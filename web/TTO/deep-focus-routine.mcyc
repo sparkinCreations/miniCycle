@@ -1,0 +1,59 @@
+{
+  "title": "Deep Focus Routine",
+  "created": "2025-08-06T05:46:50.580047",
+  "autoReset": true,
+  "deleteCheckedTasks": true,
+  "tasks": [
+    {
+      "id": "task-1",
+      "text": "Eliminate distractions (put phone on silent)",
+      "completed": false,
+      "remindersEnabled": true,
+      "dueDate": null,
+      "highPriority": true,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "daily",
+        "recurIndefinitely": true,
+        "startTime": 1754459210580,
+        "schemaVersion": 3
+      }
+    },
+    {
+      "id": "task-2",
+      "text": "Set a 25-minute Pomodoro timer",
+      "completed": false,
+      "remindersEnabled": false,
+      "dueDate": null,
+      "highPriority": false,
+      "recurring": false,
+      "recurringSettings": {}
+    },
+    {
+      "id": "task-3",
+      "text": "Work on most important task",
+      "completed": false,
+      "remindersEnabled": true,
+      "dueDate": "2025-08-06T06:46:50.580061",
+      "highPriority": true,
+      "recurring": false,
+      "recurringSettings": {}
+    },
+    {
+      "id": "task-4",
+      "text": "Take a 5-minute break and stretch",
+      "completed": false,
+      "remindersEnabled": false,
+      "dueDate": null,
+      "highPriority": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "hourly",
+        "frequencyValue": 1,
+        "recurIndefinitely": true,
+        "startTime": 1754459210580,
+        "schemaVersion": 3
+      }
+    }
+  ]
+}

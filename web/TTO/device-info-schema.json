@@ -1,0 +1,7 @@
+{
+  deviceID: "device-MJPhone2025",
+  deviceName: "MJ’s iPhone",
+  registeredAt: "2025-08-01T07:55:00.000Z",
+  lastSynced: "2025-08-08T17:15:00.000Z",
+  pairedWith: ["device-MJMacbook"]
+}

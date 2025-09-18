@@ -1,0 +1,80 @@
+{
+  "name": "Production Line Startup Cycle",
+  "tasks": [
+    {
+      "id": "6b758028-d489-4779-be83-4c0964827ac5",
+      "text": "Check conveyor belt alignment",
+      "completed": false,
+      "dueDate": "2025-08-06T08:50:07.770904",
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "hourly",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "af9d8355-71f6-47f6-9d52-d380e02c8da8",
+      "text": "Inspect coolant levels",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "daily",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "a97d1e99-9eed-48a4-a574-2834a1bf6cc9",
+      "text": "Verify sensor calibration",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "3d58d338-8a09-4db7-ae09-003e6b36ca18",
+      "text": "Clean optical lens",
+      "completed": false,
+      "dueDate": "2025-08-09T05:50:07.772290",
+      "highPriority": false,
+      "remindersEnabled": true,
+      "recurring": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "c0734e1d-1f13-42af-989c-c47e1aa620f2",
+      "text": "Review safety checklist with team",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "schemaVersion": 2
+    }
+  ],
+  "autoResetEnabled": false,
+  "deleteCheckedTasks": true,
+  "createdAt": "2025-08-06T05:50:07.772812",
+  "schemaVersion": 2
+}

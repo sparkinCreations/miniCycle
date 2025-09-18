@@ -1,0 +1,100 @@
+{
+  "name": "Field Equipment Check Rotation",
+  "tasks": [
+    {
+      "id": "d2ad413c-c0ed-46d3-8cdd-5a27c64851bd",
+      "text": "Pressure gauge check",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "hourly",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "c3f88718-4f38-4acc-a9b1-f12f777f275c",
+      "text": "Daily battery inspection",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "daily",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "e4984381-19de-4e10-b6a7-747847918252",
+      "text": "Weekly antenna sweep",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "recurIndefinitely": true,
+        "specificDays": [
+          "Monday"
+        ],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "07c6c1e6-c486-4ab9-84bb-fb0f21583e03",
+      "text": "Monthly firmware update",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "monthly",
+        "recurIndefinitely": true,
+        "specificDays": [
+          "15"
+        ],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "44d2e8dc-5557-4b30-8622-6dc5d4164884",
+      "text": "Yearly license audit",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "yearly",
+        "recurIndefinitely": true,
+        "specificDays": [
+          "January 10"
+        ],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    }
+  ],
+  "autoResetEnabled": true,
+  "deleteCheckedTasks": true,
+  "createdAt": "2025-08-06T05:52:15.072590",
+  "schemaVersion": 2
+}

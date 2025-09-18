@@ -1,0 +1,95 @@
+[
+  {
+    "id": "1f1e21a9-69b4-4523-8d88-5609f8c68b91",
+    "text": "Daily inspection checklist",
+    "completed": false,
+    "remindersEnabled": true,
+    "reminderSettings": {
+      "startTime": 1754536800696,
+      "frequencyValue": 60,
+      "frequencyUnit": "minutes",
+      "lastFired": null
+    },
+    "recurring": true,
+    "recurringSettings": {
+      "frequency": "daily",
+      "interval": 1,
+      "specificDates": [],
+      "timeOfDay": "08:00",
+      "startDate": "2025-08-07",
+      "timezone": "America/New_York",
+      "createdAt": 1754536800696
+    },
+    "metadata": {
+      "createdAt": 1754536800696,
+      "modifiedAt": 1754536800696,
+      "createdByDevice": "device-abc123",
+      "lastModifiedByDevice": "device-abc123",
+      "isDeleted": false,
+      "isDirty": true
+    },
+    "schemaVersion": 3
+  },
+  {
+    "id": "fa1182d7-1a5d-4d5d-852d-49e2d2c32280",
+    "text": "Submit QA report",
+    "completed": true,
+    "remindersEnabled": false,
+    "reminderSettings": {
+      "startTime": null,
+      "frequencyValue": 0,
+      "frequencyUnit": "minutes",
+      "lastFired": null
+    },
+    "recurring": false,
+    "recurringSettings": {
+      "frequency": "none",
+      "interval": 0,
+      "specificDates": [],
+      "timeOfDay": null,
+      "startDate": null,
+      "timezone": null,
+      "createdAt": 1754450400696
+    },
+    "metadata": {
+      "createdAt": 1754450400696,
+      "modifiedAt": 1754536800696,
+      "createdByDevice": "device-xyz789",
+      "lastModifiedByDevice": "device-abc123",
+      "isDeleted": false,
+      "isDirty": false
+    },
+    "schemaVersion": 3
+  },
+  {
+    "id": "8c735311-1a5b-41f5-9bb4-b6092a236ccb",
+    "text": "Old task to be removed",
+    "completed": false,
+    "remindersEnabled": false,
+    "reminderSettings": {
+      "startTime": null,
+      "frequencyValue": 0,
+      "frequencyUnit": "minutes",
+      "lastFired": null
+    },
+    "recurring": false,
+    "recurringSettings": {
+      "frequency": "none",
+      "interval": 0,
+      "specificDates": [],
+      "timeOfDay": null,
+      "startDate": null,
+      "timezone": null,
+      "createdAt": 1754450400696
+    },
+    "metadata": {
+      "createdAt": 1754450400696,
+      "modifiedAt": 1754623200696,
+      "createdByDevice": "device-abc123",
+      "lastModifiedByDevice": "device-xyz789",
+      "isDeleted": true,
+      "isDirty": true
+    },
+    "schemaVersion": 3
+  }
+]

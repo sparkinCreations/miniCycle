@@ -1,0 +1,4122 @@
+ /* Global Styles */
+ body {
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    z-index:-2;
+}
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    background-color:#000;
+}
+
+/* Ensure the app respects iPhone Safe Areas */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}body {
+    background-size: cover;
+}
+
+.app-root {
+  justify-content: flex-start;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+  color: white;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+
+#app-container {
+    position: relative;
+    width: 100vw;
+    overflow: hidden;
+    padding-top: 60px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#task-view {
+    position: fixed;
+    top: 50%;
+    margin: 5px;
+    left: 0; /* Default position (fully visible) */
+    transform: translate(0, -50%);
+    width: 100vw;
+    height: auto;
+    max-height: 90vh;
+    transition: left .4s ease-in-out; /* Smooth sliding */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 50px;
+    padding-bottom: 60px; 
+}
+
+/* When hiding task view, slide it left (out of screen) */
+#task-view.hide {
+    left: -200%; /* Moves it completely off-screen */
+}
+
+/* When showing task view, bring it back */
+#task-view.show {
+    left: 0; /* Moves it back into view */
+}
+
+
+
+.stats-panel {
+    position: fixed; /* Changed from absolute to fixed */
+    top: 57%;
+    left: 100%;
+    transform: translate(-50%, -50%); /* Keeps it centered */
+    width: 80vw;
+    max-width: 400px;
+    height: auto;
+    max-height: 67vh;
+    overflow-y: auto; /* Enable vertical scrolling */
+    color: black;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    transition: left .4s ease-in-out;
+    padding: 10px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50; /* Ensures it appears above everything */
+}
+
+/* When visible, animate it in */
+#stats-panel.show {
+    opacity: 1;
+    pointer-events: all; /* Allows interaction when visible */
+}
+
+/* When visible, slide it into view */
+#stats-panel.show {
+    left: calc(100% - 50vw); /* Moves the panel into view */
+}
+
+/* When hidden, slide it out of view */
+#stats-panel.hide {
+    left: 200%; /* Moves the panel out of view */
+   
+}
+
+#stats-panel p {
+    margin: 6px 0; /* or whatever spacing you want */
+  }
+
+
+
+
+
+
+/* General Styling for Slide Arrows */
+.slide-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: black;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, opacity 0.3s;
+    z-index: 2;
+}
+
+/* Left arrow (for sliding task view out) */
+#slide-left {
+    left: 15%;
+}
+
+/* Right arrow (for sliding stats panel in) */
+#slide-right {
+    right: 15%;
+}
+
+/* ✅ Always Visible on Desktop */
+@media (min-width: 768px) {
+    .slide-arrow {
+        opacity: 1; /* Always visible */
+        pointer-events: all; /* Fully interactive */
+    }
+}
+
+/* ✅ Keep Hidden on Mobile */
+@media (max-width: 768px) {
+    .slide-arrow {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* Hide left arrow when task view is visible */
+#slide-left.hide {
+    opacity: 0;
+    pointer-events: none; /* Prevents accidental clicks */
+}
+
+/* Hide right arrow when stats panel is visible */
+#slide-right.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+#slide-left.show:hover {
+    background-color:  white;
+    
+}
+
+
+#slide-right.show:hover {
+    background-color:  white;
+    
+}
+
+
+
+/* Task Input Section */
+.task-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    margin-top: 90px; /* Ensures it is below the logo */
+    margin-bottom: 15px;
+    width: 90%;
+    max-width: 400px;
+}
+
+input[type="text"] {
+    flex: 1;
+    background: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+}
+
+
+
+button {
+    background: #3e3d3d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #ff4d4d;
+}
+
+    /* Complete All Button */
+.complete-all-btn {
+    background: #08c352;
+    border: 1px solid rgba(0, 160, 11, 0.655);
+    margin-top: 10px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    color: rgba(255, 251, 251, 0.938);
+    position: relative;
+    z-index: 2;
+  
+}
+
+.complete-all-btn:hover {
+    background: #009c41;
+}
+
+
+.mini-cycle-complete-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(76, 175, 79, 0.909);
+    color: black;
+    padding: 15px 25px;
+    font-size: 60px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeOut 1.5s ease-in-out;
+}
+
+/* Animation for fading out */
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+
+
+
+
+
+
+
+.mini-cycle-title {
+    position: sticky;
+    font-family: 'Inter', sans-serif;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    color: rgba(43, 43, 43, 0.783);
+    background: none;
+    background-color: rgba(255, 255, 255, 0.4); /* Solid background to separate it from tasks */
+    padding: 8px;
+    border: none;
+    outline: none;
+    cursor: text;
+    top: 0;
+    border-radius: 8px 8px 0 0; /* Rounded only on top corners */
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%; /* Adjust width dynamically */
+    max-width: 404px;
+    z-index:10;
+}
+
+
+/* When the user clicks to edit */
+#mini-cycle-title:focus {
+    background: rgba(255, 255, 255, 0.2); /* Subtle background highlight */
+    color: #f8f8f8; /* Slightly brighter text */
+    border-bottom: 2px solid #ffffff; /* Add subtle underline effect */
+}
+
+
+/* Task List Container */
+.task-list-container {
+max-width: 400px;
+width: 100%;
+max-height: 290px;/* Set a fixed height */
+overflow-y: auto; /* Enable vertical scrolling */
+background: rgba(255, 255, 255, 0.2);
+border-radius: 0 0 8px 8px; /* Rounded only on top corners */
+padding: 10px;
+box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+
+
+}
+.task-list-container::-webkit-scrollbar {
+width: 8px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+background-color: rgba(255, 255, 255, 0.6);
+border-radius: 10px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+background: rgba(255, 255, 255, 0.1);
+}
+
+/* Task List */
+.task-list {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+
+/* Hide scrollbar on WebKit browsers */
+.task-list-container::-webkit-scrollbar {
+width: 6px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+background-color: rgba(255, 255, 255, 0.4);
+border-radius: 10px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+background: transparent;
+}
+
+.task {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px;
+    background: white;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    color: #333;
+    position: relative;
+}
+
+.task:hover {
+    transform: scale(1.02);
+    background: #f8f9fa;
+}
+
+.task input {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.task span {
+flex: 1;
+text-align: left;
+font-size: 16px;
+max-width: calc(100% - 180px);
+white-space: pre-wrap;
+word-wrap: break-word; 
+margin-right: 150px;
+}
+
+
+
+.action-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+
+/* Hide default checkbox */
+.task input[type="checkbox"] {
+appearance: none;
+width: 22px;
+height: 22px;
+aspect-ratio: 1/1;  /* Ensures a perfect circle */
+border-radius: 50%;
+border: 2px solid #ccc;
+background-color: white;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+outline: none;
+box-sizing: border-box; /* Prevents unwanted resizing */
+transition: all 0.3s ease;
+}
+
+/* Hover Effect */
+.task input[type="checkbox"]:hover {
+border-color: #40af4d;
+}
+
+/* Checked State */
+.task input[type="checkbox"]:checked {
+background-color: #5db567;
+border-color: #40af4d;
+}
+
+/* Add a checkmark */
+.task input[type="checkbox"]::after {
+content: "✔";
+font-size: 28px;
+color: rgb(18, 70, 9);
+font-weight: bold;
+display: none;
+position: relative;
+top: -5px; /* Adjust to move up */
+left: 2px;
+}
+
+/* Show checkmark when checked */
+.task input[type="checkbox"]:checked::after {
+display: block;
+}
+
+.task input[type="checkbox"]:focus {
+  outline: 2px solid var(--accent-color, #007BFF); /* fallback to blue */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); /* subtle glow effect */
+  border-radius: 50%;
+}
+
+
+
+.rename-btn { color: #ffa502; } /* Rename - Orange */
+.rename-btn:hover { color: #ff7f00; }
+
+.delete-btn { color: #ff6b6b; } /* Delete - Red */
+.delete-btn:hover { color: #ff4d4d; }
+
+/* Progress Bar */
+.progress-container {
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 10px;
+    min-height: 12px;
+    margin-top: 15px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    min-height: 12px;
+    background: #82db8c;
+    transition: width 0.3s ease-in-out;
+}
+
+#cycleMessage {
+    position: relative;
+    z-index: 1; /* Lower than the button */
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px; /* Adds space between button & message */
+    height: 24px;
+    visibility: hidden; /* Keeps space reserved even when hidden */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+
+
+
+
+#app_name img{
+width: 170px;
+padding: 6px;
+
+border-radius: 5px;
+}
+
+.title-container {
+  position: fixed;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  height: auto;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  padding-top: env(safe-area-inset-top); /* iOS safe area */
+  z-index: 10;
+}
+
+.title-header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.undo-container {
+  display: flex;
+  gap: 10px;
+  margin-top: -3px;
+}
+
+.undo-redo-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #dadada;
+  cursor: pointer;
+  padding: 2px 6px;
+  opacity: .5;
+  transition: color 0.2s ease;
+}
+
+.undo-redo-btn:hover {
+  background: none;
+  color: #000;
+}
+
+.undo-redo-btn[hidden] {
+  display: none;
+}
+
+/* Mobile: reposition Undo/Redo to upper-left */
+@media (max-width: 600px) {
+  .title-header-inner {
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  .undo-container {
+    position: absolute;
+    top: 0;
+    left: -80px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+  }
+
+  .undo-redo-btn {
+    font-size: 0.85em;
+    color: #fff;
+    background: rgba(0,0,0,0.4);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .undo-redo-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+}
+
+
+
+.title-text {
+color: rgb(255, 255, 255);
+display: flex;
+flex-direction: column; /* Stack "Task Cycle" and tagline */
+align-items: center; /* Center both */
+}
+
+.tagline {
+font-size: 11px;
+color: white;
+margin-top: 2px; /* Adjust spacing between title and tagline */
+font-weight: bold;
+background-color: #000000;
+padding: 3px 22px;
+border-radius: 10px;
+}
+
+.logo img {
+width: 38px;
+height: auto;
+border-radius: 50%;
+}
+
+.task.dragging {
+    opacity: 0.7;
+    background-color: #d3d3d3;
+    transform: scale(1.05);
+    transition: none;
+}
+
+.task-list .task-placeholder {
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 2px dashed #ccc;
+    margin: 6px 0;
+}
+
+
+
+
+/* Menu Styles */
+.menu-button {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: black;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    z-index:20;
+}
+
+.menu-button:hover {
+    background: #333;
+}
+
+.menu-container {
+    font-size: 14px;
+    font-weight: bold;
+    background: #ccd7ddfb; /* Sleek dark background */
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index:500;
+    min-width: 220px; /* ✅ Fixed width */
+    max-height: 600px; /* ✅ Prevents it from expanding */
+    border-radius: 8px; /* ✅ Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* ✅ Soft shadow */
+    overflow-y: auto; /* ✅ Enables scrolling if content is too long */
+    flex-shrink: 0; /* ✅ Prevents it from shrinking */
+
+}
+/* Show the menu */
+.menu-container.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* 📌 Menu Header */
+.main-menu-header-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: none;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: -10px;
+    margin-left: -10px;
+}
+
+/* 📌 Logo */
+.main-menu-header-logo img {
+    width: 22px;
+    height: auto;
+    filter: brightness(1.1) contrast(1.1);
+   
+}
+
+/* 📌 Mini Cycle Title */
+.main-menu-header {
+    flex-grow: 1;  /* ⬅️ Pushes the title to take remaining space */
+    text-align: left;  /* ⬅️ Keeps text aligned to the left */
+    font-size: 18px;
+    font-weight: 600;
+    color: #081d3ace;
+    margin-left: 8px;  /* ⬅️ Adds space between the logo and title */
+}
+
+/* 📌 Separator */
+.main-menu-header-row::after {
+    content: "";
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    /*margin-top: 5px;*/
+}
+
+/* 📌 Date Styling */
+#current-date {
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.6); /* ⬅️ Slightly muted */
+    margin-left: 12px; /* ⬅️ Adds spacing between title and date */
+    padding-right: 15px;
+}
+
+.mode-description {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f4f8ff;
+  color: #222;
+  border-radius: 10px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: block;
+  white-space: normal;
+}
+
+body.theme-dark-ocean .mode-description {
+  background: #2c5b78;
+  color: #f0faff;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+body.theme-golden-glow .mode-description {
+  background: #fffbe5;
+  color: #4b3f00;
+  box-shadow: 0px 2px 6px rgba(255, 204, 0, 0.3);
+}
+
+
+
+/* 📌 Align checkbox and text properly */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 30px; /* Space between checkbox and text */
+    padding: 5px 10px;
+    margin-left: 5px;
+}
+
+/* 📌 Custom checkbox */
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #424242;
+    cursor: pointer;
+}
+
+/* Hide default checkbox */
+.custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* 📌 Custom checkmark */
+.custom-checkbox .checkmark {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    margin-right: 8px;
+    transition: background 0.2s ease;
+}
+
+/* 📌 Checked state */
+.custom-checkbox input:checked + .checkmark {
+    background-color: #4CAF50; /* Green when checked */
+    border-color: #000000;
+    position: relative;
+}
+
+/* 📌 Checkmark tick */
+.custom-checkbox input:checked + .checkmark::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: -1px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+input:checked + .slider {
+    background-color: #40af4d;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+.main-menu-row {
+    display:flex;
+    justify-content: flex-start;
+    justify-content: space-evenly;
+
+    border-top: 1px solid rgba(0, 0, 0, 0.374);
+  
+}
+
+
+
+/* Menu List */
+.menu-container ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+.menu-container ul li {
+    margin: 5px 0;
+}
+
+/* Menu Buttons */
+.menu-container ul li button {
+   
+    padding: 5px 5px;
+    font-size:   12px;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    display: flex;
+    align-items: center;
+    flex-direction: column; 
+    gap: 1px;
+}
+
+.menu-container button i {
+    font-size: 20px;
+}
+
+.menu-container ul li button:hover {
+    background: #b4b5bb;
+    transform: scale(1.02);
+}
+
+
+/* 📌 Special Buttons */
+#delete-all-mini-cycle-tasks i.fas {
+    color: #9d2a26; /* Red */
+}
+
+#exit-mini-cycle i.fas {
+    color: #000000; /* Blue */
+}
+#exit-mini-cycle {
+   margin-top: 10px;
+   display: flex;
+   justify-content: center;
+   background-color: rgb(189, 71, 71);
+   border: 1px solid rgba(0, 0, 0, 0.142);
+   gap:10px;
+   width: 60%;
+   align-items: center;
+   margin-left: auto;
+   margin-right: auto;
+  
+}
+
+#export-mini-cycle {
+   margin-left: 0;
+}
+.divider-vertical{
+
+    border: 1px dashed rgba(0, 0, 0, 0.183);
+}
+
+
+.main-menu-controls-container{
+    padding: 10px;
+    border-top: 2px solid rgba(0, 0, 0, 0.167);
+}
+
+
+
+
+/* 📌 Auto Reset Toggle */
+#deleteCheckedTasksContainer,
+#toggleAutoReset {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 10px 0;
+    color: white;
+}
+
+
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.402);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 11.5px;
+    width: 11.5px;
+    left: 1px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+
+/* Aligns toggle switches and text side by side */
+.toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Ensures even spacing */
+    gap: 10px; /* Space between toggle and label */
+    width: 100%; /* Makes sure it takes the full available width */
+    max-width: 300px; /* Optional: Adjust width as needed */
+   
+}
+
+/* 📌 Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 17px;
+    
+}
+
+
+/* Consistent label styling */
+.label-text {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #424242;
+    white-space: nowrap; /* Prevents text wrapping */
+    flex-grow: 1; /* Makes the text take up remaining space */
+    text-align: left; /* Aligns text properly */
+}
+
+
+
+.menu-container-footer {
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+
+
+
+
+.mini-cycle-switch-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+/* 🏷️ Modal Content Box */
+.mini-cycle-switch-modal-content {
+    background: rgb(237, 239, 246);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    min-width: 300px;
+    max-width: 400px;
+    text-align: center;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* 🎯 Mini Cycle Switch Title */
+.mini-cycle-switch-title {
+    font-size: 1.3rem; /* ⬅️ Reduced for compact view */
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+/* 🎯 Mini Cycle Switch Title */
+.mini-cycle-switch-title-logo {
+    font-weight: bold;
+    margin-bottom: -30px;
+
+}
+.mini-cycle-switch-title-logo img {
+    width: 22px;
+    padding: 3px;
+    margin-left: -300px;
+}
+
+/* 📜 Scrollable Mini Cycle List */
+.mini-cycle-switch-list {
+    max-height: 240px; /* ⬅️ Smaller max height */
+    overflow-y: auto;
+    border: 1px solid #767676;
+    padding: 6px; /* ⬅️ Reduced padding */
+    background: white;
+    text-align: left;
+    border-radius: 5px;
+}
+
+/* 🔘 Mini Cycle Selection Buttons (Smaller) */
+.mini-cycle-switch-item {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+    padding: 8px;
+    margin-bottom: 3px; /* ⬅️ Reduced spacing */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: none;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    text-align: left;
+    border-radius: 3px;
+    font-size: 0.9rem; /* ⬅️ Slightly smaller font */
+}
+.mini-cycle-switch-item span {
+    pointer-events: none;
+}
+
+.mini-cycle-switch-item:hover {
+    background: #ddd;
+}
+
+/* ✅ Selected Mini Cycle */
+.mini-cycle-switch-item.selected {
+    background: #0056b3;
+    color: white;
+    font-weight: bold;
+}
+
+/* 🎯 Switch Items Row (Initially Hidden) */
+.switch-items-row {
+    display: none; /* ✅ Now hidden by default */
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+
+/* 📌 Preview Box */
+.switch-preview-window {
+    position: relative;
+    margin: 10px auto;
+    width: 150px;
+    height: auto;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 5px;
+    color: #3A3A3A;
+    font-size: 0.9rem;
+    text-align: left;
+    overflow-y: auto;
+    max-height: 70px; /* ✅ Limit height */
+}
+
+/* 🎯 Style for Preview Tasks */
+.preview-task {
+    font-size: 0.85rem;
+    padding: 3px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.preview-task:last-child {
+    border-bottom: none;
+}
+
+
+
+
+
+
+
+
+
+
+/* 🎛️ Edit/Delete Buttons */
+.switch-buttons {
+    color: rgb(0, 0, 0);
+    margin-left: 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    font-size: 18px;
+}
+
+
+.switch-buttons:hover {
+    background-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+/* 🏁 Open & Cancel Buttons (Bigger) */
+.mini-cycle-switch-btn {
+    width: 90px; /* ✅ Bigger */
+    padding: 7px;
+    font-size: 1.1rem;
+    margin: 5px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: opacity 0.2s ease-in-out, transform 0.1s;
+}
+
+.mini-cycle-switch-btn:hover {
+    opacity: 0.8;
+}
+
+.mini-cycle-switch-btn:active {
+    transform: scale(0.98);
+}
+
+/* ❌ Cancel Button */
+.mini-cycle-switch-btn.cancel-btn {
+    background: #ff4d4d;
+    color: white;
+}
+
+/* 🎭 Responsive Adjustments */
+@media (max-width: 480px) {
+    .mini-cycle-switch-modal-content {
+        width: 85%;
+        padding: 12px;
+    }
+
+    .mini-cycle-switch-title {
+        font-size: 1.2rem;
+    }
+
+    .mini-cycle-switch-btn {
+        width: 90px;
+        padding: 8px;
+    }
+}
+
+
+
+
+
+
+.mini-cycle-milestone {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 25px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeInOut 3s ease-in-out;
+    z-index: 20;
+}
+
+/* Animation for fade-in and fade-out */
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -30%); }
+    10% { opacity: 1; transform: translate(-50%, -50%); }
+    90% { opacity: 1; transform: translate(-50%, -50%); }
+    100% { opacity: 0; transform: translate(-50%, -70%); }
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Footer Styling */
+#footer-container {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-family: 'Poppins', sans-serif;
+    z-index:0;
+    width:100%;
+ 
+    
+
+    
+}
+
+/* Copyright Text */
+#copyright {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    
+}
+
+#copyright {
+    color: white; /* Make the text white */
+}
+
+#copyright a {
+    color: white; /* Ensure the link is also white */
+    text-decoration: none; /* Optional: Removes underline */
+}
+
+#copyright a:hover {
+    text-decoration: underline; /* Optional: Adds underline on hover */
+}
+
+
+/* Hover Effect */
+#footer-container:hover #copyright {
+    opacity: 1; /* Make it fully visible on hover */
+}
+
+
+
+
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+/* 🔳 Modal Overlay */
+.settings-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px); /* ✨ Fancy background blur */
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  /* 🧾 Modal Content */
+  .settings-modal-content {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 30px 25px;
+    width: 90%;
+    max-width: 400px;
+    text-align: left;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    font-family: 'Inter', sans-serif;
+    position: relative;
+  }
+  
+  /* 📝 Modal Header */
+  .settings-modal-content h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+  }
+  
+  /* 🧩 Checkbox Options */
+  .settings-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+    font-size: 15px;
+    color: #444;
+  }
+  
+  /* 🟩 Buttons */
+  .settings-btn {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: #f1f1f1;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+  
+  .settings-btn:hover {
+    background: #e2e2e2;
+    transform: scale(1.01);
+  }
+  
+  /* 🛑 Factory Reset (danger) */
+  .factory-reset-btn {
+    background: #ff4d4d;
+    color: white;
+  }
+  
+  .factory-reset-btn:hover {
+    background: #e60000;
+  }
+  
+  /* ❌ Close Button */
+  .close-btn {
+    background: #888;
+    color: white;
+  }
+  
+  .close-btn:hover {
+    background: #555;
+  }
+/* Feedback Modal Styling */
+.feedback-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content */
+.feedback-modal-content {
+    background: rgb(203, 203, 203);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+}
+
+/* Close Button */
+.close-feedback-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Textarea Styling */
+#feedback-text {
+    width: 90%;
+    height: 100px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    resize: none;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+/* Submit Button */
+#submit-feedback {
+    background: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s ease-in-out;
+}
+
+#submit-feedback:hover {
+    background: #0056b3;
+}
+/* About Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content */
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+}
+
+/* Close Button */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* About Section Links */
+.modal-content a {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.modal-content a:hover {
+    text-decoration: underline;
+}
+
+
+/* Lowkey About Button */
+.open-about-modal {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    color: rgba(0, 0, 0, 0.6); /* Subtle muted text */
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+
+/* Icon Styling */
+.open-about-modal i.fas {
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.5); /* Muted icon */
+    transition: color 0.3s ease-in-out;
+
+}
+
+/* Hover Effect */
+.open-about-modal:hover {
+    color: black;
+    background: rgba(0, 0, 0, 0.05); /* Light background */
+}
+
+.open-about-modal:hover i {
+    color: black;
+}
+body:not(.show-three-dots-enabled) .task:hover .task-options,
+body:not(.show-three-dots-enabled) .task:active .task-options {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ✅ Task Buttons (Initially Hidden) */
+.task-options {
+    position: absolute;
+    top: -20px; /* Move above the task */
+    left: 57%;
+    transform: translateX(-50%);
+    display:flex;
+    gap: 5px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+   
+}
+
+/* ✅ Show Buttons on Hover or Long Press */
+.task:hover .task-options,
+.task:active .task-options {
+    visibility: visible;
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+
+  .task:hover .task-options,
+.task:active .task-options,
+.task:hover .task-btn,
+.task:active .task-btn {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+}
+
+
+.task-btn,
+.move-btn {
+    background: rgb(231, 231, 231);
+    border: 1px solid #ccc;
+    border-radius: 50% 50% 0 0; /* Top half-circle */
+    width: 35px;
+    height: 25px; /* Shorter height for half-circle effect */
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ✅ Icon color set to black */
+.task-btn svg,
+.task-btn  {
+    color: black; /* Ensures the icon color is black */
+    font-size: 16px;
+}
+
+.recurring-btn{
+color:#0056b3;
+}
+.task-btn.recurring-btn.active {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+}
+
+
+.priority-btn {
+    color:rgba(191, 3, 3, 0.715);
+
+}
+
+.edit-btn {
+color: rgba(77, 77, 255, 0.771);
+}
+
+.task-btn.set-due-date.active {
+    background-color: #535353;
+    color: white;
+    font-weight: bold;
+}
+
+/* ✅ Button hover effect */
+.task-btn:hover {
+    background: #f0f0f0;
+    transform: scale(1.05);
+}
+
+
+/* ✅ High Priority Styling */
+.high-priority {
+    border-left: 5px solid red;
+}
+
+/* ✅ Task Dragging Effect */
+.dragging {
+    opacity: 0.7;
+    background-color: #e0e0e0;
+    transform: scale(1.05);
+    transition: none;
+}
+
+/* Prevent scrolling past the last task */
+#taskList {
+    overscroll-behavior: contain;
+    touch-action: pan-y; /* Allows normal vertical scrolling */
+}
+.task-options {
+    visibility: hidden;
+    opacity: 0;
+   
+}
+
+.hidden-task-btn {
+  display: none;
+}
+/*
+.task-btn:focus {
+  outline: 2px solid var(--focus-color, #2195f3);
+  outline-offset: 2px;
+}
+*/
+.task:hover .task-options {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ✅ Ensure long-pressed tasks show options */
+.task.long-pressed .task-options {
+    display:flex;
+    visibility: visible ;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.overdue-task {
+    background-color: rgba(255, 0, 0, 0.2); /* Light red */
+    /*border-left: 4px solid red;*/
+    color: darkred; /* Change text color */
+    font-weight: bold;
+}
+
+
+.overdue-task:hover {
+    background-color: rgba(255, 0, 0, 0.2); /* Light red */
+    /*border-left: 4px solid red;*/
+}
+
+.due-date {
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-left:15%;
+    width: 100%;
+    max-width: 180px; /* Optional for a nice compact look */
+    background-color: #c8c8c868;
+    color: #333;
+}
+
+.due-date.hidden {
+    display: none;
+}
+
+.task-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.badge-container {
+    text-align: center;
+  }
+  
+  .badges {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+    user-select: none;
+    cursor: default;
+
+  }
+  
+  .badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #ddd; /* Gray by default */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: #888;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    gap: 15px;
+    margin-top: 10px;
+  }
+  
+  .badge.unlocked {
+    background-color: #4caf50; /* Green when unlocked */
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .badge.unlocked.ocean-theme {
+    background-color: #4ecdc4; /* Ocean turquoise */
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 160, 147, 0.4);
+  }
+  
+  .badge.unlocked.golden-theme {
+    background-color: #ffd700; /* Golden Glow */
+    color: #4a3d00;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.5);
+  }
+
+  .badge.unlocked.game-unlocked {
+    background-color: rgba(0, 0, 0, 0.868);
+    color: white;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+    font-weight: bold;
+}
+
+
+
+  @media (hover: none) and (pointer: coarse) {
+    .task:hover .task-options {
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+  
+  .three-dots-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 25px;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    transition: background 0.2s ease;
+    width: 30px;
+}
+
+.three-dots-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+
+/* Reminders Modal Container */
+.reminders-modal {
+    display: none;               /* Hidden by default */
+    position: fixed;            /* Stays in same place even if page scrolls */
+    top: 0; left: 0;            /* Full viewport */
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+    z-index: 9999;              /* Above most other elements */
+    justify-content: center;    /* Centers the modal horizontally */
+    align-items: center;        /* Centers the modal vertically */
+    overflow: auto;             /* Scroll if content is tall */
+  }
+  
+  /* Modal Content */
+  .reminders-modal-content {
+    background: #fff;          /* White background */
+    color: #333;               /* Dark text color */
+    padding: 20px;             /* Space inside */
+    border-radius: 8px;        /* Rounded corners */
+    width: 320px;              /* A fixed width (adjust as needed) */
+    max-width: 90%;            /* Don’t exceed the screen’s width */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    position: relative;        /* For positioning close icon if needed */
+  }
+  
+  /* Headings and Sections */
+  .reminders-modal-content h2 {
+    margin-top: 0;             /* Remove default margin if desired */
+  }
+  
+  .settings-option {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 10px;
+    
+    
+  }
+  
+  .settings-option input[type="checkbox"] {
+    margin-right: 10px;
+  }
+  
+  /* Frequency Section */
+  #frequency-section {
+    margin-top: 10px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+  
+  #repeat-count-row, #every-row {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+  }
+  
+  #repeat-count-row label, 
+  #every-row label {
+    margin-right: 6px;
+    min-width: 100px; /* Adjust for consistent alignment if you like */
+  }
+  
+  #repeatCount, 
+  #frequencyValue {
+    width: 60px; /* Enough space for small numbers */
+    margin-right: 6px;
+  }
+  
+  /* Buttons */
+  .settings-btn {
+    background: #4790df;       /* A complementary color for your theme */
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    margin-right: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .settings-btn:hover {
+    background: #2171b5;       /* Slightly darker on hover */
+  }
+  
+  /* Close button if you want an 'X' in the corner */
+  .reminders-modal-content .close-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: transparent;
+    color: #999;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+  }
+  .reminders-modal-content .close-btn:hover {
+    color: #666;
+  }
+  
+
+
+/* Active state when reminder is enabled */
+.task-btn.enable-task-reminders.reminder-active {
+    background: #4790df;   /* Blue color when active */
+    color: white;
+}
+
+/* Add subtle hover effects */
+.task-btn.enable-task-reminders:hover {
+    background: #bbb;
+}
+
+/* Hover effect when active */
+.task-btn.enable-task-reminders.reminder-active:hover {
+    background: #2171b5;   /* Slightly darker blue */
+}
+
+/* Active state when High Priority is enabled */
+.task-btn.priority-btn.priority-active {
+    background: #d9534f;       /* Red color when active */
+    color: white;
+}
+
+/* Hover effect */
+.task-btn.priority-btn:hover {
+    background: #bbb;
+}
+
+/* Hover effect when active */
+.task-btn.priority-btn.priority-active:hover {
+    background: #b52b27;       /* Darker red when active */
+}
+
+/* 🔔 Global Notification System */
+#notification-container {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+    cursor: grab
+}
+
+#notification-container.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.notification {
+    background: #323232;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal; /* ✅ This allows wrapping! */
+    display: block; /* Optional: Ensures full width for wrapping */
+    line-height: 1.4;
+    
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.error {
+    background: #ff4d4d;
+}
+
+.notification.success {
+    background: #28a745;
+}
+
+
+.notification.info {
+  background-color: #007bff; /* Blue */
+}
+
+.notification.warning {
+  background-color: #ffc107; /* Yellow text, dark background is better */
+  color: #000;
+}
+
+
+.notification button {
+    background: none;
+    border: none;
+    color: white;
+    font-weight: bold;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+
+/* Fix for clicking outside the modal */
+.onboarding-modal {
+    display: none; /* Initially hidden */
+    position: fixed;
+    z-index: 100;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* ✅ Allows detecting clicks outside */
+}
+
+/* Keep pointer events active only for the content */
+.onboarding-content {
+    background: white;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 10px;
+    text-align: center;
+    position: relative;
+    pointer-events: auto; /* ✅ Prevents modal content from blocking clicks */
+}
+
+.onboarding-content h2 {
+    color: #222;
+    font-size: 24px;
+}
+
+.onboarding-content ul {
+    text-align: left;
+    padding-left: 20px;
+}
+
+.onboarding-modal {
+    animation: fadeInUp 0.4s ease-out;
+  }
+
+  .onboarding-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+  
+  .onboarding-controls button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+  
+  .onboarding-skip {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    color: #888;
+    cursor: pointer;
+  }
+  
+  .onboarding-skip:hover {
+    color: #333;
+  }
+
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+#start-mini-cycle {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    font-size: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+#start-mini-cycle:hover {
+    background: #0056b3;
+}
+
+
+
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.3); /* Semi-transparent black */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; /* Behind modal content */
+}
+
+
+/* Shared modal style (based on your Reminders/Feedback panels) */
+.modal-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 420px;
+  max-height: 75vh;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  border-radius: 15px;
+  padding: 20px 25px;
+  z-index: 1000;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Title like "Provide Feedback" */
+.modal-panel h2 {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+/* Close button */
+.modal-close-button {
+  background-color: #007bff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 1rem;
+  padding: 10px 20px;
+  margin-top: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modal-close-button:hover {
+  background-color: #0056b3;
+}
+
+/* Task List */
+#recurring-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+/* Task Item */
+.recurring-task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 2px 4px;
+  margin-bottom: 4px;
+  user-select: none;
+  gap: 8px;
+  box-shadow: inset 0 0 0 1px #989898;
+  transition: background-color 0.3s ease, box-shadow 0.2s ease;
+}
+ 
+
+.recurring-task-item.checked {
+  background-color: #b9b9b9; /* light green when marked */
+}
+
+.recurring-task-item input[type="checkbox"] {
+  accent-color: #4CAF50; /* green checkboxes */
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.recurring-task-item .recurring-task-text {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recurring-remove-btn {
+  background: none;
+  border: none;
+  color: red;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+
+.recurring-task-item button:hover {
+  color: #c0392b;
+}
+
+#recurring-settings-panel {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f0f0f0;
+  border-top: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+#recurring-settings-panel.hidden {
+  display: none;
+}
+
+#recurring-settings-panel label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+#recur-count-input {
+  width: 60px;
+  margin-left: 6px;
+}
+
+.recurring-task-item.selected {
+  border: 1px solid #4caf4f;
+  background-color: #dfffdf;
+}
+
+#recur-count-container.hidden {
+  display: none;
+}
+
+.recurring-task-item input[type="checkbox"]:hover {
+  filter: brightness(1.2);
+}
+
+#recur-frequency-container {
+  margin-top: 10px;
+}
+
+#recur-frequency-container label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+#recur-frequency {
+  width: 50%;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+
+#apply-recurring-settings {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #4CAF50; /* Green */
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+#apply-recurring-settings:hover {
+  background-color: #45a049;
+  transform: scale(1.02);
+}
+
+#apply-recurring-settings:active {
+  background-color: #3e8e41;
+  transform: scale(0.98);
+}
+
+
+
+
+
+
+
+#open-recurring-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background-color: #c4dcc6;
+  color: #333;
+  box-shadow: inset 0 0 0 1px #989898;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.2s ease;
+  width: 60%;
+  margin: 8px 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#open-recurring-panel:hover:not(:disabled) {
+  background-color: #f1f1f1;
+  box-shadow: inset 0 0 0 1px #aaa;
+}
+
+#open-recurring-panel:disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#open-recurring-panel i {
+  font-size: 1.1rem;
+}
+
+.recurring-scroll-area {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px; /* extra room for scrollbar */
+  margin-top: 10px;
+}
+
+.recurring-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recurring-scroll-area::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.3);
+  border-radius: 4px;
+}
+
+.recurring-scroll-area::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 100, 100, 0.5);
+}
+
+.close-recurring-panel {
+  padding: 5px;
+  margin: 10px;
+  width: 70%;
+}
+
+
+
+
+.monthly-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px;
+  background: #d3d3d3;
+  border-radius: 10px;
+}
+
+.monthly-day-box {
+  text-align: center;
+  padding: 12px 0;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+
+
+.monthly-day-box.selected::after {
+  content: "✔";
+  font-size: 14px;
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  color: #000000;
+}
+
+
+
+.monthly-day-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f8f8;
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
+  border: 1px solid transparent;
+  height: 30px; /* consistent box size */
+}
+
+
+
+.monthly-day-option:hover {
+  background-color: #eef6ff;
+  border-color: #c3dfff;
+}
+
+.monthly-day-option input[type="checkbox"] {
+  margin-right: 6px;
+  accent-color: #4CAF50;
+  margin-bottom: 4px; /* space between checkbox and number */
+  transform: scale(1.2); /* slightly bigger for touch */
+}
+
+.monthly-day-option.selected {
+  background-color: #d2f8da;
+  border-color: #4CAF50;
+  font-weight: bold;
+}
+
+.monthly-day-box.selected {
+  background: #b0f1b5;
+  border-color: #38a169;
+  color: #000000;
+}
+
+
+.weekly-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px;
+  background: #d3d3d3;
+  border-radius: 10px;
+}
+
+.weekly-day-box {
+  text-align: center;
+  padding: 12px 0;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.weekly-day-box.selected {
+  background: #b0f1b5;
+  border-color: #38a169;
+  color: #000;
+}
+
+.weekly-day-box.selected::after {
+  content: "✔";
+  font-size: 12px;
+  position: absolute;
+  top: 1px;
+  left: 18px;
+  color: #000000;
+}
+
+
+
+
+
+
+
+
+.biweekly-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px;
+  background: #d3d3d3;
+  border-radius: 10px;
+}
+
+.biweekly-day-box {
+  text-align: center;
+  padding: 12px 0;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.biweekly-day-box.selected {
+  background: #b0f1b5;
+  border-color: #38a169;
+  color: #000;
+}
+
+.biweekly-day-box.selected::after {
+  content: "✔";
+  font-size: 12px;
+  position: absolute;
+  top: 1px;
+  left: 18px;
+  color: #000000;
+}
+
+
+
+
+
+
+/* Shared styles for all time containers */
+#daily-time-container,
+#weekly-time-container,
+#biweeklt-time-container,
+#monthly-time-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 0;
+  align-items: center;
+  font-size: 16px;
+}
+
+.time-picker-wrapper {
+  margin: 20px auto 0 auto;
+  max-width: 350px; /* optional constraint */
+  padding: 10px;
+  border: 1px solid #ccc;
+  margin: auto;
+  border-radius: 5px;
+}
+
+/* Group inputs side by side */
+.time-picker-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Inputs: big, clean, and mobile-friendly */
+.time-picker-group input[type="number"],
+.time-picker-group select {
+  padding: 4px 4px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+  width: 70px;
+  text-align: center;
+  appearance: none;
+  transition: border-color 0.2s;
+}
+
+.time-picker-group input[type="number"]:focus,
+.time-picker-group select:focus {
+  outline: none;
+  border-color: #38a169; /* green accent */
+}
+
+/* Hide meridiem dropdown when using 24-hour mode */
+select.hidden {
+  display: none;
+}
+
+/* 24-hour toggle checkbox */
+.time-format-toggle {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.time-picker-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.section-label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+
+.time-picker-group input::placeholder {
+  color: #aaa;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Container styles for months and days */
+.yearly-months,
+.yearly-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 10px;
+  padding: 10px;
+  background: #d3d3d3;
+  border-radius: 10px;
+}
+
+.yearly-month-box,
+.yearly-day-box {
+  text-align: center;
+  padding: 12px 0;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  width: 60px;
+}
+
+.yearly-month-box.selected,
+.yearly-day-box.selected {
+  background: #b0f1b5;
+  border-color: #38a169;
+  color: #000000;
+}
+
+.yearly-month-box.selected::after,
+.yearly-day-box.selected::after {
+  content: "✔";
+  font-size: 14px;
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  color: #000000;
+}
+
+#specific-dates-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+}
+
+#specific-date-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.specific-date-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.specific-date-entry input[type="date"] {
+  padding: 6px 10px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #333;
+  width: 200px;
+}
+
+/* NEW: match .trash-btn */
+.specific-date-item button.trash-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #cc0000;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.2s;
+}
+
+.specific-date-item button.trash-btn:hover {
+  color: #a30000;
+}
+
+#add-specific-date {
+  margin-top: 10px;
+  width: 40%;
+  background-color: #8c8c8c;
+  border: 1px solid #303030;
+  color: #ffffff;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  gap: 3px;  box-shadow: inset 0 0 0 1px #989898;
+  transition: background-color 0.3s ease, box-shadow 0.2s ease;
+}
+
+#add-specific-date:hover {
+  background-color: #444444;
+}
+
+.plus-icon {
+  font-size: 15px; /* or bigger! */
+  margin-right: 6px;
+}
+
+.toggle-advanced-btn {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background-color: #777777;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-advanced-btn:hover {
+  background-color: #989898;
+}
+
+
+.recurring-summary {
+  font-size: 0.95rem;
+  margin: 1em 0;
+  padding: 0.75em 1em;
+  background-color: #eaffeb;
+  border: solid 1px green;
+  box-shadow: #000;
+  border-radius: 6px;
+  color: #333;
+}
+
+
+#recurring-summary-preview {
+  margin-top: 10px;
+  padding: 12px;
+  background-color: #ededed;
+  border: 1px solid #3e3e3e;
+  border-radius: 8px;
+  text-align: left;
+  animation: fadeIn 0.25s ease;
+}
+
+.summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#recurring-preview-text {
+  font-size: 14px;
+  color: #2f855a;
+}
+
+.change-recurring-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  background-color: #38a169;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.change-recurring-btn:hover {
+  background-color: #2f855a;
+}
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cancel-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #cccccc; /* Neutral grey */
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 12px;
+  margin-left: 10px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #bbbbbb;
+  transform: scale(1.02);
+}
+
+.cancel-btn:active {
+  background-color: #aaaaaa;
+  transform: scale(0.98);
+}
+
+.recurring-check.hidden {
+  visibility: hidden;
+}
+
+.summary-label {
+  font-weight: bold;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+#recurring-toggle-actions {
+  display: flex;
+  justify-content: flex-start; /* Aligns to the left now */
+  padding-left: 34px;          /* Matches the left padding of the checkboxes */
+  margin-bottom: 8px;
+}
+
+
+.toggle-check-btn {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 10px;
+  background-color: #9f9f9f;
+  border: 1px solid #808080;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-check-btn:hover {
+  background-color: #707070;
+}
+
+
+/* More specific trash icon inside recurring settings */
+.recurring-date-trash-icon {
+
+  font-size: 14px;
+  color: #cb5d5d;
+  transition: color 0.2s;
+  pointer-events: none; /* optional: makes sure the button handles click, not the icon */
+}
+
+.trash-btn:hover .recurring-date-trash-icon {
+
+  color: #3d3d3d;
+}
+
+
+
+
+.first-specific-date {
+
+  margin-bottom: 8px; /* Match spacing below */
+  margin-right: 28px;
+}
+
+
+
+/* More specific trash icon inside recurring settings */
+.recurring-trash-icon {
+
+  font-size: 16px;
+  color: rgb(79, 79, 79);
+  transition: color 0.2s;
+  pointer-events: none; /* optional: makes sure the button handles click, not the icon */
+}
+
+.trash-btn:hover .recurring-trash-icon {
+
+  color: #3d3d3d;
+}
+
+/* 🔁 Recurring Task Icon */
+.recurring-indicator {
+  display: inline-block;
+  font-size: 14px;
+  color: #3498db; /* Blue */
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.navigation-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  position: absolute;
+  bottom: 25px;
+  width: 100%;
+  z-index: 1;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  background-color: #ccc;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.dot.active {
+  background-color: #007BFF;
+}
+
+
+/*DARk MODE*/
+/* 🌙 DARK MODE */
+body.dark-mode {
+    background: linear-gradient(135deg, #4d4d4d, #4a4a4a); 
+    color: #ffffff;
+}
+
+/* 🌙 Task Cards */
+.dark-mode .task {
+  background: #2e2e2e;
+  color: #ffffff;
+  border: 1px solid #444;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.dark-mode .task:hover {
+  background: #1f1f1f;
+}
+
+/* 🌙 Menu, Panels, Modals */
+.dark-mode .menu-container,
+.dark-mode .reminders-modal-content,
+.dark-mode .settings-modal-content,
+.dark-mode .stats-panel,
+.dark-mode .themes-modal-content,
+.dark-mode .feedback-modal-content {
+    background: #828282;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+/* 🌙 Buttons */
+.dark-mode .task-options button,
+.dark-mode .complete-all-btn {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  transition: background 0.3s ease;
+}
+
+.dark-mode .task-options button:hover,
+.dark-mode .complete-all-btn:hover {
+  background: #555;
+}
+
+/* 🌙 Notifications */
+.dark-mode .notification {
+  background: #2b2b2b;
+  color: #fff;
+  border-left: 4px solid #888;
+}
+
+.dark-mode .notification.success {
+  background: #2e7d32;
+  border-left-color: #4caf50;
+}
+
+.dark-mode .notification.error {
+  background: #c62828;
+  border-left-color: #ef5350;
+}
+
+/* 🌙 High Priority */
+.dark-mode .high-priority {
+  border-left: 5px solid #ff6b6b;
+  background: #1e1e1e;
+}
+
+/* 🌙 Checkbox Contrast */
+.dark-mode .custom-checkbox input:checked + .checkmark {
+  background-color: #4caf50;
+  border-color: #2e7d32;
+}
+
+/* 🌙 Clickable Theme Unlock Panels */
+body.dark-mode .theme-unlock-status .clickable {
+  background-color: #3a3a3a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+}
+
+body.dark-mode .theme-unlock-status .clickable:hover {
+  background-color: #4a4a4a;
+  transform: scale(1.02);
+  color: #90ee90;
+}
+
+body.dark-mode #theme-unlock-message,
+body.dark-mode #golden-unlock-message {
+  color: #dddddd;
+}
+
+body.dark-mode #theme-unlock-message.unlocked-message,
+body.dark-mode #golden-unlock-message.unlocked-message {
+  color: #7cff9e;
+}
+
+body.dark-mode .theme-divider {
+    border-top: 1px solid #666;
+    opacity: 0.4;
+  }
+
+
+  /* 🌙 DARK MODE: Menu Buttons */
+body.dark-mode .menu-container button,
+body.dark-mode .menu-container .menu-button,
+body.dark-mode .menu-container .menu-grid button, 
+body.dark-mode #open-themes-panel {
+  background-color: none;
+  color: #b1b1b1;
+}
+
+body.dark-mode #current-date {
+  background-color: none;
+  color: #e3e3e3;
+}
+
+body.dark-mode #open-themes-panel,
+body.dark-mode #open-games-panel {
+  background-color: none;
+  color: #f2eded;
+}
+body.dark-mode #main-menu-mini-cycle-title {
+  background-color: none;
+  color: #4b56a7;
+}
+
+body.dark-mode .menu-container button:hover,
+body.dark-mode .menu-container .menu-button:hover,
+body.dark-mode .menu-container .menu-grid button:hover {
+  background-color: #444;
+  color: #ffffff;
+  border-color: #777;
+}
+
+/* 🌙 About Modal in Dark Mode */
+body.dark-mode #about-modal .modal-content {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode #about-modal a {
+  color: #7cff9e;
+  text-decoration: underline;
+}
+
+body.dark-mode #about-modal a:hover {
+  color: #aaffaa;
+}
+
+body.dark-mode #about-modal .close-modal {
+  color: #ccc;
+}
+
+body.dark-mode #about-modal .close-modal:hover {
+  color: #fff;
+  cursor: pointer;
+}
+
+/* 🌊 About Modal - Dark Ocean Theme */
+body.theme-dark-ocean #about-modal .modal-content {
+  background-color: #244d6a;
+  color: #f0faff;
+  border: 1px solid #497b96;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+body.theme-dark-ocean #about-modal a {
+  color: #9ae6b4;
+  text-decoration: underline;
+}
+
+body.theme-dark-ocean #about-modal a:hover {
+  color: #c3f9c9;
+}
+
+body.theme-dark-ocean #about-modal .close-modal {
+  color: #e0faff;
+}
+
+body.theme-dark-ocean #about-modal .close-modal:hover {
+  color: #ffffff;
+  cursor: pointer;
+}
+
+body.theme-golden-glow .about-panel,
+body.theme-golden-glow .about-panel h2,
+body.theme-golden-glow .about-panel p,
+body.theme-golden-glow .about-panel ul,
+body.theme-golden-glow .about-panel li {
+  background-color: #fff9e0;
+  color: #222;
+  border-color: #f4c542;
+}
+
+body.theme-golden-glow .about-panel {
+  border: 1px solid #f4c542;
+  box-shadow: 0 2px 6px rgba(244, 197, 66, 0.4);
+}
+body.dark-mode.theme-golden-glow .about-panel,
+body.dark-mode.theme-golden-glow .about-panel h2,
+body.dark-mode.theme-golden-glow .about-panel p,
+body.dark-mode.theme-golden-glow .about-panel ul,
+body.dark-mode.theme-golden-glow .about-panel li {
+  background-color: #3a320f;
+  color: #f7e8a1;
+  border-color: #eac73b;
+}
+
+body.dark-mode.theme-golden-glow .about-panel {
+  box-shadow: 0 2px 8px rgba(255, 221, 94, 0.3);
+}
+
+
+body.theme-golden-glow .about-panel h2::after {
+  content: "";
+  display: block;
+  height: 2px;
+  background: #f4c542;
+  margin-top: 6px;
+}
+
+
+  /* 🌙 DARK MODE BASE */
+body.dark-mode {
+  background: linear-gradient(135deg, #1c1c1c, #2a2a2a);
+  color: #f0f0f0;
+}
+
+/* 🌙 Task Cards */
+body.dark-mode .task {
+  background: #2e2e2e;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .task:hover {
+  background: #262626;
+}
+
+/* 🌙 Panels, Modals, Menus */
+body.dark-mode .menu-container,
+body.dark-mode .reminders-modal-content,
+body.dark-mode .settings-modal-content,
+body.dark-mode .stats-panel,
+body.dark-mode .themes-modal-content,
+body.dark-mode .feedback-modal-content,
+body.dark-mode .modal-panel {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+}
+
+/* 🌙 Buttons */
+body.dark-mode .task-options button,
+body.dark-mode .complete-all-btn {
+  background-color: #3a3a3a;
+  color: #fff;
+  border: 1px solid #666;
+}
+
+body.dark-mode .task-options button:hover,
+body.dark-mode .complete-all-btn:hover {
+  background-color: #4a4a4a;
+}
+
+/* 🌙 Notifications */
+body.dark-mode .notification {
+  background-color: #1e1e1e;
+  color: #fff;
+  border-left: 4px solid #888;
+}
+
+body.dark-mode .notification.success {
+  background-color: #225f2f;
+  border-left-color: #4caf50;
+}
+
+body.dark-mode .notification.error {
+  background-color: #8c1c1c;
+  border-left-color: #ef5350;
+}
+
+/* 🌙 High Priority Tag */
+body.dark-mode .high-priority {
+  border-left: 5px solid #ff6b6b;
+  background-color: #1e1e1e;
+}
+
+/* 🌙 Custom Checkbox */
+body.dark-mode .custom-checkbox input:checked + .checkmark {
+  background-color: #4caf50;
+  border-color: #2e7d32;
+}
+
+/* 🌙 Theme Unlock Panels */
+body.dark-mode .theme-unlock-status .clickable {
+  background-color: #303030;
+  color: #dddddd;
+  border: 1px solid #555;
+}
+
+body.dark-mode .theme-unlock-status .clickable:hover {
+  background-color: #3c3c3c;
+  transform: scale(1.02);
+  color: #aaffaa;
+}
+
+body.dark-mode #theme-unlock-message,
+body.dark-mode #golden-unlock-message {
+  color: #cccccc;
+}
+
+body.dark-mode #theme-unlock-message.unlocked-message,
+body.dark-mode #golden-unlock-message.unlocked-message {
+  color: #7cff9e;
+}
+
+body.dark-mode .theme-divider {
+  border-top: 1px solid #555;
+  opacity: 0.3;
+}
+
+/* 🌙 DARK MODE: Recurring Task UI */
+body.dark-mode .recurring-task-item,
+body.dark-mode #recurring-summary-preview,
+body.dark-mode .summary-label,
+body.dark-mode #recurring-settings-panel,
+body.dark-mode .weekly-day-box,
+body.dark-mode .biweekly-day-box,
+body.dark-mode .monthly-day-box,
+body.dark-mode .yearly-day-box,
+body.dark-mode .yearly-month-box {
+  background-color: #656565;
+  color: #eaeaea;
+  border: 1px solid #555;
+}
+
+body.dark-mode .weekly-day-box::after {
+  background-color: #4caf50;
+}
+
+body.dark-mode .weekly-day-box:hover,
+body.dark-mode .biweekly-day-box:hover,
+body.dark-mode .monthly-day-box:hover,
+body.dark-mode .yearly-day-box:hover,
+body.dark-mode .yearly-month-box:hover {
+  background-color: #3a3a3a;
+  cursor: pointer;
+}
+
+body.dark-mode .selected {
+  background-color: #70c570;
+  color: #fff;
+  border-color: #000;
+}
+
+body.dark-mode .summary-label {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+
+
+
+
+
+
+
+/* Theme: Dark Ocean 
+body.theme-dark-ocean {
+    background: repeating-linear-gradient(
+        -45deg,
+        #0e1d2f,
+        #0e1d2f 10px,
+        #152b3c 10px,
+        #152b3c 20px
+    );
+    background-size: 200% 200%;
+    animation: waveBackground 8s ease-in-out infinite;
+    color: #ffffff;
+}
+
+@keyframes waveBackground {
+    0% {
+        background-position: 0 0;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+*/
+/* 🌊 Base Ocean Theme */
+body.theme-dark-ocean {
+    background-color: #0e1d2f;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 70%),
+      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.02) 0%, transparent 70%),
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.05) 0px,
+        rgba(255, 255, 255, 0.04) 2px,
+        transparent 2px,
+        transparent 4px
+      );
+    background-blend-mode: overlay;
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #ffffff;
+  }
+  
+  body.theme-dark-ocean .checkbox-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+  
+  body.theme-dark-ocean .checkbox-label {
+    color: #fff;
+  }
+  
+  body.theme-dark-ocean .task-list-container {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  body.theme-dark-ocean .checkbox-container.completed {
+    background-color: #3a7ca5;
+    border: 2px solid #81c3d7;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  body.theme-dark-ocean .menu-container {
+    background: rgba(16, 36, 57, 0.95);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  body.theme-dark-ocean .menu-container button {
+    color: #dfdfdf;
+  }
+  
+  body.theme-dark-ocean .menu-container button:hover {
+    background: #2a4a6a;
+  }
+  
+  body.theme-dark-ocean #progress-bar {
+    background-color: #4ecdc4;
+  }
+  
+  body.theme-dark-ocean .complete-all-btn {
+    background: #4ecdc4;
+    border: 1px solid rgba(0, 160, 147, 0.655);
+    color: #fff;
+    transition: background 0.3s ease;
+  }
+  
+  body.theme-dark-ocean .complete-all-btn:hover {
+    background: #36b1a8;
+  }
+  body.theme-dark-ocean .reminders-modal-content,
+  body.theme-dark-ocean .settings-modal-content,
+  body.theme-dark-ocean .themes-modal-content,
+body.theme-dark-ocean .feedback-modal-content,
+body.theme-dark-ocean .stats-panel,
+body.theme-dark-ocean .modal-panel{
+  background: rgba(16, 36, 57, 0.95);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.theme-dark-ocean .recurring-task-item,
+body.theme-dark-ocean #recurring-summary-preview,
+body.theme-dark-ocean .summary-label,
+body.theme-dark-ocean #recurring-settings-panel,  
+body.theme-dark-ocean .weekly-day-box,
+body.theme-dark-ocean .biweekly-day-box,
+ body.theme-dark-ocean .monthly-day-box,
+ body.theme-dark-ocean .yearly-day-box,
+ body.theme-dark-ocean .yearly-month-box {
+    background-color: #244d6a;
+    color: #f0faff;
+    border: 1px solid #497b96;
+  }
+
+  body.theme-dark-ocean .weekly-day-box::after {
+    background-color: #54a558;
+  }
+
+  body.theme-dark-ocean .weekly-day-box:hover,
+body.theme-dark-ocean .biweekly-day-box:hover,
+body.theme-dark-ocean .monthly-day-box:hover,
+body.theme-dark-ocean .yearly-day-box:hover,
+body.theme-dark-ocean .yearly-month-box:hover {
+  background-color: #2e5e80;
+  cursor: pointer;
+}
+
+body.theme-dark-ocean .selected {
+  background-color: #82bb8d;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+body.theme-dark-ocean .summary-label {
+  font-weight: bold;
+  color: #e4f4ff;
+}
+
+
+
+/* 🌊 Theme Unlock Panel - Ocean (non-dark mode) */
+body.theme-dark-ocean .theme-unlock-status .clickable {
+    background-color: #244d6a;
+    color: #f0faff;
+    border: 1px solid #497b96;
+  }
+
+  body.theme-dark-ocean .recurring-task-item,
+body.theme-dark-ocean #recurring-settings-panel {
+  padding: 10px;
+  border-radius: 6px;
+}
+
+  
+  body.theme-dark-ocean .theme-unlock-status .clickable:hover {
+    background-color: #2e6c8e;
+    transform: scale(1.02);
+    color: #c0fff7;
+  }
+  
+  body.theme-dark-ocean #theme-unlock-message,
+  body.theme-dark-ocean #golden-unlock-message {
+    color: #e1f7ff;
+  }
+  
+  body.theme-dark-ocean #theme-unlock-message.unlocked-message,
+  body.theme-dark-ocean #golden-unlock-message.unlocked-message {
+    color: #9ffff0; /* Ocean glow effect for unlocked themes */
+  }
+  body.theme-dark-ocean #open-themes-panel,
+body.theme-dark-ocean .label-text,
+body.theme-dark-ocean .custom-checkbox {
+  color: #a2d9ff;
+  font-weight: bold;
+}
+
+body.theme-dark-ocean #open-themes-panel:hover {
+  background-color: #234b5c;
+  color: #d6faff;
+}
+body.theme-dark-ocean .theme-divider {
+    border-top: 1px solid #4ecdc4;
+  }
+
+.theme-dark-ocean .onboarding-modal {
+    background-color: rgba(14, 29, 47, 0.95);
+    color: #fff;
+    border: 1px solid #4ecdc4;
+  }
+
+  
+/* 🌊 Ocean Themed Onboarding */
+.theme-dark-ocean .onboarding-content {
+    background-color: rgba(14, 29, 47, 0.95);
+    color: #fff;
+    border: 1px solid #4ecdc4;
+  }
+  .theme-dark-ocean .onboarding-content h2 {
+    color: #4ecdc4;
+  }
+
+
+
+/* 🌊+🌙 Ocean Theme in Dark Mode */
+body.dark-mode.theme-dark-ocean {
+    background: linear-gradient(135deg, #0c1724, #0a1a2b); /* Even darker ocean tones */
+    color: #e0f7fa;
+  }
+  
+  body.dark-mode.theme-dark-ocean .task {
+    background-color: #16232f;
+    border: 1px solid #314b5f;
+  }
+  
+  body.dark-mode.theme-dark-ocean .complete-all-btn {
+    background-color: #3fc6c6;
+    border-color: #2ea9a9;
+    color: #ffffff;
+  }
+  
+  body.dark-mode.theme-dark-ocean .complete-all-btn:hover {
+    background-color: #2da6a6;
+  }
+  
+  body.dark-mode.theme-dark-ocean .menu-container {
+    background: rgba(12, 25, 38, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  body.dark-mode.theme-dark-ocean .notification.success {
+    background: #3fc6c6;
+    color: #ffffff;
+  }
+  
+  body.dark-mode.theme-dark-ocean .checkbox-container.completed {
+    background-color: #3c8ea8;
+    border-color: #68b0cc;
+  }
+
+  body.dark-mode.theme-dark-ocean .reminders-modal-content,
+  body.dark-mode.theme-dark-ocean .settings-modal-content,
+  body.dark-mode.theme-dark-ocean .themes-modal-content,
+  body.dark-mode.theme-dark-ocean .feedback-modal-content,
+  body.dark-mode.theme-dark-ocean .stats-panel {
+    background: rgba(12, 25, 38, 0.95); /* Slightly darker */
+    color: #e0f7fa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+/* 🌊 + 🌙 Theme Unlock Panels */
+body.dark-mode.theme-dark-ocean .theme-unlock-status .clickable {
+    background-color: #1b2f40;
+    color: #e0f7fa;
+    border: 1px solid #355f7a;
+  }
+  
+  body.dark-mode.theme-dark-ocean .theme-unlock-status .clickable:hover {
+    background-color: #234b5c;
+    color: #9bfdd8; /* A soft seafoam green */
+    transform: scale(1.02);
+  }
+  
+  body.dark-mode.theme-dark-ocean #theme-unlock-message,
+  body.dark-mode.theme-dark-ocean #golden-unlock-message {
+    color: #cfeff4;
+  }
+  
+  body.dark-mode.theme-dark-ocean #theme-unlock-message.unlocked-message,
+  body.dark-mode.theme-dark-ocean #golden-unlock-message.unlocked-message {
+    color: #72ffe6; /* Oceanic glow for unlocked state */
+  }
+  body.dark-mode.theme-dark-ocean #open-themes-panel,
+  body.dark-mode.theme-dark-ocean .label-text,
+  body.dark-mode.theme-dark-ocean .custom-checkbox {
+    color: #90d7f5;
+    font-weight: bold;
+  }
+  
+  body.dark-mode.theme-dark-ocean #open-themes-panel:hover {
+    background-color: #1b3d4d;
+    color: #b2f0ff;
+  }
+/* 🌙 Generic Dark Mode Onboarding */
+body.dark-mode .onboarding-content {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+    border: 1px solid #444;
+  }
+  body.dark-mode .onboarding-content h2 {
+    color: #cecece;
+  }
+
+  body.dark-mode .games-modal-content {
+    background: #2a2a2a;
+    color: #f0f0f0;
+    border: 1px solid #555;
+  }
+  
+  body.dark-mode .games-modal-content h2,
+  body.dark-mode .games-modal-content p {
+    color: #f0f0f0;
+  }
+  
+  body.dark-mode #open-task-order-game {
+    background: #3fc6c6;
+    color: white;
+  }
+  
+  body.dark-mode #open-task-order-game:hover {
+    background: #2da6a6;
+  }
+  .theme-dark-ocean .games-modal-content {
+    background: rgba(14, 29, 47, 0.95);
+    color: #ffffff;
+    border: 1px solid #4ecdc4;
+  }
+  
+  .theme-golden-glow .games-modal-content {
+    background: rgba(255, 248, 220, 0.95);
+    color: #4a3d00;
+    border: 1px solid #ffd700;
+  }
+
+
+
+
+
+
+
+/* 🌟 Golden Glow Theme */
+body.theme-golden-glow {
+    background: linear-gradient(135deg, #525252, #ffe066); /* Softer cream to golden yellow */
+    color: #333333; /* Neutral text color */
+  }
+  
+  body.theme-golden-glow .task {
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    box-shadow: 0 1px 3px rgba(255, 215, 0, 0.2);
+  }
+  
+  body.theme-golden-glow .complete-all-btn {
+    background-color: #ffd700;
+    color: white;
+    border: 1px solid #f1c40f;
+    transition: background-color 0.3s ease;
+  }
+  
+  body.theme-golden-glow .complete-all-btn:hover {
+    background-color: #e6be00;
+  }
+  
+  body.theme-golden-glow .menu-container {
+    background: #fff9c4;
+    color: #333;
+    border: 1px solid #fce88b;
+  }
+  
+  body.theme-golden-glow .notification.success {
+    background: #f1c40f;
+    color: white;
+    border-left: 5px solid #e6be00;
+  }
+  
+  /* 🌟 Golden Glow Panels */
+  body.theme-golden-glow .reminders-modal-content,
+  body.theme-golden-glow .settings-modal-content,
+  body.theme-golden-glow .themes-modal-content,
+  body.theme-golden-glow .feedback-modal-content,
+  body.theme-golden-glow .stats-panel {
+    background: #fffbe6;
+    color: #333;
+    border: 1px solid #f1d78a;
+  }
+  
+  /* 🌟 Golden Glow Theme Unlock Panel */
+  body.theme-golden-glow .theme-unlock-status .clickable {
+    background-color: #fff2b8;
+    color: #3a3000;
+    border: 1px solid #ffd54f;
+  }
+  
+  body.theme-golden-glow .theme-unlock-status .clickable:hover {
+    background-color: #ffe477;
+    transform: scale(1.02);
+    color: #6f5400;
+  }
+  
+  body.theme-golden-glow #theme-unlock-message,
+  body.theme-golden-glow #golden-unlock-message {
+    color: #5c4500;
+  }
+  
+  body.theme-golden-glow #theme-unlock-message.unlocked-message,
+  body.theme-golden-glow #golden-unlock-message.unlocked-message {
+    color: #e6ac00; /* Soft glow gold */
+  }
+  body.theme-golden-glow #open-themes-panel,
+  body.theme-golden-glow .label-text,
+  body.theme-golden-glow .custom-checkbox {
+    color: #6f5400;
+    font-weight: bold;
+  }
+  
+  body.theme-golden-glow #open-themes-panel:hover {
+    background-color: #fff2b8;
+    color: #3a3000;
+  }
+  body.theme-golden-glow .theme-divider {
+    border-top: 1px solid #f1c40f;
+  }
+  
+
+
+.theme-golden-glow .onboarding-content {
+    background-color: rgba(255, 248, 220, 0.95);
+    color: #4a3d00;
+    border: 1px solid #ffd700;
+  }
+
+  .theme-golden-glow .onboarding-content h2 {
+    color: #d4a700;
+  }
+
+
+
+
+
+/* 🌟+🌙 Golden Glow Theme in Dark Mode */
+body.dark-mode.theme-golden-glow {
+    background: linear-gradient(135deg, #2f2a00, #1f1b00);
+    color: #ffecb3;
+  }
+  
+  body.dark-mode.theme-golden-glow .task {
+    background: #3c3600;
+    border: 1px solid #998500;
+    box-shadow: 0 1px 3px rgba(255, 215, 0, 0.3);
+  }
+  
+  body.dark-mode.theme-golden-glow .complete-all-btn {
+    background-color: #e6c200;
+    color: #fff;
+    border: 1px solid #d1ac00;
+  }
+  
+  body.dark-mode.theme-golden-glow .complete-all-btn:hover {
+    background-color: #c7a600;
+  }
+  
+  body.dark-mode.theme-golden-glow .menu-container {
+    background: #4a3e00;
+    color: #fff1c1;
+    border: 1px solid #a67c00;
+  }
+  
+  body.dark-mode.theme-golden-glow .notification.success {
+    background: #d1ac00;
+    color: white;
+    border-left: 5px solid #b88e00;
+  }
+  
+  /* 🌙 Panels in Golden Theme */
+  body.dark-mode.theme-golden-glow .reminders-modal-content,
+  body.dark-mode.theme-golden-glow .settings-modal-content,
+  body.dark-mode.theme-golden-glow .themes-modal-content,
+  body.dark-mode.theme-golden-glow .feedback-modal-content,
+  body.dark-mode.theme-golden-glow .stats-panel {
+    background: #3b3200;
+    color: #ffeaa7;
+    border: 1px solid #8a6c00;
+  }
+  
+  /* 🌙 Theme Unlock Panel */
+  body.dark-mode.theme-golden-glow .theme-unlock-status .clickable {
+    background-color: #4a3d00;
+    color: #fff7d6;
+    border: 1px solid #a88200;
+  }
+  
+  body.dark-mode.theme-golden-glow .theme-unlock-status .clickable:hover {
+    background-color: #5e4800;
+    color: #fffecf;
+    transform: scale(1.02);
+  }
+  
+  body.dark-mode.theme-golden-glow #theme-unlock-message,
+  body.dark-mode.theme-golden-glow #golden-unlock-message {
+    color: #fcefa1;
+  }
+  
+  body.dark-mode.theme-golden-glow #theme-unlock-message.unlocked-message,
+  body.dark-mode.theme-golden-glow #golden-unlock-message.unlocked-message {
+    color: #ffe53c;
+  }
+  body.dark-mode.theme-golden-glow #open-themes-panel,
+  body.dark-mode.theme-golden-glow .label-text, 
+  body.dark-mode.theme-golden-glow .custom-checkbox {
+    color: #ffe97a;
+    font-weight: bold;
+  }
+  
+  body.dark-mode.theme-golden-glow #open-themes-panel:hover {
+    background-color: #5e4800;
+    color: #fffecf;
+  }
+
+
+
+
+/* THEMES
+*/
+.theme-locked {
+    opacity: 0.5;
+    font-style: italic;
+  }
+
+  .theme-unlock-status {
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+
+  }
+
+
+  
+  #theme-unlock-message, #golden-unlock-message, #game-unlock-message {
+    display: none;
+    font-weight: 500;
+    color: #444;
+    white-space: pre-wrap;
+    transition: opacity 0.3s ease;
+  }
+  #theme-unlock-message.visible,  #golden-unlock-message.visible, #game-unlock-message.visible {
+    display: block;
+  }
+  
+  #theme-unlock-message.unlocked-message, #golden-unlock-message.unlocked-message, #game-unlock-message.unlocked-message {
+    color: #2e8b57;
+    font-weight: bold;
+  }
+
+  .theme-unlock-status h3 {
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .theme-unlock-status h3:hover {
+    color: #2e8b57; /* Change to an accent color of your choice */
+    transform: scale(1.05);
+  }
+
+  .theme-unlock-status .clickable {
+    cursor: pointer;
+    background-color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .theme-unlock-status .clickable:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.02);
+  }
+  
+  .toggle-icon {
+    margin-left: 8px;
+    font-size: 0.9em;
+    vertical-align: middle;
+  }
+
+  /* Themes Modal */
+.themes-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+.themes-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* New Close Button Style (Bottom of Modal) */
+.themes-modal .close-btn {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.themes-modal .close-btn:hover {
+    background: #000;
+}
+
+.open-themes-panel {
+    display: none; /* Start hidden – shown via JS if unlocked */
+}
+
+.open-themes-panel:hover {
+    background: #b1b1b1;
+    transform: scale(1.02);
+}
+
+.open-themes-panel i {
+    margin-right: 6px;
+}
+
+/* Divider between themes and dark mode */
+.theme-divider {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 20px 0;
+    opacity: 0.5;
+  }
+  
+  /* Optional: spacing & visual separation */
+  #theme-options-section,
+  #dark-mode-section {
+    margin-bottom: 15px;
+    text-align: left;
+  }
+
+
+  #quick-dark-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 10;
+  background: none;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+#quick-dark-toggle:hover {
+  transform: scale(1.3);
+}
+
+
+
+
+
+  /* 🎮 Games Modal */
+.games-modal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Dark overlay */
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .games-modal-content {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  .games-modal-content h2 {
+    margin-bottom: 12px;
+    font-size: 24px;
+    color: #222;
+  }
+  
+  .games-modal-content p {
+    margin-bottom: 20px;
+    color: #444;
+    font-size: 16px;
+  }
+  
+  /* 🎮 Play Game Button */
+  #open-task-order-game {
+    background: #4ecdc4;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  #open-task-order-game:hover {
+    background: #36b1a8;
+  }
+  
+  
+  .close-btn {
+    padding: 8px 16px;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  .close-btn:hover {
+    background: #222;
+  }
+  
+  /* ✨ Fade In */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  #taskOrderGameContainer {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 10px;
+    background: #f5f5f5;
+  }
+
+  .unlockables {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  
+  #open-themes-panel,
+  #open-games-panel {
+    padding: 10px 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: black;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.1s ease;
+  }
+  
+  #open-themes-panel:hover,
+  #open-games-panel:hover {
+    background: #55555553;
+    transform: scale(1.02);
+  }
+

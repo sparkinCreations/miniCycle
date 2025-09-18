@@ -1,0 +1,133 @@
+My miniCycleStorage uses a nested object where each key is a named Mini Cycle. 
+Each Mini Cycle contains an array of tasks. 
+Every task is schema-versioned and may contain recurringSettings, which includes the frequency, global time block, and detailed recurrence options. 
+Tasks are saved by id and include metadata like priority, due date, reminder status, and recurring logic.
+
+
+{
+  "CycleName1": {
+    title: "Morning Routine",           // Title shown in UI
+    autoReset: true,                    // Auto-reset setting
+    deleteCheckedTasks: false,         // Whether to delete checked tasks on complete
+    cycleCount: 12,                    // Number of times the cycle has completed
+    tasks: [                           // Array of task objects (see below)
+      {
+        id: "task-abc123",             // Unique task ID
+        text: "Drink water",           // Task label
+        completed: false,              // Checkbox state
+        dueDate: "2025-04-10",         // Optional due date
+        highPriority: true,            // 🔥 Marked as high priority
+        remindersEnabled: true,        // 🔔 Has reminders ON
+        recurring: true,               // 🔁 Flag for recurring logic
+        recurringSettings: {           // 🌱 v2 recurring logic object
+          frequency: "weekly",         // "hourly" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly" | "specificDates"
+          useSpecificTime: true,       // Whether to use a specific time of day
+          time: {
+            hour: 8,
+            minute: 30,
+            meridiem: "AM",            // AM/PM format
+            military: false            // 24hr toggle
+          },
+          recurIndefinitely: true,     // Keep recurring forever
+          recurCount: null,            // OR number of recurrences
+
+          // Optional frequency-specific properties:
+          daily: {},
+
+          hourly: {
+            useSpecificMinute: true,
+            minute: 15
+          },
+
+          weekly: {
+            useSpecificDays: true,
+            days: ["Monday", "Wednesday"]
+          },
+
+          biweekly: {
+            useSpecificDays: true,
+            days: ["Tuesday", "Friday"]
+          },
+
+          monthly: {
+            useSpecificDays: true,
+            days: [1, 15, 30]
+          },
+
+          yearly: {
+            useSpecificMonths: true,
+            months: ["April", "June"],
+            useSpecificDays: true,
+            daysByMonth: {
+              April: [10],
+              June: [1, 30]
+            },
+            applyDaysToAll: false
+          },
+
+          specificDates: {
+            enabled: true,
+            dates: ["2025-04-10", "2025-06-01"]
+          }
+        },
+        schemaVersion: 2               // 🌍 Versioned task format (for migration)
+      },
+      // more tasks...
+    ]
+  },
+
+  "CycleName2": {
+    // another mini cycle
+  }
+}
+
+
+
+Absolutely, here’s your logic boiled down into a clear, reusable explanation you can give to any future LLM to make sure they fully understand how recurring tasks work in your app:
+
+⸻
+
+🧠 Task Cycle: Recurring Logic Summary for LLMs
+
+I’m building a productivity app called Task Cycle, and it uses a system of task cycles that reset once all tasks are completed. Each cycle has two key configuration settings:
+
+⸻
+
+🔁 Cycle Settings
+	•	autoReset: true → Tasks reset automatically when all are checked.
+	•	autoReset: false → The user must manually press a “Complete” button to reset the cycle.
+
+If autoReset is false, there’s also:
+	•	deleteCheckedTasks: true → Only applies when the user presses “Complete”; all checked tasks are deleted instead of reset.
+
+⸻
+
+🌀 Recurring Tasks Logic
+	•	Any task can be marked as recurring: true, with detailed recurringSettings.
+	•	Recurring tasks are NOT regenerated on every cycle reset—they only regenerate after being deleted.
+	•	The user manages recurring schedules (daily, weekly, specific dates, etc.) through a special Recurring Panel.
+
+⸻
+
+❗Special Rule for Recurring Tasks
+	•	Recurring tasks should always be deleted on cycle reset, whether:
+	•	The cycle is auto-reset or manually completed.
+	•	The task was checked or not.
+	•	This simulates the effect of “completing” the recurring task—even if it wasn’t manually checked.
+
+⸻
+
+🎛️ Why This Matters
+	•	This gives users full control over recurring items through the Recurring Panel, while keeping the task list clean.
+	•	Non-recurring tasks behave normally (reset or deleted based on settings).
+	•	Recurring tasks always behave predictably: delete on reset → recur later.
+
+⸻
+
+TL;DR
+
+“Recurring tasks are deleted on reset (regardless of state), and reappear only when deleted. Reset can be auto or manual. Recurring settings are persistent and editable in a separate panel.”
+
+⸻
+
+You can copy-paste that summary into a prompt any time, and the model will be fully caught up. Want me to save it as a reusable snippet for you?

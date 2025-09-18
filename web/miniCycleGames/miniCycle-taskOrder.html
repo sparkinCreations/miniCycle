@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en" role="document">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Whack-a-Order - Mini Game</title>
+  <style>
+    /* 🌐 Game Layout */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: rgb(177, 177, 177);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* 🎮 Game Container */
+.game-container {
+  background: rgb(87, 137, 172);
+  padding: 30px 40px;
+  border: solid 2px rgba(0, 0, 0, 0.474);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  max-width: 650px;
+  width: 100%;
+  transition: transform 0.3s ease;
+}
+.game-container:hover {
+  transform: scale(1.01);
+}
+
+/* 🧠 Header */
+h1 {
+  color: #2a2e47;
+  font-size: 26px;
+  margin-bottom: 12px;
+}
+
+/* 📋 Instructions & Score */
+#instructions {
+  margin-bottom: 10px;
+  color: #f2f1f1;
+  font-size: 14px;
+}
+#scoreboard {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f6f6f6;
+  margin-bottom: 16px;
+}
+
+/* ⬜ Task Field */
+#taskWindow {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  background: linear-gradient(white, rgb(187, 211, 247));
+}
+
+/* 🟦 Task Buttons */
+.task-btn {
+  position: absolute;
+  padding: 10px 14px;
+  background: #4c79ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+.task-btn:hover {
+  transform: scale(1.05);
+}
+.task-btn.clicked {
+  background: #28a745;
+  cursor: default;
+}
+.task-btn:focus {
+  outline: 3px solid yellow;
+  outline-offset: 2px;
+}
+
+/* 💬 Feedback Text */
+.feedback {
+  font-size: 18px;
+  font-weight: bold;
+  color: #444;
+  margin-top: 12px;
+  min-height: 24px;
+}
+
+/* 🔁 Restart Button */
+#restartBtn {
+  display: none;
+  margin: 14px auto 0 auto; /* Top, Auto Left & Right */
+  padding: 10px 20px;
+  font-size: 15px;
+  border: none;
+  background: #ff4d4d;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block; /* Force it to act like a block element */
+}
+#restartBtn:hover {
+  background: #e04343;
+}
+
+/* 🏆 Leaderboard */
+#leaderboard {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* 🔙 Back Button */
+#back-to-minicycle {
+  margin-top: 24px;
+  padding: 10px 18px;
+  font-size: 15px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#back-to-minicycle:hover {
+  background: #222;
+}
+  </style>
+</head>
+<body>
+  <main role="main">
+    <div class="game-container" aria-label="Whack-a-Order Mini Game">
+    <h1>Task Whack-a-Order</h1>
+    <div id="instructions">
+      Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!
+    </div>
+    <div id="scoreboard" aria-live="polite">Round: 1 | Score: 0</div>
+    <!-- Task Window Container -->
+    <div id="taskWindow" aria-label="Task field"></div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+    <button id="restartBtn" aria-label="Restart Game">Restart Game</button>
+    <!-- Leaderboard Display -->
+    <div id="leaderboard">
+      <div>Highest Round: <span id="bestRound">0</span></div>
+      <div>Fastest Time: <span id="bestTime">--</span> seconds</div>
+    </div>
+    <button id="back-to-minicycle" aria-label="Go back to Task Cycle Mini">Back to Task Cycle: Mini </button>
+  </div>
+
+  <script>
+    /***** Game Setup *****/
+    // Retrieve task names from localStorage (from your Task Cycle: Mini app)
+    function getTaskNames() {
+      let names = [];
+      const miniCycleName = localStorage.getItem("lastUsedMiniCycle");
+      if (miniCycleName) {
+        const storage = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+        const currentCycle = storage[miniCycleName];
+        if (currentCycle && Array.isArray(currentCycle.tasks)) {
+          names = currentCycle.tasks
+            .map(task => task.text)
+            .filter(text => text && text.trim() !== "");
+        }
+      }
+      return names;
+    }
+    
+    // Use fallback tasks if none are found
+    let tasks = getTaskNames();
+    if (tasks.length === 0) {
+      tasks = [
+        "Inspect Part", "Check Serial", "Verify Job", "Record Number",
+        "Update Log", "Order Supplies", "Calibrate Tool", "Review Report",
+        "Confirm Specs", "Test Output", "Schedule Meeting", "File Report"
+      ];
+    }
+
+    let round = 1;
+    let score = 0;
+    let expectedOrder = 1;
+    let movingSpeed = 2000; // initial speed in ms (affects velocity scaling)
+    let gameActive = true;
+    let gameStartTime = null; // to track elapsed time
+
+    const taskWindow = document.getElementById("taskWindow");
+    const feedbackEl = document.getElementById("feedback");
+    const scoreboardEl = document.getElementById("scoreboard");
+    const restartBtn = document.getElementById("restartBtn");
+    const bestRoundEl = document.getElementById("bestRound");
+    const bestTimeEl = document.getElementById("bestTime");
+    const backToMiniCycle = document.getElementById("back-to-minicycle");
+
+
+
+    let currentTasks = []; // Array of tasks for the current round
+    let movementAnimationFrame = null;
+    let lastTimestamp = null; // For requestAnimationFrame delta
+
+    /***** Leaderboard Functions *****/
+    function updateLeaderboard(currentRound, elapsedTime) {
+      let bestRound = parseInt(localStorage.getItem("bestRound")) || 0;
+      let bestTime = parseInt(localStorage.getItem("bestTime")) || Infinity;
+      if (currentRound > bestRound) {
+        bestRound = currentRound;
+        localStorage.setItem("bestRound", bestRound);
+      }
+      if (elapsedTime < bestTime) {
+        bestTime = elapsedTime;
+        localStorage.setItem("bestTime", bestTime);
+      }
+      bestRoundEl.textContent = bestRound;
+      bestTimeEl.textContent = bestTime === Infinity ? "--" : Math.floor(bestTime / 1000);
+    }
+
+    /***** Game Functions *****/
+    function startRound() {
+      if (round === 1) {
+        gameStartTime = Date.now();
+      }
+      clearTasks();
+      feedbackEl.textContent = "";
+      expectedOrder = 1;
+      scoreboardEl.textContent = `Round: ${round} | Score: ${score}`;
+
+      // Randomly select up to 10 tasks
+      let roundTasks = shuffleArray(tasks);
+      if (roundTasks.length > 10) {
+        roundTasks = roundTasks.slice(0, 10);
+      }
+      currentTasks = roundTasks.map((task, index) => ({
+        order: index + 1,
+        text: task
+      }));
+
+      // Create moving buttons for each task
+      currentTasks.forEach(taskObj => {
+        createMovingTaskButton(taskObj);
+      });
+
+      // Start the animation loop for smooth movement
+      lastTimestamp = null;
+      startMovement();
+    }
+
+    // Create a task button with random velocity
+    function createMovingTaskButton(taskObj) {
+      const btn = document.createElement("button");
+      btn.className = "task-btn";
+      btn.textContent = `${taskObj.order}. ${taskObj.text}`;
+      btn.dataset.order = taskObj.order;
+      // Set initial random position within taskWindow
+      const pos = getRandomPosition();
+      btn.style.left = pos.x + "px";
+      btn.style.top = pos.y + "px";
+      // Assign random velocity (pixels per second)
+      // Speed scales with movingSpeed factor; you can adjust these values as needed
+   // Define a speed multiplier, which can increase with rounds
+   
+let speedMultiplier = round; // Or any other formula based on your design
+btn.dataset.dx = ((Math.random() * 100 - 50) * speedMultiplier).toFixed(1.2);
+btn.dataset.dy = ((Math.random() * 100 - 50) * speedMultiplier).toFixed(1.);
+
+/*
+btn.dataset.dx = (Math.random() * 400 - 200).toFixed(2);
+btn.dataset.dy = (Math.random() * 400 - 200).toFixed(2);
+*/
+
+      btn.addEventListener("click", function() {
+        if (!gameActive) return;
+        const clickedOrder = parseInt(this.dataset.order, 10);
+        if (clickedOrder === expectedOrder) {
+          this.classList.add("clicked");
+          this.disabled = true;
+          expectedOrder++;
+          if (expectedOrder > currentTasks.length) {
+            // If round 10 is complete, game win
+            if (round >= 10) {
+              score++;
+              stopMovement();
+              const elapsedTime = Date.now() - gameStartTime;
+              feedbackEl.textContent = `Winner! 🎉 Time: ${Math.floor(elapsedTime / 1000)}s`;
+              updateLeaderboard(round, elapsedTime);
+              gameActive = false;
+              restartBtn.style.display = "flex";
+              return;
+            }
+            score++;
+            feedbackEl.textContent = "Round complete! 🎉";
+            stopMovement();
+            round++;
+            movingSpeed = Math.max(500, movingSpeed - 200); // Increase difficulty
+            setTimeout(startRound, 1500);
+          }
+        } else {
+          feedbackEl.textContent = "Wrong order! Game Over! ❌";
+          gameActive = false;
+          stopMovement();
+          restartBtn.style.display = "flex";
+        }
+      });
+      taskWindow.appendChild(btn);
+
+
+
+        btn.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault(); // Prevent scrolling on spacebar
+      this.click(); // Simulate click
+    }
+  });
+
+    }
+
+    // Get a random position within taskWindow boundaries
+    function getRandomPosition() {
+      const rect = taskWindow.getBoundingClientRect();
+      const maxX = rect.width - 120; // Adjust based on button width
+      const maxY = rect.height - 60; // Adjust based on button height
+      return {
+        x: Math.floor(Math.random() * maxX),
+        y: Math.floor(Math.random() * maxY)
+      };
+    }
+
+    // Helper to shuffle an array
+    function shuffleArray(arr) {
+      let array = [...arr];
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Clear all task buttons from taskWindow
+    function clearTasks() {
+      const buttons = document.querySelectorAll(".task-btn");
+      buttons.forEach(btn => btn.remove());
+    }
+
+    /***** Smooth Movement using requestAnimationFrame *****/
+    function animateButtons(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = (timestamp - lastTimestamp) / 1000; // delta time in seconds
+      lastTimestamp = timestamp;
+      const rect = taskWindow.getBoundingClientRect();
+      const buttons = document.querySelectorAll(".task-btn");
+      buttons.forEach(btn => {
+        let x = parseFloat(btn.style.left);
+        let y = parseFloat(btn.style.top);
+        let dx = parseFloat(btn.dataset.dx);
+        let dy = parseFloat(btn.dataset.dy);
+        // Update positions using velocity and dt
+        x += dx * dt;
+        y += dy * dt;
+        // Bounce off left/right boundaries
+        if (x < 0) { x = 0; btn.dataset.dx = -dx; }
+        if (x > rect.width - btn.offsetWidth) { x = rect.width - btn.offsetWidth; btn.dataset.dx = -dx; }
+        // Bounce off top/bottom boundaries
+        if (y < 0) { y = 0; btn.dataset.dy = -dy; }
+        if (y > rect.height - btn.offsetHeight) { y = rect.height - btn.offsetHeight; btn.dataset.dy = -dy; }
+        btn.style.left = x + "px";
+        btn.style.top = y + "px";
+      });
+      movementAnimationFrame = requestAnimationFrame(animateButtons);
+    }
+
+    function startMovement() {
+      stopMovement();
+      movementAnimationFrame = requestAnimationFrame(animateButtons);
+    }
+
+    function stopMovement() {
+      if (movementAnimationFrame) {
+        cancelAnimationFrame(movementAnimationFrame);
+        movementAnimationFrame = null;
+      }
+    }
+
+    /***** Restart Game Handler *****/
+    restartBtn.addEventListener("click", function() {
+      gameActive = true;
+      round = 1;
+      score = 0;
+      movingSpeed = 2000;
+      restartBtn.style.display = "none";
+      feedbackEl.textContent = "";
+      startRound();
+    });
+
+          backToMiniCycle.addEventListener( "click", function() {
+        window.location.href = "../miniCycle.html";
+    });
+
+    // Start game on page load
+    window.onload = startRound;
+  </script>
+  </main>
+</body>
+
+</html>

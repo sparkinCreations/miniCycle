@@ -1,0 +1,57 @@
+{
+  id: "task-1691524651983-882",
+  text: "Check air compressor",
+  completed: false,
+  dueDate: "2025-08-09T15:30:00.000Z",
+  highPriority: true,
+  remindersEnabled: true,
+
+  reminderSettings: {
+    startTime: null,
+    frequencyValue: 60,
+    frequencyUnit: "minutes",
+    lastFired: null
+  },
+
+  recurring: true,
+  recurringSettings: {
+    frequency: "daily",
+    interval: 1,
+    specificDates: {
+      enabled: false,
+      dates: []
+    },
+    timeOfDay: "08:00",
+    startDate: "2025-08-08",
+    timezone: "America/New_York",
+    defaultRecurTime: "2025-08-08T14:00:00.000Z",
+    hourly: {
+      useSpecificMinute: false,
+      minute: 0
+    },
+    weekly: {
+      days: ["Monday", "Wednesday"]
+    },
+    monthly: {
+      days: [1, 15]
+    },
+    yearly: {
+      months: [1, 7],
+      daysByMonth: { "1": [1], "7": [15] },
+      useSpecificDays: true,
+      applyDaysToAll: false
+    },
+    useSpecificTime: true
+  },
+
+  metadata: {
+    createdAt: 1754536800696,
+    modifiedAt: 1754540000000,
+    createdByDevice: "device-MJPhone2025",
+    lastModifiedByDevice: "device-MJMacbook",
+    isDeleted: false,
+    isDirty: true
+  },
+
+  schemaVersion: 3
+}

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Cycle Mini</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .add-task {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .task-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .task-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .cycle-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cycle-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .cycle-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .add-btn {
+            width: 100%;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #45a049;
+        }
+
+        .tasks-section {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-count {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .task-item.completed {
+            background: #e8f5e8;
+            opacity: 0.8;
+        }
+
+        .task-item.resetting {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .task-meta {
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .task-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .complete-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .complete-btn:hover {
+            background: #45a049;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .reset-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #ffc107;
+            border-radius: 50%;
+            margin-left: 5px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .completed-section {
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Task Cycle Mini</h1>
+            <p>Turn routines into satisfying cycles of progress</p>
+        </div>
+        
+        <div class="add-task">
+            <input type="text" class="task-input" placeholder="What do you want to cycle through?" id="taskInput">
+            <div class="cycle-options">
+                <button class="cycle-btn active" data-cycle="daily">Daily</button>
+                <button class="cycle-btn" data-cycle="weekly">Weekly</button>
+                <button class="cycle-btn" data-cycle="instant">Instant</button>
+                <button class="cycle-btn" data-cycle="custom">Custom</button>
+            </div>
+            <button class="add-btn" id="addTaskBtn">Add Task Cycle</button>
+        </div>
+
+        <div class="tasks-section">
+            <h2 class="section-title">
+                Active Cycles 
+                <span class="task-count" id="activeCount">0</span>
+            </h2>
+            <ul class="task-list" id="activeTasks"></ul>
+            
+            <div class="completed-section">
+                <h2 class="section-title">
+                    Recently Completed 
+                    <span class="task-count" id="completedCount">0</span>
+                </h2>
+                <ul class="task-list" id="completedTasks"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state - yeah, I know, not ideal but it works
+        let tasks = [];
+        let completedTasks = [];
+        let selectedCycle = 'daily';
+        let taskIdCounter = 1;
+        let resetTimers = {};
+
+        // Load data on startup
+        function loadData() {
+            const savedTasks = localStorage.getItem('taskCycleMini_tasks');
+            const savedCompleted = localStorage.getItem('taskCycleMini_completed');
+            const savedCounter = localStorage.getItem('taskCycleMini_counter');
+            
+            if (savedTasks) {
+                tasks = JSON.parse(savedTasks);
+            }
+            if (savedCompleted) {
+                completedTasks = JSON.parse(savedCompleted);
+            }
+            if (savedCounter) {
+                taskIdCounter = parseInt(savedCounter);
+            }
+            
+            // Check for any tasks that should have reset while app was closed
+            checkPendingResets();
+            renderTasks();
+            updateCounts();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('taskCycleMini_tasks', JSON.stringify(tasks));
+            localStorage.setItem('taskCycleMini_completed', JSON.stringify(completedTasks));
+            localStorage.setItem('taskCycleMini_counter', taskIdCounter.toString());
+        }
+
+        // Handle cycle button selection
+        function handleCycleSelection(e) {
+            if (e.target.classList.contains('cycle-btn')) {
+                document.querySelectorAll('.cycle-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                selectedCycle = e.target.getAttribute('data-cycle');
+            }
+        }
+
+        // Add new task
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const taskName = input.value.trim();
+            
+            if (!taskName) return;
+            
+            const task = {
+                id: taskIdCounter++,
+                name: taskName,
+                cycle: selectedCycle,
+                created: new Date().toISOString(),
+                completed: null,
+                resetAt: null,
+                completedCount: 0
+            };
+            
+            tasks.push(task);
+            input.value = '';
+            
+            saveData();
+            renderTasks();
+            updateCounts();
+        }
+
+        // Complete a task
+        function completeTask(taskId) {
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) return;
+            
+            const task = tasks[taskIndex];
+            const now = new Date();
+            
+            // Mark as completed
+            task.completed = now.toISOString();
+            task.completedCount++;
+            
+            // Calculate reset time based on cycle type
+            let resetTime;
+            switch (task.cycle) {
+                case 'instant':
+                    resetTime = new Date(now.getTime() + 2000); // 2 seconds
+                    break;
+                case 'daily':
+                    resetTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+                    break;
+                case 'weekly':
+                    resetTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+                    break;
+                case 'custom':
+                    resetTime = new Date(now.getTime() + 4 * 60 * 60 * 1000); // 4 hours for demo
+                    break;
+                default:
+                    resetTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            }
+            
+            task.resetAt = resetTime.toISOString();
+            
+            // Move to completed list
+            completedTasks.unshift(task);
+            tasks.splice(taskIndex, 1);
+            
+            // Keep only last 10 completed tasks
+            if (completedTasks.length > 10) {
+                completedTasks = completedTasks.slice(0, 10);
+            }
+            
+            // Set up reset timer
+            scheduleTaskReset(task);
+            
+            saveData();
+            renderTasks();
+            updateCounts();
+        }
+
+        // Schedule task reset
+        function scheduleTaskReset(task) {
+            const resetTime = new Date(task.resetAt);
+            const now = new Date();
+            const delay = resetTime.getTime() - now.getTime();
+            
+            if (delay > 0) {
+                resetTimers[task.id] = setTimeout(() => {
+                    resetTask(task.id);
+                }, delay);
+            } else {
+                // Should reset immediately
+                resetTask(task.id);
+            }
+        }
+
+        // Reset a task back to active
+        function resetTask(taskId) {
+            const completedIndex = completedTasks.findIndex(t => t.id === taskId);
+            if (completedIndex === -1) return;
+            
+            const task = completedTasks[completedIndex];
+            
+            // Reset task state
+            task.completed = null;
+            task.resetAt = null;
+            
+            // Move back to active tasks
+            tasks.push(task);
+            completedTasks.splice(completedIndex, 1);
+            
+            // Clean up timer
+            if (resetTimers[taskId]) {
+                clearTimeout(resetTimers[taskId]);
+                delete resetTimers[taskId];
+            }
+            
+            saveData();
+            renderTasks();
+            updateCounts();
+        }
+
+        // Check for tasks that should have reset while app was closed
+        function checkPendingResets() {
+            const now = new Date();
+            const tasksToReset = [];
+            
+            completedTasks.forEach(task => {
+                if (task.resetAt && new Date(task.resetAt) <= now) {
+                    tasksToReset.push(task.id);
+                }
+            });
+            
+            tasksToReset.forEach(taskId => {
+                resetTask(taskId);
+            });
+        }
+
+        // Delete a task permanently
+        function deleteTask(taskId, isCompleted = false) {
+            if (isCompleted) {
+                const index = completedTasks.findIndex(t => t.id === taskId);
+                if (index !== -1) {
+                    completedTasks.splice(index, 1);
+                }
+            } else {
+                const index = tasks.findIndex(t => t.id === taskId);
+                if (index !== -1) {
+                    tasks.splice(index, 1);
+                }
+            }
+            
+            // Clean up any pending reset timer
+            if (resetTimers[taskId]) {
+                clearTimeout(resetTimers[taskId]);
+                delete resetTimers[taskId];
+            }
+            
+            saveData();
+            renderTasks();
+            updateCounts();
+        }
+
+        // Format time remaining until reset
+        function formatTimeUntilReset(resetAt) {
+            const now = new Date();
+            const reset = new Date(resetAt);
+            const diff = reset.getTime() - now.getTime();
+            
+            if (diff <= 0) return 'Resetting...';
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 24) {
+                const days = Math.floor(hours / 24);
+                return `Resets in ${days}d`;
+            } else if (hours > 0) {
+                return `Resets in ${hours}h ${minutes}m`;
+            } else if (minutes > 0) {
+                return `Resets in ${minutes}m`;
+            } else {
+                return 'Resetting soon...';
+            }
+        }
+
+        // Render all tasks
+        function renderTasks() {
+            renderActiveTasks();
+            renderCompletedTasks();
+        }
+
+        // Render active tasks
+        function renderActiveTasks() {
+            const container = document.getElementById('activeTasks');
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="empty-state">No active cycles. Add one above!</div>';
+                return;
+            }
+            
+            container.innerHTML = tasks.map(task => `
+                <li class="task-item">
+                    <div class="task-content">
+                        <div class="task-name">${escapeHtml(task.name)}</div>
+                        <div class="task-meta">
+                            <span>Cycle: ${task.cycle}</span>
+                            <span>Completed: ${task.completedCount} times</span>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <button class="task-btn complete-btn" onclick="completeTask(${task.id})">
+                            Complete
+                        </button>
+                        <button class="task-btn delete-btn" onclick="deleteTask(${task.id}, false)">
+                            Delete
+                        </button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Render completed tasks
+        function renderCompletedTasks() {
+            const container = document.getElementById('completedTasks');
+            
+            if (completedTasks.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recently completed cycles</div>';
+                return;
+            }
+            
+            container.innerHTML = completedTasks.map(task => {
+                const isResetting = task.resetAt && new Date(task.resetAt) > new Date();
+                return `
+                    <li class="task-item completed ${isResetting ? 'resetting' : ''}">
+                        <div class="task-content">
+                            <div class="task-name">
+                                ${escapeHtml(task.name)}
+                                ${isResetting ? '<span class="reset-indicator"></span>' : ''}
+                            </div>
+                            <div class="task-meta">
+                                <span>Cycle: ${task.cycle}</span>
+                                <span>Completed: ${task.completedCount} times</span>
+                                ${task.resetAt ? `<span>${formatTimeUntilReset(task.resetAt)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            ${isResetting ? 
+                                `<button class="task-btn complete-btn" onclick="resetTask(${task.id})">Reset Now</button>` : 
+                                ''
+                            }
+                            <button class="task-btn delete-btn" onclick="deleteTask(${task.id}, true)">
+                                Delete
+                            </button>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // Update task counts
+        function updateCounts() {
+            document.getElementById('activeCount').textContent = tasks.length;
+            document.getElementById('completedCount').textContent = completedTasks.length;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            
+            // Set up event listeners
+            document.getElementById('addTaskBtn').addEventListener('click', addTask);
+            document.getElementById('taskInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            });
+            
+            document.querySelector('.cycle-options').addEventListener('click', handleCycleSelection);
+            
+            // Set up timers for existing completed tasks
+            completedTasks.forEach(task => {
+                if (task.resetAt) {
+                    scheduleTaskReset(task);
+                }
+            });
+            
+            // Update time displays every minute
+            setInterval(() => {
+                renderCompletedTasks();
+            }, 60000);
+        });
+    </script>
+</body>
+</html>

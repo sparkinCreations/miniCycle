@@ -1,0 +1,99 @@
+{
+  "name": "Daily Routine 🌞",
+  "title": "Daily Routine 🌞",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "🌅 Wake up & stretch",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t2",
+      "text": "🛏️ Make bed",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t3",
+      "text": "🪥 Brush teeth",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t4",
+      "text": "🥣 Eat breakfast",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t5",
+      "text": "💧 Drink water",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t6",
+      "text": "🏋️ Exercise",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t7",
+      "text": "🧑‍💻 Start work / study",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t8",
+      "text": "🍎 Healthy snack",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t9",
+      "text": "📖 Read 10 minutes",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    },
+    {
+      "id": "t10",
+      "text": "🌙 Evening reflection",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false
+    }
+  ],
+  "autoReset": true,
+  "deleteCheckedTasks": false,
+  "cycleCount": 0
+}

@@ -1,0 +1,456 @@
+﻿Mini Cycle Documentation 
+# Mini Cycle Application Documentation
+## Overview
+Mini Cycle is a comprehensive task management application that supports recurring tasks, reminders, themes, drag-and-drop functionality, and multiple cycle modes. The application is built with vanilla JavaScript and provides both desktop and mobile experiences.
+## Core Features
+### 1. Task Management
+- **Add/Edit/Delete Tasks**: Users can create, modify, and remove tasks
+- **Task Completion**: Click tasks or checkboxes to mark as complete
+- **Priority Settings**: Mark tasks as high priority with visual indicators
+- **Due Dates**: Set and track task due dates with overdue notifications
+- **Drag & Drop Reordering**: Reorder tasks via drag and drop or arrow buttons
+### 2. Recurring Tasks System
+- **Frequency Options**: hourly, daily, weekly, biweekly, monthly, yearly
+- **Specific Dates**: Set tasks to recur on specific calendar dates
+- **Time Settings**: Configure specific times for task recurrence
+- **Advanced Scheduling**: Weekly days, monthly dates, yearly months/days
+- **Templates**: Recurring tasks are saved as templates and recreated automatically
+### 3. Mini Cycle Management
+- **Multiple Cycles**: Create, switch between, and manage multiple task cycles
+- **Auto Reset Mode**: Automatically reset tasks when all are completed
+- **Manual Cycle Mode**: Reset tasks manually with complete button
+- **To-Do List Mode**: Delete completed tasks instead of resetting
+- **Import/Export**: Save and load Mini Cycles as .mcyc files
+### 4. Reminders & Notifications
+- **Global Reminders**: System-wide reminder settings with frequency controls
+- **Task-Specific Reminders**: Individual reminder settings per task
+- **Due Date Notifications**: Alerts for overdue tasks
+- **Draggable Notifications**: User can reposition notification container
+### 5. Themes & Customization
+- **Dark Mode**: Toggle between light and dark themes
+- **Unlockable Themes**: Dark Ocean (5 cycles), Golden Glow (50 cycles)
+- **Theme Persistence**: Settings saved across sessions
+- **Milestone Rewards**: Unlock features based on cycle completion
+### 6. User Interface Modes
+- **Three-Dot Menu**: Mobile-friendly task options menu
+- **Hover Interactions**: Desktop hover to reveal task options
+- **Move Arrows**: Visual arrows for task reordering
+- **Accessibility**: Keyboard navigation and screen reader support
+### 7. Data Management
+- **Auto Save**: Automatic saving of all changes
+- **Undo/Redo System**: 4-level undo/redo with snapshots
+- **Local Storage**: All data stored locally in browser
+- **Backup/Restore**: Export and import application data
+## Key Components
+### Main Application Class
+```javascript
+// Core initialization
+document.addEventListener('DOMContentLoaded', (event) => {
+    initialSetup();
+    loadRemindersSettings();
+    setupReminderToggle();
+    // ... additional setup functions
+});
+```
+### Task Management Functions
+#### Adding Tasks
+```javascript
+function addTask(taskText, completed = false, shouldSave = true, 
+                dueDate = null, highPriority = null, isLoading = false, 
+                remindersEnabled = false, recurring = false, 
+                taskId = null, recurringSettings = {})
+```
+#### Task Operations
+- `handleTaskButtonClick(event)` - Processes task button interactions
+- `handleTaskCompletionChange(checkbox)` - Manages task completion state
+- `DragAndDrop(taskElement)` - Enables drag and drop for task reordering
+### Recurring Task System
+#### Core Functions
+- `shouldTaskRecurNow(settings, now)` - Determines if a recurring task should activate
+- `watchRecurringTasks()` - Monitors and recreates recurring tasks
+- `buildRecurringSettingsFromPanel()` - Extracts settings from UI
+- `normalizeRecurringSettings(settings)` - Standardizes recurring configuration
+#### Settings Structure
+```javascript
+const recurringSettings = {
+    frequency: "daily|weekly|monthly|yearly|hourly",
+    indefinitely: true|false,
+    count: number|null,
+    time: {hour, minute, meridiem, military},
+    weekly: {days: ["Mon", "Tue", ...]},
+    monthly: {days: [1, 15, 30]},
+    yearly: {months: [1, 6, 12], daysByMonth: {...}},
+    specificDates: {enabled: boolean, dates: [...]}
+};
+```
+### Storage Management
+#### Data Structure
+```javascript
+const miniCycleStorage = {
+    "Cycle Name": {
+        title: "Cycle Title",
+        tasks: [...],
+        recurringTemplates: {...},
+        autoReset: boolean,
+        deleteCheckedTasks: boolean,
+        cycleCount: number
+    }
+};
+```
+#### Key Storage Functions
+- `autoSave(overrideTaskList)` - Saves current state to localStorage
+- `loadMiniCycle()` - Loads active cycle from storage
+- `migrateTask(task)` - Upgrades task schema versions
+### UI Management
+#### Modal & Panel System
+- `setupMainMenu()` - Configures main navigation menu
+- `setupSettingsMenu()` - Initializes settings panel
+- `setupRecurringPanel()` - Sets up recurring task configuration
+- `updateStatsPanel()` - Updates statistics display
+#### Theme Management
+- `applyTheme(themeName)` - Applies selected theme
+- `unlockDarkOceanTheme()` - Unlocks first milestone theme
+- `unlockGoldenGlowTheme()` - Unlocks advanced theme
+### Notification System
+#### Core Functions
+- `showNotification(message, type, duration)` - Displays notifications
+- `setupNotificationDragging(container)` - Enables notification repositioning
+- `EducationalTipManager` - Manages contextual help tips
+#### Notification Types
+- `default` - Standard notifications
+- `error` - Error messages and overdue alerts
+- `success` - Confirmation messages
+- `info` - Informational updates
+- `recurring` - Recurring task notifications
+## Event Handling
+### Touch & Mouse Events
+```javascript
+// Touch events for mobile
+taskElement.addEventListener("touchstart", handleTouchStart);
+taskElement.addEventListener("touchmove", handleTouchMove);
+taskElement.addEventListener("touchend", handleTouchEnd);
+// Mouse events for desktop
+taskElement.addEventListener("dragstart", handleDragStart);
+taskElement.addEventListener("dragover", handleDragOver);
+```
+### Keyboard Accessibility
+```javascript
+// Global keyboard shortcuts
+document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "z") performUndo();
+    if (e.key === "Escape") closeAllModals();
+});
+```
+## Configuration Options
+### Application Settings
+- **Move Arrows**: Toggle visual reorder arrows
+- **Three-Dot Menu**: Enable mobile-friendly menu system
+- **Dark Mode**: Toggle dark theme
+- **Always Show Recurring**: Force recurring buttons visible
+### Reminder Settings
+```javascript
+const reminderSettings = {
+    enabled: boolean,
+    indefinite: boolean,
+    dueDatesReminders: boolean,
+    repeatCount: number,
+    frequencyValue: number,
+    frequencyUnit: "minutes|hours|days"
+};
+```
+## Data Flow
+### Task Lifecycle
+1. **Creation**: User adds task → `addTask()` → Save to storage
+1. **Modification**: User edits → Update DOM → `autoSave()`
+1. **Completion**: User checks task → Update state → Check for cycle completion
+1. **Deletion**: User deletes → Remove from DOM and storage
+### Recurring Task Flow
+1. **Setup**: User configures recurring settings → Save template
+1. **Monitoring**: `watchRecurringTasks()` runs every 30 seconds
+1. **Recreation**: When conditions met → `addTask()` with template data
+1. **Reset**: On cycle reset → Remove task, keep template
+### Cycle Management Flow
+1. **All Tasks Complete**: Check if auto-reset enabled
+1. **Auto Reset ON**: Automatic reset after delay
+1. **Auto Reset OFF**: Manual reset via complete button
+1. **Delete Mode**: Remove completed tasks instead of reset
+## Error Handling
+### Input Validation
+```javascript
+function sanitizeInput(input) {
+    if (typeof input !== "string") return "";
+    const temp = document.createElement("div");
+    temp.textContent = input;
+    return temp.textContent.trim().substring(0, TASK_LIMIT);
+}
+```
+### Safe Event Listeners
+```javascript
+function safeAddEventListener(element, event, handler) {
+    if (!element) return;
+    element.removeEventListener(event, handler);
+    element.addEventListener(event, handler);
+}
+```
+## Performance Considerations
+### Throttling & Debouncing
+- Drag operations throttled to 50ms intervals
+- Auto-save operations batched to prevent excessive writes
+- Recurring task checks limited to 30-second intervals
+### Memory Management
+- Event listeners properly removed to prevent leaks
+- DOM elements cleaned up on task deletion
+- Storage operations optimized with batch updates
+## Browser Compatibility
+### Storage Limitations
+- **No localStorage in artifacts**: Uses in-memory storage during development
+- **Fallback handling**: Graceful degradation when storage unavailable
+- **Migration system**: Automatic schema updates for backwards compatibility
+### Device Detection
+```javascript
+function detectDeviceType() {
+    let hasTouchEvents = "ontouchstart" in window;
+    let touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
+    let isFinePointer = window.matchMedia("(pointer: fine)").matches;
+    // Apply appropriate device class
+}
+```
+## Security Features
+### XSS Prevention
+- All user input sanitized through `sanitizeInput()`
+- DOM text content used instead of innerHTML where possible
+- HTML content properly escaped before display
+### Data Validation
+- Task limits enforced (50 character limit)
+- Input type validation throughout
+- Safe parsing of stored JSON data
+## Extension Points
+### Custom Themes
+Add new themes by:
+1. Creating CSS classes with `theme-` prefix
+1. Adding theme to `themeList` array
+1. Implementing unlock conditions
+### New Recurring Frequencies
+Extend recurring system by:
+1. Adding frequency to UI options
+1. Implementing logic in `shouldTaskRecurNow()`
+1. Adding settings normalization
+### Additional Storage Backends
+Replace localStorage by:
+1. Implementing storage interface
+1. Updating `autoSave()` and `loadMiniCycle()`
+1. Handling async operations
+## Debugging & Development
+### Console Logging
+- Extensive logging throughout for debugging
+- Prefixed log messages for component identification
+- Error logging with context information
+### Development Helpers
+```javascript
+// Validation functions for debugging
+validateAllMiniCycleTasks();
+validateRecurringSchema(task);
+```
+### Testing Utilities
+- Manual triggering of recurring tasks
+- Force unlock of milestone rewards
+- Storage inspection helpers
+## HTML Structure & Layout
+### Main Application Structure
+```html
+<body>
+  <!-- Navigation Menu -->
+  <button class="menu-button">☰</button>
+  <nav class="menu-container">
+    <!-- Main menu with cycle management options -->
+  </nav>
+  <!-- Core Application -->
+  <div id="app-root" class="app-root">
+    <header class="title-container">
+      <!-- Logo, app name, and undo/redo buttons -->
+    </header>
+    
+    <main id="app-container">
+      <!-- Task input and management area -->
+      <div id="task-view">
+        <div class="task-input">
+          <input type="text" id="taskInput" placeholder="Enter a task...">
+          <button id="addTask">Add</button>
+        </div>
+        
+        <!-- Editable mini cycle title -->
+        <div id="mini-cycle-title" contenteditable="true"></div>
+        
+        <!-- Scrollable task container -->
+        <div class="task-list-container">
+          <ul id="taskList" class="task-list"></ul>
+        </div>
+        
+        <!-- Progress indicator and controls -->
+        <div class="progress-container">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <button id="completeAll" class="complete-all-btn">Complete</button>
+      </div>
+      <!-- Stats panel (swipeable on mobile) -->
+      <section id="stats-panel" class="stats-panel">
+        <!-- Statistics, badges, and milestone tracking -->
+      </section>
+    </main>
+  </div>
+  <!-- Modal System -->
+  <!-- Settings, themes, feedback, recurring tasks panels -->
+  
+  <!-- Notification System -->
+  <div id="notification-container"></div>
+</body>
+```
+### Task Element Structure
+Each task is dynamically created with this structure:
+```html
+<li class="task" data-task-id="unique-id" draggable="true">
+  <!-- Three-dot menu (if enabled) -->
+  <button class="three-dots-btn">⋮</button>
+  
+  <!-- Task action buttons -->
+  <div class="task-options">
+    <button class="task-btn move-up">▲</button>
+    <button class="task-btn move-down">▼</button>
+    <button class="task-btn recurring-btn">🔁</button>
+    <button class="task-btn set-due-date">📅</button>
+    <button class="task-btn enable-task-reminders">🔔</button>
+    <button class="task-btn priority-btn">⚠️</button>
+    <button class="task-btn edit-btn">✏️</button>
+    <button class="task-btn delete-btn">🗑️</button>
+  </div>
+  
+  <!-- Task content -->
+  <div class="task-content">
+    <input type="checkbox" id="checkbox-taskid">
+    <span class="task-text">Task description</span>
+  </div>
+  
+  <!-- Optional due date input -->
+  <input type="date" class="due-date hidden">
+</li>
+```
+## CSS Architecture & Styling
+### Design System
+The application uses a comprehensive design system with:
+#### Color Schemes
+- **Default**: Blue gradient background (`#4c79ff` to `#74c0fc`)
+- **Dark Mode**: Dark gray gradients with white text
+- **Dark Ocean Theme**: Deep blue ocean tones with turquoise accents
+- **Golden Glow Theme**: Warm golden yellows with cream backgrounds
+#### Layout System
+- **Responsive Design**: Mobile-first approach with desktop enhancements
+- **Fixed Positioning**: Header and footer remain static during scrolling
+- **Flexbox Layout**: Modern CSS layout for consistent alignment
+- **Grid Systems**: Used for date/time pickers and badge layouts
+### Key CSS Features
+#### Mobile-First Responsive Design
+```css
+/* Base mobile styles */
+.task-view {
+  position: fixed;
+  width: 100vw;
+  height: auto;
+  max-height: 90vh;
+}
+/* Desktop enhancements */
+@media (min-width: 768px) {
+  .slide-arrow {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+```
+#### Interactive Elements
+- **Hover Effects**: Subtle scale transforms and color changes
+- **Touch Interactions**: Long-press support for mobile devices
+- **Smooth Transitions**: CSS transitions for all interactive elements
+- **Button States**: Active, hover, and disabled states
+#### Theme System
+```css
+/* Base theme variables */
+body.theme-dark-ocean {
+  background: linear-gradient(135deg, #0e1d2f, #152b3c);
+  color: #ffffff;
+}
+body.theme-golden-glow {
+  background: linear-gradient(135deg, #525252, #ffe066);
+  color: #333333;
+}
+```
+#### Component Architecture
+- **Modular CSS**: Each component has isolated styles
+- **BEM Methodology**: Block-Element-Modifier naming convention
+- **CSS Variables**: Theme-aware color system
+- **Utility Classes**: Hidden, active, selected state classes
+### Advanced Styling Features
+#### Custom Scrollbars
+```css
+.task-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+.task-list-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+}
+```
+#### Animation System
+- **Keyframe Animations**: Completion celebrations, milestone unlocks
+- **Micro-interactions**: Button press feedback, hover states
+- **Smooth Transitions**: Panel sliding, modal appearances
+- **Performance Optimized**: GPU-accelerated transforms
+#### Accessibility Features
+- **Focus Indicators**: Visible keyboard navigation outlines
+- **Screen Reader Support**: ARIA labels and live regions
+- **High Contrast**: Sufficient color contrast ratios
+- **Touch Targets**: Minimum 44px touch target sizes
+## Technical Implementation Details
+### CSS Methodology
+1. **Mobile-First**: Base styles target mobile devices
+1. **Progressive Enhancement**: Desktop features added via media queries
+1. **Component Isolation**: Scoped styles prevent conflicts
+1. **Performance**: Minimal repaints and reflows
+### Browser Compatibility
+- **Modern Browsers**: Chrome, Firefox, Safari, Edge
+- **CSS Grid/Flexbox**: Modern layout techniques
+- **CSS Custom Properties**: Theme system implementation
+- **Webkit Prefixes**: Safari-specific optimizations
+### Responsive Breakpoints
+- **Mobile**: < 768px (primary focus)
+- **Tablet**: 768px - 1024px
+- **Desktop**: > 1024px
+### Safe Area Handling
+```css
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+```
+## Modal & Panel System
+### Modal Architecture
+The application uses a comprehensive modal system:
+#### Settings Modal
+- Dark mode toggle
+- Move arrows toggle
+- Three-dot menu toggle
+- Backup/restore functionality
+- Factory reset option
+#### Recurring Tasks Panel
+- Advanced scheduling interface
+- Time picker components
+- Day/month selection grids
+- Preview and summary system
+#### Themes Panel
+- Unlockable theme system
+- Progress-based rewards
+- Dark mode integration
+### Panel Interactions
+- **Outside Click**: Close modals when clicking outside
+- **Keyboard Navigation**: ESC key support
+- **Touch Gestures**: Swipe to navigate on mobile
+- **Focus Management**: Proper tab order and focus trapping
+This documentation provides a comprehensive overview of the Mini Cycle application architecture, featuring modular design, extensive customization options, robust task management capabilities, and a sophisticated UI/UX system built with modern web technologies.

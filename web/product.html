@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>miniCycle - Turn Your Routine Into Progress</title>
+    <meta name="description" content="miniCycle is a powerful yet simple task management app that helps you stay productive with auto-reset cycles, recurring tasks, and beautiful themes.">
+    <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .cta-button {
+            background: #667eea;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .cta-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 0;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 15px;
+            background: #f8f9fa;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 5rem 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+
+        .step h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .step p {
+            color: #666;
+        }
+
+        /* Screenshots */
+        .screenshots {
+            padding: 5rem 0;
+            background: white;
+            text-align: center;
+        }
+
+        .screenshot-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .screenshot {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .screenshot:hover {
+            transform: scale(1.05);
+        }
+
+        .screenshot img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+                /* Add this to your existing CSS */
+        .screenshot-caption {
+            padding: 1.5rem;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        
+        .screenshot-caption h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .screenshot-caption p {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .screenshot {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            background: white;
+        }
+        
+        .screenshot:hover {
+            transform: translateY(-5px);
+        }
+        
+        .screenshot img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Quick Start */
+        .quick-start {
+            padding: 5rem 0;
+            background: #f8f9fa;
+        }
+
+        .quick-start-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .quick-start ol {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .quick-start li {
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+        }
+
+        /* Download Section */
+        .download {
+            padding: 5rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
+            color: white;
+        }
+
+        .download h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .download p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            color: #ecf0f1;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: #bdc3c7;
+            text-decoration: none;
+            line-height: 1.6;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #34495e;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            color: #95a5a6;
+        }
+
+        
+
+/* Footer Styling */
+#footer-container {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-family: 'Poppins', sans-serif;
+    z-index:0;
+    width:100%;
+ 
+    
+
+    
+}
+
+/* Copyright Text */
+#copyright {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    
+}
+
+#copyright {
+    color: white; /* Make the text white */
+}
+
+#copyright a {
+    color: white; /* Ensure the link is also white */
+    text-decoration: none; /* Optional: Removes underline */
+}
+
+#copyright a:hover {
+    text-decoration: underline; /* Optional: Adds underline on hover */
+}
+
+
+/* Hover Effect */
+#footer-container:hover #copyright {
+    opacity: 1; /* Make it fully visible on hover */
+}
+
+.hero-image {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.hero-image img {
+    max-width: 90vw;
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+@media (max-width: 600px) {
+    .hero-image img {
+        max-width: 95vw;
+        max-width: 320px;
+    }
+}
+
+/* Footer Item Text */
+.footer-item {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    
+}
+
+.footer-item {
+    color: white; /* Make the text white */
+}
+
+.footer-item a {
+    color: white; /* Ensure the link is also white */
+    text-decoration: none; /* Optional: Removes underline */
+}
+
+.footer-item a:hover {
+    text-decoration: underline; /* Optional: Adds underline on hover */
+}
+
+
+/* Hover Effect */
+#footer-container:hover .footer-item {
+    opacity: 1; /* Make it fully visible on hover */
+}
+
+
+.logo img {
+width: 29px;
+height: auto;
+border-radius: 50%;
+}
+
+#app_name img{
+width: 170px;
+padding: 6px;
+
+border-radius: 5px;
+}
+
+
+
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="container">
+    <div id="app_name">
+      <img src="assets/images/logo/App_Name_tp_bw.png" alt="Task Cycle App Name" />
+    </div> 
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#screenshots">Screenshots</a></li>
+                <li><a href="#download">Download</a></li>
+            </ul>
+            <a href="miniCycle.html" class="cta-button">Try Now</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-image">
+                <img src="assets/images/Logo/taskcycle_logo_blackandwhite_transparent_full.png" alt="Hero Image" />
+            </div>
+            <h1 class="fade-in-up">Cycle Based Workflow<br>Change the Way You Work</h1>
+            <p class="fade-in-up">miniCycle helps you stay productive with auto-reset cycles, beautiful themes, and smart recurring tasks. No complexity, just results.</p>
+            <div class="hero-buttons fade-in-up">
+                <a href="miniCycle.html" class="btn-primary">🚀 Launch miniCycle</a>
+                <a href="#features" class="btn-secondary">📖 Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose miniCycle?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Auto-Reset Cycles</h3>
+                    <p>Complete all tasks and watch them automatically reset for your next cycle. Perfect for daily routines, weekly goals, and recurring workflows.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⏰</div>
+                    <h3>Smart Recurring Tasks</h3>
+                    <p>Set up tasks to repeat daily, weekly, or monthly. Smart scheduling ensures they appear exactly when you need them.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Beautiful Themes</h3>
+                    <p>Unlock stunning themes as you complete cycles. From Ocean Deep to Sunset Glow - make productivity beautiful.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Works Everywhere</h3>
+                    <p>Responsive design that works perfectly on desktop, tablet, and mobile. Your tasks follow you wherever you go.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Smart Reminders</h3>
+                    <p>Never forget important tasks with customizable reminder notifications. Stay on track without being overwhelmed.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Export & Backup</h3>
+                    <p>Export your miniCycles as .mcyc files. Share templates with friends or keep backups of your important workflows.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How miniCycle Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Create Your miniCycle</h3>
+                    <p>Start by creating a miniCycle - think of it as a collection of related tasks like "Morning Routine" or "Weekly Goals".</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Add Your Tasks</h3>
+                    <p>Add tasks to your cycle. Set priorities, due dates, and make tasks recurring if they repeat regularly.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Complete & Reset</h3>
+                    <p>Check off tasks as you complete them. When all tasks are done, your cycle automatically resets for the next round.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Build Momentum</h3>
+                    <p>Watch your cycle count grow and unlock beautiful themes. Each completed cycle builds your productivity momentum.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+       <!-- Screenshots -->
+    <section id="screenshots" class="screenshots">
+        <div class="container">
+            <h2 class="section-title">See miniCycle in Action</h2>
+            <div class="screenshot-gallery">
+                <div class="screenshot">
+                    <img src="assets/images/Product/Mini_Cycle_List.png" alt="miniCycle Task Management View - Clean interface showing tasks with checkboxes, priorities, and progress tracking">
+                    <div class="screenshot-caption">
+                        <h3>📋 Task Management</h3>
+                        <p>Clean, intuitive interface for managing your daily tasks and routines</p>
+                    </div>
+                </div>
+                <div class="screenshot">
+                    <img src="assets/images/Product/Mini_Cycle_Stats.png" alt="miniCycle Statistics View - Progress tracking and cycle completion analytics">
+                    <div class="screenshot-caption">
+                        <h3>📊 Progress Tracking</h3>
+                        <p>Visual progress bars and statistics to keep you motivated</p>
+                    </div>
+                </div>
+                <div class="screenshot">
+                    <img src="assets/images/Product/Mini_Cycle_Themes.png" alt="miniCycle Theme Selection - Beautiful color themes and customization options">
+                    <div class="screenshot-caption">
+                        <h3>🎨 Beautiful Themes</h3>
+                        <p>Unlock stunning themes as you complete cycles and stay productive</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Guide -->
+        <section class="quick-start">
+        <div class="container">
+            <h2 class="section-title">Quick Start Guide</h2>
+            <div class="quick-start-content">
+                <h3 style="margin-bottom: 2rem; color: #333;">Get up and running in 2 minutes:</h3>
+                <ol>
+                    <li><strong>Launch miniCycle</strong> - Click the "Try Now" button to access the app</li>
+                    <li><strong>Create your first miniCycle</strong> - Enter a name like "Daily Tasks" or "Morning Routine" when prompted</li>
+                    <li><strong>Add your tasks</strong> - Type in the input box and click "Add" to create tasks</li>
+                    <li><strong>Access task options</strong> - Hover over tasks (desktop) or long-press (mobile) to see edit, priority, and other options</li>
+                    <li><strong>Set priorities</strong> - Use the priority button in task options to mark important tasks</li>
+                    <li><strong>Complete tasks</strong> - Check off tasks as you finish them using the circular checkboxes</li>
+                    <li><strong>Watch the magic</strong> - When all tasks are complete, they automatically reset for your next cycle (if Auto Reset is enabled)</li>
+                    <li><strong>Explore features</strong> - Try the menu (☰) to access recurring tasks, themes, reminders, and more</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <h2>Ready to Boost Your Productivity?</h2>
+            <p>Join thousands of users who've simplified their task management with miniCycle</p>
+            <div class="hero-buttons">
+                <a href="miniCycle.html" class="btn-primary">🚀 Launch miniCycle</a>
+                <a href="#" onclick="downloadSample()" class="btn-secondary">📦 Download Sample</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🔄 miniCycle</h3>
+                    <p>Simple task management that actually works. Built for people who want to get things done without the complexity.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Features</h3>
+                    <p><a href="#features">Auto-Reset Cycles</a></p>
+                    <p><a href="#features">Recurring Tasks</a></p>
+                    <p><a href="#features">Beautiful Themes</a></p>
+                    <p><a href="#features">Smart Reminders</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Get Started</h3>
+                    <p><a href="miniCycle.html">Launch App</a></p>
+                    <p><a href="#how-it-works">How It Works</a></p>
+                    <p><a href="#screenshots">Screenshots</a></p>
+                    <p><a href="#download">Download</a></p>
+                </div>
+                <div class="footer-section">
+                    <h3>Support</h3>
+                    <p>📧 Email Support</p>
+                    <p>📖 Documentation</p>
+                    <p>🐛 Report Issues</p>
+                    <p>💡 Feature Requests</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p id="copyright">&copy; 2025 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add fade-in animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all sections
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Download sample function
+        function downloadSample() {
+            const sampleData = {
+                name: "Getting Started",
+                title: "Getting Started",
+                autoReset: true,
+                deleteCheckedTasks: false,
+                cycleCount: 0,
+                tasks: [
+                    {
+                        id: "sample-task-1",
+                        text: "🎯 Add your first task",
+                        completed: false,
+                        dueDate: null,
+                        highPriority: false,
+                        remindersEnabled: false,
+                        recurring: false,
+                        recurringSettings: {},
+                        schemaVersion: 2
+                    },
+                    {
+                        id: "sample-task-2",
+                        text: "✅ Check off completed tasks",
+                        completed: false,
+                        dueDate: null,
+                        highPriority: false,
+                        remindersEnabled: false,
+                        recurring: false,
+                        recurringSettings: {},
+                        schemaVersion: 2
+                    },
+                    {
+                        id: "sample-task-3",
+                        text: "🔄 Watch tasks reset when all are complete",
+                        completed: false,
+                        dueDate: null,
+                        highPriority: false,
+                        remindersEnabled: false,
+                        recurring: false,
+                        recurringSettings: {},
+                        schemaVersion: 2
+                    }
+                ]
+            };
+
+            const blob = new Blob([JSON.stringify(sampleData, null, 2)], { 
+                type: "application/octet-stream" 
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "getting-started.mcyc";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Add some interactive effects
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

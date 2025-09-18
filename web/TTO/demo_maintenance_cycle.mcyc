@@ -1,0 +1,73 @@
+{
+  "name": "Demo Maintenance Cycle",
+  "tasks": [
+    {
+      "id": "45bc2edf-fde2-4daa-b49f-07788fb398ef",
+      "text": "Check air filters",
+      "completed": false,
+      "dueDate": "2025-08-07T05:48:26.158851",
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "daily",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "fd9dbd1f-c51b-46f6-a89d-ea1e3fa3c341",
+      "text": "Inspect safety equipment",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "674d2fad-0e9c-4ae6-a3e3-e8ae43f9a145",
+      "text": "Clean machine surface",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": true,
+      "recurring": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "52274781-81da-42e8-bb5c-21036a1bd5e5",
+      "text": "Log temperature readings",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "schemaVersion": 2,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "recurIndefinitely": true,
+        "specificDays": [],
+        "specificTime": null,
+        "schemaVersion": 2
+      }
+    },
+    {
+      "id": "0595573f-75c3-4356-ad20-cd2a8ae21d4e",
+      "text": "Tighten bolts on frame",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "schemaVersion": 2
+    }
+  ],
+  "autoResetEnabled": true,
+  "deleteCheckedTasks": false,
+  "createdAt": "2025-08-06T05:48:26.159078",
+  "schemaVersion": 2
+}

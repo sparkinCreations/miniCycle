@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terms of Service • Mini Cycle</title>
+
+  <!-- Reuse the user's manual stylesheet for consistent look -->
+  <link rel="stylesheet" href="user-manual-styles.css" />
+
+  <style>
+   /* ================================
+   Terms of Service Styles
+   Match User Manual Look & Feel
+   ================================ */
+
+/* === Terms of Service Styles (aligned with User Manual) === */
+
+/* Base body matches user manual */
+body {
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+  line-height: 1.6;
+  color: #333;
+  background-color: #6a97e4;
+}
+
+/* Headings consistent */
+h1, h2, h3 {
+  color: #222;
+}
+
+h1 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+/* Sections styled like user manual */
+.section {
+  margin-bottom: 30px;
+  padding: 15px;
+  background: rgb(191, 204, 237);
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Back button matches manual */
+.back-button, .btn {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 10px 15px;
+  background: #007bff;
+  color: white;
+  border: solid 1px rgba(0, 0, 0, 0.418);
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back-button:hover, .btn:hover {
+  background: #0056b3;
+}
+
+/* Lists and paragraphs */
+ul {
+  padding-left: 20px;
+}
+ul li {
+  margin-bottom: 10px;
+}
+p {
+  margin-bottom: 10px;
+}
+
+/* Doc container + header (keep extra structure) */
+.doc-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.doc-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.doc-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.2vw + 1rem, 2.25rem);
+}
+.doc-meta {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+.pill {
+  display:inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.825rem;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+/* Cards (retain original style) */
+.card {
+  background: rgb(191, 204, 237);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.muted { opacity: .8; }
+
+/* Links */
+a { color: #1d4ed8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Code blocks */
+code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* Copyright Text */
+#copyright {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    
+}
+
+#copyright {
+    color: white; /* Make the text white */
+}
+
+#copyright a {
+    color: white; /* Ensure the link is also white */
+    text-decoration: none; /* Optional: Removes underline */
+}
+
+#copyright a:hover {
+    text-decoration: underline; /* Optional: Adds underline on hover */
+}
+
+
+/* Hover Effect */
+#footer-container:hover #copyright {
+    opacity: 1; /* Make it fully visible on hover */
+}
+
+/* Responsive: match manual */
+@media (max-width: 600px) {
+  body { padding: 10px; }
+  .section { padding: 10px; }
+  h1 { font-size: 24px; }
+}
+
+  </style>
+</head>
+<body>
+  <main class="doc-container">
+    <div class="back-row">
+      <a class="btn" href="miniCycle.html" aria-label="Back to Mini Cycle">← Back to Mini Cycle</a>
+      <span class="pill">Legal</span>
+    </div>
+
+    <header class="doc-header">
+      <h1 class="doc-title">Terms of Service for Mini Cycle</h1>
+    </header>
+
+    <div class="doc-meta">
+      <div><strong>Last Updated:</strong> August 25, 2025</div>
+      <div><strong>Effective Date:</strong> August 25, 2025</div>
+    </div>
+
+    <section class="section card" id="welcome">
+      <h2>Welcome to Mini Cycle</h2>
+      <p>These Terms of Service ("Terms") govern your use of the Mini Cycle web application ("Service") operated by Sparkin Creations ("us", "we", or "our"). By accessing or using Mini Cycle, you agree to be bound by these Terms. If you disagree with any part of these Terms, you may not access or use the Service.</p>
+    </section>
+
+    <section class="section card" id="description">
+      <h2>Description of Service</h2>
+      <p>Mini Cycle is a free web-based task management application that helps users organize tasks in cycles with auto-reset functionality. The application runs entirely in your web browser using local storage technology.</p>
+    </section>
+
+<section class="section card" id="acceptance">
+  <h2>Acceptance of Terms</h2>
+  <p>By using Mini Cycle, you confirm that:</p>
+  <ul>
+    <li>You are at least 18 years of age, or you are at least 13 years of age and are using the Service with the consent and supervision of a parent or legal guardian</li>
+    <li>You have the legal capacity to enter into these Terms (or have such capacity through your parent/guardian if under 18)</li>
+    <li>You will use the Service in compliance with all applicable laws</li>
+  </ul>
+</section>
+
+    <section class="section card" id="use">
+      <h2>How You May Use Mini Cycle</h2>
+      <h3>Permitted Uses</h3>
+      <ul>
+        <li>Create and manage personal task lists and cycles</li>
+        <li>Use recurring task functionality for personal productivity</li>
+        <li>Export your data for backup purposes</li>
+        <li>Use the application for personal, educational, or commercial productivity</li>
+      </ul>
+      <h3>Prohibited Uses</h3>
+      <ul>
+        <li>Attempt to reverse engineer, modify, or distribute the application code</li>
+        <li>Use the Service to store illegal, harmful, or inappropriate content</li>
+        <li>Attempt to interfere with the Service's functionality or security</li>
+        <li>Use the Service in a way that violates any applicable laws or regulations</li>
+        <li>Redistribute or resell Mini Cycle as your own product</li>
+      </ul>
+    </section>
+
+    <section class="section card" id="privacy">
+      <h2>Your Data and Privacy</h2>
+      <ul>
+        <li><strong>Your Control:</strong> You retain complete ownership and control of all data you create in Mini Cycle</li>
+        <li><strong>Local Storage:</strong> All your data is stored locally on your device using browser storage</li>
+        <li><strong>No Collection:</strong> We do not collect, access, or store your personal data on our servers</li>
+        <li><strong>Privacy Policy:</strong> Our complete privacy practices are detailed in our <a href="privacy.html">Privacy Policy</a></li>
+      </ul>
+    </section>
+
+    <section class="section card" id="ip">
+      <h2>Intellectual Property</h2>
+      <h3>Our Rights</h3>
+      <ul>
+        <li>Mini Cycle's design, code, and functionality are owned by Sparkin Creations</li>
+        <li>The "Mini Cycle" name and logo are trademarks of Sparkin Creations</li>
+        <li>All rights not expressly granted to you are reserved</li>
+      </ul>
+      <h3>Your Rights</h3>
+      <ul>
+        <li>You retain ownership of all content and data you create using Mini Cycle</li>
+        <li>You may export your data at any time in standard formats</li>
+      </ul>
+    </section>
+
+    <section class="section card" id="availability">
+      <h2>Service Availability</h2>
+      <h3>Free Service</h3>
+      <ul>
+        <li>Mini Cycle is provided free of charge</li>
+        <li>We strive to maintain reliable service but make no guarantees of uptime</li>
+        <li>Features may be added, modified, or removed at our discretion</li>
+        <li>Future premium features or services may be subject to separate terms</li>
+      </ul>
+      <h3>Browser Requirements</h3>
+      <ul>
+        <li>Mini Cycle requires a modern web browser with localStorage support</li>
+        <li>We support current versions of Chrome, Firefox, Safari, and Edge</li>
+        <li>Older browsers may have limited functionality</li>
+      </ul>
+    </section>
+
+    <section class="section card" id="disclaimers">
+      <h2>Disclaimers and Limitations</h2>
+      <h3>Service "As Is"</h3>
+      <p>Mini Cycle is provided "as is" without warranties of any kind, either express or implied, including but not limited to fitness for a particular purpose, uninterrupted or error-free operation, and data accuracy or reliability.</p>
+      <h3>Limitation of Liability</h3>
+      <p>To the fullest extent permitted by law, Sparkin Creations shall not be liable for any direct, indirect, incidental, or consequential damages; loss of data, profits, or productivity; service interruptions or technical issues; or any damages exceeding $100 USD.</p>
+      <h3>Data Backup Responsibility</h3>
+      <ul>
+        <li>While your data is stored locally on your device, you are responsible for backing up your important data</li>
+        <li>We recommend regular exports of your mini cycle lists</li>
+        <li>Browser data can be lost due to various technical reasons</li>
+      </ul>
+    </section>
+
+    <section class="section card" id="changes">
+      <h2>Changes to Service and Terms</h2>
+      <h3>Service Changes</h3>
+      <ul>
+        <li>We may modify or discontinue features with reasonable notice</li>
+        <li>We may update the application to improve functionality or security</li>
+        <li>We may change these Terms with 30 days' notice</li>
+      </ul>
+      <h3>Notification of Changes</h3>
+      <ul>
+        <li>We will notify users of significant changes through in-app notifications</li>
+        <li>We will post updates on <a href="product.html">minicycle.app/product</a></li>
+        <li>Email notification if provided (optional)</li>
+      </ul>
+    </section>
+
+    <section class="section card" id="termination">
+      <h2>Termination</h2>
+      <h3>Your Right to Stop Using</h3>
+      <ul>
+        <li>Simply close the application</li>
+        <li>Clear your browser data to remove all stored information</li>
+        <li>No formal account deletion required since no accounts exist</li>
+      </ul>
+      <h3>Our Right to Restrict Access</h3>
+      <ul>
+        <li>We may restrict access if you violate these Terms</li>
+        <li>We may restrict access for harmful or illegal use</li>
+        <li>We may restrict access if you abuse the Service or attempt to disrupt its operation</li>
+      </ul>
+    </section>
+
+    <section class="section card" id="law">
+      <h2>Governing Law &amp; Dispute Resolution</h2>
+      <p>These Terms are governed by the laws of the State of <strong>Connecticut, USA</strong>, without regard to conflict of law principles.</p>
+      <p>Any disputes arising from these Terms will be resolved through <strong>binding arbitration</strong> conducted in Connecticut, unless prohibited by applicable law. By using Mini Cycle, you waive your right to participate in class actions or jury trials, except where not legally enforceable.</p>
+    </section>
+
+    <section class="section card" id="contact">
+      <h2>Contact Information</h2>
+      <ul>
+        <li><strong>Email:</strong> <a href="mailto:admin@sparkincreations.com">admin@sparkincreations.com</a></li>
+        <li><strong>Website:</strong> <a href="https://minicycle.app">minicycle.app</a></li>
+        <li><strong>Company:</strong><a href="https://sparkincreations.com">sparkinCreations</a></li>
+      </ul>
+    </section>
+
+    <section class="section card" id="severability">
+      <h2>Severability</h2>
+      <p>If any provision of these Terms is found to be unenforceable, the remaining provisions will continue in full force and effect.</p>
+    </section>
+
+    <section class="section card" id="entire">
+      <h2>Entire Agreement</h2>
+      <p>These Terms, together with our Privacy Policy, constitute the entire agreement between you and Sparkin Creations regarding the use of Mini Cycle.</p>
+    </section>
+
+    <footer>
+      <div id="copyright">&copy; 2025 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a></div>
+    </footer>
+
+     </main>
+
+  <script>
+    // Set current year in footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

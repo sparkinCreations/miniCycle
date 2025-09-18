@@ -1,0 +1,141 @@
+﻿{
+  taskName:  "Check air compressor",                  //For local Storage debugging
+  id: "2a9c85b3-b9a5-4a2f-a9f8-1a1a9c5b3e9f",  // UUID v4
+  text: "Check air compressor",
+  completed: false,
+  dueDate: "2025-08-09T15:30:00.000Z",           // ISO 8601 timestamp
+  highPriority: true,
+  remindersEnabled: true,
+
+
+  // 🔔 Reminder Settings
+  reminderSettings: {
+    frequencyValue: 60,                          // Every 60 minutes/hours/etc.
+    frequencyUnit: "minutes",                    // "minutes" | "hours" | "days"
+    startTime: null,                             // When reminders begin (timestamp)
+    lastFired: null                              // When last reminder was sent
+  },
+
+
+  // 🔄 Recurring Task Settings
+  recurring: true,
+  recurringSettings: {
+    frequency: "daily",                          // "hourly", "daily", "weekly", "monthly", "yearly"
+    interval: 1,                                 // every X units (e.g. every 2 days)
+    timeOfDay: "08:00",                          // "HH:MM" format (24h)
+    
+    // Frequency-specific settings
+    hourly: {
+      useSpecificMinute: false,
+      minute: 0                                  // 0-59
+    },
+    weekly: {
+      days: ["Monday", "Wednesday"]              // Array of day names
+    },
+    monthly: {
+      days: [1, 15]                              // Array of day numbers (1-31)
+    },
+    yearly: {
+      months: [1, 7],                            // Array of month numbers (1-12)
+      daysByMonth: { "1": [1], "7": [15] },      // Specific days per month
+      useSpecificDays: true,
+      applyDaysToAll: false
+    },
+    
+    // Scheduling metadata
+    useSpecificTime: true,
+    nextRecurDueAt: "2025-08-08T14:00:00.000Z",
+    lastRecurTriggered: "2025-08-08T14:00:00.000Z"
+  },
+
+
+  // 📊 Basic Metadata (Local Only)
+  metadata: {
+    createdAt: 1754536800696,                    // Unix timestamp
+    modifiedAt: 1754540000000,                   // Unix timestamp
+    deviceId: "local-device-abc123",             // Simple device identifier
+    version: 1                                   // Version number for local changes
+  },
+
+
+  schemaVersion: "3A"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+ cycleName: "morning-checks", 
+  id: "2a9c85b3-b9a5-4a2f-a9f8-1a1a9c5b3e9d",  // UUID v4
+  title: "Morning Safety Checks",               // Display title
+  tasks: [ /* array of task objects */ ],
+  
+  // Cycle behavior settings
+  autoReset: true,
+  deleteCheckedTasks: false,
+  cycleCount: 11,                                // Number of completed cycles
+  
+  // 📊 Basic Metadata (Local Only)
+  metadata: {
+    createdAt: 1754536800696,
+    modifiedAt: 1754540000000,
+    deviceId: "local-device-abc123",
+    version: 1,
+    totalTasksCompleted: 45,                     // Lifetime task completions
+    averageCompletionTime: 1800                  // Average seconds to complete cycle
+  },
+
+
+  schemaVersion: "3A"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{
+  deviceId: "local-device-abc123",               // Simple local identifier
+  deviceName: "Local Device",                    // User-friendly name
+  generatedAt: "2025-08-01T07:55:00.000Z",     // When device ID was created
+  
+  // Local preferences
+  preferences: {
+    theme: "default",
+    darkMode: false,
+    notificationPosition: { x: 50, y: 50 },
+    defaultRecurringSettings: {
+      frequency: "daily",
+      indefinitely: true,
+      time: null
+    }
+  },
+
+
+  schemaVersion: "3A"
+}

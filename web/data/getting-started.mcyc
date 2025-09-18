@@ -1,0 +1,42 @@
+{
+  "name": "Getting Started",
+  "title": "Getting Started",
+  "tasks": [
+    {
+      "id": "task-001",
+      "text": "Welcome to miniCycle 🎉",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-002",
+      "text": "Tap a task to check it off ✅",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-003",
+      "text": "When all tasks are done, your cycle resets 🔄",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

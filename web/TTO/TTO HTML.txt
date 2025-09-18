@@ -1,0 +1,9 @@
+ <div class="task">
+                <input type="checkbox">
+                <span class="task-text"></span>
+                <input type="date" class="due-date hidden">  <!-- Due Date Field -->
+                <div class="task-actions">
+                    <button class="set-due-date"><i class="fas fa-calendar-alt"></i></button>
+                    <button class="delete-task"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>

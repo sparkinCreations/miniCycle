@@ -1,0 +1,4177 @@
+/* ==========================================
+   📱 miniCycle LITE - Optimized CSS for Older Devices
+   ES5 Compatible | Same Interface | Maximum Performance
+   ========================================== */
+
+/* ✅ CSS Variables Fallbacks for IE11 */
+:root {
+  --header-bg: #5680ff;
+  --header-border: rgba(255, 255, 255, 0.2);
+  --header-text: #ffffff;
+}
+
+/* ✅ Global Styles - Simplified */
+body {
+    background: #4c79ff; /* ✅ Solid color instead of gradient for performance */
+    background-color: #4c79ff;
+    color: white;
+    font-family: Arial, sans-serif; /* ✅ Web-safe font fallback */
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    padding-bottom: 20px; /* ✅ Safe area fallback */
+}
+
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #4c79ff; /* ✅ Solid fallback */
+}
+
+/* ✅ App Container */
+.app-root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+    margin: 0;
+}
+
+#app-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding-top: 120px; /* ✅ Fixed padding instead of calc() */
+    max-width: 100%;
+}
+
+/* ✅ Task View - Identical Layout */
+#task-view {
+    position: fixed;
+    top: 375px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    max-height: 550px; /* ✅ Fixed height for better performance */
+    transition: all 0.3s ease; /* ✅ Simplified transition */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 1;
+}
+
+#task-view * {
+    pointer-events: auto;
+}
+
+#task-view.hide {
+    left: -50%;
+    transform: translate(-200%, -50%);
+}
+
+#task-view.show {
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+
+
+
+
+/* ✅ Extra small screens (phones in portrait) */
+@media (max-width: 480px) {
+    #task-view {
+        top: 400px; /* ✅ Slightly higher for smaller screens */
+        width: 95%;
+            max-height: 425px; /* ✅ Fixed height for better performance */
+        padding-bottom: 100px;
+    }
+}
+/* ✅ Extra small screens (phones in portrait) */
+@media (max-width: 768px) {
+    #task-view {
+        top: 400px; /* ✅ Slightly higher for smaller screens */
+        width: 95%;
+            max-height: 425px; /* ✅ Fixed height for better performance */
+        padding-bottom: 100px;
+    }
+}
+
+
+
+/* ✅ Stats Panel - Same Visual Design */
+.stats-panel {
+    position: fixed;
+    top: 54%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+    width: 80%;
+    max-width: 400px;
+    height: auto;
+    max-height: 450px;
+    overflow-y: auto;
+    color: black;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@media (max-width: 768px) {
+.stats-panel {
+    position: fixed;
+    top: 54%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+    width: 80%;
+    max-width: 400px;
+    height: auto;
+    max-height: 280px;
+    overflow-y: auto;
+    color: black;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+}
+
+#stats-panel.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+#stats-panel p {
+    margin: 6px 0;
+}
+
+#stats-panel.hide {
+    transform: translate(200%, -50%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ✅ Slide Arrows - Desktop Only */
+.slide-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: black;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    z-index: 2;
+}
+
+/* ✅ Focus indicators for slide arrows */
+.slide-arrow:focus {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.slide-arrow:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.slide-arrow:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2); /* ✅ Visible focus for keyboard users */
+}
+
+
+
+#slide-left {
+    left: 15%;
+}
+
+#slide-right {
+    right: 15%;
+}
+
+/* ✅ Desktop Only */
+@media (min-width: 768px) {
+    .slide-arrow {
+        opacity: 1;
+        pointer-events: all;
+    }
+    
+    #slide-left.show:hover,
+    #slide-right.show:hover {
+        background-color: white;
+    }
+}
+
+/* ✅ Mobile Hidden */
+@media (max-width: 768px) {
+    .slide-arrow {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* ✅ Task Input Section */
+.task-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    width: 80%;
+    max-width: 400px;
+    height: 30px;
+}
+
+input[type="text"] {
+    flex: 1;
+    background: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+}
+
+/* ✅ Buttons - Simplified */
+button {
+    background: #3e3d3d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #555;
+}
+
+#addTask {
+    padding: 10px 10px;
+    font-size: 13px;
+    width: auto;
+    height: 35px;
+}
+
+/* ✅ Enhanced Complete All Button Styles */
+.complete-all-btn {
+    background: #08c352;
+    border: 1px solid rgba(0, 160, 11, 0.655);
+    margin: 15px 0 10px 0; /* ✅ Add top margin for visibility */
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: white;
+    position: relative;
+    z-index: 2;
+    display: block; /* ✅ Ensure it's visible */
+    width: auto;
+    min-width: 120px;
+}
+
+.complete-all-btn:hover {
+    background: #009c41;
+}
+
+.complete-all-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* ✅ Ensure container is visible */
+.complete-all-and-help-window-container {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* ✅ Dark mode support */
+body.dark-mode .complete-all-btn {
+    background: #198754;
+    border-color: rgba(0, 255, 0, 0.3);
+}
+
+body.dark-mode .complete-all-btn:hover {
+    background: #157347;
+}
+
+/* ✅ Simple Complete Animation */
+.lite-complete-animation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #28a745;
+    color: white;
+    padding: 15px 25px;
+    font-size: 48px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+/* ✅ Title Section */
+.mini-cycle-title {
+    position: sticky;
+    font-family: Arial, sans-serif;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 18px;
+    text-align: center;
+    color: rgba(43, 43, 43, 0.783);
+    background-color: rgba(255, 255, 255, 0.4);
+    padding: 8px 10px;
+    border: none;
+    outline: none;
+    cursor: text;
+    top: 0;
+    border-radius: 8px 8px 0 0;
+    transition: background-color 0.2s ease;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    z-index: 1;
+}
+
+#mini-cycle-title:focus {
+    background: rgba(255, 255, 255, 0.6);
+    color: #333;
+}
+
+
+/* ✅ Simplified Scrollbar */
+.task-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 10px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+
+
+
+
+
+.task:hover {
+    transform: scale(1.01);
+    background: #f8f9fa;
+}
+
+.task-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.task-content {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    width: 100%;
+    gap: 10px;
+}
+
+
+.task-text {
+    flex: 1;
+    text-align: left;
+    font-size: 16px;
+    word-wrap: break-word;
+}
+
+/* ✅ Custom Checkbox - Same Design */
+.task input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+
+
+.task-text {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+
+.task input[type="checkbox"]:hover {
+    border-color: #40af4d;
+}
+
+.task input[type="checkbox"]:checked {
+    background-color: #5db567;
+    border-color: #40af4d;
+}
+
+.task input[type="checkbox"]:checked:after {
+    content: "✔";
+    font-size: 28px;
+    color: rgb(18, 70, 9);
+    font-weight: bold;
+    top: -4px; /* Adjust to move up */
+    left: 5px;
+    position: relative;
+}
+
+@media (max-width: 768px) {
+    .task input[type="checkbox"]:checked:after {
+        font-size: 20px; /* Slightly smaller on mobile */
+        top: -3px;
+        left: 4px;
+    }
+}
+
+.task input[type="checkbox"]:focus {
+    outline: 2px solid #007BFF;
+    outline-offset: 2px;
+}
+
+/* ✅ Task Options - Same Functionality */
+.task-options {
+    position: absolute;
+    top: 0px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.task:hover .task-options {
+    visibility: visible;
+    opacity: 1;
+}
+
+.task-btn {
+    background: rgb(231, 231, 231);
+    border: 1px solid #ccc;
+    border-radius: 50% 50% 0 0;
+    width: 35px;
+    height: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+}
+
+.task-btn:hover {
+    background: #f0f0f0;
+    transform: scale(1.05);
+}
+
+.edit-btn {
+    color: rgba(77, 77, 255, 0.771);
+}
+
+.delete-btn {
+    color: #ff6b6b;
+}
+
+/* ✅ Mobile Task Options */
+@media (max-width: 768px) {
+    .task-options {
+        visibility: hidden;
+        opacity: 0;
+    }
+    
+    .task.long-pressed .task-options {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+/* ✅ Progress Bar */
+.progress-container {
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 10px;
+    min-height: 12px;
+    margin-top: 15px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    min-height: 12px;
+    background: #82db8c;
+    transition: width 0.3s ease;
+}
+
+/* ✅ Help Window */
+.complete-all-and-help-window-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.help-window {
+    background: rgba(125, 186, 255, 0.478);
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 100%;
+    padding: 10px;
+    z-index: 1;
+    display: none;
+    text-align: center;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    transition: opacity 0.2s ease;
+    opacity: 1;
+}
+
+.help-window h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.help-window p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ✅ Header - Same Design */
+.mini-cycle-header-row {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 16px 8px 16px; /* ✅ Fixed padding */
+    background: #5680ff; /* ✅ Solid color fallback */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0;
+    height: auto;
+    min-height: 55px;
+    z-index: 20;
+}
+
+/* ✅ IE11 and Older Browser Fallbacks */
+.mini-cycle-header-row {
+    display: -webkit-box;      /* Old iOS Safari, old Android */
+    display: -webkit-flex;     /* Safari 6.1+ */
+    display: -ms-flexbox;      /* IE 10 */
+    display: flex;             /* Modern browsers */
+    
+    /* ✅ Flexbox fallback for grid */
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    /* ✅ Remove grid properties for compatibility */
+    /* display: grid; */
+    /* grid-template-columns: 1fr auto; */
+}
+
+/* ✅ Mode Selector */
+.mode-selector-container {
+    justify-self: start;
+}
+
+.mode-selector {
+    position: relative;
+    background: rgba(0, 0, 0, 0.7);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    margin: 0;
+    padding: 5px 12px;
+    height: 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1;
+    font-size: 12px;
+    font-weight: bold;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    min-width: 110px;
+    outline: none;
+    text-align: center;
+}
+
+.mode-selector:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.mode-selector:focus {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.mode-selector option {
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    font-weight: bold;
+    border: none;
+}
+/* ✅ Header Branding - Desktop */
+.header-branding {
+    position: absolute;
+    left: 50%;
+    /* ✅ ES5 compatible transform */
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    
+    /* ✅ ES5 compatible flexbox */
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    gap: 4px;
+}
+
+.header-logo {
+    height: 25px;
+    width: auto;
+    border-radius: 6px;
+    z-index: 1;
+    -webkit-box-ordinal-group: 2;
+    -webkit-order: 1;
+    -ms-flex-order: 1;
+    order: 1;
+}
+
+/* ✅ Logo Glow Animation for Task Completion */
+@keyframes logoGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(40, 167, 69, 0);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(40, 167, 69, 0));
+  }
+  25% {
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.8);
+    filter: brightness(1.2) drop-shadow(0 0 15px rgba(40, 167, 69, 0.9));
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(40, 167, 69, 1);
+    filter: brightness(1.3) drop-shadow(0 0 20px rgba(40, 167, 69, 1));
+  }
+  75% {
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.8);
+    filter: brightness(1.2) drop-shadow(0 0 15px rgba(40, 167, 69, 0.9));
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(40, 167, 69, 0);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(40, 167, 69, 0));
+  }
+}
+
+/* ✅ Logo glow class */
+.header-logo.task-completed-glow {
+  animation: logoGlow 1s ease-in-out;
+}
+
+/* ✅ Dark mode version with brighter glow */
+body.dark-mode .header-logo.task-completed-glow {
+  animation: logoGlowDark 1s ease-in-out;
+}
+
+@keyframes logoGlowDark {
+  0% {
+    box-shadow: 0 0 0 rgba(76, 175, 80, 0);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(76, 175, 80, 0));
+  }
+  25% {
+    box-shadow: 0 0 25px rgba(76, 175, 80, 0.9);
+    filter: brightness(1.4) drop-shadow(0 0 20px rgba(76, 175, 80, 1));
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(76, 175, 80, 1);
+    filter: brightness(1.5) drop-shadow(0 0 25px rgba(76, 175, 80, 1));
+  }
+  75% {
+    box-shadow: 0 0 25px rgba(76, 175, 80, 0.9);
+    filter: brightness(1.4) drop-shadow(0 0 20px rgba(76, 175, 80, 1));
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(76, 175, 80, 0);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(76, 175, 80, 0));
+  }
+}
+
+/* ✅ Ensure logo has proper positioning for glow */
+.header-logo {
+  transition: all 0.1s ease;
+  position: relative;
+  z-index: 10;
+}
+
+/* ✅ Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .header-logo.task-completed-glow {
+    animation: logoGlowReduced 0.1s ease-in-out;
+  }
+  
+  @keyframes logoGlowReduced {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+}
+
+.app-name {
+    height: 35px;
+    width: auto;
+    z-index: 1;
+    -webkit-box-ordinal-group: 3;
+    -webkit-order: 2;
+    -ms-flex-order: 2;
+    order: 2;
+}
+
+/* ✅ Mobile Header - Logo centered to task-view */
+@media (max-width: 768px) {
+    .mini-cycle-header-row {
+        padding: 15px;
+        background: #5680ff;
+        border: none;
+        height: 60px;
+        position: relative; /* ✅ Add for absolute positioning */
+        
+        /* ✅ ES5 compatible flexbox as grid fallback */
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        display: grid; /* ✅ Modern browsers will use this */
+        
+        /* ✅ Grid properties for modern browsers */
+        grid-template-columns: 1fr auto;
+        grid-template-areas: "branding menu";
+        
+        /* ✅ Flexbox fallback for older browsers */
+        -webkit-box-pack: justify;
+        -webkit-justify-content: space-between;
+        -ms-flex-pack: justify;
+        justify-content: space-between;
+        
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        
+        gap: 6px;
+    }
+    
+    /* ✅ Logo centered to viewport (aligned with task-view below) */
+    .header-branding {
+        /* ✅ Override grid positioning for true center alignment */
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        
+        /* ✅ ES5 compatible transforms */
+        -webkit-transform: translate(-50%, -50%);
+        -ms-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+        
+        /* ✅ Remove grid area to use absolute positioning */
+        grid-area: unset;
+        justify-self: unset;
+        
+        /* ✅ ES5 compatible flexbox */
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        
+        gap: 4px;
+        z-index: 10; /* ✅ Ensure it's above other elements */
+    }
+    
+    /* ✅ Menu button stays on the right */
+    .menu-button {
+        grid-area: menu;
+        justify-self: end;
+        
+        /* ✅ Fallback positioning for older browsers */
+        position: absolute;
+        right: 0px;
+        top: 40%;
+        -webkit-transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+        transform: translateY(-50%);
+        
+        background-color: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.475);
+        color: white;
+        font-size: 15px;
+        flex-shrink: 0;
+        min-width: auto;
+        z-index: 10; /* ✅ Ensure it's clickable */
+        height: 40px;
+        padding: 10px;
+        width: auto ;
+    }
+    
+    /* ✅ Mode selector container - hidden but needs proper handling */
+    .mode-selector-container {
+        display: none;
+    }
+    
+    /* ✅ Mobile mode selector - positioned to not interfere */
+    .mobile-mode-selector-wrapper {
+        position: fixed;
+        top: 90px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 100;
+        
+        /* ✅ ES5 compatible flexbox */
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        
+        padding: 5px;
+        background: rgba(241, 241, 241, 0.5);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        z-index: 19;
+        min-height: 20px;
+    }
+    
+    .mobile-mode-selector-wrapper .mode-selector {
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+        border: 1px solid rgba(12, 33, 145, 0.25);
+        color: rgb(44, 50, 112);
+        border-radius: 5px;
+        padding: 3px 5px;
+        font-size: 12px;
+        width: 90%;
+        max-width: 130px;
+        height: 20px;
+        margin: 0 auto;
+            z-index: 100;
+    }
+    
+    /* ✅ Adjust logo sizes for mobile */
+    .header-logo {
+        height: 30px;
+    }
+    
+    .app-name {
+        height: 40px;
+    }
+}
+
+/* ✅ IE11 and older browser fallbacks */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    @media (max-width: 768px) {
+        .mini-cycle-header-row {
+            /* ✅ Block fallback for very old browsers */
+            display: block;
+            position: relative;
+            text-align: center;
+        }
+        
+        .header-branding {
+            position: relative;
+            left: auto;
+            top: auto;
+            -webkit-transform: none;
+            -ms-transform: none;
+            transform: none;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .menu-button {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            -webkit-transform: none;
+            -ms-transform: none;
+            transform: none;
+        }
+    }
+}
+/* ✅ Menu Container - Same Design */
+.menu-container {
+    font-size: 14px;
+    font-weight: bold;
+    background: #ccd7dd;
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 500;
+    min-width: 220px;
+    max-height: 600px;
+    border-radius: 8px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.menu-container.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ✅ Menu Header */
+.main-menu-header-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: none;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: -10px;
+    margin-left: -10px;
+}
+
+.main-menu-header-logo img {
+    width: 22px;
+    height: auto;
+    filter: brightness(1.1) contrast(1.1);
+}
+
+.main-menu-header {
+    flex-grow: 1;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    color: #081d3a;
+    margin-left: 8px;
+}
+
+#current-date {
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.6);
+    margin-left: 12px;
+    padding-right: 15px;
+}
+
+/* ✅ Menu Buttons */
+.main-menu-row {
+    display: flex;
+    justify-content: space-evenly;
+    border-top: 1px solid rgba(0, 0, 0, 0.374);
+}
+
+.menu-container ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+.menu-container ul li {
+    margin: 5px 0;
+}
+
+.menu-container ul li button {
+    padding: 5px 5px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.menu-container button i {
+    font-size: 20px;
+}
+
+.menu-container ul li button:hover {
+    background: #b4b5bb;
+    transform: scale(1.02);
+}
+
+#delete-all-mini-cycle-tasks i.fas {
+    color: #9d2a26;
+}
+
+#exit-mini-cycle i.fas {
+    color: #000000;
+}
+
+#exit-mini-cycle {
+    margin-top: 10px;
+    display: none;
+    justify-content: center;
+    background-color: rgb(189, 71, 71);
+    border: 1px solid rgba(0, 0, 0, 0.142);
+    gap: 10px;
+    width: 60%;
+    align-items: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ✅ Footer */
+#footer-container {
+    display: block;
+    position: fixed;
+    bottom: 8px;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-family: Arial, sans-serif;
+    z-index: 0;
+    width: 100%;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    display: inline;
+}
+
+.footer-links a {
+    color: white;
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+/* ✅ Navigation Dots */
+.navigation-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    position: absolute;
+    bottom: 35px;
+    width: 100%;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    background-color: #ccc;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.dot.active {
+    background-color: #007BFF;
+}
+
+
+/* ✅ Add these missing styles to the end of your CSS file */
+
+/* ✅ Screen Reader Only - Accessibility */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* ✅ CORRECTED Feedback Modal Overlay - Add this to replace existing */
+.feedback-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* ✅ Dark semi-transparent background */
+    display: flex; /* ✅ Change from 'none' when shown via JavaScript */
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1; /* ✅ Ensure it's visible */
+}
+
+/* ✅ Modal Content Container - Updated */
+.feedback-modal-content {
+    background: rgb(108, 108, 108);
+    border-radius: 12px;
+    padding: 25px;
+    max-width: 450px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    color: #ffffff; /* ✅ Ensure text is visible */
+}
+
+/* ✅ Ensure form elements are visible */
+#feedback-form {
+    display: block;
+    width: 100%;
+}
+
+#feedback-text {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    background: white;
+    color: #333;
+}
+
+input[name="email"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    background: white;
+    color: #333;
+}
+
+#submit-feedback {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: auto;
+    min-width: 120px;
+}
+
+/* ✅ Close button styling */
+.close-feedback-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.close-feedback-modal:hover {
+    color: #333;
+}
+
+/* ✅ Dark Mode Support */
+body.dark-mode .feedback-modal {
+    background: rgba(0, 0, 0, 0.8); /* ✅ Darker overlay in dark mode */
+}
+
+body.dark-mode .feedback-modal-content {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark-mode #feedback-text,
+body.dark-mode input[name="email"] {
+    background: #4a5568;
+    border-color: #718096;
+    color: #e2e8f0;
+}
+
+body.dark-mode .close-feedback-modal {
+    color: #a0aec0;
+}
+
+body.dark-mode .close-feedback-modal:hover {
+    color: #e2e8f0;
+}
+
+.feedback-modal .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.feedback-modal h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+    text-align: center;
+}
+
+.feedback-modal textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.feedback-modal textarea:focus {
+    border-color: #007bff;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#submit-feedback {
+    background: #007bff;
+    color: white;
+}
+
+#submit-feedback:hover {
+    background: #0056b3;
+}
+
+.close-feedback-modal {
+    background: #6c757d;
+    color: white;
+}
+
+.close-feedback-modal:hover {
+    background: #545b62;
+}
+
+/* ✅ Dark Mode for Feedback Modal */
+body.dark-mode .feedback-modal .modal-content {
+    background: #2e2e2e;
+    color: #f0f0f0;
+}
+
+body.dark-mode .feedback-modal h3 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .feedback-modal textarea {
+    background: #444;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .feedback-modal textarea:focus {
+    border-color: #007bff;
+}
+
+/* ✅ Back Button Styles */
+.back-button {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 15px;
+    transition: background 0.2s ease;
+}
+
+.back-button:hover {
+    background: #545b62;
+}
+
+body.dark-mode .back-button {
+    background: #495057;
+}
+
+body.dark-mode .back-button:hover {
+    background: #343a40;
+}
+
+/* ✅ Badge Container and Badges */
+.badge-container {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.badge-container h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: inherit;
+}
+
+.badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.badge.earned {
+    background: #28a745;
+    color: white;
+    border-color: #1e7e34;
+    transform: scale(1.1);
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+/* ✅ Dark Mode for Badges */
+body.dark-mode .badge {
+    background: #495057;
+    color: #f0f0f0;
+    border-color: #6c757d;
+}
+
+body.dark-mode .badge.earned {
+    background: #198754;
+    border-color: #146c43;
+}
+
+
+/* ✅ CORRECTED Badge Container and Badges */
+.badge-container {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.badge-container h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: inherit;
+}
+
+.badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+/* ✅ LOCKED state (default) */
+.badge.locked {
+    background: #e9ecef;
+    color: #6c757d;
+    border-color: #dee2e6;
+    opacity: 0.6;
+}
+
+/* ✅ UNLOCKED state (earned) */
+.badge.unlocked {
+    background: #28a745;
+    color: white;
+    border-color: #1e7e34;
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.4);
+}
+
+/* ✅ CELEBRATING animation */
+.badge.celebrating {
+    animation: badgeCelebrate 1s ease-in-out;
+}
+
+@keyframes badgeCelebrate {
+    0%, 100% { transform: scale(1.1) rotate(0deg); }
+    25% { transform: scale(1.3) rotate(-5deg); }
+    50% { transform: scale(1.4) rotate(5deg); }
+    75% { transform: scale(1.3) rotate(-3deg); }
+}
+
+/* ✅ CELEBRATED state (permanent after celebration) */
+.badge.celebrated {
+    background: #28a745;
+    color: white;
+    border-color: #1e7e34;
+    transform: scale(1.1);
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+.badge.unlocked:hover,
+.badge.celebrated:hover {
+    transform: scale(1.15);
+}
+
+/* ✅ Dark Mode for Badges */
+body.dark-mode .badge {
+    background: #495057;
+    color: #f0f0f0;
+    border-color: #6c757d;
+}
+
+body.dark-mode .badge.locked {
+    background: #343a40;
+    color: #6c757d;
+    border-color: #495057;
+}
+
+body.dark-mode .badge.unlocked,
+body.dark-mode .badge.celebrated {
+    background: #198754;
+    border-color: #146c43;
+    color: white;
+}
+
+/* ✅ Menu Close Button */
+.menu-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.menu-close-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+/* ✅ Stats Grid for Better Layout */
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.stats-grid p {
+    margin: 0;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+body.dark-mode .stats-grid p {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+    /* ✅ Quick Help Toggle Button */
+#quick-help-toggle {
+    position: fixed;
+    bottom: 30px;
+    left: 20px;
+    background: none;
+    color: white;
+    padding: 4px 6px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+/* ✅ Quick Dark Toggle Button */
+#quick-dark-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: none;
+    color: white;
+    padding: 4px 6px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 24px;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+#quick-dark-toggle:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+body.dark-mode #quick-dark-toggle {
+    background: none;
+    color: #f0f0f0;
+}
+
+body.dark-mode #quick-dark-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ✅ Navigation Dots as Buttons */
+.navigation-dots button.dot {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transition: all 0.2s ease;
+    padding: 0;
+    margin: 6px;
+}
+
+.navigation-dots button.dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: scale(1.2);
+}
+
+.navigation-dots button.dot.active {
+    background: #424242;
+    transform: scale(1.3);
+}
+
+.navigation-dots button.dot:focus {
+    outline: 2px solid #5f5f5f;
+    outline-offset: 2px;
+}           
+
+/* ✅ Slide Arrows as Buttons */
+button.slide-arrow {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+button.slide-arrow:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+button.slide-arrow:hover {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* ✅ Current Date Styling */
+.current-date {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: normal;
+}
+
+
+
+/* ✅ Missing Undo/Redo Button Styles */
+.undo-container {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: none;
+    
+    gap: 10px;
+}
+
+.undo-redo-btn {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: bold;
+}
+
+.undo-redo-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    -webkit-transform: scale(1.05);
+    -ms-transform: scale(1.05);
+    transform: scale(1.05);
+}
+
+.undo-redo-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.undo-redo-btn:disabled:hover {
+    background: rgba(0, 0, 0, 0.7);
+    -webkit-transform: none;
+    -ms-transform: none;
+    transform: none;
+}
+
+
+
+/* ✅ Dark mode for undo/redo */
+body.dark-mode .undo-redo-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: #f0f0f0;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+body.dark-mode .undo-redo-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ✅ Missing Edit Task Modal Styles */
+.edit-task-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    
+    z-index: 1000;
+}
+
+.edit-task-modal .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.edit-task-modal h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+    text-align: center;
+}
+
+.edit-task-modal input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.edit-task-modal input[type="text"]:focus {
+    border-color: #007bff;
+}
+
+.edit-modal-buttons {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    gap: 10px;
+    -webkit-box-pack: end;
+    -webkit-justify-content: flex-end;
+    -ms-flex-pack: end;
+    justify-content: flex-end;
+    
+    margin-top: 15px;
+}
+
+.edit-modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#save-edit {
+    background: #28a745;
+    color: white;
+}
+
+#save-edit:hover {
+    background: #218838;
+}
+
+#cancel-edit {
+    background: #6c757d;
+    color: white;
+}
+
+#cancel-edit:hover {
+    background: #545b62;
+}
+
+/* ✅ Dark mode for edit modal */
+body.dark-mode .edit-task-modal .modal-content {
+    background: #2e2e2e;
+    color: #f0f0f0;
+}
+
+body.dark-mode .edit-task-modal h3 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .edit-task-modal input[type="text"] {
+    background: #444;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .edit-task-modal input[type="text"]:focus {
+    border-color: #007bff;
+}
+
+/* ✅ Transform Prefixes for Better Compatibility */
+#task-view {
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+#task-view.hide {
+    -webkit-transform: translate(-200%, -50%);
+    -ms-transform: translate(-200%, -50%);
+    transform: translate(-200%, -50%);
+}
+
+#task-view.show {
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+.stats-panel {
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+#stats-panel.hide {
+    -webkit-transform: translate(200%, -50%);
+    -ms-transform: translate(200%, -50%);
+    transform: translate(200%, -50%);
+}
+
+
+/* ✅ Flexbox Fallbacks for Task Input */
+.task-input {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+}
+
+.task-input input[type="text"] {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+
+/* ✅ Complete All Container */
+.complete-all-and-help-window-container {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+/* ✅ Navigation Dots Container */
+.navigation-dots {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+}
+
+/* ✅ Badges Container */
+.badges {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    
+    -webkit-flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+}
+
+/* ✅ Stats Grid */
+.stats-grid {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+/* ✅ Modal Buttons */
+.modal-buttons,
+.edit-modal-buttons {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+/* ✅ Menu Container */
+.menu-container {
+    display: none; /* Hidden by default */
+}
+
+.menu-container.visible {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+.main-menu-header-row {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+.main-menu-row {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-pack: distribute;
+    -webkit-justify-content: space-evenly;
+    -ms-flex-pack: distribute;
+    justify-content: space-evenly;
+}
+
+.menu-container ul li button {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+#exit-mini-cycle {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: none;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+
+/* ✅ Try Full Version button styling */
+#try-full-version {
+    display: inline-flex;
+  color: rgb(0, 0, 0);
+ 
+  position: relative;
+  overflow: hidden;
+}
+
+#try-full-version::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+
+  transition: left 0.5s;
+}
+
+#try-full-version:hover::before,
+#try-full-version:focus::before {
+  left: 100%;
+}
+
+
+/* ✅ Dark mode support */
+.dark-mode #try-full-version {
+  background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+  border-color: #66BB6A;
+}
+
+.dark-mode #try-full-version:hover,
+.dark-mode #try-full-version:focus {
+  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+  box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+}
+
+/* ✅ Subtle animation for attention */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2); }
+  50% { box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4); }
+}
+
+
+/* ✅ Add this CSS to your miniCycle-lite-styles.css */
+
+/* ==========================================
+   📱 ENHANCED TASK OPTIONS SYSTEM
+   ========================================== */
+/* ✅ REPLACE the old .task-options section with this: */
+
+.task-options {
+    position: relative;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    gap: 5px;
+    /* ✅ Remove the old hover-based positioning */
+    position: static; /* Instead of absolute */
+    visibility: visible; /* Instead of hidden */
+    opacity: 1; /* Instead of 0 */
+    /* ✅ No more hover transitions */
+}
+
+/* ✅ REMOVE these old hover rules: */
+/*
+.task:hover .task-options {
+    visibility: visible;
+    opacity: 1;
+}
+*/
+
+/* ✅ Three dots trigger button */
+.three-dots-btn {
+    /*background: rgba(108, 117, 125, 0.15);*/
+    background: none;
+    /*border: 1px solid rgba(108, 117, 125, 0.25);*/
+    box-shadow: none;
+    border: none;   
+    color: #6c757d;
+    padding: 8px 10px;
+    /*border-radius: 6px;*/
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    height: 32px;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+}
+
+.three-dots-btn:hover {
+    background: rgba(108, 117, 125, 0.25);
+    border-color: rgba(108, 117, 125, 0.4);
+    color: #495057;
+    transform: scale(1.05);
+    border-radius: 1px;
+}
+
+
+
+.options-menu.hidden {
+    display: none;
+}
+
+
+.options-menu .task-btn:hover {
+    background: #f8f9fa;
+    color: #212529;
+}
+
+/* ✅ Specific button colors */
+.options-menu .move-btn {
+    color: #007bff;
+}
+
+.options-menu .move-btn:hover {
+    background: #e3f2fd;
+    color: #0056b3;
+}
+
+.options-menu .edit-btn {
+    color: #ffc107;
+}
+
+.options-menu .edit-btn:hover {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.options-menu .delete-btn {
+    color: #dc3545;
+}
+
+.options-menu .delete-btn:hover {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* ✅ UPDATED: Center the task container itself */
+.task-list-container {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    max-height: 600px;
+    min-height: 50px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 0 0 8px 8px;
+    padding: 10px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    flex: 1 1 auto;
+    
+    /* ✅ Center the tasks within the container */
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+/* ✅ UPDATED: Task list to center all tasks */
+.task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    max-width: 380px; /* ✅ Slightly smaller than container for centered look */
+    
+    /* ✅ Center the tasks */
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    gap: 8px; /* ✅ Consistent spacing between tasks */
+}
+
+/* ✅ UPDATED: Individual task centering */
+.task {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: row;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    
+    /* ✅ Full width but centered in container */
+    width: 100%;
+    max-width: 360px; /* ✅ Consistent task width */
+    
+    /* ✅ Centering within the list */
+    margin: 0 auto; /* ✅ Center horizontally */
+    padding: 3px 4px; /* ✅ Balanced padding */
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    color: #333;
+    position: relative;
+    transition: transform 0.2s ease;
+    
+    /* ✅ Prevent tasks from being too narrow */
+    min-height: 50px;
+    
+    /* ✅ Better visual spacing */
+    margin-bottom: 8px;
+}
+
+/* ✅ Task content - better balance */
+.task-content {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    gap: 12px; /* ✅ Slightly more space */
+    
+    /* ✅ Take up remaining space but leave room for options */
+    -webkit-box-flex: 1;
+    -webkit-flex: 1 1 0%;
+    -ms-flex: 1 1 0%;
+    flex: 1 1 0%;
+    
+    -webkit-box-ordinal-group: 2;
+    -webkit-order: 1;
+    -ms-flex-order: 1;
+    order: 1;
+    
+    /* ✅ Prevent text overflow */
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ✅ Task text - better centering */
+.task-text {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    
+    text-align: left; /* ✅ Keep text left-aligned for readability */
+    font-size: 16px;
+    word-wrap: break-word;
+    line-height: 1.4; /* ✅ Better line height */
+    
+    /* ✅ Prevent text overflow */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ✅ Checkbox positioning */
+.task input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 24px; /* ✅ Slightly larger */
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background-color: white;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    flex-shrink: 0; /* ✅ Prevent shrinking */
+    margin-right: 4px; /* ✅ Small margin for spacing */
+}
+
+/* ✅ Task options positioning */
+.task-options {
+    position: relative;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    gap: 5px;
+    
+    /* ✅ Right side positioning */
+    -webkit-box-ordinal-group: 3;
+    -webkit-order: 2;
+    -ms-flex-order: 2;
+    order: 2;
+    
+    visibility: visible;
+    opacity: 1;
+    flex-shrink: 0; /* ✅ Don't shrink the options */
+}
+
+/* ✅ Mobile responsive centering */
+@media (max-width: 768px) {
+    .task-list-container {
+        padding: 8px;
+        max-width: 100%;
+    }
+    
+    .task-list {
+        max-width: 95%;
+    }
+    
+    .task {
+        max-width: 100%;
+        padding: 10px 12px;
+        margin-bottom: 6px;
+    }
+    
+    .task-content {
+        gap: 10px;
+    }
+    
+    .task input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+/* ✅ Very small screens */
+@media (max-width: 480px) {
+    .task {
+        padding: 8px 10px;
+    }
+    
+    .task-text {
+        font-size: 15px;
+    }
+}
+
+/* ✅ Empty state centering */
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    max-width: 360px; /* ✅ Match task width */
+    margin: 0 auto;
+    background: rgba(73, 73, 73, 0.873);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-state-content h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-state-content p {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+/* ==========================================
+   🔥 HIGH PRIORITY TASK STYLING
+   ========================================== */
+
+/* ✅ High priority task styling */
+.task.high-priority {
+    border-left: 4px solid #dc3545; /* Red left border */
+    padding-left: 16px; /* Adjust padding to compensate for border */
+}
+
+/* ✅ Dark mode high priority */
+body.dark-mode .task.high-priority {
+    border-left-color: #ff6b6b;
+    background: linear-gradient(90deg, 
+        rgba(255, 107, 107, 0.1) 0%, 
+        rgba(46, 46, 46, 1) 15%
+    );
+}
+
+/* ✅ Priority button styling */
+.options-menu .priority-btn {
+    color: #6c757d; /* Default gray */
+}
+
+.options-menu .priority-btn:hover {
+    background: rgb(220, 53, 70);
+    color: #dc3545;
+}
+
+.options-menu .priority-btn.active {
+    color: #dc3545; /* Red when active */
+    background: rgba(220, 53, 70, 0.948);
+    font-weight: bold;
+}
+
+.options-menu .priority-btn.active:hover {
+    background: rgba(220, 53, 70, 0.946);
+    color: #c82333;
+}
+
+/* ✅ Dark mode priority button */
+body.dark-mode .options-menu .priority-btn {
+    color: #adb5bd;
+}
+
+body.dark-mode .options-menu .priority-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+body.dark-mode .options-menu .priority-btn.active {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.2);
+}
+
+/* ✅ High priority tasks appear slightly above others */
+.task.high-priority {
+    position: relative;
+    z-index: 2;
+    box-shadow: 0px 3px 8px rgba(220, 53, 69, 0.2);
+}
+
+body.dark-mode .task.high-priority {
+    box-shadow: 0px 3px 8px rgba(255, 107, 107, 0.3);
+}
+
+/* ✅ Animation for priority toggle */
+.task.high-priority {
+    animation: priorityPulse 0.5s ease-out;
+}
+
+@keyframes priorityPulse {
+    0% { 
+        border-left-width: 4px;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    50% { 
+        border-left-width: 6px;
+        box-shadow: 0px 4px 12px rgba(220, 53, 69, 0.4);
+    }
+    100% { 
+        border-left-width: 4px;
+        box-shadow: 0px 3px 8px rgba(220, 53, 69, 0.2);
+    }
+}
+
+/* ✅ Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .task.high-priority {
+        animation: none;
+    }
+}
+
+/* ✅ Enhanced focus styles for task buttons */
+.task-btn:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+  transform: scale(1.05);
+  z-index: 1001;
+}
+
+.task-btn:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.task-btn:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+  transform: scale(1.05);
+  z-index: 1001;
+}
+
+/* ✅ Specific colors for different button types */
+.move-btn:focus-visible {
+  outline-color: #28a745;
+  box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2);
+}
+
+.edit-btn:focus-visible {
+  outline-color: #ffc107;
+  box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.2);
+}
+
+.delete-btn:focus-visible {
+  outline-color: #dc3545;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2);
+}
+
+.priority-btn:focus-visible {
+  outline-color: #fd7e14;
+  box-shadow: 0 0 0 4px rgba(253, 126, 20, 0.2);
+}
+
+/* ✅ UPDATED: Fix task options button positioning to match full version */
+.options-menu {
+    position: absolute;
+    /* ✅ Position above the task like in full version */
+    bottom: 100%;
+    right: 10px;
+    margin-bottom: 8px; /* Space above the task */
+    
+    /* ✅ Remove white background to match full version */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 3000 !important;
+    
+    /* ✅ Horizontal layout */
+    min-width: auto;
+    width: auto;
+    white-space: nowrap;
+    padding: 0;
+    margin-right: 0;
+    
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    /* ✅ Horizontal direction */
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: row;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    
+    transition: all 0.2s ease;
+    opacity: 1;
+    
+    /* ✅ Align to the right edge like full version */
+    justify-content: flex-end;
+}
+
+/* ✅ UPDATED: Style buttons to match full version exactly */
+.options-menu .task-btn {
+    background: rgb(231, 231, 231);
+    border: 1px solid #ccc;
+    border-radius: 50% 50% 0 0; /* Top half-circle */
+    min-width: 30px;
+    min-height: 20px; /* Shorter height for half-circle effect */
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+     margin: 0 2px;
+     
+
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    
+
+}
+
+
+
+/* ✅ Button hover states to match full version */
+.options-menu .task-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* ✅ Specific button colors to match full version */
+.options-menu .move-btn:hover {
+    background: rgb(131, 191, 255);
+    color: #007bff;
+}
+
+.options-menu .edit-btn:hover {
+    background: rgb(255, 193, 7);
+    color: #ffc107;
+}
+
+.options-menu .delete-btn:hover {
+    background: rgb(220, 53, 70);
+    color: #dc3545;
+}
+
+
+
+/* ✅ Dark mode updates */
+body.dark-mode .options-menu {
+    background: #343a40;
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ✅ Alternative: If you want dropdown to extend RIGHT instead of LEFT 
+.options-menu.extend-right {
+    /* ✅ Uncomment this section if you prefer dropdown to extend to the right
+    /*
+    right: auto;
+    left: 100%;
+    margin-right: 0;
+    margin-left: 8px;
+    
+}*/
+
+
+/* ✅ Animation for horizontal menu */
+.options-menu:not(.hidden) {
+    animation: slideInLeft 0.2s ease;
+}
+
+
+
+/* ✅ Empty State Styles */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--card-background, #1381e7);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.empty-state-content {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state-title {
+  color: var(--text-primary, #333);
+  font-size: 24px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.empty-state-subtitle {
+  color: var(--text-secondary, #666);
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+
+.empty-state-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: var(--accent-background, #82b7d7);
+  border-radius: 8px;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.feature-icon {
+  font-size: 24px;
+}
+
+.feature-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary, #333);
+}
+
+.getting-started {
+  text-align: left;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--background-secondary, #86b1c3);
+  border-radius: 8px;
+
+}
+
+.getting-started h4 {
+  color: var(--text-primary, #333);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.getting-started h4::before {
+  content: "🚀";
+}
+
+.getting-started-steps {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.getting-started-steps li {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.mode-list {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.mode-list li {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-icon {
+  font-size: 16px;
+}
+
+.lite-version-info {
+  background: var(--info-background, #2a6690);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.lite-info-text {
+  margin: 0;
+  color: var(--text-secondary, #555);
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.info-icon {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.quick-tips {
+  text-align: left;
+  background: var(--tips-background, #f5f5f5);
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.quick-tips h4 {
+  color: var(--text-primary, #333);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-tips h4::before {
+  content: "💡";
+}
+
+.tips-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tips-list li {
+  margin-bottom: 8px;
+  color: var(--text-secondary, #666);
+  font-size: 14px;
+}
+
+/* ✅ Dark mode support */
+.dark-mode .empty-state {
+  background: var(--card-background-dark, #2a2a2a);
+}
+
+.dark-mode .empty-state-title {
+  color: var(--text-primary-dark, #fff);
+}
+
+.dark-mode .empty-state-subtitle {
+  color: var(--text-secondary-dark, #ccc);
+}
+
+.dark-mode .feature-text {
+  color: var(--text-primary-dark, #fff);
+}
+
+.dark-mode .getting-started {
+  background: var(--background-secondary-dark, #333);
+}
+
+.dark-mode .getting-started h4 {
+  color: var(--text-primary-dark, #fff);
+}
+
+.dark-mode .lite-info-text {
+  color: var(--text-secondary-dark, #bbb);
+}
+
+.dark-mode .quick-tips {
+  background: var(--tips-background-dark, #333);
+}
+
+.dark-mode .quick-tips h4 {
+  color: var(--text-primary-dark, #fff);
+}
+
+.dark-mode .tips-list li {
+  color: var(--text-secondary-dark, #bbb);
+}
+
+/* ✅ Mobile optimizations */
+@media (max-width: 600px) {
+  .empty-state {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+  
+  .empty-state-features {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .feature-text {
+    font-size: 11px;
+  }
+  
+  .getting-started,
+  .quick-tips {
+    padding: 16px;
+  }
+  
+  .getting-started-steps,
+  .tips-list {
+    padding-left: 16px;
+  }
+}
+
+/* ✅ Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
+
+
+
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(-50%) translateX(10px);
+        -ms-transform: translateY(-50%) translateX(10px);
+        transform: translateY(-50%) translateX(10px);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(-50%) translateX(0);
+        -ms-transform: translateY(-50%) translateX(0);
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+/* ✅ For mobile vertical animation */
+@media (max-width: 480px) {
+    .options-menu:not(.hidden) {
+        animation: slideInUp 0.2s ease;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            -webkit-transform: translateY(10px);
+            -ms-transform: translateY(10px);
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            -webkit-transform: translateY(0);
+            -ms-transform: translateY(0);
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Dark mode support */
+body.dark-mode .three-dots-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #adb5bd;
+}
+
+body.dark-mode .three-dots-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+
+body.dark-mode .options-menu {
+    background: #343a40;
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .options-menu .task-btn {
+    color: #adb5bd;
+}
+
+body.dark-mode .options-menu .task-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+body.dark-mode .options-menu .move-btn {
+    color: #66b3ff;
+}
+
+body.dark-mode .options-menu .move-btn:hover {
+    background: rgba(102, 179, 255, 0.2);
+}
+
+body.dark-mode .options-menu .edit-btn:hover {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+body.dark-mode .options-menu .delete-btn {
+    color: #ff6b6b;
+}
+
+body.dark-mode .options-menu .delete-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+}
+
+
+
+/* ✅ Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .undo-container {
+        bottom: 50px;
+    }
+    
+    .edit-modal-buttons,
+    .modal-buttons {
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: column;
+        -ms-flex-direction: column;
+        flex-direction: column;
+    }
+    
+    .edit-modal-buttons button,
+    .modal-buttons button {
+        width: 100%;
+        margin: 2px 0;
+    }
+}
+
+/* ✅ Very Old Browser Fallback (IE8-9) */
+.lt-ie10 .task-input {
+    display: block;
+}
+
+.lt-ie10 .task-input input[type="text"] {
+    width: 70%;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.lt-ie10 .task-input button {
+    width: 25%;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.lt-ie10 .task-content {
+    display: block;
+}
+
+.lt-ie10 .task-text {
+    display: inline-block;
+    width: 70%;
+    vertical-align: middle;
+}
+
+.lt-ie10 .task input[type="checkbox"] {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* ✅ Enhanced Animation Fallbacks */
+@media (prefers-reduced-motion: reduce) {
+    .task:hover {
+        -webkit-transform: none;
+        -ms-transform: none;
+        transform: none;
+    }
+    
+    .badge:hover,
+    .navigation-dots button.dot:hover,
+    .undo-redo-btn:hover {
+        -webkit-transform: none;
+        -ms-transform: none;
+        transform: none;
+    }
+}
+
+/* ✅ Enhanced Mobile Responsiveness */
+@media (max-width: 768px) {
+    #quick-dark-toggle {
+        bottom: 20px;
+        right: 15px;
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+    
+    .feedback-modal .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-buttons button {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .badges {
+        gap: 6px;
+    }
+    
+    .badge {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+}
+
+/* ✅ Very Small Screen Adjustments */
+@media (max-width: 480px) {
+    .feedback-modal .modal-content {
+        margin: 20px;
+        width: calc(100% - 40px);
+    }
+    
+    .stats-grid p {
+        font-size: 13px;
+        padding: 6px;
+    }
+    
+    .back-button {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+/* ==========================================
+   🎯 CUSTOM ACCESSIBILITY FOCUS STYLES
+   ========================================== */
+
+/* ✅ Option 1: Match your brand blue */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+.slide-arrow:focus,
+.dot:focus {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(86, 128, 255, 0.2);
+}
+
+/* ✅ Option 2: High contrast orange (great for accessibility) */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #ff6b35;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2);
+}
+
+/* ✅ Option 3: Green for positive actions */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #28a745;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2);
+}
+
+/* ✅ Option 4: Gradient focus (modern look) */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 
+    0 0 0 2px white,
+    0 0 0 4px #0026ff,
+    0 0 8px rgba(86, 128, 255, 0.3);
+}   
+
+/* ✅ Option 5: Dynamic based on context */
+/* Task-related elements */
+#taskInput:focus,
+#addTask:focus,
+.task-item button:focus {
+  outline: 2px solid #28a745; /* Green for tasks */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.15);
+}   
+
+/* Navigation elements */
+.slide-arrow:focus,
+.dot:focus,
+#menu-button:focus {
+  outline: 2px solid #fcfcfc; /* Brand blue for navigation */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(86, 128, 255, 0.15);
+}
+
+/* Dangerous actions */     
+#delete-all-mini-cycle-tasks:focus,
+#clear-mini-cycle-tasks:focus {
+  outline: 2px solid #dc3545; /* Red for destructive actions */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15);
+}
+
+
+/* ✅ Dark mode focus adjustments */
+body.dark-mode button:focus,
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+  outline: 2px solid #63b3ed; /* Lighter blue for dark backgrounds */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(99, 179, 237, 0.2);
+}
+/* ✅ High Contrast Mode Enhancements */
+@media (prefers-contrast: high) {
+    .badge {
+        border-width: 3px;
+    }
+    
+
+    
+    .feedback-modal .modal-content {
+        border: 2px solid #000;
+    }
+}
+
+
+
+/* ✅ Fallback Icon Support Enhancement */
+.fallback-icon {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    display: none;
+    width: 20px;
+    text-align: center;
+}
+
+/* ✅ When FontAwesome fails to load */
+.fa-failed .fallback-icon {
+    display: inline-block;
+}
+
+.fa-failed i.fas,
+.fa-failed i.far,
+.fa-failed i.fab {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .navigation-dots {
+        bottom: 25px;
+    }
+}
+
+/* ✅ Notifications - Simplified */
+#notification-container {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+}
+
+.lite-notification {
+    background: #323232;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.lite-notification.error {
+    background: #ff4d4d;
+}
+
+.lite-notification.success {
+    background: #28a745;
+}
+
+.lite-notification.info {
+    background: #007bff;
+}
+
+.lite-notification.warning {
+    background: #ffc107;
+    color: #000;
+}
+
+/* ✅ Simple Dark Mode */
+body.dark-mode {
+    background: #2a2a2a;
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+}
+
+body.dark-mode .task {
+    background: #2e2e2e;
+    color: #f0f0f0;
+    border: 1px solid #444;
+}
+
+body.dark-mode .task:hover {
+    background: #1f1f1f;
+}
+
+body.dark-mode .menu-container {
+    background: #828282;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+body.dark-mode .stats-panel {
+    background: rgba(50, 50, 50, 0.95);
+    color: #fff;
+}
+
+body.dark-mode .task-input {
+    background: #e4e4e4;
+}
+
+body.dark-mode .task-input input[type="text"] {
+    background: #dbdbdb;
+    color: #3b3b3b;
+}
+
+body.dark-mode .mini-cycle-title {
+    background-color: rgba(80, 80, 80, 0.8);
+    color: #f0f0f0;
+}
+
+body.dark-mode .task-list-container {
+    background: rgba(60, 60, 60, 0.3);
+}
+
+body.dark-mode .help-window {
+    background: rgba(60, 60, 80, 0.85);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .mini-cycle-header-row {
+    background: #2a2a2a;
+}
+
+body.dark-mode .mode-selector {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .menu-button {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .lite-notification {
+    background: #717076;
+    color: #fff;
+}
+
+body.dark-mode .lite-notification.success {
+    background: #2e7d32;
+}
+
+body.dark-mode .lite-notification.error {
+    background: #c62828;
+}
+
+/* ✅ Animation Keyframes - Essential Only */
+@keyframes liteComplete {
+    0% { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(0.8); 
+    }
+    50% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1.1); 
+    }
+    100% { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+}
+
+@keyframes slideInRight {
+    from { 
+        transform: translateX(100%); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+}
+
+/* ✅ Responsive Design */
+@media (max-width: 600px) {
+    .complete-all-and-help-window-container {
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+    
+    .help-window {
+        width: 100%;
+        max-width: 400px;
+        font-size: 13px;
+    }
+    
+    #notification-container {
+        width: calc(100vw - 20px);
+        max-width: 280px;
+        left: 10px;
+        right: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .task {
+        padding: 8px;
+        margin: 8px 0;
+    }
+    
+    .task-text {
+        font-size: 14px;
+    }
+    
+    .lite-complete-animation {
+        font-size: 36px;
+        padding: 12px 20px;
+    }
+    
+    .help-window {
+        font-size: 12px;
+        padding: 8px;
+    }
+}
+
+/* ✅ Print Styles */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .slide-arrow,
+    .menu-button,
+    #notification-container,
+    .navigation-dots {
+        display: none !important;
+    }
+}
+
+/* ✅ High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .task {
+        border: 2px solid #000;
+    }
+    
+    button {
+        border: 2px solid #000;
+    }
+    
+    .task input[type="checkbox"] {
+        border: 2px solid #000;
+    }
+}
+
+/* ✅ Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ✅ IE11 Specific Fixes */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    .task-input {
+        display: block; /* ✅ Flexbox fallback */
+    }
+    
+    .task-input input[type="text"] {
+        width: 70%;
+        display: inline-block;
+    }
+    
+    .task-input button {
+        width: 25%;
+        display: inline-block;
+    }
+    
+    #task-view {
+        position: absolute; /* ✅ Fixed fallback */
+    }
+}
+
+/* ==========================================
+   📱 MOBILE TASK OPTIONS SYSTEM
+   ========================================== */
+
+/* ✅ Mobile-specific task options styling */
+@media (max-width: 768px) {
+    
+    /* ✅ Mobile three dots button - larger touch target */
+    .three-dots-btn {
+        color: #6c757d;
+        padding: 12px 15px; /* ✅ Larger for touch */
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 18px; /* ✅ Larger dots */
+        font-weight: bold;
+        transition: all 0.2s ease;
+        min-width: 44px; /* ✅ iOS accessibility minimum */
+        min-height: 44px;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        
+        -webkit-box-pack: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+    }
+
+    .three-dots-btn:hover,
+    .three-dots-btn:active {
+        background: rgba(108, 117, 125, 0.4);
+        border-color: rgba(108, 117, 125, 0.5);
+        color: #495057;
+        transform: scale(1.05);
+    }
+
+
+    /* ✅ Mobile button hover/active states */
+    .options-menu .task-btn:hover,
+    .options-menu .task-btn:active {
+        background: rgba(255, 255, 255, 1);
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ✅ Mobile-specific button colors */
+    .options-menu .move-btn:hover,
+    .options-menu .move-btn:active {
+        background: rgba(0, 123, 255, 0.15);
+        color: #007bff;
+        border-color: rgba(0, 123, 255, 0.3);
+    }
+
+    .options-menu .edit-btn:hover,
+    .options-menu .edit-btn:active {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+        border-color: rgba(255, 193, 7, 0.3);
+    }
+
+    .options-menu .delete-btn:hover,
+    .options-menu .delete-btn:active {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+        border-color: rgba(220, 53, 69, 0.3);
+    }
+
+    .options-menu .priority-btn:hover,
+    .options-menu .priority-btn:active {
+        background: rgba(253, 126, 20, 0.15);
+        color: #fd7e14;
+        border-color: rgba(253, 126, 20, 0.3);
+    }
+
+    .options-menu .priority-btn.active {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border-color: rgba(220, 53, 69, 0.4);
+        font-weight: bold;
+    }
+
+    /* ✅ Mobile animation */
+    .options-menu:not(.hidden) {
+        animation: slideInLeftMobile 0.3s ease;
+    }
+
+    @keyframes slideInLeftMobile {
+        from {
+            opacity: 0;
+            -webkit-transform: translateY(-50%) translateX(20px);
+            -ms-transform: translateY(-50%) translateX(20px);
+            transform: translateY(-50%) translateX(20px);
+        }
+        to {
+            opacity: 1;
+            -webkit-transform: translateY(-50%) translateX(0);
+            -ms-transform: translateY(-50%) translateX(0);
+            transform: translateY(-50%) translateX(0);
+        }
+    }
+
+    /* ✅ Dark mode for mobile */
+    body.dark-mode .three-dots-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #adb5bd;
+    }
+
+    body.dark-mode .three-dots-btn:hover,
+    body.dark-mode .three-dots-btn:active {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #ffffff;
+    }
+
+    body.dark-mode .options-menu {
+        background: #343a40;
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .options-menu .task-btn {
+        background: rgba(73, 80, 87, 0.9);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #adb5bd;
+    }
+
+    body.dark-mode .options-menu .task-btn:hover,
+    body.dark-mode .options-menu .task-btn:active {
+        background: rgba(108, 117, 125, 1);
+        color: #ffffff;
+    }
+
+    body.dark-mode .options-menu .move-btn:hover,
+    body.dark-mode .options-menu .move-btn:active {
+        background: rgba(102, 179, 255, 0.3);
+        color: #66b3ff;
+    }
+
+    body.dark-mode .options-menu .edit-btn:hover,
+    body.dark-mode .options-menu .edit-btn:active {
+        background: rgba(255, 193, 7, 0.3);
+        color: #ffdb4d;
+    }
+
+    body.dark-mode .options-menu .delete-btn:hover,
+    body.dark-mode .options-menu .delete-btn:active {
+        background: rgba(255, 107, 107, 0.3);
+        color: #ff6b6b;
+    }
+
+    body.dark-mode .options-menu .priority-btn:hover,
+    body.dark-mode .options-menu .priority-btn:active {
+        background: rgba(255, 126, 20, 0.3);
+        color: #ff7e14;
+    }
+
+    body.dark-mode .options-menu .priority-btn.active {
+        background: rgba(255, 107, 107, 0.3);
+        color: #ff6b6b;
+        border-color: rgba(255, 107, 107, 0.5);
+    }
+}
+
+
+/* ✅ Touch-friendly focus states for mobile */
+@media (max-width: 768px) {
+    .three-dots-btn:focus {
+        outline: 3px solid rgba(86, 128, 255, 0.6);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 6px rgba(86, 128, 255, 0.2);
+    }
+
+    .options-menu .task-btn:focus {
+        outline: 3px solid rgba(86, 128, 255, 0.6);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 6px rgba(86, 128, 255, 0.2);
+    }
+}
+
+/* ✅ Mobile Input Overlay Styles */
+.mobile-input-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  
+  /* ✅ Smooth transitions */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mobile-input-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-input-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mobile-input-container {
+  background: var(--background-color, #fff);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  
+  /* ✅ Prevent content from being too small */
+  min-height: 200px;
+}
+
+.mobile-input-header {
+  background: var(--primary-color, #4c79ff);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-input-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mobile-cancel-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-cancel-btn:hover,
+.mobile-cancel-btn:focus {
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.mobile-input-form {
+  padding: 25px 20px;
+}
+
+#mobile-task-input {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+  
+  /* ✅ Prevent zoom on iOS */
+  font-size: 16px;
+  -webkit-appearance: none;
+  -webkit-border-radius: 8px;
+}
+
+#mobile-task-input:focus {
+  border-color: var(--primary-color, #4c79ff);
+  box-shadow: 0 0 0 3px rgba(76, 121, 255, 0.1);
+}
+
+.mobile-input-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mobile-add-btn {
+  background: var(--primary-color, #4c79ff);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 120px;
+}
+
+.mobile-add-btn:hover,
+.mobile-add-btn:focus {
+  background: var(--primary-hover-color, #3d5bff);
+  outline: none;
+}
+
+.mobile-add-btn:active {
+  transform: translateY(1px);
+}
+
+/* ✅ Body class when mobile input is active */
+body.mobile-input-active {
+  overflow: hidden !important;
+}
+
+/* ✅ Dark mode support for mobile overlay */
+body.dark-mode .mobile-input-container {
+  background: #2d2d2d;
+  color: #f0f0f0;
+}
+
+body.dark-mode .mobile-input-header {
+  background: #4c79ff;
+}
+
+body.dark-mode #mobile-task-input {
+  background: #404040;
+  color: #f0f0f0;
+  border-color: #666;
+}
+
+body.dark-mode #mobile-task-input:focus {
+  border-color: #4c79ff;
+  box-shadow: 0 0 0 3px rgba(76, 121, 255, 0.2);
+}
+
+
+/* ✅ UNIFIED Navigation Dots - Remove conflicts */
+.navigation-dots {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    
+    gap: 8px;
+    position: absolute;
+    bottom: 35px;
+    width: 100%;
+    z-index: 1;
+    pointer-events: auto;
+}
+
+/* ✅ SINGLE dot style that works for both divs and buttons */
+.navigation-dots .dot,
+.navigation-dots button.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    
+    /* ✅ Button-specific resets */
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 6px;
+    
+    /* ✅ Default inactive state */
+    background-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1);
+}
+
+/* ✅ Hover state */
+.navigation-dots .dot:hover,
+.navigation-dots button.dot:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    transform: scale(1.2);
+}
+
+/* ✅ SINGLE active state */
+.navigation-dots .dot.active,
+.navigation-dots button.dot.active {
+    background-color: #424242;
+    transform: scale(1.3);
+}
+
+/* ✅ Focus state for accessibility */
+.navigation-dots .dot:focus,
+.navigation-dots button.dot:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(66, 66, 66, 0.3);
+}
+
+/* ✅ Remove focus outline for mouse users */
+.navigation-dots .dot:focus:not(:focus-visible),
+.navigation-dots button.dot:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+/* ✅ Keep focus for keyboard users */
+.navigation-dots .dot:focus-visible,
+.navigation-dots button.dot:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(66, 66, 66, 0.3);
+}
+
+/* ✅ Mobile-specific adjustments */
+@media (max-width: 768px) {
+    .navigation-dots {
+        bottom: 25px;
+        gap: 10px; /* ✅ More space for touch targets */
+    }
+    
+    .navigation-dots .dot,
+    .navigation-dots button.dot {
+        
+        /* ✅ Ensure mobile visual feedback works */
+        transition: all 0.2s ease;
+    }
+    
+    /* ✅ MOBILE: Force the correct colors */
+    .navigation-dots .dot.active,
+    .navigation-dots button.dot.active {
+        background-color: #424242 !important;
+        transform: scale(1.3) !important;
+    }
+    
+    .navigation-dots .dot:not(.active),
+    .navigation-dots button.dot:not(.active) {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        transform: scale(1) !important;
+    }
+}
+
+/* ✅ Dark mode support */
+body.dark-mode .navigation-dots .dot,
+body.dark-mode .navigation-dots button.dot {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .navigation-dots .dot:hover,
+body.dark-mode .navigation-dots button.dot:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+body.dark-mode .navigation-dots .dot.active,
+body.dark-mode .navigation-dots button.dot.active {
+    background-color: #ffffff;
+}
+
+body.dark-mode .navigation-dots .dot:focus,
+body.dark-mode .navigation-dots button.dot:focus {
+    outline-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+

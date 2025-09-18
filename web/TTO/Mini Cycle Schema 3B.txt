@@ -1,0 +1,166 @@
+﻿{
+  id: "2a9c85b3-b9a5-4a2f-a9f8-1a1a9c5b3e9f",  // UUID v4
+  text: "Check air compressor",
+  completed: false,
+  dueDate: "2025-08-09T15:30:00.000Z",
+  highPriority: true,
+  remindersEnabled: true,
+
+
+  // 🔔 Reminder Settings (same as 3A)
+  reminderSettings: {
+    frequencyValue: 60,
+    frequencyUnit: "minutes",
+    startTime: null,
+    lastFired: null
+  },
+
+
+  // 🔄 Recurring Task Settings (same as 3A)
+  recurring: true,
+  recurringSettings: {
+    frequency: "daily",
+    interval: 1,
+    timeOfDay: "08:00",
+    timezone: "America/New_York",                // 🆕 Timezone for cross-device
+    
+    hourly: {
+      useSpecificMinute: false,
+      minute: 0
+    },
+    weekly: {
+      days: ["Monday", "Wednesday"]
+    },
+    monthly: {
+      days: [1, 15]
+    },
+    yearly: {
+      months: [1, 7],
+      daysByMonth: { "1": [1], "7": [15] },
+      useSpecificDays: true,
+      applyDaysToAll: false
+    },
+    
+    useSpecificTime: true,
+    nextRecurDueAt: "2025-08-08T14:00:00.000Z",
+    lastRecurTriggered: "2025-08-08T14:00:00.000Z"
+  },
+
+
+  // 🌐 Enhanced Metadata for Sync
+  metadata: {
+    createdAt: 1754536800696,
+    modifiedAt: 1754540000000,
+    lastSyncedAt: 1754539900000,                 // 🆕 Last sync timestamp
+    createdByDevice: "device-MJPhone2025",       // 🆕 Creating device
+    lastModifiedByDevice: "device-MJMacbook",    // 🆕 Last editing device
+    version: 3,                                  // 🆕 Incremented on each edit
+    conflictResolved: false,                     // 🆕 Conflict resolution flag
+    isDeleted: false,                            // 🆕 Soft delete support
+    isDirty: true                                // 🆕 Needs sync flag
+  },
+
+
+  schemaVersion: "3B"
+}
+
+
+
+
+
+
+
+{
+  id: "cycle-morning-checks-001",
+  name: "morning-checks",
+  title: "Morning Safety Checks",
+  tasks: [ /* array of task objects */ ],
+  
+  autoReset: true,
+  deleteCheckedTasks: false,
+  cycleCount: 11,
+  
+  // 🌐 Enhanced Metadata for Sync
+  metadata: {
+    createdAt: 1754536800696,
+    modifiedAt: 1754540000000,
+    lastSyncedAt: 1754539900000,                 // 🆕 Last sync timestamp
+    createdByDevice: "device-MJPhone2025",
+    lastModifiedByDevice: "device-MJMacbook",
+    version: 5,                                  // 🆕 Incremented on cycle changes
+    conflictResolved: false,
+    isDeleted: false,
+    isDirty: true,
+    
+    // 📊 Enhanced Analytics
+    totalTasksCompleted: 45,
+    averageCompletionTime: 1800,
+    syncedWith: ["device-MJMacbook"],            // 🆕 List of synced devices
+    lastAccessedByDevice: {                      // 🆕 Track device usage
+      "device-MJPhone2025": 1754540000000,
+      "device-MJMacbook": 1754539500000
+    }
+  },
+
+
+  schemaVersion: "3B"
+}
+
+
+
+
+
+
+
+
+{
+  deviceId: "device-MJPhone2025",                // 🆕 Structured device ID
+  deviceName: "MJ's iPhone",
+  registeredAt: "2025-08-01T07:55:00.000Z",
+  lastSynced: "2025-08-08T17:15:00.000Z",       // 🆕 Last sync timestamp
+  
+  // 🔗 Sync Configuration
+  syncSettings: {
+    isPrimary: true,                             // 🆕 Primary device flag
+    syncEnabled: true,                           // 🆕 Can be disabled
+    autoSync: true,                              // 🆕 Automatic vs manual sync
+    syncInterval: 300000,                        // 🆕 5 minutes in milliseconds
+    lastSyncAttempt: "2025-08-08T17:10:00.000Z"
+  },
+  
+  // 🔑 Sync Code Management (Primary Device Only)
+  syncCode: {
+    code: "ABC123",                              // 🆕 6-digit alphanumeric
+    expiresAt: "2025-08-08T18:00:00.000Z",      // 🆕 1-hour expiration
+    isActive: true,                              // 🆕 Can be invalidated
+    maxUses: 1,                                  // 🆕 Single-use codes
+    generatedAt: "2025-08-08T17:00:00.000Z"
+  },
+  
+  // 📱 Paired Devices
+  pairedDevices: [
+    {
+      deviceId: "device-MJMacbook",
+      deviceName: "MJ's MacBook Pro",
+      pairedAt: "2025-08-08T14:30:00.000Z",
+      lastSeen: "2025-08-08T17:15:00.000Z",
+      isActive: true,                            // 🆕 Can be unlinked
+      trustLevel: "full"                         // 🆕 "full" | "limited"
+    }
+  ],
+  
+  // Local preferences (same as 3A)
+  preferences: {
+    theme: "default",
+    darkMode: false,
+    notificationPosition: { x: 50, y: 50 },
+    defaultRecurringSettings: {
+      frequency: "daily",
+      indefinitely: true,
+      time: null
+    }
+  },
+
+
+  schemaVersion: "3B"
+}

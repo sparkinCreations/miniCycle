@@ -1,0 +1,107 @@
+SparkinCreations Business Plan (Dual Format)
+
+==================================================
+
+Part 1: Strategic Overview (External-Facing)
+--------------------------------------------------
+
+Mission Statement
+SparkinCreations builds useful tools and fun products that help people solve problems and contribute to the world.
+
+Official Website: sparkinCreations.com
+
+Vision & Core Values
+Vision:
+To grow into a recognized indie brand known for quality, creativity, and practical design, with a portfolio of apps that people can trust, enjoy, and rely on in everyday life.
+
+Core Values:
+- Practical Utility – every product should be genuinely useful
+- Creativity – unique approaches and thoughtful design are at the core
+- Contribute to the World – each app should have purpose and positive impact
+- Respect for Privacy – offline-first where it makes sense; data handled carefully when online
+- Accessibility – products should be approachable and easy to use
+
+Product Strategy – The Three Tiers
+
+Tier 1: miniCycle (Free)
+App Website: miniCycle.app
+- Lightweight, offline-first repeatable workflow tool.
+- Features: Auto-reset cycles, reminders, recurring scheduling, undo/redo, gamification, multi-cycle management.
+- Goal: Build trust, establish a user base, funnel into paid tier.
+
+Tier 2: Task Cycle (One-Time Paid)
+App Website: taskcycle.app
+- Powerful offline-first workflow system for individuals.
+- Features: Advanced task types (multiple-choice, true/false, counters); Subtasks with roll-up; Task comments/notes;
+  Task timing & analytics; Timeline, stopwatch & timer; Low-priority tagging.
+- Goal: Convert miniCycle power users into paid customers.
+
+Tier 3: Task Cycle Pro (Subscription)
+Access: Via taskcycle.app upon launch
+- Collaborative, online-first solution for teams.
+- Features: Cloud sync, collaboration tools, AI templates, analytics dashboards, shared reports.
+- Goal: Capture business and team users, expand recurring revenue.
+
+Go-To-Market Strategy
+- Soft launch: Family, friends, Reddit testers.
+- Official launch: Social media rollout, iOS/Android/Web release.
+- Marketing hook: Personal story — born from solving repetitive job workflows.
+- Branding: sparkinCreations.com, miniCycle.app, taskcycle.app.
+
+Long-Term Goals
+- Build 20+ apps, each solving distinct problems.
+- Transition from inspector/student → full-time indie developer.
+- Achieve sustainable revenue ($2k–$5k+/month).
+- Establish SparkinCreations as a trusted indie brand.
+- Leave a lasting portfolio of tools and fun products that contribute to the world.
+
+==================================================
+
+Part 2: Internal Playbook (For MJ’s Execution)
+--------------------------------------------------
+
+Financial Reality Check
+Revenue Targets (Monthly):
+- Year 1: $500–1,500 (Task Cycle early adopters).
+- Year 2: $2,000–5,000 (Task Cycle growth + some Pro subs).
+- Year 3: $5,000–10,000 (multiple products).
+
+Expenses:
+- Development tools: $200/year.
+- Marketing: $100/month (scalable).
+- Legal/business: $500/year.
+- Total: ~$2,000/year.
+
+Break-Even Math:
+- Task Cycle at $50: ~40 sales to cover $2,000/year.
+- Task Cycle Pro at $10/month: ~17 subs to cover $2,000/year.
+
+Success Metrics
+miniCycle: Retention, engagement, word-of-mouth.
+Task Cycle: Conversion, usage (task timing/analytics), satisfaction.
+Task Cycle Pro: Adoption, reliability, growth.
+Overall Business: Revenue diversification, brand recognition, user trust.
+
+Risk Scenarios & Responses
+- Low miniCycle adoption → Talk to users, iterate quickly.
+- Users won’t pay for Task Cycle → Adjust pricing/features.
+- Limited personal time → Keep products simple, iterate in steps.
+- Competitors copy concept → Focus on execution and polish.
+
+90-Day Action Plan
+Month 1: Ship miniCycle
+- Final testing, sparkinCreations.com live, launch to friends/family, feedback system.
+
+Month 2: Gather Feedback
+- 50 active users, document issues, build email list, Task Cycle planning.
+
+Month 3: Build Momentum
+- Public launch of miniCycle, share dev journey, begin Task Cycle dev, 200+ users.
+
+Principles for Success
+1. Ship early, ship often.
+2. Talk to users constantly.
+3. Focus on one thing at a time.
+4. Quality over quantity.
+5. Sustainable pace (marathon, not sprint).
+6. Always solve real problems.

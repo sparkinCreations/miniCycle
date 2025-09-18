@@ -1,0 +1,1524 @@
+ /* Global Styles */
+ body {
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    z-index:-2;
+}
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    background-color:#000;
+}
+
+/* Ensure the app respects iPhone Safe Areas */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}body {
+    background-size: cover;
+}
+
+app {
+    justify-content: flex-start;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    color: white;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  
+}
+
+#app-container {
+    position: relative;
+    width: 100vw;
+    overflow: hidden;
+    padding-top: 60px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#task-view {
+    position: fixed;
+    top: 50%;
+    margin: 5px;
+    left: 0; /* Default position (fully visible) */
+    transform: translate(0, -50%);
+    width: 100vw;
+    height: auto;
+    max-height: 90vh;
+    transition: left .4s ease-in-out; /* Smooth sliding */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* When hiding task view, slide it left (out of screen) */
+#task-view.hide {
+    left: -200%; /* Moves it completely off-screen */
+}
+
+/* When showing task view, bring it back */
+#task-view.show {
+    left: 0; /* Moves it back into view */
+}
+
+
+
+#stats-panel {
+    position: fixed; /* Changed from absolute to fixed */
+    top: 50%;
+    left: 100%;
+    transform: translate(-50%, -50%); /* Keeps it centered */
+    width: 80vw;
+    max-width: 400px;
+    height: auto;
+    max-height: 80vh;
+    color: black;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    transition: left .4s ease-in-out;
+    padding: 20px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50; /* Ensures it appears above everything */
+}
+
+/* When visible, animate it in */
+#stats-panel.show {
+    opacity: 1;
+    pointer-events: all; /* Allows interaction when visible */
+}
+
+/* When visible, slide it into view */
+#stats-panel.show {
+    left: calc(100% - 50vw); /* Moves the panel into view */
+}
+
+/* When hidden, slide it out of view */
+#stats-panel.hide {
+    left: 200%; /* Moves the panel out of view */
+   
+}
+
+
+
+
+
+
+/* General styling for slide arrows */
+.slide-arrow {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-60%);
+    font-size: 32px;
+    color: black;
+    font-weight: bold;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, opacity 0.3s;
+    opacity: -1; /* Hidden by default */
+    z-index: 2;
+}
+
+/* Show arrows on hover */
+.slide-arrow:hover {
+    background: rgba(188, 184, 184, 0.8);
+     opacity: 1;
+
+}
+
+/* Left arrow (for sliding task view out) */
+#slide-left {
+    left: 15%;
+}
+
+/* Right arrow (for sliding stats panel in) */
+#slide-right {
+    right: 15%;
+}
+
+/* Show arrows only on larger screens */
+@media (min-width: 768px) {
+    .slide-arrow {
+        opacity: 0; /* Make arrows visible on desktop */
+    }
+}
+/* Show arrows only on larger screens */
+@media (max-width: 768px) {
+    .slide-arrow {
+        opacity: -1; /* Make arrows visible on desktop */
+        pointer-events: none;
+    }
+
+#slide-left.show:hover {
+    opacity: -1;
+    pointer-events: none; /* Ensures it's clickable */
+}
+
+
+#slide-right.show:hover {
+    opacity: -1;
+    pointer-events: none;
+}
+
+    
+}
+
+/* Hide left arrow when task view is visible */
+#slide-left.hide {
+    opacity: 0;
+    pointer-events: none; /* Prevents accidental clicks */
+}
+
+/* Hide right arrow when stats panel is visible */
+#slide-right.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Show left arrow when stats panel is visible */
+#slide-left.show:hover {
+    opacity: 1;
+    pointer-events: all; /* Ensures it's clickable */
+}
+
+/* Show right arrow when task view is visible */
+#slide-right.show:hover {
+    opacity: 1;
+    pointer-events: all;
+}
+
+
+
+
+/* Task Input Section */
+.task-input {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    padding: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    margin-top: 50px;
+}
+
+input[type="text"] {
+    flex: 1;
+    background: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+}
+
+button {
+    background: #3e3d3d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #ff4d4d;
+}
+
+    /* Complete All Button */
+.complete-all-btn {
+    background: #00C851;
+    margin-top: 10px;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  
+}
+
+.complete-all-btn:hover {
+    background: #009c41;
+}
+
+
+/* Animation for fading out */
+@keyframes fadeOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+
+
+
+
+
+
+
+.mini-cycle-title {
+    position: sticky;
+    font-family: 'Inter', sans-serif;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    color: rgba(43, 43, 43, 0.783);
+    background: none;
+    background-color: rgba(255, 255, 255, 0.4); /* Solid background to separate it from tasks */
+    padding: 8px;
+    border: none;
+    outline: none;
+    cursor: text;
+    top: 0;
+    border-radius: 8px 8px 0 0; /* Rounded only on top corners */
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%; /* Adjust width dynamically */
+    max-width: 404px;
+    z-index:10;
+}
+
+
+/* When the user clicks to edit */
+#mini-cycle-title:focus {
+    background: rgba(255, 255, 255, 0.2); /* Subtle background highlight */
+    color: #f8f8f8; /* Slightly brighter text */
+    border-bottom: 2px solid #ffffff; /* Add subtle underline effect */
+}
+
+
+/* Task List Container */
+.task-list-container {
+max-width: 400px;
+width: 100%;
+max-height: 290px;/* Set a fixed height */
+overflow-y: auto; /* Enable vertical scrolling */
+background: rgba(255, 255, 255, 0.2);
+border-radius: 0 0 8px 8px; /* Rounded only on top corners */
+padding: 10px;
+box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+
+
+
+}
+.task-list-container::-webkit-scrollbar {
+width: 8px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+background-color: rgba(255, 255, 255, 0.6);
+border-radius: 10px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+background: rgba(255, 255, 255, 0.1);
+}
+
+/* Task List */
+.task-list {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+
+/* Hide scrollbar on WebKit browsers */
+.task-list-container::-webkit-scrollbar {
+width: 6px;
+}
+
+.task-list-container::-webkit-scrollbar-thumb {
+background-color: rgba(255, 255, 255, 0.4);
+border-radius: 10px;
+}
+
+.task-list-container::-webkit-scrollbar-track {
+background: transparent;
+}
+
+.task {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    color: #333;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.3s;
+    position: relative;
+    transition: all 0.3s ease; /* Normal transition */
+}
+
+.task:hover {
+    transform: scale(1.02);
+    background: #f8f9fa;
+}
+
+.task input {
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.task span {
+flex: 1;
+text-align: left;
+font-size: 16px;
+max-width: calc(100% - 180px);
+white-space: pre-wrap;
+word-wrap: break-word; 
+margin-right: 150px;
+}
+
+
+
+.action-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+
+/* Hide default checkbox */
+.task input[type="checkbox"] {
+appearance: none;
+width: 22px;
+height: 22px;
+aspect-ratio: 1/1;  /* Ensures a perfect circle */
+border-radius: 50%;
+border: 2px solid #ccc;
+background-color: white;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+outline: none;
+box-sizing: border-box; /* Prevents unwanted resizing */
+transition: all 0.3s ease;
+}
+
+/* Hover Effect */
+.task input[type="checkbox"]:hover {
+border-color: #40af4d;
+}
+
+/* Checked State */
+.task input[type="checkbox"]:checked {
+background-color: #5db567;
+border-color: #40af4d;
+}
+
+/* Add a checkmark */
+.task input[type="checkbox"]::after {
+content: "✔";
+font-size: 28px;
+color: rgb(18, 70, 9);
+font-weight: bold;
+display: none;
+position: relative;
+top: -5px; /* Adjust to move up */
+left: 2px;
+}
+
+/* Show checkmark when checked */
+.task input[type="checkbox"]:checked::after {
+display: block;
+}
+
+
+.rename-btn { color: #ffa502; } /* Rename - Orange */
+.rename-btn:hover { color: #ff7f00; }
+
+.delete-btn { color: #ff6b6b; } /* Delete - Red */
+.delete-btn:hover { color: #ff4d4d; }
+
+/* Progress Bar */
+.progress-container {
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border-radius: 10px;
+    min-height: 12px;
+    margin-top: 15px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    min-height: 12px;
+    background: #82db8c;
+    transition: width 0.3s ease-in-out;
+}
+
+/* Ensure the message has a fixed space but stays hidden when not displayed */
+#cycleMessage {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 15px;
+    height: 24px; /* ✅ Ensures the space remains even when hidden */
+    visibility: hidden; /* ✅ Hides message without removing space */
+    opacity: 0; /* Smooth fade effect */
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+
+#app_name img{
+width: 170px;
+padding: 6px;
+
+border-radius: 5px;
+}
+
+/* Ensure the header stays visible */
+.title-container {
+    position: fixed;
+    top: 10px;
+    left: 0;
+    width: 100%;
+    height: 60px; /* Adjust if needed */
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: env(safe-area-inset-top); /* Fix for iPhones */
+}
+
+.title-text {
+color: rgb(255, 255, 255);
+display: flex;
+flex-direction: column; /* Stack "Task Cycle" and tagline */
+align-items: center; /* Center both */
+}
+
+.tagline {
+font-size: 11px;
+color: white;
+margin-top: 2px; /* Adjust spacing between title and tagline */
+font-weight: bold;
+background-color: #000000;
+padding: 3px 22px;
+border-radius: 10px;
+}
+
+.logo img {
+width: 38px;
+height: auto;
+border-radius: 50%;
+}
+
+.task.dragging {
+    opacity: 0.7;
+    background-color: #d3d3d3;
+    transform: scale(1.05);
+    transition: none;
+}
+
+.task-list .task-placeholder {
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 2px dashed #ccc;
+    margin: 6px 0;
+}
+
+
+
+
+/* Menu Styles */
+.menu-button {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #000;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    z-index:20;
+}
+
+.menu-button:hover {
+    background: #333;
+}
+
+.menu-container {
+    font-size: 14px;
+    font-weight: bold;
+    background: #ccd7ddfb; /* Sleek dark background */
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    z-index:2000;
+    min-width: 220px; /* ✅ Fixed width */
+    max-height: 600px; /* ✅ Prevents it from expanding */
+    border-radius: 8px; /* ✅ Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* ✅ Soft shadow */
+    overflow-y: auto; /* ✅ Enables scrolling if content is too long */
+    flex-shrink: 0; /* ✅ Prevents it from shrinking */
+
+}
+/* Show the menu */
+.menu-container.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* 📌 Menu Header */
+.main-menu-header-row {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: none;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: -10px;
+    margin-left: -10px;
+}
+
+/* 📌 Logo */
+.main-menu-header-logo img {
+    width: 22px;
+    height: auto;
+    filter: brightness(1.1) contrast(1.1);
+   
+}
+
+/* 📌 Mini Cycle Title */
+.main-menu-header {
+    flex-grow: 1;  /* ⬅️ Pushes the title to take remaining space */
+    text-align: left;  /* ⬅️ Keeps text aligned to the left */
+    font-size: 18px;
+    font-weight: 600;
+    color: #081d3ace;
+    margin-left: 8px;  /* ⬅️ Adds space between the logo and title */
+}
+
+/* 📌 Separator */
+.main-menu-header-row::after {
+    content: "";
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    /*margin-top: 5px;*/
+}
+
+/* 📌 Date Styling */
+#current-date {
+    font-size: 14px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.6); /* ⬅️ Slightly muted */
+    margin-left: 12px; /* ⬅️ Adds spacing between title and date */
+    padding-right: 15px;
+}
+
+
+
+
+
+/* 📌 Align checkbox and text properly */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 30px; /* Space between checkbox and text */
+    padding: 5px 10px;
+    margin-left: 5px;
+}
+
+/* 📌 Custom checkbox */
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #424242;
+    cursor: pointer;
+}
+
+/* Hide default checkbox */
+.custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* 📌 Custom checkmark */
+.custom-checkbox .checkmark {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    margin-right: 8px;
+    transition: background 0.2s ease;
+}
+
+/* 📌 Checked state */
+.custom-checkbox input:checked + .checkmark {
+    background-color: #4CAF50; /* Green when checked */
+    border-color: #000000;
+    position: relative;
+}
+
+/* 📌 Checkmark tick */
+.custom-checkbox input:checked + .checkmark::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: -1px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+input:checked + .slider {
+    background-color: #40af4d;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+.main-menu-row {
+    display:flex;
+    justify-content: flex-start;
+    justify-content: space-evenly;
+
+    border-top: 1px solid rgba(0, 0, 0, 0.374);
+  
+}
+
+
+
+/* Menu List */
+.menu-container ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+.menu-container ul li {
+    margin: 5px 0;
+}
+
+/* Menu Buttons */
+.menu-container ul li button {
+   
+    padding: 5px 5px;
+    font-size:   12px;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    display: flex;
+    align-items: center;
+    flex-direction: column; 
+    gap: 1px;
+}
+
+.menu-container button i {
+    font-size: 20px;
+}
+
+.menu-container ul li button:hover {
+    background: #b4b5bb;
+    transform: scale(1.02);
+}
+
+
+/* 📌 Special Buttons */
+#delete-all-mini-cycle-tasks i.fas {
+    color: #9d2a26; /* Red */
+}
+
+#exit-mini-cycle i.fas {
+    color: #000000; /* Blue */
+}
+#exit-mini-cycle {
+   margin-top: 10px;
+   display: flex;
+   justify-content: center;
+   background-color: rgb(189, 71, 71);
+   border: 1px solid rgba(0, 0, 0, 0.142);
+   gap:10px;
+   width: 60%;
+   align-items: center;
+   margin-left: auto;
+   margin-right: auto;
+  
+}
+
+#export-mini-cycle {
+   margin-left: 0;
+}
+.divider-vertical{
+
+    border: 1px dashed rgba(0, 0, 0, 0.183);
+}
+
+
+.main-menu-controls-container{
+    padding: 10px;
+    border-top: 2px solid rgba(0, 0, 0, 0.167);
+}
+
+
+
+
+/* 📌 Auto Reset Toggle */
+#deleteCheckedTasksContainer,
+#toggleAutoReset {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 10px 0;
+    color: white;
+}
+
+
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.402);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 11.5px;
+    width: 11.5px;
+    left: 1px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+
+input:checked + .slider {
+    background-color: #28a745;
+}
+
+input:checked + .slider:before {
+    transform: translateX(14px);
+}
+
+
+/* Aligns toggle switches and text side by side */
+.toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Ensures even spacing */
+    gap: 10px; /* Space between toggle and label */
+    width: 100%; /* Makes sure it takes the full available width */
+    max-width: 300px; /* Optional: Adjust width as needed */
+   
+}
+
+/* 📌 Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 17px;
+    
+}
+
+
+/* Consistent label styling */
+.label-text {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #424242;
+    white-space: nowrap; /* Prevents text wrapping */
+    flex-grow: 1; /* Makes the text take up remaining space */
+    text-align: left; /* Aligns text properly */
+}
+
+
+
+.menu-container-footer {
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+
+
+
+
+.mini-cycle-switch-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+/* 🏷️ Modal Content Box */
+.mini-cycle-switch-modal-content {
+    background: rgb(237, 239, 246);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    min-width: 300px;
+    max-width: 400px;
+    text-align: center;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* 🎯 Mini Cycle Switch Title */
+.mini-cycle-switch-title {
+    font-size: 1.3rem; /* ⬅️ Reduced for compact view */
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+/* 🎯 Mini Cycle Switch Title */
+.mini-cycle-switch-title-logo {
+    font-weight: bold;
+    margin-bottom: -30px;
+
+}
+.mini-cycle-switch-title-logo img {
+    width: 22px;
+    padding: 3px;
+    margin-left: -300px;
+}
+
+/* 📜 Scrollable Mini Cycle List */
+.mini-cycle-switch-list {
+    max-height: 240px; /* ⬅️ Smaller max height */
+    overflow-y: auto;
+    border: 1px solid #767676;
+    padding: 6px; /* ⬅️ Reduced padding */
+    background: white;
+    text-align: left;
+    border-radius: 5px;
+}
+
+/* 🔘 Mini Cycle Selection Buttons (Smaller) */
+.mini-cycle-switch-item {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 3px; /* ⬅️ Reduced spacing */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: none;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    text-align: left;
+    border-radius: 3px;
+    font-size: 0.9rem; /* ⬅️ Slightly smaller font */
+}
+
+.mini-cycle-switch-item:hover {
+    background: #ddd;
+}
+
+/* ✅ Selected Mini Cycle */
+.mini-cycle-switch-item.selected {
+    background: #0056b3;
+    color: white;
+    font-weight: bold;
+}
+
+/* 🎯 Switch Items Row (Initially Hidden) */
+.switch-items-row {
+    display: none; /* ✅ Now hidden by default */
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+
+/* 📌 Preview Box */
+.switch-preview-window {
+    position: relative;
+    margin: 10px auto;
+    width: 150px;
+    height: auto;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 5px;
+    color: #3A3A3A;
+    font-size: 0.9rem;
+    text-align: left;
+    overflow-y: auto;
+    max-height: 70px; /* ✅ Limit height */
+}
+
+/* 🎯 Style for Preview Tasks */
+.preview-task {
+    font-size: 0.85rem;
+    padding: 3px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.preview-task:last-child {
+    border-bottom: none;
+}
+
+
+
+
+
+
+
+
+
+
+/* 🎛️ Edit/Delete Buttons */
+.switch-buttons {
+    color: rgb(0, 0, 0);
+    margin-left: 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background 0.2s ease-in-out, transform 0.1s;
+    font-size: 18px;
+}
+
+
+.switch-buttons:hover {
+    background-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+/* 🏁 Open & Cancel Buttons (Bigger) */
+.mini-cycle-switch-btn {
+    width: 90px; /* ✅ Bigger */
+    padding: 7px;
+    font-size: 1.1rem;
+    margin: 5px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: opacity 0.2s ease-in-out, transform 0.1s;
+}
+
+.mini-cycle-switch-btn:hover {
+    opacity: 0.8;
+}
+
+.mini-cycle-switch-btn:active {
+    transform: scale(0.98);
+}
+
+/* ❌ Cancel Button */
+.mini-cycle-switch-btn.cancel-btn {
+    background: #ff4d4d;
+    color: white;
+}
+
+/* 🎭 Responsive Adjustments */
+@media (max-width: 480px) {
+    .mini-cycle-switch-modal-content {
+        width: 85%;
+        padding: 12px;
+    }
+
+    .mini-cycle-switch-title {
+        font-size: 1.2rem;
+    }
+
+    .mini-cycle-switch-btn {
+        width: 90px;
+        padding: 8px;
+    }
+}
+
+
+
+
+
+
+.mini-cycle-milestone {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 25px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeInOut 3s ease-in-out;
+    z-index: 20;
+}
+
+/* Animation for fade-in and fade-out */
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -30%); }
+    10% { opacity: 1; transform: translate(-50%, -50%); }
+    90% { opacity: 1; transform: translate(-50%, -50%); }
+    100% { opacity: 0; transform: translate(-50%, -70%); }
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Footer Styling */
+#footer-container {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-family: 'Poppins', sans-serif;
+    z-index:0;
+    width:100%;
+ 
+    
+
+    
+}
+
+/* Copyright Text */
+#copyright {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    
+}
+
+/* Hover Effect */
+#footer-container:hover #copyright {
+    opacity: 1; /* Make it fully visible on hover */
+}
+
+
+
+
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Settings Modal (Overlay) */
+.settings-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Settings Modal Content */
+.settings-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 300px;
+}
+
+/* Settings Buttons */
+.settings-btn {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Factory Reset (Danger Button) */
+.factory-reset-btn {
+    background: #ff4d4d;
+    color: white;
+}
+
+.settings-btn:hover {
+    opacity: 0.8;
+}
+
+/* Close Button */
+.close-btn {
+    background: gray;
+    color: white;
+}
+
+
+/* Feedback Modal Styling */
+.feedback-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content */
+.feedback-modal-content {
+    background: rgb(203, 203, 203);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+}
+
+/* Close Button */
+.close-feedback-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Textarea Styling */
+#feedback-text {
+    width: 90%;
+    height: 100px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    resize: none;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+/* Submit Button */
+#submit-feedback {
+    background: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s ease-in-out;
+}
+
+#submit-feedback:hover {
+    background: #0056b3;
+}
+/* About Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+/* Modal Content */
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+}
+
+/* Close Button */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* About Section Links */
+.modal-content a {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.modal-content a:hover {
+    text-decoration: underline;
+}
+
+
+/* Lowkey About Button */
+.open-about-modal {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    color: rgba(0, 0, 0, 0.6); /* Subtle muted text */
+    border: none;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color 0.3s ease-in-out, background 0.3s ease-in-out;
+}
+
+/* Icon Styling */
+.open-about-modal i.fas {
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.5); /* Muted icon */
+    transition: color 0.3s ease-in-out;
+
+}
+
+/* Hover Effect */
+.open-about-modal:hover {
+    color: black;
+    background: rgba(0, 0, 0, 0.05); /* Light background */
+}
+
+.open-about-modal:hover i {
+    color: black;
+}
+
+
+/* ✅ Task Buttons (Initially Hidden) */
+.task-options {
+    position: absolute;
+    top: -20px; /* Move above the task */
+    left: 70%;
+    transform: translateX(-50%);
+    display:flex;
+    gap: 5px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+   
+}
+
+/* ✅ Show Buttons on Hover or Long Press */
+.task:hover .task-options,
+.task:active .task-options {
+    visibility: visible;
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+
+  .task:hover .task-options,
+.task:active .task-options,
+.task:hover .task-btn,
+.task:active .task-btn {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+}
+
+
+.task-btn,
+.move-btn {
+    background: rgb(231, 231, 231);
+    border: 1px solid #ccc;
+    border-radius: 50% 50% 0 0; /* Top half-circle */
+    width: 35px;
+    height: 25px; /* Shorter height for half-circle effect */
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ✅ Icon color set to black */
+.task-btn svg,
+.task-btn  {
+    color: black; /* Ensures the icon color is black */
+    font-size: 16px;
+}
+
+.priority-btn {
+    color:red;
+
+}
+.edit-btn {
+color: blue;
+}
+
+/* ✅ Button hover effect */
+.task-btn:hover {
+    background: #f0f0f0;
+    transform: scale(1.05);
+}
+
+
+/* ✅ High Priority Styling */
+.high-priority {
+    border-left: 5px solid red;
+}
+
+/* ✅ Task Dragging Effect */
+.dragging {
+    opacity: 0.7;
+    background-color: #e0e0e0;
+    transform: scale(1.05);
+    transition: none;
+}
+
+/* Prevent scrolling past the last task */
+#taskList {
+    overscroll-behavior: contain;
+    touch-action: pan-y; /* Allows normal vertical scrolling */
+}
+.task-options {
+    visibility: hidden;
+    opacity: 0;
+   
+}
+
+.task:hover .task-options {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ✅ Ensure long-pressed tasks show options */
+.task.long-pressed .task-options {
+    display:flex;
+    visibility: visible ;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.overdue-task {
+    background-color: rgba(255, 0, 0, 0.2); /* Light red */
+    border-left: 4px solid red;
+}

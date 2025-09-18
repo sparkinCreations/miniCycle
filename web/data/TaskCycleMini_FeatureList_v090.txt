@@ -1,0 +1,65 @@
+Task Cycle: Mini – Feature List (v0.9.0)
+==================================================
+
+📝 Core Task Cycle System
+1. Mini Cycle Lists – Named task lists that reset when complete.
+2. Auto Reset + Manual Reset – Reset automatically or only when you choose.
+3. “Cycle Complete” Animation – Celebratory toast and reset logic.
+4. Delete Checked Tasks on Complete – Optional setting to wipe checked tasks after completing a cycle.
+5. Clear All Tasks (Reset State) – Resets all tasks to incomplete without completing the cycle.
+6. Delete All Tasks – One-tap delete for all tasks in the list.
+
+✅ Task Features
+7. Task Checkmarks – Tap to complete with smooth animation.
+8. High Priority Tasks – Visually emphasize important items.
+9. Reminders System – Per-task reminders when enabled.
+10. Due Dates – Displayed when reminders are on.
+11. Recurring Tasks – Full support for recurring patterns.
+
+🔁 Recurring Task Options
+12. Daily, Weekly, Monthly, Yearly Recurrence
+13. Specific Day(s) and Time – Fine-grained scheduling.
+14. Specific Date(s) – Add exact custom dates.
+15. Recurring Summary Preview – Friendly summary shown on task selection.
+16. Advanced Recurring Panel – Toggle days/months/time settings.
+17. 24-hour Time Format Toggle
+
+📊 Stats & Progress
+18. Progress Bar – Visual track of how close you are.
+19. Stats Panel – Task totals, completion rates, cycle count.
+20. Cycle Count Tracking – Persistent storage of how many times you’ve completed a list.
+21. Milestone Badges – Celebrate 5, 25, 50, 75, and 100 cycles.
+
+🎮 Gamification & Fun
+22. Theme Unlocks – Unlock Dark Ocean, Golden Glow, and more.
+23. Task Game: Whack-a-Order – Secret mini-game at 100 cycles 😄
+
+🎨 UI Personalization
+24. Theme Settings Panel – Apply unlocked looks.
+25. Dark Mode Toggle
+26. Mobile-Optimized Layout
+27. Touch vs. Mouse Detection
+
+📁 Save & Manage Cycles
+28. Save As / Rename Mini Cycle
+29. Switch Between Saved Cycles
+30. Import / Export Mini Cycles (.mcyc files)
+31. Backup / Restore All Mini Cycles
+
+🛠️ Settings & Utility Tools
+32. Reminder Settings Panel – Toggle globally or per task.
+33. Factory Reset – Clear everything with one click.
+34. Reset Notification Position – Fix misplaced popups.
+35. Reset Onboarding – Replay intro tips.
+
+📚 Info & Help
+36. User Manual – In-app HTML help doc with guidance.
+37. About Section – Shows app name, version, credits.
+38. Feedback Form Modal – Submit bug reports or praise.
+
+🌐 Tech Features
+39. Offline-First – No account or connection needed.
+40. Accessibility Tags – Better support for screen readers.
+41. Clean, Polished UI – Nice spacing, hovers, and animations.
+
+Feature Total: 41 🎉

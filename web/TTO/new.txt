@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Task Cycle | Mini Cycle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="miniCycle-styles.css">
+
+</head>
+<body>
+
+    <button class="menu-button">☰</button>
+    <div class="menu-container">
+        <div id="main-menu-header-row" class="main-menu-header-row">
+            <div class="main-menu-header-logo">
+                <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" />
+            </div> 
+            <div id="main-menu-header" class="main-menu-header">
+                <span id="main-menu-mini-cycle-title"></span>  <!-- Mini Cycle Title -->
+                <span id="current-date"></span>  <!-- Date will be inserted here -->
+            </div>
+             <!-- About Section Trigger -->
+             <button id="open-about-modal" class="open-about-modal">
+                <i class="fas fa-info-circle"></i>
+            </button>
+           
+        </div>
+
+            <!-- About Modal -->
+            <div id="about-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>About Mini Cycle</h2>
+                    <p><strong>Version:</strong> 1.0</p>
+                    <p>Mini Cycle is a lightweight task manager designed for quick and easy task tracking.</p>
+                    <p>Developed by <strong>Sparkin Creations</strong>.</p>
+                    <p>Visit <a href="https://sparkincreations.com" target="_blank">our website</a> for updates!</p>
+                </div>
+            </div>
+
+        <div class="menu-buttons-together">
+        <ul>
+            <div class="main-menu-row">
+            <li><button id="new-mini-cycle"><i class="fas fa-plus"></i>Create<br>New</button></li>
+            <li><button id="open-mini-cycle"><i class="fas fa-folder-open"></i>Open</button></li>
+            <li><button id="save-as-mini-cycle"><i class="fas fa-copy"></i>Create<br>New Copy</button></li>
+            </div>
+            <div class="main-menu-row">
+            <li><button id="export-mini-cycle"><i class="fas fa-file-download"></i>Download <br> Mini Cycle</button></li>
+            <li><button id="import-mini-cycle"><i class="fas fa-file-upload"></i> Import <br> Mini Cycle</button></li>
+          <div class="divider-vertical"></div>
+            <li><button id="clear-mini-cycle-tasks"><i class="fas fa-eraser"></i> Clear <br> All Tasks</button></li>
+            <li><button id="delete-all-mini-cycle-tasks"><i class="fas fa-trash"></i> Delete <br> All Tasks</button></li>
+            </div>
+            <div class="main-menu-row">
+              
+                <li><button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Send <br> Feedback</button></li>
+                <li><button id="open-user-manual" class="open-user-manual"><i class="fas fa-book"></i>User Manual</button></li>
+                <li><button id="open-settings" class="open-settings"><i class="fas fa-cog"></i>Settings</button></li>
+                </div>
+           </ul>
+        </div>
+        <div class="main-menu-controls-container">
+           <div class="toggle-container">
+            <label class="switch">
+                <input type="checkbox" id="toggleAutoReset">
+                <span class="slider round"></span>
+            </label>
+            <span class="label-text">Auto Reset</span>
+        </div>
+        
+        <div class="checkbox-container" id="deleteCheckedTasksContainer" style="display: none;">
+            <label class="custom-checkbox">
+                <input type="checkbox" id="deleteCheckedTasks">
+                <span class="checkmark"></span>
+                Delete Checked Tasks after Complete
+            </label>
+        </div>
+    </div>
+    
+    <button id="exit-mini-cycle"><i class="fas fa-sign-out-alt"></i> Exit Mini Cycle</button>
+        
+    </div>
+
+
+    <!-- Settings Modal -->
+<div class="settings-modal">
+    <div class="settings-modal-content">
+        <h2>Settings</h2>
+
+        <label class="settings-option">
+            <input type="checkbox" id="toggle-move-arrows">
+            Show Move Arrows for Manual Rearranging
+        </label>
+        
+
+        <!-- Backup & Restore -->
+        <button id="backup-mini-cycles" class="settings-btn">📥 Backup All Mini Cycles</button>
+        <button id="restore-mini-cycles" class="settings-btn">📤 Restore All Mini Cycles</button>
+
+        <!-- Factory Reset -->
+        <button id="factory-reset" class="settings-btn factory-reset-btn">⚠️ Factory Reset</button>
+
+        <!-- Close Button -->
+        <button id="close-settings" class="settings-btn close-btn">❌ Close</button>
+    </div>
+</div>
+
+
+
+
+
+<!-- Mini Cycle Switch Modal -->
+<div class="mini-cycle-switch-modal">
+    <div class="mini-cycle-switch-modal-content">
+        <div class="mini-cycle-switch-title-logo"><img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" /></div>
+        <div class="mini-cycle-switch-title">Open Mini Cycle</div>
+        <!-- ✅ Scrollable list instead of input -->
+        <div class="mini-cycle-switch-list" id="miniCycleList"></div>
+        <div id="switch-items-row" class="switch-items-row">
+            <button id="switch-rename" class="switch-rename switch-buttons"><i class="fas fa-edit"></i></button>
+            <button id="switch-delete" class="switch-delete switch-buttons"><i class="fas fa-trash"></i></button>
+            <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
+        </div>
+
+        <div>
+            <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn">Open</button>
+            <button id="miniCycleSwitchCancel" class="mini-cycle-switch-btn cancel-btn">Cancel</button>
+        </div>
+        <div>
+            <button id="miniCycleUpload" class="mini-cycle-upload-btn"><i class="fas fa-file-upload"></i> Import From External </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Feedback Modal -->
+<div id="feedback-modal" class="feedback-modal">
+    <div class="feedback-modal-content">
+        <span class="close-feedback-modal">&times;</span>
+        <h2>Provide Feedback</h2>
+        <p>We appreciate your feedback! Let us know how we can improve Mini Cycle.</p>
+        <textarea id="feedback-text" placeholder="Write your feedback here..."></textarea>
+        <button id="submit-feedback">Submit</button>
+    </div>
+</div>
+
+
+
+
+
+
+    
+    
+<app>
+ 
+
+    <h1 class="title-container">
+    
+        <div class="title-text">
+            <a href="#home" class="logo">
+                <img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" />
+            </a>
+            <logo id="app_name">
+                <img src="assets/images/logo/App_Name_tp_bw.png" alt="App Name" />
+              </logo>   
+            <div class="tagline">Mini Cycle | To-Do List  </div>
+        </div>
+    </h1>
+<!-- Task List & Stats Wrapper -->
+<div id="app-container">
+    <!-- Left Arrow for Task View -->
+<div id="slide-left" class="slide-arrow">❯</div>
+
+<!-- Right Arrow for Stats Panel -->
+<div id="slide-right" class="slide-arrow">❮</div>
+
+    <div id="task-view">
+        <div class="task-input">
+            <input type="text" id="taskInput" placeholder="Enter a task...">
+            <button id="addTask">Add</button>
+        </div>
+        <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
+        <div class="task-list-container">
+           
+            <!--Tasks will go here--> 
+            <ul id="taskList" class="task-list"></ul>
+        </div>
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <button id="completeAll" class="complete-all-btn">Complete</button>
+        <p id="cycleMessage">✅ Cycle Complete! Tasks reset.</p>
+    </div>
+
+    <!-- Stats Panel (Initially Hidden) -->
+    <div id="stats-panel">
+        <h2>📊 Stats</h2>
+        <p><strong>Total Tasks:</strong> <span id="total-tasks">0</span></p>
+        <p><strong>Completed Tasks:</strong> <span id="completed-tasks">0</span></p>
+        <p><strong>Completion Rate:</strong> <span id="completion-rate">0%</span></p>
+        <p><strong>Mini Cycles Completed:</strong> <span id="mini-cycle-count">0</span></p> <!-- ✅ New Line -->
+        <div class="progress-container">
+            <div id="stats-progress-bar" class="progress-bar"></div>
+        </div>
+    </div>
+    
+</div>
+
+    
+    </app>
+<div>
+    <footer id="footer-container">
+        <p id="copyright">
+          © 2025 Sparkin Creations
+        </p>
+        </footer>
+</div>
+
+
+    <script src="miniCycle-scripts.js"></script>
+</body>
+</html>
+

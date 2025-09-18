@@ -1,0 +1,218 @@
+{
+  "name": "Field Equipment Check Rotation",
+  "tasks": [
+    {
+      "id": "d2ad413c-c0ed-46d3-8cdd-5a27c64851bd",
+      "text": "Pressure gauge check",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "daily",
+        "useSpecificTime": false,
+        "time": null,
+        "recurIndefinitely": true,
+        "recurCount": null,
+        "daily": {},
+        "weekly": {
+          "useSpecificDays": false,
+          "days": []
+        },
+        "biweekly": {
+          "useSpecificDays": false,
+          "days": []
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": []
+        },
+        "yearly": {
+          "useSpecificMonths": false,
+          "months": [],
+          "useSpecificDays": false,
+          "daysByMonth": {},
+          "applyDaysToAll": true
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        }
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "c3f88718-4f38-4acc-a9b1-f12f777f275c",
+      "text": "Daily battery inspection",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "daily",
+        "useSpecificTime": false,
+        "time": null,
+        "recurIndefinitely": true,
+        "recurCount": null,
+        "daily": {},
+        "weekly": {
+          "useSpecificDays": false,
+          "days": []
+        },
+        "biweekly": {
+          "useSpecificDays": false,
+          "days": []
+        },
+        "monthly": {
+          "useSpecificDays": false,
+          "days": []
+        },
+        "yearly": {
+          "useSpecificMonths": false,
+          "months": [],
+          "useSpecificDays": false,
+          "daysByMonth": {},
+          "applyDaysToAll": true
+        },
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        }
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "e4984381-19de-4e10-b6a7-747847918252",
+      "text": "Weekly antenna sweep",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "weekly",
+        "indefinitely": true,
+        "count": null,
+        "time": null,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": [
+            "Monday"
+          ]
+        },
+        "biweekly": {
+          "days": []
+        },
+        "monthly": {
+          "days": []
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "07c6c1e6-c486-4ab9-84bb-fb0f21583e03",
+      "text": "Monthly firmware update",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "monthly",
+        "indefinitely": true,
+        "count": null,
+        "time": null,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "days": []
+        },
+        "monthly": {
+          "days": [
+            15
+          ]
+        },
+        "yearly": {
+          "months": [],
+          "useSpecificDays": false,
+          "applyDaysToAll": true,
+          "daysByMonth": {}
+        }
+      },
+      "schemaVersion": 2
+    },
+    {
+      "id": "44d2e8dc-5557-4b30-8622-6dc5d4164884",
+      "text": "Yearly license audit",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "yearly",
+        "indefinitely": true,
+        "count": null,
+        "time": null,
+        "specificDates": {
+          "enabled": false,
+          "dates": []
+        },
+        "hourly": {
+          "useSpecificMinute": false,
+          "minute": 0
+        },
+        "weekly": {
+          "days": []
+        },
+        "biweekly": {
+          "days": []
+        },
+        "monthly": {
+          "days": []
+        },
+        "yearly": {
+          "months": [
+            1
+          ],
+          "useSpecificDays": true,
+          "applyDaysToAll": false,
+          "daysByMonth": {
+            "1": [
+              10
+            ]
+          }
+        }
+      },
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": true,
+  "title": "New Mini Cycle"
+}

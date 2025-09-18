@@ -1,0 +1,110 @@
+// Add a simple global flag at the top with your other variables
+let swipeBlocked = false;
+
+// Update all your swipe event listeners to check this flag first:
+
+// Touch events
+document.addEventListener("touchstart", (event) => {
+    if (isDraggingNotification || swipeBlocked) return; // ✅ Add swipeBlocked check
+    
+    startX = event.touches[0].clientX;
+    isSwiping = true;
+});
+
+document.addEventListener("touchmove", (event) => {
+    if (!isSwiping || isDraggingNotification || swipeBlocked) return; // ✅ Add swipeBlocked check
+    
+    let moveX = event.touches[0].clientX;
+    let difference = startX - moveX;
+
+    if (difference > 50 && !isStatsVisible) {
+        isStatsVisible = true;
+        showStatsPanel();
+        isSwiping = false;
+    }
+
+    if (difference < -50 && isStatsVisible) {
+        isStatsVisible = false;
+        showTaskView();
+        isSwiping = false;
+    }
+});
+
+// Wheel events
+document.addEventListener("wheel", (event) => {
+    if (swipeBlocked) return; // ✅ Add swipeBlocked check
+
+    // Only handle horizontal scrolling
+    if (Math.abs(event.deltaX) < 10) return;
+    
+    // ...rest of your wheel code
+});
+
+// Mouse drag events
+document.addEventListener("mousedown", (event) => {
+    if (swipeBlocked) return; // ✅ Add swipeBlocked check
+
+    // ✅ SIMPLIFIED: Only exclude interactive elements, allow drag from everywhere else
+    if (
+        isDraggingNotification ||
+        event.target.closest("button, input, select, textarea, .task-options, .notification, a[href]") ||
+        event.target.tagName === "BUTTON" ||
+        event.target.tagName === "INPUT" ||
+        event.target.tagName === "SELECT" ||
+        event.target.tagName === "TEXTAREA"
+    ) {
+        return;
+    }
+
+    // ✅ Allow drag from anywhere on the main content areas
+    isMouseDragging = false;
+    mouseStartX = event.clientX;
+    
+    // Add temporary visual feedback
+    document.body.style.userSelect = "none";
+});
+
+// Now update your menu button click handler:
+safeAddEventListener(menuButton, "click", (event) => {
+    event.stopPropagation();
+    syncCurrentSettingsToStorage();
+    saveToggleAutoReset();
+    menu.classList.toggle("visible");
+
+    if (menu.classList.contains("visible")) {
+        swipeBlocked = true; // ✅ Block swiping when menu opens
+        document.addEventListener("click", closeMenuOnClickOutside);
+    } else {
+        swipeBlocked = false; // ✅ Re-enable swiping when menu closes
+    }
+});
+
+// Update your closeMainMenu function:
+function closeMainMenu() {
+    if (menu) { 
+        menu.classList.remove("visible");
+        swipeBlocked = false; // ✅ Re-enable swiping when menu closes manually
+    }
+}
+
+// Update your closeMenuOnClickOutside function:
+function closeMenuOnClickOutside(event) {
+    if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
+        menu.classList.remove("visible");
+        swipeBlocked = false; // ✅ Re-enable swiping when clicking outside
+        document.removeEventListener("click", closeMenuOnClickOutside);
+    }
+}
+
+// For other modals, you can do the same pattern:
+// When opening any modal:
+function openAnyModal() {
+    swipeBlocked = true;
+    // ...show modal code
+}
+
+// When closing any modal:
+function closeAnyModal() {
+    swipeBlocked = false;
+    // ...hide modal code
+}

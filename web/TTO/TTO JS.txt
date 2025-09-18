@@ -1,0 +1,1431 @@
+
+
+function DragAndDrop(taskElement) {
+    taskElement.setAttribute("draggable", "true");
+
+     // Prevent text selection on mobile
+     taskElement.style.userSelect = "none";
+     taskElement.style.webkitUserSelect = "none";
+     taskElement.style.msUserSelect = "none";
+    
+ 
+
+    // Desktop Dragging
+    taskElement.addEventListener("dragstart", (event) => {
+        draggedTask = taskElement;
+        event.dataTransfer.effectAllowed = "move";
+        setTimeout(() => taskElement.classList.add("dragging"), 0);
+    });
+
+    taskElement.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        handleRearrange(event.target);
+    });
+
+    taskElement.addEventListener("drop", () => {
+        saveTasks();
+    });
+
+    taskElement.addEventListener("dragend", () => {
+        draggedTask.classList.remove("dragging");
+        draggedTask = null;
+    });
+
+    // ✅ Mobile Touch Support with Hold Delay
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let holdTimeout = null;
+
+    taskElement.addEventListener("touchstart", (event) => {
+        touchStartY = event.touches[0].clientY;
+        
+        holdTimeout = setTimeout(() => {
+            draggedTask = taskElement;
+            taskElement.classList.add("dragging");
+        }, 300); // 300ms hold time before drag starts
+    });
+
+    taskElement.addEventListener("touchmove", (event) => {
+        if (!draggedTask) return;
+        event.preventDefault();
+        touchEndY = event.touches[0].clientY;
+        const movingTask = document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY);
+        handleRearrange(movingTask);
+    });
+
+    taskElement.addEventListener("touchend", () => {
+        clearTimeout(holdTimeout);
+        if (draggedTask) {
+            draggedTask.classList.remove("dragging");
+            draggedTask = null;
+            saveTasks();
+        }
+    });
+}
+
+// Helper function for rearranging tasks
+function handleRearrange(target) {
+    if (!target) return; // ✅ Prevents errors if `target` is null
+    const draggingOver = target.closest(".task");
+
+    if (draggingOver && draggingOver !== draggedTask) {
+        const bounding = draggingOver.getBoundingClientRect();
+        const offset = touchEndY - bounding.top;
+        const parent = taskList;
+        
+        if (offset > bounding.height / 2) {
+            parent.insertBefore(draggedTask, draggingOver.nextSibling);
+        } else {
+            parent.insertBefore(draggedTask, draggingOver);
+        }
+    }
+}
+
+
+
+function saveTasks() {
+    const miniCycleTasks = [...taskList.children].map(task => ({
+        text: task.querySelector("span").textContent,
+        completed: task.querySelector("input").checked
+    }));
+
+    try {
+        localStorage.setItem("miniCycleTasks", JSON.stringify(miniCycleTasks));
+        console.log("Tasks saved successfully:", miniCycleTasks);
+    } catch (error) {
+        console.error("Error saving tasks:", error);
+    }
+}
+
+
+function loadTasks() {
+    const savedTasks = localStorage.getItem("miniCycleTasks");
+    
+    // ✅ Prevent errors if no data exists
+    if (!savedTasks) {
+        console.warn("No saved tasks found in localStorage.");
+        return;
+    }
+
+    try {
+        const parsedTasks = JSON.parse(savedTasks);
+        if (!Array.isArray(parsedTasks)) throw new Error("Invalid task data");
+
+        taskList.innerHTML = ""; // Clear tasks before loading
+
+        parsedTasks.forEach(task => addTask(task.text, task.completed, false));
+
+        updateProgressBar();
+        checkCompleteAllButton();
+    } catch (error) {
+        console.error("Error loading tasks:", error);
+        localStorage.removeItem("miniCycleTasks"); // Clear corrupted data
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Mini Cycle
+let draggedTask = null;
+let logoTimeoutId = null;
+let touchStartY = 0;
+let touchEndY = 0;
+let holdTimeout = null;
+let touchStartTime = 0;
+let isLongPress = false;
+
+
+document.addEventListener('DOMContentLoaded', (event) => {
+ 
+
+
+const taskInput = document.getElementById("taskInput");
+const addTaskButton = document.getElementById("addTask");
+const taskList = document.getElementById("taskList");
+const cycleMessage = document.getElementById("cycleMessage");
+const progressBar = document.getElementById("progressBar");
+const completeAllButton = document.getElementById("completeAll");
+const toggleAutoReset = document.getElementById("toggleAutoReset");
+const TASK_LIMIT = 50; 
+
+
+
+
+
+// Run functions on page load
+    loadMiniCycleFromLocalStorage();
+    initializeMiniCycle();  
+    setupMenu();
+    checkFirstTimeUse();
+    loadAutoReset();
+    updateStatsPanel(); 
+    loadTasks();
+    taskInput.focus();
+
+
+document.getElementById("taskList").addEventListener("input", saveMiniCycleToLocalStorage);
+document.getElementById("toggleAutoReset").addEventListener("change", saveMiniCycleToLocalStorage);
+
+
+function initializeMiniCycle() {
+    let miniCycleFileName = localStorage.getItem("miniCycleFileName");
+
+    if (!miniCycleFileName) {
+        miniCycleFileName = prompt("Enter a name for your Mini Cycle:");
+        if (!miniCycleFileName || miniCycleFileName.trim() === "") {
+            miniCycleFileName = "My Mini Cycle"; // Default name if empty
+        }
+
+        localStorage.setItem("miniCycleFileName", miniCycleFileName);
+    }
+
+    let savedTitle = localStorage.getItem("miniCycleTitle") || miniCycleFileName; // Use file name as default title
+    document.getElementById("mini-cycle-title").textContent = savedTitle;
+}
+
+function saveTasks() {
+    const miniCycleFileName = localStorage.getItem("miniCycleFileName") || "My Mini Cycle";
+    const miniCycleTasks = [...document.getElementById("taskList").children].map(task => ({
+        text: task.querySelector("span").textContent,
+        completed: task.querySelector("input").checked
+    }));
+
+    try {
+        const savedMiniCycles = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+        savedMiniCycles[miniCycleFileName] = miniCycleTasks;
+
+        localStorage.setItem("miniCycleStorage", JSON.stringify(savedMiniCycles));
+        console.log(`Tasks saved successfully under '${miniCycleFileName}':`, miniCycleTasks);
+    } catch (error) {
+        console.error("Error saving tasks:", error);
+    }
+}
+
+
+
+
+function loadTasks() {
+
+    const savedTasks = localStorage.getItem("miniCycleTasks");
+    
+    // ✅ Prevent errors if no data exists
+    if (!savedTasks) {
+        console.warn("No saved tasks found in localStorage.");
+        return;
+    }
+
+    try {
+        const parsedTasks = JSON.parse(savedTasks);
+        if (!Array.isArray(parsedTasks)) throw new Error("Invalid task data");
+
+        taskList.innerHTML = ""; // Clear tasks before loading
+
+        parsedTasks.forEach(task => addTask(task.text, task.completed, false));
+
+        updateProgressBar();
+        checkCompleteAllButton();
+    } catch (error) {
+        console.error("Error loading tasks:", error);
+        localStorage.removeItem("miniCycleTasks"); // Clear corrupted data
+    }
+}
+
+
+function saveMiniCycleToLocalStorage() {
+    const miniCycleName = localStorage.getItem("miniCycleFileName") || "My Mini Cycle"; // ✅ Get active cycle name
+    const miniCycleTasks = [...document.querySelectorAll("#taskList .task")].map(task => ({
+        text: task.querySelector("span").textContent,
+        completed: task.querySelector("input[type='checkbox']").checked
+    }));
+
+    const savedMiniCycles = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+    
+    // ✅ Store tasks under the correct Mini Cycle name
+    savedMiniCycles[miniCycleName] = miniCycleTasks;
+
+    try {
+        localStorage.setItem("miniCycleStorage", JSON.stringify(savedMiniCycles));
+        console.log(`✅ Mini Cycle "${miniCycleName}" saved successfully:`, miniCycleTasks);
+    } catch (error) {
+        console.error("❌ Error saving Mini Cycle:", error);
+    }
+}
+
+
+
+console.log(localStorage.getItem("miniCycleStorage"));
+
+
+
+
+function loadMiniCycleFromLocalStorage() {
+    const savedMiniCycles = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+
+    // ✅ Get the active Mini Cycle name
+    const miniCycleName = localStorage.getItem("miniCycleFileName") || "My Mini Cycle";
+
+    if (!savedMiniCycles[miniCycleName]) {
+        console.warn(`⚠ No saved tasks found for "${miniCycleName}".`);
+        return;
+    }
+
+    try {
+        const tasks = savedMiniCycles[miniCycleName]; // ✅ Load tasks under the correct cycle name
+
+        if (!Array.isArray(tasks)) {
+            throw new Error(`Invalid Mini Cycle data format for "${miniCycleName}".`);
+        }
+
+        // ✅ Restore tasks safely
+        taskList.innerHTML = ""; // Clear existing tasks before loading
+        tasks.forEach(task => addTask(task.text, task.completed, false));
+
+        console.log(`✅ Loaded Mini Cycle: "${miniCycleName}"`, tasks);
+    } catch (error) {
+        console.error("❌ Error loading Mini Cycle:", error);
+    }
+}
+
+
+
+
+
+
+
+
+
+function updateProgressBar() {
+    const totalTasks = taskList.children.length;
+    const completedTasks = [...taskList.children].filter(task => task.querySelector("input").checked).length;
+    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    progressBar.style.width = `${progress}%`;
+    saveTasks();
+
+}
+
+function checkTaskCycle() {
+    updateProgressBar();
+    const allCompleted = [...taskList.children].every(task => task.querySelector("input").checked);
+
+    if (allCompleted && taskList.children.length > 0) {
+        triggerLogoBackground('green', 300);
+
+        // ✅ Increment Mini Cycle Count
+        let cycleCount = parseInt(localStorage.getItem("miniCycleCount")) || 0;
+        cycleCount++;
+        localStorage.setItem("miniCycleCount", cycleCount); // ✅ Save to localStorage
+
+        if (autoReset) { // ✅ Auto-reset tasks if enabled
+            setTimeout(resetTasks, 1000);
+        }
+    }
+    updateStatsPanel(); // ✅ Ensure the count updates
+    saveTasks();
+}
+
+
+
+
+function DragAndDrop(taskElement) {
+    taskElement.setAttribute("draggable", "true");
+
+     // Prevent text selection on mobile
+     taskElement.style.userSelect = "none";
+     taskElement.style.webkitUserSelect = "none";
+     taskElement.style.msUserSelect = "none";
+    
+ 
+
+
+    // ✅ Mobile Touch Support with Hold Delay
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let holdTimeout = null;
+
+    taskElement.addEventListener("touchstart", (event) => {
+        touchStartY = event.touches[0].clientY;
+        
+        holdTimeout = setTimeout(() => {
+            draggedTask = taskElement;
+            taskElement.classList.add("dragging");
+        }, 300); // 300ms hold time before drag starts
+    });
+
+    taskElement.addEventListener("touchmove", (event) => {
+        if (!draggedTask) return;
+        event.preventDefault();
+        touchEndY = event.touches[0].clientY;
+        const movingTask = document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY);
+        handleRearrange(movingTask);
+    });
+
+    taskElement.addEventListener("touchend", () => {
+        clearTimeout(holdTimeout);
+        if (draggedTask) {
+            draggedTask.classList.remove("dragging");
+            draggedTask = null;
+            saveTasks();
+        }
+    });
+}
+
+// Helper function for rearranging tasks
+function handleRearrange(target) {
+    if (!target) return; // ✅ Prevent errors if `target` is null
+    const draggingOver = target.closest(".task");
+    const parent = taskList;
+
+    if (draggingOver && draggingOver !== draggedTask) {
+        const bounding = draggingOver.getBoundingClientRect();
+        const offset = touchEndY - bounding.top;
+
+        // ✅ If dragging below last task, move it to the end
+        if (!draggingOver.nextSibling && offset > bounding.height / 2) {
+            parent.appendChild(draggedTask);
+        }
+        // ✅ Move task before or after the hovered task
+        else if (offset > bounding.height / 2) {
+            parent.insertBefore(draggedTask, draggingOver.nextSibling);
+        } else {
+            parent.insertBefore(draggedTask, draggingOver);
+        }
+    }
+}
+
+
+
+
+
+function addTask(taskText, completed = false, shouldSave = true) {
+    // ✅ Prevent events from being passed by mistake
+    if (typeof taskText !== "string") {
+        console.error("Error: taskText is not a string", taskText);
+        return;
+    }
+    let taskTextTrimmed = taskText.trim();
+    if (!taskTextTrimmed) return;
+if (!taskTextTrimmed.length > TASK_LIMIT) {
+alert(`Task must be ${TASK_LIMIT} characters or less.`);
+return;
+}
+
+const li = document.createElement("li");
+li.classList.add("task");
+li.setAttribute("draggable", "true");
+
+const checkbox = document.createElement("input");
+checkbox.type = "checkbox";
+checkbox.checked = completed;
+checkbox.addEventListener("change", checkTaskCycle);
+checkbox.addEventListener("click", () => {
+    triggerLogoBackground('green', 300);
+    });
+
+const label = document.createElement("span");
+label.textContent = taskTextTrimmed;
+label.addEventListener("click", () => {
+checkbox.checked = !checkbox.checked;
+checkTaskCycle(); 
+saveTasks();
+triggerLogoBackground('green', 300);
+});
+
+const taskActions = document.createElement("div");
+taskActions.classList.add("task-actions");
+
+const renameBtn = document.createElement("button");
+renameBtn.innerHTML = "✏️";
+renameBtn.classList.add("action-btn", "rename-btn");
+renameBtn.addEventListener("click", () => renameTask(label));
+
+const deleteBtn = document.createElement("button");
+deleteBtn.innerHTML = "🗑️";
+deleteBtn.classList.add("action-btn", "delete-btn");
+deleteBtn.addEventListener("click", (event) => {
+event.stopPropagation();
+li.remove();
+updateProgressBar();
+updateStatsPanel();
+checkCompleteAllButton();
+saveTasks();
+});
+
+DragAndDrop(li);
+
+taskActions.appendChild(renameBtn);
+taskActions.appendChild(deleteBtn);
+li.appendChild(checkbox);
+li.appendChild(label);
+li.appendChild(taskActions);
+taskList.appendChild(li);
+taskInput.value = "";
+
+
+document.querySelector(".task-list-container").scrollTo({
+top: taskList.scrollHeight,
+behavior: "smooth"
+});
+
+
+checkCompleteAllButton(); 
+updateProgressBar();
+updateStatsPanel();
+if (shouldSave) saveTasks();
+
+}
+
+
+function renameTask(label) {
+    const newName = prompt(`Rename Task (Max ${TASK_LIMIT} chars):`, label.textContent);
+    if (newName !== null && newName.trim() !== "" && newName.length <= TASK_LIMIT) {
+        label.textContent = newName.trim();
+        saveTasks(); // ✅ Ensures the new name is saved
+    } else if (newName.length > TASK_LIMIT) {
+        alert(`Task name cannot exceed ${TASK_LIMIT} characters.`);
+    }
+}
+
+
+function resetTasks() {
+    taskList.querySelectorAll(".task input").forEach(task => task.checked = false);
+
+    // ✅ Show message with smooth fade-in
+    cycleMessage.style.visibility = "visible";
+    cycleMessage.style.opacity = "1";
+
+    progressBar.style.width = "0%";
+
+    setTimeout(() => {
+        // ✅ Hide message with smooth fade-out after 2 seconds
+        cycleMessage.style.opacity = "0";
+        cycleMessage.style.visibility = "hidden";
+    }, 2000);
+    updateStatsPanel();
+    saveTasks(); // ✅ Save the reset state
+}
+
+
+
+function checkCompleteAllButton() {
+
+    if (taskList.children.length > 0) 
+        {
+            console.log(taskList.children.length);
+    completeAllButton.style.display = "block";
+    
+    completeAllButton.style.zIndex = "2";
+    } else {
+        completeAllButton.style.display = taskList.children.length > 0 ? "block" : "none";
+        console.log(taskList.children.length);
+    
+    
+    }
+    }
+    
+    
+function triggerLogoBackground(color = 'green', duration = 300) {
+    const logo = document.querySelector('.logo img');
+
+    if (logo) {
+
+        if (logoTimeoutId) {
+            clearTimeout(logoTimeoutId);
+            logoTimeoutId = null;
+        }
+
+
+        logo.style.backgroundColor = color;
+        logoTimeoutId = setTimeout(() => {
+            logo.style.backgroundColor = '';
+            logoTimeoutId = null; 
+        }, duration);
+    }
+}
+
+
+function setupMenu() {
+    const menuButton = document.querySelector(".menu-button");
+    const menu = document.querySelector(".menu-container");
+    const toggleAutoReset = document.getElementById("toggleAutoReset");
+    const exitMiniCycle = document.getElementById("exit-mini-cycle");
+
+    // ✅ Load autoReset setting from localStorage
+    autoReset = JSON.parse(localStorage.getItem("autoReset")) || false;
+    toggleAutoReset.checked = autoReset; // Reflect stored setting
+
+    menuButton.addEventListener("click", () => {
+        menu.classList.toggle("visible");
+    });
+    
+    exitMiniCycle.addEventListener("click", () => {
+        window.location.href = "../index.html";
+    });
+
+    toggleAutoReset.addEventListener("change", (event) => {
+        autoReset = event.target.checked;
+        localStorage.setItem("autoReset", JSON.stringify(autoReset)); // ✅ Save to localStorage
+    });
+    document.getElementById("delete-all-mini-cycle-tasks").addEventListener("click", () => {
+        localStorage.removeItem("miniCycleStorage");
+        localStorage.setItem("miniCycleCount", "0"); // ✅ Reset cycle count
+        taskList.innerHTML = "";
+        updateProgressBar();
+        updateStatsPanel();
+        console.log("Mini Cycle Tasks Deleted!");
+    });
+    
+}
+
+
+function saveSettings() {
+    localStorage.setItem("autoReset", autoReset);
+}
+
+
+
+
+// Function to check if it's the user's first visit
+function checkFirstTimeUse() {
+    if (localStorage.getItem("miniCycleHasVisitedBefore") === null) {
+        // First time using the app
+        localStorage.setItem("miniCycleAutoReset", JSON.stringify(true)); // ✅ Default to ON
+        localStorage.setItem("miniCycleHasVisitedBefore", "true"); // ✅ Mark that they’ve visited before
+    }
+}
+function loadAutoReset() {
+    const savedAutoReset = JSON.parse(localStorage.getItem("miniCycleAutoReset"));
+    if (savedAutoReset !== null) {
+        toggleAutoReset.checked = savedAutoReset; // ✅ Reflect saved value in UI
+    }
+}
+
+toggleAutoReset.addEventListener("change", () => {
+    localStorage.setItem("miniCycleAutoReset", JSON.stringify(toggleAutoReset.checked)); // ✅ Store new value
+    saveMiniCycleToLocalStorage(); // ✅ Save to storage immediately
+});
+
+
+
+
+addTaskButton.addEventListener("click", () => {
+    addTask(taskInput.value); // ✅ Passes the task text, not the event
+});
+
+taskInput.addEventListener("keypress", event => {
+    if (event.key === "Enter") {
+        addTask(taskInput.value); // ✅ Ensures only text is passed
+    }
+});
+
+
+
+completeAllButton.addEventListener("click", () => {
+    taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+    checkTaskCycle();
+    
+    // ✅ Always reset tasks, even if autoReset is off
+    setTimeout(resetTasks, 1000);
+});
+
+
+
+
+
+
+document.addEventListener("click", (event) => {
+    let isTaskClick = event.target.closest(".task");
+
+    if (!isTaskClick) {
+        // Hide all task action buttons when clicking outside
+        document.querySelectorAll(".task-actions").forEach(action => {
+            action.style.opacity = "0"; // Hide buttons
+        });
+    }
+});
+
+document.addEventListener("click", (event) => {
+    let taskItem = event.target.closest(".task");
+
+    // Hide all task action buttons first
+    document.querySelectorAll(".task-actions").forEach(action => {
+        action.style.opacity = "0"; 
+    });
+
+    if (taskItem) {
+        // Show buttons only for the clicked task
+        let taskActions = taskItem.querySelector(".task-actions");
+        if (taskActions) {
+            taskActions.style.opacity = "1";
+        }
+    }
+});
+
+
+document.getElementById("save-as-mini-cycle").addEventListener("click", saveMiniCycleToLocalStorage);
+
+document.getElementById("open-mini-cycle").addEventListener("click", loadMiniCycleFromLocalStorage);
+
+
+
+/***********************
+ * 
+ * 
+ * STATS PANEL
+ * 
+ * 
+ ************************/
+
+
+
+let startX = 0;
+let isSwiping = false;
+let isStatsVisible = false;
+const statsPanel = document.getElementById("stats-panel");
+const taskView = document.getElementById("task-view");
+
+// Detect swipe start
+document.addEventListener("touchstart", (event) => {
+    startX = event.touches[0].clientX;
+    isSwiping = true;
+});
+
+// Detect swipe move
+document.addEventListener("touchmove", (event) => {
+    if (!isSwiping) return;
+    let moveX = event.touches[0].clientX;
+    let difference = startX - moveX;
+
+    // Swipe left → Slide in Stats Panel, Slide out Task View
+    if (difference > 50 && !isStatsVisible) {
+        statsPanel.classList.add("show");  // Slide in stats
+        statsPanel.classList.remove("hide"); // Ensure it's not hiding
+
+        taskView.classList.add("hide"); // Slide out task list
+        isStatsVisible = true;
+        isSwiping = false;
+    }
+
+    // Swipe right → Slide out Stats Panel, Slide in Task View
+    if (difference < -50 && isStatsVisible) {
+        statsPanel.classList.add("hide");  // Slide out stats
+        taskView.classList.remove("hide"); // Bring back task list
+        isStatsVisible = false;
+        isSwiping = false;
+    }
+});
+
+// Reset swipe tracking
+document.addEventListener("touchend", () => {
+    isSwiping = false;
+});
+
+
+
+// Update Stats Panel
+function updateStatsPanel() {
+    let totalTasks = document.querySelectorAll(".task").length;
+    let completedTasks = document.querySelectorAll(".task input:checked").length;
+    let completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
+
+    // ✅ Load cycle count from localStorage (or default to 0)
+    let cycleCount = parseInt(localStorage.getItem("miniCycleCount")) || 0;
+
+    // ✅ Update Stats Display
+    document.getElementById("total-tasks").textContent = totalTasks;
+    document.getElementById("completed-tasks").textContent = completedTasks;
+    document.getElementById("completion-rate").textContent = completionRate;
+    document.getElementById("mini-cycle-count").textContent = cycleCount; // ✅ Show count
+    document.getElementById("stats-progress-bar").style.width = completionRate;
+}
+
+
+
+
+// Hook into existing task functions to update stats when tasks change
+document.getElementById("taskList").addEventListener("change", updateStatsPanel);
+document.getElementById("addTask").addEventListener("click", updateStatsPanel);
+
+
+const slideLeft = document.getElementById("slide-left");
+const slideRight = document.getElementById("slide-right");
+
+
+slideLeft.classList.add("hide");
+slideLeft.classList.remove("show");
+
+slideRight.addEventListener("click", () => {
+    statsPanel.classList.add("show");
+    statsPanel.classList.remove("hide");
+
+    taskView.classList.add("hide");
+    taskView.classList.remove("show");
+
+    slideRight.classList.add("hide");
+    slideRight.classList.remove("show");
+
+    slideLeft.classList.add("show");
+    slideLeft.classList.remove("hide");
+
+    isStatsVisible = true;
+});
+
+slideLeft.addEventListener("click", () => {
+    statsPanel.classList.add("hide");
+    statsPanel.classList.remove("show");
+
+    taskView.classList.add("show");
+    taskView.classList.remove("hide");
+
+    slideRight.classList.add("show");
+    slideRight.classList.remove("hide");
+
+    slideLeft.classList.add("hide");
+    slideLeft.classList.remove("show");
+
+    isStatsVisible = false;
+});
+
+
+
+
+
+
+});
+
+function mainMenu() {
+    const menuButton = document.querySelector(".menu-button");
+    const menu = document.querySelector(".menu-container");
+    const exitMiniCycle = document.getElementById("exit-mini-cycle");
+    const toggleAutoReset = document.getElementById("toggleAutoReset"); // ✅ Ensure toggle element is selected
+    const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
+
+    // ✅ Ensure AutoReset toggle reflects the correct state for the active Mini Cycle
+    if (lastUsedMiniCycle && savedMiniCycles[lastUsedMiniCycle]) {
+        toggleAutoReset.checked = savedMiniCycles[lastUsedMiniCycle].autoReset || false;
+        console.log(`🔄 Loaded AutoReset setting for "${lastUsedMiniCycle}": ${toggleAutoReset.checked}`);
+    } else {
+        console.warn("⚠ No active Mini Cycle found. Defaulting AutoReset to OFF.");
+        toggleAutoReset.checked = false;
+    }
+
+    menuButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        menu.classList.toggle("visible");
+        console.log(`📂 Menu toggled: ${menu.classList.contains("visible") ? "Opened" : "Closed"}`);
+    });
+
+    exitMiniCycle.addEventListener("click", () => {
+        window.location.href = "../index.html";
+    });
+
+    // ✅ Save AutoReset setting when toggled
+    toggleAutoReset.addEventListener("change", (event) => {
+        if (!lastUsedMiniCycle || !savedMiniCycles[lastUsedMiniCycle]) {
+            console.error("❌ Error: No active Mini Cycle to update AutoReset setting.");
+            return;
+        }
+
+        // ✅ Save new AutoReset state inside the correct Mini Cycle
+        savedMiniCycles[lastUsedMiniCycle].autoReset = event.target.checked;
+        localStorage.setItem("miniCycleStorage", JSON.stringify(savedMiniCycles));
+        console.log(`✅ AutoReset updated for "${lastUsedMiniCycle}": ${event.target.checked}`);
+
+        // ✅ Only trigger Mini Cycle reset if AutoReset is enabled
+        if (event.target.checked) {
+            checkMiniCycle();
+        }
+    });
+}
+
+
+BAD FUNCTION:
+function addTask(taskText, completed = false, shouldSave = true) {
+    // ✅ Prevent events from being passed by mistake
+    if (typeof taskText !== "string") {
+        console.error("Error: taskText is not a string", taskText);
+        return;
+    }
+    let taskTextTrimmed = taskText.trim();
+    if (!taskTextTrimmed) return;
+
+    // ✅ Enforce TASK_LIMIT
+    if (taskTextTrimmed.length > TASK_LIMIT) {
+        alert(`Task must be ${TASK_LIMIT} characters or less.`);
+        return;
+    }
+
+    // ✅ Create Task Element
+    const taskItem = document.createElement("li");
+    taskItem.classList.add("task");
+    taskItem.setAttribute("draggable", "true");
+
+    // ✅ Create Button Container (above the task)
+    const buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("task-options");
+
+    // ✅ High Priority Button
+    const priorityButton = document.createElement("button");
+    priorityButton.classList.add("task-btn", "priority-btn");
+    priorityButton.innerHTML = "⚠"; // Warning icon
+    priorityButton.addEventListener("click", () => {
+        taskItem.classList.toggle("high-priority");
+        autoSave();
+    });
+
+    // ✅ Edit Button
+    const editButton = document.createElement("button");
+    editButton.classList.add("task-btn", "edit-btn");
+    editButton.innerHTML = "🖊"; // Edit icon
+    editButton.addEventListener("click", () => {
+        const newText = prompt("Edit task name:", taskTextTrimmed);
+        if (newText) {
+            taskLabel.textContent = newText.trim();
+            autoSave();
+        }
+    });
+
+    // ✅ Delete Button
+    const deleteButton = document.createElement("button");
+    deleteButton.classList.add("task-btn", "delete-btn");
+    deleteButton.innerHTML = "🗑"; // Delete icon
+    deleteButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        taskItem.remove();
+        updateProgressBar();
+        updateStatsPanel();
+        checkCompleteAllButton();
+        autoSave();
+    });
+
+    // ✅ Append Buttons Above the Task
+    buttonContainer.appendChild(priorityButton);
+    buttonContainer.appendChild(editButton);
+    buttonContainer.appendChild(deleteButton);
+    taskItem.appendChild(buttonContainer);
+
+    // ✅ Checkbox for Completion
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = completed;
+    function addTask(taskText, completed = false, shouldSave = true) {
+    // ✅ Prevent events from being passed by mistake
+    if (typeof taskText !== "string") {
+        console.error("Error: taskText is not a string", taskText);
+        return;
+    }
+    let taskTextTrimmed = taskText.trim();
+    if (!taskTextTrimmed) return;
+
+    // ✅ Enforce TASK_LIMIT
+    if (taskTextTrimmed.length > TASK_LIMIT) {
+        alert(`Task must be ${TASK_LIMIT} characters or less.`);
+        return;
+    }
+
+    // ✅ Create Task Element
+    const taskItem = document.createElement("li");
+    taskItem.classList.add("task");
+    taskItem.setAttribute("draggable", "true");
+
+    // ✅ Create Button Container (above the task)
+    const buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("task-options");
+
+    // ✅ High Priority Button
+    const priorityButton = document.createElement("button");
+    priorityButton.classList.add("task-btn", "priority-btn");
+    priorityButton.innerHTML = "⚠"; // Warning icon
+    priorityButton.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent marking task as complete
+        taskItem.classList.toggle("high-priority");
+        autoSave();
+    });
+
+    // ✅ Edit Button
+    const editButton = document.createElement("button");
+    editButton.classList.add("task-btn", "edit-btn");
+    editButton.innerHTML = "🖊"; // Edit icon
+    editButton.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent marking task as complete
+        const newText = prompt("Edit task name:", taskTextTrimmed);
+        if (newText) {
+            taskLabel.textContent = newText.trim();
+            autoSave();
+        }
+    });
+
+    // ✅ Delete Button
+    const deleteButton = document.createElement("button");
+    deleteButton.classList.add("task-btn", "delete-btn");
+    deleteButton.innerHTML = "🗑"; // Delete icon
+    deleteButton.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent marking task as complete
+        taskItem.remove();
+        updateProgressBar();
+        updateStatsPanel();
+        checkCompleteAllButton();
+        autoSave();
+    });
+
+    // ✅ Append Buttons Above the Task
+    buttonContainer.appendChild(priorityButton);
+    buttonContainer.appendChild(editButton);
+    buttonContainer.appendChild(deleteButton);
+    taskItem.appendChild(buttonContainer);
+
+    // ✅ Checkbox for Completion
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = completed;
+    checkbox.addEventListener("change", () => {
+        checkMiniCycle();
+        autoSave();
+        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+    });
+
+    // ✅ Task Text
+    const taskLabel = document.createElement("span");
+    taskLabel.textContent = taskTextTrimmed;
+
+    // ✅ Make Clicking the Entire Task Toggle Completion (Except for Buttons & Checkbox)
+    taskItem.addEventListener("click", (event) => {
+        // ❌ Prevent toggling if clicking the checkbox or any button
+        if (event.target === checkbox || buttonContainer.contains(event.target)) {
+            return;
+        }
+
+        checkbox.checked = !checkbox.checked;
+        checkMiniCycle();
+        autoSave();
+        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+    });
+
+    // ✅ Attach Elements to Task
+    taskItem.appendChild(checkbox);
+    taskItem.appendChild(taskLabel);
+
+    // ✅ Add Task to the List
+    document.getElementById("taskList").appendChild(taskItem);
+    taskInput.value = "";
+
+    // ✅ Auto-scroll to new task
+    document.querySelector(".task-list-container").scrollTo({
+        top: taskList.scrollHeight,
+        behavior: "smooth"
+    });
+
+    checkCompleteAllButton();
+    updateProgressBar();
+    updateStatsPanel();
+    if (shouldSave) autoSave();
+
+    // ✅ Enable Drag and Drop
+    DragAndDrop(taskItem);
+}
+
+    
+
+    // ✅ Task Text
+    const taskLabel = document.createElement("span");
+    taskLabel.textContent = taskTextTrimmed;
+
+    // ✅ Make Clicking the Entire Task Toggle Completion
+    taskItem.addEventListener("click", () => {
+        if (event.target === checkbox || buttonContainer.contains(event.target)) {
+            return;
+        }
+    checkbox.checked = !checkbox.checked;
+        checkMiniCycle();
+        autoSave();
+        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+    });
+
+    // ✅ Prevent click events from buttons inside the task
+    buttonContainer.addEventListener("click", (event) => event.stopPropagation());
+
+    // ✅ Attach Elements to Task
+    taskItem.appendChild(checkbox);
+    taskItem.appendChild(taskLabel);
+    
+    // ✅ Add Task to the List
+    document.getElementById("taskList").appendChild(taskItem);
+    taskInput.value = "";
+
+    // ✅ Auto-scroll to new task
+    document.querySelector(".task-list-container").scrollTo({
+        top: taskList.scrollHeight,
+        behavior: "smooth"
+    });
+
+    checkCompleteAllButton();
+    updateProgressBar();
+    updateStatsPanel();
+    if (shouldSave) autoSave();
+
+    // ✅ Enable Drag and Drop
+    DragAndDrop(taskItem);
+}
+
+GOOD FUNCTION:
+function addTask(taskText, completed = false, shouldSave = true) {
+    // ✅ Prevent events from being passed by mistake
+    if (typeof taskText !== "string") {
+        console.error("Error: taskText is not a string", taskText);
+        return;
+    }
+    let taskTextTrimmed = taskText.trim();
+    if (!taskTextTrimmed) return;
+
+    // ✅ Enforce TASK_LIMIT
+    if (taskTextTrimmed.length > TASK_LIMIT) {
+        alert(`Task must be ${TASK_LIMIT} characters or less.`);
+        return;
+    }
+
+    // ✅ Create Task Element
+    const taskItem = document.createElement("li");
+    taskItem.classList.add("task");
+    taskItem.setAttribute("draggable", "true");
+
+    // ✅ Create Button Container (above the task)
+    const buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("task-options");
+
+    // ✅ High Priority Button
+    const priorityButton = document.createElement("button");
+    priorityButton.classList.add("task-btn", "priority-btn");
+    priorityButton.innerHTML = "⚠"; // Warning icon
+    priorityButton.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent marking task as complete
+        taskItem.classList.toggle("high-priority");
+        autoSave();
+    });
+
+    // ✅ Edit Button
+    const editButton = document.createElement("button");
+    editButton.classList.add("task-btn", "edit-btn");
+    editButton.innerHTML = "🖊"; // Edit icon
+    editButton.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent marking task as complete
+        const newText = prompt("Edit task name:", taskTextTrimmed);
+        if (newText) {
+            taskLabel.textContent = newText.trim();
+            autoSave();
+        }
+    });
+
+    // ✅ Delete Button
+    const deleteButton = document.createElement("button");
+    deleteButton.classList.add("task-btn", "delete-btn");
+    deleteButton.innerHTML = "🗑"; // Delete icon
+    deleteButton.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent marking task as complete
+        taskItem.remove();
+        updateProgressBar();
+        updateStatsPanel();
+        checkCompleteAllButton();
+        autoSave();
+    });
+
+    // ✅ Append Buttons Above the Task
+    buttonContainer.appendChild(priorityButton);
+    buttonContainer.appendChild(editButton);
+    buttonContainer.appendChild(deleteButton);
+    taskItem.appendChild(buttonContainer);
+
+    // ✅ Checkbox for Completion
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = completed;
+    checkbox.addEventListener("change", () => {
+        checkMiniCycle();
+        autoSave();
+        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+    });
+
+    // ✅ Task Text
+    const taskLabel = document.createElement("span");
+    taskLabel.textContent = taskTextTrimmed;
+
+    // ✅ Make Clicking the Entire Task Toggle Completion (Except for Buttons & Checkbox)
+    taskItem.addEventListener("click", (event) => {
+        // ❌ Prevent toggling if clicking the checkbox or any button
+        if (event.target === checkbox || buttonContainer.contains(event.target)) {
+            return;
+        }
+
+        checkbox.checked = !checkbox.checked;
+        checkMiniCycle();
+        autoSave();
+        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+    });
+
+    // ✅ Attach Elements to Task
+    taskItem.appendChild(checkbox);
+    taskItem.appendChild(taskLabel);
+
+    // ✅ Add Task to the List
+    document.getElementById("taskList").appendChild(taskItem);
+    taskInput.value = "";
+
+    // ✅ Auto-scroll to new task
+    document.querySelector(".task-list-container").scrollTo({
+        top: taskList.scrollHeight,
+        behavior: "smooth"
+    });
+
+    checkCompleteAllButton();
+    updateProgressBar();
+    updateStatsPanel();
+    if (shouldSave) autoSave();
+
+    // ✅ Enable Drag and Drop
+    DragAndDrop(taskItem);
+}
+
+
+
+
+
+
+
+
+
+
+
+function handleRearrange(target, event) {
+    if (!target || !draggedTask || target === draggedTask) return;
+
+    clearTimeout(rearrangeTimeout); // Avoid unnecessary rapid reordering
+    rearrangeTimeout = setTimeout(() => {
+        
+        const parent = draggedTask.parentNode;
+        if (!parent || parent !== target.parentNode) return;
+
+        const bounding = target.getBoundingClientRect();
+        const offset = event.clientY - bounding.top;
+
+        // ✅ Remove previous drop indicators to ensure only ONE target at a time
+        document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+
+        // 🔍 Check if the task is being moved to the FIRST or LAST position
+        const isLastTask = !target.nextElementSibling;
+        const isFirstTask = !target.previousElementSibling;
+
+        // ✅ Prevent redundant reordering
+        if (offset > bounding.height / 3) {
+            if (target.nextSibling !== draggedTask) {
+                console.log(`🔄 Moving task AFTER:`, draggedTask, `➡`, target);
+                parent.insertBefore(draggedTask, target.nextSibling);
+            }
+        } else {
+            if (target.previousSibling !== draggedTask) {
+                console.log(`🔄 Moving task BEFORE:`, draggedTask, `⬅`, target);
+                parent.insertBefore(draggedTask, target);
+            }
+        }
+
+        // ✅ Special case: If dragging to the LAST position
+        if (isLastTask && target.nextSibling !== draggedTask) {
+            console.log("📌 Moving to last position.");
+            parent.appendChild(draggedTask);
+        }
+
+        // ✅ Special case: If dragging to the FIRST position
+        if (isFirstTask && target.previousSibling !== draggedTask) {
+            console.log("📌 Moving to first position.");
+            parent.insertBefore(draggedTask, parent.firstChild);
+        }
+
+        // ✅ Highlight the drop position
+        draggedTask.classList.add("drop-target");
+
+    }, 50); // Small delay to smooth out the reordering process
+}
+
+
+
+
+    function checkDueDates () {
+
+    if (!toggleAutoReset.dataset.listenerAdded) {
+        toggleAutoReset.addEventListener("change", function () {
+            let autoReset = this.checked; // Get Auto Reset state
+    
+            document.querySelectorAll(".set-due-date").forEach(input => {
+                input.classList.toggle("hidden", autoReset); // Hide if Auto Reset is ON
+            });
+
+            
+            document.querySelectorAll(".due-date").forEach(input => {
+                if (autoReset === true){ input.classList.add("hidden"); // Hide if Auto Reset is ON
+                }
+            });
+    
+            // 🔄 Save Auto Reset status inside the current Mini Cycle storage
+            let miniCycleName = localStorage.getItem("lastUsedMiniCycle");
+            let savedMiniCycles = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+            
+            if (savedMiniCycles[miniCycleName]) {
+                savedMiniCycles[miniCycleName].autoReset = autoReset;
+                localStorage.setItem("miniCycleStorage", JSON.stringify(savedMiniCycles));
+            }
+        });
+    
+        toggleAutoReset.dataset.listenerAdded = true; // Prevent duplicate listeners
+    }
+
+
+
+    document.addEventListener("change", function (event) {
+        if (event.target.classList.contains("due-date")) {
+            let taskItem = event.target.closest(".task"); // Find the task container
+            let taskText = taskItem.querySelector(".task-text").textContent; // Get task name
+            let dueDateValue = event.target.value; // Get selected due date
+            
+            // 🛠 Retrieve saved Mini Cycle from local storage
+            let miniCycleName = localStorage.getItem("lastUsedMiniCycle");
+            let savedMiniCycles = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+    
+            if (savedMiniCycles[miniCycleName]) {
+                // 📝 Find the corresponding task and update its due date
+                let taskData = savedMiniCycles[miniCycleName].tasks.find(task => task.text === taskText);
+                if (taskData) {
+                    taskData.dueDate = dueDateValue;
+                    localStorage.setItem("miniCycleStorage", JSON.stringify(savedMiniCycles));
+                    console.log(`📅 Due date set for task "${taskText}": ${dueDateValue}`);
+                }
+            }
+        }
+    });
+    
+    let autoReset = toggleAutoReset.checked;
+    document.querySelectorAll(".set-due-date").forEach(input => {
+        input.classList.toggle("hidden", autoReset); // Hide if Auto Reset is ON
+    });
+    document.querySelectorAll(".due-date").forEach(input => {
+        if (autoReset === true){ input.classList.add("hidden"); // Hide if Auto Reset is ON
+        }
+    });
+
+    }
+
+
+
+completeAllButton.addEventListener("click", () => {
+    const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
+    const cycleData = savedMiniCycles[lastUsedMiniCycle];
+
+    // ✅ Ensure there's an active Mini Cycle
+    if (!lastUsedMiniCycle || !cycleData) return;
+
+     // ✅ Check if any task has a due date set
+     const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
+        dueDateInput => dueDateInput.value
+    );
+
+    if (hasDueDates) {
+        const confirmReset = confirm(
+            "⚠️ This will complete all tasks and reset them to an uncompleted state.\n\nAny assigned Due Dates will be cleared.\n\nProceed?"
+        );
+        if (!confirmReset) return; // ❌ Stop if user cancels
+    }
+
+    if (cycleData.deleteCheckedTasks) {
+        // ✅ Delete all checked tasks if the option is enabled
+        document.querySelectorAll(".task input:checked").forEach(checkbox => {
+            checkbox.closest(".task").remove();
+        });
+
+        autoSave(); // ✅ Save changes after deletion
+    } else {
+        // ✅ If "Delete Checked Tasks" is OFF, just mark all as complete
+        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+        checkMiniCycle();
+        
+   // ✅ Only call resetTasks() if autoReset is OFF
+   if (!cycleData.autoReset) {
+    setTimeout(resetTasks, 1000);
+    }
+
+
+    }
+    updateStatsPanel();
+    updateProgressBar();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+enableReminders.addEventListener("change", () => {
+    const isEnabled = enableReminders.checked;
+  
+    // ✅ Toggle visibility of the frequency settings section
+    frequencySection.classList.toggle("hidden", !isEnabled);
+  
+    // ✅ Save global reminder toggle to localStorage
+    const globalReminderState = autoSaveReminders(); // should return true or false
+  
+    // ✅ Update task buttons (adds or removes 🔔 icons)
+    updateReminderButtons();
+  
+    // ✅ Start or Stop the reminder loop
+    if (globalReminderState) {
+      console.log("🔔 Global Reminders Enabled — Starting reminders...");
+      setTimeout(() => {
+        startReminders(); // your reminder loop logic
+      }, 200);
+    } else {
+      console.log("🔕 Global Reminders Disabled — Stopping reminders...");
+      stopReminders(); // we'll define this next
+    }
+  });
+  function stopReminders() {
+    if (reminderIntervalId) {
+      clearInterval(reminderIntervalId);
+      reminderIntervalId = null;
+      console.log("🛑 Reminder system stopped.");
+    }
+  }
+
+
+enableReminders.addEventListener("change", () => {
+    // ✅ Toggle frequency settings visibility
+    frequencySection.style.display = enableReminders.checked ? "block" : "none";
+
+    // ✅ Save settings and get whether reminders are globally enabled
+    const enabledNow = autoSaveReminders();
+
+    // ✅ Update task buttons accordingly
+    updateReminderButtons();
+
+    // ✅ Start reminders ONLY when toggled ON
+    if (enabledNow) {
+        startReminders();
+    }
+});

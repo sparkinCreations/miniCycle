@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Cycle Mini Game</title>
+  <style>
+    /* Basic styling for the game */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .game-container {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    p {
+      margin-bottom: 10px;
+    }
+    .scrambled-word {
+      font-size: 2rem;
+      margin: 20px 0;
+      letter-spacing: 2px;
+      color: #4c79ff;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 80%;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      background: #4c79ff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #3a65d9;
+    }
+    .feedback {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Task Name Scramble Game</h1>
+    <p>Unscramble the task name!</p>
+    <div class="scrambled-word" id="scrambledWord">Loading...</div>
+    <input type="text" id="guessInput" placeholder="Type your guess here..." />
+    <div>
+      <button id="submitGuess">Submit</button>
+      <button id="nextTask">Next</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <script>
+    // Scramble a string by shuffling its characters
+    function scrambleString(str) {
+      let arr = str.split('');
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr.join('');
+    }
+
+    // Retrieve task names from localStorage (from your Task Cycle: Mini app)
+    function getTaskNames() {
+      let taskNames = [];
+      const miniCycleName = localStorage.getItem("lastUsedMiniCycle");
+      if (miniCycleName) {
+        const miniCycleStorage = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
+        const currentCycle = miniCycleStorage[miniCycleName];
+        if (currentCycle && Array.isArray(currentCycle.tasks)) {
+          // Extract non-empty task texts
+          taskNames = currentCycle.tasks
+            .map(task => task.text)
+            .filter(text => text && text.trim() !== "");
+        }
+      }
+      return taskNames;
+    }
+
+    // Get tasks, use fallback if none are found
+    let tasks = getTaskNames();
+    if (tasks.length === 0) {
+      tasks = ["Sample Task", "Check Serial", "Verify Part", "Inspect Job"];
+    }
+
+    let currentTask = "";
+
+    // Load a new task: choose one randomly, scramble each word separately
+    function loadNewTask() {
+      currentTask = tasks[Math.floor(Math.random() * tasks.length)];
+      let scrambled = currentTask
+        .split(' ')
+        .map(word => scrambleString(word))
+        .join(' ');
+      document.getElementById("scrambledWord").textContent = scrambled;
+      document.getElementById("feedback").textContent = "";
+      document.getElementById("guessInput").value = "";
+    }
+
+    // Event listener for submitting the guess
+    document.getElementById("submitGuess").addEventListener("click", function () {
+      const guess = document.getElementById("guessInput").value.trim();
+      if (guess.toLowerCase() === currentTask.toLowerCase()) {
+        document.getElementById("feedback").textContent = "Correct! 🎉";
+      } else {
+        document.getElementById("feedback").textContent = "Try again! ❌";
+      }
+    });
+
+    // Event listener for moving to the next task
+    document.getElementById("nextTask").addEventListener("click", function () {
+      loadNewTask();
+    });
+
+    // Load a new task when the page loads
+    window.onload = loadNewTask;
+  </script>
+</body>
+</html>

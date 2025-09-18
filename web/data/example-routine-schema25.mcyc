@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "2.5",
+  "metadata": {
+    "createdAt": 1757026568352,
+    "lastModified": 1757026568352,
+    "migratedFrom": null,
+    "migrationDate": null,
+    "totalCyclesCreated": 1,
+    "totalTasksCompleted": 0,
+    "schemaVersion": "2.5"
+  },
+  "settings": {
+    "theme": null,
+    "darkMode": false,
+    "alwaysShowRecurring": false,
+    "autoSave": true,
+    "defaultRecurringSettings": {
+      "frequency": null,
+      "indefinitely": true,
+      "time": null
+    },
+    "unlockedThemes": [],
+    "unlockedFeatures": [],
+    "notificationPosition": {
+      "x": 0,
+      "y": 0
+    },
+    "notificationPositionModified": false,
+    "accessibility": {
+      "reducedMotion": false,
+      "highContrast": false,
+      "screenReaderHints": false
+    }
+  },
+  "data": {
+    "cycles": {
+      "cycle_1757026568352": {
+        "id": "cycle_1757026568352",
+        "title": "Daily Routine 🌞",
+        "tasks": [
+          {
+            "id": "t1",
+            "text": "🌅 Wake up & stretch",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t2",
+            "text": "🛏️ Make bed",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t3",
+            "text": "🪥 Brush teeth",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t4",
+            "text": "🥣 Eat breakfast",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t5",
+            "text": "💧 Drink water",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t6",
+            "text": "🏋️ Exercise",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t7",
+            "text": "🧑‍💻 Start work / study",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t8",
+            "text": "🍎 Healthy snack",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t9",
+            "text": "📖 Read 10 minutes",
+            "completed": false,
+            "schemaVersion": 2
+          },
+          {
+            "id": "t10",
+            "text": "🌙 Evening reflection",
+            "completed": false,
+            "schemaVersion": 2
+          }
+        ],
+        "autoReset": true,
+        "deleteCheckedTasks": false,
+        "cycleCount": 0,
+        "createdAt": 1757026568352,
+        "recurringTemplates": {}
+      }
+    }
+  },
+  "appState": {
+    "activeCycleId": "cycle_1757026568352"
+  },
+  "userProgress": {
+    "cyclesCompleted": 0,
+    "rewardMilestones": []
+  },
+  "customReminders": {
+    "enabled": false,
+    "indefinite": false,
+    "dueDatesReminders": false,
+    "repeatCount": 0,
+    "frequencyValue": 30,
+    "frequencyUnit": "minutes"
+  }
+}

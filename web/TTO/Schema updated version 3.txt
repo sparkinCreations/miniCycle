@@ -1,0 +1,94 @@
+{
+ id: "2a9c85b3-b9a5-4a2f-a9f8-1a1a9c5b3e9f",  // UUID v4,
+  text: "Check air compressor",
+  completed: false,
+  dueDate: "2025-08-09T15:30:00.000Z",
+  highPriority: true,
+  remindersEnabled: true,
+  
+
+  // 🔁 Reminder Metadata
+  reminderSettings: {
+    startTime: null,                      // When reminders begin (timestamp)
+    frequencyValue: 60,                  // Every 60 minutes/hours/etc.
+    frequencyUnit: "minutes",            // "minutes" | "hours" | "days"
+    lastFired: null                      // When last reminder was sent
+  },
+
+  // 🔁 Recurring Task Settings
+  recurring: true,
+  recurringSettings: {
+    frequency: "daily",                  // "hourly", "daily", "weekly", etc.
+    interval: 1,                         // every X units (e.g. every 1 day)
+    specificDates: {
+      enabled: false,
+      dates: []
+    },
+    timeOfDay: "08:00",                  // "HH:MM" format (24h)
+    startDate: "2025-08-08",             // optional ISO start date
+    timezone: "America/New_York",        // optional for cross-device support
+    defaultRecurTime: "2025-08-08T14:00:00.000Z",  // fallback if no time picked
+    hourly: {
+      useSpecificMinute: false,
+      minute: 0
+    },
+    weekly: {
+      days: ["Monday", "Wednesday"]
+    },
+    monthly: {
+      days: [1, 15]
+    },
+    yearly: {
+      months: [1, 7],
+      daysByMonth: { "1": [1], "7": [15] },
+      useSpecificDays: true,
+      applyDaysToAll: false
+    },
+    useSpecificTime: true,
+    nextRecurDueAt: "2025-08-08T14:00:00.000Z",
+    lastRecurTriggered: "2025-08-08T14:00:00.000Z"	
+  },
+
+  // 🔐 Metadata for Syncing & Conflict Resolution
+  metadata: {
+  createdAt: 1754536800696,
+  modifiedAt: 1754540000000,
+  lastSyncedAt: 1754539900000,
+  createdByDevice: "device-MJPhone2025",
+  lastModifiedByDevice: "device-MJMacbook",
+  isDeleted: false,
+  isDirty: true
+},
+
+  schemaVersion: 3
+}
+
+
+
+{
+  name: "morning-check",
+  title: "Morning Safety Checks",
+  tasks: [ /* array of task objects */ ],
+  autoReset: true,
+  deleteCheckedTasks: true,
+  cycleCount: 11,
+
+  metadata: {
+    createdAt: 1754536800696,
+    modifiedAt: 1754540000000,
+    createdByDevice: "device-MJPhone2025",
+    lastModifiedByDevice: "device-MJMacbook",
+    syncedWith: ["device-MJMacbook"]
+  },
+
+  schemaVersion: 3
+}
+
+
+{
+  deviceID: "device-MJPhone2025",
+  deviceName: "MJ’s iPhone",
+  registeredAt: "2025-08-01T07:55:00.000Z",
+  lastSynced: "2025-08-08T17:15:00.000Z",
+  pairedWith: ["device-MJMacbook"]
+}

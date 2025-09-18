@@ -1,0 +1,289 @@
+const EMPTY_SCHEMA_3A = {
+
+  schemaVersion: "3A",
+
+  miniCycle: {
+
+	metadata: {
+
+  	deviceId: null,
+
+  	deviceName: null,
+
+  	createdAt: null,
+
+  	lastModified: null,
+
+  	appVersion: null,
+
+  	migratedFrom: null,
+
+  	migrationType: null,
+
+  	migrationDate: null,
+
+  	migrationHash: null,
+
+  	totalCyclesCreated: 0,
+
+  	totalTasksCompleted: 0,
+
+  	totalTasksCleared: 0,
+
+  	totalTasksMigrated: 0,
+
+  	migrationErrors: [],
+
+  	schemaVersion: "3A"
+
+	},
+
+	settings: {
+
+  	theme: null,
+
+  	globalSound: true,
+
+  	darkMode: false,
+
+  	onboarding: {
+
+    	complete: false,
+
+    	currentStep: null,
+
+    	resetRequested: false
+
+  	},
+
+  	notificationPosition: { x: 0, y: 0 },
+
+  	notificationPositionModified: false,
+
+  	defaultRecurringSettings: {
+
+    	frequency: null,
+
+    	indefinitely: true,
+
+    	time: null
+
+  	},
+
+  	recurringDefaultsModified: false,
+
+  	taskUIOverrides: {
+
+    	global: {},
+
+    	cycles: {},
+
+    	tasks: {}
+
+  	},
+
+  	preferredLanguage: null,
+
+  	accessibility: {
+
+    	reducedMotion: false,
+
+    	highContrast: false,
+
+    	screenReaderHints: false
+
+  	},
+
+  	fontSize: null,
+
+  	fontStyle: null,
+
+  	alwaysShowRecurring: false,
+
+  	autoSave: true,
+
+  	deleteCheckedTasksGlobal: false,
+
+  	unlockedThemes: [],
+
+  	unlockedFeatures: [],
+
+  	premiumActive: false,
+
+  	premiumStartDate: null,
+
+  	premiumExpiresAt: null,
+
+  	preferredTimeFormat: "12h",
+
+  	defaultLayoutOverrides: {
+
+    	layoutMode: "default",
+
+    	components: {
+
+      	taskList: {
+
+        	visible: true,
+
+        	position: { x: 0, y: 0 },
+
+        	size: { width: 400, height: 600 }
+
+      	},
+
+      	panel: {
+
+        	visible: true,
+
+        	position: { x: 0, y: 0 },
+
+        	size: { width: 300, height: 600 }
+
+      	},
+
+      	cycleNotes: {
+
+        	visible: false,
+
+        	position: { x: 0, y: 0 },
+
+        	size: { width: 350, height: 500 }
+
+      	}
+
+    	}
+
+  	},
+
+  	experimental: {
+
+    	testMode: false,
+
+    	features: {},
+
+    	data: {
+
+      	lastReminderUITestRun: null,
+
+      	betaFeedbackNotes: [],
+
+      	debugOverrides: {},
+
+      	testMetrics: {}
+
+    	},
+
+    	meta: {
+
+      	lastFeatureCheck: null,
+
+      	schemaTestedOn: "3A",
+
+      	devBuild: null,
+
+      	experimentStartDate: null,
+
+      	scheduledCleanup: null
+
+    	}
+
+  	}
+
+	},
+
+	userProfile: {
+
+  	nickname: null,
+
+  	pronouns: null,
+
+  	createdAt: null,
+
+  	deviceLabel: null,
+
+  	preferences: {
+
+    	showMotivationalTips: false,
+
+    	showGreeting: false,
+
+    	greetingStyle: null
+
+  	}
+
+	},
+
+	customReminders: [],
+
+	tags: [],
+
+	data: {
+
+  	cycleTemplates: {},
+
+  	cycles: [],
+
+  	history: {
+
+    	cycles: [],
+
+    	archivedTasks: []
+
+  	}
+
+	},
+
+	cycleNotes: {
+
+  	notes: []
+
+	},
+
+	appState: {
+
+  	activeCycleId: null,
+
+  	recentCycles: []
+
+	},
+
+	userBackups: [],
+
+	backupReminder: {
+
+  	lastPrompted: null,
+
+  	lastUserBackup: null,
+
+  	skipUntil: null,
+
+  	nextBackupPromptDueAt: null
+
+	},
+
+	backups: [],
+
+	analytics: {
+
+  	enabled: true,
+
+  	data: {}
+
+	},
+
+	userProgress: {
+
+  	tasksClearedInTodoMode: 0,
+
+  	recurringTasksArchived: 0,
+
+  	cyclesCompleted: 0,
+
+  	rewardMilestones: []
+
+	}
+
+  }
+
+};
