@@ -1,0 +1,5 @@
+# Redirect root to miniCycle.html
+/    /miniCycle.html    200
+
+# Handle 404s by serving miniCycle.html (SPA fallback)
+/*   /miniCycle.html    404
