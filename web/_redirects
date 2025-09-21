@@ -1,6 +1,6 @@
-# Domain redirect for minicycleapp.com
-https://minicycleapp.com  https://minicycle.app/product.html  301!
-https://www.minicycleapp.com  https://minicycle.app/product.html  301!
+# Domain redirect for minicycleapp.com (with forced redirect)
+https://minicycleapp.com/*  https://minicycle.app/product.html  301!
+https://www.minicycleapp.com/*  https://minicycle.app/product.html  301!
 
 # Redirect root to miniCycle.html
 /    /miniCycle.html    200

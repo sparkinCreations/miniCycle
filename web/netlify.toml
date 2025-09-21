@@ -1,0 +1,47 @@
+# Netlify configuration file
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  # Publish directory (where your built site files are located)
+  publish = "."
+  
+  # Command to run before deploying (if you have a build process)
+  # command = "npm run build"
+
+# Domain redirects for minicycleapp.com
+[[redirects]]
+  from = "https://minicycleapp.com/*"
+  to = "https://minicycle.app/product.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.minicycleapp.com/*"
+  to = "https://minicycle.app/product.html"
+  status = 301
+  force = true
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # PWA and caching headers
+    Cache-Control = "public, max-age=31536000"
+    
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    # Don't cache HTML files as aggressively
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    # Cache manifest for PWA
+    Cache-Control = "public, max-age=86400"
