@@ -146,6 +146,19 @@ html, body {
     cursor: pointer;
     transition: background 0.3s ease-in-out, opacity 0.3s;
     z-index: 2;
+    
+    /* Reset button styles */
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    outline: none;
+}
+
+/* Focus styling for accessibility */
+.slide-arrow:focus {
+    outline: 2px solid #007BFF;
+    outline-offset: 2px;
+    background-color: rgba(255, 255, 255, 0.9);
 }
 
 /* Left arrow (for sliding task view out) */
@@ -186,16 +199,31 @@ html, body {
     pointer-events: none;
 }
 
-
-#slide-left.show:hover {
-    background-color:  white;
-    
+/* Hover states */
+#slide-left.show:hover,
+#slide-left:hover:not(.hide) {
+    background-color: white;
 }
 
+#slide-right.show:hover,
+#slide-right:hover:not(.hide) {
+    background-color: white;
+}
 
-#slide-right.show:hover {
-    background-color:  white;
+/* Active states for better feedback */
+.slide-arrow:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .slide-arrow {
+        border: 2px solid currentColor;
+    }
     
+    .slide-arrow:focus {
+        outline: 3px solid #007BFF;
+    }
 }
 
 
@@ -795,7 +823,7 @@ body.dark-mode.theme-golden-glow .undo-redo-btn:hover {
 }
 
 /* Mobile: Enhanced theming for mobile view */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .title-header-inner {
     flex-direction: column;
     align-items: center;
@@ -5575,7 +5603,7 @@ select.hidden {
   bottom: 35px;
   width: 100%;
   z-index: 1;
-  pointer-events: grab;
+  pointer-events: auto;
 }
 
 .dot {
@@ -5584,7 +5612,20 @@ select.hidden {
   background-color: #ccc;
   border-radius: 50%;
   transition: background-color 0.3s ease;
-  pointer-events: grab;
+  cursor: pointer;
+  
+  /* Reset button styles */
+  border: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  
+  /* Ensure proper focus styling for accessibility */
+}
+
+.dot:focus {
+  outline: 2px solid #007BFF;
+  outline-offset: 2px;
 }
 
 .dot.active {

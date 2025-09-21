@@ -1354,24 +1354,32 @@ window.installApp = () => {
 
 
 <div>
-    <footer id="footer-container" role="contentinfo">
-        <!-- ✅ Undo buttons here will group them logically with header -->
-  <div id="undo-redo-buttons" class="undo-container">
-    <button id="undo-btn" class="undo-redo-btn" hidden>Undo</button>
-    <button id="redo-btn" class="undo-redo-btn" hidden>Redo</button>
-  </div>
-
-          <div id="nav-dots" class="navigation-dots">
-  <span class="dot active"></span>
-  <span class="dot"></span>
+<footer id="footer-container" role="contentinfo">
+<!-- ✅ Undo buttons here will group them logically with header -->
+<div id="undo-redo-buttons" class="undo-container">
+<button id="undo-btn" class="undo-redo-btn" hidden>Undo</button>
+<button id="redo-btn" class="undo-redo-btn" hidden>Redo</button>
 </div>
-        <ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; gap: 1em; justify-content: center; align-items: center; width: fit-content;">
-          <li id="copyright">&copy; 2025 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a></li>
-          <li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></li>
-          <li class="footer-item"><a href="terms.html" target="_blank" rel="noopener">Terms of Service</a></li>
-          <li class="footer-item" id="open-feedback-modal-footer" class="open-feedback-modal-footer">Feedback</li>
-        </ul>
-      </footer>
+
+<nav id="nav-dots" class="navigation-dots" role="tablist" aria-label="Page navigation">
+<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view">
+<span class="visually-hidden">Tasks</span>
+</button>
+<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view">
+<span class="visually-hidden">Stats</span>
+</button>
+</nav>
+<ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; gap: 1em; justify-content: center; align-items: center; width: fit-content;">
+<li id="copyright">&copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a></li>
+<li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+<li class="footer-item"><a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a></li>
+<li class="footer-item">
+<a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal">
+Feedback
+</a>
+</li>
+</ul>
+</footer>
       
 </div>
 
