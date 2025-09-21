@@ -397,7 +397,7 @@ window.installApp = () => {
 </head>
 
 <body>
-  <div id="notification-container"></div> <!-- Notification container --> 
+  <div id="notification-container" aria-live="polite"></div> <!-- Notification container --> 
 
 
   
@@ -458,9 +458,10 @@ window.installApp = () => {
                 <div class="modal-content">
                     <span class="close-modal" role="button" tabindex="0" aria-label="Close about modal">&times;</span>
                   <h2 id="about-modal-title">About miniCycle</h2>
-                    <p><strong>Version:</strong> 1.0</p>
+                    <p><strong>Version:</strong> <span id="about-version">—</span></p>
+                    <p><strong>Service Worker Cache:</strong> <span id="about-sw-version">—</span></p>
                     <p>miniCycle is a lightweight task manager designed for quick and easy task tracking.</p>
-                    <p>Developed by <strong>Sparkin Creations</strong>.</p>
+                    <p>Developed by <strong>sparkinCreations</strong>.</p>
                     <p>Visit <a href="https://sparkincreations.com" target="_blank">our website</a> for updates!</p>
                 </div>
             </div>
@@ -998,6 +999,7 @@ window.installApp = () => {
               <button id="open-testing-modal" class="settings-btn">
                   🔬 Open App Diagnostics & Testing
               </button>
+              <button id="check-for-updates" class="settings-btn">🔄 Check for Updates</button>
               <button id="try-lite-version" class="settings-btn">📱 Try Lite Version</button>
 
                 <!-- Factory Reset -->
@@ -1349,8 +1351,7 @@ window.installApp = () => {
 
     
 </div>
-    <!-- Global Notification System -->
-    <div id="notification-container" aria-live="polite"></div>
+
 
 
 <div>
@@ -1400,6 +1401,42 @@ Feedback
     }
   }, 1500);
 })();
+</script>
+<script>
+// Sync About modal version with meta app-version
+document.addEventListener('DOMContentLoaded', function () {
+  var meta = document.querySelector('meta[name="app-version"]');
+  var aboutSpan = document.getElementById('about-version');
+  if (meta && aboutSpan) {
+    aboutSpan.textContent = meta.getAttribute('content') || '—';
+  }
+  // Populate SW version in About modal
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg || !reg.active) return;
+      var ch = new MessageChannel();
+      ch.port1.onmessage = function (evt) {
+        var swSpan = document.getElementById('about-sw-version');
+        if (swSpan && evt.data) {
+          swSpan.textContent = evt.data.version || 'Unknown';
+        }
+      };
+      try { reg.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) {}
+    }).catch(function(){});
+  }
+
+  // Wire "Check for Updates" button
+  var btn = document.getElementById('check-for-updates');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      if (typeof window.forceServiceWorkerUpdate === 'function') {
+        window.forceServiceWorkerUpdate();
+      } else if (typeof window.checkForUpdates === 'function') {
+        window.checkForUpdates();
+      }
+    });
+  }
+});
 </script>
    <!-- <script src="utilities/testing-modal.js"></script> -->
 </body>

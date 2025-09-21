@@ -14284,7 +14284,7 @@ function showAppInfo() {
     appendToTestResults("ℹ️ Application Information:\n");
     appendToTestResults(`- Version: 1.0\n`);
     appendToTestResults(`- Name: miniCycle\n`);
-    appendToTestResults(`- Developer: Sparkin Creations\n`);
+    appendToTestResults(`- Developer: sparkinCreations\n`);
     appendToTestResults(`- Build Date: August 25, 2025\n`);
     appendToTestResults(`- User Agent: ${navigator.userAgent}\n\n`);
     
