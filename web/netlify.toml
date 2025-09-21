@@ -21,6 +21,13 @@
   status = 301
   force = true
 
+# Alternative www redirect (in case the above doesn't work)
+[[redirects]]
+  from = "http://www.minicycleapp.com/*"
+  to = "https://minicycle.app/product.html"
+  status = 301
+  force = true
+
 # Headers for security and performance
 [[headers]]
   for = "/*"
