@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.275">
+<meta name="app-version" content="1.276">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.275">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.276">
 <link rel="manifest" href="manifest.json">
 
 
@@ -69,6 +69,8 @@
   .notification .notification-content {
     margin-right: 24px; /* Space for close button */
   }
+
+  /* Footer mobile layout is defined in miniCycle-styles.css */
 
   </style>
 
@@ -397,7 +399,7 @@ window.installApp = () => {
 </head>
 
 <body>
-  <div id="notification-container"></div> <!-- Notification container --> 
+  <div id="notification-container" aria-live="polite"></div> <!-- Notification container --> 
 
 
   
@@ -458,10 +460,13 @@ window.installApp = () => {
                 <div class="modal-content">
                     <span class="close-modal" role="button" tabindex="0" aria-label="Close about modal">&times;</span>
                   <h2 id="about-modal-title">About miniCycle</h2>
-                    <p><strong>Version:</strong> 1.0</p>
-                    <p>miniCycle is a lightweight task manager designed for quick and easy task tracking.</p>
-                    <p>Developed by <strong>Sparkin Creations</strong>.</p>
-                    <p>Visit <a href="https://sparkincreations.com" target="_blank">our website</a> for updates!</p>
+                    <p><strong>Version:</strong> <span id="about-version">—</span></p>
+                    <p><strong>Service Worker Cache:</strong> <span id="about-sw-version">—</span></p>
+          <p>miniCycle is a lightweight task manager designed for quick and easy task tracking.</p>
+          <p>Developed by <strong>sparkinCreations</strong>.</p>
+          <p><a href="product.html" target="_blank" rel="noopener noreferrer">Learn more about miniCycle</a></p>
+          <p>Visit <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">our website</a> for updates!</p>
+          <p class="about-legal" style="font-size: 12px; opacity: 0.8; margin-top: 8px;">&copy; 2025 sparkinCreations &bull; miniCycle&trade;</p>
                 </div>
             </div>
 
@@ -998,6 +1003,7 @@ window.installApp = () => {
               <button id="open-testing-modal" class="settings-btn">
                   🔬 Open App Diagnostics & Testing
               </button>
+              <button id="check-for-updates" class="settings-btn">🔄 Check for Updates</button>
               <button id="try-lite-version" class="settings-btn">📱 Try Lite Version</button>
 
                 <!-- Factory Reset -->
@@ -1349,29 +1355,40 @@ window.installApp = () => {
 
     
 </div>
-    <!-- Global Notification System -->
-    <div id="notification-container" aria-live="polite"></div>
+
 
 
 <div>
-    <footer id="footer-container" role="contentinfo">
-        <!-- ✅ Undo buttons here will group them logically with header -->
-  <div id="undo-redo-buttons" class="undo-container">
-    <button id="undo-btn" class="undo-redo-btn" hidden>Undo</button>
-    <button id="redo-btn" class="undo-redo-btn" hidden>Redo</button>
-  </div>
-
-          <div id="nav-dots" class="navigation-dots">
-  <span class="dot active"></span>
-  <span class="dot"></span>
+<footer id="footer-container" role="contentinfo">
+<!-- ✅ Undo buttons here will group them logically with header -->
+<div id="undo-redo-buttons" class="undo-container">
+<button id="undo-btn" class="undo-redo-btn" hidden>Undo</button>
+<button id="redo-btn" class="undo-redo-btn" hidden>Redo</button>
 </div>
-        <ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; gap: 1em; justify-content: center; align-items: center; width: fit-content;">
-          <li id="copyright">&copy; 2025 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a></li>
-          <li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></li>
-          <li class="footer-item"><a href="terms.html" target="_blank" rel="noopener">Terms of Service</a></li>
-          <li class="footer-item" id="open-feedback-modal-footer" class="open-feedback-modal-footer">Feedback</li>
-        </ul>
-      </footer>
+
+<nav id="nav-dots" class="navigation-dots" role="tablist" aria-label="Page navigation">
+<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view">
+<span class="visually-hidden">Tasks</span>
+</button>
+<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view">
+<span class="visually-hidden">Stats</span>
+</button>
+</nav>
+<ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; justify-content: center; align-items: center; width: fit-content;">
+<li id="copyright">
+  &copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a>
+  &bull;
+  <a href="product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page">miniCycle<sup>™</sup></a>
+</li>
+<li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+<li class="footer-item"><a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a></li>
+<li class="footer-item">
+<a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal">
+Feedback
+</a>
+</li>
+</ul>
+</footer>
       
 </div>
 
@@ -1381,7 +1398,7 @@ window.installApp = () => {
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script src="miniCycle-scripts.js?v=1.275"></script>
+ <script src="miniCycle-scripts.js?v=1.276"></script>
 <script>
 // Late, best-effort fallback: if app didn’t initialize, go lite.
 (function () {
@@ -1392,6 +1409,42 @@ window.installApp = () => {
     }
   }, 1500);
 })();
+</script>
+<script>
+// Sync About modal version with meta app-version
+document.addEventListener('DOMContentLoaded', function () {
+  var meta = document.querySelector('meta[name="app-version"]');
+  var aboutSpan = document.getElementById('about-version');
+  if (meta && aboutSpan) {
+    aboutSpan.textContent = meta.getAttribute('content') || '—';
+  }
+  // Populate SW version in About modal
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg || !reg.active) return;
+      var ch = new MessageChannel();
+      ch.port1.onmessage = function (evt) {
+        var swSpan = document.getElementById('about-sw-version');
+        if (swSpan && evt.data) {
+          swSpan.textContent = evt.data.version || 'Unknown';
+        }
+      };
+      try { reg.active.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch (e) {}
+    }).catch(function(){});
+  }
+
+  // Wire "Check for Updates" button
+  var btn = document.getElementById('check-for-updates');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      if (typeof window.forceServiceWorkerUpdate === 'function') {
+        window.forceServiceWorkerUpdate();
+      } else if (typeof window.checkForUpdates === 'function') {
+        window.checkForUpdates();
+      }
+    });
+  }
+});
 </script>
    <!-- <script src="utilities/testing-modal.js"></script> -->
 </body>

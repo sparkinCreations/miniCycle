@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 // ✅ UPDATED: Device detection with Schema 2.5 only
 function runDeviceDetection() {
     var userAgent = navigator.userAgent;
-    var currentVersion = '1.275';
+    var currentVersion = '1.276';
     
     console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
     showNotification('🔍 Checking device compatibility...', 'info', 3000);
@@ -370,7 +370,7 @@ function runDeviceDetection() {
 
 // ✅ UPDATED: Auto-redetection with Schema 2.5 only
 function autoRedetectOnVersionChange() {
-    const currentVersion = '1.275';
+    const currentVersion = '1.276';
     
     console.log('🔄 Checking version change (Schema 2.5 only)...');
     
@@ -405,7 +405,7 @@ function autoRedetectOnVersionChange() {
 // ✅ UPDATED: Enhanced device detection reporting with Schema 2.5 only
 function reportDeviceCompatibility() {
     const userAgent = navigator.userAgent;
-    const currentVersion = '1.275';
+    const currentVersion = '1.276';
     
     console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
     
@@ -14284,7 +14284,7 @@ function showAppInfo() {
     appendToTestResults("ℹ️ Application Information:\n");
     appendToTestResults(`- Version: 1.0\n`);
     appendToTestResults(`- Name: miniCycle\n`);
-    appendToTestResults(`- Developer: Sparkin Creations\n`);
+    appendToTestResults(`- Developer: sparkinCreations\n`);
     appendToTestResults(`- Build Date: August 25, 2025\n`);
     appendToTestResults(`- User Agent: ${navigator.userAgent}\n\n`);
     
