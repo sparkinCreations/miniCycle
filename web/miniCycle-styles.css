@@ -48,7 +48,7 @@ html, body {
 
 #task-view {
     position: fixed;
-    top: 55%;
+    top: 54%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90vw;
@@ -1902,7 +1902,7 @@ input:checked + .slider:before {
 #footer-container {
     display: block;
     position: fixed;
-    bottom: 20px;
+    bottom: 18px;
     color: white;
     text-align: center;
     font-size: 10px;
