@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /utilities/
+Disallow: /components/
+Disallow: /backup/
+Disallow: /TTO/
+Disallow: /miniCycleGames/
+Disallow: /docs/
+
+# Allow important pages
+Allow: /product.html
+Allow: /miniCycle.html
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /user-manual.html
+Allow: /assets/
+
+# Sitemap location
+Sitemap: https://minicycle.app/sitemap.xml
+
+# Crawl delay (optional - helps prevent server overload)
+Crawl-delay: 1
