@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.277">
+<meta name="app-version" content="1.278">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.277">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.278">
 <link rel="manifest" href="manifest.json">
 
 
@@ -407,10 +407,10 @@ window.installApp = () => {
 <header class="mini-cycle-header-row">
   <!-- Mode Selector -->
   <div class="mode-selector-container">
-    <select id="mode-selector" class="mode-selector">
-      <option value="auto-cycle">Auto Cycle ↻</option>
-      <option value="manual-cycle">Manual Cycle ✔︎↻</option>
-      <option value="todo-mode">To-Do Mode ✓</option>
+    <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
+      <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻</option>
+      <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻</option>
+      <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode ✓</option>
     </select>
   </div>
 
@@ -421,15 +421,15 @@ window.installApp = () => {
   </div>
 
   <!-- Menu Button -->
-  <button class="menu-button" aria-label="Menu">☰</button>
+  <button class="menu-button" aria-label="Menu" title="Open menu">☰</button>
 </header>
 
 <!-- Mobile Mode Selector (below header) -->
 <div class="mobile-mode-selector-wrapper">
-  <select id="mobile-mode-selector" class="mode-selector">
-    <option value="auto-cycle">Auto Cycle ↻ ▼</option>
-    <option value="manual-cycle">Manual Cycle ✔︎↻ ▼</option>
-    <option value="todo-mode">To-Do Mode ✓ ▼</option>
+  <select id="mobile-mode-selector" class="mode-selector" aria-label="Select mode (mobile)" title="Switch mode (mobile): Auto Cycle, Manual Cycle, or To-Do">
+    <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻ ▼</option>
+    <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻ ▼</option>
+    <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode ✓ ▼</option>
   </select>
 </div>
 
@@ -445,7 +445,7 @@ window.installApp = () => {
                 <span id="current-date"></span>  <!-- Date will be inserted here -->
             </div>
              <!-- About Section Trigger -->
-            <button id="open-about-modal" class="open-about-modal" aria-label="About Task Cycle Mini">
+      <button id="open-about-modal" class="open-about-modal" aria-label="About Task Cycle Mini" title="About miniCycle">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         </button>
 
@@ -462,7 +462,7 @@ window.installApp = () => {
                   <h2 id="about-modal-title">About miniCycle</h2>
                     <p><strong>Version:</strong> <span id="about-version">—</span></p>
                     <p><strong>Service Worker Cache:</strong> <span id="about-sw-version">—</span></p>
-          <p>miniCycle is a lightweight task manager designed for quick and easy task tracking.</p>
+          <p>miniCycle is your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.</p>
           <p>Developed by <strong>sparkinCreations</strong>.</p>
           <p><a href="product.html" target="_blank" rel="noopener noreferrer">Learn more about miniCycle</a></p>
           <p>Visit <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">our website</a> for updates!</p>
@@ -475,22 +475,22 @@ window.installApp = () => {
         <div class="menu-buttons-together">
         <ul>
             <div class="main-menu-row">
-            <li><button id="new-mini-cycle"><i class="fas fa-plus"></i>New <br>Cycle List</button></li>
-            <li><button id="open-mini-cycle"><i class="fas fa-folder-open"></i>Open Existing<br>Cycle List</button></li>
-            <li><button id="save-as-mini-cycle"><i class="fas fa-copy"></i>Duplicate <br>Cycle List</button></li>
+            <li><button id="new-mini-cycle" title="Create a new miniCycle"><i class="fas fa-plus"></i>New <br>Cycle List</button></li>
+            <li><button id="open-mini-cycle" title="Open an existing miniCycle"><i class="fas fa-folder-open"></i>Open Existing<br>Cycle List</button></li>
+            <li><button id="save-as-mini-cycle" title="Duplicate the current miniCycle"><i class="fas fa-copy"></i>Duplicate <br>Cycle List</button></li>
             </div>
             <div class="main-menu-row">
-            <li><button id="export-mini-cycle"><i class="fas fa-file-download"></i>Download <br> Cycle List</button></li>
-            <li><button id="import-mini-cycle"><i class="fas fa-file-upload"></i> Import <br> Cycle List</button></li>
+            <li><button id="export-mini-cycle" title="Download the current miniCycle as a file"><i class="fas fa-file-download"></i>Download <br> Cycle List</button></li>
+            <li><button id="import-mini-cycle" title="Import a miniCycle from a file"><i class="fas fa-file-upload"></i> Import <br> Cycle List</button></li>
           <div class="divider-vertical"></div>
-            <li><button id="clear-mini-cycle-tasks"><i class="fas fa-eraser"></i> Uncheck All<br>Tasks</button></li>
-            <li><button id="delete-all-mini-cycle-tasks"><i class="fas fa-trash"></i> Delete All<br>Tasks</button></li>
+            <li><button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this miniCycle"><i class="fas fa-eraser"></i> Uncheck All<br>Tasks</button></li>
+            <li><button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this miniCycle"><i class="fas fa-trash"></i> Delete All<br>Tasks</button></li>
             </div>
             <div class="main-menu-row">
-                <li><button id="open-reminders-modal"><i class="fas fa-bell"></i>Reminders &<br> Notifications</button></li>
+                <li><button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders &<br> Notifications</button></li>
                 <li><button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Send <br> Feedback</button></li>
-                <li><button id="open-user-manual" class="open-user-manual"><i class="fas fa-book"></i>User Manual</button></li>
-                <li><button id="open-settings" class="open-settings"><i class="fas fa-cog"></i>Settings</button></li>
+                <li><button id="open-user-manual" class="open-user-manual" title="Open the user manual"><i class="fas fa-book"></i>User Manual</button></li>
+                <li><button id="open-settings" class="open-settings" title="Open settings"><i class="fas fa-cog"></i>Settings</button></li>
                 </div>
            </ul>
         </div>
@@ -539,7 +539,7 @@ window.installApp = () => {
 
  
   
-      <button id="open-recurring-panel" class="open-recurring-panel"><i class="fas fa-repeat"></i> Manage Recurring Tasks</button>
+  <button id="open-recurring-panel" class="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i> Manage Recurring Tasks</button>
     
 
     
@@ -1285,20 +1285,20 @@ window.installApp = () => {
 
 <!-- Task List & Stats Wrapper -->
 <main id="app-container" role="main">
-          <button id="quick-dark-toggle" aria-label="Toggle dark mode">
+          <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
   🌓
 </button>
     <!-- Left Arrow for Task View -->
-<div id="slide-left" class="slide-arrow">❯</div>
+<div id="slide-left" class="slide-arrow" title="Show Stats">❯</div>
 
 <!-- Right Arrow for Stats Panel -->
-<div id="slide-right" class="slide-arrow">❮</div>
+<div id="slide-right" class="slide-arrow" title="Show Tasks">❮</div>
 
 
 <div id="task-view">
     <div class="task-input">
-        <input type="text" id="taskInput" class="taskInput" placeholder="Enter a task...">
-        <button id="addTask">Add</button>
+  <input type="text" id="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
+  <button id="addTask" title="Add task">Add</button>
     </div>
     <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
     <div class="task-list-container">
@@ -1310,7 +1310,7 @@ window.installApp = () => {
     </div>
     <div id="complete-all-and-help-window-container" class="complete-all-and-help-window-container">
         <!-- Complete All Button -->
-        <button id="completeAll" class="complete-all-btn">Complete</button>
+  <button id="completeAll" class="complete-all-btn" title="Complete all checked tasks">Complete</button>
         <!-- Mini Cycle Help Window -->
         <div id="help-window" class="help-window">
             <!--Messages will appear here-->
@@ -1362,28 +1362,28 @@ window.installApp = () => {
 <footer id="footer-container" role="contentinfo">
 <!-- ✅ Undo buttons here will group them logically with header -->
 <div id="undo-redo-buttons" class="undo-container">
-<button id="undo-btn" class="undo-redo-btn" hidden>Undo</button>
-<button id="redo-btn" class="undo-redo-btn" hidden>Redo</button>
+<button id="undo-btn" class="undo-redo-btn" hidden title="Undo last action">Undo</button>
+<button id="redo-btn" class="undo-redo-btn" hidden title="Redo last undone action">Redo</button>
 </div>
 
 <nav id="nav-dots" class="navigation-dots" role="tablist" aria-label="Page navigation">
-<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view">
+<button class="dot active" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" title="Tasks view">
 <span class="visually-hidden">Tasks</span>
 </button>
-<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view">
+<button class="dot" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" title="Statistics view">
 <span class="visually-hidden">Stats</span>
 </button>
 </nav>
 <ul class="footer-links" style="list-style: none; padding: 0; margin: 0 auto; display: flex; justify-content: center; align-items: center; width: fit-content;">
 <li id="copyright">
-  &copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a>
+  &copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
   &bull;
-  <a href="product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page">miniCycle<sup>™</sup></a>
+  <a href="product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
 </li>
-<li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
-<li class="footer-item"><a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a></li>
+<li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
+<li class="footer-item"><a href="terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
 <li class="footer-item">
-<a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal">
+<a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal" title="Send us feedback">
 Feedback
 </a>
 </li>
@@ -1398,7 +1398,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script src="miniCycle-scripts.js?v=1.277"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.278"></script>
 <script>
 // Late, best-effort fallback: if app didn’t initialize, go lite.
 (function () {
@@ -1446,6 +1446,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
-   <!-- <script src="utilities/testing-modal.js"></script> -->
+   <script src="utilities/testing-modal.js"></script>
 </body>
 </html>

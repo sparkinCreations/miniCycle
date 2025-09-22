@@ -305,10 +305,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 // ✅ UPDATED: Device detection with Schema 2.5 only
 function runDeviceDetection() {
     var userAgent = navigator.userAgent;
-    var currentVersion = '1.279';
+    var currentVersion = '1.280';
     
     console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
-    showNotification('🔍 Checking device compatibility...', 'info', 3000);
+    //showNotification('🔍 Checking device compatibility...', 'info', 3000);
     
     // ✅ Check manual override first
     var manualOverride = localStorage.getItem('miniCycleForceFullVersion');
@@ -400,7 +400,7 @@ function runDeviceDetection() {
             }, 1000);
         } else {
             console.log('💻 Device is capable - staying on full version');
-            showNotification('✅ Device detection complete - using full version', 'success', 3000);
+            //showNotification('✅ Device detection complete - using full version', 'success', 3000);
         }
     }
     
@@ -410,7 +410,7 @@ function runDeviceDetection() {
 
 // ✅ UPDATED: Auto-redetection with Schema 2.5 only
 function autoRedetectOnVersionChange() {
-    const currentVersion = '1.279';
+    const currentVersion = '1.280';
     
     console.log('🔄 Checking version change (Schema 2.5 only)...');
     
@@ -445,7 +445,7 @@ function autoRedetectOnVersionChange() {
 // ✅ UPDATED: Enhanced device detection reporting with Schema 2.5 only
 function reportDeviceCompatibility() {
     const userAgent = navigator.userAgent;
-    const currentVersion = '1.279';
+    const currentVersion = '1.280';
     
     console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
     

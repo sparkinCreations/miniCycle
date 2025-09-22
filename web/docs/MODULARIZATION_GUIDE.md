@@ -31,8 +31,10 @@ Breaking down the monolithic 15,677-line `miniCycle-scripts.js` into smaller, fo
 
 ### Success Metrics
 - ✅ **Notification System**: Successfully extracted (946 lines → separate module)
+- ✅ **Testing Modal System**: Successfully extracted (2,669 lines → separate module)
 - 🎯 **Target**: Break main script into 10-15 focused modules
 - 📈 **Goal**: Reduce main script to under 3,000 lines
+- 📊 **Progress**: 22% reduction achieved (15,677 → 13,008 lines)
 
 ---
 
@@ -65,6 +67,7 @@ Rate modules by extraction difficulty:
 | Module | Lines | Dependencies | DOM Access | Global Vars | Difficulty |
 |--------|-------|--------------|------------|-------------|------------|
 | Notifications | 946 | High | Medium | 5 | ✅ Done |
+| Testing Modal | 2,669 | Medium | High | 3 | ✅ Done |
 | Task Manager | ~2000 | Very High | High | 15+ | 🔴 Hard |
 | Theme System | ~800 | Medium | Low | 3 | 🟡 Medium |
 | Data Storage | ~1500 | Very High | None | 8 | 🔴 Hard |
@@ -401,6 +404,58 @@ class DOMModule {
 }
 ```
 
+### Challenge 6: Duplicate Setup/Initialization Calls
+**Problem**: After modularization, module setup functions get called multiple times
+
+**Discovered in**: Testing Modal extraction - `setupTestingModal()` was called twice
+**Symptoms**: 
+- Modal opens and immediately closes
+- Event listeners firing multiple times  
+- Conflicting behavior between duplicate instances
+
+**Root Cause**: 
+```javascript
+// Multiple places calling the same setup function
+function boot() {
+    setupTestingModal(); // Call #1 - line 194
+}
+
+function start() {
+    setupTestingModal(); // Call #2 - line 12953 (duplicate!)
+}
+```
+
+**Solution**:
+```javascript
+// 1. Search for duplicate calls
+grep -n "setupModuleName" miniCycle-scripts.js
+
+// 2. Remove duplicates, keep only one initialization point
+function boot() {
+    setupTestingModal(); // Keep this one
+}
+
+function start() {
+    // setupTestingModal(); // Remove duplicate
+}
+
+// 3. Add safeguards against double initialization
+let isInitialized = false;
+function setupModule() {
+    if (isInitialized) {
+        console.warn('Module already initialized');
+        return;
+    }
+    isInitialized = true;
+    // ... setup logic
+}
+```
+
+**Prevention**: Always search for existing calls before adding new ones
+```bash
+grep -n "functionName" miniCycle-scripts.js
+```
+
 ---
 
 ## 🧪 Testing & Validation
@@ -483,8 +538,8 @@ themeTests.runTests();
 ## 📋 Recommended Module Extraction Order
 
 ### Phase 1: Low-Risk Modules (Start Here)
-1. **✅ Notifications** - Already done
-2. **🟡 Testing Modal** - Partially done, needs cleanup
+1. **✅ Notifications** - Already done (946 lines extracted)
+2. **✅ Testing Modal** - Successfully completed (2,669 lines extracted)
 3. **🟢 Theme System** - Medium complexity, low coupling
 4. **🟢 Date Utilities** - Pure functions, no dependencies
 
@@ -841,6 +896,38 @@ This modularization guide provides:
 - ✅ **Global Compatibility**: Window object attachment pattern
 - ✅ **State Synchronization**: Keep global and module state in sync
 - ✅ **Comprehensive Testing**: Both automated and manual testing
+
+### Lessons Learned from Testing Modal Extraction
+
+#### What Worked Well ✅
+- **Window object pattern**: Made functions globally accessible without ES6 issues
+- **Large module extraction**: Successfully removed 2,669 lines in one extraction
+- **Safe function wrappers**: `safeAddEventListenerById()` prevented errors
+- **Module self-containment**: All 39 buttons and 4 tabs work independently
+
+#### Critical Discoveries 🔍  
+- **Duplicate setup calls**: Always search for existing function calls before adding new ones
+- **Event listener conflicts**: Multiple setups can cause open/close conflicts
+- **Timing dependencies**: Module loading order affects functionality
+- **Systematic debugging**: Console analysis revealed actual vs perceived issues
+
+#### Best Practices Learned 📋
+```bash
+# Always check for duplicate calls before modularizing
+grep -n "setupFunctionName" miniCycle-scripts.js
+
+# Search for all references to understand dependencies  
+grep -r "functionName" . --include="*.js"
+
+# Test in browser console to verify functionality
+console.log("Testing module functionality...")
+```
+
+#### Next Module Recommendations 🎯
+Based on testing modal success:
+1. **Theme System** (similar complexity, fewer dependencies)
+2. **Settings Management** (well-defined boundaries)
+3. **Modal Management** (patterns established from testing modal)
 
 ---
 
