@@ -4,12 +4,48 @@
 // � DEPENDENCY HELPERS (Safe Global Access)
 // ==========================================
 
-// Safe access to global functions
+// ==========================================
+// 📦 MODULE IMPORTS  
+// ==========================================
+
+import { MiniCycleNotifications } from './notifications.js';
+
+// ==========================================
+// � DEPENDENCY HELPERS (Safe Global Access)
+// ==========================================
+
+// Initialize notifications module
+const notifications = new MiniCycleNotifications();
+
+// Safe access to notification functions (now using imported module)
 function safeShowNotification(message, type = "info", duration = 2000) {
-    if (typeof window.showNotification === 'function') {
-        window.showNotification(message, type, duration);
-    } else {
-        console.log(`[Notification] ${message}`);
+    try {
+        return notifications.show(message, type, duration);
+    } catch (error) {
+        console.log(`[Notification Fallback] ${message}`);
+        console.warn('Notification system error:', error);
+    }
+}
+
+// Safe access to confirmation modal
+function safeShowConfirmationModal(options) {
+    try {
+        return notifications.showConfirmationModal(options);
+    } catch (error) {
+        console.warn('Confirmation modal error:', error);
+        // Fallback to basic confirm
+        return Promise.resolve(confirm(options.message || 'Confirm action?'));
+    }
+}
+
+// Safe access to prompt modal
+function safeShowPromptModal(options) {
+    try {
+        return notifications.showPromptModal(options);
+    } catch (error) {
+        console.warn('Prompt modal error:', error);
+        // Fallback to basic prompt
+        return Promise.resolve(prompt(options.message || 'Enter value:', options.defaultValue || ''));
     }
 }
 
@@ -1053,7 +1089,7 @@ function performActualMigration() {
             
             // Show reload confirmation
             setTimeout(() => {
-    showConfirmationModal({
+    safeShowConfirmationModal({
         title: "🎉 Schema 2.5 Migration Complete!",
         message: `Migration to Schema 2.5 was successful!<br><br>
                  ✅ Your data has been upgraded<br>
@@ -1329,7 +1365,7 @@ function restoreFromBackup() {
     restoreBtn.addEventListener("click", () => {
         if (!selectedBackup) return;
         
-        showConfirmationModal({
+        safeShowConfirmationModal({
             title: "Confirm Restore",
             message: `⚠️ WARNING: This will completely replace all your current miniCycle data!\n\n` +
                      `Selected backup: ${new Date(parseInt(selectedBackup.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''))).toLocaleString()}\n` +
@@ -2801,4 +2837,9 @@ window.appendToTestResults = appendToTestResults;
 window.clearTestResults = clearTestResults;
 window.exportTestResults = exportTestResults;
 window.copyTestResults = copyTestResults;
+
+// Make notification functions globally available
+window.showNotification = safeShowNotification;
+window.showConfirmationModal = safeShowConfirmationModal;
+window.showPromptModal = safeShowPromptModal;
 
