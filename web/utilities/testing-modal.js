@@ -1,19 +1,48 @@
 
 
 // ==========================================
-// 🛠️ UTILITY FUNCTIONS
+// � DEPENDENCY HELPERS (Safe Global Access)
+// ==========================================
+
+// Safe access to global functions
+function safeShowNotification(message, type = "info", duration = 2000) {
+    if (typeof window.showNotification === 'function') {
+        window.showNotification(message, type, duration);
+    } else {
+        console.log(`[Notification] ${message}`);
+    }
+}
+
+function safeDeleteStorageItem(key, storageType) {
+    if (typeof window.deleteStorageItem === 'function') {
+        window.deleteStorageItem(key, storageType);
+    } else {
+        // Fallback implementation
+        const storage = storageType === 'local' ? localStorage : sessionStorage;
+        storage.removeItem(key);
+        console.log(`Deleted storage item: ${key}`);
+    }
+}
+
+// Use safe versions throughout this module
+const showNotification = safeShowNotification;
+
+// ==========================================
+// �🛠️ UTILITY FUNCTIONS
 // ==========================================
 
 function safeAddEventListener(element, event, handler) {
     if (!element) return; // Prevent errors if element is null
-    element.removeEventListener(event, handler); // Clear old one
-    element.addEventListener(event, handler); // Add fresh
+    
+    // Don't remove existing listeners - just add the new one
+    element.addEventListener(event, handler);
 }
 
 function safeAddEventListenerById(id, event, handler) {
     const element = document.getElementById(id);
     if (element) {
-        safeAddEventListener(element, event, handler);
+        // Add event listener directly
+        element.addEventListener(event, handler);
     } else {
         console.warn(`⚠ Cannot attach event listener: #${id} not found.`);
     }
@@ -38,6 +67,18 @@ function setupTestingModal() {
         testingModal.style.display = "flex";
         initializeTestingModalDrag();
         showNotification("🔬 Testing panel opened", "info", 2000);
+        
+        // Setup ALL functionality AFTER modal is visible
+        setTimeout(() => {
+            // Setup tabs first
+            setupTestingTabs();
+            
+            // Setup buttons
+            setupTestButtons();
+            
+            // Setup results controls
+            setupResultsControls();
+        }, 150);
     });
     
     // Close testing modal
@@ -63,7 +104,7 @@ function setupTestingModal() {
 // ==========================================
 
 function setupTestingTabs() {
-    const tabButtons = document.querySelectorAll('.testing-tab-btn');
+    const tabButtons = document.querySelectorAll('.testing-tab');
     const tabContents = document.querySelectorAll('.testing-tab-content');
     
     if (tabButtons.length === 0) {
@@ -79,9 +120,13 @@ function setupTestingTabs() {
             tabButtons.forEach(btn => btn.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
             
-            // Add active class to clicked button and corresponding content
+            // Add active class to clicked button
             button.classList.add('active');
-            const targetContent = document.getElementById(targetTab);
+            
+            // Find the corresponding content with the correct ID format
+            const targetContentId = targetTab + '-tab';
+            const targetContent = document.getElementById(targetContentId);
+            
             if (targetContent) {
                 targetContent.classList.add('active');
             }
@@ -139,10 +184,8 @@ function setupResultsControls() {
 
 // Add any other missing functions that are called in setupTestingModal()
     
-    // Setup enhanced functionality
+    // Setup enhanced functionality that doesn't depend on modal being visible
     setupTestingTabs();
-    setupTestButtons();
-    setupResultsControls();
     setupTestResultsEnhancements();
     addTestResultsHint();
     
@@ -150,7 +193,6 @@ function setupResultsControls() {
     safeAddEventListener(document, "keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
             e.preventDefault();
-            console.log("🔬 Toggling Testing Modal via keyboard shortcut");
             const testingModal = document.getElementById("testing-modal");
             
             if (testingModal) {
@@ -163,6 +205,13 @@ function setupResultsControls() {
                     testingModal.style.display = "flex";
                     initializeTestingModalDrag();
                     showNotification("🔬 Testing panel opened", "success", 2000);
+                    
+                    // Setup functionality when opened via keyboard
+                    setTimeout(() => {
+                        setupTestingTabs();
+                        setupTestButtons();
+                        setupResultsControls();
+                    }, 150);
                 }
             } else {
                 console.warn("⚠️ Testing modal not found");
@@ -495,6 +544,7 @@ function setupTestButtons() {
     });
     
     safeAddEventListenerById("view-local-storage-btn", "click", () => {
+        console.log("🔍 View Local Storage button clicked!");
         openStorageViewer();
     });
     
@@ -2743,16 +2793,12 @@ function getServiceWorkerInfo() {
     });
 }
 
-// ...existing code...
-
-// At the end of utilities/testing-modal.js, add:
-export { 
-    setupTestingModal,
-    closeStorageViewer,
-    openStorageViewer,
-    appendToTestResults,
-    clearTestResults,
-    exportTestResults,
-    copyTestResults
-};
+// Make functions globally available
+window.setupTestingModal = setupTestingModal;
+window.openStorageViewer = openStorageViewer;
+window.closeStorageViewer = closeStorageViewer;
+window.appendToTestResults = appendToTestResults;
+window.clearTestResults = clearTestResults;
+window.exportTestResults = exportTestResults;
+window.copyTestResults = copyTestResults;
 
