@@ -60,15 +60,34 @@ let isDraggingNotification = false;
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
-    // Import and initialize notification system after DOM is ready
+
+    /******
+     * 
+     * Import utility functions
+    */
+
+
+      // Import and initialize notification system after DOM is ready
     const { MiniCycleNotifications } = await import('./utilities/notifications.js');
     const notifications = new MiniCycleNotifications();
     
     // Make notifications globally accessible
     window.notifications = notifications;
+    window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     
-    // Sync the global dragging state
-    window.isDraggingNotification = isDraggingNotification;
+    // ✅ WAIT for device detection until after dependencies are ready
+    console.log('📱 Initializing device detection module...');
+    const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
+    
+    // ✅ Use a function that checks for availability at runtime
+    const deviceDetectionManager = new DeviceDetectionManager({
+        loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
+        showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+        currentVersion: '1.280'
+    });
+    
+    // Make globally accessible
+    window.deviceDetectionManager = deviceDetectionManager;
 
     // ✅ DOM Element References
     const taskInput = document.getElementById("taskInput");
@@ -302,259 +321,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-// ✅ UPDATED: Device detection with Schema 2.5 only
-function runDeviceDetection() {
-    var userAgent = navigator.userAgent;
-    var currentVersion = '1.280';
     
-    console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
-    //showNotification('🔍 Checking device compatibility...', 'info', 3000);
-    
-    // ✅ Check manual override first
-    var manualOverride = localStorage.getItem('miniCycleForceFullVersion');
-    if (manualOverride === 'true') {
-        console.log('🚀 Manual override detected - user chose full version');
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for device detection');
-            return;
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.deviceCompatibility = {
-            shouldUseLite: false,
-            reason: 'manual_override',
-            lastDetectionVersion: currentVersion,
-            detectionDate: new Date().toISOString(),
-            userAgent: userAgent
-        };
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Manual override saved to Schema 2.5');
-        showNotification('✅ Device detection complete - using full version by user choice', 'success', 3000);
-        return;
-    }
-    
-    function shouldRedirectToLite() {
-        const userAgent = navigator.userAgent.toLowerCase();
-        
-        // ✅ Device capability checks
-        const isOldDevice = 
-            /android [1-4]\./i.test(userAgent) ||
-            /chrome\/[1-4][0-9]\./i.test(userAgent) ||
-            /firefox\/[1-4][0-9]\./i.test(userAgent) ||
-            /safari\/[1-7]\./i.test(userAgent) ||
-            /msie|trident/i.test(userAgent);
-        
-        const hasLowMemory = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
-        const hasSlowConnection = navigator.connection && 
-            (navigator.connection.effectiveType === 'slow-2g' || 
-             navigator.connection.effectiveType === '2g' || 
-             navigator.connection.effectiveType === '3g');
-        
-        return isOldDevice || hasLowMemory || hasSlowConnection;
-    }
-    
-    // ✅ Enhanced redirect with Schema 2.5 only
-    function performRedirect() {
-        const shouldUseLite = shouldRedirectToLite();
-        const reason = shouldUseLite ? 'device_compatibility' : 'device_capable';
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for device detection');
-            return;
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (!fullSchemaData.settings) fullSchemaData.settings = {};
-        
-        fullSchemaData.settings.deviceCompatibility = {
-            shouldUseLite: shouldUseLite,
-            reason: reason,
-            lastDetectionVersion: currentVersion,
-            detectionDate: new Date().toISOString(),
-            userAgent: userAgent,
-            deviceInfo: {
-                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
-                connectionType: navigator.connection?.effectiveType || 'unknown',
-                screenWidth: window.screen.width,
-                screenHeight: window.screen.height
-            }
-        };
-        
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Device detection saved to Schema 2.5:', fullSchemaData.settings.deviceCompatibility);
-        
-        if (shouldUseLite) {
-            const cacheBuster = '?redirect=auto&v=' + currentVersion + '&t=' + Date.now();
-            console.log('📱 Redirecting to lite version:', 'miniCycle-lite.html' + cacheBuster);
-            
-            showNotification('📱 Redirecting to optimized lite version...', 'info', 2000);
-            setTimeout(() => {
-                window.location.href = 'miniCycle-lite.html' + cacheBuster;
-            }, 1000);
-        } else {
-            console.log('💻 Device is capable - staying on full version');
-            //showNotification('✅ Device detection complete - using full version', 'success', 3000);
-        }
-    }
-    
-    // ✅ Check if we should redirect
-    performRedirect();
-}
-
-// ✅ UPDATED: Auto-redetection with Schema 2.5 only
-function autoRedetectOnVersionChange() {
-    const currentVersion = '1.280';
-    
-    console.log('🔄 Checking version change (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for version detection');
-        return;
-    }
-    
-    let lastDetectionVersion = null;
-    try {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        lastDetectionVersion = fullSchemaData.settings?.deviceCompatibility?.lastDetectionVersion;
-    } catch (error) {
-        console.warn('⚠️ Error reading detection version from Schema 2.5:', error);
-    }
-    
-    // If version changed or first time, re-run detection
-    if (lastDetectionVersion !== currentVersion) {
-        console.log('🔄 Version changed or first run - running device detection');
-        console.log('   Previous version:', lastDetectionVersion || 'None');
-        console.log('   Current version:', currentVersion);
-        
-        setTimeout(() => {
-            runDeviceDetection();
-        }, 1000);
-    } else {
-        console.log('✅ Device detection up-to-date for version', currentVersion);
-    }
-}
-
-// ✅ UPDATED: Enhanced device detection reporting with Schema 2.5 only
-function reportDeviceCompatibility() {
-    const userAgent = navigator.userAgent;
-    const currentVersion = '1.280';
-    
-    console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for compatibility report');
-        showNotification('❌ Cannot generate report - Schema 2.5 data required', 'error', 3000);
-        return null;
-    }
-    
-    let storedDecision = null;
-    let lastDetectionVersion = null;
-    let detectionData = null;
-    
-    try {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        const compatibility = fullSchemaData.settings?.deviceCompatibility;
-        if (compatibility) {
-            storedDecision = compatibility.shouldUseLite;
-            lastDetectionVersion = compatibility.lastDetectionVersion;
-            detectionData = compatibility;
-        }
-    } catch (error) {
-        console.error('❌ Error reading device compatibility from Schema 2.5:', error);
-    }
-    
-    // Device info
-    const deviceInfo = {
-        userAgent: userAgent,
-        version: currentVersion,
-        lastDetectionVersion: lastDetectionVersion,
-        storedDecision: storedDecision,
-        currentUrl: window.location.href,
-        timestamp: new Date().toISOString(),
-        schema: '2.5',
-        detectionData: detectionData
-    };
-    
-    let statusMessage = '';
-    let statusType = 'info';
-    
-    if (storedDecision === true) {
-        statusMessage = '📱 Device configured for lite version';
-        statusType = 'info';
-    } else if (storedDecision === false) {
-        statusMessage = '💻 Device configured for full version';  
-        statusType = 'success';
-    } else {
-        statusMessage = '❓ No device preference stored';
-        statusType = 'warning';
-    }
-    
-    // Show detailed notification
-    showNotification(
-        `${statusMessage}<br>` +
-        `Version: ${currentVersion}<br>` +
-        `Schema: ${deviceInfo.schema}<br>` +
-        `Last Check: ${lastDetectionVersion || 'Never'}`,
-        statusType,
-        8000
-    );
-    
-    // Also log to console for debugging
-    console.log('📊 Device Compatibility Report (Schema 2.5):', deviceInfo);
-    
-    return deviceInfo;
-}
-
-// ✅ UPDATED: Manual testing with Schema 2.5 cleanup only
-function testDeviceDetection() {
-    showNotification('🧪 Starting manual device detection test (Schema 2.5 only)...', 'info', 2000);
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for device detection test');
-        showNotification('❌ Cannot test - Schema 2.5 data required', 'error', 3000);
-        return;
-    }
-    
-    // Clear from Schema 2.5 only
-    try {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (fullSchemaData.settings?.deviceCompatibility) {
-            delete fullSchemaData.settings.deviceCompatibility;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            console.log('🧹 Cleared device compatibility from Schema 2.5');
-        }
-    } catch (error) {
-        console.error('❌ Error clearing Schema 2.5 compatibility:', error);
-    }
-    
-    // Also clear legacy keys for cleanup
-    localStorage.removeItem('miniCycleForceFullVersion');
-    
-    console.log('🧹 Cleared device detection cache');
-    
-    // Wait a moment then run detection
+  
+    // ✅ FIXED: Device detection call at the end, after everything is initialized
     setTimeout(() => {
-        console.log('🔄 Running fresh device detection...');
-        runDeviceDetection();
-    }, 2500);
-}
-
-// ✅ Expose testing functions to console for debugging
-window.testDeviceDetection = testDeviceDetection;
-window.reportDeviceCompatibility = reportDeviceCompatibility;
-window.runDeviceDetection = runDeviceDetection;
-
+        console.log('📱 Running device detection...');
+        if (window.deviceDetectionManager && window.loadMiniCycleData) {
+            window.deviceDetectionManager.autoRedetectOnVersionChange();
+        } else {
+            console.error('❌ Device detection manager or dependencies not available');
+        }
+    }, 10000);
 
 
 
@@ -1342,152 +1119,6 @@ document.getElementById("toggleAutoReset").addEventListener("change", updateCycl
 document.getElementById("deleteCheckedTasks").addEventListener("change", updateCycleModeDescription);
 // ...existing code...
 
-// Replace the complex mode selector setup with this simpler approach:
-function setupModeSelector() {
-    console.log('🎯 Setting up mode selectors (Schema 2.5 only)...');
-    
-    const modeSelector = document.getElementById('mode-selector');
-    const mobileModeSelector = document.getElementById('mobile-mode-selector');
-    const toggleAutoReset = document.getElementById('toggleAutoReset');
-    const deleteCheckedTasks = document.getElementById('deleteCheckedTasks');
-    
-    console.log('🔍 Element detection:', {
-        modeSelector: !!modeSelector,
-        mobileModeSelector: !!mobileModeSelector,
-        toggleAutoReset: !!toggleAutoReset,
-        deleteCheckedTasks: !!deleteCheckedTasks
-    });
-    
-    if (!modeSelector || !mobileModeSelector || !toggleAutoReset || !deleteCheckedTasks) {
-        console.warn('⚠️ Mode selector elements not found');
-        return;
-    }
-    
-    // ✅ Function to sync both selectors with toggles (Schema 2.5 only)
-    function syncModeFromToggles() {
-        console.log('🔄 Syncing mode from Schema 2.5 data...');
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for syncModeFromToggles');
-            return;
-        }
-        
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
-        
-        let autoReset = false;
-        let deleteChecked = false;
-        
-        if (currentCycle) {
-            autoReset = currentCycle.autoReset || false;
-            deleteChecked = currentCycle.deleteCheckedTasks || false;
-            
-            // Update DOM to match Schema 2.5 data
-            toggleAutoReset.checked = autoReset;
-            deleteCheckedTasks.checked = deleteChecked;
-        }
-        
-        console.log('� Mode sync data:', { autoReset, deleteChecked });
-        
-        let mode = 'auto-cycle';
-        
-        if (autoReset && !deleteChecked) {
-            mode = 'auto-cycle';
-        } else if (!autoReset && !deleteChecked) {
-            mode = 'manual-cycle';  
-        } else if (deleteChecked) {
-            mode = 'todo-mode';
-        }
-            
-        console.log('📝 Setting both selectors to:', mode);
-        
-        // Update both selectors
-        modeSelector.value = mode;
-        mobileModeSelector.value = mode;
-        
-        // Update body classes
-        document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
-        document.body.classList.add(mode + '-mode');
-        
-        // Update container visibility
-        const deleteContainer = document.getElementById('deleteCheckedTasksContainer');
-        if (deleteContainer) {
-            deleteContainer.style.display = autoReset ? 'none' : 'block';
-        }
-        
-        console.log('✅ Mode selectors synced (Schema 2.5):', mode);
-    }
-    
-    // ✅ Function to sync toggles from either selector (Schema 2.5 only)
-    function syncTogglesFromMode(selectedMode) {
-        console.log('🔄 Syncing toggles from mode selector (Schema 2.5):', selectedMode);
-        
-        switch(selectedMode) {
-            case 'auto-cycle':
-                toggleAutoReset.checked = true;
-                deleteCheckedTasks.checked = false;
-                break;
-            case 'manual-cycle':
-                toggleAutoReset.checked = false;
-                deleteCheckedTasks.checked = false;
-                break;
-            case 'todo-mode':
-                toggleAutoReset.checked = false;
-                deleteCheckedTasks.checked = true;
-                break;
-        }
-        
-        // Keep both selectors in sync
-        modeSelector.value = selectedMode;
-        mobileModeSelector.value = selectedMode;
-        
-        // Trigger change events to update Schema 2.5 storage
-        console.log('🔔 Dispatching change events to update Schema 2.5 storage...');
-        toggleAutoReset.dispatchEvent(new Event('change'));
-        deleteCheckedTasks.dispatchEvent(new Event('change'));
-        
-        // Update UI
-        syncModeFromToggles();
-        
-        if (typeof updateRecurringButtonVisibility === 'function') {
-            updateRecurringButtonVisibility();
-        }
-        
-        console.log('✅ Toggles synced from mode selector (Schema 2.5)');
-    }
-    
-    // ✅ Set up event listeners for both selectors
-    console.log('📡 Setting up event listeners for both selectors...');
-    
-    modeSelector.addEventListener('change', (e) => {
-        console.log('🎯 Desktop mode selector changed:', e.target.value);
-        syncTogglesFromMode(e.target.value);
-        showNotification(`Switched to ${getModeName(e.target.value)}`, 'info', 2000);
-    });
-    
-    mobileModeSelector.addEventListener('change', (e) => {
-        console.log('📱 Mobile mode selector changed:', e.target.value);
-        syncTogglesFromMode(e.target.value);
-        showNotification(`Switched to ${getModeName(e.target.value)}`, 'info', 2000);
-    });
-    
-    toggleAutoReset.addEventListener('change', (e) => {
-        console.log('🔘 Auto Reset toggle changed:', e.target.checked);
-        syncModeFromToggles();
-    });
-    
-    deleteCheckedTasks.addEventListener('change', (e) => {
-        console.log('🗑️ Delete Checked Tasks toggle changed:', e.target.checked);
-        syncModeFromToggles();
-    });
-    
-    // ✅ Initialize on load
-    console.log('🚀 Initializing mode selectors (Schema 2.5)...');
-    syncModeFromToggles();
-    
-    console.log('✅ Mode selectors setup complete (Schema 2.5)');
-}
 
 
 // Helper function to get readable mode name (keep this)
@@ -7451,11 +7082,7 @@ function getRecurringSummaryText(template) {
   return buildRecurringSummaryFromSettings(template.recurringSettings || {});
 }
 
-// After—treat the argument itself as the settings
-function getRecurringSummaryText(settings) {
-  return buildRecurringSummaryFromSettings(settings || {});
-}
-  
+
 
 
 // ✅ Shared utility: Build a recurring summary string from a settings object
@@ -7847,7 +7474,7 @@ function watchRecurringTasks() {
     }
 }
 
-function setupRecurringWatcher(lastUsedMiniCycle, savedMiniCycles) {
+function setupRecurringWatcher() {
     console.log('⚙️ Setting up recurring watcher (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
@@ -7886,20 +7513,6 @@ function setupRecurringWatcher(lastUsedMiniCycle, savedMiniCycles) {
     console.log('✅ Recurring watcher setup completed');
 }
 
-
-function setupRecurringWatcher(lastUsedMiniCycle, savedMiniCycles) {
-  const recurringTemplates = savedMiniCycles?.[lastUsedMiniCycle]?.recurringTemplates || {};
-  if (Object.keys(recurringTemplates).length === 0) return;
-
-  watchRecurringTasks();
-  setInterval(watchRecurringTasks, 30000);
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      watchRecurringTasks();
-    }
-  });
-}
 
 
 
@@ -9593,20 +9206,6 @@ function toggleArrowVisibility() {
      * @param {boolean} [remindersEnabled=false] - If true, reminders are turned on.
      */
 
-    function isAlwaysShowRecurringEnabled() {
-        // ✅ Schema 2.5 only
-        const schemaData = loadMiniCycleData();
-        
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for isAlwaysShowRecurringEnabled');
-            return false;
-        }
-        
-        // Check Schema 2.5 setting first, then DOM as fallback
-        return schemaData.settings.alwaysShowRecurring || 
-               document.getElementById("always-show-recurring")?.checked || 
-               false;
-    }
 
     
 function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
@@ -10865,8 +10464,6 @@ function checkCompleteAllButton() {
  * @param {string} [color='green'] - The temporary background color for the logo.
  * @param {number} [duration=300] - The duration (in milliseconds) before resetting the background.
  */
-// Declare the timeout variable at the top level
-let logoTimeoutId = null;
 
 function triggerLogoBackground(color = 'green', duration = 300) {
     // Target the specific logo image (not the app name)
@@ -12148,18 +11745,6 @@ function updateStorageFromToggles() {
     console.log('✅ Mode selectors setup complete');
 }
 
-// Helper function to get readable mode name (keep this)
-function getModeName(mode) {
-    const modeNames = {
-        'auto-cycle': 'Auto Cycle ↻',
-        'manual-cycle': 'Manual Cycle ✔︎↻',
-        'todo-mode': 'To-Do Mode ✓'
-    };
-    
-    const result = modeNames[mode] || 'Auto Cycle ↻';
-    console.log('📝 Getting mode name:', { input: mode, output: result });
-    return result;
-}
 
 // ✅ Updated updateCycleModeDescription to Schema 2.5 only
 function updateCycleModeDescription() {
