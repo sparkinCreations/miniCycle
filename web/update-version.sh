@@ -143,6 +143,11 @@ if update_file "miniCycle-lite-scripts.js" "lite scripts"; then
 fi
 
 # ---------- JS: Utility Modules ----------
+if update_file "utilities/globalUtils.js" "global utilities module"; then
+    "${SED_INPLACE[@]}" "s/@version [0-9.]\\+/@version $NEW_VERSION/g" utilities/globalUtils.js
+    echo "✅ Updated utilities/globalUtils.js"
+fi
+
 if update_file "utilities/deviceDetection.js" "device detection module"; then
     "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" utilities/deviceDetection.js
     "${SED_INPLACE[@]}" "s/currentVersion = '[0-9.]*'/currentVersion = '$NEW_VERSION'/g" utilities/deviceDetection.js
@@ -195,6 +200,7 @@ cp service-worker.js ../service-worker.js 2>/dev/null && echo "✅ Restored serv
 cp manifest.json ../manifest.json 2>/dev/null && echo "✅ Restored manifest.json"
 cp manifest-lite.json ../manifest-lite.json 2>/dev/null && echo "✅ Restored manifest-lite.json"
 cp product.html ../product.html 2>/dev/null && echo "✅ Restored product.html"
+cp utilities/globalUtils.js ../utilities/globalUtils.js 2>/dev/null && echo "✅ Restored utilities/globalUtils.js"
 cp utilities/deviceDetection.js ../utilities/deviceDetection.js 2>/dev/null && echo "✅ Restored utilities/deviceDetection.js"
 cp utilities/notifications.js ../utilities/notifications.js 2>/dev/null && echo "✅ Restored utilities/notifications.js"
 

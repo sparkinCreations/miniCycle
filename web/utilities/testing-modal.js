@@ -66,23 +66,25 @@ const showNotification = safeShowNotification;
 // ==========================================
 // �🛠️ UTILITY FUNCTIONS
 // ==========================================
+// 🛠️ UTILITY FUNCTIONS (Using Global Utils)
+// ==========================================
 
-function safeAddEventListener(element, event, handler) {
-    if (!element) return; // Prevent errors if element is null
-    
-    // Don't remove existing listeners - just add the new one
+// Note: safeAddEventListener functions are now available globally
+// from the GlobalUtils module imported in the main script.
+// For backward compatibility within this module, we'll use the global functions
+const safeAddEventListener = window.safeAddEventListener || function(element, event, handler) {
+    if (!element) return;
     element.addEventListener(event, handler);
-}
+};
 
-function safeAddEventListenerById(id, event, handler) {
+const safeAddEventListenerById = window.safeAddEventListenerById || function(id, event, handler) {
     const element = document.getElementById(id);
     if (element) {
-        // Add event listener directly
         element.addEventListener(event, handler);
     } else {
         console.warn(`⚠ Cannot attach event listener: #${id} not found.`);
     }
-}
+};
 
 // ==========================================
 // 🔬 ENHANCED TESTING MODAL FUNCTIONALITY
