@@ -1,5 +1,5 @@
 #!/bin/bash
-# Auto-generated restore script for version update on 20250921_045548
+# Auto-generated restore script for version update on 20250922_055110
 echo "🔄 Restoring files from backup..."
 
 cp miniCycle.html ../miniCycle.html 2>/dev/null && echo "✅ Restored miniCycle.html"
@@ -9,6 +9,9 @@ cp miniCycle-lite-scripts.js ../miniCycle-lite-scripts.js 2>/dev/null && echo "�
 cp service-worker.js ../service-worker.js 2>/dev/null && echo "✅ Restored service-worker.js"
 cp manifest.json ../manifest.json 2>/dev/null && echo "✅ Restored manifest.json"
 cp manifest-lite.json ../manifest-lite.json 2>/dev/null && echo "✅ Restored manifest-lite.json"
+cp product.html ../product.html 2>/dev/null && echo "✅ Restored product.html"
+cp utilities/deviceDetection.js ../utilities/deviceDetection.js 2>/dev/null && echo "✅ Restored utilities/deviceDetection.js"
+cp utilities/notifications.js ../utilities/notifications.js 2>/dev/null && echo "✅ Restored utilities/notifications.js"
 
 echo "🎉 Restore completed!"
 echo ""

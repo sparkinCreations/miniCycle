@@ -142,6 +142,25 @@ if update_file "miniCycle-lite-scripts.js" "lite scripts"; then
     echo "✅ Updated miniCycle-lite-scripts.js"
 fi
 
+# ---------- JS: Utility Modules ----------
+if update_file "utilities/deviceDetection.js" "device detection module"; then
+    "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" utilities/deviceDetection.js
+    "${SED_INPLACE[@]}" "s/currentVersion = '[0-9.]*'/currentVersion = '$NEW_VERSION'/g" utilities/deviceDetection.js
+    echo "✅ Updated utilities/deviceDetection.js"
+fi
+
+if update_file "utilities/notifications.js" "notifications module"; then
+    "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/notifications.js
+    echo "✅ Updated utilities/notifications.js"
+fi
+
+# ---------- HTML: Product Landing Page ----------
+if update_file "product.html" "product landing page"; then
+    "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" product.html
+    "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" product.html
+    echo "✅ Updated product.html"
+fi
+
 # ---------- Service Worker ----------
 if update_file "service-worker.js" "service worker"; then
     # CACHE_VERSION (cache-busting)
@@ -175,6 +194,9 @@ cp miniCycle-lite-scripts.js ../miniCycle-lite-scripts.js 2>/dev/null && echo "�
 cp service-worker.js ../service-worker.js 2>/dev/null && echo "✅ Restored service-worker.js"
 cp manifest.json ../manifest.json 2>/dev/null && echo "✅ Restored manifest.json"
 cp manifest-lite.json ../manifest-lite.json 2>/dev/null && echo "✅ Restored manifest-lite.json"
+cp product.html ../product.html 2>/dev/null && echo "✅ Restored product.html"
+cp utilities/deviceDetection.js ../utilities/deviceDetection.js 2>/dev/null && echo "✅ Restored utilities/deviceDetection.js"
+cp utilities/notifications.js ../utilities/notifications.js 2>/dev/null && echo "✅ Restored utilities/notifications.js"
 
 echo "🎉 Restore completed!"
 echo ""
