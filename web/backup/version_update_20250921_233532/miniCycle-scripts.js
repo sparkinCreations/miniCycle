@@ -1,4 +1,33 @@
-//miniCycle
+// Create a global state object to avoid module scoping issues
+window.AppState = {
+  draggedTask: null,
+  logoTimeoutId: null,
+  touchStartTime: 0,
+  isLongPress: false,
+  touchStartY: 0,
+  touchEndY: 0,
+  holdTimeout: null,
+  moved: false,
+  isDragging: false,
+  rearrangeInitialized: false,
+  lastDraggedOver: null,
+  lastRearrangeTarget: null,
+  lastDragOverTime: 0,
+  hasInteracted: false,
+  reminderIntervalId: null,
+  timesReminded: 0,
+  lastReminderTime: null,
+  isResetting: false,
+  undoSnapshot: null,
+  redoSnapshot: null,
+  undoStack: [],
+  redoStack: [],
+  didDragReorderOccur: false,
+  lastReorderTime: 0,
+  advancedVisible: false
+};
+
+// For backward compatibility, also create the variables
 let draggedTask = null;
 let logoTimeoutId = null;
 let touchStartTime = 0;
@@ -16,7 +45,6 @@ let hasInteracted = false;
 let reminderIntervalId = null;
 let timesReminded = 0;
 let lastReminderTime = null;
-let isDraggingNotification = false;
 let isResetting = false;
 let undoSnapshot = null;
 let redoSnapshot = null;
@@ -25,10 +53,22 @@ let undoStack = [];
 let redoStack = [];
 let didDragReorderOccur = false;
 let lastReorderTime = 0;
-const REORDER_SNAPSHOT_INTERVAL = 500; // only allow snapshot every 500ms
+const REORDER_SNAPSHOT_INTERVAL = 500;
+let advancedVisible = false;
+let isDraggingNotification = false;
 
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
+
+    // Import and initialize notification system after DOM is ready
+    const { MiniCycleNotifications } = await import('./utilities/notifications.js');
+    const notifications = new MiniCycleNotifications();
+    
+    // Make notifications globally accessible
+    window.notifications = notifications;
+    
+    // Sync the global dragging state
+    window.isDraggingNotification = isDraggingNotification;
 
     // ✅ DOM Element References
     const taskInput = document.getElementById("taskInput");
@@ -265,7 +305,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 // ✅ UPDATED: Device detection with Schema 2.5 only
 function runDeviceDetection() {
     var userAgent = navigator.userAgent;
-    var currentVersion = '1.276';
+    var currentVersion = '1.279';
     
     console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
     showNotification('🔍 Checking device compatibility...', 'info', 3000);
@@ -370,7 +410,7 @@ function runDeviceDetection() {
 
 // ✅ UPDATED: Auto-redetection with Schema 2.5 only
 function autoRedetectOnVersionChange() {
-    const currentVersion = '1.276';
+    const currentVersion = '1.279';
     
     console.log('🔄 Checking version change (Schema 2.5 only)...');
     
@@ -405,7 +445,7 @@ function autoRedetectOnVersionChange() {
 // ✅ UPDATED: Enhanced device detection reporting with Schema 2.5 only
 function reportDeviceCompatibility() {
     const userAgent = navigator.userAgent;
-    const currentVersion = '1.276';
+    const currentVersion = '1.279';
     
     console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
     
@@ -1200,6 +1240,10 @@ function generateHashId(message) {
     }
     return `note-${Math.abs(hash)}`;
 }
+
+// Make utility functions globally accessible for the notification module
+window.generateNotificationId = generateNotificationId;
+window.generateHashId = generateHashId;
 
 /**
  * Detects the device type and applies the appropriate class to the body.
@@ -2924,6 +2968,9 @@ function loadMiniCycleData() {
     
     return null;
 }
+
+// Make loadMiniCycleData globally accessible for the notification module
+window.loadMiniCycleData = loadMiniCycleData;
 
 
 
@@ -5496,554 +5543,33 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
 
 /********
  * 
- * Show Notification function (Schema 2.5 only)
+ * Show Notification function (Schema 2.5 only) - Modular Wrapper
  * 
  */
   
 function showNotification(message, type = "default", duration = null) {
-  try {
-    const notificationContainer = document.getElementById("notification-container");
-    if (!notificationContainer) {
-      console.warn("⚠️ Notification container not found.");
-      return;
-    }
-
-    if (typeof message !== "string" || message.trim() === "") {
-      console.warn("⚠️ Invalid or empty message passed to showNotification().");
-      message = "⚠️ Unknown notification";
-    }
-
-    const newId = generateHashId(message);
-    if ([...notificationContainer.querySelectorAll(".notification")]
-        .some(n => n.dataset.id === newId)) {
-      console.log("🔄 Notification already exists, skipping duplicate.");
-      return;
-    }
-
-    const notification = document.createElement("div");
-    notification.classList.add("notification", "show");
-    notification.dataset.id = newId;
-
-    if (["error", "success", "info", "warning", "recurring"].includes(type)) {
-      notification.classList.add(type);
-    }
-
-    // ⏩ Only add default close button if one is not already in message HTML
-    if (message.includes('class="close-btn"')) {
-      notification.innerHTML = message;
-    } else {
-      notification.innerHTML = `
-        <div class="notification-content">${message}</div>
-        <button class="close-btn" title="Close" aria-label="Close notification">✖</button>
-      `;
-    }
-
-    // Style and handler for any close button
-    const closeBtn = notification.querySelector(".close-btn");
-    if (closeBtn) {
-      Object.assign(closeBtn.style, {
-        position: "absolute",
-        top: "6px",
-        right: "6px",
-        background: "transparent",
-        border: "none",
-        fontSize: "16px",
-        cursor: "pointer",
-        color: "#fff",
-        lineHeight: "1",
-        padding: "0"
-      });
-
-      closeBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        notification.classList.remove("show");
-        setTimeout(() => notification.remove(), 300);
-      });
-    }
-
-    notificationContainer.appendChild(notification);
-
-    // ✅ Restore saved position from Schema 2.5 only
-    try {
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for notification position');
-        return;
-      }
-
-      const savedPosition = schemaData.settings.notificationPosition;
-      if (savedPosition?.x && savedPosition?.y) {
-        notificationContainer.style.top = `${savedPosition.y}px`;
-        notificationContainer.style.left = `${savedPosition.x}px`;
-        notificationContainer.style.right = "auto";
-      }
-    } catch (posError) {
-      console.warn("⚠️ Failed to apply saved notification position.", posError);
-    }
-
-    // Auto-remove after duration (hover pause)
-    if (duration) {
-      let hoverPaused = false;
-      let remaining = duration;
-      let removeTimeout;
-      let startTime = Date.now();
-
-      const clearNotification = () => {
-        notification.classList.remove("show");
-        setTimeout(() => notification.remove(), 300);
-      };
-
-      const startTimer = () => {
-        removeTimeout = setTimeout(() => {
-          if (!hoverPaused) clearNotification();
-        }, remaining);
-      };
-
-      const pauseTimer = () => {
-        hoverPaused = true;
-        clearTimeout(removeTimeout);
-        remaining -= (Date.now() - startTime);
-      };
-
-      const resumeTimer = () => {
-        hoverPaused = false;
-        startTime = Date.now();
-        startTimer();
-      };
-
-      startTimer();
-      notification.addEventListener("mouseenter", pauseTimer);
-      notification.addEventListener("mouseleave", resumeTimer);
-    }
-
-    // Keep drag support
-    setupNotificationDragging(notificationContainer);
-
-  } catch (err) {
-    console.error("❌ showNotification failed:", err);
-  }
+  return window.notifications.show(message, type, duration);
 }
 
 function setupNotificationDragging(notificationContainer) {
-  if (notificationContainer.dragListenersAttached) return;
-  notificationContainer.dragListenersAttached = true;
-
-  const interactiveSelectors = [
-    '.tip-close', '.tip-toggle',
-    '.quick-option', '.radio-circle', '.option-label',
-    '.apply-quick-recurring', '.open-recurring-settings',
-    'button', 'input', 'select', 'textarea', 'a[href]'
-  ];
-
-  // ✅ Save position to Schema 2.5 only
-  const savePositionToSchema25 = (x, y) => {
-    try {
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saving notification position');
-        return;
-      }
-
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      fullSchemaData.settings.notificationPosition = { x, y };
-      fullSchemaData.settings.notificationPositionModified = true;
-      fullSchemaData.metadata.lastModified = Date.now();
-      localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    } catch (error) {
-      console.warn("⚠️ Failed to save notification position:", error);
-    }
-  };
-
-  // Mouse dragging
-  notificationContainer.addEventListener("mousedown", (e) => {
-    const isInteractive = interactiveSelectors.some(selector =>
-      e.target.matches(selector) || e.target.closest(selector)
-    );
-    if (isInteractive) return;
-
-    let dragStarted = false;
-    let startX = e.clientX;
-    let startY = e.clientY;
-    const dragThreshold = 5;
-
-    const rect = notificationContainer.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
-
-    const startDrag = () => {
-      if (!dragStarted) {
-        dragStarted = true;
-        isDraggingNotification = true;
-        notificationContainer.classList.add("dragging");
-        document.body.style.userSelect = 'none';
-      }
-    };
-
-    const onMouseMove = (e) => {
-      const moveDistance = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
-      if (!dragStarted && moveDistance > dragThreshold) startDrag();
-      if (dragStarted) {
-        e.preventDefault();
-        const newY = e.clientY - offsetY;
-        const newX = e.clientX - offsetX;
-        
-        notificationContainer.style.top = `${newY}px`;
-        notificationContainer.style.left = `${newX}px`;
-        notificationContainer.style.right = "auto";
-        
-        // ✅ Save to Schema 2.5 only
-        savePositionToSchema25(newX, newY);
-      }
-    };
-
-    const onMouseUp = (e) => {
-      if (dragStarted) {
-        isDraggingNotification = false;
-        notificationContainer.classList.remove("dragging");
-        document.body.style.userSelect = '';
-        if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > dragThreshold) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  });
-
-  // Touch dragging
-  notificationContainer.addEventListener("touchstart", (e) => {
-    const isInteractive = interactiveSelectors.some(selector =>
-      e.target.matches(selector) || e.target.closest(selector)
-    );
-    if (isInteractive) return;
-
-    let dragStarted = false;
-    const touch = e.touches[0];
-    const startX = touch.clientX;
-    const startY = touch.clientY;
-    const dragThreshold = 8;
-
-    const rect = notificationContainer.getBoundingClientRect();
-    const offsetX = touch.clientX - rect.left;
-    const offsetY = touch.clientY - rect.top;
-
-    const startDrag = () => {
-      if (!dragStarted) {
-        dragStarted = true;
-        isDraggingNotification = true;
-        notificationContainer.classList.add("dragging");
-        document.body.style.overflow = 'hidden';
-      }
-    };
-
-    const onTouchMove = (e) => {
-      const touch = e.touches[0];
-      const moveDistance = Math.abs(touch.clientX - startX) + Math.abs(touch.clientY - startY);
-      if (!dragStarted && moveDistance > dragThreshold) startDrag();
-      if (dragStarted) {
-        e.preventDefault();
-        const newY = touch.clientY - offsetY;
-        const newX = touch.clientX - offsetX;
-        
-        notificationContainer.style.top = `${newY}px`;
-        notificationContainer.style.left = `${newX}px`;
-        notificationContainer.style.right = "auto";
-        
-        // ✅ Save to Schema 2.5 only
-        savePositionToSchema25(newX, newY);
-      }
-    };
-
-    const onTouchEnd = (e) => {
-      if (dragStarted) {
-        isDraggingNotification = false;
-        notificationContainer.classList.remove("dragging");
-        document.body.style.overflow = '';
-        const finalTouch = e.changedTouches[0];
-        if (Math.abs(finalTouch.clientX - startX) + Math.abs(finalTouch.clientY - startY) > dragThreshold) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }
-      document.removeEventListener("touchmove", onTouchMove);
-      document.removeEventListener("touchend", onTouchEnd);
-    };
-
-    document.addEventListener("touchmove", onTouchMove, { passive: false });
-    document.addEventListener("touchend", onTouchEnd);
-  });
+  return window.notifications.setupNotificationDragging(notificationContainer);
 }
 
   
 function resetNotificationPosition() {
-  console.log("🔄 Resetting notification position (Schema 2.5 only)...");
-  
-  const schemaData = loadMiniCycleData();
-  if (!schemaData) {
-    console.error('❌ Schema 2.5 data required for resetNotificationPosition');
-    throw new Error('Schema 2.5 data not found');
-  }
-
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  fullSchemaData.settings.notificationPosition = { x: 0, y: 0 };
-  fullSchemaData.settings.notificationPositionModified = false;
-  fullSchemaData.metadata.lastModified = Date.now();
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-  // Reset DOM position
-  const container = document.getElementById("notification-container");
-  if (container) {
-    container.style.top = "";
-    container.style.left = "";
-    container.style.right = "";
-  }
-
-  console.log("✅ Notification position reset completed (Schema 2.5)");
+  return window.notifications.resetPosition();
 }
 
 
-/**
- * 🎓 Modular Educational Tips System (Schema 2.5 only)
- * 
- * Features:
- * - Remember dismissed tips per user in Schema 2.5
- * - Collapsible with lightbulb toggle
- * - Reusable across the app
- * - Easy integration with existing notifications
- */
-
-class EducationalTipManager {
-  constructor() {
-    this.dismissedTips = this.loadDismissedTips();
-  }
-
-  loadDismissedTips() {
-    console.log('📚 Loading dismissed tips (Schema 2.5 only)...');
-    
-    try {
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for loadDismissedTips');
-        return {};
-      }
-
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      return fullSchemaData.settings.dismissedEducationalTips || {};
-    } catch (e) {
-      console.warn('⚠️ Error loading dismissed tips from Schema 2.5:', e);
-      return {};
-    }
-  }
-
-  saveDismissedTips() {
-    console.log('💾 Saving dismissed tips (Schema 2.5 only)...');
-    
-    try {
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveDismissedTips');
-        return;
-      }
-
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      fullSchemaData.settings.dismissedEducationalTips = this.dismissedTips;
-      fullSchemaData.metadata.lastModified = Date.now();
-      localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-      
-      console.log('✅ Dismissed tips saved to Schema 2.5');
-    } catch (e) {
-      console.error('❌ Error saving dismissed tips to Schema 2.5:', e);
-    }
-  }
-
-  isTipDismissed(tipId) {
-    return this.dismissedTips[tipId] === true;
-  }
-
-  dismissTip(tipId) {
-    console.log('🚫 Dismissing tip (Schema 2.5):', tipId);
-    this.dismissedTips[tipId] = true;
-    this.saveDismissedTips();
-  }
-
-  showTip(tipId) {
-    console.log('👁️ Showing tip (Schema 2.5):', tipId);
-    delete this.dismissedTips[tipId];
-    this.saveDismissedTips();
-  }
-
-  createTip(tipId, tipText, options = {}) {
-    const {
-      icon = '💡',
-      borderColor = 'rgba(255, 255, 255, 0.3)',
-      backgroundColor = 'rgba(255, 255, 255, 0.1)',
-      className = 'educational-tip'
-    } = options;
-
-    const isDismissed = this.isTipDismissed(tipId);
-    
-    return `
-      <div class="${className}" id="tip-${tipId}" data-tip-id="${tipId}" 
-           style="display: ${isDismissed ? 'none' : 'block'};">
-        <div class="tip-content">
-          <span class="tip-icon">${icon}</span>
-          <span class="tip-text">${tipText}</span>
-          <button class="tip-close" aria-label="Dismiss tip">✕</button>
-        </div>
-      </div>
-      <button class="tip-toggle ${isDismissed ? 'show' : 'hide'}" 
-              data-tip-id="${tipId}" 
-              aria-label="Show educational tip">
-        💡
-      </button>
-    `;
-  }
-
-  /**
-   * ✅ Enhanced tip listeners with proper event handling
-   */
-  initializeTipListeners(container) {
-    // Handle tip close buttons
-    container.addEventListener('click', (e) => {
-      if (e.target.classList.contains('tip-close')) {
-        e.stopPropagation(); // ✅ Prevent drag from starting
-        const tipElement = e.target.closest('.educational-tip');
-        const tipId = tipElement.dataset.tipId;
-        this.hideTip(tipId, container);
-      }
-    });
-
-    // Handle tip toggle buttons
-    container.addEventListener('click', (e) => {
-     if (e.target.classList.contains('tip-toggle') || e.target.classList.contains('tip-toggle-btn')) {
-        e.stopPropagation(); // ✅ Prevent drag from starting
-        const tipId = e.target.dataset.tipId;
-        const tipElement = container.querySelector(`#tip-${tipId}`);
-        
-        if (tipElement.style.display === 'none') {
-          this.showTipElement(tipId, container);
-        } else {
-          this.hideTip(tipId, container);
-        }
-      }
-    });
-  }
-
-  hideTip(tipId, container) {
-    const tipElement = container.querySelector(`#tip-${tipId}`);
-    const toggleButton = container.querySelector(`.tip-toggle[data-tip-id="${tipId}"]`);
-    
-    if (tipElement) {
-      tipElement.style.opacity = '0';
-      tipElement.style.transform = 'translateY(-10px)';
-      
-      setTimeout(() => {
-        tipElement.style.display = 'none';
-        if (toggleButton) {
-          toggleButton.classList.remove('hide');
-          toggleButton.classList.add('show');
-        }
-      }, 200);
-    }
-    
-    this.dismissTip(tipId);
-  }
-
-  showTipElement(tipId, container) {
-    const tipElement = container.querySelector(`#tip-${tipId}`);
-    const toggleButton = container.querySelector(`.tip-toggle[data-tip-id="${tipId}"]`);
-    
-    if (tipElement) {
-      tipElement.style.display = 'block';
-      tipElement.style.opacity = '0';
-      tipElement.style.transform = 'translateY(-10px)';
-      
-      // Force reflow
-      tipElement.offsetHeight;
-      
-      tipElement.style.opacity = '1';
-      tipElement.style.transform = 'translateY(0)';
-      
-      if (toggleButton) {
-        toggleButton.classList.remove('show');
-        toggleButton.classList.add('hide');
-      }
-    }
-    
-    this.showTip(tipId);
-  }
-}
-
-// 🌟 Initialize global tip manager
-const educationalTips = new EducationalTipManager();
+// � Access educational tips from the notification module
+const educationalTips = notifications.educationalTips;
 
 /**
  * 🚀 Enhanced Recurring Notification with Educational Tip
  * Updated implementation for your recurring feature
  */
 function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) {
-  const tipId = 'recurring-cycle-explanation';
-  const tipText = 'Recurring tasks are deleted on cycle reset and reappear based on their schedule';
-
-  // Only the tooltip box — no 💡 toggle inside
-  const educationalTipHTML = `
-    <div class="educational-tip recurring-tip" id="tip-${tipId}" data-tip-id="${tipId}" style="display: none;">
-      <div class="tip-content">
-        <span class="tip-icon">📍</span>
-        <span class="tip-text">${tipText}</span>
-        <button class="tip-close" aria-label="Dismiss tip">✕</button>
-      </div>
-    </div>
-  `;
-
-  return `
-    <div class="main-notification-content" 
-         style="position: relative; display: block; padding: 12px 16px; border-radius: 6px;">
-      
-      <!-- Close button -->
-      <button class="close-btn" 
-              title="Close" 
-              aria-label="Close notification"
-              style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0;">✖</button>
-
-      ${educationalTipHTML}
-
-      <span id="current-settings-${assignedTaskId}">
-        🔁 Recurring set to <strong>${frequency}</strong> (${pattern})
-      </span><br>
-
-      <div class="quick-recurring-options" data-task-id="${assignedTaskId}">
-        <div class="quick-option">
-          <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly"></span>
-          <span class="option-label">Hourly</span>
-        </div>
-        <div class="quick-option">
-          <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily"></span>
-          <span class="option-label">Daily</span>
-        </div>
-        <div class="quick-option">
-          <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly"></span>
-          <span class="option-label">Weekly</span>
-        </div>
-        <div class="quick-option">
-          <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly"></span>
-          <span class="option-label">Monthly</span>
-        </div>
-      </div>
-
-      <div class="quick-actions">
-        <button class="apply-quick-recurring" data-task-id="${assignedTaskId}" style="display: none;">Apply</button>
-        <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ More Options</button>
-      </div>
-
-      <!-- Detached Lightbulb toggle -->
-      <button class="tip-toggle-btn" data-tip-id="${tipId}" aria-label="Show educational tip">💡</button>
-    </div>
-  `;
+  return notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
 }
 
 
@@ -6051,142 +5577,14 @@ function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) 
  * ✅ Enhanced recurring notification listeners with proper event handling (Schema 2.5 only)
  */
 function initializeRecurringNotificationListeners(notification) {
-  // ✅ Close button handler first
-  const closeBtn = notification.querySelector(".close-btn");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      notification.classList.remove("show");
-      setTimeout(() => notification.remove(), 300); // match fade-out speed
-    });
-  }
-
-  // ✅ Delegate clicks inside notification
-  notification.addEventListener("click", (e) => {
-    e.stopPropagation();
-
-    // Always get taskId
-    const taskId = e.target.dataset.taskId || 
-                   e.target.closest("[data-task-id]")?.dataset.taskId;
-
-    // Handle quick option clicks
-    if (e.target.closest(".quick-option")) {
-      const quickOption = e.target.closest(".quick-option");
-      const radioCircle = quickOption.querySelector(".radio-circle");
-      const quickOptions = quickOption.closest(".quick-recurring-options");
-      const applyButton = notification.querySelector(".apply-quick-recurring");
-
-      quickOptions.querySelectorAll(".radio-circle").forEach(circle => {
-        circle.classList.remove("selected");
-      });
-
-      radioCircle.classList.add("selected");
-      applyButton.style.display = "inline-block";
-      applyButton.classList.add("show");
-    }
-
-    // Handle apply button clicks
-    if (e.target.classList.contains("apply-quick-recurring")) {
-      const selectedCircle = notification.querySelector(".radio-circle.selected");
-      if (!selectedCircle || !taskId) return;
-
-      const newFrequency = selectedCircle.dataset.freq;
-      
-      // ✅ Schema 2.5 only
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for apply-quick-recurring');
-        return;
-      }
-
-      const { cycles, activeCycle } = schemaData;
-      
-      applyRecurringToTaskSchema25(taskId, { frequency: newFrequency }, cycles, activeCycle);
-
-      const targetTask = cycles[activeCycle]?.tasks.find(t => t.id === taskId);
-      const pattern = targetTask?.recurringSettings?.indefinitely ? "Indefinitely" : "Limited";
-      const currentSettingsText = notification.querySelector(`#current-settings-${taskId}`);
-
-      if (currentSettingsText) {
-        currentSettingsText.innerHTML = `🔁 Recurring set to <strong>${newFrequency}</strong> (${pattern})`;
-        currentSettingsText.style.background = "rgba(255, 255, 255, 0.2)";
-        setTimeout(() => currentSettingsText.style.background = "transparent", 800);
-      }
-
-      e.target.style.display = "none";
-      showApplyConfirmation(currentSettingsText);
-      updateRecurringPanel?.();
-    }
-
-    // Handle advanced settings button
-    if (e.target.classList.contains("open-recurring-settings") && taskId) {
-      // ✅ Schema 2.5 only
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for open-recurring-settings');
-        return;
-      }
-
-      const { cycles, activeCycle } = schemaData;
-      const task = cycles[activeCycle]?.tasks.find(t => t.id === taskId);
-
-      let startingFrequency;
-      const selectedCircle = notification.querySelector(".radio-circle.selected");
-      if (selectedCircle) {
-        startingFrequency = selectedCircle.dataset.freq;
-      } else if (task?.recurringSettings?.frequency) {
-        startingFrequency = task.recurringSettings.frequency;
-      }
-
-      if (startingFrequency) {
-        const freqSelect = document.getElementById("recur-frequency");
-        if (freqSelect) {
-          freqSelect.value = startingFrequency;
-          freqSelect.dispatchEvent(new Event("change"));
-        }
-      }
-
-      openRecurringSettingsPanelForTask(taskId);
-
-      const notificationEl = e.target.closest(".notification");
-      if (notificationEl) {
-        notificationEl.classList.remove("show");
-        setTimeout(() => notificationEl.remove(), 300);
-      }
-    }
-  });
+  return notifications.initializeRecurringNotificationListeners(notification);
 }
 
 /**
  * Show confirmation message after applying changes
  */
 function showApplyConfirmation(targetElement) {
-  const tempConfirm = document.createElement("span");
-  tempConfirm.textContent = "✨  Applied!";
-  tempConfirm.style.color = "#209b17ff";
-  tempConfirm.style.fontWeight = "bold";
-  tempConfirm.style.marginLeft = "8px";
-  tempConfirm.style.opacity = "0";
-  tempConfirm.style.transition = "opacity 0.3s ease";
-  
-  if (targetElement) {
-    targetElement.appendChild(tempConfirm);
-    
-    // Animate in
-    setTimeout(() => {
-      tempConfirm.style.opacity = "1";
-    }, 100);
-    
-    // Fade out and remove
-    setTimeout(() => {
-      tempConfirm.style.opacity = "0";
-      setTimeout(() => {
-        if (tempConfirm.parentNode) {
-          tempConfirm.parentNode.removeChild(tempConfirm);
-        }
-      }, 300);
-    }, 2000);
-  }
+  return notifications.showApplyConfirmation(targetElement);
 }
 
 // 🛠 Unified recurring update helper (Schema 2.5 only)
@@ -6241,263 +5639,25 @@ function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) 
   }
 }
 
+// Make recurring function globally accessible for the notification module
+window.applyRecurringToTaskSchema25 = applyRecurringToTaskSchema25;
+
 /**
  * 🔧 Enhanced showNotification function with educational tips support (Schema 2.5 only)
  */
 function showNotificationWithTip(content, type = "default", duration = null, tipId = null) {
-  try {
-    const notificationContainer = document.getElementById("notification-container");
-    if (!notificationContainer) {
-      console.warn("⚠️ Notification container not found.");
-      return;
-    }
-
-    // 💡 Sanitize + Fallback message
-    if (typeof content !== "string" || content.trim() === "") {
-      console.warn("⚠️ Invalid or empty message passed to showNotificationWithTip().");
-      content = "⚠️ Unknown notification";
-    }
-
-    const newId = generateHashId(content); // 🔐 Use hash-based ID
-    const existing = [...notificationContainer.querySelectorAll(".notification")];
-
-    // ✅ Prevent duplicates
-    if (existing.some(n => n.dataset.id === newId)) {
-      console.log("🔄 Notification already exists, skipping duplicate.");
-      return;
-    }
-
-    // ✅ Build notification
-    const notification = document.createElement("div");
-    notification.classList.add("notification", "show");
-    notification.dataset.id = newId;
-
-    if (type === "error") notification.classList.add("error");
-    if (type === "success") notification.classList.add("success");
-    if (type === "info") notification.classList.add("info");
-    if (type === "warning") notification.classList.add("warning");
-    if (type === "recurring") notification.classList.add("recurring");
-
-    // 🛡 Check if HTML already has a close button before adding one
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = content;
-    const hasCloseBtn = tempDiv.querySelector(".close-btn, .notification-close");
-
-    if (hasCloseBtn) {
-      notification.innerHTML = content;
-    } else {
-      notification.innerHTML = `
-        <div class="notification-content">${content}</div>
-        <button class="notification-close" aria-label="Close notification">✖</button>
-      `;
-    }
-
-    notificationContainer.appendChild(notification);
-
-    // 🎯 Close button click
-    const closeBtn = notification.querySelector(".close-btn, .notification-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", (e) => {
-        e.stopPropagation(); // Avoid triggering other listeners
-        notification.classList.remove("show");
-        setTimeout(() => notification.remove(), 300);
-      });
-    }
-
-    // ✅ Initialize tip listeners if this notification has tips
-    if (tipId || notification.querySelector(".educational-tip")) {
-      educationalTips.initializeTipListeners(notification);
-    }
-
-    // ✅ Restore saved position from Schema 2.5 only
-    try {
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for notification position');
-        return;
-      }
-
-      const savedPosition = schemaData.settings.notificationPosition;
-      if (savedPosition?.x && savedPosition?.y) {
-        notificationContainer.style.top = `${savedPosition.y}px`;
-        notificationContainer.style.left = `${savedPosition.x}px`;
-        notificationContainer.style.right = "auto";
-      }
-    } catch (posError) {
-      console.warn("⚠️ Failed to apply saved notification position.", posError);
-    }
-
-    // ✅ Auto-remove logic with hover pause
-    if (duration) {
-      let hoverPaused = false;
-      let remaining = duration;
-      let removeTimeout;
-      let startTime = Date.now();
-
-      const clearNotification = () => {
-        notification.classList.remove("show");
-        setTimeout(() => notification.remove(), 300);
-      };
-
-      const startTimer = () => {
-        removeTimeout = setTimeout(() => {
-          if (!hoverPaused) clearNotification();
-        }, remaining);
-      };
-
-      const pauseTimer = () => {
-        hoverPaused = true;
-        clearTimeout(removeTimeout);
-        const elapsed = Date.now() - startTime;
-        remaining -= elapsed;
-      };
-
-      const resumeTimer = () => {
-        hoverPaused = false;
-        startTime = Date.now();
-        startTimer();
-      };
-
-      startTimer();
-      notification.addEventListener("mouseenter", pauseTimer);
-      notification.addEventListener("mouseleave", resumeTimer);
-    }
-
-    // ✅ Dragging setup (once)
-    setupNotificationDragging(notificationContainer);
-
-    return notification;
-
-  } catch (err) {
-    console.error("❌ showNotificationWithTip failed:", err);
-  }
+  return notifications.showWithTip(content, type, duration, tipId);
 }
 
 /**
  * Show a confirmation modal and call callback with boolean result
  */
-function showConfirmationModal({
-  title = "Confirm Action",
-  message = "Are you sure?",
-  confirmText = "Yes",
-  cancelText = "Cancel",
-  callback = () => {}
-}) {
-  // Create overlay
-  const overlay = document.createElement("div");
-  overlay.className = "mini-modal-overlay";
-
-  // Modal content
-  const modal = document.createElement("div");
-  modal.className = "mini-modal-box";
-  modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-modal", "true");
-  modal.setAttribute("tabindex", "-1");
-
-  modal.innerHTML = `
-    <div class="mini-modal-header">${title}</div>
-    <div class="mini-modal-body">${message}</div>
-    <div class="mini-modal-buttons">
-      <button class="btn-confirm">${confirmText}</button>
-      <button class="btn-cancel">${cancelText}</button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  // Elements
-  const confirmBtn = modal.querySelector(".btn-confirm");
-  const cancelBtn = modal.querySelector(".btn-cancel");
-
-  // Focus cancel by default for safe UX
-  setTimeout(() => cancelBtn.focus(), 20);
-
-  // Actions
-  const cleanup = () => {
-    document.removeEventListener("keydown", handleKeydown);
-    document.body.removeChild(overlay);
-  };
-
-  const handleKeydown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      confirmBtn.click();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      cancelBtn.click();
-    }
-  };
-
-  // Keyboard shortcut listeners
-  document.addEventListener("keydown", handleKeydown);
-
-  // Button handlers
-  confirmBtn.onclick = () => {
-    cleanup();
-    callback(true);
-  };
-
-  cancelBtn.onclick = () => {
-    cleanup();
-    callback(false);
-  };
+function showConfirmationModal(options) {
+  return notifications.showConfirmationModal(options);
 }
 
-function showPromptModal({
-  title = "Enter a value",
-  message = "",
-  placeholder = "",
-  defaultValue = "",
-  confirmText = "OK",
-  cancelText = "Cancel",
-  required = false,
-  callback = () => {}
-}) {
-  const overlay = document.createElement("div");
-  overlay.className = "miniCycle-overlay";
-
-  overlay.innerHTML = `
-    <div class="miniCycle-prompt-box">
-      <h2 class="miniCycle-prompt-title">${title}</h2>
-      <p class="miniCycle-prompt-message">${message}</p>
-      <input type="text" class="miniCycle-prompt-input" placeholder="${placeholder}" value="${defaultValue}" />
-      <div class="miniCycle-prompt-buttons">
-        <button class="miniCycle-btn-cancel">${cancelText}</button>
-        <button class="miniCycle-btn-confirm">${confirmText}</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const input = overlay.querySelector(".miniCycle-prompt-input");
-  const cancelBtn = overlay.querySelector(".miniCycle-btn-cancel");
-  const confirmBtn = overlay.querySelector(".miniCycle-btn-confirm");
-
-  // Focus input automatically
-  setTimeout(() => input.focus(), 50);
-
-  cancelBtn.addEventListener("click", () => {
-    document.body.removeChild(overlay);
-    callback(null);
-  });
-
-  confirmBtn.addEventListener("click", () => {
-    const value = input.value.trim();
-    if (required && !value) {
-      input.classList.add("miniCycle-input-error");
-      input.focus();
-      return;
-    }
-    document.body.removeChild(overlay);
-    callback(value);
-  });
-
-  overlay.addEventListener("keydown", e => {
-    if (e.key === "Enter") confirmBtn.click();
-    if (e.key === "Escape") cancelBtn.click();
-  });
+function showPromptModal(options) {
+  return notifications.showPromptModal(options);
 }
 
   
@@ -6636,7 +5796,7 @@ function startReminders() {
     const specificDatesPanel = document.getElementById("specific-dates-panel");
     const toggleBtn = document.getElementById("toggle-advanced-settings");
    
-    let advancedVisible = false;
+    advancedVisible = false; // Use global variable instead of let
     setAdvancedVisibility(advancedVisible, toggleBtn);
   
     toggleBtn.addEventListener("click", () => {
@@ -6813,7 +5973,7 @@ function updateRecurringPanel(currentCycleData = null) {
     const recurringList = document.getElementById("recurring-task-list");
     
     // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for updateRecurringPanel');
         throw new Error('Schema 2.5 data not found');
@@ -6893,7 +6053,7 @@ function updateRecurringPanel(currentCycleData = null) {
                     pushUndoSnapshot();
 
                     // ✅ Schema 2.5 only
-                    const schemaData = loadMiniCycleData();
+                    const schemaData = window.loadMiniCycleData();
                     if (!schemaData) {
                         console.error('❌ Schema 2.5 data required for task removal');
                         return;
@@ -6970,6 +6130,9 @@ function updateRecurringPanel(currentCycleData = null) {
     updateRecurringSummary();
     console.log('✅ Recurring panel updated successfully');
 }
+
+// Make updateRecurringPanel globally accessible for the notification module
+window.updateRecurringPanel = updateRecurringPanel;
   
   function openRecurringSettingsPanelForTask(taskIdToPreselect) {
       console.log('⚙️ Opening recurring settings panel (Schema 2.5 only)...', taskIdToPreselect);
@@ -6988,7 +6151,7 @@ function updateRecurringPanel(currentCycleData = null) {
           }
   
           // ✅ Update the preview with Schema 2.5 only
-          const schemaData = loadMiniCycleData();
+          const schemaData = window.loadMiniCycleData();
           if (!schemaData) {
               console.error('❌ Schema 2.5 data required for task preview');
               return;
@@ -9098,7 +8261,7 @@ if (threeDotsToggle) {
                       return;
                   }
                   
-                  console.log('🧹 Performing Schema 2.5 factory reset...');
+                  console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
                   
                   // Schema 2.5 - Single key cleanup
                   localStorage.removeItem("miniCycleData");
@@ -9119,18 +8282,60 @@ if (threeDotsToggle) {
                       "overdueTaskStates",
                       "bestRound",
                       "bestTime",
-                      "miniCycleAlwaysShowRecurring"
+                      "miniCycleAlwaysShowRecurring",
+                      "miniCycle_console_logs",
+                      "miniCycle_console_capture_start",
+                      "miniCycle_console_capture_enabled"
                   ];
                   
                   legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
                   
-                  // Clean up any backup files
+                  // Clean up any backup files and dynamic keys
                   const allKeys = Object.keys(localStorage);
+                  let dynamicKeysRemoved = 0;
+                  
                   allKeys.forEach(key => {
+                      // Backup files
                       if (key.startsWith('miniCycle_backup_') || key.startsWith('pre_migration_backup_')) {
                           localStorage.removeItem(key);
+                          dynamicKeysRemoved++;
+                          return;
+                      }
+                      
+                      // Any key containing miniCycle, minicycle, or TaskCycle (case-insensitive)
+                      const keyLower = key.toLowerCase();
+                      if (keyLower.includes('minicycle') || keyLower.includes('taskcycle')) {
+                          console.log('🧹 Removing additional key:', key);
+                          localStorage.removeItem(key);
+                          dynamicKeysRemoved++;
                       }
                   });
+                  
+                  console.log(`🧹 Removed ${dynamicKeysRemoved} additional dynamic keys`);
+                  
+                  // Optional: Clear service worker cache for complete reset
+                  if ('serviceWorker' in navigator) {
+                      navigator.serviceWorker.getRegistrations().then(registrations => {
+                          registrations.forEach(registration => {
+                              console.log('🧹 Unregistering service worker:', registration.scope);
+                              registration.unregister();
+                          });
+                      }).catch(err => console.warn('⚠️ Service worker cleanup failed:', err));
+                  }
+                  
+                  // Clear any cached data in memory
+                  if (typeof window.caches !== 'undefined') {
+                      caches.keys().then(cacheNames => {
+                          return Promise.all(
+                              cacheNames.map(cacheName => {
+                                  if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
+                                      console.log('🧹 Clearing cache:', cacheName);
+                                      return caches.delete(cacheName);
+                                  }
+                              })
+                          );
+                      }).catch(err => console.warn('⚠️ Cache cleanup failed:', err));
+                  }
       
                   showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
                   setTimeout(() => location.reload(), 1000);
