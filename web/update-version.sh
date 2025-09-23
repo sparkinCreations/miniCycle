@@ -250,6 +250,7 @@ echo "✅ All done!"
 # 
 # 1️⃣ First time setup (make it executable):
 #    chmod +x update-version.sh
+
 #
 # 2️⃣ Run the script:
 #    ./update-version.sh

@@ -1,0 +1,537 @@
+# miniCycle - Developer Documentation (Accurate)
+**Version**: 1.275
+**Target Audience**: Developers, Contributors, Technical Partners
+**Purpose**: Technical guide reflecting actual implemented features only
+-----
+## Executive Summary
+miniCycle is a task management web application that introduces a "cycling" approach to productivity. Built with vanilla JavaScript, it offers automatic task reset functionality that promotes habit formation and routine establishment.
+
+**Actually Implemented Features:**
+- **Zero Dependencies**: Pure JavaScript implementation with no external libraries
+- **Privacy-First Architecture**: 100% client-side storage with no data transmission
+- **Basic Recurring System**: Daily, weekly, monthly task scheduling
+- **PWA Implementation**: Offline-capable with service worker and manifest
+- **Dual Version Strategy**: Modern ES6+ and ES5 fallback for maximum compatibility
+- **Modular Design**: Extracted modules for notifications, stats panel, and testing
+
+**Technical Reality:**
+- Schema versioning with basic data migration (Schema 2.5)
+- Drag-and-drop with touch and mouse support
+- Basic theming system with unlockable themes
+- Notification system and modal management
+- Undo/redo functionality with limited history
+
+This documentation reflects the actual implemented codebase as of September 2025.
+-----
+## Table of Contents
+1. [Overview](#overview)
+1. [Architecture](#architecture)
+1. [Core Systems](#core-systems)
+1. [API Reference](#api-reference)
+1. [Data Management](#data-management)
+1. [UI Components](#ui-components)
+1. [Development Guide](#development-guide)
+1. [Troubleshooting](#troubleshooting)
+-----
+## Overview
+miniCycle is a web-based task management application that focuses on automatic task cycling. Unlike traditional task managers, miniCycle resets completed task lists to promote habit formation and routine establishment.
+
+### Core Philosophy
+- **Privacy-First**: All data stored locally, no external servers
+- **Offline-Capable**: Full functionality without internet connection
+- **Habit-Focused**: Cycling methodology encourages consistent routines
+- **Cross-Platform**: Responsive design works on all devices
+
+### Key Features (Actually Implemented)
+- Automatic task reset system
+- Basic recurring task scheduling (daily, weekly, monthly)
+- Multiple cycle management
+- Basic theme system with unlocks
+- PWA implementation with offline support
+-----
+## Architecture
+### Technology Stack
+```
+Frontend Layer:
+├── HTML5 (Semantic structure)
+├── CSS3 (Custom properties, Grid, Flexbox)
+├── Vanilla JavaScript (ES6+ with ES5 fallback)
+└── Progressive Web App (Service Worker, Manifest)
+
+Data Layer:
+├── localStorage (Primary storage)
+├── JSON schema (Version 2.5)
+├── Basic migration system
+└── Export/Import (.mcyc files)
+
+Compatibility Layer:
+├── Modern browsers (Chrome, Firefox, Safari, Edge)
+├── ES5 fallback (miniCycle-lite.html)
+├── Touch and mouse events
+└── Responsive breakpoints
+```
+
+### Project Structure (Actual)
+```
+miniCycle/
+├── Core Application
+│   ├── miniCycle.html                 # Main application entry
+│   ├── miniCycle-scripts.js           # Core logic (ES6+)
+│   ├── miniCycle-styles.css           # Main stylesheet
+│   └── manifest.json                  # PWA configuration
+│
+├── Utilities (Modular)
+│   ├── notifications.js               # Notification system
+│   ├── statsPanel.js                  # Stats panel manager
+│   ├── testing-modal.js               # Testing modal
+│   └── globalUtils.js                 # Global utilities
+│
+├── Compatibility Version
+│   ├── miniCycle-lite.html            # ES5 compatible entry
+│   ├── miniCycle-lite-scripts.js      # ES5 compatible logic
+│   └── miniCycle-lite-styles.css      # Optimized styles
+│
+└── Documentation
+    ├── user-manual.html               # End user guide
+    ├── privacy.html                   # Privacy policy
+    └── terms.html                     # Terms of service
+```
+-----
+## Core Systems
+### 1. Task Management System
+#### Task Creation and Validation
+```javascript
+function addTask(taskText, completed = false, shouldSave = true, 
+                dueDate = null, highPriority = null, isLoading = false, 
+                remindersEnabled = false, recurring = false, 
+                taskId = null, recurringSettings = {}) {
+    
+    // Input validation and sanitization
+    let taskTextTrimmed = sanitizeInput(taskText.trim());
+    if (!taskTextTrimmed) {
+        console.warn("⚠ Skipping empty or unsafe task.");
+        return;
+    }
+    
+    if (taskTextTrimmed.length > TASK_LIMIT) {
+        showNotification(`Task must be ${TASK_LIMIT} characters or less.`);
+        return;
+    }
+    
+    // Generate unique task ID
+    const id = taskId || generateUniqueId();
+    
+    // Create task object with schema version
+    const task = {
+        id: id,
+        text: taskTextTrimmed,
+        completed: completed,
+        priority: highPriority || false,
+        dueDate: dueDate,
+        remindersEnabled: remindersEnabled,
+        recurring: recurring,
+        recurringSettings: recurringSettings,
+        schemaVersion: SCHEMA_VERSION,
+        createdAt: new Date().toISOString(),
+        completedAt: null
+    };
+    
+    // Add to task list and update UI
+    taskList.push(task);
+    if (shouldSave) autoSave();
+    updateTaskListUI();
+    return task;
+}
+```
+
+### 2. Cycle Management System
+#### Basic Cycle Operations
+```javascript
+function createNewMiniCycle() {
+    // Basic cycle creation - opens modal for user input
+    // Actual implementation handles cycle name validation and creation
+}
+
+function switchToMiniCycle(cycleName) {
+    // Load specified cycle from storage
+    // Updates UI and saves current state
+}
+
+function exportMiniCycleData(miniCycleData, cycleName) {
+    // Exports cycle as downloadable .mcyc file
+    // Handles file generation and download
+}
+```
+
+### 3. Recurring Tasks System (Basic)
+#### Available Frequencies
+- Daily: Tasks repeat every day
+- Weekly: Tasks repeat on selected days of the week
+- Monthly: Tasks repeat on selected days of the month
+
+#### Basic Recurring Logic
+```javascript
+// Simplified recurring task monitoring
+// Checks for recurring tasks that need to be recreated
+// Limited to basic daily/weekly/monthly patterns
+```
+
+### 4. Modular Components (Actually Implemented)
+#### Notification System
+```javascript
+// utilities/notifications.js
+export class MiniCycleNotifications {
+    show(message, type = 'default', duration = 3000) {
+        // Creates and manages notification display
+        // Supports multiple notification types
+    }
+}
+```
+
+#### Stats Panel Manager
+```javascript
+// utilities/statsPanel.js  
+export class StatsPanelManager {
+    updateStatsPanel() {
+        // Updates statistics display
+        // Handles swipe navigation
+    }
+    
+    showStatsPanel() {
+        // Shows statistics view
+    }
+    
+    showTaskView() {
+        // Returns to task view
+    }
+}
+```
+
+#### Testing Modal
+```javascript
+// utilities/testing-modal.js
+export class TestingModalManager {
+    // Provides development and testing functionality
+    // Accessible through testing modal interface
+}
+```
+-----
+## API Reference (Actual Functions)
+### Core Task Functions
+#### `addTask(taskText, options...)`
+Creates a new task with validation and sanitization.
+```javascript
+// Basic usage
+addTask("Complete project documentation");
+
+// With options
+addTask("Daily meeting", false, true, null, true, false, false, false, null, {});
+```
+
+#### Task Management
+- Tasks are stored in global `taskList` array
+- Each task has unique ID, text, completion status, and metadata
+- Automatic saving to localStorage on changes
+
+### Cycle Management Functions
+#### `createNewMiniCycle()`
+Opens modal for creating new cycles.
+
+#### `exportMiniCycleData(data, name)`
+Exports cycle data as downloadable file.
+
+### Storage Functions
+#### `autoSave(overrideTaskList)`
+Saves current application state to localStorage.
+```javascript
+autoSave(); // Save current state
+```
+
+#### `loadMiniCycle(cycleName)`
+Loads specified cycle or active cycle from storage.
+```javascript
+loadMiniCycle(); // Load active cycle
+```
+-----
+## Data Management
+### Schema System (Schema 2.5)
+```javascript
+const SCHEMA_VERSION = 2.5;
+
+// Task schema (actual)
+const TaskSchema = {
+    id: "string",           // Unique identifier
+    text: "string",         // Task description
+    completed: "boolean",   // Completion state
+    priority: "boolean",    // High priority flag
+    dueDate: "string|null", // ISO 8601 date string
+    remindersEnabled: "boolean",
+    recurring: "boolean",
+    recurringSettings: "object",
+    schemaVersion: "number",
+    createdAt: "string",    // ISO 8601 timestamp
+    completedAt: "string|null"
+};
+
+// Cycle schema (actual)
+const CycleSchema = {
+    title: "string",
+    tasks: "array",
+    autoReset: "boolean",
+    deleteCheckedTasks: "boolean",
+    cycleCount: "number",
+    createdAt: "string",
+    lastModified: "string"
+};
+```
+
+### Storage Structure (Actual)
+```javascript
+// localStorage keys used
+const StorageKeys = {
+    MINI_CYCLE_STORAGE: 'miniCycleStorage',
+    ACTIVE_MINI_CYCLE: 'activeMiniCycle',
+    REMINDERS_SETTINGS: 'remindersSettings',
+    THEME_SETTINGS: 'selectedTheme'
+};
+```
+
+### Migration System (Basic)
+```javascript
+function migrateTask(task) {
+    // Basic migration from older schema versions
+    // Ensures tasks have required properties
+    // Updates schema version to current
+}
+```
+-----
+## UI Components (Actually Implemented)
+### Modal System
+- Settings modal with theme selection and app preferences
+- Cycle creation/management modals
+- Testing modal for development features
+- About modal with app information
+
+### Notification System (Modular)
+```javascript
+// Notification types available:
+// - default: blue background
+// - success: green background  
+// - error: red background
+// - warning: orange background
+// - info: gray background
+
+showNotification("Task completed!", "success");
+```
+
+### Drag and Drop System
+```javascript
+// Basic drag and drop for task reordering
+// Supports both mouse and touch events
+// Updates task order and saves automatically
+```
+
+### Theme System (Basic)
+```javascript
+// Available themes (unlock by cycle count):
+const themeList = [
+    { name: 'Default', class: 'theme-default', requirement: 0 },
+    { name: 'Dark Mode', class: 'theme-dark', requirement: 5 },
+    { name: 'Blue Ocean', class: 'theme-blue', requirement: 10 },
+    // Additional themes unlock at higher cycle counts
+];
+
+function applyTheme(themeName) {
+    document.body.className = `theme-${themeName}`;
+    localStorage.setItem('selectedTheme', themeName);
+}
+```
+-----
+## Event System (Basic DOM Events)
+### Global Event Handlers
+```javascript
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    // Undo: Ctrl+Z
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        performUndo();
+    }
+    
+    // Redo: Ctrl+Y or Ctrl+Shift+Z
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        performRedo();
+    }
+    
+    // Close modals with Escape
+    if (e.key === 'Escape') {
+        closeAllModals();
+    }
+});
+```
+
+### Safe Event Listener Utilities
+```javascript
+function safeAddEventListener(element, event, handler) {
+    if (!element) return;
+    element.removeEventListener(event, handler); // Clear old one
+    element.addEventListener(event, handler); // Add fresh
+}
+
+function safeAddEventListenerById(id, event, handler) {
+    const element = document.getElementById(id);
+    if (element) {
+        safeAddEventListener(element, event, handler);
+    } else {
+        console.warn(`⚠ Cannot attach event listener: #${id} not found.`);
+    }
+}
+```
+-----
+## Development Guide
+### Setup and Installation
+```bash
+# No build process required - serve static files
+# For local development:
+python -m http.server 8000
+# OR
+npx serve .
+# OR
+php -S localhost:8000
+```
+
+### Development Workflow
+```javascript
+// Enable debug mode (if available)
+const DEBUG_MODE = true;
+
+// Use console logging for development
+function debugLog(message, data = null) {
+    if (DEBUG_MODE) {
+        console.log(`[miniCycle Debug] ${message}`, data);
+    }
+}
+```
+
+### Testing (Manual)
+- Use testing modal for development features
+- Check browser console for errors
+- Test across different browsers and devices
+- Validate localStorage data integrity
+
+### Browser Compatibility
+- Modern browsers: Chrome, Firefox, Safari, Edge
+- ES5 fallback version available (miniCycle-lite.html)
+- Touch and mouse event support
+- Responsive design for mobile and desktop
+-----
+## Troubleshooting
+### Common Issues and Solutions
+#### Storage Issues
+```javascript
+// Problem: localStorage quota exceeded
+// Solution: Clear old data or export/import cycles
+
+// Problem: Corrupted data
+// Solution: Use browser dev tools to inspect/clear localStorage
+// Key: 'miniCycleStorage'
+```
+
+#### UI Issues
+```javascript
+// Problem: Drag and drop not working
+// Solution: Check if touch events are properly supported
+// Fallback: Use move arrows (can be enabled in settings)
+
+// Problem: Modals not closing
+// Solution: Press Escape key or click outside modal area
+```
+
+### Debug Tools (Basic)
+```javascript
+// Available in browser console:
+// - MiniCycleDiagnostics.validateData()
+// - MiniCycleDiagnostics.exportDiagnostics()
+
+// Manual debugging:
+console.log(taskList); // View current tasks
+console.log(localStorage.getItem('miniCycleStorage')); // View stored data
+```
+-----
+## Modular Architecture (Actually Implemented)
+### Current Module Structure
+```javascript
+// Implemented modules:
+import { MiniCycleNotifications } from './utilities/notifications.js';
+import { StatsPanelManager } from './utilities/statsPanel.js';  
+import { TestingModalManager } from './utilities/testing-modal.js';
+import { GlobalUtils } from './utilities/globalUtils.js';
+```
+
+### Module Integration Pattern
+```javascript
+// Dynamic import with dependency injection
+document.addEventListener('DOMContentLoaded', async () => {
+    // Import modules
+    const { MiniCycleNotifications } = await import('./utilities/notifications.js');
+    const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+    
+    // Initialize with dependencies
+    window.notifications = new MiniCycleNotifications();
+    window.statsPanelManager = new StatsPanelManager();
+    
+    // Make globally accessible
+    window.showNotification = window.notifications.show.bind(window.notifications);
+    window.updateStatsPanel = window.statsPanelManager.updateStatsPanel.bind(window.statsPanelManager);
+});
+```
+
+### Available Global Functions (Actual)
+```javascript
+// Safe DOM manipulation
+safeAddEventListener(element, event, handler)
+safeGetElementById(id)
+
+// Notifications
+showNotification(message, type, duration)
+
+// Stats and UI updates  
+updateStatsPanel()
+showStatsPanel()
+showTaskView()
+
+// Utilities
+debounce(func, wait)
+throttle(func, limit)
+generateId(prefix)
+```
+-----
+## Conclusion
+This documentation reflects the actual implemented features of miniCycle as of September 2025. The application provides a solid foundation for task management with cycling methodology, modular architecture, and basic extensibility.
+
+**What's Actually Working:**
+- Task creation, completion, and basic management
+- Cycle creation and switching
+- Basic recurring tasks (daily/weekly/monthly)
+- Theme system with unlockable themes
+- Notification system
+- PWA functionality with offline support
+- Export/import of cycle data
+- Modular architecture with extracted components
+
+**What's Not Implemented:**
+- Advanced plugin system
+- Complex event bus architecture
+- Advanced customization options
+- Enterprise-grade features
+
+### Quick Reference Links
+- **User Manual**: `user-manual.html`
+- **Privacy Policy**: `privacy.html`
+- **Terms of Service**: `terms.html`
+
+### Support and Contributing
+For technical questions, bug reports, or feature requests, please refer to the project's issue tracking system.
+
+**Happy coding! 🚀**

@@ -57,18 +57,137 @@ const REORDER_SNAPSHOT_INTERVAL = 500;
 let advancedVisible = false;
 let isDraggingNotification = false;
 
+// ✅ Temporary placeholder functions for stats panel (will be replaced when module loads)
+window.updateStatsPanel = function() {
+    console.log('📊 updateStatsPanel called before StatsPanelManager is ready - queuing for later');
+};
+window.showStatsPanel = function() {
+    console.log('📊 showStatsPanel called before StatsPanelManager is ready');
+};
+window.showTaskView = function() {
+    console.log('📊 showTaskView called before StatsPanelManager is ready');
+};
+
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
-    // Import and initialize notification system after DOM is ready
+
+    /******
+     * 
+     * Import utility modules
+    */
+
+    // Import global utilities first (foundational functions)
+    await import('./utilities/globalUtils.js');
+    console.log('🛠️ Global utilities loaded');
+
+    // Import console capture module
+    const { default: consoleCapture } = await import('./utilities/consoleCapture.js');
+    
+    // Make console capture globally accessible
+    window.consoleCapture = consoleCapture;
+
+    // Import and initialize notification system
     const { MiniCycleNotifications } = await import('./utilities/notifications.js');
     const notifications = new MiniCycleNotifications();
     
     // Make notifications globally accessible
     window.notifications = notifications;
+    window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     
-    // Sync the global dragging state
-    window.isDraggingNotification = isDraggingNotification;
+    // Import and initialize device detection
+    console.log('📱 Initializing device detection module...');
+    const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
+    
+    const deviceDetectionManager = new DeviceDetectionManager({
+        loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
+        showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+        currentVersion: '1.280'
+    });
+    
+    // Make globally accessible
+    window.deviceDetectionManager = deviceDetectionManager;
+
+       // Around line 100 where you initialize StatsPanelManager, update it:
+    
+    // Import and initialize stats panel manager
+    console.log('📊 Initializing stats panel module...');
+    const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+    
+    // ✅ Don't wait arbitrarily - wait for data to be ready
+    const statsPanelManager = new StatsPanelManager({
+        showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+        loadMiniCycleData: () => {
+            // ✅ More defensive data loading
+            try {
+                const result = window.loadMiniCycleData ? window.loadMiniCycleData() : null;
+                if (!result) {
+                    console.log('� StatsPanelManager: Data not ready yet');
+                }
+                return result;
+            } catch (error) {
+                console.warn('⚠️ StatsPanelManager: Error loading data:', error);
+                return null;
+            }
+        },
+        isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false
+    });
+    
+    // Make globally accessible - replace placeholder functions
+    window.statsPanelManager = statsPanelManager;
+    window.showStatsPanel = () => statsPanelManager.showStatsPanel();
+    window.showTaskView = () => statsPanelManager.showTaskView();
+    window.updateStatsPanel = () => {
+        // ✅ Only call if data is available
+        const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
+        if (dataAvailable) {
+            return statsPanelManager.updateStatsPanel();
+        } else {
+            console.log('📊 Skipping stats update - data not ready');
+        }
+    };
+    console.log('📊 StatsPanelManager global functions updated');
+    // ✅ isOverlayActive function (needed by various parts of the app)
+    window.isOverlayActive = function() {
+        // Check for visible menu
+        if (document.querySelector(".menu-container.visible")) return true;
+        
+        // Check for open modals/overlays
+        const overlaySelectors = [
+            '.settings-modal[style*="display: flex"]',
+            '.mini-cycle-switch-modal[style*="display: flex"]',
+            '#feedback-modal[style*="display: flex"]',
+            '#about-modal[style*="display: flex"]',
+            '#themes-modal[style*="display: flex"]',
+            '#games-panel[style*="display: flex"]',
+            '#reminders-modal[style*="display: flex"]',
+            '#testing-modal[style*="display: flex"]',
+            '#recurring-panel-overlay:not(.hidden)',
+            '.notification-container .notification',
+            '#storage-viewer-overlay:not(.hidden)',  // Local storage viewer
+            '.mini-modal-overlay',                    // Confirmation/prompt modals
+            '.miniCycle-overlay',                     // Your prompt modals
+            '.onboarding-modal:not([style*="display: none"])'  // Onboarding
+            //'.modal-overlay'                          // Generic modal overlay
+        ];
+        
+        return overlaySelectors.some(selector => document.querySelector(selector));
+    };
+
+    // ✅ Navigation dots function (works with stats panel)
+    function updateNavDots() {
+        const statsPanel = document.getElementById("stats-panel");
+        const statsVisible = statsPanel && statsPanel.classList.contains("show");
+        const dots = document.querySelectorAll(".dot");
+
+        if (dots.length === 2) {
+            dots[0].classList.toggle("active", !statsVisible); // Task View dot
+            dots[1].classList.toggle("active", statsVisible);  // Stats Panel dot
+        }
+    }
+    
+    // Make updateNavDots globally accessible
+    window.updateNavDots = updateNavDots;
 
     // ✅ DOM Element References
     const taskInput = document.getElementById("taskInput");
@@ -196,8 +315,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Stats and Navigation
     console.log('📊 Updating stats and navigation...');
-    updateStatsPanel(); 
     updateNavDots();
+
 
     // ✅ Theme Loading (Schema 2.5 only)
     console.log('🎨 Loading theme settings...');
@@ -302,259 +421,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-// ✅ UPDATED: Device detection with Schema 2.5 only
-function runDeviceDetection() {
-    var userAgent = navigator.userAgent;
-    var currentVersion = '1.279';
     
-    console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
-    showNotification('🔍 Checking device compatibility...', 'info', 3000);
-    
-    // ✅ Check manual override first
-    var manualOverride = localStorage.getItem('miniCycleForceFullVersion');
-    if (manualOverride === 'true') {
-        console.log('🚀 Manual override detected - user chose full version');
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for device detection');
-            return;
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.deviceCompatibility = {
-            shouldUseLite: false,
-            reason: 'manual_override',
-            lastDetectionVersion: currentVersion,
-            detectionDate: new Date().toISOString(),
-            userAgent: userAgent
-        };
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Manual override saved to Schema 2.5');
-        showNotification('✅ Device detection complete - using full version by user choice', 'success', 3000);
-        return;
-    }
-    
-    function shouldRedirectToLite() {
-        const userAgent = navigator.userAgent.toLowerCase();
-        
-        // ✅ Device capability checks
-        const isOldDevice = 
-            /android [1-4]\./i.test(userAgent) ||
-            /chrome\/[1-4][0-9]\./i.test(userAgent) ||
-            /firefox\/[1-4][0-9]\./i.test(userAgent) ||
-            /safari\/[1-7]\./i.test(userAgent) ||
-            /msie|trident/i.test(userAgent);
-        
-        const hasLowMemory = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
-        const hasSlowConnection = navigator.connection && 
-            (navigator.connection.effectiveType === 'slow-2g' || 
-             navigator.connection.effectiveType === '2g' || 
-             navigator.connection.effectiveType === '3g');
-        
-        return isOldDevice || hasLowMemory || hasSlowConnection;
-    }
-    
-    // ✅ Enhanced redirect with Schema 2.5 only
-    function performRedirect() {
-        const shouldUseLite = shouldRedirectToLite();
-        const reason = shouldUseLite ? 'device_compatibility' : 'device_capable';
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for device detection');
-            return;
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (!fullSchemaData.settings) fullSchemaData.settings = {};
-        
-        fullSchemaData.settings.deviceCompatibility = {
-            shouldUseLite: shouldUseLite,
-            reason: reason,
-            lastDetectionVersion: currentVersion,
-            detectionDate: new Date().toISOString(),
-            userAgent: userAgent,
-            deviceInfo: {
-                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
-                connectionType: navigator.connection?.effectiveType || 'unknown',
-                screenWidth: window.screen.width,
-                screenHeight: window.screen.height
-            }
-        };
-        
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Device detection saved to Schema 2.5:', fullSchemaData.settings.deviceCompatibility);
-        
-        if (shouldUseLite) {
-            const cacheBuster = '?redirect=auto&v=' + currentVersion + '&t=' + Date.now();
-            console.log('📱 Redirecting to lite version:', 'miniCycle-lite.html' + cacheBuster);
-            
-            showNotification('📱 Redirecting to optimized lite version...', 'info', 2000);
-            setTimeout(() => {
-                window.location.href = 'miniCycle-lite.html' + cacheBuster;
-            }, 1000);
-        } else {
-            console.log('💻 Device is capable - staying on full version');
-            showNotification('✅ Device detection complete - using full version', 'success', 3000);
-        }
-    }
-    
-    // ✅ Check if we should redirect
-    performRedirect();
-}
-
-// ✅ UPDATED: Auto-redetection with Schema 2.5 only
-function autoRedetectOnVersionChange() {
-    const currentVersion = '1.279';
-    
-    console.log('🔄 Checking version change (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for version detection');
-        return;
-    }
-    
-    let lastDetectionVersion = null;
-    try {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        lastDetectionVersion = fullSchemaData.settings?.deviceCompatibility?.lastDetectionVersion;
-    } catch (error) {
-        console.warn('⚠️ Error reading detection version from Schema 2.5:', error);
-    }
-    
-    // If version changed or first time, re-run detection
-    if (lastDetectionVersion !== currentVersion) {
-        console.log('🔄 Version changed or first run - running device detection');
-        console.log('   Previous version:', lastDetectionVersion || 'None');
-        console.log('   Current version:', currentVersion);
-        
-        setTimeout(() => {
-            runDeviceDetection();
-        }, 1000);
-    } else {
-        console.log('✅ Device detection up-to-date for version', currentVersion);
-    }
-}
-
-// ✅ UPDATED: Enhanced device detection reporting with Schema 2.5 only
-function reportDeviceCompatibility() {
-    const userAgent = navigator.userAgent;
-    const currentVersion = '1.279';
-    
-    console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for compatibility report');
-        showNotification('❌ Cannot generate report - Schema 2.5 data required', 'error', 3000);
-        return null;
-    }
-    
-    let storedDecision = null;
-    let lastDetectionVersion = null;
-    let detectionData = null;
-    
-    try {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        const compatibility = fullSchemaData.settings?.deviceCompatibility;
-        if (compatibility) {
-            storedDecision = compatibility.shouldUseLite;
-            lastDetectionVersion = compatibility.lastDetectionVersion;
-            detectionData = compatibility;
-        }
-    } catch (error) {
-        console.error('❌ Error reading device compatibility from Schema 2.5:', error);
-    }
-    
-    // Device info
-    const deviceInfo = {
-        userAgent: userAgent,
-        version: currentVersion,
-        lastDetectionVersion: lastDetectionVersion,
-        storedDecision: storedDecision,
-        currentUrl: window.location.href,
-        timestamp: new Date().toISOString(),
-        schema: '2.5',
-        detectionData: detectionData
-    };
-    
-    let statusMessage = '';
-    let statusType = 'info';
-    
-    if (storedDecision === true) {
-        statusMessage = '📱 Device configured for lite version';
-        statusType = 'info';
-    } else if (storedDecision === false) {
-        statusMessage = '💻 Device configured for full version';  
-        statusType = 'success';
-    } else {
-        statusMessage = '❓ No device preference stored';
-        statusType = 'warning';
-    }
-    
-    // Show detailed notification
-    showNotification(
-        `${statusMessage}<br>` +
-        `Version: ${currentVersion}<br>` +
-        `Schema: ${deviceInfo.schema}<br>` +
-        `Last Check: ${lastDetectionVersion || 'Never'}`,
-        statusType,
-        8000
-    );
-    
-    // Also log to console for debugging
-    console.log('📊 Device Compatibility Report (Schema 2.5):', deviceInfo);
-    
-    return deviceInfo;
-}
-
-// ✅ UPDATED: Manual testing with Schema 2.5 cleanup only
-function testDeviceDetection() {
-    showNotification('🧪 Starting manual device detection test (Schema 2.5 only)...', 'info', 2000);
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for device detection test');
-        showNotification('❌ Cannot test - Schema 2.5 data required', 'error', 3000);
-        return;
-    }
-    
-    // Clear from Schema 2.5 only
-    try {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (fullSchemaData.settings?.deviceCompatibility) {
-            delete fullSchemaData.settings.deviceCompatibility;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            console.log('🧹 Cleared device compatibility from Schema 2.5');
-        }
-    } catch (error) {
-        console.error('❌ Error clearing Schema 2.5 compatibility:', error);
-    }
-    
-    // Also clear legacy keys for cleanup
-    localStorage.removeItem('miniCycleForceFullVersion');
-    
-    console.log('🧹 Cleared device detection cache');
-    
-    // Wait a moment then run detection
+  
+    // ✅ FIXED: Device detection call at the end, after everything is initialized
     setTimeout(() => {
-        console.log('🔄 Running fresh device detection...');
-        runDeviceDetection();
-    }, 2500);
-}
-
-// ✅ Expose testing functions to console for debugging
-window.testDeviceDetection = testDeviceDetection;
-window.reportDeviceCompatibility = reportDeviceCompatibility;
-window.runDeviceDetection = runDeviceDetection;
-
+        console.log('📱 Running device detection...');
+        if (window.deviceDetectionManager && window.loadMiniCycleData) {
+            window.deviceDetectionManager.autoRedetectOnVersionChange();
+        } else {
+            console.error('❌ Device detection manager or dependencies not available');
+        }
+    }, 10000);
 
 
 
@@ -581,430 +458,6 @@ window.runDeviceDetection = runDeviceDetection;
     }, 1000);
 
 
-
-
-
-
-
-
-// ==========================================
-// 🎯 AUTO CONSOLE CAPTURE FOR MIGRATIONS
-// ==========================================
-
-let consoleLogBuffer = [];
-let originalConsole = {};
-let consoleCapturing = false;
-let autoStarted = false;
-let captureInterval = null;
-
-// Check if we should auto-start console capture
-function shouldAutoStartConsoleCapture() {
-    // Auto-start if:
-    // 1. We have old schema data (migration might happen)
-    // 2. OR we're in development/testing mode
-    // 3. OR migration is explicitly enabled
-    const hasOldData = localStorage.getItem("miniCycleStorage") && !localStorage.getItem("miniCycleData");
-    const isTestingMode = localStorage.getItem("miniCycle_enableAutoConsoleCapture") === "true";
-    const migrationMode = sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
-    
-    return hasOldData || isTestingMode || migrationMode;
-}
-
-// Enhanced console capture that works across page refreshes
-function startAutoConsoleCapture() {
-    if (consoleCapturing || autoStarted) return;
-    
-    autoStarted = true;
-    consoleCapturing = true;
-    consoleLogBuffer = [];
-    
-    // Load any existing buffer from previous sessions
-    try {
-        const storedBuffer = localStorage.getItem("miniCycle_capturedConsoleBuffer");
-        if (storedBuffer) {
-            const storedLogs = JSON.parse(storedBuffer);
-            consoleLogBuffer = Array.isArray(storedLogs) ? storedLogs : [];
-            console.log(`🔄 Restored ${consoleLogBuffer.length} previous console messages`);
-        }
-    } catch (e) {
-        console.warn("⚠️ Could not restore previous console buffer");
-    }
-    
-    // Store original console methods
-    originalConsole = {
-        log: console.log,
-        error: console.error,
-        warn: console.warn,
-        info: console.info,
-        debug: console.debug,
-        table: console.table
-    };
-    
-    // Enhanced console override with better formatting and filtering
-    console.log = (...args) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const message = formatConsoleArgs(args);
-        const logEntry = `[${timestamp}] 📝 LOG: ${message}`;
-        
-        // Store in buffer
-        consoleLogBuffer.push(logEntry);
-        
-        // Keep buffer size manageable (last 500 messages)
-        if (consoleLogBuffer.length > 500) {
-            consoleLogBuffer = consoleLogBuffer.slice(-500);
-        }
-        
-        // Call original
-        originalConsole.log.apply(console, args);
-    };
-    
-    console.error = (...args) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const message = formatConsoleArgs(args);
-        const logEntry = `[${timestamp}] ❌ ERROR: ${message}`;
-        
-        consoleLogBuffer.push(logEntry);
-        if (consoleLogBuffer.length > 500) {
-            consoleLogBuffer = consoleLogBuffer.slice(-500);
-        }
-        
-        originalConsole.error.apply(console, args);
-    };
-    
-    console.warn = (...args) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const message = formatConsoleArgs(args);
-        const logEntry = `[${timestamp}] ⚠️ WARN: ${message}`;
-        
-        consoleLogBuffer.push(logEntry);
-        if (consoleLogBuffer.length > 500) {
-            consoleLogBuffer = consoleLogBuffer.slice(-500);
-        }
-        
-        originalConsole.warn.apply(console, args);
-    };
-    
-    console.info = (...args) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const message = formatConsoleArgs(args);
-        const logEntry = `[${timestamp}] ℹ️ INFO: ${message}`;
-        
-        consoleLogBuffer.push(logEntry);
-        if (consoleLogBuffer.length > 500) {
-            consoleLogBuffer = consoleLogBuffer.slice(-500);
-        }
-        
-        originalConsole.info.apply(console, args);
-    };
-    
-    // Handle console.table for migration debugging
-    console.table = (...args) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const message = formatConsoleArgs(args);
-        const logEntry = `[${timestamp}] 📊 TABLE: ${message}`;
-        
-        consoleLogBuffer.push(logEntry);
-        if (consoleLogBuffer.length > 500) {
-            consoleLogBuffer = consoleLogBuffer.slice(-500);
-        }
-        
-        originalConsole.table.apply(console, args);
-    };
-    
-    console.log("🎯 Enhanced console capture started - monitoring migration activity with detailed logging");
-    
-    // Store captured logs in localStorage periodically
-    captureInterval = setInterval(() => {
-        if (consoleLogBuffer.length > 0) {
-            try {
-                localStorage.setItem("miniCycle_capturedConsoleBuffer", JSON.stringify(consoleLogBuffer));
-            } catch (e) {
-                // Storage might be full, remove old entries
-                if (consoleLogBuffer.length > 100) {
-                    consoleLogBuffer = consoleLogBuffer.slice(-100);
-                    try {
-                        localStorage.setItem("miniCycle_capturedConsoleBuffer", JSON.stringify(consoleLogBuffer));
-                    } catch (e2) {
-                        console.warn("⚠️ Unable to save console buffer to localStorage");
-                    }
-                }
-            }
-        }
-    }, 2000); // Save every 2 seconds instead of 1
-}
-
-// Helper function to format console arguments
-function formatConsoleArgs(args) {
-    return args.map(arg => {
-        if (typeof arg === 'object') {
-            try {
-                // Handle special objects better
-                if (arg === null) return 'null';
-                if (arg === undefined) return 'undefined';
-                if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
-                if (Array.isArray(arg)) return `[${arg.length} items]: ${JSON.stringify(arg).substring(0, 100)}${arg.length > 3 ? '...' : ''}`;
-                
-                // Regular objects
-                const str = JSON.stringify(arg, null, 2);
-                return str.length > 200 ? str.substring(0, 200) + '...' : str;
-            } catch (e) {
-                return '[Object - could not stringify]';
-            }
-        }
-        return String(arg);
-    }).join(' ');
-}
-
-// Auto-start console capture if conditions are met
-if (shouldAutoStartConsoleCapture()) {
-    startAutoConsoleCapture();
-}
-
-// Enhanced stop function
-function stopConsoleCapture() {
-    if (!consoleCapturing) return;
-    
-    // Restore original console methods
-    console.log = originalConsole.log;
-    console.error = originalConsole.error;
-    console.warn = originalConsole.warn;
-    console.info = originalConsole.info;
-    console.debug = originalConsole.debug;
-    console.table = originalConsole.table;
-    
-    // Clear interval
-    if (captureInterval) {
-        clearInterval(captureInterval);
-        captureInterval = null;
-    }
-    
-    consoleCapturing = false;
-    autoStarted = false;
-    
-    // Clear the stored buffer
-    localStorage.removeItem("miniCycle_capturedConsoleBuffer");
-    
-    console.log("⏹️ Enhanced console capture stopped - all logging restored to normal");
-}
-
-// Enhanced log display with better filtering and search
-function showAllCapturedLogs() {
-    let allLogs = [...consoleLogBuffer];
-    
-    // Also try to get any stored logs from localStorage
-    const storedBuffer = localStorage.getItem("miniCycle_capturedConsoleBuffer");
-    if (storedBuffer) {
-        try {
-            const storedLogs = JSON.parse(storedBuffer);
-            // Merge, removing duplicates based on timestamp and content
-            storedLogs.forEach(log => {
-                if (!allLogs.some(existingLog => existingLog === log)) {
-                    allLogs.push(log);
-                }
-            });
-        } catch (e) {
-            console.warn("Could not parse stored console buffer");
-        }
-    }
-    
-    if (!allLogs.length) {
-        appendToTestResults("📭 No console messages captured yet.\n\n");
-        return;
-    }
-    
-    // Sort by timestamp (extract from log format)
-    allLogs.sort((a, b) => {
-        const timeA = a.match(/\[(.*?)\]/)?.[1] || '';
-        const timeB = b.match(/\[(.*?)\]/)?.[1] || '';
-        return timeA.localeCompare(timeB);
-    });
-    
-    appendToTestResults("📊 ALL CAPTURED CONSOLE MESSAGES:\n");
-    appendToTestResults("==========================================\n");
-    appendToTestResults(`📅 Capture Period: ${allLogs.length > 0 ? allLogs[0].match(/\[(.*?)\]/)?.[1] || 'Unknown' : 'N/A'} - ${allLogs.length > 0 ? allLogs[allLogs.length - 1].match(/\[(.*?)\]/)?.[1] || 'Unknown' : 'N/A'}\n`);
-    appendToTestResults(`🔢 Total Messages: ${allLogs.length}\n`);
-    appendToTestResults("==========================================\n\n");
-    
-    // Group by type for better organization
-    const logTypes = {
-        'ERROR': allLogs.filter(log => log.includes('❌ ERROR:')),
-        'WARN': allLogs.filter(log => log.includes('⚠️ WARN:')),
-        'INFO': allLogs.filter(log => log.includes('ℹ️ INFO:')),
-        'LOG': allLogs.filter(log => log.includes('📝 LOG:')),
-        'TABLE': allLogs.filter(log => log.includes('📊 TABLE:'))
-    };
-    
-    appendToTestResults("📈 MESSAGE BREAKDOWN:\n");
-    Object.entries(logTypes).forEach(([type, logs]) => {
-        if (logs.length > 0) {
-            appendToTestResults(`  ${type}: ${logs.length} messages\n`);
-        }
-    });
-    appendToTestResults("\n");
-    
-    // Display all messages
-    allLogs.forEach((log, index) => {
-        appendToTestResults(`${String(index + 1).padStart(3, '0')}. ${log}\n`);
-    });
-    
-    appendToTestResults("\n==========================================\n");
-    appendToTestResults(`📊 Console capture complete - ${allLogs.length} messages displayed\n\n`);
-    
-    showNotification(`📊 Displayed ${allLogs.length} console messages with enhanced migration logging`, "success", 4000);
-}
-
-function clearAllConsoleLogs() {
-    consoleLogBuffer = [];
-    localStorage.removeItem("miniCycle_capturedConsoleBuffer");
-    appendToTestResults("🧹 All console logs cleared (including stored buffer)\n");
-    appendToTestResults("✨ Ready to capture new migration activity\n\n");
-    showNotification("🧹 Console logs cleared - ready for new capture", "info", 2000);
-}
-
-// Enhanced error filtering with more sophisticated detection
-function showMigrationErrorsOnly() {
-    let allLogs = [...consoleLogBuffer];
-    
-    // Also get stored logs
-    const storedBuffer = localStorage.getItem("miniCycle_capturedConsoleBuffer");
-    if (storedBuffer) {
-        try {
-            const storedLogs = JSON.parse(storedBuffer);
-            storedLogs.forEach(log => {
-                if (!allLogs.some(existingLog => existingLog === log)) {
-                    allLogs.push(log);
-                }
-            });
-        } catch (e) {}
-    }
-    
-    // Enhanced filtering for migration-related messages
-    const migrationKeywords = [
-        'migration', 'schema', 'backup', 'restore', 'fallback',
-        'legacy', 'performSchema25Migration', 'checkMigrationNeeded',
-        'handleMigrationFailure', 'createAutomaticMigrationBackup',
-        'restoreFromAutomaticBackup', 'migrateTask', 'validateAllMiniCycleTasks'
-    ];
-    
-    const errorMessages = allLogs.filter(log => {
-        const logLower = log.toLowerCase();
-        return (
-            log.includes('❌ ERROR:') || 
-            log.includes('⚠️ WARN:') ||
-            migrationKeywords.some(keyword => logLower.includes(keyword.toLowerCase())) ||
-            log.includes('🔄') || // Migration progress indicators
-            log.includes('📥') || // Backup indicators  
-            log.includes('✅') || // Success indicators (for context)
-            log.includes('🚨')    // Critical error indicators
-        );
-    });
-    
-    if (errorMessages.length === 0) {
-        appendToTestResults("✅ No migration-related messages found!\n");
-        appendToTestResults("This could mean:\n");
-        appendToTestResults("  • No migration has run yet\n");
-        appendToTestResults("  • Migration completed without logging\n");
-        appendToTestResults("  • Console capture was not active during migration\n\n");
-        return;
-    }
-    
-    // Sort by timestamp
-    errorMessages.sort((a, b) => {
-        const timeA = a.match(/\[(.*?)\]/)?.[1] || '';
-        const timeB = b.match(/\[(.*?)\]/)?.[1] || '';
-        return timeA.localeCompare(timeB);
-    });
-    
-    appendToTestResults("🚨 MIGRATION-RELATED MESSAGES:\n");
-    appendToTestResults("==========================================\n");
-    appendToTestResults(`📅 Time Range: ${errorMessages[0]?.match(/\[(.*?)\]/)?.[1] || 'N/A'} - ${errorMessages[errorMessages.length - 1]?.match(/\[(.*?)\]/)?.[1] || 'N/A'}\n`);
-    appendToTestResults("==========================================\n\n");
-    
-    // Categorize messages
-    const categories = {
-        'Critical Errors': errorMessages.filter(log => log.includes('❌ ERROR:') || log.includes('🚨')),
-        'Warnings': errorMessages.filter(log => log.includes('⚠️ WARN:')),
-        'Migration Progress': errorMessages.filter(log => log.includes('🔄') && !log.includes('ERROR') && !log.includes('WARN')),
-        'Backup Operations': errorMessages.filter(log => log.includes('📥') && !log.includes('ERROR') && !log.includes('WARN')),
-        'Success Messages': errorMessages.filter(log => log.includes('✅') && !log.includes('ERROR') && !log.includes('WARN'))
-    };
-    
-    Object.entries(categories).forEach(([category, messages]) => {
-        if (messages.length > 0) {
-            appendToTestResults(`\n📋 ${category.toUpperCase()} (${messages.length}):\n`);
-            appendToTestResults("─".repeat(40) + "\n");
-            messages.forEach((message, index) => {
-                appendToTestResults(`${String(index + 1).padStart(2, '0')}. ${message}\n`);
-            });
-        }
-    });
-    
-    appendToTestResults("\n==========================================\n");
-    appendToTestResults(`🔍 Analysis Complete: Found ${errorMessages.length} migration-related messages\n\n`);
-    
-    if (categories['Critical Errors'].length > 0) {
-        appendToTestResults("🚨 ATTENTION: Critical errors detected! Review the error messages above.\n\n");
-        showNotification(`🚨 Found ${errorMessages.length} migration messages including ${categories['Critical Errors'].length} critical errors`, "error", 6000);
-    } else if (categories['Warnings'].length > 0) {
-        appendToTestResults("⚠️ Warnings found but no critical errors detected.\n\n");
-        showNotification(`⚠️ Found ${errorMessages.length} migration messages with ${categories['Warnings'].length} warnings`, "warning", 4000);
-    } else {
-        appendToTestResults("✅ No critical errors found in migration messages.\n\n");
-        showNotification(`📊 Found ${errorMessages.length} migration messages - no critical errors`, "success", 4000);
-    }
-}
-
-// Helper function to get console capture stats
-function getConsoleCaptureStats() {
-    return {
-        capturing: consoleCapturing,
-        bufferSize: consoleLogBuffer.length,
-        autoStarted: autoStarted,
-        hasStoredBuffer: !!localStorage.getItem("miniCycle_capturedConsoleBuffer")
-    };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds an event listener safely by removing any existing listener first.
- * This prevents duplicate event bindings and ensures only one listener is active at a time.
- *
- * @param {HTMLElement} element - The element to attach the event listener to.
- * @param {string} event - The event type (e.g., "click", "input").
- * @param {Function} handler - The function that handles the event.
- */
-
-
-
-
-function safeAddEventListener(element, event, handler) {
-    if (!element) return; // Prevent errors if element is null
-    element.removeEventListener(event, handler); // Clear old one
-    element.addEventListener(event, handler); // Add fresh
-}
-
-function safeAddEventListenerById(id, event, handler) {
-    const element = document.getElementById(id);
-    if (element) {
-        safeAddEventListener(element, event, handler);
-    } else {
-        console.warn(`⚠ Cannot attach event listener: #${id} not found.`);
-    }
-}
 
 
 // ==== 🔁 UNDO / REDO SYSTEM =============================
@@ -1342,152 +795,6 @@ document.getElementById("toggleAutoReset").addEventListener("change", updateCycl
 document.getElementById("deleteCheckedTasks").addEventListener("change", updateCycleModeDescription);
 // ...existing code...
 
-// Replace the complex mode selector setup with this simpler approach:
-function setupModeSelector() {
-    console.log('🎯 Setting up mode selectors (Schema 2.5 only)...');
-    
-    const modeSelector = document.getElementById('mode-selector');
-    const mobileModeSelector = document.getElementById('mobile-mode-selector');
-    const toggleAutoReset = document.getElementById('toggleAutoReset');
-    const deleteCheckedTasks = document.getElementById('deleteCheckedTasks');
-    
-    console.log('🔍 Element detection:', {
-        modeSelector: !!modeSelector,
-        mobileModeSelector: !!mobileModeSelector,
-        toggleAutoReset: !!toggleAutoReset,
-        deleteCheckedTasks: !!deleteCheckedTasks
-    });
-    
-    if (!modeSelector || !mobileModeSelector || !toggleAutoReset || !deleteCheckedTasks) {
-        console.warn('⚠️ Mode selector elements not found');
-        return;
-    }
-    
-    // ✅ Function to sync both selectors with toggles (Schema 2.5 only)
-    function syncModeFromToggles() {
-        console.log('🔄 Syncing mode from Schema 2.5 data...');
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for syncModeFromToggles');
-            return;
-        }
-        
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
-        
-        let autoReset = false;
-        let deleteChecked = false;
-        
-        if (currentCycle) {
-            autoReset = currentCycle.autoReset || false;
-            deleteChecked = currentCycle.deleteCheckedTasks || false;
-            
-            // Update DOM to match Schema 2.5 data
-            toggleAutoReset.checked = autoReset;
-            deleteCheckedTasks.checked = deleteChecked;
-        }
-        
-        console.log('� Mode sync data:', { autoReset, deleteChecked });
-        
-        let mode = 'auto-cycle';
-        
-        if (autoReset && !deleteChecked) {
-            mode = 'auto-cycle';
-        } else if (!autoReset && !deleteChecked) {
-            mode = 'manual-cycle';  
-        } else if (deleteChecked) {
-            mode = 'todo-mode';
-        }
-            
-        console.log('📝 Setting both selectors to:', mode);
-        
-        // Update both selectors
-        modeSelector.value = mode;
-        mobileModeSelector.value = mode;
-        
-        // Update body classes
-        document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
-        document.body.classList.add(mode + '-mode');
-        
-        // Update container visibility
-        const deleteContainer = document.getElementById('deleteCheckedTasksContainer');
-        if (deleteContainer) {
-            deleteContainer.style.display = autoReset ? 'none' : 'block';
-        }
-        
-        console.log('✅ Mode selectors synced (Schema 2.5):', mode);
-    }
-    
-    // ✅ Function to sync toggles from either selector (Schema 2.5 only)
-    function syncTogglesFromMode(selectedMode) {
-        console.log('🔄 Syncing toggles from mode selector (Schema 2.5):', selectedMode);
-        
-        switch(selectedMode) {
-            case 'auto-cycle':
-                toggleAutoReset.checked = true;
-                deleteCheckedTasks.checked = false;
-                break;
-            case 'manual-cycle':
-                toggleAutoReset.checked = false;
-                deleteCheckedTasks.checked = false;
-                break;
-            case 'todo-mode':
-                toggleAutoReset.checked = false;
-                deleteCheckedTasks.checked = true;
-                break;
-        }
-        
-        // Keep both selectors in sync
-        modeSelector.value = selectedMode;
-        mobileModeSelector.value = selectedMode;
-        
-        // Trigger change events to update Schema 2.5 storage
-        console.log('🔔 Dispatching change events to update Schema 2.5 storage...');
-        toggleAutoReset.dispatchEvent(new Event('change'));
-        deleteCheckedTasks.dispatchEvent(new Event('change'));
-        
-        // Update UI
-        syncModeFromToggles();
-        
-        if (typeof updateRecurringButtonVisibility === 'function') {
-            updateRecurringButtonVisibility();
-        }
-        
-        console.log('✅ Toggles synced from mode selector (Schema 2.5)');
-    }
-    
-    // ✅ Set up event listeners for both selectors
-    console.log('📡 Setting up event listeners for both selectors...');
-    
-    modeSelector.addEventListener('change', (e) => {
-        console.log('🎯 Desktop mode selector changed:', e.target.value);
-        syncTogglesFromMode(e.target.value);
-        showNotification(`Switched to ${getModeName(e.target.value)}`, 'info', 2000);
-    });
-    
-    mobileModeSelector.addEventListener('change', (e) => {
-        console.log('📱 Mobile mode selector changed:', e.target.value);
-        syncTogglesFromMode(e.target.value);
-        showNotification(`Switched to ${getModeName(e.target.value)}`, 'info', 2000);
-    });
-    
-    toggleAutoReset.addEventListener('change', (e) => {
-        console.log('🔘 Auto Reset toggle changed:', e.target.checked);
-        syncModeFromToggles();
-    });
-    
-    deleteCheckedTasks.addEventListener('change', (e) => {
-        console.log('🗑️ Delete Checked Tasks toggle changed:', e.target.checked);
-        syncModeFromToggles();
-    });
-    
-    // ✅ Initialize on load
-    console.log('🚀 Initializing mode selectors (Schema 2.5)...');
-    syncModeFromToggles();
-    
-    console.log('✅ Mode selectors setup complete (Schema 2.5)');
-}
 
 
 // Helper function to get readable mode name (keep this)
@@ -7451,11 +6758,7 @@ function getRecurringSummaryText(template) {
   return buildRecurringSummaryFromSettings(template.recurringSettings || {});
 }
 
-// After—treat the argument itself as the settings
-function getRecurringSummaryText(settings) {
-  return buildRecurringSummaryFromSettings(settings || {});
-}
-  
+
 
 
 // ✅ Shared utility: Build a recurring summary string from a settings object
@@ -7847,7 +7150,7 @@ function watchRecurringTasks() {
     }
 }
 
-function setupRecurringWatcher(lastUsedMiniCycle, savedMiniCycles) {
+function setupRecurringWatcher() {
     console.log('⚙️ Setting up recurring watcher (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
@@ -7886,20 +7189,6 @@ function setupRecurringWatcher(lastUsedMiniCycle, savedMiniCycles) {
     console.log('✅ Recurring watcher setup completed');
 }
 
-
-function setupRecurringWatcher(lastUsedMiniCycle, savedMiniCycles) {
-  const recurringTemplates = savedMiniCycles?.[lastUsedMiniCycle]?.recurringTemplates || {};
-  if (Object.keys(recurringTemplates).length === 0) return;
-
-  watchRecurringTasks();
-  setInterval(watchRecurringTasks, 30000);
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      watchRecurringTasks();
-    }
-  });
-}
 
 
 
@@ -9210,7 +8499,7 @@ function DragAndDrop(taskElement) {
     taskElement.style.userSelect = "none";
     taskElement.style.webkitUserSelect = "none";
     taskElement.style.msUserSelect = "none";
-
+    let readyToDrag = false; 
     let touchStartX = 0;
     let touchStartY = 0;
     let holdTimeout = null;
@@ -9593,20 +8882,6 @@ function toggleArrowVisibility() {
      * @param {boolean} [remindersEnabled=false] - If true, reminders are turned on.
      */
 
-    function isAlwaysShowRecurringEnabled() {
-        // ✅ Schema 2.5 only
-        const schemaData = loadMiniCycleData();
-        
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for isAlwaysShowRecurringEnabled');
-            return false;
-        }
-        
-        // Check Schema 2.5 setting first, then DOM as fallback
-        return schemaData.settings.alwaysShowRecurring || 
-               document.getElementById("always-show-recurring")?.checked || 
-               false;
-    }
 
     
 function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
@@ -10865,8 +10140,6 @@ function checkCompleteAllButton() {
  * @param {string} [color='green'] - The temporary background color for the logo.
  * @param {number} [duration=300] - The duration (in milliseconds) before resetting the background.
  */
-// Declare the timeout variable at the top level
-let logoTimeoutId = null;
 
 function triggerLogoBackground(color = 'green', duration = 300) {
     // Target the specific logo image (not the app name)
@@ -12148,18 +11421,6 @@ function updateStorageFromToggles() {
     console.log('✅ Mode selectors setup complete');
 }
 
-// Helper function to get readable mode name (keep this)
-function getModeName(mode) {
-    const modeNames = {
-        'auto-cycle': 'Auto Cycle ↻',
-        'manual-cycle': 'Manual Cycle ✔︎↻',
-        'todo-mode': 'To-Do Mode ✓'
-    };
-    
-    const result = modeNames[mode] || 'Auto Cycle ↻';
-    console.log('📝 Getting mode name:', { input: mode, output: result });
-    return result;
-}
 
 // ✅ Updated updateCycleModeDescription to Schema 2.5 only
 function updateCycleModeDescription() {
@@ -12248,496 +11509,20 @@ document.addEventListener("touchstart", () => {}, { passive: true });
 /***********************
  * 
  * 
- * STATS PANEL - WITH DESKTOP SWIPE SUPPORT
+ * STATS PANEL - MOVED TO MODULE
  * 
+ * Stats panel functionality including swipe detection, view switching,
+ * event handlers, and all related code has been moved to:
+ * utilities/statsPanel.js (StatsPanelManager class)
+ * 
+ * Global functions are available through module initialization:
+ * - window.showStatsPanel()
+ * - window.showTaskView() 
+ * - window.updateStatsPanel()
  * 
  ************************/
 
-let startX = 0;
-let isSwiping = false;
-let isStatsVisible = false;
-const statsPanel = document.getElementById("stats-panel");
-const taskView = document.getElementById("task-view");
-const liveRegion = document.getElementById("live-region");
-
-
-
-// ✅ Enhanced touch detection for mobile
-document.addEventListener("touchstart", (event) => {
-    if (isDraggingNotification) return;
-    
-    // ✅ Block touch swipe when overlays are active
-    if (isOverlayActive()) {
-        return;
-    }
-    
-    startX = event.touches[0].clientX;
-    isSwiping = true;
-});
-
-document.addEventListener("touchmove", (event) => {
-    if (!isSwiping || isDraggingNotification) return;
-    
-    // ✅ Block touch swipe when overlays are active
-    if (isOverlayActive()) {
-        return;
-    }
-    
-    let moveX = event.touches[0].clientX;
-    let difference = startX - moveX;
-
-    if (difference > 50 && !isStatsVisible) {
-        isStatsVisible = true;
-        showStatsPanel();
-        isSwiping = false;
-    }
-
-    if (difference < -50 && isStatsVisible) {
-        isStatsVisible = false;
-        showTaskView();
-        isSwiping = false;
-    }
-});
-
-document.addEventListener("touchend", () => {
-    isSwiping = false;
-});
-
-
-
-// ✅ NEW: Desktop trackpad/mouse wheel swipe detection
-let wheelDeltaX = 0;
-let wheelTimeout = null;
-const SWIPE_THRESHOLD = 400; // Adjust sensitivity
-const WHEEL_RESET_DELAY = 15; // Reset wheel tracking after this delay
-
-document.addEventListener("wheel", (event) => {
-    // ✅ Block wheel swipe when overlays are active
-    if (isOverlayActive()) {
-        return;
-    }
-
-    // Only handle horizontal scrolling
-    if (Math.abs(event.deltaX) < 10) return;
-    
-    // Prevent default horizontal scrolling
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-        event.preventDefault();
-    }
-    
-    wheelDeltaX += event.deltaX;
-    
-    // Clear previous timeout
-    if (wheelTimeout) {
-        clearTimeout(wheelTimeout);
-    }
-    
-    // Check if we've reached the swipe threshold
-    if (wheelDeltaX > SWIPE_THRESHOLD && !isStatsVisible) {
-        // Swipe left (show stats panel)
-        isStatsVisible = true;
-        showStatsPanel();
-        wheelDeltaX = 0;
-    } else if (wheelDeltaX < -SWIPE_THRESHOLD && isStatsVisible) {
-        // Swipe right (show task view)
-        isStatsVisible = false;
-        showTaskView();
-        wheelDeltaX = 0;
-    }
-    
-    // Reset wheel tracking after a delay
-    wheelTimeout = setTimeout(() => {
-        wheelDeltaX = 0;
-    }, WHEEL_RESET_DELAY);
-}, { passive: false });
-
-// ✅ NEW: Mouse drag support for regular desktop mice
-let isMouseDragging = false;
-let mouseStartX = 0;
-const MOUSE_DRAG_THRESHOLD = 400; // pixels to drag before triggering
-
-
-// ✅ Helper function to check if any overlay is active
-function isOverlayActive() {
-    // Check for visible menu
-    if (document.querySelector(".menu-container.visible")) return true;
-    
-    // Check for open modals/overlays
-    const overlaySelectors = [
-        '.settings-modal[style*="display: flex"]',
-        '.mini-cycle-switch-modal[style*="display: flex"]',
-        '#feedback-modal[style*="display: flex"]',
-        '#about-modal[style*="display: flex"]',
-        '#themes-modal[style*="display: flex"]',
-        '#games-panel[style*="display: flex"]',
-        '#reminders-modal[style*="display: flex"]',
-        '#testing-modal[style*="display: flex"]',
-        '#recurring-panel-overlay:not(.hidden)',
-        '.notification-container .notification',
-        '#storage-viewer-overlay:not(.hidden)',  // Local storage viewer
-        '.mini-modal-overlay',                    // Confirmation/prompt modals
-        '.miniCycle-overlay',                     // Your prompt modals
-        '.onboarding-modal:not([style*="display: none"])'  // Onboarding
-        //'.modal-overlay'                          // Generic modal overlay
-    ];
-    
-    return overlaySelectors.some(selector => document.querySelector(selector));
-}
-
-document.addEventListener("mousedown", (event) => {
-    // ✅ Block drag when any overlay is active
-    if (isOverlayActive()) {
-        return;
-    }
-
-    // ✅ SIMPLIFIED: Only exclude interactive elements, allow drag from everywhere else
-    if (
-        isDraggingNotification ||
-        event.target.closest("button, input, select, textarea, .task-options, .notification, a[href]") ||
-        event.target.tagName === "BUTTON" ||
-        event.target.tagName === "INPUT" ||
-        event.target.tagName === "SELECT" ||
-        event.target.tagName === "TEXTAREA"
-    ) {
-        return;
-    }
-
-    // ✅ Allow drag from anywhere on the main content areas
-    isMouseDragging = false;
-    mouseStartX = event.clientX;
-    
-    // Add temporary visual feedback
-    document.body.style.userSelect = "none";
-});
-
-
-document.addEventListener("mousemove", (event) => {
-    if (mouseStartX === 0) return; // No active drag
-
-    const deltaX = event.clientX - mouseStartX;
-    const absDelta = Math.abs(deltaX);
-
-    // Start dragging after threshold is met
-    if (!isMouseDragging && absDelta > 20) {
-        isMouseDragging = true;
-        //showNotification("🖱️ Mouse drag detected - continue dragging to switch views", "info", 2000);
-    }
-
-    if (isMouseDragging && absDelta > MOUSE_DRAG_THRESHOLD) {
-        // Left drag (negative deltaX) = show stats panel
-        if (deltaX < -MOUSE_DRAG_THRESHOLD && !isStatsVisible) {
-            isStatsVisible = true;
-            showStatsPanel();
-            //showNotification("👈 Mouse drag - Stats Panel opened", "info", 1500);
-            resetMouseDrag();
-        }
-        // Right drag (positive deltaX) = show task view  
-        else if (deltaX > MOUSE_DRAG_THRESHOLD && isStatsVisible) {
-            isStatsVisible = false;
-            showTaskView();
-            //showNotification("👉 Mouse drag - Task View opened", "info", 1500);
-            resetMouseDrag();
-        }
-    }
-});
-
-document.addEventListener("mouseup", () => {
-    resetMouseDrag();
-});
-
-// ✅ Helper function to reset mouse drag state
-function resetMouseDrag() {
-    isMouseDragging = false;
-    mouseStartX = 0;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-}
-
-// ✅ Alternative: Pointer events for better compatibility (optional enhancement)
-let isPointerSwiping = false;
-let pointerStartX = 0;
-
-document.addEventListener("pointerdown", (event) => {
-    // Only track if it's a touch or pen input
-    if (event.pointerType === "touch" || event.pointerType === "pen") {
-        isPointerSwiping = true;
-        pointerStartX = event.clientX;
-    }
-});
-
-document.addEventListener("pointermove", (event) => {
-    if (!isPointerSwiping || event.pointerType === "mouse") return;
-    
-    const moveX = event.clientX;
-    const difference = pointerStartX - moveX;
-    
-    if (Math.abs(difference) > 50) {
-        if (difference > 50 && !isStatsVisible) {
-            isStatsVisible = true;
-            showStatsPanel();
-            isPointerSwiping = false;
-        } else if (difference < -50 && isStatsVisible) {
-            isStatsVisible = false;
-            showTaskView();
-            isPointerSwiping = false;
-        }
-    }
-});
-
-document.addEventListener("pointerup", () => {
-    isPointerSwiping = false;
-});
-
-// ✅ Enhanced keyboard shortcuts with user feedback
-safeAddEventListener(document, "keydown", (e) => {
-    if (!e.shiftKey) return;
-
-    if (e.key === "ArrowRight" && !isStatsVisible) {
-        e.preventDefault();
-        showStatsPanel();
-        showNotification("⌨️ Keyboard shortcut - Stats Panel opened", "info", 1500);
-    } else if (e.key === "ArrowLeft" && isStatsVisible) {
-        e.preventDefault();
-        showTaskView();
-        showNotification("⌨️ Keyboard shortcut - Task View opened", "info", 1500);
-    }
-    
-    // ✅ Optional: Add Shift+Tab for quick toggle
-    if (e.key === "Tab") {
-        e.preventDefault();
-        if (isStatsVisible) {
-            showTaskView();
-            showNotification("⌨️ Quick toggle - Task View", "info", 1500);
-        } else {
-            showStatsPanel();
-            showNotification("⌨️ Quick toggle - Stats Panel", "info", 1500);
-        }
-    }
-});
-
-
-
-
-
-
-
-/**
- * ✅ Updated handleThemeToggleClick function with Schema 2.5 support
- */
-function handleThemeToggleClick() {
-    const themeMessage = document.getElementById("theme-unlock-message");
-    const goldenMessage = document.getElementById("golden-unlock-message");
-    const gameMessage = document.getElementById("game-unlock-message");
-    const toggleIcon = document.querySelector("#theme-unlock-status .toggle-icon");
-  
-    // ✅ Schema 2.5 only
-    console.log('🎨 Handling theme toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleThemeToggleClick');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { settings } = schemaData;
-    const unlockedThemes = settings.unlockedThemes || [];
-    const unlockedFeatures = settings.unlockedFeatures || [];
-    
-    // Convert to old format for compatibility
-    const milestoneUnlocks = {
-        darkOcean: unlockedThemes.includes("dark-ocean"),
-        goldenGlow: unlockedThemes.includes("golden-glow"),
-        taskOrderGame: unlockedFeatures.includes("task-order-game")
-    };
-  
-    // 🔁 Always toggle theme message
-    themeMessage.classList.toggle("visible");
-  
-    // 🔁 Toggle golden glow if present
-    if (goldenMessage.textContent && goldenMessage.textContent !== "Loading...") {
-      goldenMessage.classList.toggle("visible");
-    }
-  
-    // 🔒 Only toggle game message if Golden Glow has been unlocked
-    if (milestoneUnlocks.goldenGlow && gameMessage.textContent && gameMessage.textContent !== "Loading...") {
-      gameMessage.classList.toggle("visible");
-    }
-  
-    // ⬇️ Update toggle arrow
-    if (toggleIcon) {
-      const anyVisible =
-        themeMessage.classList.contains("visible") ||
-        goldenMessage.classList.contains("visible") ||
-        gameMessage.classList.contains("visible");
-  
-      toggleIcon.textContent = anyVisible ? "▲" : "▼";
-    }
-    
-    console.log('✅ Theme toggle handled (Schema 2.5)');
-}
-
-/**
- * Update stats panel function.
- *
- * @returns {void}
- */
-
-
-function updateStatsPanel() {
-    let totalTasks = document.querySelectorAll(".task").length;
-    let completedTasks = document.querySelectorAll(".task input:checked").length;
-    let completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
-
-    // ✅ Schema 2.5 only
-    console.log('📊 Updating stats panel (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateStatsPanel');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    let cycleCount = 0;
-    
-    if (activeCycle && cycles[activeCycle]) {
-        cycleCount = cycles[activeCycle].cycleCount || 0;
-    }
-
-    // ✅ Update Stats Display
-    document.getElementById("total-tasks").textContent = totalTasks;
-    document.getElementById("completed-tasks").textContent = completedTasks;
-    document.getElementById("completion-rate").textContent = completionRate;
-    document.getElementById("mini-cycle-count").textContent = cycleCount;
-    document.getElementById("stats-progress-bar").style.width = completionRate;
-
-    // ✅ Unlock badges
-    document.querySelectorAll(".badge").forEach(badge => {
-        const milestone = parseInt(badge.dataset.milestone);
-        const isUnlocked = cycleCount >= milestone;
-    
-        badge.classList.toggle("unlocked", isUnlocked);
-    
-        // Reset theme badge classes
-        badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
-    
-        // Assign custom theme class if applicable
-        if (isUnlocked) {
-            if (milestone === 5) {
-                badge.classList.add("ocean-theme");
-            } else if (milestone === 50) {
-                badge.classList.add("golden-theme");
-            } else if (milestone === 100) {
-                badge.classList.add("game-unlocked"); 
-            }
-        }
-    });
-    updateThemeUnlockStatus(cycleCount);
-    
-    console.log('✅ Stats panel updated (Schema 2.5)');
-}
-
-function updateThemeUnlockStatus(cycleCount) {
-    // ✅ Schema 2.5 only
-    console.log('🎨 Updating theme unlock status (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateThemeUnlockStatus');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { settings } = schemaData;
-    const unlockedThemes = settings.unlockedThemes || [];
-    const unlockedFeatures = settings.unlockedFeatures || [];
-    
-    // Convert to old format for compatibility
-    const milestoneUnlocks = {
-        darkOcean: unlockedThemes.includes("dark-ocean"),
-        goldenGlow: unlockedThemes.includes("golden-glow"),
-        taskOrderGame: unlockedFeatures.includes("task-order-game")
-    };
-  
-    const themeMessage = document.getElementById("theme-unlock-message");
-    const goldenMessage = document.getElementById("golden-unlock-message");
-    const gameMessage = document.getElementById("game-unlock-message");
-    const themeSection = document.getElementById("theme-unlock-status");
-    const toggleIcon = themeSection.querySelector(".toggle-icon");
-  
-    // === 🌊 DARK OCEAN THEME ===
-    if (milestoneUnlocks.darkOcean) {
-      themeMessage.textContent = "🌊 Dark Ocean Theme unlocked! 🔓";
-      themeMessage.classList.add("unlocked-message");
-    } else {
-      const needed = Math.max(0, 5 - cycleCount);
-      themeMessage.textContent = `🔒 Only ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
-      themeMessage.classList.remove("unlocked-message");
-    }
-  
-    // === 🌟 GOLDEN GLOW THEME === (Only show if Ocean is unlocked)
-    if (milestoneUnlocks.darkOcean) {
-      if (cycleCount >= 50 && !milestoneUnlocks.goldenGlow) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (!fullSchemaData.settings.unlockedThemes.includes("golden-glow")) {
-          fullSchemaData.settings.unlockedThemes.push("golden-glow");
-          fullSchemaData.metadata.lastModified = Date.now();
-          localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        }
-      }
-      
-      if (cycleCount >= 50) {
-        goldenMessage.textContent = "🌟 Golden Glow Theme unlocked! 🔓";
-        goldenMessage.classList.add("unlocked-message");
-      } else {
-        const needed = 50 - cycleCount;
-        goldenMessage.textContent = `🔒 ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
-        goldenMessage.classList.remove("unlocked-message");
-      }
-    } else {
-      goldenMessage.textContent = "";
-      goldenMessage.classList.remove("unlocked-message", "visible");
-    }
-  
-    // === 🎮 TASK ORDER GAME === (Only show if Golden Glow unlocked)
-    const showGameHint = milestoneUnlocks.goldenGlow;
-    if (showGameHint && gameMessage) {
-      const cyclesLeft = Math.max(0, 100 - cycleCount);
-    
-      if (milestoneUnlocks.taskOrderGame) {
-        gameMessage.textContent = "🎮 Task Whack-a-Order Game unlocked! 🔓";
-        gameMessage.classList.add("unlocked-message");
-      } else {
-        gameMessage.textContent = `🔒 Only ${cyclesLeft} more cycle${cyclesLeft !== 1 ? "s" : ""} to unlock 🎮 Task Order Game!`;
-        gameMessage.classList.remove("unlocked-message");
-      }
-    } else {
-      gameMessage.textContent = "";
-      gameMessage.classList.remove("unlocked-message", "visible");
-    }
-  
-    // === 🧠 Toggle all unlock messages ===
-    themeSection.replaceWith(themeSection.cloneNode(true));
-    const newThemeSection = document.getElementById("theme-unlock-status");
-  
-    newThemeSection.addEventListener("click", () => {
-      themeMessage.classList.toggle("visible");
-  
-      if (goldenMessage.textContent && goldenMessage.textContent !== "Loading...") {
-        goldenMessage.classList.toggle("visible");
-      }
-      if (gameMessage.textContent && gameMessage.textContent !== "Loading...") {
-        gameMessage.classList.toggle("visible");
-      }
-  
-      if (toggleIcon) {
-        toggleIcon.textContent = themeMessage.classList.contains("visible") ? "▲" : "▼";
-      }
-    });
-
-    safeAddEventListenerById("theme-unlock-status", "click", handleThemeToggleClick);
-    
-    console.log('✅ Theme unlock status updated (Schema 2.5)');
-}
+// ✅ Theme-related functions that were accidentally removed during stats panel extraction
 
 function setupThemesPanel() {
     // ✅ Schema 2.5 only
@@ -12745,10 +11530,24 @@ function setupThemesPanel() {
     
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for setupThemesPanel');
-        throw new Error('Schema 2.5 data not found');
+        console.warn('⚠️ Schema 2.5 data not yet available for setupThemesPanel - deferring setup');
+        // Defer setup until data is available
+        setTimeout(() => {
+            const retryData = loadMiniCycleData();
+            if (retryData) {
+                console.log('🎨 Retrying setupThemesPanel with loaded data...');
+                setupThemesPanelWithData(retryData);
+            } else {
+                console.warn('⚠️ Schema 2.5 data still not available for setupThemesPanel');
+            }
+        }, 1000);
+        return;
     }
 
+    setupThemesPanelWithData(schemaData);
+}
+
+function setupThemesPanelWithData(schemaData) {
     const { settings } = schemaData;
     const unlockedThemes = settings.unlockedThemes || [];
     const hasUnlockedThemes = unlockedThemes.length > 0;
@@ -12783,7 +11582,7 @@ function setupThemesPanel() {
     console.log('✅ Themes panel setup completed (Schema 2.5)');
 }
 
-
+// ✅ Quick dark toggle functionality
 document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     const isDark = document.body.classList.toggle("dark-mode");
     
@@ -12792,8 +11591,16 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for quick dark toggle');
-        throw new Error('Schema 2.5 data not found');
+        console.warn('⚠️ Schema 2.5 data not available for dark toggle - using fallback');
+        // Still update the UI but skip the data persistence
+        const settingsToggle = document.getElementById("darkModeToggle");
+        const themeToggle = document.getElementById("darkModeToggleThemes");
+        if (settingsToggle) settingsToggle.checked = isDark;
+        if (themeToggle) themeToggle.checked = isDark;
+
+        const quickToggle = document.getElementById("quick-dark-toggle");
+        quickToggle.textContent = isDark ? "☀️" : "🌙";
+        return;
     }
 
     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
@@ -12819,113 +11626,9 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     console.log('✅ Quick dark toggle completed (Schema 2.5)');
 });
 
+// ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
+// setupThemesPanel(); // Moved to initialization sequence
 
-setupThemesPanel();
-
-
-
-
-
-
-
-// Hook into existing task functions to update stats when tasks change
-document.getElementById("taskList").addEventListener("change", updateStatsPanel);
-document.getElementById("addTask").addEventListener("click", updateStatsPanel);
-
-
-const slideLeft = document.getElementById("slide-left");
-const slideRight = document.getElementById("slide-right");
-
-
-slideLeft.classList.add("hide");
-slideLeft.classList.remove("show");
-
-
-// ✅ Optional screen reader support
-function announceViewChange(message) {
-    if (liveRegion) liveRegion.textContent = message;
-}
-
-// ✅ Unified function to show task view
-function showTaskView() {
-    statsPanel.classList.add("hide");
-    statsPanel.classList.remove("show");
-
-    taskView.classList.add("show");
-    taskView.classList.remove("hide");
-
-    slideRight.classList.add("show");
-    slideRight.classList.remove("hide");
-
-    slideLeft.classList.add("hide");
-    slideLeft.classList.remove("show");
-
-    isStatsVisible = false;
-    announceViewChange("Task view opened");
-     updateNavDots();
-}
-
-// ✅ Unified function to show stats panel
-function showStatsPanel() {
-    statsPanel.classList.add("show");
-    statsPanel.classList.remove("hide");
-
-    taskView.classList.add("hide");
-    taskView.classList.remove("show");
-
-    slideRight.classList.add("hide");
-    slideRight.classList.remove("show");
-
-    slideLeft.classList.add("show");
-    slideLeft.classList.remove("hide");
-
-    isStatsVisible = true;
-    announceViewChange("Stats panel opened");
-     updateNavDots();
-}
-
-// 🔄 Initially hide the left slide
-slideLeft.classList.add("hide");
-slideLeft.classList.remove("show");
-
-// ✅ Use safe listeners
-safeAddEventListener(slideRight, "click", showStatsPanel);
-safeAddEventListener(slideLeft, "click", showTaskView);
-
-// ⌨️ Shift + Arrow Keyboard Shortcuts
-safeAddEventListener(document, "keydown", (e) => {
-    if (!e.shiftKey) return;
-
-    if (e.key === "ArrowRight" && isStatsVisible) {
-        e.preventDefault();
-        showTaskView();
-    } else if (e.key === "ArrowLeft" && !isStatsVisible) {
-        e.preventDefault();
-        showStatsPanel();
-    }
-});
-
-
-function updateNavDots() {
-    const statsPanel = document.getElementById("stats-panel");
-  const statsVisible = statsPanel.classList.contains("show");
-  const dots = document.querySelectorAll(".dot");
-
-  if (dots.length === 2) {
-    dots[0].classList.toggle("active", !statsVisible); // Task View dot
-    dots[1].classList.toggle("active", statsVisible);  // Stats Panel dot
-  }
-}
-
-document.querySelectorAll(".dot").forEach((dot, index) => {
-  dot.addEventListener("click", () => {
-    if (index === 0) {
-      showTaskView();
-    } else {
-      showStatsPanel();
-    }
-  });
-});
 updateCycleModeDescription();
  setTimeout(updateCycleModeDescription, 10000);
 
@@ -12950,12 +11653,12 @@ updateCycleModeDescription();
       setupAbout();
       setupUserManual();
       setupFeedbackModal();
+      // Add themes panel setup after other modal setups
       // setupTestingModal(); // Removed duplicate - already called in main boot function
       initializeThemesPanel();
       initializeModeSelector();
       setupRecurringPanel();
       attachRecurringSummaryListeners();
-      updateStatsPanel();
       updateNavDots();
       loadMiniCycle();
       initializeDefaultRecurringSettings();
@@ -12968,6 +11671,7 @@ updateCycleModeDescription();
       checkDueDates();
       loadAlwaysShowRecurringSetting();
       updateCycleModeDescription();
+         setupThemesPanel(); 
 
       // --- timers / async kickoffs ---
       setTimeout(remindOverdueTasks, 2000);
@@ -12980,6 +11684,25 @@ updateCycleModeDescription();
       window.addEventListener('load', function () {
         var el = document.getElementById('taskInput');
         if (el) { try { el.focus(); } catch(_){} }
+      });
+
+      // Initialize stats panel manager
+      if (window.statsPanelManager) {
+        console.log('📊 Initializing stats panel event handlers...');
+        window.statsPanelManager.init();
+        // Update stats panel now that it's ready
+        window.updateStatsPanel();
+      }
+
+      // ✅ Setup navigation dot click handlers
+      document.querySelectorAll(".dot").forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+          if (index === 0) {
+            if (window.showTaskView) window.showTaskView();
+          } else {
+            if (window.showStatsPanel) window.showStatsPanel();
+          }
+        });
       });
 
       // ready signal
