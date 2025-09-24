@@ -32,9 +32,10 @@ Breaking down the monolithic 15,677-line `miniCycle-scripts.js` into smaller, fo
 ### Success Metrics
 - ✅ **Notification System**: Successfully extracted (946 lines → separate module)
 - ✅ **Testing Modal System**: Successfully extracted (2,669 lines → separate module)
+- ✅ **Cycle Loader**: Successfully extracted (~200 lines → separate module)
 - 🎯 **Target**: Break main script into 10-15 focused modules
 - 📈 **Goal**: Reduce main script to under 3,000 lines
-- 📊 **Progress**: 22% reduction achieved (15,677 → 13,008 lines)
+- 📊 **Progress**: 24% reduction achieved (15,677 → ~12,800 lines)
 
 ---
 
@@ -456,6 +457,67 @@ function setupModule() {
 grep -n "functionName" miniCycle-scripts.js
 ```
 
+### Challenge 7: Dependency Timing Issues
+**Problem**: Module tries to access global functions that aren't defined yet during import
+
+**Discovered in**: Cycle Loader extraction - `window.loadMiniCycleData is not a function`
+
+**Symptoms**: 
+- `TypeError: this.functionName is not a function`
+- Module imports fail with undefined function errors
+- Dependency injection fails during module loading
+
+**Root Cause**: 
+```javascript
+// Module imports and tries to access global functions immediately
+class MyModule {
+  constructor(dependencies = {}) {
+    this.globalFunc = dependencies.globalFunc || window.globalFunc; // ❌ May not exist yet
+  }
+}
+```
+
+**Solutions**:
+
+**Option A: Direct Window Access (Simplest)**
+```javascript
+class MyModule {
+  // No constructor dependencies - use window directly
+  
+  myMethod() {
+    // ✅ Access global functions when actually needed
+    if (window.globalFunc) {
+      window.globalFunc();
+    }
+  }
+}
+```
+
+**Option B: Lazy Dependency Resolution**
+```javascript
+class MyModule {
+  constructor(dependencies = {}) {
+    this.dependencies = dependencies; // Store for later
+    this.isInitialized = false;
+  }
+  
+  initialize() {
+    if (this.isInitialized) return;
+    
+    // ✅ Resolve dependencies when first used
+    this.globalFunc = this.dependencies.globalFunc || window.globalFunc;
+    this.isInitialized = true;
+  }
+  
+  myMethod() {
+    this.initialize(); // Lazy init
+    this.globalFunc?.();
+  }
+}
+```
+
+**Prevention**: Test module loading in isolation before integration
+
 ---
 
 ## 🧪 Testing & Validation
@@ -540,8 +602,9 @@ themeTests.runTests();
 ### Phase 1: Low-Risk Modules (Start Here)
 1. **✅ Notifications** - Already done (946 lines extracted)
 2. **✅ Testing Modal** - Successfully completed (2,669 lines extracted)
-3. **🟢 Theme System** - Medium complexity, low coupling
-4. **🟢 Date Utilities** - Pure functions, no dependencies
+3. **✅ Cycle Loader** - Successfully completed (~200 lines extracted)
+4. **🟢 Theme System** - Medium complexity, low coupling
+5. **🟢 Date Utilities** - Pure functions, no dependencies
 
 ### Phase 2: Medium-Risk Modules
 5. **🟡 Device Detection** - Some global dependencies
@@ -788,6 +851,48 @@ class UIModule {
 export { UIModule };
 ```
 
+### Simple Function Module Template
+```javascript
+/**
+ * 🔧 miniCycle [ModuleName] Module
+ * 
+ * Simple module for extracting related functions
+ * - No complex state management
+ * - Direct window function access
+ * - Minimal dependencies
+ */
+
+class SimpleFunctionModule {
+  // No constructor needed for simple modules
+  
+  /**
+   * Main module methods - access globals directly
+   */
+  primaryFunction() {
+    // ✅ Access global functions when needed
+    if (window.requiredGlobalFunction) {
+      window.requiredGlobalFunction();
+    }
+    
+    // Your logic here
+  }
+  
+  secondaryFunction() {
+    // More methods as needed
+  }
+}
+
+// Create singleton instance
+const simpleFunctionModule = new SimpleFunctionModule();
+
+// Export both class and instance
+export { SimpleFunctionModule, simpleFunctionModule };
+
+// Make available globally for backward compatibility
+window.SimpleFunctionModule = SimpleFunctionModule;
+window.simpleFunctionModule = simpleFunctionModule;
+```
+
 ---
 
 ## 📊 Progress Tracking
@@ -804,6 +909,20 @@ const ModularizationProgress = {
       lines_extracted: 946,
       date_completed: '2025-09-21',
       difficulty: 'high',
+      status: 'complete'
+    },
+    {
+      name: 'testing-modal',
+      lines_extracted: 2669,
+      date_completed: '2025-09-22',
+      difficulty: 'high',
+      status: 'complete'
+    },
+    {
+      name: 'cycle-loader',
+      lines_extracted: 200,
+      date_completed: '2025-09-24',
+      difficulty: 'medium',
       status: 'complete'
     }
     // Add more as you complete them
