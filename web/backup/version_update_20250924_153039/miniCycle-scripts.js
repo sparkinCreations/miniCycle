@@ -57,6 +57,17 @@ const REORDER_SNAPSHOT_INTERVAL = 500;
 let advancedVisible = false;
 let isDraggingNotification = false;
 
+// ✅ Temporary placeholder functions for stats panel (will be replaced when module loads)
+window.updateStatsPanel = function() {
+    console.log('📊 updateStatsPanel called before StatsPanelManager is ready - queuing for later');
+};
+window.showStatsPanel = function() {
+    console.log('📊 showStatsPanel called before StatsPanelManager is ready');
+};
+window.showTaskView = function() {
+    console.log('📊 showTaskView called before StatsPanelManager is ready');
+};
+
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
@@ -96,6 +107,87 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     
     // Make globally accessible
     window.deviceDetectionManager = deviceDetectionManager;
+
+       // Around line 100 where you initialize StatsPanelManager, update it:
+    
+    // Import and initialize stats panel manager
+    console.log('📊 Initializing stats panel module...');
+    const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+    
+    // ✅ Don't wait arbitrarily - wait for data to be ready
+    const statsPanelManager = new StatsPanelManager({
+        showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+        loadMiniCycleData: () => {
+            // ✅ More defensive data loading
+            try {
+                const result = window.loadMiniCycleData ? window.loadMiniCycleData() : null;
+                if (!result) {
+                    console.log('� StatsPanelManager: Data not ready yet');
+                }
+                return result;
+            } catch (error) {
+                console.warn('⚠️ StatsPanelManager: Error loading data:', error);
+                return null;
+            }
+        },
+        isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false
+    });
+    
+    // Make globally accessible - replace placeholder functions
+    window.statsPanelManager = statsPanelManager;
+    window.showStatsPanel = () => statsPanelManager.showStatsPanel();
+    window.showTaskView = () => statsPanelManager.showTaskView();
+    window.updateStatsPanel = () => {
+        // ✅ Only call if data is available
+        const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
+        if (dataAvailable) {
+            return statsPanelManager.updateStatsPanel();
+        } else {
+            console.log('📊 Skipping stats update - data not ready');
+        }
+    };
+    console.log('📊 StatsPanelManager global functions updated');
+    // ✅ isOverlayActive function (needed by various parts of the app)
+    window.isOverlayActive = function() {
+        // Check for visible menu
+        if (document.querySelector(".menu-container.visible")) return true;
+        
+        // Check for open modals/overlays
+        const overlaySelectors = [
+            '.settings-modal[style*="display: flex"]',
+            '.mini-cycle-switch-modal[style*="display: flex"]',
+            '#feedback-modal[style*="display: flex"]',
+            '#about-modal[style*="display: flex"]',
+            '#themes-modal[style*="display: flex"]',
+            '#games-panel[style*="display: flex"]',
+            '#reminders-modal[style*="display: flex"]',
+            '#testing-modal[style*="display: flex"]',
+            '#recurring-panel-overlay:not(.hidden)',
+            '.notification-container .notification',
+            '#storage-viewer-overlay:not(.hidden)',  // Local storage viewer
+            '.mini-modal-overlay',                    // Confirmation/prompt modals
+            '.miniCycle-overlay',                     // Your prompt modals
+            '.onboarding-modal:not([style*="display: none"])'  // Onboarding
+            //'.modal-overlay'                          // Generic modal overlay
+        ];
+        
+        return overlaySelectors.some(selector => document.querySelector(selector));
+    };
+
+    // ✅ Navigation dots function (works with stats panel)
+    function updateNavDots() {
+        const statsPanel = document.getElementById("stats-panel");
+        const statsVisible = statsPanel && statsPanel.classList.contains("show");
+        const dots = document.querySelectorAll(".dot");
+
+        if (dots.length === 2) {
+            dots[0].classList.toggle("active", !statsVisible); // Task View dot
+            dots[1].classList.toggle("active", statsVisible);  // Stats Panel dot
+        }
+    }
+    
+    // Make updateNavDots globally accessible
+    window.updateNavDots = updateNavDots;
 
     // ✅ DOM Element References
     const taskInput = document.getElementById("taskInput");
@@ -223,8 +315,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Stats and Navigation
     console.log('📊 Updating stats and navigation...');
-    updateStatsPanel(); 
     updateNavDots();
+
 
     // ✅ Theme Loading (Schema 2.5 only)
     console.log('🎨 Loading theme settings...');
@@ -364,6 +456,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.log('✅ No migration needed');
         }
     }, 1000);
+
+
+
 
 // ==== 🔁 UNDO / REDO SYSTEM =============================
 // - Tracks task + recurring state snapshots
@@ -1663,127 +1758,131 @@ function autoSave(overrideTaskList = null) {
  * Loads the last used miniCycle from localStorage and updates the UI.
  * Ensures tasks, title, settings, and overdue statuses are properly restored.
  */
+/**
+ * Main coordination function - now much simpler
+ */
 function loadMiniCycle() {
     console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ No Schema 2.5 data found');
-        // Try to create initial data
         createInitialSchema25Data();
         return;
     }
 
-    const { cycles, activeCycle, reminders, settings } = schemaData;
-    
-    console.log('📊 Loading cycle:', {
-        activeCycle,
-        cycleExists: !!cycles[activeCycle],
-        totalCycles: Object.keys(cycles).length
-    });
+    const { cycles, activeCycle } = schemaData;
     
     if (!activeCycle || !cycles[activeCycle]) {
         console.error('❌ No valid active cycle found');
-        console.log('🔄 No active cycle found - stopping here to avoid loop');
         return;
     }
 
     const currentCycle = cycles[activeCycle];
-    console.log('📋 Current cycle data:', currentCycle);
     
-    // Clear the task list before loading
-    const taskList = document.getElementById("taskList");
-    if (taskList) {
-        taskList.innerHTML = "";
+    // 🔧 1. Repair and clean data
+    const cleanedTasks = repairAndCleanTasks(currentCycle);
+    
+    // 💾 2. Save any repairs made
+    if (cleanedTasks.wasModified) {
+        saveCycleData(activeCycle, currentCycle);
     }
     
-    // ✅ FIXED: More lenient task processing
-    if (currentCycle.tasks && Array.isArray(currentCycle.tasks)) {
-        console.log(`📝 Loading ${currentCycle.tasks.length} tasks`);
+    // 🎨 3. Render tasks to DOM
+    renderTasksToDOM(currentCycle.tasks);
+    
+    // ⚙️ 4. Update UI state
+    updateCycleUIState(currentCycle, schemaData.settings);
+    
+    // 🔔 5. Configure reminders
+    setupRemindersForCycle(schemaData.reminders);
+    
+    // 📊 6. Update dependent UI components
+    updateDependentComponents();
+    
+    console.log('✅ Cycle loading completed');
+}
+
+/**
+ * Handles task data repair and cleanup
+ */
+function repairAndCleanTasks(currentCycle) {
+    if (!currentCycle.tasks || !Array.isArray(currentCycle.tasks)) {
+        return { tasks: [], wasModified: false };
+    }
+
+    let tasksModified = false;
+    
+    // Process each task for repairs
+    currentCycle.tasks.forEach((task, index) => {
+        if (!task) return;
         
-        let tasksModified = false;
-        
-        // ✅ FIXED: Process tasks without removing them unless absolutely necessary
-        currentCycle.tasks.forEach((task, index) => {
-            // ✅ Only skip completely null/undefined tasks
-            if (!task) {
-                console.warn('⚠️ Skipping null/undefined task at index:', index);
-                return;
-            }
-            
-            // ✅ FIXED: Check for ANY text property and fix missing ones
-            const hasText = task.text || task.taskText;
-            if (!hasText) {
-                console.warn('⚠️ Task missing text, giving placeholder:', task);
-                task.text = task.text || task.taskText || `[Task ${index + 1}]`;
-                tasksModified = true;
-            }
-            
-            // ✅ FIXED: Ensure ID exists without removing task
-            if (!task.id) {
-                task.id = `task-${Date.now()}-${index}`;
-                console.warn('⚠️ Added missing ID to task:', task.text);
-                tasksModified = true;
-            }
-        });
-        
-        // ✅ FIXED: Only filter out truly unusable tasks
-        const validTasks = currentCycle.tasks.filter(task => {
-            if (!task) return false;
-            
-            // Task must have some form of text content
-            const hasValidText = task.text || task.taskText;
-            if (!hasValidText) {
-                console.error('❌ Removing task with no text after repair attempt:', task);
-                return false;
-            }
-            
-            return true;
-        });
-        
-        // ✅ Update the task array with cleaned tasks
-        currentCycle.tasks = validTasks;
-        
-        // ✅ Save changes only if modifications were made
-        if (tasksModified || validTasks.length !== currentCycle.tasks.length) {
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            console.log('💾 Saved task repairs to storage');
+        // Fix missing text
+        const hasText = task.text || task.taskText;
+        if (!hasText) {
+            task.text = task.text || task.taskText || `[Task ${index + 1}]`;
+            tasksModified = true;
         }
         
-        // ✅ Render all valid tasks
-        currentCycle.tasks.forEach((task, index) => {
-            console.log(`Loading task ${index}:`, task);
-            
-            // Make sure we have all required properties
-            const taskText = task.text || task.taskText || '';
-            const taskId = task.id || `task-${Date.now()}-${index}`;
-            
-            addTask(
-                taskText,
-                task.completed || false,
-                false, // Don't save during load
-                task.dueDate || null,
-                task.highPriority || false,
-                true, // isLoading = true
-                task.remindersEnabled || false,
-                task.recurring || false,
-                taskId,
-                task.recurringSettings || {}
-            );
-        });
-    } else {
-        console.log('📝 No tasks to load or tasks is not an array');
-    }
+        // Fix missing ID
+        if (!task.id) {
+            task.id = `task-${Date.now()}-${index}`;
+            tasksModified = true;
+        }
+    });
     
-    // ✅ Update UI elements (rest of your existing code remains the same)
+    // Filter out truly unusable tasks
+    const validTasks = currentCycle.tasks.filter(task => {
+        return task && (task.text || task.taskText);
+    });
+    
+    currentCycle.tasks = validTasks;
+    
+    return {
+        tasks: validTasks,
+        wasModified: tasksModified || validTasks.length !== currentCycle.tasks.length
+    };
+}
+
+/**
+ * Renders tasks to the DOM
+ */
+function renderTasksToDOM(tasks) {
+    const taskList = document.getElementById("taskList");
+    if (!taskList) return;
+    
+    taskList.innerHTML = "";
+    
+    tasks.forEach((task) => {
+        const taskText = task.text || task.taskText || '';
+        const taskId = task.id || `task-${Date.now()}-${Math.random()}`;
+        
+        addTask(
+            taskText,
+            task.completed || false,
+            false, // Don't save during load
+            task.dueDate || null,
+            task.highPriority || false,
+            true, // isLoading = true
+            task.remindersEnabled || false,
+            task.recurring || false,
+            taskId,
+            task.recurringSettings || {}
+        );
+    });
+}
+
+/**
+ * Updates UI state for the current cycle
+ */
+function updateCycleUIState(currentCycle, settings) {
+    // Update title
     const titleElement = document.getElementById("mini-cycle-title");
     if (titleElement) {
         titleElement.textContent = currentCycle.title || "Untitled Cycle";
     }
     
+    // Update toggles
     const toggleAutoReset = document.getElementById("toggleAutoReset");
     const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
     
@@ -1795,44 +1894,64 @@ function loadMiniCycle() {
         deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
     }
     
-    // Apply settings from Schema 2.5
+    // Apply theme settings
+    applyThemeSettings(settings);
+}
+
+/**
+ * Applies theme settings from schema data
+ */
+function applyThemeSettings(settings) {
     if (settings.darkMode) {
-        console.log('🌙 Applying dark mode...');
         document.body.classList.add("dark-mode");
     }
     
     if (settings.theme && settings.theme !== 'default') {
-        console.log('🎨 Applying theme:', settings.theme);
         const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
         allThemes.forEach(theme => document.body.classList.remove(theme));
         document.body.classList.add(`theme-${settings.theme}`);
     }
     
-    // Update theme color after applying all settings
     if (typeof updateThemeColor === 'function') {
         updateThemeColor();
     }
-    
-    // Update progress and other UI
-    updateProgressBar();
-    checkCompleteAllButton();
-    updateMainMenuHeader();
-    
-    // Handle reminders
+}
+
+/**
+ * Sets up reminders for the current cycle
+ */
+function setupRemindersForCycle(reminders) {
     const enableReminders = document.getElementById("enableReminders");
     const frequencySection = document.getElementById("frequency-section");
     
-    if (enableReminders) {
-        enableReminders.checked = reminders.enabled === true;
-        
-        if (reminders.enabled && frequencySection) {
-            console.log('🔔 Starting reminders...');
-            frequencySection.classList.remove("hidden");
-            startReminders();
-        }
-    }
+    if (!enableReminders) return;
     
-    console.log('✅ Cycle loading completed');
+    enableReminders.checked = reminders.enabled === true;
+    
+    if (reminders.enabled && frequencySection) {
+        frequencySection.classList.remove("hidden");
+        startReminders();
+    }
+}
+
+/**
+ * Updates all dependent UI components
+ */
+function updateDependentComponents() {
+    updateProgressBar();
+    checkCompleteAllButton();
+    updateMainMenuHeader();
+    updateStatsPanel();
+}
+
+/**
+ * Saves cycle data to Schema 2.5 storage
+ */
+function saveCycleData(activeCycle, currentCycle) {
+    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+    fullSchemaData.data.cycles[activeCycle] = currentCycle;
+    fullSchemaData.metadata.lastModified = Date.now();
+    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
 }
 // ...existing code...
 /**
@@ -8404,7 +8523,7 @@ function DragAndDrop(taskElement) {
     taskElement.style.userSelect = "none";
     taskElement.style.webkitUserSelect = "none";
     taskElement.style.msUserSelect = "none";
-
+    let readyToDrag = false; 
     let touchStartX = 0;
     let touchStartY = 0;
     let holdTimeout = null;
@@ -11414,496 +11533,20 @@ document.addEventListener("touchstart", () => {}, { passive: true });
 /***********************
  * 
  * 
- * STATS PANEL - WITH DESKTOP SWIPE SUPPORT
+ * STATS PANEL - MOVED TO MODULE
  * 
+ * Stats panel functionality including swipe detection, view switching,
+ * event handlers, and all related code has been moved to:
+ * utilities/statsPanel.js (StatsPanelManager class)
+ * 
+ * Global functions are available through module initialization:
+ * - window.showStatsPanel()
+ * - window.showTaskView() 
+ * - window.updateStatsPanel()
  * 
  ************************/
 
-let startX = 0;
-let isSwiping = false;
-let isStatsVisible = false;
-const statsPanel = document.getElementById("stats-panel");
-const taskView = document.getElementById("task-view");
-const liveRegion = document.getElementById("live-region");
-
-
-
-// ✅ Enhanced touch detection for mobile
-document.addEventListener("touchstart", (event) => {
-    if (isDraggingNotification) return;
-    
-    // ✅ Block touch swipe when overlays are active
-    if (isOverlayActive()) {
-        return;
-    }
-    
-    startX = event.touches[0].clientX;
-    isSwiping = true;
-});
-
-document.addEventListener("touchmove", (event) => {
-    if (!isSwiping || isDraggingNotification) return;
-    
-    // ✅ Block touch swipe when overlays are active
-    if (isOverlayActive()) {
-        return;
-    }
-    
-    let moveX = event.touches[0].clientX;
-    let difference = startX - moveX;
-
-    if (difference > 50 && !isStatsVisible) {
-        isStatsVisible = true;
-        showStatsPanel();
-        isSwiping = false;
-    }
-
-    if (difference < -50 && isStatsVisible) {
-        isStatsVisible = false;
-        showTaskView();
-        isSwiping = false;
-    }
-});
-
-document.addEventListener("touchend", () => {
-    isSwiping = false;
-});
-
-
-
-// ✅ NEW: Desktop trackpad/mouse wheel swipe detection
-let wheelDeltaX = 0;
-let wheelTimeout = null;
-const SWIPE_THRESHOLD = 400; // Adjust sensitivity
-const WHEEL_RESET_DELAY = 15; // Reset wheel tracking after this delay
-
-document.addEventListener("wheel", (event) => {
-    // ✅ Block wheel swipe when overlays are active
-    if (isOverlayActive()) {
-        return;
-    }
-
-    // Only handle horizontal scrolling
-    if (Math.abs(event.deltaX) < 10) return;
-    
-    // Prevent default horizontal scrolling
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-        event.preventDefault();
-    }
-    
-    wheelDeltaX += event.deltaX;
-    
-    // Clear previous timeout
-    if (wheelTimeout) {
-        clearTimeout(wheelTimeout);
-    }
-    
-    // Check if we've reached the swipe threshold
-    if (wheelDeltaX > SWIPE_THRESHOLD && !isStatsVisible) {
-        // Swipe left (show stats panel)
-        isStatsVisible = true;
-        showStatsPanel();
-        wheelDeltaX = 0;
-    } else if (wheelDeltaX < -SWIPE_THRESHOLD && isStatsVisible) {
-        // Swipe right (show task view)
-        isStatsVisible = false;
-        showTaskView();
-        wheelDeltaX = 0;
-    }
-    
-    // Reset wheel tracking after a delay
-    wheelTimeout = setTimeout(() => {
-        wheelDeltaX = 0;
-    }, WHEEL_RESET_DELAY);
-}, { passive: false });
-
-// ✅ NEW: Mouse drag support for regular desktop mice
-let isMouseDragging = false;
-let mouseStartX = 0;
-const MOUSE_DRAG_THRESHOLD = 400; // pixels to drag before triggering
-
-
-// ✅ Helper function to check if any overlay is active
-function isOverlayActive() {
-    // Check for visible menu
-    if (document.querySelector(".menu-container.visible")) return true;
-    
-    // Check for open modals/overlays
-    const overlaySelectors = [
-        '.settings-modal[style*="display: flex"]',
-        '.mini-cycle-switch-modal[style*="display: flex"]',
-        '#feedback-modal[style*="display: flex"]',
-        '#about-modal[style*="display: flex"]',
-        '#themes-modal[style*="display: flex"]',
-        '#games-panel[style*="display: flex"]',
-        '#reminders-modal[style*="display: flex"]',
-        '#testing-modal[style*="display: flex"]',
-        '#recurring-panel-overlay:not(.hidden)',
-        '.notification-container .notification',
-        '#storage-viewer-overlay:not(.hidden)',  // Local storage viewer
-        '.mini-modal-overlay',                    // Confirmation/prompt modals
-        '.miniCycle-overlay',                     // Your prompt modals
-        '.onboarding-modal:not([style*="display: none"])'  // Onboarding
-        //'.modal-overlay'                          // Generic modal overlay
-    ];
-    
-    return overlaySelectors.some(selector => document.querySelector(selector));
-}
-
-document.addEventListener("mousedown", (event) => {
-    // ✅ Block drag when any overlay is active
-    if (isOverlayActive()) {
-        return;
-    }
-
-    // ✅ SIMPLIFIED: Only exclude interactive elements, allow drag from everywhere else
-    if (
-        isDraggingNotification ||
-        event.target.closest("button, input, select, textarea, .task-options, .notification, a[href]") ||
-        event.target.tagName === "BUTTON" ||
-        event.target.tagName === "INPUT" ||
-        event.target.tagName === "SELECT" ||
-        event.target.tagName === "TEXTAREA"
-    ) {
-        return;
-    }
-
-    // ✅ Allow drag from anywhere on the main content areas
-    isMouseDragging = false;
-    mouseStartX = event.clientX;
-    
-    // Add temporary visual feedback
-    document.body.style.userSelect = "none";
-});
-
-
-document.addEventListener("mousemove", (event) => {
-    if (mouseStartX === 0) return; // No active drag
-
-    const deltaX = event.clientX - mouseStartX;
-    const absDelta = Math.abs(deltaX);
-
-    // Start dragging after threshold is met
-    if (!isMouseDragging && absDelta > 20) {
-        isMouseDragging = true;
-        //showNotification("🖱️ Mouse drag detected - continue dragging to switch views", "info", 2000);
-    }
-
-    if (isMouseDragging && absDelta > MOUSE_DRAG_THRESHOLD) {
-        // Left drag (negative deltaX) = show stats panel
-        if (deltaX < -MOUSE_DRAG_THRESHOLD && !isStatsVisible) {
-            isStatsVisible = true;
-            showStatsPanel();
-            //showNotification("👈 Mouse drag - Stats Panel opened", "info", 1500);
-            resetMouseDrag();
-        }
-        // Right drag (positive deltaX) = show task view  
-        else if (deltaX > MOUSE_DRAG_THRESHOLD && isStatsVisible) {
-            isStatsVisible = false;
-            showTaskView();
-            //showNotification("👉 Mouse drag - Task View opened", "info", 1500);
-            resetMouseDrag();
-        }
-    }
-});
-
-document.addEventListener("mouseup", () => {
-    resetMouseDrag();
-});
-
-// ✅ Helper function to reset mouse drag state
-function resetMouseDrag() {
-    isMouseDragging = false;
-    mouseStartX = 0;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-}
-
-// ✅ Alternative: Pointer events for better compatibility (optional enhancement)
-let isPointerSwiping = false;
-let pointerStartX = 0;
-
-document.addEventListener("pointerdown", (event) => {
-    // Only track if it's a touch or pen input
-    if (event.pointerType === "touch" || event.pointerType === "pen") {
-        isPointerSwiping = true;
-        pointerStartX = event.clientX;
-    }
-});
-
-document.addEventListener("pointermove", (event) => {
-    if (!isPointerSwiping || event.pointerType === "mouse") return;
-    
-    const moveX = event.clientX;
-    const difference = pointerStartX - moveX;
-    
-    if (Math.abs(difference) > 50) {
-        if (difference > 50 && !isStatsVisible) {
-            isStatsVisible = true;
-            showStatsPanel();
-            isPointerSwiping = false;
-        } else if (difference < -50 && isStatsVisible) {
-            isStatsVisible = false;
-            showTaskView();
-            isPointerSwiping = false;
-        }
-    }
-});
-
-document.addEventListener("pointerup", () => {
-    isPointerSwiping = false;
-});
-
-// ✅ Enhanced keyboard shortcuts with user feedback
-safeAddEventListener(document, "keydown", (e) => {
-    if (!e.shiftKey) return;
-
-    if (e.key === "ArrowRight" && !isStatsVisible) {
-        e.preventDefault();
-        showStatsPanel();
-        showNotification("⌨️ Keyboard shortcut - Stats Panel opened", "info", 1500);
-    } else if (e.key === "ArrowLeft" && isStatsVisible) {
-        e.preventDefault();
-        showTaskView();
-        showNotification("⌨️ Keyboard shortcut - Task View opened", "info", 1500);
-    }
-    
-    // ✅ Optional: Add Shift+Tab for quick toggle
-    if (e.key === "Tab") {
-        e.preventDefault();
-        if (isStatsVisible) {
-            showTaskView();
-            showNotification("⌨️ Quick toggle - Task View", "info", 1500);
-        } else {
-            showStatsPanel();
-            showNotification("⌨️ Quick toggle - Stats Panel", "info", 1500);
-        }
-    }
-});
-
-
-
-
-
-
-
-/**
- * ✅ Updated handleThemeToggleClick function with Schema 2.5 support
- */
-function handleThemeToggleClick() {
-    const themeMessage = document.getElementById("theme-unlock-message");
-    const goldenMessage = document.getElementById("golden-unlock-message");
-    const gameMessage = document.getElementById("game-unlock-message");
-    const toggleIcon = document.querySelector("#theme-unlock-status .toggle-icon");
-  
-    // ✅ Schema 2.5 only
-    console.log('🎨 Handling theme toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleThemeToggleClick');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { settings } = schemaData;
-    const unlockedThemes = settings.unlockedThemes || [];
-    const unlockedFeatures = settings.unlockedFeatures || [];
-    
-    // Convert to old format for compatibility
-    const milestoneUnlocks = {
-        darkOcean: unlockedThemes.includes("dark-ocean"),
-        goldenGlow: unlockedThemes.includes("golden-glow"),
-        taskOrderGame: unlockedFeatures.includes("task-order-game")
-    };
-  
-    // 🔁 Always toggle theme message
-    themeMessage.classList.toggle("visible");
-  
-    // 🔁 Toggle golden glow if present
-    if (goldenMessage.textContent && goldenMessage.textContent !== "Loading...") {
-      goldenMessage.classList.toggle("visible");
-    }
-  
-    // 🔒 Only toggle game message if Golden Glow has been unlocked
-    if (milestoneUnlocks.goldenGlow && gameMessage.textContent && gameMessage.textContent !== "Loading...") {
-      gameMessage.classList.toggle("visible");
-    }
-  
-    // ⬇️ Update toggle arrow
-    if (toggleIcon) {
-      const anyVisible =
-        themeMessage.classList.contains("visible") ||
-        goldenMessage.classList.contains("visible") ||
-        gameMessage.classList.contains("visible");
-  
-      toggleIcon.textContent = anyVisible ? "▲" : "▼";
-    }
-    
-    console.log('✅ Theme toggle handled (Schema 2.5)');
-}
-
-/**
- * Update stats panel function.
- *
- * @returns {void}
- */
-
-
-function updateStatsPanel() {
-    let totalTasks = document.querySelectorAll(".task").length;
-    let completedTasks = document.querySelectorAll(".task input:checked").length;
-    let completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
-
-    // ✅ Schema 2.5 only
-    console.log('📊 Updating stats panel (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateStatsPanel');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    let cycleCount = 0;
-    
-    if (activeCycle && cycles[activeCycle]) {
-        cycleCount = cycles[activeCycle].cycleCount || 0;
-    }
-
-    // ✅ Update Stats Display
-    document.getElementById("total-tasks").textContent = totalTasks;
-    document.getElementById("completed-tasks").textContent = completedTasks;
-    document.getElementById("completion-rate").textContent = completionRate;
-    document.getElementById("mini-cycle-count").textContent = cycleCount;
-    document.getElementById("stats-progress-bar").style.width = completionRate;
-
-    // ✅ Unlock badges
-    document.querySelectorAll(".badge").forEach(badge => {
-        const milestone = parseInt(badge.dataset.milestone);
-        const isUnlocked = cycleCount >= milestone;
-    
-        badge.classList.toggle("unlocked", isUnlocked);
-    
-        // Reset theme badge classes
-        badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
-    
-        // Assign custom theme class if applicable
-        if (isUnlocked) {
-            if (milestone === 5) {
-                badge.classList.add("ocean-theme");
-            } else if (milestone === 50) {
-                badge.classList.add("golden-theme");
-            } else if (milestone === 100) {
-                badge.classList.add("game-unlocked"); 
-            }
-        }
-    });
-    updateThemeUnlockStatus(cycleCount);
-    
-    console.log('✅ Stats panel updated (Schema 2.5)');
-}
-
-function updateThemeUnlockStatus(cycleCount) {
-    // ✅ Schema 2.5 only
-    console.log('🎨 Updating theme unlock status (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateThemeUnlockStatus');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { settings } = schemaData;
-    const unlockedThemes = settings.unlockedThemes || [];
-    const unlockedFeatures = settings.unlockedFeatures || [];
-    
-    // Convert to old format for compatibility
-    const milestoneUnlocks = {
-        darkOcean: unlockedThemes.includes("dark-ocean"),
-        goldenGlow: unlockedThemes.includes("golden-glow"),
-        taskOrderGame: unlockedFeatures.includes("task-order-game")
-    };
-  
-    const themeMessage = document.getElementById("theme-unlock-message");
-    const goldenMessage = document.getElementById("golden-unlock-message");
-    const gameMessage = document.getElementById("game-unlock-message");
-    const themeSection = document.getElementById("theme-unlock-status");
-    const toggleIcon = themeSection.querySelector(".toggle-icon");
-  
-    // === 🌊 DARK OCEAN THEME ===
-    if (milestoneUnlocks.darkOcean) {
-      themeMessage.textContent = "🌊 Dark Ocean Theme unlocked! 🔓";
-      themeMessage.classList.add("unlocked-message");
-    } else {
-      const needed = Math.max(0, 5 - cycleCount);
-      themeMessage.textContent = `🔒 Only ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
-      themeMessage.classList.remove("unlocked-message");
-    }
-  
-    // === 🌟 GOLDEN GLOW THEME === (Only show if Ocean is unlocked)
-    if (milestoneUnlocks.darkOcean) {
-      if (cycleCount >= 50 && !milestoneUnlocks.goldenGlow) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (!fullSchemaData.settings.unlockedThemes.includes("golden-glow")) {
-          fullSchemaData.settings.unlockedThemes.push("golden-glow");
-          fullSchemaData.metadata.lastModified = Date.now();
-          localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        }
-      }
-      
-      if (cycleCount >= 50) {
-        goldenMessage.textContent = "🌟 Golden Glow Theme unlocked! 🔓";
-        goldenMessage.classList.add("unlocked-message");
-      } else {
-        const needed = 50 - cycleCount;
-        goldenMessage.textContent = `🔒 ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
-        goldenMessage.classList.remove("unlocked-message");
-      }
-    } else {
-      goldenMessage.textContent = "";
-      goldenMessage.classList.remove("unlocked-message", "visible");
-    }
-  
-    // === 🎮 TASK ORDER GAME === (Only show if Golden Glow unlocked)
-    const showGameHint = milestoneUnlocks.goldenGlow;
-    if (showGameHint && gameMessage) {
-      const cyclesLeft = Math.max(0, 100 - cycleCount);
-    
-      if (milestoneUnlocks.taskOrderGame) {
-        gameMessage.textContent = "🎮 Task Whack-a-Order Game unlocked! 🔓";
-        gameMessage.classList.add("unlocked-message");
-      } else {
-        gameMessage.textContent = `🔒 Only ${cyclesLeft} more cycle${cyclesLeft !== 1 ? "s" : ""} to unlock 🎮 Task Order Game!`;
-        gameMessage.classList.remove("unlocked-message");
-      }
-    } else {
-      gameMessage.textContent = "";
-      gameMessage.classList.remove("unlocked-message", "visible");
-    }
-  
-    // === 🧠 Toggle all unlock messages ===
-    themeSection.replaceWith(themeSection.cloneNode(true));
-    const newThemeSection = document.getElementById("theme-unlock-status");
-  
-    newThemeSection.addEventListener("click", () => {
-      themeMessage.classList.toggle("visible");
-  
-      if (goldenMessage.textContent && goldenMessage.textContent !== "Loading...") {
-        goldenMessage.classList.toggle("visible");
-      }
-      if (gameMessage.textContent && gameMessage.textContent !== "Loading...") {
-        gameMessage.classList.toggle("visible");
-      }
-  
-      if (toggleIcon) {
-        toggleIcon.textContent = themeMessage.classList.contains("visible") ? "▲" : "▼";
-      }
-    });
-
-    safeAddEventListenerById("theme-unlock-status", "click", handleThemeToggleClick);
-    
-    console.log('✅ Theme unlock status updated (Schema 2.5)');
-}
+// ✅ Theme-related functions that were accidentally removed during stats panel extraction
 
 function setupThemesPanel() {
     // ✅ Schema 2.5 only
@@ -11911,10 +11554,24 @@ function setupThemesPanel() {
     
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for setupThemesPanel');
-        throw new Error('Schema 2.5 data not found');
+        console.warn('⚠️ Schema 2.5 data not yet available for setupThemesPanel - deferring setup');
+        // Defer setup until data is available
+        setTimeout(() => {
+            const retryData = loadMiniCycleData();
+            if (retryData) {
+                console.log('🎨 Retrying setupThemesPanel with loaded data...');
+                setupThemesPanelWithData(retryData);
+            } else {
+                console.warn('⚠️ Schema 2.5 data still not available for setupThemesPanel');
+            }
+        }, 1000);
+        return;
     }
 
+    setupThemesPanelWithData(schemaData);
+}
+
+function setupThemesPanelWithData(schemaData) {
     const { settings } = schemaData;
     const unlockedThemes = settings.unlockedThemes || [];
     const hasUnlockedThemes = unlockedThemes.length > 0;
@@ -11949,7 +11606,7 @@ function setupThemesPanel() {
     console.log('✅ Themes panel setup completed (Schema 2.5)');
 }
 
-
+// ✅ Quick dark toggle functionality
 document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     const isDark = document.body.classList.toggle("dark-mode");
     
@@ -11958,8 +11615,16 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for quick dark toggle');
-        throw new Error('Schema 2.5 data not found');
+        console.warn('⚠️ Schema 2.5 data not available for dark toggle - using fallback');
+        // Still update the UI but skip the data persistence
+        const settingsToggle = document.getElementById("darkModeToggle");
+        const themeToggle = document.getElementById("darkModeToggleThemes");
+        if (settingsToggle) settingsToggle.checked = isDark;
+        if (themeToggle) themeToggle.checked = isDark;
+
+        const quickToggle = document.getElementById("quick-dark-toggle");
+        quickToggle.textContent = isDark ? "☀️" : "🌙";
+        return;
     }
 
     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
@@ -11985,113 +11650,9 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     console.log('✅ Quick dark toggle completed (Schema 2.5)');
 });
 
+// ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
+// setupThemesPanel(); // Moved to initialization sequence
 
-setupThemesPanel();
-
-
-
-
-
-
-
-// Hook into existing task functions to update stats when tasks change
-document.getElementById("taskList").addEventListener("change", updateStatsPanel);
-document.getElementById("addTask").addEventListener("click", updateStatsPanel);
-
-
-const slideLeft = document.getElementById("slide-left");
-const slideRight = document.getElementById("slide-right");
-
-
-slideLeft.classList.add("hide");
-slideLeft.classList.remove("show");
-
-
-// ✅ Optional screen reader support
-function announceViewChange(message) {
-    if (liveRegion) liveRegion.textContent = message;
-}
-
-// ✅ Unified function to show task view
-function showTaskView() {
-    statsPanel.classList.add("hide");
-    statsPanel.classList.remove("show");
-
-    taskView.classList.add("show");
-    taskView.classList.remove("hide");
-
-    slideRight.classList.add("show");
-    slideRight.classList.remove("hide");
-
-    slideLeft.classList.add("hide");
-    slideLeft.classList.remove("show");
-
-    isStatsVisible = false;
-    announceViewChange("Task view opened");
-     updateNavDots();
-}
-
-// ✅ Unified function to show stats panel
-function showStatsPanel() {
-    statsPanel.classList.add("show");
-    statsPanel.classList.remove("hide");
-
-    taskView.classList.add("hide");
-    taskView.classList.remove("show");
-
-    slideRight.classList.add("hide");
-    slideRight.classList.remove("show");
-
-    slideLeft.classList.add("show");
-    slideLeft.classList.remove("hide");
-
-    isStatsVisible = true;
-    announceViewChange("Stats panel opened");
-     updateNavDots();
-}
-
-// 🔄 Initially hide the left slide
-slideLeft.classList.add("hide");
-slideLeft.classList.remove("show");
-
-// ✅ Use safe listeners
-safeAddEventListener(slideRight, "click", showStatsPanel);
-safeAddEventListener(slideLeft, "click", showTaskView);
-
-// ⌨️ Shift + Arrow Keyboard Shortcuts
-safeAddEventListener(document, "keydown", (e) => {
-    if (!e.shiftKey) return;
-
-    if (e.key === "ArrowRight" && isStatsVisible) {
-        e.preventDefault();
-        showTaskView();
-    } else if (e.key === "ArrowLeft" && !isStatsVisible) {
-        e.preventDefault();
-        showStatsPanel();
-    }
-});
-
-
-function updateNavDots() {
-    const statsPanel = document.getElementById("stats-panel");
-  const statsVisible = statsPanel.classList.contains("show");
-  const dots = document.querySelectorAll(".dot");
-
-  if (dots.length === 2) {
-    dots[0].classList.toggle("active", !statsVisible); // Task View dot
-    dots[1].classList.toggle("active", statsVisible);  // Stats Panel dot
-  }
-}
-
-document.querySelectorAll(".dot").forEach((dot, index) => {
-  dot.addEventListener("click", () => {
-    if (index === 0) {
-      showTaskView();
-    } else {
-      showStatsPanel();
-    }
-  });
-});
 updateCycleModeDescription();
  setTimeout(updateCycleModeDescription, 10000);
 
@@ -12116,12 +11677,12 @@ updateCycleModeDescription();
       setupAbout();
       setupUserManual();
       setupFeedbackModal();
+      // Add themes panel setup after other modal setups
       // setupTestingModal(); // Removed duplicate - already called in main boot function
       initializeThemesPanel();
       initializeModeSelector();
       setupRecurringPanel();
       attachRecurringSummaryListeners();
-      updateStatsPanel();
       updateNavDots();
       loadMiniCycle();
       initializeDefaultRecurringSettings();
@@ -12134,6 +11695,7 @@ updateCycleModeDescription();
       checkDueDates();
       loadAlwaysShowRecurringSetting();
       updateCycleModeDescription();
+         setupThemesPanel(); 
 
       // --- timers / async kickoffs ---
       setTimeout(remindOverdueTasks, 2000);
@@ -12146,6 +11708,25 @@ updateCycleModeDescription();
       window.addEventListener('load', function () {
         var el = document.getElementById('taskInput');
         if (el) { try { el.focus(); } catch(_){} }
+      });
+
+      // Initialize stats panel manager
+      if (window.statsPanelManager) {
+        console.log('📊 Initializing stats panel event handlers...');
+        window.statsPanelManager.init();
+        // Update stats panel now that it's ready
+        window.updateStatsPanel();
+      }
+
+      // ✅ Setup navigation dot click handlers
+      document.querySelectorAll(".dot").forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+          if (index === 0) {
+            if (window.showTaskView) window.showTaskView();
+          } else {
+            if (window.showStatsPanel) window.showStatsPanel();
+          }
+        });
       });
 
       // ready signal

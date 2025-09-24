@@ -1758,127 +1758,131 @@ function autoSave(overrideTaskList = null) {
  * Loads the last used miniCycle from localStorage and updates the UI.
  * Ensures tasks, title, settings, and overdue statuses are properly restored.
  */
+/**
+ * Main coordination function - now much simpler
+ */
 function loadMiniCycle() {
     console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ No Schema 2.5 data found');
-        // Try to create initial data
         createInitialSchema25Data();
         return;
     }
 
-    const { cycles, activeCycle, reminders, settings } = schemaData;
-    
-    console.log('📊 Loading cycle:', {
-        activeCycle,
-        cycleExists: !!cycles[activeCycle],
-        totalCycles: Object.keys(cycles).length
-    });
+    const { cycles, activeCycle } = schemaData;
     
     if (!activeCycle || !cycles[activeCycle]) {
         console.error('❌ No valid active cycle found');
-        console.log('🔄 No active cycle found - stopping here to avoid loop');
         return;
     }
 
     const currentCycle = cycles[activeCycle];
-    console.log('📋 Current cycle data:', currentCycle);
     
-    // Clear the task list before loading
-    const taskList = document.getElementById("taskList");
-    if (taskList) {
-        taskList.innerHTML = "";
+    // 🔧 1. Repair and clean data
+    const cleanedTasks = repairAndCleanTasks(currentCycle);
+    
+    // 💾 2. Save any repairs made
+    if (cleanedTasks.wasModified) {
+        saveCycleData(activeCycle, currentCycle);
     }
     
-    // ✅ FIXED: More lenient task processing
-    if (currentCycle.tasks && Array.isArray(currentCycle.tasks)) {
-        console.log(`📝 Loading ${currentCycle.tasks.length} tasks`);
+    // 🎨 3. Render tasks to DOM
+    renderTasksToDOM(currentCycle.tasks);
+    
+    // ⚙️ 4. Update UI state
+    updateCycleUIState(currentCycle, schemaData.settings);
+    
+    // 🔔 5. Configure reminders
+    setupRemindersForCycle(schemaData.reminders);
+    
+    // 📊 6. Update dependent UI components
+    updateDependentComponents();
+    
+    console.log('✅ Cycle loading completed');
+}
+
+/**
+ * Handles task data repair and cleanup
+ */
+function repairAndCleanTasks(currentCycle) {
+    if (!currentCycle.tasks || !Array.isArray(currentCycle.tasks)) {
+        return { tasks: [], wasModified: false };
+    }
+
+    let tasksModified = false;
+    
+    // Process each task for repairs
+    currentCycle.tasks.forEach((task, index) => {
+        if (!task) return;
         
-        let tasksModified = false;
-        
-        // ✅ FIXED: Process tasks without removing them unless absolutely necessary
-        currentCycle.tasks.forEach((task, index) => {
-            // ✅ Only skip completely null/undefined tasks
-            if (!task) {
-                console.warn('⚠️ Skipping null/undefined task at index:', index);
-                return;
-            }
-            
-            // ✅ FIXED: Check for ANY text property and fix missing ones
-            const hasText = task.text || task.taskText;
-            if (!hasText) {
-                console.warn('⚠️ Task missing text, giving placeholder:', task);
-                task.text = task.text || task.taskText || `[Task ${index + 1}]`;
-                tasksModified = true;
-            }
-            
-            // ✅ FIXED: Ensure ID exists without removing task
-            if (!task.id) {
-                task.id = `task-${Date.now()}-${index}`;
-                console.warn('⚠️ Added missing ID to task:', task.text);
-                tasksModified = true;
-            }
-        });
-        
-        // ✅ FIXED: Only filter out truly unusable tasks
-        const validTasks = currentCycle.tasks.filter(task => {
-            if (!task) return false;
-            
-            // Task must have some form of text content
-            const hasValidText = task.text || task.taskText;
-            if (!hasValidText) {
-                console.error('❌ Removing task with no text after repair attempt:', task);
-                return false;
-            }
-            
-            return true;
-        });
-        
-        // ✅ Update the task array with cleaned tasks
-        currentCycle.tasks = validTasks;
-        
-        // ✅ Save changes only if modifications were made
-        if (tasksModified || validTasks.length !== currentCycle.tasks.length) {
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            console.log('💾 Saved task repairs to storage');
+        // Fix missing text
+        const hasText = task.text || task.taskText;
+        if (!hasText) {
+            task.text = task.text || task.taskText || `[Task ${index + 1}]`;
+            tasksModified = true;
         }
         
-        // ✅ Render all valid tasks
-        currentCycle.tasks.forEach((task, index) => {
-            console.log(`Loading task ${index}:`, task);
-            
-            // Make sure we have all required properties
-            const taskText = task.text || task.taskText || '';
-            const taskId = task.id || `task-${Date.now()}-${index}`;
-            
-            addTask(
-                taskText,
-                task.completed || false,
-                false, // Don't save during load
-                task.dueDate || null,
-                task.highPriority || false,
-                true, // isLoading = true
-                task.remindersEnabled || false,
-                task.recurring || false,
-                taskId,
-                task.recurringSettings || {}
-            );
-        });
-    } else {
-        console.log('📝 No tasks to load or tasks is not an array');
-    }
+        // Fix missing ID
+        if (!task.id) {
+            task.id = `task-${Date.now()}-${index}`;
+            tasksModified = true;
+        }
+    });
     
-    // ✅ Update UI elements (rest of your existing code remains the same)
+    // Filter out truly unusable tasks
+    const validTasks = currentCycle.tasks.filter(task => {
+        return task && (task.text || task.taskText);
+    });
+    
+    currentCycle.tasks = validTasks;
+    
+    return {
+        tasks: validTasks,
+        wasModified: tasksModified || validTasks.length !== currentCycle.tasks.length
+    };
+}
+
+/**
+ * Renders tasks to the DOM
+ */
+function renderTasksToDOM(tasks) {
+    const taskList = document.getElementById("taskList");
+    if (!taskList) return;
+    
+    taskList.innerHTML = "";
+    
+    tasks.forEach((task) => {
+        const taskText = task.text || task.taskText || '';
+        const taskId = task.id || `task-${Date.now()}-${Math.random()}`;
+        
+        addTask(
+            taskText,
+            task.completed || false,
+            false, // Don't save during load
+            task.dueDate || null,
+            task.highPriority || false,
+            true, // isLoading = true
+            task.remindersEnabled || false,
+            task.recurring || false,
+            taskId,
+            task.recurringSettings || {}
+        );
+    });
+}
+
+/**
+ * Updates UI state for the current cycle
+ */
+function updateCycleUIState(currentCycle, settings) {
+    // Update title
     const titleElement = document.getElementById("mini-cycle-title");
     if (titleElement) {
         titleElement.textContent = currentCycle.title || "Untitled Cycle";
     }
     
+    // Update toggles
     const toggleAutoReset = document.getElementById("toggleAutoReset");
     const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
     
@@ -1890,44 +1894,64 @@ function loadMiniCycle() {
         deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
     }
     
-    // Apply settings from Schema 2.5
+    // Apply theme settings
+    applyThemeSettings(settings);
+}
+
+/**
+ * Applies theme settings from schema data
+ */
+function applyThemeSettings(settings) {
     if (settings.darkMode) {
-        console.log('🌙 Applying dark mode...');
         document.body.classList.add("dark-mode");
     }
     
     if (settings.theme && settings.theme !== 'default') {
-        console.log('🎨 Applying theme:', settings.theme);
         const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
         allThemes.forEach(theme => document.body.classList.remove(theme));
         document.body.classList.add(`theme-${settings.theme}`);
     }
     
-    // Update theme color after applying all settings
     if (typeof updateThemeColor === 'function') {
         updateThemeColor();
     }
-    
-    // Update progress and other UI
-    updateProgressBar();
-    checkCompleteAllButton();
-    updateMainMenuHeader();
-    
-    // Handle reminders
+}
+
+/**
+ * Sets up reminders for the current cycle
+ */
+function setupRemindersForCycle(reminders) {
     const enableReminders = document.getElementById("enableReminders");
     const frequencySection = document.getElementById("frequency-section");
     
-    if (enableReminders) {
-        enableReminders.checked = reminders.enabled === true;
-        
-        if (reminders.enabled && frequencySection) {
-            console.log('🔔 Starting reminders...');
-            frequencySection.classList.remove("hidden");
-            startReminders();
-        }
-    }
+    if (!enableReminders) return;
     
-    console.log('✅ Cycle loading completed');
+    enableReminders.checked = reminders.enabled === true;
+    
+    if (reminders.enabled && frequencySection) {
+        frequencySection.classList.remove("hidden");
+        startReminders();
+    }
+}
+
+/**
+ * Updates all dependent UI components
+ */
+function updateDependentComponents() {
+    updateProgressBar();
+    checkCompleteAllButton();
+    updateMainMenuHeader();
+    updateStatsPanel();
+}
+
+/**
+ * Saves cycle data to Schema 2.5 storage
+ */
+function saveCycleData(activeCycle, currentCycle) {
+    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+    fullSchemaData.data.cycles[activeCycle] = currentCycle;
+    fullSchemaData.metadata.lastModified = Date.now();
+    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
 }
 // ...existing code...
 /**
