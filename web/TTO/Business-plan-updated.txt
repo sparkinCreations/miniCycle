@@ -1,0 +1,266 @@
+Business plan
+
+# SparkinCreations Business Plan
+
+**Updated Strategic Overview - 2025**
+
+-----
+
+## Mission Statement
+
+SparkinCreations builds workflow productivity solutions that transform repetitive processes into systematic progress, serving everyone from casual users to professional teams.
+
+**Official Website:** sparkinCreations.com
+
+-----
+
+## The Three-Tier Ecosystem Strategy
+
+### Tier 1: miniCycle (Free)
+
+**Website:** minicycle.app  
+**Target:** Casual users and habit builders  
+**Purpose:** Market education and user acquisition
+
+**Core Features:**
+
+- Auto-reset task cycles that promote habit formation
+- Basic recurring task scheduling
+- Gamification with theme unlocks
+- Offline-first PWA with no account required
+- Introduction to “cycling methodology”
+
+**Business Goal:** Build user base and introduce cycling concept to broad audience
+
+-----
+
+### Tier 2: Task Cycle ($25 One-Time)
+
+**Website:** taskcycle.app  
+**Target:** Professionals, project managers, workflow practitioners  
+**Purpose:** Professional workflow digitization
+
+**Advanced Features:**
+
+- Multiple choice and true/false task types
+- Task comments and detailed notes
+- Enhanced statistics and progress tracking
+- Professional timeline and completion tracking
+- Data export for compliance/reporting
+- All offline-first for privacy and reliability
+
+**Business Goal:** Convert workflow professionals who need advanced features
+**Value Proposition:** Professional-grade workflow software at 95% less cost than enterprise solutions
+
+-----
+
+### Tier 3: Task Cycle Pro ($10-15/month subscription)
+
+**Access:** Upgrade from Task Cycle  
+**Target:** Small teams and organizations  
+**Purpose:** Team collaboration and advanced automation
+
+**Team Features:**
+
+- Cloud sync across devices and team members
+- Team collaboration and shared workflows
+- AI-generated workflow templates
+- Advanced analytics dashboards
+- Shared reporting and compliance tracking
+- Team administration and permissions
+
+**Business Goal:** Recurring revenue from organizations that adopt cycling methodology
+
+-----
+
+## Market Strategy
+
+### Target Audiences by Tier
+
+**miniCycle Users:**
+
+- Personal productivity enthusiasts
+- People exploring habit formation
+- Students and casual organizers
+- Gateway to professional tiers
+
+**Task Cycle Professionals:**
+
+- Healthcare workers (patient care protocols)
+- Quality inspectors (compliance checklists)
+- Cleaning/maintenance (standardized routes)
+- Small business owners (operational workflows)
+- Project managers (recurring processes)
+
+**Task Cycle Pro Organizations:**
+
+- Small teams (5-20 people) using workflow processes
+- Companies needing compliance documentation
+- Service businesses with standardized procedures
+- Growing organizations adopting systematic processes
+
+### Competitive Positioning
+
+**vs. Consumer Apps (Todoist, Things):** Professional workflow features at consumer pricing  
+**vs. Enterprise Software:** 95% cost reduction with offline-first simplicity  
+**vs. Generic Solutions:** Purpose-built for cycling methodology and workflow professionals
+
+-----
+
+## Financial Projections
+
+### Revenue Targets (Monthly)
+
+- **Year 1:** $500-1,500 (Task Cycle early adopters)
+- **Year 2:** $2,000-5,000 (Task Cycle growth + Task Cycle Pro subscribers)
+- **Year 3:** $5,000-10,000 (full ecosystem with multiple products)
+
+### Break-Even Analysis
+
+- **Annual Expenses:** ~$2,000 (development tools, marketing, legal)
+- **Task Cycle Break-Even:** 80 sales ($25 × 80 = $2,000)
+- **Task Cycle Pro Break-Even:** 17 subscribers ($10 × 12 months × 17 = $2,040)
+
+### Revenue Mix Target (Year 3)
+
+- **Task Cycle:** $3,000/month (120 sales/month at $25)
+- **Task Cycle Pro:** $7,000/month (500+ subscribers at $14/month average)
+- **Total:** $10,000/month sustainable recurring revenue
+
+-----
+
+## Go-To-Market Timeline
+
+### Phase 1: Foundation (Months 1-6)
+
+**Focus:** Launch and iterate miniCycle
+
+- Soft launch to personal network and communities
+- Gather user feedback and iterate quickly
+- Build email list of interested users (target: 500 subscribers)
+- Document case studies and user success stories
+
+### Phase 2: Professional Launch (Months 7-12)
+
+**Focus:** Launch Task Cycle to professional market
+
+- Complete professional features (comments, export, enhanced statistics)
+- Target workflow professionals through industry communities
+- Content marketing around workflow optimization
+- Early revenue generation and customer validation
+
+### Phase 3: Scale & Teams (Months 13-18)
+
+**Focus:** Develop and launch Task Cycle Pro
+
+- Build team collaboration and sync features
+- Target small businesses and growing teams
+- Develop AI template generation capabilities
+- Establish recurring revenue foundation
+
+-----
+
+## Key Success Metrics
+
+### miniCycle (User Acquisition)
+
+- Monthly active users
+- Cycle completion rates
+- Theme unlock progression (engagement indicator)
+- Conversion rate to Task Cycle interest
+
+### Task Cycle (Revenue Generation)
+
+- Monthly sales volume
+- Customer satisfaction and retention
+- Professional use case validation
+- Export feature usage (compliance value)
+
+### Task Cycle Pro (Recurring Revenue)
+
+- Monthly recurring revenue (MRR)
+- Team size and collaboration usage
+- Churn rate and customer lifetime value
+- AI template generation adoption
+
+-----
+
+## Competitive Advantages
+
+### Unique Methodology
+
+**Cycling approach** vs. endless task lists creates natural habit formation and prevents overwhelm
+
+### Domain Expertise
+
+**Real workflow experience** from aerospace inspection background provides authentic professional insights
+
+### Technical Excellence
+
+**Offline-first architecture** with professional-grade reliability and data privacy
+
+### Market Positioning
+
+**Professional features at consumer pricing** disrupts expensive enterprise workflow software
+
+### Product Ecosystem
+
+**Clear upgrade path** from free to professional to team tiers maximizes customer lifetime value
+
+-----
+
+## Risk Mitigation
+
+### Market Risks
+
+- **User education challenge:** Solved through free tier introduction and clear use cases
+- **Competition from established players:** Mitigated by unique methodology and pricing advantage
+- **Economic downturns:** One-time pricing reduces subscription budget concerns
+
+### Technical Risks
+
+- **Development complexity:** Modular architecture reduces technical debt
+- **Server/sync challenges for Pro tier:** Offline-first foundation minimizes critical dependencies
+- **Data privacy concerns:** Offline-first approach eliminates most privacy issues
+
+### Business Risks
+
+- **Customer acquisition costs:** Domain expertise provides authentic marketing content
+- **Feature creep:** Clear tier boundaries maintain focus
+- **Scaling challenges:** Sequential rollout allows learning and adjustment
+
+-----
+
+## Long-Term Vision (3-5 Years)
+
+### Product Portfolio
+
+- **5+ specialized workflow apps** each targeting specific professional niches
+- **sparkinCreations platform** connecting multiple workflow solutions
+- **Industry-specific versions** (healthcare, manufacturing, service businesses)
+
+### Business Model Evolution
+
+- **Core:** Recurring revenue from team subscriptions (60% of revenue)
+- **Growth:** Professional one-time sales (30% of revenue)
+- **Acquisition:** Free tier driving consistent user growth (10% direct revenue)
+
+### Market Position
+
+- **Recognized leader** in cycling methodology for workflow productivity
+- **Go-to solution** for small-medium businesses adopting systematic processes
+- **Platform ecosystem** enabling workflow optimization across industries
+
+-----
+
+## Success Definition
+
+**Year 1 Success:** $12,000+ annual revenue with validated professional market fit  
+**Year 2 Success:** $30,000+ annual revenue with growing subscription base  
+**Year 3 Success:** $75,000+ annual revenue supporting transition from part-time to full-time focus
+
+**Ultimate Goal:** Build sustainable indie software business that helps professionals transform chaotic workflows into systematic progress, while maintaining work-life balance and creative independence.
+
+-----
+
+*This plan balances ambitious growth targets with realistic execution constraints, leveraging domain expertise and technical excellence to build a differentiated position in the workflow productivity market.*
