@@ -285,7 +285,7 @@ button:hover {
 }
 
 
-#addTask {
+#addTaskBtn {
   padding: 10px 15px;
   font-size: 13px;
   height: 35px;
@@ -322,7 +322,7 @@ button:hover {
     width: 60%;
 }
 
-    #addTask {
+    #addTaskBtn {
         padding: 8px 12px;
         font-size: 12px;
         height: 30px;

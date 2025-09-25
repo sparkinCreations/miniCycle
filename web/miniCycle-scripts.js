@@ -1,3 +1,28 @@
+/**
+ * Welcome to miniCycle!
+ *
+ * Hi, I'm MJ, the developer of miniCycle. Thanks for exploring the code!
+ * This file (miniCycle-scripts.js) serves as the main entry point for the miniCycle web app.
+ * It manages the loading and initialization of all modules and utilities that power the app.
+ *
+ * The codebase has evolved with both manual improvements and AI-assisted refactoring to enhance structure, readability, and maintainability.
+ * If you're new here, start by reading the comments and following the initialization flow.
+ *
+ * Note: This file is intentionally comprehensive due to miniCycle's modular design.
+ * I've included detailed comments throughout to clarify each section and its role.
+ * If you have questions or suggestions, feel free to reach out!
+ *
+ * You can visit my website at https://sparkincreative.com
+ *
+ * or the official miniCycle product page at https://minicycleapp.com
+ */
+
+
+
+
+
+
+
 // Create a global state object to avoid module scoping issues
 window.AppState = {
   draggedTask: null,
@@ -12,8 +37,8 @@ window.AppState = {
   rearrangeInitialized: false,
   lastDraggedOver: null,
   lastRearrangeTarget: null,
-  lastDragOverTime: 0,
   hasInteracted: false,
+  lastDragOverTime: 0,
   reminderIntervalId: null,
   timesReminded: 0,
   lastReminderTime: null,
@@ -57,6 +82,26 @@ const REORDER_SNAPSHOT_INTERVAL = 500;
 let advancedVisible = false;
 let isDraggingNotification = false;
 
+
+// 🚦 Minimal lifecycle: signal when an active cycle exists, and run dependents after.
+const AppInit = (() => {
+  let resolveReady;
+  const ready = new Promise(r => (resolveReady = r));
+  let readyFlag = false;
+
+  return {
+    onReady(fn) { ready.then(() => { try { fn(); } catch (e) { console.error('onReady error:', e); } }); },
+    isReady() { return readyFlag; },
+    signalReady(activeCycle) {
+      if (readyFlag) return;
+      readyFlag = true;
+      document.dispatchEvent(new CustomEvent('cycle:ready', { detail: { activeCycle } }));
+      resolveReady();
+    }
+  };
+})();
+window.AppInit = AppInit;
+
 // ✅ Temporary placeholder functions for stats panel (will be replaced when module loads)
 window.updateStatsPanel = function() {
     console.log('📊 updateStatsPanel called before StatsPanelManager is ready - queuing for later');
@@ -68,6 +113,14 @@ window.showTaskView = function() {
     console.log('📊 showTaskView called before StatsPanelManager is ready');
 };
 
+
+
+
+
+
+
+// Main initialization function
+
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
@@ -77,6 +130,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
      * Import utility modules
     */
 
+
+
     // Import global utilities first (foundational functions)
     await import('./utilities/globalUtils.js');
     console.log('🛠️ Global utilities loaded');
@@ -84,7 +139,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Import console capture module
     const { default: consoleCapture } = await import('./utilities/consoleCapture.js');
     
-    // Make console capture globally accessible
     window.consoleCapture = consoleCapture;
 
     // Import and initialize notification system
@@ -189,9 +243,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Make updateNavDots globally accessible
     window.updateNavDots = updateNavDots;
 
+
     // ✅ DOM Element References
     const taskInput = document.getElementById("taskInput");
-    const addTaskButton = document.getElementById("addTask");
+   const addTaskButton = document.getElementById("addTaskBtn");
     const taskList = document.getElementById("taskList");
     const progressBar = document.getElementById("progressBar");
     const completeAllButton = document.getElementById("completeAll");
@@ -289,17 +344,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         autoRedetectOnVersionChange();
     }, 10000);
 
-    // ✅ Core data initialization (Schema 2.5 required)
-    try {
-        console.log('🔧 Fixing task validation issues...');
-        fixTaskValidationIssues();
-        
-        console.log('🔄 Initializing app with auto-migration...');
-        initializeAppWithAutoMigration({ forceMode: true });
-    } catch (error) {
-        console.error('❌ Critical initialization error:', error);
-        // Continue with setup even if migration fails
-    }
+    
 
     // ✅ UI Component Setup
     console.log('🎨 Setting up UI components...');
@@ -334,22 +379,48 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         applyTheme('default');
     }
 
-    // ✅ Core App Loading
-    console.log('📱 Loading core app data...');
-    try {
-        loadMiniCycle();
-        initializeDefaultRecurringSettings();
-    } catch (error) {
-        console.error('❌ Core app loading failed:', error);
-        // Try to create initial data if loading fails
-        try {
-            console.log('🆘 Attempting to create initial data...');
-            createInitialSchema25Data();
-            loadMiniCycle();
-        } catch (fallbackError) {
-            console.error('❌ Fallback initialization failed:', fallbackError);
-        }
+    // ...inside DOMContentLoaded, replace the current try { await cycleLoaderModulePromise; ... } block...
+    
+    // ...existing code...
+    
+    // Inside DOMContentLoaded, replace the current try { await window.cycleLoaderModulePromise; ... } with:
+// ✅ Load cycleLoader EARLY so window.loadMiniCycle exists before any initialSetup runs
+  try {
+    const mod = await import('./utilities/cycleLoader.js');
+
+    mod.setCycleLoaderDependencies({
+      loadMiniCycleData,         // function defined in this file
+      createInitialSchema25Data, // function defined in this file
+      addTask,                   // function defined in this file
+      updateThemeColor,          // function defined in this file
+      startReminders,            // function defined in this file
+      updateProgressBar,         // function defined in this file
+      checkCompleteAllButton,    // function defined in this file
+      updateMainMenuHeader,      // function defined in this file
+      updateStatsPanel           // function defined in this file
+    });
+
+    // If completeInitialSetup ran earlier and queued a load, honor it.
+    if (window.__pendingCycleLoad) {
+      mod.loadMiniCycle();
+      window.__pendingCycleLoad = false;
     }
+  } catch (e) {
+    console.error('❌ cycleLoader import failed:', e);
+  }
+
+  // ✅ Core data initialization (runs AFTER loader is available)
+  try {
+    fixTaskValidationIssues();
+    initializeAppWithAutoMigration({ forceMode: true }); // this will call initialSetup()
+  } catch (error) {
+    console.error('❌ Critical initialization error:', error);
+  }
+
+  // ...remove the later duplicate cycleLoader import block that used to be here...
+  // ...existing code continues...
+
+    // ...existing code...
 
     // ✅ Feature Setup
     console.log('⚙️ Setting up features...');
@@ -359,8 +430,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupRearrange();
     dragEndCleanup();
     updateMoveArrowsVisibility();
-    checkDueDates();
     initializeThemesPanel();
+
+
+    // ✅ Defer anything that needs cycles/data until an active cycle exists
+AppInit.onReady(() => {
+  console.log('🟢 Data-ready initializers running…');
 
     // ✅ Recurring Features
     console.log('🔁 Setting up recurring features...');
@@ -381,6 +456,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ Overdue task reminder failed:', error);
         }
     }, 2000);
+    checkDueDates();
+
 
     setTimeout(() => {
         try {
@@ -413,6 +490,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         }
     };
 
+ });
+
     // ✅ Mark app as ready
     window.AppReady = true;
     console.log("✅ miniCycle app is fully initialized and ready (Schema 2.5).");
@@ -437,25 +516,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-
-// 🔧 FORCE MIGRATION CHECK
-    setTimeout(() => {
-        console.log('🔧 Forcing migration check...');
-        
-        // Fix validation issues first
-        fixTaskValidationIssues();
-        
-        // Then check migration
-        const migrationCheck = checkMigrationNeeded();
-        console.log('🔍 Migration check result:', migrationCheck);
-        
-        if (migrationCheck.needed) {
-            console.log('🚨 Migration needed - starting process...');
-            initializeAppWithAutoMigration();
-        } else {
-            console.log('✅ No migration needed');
-        }
-    }, 1000);
 
 
 
@@ -811,6 +871,10 @@ function getModeName(mode) {
 }
 
 function initializeModeSelector() {
+      if (!window.AppInit?.isReady?.()) {
+    // Defer this whole initializer until data-ready (safety net)
+    return AppInit.onReady(() => initializeModeSelector());
+  }
     console.log('⏰ Initializing mode selector with 200ms delay...');
     setTimeout(() => {
         console.log('⏰ Delay complete, calling setupModeSelector...');
@@ -1260,7 +1324,16 @@ function showOnboarding() {
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
 function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
-    console.log('✅ Completing initial setup for cycle:', activeCycle);
+  console.log('✅ Completing initial setup for cycle:', activeCycle);
+
+  // Call the loader only via the global (attached by cycleLoader import)
+  console.log('🎯 Loading miniCycle...');
+  if (typeof window.loadMiniCycle === 'function') {
+    window.loadMiniCycle();
+  } else {
+    console.log('⏳ Loader not ready yet, flagging pending load');
+    window.__pendingCycleLoad = true;
+  }
     
     // Get fresh data if not provided
     if (!schemaData) {
@@ -1335,10 +1408,15 @@ function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = n
         updateThemeColor();
     }
     
-    console.log('🎯 Loading miniCycle...');
-    loadMiniCycle();
-    
-    console.log('✅ Initial setup completed successfully');
+
+  // ✅ Tell the app that data (active cycle) is ready
+  try {
+    window.AppInit?.signalReady?.(activeCycle);
+  } catch (e) {
+    console.warn('AppInit signal failed:', e);
+  }
+
+  console.log('✅ Initial setup completed successfully');
 }
 
 function createInitialSchema25Data() {
@@ -1758,202 +1836,7 @@ function autoSave(overrideTaskList = null) {
  * Loads the last used miniCycle from localStorage and updates the UI.
  * Ensures tasks, title, settings, and overdue statuses are properly restored.
  */
-/**
- * Main coordination function - now much simpler
- */
-function loadMiniCycle() {
-    console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ No Schema 2.5 data found');
-        createInitialSchema25Data();
-        return;
-    }
 
-    const { cycles, activeCycle } = schemaData;
-    
-    if (!activeCycle || !cycles[activeCycle]) {
-        console.error('❌ No valid active cycle found');
-        return;
-    }
-
-    const currentCycle = cycles[activeCycle];
-    
-    // 🔧 1. Repair and clean data
-    const cleanedTasks = repairAndCleanTasks(currentCycle);
-    
-    // 💾 2. Save any repairs made
-    if (cleanedTasks.wasModified) {
-        saveCycleData(activeCycle, currentCycle);
-    }
-    
-    // 🎨 3. Render tasks to DOM
-    renderTasksToDOM(currentCycle.tasks);
-    
-    // ⚙️ 4. Update UI state
-    updateCycleUIState(currentCycle, schemaData.settings);
-    
-    // 🔔 5. Configure reminders
-    setupRemindersForCycle(schemaData.reminders);
-    
-    // 📊 6. Update dependent UI components
-    updateDependentComponents();
-    
-    console.log('✅ Cycle loading completed');
-}
-
-/**
- * Handles task data repair and cleanup
- */
-function repairAndCleanTasks(currentCycle) {
-    if (!currentCycle.tasks || !Array.isArray(currentCycle.tasks)) {
-        return { tasks: [], wasModified: false };
-    }
-
-    let tasksModified = false;
-    
-    // Process each task for repairs
-    currentCycle.tasks.forEach((task, index) => {
-        if (!task) return;
-        
-        // Fix missing text
-        const hasText = task.text || task.taskText;
-        if (!hasText) {
-            task.text = task.text || task.taskText || `[Task ${index + 1}]`;
-            tasksModified = true;
-        }
-        
-        // Fix missing ID
-        if (!task.id) {
-            task.id = `task-${Date.now()}-${index}`;
-            tasksModified = true;
-        }
-    });
-    
-    // Filter out truly unusable tasks
-    const validTasks = currentCycle.tasks.filter(task => {
-        return task && (task.text || task.taskText);
-    });
-    
-    currentCycle.tasks = validTasks;
-    
-    return {
-        tasks: validTasks,
-        wasModified: tasksModified || validTasks.length !== currentCycle.tasks.length
-    };
-}
-
-/**
- * Renders tasks to the DOM
- */
-function renderTasksToDOM(tasks) {
-    const taskList = document.getElementById("taskList");
-    if (!taskList) return;
-    
-    taskList.innerHTML = "";
-    
-    tasks.forEach((task) => {
-        const taskText = task.text || task.taskText || '';
-        const taskId = task.id || `task-${Date.now()}-${Math.random()}`;
-        
-        addTask(
-            taskText,
-            task.completed || false,
-            false, // Don't save during load
-            task.dueDate || null,
-            task.highPriority || false,
-            true, // isLoading = true
-            task.remindersEnabled || false,
-            task.recurring || false,
-            taskId,
-            task.recurringSettings || {}
-        );
-    });
-}
-
-/**
- * Updates UI state for the current cycle
- */
-function updateCycleUIState(currentCycle, settings) {
-    // Update title
-    const titleElement = document.getElementById("mini-cycle-title");
-    if (titleElement) {
-        titleElement.textContent = currentCycle.title || "Untitled Cycle";
-    }
-    
-    // Update toggles
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
-    
-    if (toggleAutoReset) {
-        toggleAutoReset.checked = currentCycle.autoReset || false;
-    }
-    
-    if (deleteCheckedTasks) {
-        deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
-    }
-    
-    // Apply theme settings
-    applyThemeSettings(settings);
-}
-
-/**
- * Applies theme settings from schema data
- */
-function applyThemeSettings(settings) {
-    if (settings.darkMode) {
-        document.body.classList.add("dark-mode");
-    }
-    
-    if (settings.theme && settings.theme !== 'default') {
-        const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
-        allThemes.forEach(theme => document.body.classList.remove(theme));
-        document.body.classList.add(`theme-${settings.theme}`);
-    }
-    
-    if (typeof updateThemeColor === 'function') {
-        updateThemeColor();
-    }
-}
-
-/**
- * Sets up reminders for the current cycle
- */
-function setupRemindersForCycle(reminders) {
-    const enableReminders = document.getElementById("enableReminders");
-    const frequencySection = document.getElementById("frequency-section");
-    
-    if (!enableReminders) return;
-    
-    enableReminders.checked = reminders.enabled === true;
-    
-    if (reminders.enabled && frequencySection) {
-        frequencySection.classList.remove("hidden");
-        startReminders();
-    }
-}
-
-/**
- * Updates all dependent UI components
- */
-function updateDependentComponents() {
-    updateProgressBar();
-    checkCompleteAllButton();
-    updateMainMenuHeader();
-    updateStatsPanel();
-}
-
-/**
- * Saves cycle data to Schema 2.5 storage
- */
-function saveCycleData(activeCycle, currentCycle) {
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-}
-// ...existing code...
 /**
  * Checks for overdue tasks and visually marks them as overdue.
  * Notifies the user if newly overdue tasks are detected.
@@ -6602,6 +6485,7 @@ function isAlwaysShowRecurringEnabled() {
 }
   
 function updateRecurringPanelButtonVisibility() {
+    if (!window.AppInit?.isReady?.()) return; // Ensure app is fully initialized
     console.log('🔄 Updating recurring panel button visibility (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
@@ -7175,6 +7059,8 @@ function watchRecurringTasks() {
 }
 
 function setupRecurringWatcher() {
+
+    if (!window.AppInit?.isReady?.()) return;
     console.log('⚙️ Setting up recurring watcher (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
@@ -9400,7 +9286,41 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     
     console.log('✅ Task creation completed (Schema 2.5)');
 }
-    
+
+// Ensure the real function is exposed via alias and flush queued calls
+(function finalizeAddTaskBootstrap() {
+  try {
+    if (typeof addTask === 'function') {
+      window.addTaskFunction = addTask; // primary programmatic entry
+      // Keep legacy global only if it’s not a DOM element
+      if (typeof window.addTask !== 'function') {
+        window.addTask = addTask;
+      }
+      if (Array.isArray(window.__queuedAddTaskCalls) && window.__queuedAddTaskCalls.length) {
+        console.log(`🚚 Flushing ${window.__queuedAddTaskCalls.length} queued addTask calls`);
+        window.__queuedAddTaskCalls.splice(0).forEach(args => {
+          try { addTask(...args); } catch (e) { console.warn('addTask flush error:', e); }
+        });
+      }
+      if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
+        window.resumeDeferredRenderIfNeeded();
+      }
+    }
+  } catch (e) {
+    console.warn('finalizeAddTaskBootstrap error:', e);
+  }
+})();
+// ▶️ Attempt to resume deferred render once real addTask is present
+if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
+  window.resumeDeferredRenderIfNeeded();
+} else {
+  // Fallback: try again shortly if cycleLoader not finished attaching hook yet
+  setTimeout(() => {
+    if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
+      window.resumeDeferredRenderIfNeeded();
+    }
+  }, 200);
+}
 
 
 
@@ -11665,7 +11585,7 @@ updateCycleModeDescription();
 
 
 
-
+/*
 
 (function boot() {
   function start() {
@@ -11753,4 +11673,11 @@ updateCycleModeDescription();
   }
 })();
 
+*/
+
 });
+
+  function supportsModern() {
+    try { new Function('()=>{}'); } catch(_) { return false; }
+    return !!(window.Promise && window.fetch);
+  }
