@@ -232,6 +232,20 @@ Is it a complex UI component that must work even when things break?
 └─ NO → Use Simple Instance Pattern 🎯
 ```
 
+## 📊 **Pattern Selection Quick Reference**
+
+| Module Type | Best Pattern | Key Indicators |
+|------------|-------------|---------------|
+| **DOM Utilities** | Static Utility ⚡ | Pure functions, no state, universal |
+| **Math Functions** | Static Utility ⚡ | Input → output, no side effects |
+| **Formatters** | Static Utility ⚡ | Transform data, no dependencies |
+| **Notifications** | Simple Instance 🎯 | Self-contained, should always work |
+| **Simple Modals** | Simple Instance 🎯 | Basic UI, graceful degradation |
+| **Status Panels** | Resilient Constructor 🛡️ | Complex UI, needs external data |
+| **Interactive Widgets** | Resilient Constructor 🛡️ | Must handle missing dependencies |
+| **Data Processing** | Strict Injection 🔧 | Critical logic, complex dependencies |
+| **Core App Features** | Strict Injection 🔧 | Cannot work without dependencies |
+
 ---
 
 ## 📚 **The Four Proven Patterns**
