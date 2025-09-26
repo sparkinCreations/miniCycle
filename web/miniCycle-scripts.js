@@ -8794,26 +8794,56 @@ function toggleArrowVisibility() {
 
 
     
+// ✅ Main addTask function - now acts as orchestrator
 function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
-     
+    // Input validation and sanitization
+    const validatedInput = validateAndSanitizeTaskInput(taskText);
+    if (!validatedInput) return;
+    
+    // Load and validate data context
+    const taskContext = loadTaskContext(validatedInput, taskId, {
+        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
+    });
+    if (!taskContext) return;
+    
+    // Create or update task data
+    const taskData = createOrUpdateTaskData(taskContext);
+    
+    // Create DOM elements
+    const taskElements = createTaskDOMElements(taskContext, taskData);
+    
+    // Setup task interactions and events
+    setupTaskInteractions(taskElements, taskContext);
+    
+    // Finalize task creation
+    finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
+    
+    console.log('✅ Task creation completed (Schema 2.5)');
+}
+
+// ✅ 1. Input Validation and Sanitization
+function validateAndSanitizeTaskInput(taskText) {
     if (typeof taskText !== "string") {
         console.error("❌ Error: taskText is not a string", taskText);
-        return;
+        return null;
     }
     
-    // ⛑️ Sanitize input early to avoid unsafe values spreading
-    let taskTextTrimmed = sanitizeInput(taskText.trim());
+    const taskTextTrimmed = sanitizeInput(taskText.trim());
     if (!taskTextTrimmed) {
         console.warn("⚠ Skipping empty or unsafe task.");
-        return;
+        return null;
     }
     
     if (taskTextTrimmed.length > TASK_LIMIT) {
         showNotification(`Task must be ${TASK_LIMIT} characters or less.`);
-        return;
+        return null;
     }
     
-    // ✅ Schema 2.5 only
+    return taskTextTrimmed;
+}
+
+// ✅ 2. Data Context Loading and Validation
+function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
     console.log('📝 Adding task (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
@@ -8832,56 +8862,36 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
 
     console.log('📊 Active cycle found:', activeCycle);
 
-    const cycleTasks = currentCycle.tasks || [];
-    
-    // ✅ Get settings from Schema 2.5
-    const autoResetEnabled = currentCycle.autoReset || false;
-    const remindersEnabledGlobal = reminders?.enabled === true;
-    
-    // ✅ Use the passed-in taskId if it exists, otherwise generate a new one
     const assignedTaskId = taskId || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    
     console.log('🆔 Assigned task ID:', assignedTaskId);
-    
-    // ✅ Get required DOM elements
-    const taskList = document.getElementById("taskList");
-    const taskInput = document.getElementById("taskInput");
-    
-    // ✅ Create Task Element
-    const taskItem = document.createElement("li");
-    taskItem.classList.add("task");
-    taskItem.setAttribute("draggable", "true");
-    taskItem.dataset.taskId = assignedTaskId;
-    
-    if (highPriority) {
-        taskItem.classList.add("high-priority");
-    }
 
-    const hasValidRecurringSettings = recurring && recurringSettings && Object.keys(recurringSettings).length > 0;
-    if (hasValidRecurringSettings) {
-        taskItem.classList.add("recurring");
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
-    }
+    return {
+        taskTextTrimmed,
+        assignedTaskId,
+        schemaData,
+        cycles,
+        activeCycle,
+        currentCycle,
+        settings,
+        reminders,
+        cycleTasks: currentCycle.tasks || [],
+        autoResetEnabled: currentCycle.autoReset || false,
+        remindersEnabledGlobal: reminders?.enabled === true,
+        deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false,
+        ...taskOptions
+    };
+}
 
-    // ✅ Three Dots Menu from Schema 2.5 settings
-    const showThreeDots = settings.showThreeDots || false;
-    if (showThreeDots) {
-        const threeDotsButton = document.createElement("button");
-        threeDotsButton.classList.add("three-dots-btn");
-        threeDotsButton.innerHTML = "⋮";
-        threeDotsButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            revealTaskButtons(taskItem);
-        });
-        taskItem.appendChild(threeDotsButton);
-    }
+// ✅ 3. Task Data Creation and Storage
+function createOrUpdateTaskData(taskContext) {
+    const { 
+        cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate, 
+        highPriority, remindersEnabled, recurring, recurringSettings,
+        currentCycle, cycles, activeCycle
+    } = taskContext;
 
-    // ✅ Create Button Container
-    const buttonContainer = document.createElement("div");
-    buttonContainer.classList.add("task-options");
-
-    // ✅ Create or update task in Schema 2.5
     let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
+    
     if (!existingTask) {
         console.log('📋 Creating new task in Schema 2.5');
         
@@ -8896,42 +8906,143 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
             recurringSettings,
             schemaVersion: 2
         };
+        
         currentCycle.tasks.push(existingTask);
         
-        // ✅ Save recurring template in Schema 2.5
+        // Handle recurring template creation
         if (recurring && recurringSettings) {
-            console.log('🔁 Saving recurring template');
-            
-            if (!currentCycle.recurringTemplates) {
-                currentCycle.recurringTemplates = {};
-            }
-
-            currentCycle.recurringTemplates[assignedTaskId] = {
-                id: assignedTaskId,
-                text: taskTextTrimmed,
-                recurring: true,
-                recurringSettings: structuredClone(recurringSettings),
-                highPriority: highPriority || false,
-                dueDate: dueDate || null,
-                remindersEnabled: remindersEnabled || false,
-                lastTriggeredTimestamp: null,
-                schemaVersion: 2
-            };
+            createRecurringTemplate(taskContext, existingTask);
         }
         
-        // ✅ Save to Schema 2.5
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = currentCycle;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
+        // Save to Schema 2.5
+        saveTaskToSchema25(activeCycle, currentCycle);
         console.log('💾 Task saved to Schema 2.5');
     }
     
-    const deleteCheckedEnabled = currentCycle.deleteCheckedTasks || false;
+    return existingTask;
+}
+
+// ✅ 4. Recurring Template Creation (extracted from task data creation)
+function createRecurringTemplate(taskContext, taskData) {
+    const { currentCycle, assignedTaskId, taskTextTrimmed, highPriority, dueDate, remindersEnabled, recurringSettings } = taskContext;
+    
+    console.log('🔁 Saving recurring template');
+    
+    if (!currentCycle.recurringTemplates) {
+        currentCycle.recurringTemplates = {};
+    }
+
+    currentCycle.recurringTemplates[assignedTaskId] = {
+        id: assignedTaskId,
+        text: taskTextTrimmed,
+        recurring: true,
+        recurringSettings: structuredClone(recurringSettings),
+        highPriority: highPriority || false,
+        dueDate: dueDate || null,
+        remindersEnabled: remindersEnabled || false,
+        lastTriggeredTimestamp: null,
+        schemaVersion: 2
+    };
+}
+
+// ✅ 5. DOM Elements Creation
+function createTaskDOMElements(taskContext, taskData) {
+    const { 
+        assignedTaskId, taskTextTrimmed, highPriority, recurring, 
+        recurringSettings, settings, autoResetEnabled
+    } = taskContext;
+
+    // Get required DOM elements
+    const taskList = document.getElementById("taskList");
+    const taskInput = document.getElementById("taskInput");
+    
+    // Create main task element
+    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings);
+    
+    // Create three dots button if needed
+    const threeDotsButton = createThreeDotsButton(taskItem, settings);
+    
+    // Create button container and buttons
+    const buttonContainer = createTaskButtonContainer(taskContext);
+    
+    // Create task content elements
+    const { checkbox, taskLabel, dueDateInput } = createTaskContentElements(taskContext);
+    
+    // Create task content wrapper
+    const taskContent = document.createElement("div");
+    taskContent.classList.add("task-content");
+    taskContent.appendChild(checkbox);
+    taskContent.appendChild(taskLabel);
+
+    // Assemble the task item
+    taskItem.appendChild(buttonContainer);
+    taskItem.appendChild(taskContent);
+    taskItem.appendChild(dueDateInput);
+
+    return {
+        taskItem,
+        taskList,
+        taskInput,
+        buttonContainer,
+        checkbox,
+        taskLabel,
+        dueDateInput,
+        threeDotsButton
+    };
+}
+
+// ✅ 6. Main Task Element Creation
+function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings) {
+    const taskItem = document.createElement("li");
+    taskItem.classList.add("task");
+    taskItem.setAttribute("draggable", "true");
+    taskItem.dataset.taskId = assignedTaskId;
+    
+    if (highPriority) {
+        taskItem.classList.add("high-priority");
+    }
+
+    const hasValidRecurringSettings = recurring && recurringSettings && Object.keys(recurringSettings).length > 0;
+    if (hasValidRecurringSettings) {
+        taskItem.classList.add("recurring");
+        taskItem.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
+    }
+    
+    return taskItem;
+}
+
+// ✅ 7. Three Dots Button Creation
+function createThreeDotsButton(taskItem, settings) {
+    const showThreeDots = settings.showThreeDots || false;
+    
+    if (showThreeDots) {
+        const threeDotsButton = document.createElement("button");
+        threeDotsButton.classList.add("three-dots-btn");
+        threeDotsButton.innerHTML = "⋮";
+        threeDotsButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            revealTaskButtons(taskItem);
+        });
+        taskItem.appendChild(threeDotsButton);
+        return threeDotsButton;
+    }
+    
+    return null;
+}
+
+// ✅ 8. Task Button Container Creation
+function createTaskButtonContainer(taskContext) {
+    const { 
+        autoResetEnabled, deleteCheckedEnabled, settings, 
+        remindersEnabled, remindersEnabledGlobal, assignedTaskId, 
+        currentCycle, recurring, highPriority
+    } = taskContext;
+
+    const buttonContainer = document.createElement("div");
+    buttonContainer.classList.add("task-options");
+
     const showRecurring = !autoResetEnabled && deleteCheckedEnabled;
 
-    // ✅ Task Buttons (Including Reminder Button)
     const buttons = [
         { class: "move-up", icon: "▲", show: true },
         { class: "move-down", icon: "▼", show: true },
@@ -8942,179 +9053,244 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
         { class: "edit-btn", icon: "<i class='fas fa-edit'></i>", show: true },
         { class: "delete-btn", icon: "<i class='fas fa-trash'></i>", show: true }
     ];
-    
-    buttons.forEach(({ class: btnClass, icon, toggle = false, show }) => {
-        const button = document.createElement("button");
-        button.classList.add("task-btn", btnClass);
-        button.innerHTML = icon;
-        button.setAttribute("type", "button");
-        if (!show) button.classList.add("hidden");
 
-        // ⌨️ Keyboard: Enter/Space Activation
-        button.setAttribute("tabindex", "0");
-        button.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                button.click();
-            }
-
-            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));
-                const currentIndex = focusable.indexOf(e.target);
-                const nextIndex = e.key === "ArrowRight"
-                    ? (currentIndex + 1) % focusable.length
-                    : (currentIndex - 1 + focusable.length) % focusable.length;
-                focusable[nextIndex].focus();
-                e.preventDefault();
-            }
-        });
-                
-        // ARIA label setup
-        const ariaLabels = {
-            "move-up": "Move task up",
-            "move-down": "Move task down",
-            "recurring-btn": "Toggle recurring task",
-            "set-due-date": "Set due date",
-            "enable-task-reminders": "Toggle reminders for this task",
-            "priority-btn": "Mark task as high priority",
-            "edit-btn": "Edit task",
-            "delete-btn": "Delete task"
-        };
-        button.setAttribute("aria-label", ariaLabels[btnClass] || "Task action");
-    
-        // ARIA toggle state setup
-        if (btnClass === "enable-task-reminders") {
-            const isActive = remindersEnabled === true;
-            button.classList.toggle("reminder-active", isActive);
-            button.setAttribute("aria-pressed", isActive.toString());
-        } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-            const isActive = btnClass === "recurring-btn" ? !!recurring : !!highPriority;
-            button.classList.toggle("active", isActive);
-            button.setAttribute("aria-pressed", isActive.toString());
-        }
-        
-               // ✅ In addTask() function, replace the incomplete recurring button handler:
-        if (btnClass === "recurring-btn") {
-            button.addEventListener("click", () => {
-                const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
-                if (!task) return;
-        
-                pushUndoSnapshot();
-        
-                if (!(showRecurring || (settings.alwaysShowRecurring || false))) return;
-        
-                const isNowRecurring = !task.recurring;
-                task.recurring = isNowRecurring;
-        
-                button.classList.toggle("active", isNowRecurring);
-                button.setAttribute("aria-pressed", isNowRecurring.toString());
-        
-                if (isNowRecurring) {
-                    const defaultSettings = settings.defaultRecurringSettings || {
-                        frequency: "daily",
-                        indefinitely: true,
-                        time: null
-                    };
-        
-                    task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
-                    taskItem.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
-                    taskItem.classList.add("recurring");
-                    task.schemaVersion = 2;
-        
-                    // ✅ Create recurring template
-                    if (!currentCycle.recurringTemplates) {
-                        currentCycle.recurringTemplates = {};
-                    }
-        
-                    currentCycle.recurringTemplates[assignedTaskId] = {
-                        id: assignedTaskId,
-                        text: task.text,
-                        recurring: true,
-                        recurringSettings: structuredClone(task.recurringSettings),
-                        highPriority: task.highPriority || false,
-                        dueDate: task.dueDate || null,
-                        remindersEnabled: task.remindersEnabled || false,
-                        lastTriggeredTimestamp: null,
-                        schemaVersion: 2
-                    };
-        
-                    const rs = task.recurringSettings || {};
-                    const frequency = rs.frequency || "daily";
-                    const pattern = rs.indefinitely ? "Indefinitely" : "Limited";
-        
-                    const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
-                    
-                    const notification = showNotificationWithTip(
-                        notificationContent,
-                        "recurring",
-                        20000,
-                        "recurring-cycle-explanation"
-                    );
-        
-                    initializeRecurringNotificationListeners(notification);
-        
-                } else {
-                    // ✅ FIXED: Proper cleanup when turning off recurring
-                    task.recurring = false;
-                    task.recurringSettings = {};
-                    task.schemaVersion = 2;
-                    taskItem.removeAttribute("data-recurring-settings");
-                    taskItem.classList.remove("recurring");
-        
-                    // ✅ IMPORTANT: Only remove from templates, keep task in main array
-                    if (currentCycle.recurringTemplates?.[assignedTaskId]) {
-                        delete currentCycle.recurringTemplates[assignedTaskId];
-                    }
-        
-                    // ✅ CRITICAL: Ensure the task stays in the main tasks array
-                    const taskExists = currentCycle.tasks.find(t => t.id === assignedTaskId);
-                    if (!taskExists) {
-                        console.warn('⚠️ Task missing from main array, re-adding:', assignedTaskId);
-                        currentCycle.tasks.push(task);
-                    }
-        
-                    showNotification("↩️ Recurring turned off for this task.", "info", 2000);
-                }
-        
-                // ✅ CRITICAL: Save to Schema 2.5
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                
-                updateRecurringPanelButtonVisibility();
-                updateRecurringPanel?.();
-            });
-        }
-         else if (btnClass === "enable-task-reminders") {
-            button.addEventListener("click", () => {
-                pushUndoSnapshot();
-
-                const isActive = button.classList.toggle("reminder-active");
-                button.setAttribute("aria-pressed", isActive.toString());
-
-                saveTaskReminderState(assignedTaskId, isActive);
-                autoSaveReminders();
-                startReminders();
-
-                const undoBtn = document.getElementById("undo-btn");
-                const redoBtn = document.getElementById("redo-btn");
-                if (undoBtn) undoBtn.hidden = false;
-                if (redoBtn) redoBtn.hidden = true;
-
-                showNotification(`Reminders ${isActive ? "enabled" : "disabled"} for task.`, "info", 1500);
-            });
-        } else {
-            button.addEventListener("click", handleTaskButtonClick);
-        }
-    
+    buttons.forEach(buttonConfig => {
+        const button = createTaskButton(buttonConfig, taskContext, buttonContainer);
         buttonContainer.appendChild(button);
     });
 
-    // ✅ Continue with rest of DOM creation for Schema 2.5
-    console.log(`📌 Loading Task (Schema 2.5): ${taskTextTrimmed}, Reminder Enabled: ${remindersEnabled}`);
+    return buttonContainer;
+}
 
-    // ✅ Checkbox for Completion
+// ✅ 9. Individual Task Button Creation
+function createTaskButton(buttonConfig, taskContext, buttonContainer) {
+    const { class: btnClass, icon, toggle = false, show } = buttonConfig;
+    const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority } = taskContext;
+
+    const button = document.createElement("button");
+    button.classList.add("task-btn", btnClass);
+    button.innerHTML = icon;
+    button.setAttribute("type", "button");
+    if (!show) button.classList.add("hidden");
+
+    // Setup accessibility attributes
+    setupButtonAccessibility(button, btnClass, buttonContainer);
+    
+    // Setup ARIA states
+    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority);
+    
+    // Setup button event handlers
+    setupButtonEventHandlers(button, btnClass, taskContext);
+
+    return button;
+}
+
+// ✅ 10. Button Accessibility Setup
+function setupButtonAccessibility(button, btnClass, buttonContainer) {
+    button.setAttribute("tabindex", "0");
+    
+    // Keyboard navigation
+    button.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            button.click();
+        }
+
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+            const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));
+            const currentIndex = focusable.indexOf(e.target);
+            const nextIndex = e.key === "ArrowRight"
+                ? (currentIndex + 1) % focusable.length
+                : (currentIndex - 1 + focusable.length) % focusable.length;
+            focusable[nextIndex].focus();
+            e.preventDefault();
+        }
+    });
+
+    // ARIA labels
+    const ariaLabels = {
+        "move-up": "Move task up",
+        "move-down": "Move task down",
+        "recurring-btn": "Toggle recurring task",
+        "set-due-date": "Set due date",
+        "enable-task-reminders": "Toggle reminders for this task",
+        "priority-btn": "Mark task as high priority",
+        "edit-btn": "Edit task",
+        "delete-btn": "Delete task"
+    };
+    button.setAttribute("aria-label", ariaLabels[btnClass] || "Task action");
+}
+
+// ✅ 11. Button ARIA States Setup
+function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority) {
+    if (btnClass === "enable-task-reminders") {
+        const isActive = remindersEnabled === true;
+        button.classList.toggle("reminder-active", isActive);
+        button.setAttribute("aria-pressed", isActive.toString());
+    } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
+        const isActive = btnClass === "recurring-btn" ? !!recurring : !!highPriority;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive.toString());
+    }
+}
+
+// ✅ 12. Button Event Handlers Setup
+function setupButtonEventHandlers(button, btnClass, taskContext) {
+    if (btnClass === "recurring-btn") {
+        setupRecurringButtonHandler(button, taskContext);
+    } else if (btnClass === "enable-task-reminders") {
+        setupReminderButtonHandler(button, taskContext);
+    } else {
+        button.addEventListener("click", handleTaskButtonClick);
+    }
+}
+
+// ✅ 13. Recurring Button Handler (extracted from main function)
+function setupRecurringButtonHandler(button, taskContext) {
+    const { assignedTaskId, currentCycle, settings, activeCycle } = taskContext;
+    
+    button.addEventListener("click", () => {
+        const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
+        if (!task) return;
+
+        pushUndoSnapshot();
+
+        const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
+        if (!(showRecurring || (settings.alwaysShowRecurring || false))) return;
+
+        const isNowRecurring = !task.recurring;
+        task.recurring = isNowRecurring;
+
+        button.classList.toggle("active", isNowRecurring);
+        button.setAttribute("aria-pressed", isNowRecurring.toString());
+
+        if (isNowRecurring) {
+            handleRecurringTaskActivation(task, taskContext, button);
+        } else {
+            handleRecurringTaskDeactivation(task, taskContext, assignedTaskId);
+        }
+
+        // Save to Schema 2.5
+        saveTaskToSchema25(activeCycle, currentCycle);
+        
+        updateRecurringPanelButtonVisibility();
+        updateRecurringPanel?.();
+    });
+}
+
+// ✅ 14. Recurring Task Activation Handler
+function handleRecurringTaskActivation(task, taskContext, button) {
+    const { assignedTaskId, currentCycle, settings } = taskContext;
+    const taskItem = document.querySelector(`[data-task-id="${assignedTaskId}"]`);
+    
+    const defaultSettings = settings.defaultRecurringSettings || {
+        frequency: "daily",
+        indefinitely: true,
+        time: null
+    };
+
+    task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
+    taskItem.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
+    taskItem.classList.add("recurring");
+    task.schemaVersion = 2;
+
+    // Create recurring template
+    if (!currentCycle.recurringTemplates) {
+        currentCycle.recurringTemplates = {};
+    }
+
+    currentCycle.recurringTemplates[assignedTaskId] = {
+        id: assignedTaskId,
+        text: task.text,
+        recurring: true,
+        recurringSettings: structuredClone(task.recurringSettings),
+        highPriority: task.highPriority || false,
+        dueDate: task.dueDate || null,
+        remindersEnabled: task.remindersEnabled || false,
+        lastTriggeredTimestamp: null,
+        schemaVersion: 2
+    };
+
+    // Show notification with tip
+    const rs = task.recurringSettings || {};
+    const frequency = rs.frequency || "daily";
+    const pattern = rs.indefinitely ? "Indefinitely" : "Limited";
+
+    const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
+    const notification = showNotificationWithTip(notificationContent, "recurring", 20000, "recurring-cycle-explanation");
+    initializeRecurringNotificationListeners(notification);
+}
+
+// ✅ 15. Recurring Task Deactivation Handler
+function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
+    const { currentCycle } = taskContext;
+    const taskItem = document.querySelector(`[data-task-id="${assignedTaskId}"]`);
+    
+    task.recurring = false;
+    task.recurringSettings = {};
+    task.schemaVersion = 2;
+    taskItem.removeAttribute("data-recurring-settings");
+    taskItem.classList.remove("recurring");
+
+    // Remove from templates, keep task in main array
+    if (currentCycle.recurringTemplates?.[assignedTaskId]) {
+        delete currentCycle.recurringTemplates[assignedTaskId];
+    }
+
+    // Ensure the task stays in the main tasks array
+    const taskExists = currentCycle.tasks.find(t => t.id === assignedTaskId);
+    if (!taskExists) {
+        console.warn('⚠️ Task missing from main array, re-adding:', assignedTaskId);
+        currentCycle.tasks.push(task);
+    }
+
+    showNotification("↩️ Recurring turned off for this task.", "info", 2000);
+}
+
+// ✅ 16. Reminder Button Handler (extracted)
+function setupReminderButtonHandler(button, taskContext) {
+    const { assignedTaskId } = taskContext;
+    
+    button.addEventListener("click", () => {
+        pushUndoSnapshot();
+
+        const isActive = button.classList.toggle("reminder-active");
+        button.setAttribute("aria-pressed", isActive.toString());
+
+        saveTaskReminderState(assignedTaskId, isActive);
+        autoSaveReminders();
+        startReminders();
+
+        const undoBtn = document.getElementById("undo-btn");
+        const redoBtn = document.getElementById("redo-btn");
+        if (undoBtn) undoBtn.hidden = false;
+        if (redoBtn) redoBtn.hidden = true;
+
+        showNotification(`Reminders ${isActive ? "enabled" : "disabled"} for task.`, "info", 1500);
+    });
+}
+
+// ✅ 17. Task Content Elements Creation
+function createTaskContentElements(taskContext) {
+    const { 
+        assignedTaskId, taskTextTrimmed, completed, dueDate, 
+        autoResetEnabled, recurring, currentCycle, activeCycle 
+    } = taskContext;
+
+    // Create checkbox
+    const checkbox = createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
+    
+    // Create task label
+    const taskLabel = createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
+    
+    // Create due date input
+    const dueDateInput = createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
+
+    return { checkbox, taskLabel, dueDateInput };
+}
+
+// ✅ 18. Task Checkbox Creation
+function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.setAttribute("id", `checkbox-${assignedTaskId}`);
@@ -9147,27 +9323,35 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
         }
     });
 
-    // ✅ Ensure `.task-text` Exists
+    return checkbox;
+}
+
+// ✅ 19. Task Label Creation
+function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
     const taskLabel = document.createElement("span");
     taskLabel.classList.add("task-text");
     taskLabel.textContent = taskTextTrimmed;
     taskLabel.setAttribute("tabindex", "0");
     taskLabel.setAttribute("role", "text");
+    taskLabel.id = `task-desc-${assignedTaskId}`;
     
-    // 🔁 Add blue recurring icon if this task is recurring
+    // Add recurring icon if needed
     if (recurring) {
         const icon = document.createElement("span");
         icon.className = "recurring-indicator";
         icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
         taskLabel.appendChild(icon);
     }
-        
-    // ✅ Due Date Input (Hidden by Default)
+
+    return taskLabel;
+}
+
+// ✅ 20. Due Date Input Creation
+function createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle) {
     const dueDateInput = document.createElement("input");
     dueDateInput.type = "date";
     dueDateInput.classList.add("due-date");
     dueDateInput.setAttribute("aria-describedby", `task-desc-${assignedTaskId}`);
-    taskLabel.id = `task-desc-${assignedTaskId}`;   
 
     if (dueDate) {
         dueDateInput.value = dueDate;
@@ -9187,11 +9371,7 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
         const taskToUpdate = currentCycle.tasks.find(t => t.id === assignedTaskId);
         if (taskToUpdate) {
             taskToUpdate.dueDate = dueDateInput.value;
-            
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            saveTaskToSchema25(activeCycle, currentCycle);
         }
 
         updateStatsPanel();
@@ -9201,17 +9381,35 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
         showNotification("📅 Due date updated", "info", 1500);
     });
 
-    const dueDateButton = buttonContainer.querySelector(".set-due-date");
-    if (dueDateButton) {
-        dueDateButton.addEventListener("click", () => {
-            dueDateInput.classList.toggle("hidden");
-            dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
-        });
-    }
+    return dueDateInput;
+}
 
-    // ✅ Toggle Completion on Click (excluding buttons)
+// ✅ 21. Task Interactions Setup
+function setupTaskInteractions(taskElements, taskContext) {
+    const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
+    const { settings } = taskContext;
+
+    // Setup task click interaction
+    setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+    
+    // Setup priority button state
+    setupPriorityButtonState(buttonContainer, taskContext.highPriority);
+    
+    // Setup hover interactions based on three dots setting
+    setupTaskHoverInteractions(taskItem, settings);
+    
+    // Setup focus interactions
+    setupTaskFocusInteractions(taskItem);
+    
+    // Setup due date button interaction
+    setupDueDateButtonInteraction(buttonContainer, dueDateInput);
+}
+
+// ✅ 22. Task Click Interaction Setup
+function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
     taskItem.addEventListener("click", (event) => {
         if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
+        
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event("change"));
         checkbox.setAttribute("aria-checked", checkbox.checked);
@@ -9220,59 +9418,28 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
         autoSave();
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
     });
+}
 
-    const taskContent = document.createElement("div");
-    taskContent.classList.add("task-content");
-    taskContent.appendChild(checkbox);
-    taskContent.appendChild(taskLabel);
-
-    taskItem.appendChild(buttonContainer);
-
-    // ✅ Ensure Priority Button Reflects Saved State
+// ✅ 23. Priority Button State Setup
+function setupPriorityButtonState(buttonContainer, highPriority) {
     const priorityButton = buttonContainer.querySelector(".priority-btn");
-    if (highPriority) {
+    if (highPriority && priorityButton) {
         priorityButton.classList.add("priority-active");
         priorityButton.setAttribute("aria-pressed", "true");
     }
-    
-    taskItem.appendChild(taskContent);
-    taskItem.appendChild(dueDateInput);
-    taskList.appendChild(taskItem);
-    
-    // ✅ Clear input
-    if (taskInput) taskInput.value = "";
+}
 
-    // ✅ Scroll to new task with proper reference
-    const taskListContainer = document.querySelector(".task-list-container");
-    if (taskListContainer && taskList) {
-        taskListContainer.scrollTo({
-            top: taskList.scrollHeight,
-            behavior: "smooth"
-        });
-    }
-
-    setTimeout(() => { 
-        if (completed) {
-            taskItem.classList.remove("overdue-task");
-        }
-    }, 300);
-
-    checkCompleteAllButton();
-    updateProgressBar();
-    updateStatsPanel();
-    if (shouldSave) autoSave();
-
-    if (!isLoading) setTimeout(() => { remindOverdueTasks(); }, 1000);
-
-    DragAndDrop(taskItem);
-    updateMoveArrowsVisibility();
-
+// ✅ 24. Task Hover Interactions Setup
+function setupTaskHoverInteractions(taskItem, settings) {
     const threeDotsEnabled = settings.showThreeDots || false;
     if (!threeDotsEnabled) {
         taskItem.addEventListener("mouseenter", showTaskOptions);
         taskItem.addEventListener("mouseleave", hideTaskOptions);
     }
+}
 
+// ✅ 25. Task Focus Interactions Setup
+function setupTaskFocusInteractions(taskItem) {
     safeAddEventListener(taskItem, "focus", () => {
         const options = taskItem.querySelector(".task-options");
         if (options) {
@@ -9283,8 +9450,86 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     });
     
     attachKeyboardTaskOptionToggle(taskItem);
+}
+
+// ✅ 26. Due Date Button Interaction Setup
+function setupDueDateButtonInteraction(buttonContainer, dueDateInput) {
+    const dueDateButton = buttonContainer.querySelector(".set-due-date");
+    if (dueDateButton) {
+        dueDateButton.addEventListener("click", () => {
+            dueDateInput.classList.toggle("hidden");
+            dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
+        });
+    }
+}
+
+// ✅ 27. Task Creation Finalization
+function finalizeTaskCreation(taskElements, taskContext, options) {
+    const { taskItem, taskList, taskInput } = taskElements;
+    const { completed } = taskContext;
+    const { shouldSave, isLoading } = options;
+
+    // Append to DOM
+    taskList.appendChild(taskItem);
     
-    console.log('✅ Task creation completed (Schema 2.5)');
+    // Clear input
+    if (taskInput) taskInput.value = "";
+
+    // Scroll to new task
+    scrollToNewTask(taskList);
+    
+    // Handle overdue styling
+    handleOverdueStyling(taskItem, completed);
+    
+    // Update UI components
+    updateUIAfterTaskCreation(shouldSave);
+    
+    // Setup final interactions
+    setupFinalTaskInteractions(taskItem, isLoading);
+}
+
+// ✅ 28. Scroll to New Task
+function scrollToNewTask(taskList) {
+    const taskListContainer = document.querySelector(".task-list-container");
+    if (taskListContainer && taskList) {
+        taskListContainer.scrollTo({
+            top: taskList.scrollHeight,
+            behavior: "smooth"
+        });
+    }
+}
+
+// ✅ 29. Handle Overdue Styling
+function handleOverdueStyling(taskItem, completed) {
+    setTimeout(() => { 
+        if (completed) {
+            taskItem.classList.remove("overdue-task");
+        }
+    }, 300);
+}
+
+// ✅ 30. Update UI After Task Creation
+function updateUIAfterTaskCreation(shouldSave) {
+    checkCompleteAllButton();
+    updateProgressBar();
+    updateStatsPanel();
+    if (shouldSave) autoSave();
+}
+
+// ✅ 31. Setup Final Task Interactions
+function setupFinalTaskInteractions(taskItem, isLoading) {
+    if (!isLoading) setTimeout(() => { remindOverdueTasks(); }, 1000);
+
+    DragAndDrop(taskItem);
+    updateMoveArrowsVisibility();
+}
+
+// ✅ 32. Schema 2.5 Save Helper
+function saveTaskToSchema25(activeCycle, currentCycle) {
+    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+    fullSchemaData.data.cycles[activeCycle] = currentCycle;
+    fullSchemaData.metadata.lastModified = Date.now();
+    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
 }
 
 // Ensure the real function is exposed via alias and flush queued calls
