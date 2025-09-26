@@ -212,6 +212,61 @@ EOF
 
 chmod +x "$BACKUP_FOLDER/restore.sh"
 
+# ---------- Validation ----------
+echo ""
+echo "🔍 Validating updated files..."
+VALIDATION_ERRORS=0
+
+# Validate HTML files have correct app version in meta tag
+if [ -f "miniCycle.html" ]; then
+    if ! grep -q "content=\"$NEW_VERSION\"" miniCycle.html; then
+        echo "⚠️  Warning: miniCycle.html may not have updated correctly (meta tag)"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+fi
+
+if [ -f "miniCycle-lite.html" ]; then
+    if ! grep -q "content=\"$NEW_VERSION\"" miniCycle-lite.html; then
+        echo "⚠️  Warning: miniCycle-lite.html may not have updated correctly (meta tag)"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+fi
+
+# Validate service worker has correct cache version
+if [ -f "service-worker.js" ]; then
+    if ! grep -q "CACHE_VERSION = '$SW_VERSION'" service-worker.js; then
+        echo "⚠️  Warning: service-worker.js may not have updated correctly (CACHE_VERSION)"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+    if ! grep -q "APP_VERSION = '$NEW_VERSION'" service-worker.js; then
+        echo "⚠️  Warning: service-worker.js may not have updated correctly (APP_VERSION)"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+fi
+
+# Validate manifest files have correct version
+if [ -f "manifest.json" ]; then
+    if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest.json; then
+        echo "⚠️  Warning: manifest.json may not have updated correctly"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+fi
+
+if [ -f "manifest-lite.json" ]; then
+    if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest-lite.json; then
+        echo "⚠️  Warning: manifest-lite.json may not have updated correctly"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+fi
+
+# Validation summary
+if [ $VALIDATION_ERRORS -eq 0 ]; then
+    echo "✅ All files validated successfully!"
+else
+    echo "⚠️  Found $VALIDATION_ERRORS potential issues - check files manually"
+    echo "💡 If needed, restore with: cd $BACKUP_FOLDER && ./restore.sh"
+fi
+
 # ---------- Final Status ----------
 echo ""
 echo "🎉 Update completed successfully!"
