@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+
+  <title>Task Cycle</title>
+  <link rel="icon" type="image/png" href="assets/images/logo/Capture_logo_larger.png" />
+  <link rel="stylesheet" href="styles/styles.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <!-- STARTUP PAGE -->
+  <section id="startup-page">
+    <h1>Welcome to Task Cycle</h1>
+    <button id="new-cycle-button">Create New Task Cycle</button>
+    <button id="load-cycle-button">Load Saved Task Cycle</button>
+    <button id="open-app-button">Open</button>
+  </section>
+
+
+  <!-- MAIN APP SECTION -->
+  <section id="app" class="hidden-app">
+
+
+
+    <!-- BACKGROUND ELEMENTS -->
+    <aside class="background-elements">
+    <div class="triangle"></div>
+      <div class="lines"></div>
+      <div class="small-circle"></div>
+      <div class="rectangle"></div>
+      <!-- <div class="dotted-lines"></div>-->
+    </aside>
+
+    <div id="undoButton" class="hidden">
+      <span class="undo-icon">&#x21A9;</span>
+      <span class="undo-text">Undo</span>
+  </div>
+  
+  
+    <!-- MAIN MENU BUTTON -->
+    <button id="main-menu-button">☰</button>
+
+    <!-- MAIN MENU PANEL -->
+    <nav id="menu-panel" class="hidden">
+      <h3>Menu</h3>
+      <ul>
+       <li><button id="new-cycle">New</button></li>
+        <li><button id="load-cycle">Open</button></li>
+        <li><button id="save-cycle">Save</button></li>
+        <li><button id="save-as-cycle">Save As</button></li>
+        <li><button id="clear-tasks">Clear All</button></li>
+        <li><button id="reset-cycle">Reset and Delete All Content</button></li>
+        <li><button id="open-settings">Settings</button></li>
+        <li><button id="exit-to-home-page">Exit to Home Page</button></li>
+      </ul>
+    </nav>
+
+    <!-- SETTINGS MENU -->
+    <section id="settings-menu" class="hidden">
+      <h3>Settings</h3>
+      <ul>
+        <li>
+          <div id="pro-toggle-container">
+            <label class="switch">
+              <input type="checkbox" id="pro-version-toggle" />
+              <span class="slider round"></span>
+            </label>
+            <span id="pro-version-label">Switch to Pro</span>
+          </div>
+        </li>
+        <li>
+          <button id="close-settings">Close Settings</button>
+        </li>
+      </ul>
+    </section>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="main-center-container">
+      <!-- HEADER -->
+      <header class="header-container">
+        <div class="title-section">
+          <a href="#home" class="logo">
+            <img src="assets/images/logo/taskcycle_logo2.png" alt="Task Cycle Logo" />
+          </a>
+          <div id="app_name">
+            <img src="assets/images/logo/App_Name.png" alt="App Name" />
+          </div>
+        </div>
+      </header>
+
+
+
+      <div id="reset-modal" class="hidden">
+        <div class="modal-content">
+          <p>Are you sure you want to delete all data? This action cannot be undone.</p>
+          <button id="confirm-reset">Yes, Delete</button>
+          <button id="cancel-reset">Cancel</button>
+        </div>
+      </div>
+      
+
+
+
+      <!-- CENTER CONTAINER -->
+      <main class="center-container">
+        <!-- TASK CHECKLIST, PROGRESS & COMPLETE MESSAGE -->
+        <section id="checkbox-list-container">
+          <div id="checkbox-list"></div>
+          <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+          </div>
+          <div id="complete-message">CYCLE COMPLETE</div>
+                 <!-- TASK BUTTONS -->
+        <section id="button-container">
+            <input type="text" id="new-checkbox-label" placeholder="Enter name for task." />
+            <button id="add-button"><img src="assets/images/buttons/add-button.png"></button>
+          </section>
+        </section>
+
+        <!-- TOOLTIP ELEMENTS -->
+        <div id="add-button-tooltip" class="tooltip-text">Create New Task</div>
+        <div id="notes-button-tooltip" class="tooltip-text">
+          Notes Panel <br />
+          Add or Create Notes
+        </div>
+        <div id="chart-button-tooltip" class="tooltip-text">
+          Stats Panel <br />
+          Open Stats and View Insights
+        </div>
+        <div id="main-menu-button-tooltip" class="tooltip-text">Open Menu</div>
+        <div id="complete-button-tooltip" class="tooltip-text">
+          Complete Cycle <br />
+          Complete All Available Tasks
+        </div>
+        <div id="stop-watch-toggle-button-tooltip" class="tooltip-text">Display Stopwatch</div>
+        <div id="stop-watch-toggle-2-button-tooltip" class="tooltip-text">Close Stopwatch</div>
+        <div id="task-tooltip" class="tooltip-text"></div>
+        <div id="error-message" class="tooltip-text">No tasks selected for completion</div>
+
+ 
+
+        <!-- BOTTOM CONTAINER (STOP WATCH FOOTER) -->
+        <section id="bottom-container">
+            <button id="complete-button">COMPLETE</button>
+
+    
+            <div id="stop-watch-timer-toggle-container">
+
+
+
+
+          <!-- Timer Display Container -->
+          <div id="timer-container" class="hidden-flex">
+            <div id="timer-row" class="timer-row">
+              <button id="timer-toggle-2-button">
+                <img src="assets/images/buttons/hourglass-icon.png" alt="Timer Close Icon">
+              </button>
+              <div id="timer-display">0:05:00 </div>
+              <button id="set-timer-button" class="set-timer-short-button">Set</button>
+              <button id="set-timer-full-button" class="set-timer-full-button">Set Timer</button>
+            </div>
+            <div id="timer-buttons" class="timer-buttons">
+              <button id="timer-start-button">Start</button>
+              <button id="timer-pause-button">Pause</button>
+              <button id="timer-reset-button">Reset</button>
+              <button id="timer-close-button">Close</button>
+            </div>
+
+                    <!-- Set Timer Screen -->
+            <div id="set-timer-screen" class="set-timer-screen">
+
+              <div id="timer-settings-row" class="timer-settings-row">
+              <div id="timer-hour-setting" class="timer-hour-setting">
+              <input type="number" id="hours-input" min="0" placeholder="HRS"  min="0" max="24" >
+                </div>
+
+                <div id="timer-minutes-setting" class="timer-minutes-setting">
+              <input type="number" id="minutes-input" min="0" placeholder="MIN"  min="0" max="1440">
+             
+              </div>
+
+              <div id="timer-seconds-setting" class="timer-seconds-setting">
+              <input type="number" id="seconds-input" min="0" placeholder="SEC"  min="0" max="86400">
+
+              </div>
+              </div>
+              
+              <div id="timer-settings-buttons-row" class="timer-settings-buttons-row">
+              <button id="save-timer-button" class="save-timer-button">Save Timer Settings</button>
+              <button id="cancel-timer-button">Cancel</button>
+              </div>
+
+            </div>
+          </div>
+
+
+
+              <!-- Stop Watch Display Container -->
+              <div id="stop-watch-container" class="hidden-flex">
+                <div id="stop-watch-row"> 
+                   <button id="stop-watch-toggle-2-button">
+                        <img src="assets/images/buttons/stopwatch-icon.png" alt="Stopwatch Icon">
+                    </button>
+                    <div id="stop-watch">
+                0:00:00</div>
+                </div>
+                <div id="stop-watch-buttons" class="stop-watch-buttons">
+                  <button id="start-button">Start</button>
+                  <button id="stop-button">Stop</button>
+                  <button id="reset-stop-watch-button">Reset</button>
+                  <button id="close-stop-watch-button" class="close-button">Close</button>
+                </div>
+              </div>
+
+
+                <!-- Stop Watch and Timer Toggle Buttons Container -->
+              <div id="stop-watch-timer-buttons-row-container">
+                <button id="timer-toggle-button" class="timer-toggle-button">
+                  <img src="assets/images/buttons/hourglass-icon.png" alt="Timer Icon">
+                </button>
+          
+              <button id="stop-watch-toggle-button" class="stop-watch-toggle-button">
+                <img src="assets/images/buttons/stopwatch-icon.png" alt="Stopwatch Icon">
+            </button>
+            </div>
+
+
+            </div>
+            <!-- Counter Container -->
+          <div id="counter-container" class="hidden">
+            <div id="counter">0</div>
+            <button id="reset-button">Reset</button>
+          </div>
+
+          <footer id="footer-container">
+            <p id="copyright">
+              Version 1.0<br />
+              © 2025 Sparkin Creations
+            </p>
+          </footer>
+              <!-- NOTES & STATS BUTTONS -->
+    <button id="notes-button">📝</button>
+    <button id="chart-button">📈</button>
+        </section>
+
+
+
+        
+      </main>
+    </div>
+
+<!-- Modal for Task Selection -->
+<div id="taskSelectionModal" class="hidden">
+  <div class="modal-content">
+      <h3>Select a Task to Add a Subtask</h3>
+      <ul id="taskList"></ul>
+      <button id="closeTaskModal">Close</button>
+  </div>
+</div>
+
+
+
+    <!-- CONTEXT MENU FOR TASKS -->
+    <aside id="contextMenu" class="context-sensitive-menu">
+      <div id="renameOption">Rename</div>
+      <div id="deleteOption">Delete</div>
+    </aside>
+
+    <!-- HORIZONTAL MENU -->
+    <aside id="horizontalMenu" style="display: none;" class="context-sensitive-menu">
+      <button id="menuDetails">Details</button>
+      <button id="menuRename">Rename</button>
+      <button id="menuDelete">Delete</button>
+      <button id="menuRearrange" style="display: none;">Rearrange</button>
+      <button id="menuMark">Set Priority</button>
+      <button id="menuSubtasks">Subtasks</button>
+      <div id="priorityMenu" class="hidden">
+        <button id="markHigh">Mark as High Priority</button>
+        <button id="markLow">Mark as Low Priority</button>
+      </div>
+    </aside>
+
+    <!-- DETAILS MODAL -->
+    <section id="detailsModalBackdrop" class="hidden">
+      <div id="detailsModal">
+        <textarea
+          id="detailsTextarea"
+          disabled
+          placeholder="Press Edit to Enter Task Details Here"
+        ></textarea>
+        <button id="editDetailsButton">Edit</button>
+      </div>
+    </section>
+
+
+
+    <!-- NOTES PANEL -->
+    <aside id="notes-panel" class="hidden">
+      <div id="notes-list"></div>
+      <textarea id="new-note-textarea" placeholder="Add a new note..."></textarea>
+      <button id="add-note">Add Note</button>
+      <button id="close-notes">Close</button>
+    </aside>
+
+  <!-- ENTRY MODAL -->
+  <section id="entry-modal" class="hidden">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <button class="prev">&#10094;</button>
+      <div class="entry-text"></div>
+      <button class="next">&#10095;</button>
+    </div>
+  </section>
+
+    <!-- STATS/TIMELINE WINDOW -->
+    <section id="stats-window" class="hidden">
+      <button id="view-timeline-button">View Timeline</button>
+      <button id="close-timeline-button">Close Timeline</button>
+      <div id="timeline">
+        <div id="timeline-content">
+          <!-- Timeline content goes here -->
+        </div>
+        <button id="clear-timeline-button" class="hidden">Clear All Entries</button>
+      </div>
+
+      <div id="tasks-overview">
+        <div id="stats-content-tasks"></div>
+        <div id="chart-area-pie">
+          <div id="pie-chart-container">
+            <canvas id="stats-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div id="subtasks-overview">
+        <div id="stats-content-subtasks" class="hidden"></div>
+        <div id="chart-area-bar">
+          <div id="bar-chart-container">
+            <canvas id="bar-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="completion-percentage"
+        style="text-align: center; font-size: 18px; margin-top: 10px;"
+      ></div>
+      <div id="stats-content-taskcycles"></div>
+      <button id="close-stats">Close</button>
+    </section>
+  </section>
+
+  <!-- MAIN JAVASCRIPT FILE -->
+  <script src="scripts/main.js"></script>
+</body>
+</html>
