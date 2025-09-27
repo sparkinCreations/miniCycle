@@ -1,6 +1,6 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 var APP_VERSION = '1.256';
-var CACHE_VERSION = 'v65';
+var CACHE_VERSION = 'v66';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -129,6 +129,12 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET') return;
 
   var url = new URL(request.url);
+  
+  // ✅ FIXED: Skip unsupported schemes (browser extensions, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return; // Let the browser handle extension requests, data URLs, etc.
+  }
+
   var accept = (request.headers && request.headers.get('accept')) || '';
   var isNavigate = request.mode === 'navigate' ||
                    (request.destination === '' && accept.indexOf('text/html') !== -1);
@@ -139,8 +145,13 @@ self.addEventListener('fetch', function (event) {
       fetch(request)
         .then(function (fresh) {
           return caches.open(DYNAMIC_CACHE).then(function (cache) {
-            cache.put(request, fresh.clone());
-            return fresh;
+            // ✅ ADDED: Safe cache.put for navigation requests
+            return cache.put(request, fresh.clone()).then(function() {
+              return fresh;
+            }).catch(function(cacheError) {
+              console.warn('⚠️ Navigation cache put failed for:', request.url, cacheError);
+              return fresh; // Return response even if caching fails
+            });
           });
         })
         .catch(function () {
@@ -198,9 +209,14 @@ self.addEventListener('fetch', function (event) {
       return fetch(request).then(function (res) {
         if (res && res.status === 200 && res.type === 'basic') {
           return caches.open(DYNAMIC_CACHE).then(function (cache) {
-            cache.put(request, res.clone());
-            console.log('📦 Cached new asset:', request.url);
-            return res;
+            // ✅ ADDED: Safe cache.put with error handling
+            return cache.put(request, res.clone()).then(function() {
+              console.log('📦 Cached new asset:', request.url);
+              return res;
+            }).catch(function(cacheError) {
+              console.warn('⚠️ Cache put failed for:', request.url, cacheError);
+              return res; // Return response even if caching fails
+            });
           });
         }
         return res;
