@@ -132,6 +132,8 @@ fi
 if update_file "miniCycle-scripts.js" "main scripts"; then
     "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" miniCycle-scripts.js
     "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" miniCycle-scripts.js
+    # Update hardcoded version references in module initializations
+    "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" miniCycle-scripts.js
     echo "✅ Updated miniCycle-scripts.js"
 fi
 
@@ -157,6 +159,23 @@ fi
 if update_file "utilities/notifications.js" "notifications module"; then
     "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/notifications.js
     echo "✅ Updated utilities/notifications.js"
+fi
+
+if update_file "utilities/statsPanel.js" "stats panel module"; then
+    "${SED_INPLACE[@]}" "s/@version [0-9.]\\+/@version $NEW_VERSION/g" utilities/statsPanel.js
+    "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/statsPanel.js
+    echo "✅ Updated utilities/statsPanel.js"
+fi
+
+if update_file "utilities/cycleLoader.js" "cycle loader module"; then
+    "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/cycleLoader.js
+    "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" utilities/cycleLoader.js
+    echo "✅ Updated utilities/cycleLoader.js"
+fi
+
+if update_file "utilities/consoleCapture.js" "console capture module"; then
+    "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/consoleCapture.js
+    echo "✅ Updated utilities/consoleCapture.js"
 fi
 
 # ---------- HTML: Product Landing Page ----------
