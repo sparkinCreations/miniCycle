@@ -445,6 +445,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     dragEndCleanup();
     updateMoveArrowsVisibility();
     initializeThemesPanel();
+    setupThemesPanel();
 
 
     // ✅ Defer anything that needs cycles/data until an active cycle exists
@@ -11793,6 +11794,7 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
     console.log('🌙 Quick dark toggle (Schema 2.5 only)...');
     
     const schemaData = loadMiniCycleData();
+      console.log('📊 schemaData:', schemaData); // ADD THIS
     if (!schemaData) {
         console.warn('⚠️ Schema 2.5 data not available for dark toggle - using fallback');
         // Still update the UI but skip the data persistence
@@ -11805,6 +11807,8 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
         quickToggle.textContent = isDark ? "☀️" : "🌙";
         return;
     }
+
+    
 
     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
     fullSchemaData.settings.darkMode = isDark;
@@ -11830,9 +11834,10 @@ document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
 });
 
 // ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
-// setupThemesPanel(); // Moved to initialization sequence
+
 
 updateCycleModeDescription();
+ // Moved to initialization sequence
  setTimeout(updateCycleModeDescription, 10000);
 
 
