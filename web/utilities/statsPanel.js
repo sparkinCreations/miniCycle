@@ -218,10 +218,11 @@ export class StatsPanelManager {
             this.elements.themeUnlockStatus.addEventListener("click", () => this.handleThemeToggleClick());
         }
 
-        // Quick dark toggle
+        /* Quick dark toggle
         if (this.elements.quickDarkToggle) {
             this.elements.quickDarkToggle.addEventListener("click", () => this.handleQuickDarkToggle());
         }
+            */
 
         // Theme panel buttons
         if (this.elements.openThemesPanel) {
@@ -817,7 +818,7 @@ export class StatsPanelManager {
 
     /**
      * Handle quick dark mode toggle
-     */
+     *
     handleQuickDarkToggle() {
         const isDark = document.body.classList.toggle("dark-mode");
         
@@ -850,7 +851,7 @@ export class StatsPanelManager {
         
         console.log('✅ Quick dark toggle completed');
     }
-
+*/
 
 
     /**

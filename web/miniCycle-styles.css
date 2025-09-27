@@ -1284,7 +1284,121 @@ body.theme-golden-glow .mode-selector:hover {
   --button-hover: rgba(0, 0, 0, 0.5);
 }
 */
+/* 🌙 Dark Mode: Mobile Mode Selector */
+@media (max-width: 768px) {
+    /*body.dark-mode .mobile-mode-selector-wrapper {
+        background: linear-gradient(135deg, #2a2a2a, #1e1e1e);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }*/
 
+    body.dark-mode .mobile-mode-selector-wrapper .mode-selector {
+        background: rgba(60, 60, 60, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #f0f0f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .mobile-mode-selector-wrapper .mode-selector:hover {
+        background: rgba(80, 80, 80, 0.9);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    body.dark-mode .mobile-mode-selector-wrapper .mode-selector:focus {
+        background: rgba(90, 90, 90, 0.95);
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .mobile-mode-selector-wrapper .mode-selector option {
+        background: rgba(40, 40, 40, 0.95);
+        color: #f0f0f0;
+    }
+
+    body.dark-mode .mobile-mode-selector-wrapper .mode-selector option:hover {
+        background: rgba(60, 60, 60, 1);
+    }
+
+    body.dark-mode .mobile-mode-selector-wrapper .mode-selector option:checked {
+        background: rgba(100, 100, 255, 0.8);
+        color: white;
+    }
+}
+
+/* 🌊 Dark Ocean Theme: Mobile Mode Selector */
+@media (max-width: 768px) {
+    body.theme-dark-ocean .mobile-mode-selector-wrapper {
+        background: linear-gradient(135deg, #1a3a4f, #0c1724);
+        border-bottom: 1px solid rgba(78, 205, 196, 0.2);
+    }
+
+    body.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector {
+        background: rgba(26, 58, 79, 0.8);
+        border: 1px solid rgba(78, 205, 196, 0.3);
+        color: #e0f7fa;
+    }
+
+    body.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector:hover {
+        background: rgba(32, 70, 95, 0.9);
+        border-color: rgba(78, 205, 196, 0.5);
+    }
+}
+
+/* 🌟 Golden Glow Theme: Mobile Mode Selector */
+@media (max-width: 768px) {
+    body.theme-golden-glow .mobile-mode-selector-wrapper {
+        background: linear-gradient(135deg, #fff9e0, #ffeaa7);
+        border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    body.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector {
+        background: rgba(255, 248, 220, 0.8);
+        border: 1px solid rgba(255, 215, 0, 0.4);
+        color: #4a3d00;
+    }
+
+    body.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector:hover {
+        background: rgba(255, 240, 180, 0.9);
+        border-color: rgba(255, 215, 0, 0.6);
+    }
+}
+
+/* 🌟+🌙 Golden Glow Dark Mode: Mobile Mode Selector */
+@media (max-width: 768px) {
+    body.dark-mode.theme-golden-glow .mobile-mode-selector-wrapper {
+        background: linear-gradient(135deg, #3b3200, #4a3d00);
+        border-bottom: 1px solid rgba(255, 229, 60, 0.2);
+    }
+
+    body.dark-mode.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector {
+        background: rgba(75, 61, 0, 0.8);
+        border: 1px solid rgba(255, 229, 60, 0.3);
+        color: #ffeaa7;
+    }
+
+    body.dark-mode.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector:hover {
+        background: rgba(94, 72, 0, 0.9);
+        border-color: rgba(255, 229, 60, 0.5);
+    }
+}
+
+/* 🌊+🌙 Dark Ocean Dark Mode: Mobile Mode Selector */
+@media (max-width: 768px) {
+    body.dark-mode.theme-dark-ocean .mobile-mode-selector-wrapper {
+        background: linear-gradient(135deg, #0c1724, #102030);
+        border-bottom: 1px solid rgba(78, 205, 196, 0.2);
+    }
+
+    body.dark-mode.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector {
+        background: rgba(16, 32, 48, 0.8);
+        border: 1px solid rgba(78, 205, 196, 0.3);
+        color: #b2f0ff;
+    }
+
+    body.dark-mode.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector:hover {
+        background: rgba(27, 47, 64, 0.9);
+        border-color: rgba(78, 205, 196, 0.5);
+    }
+}
 
 .menu-container {
     font-size: 14px;
@@ -4280,8 +4394,8 @@ body.dark-mode {
 /* 🔔 Global Notification System */
 #notification-container {
     position: fixed;
-    top: 15px;
-    right: 15px;
+    top: 30px;
+    right: 30px;
     width: 280px;
     display: flex;
     flex-direction: column;
@@ -6653,7 +6767,7 @@ body.dark-mode.theme-golden-glow {
 }
 
 .open-themes-panel {
-    display: block !important; /* Start hidden – shown via JS if unlocked */
+    display: none; /* Start hidden – shown via JS if unlocked */
 }
 
 .open-themes-panel:hover {

@@ -425,25 +425,71 @@ export class MiniCycleNotifications {
   /**
    * 🎯 Restore notification position from Schema 2.5
    */
-  restoreNotificationPosition(notificationContainer) {
+restoreNotificationPosition(notificationContainer) {
     try {
-      const schemaData = window.loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for notification position');
-        return;
-      }
+        const schemaData = window.loadMiniCycleData();
+        if (!schemaData) {
+            console.error('❌ Schema 2.5 data required for notification position');
+            this.setDefaultPosition(notificationContainer);
+            return;
+        }
 
-      const savedPosition = schemaData.settings.notificationPosition;
-      if (savedPosition?.x && savedPosition?.y) {
-        notificationContainer.style.top = `${savedPosition.y}px`;
-        notificationContainer.style.left = `${savedPosition.x}px`;
-        notificationContainer.style.right = "auto";
-      }
+        const savedPosition = schemaData.settings.notificationPosition;
+        if (savedPosition?.x && savedPosition?.y) {
+            notificationContainer.style.top = `${savedPosition.y}px`;
+            notificationContainer.style.left = `${savedPosition.x}px`;
+            notificationContainer.style.right = "auto";
+        } else {
+            // No saved position - set a smart default
+            this.setDefaultPosition(notificationContainer);
+        }
     } catch (posError) {
-      console.warn("⚠️ Failed to apply saved notification position.", posError);
+        console.warn("⚠️ Failed to apply saved notification position.", posError);
+        this.setDefaultPosition(notificationContainer);
     }
-  }
+}
 
+
+/**
+ * 📍 Set smart default notification position
+ */
+setDefaultPosition(notificationContainer) {
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Smart positioning based on screen size
+    let defaultX, defaultY;
+    
+    if (viewportWidth <= 768) {
+        // Mobile: Center horizontally, avoid top menu area
+        defaultX = Math.max(20, (viewportWidth - 320) / 2); // Assume 320px notification width
+        defaultY = 15; // Below menu area
+    } else {
+        // Desktop: Right side, avoid menu button (typically top-left)
+        defaultX = viewportWidth - 350; // 350px from right edge
+        defaultY = 15; // Below potential menu area
+    }
+    
+    // Apply the position
+    notificationContainer.style.top = `${defaultY}px`;
+    notificationContainer.style.left = `${defaultX}px`;
+    notificationContainer.style.right = "auto";
+    
+    // Save this default position to Schema 2.5 so it persists
+    try {
+        const schemaData = window.loadMiniCycleData();
+        if (schemaData) {
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            fullSchemaData.settings.notificationPosition = { x: defaultX, y: defaultY };
+            fullSchemaData.settings.notificationPositionModified = false; // Mark as default
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        }
+    } catch (error) {
+        console.warn("⚠️ Failed to save default notification position:", error);
+    }
+}
   /**
    * ⏰ Setup auto-remove with hover pause functionality
    */

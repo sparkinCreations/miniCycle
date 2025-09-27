@@ -445,6 +445,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     dragEndCleanup();
     updateMoveArrowsVisibility();
     initializeThemesPanel();
+    setupThemesPanel();
 
 
     // ✅ Defer anything that needs cycles/data until an active cycle exists
@@ -1500,6 +1501,7 @@ function createInitialSchema25Data() {
 
 
 
+// Update your existing setupDarkModeToggle function to include quick toggle
 function setupDarkModeToggle(toggleId, allToggleIds = []) {
     const thisToggle = document.getElementById(toggleId);
     if (!thisToggle) return;
@@ -1525,6 +1527,12 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
         updateThemeColor();
     }
 
+    // ✅ Handle quick toggle button initial state
+    const quickToggle = document.getElementById("quick-dark-toggle");
+    if (quickToggle) {
+        quickToggle.textContent = isDark ? "☀️" : "🌙";
+    }
+
     // Event handler
     thisToggle.addEventListener("change", (e) => {
         const enabled = e.target.checked;
@@ -1548,6 +1556,11 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
             }
         });
 
+        // ✅ Update quick toggle icon
+        if (quickToggle) {
+            quickToggle.textContent = enabled ? "☀️" : "🌙";
+        }
+
         // ✅ Update theme color after dark mode change
         if (typeof updateThemeColor === 'function') {
             updateThemeColor();
@@ -1556,6 +1569,28 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
     
     console.log('✅ Dark mode toggle setup completed');
 }
+
+// ✅ ADD THIS FUNCTION:
+function setupQuickDarkToggle() {
+    const quickToggle = document.getElementById("quick-dark-toggle");
+    if (!quickToggle) return;
+    
+    console.log('🌙 Setting up quick dark toggle...');
+    
+    quickToggle.addEventListener("click", () => {
+        // Find the primary dark mode toggle and simulate its change
+        const primaryToggle = document.getElementById("darkModeToggle");
+        if (primaryToggle) {
+            primaryToggle.checked = !primaryToggle.checked;
+            primaryToggle.dispatchEvent(new Event("change"));
+        } else {
+            console.warn('⚠️ Primary dark mode toggle not found');
+        }
+    });
+    
+    console.log('✅ Quick dark toggle setup completed');
+}
+
 
 
 // ✅ Dynamic Theme Color System with Gradient-Matching Solid Colors
@@ -11781,61 +11816,20 @@ function setupThemesPanelWithData(schemaData) {
   
     // ✅ Setup dark mode toggle inside themes modal
     setupDarkModeToggle("darkModeToggleThemes", ["darkModeToggle", "darkModeToggleThemes"]);
+    // Add quick toggle setup
+setupQuickDarkToggle();
     
     console.log('✅ Themes panel setup completed (Schema 2.5)');
 }
 
-// ✅ Quick dark toggle functionality
-document.getElementById("quick-dark-toggle")?.addEventListener("click", () => {
-    const isDark = document.body.classList.toggle("dark-mode");
-    
-    // ✅ Schema 2.5 only
-    console.log('🌙 Quick dark toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.warn('⚠️ Schema 2.5 data not available for dark toggle - using fallback');
-        // Still update the UI but skip the data persistence
-        const settingsToggle = document.getElementById("darkModeToggle");
-        const themeToggle = document.getElementById("darkModeToggleThemes");
-        if (settingsToggle) settingsToggle.checked = isDark;
-        if (themeToggle) themeToggle.checked = isDark;
 
-        const quickToggle = document.getElementById("quick-dark-toggle");
-        quickToggle.textContent = isDark ? "☀️" : "🌙";
-        return;
-    }
-
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.settings.darkMode = isDark;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-    // ✅ ADD THIS LINE
-    if (typeof updateThemeColor === 'function') {
-        updateThemeColor();
-    }
-
-    // Sync toggle states in settings panel
-    const settingsToggle = document.getElementById("darkModeToggle");
-    const themeToggle = document.getElementById("darkModeToggleThemes");
-    if (settingsToggle) settingsToggle.checked = isDark;
-    if (themeToggle) themeToggle.checked = isDark;
-
-    // Update icon
-    const quickToggle = document.getElementById("quick-dark-toggle");
-    quickToggle.textContent = isDark ? "☀️" : "🌙";
-    
-    console.log('✅ Quick dark toggle completed (Schema 2.5)');
-});
 
 // ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
-// setupThemesPanel(); // Moved to initialization sequence
+
 
 updateCycleModeDescription();
+ // Moved to initialization sequence
  setTimeout(updateCycleModeDescription, 10000);
-
-
 
 
 
