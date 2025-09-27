@@ -6653,7 +6653,7 @@ body.dark-mode.theme-golden-glow {
 }
 
 .open-themes-panel {
-    display: none; /* Start hidden – shown via JS if unlocked */
+    display: block !important; /* Start hidden – shown via JS if unlocked */
 }
 
 .open-themes-panel:hover {

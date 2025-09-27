@@ -163,6 +163,7 @@ function updateCycleUIState(currentCycle, settings) {
  */
 function applyThemeSettings(settings) {
   document.body.classList.toggle('dark-mode', !!settings.darkMode);
+  console.log('applyThemes applied!!!');
 
   const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
   allThemes.forEach(t => document.body.classList.remove(t));
@@ -173,6 +174,10 @@ function applyThemeSettings(settings) {
 
   Deps.updateThemeColor?.();
 }
+
+
+
+
 
 /**
  * Reminders
