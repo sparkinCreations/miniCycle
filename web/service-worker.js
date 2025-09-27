@@ -1,6 +1,6 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-var APP_VERSION = '1.256';
-var CACHE_VERSION = 'v66';
+var APP_VERSION = '1.297';
+var CACHE_VERSION = 'v69';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 

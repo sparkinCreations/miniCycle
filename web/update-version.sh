@@ -189,8 +189,8 @@ fi
 if update_file "service-worker.js" "service worker"; then
     # CACHE_VERSION (cache-busting)
     "${SED_INPLACE[@]}" "s/CACHE_VERSION = 'v[0-9]*'/CACHE_VERSION = '$SW_VERSION'/g" service-worker.js
-    # NEW: APP_VERSION (display/logging/version checks)
-    "${SED_INPLACE[@]}" "s/APP_VERSION\s*=\s*'[^']*'/APP_VERSION = '$NEW_VERSION'/g" service-worker.js
+    # FIXED: APP_VERSION pattern (was too strict with whitespace)
+    "${SED_INPLACE[@]}" "s/APP_VERSION = '[0-9.]*'/APP_VERSION = '$NEW_VERSION'/g" service-worker.js
     echo "✅ Updated service-worker.js"
 fi
 
@@ -245,8 +245,9 @@ if [ -f "miniCycle.html" ]; then
 fi
 
 if [ -f "miniCycle-lite.html" ]; then
-    if ! grep -q "content=\"$NEW_VERSION\"" miniCycle-lite.html; then
-        echo "⚠️  Warning: miniCycle-lite.html may not have updated correctly (meta tag)"
+    # FIXED: Lite version doesn't have app-version meta tag, check for version params instead
+    if ! grep -q "?v=$NEW_VERSION" miniCycle-lite.html; then
+        echo "⚠️  Warning: miniCycle-lite.html may not have updated correctly (version params)"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
 fi
