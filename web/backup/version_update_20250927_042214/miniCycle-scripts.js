@@ -12,7 +12,7 @@
  * I've included detailed comments throughout to clarify each section and its role.
  * If you have questions or suggestions, feel free to reach out!
  *
- * You can visit my website at https://sparkincreative.com
+ * You can visit my website at https://sparkincreations.com
  *
  * or the official miniCycle product page at https://minicycleapp.com
  */
@@ -23,7 +23,9 @@
 
 
 
-// Create a global state object to avoid module scoping issues
+// 🌍 Global State: Because sometimes you need variables that survive the apocalypse of module imports
+// This houses all the app's critical state that needs to be accessible everywhere.
+// Think of it as the app's memory bank, storing everything from drag states to undo history.
 window.AppState = {
   draggedTask: null,
   logoTimeoutId: null,
@@ -52,7 +54,7 @@ window.AppState = {
   advancedVisible: false
 };
 
-// For backward compatibility, also create the variables
+// For backward compatibility
 let draggedTask = null;
 let logoTimeoutId = null;
 let touchStartTime = 0;
@@ -83,7 +85,13 @@ let advancedVisible = false;
 let isDraggingNotification = false;
 
 
-// 🚦 Minimal lifecycle: signal when an active cycle exists, and run dependents after.
+/**  🚦 App Initialization Lifecycle Manager
+// This system ensures that data-dependent initializers only run after an active cycle is ready.
+// It prevents race conditions between data loading and feature initialization by providing:
+// - onReady(fn): Queue functions to run when data is available
+// - isReady(): Check if initialization is complete  
+// - signalReady(activeCycle): Mark data as ready and trigger queued functions
+**/
 const AppInit = (() => {
   let resolveReady;
   const ready = new Promise(r => (resolveReady = r));
@@ -102,16 +110,6 @@ const AppInit = (() => {
 })();
 window.AppInit = AppInit;
 
-// ✅ Temporary placeholder functions for stats panel (will be replaced when module loads)
-window.updateStatsPanel = function() {
-    console.log('📊 updateStatsPanel called before StatsPanelManager is ready - queuing for later');
-};
-window.showStatsPanel = function() {
-    console.log('📊 showStatsPanel called before StatsPanelManager is ready');
-};
-window.showTaskView = function() {
-    console.log('📊 showTaskView called before StatsPanelManager is ready');
-};
 
 
 
@@ -119,37 +117,62 @@ window.showTaskView = function() {
 
 
 
-// Main initialization function
+//Main application initialization sequence
 
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
 
+// ======================================================================
+// 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
+// ======================================================================
+// This is the entry point that orchestrates the entire miniCycle app startup.
+// Execution flow:
+// 1. Load and initialize all utility modules (notifications, device detection, etc.)
+// 2. Set up DOM element references and UI components
+// 3. Configure theme and dark mode settings
+// 4. Load cycle data and handle data migration if needed
+// 5. Initialize features that depend on active cycle data
+// 6. Complete setup and mark the app as ready
+// ======================================================================
+
+
+
+
+
+
+
+
     /******
+     * UTILITY MODULE IMPORTS & INITIALIZATION
      * 
-     * Import utility modules
-    */
+     * This section dynamically imports and initializes all core utility modules
+     * that power miniCycle's functionality. Each module is loaded asynchronously
+     * to optimize startup performance while maintaining proper dependency order:
+     * 
+     * 1. Global utilities (foundational helper functions)
+     * 2. Console capture system (debugging & diagnostics)
+     * 3. Notification system (user feedback & alerts)
+     * 4. Device detection (touch/mouse, mobile/desktop optimization)
+     * 5. Stats panel manager (analytics & progress tracking)
+     * 
+     * All modules are made globally accessible for cross-component communication.
+     ******/
 
 
 
-    // Import global utilities first (foundational functions)
     await import('./utilities/globalUtils.js');
     console.log('🛠️ Global utilities loaded');
 
-    // Import console capture module
     const { default: consoleCapture } = await import('./utilities/consoleCapture.js');
-    
     window.consoleCapture = consoleCapture;
 
-    // Import and initialize notification system
     const { MiniCycleNotifications } = await import('./utilities/notifications.js');
     const notifications = new MiniCycleNotifications();
     
-    // Make notifications globally accessible
     window.notifications = notifications;
     window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     
-    // Import and initialize device detection
     console.log('📱 Initializing device detection module...');
     const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
     
@@ -159,20 +182,15 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         currentVersion: '1.280'
     });
     
-    // Make globally accessible
     window.deviceDetectionManager = deviceDetectionManager;
-
-       // Around line 100 where you initialize StatsPanelManager, update it:
     
-    // Import and initialize stats panel manager
     console.log('📊 Initializing stats panel module...');
     const { StatsPanelManager } = await import('./utilities/statsPanel.js');
     
-    // ✅ Don't wait arbitrarily - wait for data to be ready
     const statsPanelManager = new StatsPanelManager({
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
         loadMiniCycleData: () => {
-            // ✅ More defensive data loading
+            // Defensive data loading with error handling
             try {
                 const result = window.loadMiniCycleData ? window.loadMiniCycleData() : null;
                 if (!result) {
@@ -187,12 +205,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false
     });
     
-    // Make globally accessible - replace placeholder functions
+    // Expose stats panel functions globally
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
     window.updateStatsPanel = () => {
-        // ✅ Only call if data is available
         const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
         if (dataAvailable) {
             return statsPanelManager.updateStatsPanel();
@@ -201,12 +218,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         }
     };
     console.log('📊 StatsPanelManager global functions updated');
-    // ✅ isOverlayActive function (needed by various parts of the app)
+    
+    // Centralized overlay detection for UI state management
     window.isOverlayActive = function() {
-        // Check for visible menu
         if (document.querySelector(".menu-container.visible")) return true;
         
-        // Check for open modals/overlays
         const overlaySelectors = [
             '.settings-modal[style*="display: flex"]',
             '.mini-cycle-switch-modal[style*="display: flex"]',
@@ -218,29 +234,27 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             '#testing-modal[style*="display: flex"]',
             '#recurring-panel-overlay:not(.hidden)',
             '.notification-container .notification',
-            '#storage-viewer-overlay:not(.hidden)',  // Local storage viewer
-            '.mini-modal-overlay',                    // Confirmation/prompt modals
-            '.miniCycle-overlay',                     // Your prompt modals
-            '.onboarding-modal:not([style*="display: none"])'  // Onboarding
-            //'.modal-overlay'                          // Generic modal overlay
+            '#storage-viewer-overlay:not(.hidden)',
+            '.mini-modal-overlay',
+            '.miniCycle-overlay',
+            '.onboarding-modal:not([style*="display: none"])'
         ];
         
         return overlaySelectors.some(selector => document.querySelector(selector));
     };
 
-    // ✅ Navigation dots function (works with stats panel)
+    // Navigation dots for task/stats panel switching
     function updateNavDots() {
         const statsPanel = document.getElementById("stats-panel");
         const statsVisible = statsPanel && statsPanel.classList.contains("show");
         const dots = document.querySelectorAll(".dot");
 
         if (dots.length === 2) {
-            dots[0].classList.toggle("active", !statsVisible); // Task View dot
-            dots[1].classList.toggle("active", statsVisible);  // Stats Panel dot
+            dots[0].classList.toggle("active", !statsVisible);
+            dots[1].classList.toggle("active", statsVisible);
         }
     }
     
-    // Make updateNavDots globally accessible
     window.updateNavDots = updateNavDots;
 
 
