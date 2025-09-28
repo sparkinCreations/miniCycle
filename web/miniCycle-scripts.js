@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.300'
+        currentVersion: '1.301'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -1664,6 +1664,7 @@ function createInitialSchema25Data() {
 
 
 
+
 // Update your existing setupDarkModeToggle function to include quick toggle
 function setupDarkModeToggle(toggleId, allToggleIds = []) {
     const thisToggle = document.getElementById(toggleId);
@@ -1719,9 +1720,10 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
             }
         });
 
-        // ✅ Update quick toggle icon
-        if (quickToggle) {
-            quickToggle.textContent = enabled ? "☀️" : "🌙";
+        // ✅ Update quick toggle icon - GET FRESH REFERENCE
+        const currentQuickToggle = document.getElementById("quick-dark-toggle");
+        if (currentQuickToggle) {
+            currentQuickToggle.textContent = enabled ? "☀️" : "🌙";
         }
 
         // ✅ Update theme color after dark mode change
@@ -1733,7 +1735,8 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
     console.log('✅ Dark mode toggle setup completed');
 }
 
-// ✅ ADD THIS FUNCTION:
+
+// setupQuickDarkToggle function
 function setupQuickDarkToggle() {
     const quickToggle = document.getElementById("quick-dark-toggle");
     if (!quickToggle) {
@@ -1743,9 +1746,16 @@ function setupQuickDarkToggle() {
     
     console.log('🌙 Setting up quick dark toggle...');
     
+    // ✅ Get current dark mode state BEFORE replacing element
+    const schemaData = loadMiniCycleData();
+    const isDark = schemaData ? (schemaData.settings.darkMode || false) : false;
+    
     // ✅ Remove any existing listeners to prevent duplicates
     const newQuickToggle = quickToggle.cloneNode(true);
     quickToggle.parentNode.replaceChild(newQuickToggle, quickToggle);
+    
+    // ✅ Set the correct initial icon state on the NEW element
+    newQuickToggle.textContent = isDark ? "☀️" : "🌙";
     
     newQuickToggle.addEventListener("click", (e) => {
         e.preventDefault();
@@ -1771,7 +1781,6 @@ function setupQuickDarkToggle() {
     
     console.log('✅ Quick dark toggle setup completed');
 }
-
 
 
 // ✅ Dynamic Theme Color System with Gradient-Matching Solid Colors

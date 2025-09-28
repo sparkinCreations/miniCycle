@@ -26,7 +26,8 @@
 // 🌍 Global State: Because sometimes you need variables that survive the apocalypse of module imports
 // This houses all the app's critical state that needs to be accessible everywhere.
 // Think of it as the app's memory bank, storing everything from drag states to undo history.
-window.AppState = {
+
+window.AppGlobalState = {
   draggedTask: null,
   logoTimeoutId: null,
   touchStartTime: 0,
@@ -54,7 +55,9 @@ window.AppState = {
   advancedVisible: false
 };
 
-// For backward compatibility
+
+// ✅ REMOVE ALL THESE DUPLICATE VARIABLES - DELETE THIS ENTIRE SECTION:
+/*
 let draggedTask = null;
 let logoTimeoutId = null;
 let touchStartTime = 0;
@@ -75,13 +78,139 @@ let lastReminderTime = null;
 let isResetting = false;
 let undoSnapshot = null;
 let redoSnapshot = null;
-const UNDO_LIMIT = 4;
 let undoStack = [];
 let redoStack = [];
 let didDragReorderOccur = false;
 let lastReorderTime = 0;
-const REORDER_SNAPSHOT_INTERVAL = 500;
 let advancedVisible = false;
+*/
+
+
+// ✅ Add these missing property getters after your existing ones
+Object.defineProperty(window, 'touchStartTime', {
+  get: () => window.AppGlobalState.touchStartTime,
+  set: (value) => { window.AppGlobalState.touchStartTime = value; }
+});
+
+Object.defineProperty(window, 'isLongPress', {
+  get: () => window.AppGlobalState.isLongPress,
+  set: (value) => { window.AppGlobalState.isLongPress = value; }
+});
+
+Object.defineProperty(window, 'touchStartY', {
+  get: () => window.AppGlobalState.touchStartY,
+  set: (value) => { window.AppGlobalState.touchStartY = value; }
+});
+
+Object.defineProperty(window, 'touchEndY', {
+  get: () => window.AppGlobalState.touchEndY,
+  set: (value) => { window.AppGlobalState.touchEndY = value; }
+});
+
+Object.defineProperty(window, 'holdTimeout', {
+  get: () => window.AppGlobalState.holdTimeout,
+  set: (value) => { window.AppGlobalState.holdTimeout = value; }
+});
+
+Object.defineProperty(window, 'moved', {
+  get: () => window.AppGlobalState.moved,
+  set: (value) => { window.AppGlobalState.moved = value; }
+});
+
+Object.defineProperty(window, 'rearrangeInitialized', {
+  get: () => window.AppGlobalState.rearrangeInitialized,
+  set: (value) => { window.AppGlobalState.rearrangeInitialized = value; }
+});
+
+Object.defineProperty(window, 'lastDraggedOver', {
+  get: () => window.AppGlobalState.lastDraggedOver,
+  set: (value) => { window.AppGlobalState.lastDraggedOver = value; }
+});
+
+Object.defineProperty(window, 'lastRearrangeTarget', {
+  get: () => window.AppGlobalState.lastRearrangeTarget,
+  set: (value) => { window.AppGlobalState.lastRearrangeTarget = value; }
+});
+
+Object.defineProperty(window, 'lastDragOverTime', {
+  get: () => window.AppGlobalState.lastDragOverTime,
+  set: (value) => { window.AppGlobalState.lastDragOverTime = value; }
+});
+
+Object.defineProperty(window, 'didDragReorderOccur', {
+  get: () => window.AppGlobalState.didDragReorderOccur,
+  set: (value) => { window.AppGlobalState.didDragReorderOccur = value; }
+});
+
+Object.defineProperty(window, 'lastReorderTime', {
+  get: () => window.AppGlobalState.lastReorderTime,
+  set: (value) => { window.AppGlobalState.lastReorderTime = value; }
+});
+
+
+Object.defineProperty(window, 'hasInteracted', {
+  get: () => window.AppGlobalState.hasInteracted,
+  set: (value) => { window.AppGlobalState.hasInteracted = value; }
+});
+
+Object.defineProperty(window, 'logoTimeoutId', {
+  get: () => window.AppGlobalState.logoTimeoutId,
+  set: (value) => { window.AppGlobalState.logoTimeoutId = value; }
+});
+
+Object.defineProperty(window, 'advancedVisible', {
+  get: () => window.AppGlobalState.advancedVisible,
+  set: (value) => { window.AppGlobalState.advancedVisible = value; }
+});
+
+Object.defineProperty(window, 'timesReminded', {
+  get: () => window.AppGlobalState.timesReminded,
+  set: (value) => { window.AppGlobalState.timesReminded = value; }
+});
+
+Object.defineProperty(window, 'reminderIntervalId', {
+  get: () => window.AppGlobalState.reminderIntervalId,
+  set: (value) => { window.AppGlobalState.reminderIntervalId = value; }
+});
+
+Object.defineProperty(window, 'lastReminderTime', {
+  get: () => window.AppGlobalState.lastReminderTime,
+  set: (value) => { window.AppGlobalState.lastReminderTime = value; }
+});
+
+// ✅ CREATE BACKWARD-COMPATIBLE GETTERS/SETTERS
+Object.defineProperty(window, 'draggedTask', {
+  get: () => window.AppGlobalState.draggedTask,
+  set: (value) => { window.AppGlobalState.draggedTask = value; }
+});
+
+Object.defineProperty(window, 'isResetting', {
+  get: () => window.AppGlobalState.isResetting,
+  set: (value) => { window.AppGlobalState.isResetting = value; }
+});
+
+Object.defineProperty(window, 'undoStack', {
+  get: () => window.AppGlobalState.undoStack,
+  set: (value) => { window.AppGlobalState.undoStack = value; }
+});
+
+Object.defineProperty(window, 'redoStack', {
+  get: () => window.AppGlobalState.redoStack,
+  set: (value) => { window.AppGlobalState.redoStack = value; }
+});
+
+Object.defineProperty(window, 'isDragging', {
+  get: () => window.AppGlobalState.isDragging,
+  set: (value) => { window.AppGlobalState.isDragging = value; }
+});
+
+// ✅ Add other frequently used properties as needed
+
+// ✅ CONSTANTS - Keep these as they are
+const UNDO_LIMIT = 4;
+const REORDER_SNAPSHOT_INTERVAL = 500;
+
+// Additional global variable for notification system compatibility
 let isDraggingNotification = false;
 
 
@@ -161,6 +290,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
+   
+
+
+
     await import('./utilities/globalUtils.js');
     console.log('🛠️ Global utilities loaded');
 
@@ -179,7 +312,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.297'
+        currentVersion: '1.300'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -423,13 +556,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.error('❌ cycleLoader import failed:', e);
   }
 
-  // ✅ Core data initialization (runs AFTER loader is available)
-  try {
-    fixTaskValidationIssues();
-    initializeAppWithAutoMigration({ forceMode: true }); // this will call initialSetup()
-  } catch (error) {
-    console.error('❌ Critical initialization error:', error);
-  }
 
   // ...remove the later duplicate cycleLoader import block that used to be here...
   // ...existing code continues...
@@ -448,9 +574,42 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupThemesPanel();
 
 
-    // ✅ Defer anything that needs cycles/data until an active cycle exists
+
+// ✅ Defer anything that needs cycles/data until an active cycle exists
 AppInit.onReady(() => {
   console.log('🟢 Data-ready initializers running…');
+
+    // ✅ NOW initialize state module AFTER data exists
+    try {
+        console.log('🗃️ Initializing state module after data setup...');
+        
+        import('./utilities/state.js').then(({ createStateManager }) => {
+            window.AppState = createStateManager({
+                showNotification: window.showNotification || console.log.bind(console),
+                storage: localStorage,
+                createInitialData: createInitialSchema25Data
+            });
+            
+            return window.AppState.init();
+        }).then(() => {
+            console.log('✅ State module initialized successfully after data setup');
+            
+            window.AppState.subscribe('debug', (newState, oldState) => {
+                console.log('🔄 State changed:', {
+                    timestamp: new Date().toISOString(),
+                    activeCycle: newState.appState.activeCycleId,
+                    taskCount: newState.data.cycles[newState.appState.activeCycleId]?.tasks?.length || 0
+                });
+            });
+        }).catch(error => {
+            console.warn('⚠️ State module initialization failed, using legacy methods:', error);
+            window.AppState = null;
+        });
+        
+    } catch (error) {
+        console.warn('⚠️ State module initialization failed, using legacy methods:', error);
+        window.AppState = null;
+    }
 
     // ✅ Recurring Features
     console.log('🔁 Setting up recurring features...');
@@ -472,7 +631,6 @@ AppInit.onReady(() => {
         }
     }, 2000);
     checkDueDates();
-
 
     setTimeout(() => {
         try {
@@ -527,11 +685,13 @@ AppInit.onReady(() => {
         }
     }, 10000);
 
-
-
-
-
-
+      // ✅ Core data initialization (runs AFTER loader is available)
+  try {
+    fixTaskValidationIssues();
+    initializeAppWithAutoMigration({ forceMode: true }); // this will call initialSetup()
+  } catch (error) {
+    console.error('❌ Critical initialization error:', error);
+  }
 
 
 
@@ -570,10 +730,13 @@ function pushUndoSnapshot() {
     title: currentCycle.title || "Untitled miniCycle"
   };
 
-  undoStack.push(snapshot);
-  if (undoStack.length > UNDO_LIMIT) undoStack.shift(); // keep max 4
+  // ✅ Use centralized state
+  window.AppGlobalState.undoStack.push(snapshot);
+  if (window.AppGlobalState.undoStack.length > UNDO_LIMIT) {
+    window.AppGlobalState.undoStack.shift(); // keep max 4
+  }
 
-  redoStack = []; // clear redo on new action
+  window.AppGlobalState.redoStack = []; // clear redo on new action
 
   document.getElementById("undo-btn").hidden = false;
   document.getElementById("redo-btn").hidden = true;
@@ -582,7 +745,7 @@ function pushUndoSnapshot() {
 }
 
 function performUndo() {
-  if (undoStack.length === 0) return;
+  if (window.AppGlobalState.undoStack.length === 0) return;
   
   console.log('↩️ Performing undo (Schema 2.5 only)...');
 
@@ -606,10 +769,10 @@ function performUndo() {
     recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
     title: currentCycle.title
   };
-  redoStack.push(currentSnapshot);
+  window.AppGlobalState.redoStack.push(currentSnapshot);
 
   // Restore from undo stack
-  const snapshotToRestore = undoStack.pop();
+  const snapshotToRestore = window.AppGlobalState.undoStack.pop();
   currentCycle.tasks = structuredClone(snapshotToRestore.tasks);
   currentCycle.recurringTemplates = structuredClone(snapshotToRestore.recurringTemplates || {});
 
@@ -631,14 +794,14 @@ function performUndo() {
   updateRecurringPanelButtonVisibility();
 
   // Update button states
-  document.getElementById("undo-btn").hidden = undoStack.length === 0;
+  document.getElementById("undo-btn").hidden = window.AppGlobalState.undoStack.length === 0;
   document.getElementById("redo-btn").hidden = false;
   
   console.log('✅ Undo completed');
 }
 
 function performRedo() {
-  if (redoStack.length === 0) return;
+  if (window.AppGlobalState.redoStack.length === 0) return;
   
   console.log('↪️ Performing redo (Schema 2.5 only)...');
 
@@ -662,10 +825,10 @@ function performRedo() {
     recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
     title: currentCycle.title
   };
-  undoStack.push(currentSnapshot);
+  window.AppGlobalState.undoStack.push(currentSnapshot);
 
   // Restore from redo stack
-  const snapshotToRestore = redoStack.pop();
+  const snapshotToRestore = window.AppGlobalState.redoStack.pop();
   currentCycle.tasks = structuredClone(snapshotToRestore.tasks);
   currentCycle.recurringTemplates = structuredClone(snapshotToRestore.recurringTemplates || {});
 
@@ -688,7 +851,7 @@ function performRedo() {
 
   // Update button states
   document.getElementById("undo-btn").hidden = false;
-  document.getElementById("redo-btn").hidden = redoStack.length === 0;
+  document.getElementById("redo-btn").hidden = window.AppGlobalState.redoStack.length === 0;
   
   console.log('✅ Redo completed');
 }
@@ -1501,6 +1664,7 @@ function createInitialSchema25Data() {
 
 
 
+
 // Update your existing setupDarkModeToggle function to include quick toggle
 function setupDarkModeToggle(toggleId, allToggleIds = []) {
     const thisToggle = document.getElementById(toggleId);
@@ -1556,9 +1720,10 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
             }
         });
 
-        // ✅ Update quick toggle icon
-        if (quickToggle) {
-            quickToggle.textContent = enabled ? "☀️" : "🌙";
+        // ✅ Update quick toggle icon - GET FRESH REFERENCE
+        const currentQuickToggle = document.getElementById("quick-dark-toggle");
+        if (currentQuickToggle) {
+            currentQuickToggle.textContent = enabled ? "☀️" : "🌙";
         }
 
         // ✅ Update theme color after dark mode change
@@ -1570,27 +1735,52 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
     console.log('✅ Dark mode toggle setup completed');
 }
 
-// ✅ ADD THIS FUNCTION:
+
+// setupQuickDarkToggle function
 function setupQuickDarkToggle() {
     const quickToggle = document.getElementById("quick-dark-toggle");
-    if (!quickToggle) return;
+    if (!quickToggle) {
+        console.warn('⚠️ Quick dark toggle element not found');
+        return;
+    }
     
     console.log('🌙 Setting up quick dark toggle...');
     
-    quickToggle.addEventListener("click", () => {
+    // ✅ Get current dark mode state BEFORE replacing element
+    const schemaData = loadMiniCycleData();
+    const isDark = schemaData ? (schemaData.settings.darkMode || false) : false;
+    
+    // ✅ Remove any existing listeners to prevent duplicates
+    const newQuickToggle = quickToggle.cloneNode(true);
+    quickToggle.parentNode.replaceChild(newQuickToggle, quickToggle);
+    
+    // ✅ Set the correct initial icon state on the NEW element
+    newQuickToggle.textContent = isDark ? "☀️" : "🌙";
+    
+    newQuickToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🌙 Quick dark toggle clicked');
+        
         // Find the primary dark mode toggle and simulate its change
         const primaryToggle = document.getElementById("darkModeToggle");
         if (primaryToggle) {
+            console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
             primaryToggle.checked = !primaryToggle.checked;
-            primaryToggle.dispatchEvent(new Event("change"));
+            
+            // Create and dispatch a proper change event
+            const changeEvent = new Event("change", { bubbles: true, cancelable: true });
+            primaryToggle.dispatchEvent(changeEvent);
+            
+            console.log('🔄 Primary toggle new state:', primaryToggle.checked);
         } else {
-            console.warn('⚠️ Primary dark mode toggle not found');
+            console.error('❌ Primary dark mode toggle not found');
         }
     });
     
     console.log('✅ Quick dark toggle setup completed');
 }
-
 
 
 // ✅ Dynamic Theme Color System with Gradient-Matching Solid Colors
@@ -1769,118 +1959,158 @@ function setupMiniCycleTitleListener() {
  * Saves the current state of the active miniCycle to localStorage.
  * Captures task list, completion status, due dates, priority settings, and reminders.
  */
+// ✅ SIMPLE FIX: Just make this function async and await the state module update
 
-// Update autoSave to handle both schemas
-function autoSave(overrideTaskList = null) {
-  console.log('💾 Auto-saving (Schema 2.5 only)...');
+// ✅ SIMPLIFIED: Clean autosave with proper fallback strategy
+async function autoSave(overrideTaskList = null, immediate = false) {
+  console.log('💾 Auto-saving (Schema 2.5)...');
   
+  // ✅ Try state module first (preferred method)
+  if (window.AppState?.isReady?.()) {
+    try {
+      return await autoSaveWithStateModule(overrideTaskList, immediate);
+    } catch (error) {
+      console.warn('⚠️ State module save failed, using direct method:', error.message);
+      // Fall through to direct save
+    }
+  }
+  
+  // ✅ Direct save method (fallback)
+  return await directSave(overrideTaskList);
+}
+
+// ✅ SIMPLIFIED: State module save (preferred method)
+async function autoSaveWithStateModule(overrideTaskList = null, immediate = false) {
+  if (!window.AppState?.isReady?.()) {
+    throw new Error('State module not ready');
+  }
+
+  const taskData = overrideTaskList || extractTaskDataFromDOM();
+  console.log('📝 Saving tasks via state module:', taskData.length);
+
+  await window.AppState.update(state => {
+    const activeCycle = state.appState.activeCycleId;
+    const currentCycle = state.data.cycles[activeCycle];
+    
+    if (!currentCycle) {
+      throw new Error(`Active cycle "${activeCycle}" not found`);
+    }
+
+    // Update tasks
+    currentCycle.tasks = taskData;
+    
+    // Update recurring templates
+    updateRecurringTemplates(currentCycle, taskData);
+    
+  }, immediate);
+
+  console.log('✅ State module save completed');
+  return { success: true, taskCount: taskData.length };
+}
+
+// ✅ SIMPLIFIED: Direct save method (fallback)
+async function directSave(overrideTaskList = null) {
   const schemaData = loadMiniCycleData();
-  if (!schemaData) {
-    console.error('❌ Schema 2.5 data required for auto-save');
-    throw new Error('Schema 2.5 data not found');
+  if (!schemaData?.activeCycle) {
+    throw new Error('No active cycle found');
   }
 
   const { cycles, activeCycle } = schemaData;
+  const taskData = overrideTaskList || extractTaskDataFromDOM();
   
-  if (!activeCycle || !cycles[activeCycle]) {
-    console.error("❌ Error: Active cycle not found in Schema 2.5.");
-    return;
+  console.log('📝 Direct saving tasks:', taskData.length);
+  
+  // Update Schema 2.5 structure
+  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+  const currentCycle = fullSchemaData.data.cycles[activeCycle];
+  
+  currentCycle.tasks = taskData;
+  updateRecurringTemplates(currentCycle, taskData);
+  
+  fullSchemaData.metadata.lastModified = Date.now();
+  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+  
+  console.log('✅ Direct save completed');
+  return { success: true, taskCount: taskData.length };
+}
+
+// ✅ EXTRACTED: Common task data extraction logic
+function extractTaskDataFromDOM() {
+  const taskListElement = document.getElementById("taskList");
+  if (!taskListElement) {
+    console.warn('⚠️ Task list element not found');
+    return [];
   }
-  
-  console.log('📊 Auto-saving cycle:', activeCycle);
-  
-  // Get current task data from DOM (same logic as before)
-  const miniCycleTasks = overrideTaskList || [...document.getElementById("taskList").children].map(taskElement => {
+
+  return [...taskListElement.children].map(taskElement => {
     const taskTextElement = taskElement.querySelector(".task-text");
-    const dueDateElement = taskElement.querySelector(".due-date");
-    const reminderButton = taskElement.querySelector(".enable-task-reminders");
     const taskId = taskElement.dataset.taskId;
 
     if (!taskTextElement || !taskId) {
-      console.warn("⚠️ Skipping task (missing text or ID):", taskElement);
+      console.warn("⚠️ Skipping invalid task element");
       return null;
     }
 
+    // Extract recurring settings safely
     let recurringSettings = {};
-    const settingsAttr = taskElement.getAttribute("data-recurring-settings");
     try {
+      const settingsAttr = taskElement.getAttribute("data-recurring-settings");
       if (settingsAttr) {
         recurringSettings = JSON.parse(settingsAttr);
       }
     } catch (err) {
-      console.warn("⚠️ Could not parse recurringSettings from DOM:", err);
+      console.warn("⚠️ Invalid recurring settings, using empty object");
     }
-    
-    console.log("💾 Processing task for save:", taskId, recurringSettings);
 
     return {
       id: taskId,
       text: taskTextElement.textContent,
-      completed: taskElement.querySelector("input[type='checkbox']").checked,
-      dueDate: dueDateElement ? dueDateElement.value : null,
+      completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
+      dueDate: taskElement.querySelector(".due-date")?.value || null,
       highPriority: taskElement.classList.contains("high-priority"),
-      remindersEnabled: reminderButton ? reminderButton.classList.contains("reminder-active") : false,
+      remindersEnabled: taskElement.querySelector(".enable-task-reminders")?.classList.contains("reminder-active") || false,
       recurring: taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
       recurringSettings,
       schemaVersion: 2
     };
   }).filter(Boolean);
-  
-  console.log('📝 Saving tasks:', miniCycleTasks.length);
-  
-  // Update Schema 2.5 structure
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  fullSchemaData.data.cycles[activeCycle].tasks = miniCycleTasks;
-  fullSchemaData.metadata.lastModified = Date.now();
-  
-  // Handle recurring templates in Schema 2.5
-  if (!fullSchemaData.data.cycles[activeCycle].recurringTemplates) {
-    fullSchemaData.data.cycles[activeCycle].recurringTemplates = {};
+}
+
+// ✅ EXTRACTED: Common recurring templates update logic
+function updateRecurringTemplates(currentCycle, taskData) {
+  if (!currentCycle.recurringTemplates) {
+    currentCycle.recurringTemplates = {};
   }
 
-  miniCycleTasks.forEach(task => {
-    if (task.recurring && task.recurringSettings) {
-      fullSchemaData.data.cycles[activeCycle].recurringTemplates[task.id] = {
-        id: task.id,
-        text: task.text,
-        recurring: true,
-        recurringSettings: task.recurringSettings,
-        highPriority: task.highPriority,
-        dueDate: task.dueDate,
-        remindersEnabled: task.remindersEnabled,
-        lastTriggeredTimestamp: 
-          fullSchemaData.data.cycles[activeCycle].recurringTemplates[task.id]?.lastTriggeredTimestamp || null,
-        schemaVersion: task.schemaVersion || 2
-      };
+  // Clear existing templates for tasks that are no longer recurring
+  const currentTaskIds = new Set(taskData.map(t => t.id));
+  Object.keys(currentCycle.recurringTemplates).forEach(templateId => {
+    if (!currentTaskIds.has(templateId)) {
+      delete currentCycle.recurringTemplates[templateId];
     }
   });
 
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-  
-  // ✅ Logging for debugging (same as before)
-  console.log("📋 Task Status (Schema 2.5):");
-  miniCycleTasks.forEach(task => {
-    console.log(`- ${task.text}: ${task.completed ? "✅ Completed" : "❌ Not Completed"} 
-      ${task.dueDate ? `(Due: ${task.dueDate})` : ''} 
-      ${task.highPriority ? "🔥 High Priority" : ""} 
-      ${task.remindersEnabled ? "🔔 Reminders ON" : "🔕 Reminders OFF"} 
-      ${task.recurring ? "🔁 Recurring ON" : "↩️ Not Recurring"}`);
+  // Update templates for recurring tasks
+  taskData.forEach(task => {
+    if (task.recurring && task.recurringSettings) {
+      const existingTemplate = currentCycle.recurringTemplates[task.id];
+      
+      currentCycle.recurringTemplates[task.id] = {
+        id: task.id,
+        text: task.text,
+        recurring: true,
+        recurringSettings: structuredClone(task.recurringSettings),
+        highPriority: task.highPriority || false,
+        dueDate: task.dueDate || null,
+        remindersEnabled: task.remindersEnabled || false,
+        lastTriggeredTimestamp: existingTemplate?.lastTriggeredTimestamp || null,
+        schemaVersion: 2
+      };
+    }
   });
-
-  console.table(miniCycleTasks.map(t => ({
-    id: t.id,
-    text: t.text,
-    recurring: t.recurring,
-    frequency: t.recurringSettings?.frequency || "–",
-    version: t.schemaVersion
-  })));
-  
-  console.log('✅ Auto-save completed successfully');
 }
 
-
-
-
+// ✅ REMOVE the legacyAutoSave function since it's now integrated into autoSave
 /**
  * Loads the last used miniCycle from localStorage and updates the UI.
  * Ensures tasks, title, settings, and overdue statuses are properly restored.
@@ -7200,6 +7430,9 @@ function setupSettingsMenu() {
 
     // ✅ Dark Mode Toggle (Check if the element exists first)
     setupDarkModeToggle("darkModeToggle", ["darkModeToggle", "darkModeToggleThemes"]);
+    
+    // ✅ Setup Quick Dark Toggle right after primary toggle
+    setupQuickDarkToggle();
 
 
 // ✅ Toggle Move Arrows Setting (Schema 2.5 only)
@@ -8452,8 +8685,6 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
  */
 
 function DragAndDrop(taskElement) {
- 
-
     // Prevent text selection on mobile
     taskElement.style.userSelect = "none";
     taskElement.style.webkitUserSelect = "none";
@@ -8490,7 +8721,7 @@ function DragAndDrop(taskElement) {
         holdTimeout = setTimeout(() => {
             isLongPress = true;
             isTap = false;
-            draggedTask = taskElement;
+            window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
             isDragging = true;
             taskElement.classList.add("dragging", "long-pressed");
 
@@ -8556,9 +8787,9 @@ function DragAndDrop(taskElement) {
             }, 100);
         }
 
-        if (draggedTask) {
-            draggedTask.classList.remove("dragging", "rearranging");
-            draggedTask = null;
+        if (window.AppGlobalState.draggedTask) { // ✅ Use centralized state
+            window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging"); // ✅ Use centralized state
+            window.AppGlobalState.draggedTask = null; // ✅ Use centralized state
         }
 
         isDragging = false;
@@ -8575,7 +8806,7 @@ function DragAndDrop(taskElement) {
     // 🖱️ **Mouse-based Drag for Desktop**
     taskElement.addEventListener("dragstart", (event) => {
         if (event.target.closest(".task-options")) return;
-        draggedTask = taskElement;
+        window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
         event.dataTransfer.setData("text/plain", "");
 
         // ✅ NEW: Add dragging class for desktop as well
@@ -8588,7 +8819,6 @@ function DragAndDrop(taskElement) {
             event.dataTransfer.setDragImage(transparentPixel, 0, 0);
         }
     });
-
 }
 
 
@@ -8603,15 +8833,16 @@ let rearrangeTimeout; // Prevents excessive reordering calls
 
 const REARRANGE_DELAY = 75; // ms delay to smooth reordering
 
+// ✅ Update the handleRearrange function
 function handleRearrange(target, event) {
-  if (!target || !draggedTask || target === draggedTask) return;
+  if (!target || !window.AppGlobalState.draggedTask || target === window.AppGlobalState.draggedTask) return; // ✅ Use centralized state
 
   clearTimeout(rearrangeTimeout);
 
   rearrangeTimeout = setTimeout(() => {
-    if (!document.contains(target) || !document.contains(draggedTask)) return;
+    if (!document.contains(target) || !document.contains(window.AppGlobalState.draggedTask)) return; // ✅ Use centralized state
 
-    const parent = draggedTask.parentNode;
+    const parent = window.AppGlobalState.draggedTask.parentNode; // ✅ Use centralized state
     if (!parent || !target.parentNode) return;
 
     const bounding = target.getBoundingClientRect();
@@ -8619,10 +8850,10 @@ function handleRearrange(target, event) {
 
     // 🧠 Snapshot only if enough time has passed
     const now = Date.now();
-    if (now - lastReorderTime > REORDER_SNAPSHOT_INTERVAL) {
+    if (now - window.AppGlobalState.lastReorderTime > REORDER_SNAPSHOT_INTERVAL) { // ✅ Use centralized state
       pushUndoSnapshot();
-      lastReorderTime = now;
-      didDragReorderOccur = true;
+      window.AppGlobalState.lastReorderTime = now; // ✅ Use centralized state
+      window.AppGlobalState.didDragReorderOccur = true; // ✅ Use centralized state
     }
 
     const isLastTask = !target.nextElementSibling;
@@ -8630,32 +8861,31 @@ function handleRearrange(target, event) {
 
     document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
 
-    if (isLastTask && target.nextSibling !== draggedTask) {
-      parent.appendChild(draggedTask);
-      draggedTask.classList.add("drop-target");
+    if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
+      parent.appendChild(window.AppGlobalState.draggedTask); // ✅ Use centralized state
+      window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
       return;
     }
 
-    if (isFirstTask && target.previousSibling !== draggedTask) {
-      parent.insertBefore(draggedTask, parent.firstChild);
-      draggedTask.classList.add("drop-target");
+    if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
+      parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild); // ✅ Use centralized state
+      window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
       return;
     }
 
     if (offset > bounding.height / 3) {
-      if (target.nextSibling !== draggedTask) {
-        parent.insertBefore(draggedTask, target.nextSibling);
+      if (target.nextSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
+        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling); // ✅ Use centralized state
       }
     } else {
-      if (target.previousSibling !== draggedTask) {
-        parent.insertBefore(draggedTask, target);
+      if (target.previousSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
+        parent.insertBefore(window.AppGlobalState.draggedTask, target); // ✅ Use centralized state
       }
     }
 
-    draggedTask.classList.add("drop-target");
-  }, REARRANGE_DELAY);
+    window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
+  }, REORDER_DELAY);
 }
-
 
 
 /**
@@ -8663,10 +8893,10 @@ function handleRearrange(target, event) {
  *
  * @returns {void}
  */
-
+// ✅ Update the setupRearrange function to use centralized state
 function setupRearrange() {
-  if (window.rearrangeInitialized) return;
-  window.rearrangeInitialized = true;
+  if (window.AppGlobalState.rearrangeInitialized) return;
+  window.AppGlobalState.rearrangeInitialized = true; // ✅ Use centralized state
 
   document.addEventListener("dragover", (event) => {
     event.preventDefault();
@@ -8681,9 +8911,9 @@ function setupRearrange() {
 
   document.addEventListener("drop", (event) => {
     event.preventDefault();
-    if (!draggedTask) return;
+    if (!window.AppGlobalState.draggedTask) return; // ✅ Use centralized state
 
-    if (didDragReorderOccur) {
+    if (window.AppGlobalState.didDragReorderOccur) { // ✅ Use centralized state
       saveCurrentTaskOrder();
       autoSave();
       updateProgressBar();
@@ -8697,11 +8927,10 @@ function setupRearrange() {
     }
 
     cleanupDragState();
-    lastReorderTime = 0;
-  didDragReorderOccur = false;
+    window.AppGlobalState.lastReorderTime = 0; // ✅ Use centralized state
+    window.AppGlobalState.didDragReorderOccur = false; // ✅ Use centralized state
   });
 }
-
 
 
 /**
@@ -8709,17 +8938,16 @@ function setupRearrange() {
  *
  * @returns {void}
  */
-
+// ✅ Update the cleanupDragState function
 function cleanupDragState() {
-    if (draggedTask) {
-        draggedTask.classList.remove("dragging", "rearranging");
-        draggedTask = null;
+    if (window.AppGlobalState.draggedTask) { // ✅ Use centralized state
+        window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
+        window.AppGlobalState.draggedTask = null; // ✅ Use centralized state
     }
 
-    lastRearrangeTarget = null;
+    window.AppGlobalState.lastRearrangeTarget = null; // ✅ Use centralized state
     document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
 }
-
 
 
 /**
@@ -11816,8 +12044,6 @@ function setupThemesPanelWithData(schemaData) {
   
     // ✅ Setup dark mode toggle inside themes modal
     setupDarkModeToggle("darkModeToggleThemes", ["darkModeToggle", "darkModeToggleThemes"]);
-    // Add quick toggle setup
-setupQuickDarkToggle();
     
     console.log('✅ Themes panel setup completed (Schema 2.5)');
 }
