@@ -948,7 +948,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.299',
+            version: '1.300',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config

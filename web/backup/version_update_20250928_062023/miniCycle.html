@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.296">
+<meta name="app-version" content="1.299">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.296">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.299">
 <link rel="manifest" href="manifest.json">
 
 
@@ -214,21 +214,91 @@ if ('serviceWorker' in navigator) {
 window.checkForUpdates = async function() {
   if (!('serviceWorker' in navigator)) {
     console.warn('Service Workers not supported');
+    if (typeof showNotification === 'function') {
+      showNotification('❌ Service Workers not supported', 'error', 3000);
+    }
     return;
   }
   
   try {
     const registration = await navigator.serviceWorker.getRegistration();
-    if (registration) {
-      await registration.update();
-      console.log('🔄 Checked for updates');
-      
+    if (!registration) {
       if (typeof showNotification === 'function') {
-        showNotification('🔍 Checked for app updates', 'info', 2000);
+        showNotification('❌ No service worker registered', 'error', 3000);
+      }
+      return;
+    }
+
+    // Get current version info
+    const currentVersion = await getServiceWorkerVersion(registration);
+    
+    if (typeof showNotification === 'function') {
+      showNotification('🔍 Checking for app updates...', 'info', 2000);
+    }
+    
+    // Force check for updates
+    await registration.update();
+    
+    // Wait a moment for the update check to process
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Check if there's a waiting worker (new version available)
+    if (registration.waiting) {
+      // Get new version info from the waiting worker
+      const newVersion = await getWaitingWorkerVersion(registration.waiting);
+      
+      // Show detailed update modal
+      if (typeof showConfirmationModal === 'function') {
+        showConfirmationModal({
+          title: "🆕 Update Available!",
+          message: `A new version of miniCycle is available!<br><br>
+                   <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
+                   � <strong>Current Version:</strong> ${currentVersion}<br>
+                   🚀 <strong>New Version:</strong> ${newVersion}<br>
+                   </div>
+                   ✨ This update includes new features and improvements<br>
+                   🐛 Bug fixes and performance enhancements<br>
+                   🔒 Latest security updates<br><br>
+                   Would you like to update now? The app will refresh automatically.`,
+          confirmText: "🔄 Update Now",
+          cancelText: "Later",
+          callback: (confirmed) => {
+            if (confirmed) {
+              updateServiceWorker(registration);
+              if (typeof showNotification === 'function') {
+                showNotification('🔄 Installing update...', 'info', 3000);
+              }
+            } else {
+              if (typeof showNotification === 'function') {
+                showNotification('ℹ️ Update postponed - you can install it anytime', 'info', 4000);
+              }
+            }
+          }
+        });
+      } else {
+        // Fallback to browser confirm if modal isn't available yet
+        const updateConfirmed = confirm(`🆕 Update Available!\n\nCurrent: ${currentVersion}\nNew: ${newVersion}\n\nWould you like to update now?`);
+        if (updateConfirmed) {
+          updateServiceWorker(registration);
+        }
+      }
+    } else if (registration.installing) {
+      // Update is currently installing
+      if (typeof showNotification === 'function') {
+        showNotification('⏳ Update is currently installing...', 'info', 3000);
+      }
+    } else {
+      // No update available
+      if (typeof showNotification === 'function') {
+        showNotification(`✅ App is up to date! (${currentVersion})`, 'success', 3000);
       }
     }
+    
   } catch (error) {
     console.error('Failed to check for updates:', error);
+    if (typeof showNotification === 'function') {
+      showNotification('❌ Failed to check for updates', 'error', 3000);
+    }
   }
 };
 
@@ -266,13 +336,42 @@ async function getServiceWorkerVersion(registration) {
   return new Promise((resolve) => {
     const messageChannel = new MessageChannel();
     messageChannel.port1.onmessage = (event) => {
-      resolve(event.data.version || 'Unknown');
+      // Enhanced version info with both cache and app version
+      const versionData = event.data;
+      if (versionData && versionData.version && versionData.appVersion) {
+        resolve(`SW: ${versionData.version}, App: ${versionData.appVersion}`);
+      } else {
+        resolve(event.data?.version || 'Unknown');
+      }
     };
     
     registration.active.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
     
     // Timeout after 2 seconds
     setTimeout(() => resolve('Timeout'), 2000);
+  });
+}
+
+// ✅ Helper function to get version from waiting worker
+async function getWaitingWorkerVersion(waitingWorker) {
+  if (!waitingWorker) return 'Unknown';
+  
+  return new Promise((resolve) => {
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = (event) => {
+      // Enhanced version info with both cache and app version
+      const versionData = event.data;
+      if (versionData && versionData.version && versionData.appVersion) {
+        resolve(`SW: ${versionData.version}, App: ${versionData.appVersion}`);
+      } else {
+        resolve(event.data?.version || 'Unknown');
+      }
+    };
+    
+    waitingWorker.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
+    
+    // Timeout after 2 seconds
+    setTimeout(() => resolve('Unknown (New)'), 2000);
   });
 }
 
@@ -288,28 +387,52 @@ window.forceServiceWorkerUpdate = async function() {
   try {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) {
+      // Get current version before forcing update
+      const currentVersion = await getServiceWorkerVersion(registration);
+      
       if (typeof showNotification === 'function') {
         showNotification('🔄 Force checking for updates...', 'info', 2000);
       }
       
       await registration.update();
       
+      // Wait a moment for the update check to process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Check if there's a waiting worker
       if (registration.waiting) {
-        showConfirmationModal({
-          title: "🔄 Update Ready!",
-          message: "An update is ready to install. Would you like to apply it now?",
-          confirmText: "Apply Update",
-          cancelText: "Cancel",
-          callback: (confirmed) => {
-            if (confirmed) {
-              updateServiceWorker(registration);
+        const newVersion = await getWaitingWorkerVersion(registration.waiting);
+        
+        if (typeof showConfirmationModal === 'function') {
+          showConfirmationModal({
+            title: "🔄 Update Ready!",
+            message: `An update is ready to install!<br><br>
+                     <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
+                     📊 <strong>Current Version:</strong> ${currentVersion}<br>
+                     🚀 <strong>New Version:</strong> ${newVersion}<br>
+                     </div>
+                     Would you like to apply it now?`,
+            confirmText: "Apply Update",
+            cancelText: "Cancel",
+            callback: (confirmed) => {
+              if (confirmed) {
+                updateServiceWorker(registration);
+                if (typeof showNotification === 'function') {
+                  showNotification('🔄 Installing update...', 'info', 3000);
+                }
+              }
             }
+          });
+        } else {
+          // Fallback to browser confirm
+          const updateConfirmed = confirm(`🔄 Update Ready!\n\nCurrent: ${currentVersion}\nNew: ${newVersion}\n\nApply update now?`);
+          if (updateConfirmed) {
+            updateServiceWorker(registration);
           }
-        });
+        }
       } else {
         if (typeof showNotification === 'function') {
-          showNotification('✅ App is up to date!', 'success', 2000);
+          showNotification(`✅ App is up to date! (${currentVersion})`, 'success', 2000);
         }
       }
     } else {
@@ -1398,7 +1521,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.296"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.299"></script>
 <script>
 // Late, best-effort fallback: if app didn’t initialize, go lite.
 (function () {
