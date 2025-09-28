@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.298'
+        currentVersion: '1.299'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -1573,18 +1573,36 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
 // ✅ ADD THIS FUNCTION:
 function setupQuickDarkToggle() {
     const quickToggle = document.getElementById("quick-dark-toggle");
-    if (!quickToggle) return;
+    if (!quickToggle) {
+        console.warn('⚠️ Quick dark toggle element not found');
+        return;
+    }
     
     console.log('🌙 Setting up quick dark toggle...');
     
-    quickToggle.addEventListener("click", () => {
+    // ✅ Remove any existing listeners to prevent duplicates
+    const newQuickToggle = quickToggle.cloneNode(true);
+    quickToggle.parentNode.replaceChild(newQuickToggle, quickToggle);
+    
+    newQuickToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🌙 Quick dark toggle clicked');
+        
         // Find the primary dark mode toggle and simulate its change
         const primaryToggle = document.getElementById("darkModeToggle");
         if (primaryToggle) {
+            console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
             primaryToggle.checked = !primaryToggle.checked;
-            primaryToggle.dispatchEvent(new Event("change"));
+            
+            // Create and dispatch a proper change event
+            const changeEvent = new Event("change", { bubbles: true, cancelable: true });
+            primaryToggle.dispatchEvent(changeEvent);
+            
+            console.log('🔄 Primary toggle new state:', primaryToggle.checked);
         } else {
-            console.warn('⚠️ Primary dark mode toggle not found');
+            console.error('❌ Primary dark mode toggle not found');
         }
     });
     
@@ -7200,6 +7218,9 @@ function setupSettingsMenu() {
 
     // ✅ Dark Mode Toggle (Check if the element exists first)
     setupDarkModeToggle("darkModeToggle", ["darkModeToggle", "darkModeToggleThemes"]);
+    
+    // ✅ Setup Quick Dark Toggle right after primary toggle
+    setupQuickDarkToggle();
 
 
 // ✅ Toggle Move Arrows Setting (Schema 2.5 only)
@@ -11816,8 +11837,6 @@ function setupThemesPanelWithData(schemaData) {
   
     // ✅ Setup dark mode toggle inside themes modal
     setupDarkModeToggle("darkModeToggleThemes", ["darkModeToggle", "darkModeToggleThemes"]);
-    // Add quick toggle setup
-setupQuickDarkToggle();
     
     console.log('✅ Themes panel setup completed (Schema 2.5)');
 }
