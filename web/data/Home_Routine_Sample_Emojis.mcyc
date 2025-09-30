@@ -1,0 +1,75 @@
+{
+  "name": "imported_1759221924498",
+  "title": "\ud83c\udfe1 Daily Home Routine (Sample)",
+  "tasks": [
+    {
+      "id": "task-1759221924498-192",
+      "text": "\ud83d\udecf Make the bed",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924498-144",
+      "text": "\u2615 Brew morning coffee/tea",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924498-283",
+      "text": "\ud83c\udf73 Prepare breakfast",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924498-602",
+      "text": "\ud83e\uddfa Do a quick laundry check",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924498-980",
+      "text": "\ud83e\uddfd Tidy kitchen & living room",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924498-161",
+      "text": "\ud83d\udce6 Take out trash/recycling",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

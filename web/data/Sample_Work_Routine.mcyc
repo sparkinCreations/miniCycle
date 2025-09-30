@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "2.5",
+  "miniCycle": {
+    "metadata": {
+      "createdAt": "2025-09-30T09:00:00.000Z",
+      "lastModified": "2025-09-30T09:00:00.000Z",
+      "migratedFrom": null,
+      "migrationDate": null,
+      "totalCyclesCreated": 1,
+      "totalTasksCompleted": 0,
+      "schemaVersion": "2.5"
+    },
+    "settings": {
+      "theme": null,
+      "darkMode": false,
+      "alwaysShowRecurring": false,
+      "autoSave": true,
+      "defaultRecurringSettings": {
+        "frequency": null,
+        "indefinitely": true,
+        "time": null
+      },
+      "unlockedThemes": [],
+      "unlockedFeatures": [],
+      "notificationPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "notificationPositionModified": false,
+      "accessibility": {
+        "reducedMotion": false,
+        "highContrast": false,
+        "screenReaderHints": false
+      }
+    },
+    "data": {
+      "cycles": {
+        "Daily Work Routine": {
+          "title": "Daily Work Routine",
+          "tasks": [
+            {
+              "id": "task-1",
+              "text": "Check email for urgent requests",
+              "completed": false,
+              "priority": true,
+              "dueDate": null,
+              "remindersEnabled": true,
+              "recurring": true,
+              "recurringSettings": {
+                "frequency": "daily",
+                "indefinitely": true
+              },
+              "schemaVersion": "2.5",
+              "createdAt": "2025-09-30T09:00:00.000Z",
+              "completedAt": null
+            },
+            {
+              "id": "task-2",
+              "text": "Review today\u2019s job numbers / assignments",
+              "completed": false,
+              "priority": false,
+              "dueDate": null,
+              "remindersEnabled": false,
+              "recurring": true,
+              "recurringSettings": {
+                "frequency": "daily",
+                "indefinitely": true
+              },
+              "schemaVersion": "2.5",
+              "createdAt": "2025-09-30T09:00:00.000Z",
+              "completedAt": null
+            },
+            {
+              "id": "task-3",
+              "text": "Inspect parts / verify serial numbers",
+              "completed": false,
+              "priority": true,
+              "dueDate": null,
+              "remindersEnabled": false,
+              "recurring": true,
+              "recurringSettings": {
+                "frequency": "daily",
+                "indefinitely": true
+              },
+              "schemaVersion": "2.5",
+              "createdAt": "2025-09-30T09:00:00.000Z",
+              "completedAt": null
+            },
+            {
+              "id": "task-4",
+              "text": "Log results into system",
+              "completed": false,
+              "priority": false,
+              "dueDate": null,
+              "remindersEnabled": false,
+              "recurring": true,
+              "recurringSettings": {
+                "frequency": "daily",
+                "indefinitely": true
+              },
+              "schemaVersion": "2.5",
+              "createdAt": "2025-09-30T09:00:00.000Z",
+              "completedAt": null
+            },
+            {
+              "id": "task-5",
+              "text": "End-of-day wrap-up: update report & clear desk",
+              "completed": false,
+              "priority": false,
+              "dueDate": null,
+              "remindersEnabled": true,
+              "recurring": true,
+              "recurringSettings": {
+                "frequency": "daily",
+                "indefinitely": true
+              },
+              "schemaVersion": "2.5",
+              "createdAt": "2025-09-30T09:00:00.000Z",
+              "completedAt": null
+            }
+          ],
+          "recurringTemplates": {},
+          "autoReset": true,
+          "deleteCheckedTasks": false,
+          "cycleCount": 0
+        }
+      }
+    },
+    "appState": {
+      "activeCycleId": "Daily Work Routine"
+    },
+    "userProgress": {
+      "cyclesCompleted": 0,
+      "rewardMilestones": []
+    },
+    "customReminders": {
+      "enabled": true,
+      "indefinite": false,
+      "dueDatesReminders": false,
+      "repeatCount": 0,
+      "frequencyValue": 60,
+      "frequencyUnit": "minutes"
+    }
+  }
+}

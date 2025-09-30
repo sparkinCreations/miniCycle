@@ -1,0 +1,42 @@
+{
+  "name": "imported_1759218923641",
+  "title": "Daily Routine",
+  "tasks": [
+    {
+      "id": "task-1759218940689-371",
+      "text": "Task 1",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759218942231-721",
+      "text": "TAsk 2",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759218946243-296",
+      "text": "Task 3",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

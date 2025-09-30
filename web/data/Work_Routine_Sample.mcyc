@@ -1,0 +1,75 @@
+{
+  "name": "imported_1727698685000",
+  "title": "Daily Work Routine (Sample)",
+  "tasks": [
+    {
+      "id": "task-1727698685000-101-321",
+      "text": "📧 Check email for urgent requests",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1727698685000-102-322",
+      "text": "📋 Review today’s job numbers / assignments",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1727698685000-103-323",
+      "text": "🛠 Inspect parts / verify serial numbers",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1727698685000-104-324",
+      "text": "💻 Log results into system (ERP/QC log)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1727698685000-105-325",
+      "text": "📝 End-of-day wrap-up: update report & handoff notes",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1727698685000-106-326",
+      "text": "🧹 Clean station & restock supplies",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

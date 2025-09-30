@@ -1,0 +1,64 @@
+{
+  "name": "imported_1759221924499",
+  "title": "\ud83d\udcaa Fitness Routine (Sample)",
+  "tasks": [
+    {
+      "id": "task-1759221924499-477",
+      "text": "\ud83e\udd38 Warm-up stretches (5 min)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924499-343",
+      "text": "\ud83c\udfc3 Cardio: run or cycle (20 min)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924499-162",
+      "text": "\ud83c\udfcb\ufe0f Strength training (upper body)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": true,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924499-719",
+      "text": "\ud83e\uddd8 Cool down & stretching",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759221924499-776",
+      "text": "\ud83d\udca7 Hydrate & log workout",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}
