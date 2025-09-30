@@ -216,6 +216,46 @@ const UNDO_MIN_INTERVAL_MS = 100;
 // Additional global variable for notification system compatibility
 let isDraggingNotification = false;
 
+// ✅ Debug function for checking app state
+window.debugAppState = function() {
+    console.group('🔍 App State Debug');
+    
+    if (!window.AppState) {
+        console.error('❌ AppState not available');
+        console.groupEnd();
+        return;
+    }
+    
+    console.log('Ready:', window.AppState.isReady());
+    
+    const state = window.AppState.get();
+    if (!state) {
+        console.error('❌ No state data');
+        console.groupEnd();
+        return;
+    }
+    
+    console.log('📊 Full State:', state);
+    console.log('🎯 Active Cycle:', state.appState?.activeCycleId);
+    
+    const activeCycle = state.appState?.activeCycleId;
+    const cycleData = state.data?.cycles?.[activeCycle];
+    console.log('🔢 Cycle Count:', cycleData?.cycleCount || 0);
+    console.log('🎨 Unlocked Themes:', state.settings?.unlockedThemes || []);
+    console.log('🎮 Unlocked Features:', state.settings?.unlockedFeatures || []);
+    console.log('👤 User Progress:', state.userProgress || {});
+    console.log('🏆 Reward Milestones:', state.userProgress?.rewardMilestones || []);
+    
+    // Check milestone eligibility
+    const currentCount = cycleData?.cycleCount || 0;
+    console.log(`🏆 Milestone Status:
+    - Dark Ocean (5 cycles): ${currentCount >= 5 ? '✅ Eligible' : `❌ Need ${5 - currentCount} more`}
+    - Golden Glow (50 cycles): ${currentCount >= 50 ? '✅ Eligible' : `❌ Need ${50 - currentCount} more`}
+    - Mini Game (100 cycles): ${currentCount >= 100 ? '✅ Eligible' : `❌ Need ${100 - currentCount} more`}`);
+    
+    console.groupEnd();
+};
+
 
 /**  🚦 App Initialization Lifecycle Manager
 // This system ensures that data-dependent initializers only run after an active cycle is ready.
@@ -8495,22 +8535,29 @@ function setupAbout() {
 
 // ✅ AFTER (Schema 2.5 Only):
 function assignCycleVariables() {
-    console.log('🔄 Assigning cycle variables (Schema 2.5 only)...');
+    console.log('🔄 Assigning cycle variables (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for assignCycleVariables');
-        throw new Error('Schema 2.5 data required');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for assignCycleVariables');
+        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
     }
     
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for assignCycleVariables');
+        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
+    }
+    
+    const { data, appState } = currentState;
+    
     console.log('📊 Retrieved cycle data:', {
-        activeCycle: schemaData.activeCycle,
-        cycleCount: Object.keys(schemaData.cycles).length
+        activeCycle: appState.activeCycleId,
+        cycleCount: Object.keys(data.cycles).length
     });
     
     return {
-        lastUsedMiniCycle: schemaData.activeCycle,
-        savedMiniCycles: schemaData.cycles
+        lastUsedMiniCycle: appState.activeCycleId,
+        savedMiniCycles: data.cycles
     };
 }
 
@@ -8586,44 +8633,48 @@ function checkMiniCycle() {
  */
 
 function incrementCycleCount(miniCycleName, savedMiniCycles) {
-    console.log('🔢 Incrementing cycle count (Schema 2.5 only)...');
+    console.log('🔢 Incrementing cycle count (Schema 2.5 state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for incrementCycleCount');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state module instead of legacy direct data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for incrementCycleCount');
+        return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
     
-    if (!cycleData) {
-        console.warn(`⚠️ Cycle "${activeCycle}" not found in Schema 2.5`);
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for incrementCycleCount');
+        return;
+    }
+    
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const cycleData = data.cycles[activeCycle];
+    
+    if (!activeCycle || !cycleData) {
+        console.error('❌ No active cycle found for incrementCycleCount');
         return;
     }
     
     console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
     
-    // Increment cycle count
-    cycleData.cycleCount = (cycleData.cycleCount || 0) + 1;
+    // ✅ Update through state module and get the actual new count
+    let actualNewCount;
+    window.AppState.update(state => {
+        const cycle = state.data.cycles[activeCycle];
+        if (cycle) {
+            cycle.cycleCount = (cycle.cycleCount || 0) + 1;
+            actualNewCount = cycle.cycleCount; // ✅ Get the actual updated count
+            
+            // Update user progress
+            state.userProgress.cyclesCompleted = (state.userProgress.cyclesCompleted || 0) + 1;
+        }
+    }, true); // immediate save
     
-    console.log('📈 New cycle count:', cycleData.cycleCount);
+    console.log(`✅ Cycle count updated (state-based) for "${activeCycle}": ${actualNewCount}`);
     
-    // Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycleData;
-    fullSchemaData.metadata.lastModified = Date.now();
-    
-    // Update user progress
-    fullSchemaData.userProgress.cyclesCompleted = (fullSchemaData.userProgress.cyclesCompleted || 0) + 1;
-    
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log(`✅ Cycle count updated (Schema 2.5) for "${activeCycle}": ${cycleData.cycleCount}`);
-    console.log('👥 Total user cycles completed:', fullSchemaData.userProgress.cyclesCompleted);
-    
-    // ✅ Handle milestone rewards
-    handleMilestoneUnlocks(activeCycle, cycleData.cycleCount);
+    // ✅ Handle milestone rewards with the actual updated count
+    handleMilestoneUnlocks(activeCycle, actualNewCount);
     
     // ✅ Show animation + update stats
     showCompletionAnimation();
@@ -8631,12 +8682,23 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
 }
 
 function handleMilestoneUnlocks(miniCycleName, cycleCount) {
-    console.log('🏆 Handling milestone unlocks (Schema 2.5 only)...');
+    console.log('🏆 Handling milestone unlocks (state-based)...');
+    
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for milestone unlocks');
+        return;
+    }
+    
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for milestone unlocks');
+        return;
+    }
     
     // ✅ Show milestone achievement message
     checkForMilestone(miniCycleName, cycleCount);
 
-    // ✅ Theme unlocks
+    // ✅ Theme unlocks with state-based tracking
     if (cycleCount >= 5) {
         unlockDarkOceanTheme();
     }
@@ -8644,15 +8706,9 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
         unlockGoldenGlowTheme();
     }
 
-    // ✅ Game unlock
+    // ✅ Game unlock with state-based tracking
     if (cycleCount >= 100) {
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for game unlock');
-            return;
-        }
-        
-        const hasGameUnlock = schemaData.settings.unlockedFeatures.includes("task-order-game");
+        const hasGameUnlock = currentState.settings.unlockedFeatures.includes("task-order-game");
         
         if (!hasGameUnlock) {
             showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
@@ -8660,48 +8716,56 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
         }
     }
     
-    console.log('✅ Milestone unlocks processed (Schema 2.5)');
+    console.log('✅ Milestone unlocks processed (state-based)');
 }
 
 function unlockMiniGame() {
-    console.log('🎮 Unlocking mini game (Schema 2.5 only)...');
+    console.log('🎮 Unlocking mini game (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for unlockMiniGame');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for unlockMiniGame');
         return;
     }
     
-    if (!schemaData.settings.unlockedFeatures.includes("task-order-game")) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.unlockedFeatures.push("task-order-game");
-        fullSchemaData.userProgress.rewardMilestones.push("task-order-game-100");
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for unlockMiniGame');
+        return;
+    }
+    
+    if (!currentState.settings.unlockedFeatures.includes("task-order-game")) {
+        window.AppState.update(state => {
+            state.settings.unlockedFeatures.push("task-order-game");
+            state.userProgress.rewardMilestones.push("task-order-game-100");
+        }, true);
         
-        console.log("🎮 Task Order Game unlocked in Schema 2.5!");
+        console.log("🎮 Task Order Game unlocked (state-based)!");
     }
     
     checkGamesUnlock();
 }
 
 function unlockDarkOceanTheme() {
-    console.log("🌊 Unlocking Dark Ocean theme (Schema 2.5 only)...");
+    console.log("🌊 Unlocking Dark Ocean theme (state-based)...");
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for unlockDarkOceanTheme');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for unlockDarkOceanTheme');
         return;
     }
     
-    if (!schemaData.settings.unlockedThemes.includes("dark-ocean")) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.unlockedThemes.push("dark-ocean");
-        fullSchemaData.userProgress.rewardMilestones.push("dark-ocean-5");
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for unlockDarkOceanTheme');
+        return;
+    }
+    
+    if (!currentState.settings.unlockedThemes.includes("dark-ocean")) {
+        window.AppState.update(state => {
+            state.settings.unlockedThemes.push("dark-ocean");
+            state.userProgress.rewardMilestones.push("dark-ocean-5");
+        }, true);
         
-        console.log("🎨 Dark Ocean theme unlocked in Schema 2.5!");
+        console.log("🎨 Dark Ocean theme unlocked (state-based)!");
         refreshThemeToggles();
         
         // Show the theme option in menu
@@ -8725,22 +8789,26 @@ function unlockDarkOceanTheme() {
 }
 
 function unlockGoldenGlowTheme() {
-    console.log("🌟 Unlocking Golden Glow theme (Schema 2.5 only)...");
+    console.log("🌟 Unlocking Golden Glow theme (state-based)...");
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for unlockGoldenGlowTheme');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for unlockGoldenGlowTheme');
         return;
     }
     
-    if (!schemaData.settings.unlockedThemes.includes("golden-glow")) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.unlockedThemes.push("golden-glow");
-        fullSchemaData.userProgress.rewardMilestones.push("golden-glow-50");
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for unlockGoldenGlowTheme');
+        return;
+    }
+    
+    if (!currentState.settings.unlockedThemes.includes("golden-glow")) {
+        window.AppState.update(state => {
+            state.settings.unlockedThemes.push("golden-glow");
+            state.userProgress.rewardMilestones.push("golden-glow-50");
+        }, true);
         
-        console.log("🎨 Golden Glow theme unlocked in Schema 2.5!");
+        console.log("🎨 Golden Glow theme unlocked (state-based)!");
         refreshThemeToggles();
 
         // Show the theme container (if hidden)
@@ -8759,6 +8827,8 @@ function unlockGoldenGlowTheme() {
     } else {
         console.log('ℹ️ Golden Glow theme already unlocked');
     }
+    
+    refreshThemeToggles();
 }
 
 
