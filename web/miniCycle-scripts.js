@@ -10997,24 +10997,31 @@ function triggerLogoBackground(color = 'green', duration = 300) {
  * @returns {void}
  */
 function saveToggleAutoReset() {
-    console.log('⚙️ Setting up toggle auto reset (Schema 2.5 only)...');
+    console.log('⚙️ Setting up toggle auto reset (state-based)...');
     
     const toggleAutoReset = document.getElementById("toggleAutoReset");
     const deleteCheckedTasksContainer = document.getElementById("deleteCheckedTasksContainer");
     const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveToggleAutoReset');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for saveToggleAutoReset');
+        return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for saveToggleAutoReset');
+        return;
+    }
+    
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const currentCycle = data.cycles[activeCycle];
     
     console.log('📊 Setting up toggles for cycle:', activeCycle);
     
-    // ✅ Ensure AutoReset reflects the correct state from Schema 2.5
+    // ✅ Ensure AutoReset reflects the correct state from state system
     if (activeCycle && currentCycle) {
         toggleAutoReset.checked = currentCycle.autoReset || false;
         deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
@@ -11033,27 +11040,29 @@ function saveToggleAutoReset() {
     toggleAutoReset.removeEventListener("change", handleAutoResetChange);
     deleteCheckedTasks.removeEventListener("change", handleDeleteCheckedTasksChange);
 
-    // ✅ Define event listener functions for Schema 2.5
+    // ✅ Define event listener functions for state-based system
     function handleAutoResetChange(event) {
-        console.log('🔄 Auto reset toggle changed:', event.target.checked);
+        console.log('🔄 Auto reset toggle changed (state-based):', event.target.checked);
         
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active cycle available for auto reset change');
             return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle].autoReset = event.target.checked;
-
-        // ✅ If Auto Reset is turned ON, automatically uncheck "Delete Checked Tasks"
-        if (event.target.checked) {
-            fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = false;
-            deleteCheckedTasks.checked = false; // ✅ Update UI
-            console.log('🔄 Auto reset ON - disabling delete checked tasks');
-        }
-
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Update through state system
+        window.AppState.update(state => {
+            const cycle = state.data.cycles[activeCycle];
+            if (cycle) {
+                cycle.autoReset = event.target.checked;
+                
+                // ✅ If Auto Reset is turned ON, automatically uncheck "Delete Checked Tasks"
+                if (event.target.checked) {
+                    cycle.deleteCheckedTasks = false;
+                    deleteCheckedTasks.checked = false; // ✅ Update UI
+                    console.log('🔄 Auto reset ON - disabling delete checked tasks');
+                }
+            }
+        }, true); // immediate save
 
         // ✅ Show/Hide "Delete Checked Tasks" toggle dynamically
         deleteCheckedTasksContainer.style.display = event.target.checked ? "none" : "block";
@@ -11067,42 +11076,41 @@ function saveToggleAutoReset() {
         refreshTaskListUI();
         updateRecurringButtonVisibility();
         
-        console.log('✅ Auto reset settings saved to Schema 2.5');
+        console.log('✅ Auto reset settings saved (state-based)');
     }
 
     function handleDeleteCheckedTasksChange(event) {
-        console.log('🗑️ Delete checked tasks toggle changed:', event.target.checked);
+        console.log('🗑️ Delete checked tasks toggle changed (state-based):', event.target.checked);
         
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active cycle available for delete checked tasks change');
             return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = event.target.checked;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Update through state system
+        window.AppState.update(state => {
+            const cycle = state.data.cycles[activeCycle];
+            if (cycle) {
+                cycle.deleteCheckedTasks = event.target.checked;
+            }
+        }, true); // immediate save
         
-        refreshTaskListUI();
-        console.log('✅ Delete checked tasks setting saved to Schema 2.5');
+        console.log('✅ Delete checked tasks setting saved (state-based)');
     }
 
     // ✅ Add new event listeners
     toggleAutoReset.addEventListener("change", handleAutoResetChange);
     deleteCheckedTasks.addEventListener("change", handleDeleteCheckedTasksChange);
     
-    console.log('✅ Toggle auto reset setup completed');
+    console.log('✅ Toggle auto reset setup completed (state-based)');
 }
 
 
-
-
-    /**
+/**
  * Checkduedates function.
  *
  * @returns {void}
  */
-
 function checkDueDates() {
     console.log('📅 Setting up due date checks (Schema 2.5 only)...');
     
@@ -12039,9 +12047,9 @@ setTimeout(() => {
     helpWindowManager = new HelpWindowManager();
 }, 500);
 
-// ✅ Updated setupModeSelector to show help descriptions on mode change
+// ✅ Updated setupModeSelector to use state-based system
 function setupModeSelector() {
-    console.log('🎯 Setting up mode selectors...');
+    console.log('🎯 Setting up mode selectors (state-based)...');
     
     const modeSelector = document.getElementById('mode-selector');
     const mobileModeSelector = document.getElementById('mobile-mode-selector');
@@ -12060,18 +12068,25 @@ function setupModeSelector() {
         return;
     }
     
-// ✅ Function to sync both selectors with toggles (Schema 2.5 only)
+// ✅ Function to sync both selectors with toggles (state-based)
 function syncModeFromToggles() {
-    console.log('🔄 Syncing mode from toggles (Schema 2.5 only)...');
+    console.log('🔄 Syncing mode from toggles (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for syncModeFromToggles');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for syncModeFromToggles');
         return;
     }
     
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for syncModeFromToggles');
+        return;
+    }
+    
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const currentCycle = data.cycles[activeCycle];
     
     let autoReset = false;
     let deleteChecked = false;
@@ -12080,7 +12095,7 @@ function syncModeFromToggles() {
         autoReset = currentCycle.autoReset || false;
         deleteChecked = currentCycle.deleteCheckedTasks || false;
         
-        console.log('📊 Mode settings from Schema 2.5:', {
+        console.log('📊 Mode settings from state:', {
             activeCycle,
             autoReset,
             deleteChecked
@@ -12178,18 +12193,26 @@ function syncModeFromToggles() {
         console.log('✅ Toggles synced from mode selector');
     }
     
-    // ✅ Add this helper function to update storage from current toggle states
+    // ✅ Add this helper function to update storage from current toggle states (state-based)
 function updateStorageFromToggles() {
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateStorageFromToggles');
+    console.log('💾 Updating storage from toggles (state-based)...');
+    
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for updateStorageFromToggles');
         return;
     }
     
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for updateStorageFromToggles');
+        return;
+    }
     
-    if (!currentCycle) {
+    const { appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    
+    if (!activeCycle) {
         console.warn('⚠️ No active cycle found for storage update');
         return;
     }
@@ -12197,14 +12220,16 @@ function updateStorageFromToggles() {
     const toggleAutoReset = document.getElementById('toggleAutoReset');
     const deleteCheckedTasks = document.getElementById('deleteCheckedTasks');
     
-    // Update Schema 2.5
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle].autoReset = toggleAutoReset.checked;
-    fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = deleteCheckedTasks.checked;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        const cycle = state.data.cycles[activeCycle];
+        if (cycle) {
+            cycle.autoReset = toggleAutoReset.checked;
+            cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
+        }
+    }, true); // immediate save
     
-    console.log('✅ Storage updated from toggles (Schema 2.5)');
+    console.log('✅ Storage updated from toggles (state-based)');
 } 
     // ✅ Set up event listeners for both selectors
     console.log('📡 Setting up event listeners for both selectors...');
