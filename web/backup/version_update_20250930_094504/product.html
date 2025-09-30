@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>miniCycle - Complete. Cycle. Repeat.</title>
+    <link rel="icon" type="image/png" href="assets/images/logo/logo.png">
+    <link rel="apple-touch-icon" href="assets/images/logo/logo.png">
+    
+    <!-- Structured Data (JSON-LD) for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "miniCycle",
+      "description": "A routine workflow companion that helps build productive habits with auto-reset cycles, recurring workflows, and intelligent routine patterns",
+      "url": "https://minicycle.app",
+      "applicationCategory": "ProductivityApplication",
+      "genre": "Routine Workflow Companion",
+      "keywords": "routine workflow companion, auto-reset cycles, habit tracker, workflow automation, productive routines, habit building, cycle-based productivity",
+      "operatingSystem": "Web Browser, PWA",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "sparkinCreations",
+        "url": "https://sparkincreations.com"
+      },
+      "screenshot": "https://minicycle.app/assets/images/Product/Mini_Cycle_List.png",
+      "softwareVersion": "1.280",
+      "datePublished": "2025",
+      "featureList": [
+        "Auto-Reset Workflow Cycles",
+        "Intelligent Routine Patterns", 
+        "Habit-Building Focus",
+        "Smart Routine Reminders",
+        "Workflow Templates",
+        "Cross-Platform Companion"
+      ]
+    }
+    </script>
+    
+    <!-- FAQ Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is a routine workflow companion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A routine workflow companion like miniCycle helps you build lasting productive habits by transforming daily tasks into automated workflow patterns. Unlike traditional task managers, it focuses on creating repeatable routines that build momentum through auto-reset cycles."
+          }
+        },
+        {
+          "@type": "Question", 
+          "name": "How do auto-reset cycles work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Auto-reset cycles automatically refresh your routine when all tasks are completed. This creates seamless workflow patterns perfect for daily habits, weekly routines, and recurring workflows that build lasting productive momentum."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is miniCycle free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! miniCycle is completely free to use as your routine workflow companion. It's a web-based application that works in any modern browser without requiring downloads or subscriptions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use miniCycle on my phone?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely! miniCycle works perfectly on desktop, tablet, and mobile devices. Your routine workflow companion follows you everywhere with responsive design and can be installed as a PWA for app-like experience."
+          }
+        }
+      ]
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0088ff 0%, #04a7ff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 90%;
+            text-align: center;
+            padding: 20px;
+        }
+           .app-name {
+            width: 300px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slogan {
+            font-size: 2rem;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        .slogan-two {
+            font-size: 1.8rem;
+            margin-bottom: 40px;
+            color: rgb(0, 0, 0);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+            .slogan-three {
+            font-size: 1.8rem;
+            color: rgb(0, 0, 0);
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .video-showcase {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .video-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .video-display {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-display img {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+
+        .video-display img.fade-out {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        .video-display img.fade-in {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .features-slide {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: white;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+
+        .features-slide.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .features-grid-mini {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-icon-large {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-item h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+
+        .feature-item p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-button:active {
+            transform: scale(0.95);
+        }
+
+        .video-info {
+            margin-top: 20px;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        .video-info.fade-out {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .video-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .video-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        .dot.active {
+            background: white;
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .dot:hover {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        .cta-section {
+            margin-top: 30px;
+        }
+          .cta-section-two {
+            margin-top: -30px;
+            margin-bottom: 30px;
+
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #535353, #565656);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+             .cta-button-two {
+            background: linear-gradient(45deg, #ffffff, #ffffff);
+            color: rgb(0, 0, 0);
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .cta-button-two:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+
+        /* Footer */
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 3rem 0;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            color: #ecf0f1;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: #bdc3c7;
+            text-decoration: none;
+            line-height: 1.6;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #34495e;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            color: #95a5a6;
+        }
+
+        
+
+/* Footer Styling */
+#footer-container {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-family: 'Poppins', sans-serif;
+    z-index:0;
+    width:100%;
+ 
+    
+
+    
+}
+
+/* Copyright Text */
+#copyright {
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.8; /* Subtle fade effect for a softer appearance */
+    transition: opacity 0.3s ease-in-out;
+    align-items: center;
+    
+}
+
+#copyright {
+    color: white; /* Make the text white */
+}
+
+#copyright a {
+    color: white; /* Ensure the link is also white */
+    text-decoration: none; /* Optional: Removes underline */
+}
+
+#copyright a:hover {
+    text-decoration: underline; /* Optional: Adds underline on hover */
+}
+
+
+/* Hover Effect */
+#footer-container:hover #copyright {
+    opacity: 1; /* Make it fully visible on hover */
+}
+
+        @media (max-width: 768px) {
+            .logo-container {
+                gap: 10px;
+            }
+            
+            .logo-icon {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .slogan {
+                font-size: 1.3rem;
+                letter-spacing: 1px;
+            }
+            
+            .video-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-button {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-container">
+          <!--<img src="assets/images/logo/logo.png" alt="miniCycle Logo" class="logo-icon">-->
+            <img src="assets/images/Logo/app_name_miniCycle_top_half.png" alt="miniCycle -" class="app-name" />
+  
+        </div>
+         <p class="slogan-two">Transform your tasks into repeatable cycles.</p>
+         
+              <div class="cta-section-two">
+            <a href="miniCycle.html" class="cta-button-two">Get Started</a>
+            <div style="margin-top: 12px; font-size: 0.85rem; color: rgba(0,0,0,0.6);">
+                100% Free • No random ads • No accounts • Just routines
+            </div>
+        </div>
+
+        <div class="video-showcase">
+            <div class="slogan-three">Your routine in action:</div>
+         <p class="slogan"> Complete → Cycle → Repeat</p>
+            <div class="video-container">
+                <button class="nav-button" id="prevBtn">‹</button>
+                
+                <div class="video-display">
+                    <img id="currentVideo" src="assets/videos/samples/Daily_Home_Routine.gif" alt="miniCycle Demo">
+                    <div id="featuresSlide" class="features-slide">
+                        <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">Why Choose miniCycle? ✨</h3>
+                        <div class="features-grid-mini">
+                            <div class="feature-item">
+                                <div class="feature-icon-large">🔒</div>
+                                <h4>Privacy Focused</h4>
+                                <p>Your data stays on your device. No tracking, no analytics, no cloud storage.</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon-large">📱</div>
+                                <h4>Mobile First PWA</h4>
+                                <p>Install on any device. Works offline. Native app experience.</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon-large">💾</div>
+                                <h4>Export .MCYC Files</h4>
+                                <p>Download your routines as portable files. Share and backup easily.</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon-large">🎨</div>
+                                <h4>Beautiful Themes</h4>
+                                <p>Unlock stunning themes as you complete cycles and build habits.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="nav-button" id="nextBtn">›</button>
+            </div>
+            
+            <div class="video-info">
+                <h3 class="video-title" id="videoTitle">Daily Home Routine</h3>
+                <p class="video-description" id="videoDescription">Streamline your daily home tasks with organized cycles that keep you productive and focused.</p>
+            </div>
+            
+            <div class="progress-dots" id="progressDots">
+                <span class="dot active" data-index="0"></span>
+                <span class="dot" data-index="1"></span>
+                <span class="dot" data-index="2"></span>
+                <span class="dot" data-index="3"></span>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <a href="learn_more.html" style="color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; transition: all 0.3s ease;" onmouseover="this.style.color='white'; this.style.borderColor='white';" onmouseout="this.style.color='rgba(255,255,255,0.7)'; this.style.borderColor='rgba(255,255,255,0.3)';">Learn more about features →</a>
+            </div>
+
+        </div>
+
+        
+        <div class="cta-section">
+            <a href="miniCycle.html" class="cta-button">Get Started</a>
+        </div>
+    </div>
+
+           <div class="footer-bottom">
+                <p id="copyright">&copy; 2025 <a href="https://sparkincreations.com" target="_blank">sparkinCreations</a></p>
+            </div>
+
+    <script>
+        const videos = [
+            {
+                src: 'assets/videos/samples/Daily_Home_Routine.gif',
+                title: 'Daily Home Routine',
+                description: 'Streamline your daily home tasks with organized cycles that keep you productive and focused.',
+                isVideo: true
+            },
+            {
+                src: 'assets/videos/samples/Daily_Work_Routine.gif',
+                title: 'Daily Work Routine',
+                description: 'Boost your work productivity with structured cycle lists that help you stay on track throughout the day.',
+                isVideo: true
+            },
+            {
+                src: 'assets/videos/samples/Monday_Fitness_Routine.gif',
+                title: 'Monday Fitness Routine',
+                description: 'Start your week strong with organized fitness cycles that make staying healthy simple and sustainable.',
+                isVideo: true
+            },
+            {
+                src: null,
+                title: 'Built for You',
+                description: 'Privacy-focused, offline-first, and designed to work beautifully on every device you own.',
+                isVideo: false
+            }
+        ];
+
+        let currentIndex = 0;
+        
+        const videoElement = document.getElementById('currentVideo');
+        const featuresSlide = document.getElementById('featuresSlide');
+        const titleElement = document.getElementById('videoTitle');
+        const descriptionElement = document.getElementById('videoDescription');
+        const videoInfo = document.querySelector('.video-info');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const dots = document.querySelectorAll('.dot');
+
+        let isTransitioning = false;
+
+        function updateVideo(index) {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            const video = videos[index];
+            
+            // Start fade out animation for current content
+            videoInfo.classList.add('fade-out');
+            
+            // Animate based on slide type
+            if (videos[currentIndex].isVideo && !video.isVideo) {
+                // Transitioning from video to features
+                videoElement.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    videoElement.style.display = 'none';
+                    featuresSlide.style.display = 'block';
+                    setTimeout(() => {
+                        featuresSlide.classList.add('active');
+                        updateContent(video, index);
+                    }, 50);
+                }, 250);
+                
+            } else if (!videos[currentIndex].isVideo && video.isVideo) {
+                // Transitioning from features to video
+                featuresSlide.classList.remove('active');
+                
+                setTimeout(() => {
+                    featuresSlide.style.display = 'none';
+                    videoElement.style.display = 'block';
+                    videoElement.src = video.src;
+                    videoElement.classList.remove('fade-out');
+                    videoElement.classList.add('fade-in');
+                    updateContent(video, index);
+                }, 250);
+                
+            } else if (video.isVideo) {
+                // Video to video transition
+                videoElement.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    videoElement.src = video.src;
+                    videoElement.classList.remove('fade-out');
+                    videoElement.classList.add('fade-in');
+                    updateContent(video, index);
+                }, 250);
+            } else {
+                // Features slide (shouldn't happen, but just in case)
+                updateContent(video, index);
+            }
+        }
+
+        function updateContent(video, index) {
+            // Update text content
+            titleElement.textContent = video.title;
+            descriptionElement.textContent = video.description;
+            
+            // Update dots
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            
+            // Fade in the info section
+            setTimeout(() => {
+                videoInfo.classList.remove('fade-out');
+                currentIndex = index;
+                isTransitioning = false;
+            }, 100);
+        }
+
+        function nextVideo() {
+            const nextIndex = (currentIndex + 1) % videos.length;
+            updateVideo(nextIndex);
+        }
+
+        function prevVideo() {
+            const prevIndex = (currentIndex - 1 + videos.length) % videos.length;
+            updateVideo(prevIndex);
+        }
+
+        // Event listeners with button animation
+        nextBtn.addEventListener('click', () => {
+            nextBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                nextBtn.style.transform = '';
+            }, 150);
+            nextVideo();
+        });
+
+        prevBtn.addEventListener('click', () => {
+            prevBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                prevBtn.style.transform = '';
+            }, 150);
+            prevVideo();
+        });
+
+        // Dot navigation
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => updateVideo(index));
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextVideo();
+            if (e.key === 'ArrowLeft') prevVideo();
+        });
+
+        // Auto-advance every 5 seconds (optional - can be removed)
+        setInterval(nextVideo, 15000);
+    </script>
+</body>
+</html>

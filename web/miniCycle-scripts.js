@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.301'
+        currentVersion: '1.302'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -4282,7 +4282,7 @@ document.getElementById("miniCycleSwitchCancel").addEventListener("click", hideS
  */
 
 function renameMiniCycle() {
-    console.log('📝 Renaming miniCycle (Schema 2.5 only)...');
+    console.log('📝 Renaming miniCycle (state-based)...');
     
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
 
@@ -4292,13 +4292,22 @@ function renameMiniCycle() {
         return;
     }
 
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for renameMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for renameMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles } = schemaData;
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for renameMiniCycle');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const { data, appState } = currentState;
+    const cycles = data.cycles || {};
     const cycleKey = selectedCycle.dataset.cycleKey;
     const currentCycle = cycles[cycleKey];
     
@@ -4337,37 +4346,44 @@ function renameMiniCycle() {
                 return;
             }
 
-            // Check for existing cycles by title (key collision check)
-            if (cycles[cleanName]) {
-                console.warn('⚠️ Cycle name already exists:', cleanName);
-                showNotification("⚠ A miniCycle with that name already exists.", "show", 1500);
-                return;
-            }
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // Check for existing cycles by title (key collision check)
+                if (state.data.cycles[cleanName]) {
+                    console.warn('⚠️ Cycle name already exists:', cleanName);
+                    showNotification("⚠ A miniCycle with that name already exists.", "show", 1500);
+                    return; // Don't save if duplicate exists
+                }
 
-            console.log('🔄 Performing rename operation...');
+                console.log('🔄 Performing rename operation...');
 
-            // Update Schema 2.5 with title-as-key approach
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            
-            // Create new entry with new title as key
-            const updatedCycle = { ...currentCycle, title: cleanName };
-            fullSchemaData.data.cycles[cleanName] = updatedCycle;
-            
-            // Remove old entry
-            delete fullSchemaData.data.cycles[cycleKey];
-            
-            console.log('📊 Updated cycles structure:', Object.keys(fullSchemaData.data.cycles));
-            
-            // Update active cycle if this was the active one
-            if (fullSchemaData.appState.activeCycleId === cycleKey) {
-                fullSchemaData.appState.activeCycleId = cleanName;
-                console.log('🎯 Updated active cycle ID to:', cleanName);
-            }
-            
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                // Create new entry with new title as key
+                const updatedCycle = { ...currentCycle, title: cleanName };
+                state.data.cycles[cleanName] = updatedCycle;
+                
+                // Remove old entry
+                delete state.data.cycles[cycleKey];
+                
+                console.log('📊 Updated cycles structure:', Object.keys(state.data.cycles));
+                
+                // Update active cycle if this was the active one
+                if (state.appState.activeCycleId === cycleKey) {
+                    state.appState.activeCycleId = cleanName;
+                    console.log('🎯 Updated active cycle ID to:', cleanName);
+                }
+                
+                state.metadata.lastModified = Date.now();
 
-            console.log('💾 Rename saved to Schema 2.5');
+                console.log('💾 Rename saved through state system');
+
+                // Store clean name for UI updates
+                window._tempRenameData = { oldKey: cycleKey, newKey: cleanName, newName: cleanName };
+
+            }, true); // immediate save
+
+            // ✅ Get the rename data for UI updates
+            const renameData = window._tempRenameData || {};
+            delete window._tempRenameData; // cleanup
 
             // Update UI
             selectedCycle.dataset.cycleKey = cleanName;
@@ -4401,7 +4417,7 @@ function renameMiniCycle() {
  * @returns {void}
  */
 function deleteMiniCycle() {
-    console.log('🗑️ Deleting miniCycle (Schema 2.5 only)...');
+    console.log('🗑️ Deleting miniCycle (state-based)...');
     
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
     if (!selectedCycle) {
@@ -4410,13 +4426,23 @@ function deleteMiniCycle() {
         return;
     }
 
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for deleteMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for deleteMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for deleteMiniCycle');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const { data, appState } = currentState;
+    const cycles = data.cycles || {};
+    const activeCycle = appState.activeCycleId;
     const cycleKey = selectedCycle.dataset.cycleKey;
     const currentCycle = cycles[cycleKey];
     
@@ -4445,66 +4471,80 @@ function deleteMiniCycle() {
 
             console.log('🔄 Performing deletion...');
 
-            // Create undo snapshot before deletion
-            
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // Remove the selected miniCycle
+                delete state.data.cycles[cycleKey];
+                
+                console.log(`✅ miniCycle "${cycleToDelete}" deleted from state`);
+                console.log('📊 Remaining cycles:', Object.keys(state.data.cycles));
 
-            // Remove the selected miniCycle from Schema 2.5
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            delete fullSchemaData.data.cycles[cycleKey];
-            
-            console.log(`✅ miniCycle "${cycleToDelete}" deleted from Schema 2.5`);
-            console.log('📊 Remaining cycles:', Object.keys(fullSchemaData.data.cycles));
+                // If the deleted cycle was the active one, handle fallback
+                if (cycleKey === activeCycle) {
+                    console.log('🎯 Deleted cycle was active, handling fallback...');
+                    const remainingCycleKeys = Object.keys(state.data.cycles);
 
-            // If the deleted cycle was the active one, handle fallback
-            if (cycleKey === activeCycle) {
-                console.log('🎯 Deleted cycle was active, handling fallback...');
-                const remainingCycleKeys = Object.keys(fullSchemaData.data.cycles);
-
-                if (remainingCycleKeys.length > 0) {
-                    // Switch to the first available miniCycle
-                    const newActiveCycleKey = remainingCycleKeys[0];
-                    fullSchemaData.appState.activeCycleId = newActiveCycleKey;
-                    
-                    const newActiveCycle = fullSchemaData.data.cycles[newActiveCycleKey];
-                    console.log(`🔄 Switched to miniCycle: "${newActiveCycle.title}"`);
-                } else {
-                    console.log('⚠️ No cycles remaining, resetting app...');
-                    fullSchemaData.appState.activeCycleId = null;
-                    
-                    setTimeout(() => {
-                        hideSwitchMiniCycleModal();
-                        showNotification("⚠ No miniCycles left. Please create a new one.");
+                    if (remainingCycleKeys.length > 0) {
+                        // Switch to the first available miniCycle
+                        const newActiveCycleKey = remainingCycleKeys[0];
+                        state.appState.activeCycleId = newActiveCycleKey;
                         
-                        // Manually reset UI instead of reloading
-                        taskList.innerHTML = "";
-                        toggleAutoReset.checked = false;
-                        initialSetup();
-                    }, 300);
+                        const newActiveCycle = state.data.cycles[newActiveCycleKey];
+                        console.log(`🔄 Switched to miniCycle: "${newActiveCycle.title}"`);
+                    } else {
+                        console.log('⚠️ No cycles remaining, resetting app...');
+                        state.appState.activeCycleId = null;
+                    }
                 }
-            }
 
-            // Update metadata and save
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save
 
-            console.log('💾 Deletion saved to Schema 2.5');
+            console.log('💾 Deletion saved through state system');
             console.log('🔄 Refreshing UI...');
 
-            // Refresh UI
-            loadMiniCycle();
-            loadMiniCycleList();
-            setTimeout(updateProgressBar, 500);
-            setTimeout(updateStatsPanel, 500);
-            checkCompleteAllButton();
-            
-            setTimeout(() => {
-                const firstCycle = document.querySelector(".mini-cycle-switch-item");
-                if (firstCycle) {
-                    firstCycle.classList.add("selected");
-                    firstCycle.click();
-                    console.log('✅ First remaining cycle selected');
+            // ✅ Check if any cycles remain
+            const finalState = window.AppState.get();
+            const remainingCycles = Object.keys(finalState.data.cycles);
+
+            if (remainingCycles.length === 0) {
+                // No cycles left - handle gracefully
+                setTimeout(() => {
+                    hideSwitchMiniCycleModal();
+                    showNotification("⚠ No miniCycles left. Please create a new one.");
+                    
+                    // Manually reset UI instead of reloading
+                    const taskList = document.getElementById("taskList");
+                    const toggleAutoReset = document.getElementById("toggleAutoReset");
+                    
+                    if (taskList) taskList.innerHTML = "";
+                    if (toggleAutoReset) toggleAutoReset.checked = false;
+                    
+                    // Trigger initial setup for new cycle creation
+                    setTimeout(initialSetup, 500);
+                }, 300);
+            } else {
+                // Refresh UI with remaining cycles
+                if (typeof window.loadMiniCycle === 'function') {
+                    window.loadMiniCycle();
+                } else {
+                    setTimeout(() => window.location.reload(), 1000);
                 }
-            }, 50);
+                
+                loadMiniCycleList();
+                setTimeout(updateProgressBar, 500);
+                setTimeout(updateStatsPanel, 500);
+                checkCompleteAllButton();
+                
+                setTimeout(() => {
+                    const firstCycle = document.querySelector(".mini-cycle-switch-item");
+                    if (firstCycle) {
+                        firstCycle.classList.add("selected");
+                        firstCycle.click();
+                        console.log('✅ First remaining cycle selected');
+                    }
+                }, 50);
+            }
 
             console.log(`✅ Successfully deleted: "${cycleToDelete}"`);
             showNotification(`🗑️ "${cycleToDelete}" has been deleted.`);
