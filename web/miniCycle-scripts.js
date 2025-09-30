@@ -4106,16 +4106,25 @@ function saveTaskDueDate(taskId, newDueDate) {
  */
 
 function saveMiniCycleAsNew() {
-    console.log('💾 Saving miniCycle as new (Schema 2.5 only)...');
+    console.log('💾 Saving miniCycle as new (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveMiniCycleAsNew');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for saveMiniCycleAsNew');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for saveMiniCycleAsNew');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const currentCycle = data.cycles[activeCycle];
     
     console.log('📊 Checking active cycle:', activeCycle);
     
@@ -4150,44 +4159,52 @@ function saveMiniCycleAsNew() {
                 return;
             }
 
-            // ✅ Check for existing cycles by key
-            if (cycles[newCycleName]) {
-                console.warn('⚠️ Cycle name already exists:', newCycleName);
-                showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
-                return;
-            }
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // ✅ Check for existing cycles by key
+                if (state.data.cycles[newCycleName]) {
+                    console.warn('⚠️ Cycle name already exists:', newCycleName);
+                    showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
+                    return; // Don't save if duplicate exists
+                }
 
-            console.log('🔄 Creating new cycle copy...');
+                console.log('🔄 Creating new cycle copy...');
 
-            // ✅ Create new cycle with title as key for Schema 2.5
-            const newCycleId = `copy_${Date.now()}`;
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            
-            console.log('📊 Deep copying current cycle data');
-            
-            // ✅ Deep copy the current cycle with new title as storage key
-            fullSchemaData.data.cycles[newCycleName] = {
-                ...JSON.parse(JSON.stringify(currentCycle)),
-                id: newCycleId,
-                title: newCycleName,
-                createdAt: Date.now()
-            };
+                // ✅ Create new cycle with title as key for Schema 2.5
+                const newCycleId = `copy_${Date.now()}`;
+                
+                console.log('📊 Deep copying current cycle data');
+                
+                // ✅ Deep copy the current cycle with new title as storage key
+                state.data.cycles[newCycleName] = {
+                    ...JSON.parse(JSON.stringify(currentCycle)),
+                    id: newCycleId,
+                    title: newCycleName,
+                    createdAt: Date.now()
+                };
 
-            console.log('🎯 Setting new cycle as active:', newCycleName);
+                console.log('🎯 Setting new cycle as active:', newCycleName);
 
-            // ✅ Set as active cycle using the title as key
-            fullSchemaData.appState.activeCycleId = newCycleName;
-            fullSchemaData.metadata.lastModified = Date.now();
-            fullSchemaData.metadata.totalCyclesCreated++;
+                // ✅ Set as active cycle using the title as key
+                state.appState.activeCycleId = newCycleName;
+                state.metadata.lastModified = Date.now();
+                state.metadata.totalCyclesCreated++;
 
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
+                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
 
-            console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
-            console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
+            }, true); // immediate save
 
             showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${newCycleName}"!`);
             hideMainMenu();
-            loadMiniCycle();
+            
+            // ✅ Use proper cycle loader if available
+            if (typeof window.loadMiniCycle === 'function') {
+                window.loadMiniCycle();
+            } else {
+                // Fallback to manual refresh
+                setTimeout(() => window.location.reload(), 1000);
+            }
         }
     });
 }
@@ -4200,21 +4217,27 @@ function saveMiniCycleAsNew() {
  */
 
 function switchMiniCycle() {
-    console.log('🔄 Opening switch miniCycle modal (Schema 2.5 only)...');
+    console.log('🔄 Opening switch miniCycle modal (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for switchMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for switchMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles } = schemaData;
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for switchMiniCycle');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const cycles = currentState.data?.cycles || {};
     const switchModal = document.querySelector(".mini-cycle-switch-modal");
-    const listContainer = document.getElementById("miniCycleList");
     const switchRow = document.querySelector(".switch-items-row");
     const renameButton = document.getElementById("switch-rename");
     const deleteButton = document.getElementById("switch-delete");
-    const previewWindow = document.getElementById("switch-preview-window");
 
     console.log('📊 Found cycles:', Object.keys(cycles).length);
 
@@ -4226,37 +4249,11 @@ function switchMiniCycle() {
         return;
     }
 
-    console.log('🔄 Populating cycle list...');
-
-    // ✅ Clear previous list and populate with miniCycles from Schema 2.5
-    listContainer.innerHTML = "";
-    Object.entries(cycles).forEach(([cycleKey, cycle]) => {
-        const listItem = document.createElement("button");
-        listItem.classList.add("mini-cycle-switch-item");
-        listItem.textContent = cycle.title || cycleKey;
-        listItem.dataset.cycleKey = cycleKey; // ✅ Use the storage key (title in Option 1)
-        listItem.dataset.cycleName = cycle.title || cycleKey; // Keep for compatibility
-
-        console.log('📋 Adding cycle to list:', cycle.title || cycleKey);
-
-        // ✅ Click event for selecting a miniCycle
-        listItem.addEventListener("click", () => {
-            console.log('🎯 Cycle selected:', cycle.title || cycleKey);
-            
-            document.querySelectorAll(".mini-cycle-switch-item").forEach(item => 
-                item.classList.remove("selected"));
-            listItem.classList.add("selected");
-
-            switchRow.style.display = "block"; 
-            updatePreview(cycle.title || cycleKey);
-        });
-
-        listContainer.appendChild(listItem);
-    });
-
-    console.log('📱 Showing switch modal...');
+    console.log('� Showing switch modal...');
     switchModal.style.display = "flex";
     switchRow.style.display = "none";
+    
+    // ✅ Let loadMiniCycleList() handle all the population logic
     loadMiniCycleList();
 
     console.log('🔗 Setting up event listeners...');
@@ -4540,19 +4537,19 @@ function hideSwitchMiniCycleModal() {
  * @returns {void}
  */
 function confirmMiniCycle() {
-    console.log("✅ Confirming miniCycle selection (Schema 2.5 only)...");
+    console.log("✅ Confirming miniCycle selection (state-based)...");
     
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
 
     if (!selectedCycle) {
-        showNotification("Please select a miniCycle.");
+        showNotification("⚠️ Please select a miniCycle first.", "warning", 3000);
         return;
     }
 
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for confirmMiniCycle');
-        showNotification("❌ Cannot switch cycle - Schema 2.5 data required.", "error");
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for confirmMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
         return;
     }
 
@@ -4560,28 +4557,54 @@ function confirmMiniCycle() {
     
     if (!cycleKey) {
         console.error("❌ Invalid cycle selection - missing cycleKey");
-        showNotification("⚠️ Invalid cycle selection.");
+        showNotification("⚠️ Invalid cycle selection.", "error", 3000);
         return;
     }
     
     console.log(`🔄 Switching to cycle: ${cycleKey}`);
+    console.log('🔍 Current active cycle before switch:', window.AppState.get()?.appState?.activeCycleId);
     
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        console.log('🔍 Inside state update - changing from:', state.appState.activeCycleId, 'to:', cycleKey);
+        state.appState.activeCycleId = cycleKey;
+        state.metadata.lastModified = Date.now();
+    }, true); // immediate save
     
-    // Set the active cycle using the cycle key
-    fullSchemaData.appState.activeCycleId = cycleKey;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Verify the change took effect
+    const newActiveId = window.AppState.get()?.appState?.activeCycleId;
+    console.log('🔍 Active cycle after state update:', newActiveId);
     
-    console.log(`✅ Switched to cycle (Schema 2.5): ${cycleKey}`);
+    if (newActiveId !== cycleKey) {
+        console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
+        showNotification("⚠️ Failed to switch cycle. Please try again.", "error", 3000);
+        return;
+    }
     
-    // Load the new cycle and close modal
-    loadMiniCycle();
+    console.log(`✅ Switched to cycle (state-based): ${cycleKey}`);
+    
+    // ✅ Close modal first to avoid UI conflicts
     hideSwitchMiniCycleModal();
     
-    // Show confirmation
-    const cycleName = fullSchemaData.data.cycles[cycleKey]?.title || cycleKey;
-    showNotification(`✅ Switched to "${cycleName}"`, "success", 2000);
+    // ✅ Add a small delay to ensure state is fully propagated
+    setTimeout(() => {
+        console.log('🔄 Loading new cycle after delay...');
+        console.log('🔍 Final active cycle check before loading:', window.AppState.get()?.appState?.activeCycleId);
+        
+        // Load the new cycle
+        if (typeof window.loadMiniCycle === 'function') {
+            window.loadMiniCycle();
+        } else {
+            console.error('❌ loadMiniCycle function not available');
+            // Fallback refresh
+            setTimeout(() => window.location.reload(), 1000);
+        }
+        
+        // ✅ Get cycle name from state for confirmation
+        const currentState = window.AppState.get();
+        const cycleName = currentState?.data?.cycles?.[cycleKey]?.title || cycleKey;
+        showNotification(`✅ Switched to "${cycleName}"`, "success", 2000);
+    }, 100);
 }
 
 
@@ -4662,16 +4685,36 @@ function updatePreview(cycleName) {
  *
  * @returns {void}
  */
+// ✅ Add debouncing to prevent multiple rapid calls
+let loadMiniCycleListTimeout;
 function loadMiniCycleList() {
-    console.log('📋 Loading miniCycle list (Schema 2.5 only)...');
+    // ✅ Clear any pending calls
+    if (loadMiniCycleListTimeout) {
+        clearTimeout(loadMiniCycleListTimeout);
+    }
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for loadMiniCycleList');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Debounce to prevent rapid successive calls
+    loadMiniCycleListTimeout = setTimeout(() => {
+        loadMiniCycleListActual();
+    }, 50);
+}
+
+function loadMiniCycleListActual() {
+    console.log('📋 Loading miniCycle list (state-based)...');
+    
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for loadMiniCycleList');
+        return;
+    }
+    
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for loadMiniCycleList');
+        return;
     }
 
-    const { cycles } = schemaData;
+    const cycles = currentState.data?.cycles || {};
     const miniCycleList = document.getElementById("miniCycleList");
     
     if (!miniCycleList) {
@@ -4683,14 +4726,24 @@ function loadMiniCycleList() {
 
     console.log('📊 Found cycles:', Object.keys(cycles).length);
 
+    // ✅ Ensure we have cycles to display
+    if (Object.keys(cycles).length === 0) {
+        console.warn('⚠️ No cycles found to display');
+        miniCycleList.innerHTML = '<div class="no-cycles-message">No miniCycles found</div>';
+        return;
+    }
+
     // ✅ Use Object.entries to get both key and cycle data
-    Object.entries(cycles).forEach(([cycleKey, cycleData]) => {
+    Object.entries(cycles).forEach(([cycleKey, cycleData], index) => {
+        if (!cycleData) {
+            console.warn('⚠️ Invalid cycle data for key:', cycleKey);
+            return;
+        }
+
         const listItem = document.createElement("div");
         listItem.classList.add("mini-cycle-switch-item");
         listItem.dataset.cycleName = cycleData.title || cycleKey; // Use title for compatibility
         listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
-
-        console.log('📋 Adding cycle to list:', cycleData.title || cycleKey);
 
         // 🏷️ Determine emoji based on miniCycle properties
         let emoji = "📋"; // Default to 📋 (Standard Document)
@@ -4706,13 +4759,17 @@ function loadMiniCycleList() {
 
         // 🖱️ Handle selection
         listItem.addEventListener("click", function () {
-            console.log('🎯 Cycle selected:', cycleData.title || cycleKey);
+            console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
             
             document.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
             this.classList.add("selected");
 
             // Show preview & buttons
-            document.getElementById("switch-items-row").style.display = "block";
+            const switchItemsRow = document.getElementById("switch-items-row");
+            if (switchItemsRow) {
+                switchItemsRow.style.display = "block";
+            }
+            
             // ✅ Pass the cycle key for Schema 2.5
             updatePreview(cycleKey);
         });
@@ -4722,7 +4779,7 @@ function loadMiniCycleList() {
 
     updateReminderButtons();
     
-    console.log('✅ MiniCycle list loaded successfully');
+    console.log('✅ MiniCycle list loaded successfully (state-based), final count:', miniCycleList.children.length);
 }
 
 
@@ -4878,12 +4935,13 @@ function deleteAllTasks() {
  * @returns {void}
  */
 function createNewMiniCycle() {
-    console.log('🆕 Creating new miniCycle (Schema 2.5 only)...');
+    console.log('🆕 Creating new miniCycle (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for createNewMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for createNewMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
     showPromptModal({
@@ -4904,67 +4962,74 @@ function createNewMiniCycle() {
             const newCycleName = sanitizeInput(result.trim());
             console.log('🔍 Processing new cycle name:', newCycleName);
             
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            
             // ✅ Create unique ID first
             const cycleId = `cycle_${Date.now()}`;
             console.log('🆔 Generated cycle ID:', cycleId);
             
-            // ✅ Determine the storage key (title-first approach with ID fallback)
-            let storageKey = newCycleName;
-            let finalTitle = newCycleName;
-            
-            // ✅ Handle duplicate titles by checking existing keys
-            if (fullSchemaData.data.cycles[storageKey]) {
-                console.log('⚠️ Duplicate title detected, finding unique variation');
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // ✅ Determine the storage key (title-first approach with ID fallback)
+                let storageKey = newCycleName;
+                let finalTitle = newCycleName;
                 
-                // Try numbered variations first: "Title (2)", "Title (3)", etc.
-                let counter = 2;
-                let numberedTitle = `${newCycleName} (${counter})`;
-                
-                while (fullSchemaData.data.cycles[numberedTitle] && counter < 10) {
-                    counter++;
-                    numberedTitle = `${newCycleName} (${counter})`;
+                // ✅ Handle duplicate titles by checking existing keys
+                if (state.data.cycles[storageKey]) {
+                    console.log('⚠️ Duplicate title detected, finding unique variation');
+                    
+                    // Try numbered variations first: "Title (2)", "Title (3)", etc.
+                    let counter = 2;
+                    let numberedTitle = `${newCycleName} (${counter})`;
+                    
+                    while (state.data.cycles[numberedTitle] && counter < 10) {
+                        counter++;
+                        numberedTitle = `${newCycleName} (${counter})`;
+                    }
+                    
+                    // If we found a unique numbered title, use it
+                    if (!state.data.cycles[numberedTitle]) {
+                        storageKey = numberedTitle;
+                        finalTitle = numberedTitle;
+                        console.log('🔄 Using numbered variation:', finalTitle);
+                        showNotification(`⚠ Title already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+                    } else {
+                        // Fallback to ID if too many duplicates
+                        storageKey = cycleId;
+                        finalTitle = newCycleName; // Keep original title inside object
+                        console.log('🔄 Using unique ID for storage:', storageKey);
+                        showNotification(`⚠ Multiple cycles with this name exist. Using unique ID for storage.`, "warning", 3000);
+                    }
                 }
+
+                console.log('🔄 Creating new cycle with storage key:', storageKey);
+
+                // ✅ Create new cycle in Schema 2.5 format
+                state.data.cycles[storageKey] = {
+                    title: finalTitle,
+                    id: cycleId,
+                    tasks: [],
+                    autoReset: true,
+                    deleteCheckedTasks: false,
+                    cycleCount: 0,
+                    createdAt: Date.now(),
+                    recurringTemplates: {}
+                };
+
+                // ✅ Set as active cycle using the storage key
+                state.appState.activeCycleId = storageKey;
+                state.metadata.lastModified = Date.now();
+                state.metadata.totalCyclesCreated++;
+
+                console.log('💾 Saving through state system...');
+                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
                 
-                // If we found a unique numbered title, use it
-                if (!fullSchemaData.data.cycles[numberedTitle]) {
-                    storageKey = numberedTitle;
-                    finalTitle = numberedTitle;
-                    console.log('🔄 Using numbered variation:', finalTitle);
-                    showNotification(`⚠ Title already exists. Using "${finalTitle}" instead.`, "warning", 3000);
-                } else {
-                    // Fallback to ID if too many duplicates
-                    storageKey = cycleId;
-                    finalTitle = newCycleName; // Keep original title inside object
-                    console.log('🔄 Using unique ID for storage:', storageKey);
-                    showNotification(`⚠ Multiple cycles with this name exist. Using unique ID for storage.`, "warning", 3000);
-                }
-            }
+                // Store final title for UI updates
+                window._tempNewCycleData = { storageKey, finalTitle };
+                
+            }, true); // immediate save
 
-            console.log('🔄 Creating new cycle with storage key:', storageKey);
-
-            // ✅ Create new cycle in Schema 2.5 format
-            fullSchemaData.data.cycles[storageKey] = {
-                title: finalTitle,
-                id: cycleId,
-                tasks: [],
-                autoReset: true,
-                deleteCheckedTasks: false,
-                cycleCount: 0,
-                createdAt: Date.now(),
-                recurringTemplates: {}
-            };
-
-            // ✅ Set as active cycle using the storage key
-            fullSchemaData.appState.activeCycleId = storageKey;
-            fullSchemaData.metadata.lastModified = Date.now();
-            fullSchemaData.metadata.totalCyclesCreated++;
-
-            console.log('💾 Saving to Schema 2.5 storage...');
-
-            // ✅ Save to localStorage
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            // ✅ Get the final data for UI updates
+            const { storageKey, finalTitle } = window._tempNewCycleData || {};
+            delete window._tempNewCycleData; // cleanup
 
             console.log('🔄 Updating UI elements...');
 
@@ -4987,8 +5052,7 @@ function createNewMiniCycle() {
             checkCompleteAllButton();
             autoSave();
 
-            console.log(`✅ Created and switched to new miniCycle (Schema 2.5): "${finalTitle}" (key: ${storageKey})`);
-            console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
+            console.log(`✅ Created and switched to new miniCycle (state-based): "${finalTitle}" (key: ${storageKey})`);
             
             showNotification(`✅ Created new miniCycle "${finalTitle}"`, "success", 3000);
         }
