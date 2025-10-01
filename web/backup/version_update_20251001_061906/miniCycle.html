@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.299">
+<meta name="app-version" content="1.302">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.299">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.302">
 <link rel="manifest" href="manifest.json">
 
 
@@ -84,31 +84,30 @@
 // Minimal, ES3-safe feature gate: if arrow functions can't be parsed, go Lite.
 (function () {
   var needsLite = false;
+  var reasons = [];
 
-  // 1) Syntax parse test (arrow function)
-  try { new Function('()=>{}'); } catch (e) { needsLite = true; }
+  try { new Function('()=>{}'); } catch (e) { needsLite = true; reasons.push('no-arrow-fn'); }
 
-  // 2) Runtime feature tests (add or remove as you like)
   if (!needsLite) {
     var w = window;
-    if (!w.Promise || !w.fetch) needsLite = true;
+    if (!w.Promise) { needsLite = true; reasons.push('no-promise'); }
+    if (!w.fetch)   { needsLite = true; reasons.push('no-fetch'); }
     try {
-      // Some older Android “has localStorage”, but throws on write in private mode.
-      localStorage.setItem('__t', '1'); localStorage.removeItem('__t');
-    } catch (e) { needsLite = true; }
+      localStorage.setItem('__t','1'); localStorage.removeItem('__t');
+    } catch (e) {
+      window.__LocalStorageBlocked = true;
+      reasons.push('localStorage-blocked'); // not fatal
+    }
   }
 
-  // 3) Respect explicit opt-in to Full via query param or stored flag
-  var params = location.search;
-  var forcedFull = (params.indexOf('mode=full') !== -1);
+  var forcedFull = (location.search.indexOf('mode=full') !== -1);
   try { forcedFull = forcedFull || localStorage.getItem('miniCycleForceFullVersion') === 'true'; } catch(e){}
 
-  if (needsLite && !forcedFull) {
-    var target = './miniCycle-lite.html?mode=lite&src=detect';
-    // Avoid redirect loops if already on Lite
-    if (location.pathname.indexOf('miniCycle-lite.html') === -1) {
-      location.replace(target);
-    }
+  window.__FeatureGateNeedsLite = needsLite;
+  window.__FeatureGateReasons = reasons;
+
+  if (needsLite && !forcedFull && location.pathname.indexOf('miniCycle-lite.html') === -1) {
+    location.replace('./miniCycle-lite.html?mode=lite&src=feature-gate&reasons=' + encodeURIComponent(reasons.join(',')));
   }
 })();
 
@@ -637,7 +636,7 @@ window.installApp = () => {
 
         <div class="main-menu-controls-container">
             <div id="mode-description" class="mode-description" aria-live="polite"></div>
-           <div class="toggle-container">
+           <div class="toggle-container" id="autoResetContainer" style="display: none;">
             <label class="switch">
                 <input type="checkbox" id="toggleAutoReset" aria-label="Toggle auto reset" checked>
                 <span class="slider round"></span>
@@ -662,7 +661,7 @@ window.installApp = () => {
 
  
   
-  <button id="open-recurring-panel" class="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i> Manage Recurring Tasks</button>
+  <button id="open-recurring-panel" class="open-recurring-panel hidden" title="Manage recurring tasks"><i class="fas fa-repeat"></i> Manage Recurring Tasks</button>
     
 
     
@@ -1521,18 +1520,8 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.299"></script>
-<script>
-// Late, best-effort fallback: if app didn’t initialize, go lite.
-(function () {
-  if (location.search.indexOf('mode=full') !== -1) return; // user forced full
-  setTimeout(function () {
-    if (!window.AppReady) { // set window.AppReady = true in your app once fully booted
-      location.replace('./miniCycle-lite.html?mode=lite&src=fallback');
-    }
-  }, 1500);
-})();
-</script>
+ <script type="module" src="miniCycle-scripts.js?v=1.302"></script>
+
 <script>
 // Sync About modal version with meta app-version
 document.addEventListener('DOMContentLoaded', function () {
@@ -1571,5 +1560,25 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
    <script type="module" src="utilities/notifications.js"></script>
    <script type="module" src="utilities/testing-modal.js"></script>
+   <script>
+// Late fallback: only redirect if feature gate failed OR full app never even started booting.
+(function () {
+  if (location.search.indexOf('mode=full') !== -1) return; // user forced full
+  setTimeout(function () {
+    var needsLite = !!window.__FeatureGateNeedsLite; // default false if gate script didn't run
+    if (needsLite) {
+      location.replace('./miniCycle-lite.html?mode=lite&src=fallback');
+      return;
+    }
+    // If full app has begun booting, don't redirect even if AppReady isn't set yet (e.g., onboarding).
+    if (window.AppBootStarted) {
+      console.warn('Full mode boot started; skipping lite fallback.');
+      return;
+    }
+    // Last resort: no boot detected at all.
+    location.replace('./miniCycle-lite.html?mode=lite&src=no-boot');
+  }, 8000);
+})();
+</script>
 </body>
 </html>

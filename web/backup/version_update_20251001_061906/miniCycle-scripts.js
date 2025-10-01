@@ -27,6 +27,13 @@
 // This houses all the app's critical state that needs to be accessible everywhere.
 // Think of it as the app's memory bank, storing everything from drag states to undo history.
 
+// ✅ Phase C: Feature Flags for recurring system
+window.FeatureFlags = {
+  recurringEnabled: true,
+  moveArrowsEnabled: true,
+  debugMode: false
+};
+
 window.AppGlobalState = {
   draggedTask: null,
   logoTimeoutId: null,
@@ -52,7 +59,10 @@ window.AppGlobalState = {
   redoStack: [],
   didDragReorderOccur: false,
   lastReorderTime: 0,
-  advancedVisible: false
+  advancedVisible: false,
+  isPerformingUndoRedo: false,
+  lastSnapshotSignature: null, 
+  lastSnapshotTs: 0   
 };
 
 
@@ -207,11 +217,51 @@ Object.defineProperty(window, 'isDragging', {
 // ✅ Add other frequently used properties as needed
 
 // ✅ CONSTANTS - Keep these as they are
-const UNDO_LIMIT = 4;
-const REORDER_SNAPSHOT_INTERVAL = 500;
+const UNDO_LIMIT = 20;
+const UNDO_MIN_INTERVAL_MS = 100;
 
 // Additional global variable for notification system compatibility
 let isDraggingNotification = false;
+
+// ✅ Debug function for checking app state
+window.debugAppState = function() {
+    console.group('🔍 App State Debug');
+    
+    if (!window.AppState) {
+        console.error('❌ AppState not available');
+        console.groupEnd();
+        return;
+    }
+    
+    console.log('Ready:', window.AppState.isReady());
+    
+    const state = window.AppState.get();
+    if (!state) {
+        console.error('❌ No state data');
+        console.groupEnd();
+        return;
+    }
+    
+    console.log('📊 Full State:', state);
+    console.log('🎯 Active Cycle:', state.appState?.activeCycleId);
+    
+    const activeCycle = state.appState?.activeCycleId;
+    const cycleData = state.data?.cycles?.[activeCycle];
+    console.log('🔢 Cycle Count:', cycleData?.cycleCount || 0);
+    console.log('🎨 Unlocked Themes:', state.settings?.unlockedThemes || []);
+    console.log('🎮 Unlocked Features:', state.settings?.unlockedFeatures || []);
+    console.log('👤 User Progress:', state.userProgress || {});
+    console.log('🏆 Reward Milestones:', state.userProgress?.rewardMilestones || []);
+    
+    // Check milestone eligibility
+    const currentCount = cycleData?.cycleCount || 0;
+    console.log(`🏆 Milestone Status:
+    - Dark Ocean (5 cycles): ${currentCount >= 5 ? '✅ Eligible' : `❌ Need ${5 - currentCount} more`}
+    - Golden Glow (50 cycles): ${currentCount >= 50 ? '✅ Eligible' : `❌ Need ${50 - currentCount} more`}
+    - Mini Game (100 cycles): ${currentCount >= 100 ? '✅ Eligible' : `❌ Need ${100 - currentCount} more`}`);
+    
+    console.groupEnd();
+};
 
 
 /**  🚦 App Initialization Lifecycle Manager
@@ -251,7 +301,8 @@ window.AppInit = AppInit;
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
-
+  window.AppBootStarted = true;
+  window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
 // ======================================================================
@@ -312,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.299'
+        currentVersion: '1.302'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -342,10 +393,22 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
+    
+    // ✅ Create a deferred stats update queue
+    window._deferredStatsUpdates = [];
+    
     window.updateStatsPanel = () => {
         const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
         if (dataAvailable) {
-            return statsPanelManager.updateStatsPanel();
+            // ✅ Check if AppState is ready before updating
+            if (window.AppState?.isReady?.()) {
+                return statsPanelManager.updateStatsPanel();
+            } else {
+                // ✅ Defer the update until AppState is ready
+                console.log('📊 Deferring stats update - AppState not ready yet');
+                window._deferredStatsUpdates.push(() => statsPanelManager.updateStatsPanel());
+                return;
+            }
         } else {
             console.log('📊 Skipping stats update - data not ready');
         }
@@ -485,11 +548,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Initialize app with proper error handling and Schema 2.5 focus
     console.log('🔧 Starting core initialization sequence...');
 
-    // Device detection with delay to ensure DOM is ready
-    setTimeout(() => {
-        console.log('📱 Running device detection...');
-        autoRedetectOnVersionChange();
-    }, 10000);
 
     
 
@@ -535,6 +593,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   try {
     const mod = await import('./utilities/cycleLoader.js');
 
+        // ✅ Ensure loadMiniCycle is available globally for refreshUIFromState()
+    if (!window.loadMiniCycle) {
+      window.loadMiniCycle = mod.loadMiniCycle;
+    }
+
     mod.setCycleLoaderDependencies({
       loadMiniCycleData,         // function defined in this file
       createInitialSchema25Data, // function defined in this file
@@ -551,6 +614,20 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     if (window.__pendingCycleLoad) {
       mod.loadMiniCycle();
       window.__pendingCycleLoad = false;
+    }
+
+    // 🎯 Core data initialization (move here so loader is ready)
+    console.log('🎯 About to start core data initialization...');
+    try {
+      console.log('🔧 Running fixTaskValidationIssues...');
+      fixTaskValidationIssues();
+
+      console.log('🚀 Running initializeAppWithAutoMigration...');
+      initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup()
+      console.log('✅ Core initialization sequence started successfully');
+    } catch (error) {
+      console.error('❌ Critical initialization error:', error);
+      console.error('❌ Error stack:', error.stack);
     }
   } catch (e) {
     console.error('❌ cycleLoader import failed:', e);
@@ -569,107 +646,206 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupUploadMiniCycle();
     setupRearrange();
     dragEndCleanup();
-    updateMoveArrowsVisibility();
+    // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
 
 
 
+// ...existing code...
+
+
+function wireUndoRedoUI() {
+  if (window.__undoRedoWired) return; // idempotent guard
+  window.__undoRedoWired = true;
+
+  initializeUndoRedoButtons();
+  const undoBtn = document.getElementById("undo-btn");
+  const redoBtn = document.getElementById("redo-btn");
+  if (undoBtn) safeAddEventListener(undoBtn, "click", () => performStateBasedUndo());
+  if (redoBtn) safeAddEventListener(redoBtn, "click", () => performStateBasedRedo());
+}
+
 // ✅ Defer anything that needs cycles/data until an active cycle exists
-AppInit.onReady(() => {
+// ...existing code...
+AppInit.onReady(async () => {
   console.log('🟢 Data-ready initializers running…');
 
-    // ✅ NOW initialize state module AFTER data exists
-    try {
-        console.log('🗃️ Initializing state module after data setup...');
-        
-        import('./utilities/state.js').then(({ createStateManager }) => {
-            window.AppState = createStateManager({
-                showNotification: window.showNotification || console.log.bind(console),
-                storage: localStorage,
-                createInitialData: createInitialSchema25Data
-            });
-            
-            return window.AppState.init();
-        }).then(() => {
-            console.log('✅ State module initialized successfully after data setup');
-            
-            window.AppState.subscribe('debug', (newState, oldState) => {
-                console.log('🔄 State changed:', {
-                    timestamp: new Date().toISOString(),
-                    activeCycle: newState.appState.activeCycleId,
-                    taskCount: newState.data.cycles[newState.appState.activeCycleId]?.tasks?.length || 0
-                });
-            });
-        }).catch(error => {
-            console.warn('⚠️ State module initialization failed, using legacy methods:', error);
-            window.AppState = null;
+  // ✅ Initialize state module SYNCHRONOUSLY after data exists
+  try {
+    console.log('🗃️ Initializing state module after data setup...');
+
+    const { createStateManager } = await import('./utilities/state.js');
+    window.AppState = createStateManager({
+      showNotification: window.showNotification || console.log.bind(console),
+      storage: localStorage,
+      createInitialData: createInitialSchema25Data
+    });
+
+    await window.AppState.init();
+    console.log('✅ State module initialized successfully after data setup');
+
+        // ✅ Idempotent wiring for Undo/Redo buttons
+        wireUndoRedoUI();
+
+
+        // 🧰 Centralize undo snapshots on AppState.update (wrap once)
+        try {
+          if (!window.__wrappedAppStateUpdate) {
+            // Bind methods to preserve `this`
+            const boundUpdate = window.AppState.update.bind(window.AppState);
+            const boundGet = typeof window.AppState.get === 'function'
+              ? window.AppState.get.bind(window.AppState)
+              : null;
+
+             window.AppState.update = async (producer, immediate) => {
+              try {
+                if (window.AppInit?.isReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
+                  const prev = boundGet();
+                  if (prev) captureStateSnapshot(prev);
+                }
+              } catch (e) {
+                console.warn('⚠️ Undo snapshot wrapper error:', e);
+              }
+              return boundUpdate(producer, immediate);
+            };
+
+            window.__wrappedAppStateUpdate = true;
+            window.__useUpdateWrapper = true; // ✅ wrapper becomes single snapshot source
+            console.log('🧰 Undo snapshots centralized on AppState.update (bound)');
+          }
+        } catch (e) {
+          console.warn('⚠️ Failed to wrap AppState.update:', e);
+        }
+
+
+        // ✅ Subscribe for state-based undo snapshots
+        setupStateBasedUndoRedo();
+
+             // 🔘 Update button states and capture an initial snapshot
+        try {
+          updateUndoRedoButtons();
+
+          // Only capture initial snapshot if not using the update wrapper
+          if (!window.__useUpdateWrapper) {
+            setTimeout(() => {
+              try {
+                const st = window.AppState.get?.();
+                if (st) captureStateSnapshot(st);
+              } catch (e) {
+                console.warn('⚠️ Initial snapshot failed:', e);
+              }
+            }, 50);
+          }
+        } catch (uiErr) {
+          console.warn('⚠️ Undo/redo UI init failed:', uiErr);
+        }
+        // Optional debug subscribe
+        window.AppState.subscribe('debug', (newState, oldState) => {
+          console.log('🔄 State changed:', {
+            timestamp: new Date().toISOString(),
+            activeCycle: newState.appState.activeCycleId,
+            taskCount:
+              newState.data.cycles[newState.appState.activeCycleId]?.tasks?.length || 0
+          });
         });
-        
-    } catch (error) {
-        console.warn('⚠️ State module initialization failed, using legacy methods:', error);
-        window.AppState = null;
-    }
+  } catch (error) {
+    console.warn('⚠️ State module initialization failed, using legacy methods:', error);
+    window.AppState = null;
+  }
 
-    // ✅ Recurring Features
-    console.log('🔁 Setting up recurring features...');
-    setupRecurringPanel();
-    attachRecurringSummaryListeners();
-    loadAlwaysShowRecurringSetting();
+  // ✅ Give AppState a moment to fully initialize before other modules try to use it
+  await new Promise(resolve => setTimeout(resolve, 50));
 
-    // ✅ Mode Selector (with delay for DOM readiness)
-    console.log('🎯 Initializing mode selector...');
-    initializeModeSelector(); // This calls setupModeSelector()
+  // ✅ Process any deferred stats updates now that AppState is ready
+  if (window._deferredStatsUpdates && window._deferredStatsUpdates.length > 0) {
+    console.log(`📊 Processing ${window._deferredStatsUpdates.length} deferred stats updates`);
+    window._deferredStatsUpdates.forEach(updateFn => {
+      try {
+        updateFn();
+      } catch (error) {
+        console.warn('⚠️ Deferred stats update failed:', error);
+      }
+    });
+    window._deferredStatsUpdates = []; // Clear the queue
+  }
 
-    // ✅ Reminder System (with staggered timing)
-    console.log('🔔 Setting up reminder system...');
-    setTimeout(() => {
-        try {
-            remindOverdueTasks();
-        } catch (error) {
-            console.warn('⚠️ Overdue task reminder failed:', error);
-        }
-    }, 2000);
-    checkDueDates();
+  // ✅ Process any deferred recurring setups now that AppState is ready
+  if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
+    console.log(`🔁 Processing ${window._deferredRecurringSetup.length} deferred recurring setups`);
+    window._deferredRecurringSetup.forEach(setupFn => {
+      try {
+        setupFn();
+      } catch (error) {
+        console.warn('⚠️ Deferred recurring setup failed:', error);
+      }
+    });
+    window._deferredRecurringSetup = []; // Clear the queue
+  }
 
-    setTimeout(() => {
-        try {
-            updateReminderButtons(); // ✅ This is the *right* place!
-            startReminders();
-        } catch (error) {
-            console.warn('⚠️ Reminder system setup failed:', error);
-        }
-    }, 200);
+  // ✅ Recurring Features
+  console.log('🔁 Setting up recurring features...');
+  setupRecurringPanel();
+  attachRecurringSummaryListeners();
+  loadAlwaysShowRecurringSetting();
 
-    // ✅ Recurring Watcher Setup (with Schema 2.5 compatibility)
-    console.log('👁️ Setting up recurring task watcher...');
+  // ✅ Mode Selector (with delay for DOM readiness)
+  console.log('🎯 Initializing mode selector...');
+  initializeModeSelector(); // This calls setupModeSelector()
+
+  // ✅ Reminder System (with staggered timing)
+  console.log('🔔 Setting up reminder system...');
+  setTimeout(() => {
     try {
-        const schemaData = loadMiniCycleData();
-        if (schemaData && schemaData.cycles && schemaData.activeCycle) {
-            const { activeCycle, cycles } = schemaData;
-            setupRecurringWatcher(activeCycle, cycles);
-        } else {
-            console.warn('⚠️ No Schema 2.5 data available for recurring watcher');
-        }
+      remindOverdueTasks();
     } catch (error) {
-        console.warn('⚠️ Recurring watcher setup failed:', error);
+      console.warn('⚠️ Overdue task reminder failed:', error);
     }
+  }, 2000);
+  checkDueDates();
 
-    // ✅ Final Setup
-    console.log('🎯 Completing initialization...');
-    window.onload = () => {
-        if (taskInput) {
-            taskInput.focus();
-        }
-    };
+  setTimeout(() => {
+    try {
+      updateReminderButtons(); // ✅ This is the *right* place!
+      startReminders();
+    } catch (error) {
+      console.warn('⚠️ Reminder system setup failed:', error);
+    }
+  }, 200);
 
- });
+  // ✅ Recurring Watcher Setup (with Schema 2.5 compatibility)
+  console.log('👁️ Setting up recurring task watcher...');
+  try {
+    // ✅ Use AppState-based watcher setup
+    if (window.AppState && window.AppState.isReady()) {
+      setupRecurringWatcher();
+    } else {
+      console.log('⏳ AppState not ready, deferring recurring watcher setup...');
+      // Defer setup until AppState is ready
+      window._deferredRecurringSetup = window._deferredRecurringSetup || [];
+      window._deferredRecurringSetup.push(() => setupRecurringWatcher());
+    }
+  } catch (error) {
+    console.warn('⚠️ Recurring watcher setup failed:', error);
+  }
 
-    // ✅ Mark app as ready
-    window.AppReady = true;
-    console.log("✅ miniCycle app is fully initialized and ready (Schema 2.5).");
+  // ✅ Final Setup
+  console.log('🎯 Completing initialization...');
+  
+  // ✅ Now that AppState is ready, setup arrow visibility
+  updateMoveArrowsVisibility();
+  
+  window.onload = () => {
+    if (taskInput) {
+      taskInput.focus();
+    }
+  };
+});
+// ...existing code...
 
-    console.log('🎉 Initialization sequence completed successfully!');
+// ...existing code...
+
+
 
 
 
@@ -685,13 +861,8 @@ AppInit.onReady(() => {
         }
     }, 10000);
 
-      // ✅ Core data initialization (runs AFTER loader is available)
-  try {
-    fixTaskValidationIssues();
-    initializeAppWithAutoMigration({ forceMode: true }); // this will call initialSetup()
-  } catch (error) {
-    console.error('❌ Critical initialization error:', error);
-  }
+
+
 
 
 
@@ -701,160 +872,357 @@ AppInit.onReady(() => {
 // - Functions: pushUndoSnapshot, performUndo, performRedo
 // ========================================================
 
-document.getElementById("undo-btn").hidden = true;
-document.getElementById("redo-btn").hidden = true;
 
-document.getElementById("undo-btn")?.addEventListener("click", performUndo);
-document.getElementById("redo-btn")?.addEventListener("click", performRedo);
 
-function pushUndoSnapshot() {
-  console.log('📸 Creating undo snapshot (Schema 2.5 only)...');
-  
-  const schemaData = loadMiniCycleData();
-  if (!schemaData) {
-    console.error('❌ Schema 2.5 data required for pushUndoSnapshot');
-    return;
-  }
 
-  const { cycles, activeCycle } = schemaData;
-  const currentCycle = cycles[activeCycle];
-  
-  if (!activeCycle || !currentCycle) {
-    console.warn('⚠️ No active cycle found for undo snapshot');
-    return;
-  }
 
-  const snapshot = {
-    tasks: structuredClone(currentCycle.tasks),
-    recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
-    title: currentCycle.title || "Untitled miniCycle"
-  };
 
-  // ✅ Use centralized state
-  window.AppGlobalState.undoStack.push(snapshot);
-  if (window.AppGlobalState.undoStack.length > UNDO_LIMIT) {
-    window.AppGlobalState.undoStack.shift(); // keep max 4
-  }
 
-  window.AppGlobalState.redoStack = []; // clear redo on new action
-
-  document.getElementById("undo-btn").hidden = false;
-  document.getElementById("redo-btn").hidden = true;
-  
-  console.log('✅ Undo snapshot created');
+ // ✅ Add this new function
+function initializeUndoRedoButtons() {
+    const undoBtn = document.getElementById("undo-btn");
+    const redoBtn = document.getElementById("redo-btn");
+    
+    if (undoBtn) {
+        undoBtn.hidden = false; // Show the button
+        undoBtn.disabled = true; // Initially disabled
+    }
+    if (redoBtn) {
+        redoBtn.hidden = false; // Show the button  
+        redoBtn.disabled = true; // Initially disabled
+    }
+    
+    console.log('🔘 Undo/redo buttons initialized');
 }
 
-function performUndo() {
+// ✅ Add this function
+function captureInitialSnapshot() {
+    const currentState = window.AppState.get();
+    if (currentState) {
+        console.log('📸 Capturing initial snapshot...');
+        captureStateSnapshot(currentState);
+    }
+}
+
+
+// ✅ FIXED: Update the setupStateBasedUndoRedo function around line 835
+function setupStateBasedUndoRedo() {
+    if (!window.AppState?.isReady?.()) {
+        console.warn('⚠️ State module not ready for undo/redo setup');
+        return;
+    }
+
+    // Skip installing when wrapper is active
+    if (window.__useUpdateWrapper) {
+        console.log('ℹ️ Undo subscriber skipped (wrapper handles snapshots)');
+        return;
+    }
+
+    try {
+        window.AppState.subscribe('undo-system', (newState, oldState) => {
+            // ✅ Runtime guard if wrapper activates later
+            if (window.__useUpdateWrapper) return;
+
+            if (!window.AppGlobalState.isPerformingUndoRedo &&
+                oldState?.data?.cycles && newState?.data?.cycles) {
+                const activeCycle = newState.appState.activeCycleId;
+                if (activeCycle && oldState.data.cycles[activeCycle] && newState.data.cycles[activeCycle]) {
+                    const oldCycle = oldState.data.cycles[activeCycle];
+                    const newCycle = newState.data.cycles[activeCycle];
+
+                    const tasksChanged = JSON.stringify(oldCycle.tasks) !== JSON.stringify(newCycle.tasks);
+                    const titleChanged = oldCycle.title !== newCycle.title;
+                    const settingsChanged = oldCycle.autoReset !== newCycle.autoReset ||
+                                            oldCycle.deleteCheckedTasks !== newCycle.deleteCheckedTasks;
+
+                    if (tasksChanged || titleChanged || settingsChanged) {
+                        captureStateSnapshot(oldState);
+                    }
+                }
+            }
+        });
+        console.log('✅ State-based undo/redo system initialized');
+    } catch (subscriptionError) {
+        console.warn('⚠️ Failed to subscribe to state changes:', subscriptionError);
+    }
+}
+
+// ✅ Capture complete state snapshots instead of manual extraction
+function captureStateSnapshot(state) {
+    if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
+        console.warn('⚠️ Invalid state for snapshot');
+        return;
+    }
+
+    const activeCycle = state.appState.activeCycleId;
+    const currentCycle = state.data.cycles[activeCycle];
+    if (!currentCycle) return;
+
+    const snapshot = {
+        activeCycleId: activeCycle,
+        tasks: structuredClone(currentCycle.tasks || []),
+        recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
+        title: currentCycle.title || "Untitled miniCycle",
+        autoReset: currentCycle.autoReset,
+        deleteCheckedTasks: currentCycle.deleteCheckedTasks,
+        timestamp: Date.now()
+    };
+
+    // Build minimal signature to detect duplicates
+    const sig = JSON.stringify({
+        c: snapshot.activeCycleId,
+        t: snapshot.tasks.map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
+        ti: snapshot.title,
+        ar: !!snapshot.autoReset,
+        dc: !!snapshot.deleteCheckedTasks
+    });
+
+    const now = Date.now();
+
+    // Throttle identical snapshots
+    if (sig === window.AppGlobalState.lastSnapshotSignature &&
+        now - window.AppGlobalState.lastSnapshotTs < UNDO_MIN_INTERVAL_MS) {
+        return;
+    }
+
+    // Skip if last on stack is identical
+    const last = window.AppGlobalState.undoStack.at(-1);
+    if (last) {
+        const lastSig = JSON.stringify({
+            c: last.activeCycleId,
+            t: (last.tasks || []).map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
+            ti: last.title,
+            ar: !!last.autoReset,
+            dc: !!last.deleteCheckedTasks
+        });
+        if (lastSig === sig) return;
+    }
+
+    console.log('📸 Capturing snapshot:', {
+        taskCount: snapshot.tasks.length,
+        title: snapshot.title,
+        stackSize: window.AppGlobalState.undoStack.length
+    });
+
+    window.AppGlobalState.undoStack.push(snapshot);
+    if (window.AppGlobalState.undoStack.length > UNDO_LIMIT) {
+        window.AppGlobalState.undoStack.shift();
+    }
+
+    // Update dedupe trackers
+    window.AppGlobalState.lastSnapshotSignature = sig;
+    window.AppGlobalState.lastSnapshotTs = now;
+
+    window.AppGlobalState.redoStack = [];
+    updateUndoRedoButtons();
+}
+
+function buildSnapshotSignature(s) {
+  if (!s) return '';
+  return JSON.stringify({
+    c: s.activeCycleId,
+    t: (s.tasks || []).map(t => ({
+      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null
+    })),
+    ti: s.title || '',
+    ar: !!s.autoReset,
+    dc: !!s.deleteCheckedTasks
+  });
+}
+
+function snapshotsEqual(a, b) {
+  return buildSnapshotSignature(a) === buildSnapshotSignature(b);
+}
+
+
+
+// ✅ State-based undo operation
+async function performStateBasedUndo() {
   if (window.AppGlobalState.undoStack.length === 0) return;
-  
-  console.log('↩️ Performing undo (Schema 2.5 only)...');
+  if (!window.AppState?.isReady?.()) return;
 
-  const schemaData = loadMiniCycleData();
-  if (!schemaData) {
-    console.error('❌ Schema 2.5 data required for performUndo');
-    return;
+  window.AppGlobalState.isPerformingUndoRedo = true;
+  try {
+    const currentState = window.AppState.get();
+    const currentActive = currentState.appState.activeCycleId;
+    const currentCycle = currentState.data.cycles[currentActive];
+
+    const currentSnapshot = {
+      activeCycleId: currentActive,
+      tasks: structuredClone(currentCycle?.tasks || []),
+      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
+      title: currentCycle?.title,
+      autoReset: currentCycle?.autoReset,
+      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
+      timestamp: Date.now()
+    };
+
+    let snap = null;
+    while (window.AppGlobalState.undoStack.length) {
+      const candidate = window.AppGlobalState.undoStack.pop();
+      if (!snapshotsEqual(candidate, currentSnapshot)) {
+        snap = candidate;
+        break;
+      }
+    }
+    if (!snap) { updateUndoRedoButtons(); return; }
+
+    window.AppGlobalState.redoStack.push(currentSnapshot);
+
+    await window.AppState.update(state => {
+      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
+        state.appState.activeCycleId = snap.activeCycleId;
+      }
+      const cid = state.appState.activeCycleId;
+      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
+      cycle.tasks = structuredClone(snap.tasks || []);
+      cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
+      if (snap.title) cycle.title = snap.title;
+      if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
+      if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
+    }, true);
+
+    await Promise.resolve();
+    refreshUIFromState(window.AppState.get());
+    updateUndoRedoButtons();
+  } catch (e) {
+    console.error('❌ Undo failed:', e);
+  } finally {
+    window.AppGlobalState.isPerformingUndoRedo = false;
   }
-
-  const { cycles, activeCycle } = schemaData;
-  const currentCycle = cycles[activeCycle];
-  
-  if (!activeCycle || !currentCycle) {
-    console.warn('⚠️ No active cycle found for undo');
-    return;
-  }
-
-  // Save current state to redo stack
-  const currentSnapshot = {
-    tasks: structuredClone(currentCycle.tasks),
-    recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
-    title: currentCycle.title
-  };
-  window.AppGlobalState.redoStack.push(currentSnapshot);
-
-  // Restore from undo stack
-  const snapshotToRestore = window.AppGlobalState.undoStack.pop();
-  currentCycle.tasks = structuredClone(snapshotToRestore.tasks);
-  currentCycle.recurringTemplates = structuredClone(snapshotToRestore.recurringTemplates || {});
-
-  if (snapshotToRestore.title !== undefined) {
-    currentCycle.title = snapshotToRestore.title;
-    document.getElementById("mini-cycle-title").textContent = snapshotToRestore.title;
-    updateMainMenuHeader();
-  }
-
-  // Update the full schema data
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  fullSchemaData.data.cycles[activeCycle] = currentCycle;
-  fullSchemaData.metadata.lastModified = Date.now();
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-  // Refresh UI
-  loadMiniCycle();
-  updateRecurringPanel();
-  updateRecurringPanelButtonVisibility();
-
-  // Update button states
-  document.getElementById("undo-btn").hidden = window.AppGlobalState.undoStack.length === 0;
-  document.getElementById("redo-btn").hidden = false;
-  
-  console.log('✅ Undo completed');
 }
 
-function performRedo() {
+
+
+// ✅ State-based redo operation
+async function performStateBasedRedo() {
   if (window.AppGlobalState.redoStack.length === 0) return;
-  
-  console.log('↪️ Performing redo (Schema 2.5 only)...');
+  if (!window.AppState?.isReady?.()) return;
 
-  const schemaData = loadMiniCycleData();
-  if (!schemaData) {
-    console.error('❌ Schema 2.5 data required for performRedo');
-    return;
+  window.AppGlobalState.isPerformingUndoRedo = true;
+  try {
+    const currentState = window.AppState.get();
+    const currentActive = currentState.appState.activeCycleId;
+    const currentCycle = currentState.data.cycles[currentActive];
+
+    const currentSnapshot = {
+      activeCycleId: currentActive,
+      tasks: structuredClone(currentCycle?.tasks || []),
+      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
+      title: currentCycle?.title,
+      autoReset: currentCycle?.autoReset,
+      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
+      timestamp: Date.now()
+    };
+
+    let snap = null;
+    while (window.AppGlobalState.redoStack.length) {
+      const candidate = window.AppGlobalState.redoStack.pop();
+      if (!snapshotsEqual(candidate, currentSnapshot)) {
+        snap = candidate;
+        break;
+      }
+    }
+    if (!snap) { updateUndoRedoButtons(); return; }
+
+    window.AppGlobalState.undoStack.push(currentSnapshot);
+
+    await window.AppState.update(state => {
+      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
+        state.appState.activeCycleId = snap.activeCycleId;
+      }
+      const cid = state.appState.activeCycleId;
+      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
+      cycle.tasks = structuredClone(snap.tasks || []);
+      cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
+      if (snap.title) cycle.title = snap.title;
+      if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
+      if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
+    }, true);
+
+    await Promise.resolve();
+    refreshUIFromState(window.AppState.get());
+    updateUndoRedoButtons();
+  } catch (e) {
+    console.error('❌ Redo failed:', e);
+  } finally {
+    window.AppGlobalState.isPerformingUndoRedo = false;
   }
-
-  const { cycles, activeCycle } = schemaData;
-  const currentCycle = cycles[activeCycle];
-  
-  if (!activeCycle || !currentCycle) {
-    console.warn('⚠️ No active cycle found for redo');
-    return;
-  }
-
-  // Save current state to undo stack
-  const currentSnapshot = {
-    tasks: structuredClone(currentCycle.tasks),
-    recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
-    title: currentCycle.title
-  };
-  window.AppGlobalState.undoStack.push(currentSnapshot);
-
-  // Restore from redo stack
-  const snapshotToRestore = window.AppGlobalState.redoStack.pop();
-  currentCycle.tasks = structuredClone(snapshotToRestore.tasks);
-  currentCycle.recurringTemplates = structuredClone(snapshotToRestore.recurringTemplates || {});
-
-  if (snapshotToRestore.title !== undefined) {
-    currentCycle.title = snapshotToRestore.title;
-    document.getElementById("mini-cycle-title").textContent = snapshotToRestore.title;
-    updateMainMenuHeader();
-  }
-
-  // Update the full schema data
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  fullSchemaData.data.cycles[activeCycle] = currentCycle;
-  fullSchemaData.metadata.lastModified = Date.now();
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-  // Refresh UI
-  loadMiniCycle();
-  updateRecurringPanel();
-  updateRecurringPanelButtonVisibility();
-
-  // Update button states
-  document.getElementById("undo-btn").hidden = false;
-  document.getElementById("redo-btn").hidden = window.AppGlobalState.redoStack.length === 0;
-  
-  console.log('✅ Redo completed');
 }
+
+// ✅ Helper: prefer AppState for UI refresh; fall back to loader
+function refreshUIFromState(providedState = null) {
+  const state =
+    providedState ||
+    (window.AppState?.isReady?.() ? window.AppState.get() : null);
+
+  if (state?.data?.cycles && state?.appState?.activeCycleId) {
+    const cid = state.appState.activeCycleId;
+    const cycle = state.data.cycles[cid];
+    if (cycle) {
+      // Render directly from current in‑memory state
+      renderTasks(cycle.tasks || []);
+      
+      // ✅ Restore UI state after rendering
+      const arrowsVisible = state.ui?.moveArrowsVisible || false;
+      updateArrowsInDOM(arrowsVisible);
+      
+      // Update other UI bits that don't depend on reloading storage
+      if (typeof updateRecurringPanel === 'function') updateRecurringPanel();
+      if (typeof updateRecurringPanelButtonVisibility === 'function') updateRecurringPanelButtonVisibility();
+      if (typeof updateMainMenuHeader === 'function') updateMainMenuHeader();
+      if (typeof updateProgressBar === 'function') updateProgressBar();
+      if (typeof checkCompleteAllButton === 'function') checkCompleteAllButton();
+      return;
+    }
+  }
+
+  // Fallback: loader (reads from localStorage)
+  if (typeof window.loadMiniCycle === 'function') {
+    window.loadMiniCycle();
+    
+    // ✅ Also restore arrow visibility after fallback load
+    setTimeout(() => {
+      if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+        updateArrowsInDOM(arrowsVisible);
+      }
+    }, 50);
+  }
+}
+// ✅ Update button states
+function updateUndoRedoButtons() {
+  const undoBtn = document.getElementById("undo-btn");
+  const redoBtn = document.getElementById("redo-btn");
+  const undoCount = window.AppGlobalState.undoStack.length;
+  const redoCount = window.AppGlobalState.redoStack.length;
+
+  if (undoBtn) {
+    undoBtn.disabled = undoCount === 0;
+    undoBtn.hidden = (undoCount === 0 && redoCount === 0);
+    undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
+  }
+  if (redoBtn) {
+    redoBtn.disabled = redoCount === 0;
+    redoBtn.hidden = (redoCount === 0);
+    redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
+  }
+      console.log('🔘 Button states updated:', {
+        undoCount: window.AppGlobalState.undoStack.length,
+        redoCount: window.AppGlobalState.redoStack.length
+    });
+}
+    
+
+
+
+
+
+
+
+
+
 
 function renderTasks(tasksArray = []) {
   console.log('🔄 Rendering tasks (Schema 2.5 only)...');
@@ -899,18 +1267,34 @@ function renderTasks(tasksArray = []) {
   checkCompleteAllButton();
   updateStatsPanel();
   
-  console.log('✅ Task rendering completed');
+  // ✅ Update recurring panel button visibility
+  if (typeof updateRecurringPanelButtonVisibility === 'function') {
+    updateRecurringPanelButtonVisibility();
+  }
+  
+  // ✅ Restore arrow visibility from state after rendering
+  if (window.AppState?.isReady?.()) {
+    const currentState = window.AppState.get();
+    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+    updateArrowsInDOM(arrowsVisible);
+  }
+  
+  console.log('✅ Task rendering completed and UI state restored');
 }
 
+
+
+// Undo "Z" and Redo "Y" keyboard shortcuts (state-based)
 document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-    e.preventDefault();
-    performUndo();
-  } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
-    e.preventDefault();
-    performRedo();
-  }
+    if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        e.preventDefault();
+        performStateBasedUndo();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
+        e.preventDefault();
+        performStateBasedRedo();
+    }
 });
+
 
 // 🔧 Utility Function (can go at top of your scripts)
 function generateNotificationId(message) {
@@ -954,7 +1338,9 @@ function detectDeviceType() {
         document.body.classList.add("non-touch-device");
     }
 }
-detectDeviceType();
+if (!window.deviceDetectionManager) {
+  detectDeviceType();
+}
 
 
         function refreshTaskListUI() {
@@ -1594,6 +1980,10 @@ function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = n
     console.warn('AppInit signal failed:', e);
   }
 
+    // ✅ Mark app as ready here (after data-ready)
+  window.AppReady = true;
+  console.log("✅ miniCycle app is fully initialized and ready (Schema 2.5).");
+  console.log('🎉 Initialization sequence completed successfully!');
   console.log('✅ Initial setup completed successfully');
 }
 
@@ -1664,6 +2054,7 @@ function createInitialSchema25Data() {
 
 
 
+
 // Update your existing setupDarkModeToggle function to include quick toggle
 function setupDarkModeToggle(toggleId, allToggleIds = []) {
     const thisToggle = document.getElementById(toggleId);
@@ -1719,9 +2110,10 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
             }
         });
 
-        // ✅ Update quick toggle icon
-        if (quickToggle) {
-            quickToggle.textContent = enabled ? "☀️" : "🌙";
+        // ✅ Update quick toggle icon - GET FRESH REFERENCE
+        const currentQuickToggle = document.getElementById("quick-dark-toggle");
+        if (currentQuickToggle) {
+            currentQuickToggle.textContent = enabled ? "☀️" : "🌙";
         }
 
         // ✅ Update theme color after dark mode change
@@ -1733,7 +2125,8 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
     console.log('✅ Dark mode toggle setup completed');
 }
 
-// ✅ ADD THIS FUNCTION:
+
+// setupQuickDarkToggle function
 function setupQuickDarkToggle() {
     const quickToggle = document.getElementById("quick-dark-toggle");
     if (!quickToggle) {
@@ -1743,9 +2136,16 @@ function setupQuickDarkToggle() {
     
     console.log('🌙 Setting up quick dark toggle...');
     
+    // ✅ Get current dark mode state BEFORE replacing element
+    const schemaData = loadMiniCycleData();
+    const isDark = schemaData ? (schemaData.settings.darkMode || false) : false;
+    
     // ✅ Remove any existing listeners to prevent duplicates
     const newQuickToggle = quickToggle.cloneNode(true);
     quickToggle.parentNode.replaceChild(newQuickToggle, quickToggle);
+    
+    // ✅ Set the correct initial icon state on the NEW element
+    newQuickToggle.textContent = isDark ? "☀️" : "🌙";
     
     newQuickToggle.addEventListener("click", (e) => {
         e.preventDefault();
@@ -1771,7 +2171,6 @@ function setupQuickDarkToggle() {
     
     console.log('✅ Quick dark toggle setup completed');
 }
-
 
 
 // ✅ Dynamic Theme Color System with Gradient-Matching Solid Colors
@@ -1878,8 +2277,9 @@ function setupMiniCycleTitleListener() {
     titleElement.contentEditable = true;
 
     if (!titleElement.dataset.listenerAdded) {
-        titleElement.addEventListener("blur", () => {
+        titleElement.addEventListener("blur", async () => { // <= make async
             let newTitle = sanitizeInput(titleElement.textContent.trim());
+
 
             if (newTitle === "") {
                 console.log('🔍 Empty title detected, reverting (Schema 2.5 only)...');
@@ -1898,8 +2298,7 @@ function setupMiniCycleTitleListener() {
                 return;
             }
 
-            console.log('📝 Updating title (Schema 2.5 only)...');
-            
+             console.log('📝 Updating title (Schema 2.5 only)...');
             const schemaData = loadMiniCycleData();
             if (!schemaData) {
                 console.error('❌ Schema 2.5 data required for setupMiniCycleTitleListener');
@@ -1908,35 +2307,34 @@ function setupMiniCycleTitleListener() {
 
             const { cycles, activeCycle } = schemaData;
             const miniCycleData = cycles[activeCycle];
-            
             if (!activeCycle || !miniCycleData) {
                 console.warn("⚠ No active miniCycle found. Title update aborted.");
                 return;
             }
 
             const oldTitle = miniCycleData.title;
-
             if (newTitle !== oldTitle) {
                 console.log(`🔄 Title change detected: "${oldTitle}" → "${newTitle}"`);
-                
-                // 🔁 Capture undo snapshot BEFORE title change
-                pushUndoSnapshot();
 
-                titleElement.textContent = newTitle;
-                miniCycleData.title = newTitle;
-                
-                // Update the full schema data
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.data.cycles[activeCycle] = miniCycleData;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                
-                console.log(`✅ miniCycle title updated (Schema 2.5): "${oldTitle}" → "${newTitle}"`);
+                // ✅ Update via AppState so undo captures oldState
+                if (window.AppState?.isReady?.()) {
+                    await window.AppState.update(state => {
+                        const cid = state.appState.activeCycleId;
+                        const cycle = state.data.cycles[cid];
+                        if (cycle) cycle.title = newTitle;
+                    }, true);
+                } else {
+                    // Fallback to direct localStorage
+                    titleElement.textContent = newTitle;
+                    miniCycleData.title = newTitle;
+                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    fullSchemaData.data.cycles[activeCycle] = miniCycleData;
+                    fullSchemaData.metadata.lastModified = Date.now();
+                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                }
 
-                // 🔄 Update UI
+                // 🔄 Refresh UI
                 updateMainMenuHeader();
-
-                // 🔄 Show undo button
                 document.getElementById("undo-btn").hidden = false;
                 document.getElementById("redo-btn").hidden = true;
             }
@@ -1953,49 +2351,43 @@ function setupMiniCycleTitleListener() {
 // ✅ SIMPLE FIX: Just make this function async and await the state module update
 
 // ✅ SIMPLIFIED: Clean autosave with proper fallback strategy
+// ...near your autoSave() and autoSaveWithStateModule()...
+let __stateSaveWarnedOnce = false;
+
 async function autoSave(overrideTaskList = null, immediate = false) {
-  console.log('💾 Auto-saving (Schema 2.5)...');
-  
-  // ✅ Try state module first (preferred method)
-  if (window.AppState?.isReady?.()) {
+  // Prefer state module when truly ready
+  if (window.AppState && typeof window.AppState.isReady === 'function' && window.AppState.isReady()
+      && typeof window.AppState.update === 'function') {
     try {
       return await autoSaveWithStateModule(overrideTaskList, immediate);
     } catch (error) {
-      console.warn('⚠️ State module save failed, using direct method:', error.message);
-      // Fall through to direct save
+      if (!__stateSaveWarnedOnce) {
+        console.warn('⚠️ State module save failed, using direct method:', error?.message || error);
+        __stateSaveWarnedOnce = true; // avoid log spam
+        // optional: reset after a while
+        setTimeout(() => { __stateSaveWarnedOnce = false; }, 5000);
+      }
+      // fall through to direct save
     }
   }
-  
-  // ✅ Direct save method (fallback)
   return await directSave(overrideTaskList);
 }
 
-// ✅ SIMPLIFIED: State module save (preferred method)
 async function autoSaveWithStateModule(overrideTaskList = null, immediate = false) {
-  if (!window.AppState?.isReady?.()) {
+  if (!window.AppState || typeof window.AppState.isReady !== 'function' || !window.AppState.isReady()
+      || typeof window.AppState.update !== 'function') {
     throw new Error('State module not ready');
   }
 
   const taskData = overrideTaskList || extractTaskDataFromDOM();
-  console.log('📝 Saving tasks via state module:', taskData.length);
-
   await window.AppState.update(state => {
     const activeCycle = state.appState.activeCycleId;
     const currentCycle = state.data.cycles[activeCycle];
-    
-    if (!currentCycle) {
-      throw new Error(`Active cycle "${activeCycle}" not found`);
-    }
-
-    // Update tasks
+    if (!currentCycle) throw new Error(`Active cycle "${activeCycle}" not found`);
     currentCycle.tasks = taskData;
-    
-    // Update recurring templates
     updateRecurringTemplates(currentCycle, taskData);
-    
   }, immediate);
 
-  console.log('✅ State module save completed');
   return { success: true, taskCount: taskData.length };
 }
 
@@ -3787,16 +4179,25 @@ function saveTaskDueDate(taskId, newDueDate) {
  */
 
 function saveMiniCycleAsNew() {
-    console.log('💾 Saving miniCycle as new (Schema 2.5 only)...');
+    console.log('💾 Saving miniCycle as new (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveMiniCycleAsNew');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for saveMiniCycleAsNew');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for saveMiniCycleAsNew');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const currentCycle = data.cycles[activeCycle];
     
     console.log('📊 Checking active cycle:', activeCycle);
     
@@ -3831,44 +4232,52 @@ function saveMiniCycleAsNew() {
                 return;
             }
 
-            // ✅ Check for existing cycles by key
-            if (cycles[newCycleName]) {
-                console.warn('⚠️ Cycle name already exists:', newCycleName);
-                showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
-                return;
-            }
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // ✅ Check for existing cycles by key
+                if (state.data.cycles[newCycleName]) {
+                    console.warn('⚠️ Cycle name already exists:', newCycleName);
+                    showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
+                    return; // Don't save if duplicate exists
+                }
 
-            console.log('🔄 Creating new cycle copy...');
+                console.log('🔄 Creating new cycle copy...');
 
-            // ✅ Create new cycle with title as key for Schema 2.5
-            const newCycleId = `copy_${Date.now()}`;
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            
-            console.log('📊 Deep copying current cycle data');
-            
-            // ✅ Deep copy the current cycle with new title as storage key
-            fullSchemaData.data.cycles[newCycleName] = {
-                ...JSON.parse(JSON.stringify(currentCycle)),
-                id: newCycleId,
-                title: newCycleName,
-                createdAt: Date.now()
-            };
+                // ✅ Create new cycle with title as key for Schema 2.5
+                const newCycleId = `copy_${Date.now()}`;
+                
+                console.log('📊 Deep copying current cycle data');
+                
+                // ✅ Deep copy the current cycle with new title as storage key
+                state.data.cycles[newCycleName] = {
+                    ...JSON.parse(JSON.stringify(currentCycle)),
+                    id: newCycleId,
+                    title: newCycleName,
+                    createdAt: Date.now()
+                };
 
-            console.log('🎯 Setting new cycle as active:', newCycleName);
+                console.log('🎯 Setting new cycle as active:', newCycleName);
 
-            // ✅ Set as active cycle using the title as key
-            fullSchemaData.appState.activeCycleId = newCycleName;
-            fullSchemaData.metadata.lastModified = Date.now();
-            fullSchemaData.metadata.totalCyclesCreated++;
+                // ✅ Set as active cycle using the title as key
+                state.appState.activeCycleId = newCycleName;
+                state.metadata.lastModified = Date.now();
+                state.metadata.totalCyclesCreated++;
 
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
+                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
 
-            console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
-            console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
+            }, true); // immediate save
 
             showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${newCycleName}"!`);
             hideMainMenu();
-            loadMiniCycle();
+            
+            // ✅ Use proper cycle loader if available
+            if (typeof window.loadMiniCycle === 'function') {
+                window.loadMiniCycle();
+            } else {
+                // Fallback to manual refresh
+                setTimeout(() => window.location.reload(), 1000);
+            }
         }
     });
 }
@@ -3881,21 +4290,27 @@ function saveMiniCycleAsNew() {
  */
 
 function switchMiniCycle() {
-    console.log('🔄 Opening switch miniCycle modal (Schema 2.5 only)...');
+    console.log('🔄 Opening switch miniCycle modal (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for switchMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for switchMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles } = schemaData;
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for switchMiniCycle');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const cycles = currentState.data?.cycles || {};
     const switchModal = document.querySelector(".mini-cycle-switch-modal");
-    const listContainer = document.getElementById("miniCycleList");
     const switchRow = document.querySelector(".switch-items-row");
     const renameButton = document.getElementById("switch-rename");
     const deleteButton = document.getElementById("switch-delete");
-    const previewWindow = document.getElementById("switch-preview-window");
 
     console.log('📊 Found cycles:', Object.keys(cycles).length);
 
@@ -3907,37 +4322,11 @@ function switchMiniCycle() {
         return;
     }
 
-    console.log('🔄 Populating cycle list...');
-
-    // ✅ Clear previous list and populate with miniCycles from Schema 2.5
-    listContainer.innerHTML = "";
-    Object.entries(cycles).forEach(([cycleKey, cycle]) => {
-        const listItem = document.createElement("button");
-        listItem.classList.add("mini-cycle-switch-item");
-        listItem.textContent = cycle.title || cycleKey;
-        listItem.dataset.cycleKey = cycleKey; // ✅ Use the storage key (title in Option 1)
-        listItem.dataset.cycleName = cycle.title || cycleKey; // Keep for compatibility
-
-        console.log('📋 Adding cycle to list:', cycle.title || cycleKey);
-
-        // ✅ Click event for selecting a miniCycle
-        listItem.addEventListener("click", () => {
-            console.log('🎯 Cycle selected:', cycle.title || cycleKey);
-            
-            document.querySelectorAll(".mini-cycle-switch-item").forEach(item => 
-                item.classList.remove("selected"));
-            listItem.classList.add("selected");
-
-            switchRow.style.display = "block"; 
-            updatePreview(cycle.title || cycleKey);
-        });
-
-        listContainer.appendChild(listItem);
-    });
-
-    console.log('📱 Showing switch modal...');
+    console.log('� Showing switch modal...');
     switchModal.style.display = "flex";
     switchRow.style.display = "none";
+    
+    // ✅ Let loadMiniCycleList() handle all the population logic
     loadMiniCycleList();
 
     console.log('🔗 Setting up event listeners...');
@@ -3966,7 +4355,7 @@ document.getElementById("miniCycleSwitchCancel").addEventListener("click", hideS
  */
 
 function renameMiniCycle() {
-    console.log('📝 Renaming miniCycle (Schema 2.5 only)...');
+    console.log('📝 Renaming miniCycle (state-based)...');
     
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
 
@@ -3976,13 +4365,22 @@ function renameMiniCycle() {
         return;
     }
 
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for renameMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for renameMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles } = schemaData;
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for renameMiniCycle');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const { data, appState } = currentState;
+    const cycles = data.cycles || {};
     const cycleKey = selectedCycle.dataset.cycleKey;
     const currentCycle = cycles[cycleKey];
     
@@ -4021,37 +4419,44 @@ function renameMiniCycle() {
                 return;
             }
 
-            // Check for existing cycles by title (key collision check)
-            if (cycles[cleanName]) {
-                console.warn('⚠️ Cycle name already exists:', cleanName);
-                showNotification("⚠ A miniCycle with that name already exists.", "show", 1500);
-                return;
-            }
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // Check for existing cycles by title (key collision check)
+                if (state.data.cycles[cleanName]) {
+                    console.warn('⚠️ Cycle name already exists:', cleanName);
+                    showNotification("⚠ A miniCycle with that name already exists.", "show", 1500);
+                    return; // Don't save if duplicate exists
+                }
 
-            console.log('🔄 Performing rename operation...');
+                console.log('🔄 Performing rename operation...');
 
-            // Update Schema 2.5 with title-as-key approach
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            
-            // Create new entry with new title as key
-            const updatedCycle = { ...currentCycle, title: cleanName };
-            fullSchemaData.data.cycles[cleanName] = updatedCycle;
-            
-            // Remove old entry
-            delete fullSchemaData.data.cycles[cycleKey];
-            
-            console.log('📊 Updated cycles structure:', Object.keys(fullSchemaData.data.cycles));
-            
-            // Update active cycle if this was the active one
-            if (fullSchemaData.appState.activeCycleId === cycleKey) {
-                fullSchemaData.appState.activeCycleId = cleanName;
-                console.log('🎯 Updated active cycle ID to:', cleanName);
-            }
-            
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                // Create new entry with new title as key
+                const updatedCycle = { ...currentCycle, title: cleanName };
+                state.data.cycles[cleanName] = updatedCycle;
+                
+                // Remove old entry
+                delete state.data.cycles[cycleKey];
+                
+                console.log('📊 Updated cycles structure:', Object.keys(state.data.cycles));
+                
+                // Update active cycle if this was the active one
+                if (state.appState.activeCycleId === cycleKey) {
+                    state.appState.activeCycleId = cleanName;
+                    console.log('🎯 Updated active cycle ID to:', cleanName);
+                }
+                
+                state.metadata.lastModified = Date.now();
 
-            console.log('💾 Rename saved to Schema 2.5');
+                console.log('💾 Rename saved through state system');
+
+                // Store clean name for UI updates
+                window._tempRenameData = { oldKey: cycleKey, newKey: cleanName, newName: cleanName };
+
+            }, true); // immediate save
+
+            // ✅ Get the rename data for UI updates
+            const renameData = window._tempRenameData || {};
+            delete window._tempRenameData; // cleanup
 
             // Update UI
             selectedCycle.dataset.cycleKey = cleanName;
@@ -4085,7 +4490,7 @@ function renameMiniCycle() {
  * @returns {void}
  */
 function deleteMiniCycle() {
-    console.log('🗑️ Deleting miniCycle (Schema 2.5 only)...');
+    console.log('🗑️ Deleting miniCycle (state-based)...');
     
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
     if (!selectedCycle) {
@@ -4094,13 +4499,23 @@ function deleteMiniCycle() {
         return;
     }
 
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for deleteMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for deleteMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for deleteMiniCycle');
+        showNotification("⚠️ No data available. Please try again.", "error", 3000);
+        return;
+    }
+
+    const { data, appState } = currentState;
+    const cycles = data.cycles || {};
+    const activeCycle = appState.activeCycleId;
     const cycleKey = selectedCycle.dataset.cycleKey;
     const currentCycle = cycles[cycleKey];
     
@@ -4129,66 +4544,80 @@ function deleteMiniCycle() {
 
             console.log('🔄 Performing deletion...');
 
-            // Create undo snapshot before deletion
-            pushUndoSnapshot();
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // Remove the selected miniCycle
+                delete state.data.cycles[cycleKey];
+                
+                console.log(`✅ miniCycle "${cycleToDelete}" deleted from state`);
+                console.log('📊 Remaining cycles:', Object.keys(state.data.cycles));
 
-            // Remove the selected miniCycle from Schema 2.5
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            delete fullSchemaData.data.cycles[cycleKey];
-            
-            console.log(`✅ miniCycle "${cycleToDelete}" deleted from Schema 2.5`);
-            console.log('📊 Remaining cycles:', Object.keys(fullSchemaData.data.cycles));
+                // If the deleted cycle was the active one, handle fallback
+                if (cycleKey === activeCycle) {
+                    console.log('🎯 Deleted cycle was active, handling fallback...');
+                    const remainingCycleKeys = Object.keys(state.data.cycles);
 
-            // If the deleted cycle was the active one, handle fallback
-            if (cycleKey === activeCycle) {
-                console.log('🎯 Deleted cycle was active, handling fallback...');
-                const remainingCycleKeys = Object.keys(fullSchemaData.data.cycles);
-
-                if (remainingCycleKeys.length > 0) {
-                    // Switch to the first available miniCycle
-                    const newActiveCycleKey = remainingCycleKeys[0];
-                    fullSchemaData.appState.activeCycleId = newActiveCycleKey;
-                    
-                    const newActiveCycle = fullSchemaData.data.cycles[newActiveCycleKey];
-                    console.log(`🔄 Switched to miniCycle: "${newActiveCycle.title}"`);
-                } else {
-                    console.log('⚠️ No cycles remaining, resetting app...');
-                    fullSchemaData.appState.activeCycleId = null;
-                    
-                    setTimeout(() => {
-                        hideSwitchMiniCycleModal();
-                        showNotification("⚠ No miniCycles left. Please create a new one.");
+                    if (remainingCycleKeys.length > 0) {
+                        // Switch to the first available miniCycle
+                        const newActiveCycleKey = remainingCycleKeys[0];
+                        state.appState.activeCycleId = newActiveCycleKey;
                         
-                        // Manually reset UI instead of reloading
-                        taskList.innerHTML = "";
-                        toggleAutoReset.checked = false;
-                        initialSetup();
-                    }, 300);
+                        const newActiveCycle = state.data.cycles[newActiveCycleKey];
+                        console.log(`🔄 Switched to miniCycle: "${newActiveCycle.title}"`);
+                    } else {
+                        console.log('⚠️ No cycles remaining, resetting app...');
+                        state.appState.activeCycleId = null;
+                    }
                 }
-            }
 
-            // Update metadata and save
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save
 
-            console.log('💾 Deletion saved to Schema 2.5');
+            console.log('💾 Deletion saved through state system');
             console.log('🔄 Refreshing UI...');
 
-            // Refresh UI
-            loadMiniCycle();
-            loadMiniCycleList();
-            setTimeout(updateProgressBar, 500);
-            setTimeout(updateStatsPanel, 500);
-            checkCompleteAllButton();
-            
-            setTimeout(() => {
-                const firstCycle = document.querySelector(".mini-cycle-switch-item");
-                if (firstCycle) {
-                    firstCycle.classList.add("selected");
-                    firstCycle.click();
-                    console.log('✅ First remaining cycle selected');
+            // ✅ Check if any cycles remain
+            const finalState = window.AppState.get();
+            const remainingCycles = Object.keys(finalState.data.cycles);
+
+            if (remainingCycles.length === 0) {
+                // No cycles left - handle gracefully
+                setTimeout(() => {
+                    hideSwitchMiniCycleModal();
+                    showNotification("⚠ No miniCycles left. Please create a new one.");
+                    
+                    // Manually reset UI instead of reloading
+                    const taskList = document.getElementById("taskList");
+                    const toggleAutoReset = document.getElementById("toggleAutoReset");
+                    
+                    if (taskList) taskList.innerHTML = "";
+                    if (toggleAutoReset) toggleAutoReset.checked = false;
+                    
+                    // Trigger initial setup for new cycle creation
+                    setTimeout(initialSetup, 500);
+                }, 300);
+            } else {
+                // Refresh UI with remaining cycles
+                if (typeof window.loadMiniCycle === 'function') {
+                    window.loadMiniCycle();
+                } else {
+                    setTimeout(() => window.location.reload(), 1000);
                 }
-            }, 50);
+                
+                loadMiniCycleList();
+                setTimeout(updateProgressBar, 500);
+                setTimeout(updateStatsPanel, 500);
+                checkCompleteAllButton();
+                
+                setTimeout(() => {
+                    const firstCycle = document.querySelector(".mini-cycle-switch-item");
+                    if (firstCycle) {
+                        firstCycle.classList.add("selected");
+                        firstCycle.click();
+                        console.log('✅ First remaining cycle selected');
+                    }
+                }, 50);
+            }
 
             console.log(`✅ Successfully deleted: "${cycleToDelete}"`);
             showNotification(`🗑️ "${cycleToDelete}" has been deleted.`);
@@ -4221,19 +4650,19 @@ function hideSwitchMiniCycleModal() {
  * @returns {void}
  */
 function confirmMiniCycle() {
-    console.log("✅ Confirming miniCycle selection (Schema 2.5 only)...");
+    console.log("✅ Confirming miniCycle selection (state-based)...");
     
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
 
     if (!selectedCycle) {
-        showNotification("Please select a miniCycle.");
+        showNotification("⚠️ Please select a miniCycle first.", "warning", 3000);
         return;
     }
 
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for confirmMiniCycle');
-        showNotification("❌ Cannot switch cycle - Schema 2.5 data required.", "error");
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for confirmMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
         return;
     }
 
@@ -4241,28 +4670,54 @@ function confirmMiniCycle() {
     
     if (!cycleKey) {
         console.error("❌ Invalid cycle selection - missing cycleKey");
-        showNotification("⚠️ Invalid cycle selection.");
+        showNotification("⚠️ Invalid cycle selection.", "error", 3000);
         return;
     }
     
     console.log(`🔄 Switching to cycle: ${cycleKey}`);
+    console.log('🔍 Current active cycle before switch:', window.AppState.get()?.appState?.activeCycleId);
     
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        console.log('🔍 Inside state update - changing from:', state.appState.activeCycleId, 'to:', cycleKey);
+        state.appState.activeCycleId = cycleKey;
+        state.metadata.lastModified = Date.now();
+    }, true); // immediate save
     
-    // Set the active cycle using the cycle key
-    fullSchemaData.appState.activeCycleId = cycleKey;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Verify the change took effect
+    const newActiveId = window.AppState.get()?.appState?.activeCycleId;
+    console.log('🔍 Active cycle after state update:', newActiveId);
     
-    console.log(`✅ Switched to cycle (Schema 2.5): ${cycleKey}`);
+    if (newActiveId !== cycleKey) {
+        console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
+        showNotification("⚠️ Failed to switch cycle. Please try again.", "error", 3000);
+        return;
+    }
     
-    // Load the new cycle and close modal
-    loadMiniCycle();
+    console.log(`✅ Switched to cycle (state-based): ${cycleKey}`);
+    
+    // ✅ Close modal first to avoid UI conflicts
     hideSwitchMiniCycleModal();
     
-    // Show confirmation
-    const cycleName = fullSchemaData.data.cycles[cycleKey]?.title || cycleKey;
-    showNotification(`✅ Switched to "${cycleName}"`, "success", 2000);
+    // ✅ Add a small delay to ensure state is fully propagated
+    setTimeout(() => {
+        console.log('🔄 Loading new cycle after delay...');
+        console.log('🔍 Final active cycle check before loading:', window.AppState.get()?.appState?.activeCycleId);
+        
+        // Load the new cycle
+        if (typeof window.loadMiniCycle === 'function') {
+            window.loadMiniCycle();
+        } else {
+            console.error('❌ loadMiniCycle function not available');
+            // Fallback refresh
+            setTimeout(() => window.location.reload(), 1000);
+        }
+        
+        // ✅ Get cycle name from state for confirmation
+        const currentState = window.AppState.get();
+        const cycleName = currentState?.data?.cycles?.[cycleKey]?.title || cycleKey;
+        showNotification(`✅ Switched to "${cycleName}"`, "success", 2000);
+    }, 100);
 }
 
 
@@ -4343,16 +4798,36 @@ function updatePreview(cycleName) {
  *
  * @returns {void}
  */
+// ✅ Add debouncing to prevent multiple rapid calls
+let loadMiniCycleListTimeout;
 function loadMiniCycleList() {
-    console.log('📋 Loading miniCycle list (Schema 2.5 only)...');
+    // ✅ Clear any pending calls
+    if (loadMiniCycleListTimeout) {
+        clearTimeout(loadMiniCycleListTimeout);
+    }
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for loadMiniCycleList');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Debounce to prevent rapid successive calls
+    loadMiniCycleListTimeout = setTimeout(() => {
+        loadMiniCycleListActual();
+    }, 50);
+}
+
+function loadMiniCycleListActual() {
+    console.log('📋 Loading miniCycle list (state-based)...');
+    
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for loadMiniCycleList');
+        return;
+    }
+    
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for loadMiniCycleList');
+        return;
     }
 
-    const { cycles } = schemaData;
+    const cycles = currentState.data?.cycles || {};
     const miniCycleList = document.getElementById("miniCycleList");
     
     if (!miniCycleList) {
@@ -4364,14 +4839,24 @@ function loadMiniCycleList() {
 
     console.log('📊 Found cycles:', Object.keys(cycles).length);
 
+    // ✅ Ensure we have cycles to display
+    if (Object.keys(cycles).length === 0) {
+        console.warn('⚠️ No cycles found to display');
+        miniCycleList.innerHTML = '<div class="no-cycles-message">No miniCycles found</div>';
+        return;
+    }
+
     // ✅ Use Object.entries to get both key and cycle data
-    Object.entries(cycles).forEach(([cycleKey, cycleData]) => {
+    Object.entries(cycles).forEach(([cycleKey, cycleData], index) => {
+        if (!cycleData) {
+            console.warn('⚠️ Invalid cycle data for key:', cycleKey);
+            return;
+        }
+
         const listItem = document.createElement("div");
         listItem.classList.add("mini-cycle-switch-item");
         listItem.dataset.cycleName = cycleData.title || cycleKey; // Use title for compatibility
         listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
-
-        console.log('📋 Adding cycle to list:', cycleData.title || cycleKey);
 
         // 🏷️ Determine emoji based on miniCycle properties
         let emoji = "📋"; // Default to 📋 (Standard Document)
@@ -4387,13 +4872,17 @@ function loadMiniCycleList() {
 
         // 🖱️ Handle selection
         listItem.addEventListener("click", function () {
-            console.log('🎯 Cycle selected:', cycleData.title || cycleKey);
+            console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
             
             document.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
             this.classList.add("selected");
 
             // Show preview & buttons
-            document.getElementById("switch-items-row").style.display = "block";
+            const switchItemsRow = document.getElementById("switch-items-row");
+            if (switchItemsRow) {
+                switchItemsRow.style.display = "block";
+            }
+            
             // ✅ Pass the cycle key for Schema 2.5
             updatePreview(cycleKey);
         });
@@ -4403,7 +4892,7 @@ function loadMiniCycleList() {
 
     updateReminderButtons();
     
-    console.log('✅ MiniCycle list loaded successfully');
+    console.log('✅ MiniCycle list loaded successfully (state-based), final count:', miniCycleList.children.length);
 }
 
 
@@ -4434,7 +4923,7 @@ function clearAllTasks() {
     console.log('📊 Clearing tasks for cycle:', activeCycle);
 
     // ✅ Create undo snapshot before making changes
-    pushUndoSnapshot();
+    
 
     // ✅ Uncheck all tasks (DO NOT DELETE)
     currentCycle.tasks.forEach(task => task.completed = false);
@@ -4513,7 +5002,7 @@ function deleteAllTasks() {
             console.log('🔄 Proceeding with task deletion...');
 
             // ✅ Push undo snapshot before deletion
-            pushUndoSnapshot();
+            
 
             // ✅ Clear tasks completely
             currentCycle.tasks = [];
@@ -4559,12 +5048,13 @@ function deleteAllTasks() {
  * @returns {void}
  */
 function createNewMiniCycle() {
-    console.log('🆕 Creating new miniCycle (Schema 2.5 only)...');
+    console.log('🆕 Creating new miniCycle (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for createNewMiniCycle');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for createNewMiniCycle');
+        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+        return;
     }
 
     showPromptModal({
@@ -4585,67 +5075,74 @@ function createNewMiniCycle() {
             const newCycleName = sanitizeInput(result.trim());
             console.log('🔍 Processing new cycle name:', newCycleName);
             
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            
             // ✅ Create unique ID first
             const cycleId = `cycle_${Date.now()}`;
             console.log('🆔 Generated cycle ID:', cycleId);
             
-            // ✅ Determine the storage key (title-first approach with ID fallback)
-            let storageKey = newCycleName;
-            let finalTitle = newCycleName;
-            
-            // ✅ Handle duplicate titles by checking existing keys
-            if (fullSchemaData.data.cycles[storageKey]) {
-                console.log('⚠️ Duplicate title detected, finding unique variation');
+            // ✅ Update through state system
+            window.AppState.update(state => {
+                // ✅ Determine the storage key (title-first approach with ID fallback)
+                let storageKey = newCycleName;
+                let finalTitle = newCycleName;
                 
-                // Try numbered variations first: "Title (2)", "Title (3)", etc.
-                let counter = 2;
-                let numberedTitle = `${newCycleName} (${counter})`;
-                
-                while (fullSchemaData.data.cycles[numberedTitle] && counter < 10) {
-                    counter++;
-                    numberedTitle = `${newCycleName} (${counter})`;
+                // ✅ Handle duplicate titles by checking existing keys
+                if (state.data.cycles[storageKey]) {
+                    console.log('⚠️ Duplicate title detected, finding unique variation');
+                    
+                    // Try numbered variations first: "Title (2)", "Title (3)", etc.
+                    let counter = 2;
+                    let numberedTitle = `${newCycleName} (${counter})`;
+                    
+                    while (state.data.cycles[numberedTitle] && counter < 10) {
+                        counter++;
+                        numberedTitle = `${newCycleName} (${counter})`;
+                    }
+                    
+                    // If we found a unique numbered title, use it
+                    if (!state.data.cycles[numberedTitle]) {
+                        storageKey = numberedTitle;
+                        finalTitle = numberedTitle;
+                        console.log('🔄 Using numbered variation:', finalTitle);
+                        showNotification(`⚠ Title already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+                    } else {
+                        // Fallback to ID if too many duplicates
+                        storageKey = cycleId;
+                        finalTitle = newCycleName; // Keep original title inside object
+                        console.log('🔄 Using unique ID for storage:', storageKey);
+                        showNotification(`⚠ Multiple cycles with this name exist. Using unique ID for storage.`, "warning", 3000);
+                    }
                 }
+
+                console.log('🔄 Creating new cycle with storage key:', storageKey);
+
+                // ✅ Create new cycle in Schema 2.5 format
+                state.data.cycles[storageKey] = {
+                    title: finalTitle,
+                    id: cycleId,
+                    tasks: [],
+                    autoReset: true,
+                    deleteCheckedTasks: false,
+                    cycleCount: 0,
+                    createdAt: Date.now(),
+                    recurringTemplates: {}
+                };
+
+                // ✅ Set as active cycle using the storage key
+                state.appState.activeCycleId = storageKey;
+                state.metadata.lastModified = Date.now();
+                state.metadata.totalCyclesCreated++;
+
+                console.log('💾 Saving through state system...');
+                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
                 
-                // If we found a unique numbered title, use it
-                if (!fullSchemaData.data.cycles[numberedTitle]) {
-                    storageKey = numberedTitle;
-                    finalTitle = numberedTitle;
-                    console.log('🔄 Using numbered variation:', finalTitle);
-                    showNotification(`⚠ Title already exists. Using "${finalTitle}" instead.`, "warning", 3000);
-                } else {
-                    // Fallback to ID if too many duplicates
-                    storageKey = cycleId;
-                    finalTitle = newCycleName; // Keep original title inside object
-                    console.log('🔄 Using unique ID for storage:', storageKey);
-                    showNotification(`⚠ Multiple cycles with this name exist. Using unique ID for storage.`, "warning", 3000);
-                }
-            }
+                // Store final title for UI updates
+                window._tempNewCycleData = { storageKey, finalTitle };
+                
+            }, true); // immediate save
 
-            console.log('🔄 Creating new cycle with storage key:', storageKey);
-
-            // ✅ Create new cycle in Schema 2.5 format
-            fullSchemaData.data.cycles[storageKey] = {
-                title: finalTitle,
-                id: cycleId,
-                tasks: [],
-                autoReset: true,
-                deleteCheckedTasks: false,
-                cycleCount: 0,
-                createdAt: Date.now(),
-                recurringTemplates: {}
-            };
-
-            // ✅ Set as active cycle using the storage key
-            fullSchemaData.appState.activeCycleId = storageKey;
-            fullSchemaData.metadata.lastModified = Date.now();
-            fullSchemaData.metadata.totalCyclesCreated++;
-
-            console.log('💾 Saving to Schema 2.5 storage...');
-
-            // ✅ Save to localStorage
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            // ✅ Get the final data for UI updates
+            const { storageKey, finalTitle } = window._tempNewCycleData || {};
+            delete window._tempNewCycleData; // cleanup
 
             console.log('🔄 Updating UI elements...');
 
@@ -4668,8 +5165,7 @@ function createNewMiniCycle() {
             checkCompleteAllButton();
             autoSave();
 
-            console.log(`✅ Created and switched to new miniCycle (Schema 2.5): "${finalTitle}" (key: ${storageKey})`);
-            console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
+            console.log(`✅ Created and switched to new miniCycle (state-based): "${finalTitle}" (key: ${storageKey})`);
             
             showNotification(`✅ Created new miniCycle "${finalTitle}"`, "success", 3000);
         }
@@ -5032,6 +5528,9 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
  */
   
 function showNotification(message, type = "default", duration = null) {
+  if (!window.notifications || typeof window.notifications.show !== 'function') {
+    return null;
+  }
   return window.notifications.show(message, type, duration);
 }
 
@@ -5053,6 +5552,9 @@ const educationalTips = notifications.educationalTips;
  * Updated implementation for your recurring feature
  */
 function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) {
+  if (!window.notifications || typeof window.notifications.createRecurringNotificationWithTip !== 'function') {
+    return `Task set to recurring (${frequency}, ${pattern})`;
+  }
   return notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
 }
 
@@ -5061,6 +5563,9 @@ function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) 
  * ✅ Enhanced recurring notification listeners with proper event handling (Schema 2.5 only)
  */
 function initializeRecurringNotificationListeners(notification) {
+  if (!window.notifications || typeof window.notifications.initializeRecurringNotificationListeners !== 'function') {
+    return;
+  }
   return notifications.initializeRecurringNotificationListeners(notification);
 }
 
@@ -5073,9 +5578,23 @@ function showApplyConfirmation(targetElement) {
 
 // 🛠 Unified recurring update helper (Schema 2.5 only)
 function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) {
-  const cycleData = cycles[activeCycle];
-  if (!cycleData) {
+  // ✅ Use AppState instead of direct parameter passing
+  if (!AppState.isReady()) {
+    console.warn('⚠️ AppState not ready for applyRecurringToTaskSchema25');
+    return;
+  }
+
+  const state = AppState.get();
+  const activeCycleId = state.appState?.activeCycleId;
+  
+  if (!activeCycleId) {
     console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
+    return;
+  }
+
+  const cycleData = state.data?.cycles?.[activeCycleId];
+  if (!cycleData) {
+    console.error('❌ Cycle data not found for applyRecurringToTaskSchema25');
     return;
   }
 
@@ -5085,30 +5604,32 @@ function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) 
     return;
   }
 
-  // Merge instead of overwrite so we keep advanced panel settings
-  task.recurringSettings = {
-    ...task.recurringSettings,
-    ...newSettings
-  };
-  task.recurring = true;
-  task.schemaVersion = 2;
+  // ✅ Update via AppState instead of localStorage
+  AppState.update(draft => {
+    const cycle = draft.data.cycles[activeCycleId];
+    const targetTask = cycle.tasks.find(t => t.id === taskId);
+    
+    if (targetTask) {
+      // Merge instead of overwrite so we keep advanced panel settings
+      targetTask.recurringSettings = {
+        ...targetTask.recurringSettings,
+        ...newSettings
+      };
+      targetTask.recurring = true;
+      targetTask.schemaVersion = 2;
 
-  // Keep recurringTemplates in sync
-  if (!cycleData.recurringTemplates) cycleData.recurringTemplates = {};
-  cycleData.recurringTemplates[taskId] = {
-    ...(cycleData.recurringTemplates[taskId] || {}),
-    id: taskId,
-    text: task.text,
-    recurring: true,
-    schemaVersion: 2,
-    recurringSettings: { ...task.recurringSettings }
-  };
-
-  // ✅ Save to Schema 2.5
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  fullSchemaData.data.cycles[activeCycle] = cycleData;
-  fullSchemaData.metadata.lastModified = Date.now();
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+      // Keep recurringTemplates in sync
+      if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
+      cycle.recurringTemplates[taskId] = {
+        ...(cycle.recurringTemplates[taskId] || {}),
+        id: taskId,
+        text: targetTask.text,
+        recurring: true,
+        schemaVersion: 2,
+        recurringSettings: { ...targetTask.recurringSettings }
+      };
+    }
+  });
 
   // Update DOM attributes for this task
   const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
@@ -5121,6 +5642,21 @@ function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) 
       recurringBtn.setAttribute("aria-pressed", "true");
     }
   }
+
+  // ✅ Update recurring panel display if it's open
+  if (typeof updateRecurringPanel === 'function') {
+    updateRecurringPanel();
+  }
+  
+  // ✅ Update recurring summary to reflect changes
+  if (typeof updateRecurringSummary === 'function') {
+    updateRecurringSummary();
+  }
+  
+  // ✅ Update panel button visibility based on recurring task count
+  if (typeof updateRecurringPanelButtonVisibility === 'function') {
+    updateRecurringPanelButtonVisibility();
+  }
 }
 
 // Make recurring function globally accessible for the notification module
@@ -5130,6 +5666,9 @@ window.applyRecurringToTaskSchema25 = applyRecurringToTaskSchema25;
  * 🔧 Enhanced showNotification function with educational tips support (Schema 2.5 only)
  */
 function showNotificationWithTip(content, type = "default", duration = null, tipId = null) {
+  if (!window.notifications || typeof window.notifications.showWithTip !== 'function') {
+    return showNotification(content, type, duration);
+  }
   return notifications.showWithTip(content, type, duration, tipId);
 }
 
@@ -5456,8 +5995,23 @@ function updateRecurringPanel(currentCycleData = null) {
     
     const recurringList = document.getElementById("recurring-task-list");
     
-    // ✅ Schema 2.5 only
-    const schemaData = window.loadMiniCycleData();
+    // ✅ Use AppState only - no fallback to avoid state drift
+    if (!window.AppState || !window.AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for updateRecurringPanel');
+        return;
+    }
+    
+    const state = window.AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
+    
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring panel');
+        return;
+    }
+    
+    const cycles = state.data?.cycles || {};
+    const schemaData = { cycles, activeCycle: activeCycleId };
+    
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for updateRecurringPanel');
         throw new Error('Schema 2.5 data not found');
@@ -5534,7 +6088,7 @@ function updateRecurringPanel(currentCycleData = null) {
                 callback: (confirmed) => {
                     if (!confirmed) return;
 
-                    pushUndoSnapshot();
+                    
 
                     // ✅ Schema 2.5 only
                     const schemaData = window.loadMiniCycleData();
@@ -5617,9 +6171,12 @@ function updateRecurringPanel(currentCycleData = null) {
 
 // Make updateRecurringPanel globally accessible for the notification module
 window.updateRecurringPanel = updateRecurringPanel;
+
+// Make openRecurringSettingsPanelForTask globally accessible for the notification module
+window.openRecurringSettingsPanelForTask = openRecurringSettingsPanelForTask;
   
   function openRecurringSettingsPanelForTask(taskIdToPreselect) {
-      console.log('⚙️ Opening recurring settings panel (Schema 2.5 only)...', taskIdToPreselect);
+      console.log('⚙️ Opening recurring settings panel (AppState-based)...', taskIdToPreselect);
       
       updateRecurringPanel(); // Render panel fresh
   
@@ -5634,15 +6191,16 @@ window.updateRecurringPanel = updateRecurringPanel;
               itemToSelect.classList.add("checked");
           }
   
-          // ✅ Update the preview with Schema 2.5 only
-          const schemaData = window.loadMiniCycleData();
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for task preview');
+          // ✅ Use AppState instead of loadMiniCycleData
+          if (!AppState.isReady()) {
+              console.warn('⚠️ AppState not ready for task preview');
               return;
           }
-  
-          const { cycles, activeCycle } = schemaData;
-          const task = cycles[activeCycle]?.tasks.find(t => t.id === taskIdToPreselect);
+
+          const state = AppState.get();
+          const activeCycleId = state.appState?.activeCycleId;
+          const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskIdToPreselect);
+          
           if (task) {
               showTaskSummaryPreview(task);
           } else {
@@ -5841,61 +6399,71 @@ function deleteRecurringTemplate(taskId, cycleName) {
 }
 
 function saveAlwaysShowRecurringSetting() {
-    console.log('💾 Saving always show recurring setting (Schema 2.5 only)...');
+    console.log('💾 Saving always show recurring setting (AppState-based)...');
     
     const alwaysShow = document.getElementById("always-show-recurring").checked;
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveAlwaysShowRecurringSetting');
+    // ✅ Check AppState readiness
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for saveAlwaysShowRecurringSetting');
         return;
     }
     
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.settings.alwaysShowRecurring = alwaysShow;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Update via AppState instead of localStorage
+    AppState.update(draft => {
+        if (!draft.settings) draft.settings = {};
+        draft.settings.alwaysShowRecurring = alwaysShow;
+    });
     
-    console.log('✅ Always show recurring setting saved to Schema 2.5:', alwaysShow);
+    console.log('✅ Always show recurring setting saved via AppState:', alwaysShow);
     
     refreshTaskListUI();
     updateRecurringButtonVisibility();
 }
 
 function loadAlwaysShowRecurringSetting() {
-    console.log('📥 Loading always show recurring setting (Schema 2.5 only)...');
+    console.log('📥 Loading always show recurring setting (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for loadAlwaysShowRecurringSetting');
+    // ✅ Use AppState instead of loadMiniCycleData
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for loadAlwaysShowRecurringSetting');
         return;
     }
     
-    const isEnabled = schemaData.settings.alwaysShowRecurring || false;
+    const state = AppState.get();
+    const isEnabled = state.settings?.alwaysShowRecurring || false;
     
-    console.log('📊 Loaded always show recurring setting:', isEnabled);
+    console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
     
-    document.getElementById("always-show-recurring").checked = isEnabled;
+    const checkbox = document.getElementById("always-show-recurring");
+    if (checkbox) {
+        checkbox.checked = isEnabled;
+    }
 }
 
 document.getElementById("always-show-recurring").addEventListener("change", saveAlwaysShowRecurringSetting);
 
 document.getElementById("apply-recurring-settings")?.addEventListener("click", () => {
-    console.log('📝 Applying recurring settings (Schema 2.5 only)...');
+    console.log('📝 Applying recurring settings (AppState-based)...');
     
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for apply recurring settings');
-        showNotification("❌ Schema 2.5 data required.", "error");
+    // ✅ Check AppState readiness
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for apply recurring settings');
+        showNotification("❌ App not ready. Please try again.", "error");
         return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
     
-    if (!activeCycle || !cycleData) {
+    if (!activeCycleId) {
         showNotification("⚠ No active cycle found.");
+        return;
+    }
+
+    const cycleData = state.data?.cycles?.[activeCycleId];
+    if (!cycleData) {
+        showNotification("⚠ Active cycle data not found.");
         return;
     }
 
@@ -5913,51 +6481,59 @@ document.getElementById("apply-recurring-settings")?.addEventListener("click", (
         settings.defaultRecurTime = new Date().toISOString();
     }
 
-    // 💾 Save default recurring settings if requested
-    if (document.getElementById("set-default-recurring")?.checked) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.defaultRecurringSettings = settings;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        showNotification("✅ Default recurring settings saved!", "success", 1500);
-    }
+    // ✅ Batch all updates in one AppState operation
+    AppState.update(draft => {
+        // 💾 Save default recurring settings if requested
+        if (document.getElementById("set-default-recurring")?.checked) {
+            if (!draft.settings) draft.settings = {};
+            draft.settings.defaultRecurringSettings = settings;
+        }
 
-    if (!cycleData.recurringTemplates) {
-        cycleData.recurringTemplates = {};
-    }
+        const cycle = draft.data.cycles[activeCycleId];
+        if (!cycle.recurringTemplates) {
+            cycle.recurringTemplates = {};
+        }
 
-    checkedEls.forEach(checkbox => {
-        const taskEl = checkbox.closest("[data-task-id]");
-        const taskId = taskEl?.dataset.taskId;
-        if (!taskId || !taskEl) return;
+        checkedEls.forEach(checkbox => {
+            const taskEl = checkbox.closest("[data-task-id]");
+            const taskId = taskEl?.dataset.taskId;
+            if (!taskId || !taskEl) return;
 
-        let task = cycleData.tasks.find(t => t.id === taskId);
-        if (!task) {
-            task = {
-                id: taskId,
-                text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+            let task = cycle.tasks.find(t => t.id === taskId);
+            if (!task) {
+                task = {
+                    id: taskId,
+                    text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+                    recurring: true,
+                    recurringSettings: structuredClone(settings),
+                    schemaVersion: 2
+                };
+                cycle.tasks.push(task);
+            }
+
+            // ✅ Apply recurring settings to task
+            task.recurring = true;
+            task.schemaVersion = 2;
+            task.recurringSettings = structuredClone(settings);
+
+            // ✅ Update recurringTemplates
+            cycle.recurringTemplates[task.id] = {
+                id: task.id,
+                text: task.text,
+                dueDate: task.dueDate || null,
+                highPriority: task.highPriority || false,
+                remindersEnabled: task.remindersEnabled || false,
                 recurring: true,
                 recurringSettings: structuredClone(settings),
                 schemaVersion: 2
             };
-        }
+        });
+    });
 
-        // ✅ Apply recurring settings to task
-        task.recurring = true;
-        task.schemaVersion = 2;
-        task.recurringSettings = structuredClone(settings);
-
-        // ✅ Update recurringTemplates
-        cycleData.recurringTemplates[task.id] = {
-            id: task.id,
-            text: task.text,
-            dueDate: task.dueDate || null,
-            highPriority: task.highPriority || false,
-            remindersEnabled: task.remindersEnabled || false,
-            recurring: true,
-            recurringSettings: structuredClone(settings),
-            schemaVersion: 2
-        };
+    // ✅ Update DOM after state changes
+    checkedEls.forEach(checkbox => {
+        const taskEl = checkbox.closest("[data-task-id]");
+        if (!taskEl) return;
 
         // ✅ Update DOM
         taskEl.classList.add("recurring");
@@ -5971,15 +6547,27 @@ document.getElementById("apply-recurring-settings")?.addEventListener("click", (
         syncRecurringStateToDOM(taskEl, settings);
     });
 
-    // ✅ Save to Schema 2.5
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycleData;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // Show success notifications
+    if (document.getElementById("set-default-recurring")?.checked) {
+        showNotification("✅ Default recurring settings saved!", "success", 1500);
+    }
 
     updateRecurringSummary();
     showNotification("✅ Recurring settings applied!", "success", 2000);
     updateRecurringPanel();
+
+    // ✅ Refresh task preview if a task is currently selected
+    const selectedTask = document.querySelector(".recurring-task-item.selected");
+    if (selectedTask) {
+        const taskId = selectedTask.dataset.taskId;
+        const state = AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
+        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        
+        if (task) {
+            showTaskSummaryPreview(task);
+        }
+    }
 
     // ✅ Clean up UI state - remove selections and hide panels
     document.querySelectorAll(".recurring-task-item").forEach(el => {
@@ -6002,6 +6590,9 @@ document.getElementById("apply-recurring-settings")?.addEventListener("click", (
     if (preview) preview.classList.add("hidden");
 
     updateRecurringPanelButtonVisibility();
+    
+    // ✅ Clear the form since no task is selected anymore
+    clearRecurringForm();
     
     console.log('✅ Recurring settings applied successfully');
 });
@@ -6679,28 +7270,71 @@ function setupSpecificDatesPanel() {
     countContainer.classList.toggle("hidden", !shouldShow);
   }
 
+// ✅ Helper function to build task context for existing tasks (AppState-based)
+function buildTaskContext(taskItem, taskId) {
+    try {
+        // ✅ Use AppState instead of loadMiniCycleData
+        if (!AppState.isReady()) {
+            console.warn('⚠️ AppState not ready for buildTaskContext');
+            return null;
+        }
+
+        const state = AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
+        
+        if (!activeCycleId) return null;
+
+        const currentCycle = state.data?.cycles?.[activeCycleId];
+        if (!currentCycle) return null;
+
+        const taskText = taskItem.querySelector('.task-text')?.textContent?.trim() || '';
+        
+        return {
+            taskTextTrimmed: taskText,
+            assignedTaskId: taskId,
+            schemaData: state, // Pass the full state for backward compatibility
+            cycles: state.data.cycles,
+            activeCycle: activeCycleId,
+            currentCycle,
+            settings: state.settings || {},
+            autoResetEnabled: currentCycle.autoReset || false,
+            deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false
+        };
+    } catch (error) {
+        console.warn('⚠️ Failed to build task context:', error);
+        return null;
+    }
+}
 
 
 
 function updateRecurringButtonVisibility() {
-    console.log('🔄 Updating recurring button visibility (Schema 2.5 only)...');
+    console.log('🔄 Updating recurring button visibility (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateRecurringButtonVisibility');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use AppState instead of loadMiniCycleData
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for updateRecurringButtonVisibility');
+        return;
     }
 
-    const { cycles, activeCycle, settings } = schemaData;
-    const cycleData = cycles[activeCycle];
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
     
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring button visibility');
+        return;
+    }
+
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn("⚠️ No active cycle found for recurring button visibility");
         return;
     }
     
+    const settings = state.settings || {};
+    
     console.log('📊 Checking visibility conditions:', {
-        activeCycle,
+        activeCycle: activeCycleId,
         autoReset: cycleData.autoReset,
         deleteCheckedTasks: cycleData.deleteCheckedTasks,
         alwaysShowRecurring: settings.alwaysShowRecurring
@@ -6727,6 +7361,17 @@ function updateRecurringButtonVisibility() {
         if (shouldShowButtons) {
             recurringButton.classList.remove("hidden");
             console.log('👁️ Showing recurring button for task:', taskItem.dataset.taskId);
+            
+            // ✅ Ensure event handler is attached when button becomes visible
+            if (!recurringButton.dataset.handlerAttached) {
+                const taskId = taskItem.dataset.taskId;
+                const taskContext = buildTaskContext(taskItem, taskId);
+                if (taskContext) {
+                    setupRecurringButtonHandler(recurringButton, taskContext);
+                    recurringButton.dataset.handlerAttached = 'true';
+                    console.log('🔗 Attached recurring handler for task:', taskId);
+                }
+            }
         } else {
             recurringButton.classList.add("hidden");
             console.log('🙈 Hiding recurring button for task:', taskItem.dataset.taskId);
@@ -6755,40 +7400,25 @@ function isAlwaysShowRecurringEnabled() {
 }
   
 function updateRecurringPanelButtonVisibility() {
-    if (!window.AppInit?.isReady?.()) return; // Ensure app is fully initialized
-    console.log('🔄 Updating recurring panel button visibility (Schema 2.5 only)...');
+    const panelButton = document.getElementById("open-recurring-panel");
+    if (!panelButton) return;
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateRecurringPanelButtonVisibility');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-    const button = document.getElementById("open-recurring-panel");
+    // Simple check: get current data and look for recurring tasks
+    let hasRecurring = false;
     
-    if (!cycleData || !Array.isArray(cycleData.tasks) || !button) {
-        console.warn('⚠️ Missing cycle data, tasks array, or button element');
+    try {
+        const schemaData = loadMiniCycleData();
+        if (schemaData?.cycles?.[schemaData.activeCycle]) {
+            const cycle = schemaData.cycles[schemaData.activeCycle];
+            hasRecurring = cycle.tasks.some(task => task.recurring) || 
+                          Object.keys(cycle.recurringTemplates || {}).length > 0;
+        }
+    } catch (error) {
+        console.warn('Could not check recurring tasks:', error);
         return;
     }
     
-    console.log('📊 Checking for recurring tasks:', {
-        activeCycle,
-        taskCount: cycleData.tasks.length,
-        templateCount: Object.keys(cycleData.recurringTemplates || {}).length
-    });
-    
-    const hasRecurring =
-        cycleData.tasks.some(task => task.recurring) ||
-        Object.keys(cycleData.recurringTemplates || {}).length > 0;
-    
-    button.classList.toggle("hidden", !hasRecurring);
-    
-    console.log('✅ Recurring panel button visibility updated:', {
-        hasRecurring,
-        buttonVisible: !hasRecurring ? 'hidden' : 'visible'
-    });
+    panelButton.classList.toggle("hidden", !hasRecurring);
 }
   
 function updateRecurringSummary() {
@@ -6864,16 +7494,21 @@ function showTaskSummaryPreview(task) {
     const summaryContainer = document.getElementById("recurring-summary-preview") || createTaskSummaryPreview();
     summaryContainer.innerHTML = "";
 
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for showTaskSummaryPreview');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use AppState instead of loadMiniCycleData
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for showTaskSummaryPreview');
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
     
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for task preview');
+        return;
+    }
+
+    const currentCycle = state.data?.cycles?.[activeCycleId];
     if (!currentCycle) {
         console.warn('⚠️ No active cycle found for task preview');
         return;
@@ -6919,7 +7554,138 @@ function showTaskSummaryPreview(task) {
     summaryContainer.appendChild(changeBtn);
     summaryContainer.classList.remove("hidden");
     
+    // ✅ Populate form with task's current settings
+    if (recurringSettings) {
+        populateRecurringFormWithSettings(recurringSettings);
+    }
+    
     console.log('✅ Task summary preview displayed successfully');
+}
+
+// ✅ New function to populate form with existing settings
+function populateRecurringFormWithSettings(settings) {
+    console.log('📝 Populating recurring form with settings:', settings);
+    
+    try {
+        // Frequency dropdown
+        const frequencySelect = document.getElementById('recur-frequency');
+        if (frequencySelect && settings.frequency) {
+            frequencySelect.value = settings.frequency;
+            frequencySelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Indefinite checkbox
+        const indefiniteCheckbox = document.getElementById('indefiniteCheckbox');
+        if (indefiniteCheckbox) {
+            indefiniteCheckbox.checked = settings.indefinitely !== false;
+        }
+        
+        // Repeat count
+        if (settings.indefinitely === false && settings.repeatCount) {
+            const repeatCountInput = document.getElementById('repeatCount');
+            if (repeatCountInput) {
+                repeatCountInput.value = settings.repeatCount;
+            }
+        }
+        
+        // Specific time settings
+        if (settings.useSpecificTime && settings.specificTime) {
+            const useTimeCheckbox = document.getElementById('useSpecificTime');
+            const timeInput = document.getElementById('specificTime');
+            
+            if (useTimeCheckbox) useTimeCheckbox.checked = true;
+            if (timeInput) {
+                // Convert ISO string to HH:MM format
+                const timeDate = new Date(settings.specificTime);
+                const hours = timeDate.getHours().toString().padStart(2, '0');
+                const minutes = timeDate.getMinutes().toString().padStart(2, '0');
+                timeInput.value = `${hours}:${minutes}`;
+            }
+        }
+        
+        // Populate frequency-specific settings
+        if (settings.frequency === 'weekly' && settings.daysOfWeek) {
+            settings.daysOfWeek.forEach(day => {
+                const dayBox = document.querySelector(`.weekly-day-box[data-day="${day}"]`);
+                if (dayBox) dayBox.classList.add('selected');
+            });
+        }
+        
+        if (settings.frequency === 'monthly' && settings.days) {
+            settings.days.forEach(day => {
+                const dayBox = document.querySelector(`.monthly-day-box[data-day="${day}"]`);
+                if (dayBox) dayBox.classList.add('selected');
+            });
+        }
+        
+        if (settings.frequency === 'yearly' && settings.daysByMonth) {
+            Object.entries(settings.daysByMonth).forEach(([month, days]) => {
+                if (month !== 'all') {
+                    const monthBox = document.querySelector(`.yearly-month-box[data-month="${month}"]`);
+                    if (monthBox) monthBox.classList.add('selected');
+                }
+                
+                days.forEach(day => {
+                    const dayBox = document.querySelector(`.yearly-day-box[data-day="${day}"]`);
+                    if (dayBox) dayBox.classList.add('selected');
+                });
+            });
+        }
+        
+        // Update the summary display
+        updateRecurringSummary();
+        
+        console.log('✅ Form populated successfully');
+        
+    } catch (error) {
+        console.error('❌ Error populating form with settings:', error);
+    }
+}
+
+// ✅ New function to clear/reset the recurring form
+function clearRecurringForm() {
+    console.log('🧹 Clearing recurring form');
+    
+    try {
+        // Reset frequency to default
+        const frequencySelect = document.getElementById('recur-frequency');
+        if (frequencySelect) {
+            frequencySelect.value = 'daily';
+            frequencySelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Reset indefinite checkbox
+        const indefiniteCheckbox = document.getElementById('indefiniteCheckbox');
+        if (indefiniteCheckbox) {
+            indefiniteCheckbox.checked = true;
+        }
+        
+        // Clear repeat count
+        const repeatCountInput = document.getElementById('repeatCount');
+        if (repeatCountInput) {
+            repeatCountInput.value = '';
+        }
+        
+        // Clear specific time settings
+        const useTimeCheckbox = document.getElementById('useSpecificTime');
+        const timeInput = document.getElementById('specificTime');
+        
+        if (useTimeCheckbox) useTimeCheckbox.checked = false;
+        if (timeInput) timeInput.value = '';
+        
+        // Clear all selected day boxes
+        document.querySelectorAll('.weekly-day-box.selected, .biweekly-day-box.selected, .monthly-day-box.selected, .yearly-day-box.selected, .yearly-month-box.selected').forEach(box => {
+            box.classList.remove('selected');
+        });
+        
+        // Update the summary
+        updateRecurringSummary();
+        
+        console.log('✅ Form cleared successfully');
+        
+    } catch (error) {
+        console.error('❌ Error clearing form:', error);
+    }
 }
   // Helper to create the preview container if it doesn’t exist yet
   function createTaskSummaryPreview() {
@@ -7264,17 +8030,29 @@ function shouldRecreateRecurringTask(template, taskList, now) {
 }
 
 function watchRecurringTasks() {
-    console.log('👁️ Watching recurring tasks (Schema 2.5 only)...');
+    console.log('👁️ Watching recurring tasks (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for watchRecurringTasks');
+    // ✅ Check feature flag
+    if (!window.FeatureFlags?.recurringEnabled) {
+        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
     
+    // ✅ Read from AppState instead of localStorage
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for recurring task watch');
+        return;
+    }
+    
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
+    
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring task watch');
+        return;
+    }
+    
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for recurring task watch');
         return;
@@ -7291,8 +8069,10 @@ function watchRecurringTasks() {
     console.log('🔍 Checking recurring templates:', Object.keys(templates).length);
 
     const now = new Date();
-    let taskAdded = false;
+    const tasksToAdd = [];
+    const templateUpdates = {};
 
+    // ✅ Collect changes without mutating state directly
     Object.values(templates).forEach(template => {
         // ⛔ Prevent re-adding if task already exists by ID
         if (taskList.some(task => task.id === template.id)) return;
@@ -7300,48 +8080,75 @@ function watchRecurringTasks() {
 
         console.log("⏱ Auto‑recreating recurring task:", template.text);
 
-        addTask(
-            template.text,
-            false,  // not completed
-            false,  // shouldSave = false (batch save at end)
-            template.dueDate,
-            template.highPriority,
-            true,   // isLoading = true
-            template.remindersEnabled,
-            true,   // recurring = true
-            template.id,
-            template.recurringSettings
-        );
+        tasksToAdd.push({
+            text: template.text,
+            completed: false,
+            dueDate: template.dueDate,
+            highPriority: template.highPriority,
+            remindersEnabled: template.remindersEnabled,
+            recurring: true,
+            id: template.id,
+            recurringSettings: template.recurringSettings
+        });
 
-        template.lastTriggeredTimestamp = now.getTime();
-        taskAdded = true;
+        templateUpdates[template.id] = {
+            ...template,
+            lastTriggeredTimestamp: now.getTime()
+        };
     });
 
-    if (taskAdded) {
-        // Update the full schema data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycleData;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Batch all changes in one AppState update
+    if (tasksToAdd.length > 0) {
+        AppState.update(draft => {
+            const cycle = draft.data.cycles[activeCycleId];
+            
+            // Add new recurring tasks
+            tasksToAdd.forEach(taskData => {
+                cycle.tasks.push({
+                    ...taskData,
+                    dateCreated: now.toISOString()
+                });
+            });
+            
+            // Update template timestamps
+            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+                cycle.recurringTemplates[templateId] = updatedTemplate;
+            });
+        });
         
-        console.log('✅ Recurring tasks added and saved to Schema 2.5');
+        console.log(`✅ Added ${tasksToAdd.length} recurring tasks via AppState`);
     }
 }
 
 function setupRecurringWatcher() {
-
-    if (!window.AppInit?.isReady?.()) return;
-    console.log('⚙️ Setting up recurring watcher (Schema 2.5 only)...');
+    console.log('⚙️ Setting up recurring watcher (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for setupRecurringWatcher');
+    // ✅ Check feature flag
+    if (!window.FeatureFlags?.recurringEnabled) {
+        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
     
+    // ✅ Check AppState readiness with deferred setup
+    if (!AppState.isReady()) {
+        console.log('⏳ AppState not ready, deferring recurring watcher setup...');
+        
+        // Defer setup until AppState is ready
+        window._deferredRecurringSetup = window._deferredRecurringSetup || [];
+        window._deferredRecurringSetup.push(() => setupRecurringWatcher());
+        return;
+    }
+    
+    // ✅ Read from AppState instead of loadMiniCycleData
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
+    
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring watcher setup');
+        return;
+    }
+    
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for recurring watcher setup');
         return;
@@ -7437,9 +8244,19 @@ if (moveArrowsToggle) {
         return;
     }
     
-    const moveArrowsEnabled = schemaData.settings.showMoveArrows || false;
+    // ✅ Use state-based approach for move arrows setting
+    let moveArrowsEnabled = false;
     
-    console.log('📊 Loading move arrows setting from Schema 2.5:', moveArrowsEnabled);
+    if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
+    } else {
+        // Fallback for legacy or when state isn't ready
+        const schemaData = loadMiniCycleData();
+        moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
+    }
+    
+    console.log('📊 Loading move arrows setting from state:', moveArrowsEnabled);
     
     moveArrowsToggle.checked = moveArrowsEnabled;
     
@@ -7448,18 +8265,26 @@ if (moveArrowsToggle) {
         
         console.log('🔄 Move arrows toggle changed:', enabled);
         
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for saving move arrows setting');
-            return;
+        // ✅ Use state system if available
+        if (window.AppState?.isReady?.()) {
+            window.AppState.update(state => {
+                if (!state.ui) state.ui = {};
+                state.ui.moveArrowsVisible = enabled;
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save
+            
+            console.log('✅ Move arrows setting saved to state:', enabled);
+        } else {
+            // ✅ Fallback to localStorage if state not ready
+            console.warn('⚠️ AppState not ready, using localStorage fallback');
+            const schemaData = loadMiniCycleData();
+            if (schemaData) {
+                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                fullSchemaData.settings.showMoveArrows = enabled;
+                fullSchemaData.metadata.lastModified = Date.now();
+                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            }
         }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.showMoveArrows = enabled;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Move arrows setting saved to Schema 2.5:', enabled);
         
         updateMoveArrowsVisibility();
     });
@@ -8216,22 +9041,29 @@ function setupAbout() {
 
 // ✅ AFTER (Schema 2.5 Only):
 function assignCycleVariables() {
-    console.log('🔄 Assigning cycle variables (Schema 2.5 only)...');
+    console.log('🔄 Assigning cycle variables (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for assignCycleVariables');
-        throw new Error('Schema 2.5 data required');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for assignCycleVariables');
+        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
     }
     
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for assignCycleVariables');
+        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
+    }
+    
+    const { data, appState } = currentState;
+    
     console.log('📊 Retrieved cycle data:', {
-        activeCycle: schemaData.activeCycle,
-        cycleCount: Object.keys(schemaData.cycles).length
+        activeCycle: appState.activeCycleId,
+        cycleCount: Object.keys(data.cycles).length
     });
     
     return {
-        lastUsedMiniCycle: schemaData.activeCycle,
-        savedMiniCycles: schemaData.cycles
+        lastUsedMiniCycle: appState.activeCycleId,
+        savedMiniCycles: data.cycles
     };
 }
 
@@ -8266,6 +9098,12 @@ function updateProgressBar() {
  */
 
 function checkMiniCycle() {
+    // ✅ Early return if AppState not ready to prevent initialization race conditions
+    if (!window.AppState?.isReady?.()) {
+        console.log('⏳ checkMiniCycle deferred - AppState not ready');
+        return;
+    }
+    
     const allCompleted = [...taskList.children].every(task => task.querySelector("input").checked);
 
     // ✅ Retrieve miniCycle variables
@@ -8307,44 +9145,48 @@ function checkMiniCycle() {
  */
 
 function incrementCycleCount(miniCycleName, savedMiniCycles) {
-    console.log('🔢 Incrementing cycle count (Schema 2.5 only)...');
+    console.log('🔢 Incrementing cycle count (Schema 2.5 state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for incrementCycleCount');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state module instead of legacy direct data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for incrementCycleCount');
+        return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
     
-    if (!cycleData) {
-        console.warn(`⚠️ Cycle "${activeCycle}" not found in Schema 2.5`);
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for incrementCycleCount');
+        return;
+    }
+    
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const cycleData = data.cycles[activeCycle];
+    
+    if (!activeCycle || !cycleData) {
+        console.error('❌ No active cycle found for incrementCycleCount');
         return;
     }
     
     console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
     
-    // Increment cycle count
-    cycleData.cycleCount = (cycleData.cycleCount || 0) + 1;
+    // ✅ Update through state module and get the actual new count
+    let actualNewCount;
+    window.AppState.update(state => {
+        const cycle = state.data.cycles[activeCycle];
+        if (cycle) {
+            cycle.cycleCount = (cycle.cycleCount || 0) + 1;
+            actualNewCount = cycle.cycleCount; // ✅ Get the actual updated count
+            
+            // Update user progress
+            state.userProgress.cyclesCompleted = (state.userProgress.cyclesCompleted || 0) + 1;
+        }
+    }, true); // immediate save
     
-    console.log('📈 New cycle count:', cycleData.cycleCount);
+    console.log(`✅ Cycle count updated (state-based) for "${activeCycle}": ${actualNewCount}`);
     
-    // Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycleData;
-    fullSchemaData.metadata.lastModified = Date.now();
-    
-    // Update user progress
-    fullSchemaData.userProgress.cyclesCompleted = (fullSchemaData.userProgress.cyclesCompleted || 0) + 1;
-    
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log(`✅ Cycle count updated (Schema 2.5) for "${activeCycle}": ${cycleData.cycleCount}`);
-    console.log('👥 Total user cycles completed:', fullSchemaData.userProgress.cyclesCompleted);
-    
-    // ✅ Handle milestone rewards
-    handleMilestoneUnlocks(activeCycle, cycleData.cycleCount);
+    // ✅ Handle milestone rewards with the actual updated count
+    handleMilestoneUnlocks(activeCycle, actualNewCount);
     
     // ✅ Show animation + update stats
     showCompletionAnimation();
@@ -8352,12 +9194,23 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
 }
 
 function handleMilestoneUnlocks(miniCycleName, cycleCount) {
-    console.log('🏆 Handling milestone unlocks (Schema 2.5 only)...');
+    console.log('🏆 Handling milestone unlocks (state-based)...');
+    
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for milestone unlocks');
+        return;
+    }
+    
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for milestone unlocks');
+        return;
+    }
     
     // ✅ Show milestone achievement message
     checkForMilestone(miniCycleName, cycleCount);
 
-    // ✅ Theme unlocks
+    // ✅ Theme unlocks with state-based tracking
     if (cycleCount >= 5) {
         unlockDarkOceanTheme();
     }
@@ -8365,15 +9218,9 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
         unlockGoldenGlowTheme();
     }
 
-    // ✅ Game unlock
+    // ✅ Game unlock with state-based tracking
     if (cycleCount >= 100) {
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for game unlock');
-            return;
-        }
-        
-        const hasGameUnlock = schemaData.settings.unlockedFeatures.includes("task-order-game");
+        const hasGameUnlock = currentState.settings.unlockedFeatures.includes("task-order-game");
         
         if (!hasGameUnlock) {
             showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
@@ -8381,48 +9228,56 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
         }
     }
     
-    console.log('✅ Milestone unlocks processed (Schema 2.5)');
+    console.log('✅ Milestone unlocks processed (state-based)');
 }
 
 function unlockMiniGame() {
-    console.log('🎮 Unlocking mini game (Schema 2.5 only)...');
+    console.log('🎮 Unlocking mini game (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for unlockMiniGame');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for unlockMiniGame');
         return;
     }
     
-    if (!schemaData.settings.unlockedFeatures.includes("task-order-game")) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.unlockedFeatures.push("task-order-game");
-        fullSchemaData.userProgress.rewardMilestones.push("task-order-game-100");
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for unlockMiniGame');
+        return;
+    }
+    
+    if (!currentState.settings.unlockedFeatures.includes("task-order-game")) {
+        window.AppState.update(state => {
+            state.settings.unlockedFeatures.push("task-order-game");
+            state.userProgress.rewardMilestones.push("task-order-game-100");
+        }, true);
         
-        console.log("🎮 Task Order Game unlocked in Schema 2.5!");
+        console.log("🎮 Task Order Game unlocked (state-based)!");
     }
     
     checkGamesUnlock();
 }
 
 function unlockDarkOceanTheme() {
-    console.log("🌊 Unlocking Dark Ocean theme (Schema 2.5 only)...");
+    console.log("🌊 Unlocking Dark Ocean theme (state-based)...");
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for unlockDarkOceanTheme');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for unlockDarkOceanTheme');
         return;
     }
     
-    if (!schemaData.settings.unlockedThemes.includes("dark-ocean")) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.unlockedThemes.push("dark-ocean");
-        fullSchemaData.userProgress.rewardMilestones.push("dark-ocean-5");
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for unlockDarkOceanTheme');
+        return;
+    }
+    
+    if (!currentState.settings.unlockedThemes.includes("dark-ocean")) {
+        window.AppState.update(state => {
+            state.settings.unlockedThemes.push("dark-ocean");
+            state.userProgress.rewardMilestones.push("dark-ocean-5");
+        }, true);
         
-        console.log("🎨 Dark Ocean theme unlocked in Schema 2.5!");
+        console.log("🎨 Dark Ocean theme unlocked (state-based)!");
         refreshThemeToggles();
         
         // Show the theme option in menu
@@ -8446,22 +9301,26 @@ function unlockDarkOceanTheme() {
 }
 
 function unlockGoldenGlowTheme() {
-    console.log("🌟 Unlocking Golden Glow theme (Schema 2.5 only)...");
+    console.log("🌟 Unlocking Golden Glow theme (state-based)...");
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for unlockGoldenGlowTheme');
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for unlockGoldenGlowTheme');
         return;
     }
     
-    if (!schemaData.settings.unlockedThemes.includes("golden-glow")) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.unlockedThemes.push("golden-glow");
-        fullSchemaData.userProgress.rewardMilestones.push("golden-glow-50");
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data for unlockGoldenGlowTheme');
+        return;
+    }
+    
+    if (!currentState.settings.unlockedThemes.includes("golden-glow")) {
+        window.AppState.update(state => {
+            state.settings.unlockedThemes.push("golden-glow");
+            state.userProgress.rewardMilestones.push("golden-glow-50");
+        }, true);
         
-        console.log("🎨 Golden Glow theme unlocked in Schema 2.5!");
+        console.log("🎨 Golden Glow theme unlocked (state-based)!");
         refreshThemeToggles();
 
         // Show the theme container (if hidden)
@@ -8480,6 +9339,8 @@ function unlockGoldenGlowTheme() {
     } else {
         console.log('ℹ️ Golden Glow theme already unlocked');
     }
+    
+    refreshThemeToggles();
 }
 
 
@@ -8823,6 +9684,7 @@ let rearrangeTimeout; // Prevents excessive reordering calls
  */
 
 const REARRANGE_DELAY = 75; // ms delay to smooth reordering
+const REORDER_SNAPSHOT_INTERVAL = 500;
 
 // ✅ Update the handleRearrange function
 function handleRearrange(target, event) {
@@ -8842,7 +9704,7 @@ function handleRearrange(target, event) {
     // 🧠 Snapshot only if enough time has passed
     const now = Date.now();
     if (now - window.AppGlobalState.lastReorderTime > REORDER_SNAPSHOT_INTERVAL) { // ✅ Use centralized state
-      pushUndoSnapshot();
+      
       window.AppGlobalState.lastReorderTime = now; // ✅ Use centralized state
       window.AppGlobalState.didDragReorderOccur = true; // ✅ Use centralized state
     }
@@ -8875,7 +9737,7 @@ function handleRearrange(target, event) {
     }
 
     window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-  }, REORDER_DELAY);
+  }, REARRANGE_DELAY);
 }
 
 
@@ -8888,6 +9750,18 @@ function handleRearrange(target, event) {
 function setupRearrange() {
   if (window.AppGlobalState.rearrangeInitialized) return;
   window.AppGlobalState.rearrangeInitialized = true; // ✅ Use centralized state
+
+  // ✅ Add event delegation for arrow clicks (survives DOM re-renders)
+  const taskList = document.getElementById("taskList");
+  if (taskList) {
+    taskList.addEventListener("click", (event) => {
+      if (event.target.matches('.move-up, .move-down')) {
+        event.preventDefault();
+        event.stopPropagation();
+        handleArrowClick(event.target);
+      }
+    });
+  }
 
   document.addEventListener("dragover", (event) => {
     event.preventDefault();
@@ -8921,6 +9795,55 @@ function setupRearrange() {
     window.AppGlobalState.lastReorderTime = 0; // ✅ Use centralized state
     window.AppGlobalState.didDragReorderOccur = false; // ✅ Use centralized state
   });
+}
+
+// ✅ Add arrow click handler
+function handleArrowClick(button) {
+    const taskItem = button.closest('.task');
+    if (!taskItem) return;
+
+    const taskList = document.getElementById('taskList');
+    const allTasks = Array.from(taskList.children);
+    const currentIndex = allTasks.indexOf(taskItem);
+    
+    let newIndex;
+    if (button.classList.contains('move-up')) {
+        newIndex = Math.max(0, currentIndex - 1);
+    } else {
+        newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
+    }
+    
+    if (newIndex === currentIndex) return; // No movement needed
+    
+    // ✅ Reorder via state system (splice in array)
+    if (window.AppState?.isReady?.()) {
+        // ✅ Capture undo snapshot BEFORE reordering
+        const currentState = window.AppState.get();
+        if (currentState) captureStateSnapshot(currentState);
+        
+        window.AppState.update(state => {
+            const activeCycleId = state.appState.activeCycleId;
+            if (activeCycleId && state.data.cycles[activeCycleId]) {
+                const tasks = state.data.cycles[activeCycleId].tasks;
+                if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
+                    // Remove task from current position and insert at new position
+                    const [movedTask] = tasks.splice(currentIndex, 1);
+                    tasks.splice(newIndex, 0, movedTask);
+                    state.metadata.lastModified = Date.now();
+                }
+            }
+        }, true); // immediate save
+        
+        // ✅ Re-render from state to reflect changes
+        refreshUIFromState();
+        
+        // ✅ Update undo/redo buttons
+        updateUndoRedoButtons();
+        
+        console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
+    } else {
+        console.warn('⚠️ AppState not ready for arrow reordering');
+    }
 }
 
 
@@ -8961,33 +9884,32 @@ function dragEndCleanup () {
  * @returns {void}
  */
 function updateMoveArrowsVisibility() {
-    console.log('🔄 Updating move arrows visibility (Schema 2.5 only)...');
+    console.log('🔄 Updating move arrows visibility (state-based)...');
     
-    // ✅ Try Schema 2.5 first
-    const schemaData = loadMiniCycleData();
+    // ✅ Use state-based system
     let showArrows = false;
     
-    if (schemaData) {
-        showArrows = schemaData.settings.showMoveArrows || false;
+    if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        showArrows = currentState?.ui?.moveArrowsVisible || false;
+        console.log('📊 Arrow visibility from AppState:', showArrows);
     } else {
-        // ✅ Fallback to legacy (this shouldn't happen in Schema 2.5 only app)
-        showArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
+        // ✅ Silent fallback when state isn't ready (during initialization)
+        const storedValue = localStorage.getItem("miniCycleMoveArrows");
+        if (storedValue !== null) {
+            showArrows = storedValue === "true";
+            console.log('📊 Arrow visibility from localStorage fallback:', showArrows);
+        } else {
+            // Default to false if no setting exists
+            showArrows = false;
+            console.log('📊 Arrow visibility using default:', showArrows);
+        }
     }
 
-    document.querySelectorAll(".move-btn").forEach(button => {
-        button.style.visibility = showArrows ? "visible" : "hidden";
-        button.style.opacity = showArrows ? "1" : "0";
-    });
+    // ✅ Update DOM to reflect current state
+    updateArrowsInDOM(showArrows);
 
-    // ✅ Ensure `.task-options` remains interactive
-    document.querySelectorAll(".task-options").forEach(options => {
-        options.style.pointerEvents = "auto"; // 🔥 Fixes buttons becoming unclickable
-    });
-
-    console.log("✅ Move Arrows Toggled (Schema 2.5)");
-    
-    toggleArrowVisibility();
-    dragEndCleanup();
+    console.log(`✅ Move arrows visibility updated: ${showArrows ? "visible" : "hidden"}`);
 }
 
 /**
@@ -8996,26 +9918,53 @@ function updateMoveArrowsVisibility() {
  * @returns {void}
  */
 function toggleArrowVisibility() {
-    console.log('🔄 Toggling arrow visibility (Schema 2.5 only)...');
+    console.log('🔄 Toggling arrow visibility (state-based)...');
     
-    // ✅ Try Schema 2.5 first
-    const schemaData = loadMiniCycleData();
-    let showArrows = false;
-    
-    if (schemaData) {
-        showArrows = schemaData.settings.showMoveArrows || false;
-    } else {
-        // ✅ Fallback to legacy (this shouldn't happen in Schema 2.5 only app)
-        showArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
+    // ✅ Use state-based system
+    if (!window.AppState?.isReady?.()) {
+        console.log('⚠️ AppState not ready yet, deferring toggle until ready');
+        // Defer the toggle until AppState is ready
+        setTimeout(() => {
+            if (window.AppState?.isReady?.()) {
+                toggleArrowVisibility();
+            } else {
+                console.warn('❌ AppState still not ready after timeout');
+            }
+        }, 100);
+        return;
     }
-    
+
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for toggleArrowVisibility');
+        return;
+    }
+
+    const currentlyVisible = currentState.ui?.moveArrowsVisible || false;
+    const newVisibility = !currentlyVisible;
+
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        if (!state.ui) state.ui = {};
+        state.ui.moveArrowsVisible = newVisibility;
+        state.metadata.lastModified = Date.now();
+    }, true); // immediate save
+
+    // ✅ Update DOM to reflect new state
+    updateArrowsInDOM(newVisibility);
+
+    console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
+}
+
+// ✅ Extracted DOM update logic
+function updateArrowsInDOM(showArrows) {
     const allTasks = document.querySelectorAll(".task");
 
     allTasks.forEach((task, index) => {
         const upButton = task.querySelector('.move-up');
         const downButton = task.querySelector('.move-down');
-        const taskOptions = task.querySelector('.task-options'); // ✅ Select task options
-        const taskButtons = task.querySelectorAll('.task-btn'); // ✅ Select all task buttons
+        const taskOptions = task.querySelector('.task-options');
+        const taskButtons = task.querySelectorAll('.task-btn');
 
         if (upButton) {
             upButton.style.visibility = (showArrows && index !== 0) ? "visible" : "hidden";
@@ -9038,8 +9987,6 @@ function toggleArrowVisibility() {
             button.style.pointerEvents = "auto";
         });
     });
-
-    console.log(`✅ Move arrows and buttons are now ${showArrows ? "enabled" : "disabled"} (Schema 2.5)`);
 }
     
     /***********************
@@ -9408,6 +10355,9 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
         setupRecurringButtonHandler(button, taskContext);
     } else if (btnClass === "enable-task-reminders") {
         setupReminderButtonHandler(button, taskContext);
+    } else if (btnClass === "move-up" || btnClass === "move-down") {
+        // ✅ Skip attaching old handlers to move buttons - using event delegation
+        console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
     } else {
         button.addEventListener("click", handleTaskButtonClick);
     }
@@ -9417,11 +10367,19 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
 function setupRecurringButtonHandler(button, taskContext) {
     const { assignedTaskId, currentCycle, settings, activeCycle } = taskContext;
     
+    // ✅ Mark that handler is attached to prevent double-attachment
+    button.dataset.handlerAttached = 'true';
+    
     button.addEventListener("click", () => {
         const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
+        if (!task) {
+            console.warn('⚠️ Task not found:', assignedTaskId);
+            return;
+        }
+
         if (!task) return;
 
-        pushUndoSnapshot();
+        
 
         const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
         if (!(showRecurring || (settings.alwaysShowRecurring || false))) return;
@@ -9441,7 +10399,11 @@ function setupRecurringButtonHandler(button, taskContext) {
         // Save to Schema 2.5
         saveTaskToSchema25(activeCycle, currentCycle);
         
+        // ✅ Simple panel button visibility update
         updateRecurringPanelButtonVisibility();
+        
+        updateRecurringPanel?.();
+        
         updateRecurringPanel?.();
     });
 }
@@ -9484,9 +10446,35 @@ function handleRecurringTaskActivation(task, taskContext, button) {
     const frequency = rs.frequency || "daily";
     const pattern = rs.indefinitely ? "Indefinitely" : "Limited";
 
-    const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
-    const notification = showNotificationWithTip(notificationContent, "recurring", 20000, "recurring-cycle-explanation");
-    initializeRecurringNotificationListeners(notification);
+    try {
+        const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
+        const notification = showNotificationWithTip(notificationContent, "recurring", 20000, "recurring-cycle-explanation");
+        if (notification) {
+            initializeRecurringNotificationListeners(notification);
+        } else {
+            // Fallback to basic notification
+            const notificationDiv = document.createElement('div');
+            notificationDiv.className = 'notification success';
+            notificationDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
+            notificationDiv.innerHTML = `
+                <div>🔄 Task set to recurring (${frequency})</div>
+                <div style="margin-top: 10px; font-size: 12px;">
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Change</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;">More Options</button>
+                </div>
+            `;
+            document.body.appendChild(notificationDiv);
+            setTimeout(() => notificationDiv.remove(), 5000);
+        }
+    } catch (error) {
+        // Silent fallback - basic notification
+        const notificationDiv = document.createElement('div');
+        notificationDiv.className = 'notification success';
+        notificationDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
+        notificationDiv.innerHTML = `🔄 Task set to recurring (${frequency})`;
+        document.body.appendChild(notificationDiv);
+        setTimeout(() => notificationDiv.remove(), 3000);
+    }
 }
 
 // ✅ 15. Recurring Task Deactivation Handler
@@ -9520,7 +10508,7 @@ function setupReminderButtonHandler(button, taskContext) {
     const { assignedTaskId } = taskContext;
     
     button.addEventListener("click", () => {
-        pushUndoSnapshot();
+        
 
         const isActive = button.classList.toggle("reminder-active");
         button.setAttribute("aria-pressed", isActive.toString());
@@ -9569,7 +10557,7 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
     checkbox.setAttribute("aria-checked", checkbox.checked);
     
     safeAddEventListener(checkbox, "change", () => {
-        pushUndoSnapshot();
+        
         handleTaskCompletionChange(checkbox);
         checkMiniCycle();
         autoSave();
@@ -9633,7 +10621,7 @@ function createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCy
     }
     
     dueDateInput.addEventListener("change", () => {
-        pushUndoSnapshot();
+        
 
         // Update task in Schema 2.5
         const taskToUpdate = currentCycle.tasks.find(t => t.id === assignedTaskId);
@@ -9781,6 +10769,12 @@ function updateUIAfterTaskCreation(shouldSave) {
     checkCompleteAllButton();
     updateProgressBar();
     updateStatsPanel();
+    
+    // ✅ Update recurring panel button visibility when tasks are added
+    if (typeof updateRecurringPanelButtonVisibility === 'function') {
+        updateRecurringPanelButtonVisibility();
+    }
+    
     if (shouldSave) autoSave();
 }
 
@@ -9794,6 +10788,22 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 
 // ✅ 32. Schema 2.5 Save Helper
 function saveTaskToSchema25(activeCycle, currentCycle) {
+    // Use AppState if available, otherwise fallback to localStorage
+    if (window.AppState && window.AppState.isReady()) {
+        try {
+            window.AppState.update(state => {
+                if (state && state.data && state.data.cycles) {
+                    state.data.cycles[activeCycle] = currentCycle;
+                    state.metadata.lastModified = Date.now();
+                }
+            });
+            return;
+        } catch (error) {
+            // Fall through to localStorage fallback
+        }
+    }
+    
+    // Fallback to localStorage if AppState not ready or failed
     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
     fullSchemaData.data.cycles[activeCycle] = currentCycle;
     fullSchemaData.metadata.lastModified = Date.now();
@@ -10057,11 +11067,19 @@ function revealTaskButtons(taskItem) {
   const remindersEnabledGlobal = reminderSettings.enabled === true;
   const autoResetEnabled = toggleAutoReset.checked;
 
+  // ✅ Early return if AppState not ready to prevent initialization race conditions
+  if (!window.AppState?.isReady?.()) {
+    console.log('⏳ revealTaskButtons deferred - AppState not ready');
+    return;
+  }
+
   const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
   const cycleData = savedMiniCycles?.[lastUsedMiniCycle] ?? {};
   const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
 
-  const alwaysShow = JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
+  const alwaysShow = AppState.isReady() ? 
+    AppState.get()?.settings?.alwaysShowRecurring === true : 
+    JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
   const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
 
   taskOptions.querySelectorAll(".task-btn").forEach(btn => {
@@ -10191,60 +11209,21 @@ function isTouchDevice() {
  */
 
 function handleTaskButtonClick(event) {
-    event.stopPropagation(); // ✅ Prevents click from affecting the whole task
-
+    event.stopPropagation();
     const button = event.currentTarget;
     const taskItem = button.closest(".task");
-
     if (!taskItem) return;
 
-    // ✅ Ensure `.task-options` stays interactive
     const taskOptions = taskItem.querySelector(".task-options");
-    if (taskOptions) {
-        taskOptions.style.pointerEvents = "auto"; // 🔥 FIXES MOBILE CLICK ISSUE
-    }
+    if (taskOptions) taskOptions.style.pointerEvents = "auto";
 
     let shouldSave = false;
-    if (button.classList.contains("move-up")) {
-        const prevTask = taskItem.previousElementSibling;
-        if (prevTask) {
-            // 🔁 Save undo snapshot BEFORE reordering
-            pushUndoSnapshot();
 
-            if (isTouchDevice()) {
-                taskItem.classList.add("rearranging");
-            }
-
-            taskItem.parentNode.insertBefore(taskItem, prevTask);
-            revealTaskButtons(taskItem);
-            toggleArrowVisibility();
-
-            // 💾 Save the new task order to localStorage
-            saveCurrentTaskOrder();
-
-            shouldSave = false; // Already saved manually
-        }
-    } else if (button.classList.contains("move-down")) {
-        const nextTask = taskItem.nextElementSibling;
-        if (nextTask) {
-            // 🔁 Save undo snapshot BEFORE reordering
-            pushUndoSnapshot();
-
-            if (isTouchDevice()) {
-                taskItem.classList.add("rearranging");
-            }
-
-            taskItem.parentNode.insertBefore(taskItem, nextTask.nextSibling);
-            revealTaskButtons(taskItem);
-            toggleArrowVisibility();
-
-            // 💾 Save the new task order to localStorage
-            saveCurrentTaskOrder();
-
-            shouldSave = false; // Already saved manually
-        }
-    }
-    else if (button.classList.contains("edit-btn")) {
+    // ✅ DISABLED: Old arrow handling logic - now using event delegation
+    if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
+        console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
+        return; // Let the new event delegation handle this
+    } else if (button.classList.contains("edit-btn")) {
         const taskLabel = taskItem.querySelector("span");
         const oldText = taskLabel.textContent.trim();
 
@@ -10256,179 +11235,200 @@ function handleTaskButtonClick(event) {
             confirmText: "Save",
             cancelText: "Cancel",
             required: true,
-            callback: (newText) => {
+            callback: async (newText) => {
                 if (newText && newText.trim() !== oldText) {
                     const cleanText = sanitizeInput(newText.trim());
-
-                    // 🔁 Save snapshot BEFORE changing text
-                    pushUndoSnapshot();
-
+                    
+                    // ✅ ADD: Capture snapshot BEFORE changing text
+                    if (window.AppState?.isReady?.()) {
+                        const currentState = window.AppState.get();
+                        if (currentState) captureStateSnapshot(currentState);
+                    }
+                    
                     taskLabel.textContent = cleanText;
 
-                    // ✅ Update task object with Schema 2.5 only
                     const taskId = taskItem.dataset.taskId;
-                    
-                    const schemaData = loadMiniCycleData();
-                    if (!schemaData) {
-                        console.error('❌ Schema 2.5 data required for edit task');
-                        return;
+
+                    // ✅ Use AppState.update so undo sees the change
+                    if (window.AppState?.isReady?.()) {
+                        await window.AppState.update(state => {
+                            const cid = state.appState.activeCycleId;
+                            const cycle = state.data.cycles[cid];
+                            const t = cycle?.tasks?.find(t => t.id === taskId);
+                            if (t) t.text = cleanText;
+                        }, true);
+                    } else {
+                        // ...existing localStorage fallback...
+                        const schemaData = loadMiniCycleData();
+                        if (!schemaData) return;
+                        const { cycles, activeCycle } = schemaData;
+                        const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
+                        if (task) {
+                            task.text = cleanText;
+                            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
+                            fullSchemaData.metadata.lastModified = Date.now();
+                            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                        }
                     }
 
-                    const { cycles, activeCycle } = schemaData;
-                    const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                    
-                    if (task) {
-                        task.text = cleanText;
-                        
-                        // Update the full schema data
-                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                        
-                        showNotification(`Task renamed to "${cleanText}"`, "info", 1500);
-                    }
-
+                    showNotification(`Task renamed to "${cleanText}"`, "info", 1500);
                     updateStatsPanel();
                     updateProgressBar();
                     checkCompleteAllButton();
-
-                    shouldSave = false; // Already saved
+                    shouldSave = false;
                 }
             }
         });
-    }
-    else if (button.classList.contains("delete-btn")) {
+    } else if (button.classList.contains("delete-btn")) {
         const taskId = taskItem.dataset.taskId;
         const taskName = taskItem.querySelector(".task-text")?.textContent || "Task";
-    
+
         showConfirmationModal({
             title: "Delete Task",
             message: `Are you sure you want to delete "${taskName}"?`,
             confirmText: "Delete",
             cancelText: "Cancel",
-            callback: (confirmDelete) => {
+            callback: async (confirmDelete) => {
                 if (!confirmDelete) {
                     showNotification(`"${taskName}" has not been deleted.`, "show", 2500);
-                    console.log("❌ Task not deleted.");
-                    return;
-                }
-        
-                // ✅ Push undo snapshot BEFORE deletion
-                pushUndoSnapshot();
-        
-                // ✅ Schema 2.5 only
-                const schemaData = loadMiniCycleData();
-                if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for delete task');
                     return;
                 }
 
-                const { cycles, activeCycle } = schemaData;
-                const currentCycle = cycles[activeCycle];
-                
-                if (currentCycle) {
-                    // Remove task from Schema 2.5
-                    currentCycle.tasks = currentCycle.tasks.filter(task => task.id !== taskId);
-        
-                    // Remove from recurring templates if it exists
-                    if (currentCycle.recurringTemplates?.[taskId]) {
-                        delete currentCycle.recurringTemplates[taskId];
-                    }
-        
-                    // Update the full schema data
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                // ✅ ADD: Capture snapshot BEFORE deletion
+                if (window.AppState?.isReady?.()) {
+                    const currentState = window.AppState.get();
+                    if (currentState) captureStateSnapshot(currentState);
                 }
-        
-                // ✅ Remove from DOM
+
+                // ✅ Use AppState.update so undo sees the change
+                if (window.AppState?.isReady?.()) {
+                    await window.AppState.update(state => {
+                        const cid = state.appState.activeCycleId;
+                        const cycle = state.data.cycles[cid];
+                        if (!cycle) return;
+                        cycle.tasks = (cycle.tasks || []).filter(t => t.id !== taskId);
+                        if (cycle.recurringTemplates?.[taskId]) {
+                            delete cycle.recurringTemplates[taskId];
+                        }
+                    }, true);
+                } else {
+                    // ...existing localStorage fallback...
+                    const schemaData = loadMiniCycleData();
+                    if (!schemaData) return;
+                    const { cycles, activeCycle } = schemaData;
+                    const currentCycle = cycles[activeCycle];
+                    if (currentCycle) {
+                        currentCycle.tasks = currentCycle.tasks.filter(task => task.id !== taskId);
+                        if (currentCycle.recurringTemplates?.[taskId]) {
+                            delete currentCycle.recurringTemplates[taskId];
+                        }
+                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                        fullSchemaData.data.cycles[activeCycle] = currentCycle;
+                        fullSchemaData.metadata.lastModified = Date.now();
+                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                    }
+                }
+
                 taskItem.remove();
                 updateProgressBar();
                 updateStatsPanel();
                 checkCompleteAllButton();
                 toggleArrowVisibility();
-        
+
                 showNotification(`"${taskName}" has been deleted.`, "info", 2000);
-                console.log(`🗑️ Deleted task: "${taskName}"`);
             }
         });
-    
-        shouldSave = false; // Already saved manually
-    }
-    else if (button.classList.contains("priority-btn")) {
-        // 🔁 Save snapshot BEFORE changing priority
-        pushUndoSnapshot();
-    
+
+        shouldSave = false;
+    } else if (button.classList.contains("priority-btn")) {
+        // ✅ ADD: Capture snapshot BEFORE changing priority
+        if (window.AppState?.isReady?.()) {
+            const currentState = window.AppState.get();
+            if (currentState) captureStateSnapshot(currentState);
+        }
+
         taskItem.classList.toggle("high-priority");
-    
-        // ✅ Reflect priority visually
         if (taskItem.classList.contains("high-priority")) {
             button.classList.add("priority-active");
         } else {
             button.classList.remove("priority-active");
         }
-    
-        // ✅ Update task object in storage - Schema 2.5 only
+
         const taskId = taskItem.dataset.taskId;
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for priority task');
-            return;
+
+        // ✅ Use AppState.update so undo sees the change
+        if (window.AppState?.isReady?.()) {
+            window.AppState.update(state => {
+                const cid = state.appState.activeCycleId;
+                const cycle = state.data.cycles[cid];
+                const t = cycle?.tasks?.find(t => t.id === taskId);
+                if (t) t.highPriority = taskItem.classList.contains("high-priority");
+            }, true);
+        } else {
+            // ...existing localStorage fallback...
+            const schemaData = loadMiniCycleData();
+            if (!schemaData) return;
+            const { cycles, activeCycle } = schemaData;
+            const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
+            if (task) {
+                task.highPriority = taskItem.classList.contains("high-priority");
+                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
+                fullSchemaData.metadata.lastModified = Date.now();
+                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                showNotification(
+                    `Priority ${task.highPriority ? "enabled" : "removed"}.`,
+                    task.highPriority ? "error" : "info",
+                    1500
+                );
+            }
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-        
-        if (task) {
-            task.highPriority = taskItem.classList.contains("high-priority");
-            
-            // Update the full schema data
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            
-            showNotification(
-                `Priority ${task.highPriority ? "enabled" : "removed"}.`,
-                task.highPriority ? "error" : "info",
-                1500
-            );
-        }
-    
-        shouldSave = false; // Already saved manually
+        shouldSave = false;
     }
 
     if (shouldSave) autoSave();
     console.log("✅ Task button clicked:", button.className);
 }
-
-function saveCurrentTaskOrder() {
+async function saveCurrentTaskOrder() {
     const taskElements = document.querySelectorAll("#taskList .task");
     const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
 
-    // ✅ Schema 2.5 only
+    // ✅ Prefer AppState to trigger undo snapshots via subscriber
+    if (window.AppState?.isReady?.()) {
+        await window.AppState.update(state => {
+            const cid = state.appState.activeCycleId;
+            const cycle = state.data.cycles[cid];
+            if (!cycle?.tasks) return;
+
+            // ✅ Use the same pattern as your example
+            const reorderedTasks = newOrderIds.map(id =>
+                cycle.tasks.find(task => task.id === id)
+            ).filter(Boolean); // filters out any nulls
+
+            cycle.tasks = reorderedTasks;
+        }, true);
+        return;
+    }
+
+    // Fallback: direct localStorage (same pattern as your example)
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for saveCurrentTaskOrder');
         return;
     }
-
     const { cycles, activeCycle } = schemaData;
     const currentCycle = cycles[activeCycle];
-    
     if (!currentCycle || !Array.isArray(currentCycle.tasks)) return;
 
     // Reorder task array based on current DOM order
     const reorderedTasks = newOrderIds.map(id =>
         currentCycle.tasks.find(task => task.id === id)
-    ).filter(Boolean); // filters out any nulls
+    ).filter(Boolean);
 
     currentCycle.tasks = reorderedTasks;
 
-    // ✅ Save to Schema 2.5
     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
     fullSchemaData.data.cycles[activeCycle] = currentCycle;
     fullSchemaData.metadata.lastModified = Date.now();
@@ -10635,24 +11635,31 @@ function triggerLogoBackground(color = 'green', duration = 300) {
  * @returns {void}
  */
 function saveToggleAutoReset() {
-    console.log('⚙️ Setting up toggle auto reset (Schema 2.5 only)...');
+    console.log('⚙️ Setting up toggle auto reset (state-based)...');
     
     const toggleAutoReset = document.getElementById("toggleAutoReset");
     const deleteCheckedTasksContainer = document.getElementById("deleteCheckedTasksContainer");
     const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveToggleAutoReset');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for saveToggleAutoReset');
+        return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for saveToggleAutoReset');
+        return;
+    }
+    
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const currentCycle = data.cycles[activeCycle];
     
     console.log('📊 Setting up toggles for cycle:', activeCycle);
     
-    // ✅ Ensure AutoReset reflects the correct state from Schema 2.5
+    // ✅ Ensure AutoReset reflects the correct state from state system
     if (activeCycle && currentCycle) {
         toggleAutoReset.checked = currentCycle.autoReset || false;
         deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
@@ -10671,27 +11678,29 @@ function saveToggleAutoReset() {
     toggleAutoReset.removeEventListener("change", handleAutoResetChange);
     deleteCheckedTasks.removeEventListener("change", handleDeleteCheckedTasksChange);
 
-    // ✅ Define event listener functions for Schema 2.5
+    // ✅ Define event listener functions for state-based system
     function handleAutoResetChange(event) {
-        console.log('🔄 Auto reset toggle changed:', event.target.checked);
+        console.log('🔄 Auto reset toggle changed (state-based):', event.target.checked);
         
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active cycle available for auto reset change');
             return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle].autoReset = event.target.checked;
-
-        // ✅ If Auto Reset is turned ON, automatically uncheck "Delete Checked Tasks"
-        if (event.target.checked) {
-            fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = false;
-            deleteCheckedTasks.checked = false; // ✅ Update UI
-            console.log('🔄 Auto reset ON - disabling delete checked tasks');
-        }
-
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Update through state system
+        window.AppState.update(state => {
+            const cycle = state.data.cycles[activeCycle];
+            if (cycle) {
+                cycle.autoReset = event.target.checked;
+                
+                // ✅ If Auto Reset is turned ON, automatically uncheck "Delete Checked Tasks"
+                if (event.target.checked) {
+                    cycle.deleteCheckedTasks = false;
+                    deleteCheckedTasks.checked = false; // ✅ Update UI
+                    console.log('🔄 Auto reset ON - disabling delete checked tasks');
+                }
+            }
+        }, true); // immediate save
 
         // ✅ Show/Hide "Delete Checked Tasks" toggle dynamically
         deleteCheckedTasksContainer.style.display = event.target.checked ? "none" : "block";
@@ -10705,42 +11714,44 @@ function saveToggleAutoReset() {
         refreshTaskListUI();
         updateRecurringButtonVisibility();
         
-        console.log('✅ Auto reset settings saved to Schema 2.5');
+        console.log('✅ Auto reset settings saved (state-based)');
     }
 
     function handleDeleteCheckedTasksChange(event) {
-        console.log('🗑️ Delete checked tasks toggle changed:', event.target.checked);
+        console.log('🗑️ Delete checked tasks toggle changed (state-based):', event.target.checked);
         
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active cycle available for delete checked tasks change');
             return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = event.target.checked;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Update through state system
+        window.AppState.update(state => {
+            const cycle = state.data.cycles[activeCycle];
+            if (cycle) {
+                cycle.deleteCheckedTasks = event.target.checked;
+            }
+        }, true); // immediate save
         
-        refreshTaskListUI();
-        console.log('✅ Delete checked tasks setting saved to Schema 2.5');
+        // ✅ Update recurring button visibility when setting changes
+        updateRecurringButtonVisibility();
+        
+        console.log('✅ Delete checked tasks setting saved (state-based)');
     }
 
     // ✅ Add new event listeners
     toggleAutoReset.addEventListener("change", handleAutoResetChange);
     deleteCheckedTasks.addEventListener("change", handleDeleteCheckedTasksChange);
     
-    console.log('✅ Toggle auto reset setup completed');
+    console.log('✅ Toggle auto reset setup completed (state-based)');
 }
 
 
-
-
-    /**
+/**
  * Checkduedates function.
  *
  * @returns {void}
  */
-
 function checkDueDates() {
     console.log('📅 Setting up due date checks (Schema 2.5 only)...');
     
@@ -11125,7 +12136,7 @@ safeAddEventListener(addTaskButton, "click", () => {
         return;
     }
 
-    pushUndoSnapshot(); 
+     
     addTask(taskText);
     taskInput.value = "";
 });
@@ -11140,7 +12151,7 @@ safeAddEventListener(taskInput, "keypress", function (event) {
             return;
         }
 
-    pushUndoSnapshot(); 
+     
         addTask(taskText);
         taskInput.value = "";
     }
@@ -11677,9 +12688,9 @@ setTimeout(() => {
     helpWindowManager = new HelpWindowManager();
 }, 500);
 
-// ✅ Updated setupModeSelector to show help descriptions on mode change
+// ✅ Updated setupModeSelector to use state-based system
 function setupModeSelector() {
-    console.log('🎯 Setting up mode selectors...');
+    console.log('🎯 Setting up mode selectors (state-based)...');
     
     const modeSelector = document.getElementById('mode-selector');
     const mobileModeSelector = document.getElementById('mobile-mode-selector');
@@ -11698,18 +12709,25 @@ function setupModeSelector() {
         return;
     }
     
-// ✅ Function to sync both selectors with toggles (Schema 2.5 only)
+// ✅ Function to sync both selectors with toggles (state-based)
 function syncModeFromToggles() {
-    console.log('🔄 Syncing mode from toggles (Schema 2.5 only)...');
+    console.log('🔄 Syncing mode from toggles (state-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for syncModeFromToggles');
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for syncModeFromToggles');
         return;
     }
     
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for syncModeFromToggles');
+        return;
+    }
+    
+    const { data, appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    const currentCycle = data.cycles[activeCycle];
     
     let autoReset = false;
     let deleteChecked = false;
@@ -11718,7 +12736,7 @@ function syncModeFromToggles() {
         autoReset = currentCycle.autoReset || false;
         deleteChecked = currentCycle.deleteCheckedTasks || false;
         
-        console.log('📊 Mode settings from Schema 2.5:', {
+        console.log('📊 Mode settings from state:', {
             activeCycle,
             autoReset,
             deleteChecked
@@ -11759,10 +12777,14 @@ function syncModeFromToggles() {
     
     // ✅ FIXED: Update container visibility based on mode, not just autoReset
     const deleteContainer = document.getElementById('deleteCheckedTasksContainer');
+    const autoResetContainer = document.getElementById('autoResetContainer');
+    
+    // Hide both individual toggle containers since mode selector controls this functionality
     if (deleteContainer) {
-        // Show delete container in manual-cycle and todo-mode, hide in auto-cycle
-        const shouldShow = (mode === 'manual-cycle' || mode === 'todo-mode');
-        deleteContainer.style.display = shouldShow ? 'block' : 'none';
+        deleteContainer.style.display = 'none';
+    }
+    if (autoResetContainer) {
+        autoResetContainer.style.display = 'none';
     }
     
     console.log('✅ Mode selectors synced to Schema 2.5:', mode);
@@ -11816,18 +12838,26 @@ function syncModeFromToggles() {
         console.log('✅ Toggles synced from mode selector');
     }
     
-    // ✅ Add this helper function to update storage from current toggle states
+    // ✅ Add this helper function to update storage from current toggle states (state-based)
 function updateStorageFromToggles() {
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateStorageFromToggles');
+    console.log('💾 Updating storage from toggles (state-based)...');
+    
+    // ✅ Use state-based data access
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for updateStorageFromToggles');
         return;
     }
     
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for updateStorageFromToggles');
+        return;
+    }
     
-    if (!currentCycle) {
+    const { appState } = currentState;
+    const activeCycle = appState.activeCycleId;
+    
+    if (!activeCycle) {
         console.warn('⚠️ No active cycle found for storage update');
         return;
     }
@@ -11835,14 +12865,16 @@ function updateStorageFromToggles() {
     const toggleAutoReset = document.getElementById('toggleAutoReset');
     const deleteCheckedTasks = document.getElementById('deleteCheckedTasks');
     
-    // Update Schema 2.5
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle].autoReset = toggleAutoReset.checked;
-    fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = deleteCheckedTasks.checked;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        const cycle = state.data.cycles[activeCycle];
+        if (cycle) {
+            cycle.autoReset = toggleAutoReset.checked;
+            cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
+        }
+    }, true); // immediate save
     
-    console.log('✅ Storage updated from toggles (Schema 2.5)');
+    console.log('✅ Storage updated from toggles (state-based)');
 } 
     // ✅ Set up event listeners for both selectors
     console.log('📡 Setting up event listeners for both selectors...');
@@ -12081,7 +13113,7 @@ updateCycleModeDescription();
       setupUploadMiniCycle();
       setupRearrange();
       dragEndCleanup();
-      updateMoveArrowsVisibility();
+      // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
       checkDueDates();
       loadAlwaysShowRecurringSetting();
       updateCycleModeDescription();

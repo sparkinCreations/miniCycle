@@ -787,18 +787,19 @@ setDefaultPosition(notificationContainer) {
 
         const newFrequency = selectedCircle.dataset.freq;
         
-        const schemaData = window.loadMiniCycleData();
-        if (!schemaData) {
-          console.error('❌ Schema 2.5 data required for apply-quick-recurring');
+        // ✅ Use AppState instead of loadMiniCycleData
+        if (!window.AppState?.isReady()) {
+          console.error('❌ AppState not ready for apply-quick-recurring');
           return;
         }
 
-        const { cycles, activeCycle } = schemaData;
+        const state = window.AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
         
         // Note: applyRecurringToTaskSchema25 must be available in global scope
-        window.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency }, cycles, activeCycle);
+        window.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
 
-        const targetTask = cycles[activeCycle]?.tasks.find(t => t.id === taskId);
+        const targetTask = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
         const pattern = targetTask?.recurringSettings?.indefinitely ? "Indefinitely" : "Limited";
         const currentSettingsText = notification.querySelector(`#current-settings-${taskId}`);
 
@@ -815,14 +816,15 @@ setDefaultPosition(notificationContainer) {
 
       // Handle advanced settings button
       if (e.target.classList.contains("open-recurring-settings") && taskId) {
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-          console.error('❌ Schema 2.5 data required for open-recurring-settings');
+        // ✅ Use AppState instead of loadMiniCycleData
+        if (!window.AppState?.isReady()) {
+          console.error('❌ AppState not ready for open-recurring-settings');
           return;
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const task = cycles[activeCycle]?.tasks.find(t => t.id === taskId);
+        const state = window.AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
+        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
 
         let startingFrequency;
         const selectedCircle = notification.querySelector(".radio-circle.selected");
