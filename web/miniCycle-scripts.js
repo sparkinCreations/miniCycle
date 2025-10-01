@@ -295,6 +295,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
   window.AppBootStarted = true;
+  window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
 // ======================================================================
@@ -385,10 +386,22 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
+    
+    // ✅ Create a deferred stats update queue
+    window._deferredStatsUpdates = [];
+    
     window.updateStatsPanel = () => {
         const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
         if (dataAvailable) {
-            return statsPanelManager.updateStatsPanel();
+            // ✅ Check if AppState is ready before updating
+            if (window.AppState?.isReady?.()) {
+                return statsPanelManager.updateStatsPanel();
+            } else {
+                // ✅ Defer the update until AppState is ready
+                console.log('📊 Deferring stats update - AppState not ready yet');
+                window._deferredStatsUpdates.push(() => statsPanelManager.updateStatsPanel());
+                return;
+            }
         } else {
             console.log('📊 Skipping stats update - data not ready');
         }
@@ -626,7 +639,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupUploadMiniCycle();
     setupRearrange();
     dragEndCleanup();
-    updateMoveArrowsVisibility();
+    // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
 
@@ -648,25 +661,22 @@ function wireUndoRedoUI() {
 
 // ✅ Defer anything that needs cycles/data until an active cycle exists
 // ...existing code...
-AppInit.onReady(() => {
+AppInit.onReady(async () => {
   console.log('🟢 Data-ready initializers running…');
 
-  // ✅ NOW initialize state module AFTER data exists
+  // ✅ Initialize state module SYNCHRONOUSLY after data exists
   try {
     console.log('🗃️ Initializing state module after data setup...');
 
-    import('./utilities/state.js')
-      .then(({ createStateManager }) => {
-        window.AppState = createStateManager({
-          showNotification: window.showNotification || console.log.bind(console),
-          storage: localStorage,
-          createInitialData: createInitialSchema25Data
-        });
+    const { createStateManager } = await import('./utilities/state.js');
+    window.AppState = createStateManager({
+      showNotification: window.showNotification || console.log.bind(console),
+      storage: localStorage,
+      createInitialData: createInitialSchema25Data
+    });
 
-        return window.AppState.init();
-      })
-      .then(() => {
-        console.log('✅ State module initialized successfully after data setup');
+    await window.AppState.init();
+    console.log('✅ State module initialized successfully after data setup');
 
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
@@ -732,14 +742,25 @@ AppInit.onReady(() => {
               newState.data.cycles[newState.appState.activeCycleId]?.tasks?.length || 0
           });
         });
-      })
-      .catch(error => {
-        console.warn('⚠️ State module initialization failed, using legacy methods:', error);
-        window.AppState = null;
-      });
   } catch (error) {
     console.warn('⚠️ State module initialization failed, using legacy methods:', error);
     window.AppState = null;
+  }
+
+  // ✅ Give AppState a moment to fully initialize before other modules try to use it
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  // ✅ Process any deferred stats updates now that AppState is ready
+  if (window._deferredStatsUpdates && window._deferredStatsUpdates.length > 0) {
+    console.log(`📊 Processing ${window._deferredStatsUpdates.length} deferred stats updates`);
+    window._deferredStatsUpdates.forEach(updateFn => {
+      try {
+        updateFn();
+      } catch (error) {
+        console.warn('⚠️ Deferred stats update failed:', error);
+      }
+    });
+    window._deferredStatsUpdates = []; // Clear the queue
   }
 
   // ✅ Recurring Features
@@ -788,6 +809,10 @@ AppInit.onReady(() => {
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
+  
+  // ✅ Now that AppState is ready, setup arrow visibility
+  updateMoveArrowsVisibility();
+  
   window.onload = () => {
     if (taskInput) {
       taskInput.focus();
@@ -1115,6 +1140,11 @@ function refreshUIFromState(providedState = null) {
     if (cycle) {
       // Render directly from current in‑memory state
       renderTasks(cycle.tasks || []);
+      
+      // ✅ Restore UI state after rendering
+      const arrowsVisible = state.ui?.moveArrowsVisible || false;
+      updateArrowsInDOM(arrowsVisible);
+      
       // Update other UI bits that don't depend on reloading storage
       if (typeof updateRecurringPanel === 'function') updateRecurringPanel();
       if (typeof updateRecurringPanelButtonVisibility === 'function') updateRecurringPanelButtonVisibility();
@@ -1128,6 +1158,15 @@ function refreshUIFromState(providedState = null) {
   // Fallback: loader (reads from localStorage)
   if (typeof window.loadMiniCycle === 'function') {
     window.loadMiniCycle();
+    
+    // ✅ Also restore arrow visibility after fallback load
+    setTimeout(() => {
+      if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+        updateArrowsInDOM(arrowsVisible);
+      }
+    }, 50);
   }
 }
 // ✅ Update button states
@@ -1206,7 +1245,14 @@ function renderTasks(tasksArray = []) {
   checkCompleteAllButton();
   updateStatsPanel();
   
-  console.log('✅ Task rendering completed');
+  // ✅ Restore arrow visibility from state after rendering
+  if (window.AppState?.isReady?.()) {
+    const currentState = window.AppState.get();
+    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+    updateArrowsInDOM(arrowsVisible);
+  }
+  
+  console.log('✅ Task rendering completed and UI state restored');
 }
 
 
@@ -7860,9 +7906,19 @@ if (moveArrowsToggle) {
         return;
     }
     
-    const moveArrowsEnabled = schemaData.settings.showMoveArrows || false;
+    // ✅ Use state-based approach for move arrows setting
+    let moveArrowsEnabled = false;
     
-    console.log('📊 Loading move arrows setting from Schema 2.5:', moveArrowsEnabled);
+    if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
+    } else {
+        // Fallback for legacy or when state isn't ready
+        const schemaData = loadMiniCycleData();
+        moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
+    }
+    
+    console.log('📊 Loading move arrows setting from state:', moveArrowsEnabled);
     
     moveArrowsToggle.checked = moveArrowsEnabled;
     
@@ -7871,18 +7927,26 @@ if (moveArrowsToggle) {
         
         console.log('🔄 Move arrows toggle changed:', enabled);
         
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for saving move arrows setting');
-            return;
+        // ✅ Use state system if available
+        if (window.AppState?.isReady?.()) {
+            window.AppState.update(state => {
+                if (!state.ui) state.ui = {};
+                state.ui.moveArrowsVisible = enabled;
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save
+            
+            console.log('✅ Move arrows setting saved to state:', enabled);
+        } else {
+            // ✅ Fallback to localStorage if state not ready
+            console.warn('⚠️ AppState not ready, using localStorage fallback');
+            const schemaData = loadMiniCycleData();
+            if (schemaData) {
+                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                fullSchemaData.settings.showMoveArrows = enabled;
+                fullSchemaData.metadata.lastModified = Date.now();
+                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            }
         }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.showMoveArrows = enabled;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Move arrows setting saved to Schema 2.5:', enabled);
         
         updateMoveArrowsVisibility();
     });
@@ -9343,6 +9407,18 @@ function setupRearrange() {
   if (window.AppGlobalState.rearrangeInitialized) return;
   window.AppGlobalState.rearrangeInitialized = true; // ✅ Use centralized state
 
+  // ✅ Add event delegation for arrow clicks (survives DOM re-renders)
+  const taskList = document.getElementById("taskList");
+  if (taskList) {
+    taskList.addEventListener("click", (event) => {
+      if (event.target.matches('.move-up, .move-down')) {
+        event.preventDefault();
+        event.stopPropagation();
+        handleArrowClick(event.target);
+      }
+    });
+  }
+
   document.addEventListener("dragover", (event) => {
     event.preventDefault();
     requestAnimationFrame(() => {
@@ -9375,6 +9451,55 @@ function setupRearrange() {
     window.AppGlobalState.lastReorderTime = 0; // ✅ Use centralized state
     window.AppGlobalState.didDragReorderOccur = false; // ✅ Use centralized state
   });
+}
+
+// ✅ Add arrow click handler
+function handleArrowClick(button) {
+    const taskItem = button.closest('.task');
+    if (!taskItem) return;
+
+    const taskList = document.getElementById('taskList');
+    const allTasks = Array.from(taskList.children);
+    const currentIndex = allTasks.indexOf(taskItem);
+    
+    let newIndex;
+    if (button.classList.contains('move-up')) {
+        newIndex = Math.max(0, currentIndex - 1);
+    } else {
+        newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
+    }
+    
+    if (newIndex === currentIndex) return; // No movement needed
+    
+    // ✅ Reorder via state system (splice in array)
+    if (window.AppState?.isReady?.()) {
+        // ✅ Capture undo snapshot BEFORE reordering
+        const currentState = window.AppState.get();
+        if (currentState) captureStateSnapshot(currentState);
+        
+        window.AppState.update(state => {
+            const activeCycleId = state.appState.activeCycleId;
+            if (activeCycleId && state.data.cycles[activeCycleId]) {
+                const tasks = state.data.cycles[activeCycleId].tasks;
+                if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
+                    // Remove task from current position and insert at new position
+                    const [movedTask] = tasks.splice(currentIndex, 1);
+                    tasks.splice(newIndex, 0, movedTask);
+                    state.metadata.lastModified = Date.now();
+                }
+            }
+        }, true); // immediate save
+        
+        // ✅ Re-render from state to reflect changes
+        refreshUIFromState();
+        
+        // ✅ Update undo/redo buttons
+        updateUndoRedoButtons();
+        
+        console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
+    } else {
+        console.warn('⚠️ AppState not ready for arrow reordering');
+    }
 }
 
 
@@ -9415,33 +9540,32 @@ function dragEndCleanup () {
  * @returns {void}
  */
 function updateMoveArrowsVisibility() {
-    console.log('🔄 Updating move arrows visibility (Schema 2.5 only)...');
+    console.log('🔄 Updating move arrows visibility (state-based)...');
     
-    // ✅ Try Schema 2.5 first
-    const schemaData = loadMiniCycleData();
+    // ✅ Use state-based system
     let showArrows = false;
     
-    if (schemaData) {
-        showArrows = schemaData.settings.showMoveArrows || false;
+    if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        showArrows = currentState?.ui?.moveArrowsVisible || false;
+        console.log('📊 Arrow visibility from AppState:', showArrows);
     } else {
-        // ✅ Fallback to legacy (this shouldn't happen in Schema 2.5 only app)
-        showArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
+        // ✅ Silent fallback when state isn't ready (during initialization)
+        const storedValue = localStorage.getItem("miniCycleMoveArrows");
+        if (storedValue !== null) {
+            showArrows = storedValue === "true";
+            console.log('📊 Arrow visibility from localStorage fallback:', showArrows);
+        } else {
+            // Default to false if no setting exists
+            showArrows = false;
+            console.log('📊 Arrow visibility using default:', showArrows);
+        }
     }
 
-    document.querySelectorAll(".move-btn").forEach(button => {
-        button.style.visibility = showArrows ? "visible" : "hidden";
-        button.style.opacity = showArrows ? "1" : "0";
-    });
+    // ✅ Update DOM to reflect current state
+    updateArrowsInDOM(showArrows);
 
-    // ✅ Ensure `.task-options` remains interactive
-    document.querySelectorAll(".task-options").forEach(options => {
-        options.style.pointerEvents = "auto"; // 🔥 Fixes buttons becoming unclickable
-    });
-
-    console.log("✅ Move Arrows Toggled (Schema 2.5)");
-    
-    toggleArrowVisibility();
-    dragEndCleanup();
+    console.log(`✅ Move arrows visibility updated: ${showArrows ? "visible" : "hidden"}`);
 }
 
 /**
@@ -9450,26 +9574,53 @@ function updateMoveArrowsVisibility() {
  * @returns {void}
  */
 function toggleArrowVisibility() {
-    console.log('🔄 Toggling arrow visibility (Schema 2.5 only)...');
+    console.log('🔄 Toggling arrow visibility (state-based)...');
     
-    // ✅ Try Schema 2.5 first
-    const schemaData = loadMiniCycleData();
-    let showArrows = false;
-    
-    if (schemaData) {
-        showArrows = schemaData.settings.showMoveArrows || false;
-    } else {
-        // ✅ Fallback to legacy (this shouldn't happen in Schema 2.5 only app)
-        showArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
+    // ✅ Use state-based system
+    if (!window.AppState?.isReady?.()) {
+        console.log('⚠️ AppState not ready yet, deferring toggle until ready');
+        // Defer the toggle until AppState is ready
+        setTimeout(() => {
+            if (window.AppState?.isReady?.()) {
+                toggleArrowVisibility();
+            } else {
+                console.warn('❌ AppState still not ready after timeout');
+            }
+        }, 100);
+        return;
     }
-    
+
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for toggleArrowVisibility');
+        return;
+    }
+
+    const currentlyVisible = currentState.ui?.moveArrowsVisible || false;
+    const newVisibility = !currentlyVisible;
+
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        if (!state.ui) state.ui = {};
+        state.ui.moveArrowsVisible = newVisibility;
+        state.metadata.lastModified = Date.now();
+    }, true); // immediate save
+
+    // ✅ Update DOM to reflect new state
+    updateArrowsInDOM(newVisibility);
+
+    console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
+}
+
+// ✅ Extracted DOM update logic
+function updateArrowsInDOM(showArrows) {
     const allTasks = document.querySelectorAll(".task");
 
     allTasks.forEach((task, index) => {
         const upButton = task.querySelector('.move-up');
         const downButton = task.querySelector('.move-down');
-        const taskOptions = task.querySelector('.task-options'); // ✅ Select task options
-        const taskButtons = task.querySelectorAll('.task-btn'); // ✅ Select all task buttons
+        const taskOptions = task.querySelector('.task-options');
+        const taskButtons = task.querySelectorAll('.task-btn');
 
         if (upButton) {
             upButton.style.visibility = (showArrows && index !== 0) ? "visible" : "hidden";
@@ -9492,8 +9643,6 @@ function toggleArrowVisibility() {
             button.style.pointerEvents = "auto";
         });
     });
-
-    console.log(`✅ Move arrows and buttons are now ${showArrows ? "enabled" : "disabled"} (Schema 2.5)`);
 }
     
     /***********************
@@ -9862,6 +10011,9 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
         setupRecurringButtonHandler(button, taskContext);
     } else if (btnClass === "enable-task-reminders") {
         setupReminderButtonHandler(button, taskContext);
+    } else if (btnClass === "move-up" || btnClass === "move-down") {
+        // ✅ Skip attaching old handlers to move buttons - using event delegation
+        console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
     } else {
         button.addEventListener("click", handleTaskButtonClick);
     }
@@ -10655,40 +10807,10 @@ function handleTaskButtonClick(event) {
 
     let shouldSave = false;
 
-    if (button.classList.contains("move-up")) {
-        const prevTask = taskItem.previousElementSibling;
-        if (prevTask) {
-            // ✅ ADD: Capture undo snapshot BEFORE reordering
-            if (window.AppState?.isReady?.()) {
-                const currentState = window.AppState.get();
-                if (currentState) captureStateSnapshot(currentState);
-            }
-
-            taskItem.parentNode.insertBefore(taskItem, prevTask);
-            revealTaskButtons(taskItem);
-            toggleArrowVisibility();
-
-            // ✅ Persist via AppState to trigger undo snapshots
-            saveCurrentTaskOrder();
-            shouldSave = false;
-        }
-    } else if (button.classList.contains("move-down")) {
-        const nextTask = taskItem.nextElementSibling;
-        if (nextTask) {
-            // ✅ ADD: Capture undo snapshot BEFORE reordering
-            if (window.AppState?.isReady?.()) {
-                const currentState = window.AppState.get();
-                if (currentState) captureStateSnapshot(currentState);
-            }
-
-            taskItem.parentNode.insertBefore(taskItem, nextTask.nextSibling);
-            revealTaskButtons(taskItem);
-            toggleArrowVisibility();
-
-            // ✅ Persist via AppState to trigger undo snapshots
-            saveCurrentTaskOrder();
-            shouldSave = false;
-        }
+    // ✅ DISABLED: Old arrow handling logic - now using event delegation
+    if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
+        console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
+        return; // Let the new event delegation handle this
     } else if (button.classList.contains("edit-btn")) {
         const taskLabel = taskItem.querySelector("span");
         const oldText = taskLabel.textContent.trim();
@@ -12572,7 +12694,7 @@ updateCycleModeDescription();
       setupUploadMiniCycle();
       setupRearrange();
       dragEndCleanup();
-      updateMoveArrowsVisibility();
+      // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
       checkDueDates();
       loadAlwaysShowRecurringSetting();
       updateCycleModeDescription();

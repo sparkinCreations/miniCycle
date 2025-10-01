@@ -342,6 +342,9 @@ class MiniCycleState {
                 activeCycleId: null, // ✅ This matches what autoSaveWithStateModule expects
                 overdueTaskStates: {}
             },
+            ui: {
+                moveArrowsVisible: false
+            },
             userProgress: {
                 cyclesCompleted: 0,
                 rewardMilestones: []

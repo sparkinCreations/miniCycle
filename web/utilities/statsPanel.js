@@ -539,7 +539,12 @@ export class StatsPanelManager {
                 }
             }
         } else {
-            console.warn('⚠️ AppState not ready - using fallback data access');
+            // ✅ Silent fallback during initialization (no warning spam)
+            if (window.AppBootStarted && Date.now() - window.AppBootStartTime < 5000) {
+                // App is still booting, silently use fallback
+            } else {
+                console.warn('⚠️ AppState not ready - using fallback data access');
+            }
             
             // Fallback to old method if state not ready
             if (typeof this.dependencies.loadMiniCycleData === 'function') {
