@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Post Title — miniCycle Blog</title>
+  <meta name="description" content="1–2 sentence summary that will show on the blog index." />
+  <link rel="icon" type="image/png" href="../../assets/images/logo/logo.png" />
+  <link rel="apple-touch-icon" href="../../assets/images/logo/logo.png" />
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="../styles/blog.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="../../blog.html" title="miniCycle Home">
+        <img src="../../assets/images/logo/app_name_miniCycle_top_half.png" alt="miniCycle" />
+        <span>Blog</span>
+      </a>
+      <div class="nav-links">
+        <a href="../../product.html">Home</a>
+        <a href="../../miniCycle.html" class="cta">Open App</a>
+      </div>
+      <div class="pref-controls" role="group" aria-label="Preferences">
+        <button id="themeToggle" class="control-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">
+          <i id="themeIcon" class="fa-regular fa-moon"></i>
+        </button>
+        <div class="text-resize" role="group" aria-label="Text size">
+          <button id="fontDec" class="control-btn" aria-label="Decrease text size" title="Decrease text size">A-</button>
+          <span id="fontSizeLabel" class="size-indicator" aria-live="polite">100%</span>
+          <button id="fontInc" class="control-btn" aria-label="Increase text size" title="Increase text size">A+</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="post">
+    <header class="post-header">
+      <div class="post-meta">
+        <span><i class="fa-regular fa-calendar"></i> Oct 2, 2025</span>
+        <span><i class="fa-regular fa-clock"></i> 2 min read</span>
+      </div>
+  <h1 class="post-title">Your Post Title</h1>
+  <div class="tags"><a class="chip" href="../../blog.html?tag=Workflow">Workflow</a><a class="chip" href="../../blog.html?tag=Productivity">Productivity</a></div>
+      <div class="cover"><img src="../assets/example-cover.jpg" alt="Your Post Title" /></div>
+    </header>
+
+    <article class="post-content">
+      <h1>Introduction</h1>
+<p>Write your content in plain Markdown. Standard links and images “just work.”</p>
+<ul>
+<li>Keep paragraphs short</li>
+<li>Use headings to break up content</li>
+<li>Prefer concrete examples</li>
+</ul>
+<h2>Links</h2>
+<p>Inline: <a href="https://minicycle.app">miniCycle</a></p>
+<p>Relative to your site (recommended):</p>
+<ul>
+<li>Product page: <a href="../product.html">/product.html</a></li>
+<li>App: <a href="../miniCycle.html">/miniCycle.html</a></li>
+</ul>
+<p>Tip: Use root-relative paths (/product.html) in production, or …/product.html for local file viewing.</p>
+<h2>Images</h2>
+<p>Place blog images in: web/blog/assets/</p>
+<p>Reference them from Markdown posts as …/assets/<file> so they resolve from posts/*.html.</p>
+<p>Markdown image:</p>
+<p><img src="../assets/workflow.png" alt="An illustrative workflow" title="Optional title"></p>
+<p>Figure with caption:</p>
+<figure>
+  <img src="../assets/workflow.png" alt="Workflow example" />
+  <figcaption>Weekly cycle visual.</figcaption>
+</figure>
+<h2>SoundCloud audio</h2>
+<p>Embed the SoundCloud player using the shortcode on its own line:</p>
+<div class="embed soundcloud"><iframe scrolling="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2FUSER%2FTRACK&color=%2300a2ff&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=false"></iframe></div>
+<ul>
+<li>The build will convert it into an embedded SoundCloud player.</li>
+<li>Works anywhere in your Markdown.</li>
+</ul>
+<h2>Code blocks</h2>
+<pre><code class="hljs js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">cycle</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;repeat&#x27;</span>;
+}
+</code></pre>
+<h2>Lists and quotes</h2>
+<ul>
+<li>Bullet 1</li>
+<li>Bullet 2</li>
+</ul>
+<blockquote>
+<p>Systems beat willpower.</p>
+</blockquote>
+<h2>Frontmatter reference</h2>
+<ul>
+<li>title: string (required)</li>
+<li>date: string (recommended)</li>
+<li>excerpt: string (recommended)</li>
+<li>tags: array of strings (optional)</li>
+<li>cover: string path relative to web/blog/ (e.g., assets/cover.jpg) (optional)</li>
+<li>readMins: number (optional; auto-calculated if omitted)</li>
+</ul>
+<h2>Tags</h2>
+<ul>
+<li>
+<p>Add tags as an array in frontmatter, e.g.:</p>
+<p>tags: [Workflow Design, Productivity]</p>
+</li>
+<li>
+<p>Recommendations:</p>
+<ul>
+<li>Use 1–3 tags per post to keep filtering useful</li>
+<li>Be consistent with spelling and capitalization (filters match tag text)</li>
+<li>Prefer succinct names: “Routines”, “Systems”, “Focus”</li>
+<li>Spaces are fine in tag names (e.g., “Workflow Design”)</li>
+</ul>
+</li>
+</ul>
+<p>How they’re used:</p>
+<ul>
+<li>The blog index builds clickable tag chips from your post tags</li>
+<li>Clicking a tag filters the list; “All” clears the filter</li>
+<li>Tag chips show counts based on how many posts use the tag</li>
+</ul>
+<h2>File naming</h2>
+<ul>
+<li>Use: <a href="http://YYYY-MM-DD-your-title.md">YYYY-MM-DD-your-title.md</a></li>
+<li>Hyphenated, lowercase recommended (used for slug generation)</li>
+</ul>
+<h2>Build your post</h2>
+<p>From the blog folder:</p>
+<pre><code class="hljs bash"><span class="hljs-built_in">cd</span> web/blog
+npm install   <span class="hljs-comment"># first time only</span>
+npm run build
+</code></pre>
+<p>This generates an HTML file next to your Markdown in web/blog/posts/*.html.</p>
+<p>Finally, add or update a card link in web/blog.html to point at blog/posts/your-slug.html.</p>
+<h3>Troubleshooting installs (macOS)</h3>
+<p>If you see an npm EACCES (permission) error during install, your npm cache may have root-owned files. Fix it by reclaiming your cache, then install from the blog folder:</p>
+<pre><code class="hljs bash"><span class="hljs-built_in">sudo</span> <span class="hljs-built_in">chown</span> -R <span class="hljs-string">&quot;<span class="hljs-subst">$(id -u)</span>&quot;</span>:<span class="hljs-string">&quot;<span class="hljs-subst">$(id -g)</span>&quot;</span> ~/.npm/
+<span class="hljs-built_in">cd</span> web/blog
+npm install
+</code></pre>
+<p>Tips:</p>
+<ul>
+<li>Run installs inside web/blog (where package.json lives), not in the site root</li>
+<li>Requires Node 18+ (for ES modules)</li>
+<li>If problems persist: <code>npm cache verify</code> or <code>rm -rf ~/.npm</code> to reset the cache (npm recreates it)</li>
+</ul>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div>© 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> • miniCycle</div>
+      <div style="margin-top:8px;">
+        <a href="../privacy.html">Privacy</a> •
+        <a href="../terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../scripts/prefs.js" defer></script>
+</body>
+</html>

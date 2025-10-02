@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>miniCycle Blog — Workflow & Systems Productivity</title>
+  <meta name="description" content="Articles on workflow design, systems thinking, and cycle-based productivity using miniCycle." />
+  <link rel="icon" type="image/png" href="assets/images/logo/logo.png" />
+  <link rel="apple-touch-icon" href="assets/images/logo/logo.png" />
+  <link rel="canonical" href="https://minicycle.app/blog.html" />
+  <meta name="theme-color" content="#0b1220" />
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+  <link rel="stylesheet" href="blog/styles/blog.css" />
+
+  <!-- JSON-LD: Blog Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "miniCycle Blog",
+    "url": "https://minicycle.app/blog.html",
+    "description": "Articles on workflow design, systems thinking, and cycle-based productivity.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "sparkinCreations",
+      "url": "https://sparkincreations.com"
+    }
+  }
+  </script>
+
+  
+</head>
+
+<body>
+  <!-- Header / Nav -->
+  <header class="site-header" role="banner">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="product.html" title="miniCycle Home">
+        <img src="assets/images/logo/app_name_miniCycle_top_half.png" alt="miniCycle" />
+        <span>Blog</span>
+      </a>
+      <div class="nav-links">
+        <a href="product.html">Home</a>
+        <a href="miniCycle.html" class="cta">Open App</a>
+      </div>
+      <div class="pref-controls" role="group" aria-label="Preferences">
+        <button id="themeToggle" class="control-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">
+          <i id="themeIcon" class="fa-regular fa-moon"></i>
+        </button>
+        <div class="text-resize" role="group" aria-label="Text size">
+          <button id="fontDec" class="control-btn" aria-label="Decrease text size" title="Decrease text size">A-</button>
+          <span id="fontSizeLabel" class="size-indicator" aria-live="polite">100%</span>
+          <button id="fontInc" class="control-btn" aria-label="Increase text size" title="Increase text size">A+</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="eyebrow">miniCycle Blog</div>
+    <h1 class="title">Workflow & Systems Productivity</h1>
+    <p class="subtitle">Short, practical articles on designing routines, building systems, and turning tasks into sustainable cycles. New posts added regularly.</p>
+    <div style="margin-top: 14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <input id="blog-search" type="search" placeholder="Search posts…" aria-label="Search posts" 
+             style="flex:1 1 260px; max-width:520px; background: transparent; border:1px solid var(--border); color: var(--text); border-radius: 10px; padding:10px 12px;" />
+    </div>
+  </section>
+
+  <!-- Tags -->
+  <div id="tags-bar" class="content" style="padding-top: 0; display:flex; gap:8px; flex-wrap:wrap;"></div>
+
+  <!-- Posts (will be rendered by JS) -->
+  <main class="content">
+    <div class="posts" role="list"></div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div>© 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> • miniCycle</div>
+      <div style="margin-top:8px;">
+        <a href="privacy.html">Privacy</a> •
+        <a href="terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
+  <script src="blog/scripts/prefs.js" defer></script>
+  <script src="blog/scripts/index.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+[
+  {
+    "title": "The Power of Cycles vs. Checklists",
+    "path": "blog/posts/2025-10-02-cycles-vs-checklists.html",
+    "date": "Oct 2, 2025",
+    "dateValue": 1759377600000,
+    "excerpt": "Checklists end. Cycles continue. Design loops that preserve momentum.",
+    "tags": [
+      "Workflow Design",
+      "Routines",
+      "Productivity",
+      "Cycles",
+      "Audio"
+    ],
+    "cover": "blog/assets/cycles-cover.jpg",
+    "text": "Checklists end. Cycles continue. When work is cyclical, there’s no “now what?”—you always know the next step. Cycle sketch Try it with a weekly review loop: capture → triage → plan → execute → reflect. Audio version: {{soundcloud: https://soundcloud.com/artist/your track}}"
+  },
+  {
+    "title": "Welcome to the miniCycle Blog — Build Systems, Not Just Tasks",
+    "path": "blog/posts/2025-10-02-welcome-to-minicycle-blog.html",
+    "date": "Oct 2, 2025",
+    "dateValue": 1759377600000,
+    "excerpt": "Systems over willpower. Simple, repeatable workflows using cycles, cues, and constraints.",
+    "tags": [
+      "Systems Thinking",
+      "Habit Design",
+      "miniCycle",
+      "Introduction",
+      "Systems"
+    ],
+    "cover": "blog/assets/welcome-cover.jpg",
+    "text": "Welcome This blog is about one idea: systems over willpower. We’ll share short, practical posts you can apply today. Start with your smallest reliable loop, then scale. Cue: Define the trigger. Cycle: Define the steps. Constraint: Limit scope to keep momentum. Further reading: Product"
+  }
+]
