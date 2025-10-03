@@ -27,6 +27,13 @@
 // This houses all the app's critical state that needs to be accessible everywhere.
 // Think of it as the app's memory bank, storing everything from drag states to undo history.
 
+// ✅ Phase C: Feature Flags for recurring system
+window.FeatureFlags = {
+  recurringEnabled: true,
+  moveArrowsEnabled: true,
+  debugMode: false
+};
+
 window.AppGlobalState = {
   draggedTask: null,
   logoTimeoutId: null,
@@ -295,6 +302,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
   window.AppBootStarted = true;
+  window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
 // ======================================================================
@@ -355,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.301'
+        currentVersion: '1.304'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -385,10 +393,22 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
+    
+    // ✅ Create a deferred stats update queue
+    window._deferredStatsUpdates = [];
+    
     window.updateStatsPanel = () => {
         const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
         if (dataAvailable) {
-            return statsPanelManager.updateStatsPanel();
+            // ✅ Check if AppState is ready before updating
+            if (window.AppState?.isReady?.()) {
+                return statsPanelManager.updateStatsPanel();
+            } else {
+                // ✅ Defer the update until AppState is ready
+                console.log('📊 Deferring stats update - AppState not ready yet');
+                window._deferredStatsUpdates.push(() => statsPanelManager.updateStatsPanel());
+                return;
+            }
         } else {
             console.log('📊 Skipping stats update - data not ready');
         }
@@ -626,7 +646,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupUploadMiniCycle();
     setupRearrange();
     dragEndCleanup();
-    updateMoveArrowsVisibility();
+    // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
 
@@ -648,25 +668,22 @@ function wireUndoRedoUI() {
 
 // ✅ Defer anything that needs cycles/data until an active cycle exists
 // ...existing code...
-AppInit.onReady(() => {
+AppInit.onReady(async () => {
   console.log('🟢 Data-ready initializers running…');
 
-  // ✅ NOW initialize state module AFTER data exists
+  // ✅ Initialize state module SYNCHRONOUSLY after data exists
   try {
     console.log('🗃️ Initializing state module after data setup...');
 
-    import('./utilities/state.js')
-      .then(({ createStateManager }) => {
-        window.AppState = createStateManager({
-          showNotification: window.showNotification || console.log.bind(console),
-          storage: localStorage,
-          createInitialData: createInitialSchema25Data
-        });
+    const { createStateManager } = await import('./utilities/state.js');
+    window.AppState = createStateManager({
+      showNotification: window.showNotification || console.log.bind(console),
+      storage: localStorage,
+      createInitialData: createInitialSchema25Data
+    });
 
-        return window.AppState.init();
-      })
-      .then(() => {
-        console.log('✅ State module initialized successfully after data setup');
+    await window.AppState.init();
+    console.log('✅ State module initialized successfully after data setup');
 
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
@@ -732,14 +749,38 @@ AppInit.onReady(() => {
               newState.data.cycles[newState.appState.activeCycleId]?.tasks?.length || 0
           });
         });
-      })
-      .catch(error => {
-        console.warn('⚠️ State module initialization failed, using legacy methods:', error);
-        window.AppState = null;
-      });
   } catch (error) {
     console.warn('⚠️ State module initialization failed, using legacy methods:', error);
     window.AppState = null;
+  }
+
+  // ✅ Give AppState a moment to fully initialize before other modules try to use it
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  // ✅ Process any deferred stats updates now that AppState is ready
+  if (window._deferredStatsUpdates && window._deferredStatsUpdates.length > 0) {
+    console.log(`📊 Processing ${window._deferredStatsUpdates.length} deferred stats updates`);
+    window._deferredStatsUpdates.forEach(updateFn => {
+      try {
+        updateFn();
+      } catch (error) {
+        console.warn('⚠️ Deferred stats update failed:', error);
+      }
+    });
+    window._deferredStatsUpdates = []; // Clear the queue
+  }
+
+  // ✅ Process any deferred recurring setups now that AppState is ready
+  if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
+    console.log(`🔁 Processing ${window._deferredRecurringSetup.length} deferred recurring setups`);
+    window._deferredRecurringSetup.forEach(setupFn => {
+      try {
+        setupFn();
+      } catch (error) {
+        console.warn('⚠️ Deferred recurring setup failed:', error);
+      }
+    });
+    window._deferredRecurringSetup = []; // Clear the queue
   }
 
   // ✅ Recurring Features
@@ -775,12 +816,14 @@ AppInit.onReady(() => {
   // ✅ Recurring Watcher Setup (with Schema 2.5 compatibility)
   console.log('👁️ Setting up recurring task watcher...');
   try {
-    const schemaData = loadMiniCycleData();
-    if (schemaData && schemaData.cycles && schemaData.activeCycle) {
-      const { activeCycle, cycles } = schemaData;
-      setupRecurringWatcher(activeCycle, cycles);
+    // ✅ Use AppState-based watcher setup
+    if (window.AppState && window.AppState.isReady()) {
+      setupRecurringWatcher();
     } else {
-      console.warn('⚠️ No Schema 2.5 data available for recurring watcher');
+      console.log('⏳ AppState not ready, deferring recurring watcher setup...');
+      // Defer setup until AppState is ready
+      window._deferredRecurringSetup = window._deferredRecurringSetup || [];
+      window._deferredRecurringSetup.push(() => setupRecurringWatcher());
     }
   } catch (error) {
     console.warn('⚠️ Recurring watcher setup failed:', error);
@@ -788,6 +831,10 @@ AppInit.onReady(() => {
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
+  
+  // ✅ Now that AppState is ready, setup arrow visibility
+  updateMoveArrowsVisibility();
+  
   window.onload = () => {
     if (taskInput) {
       taskInput.focus();
@@ -1115,6 +1162,11 @@ function refreshUIFromState(providedState = null) {
     if (cycle) {
       // Render directly from current in‑memory state
       renderTasks(cycle.tasks || []);
+      
+      // ✅ Restore UI state after rendering
+      const arrowsVisible = state.ui?.moveArrowsVisible || false;
+      updateArrowsInDOM(arrowsVisible);
+      
       // Update other UI bits that don't depend on reloading storage
       if (typeof updateRecurringPanel === 'function') updateRecurringPanel();
       if (typeof updateRecurringPanelButtonVisibility === 'function') updateRecurringPanelButtonVisibility();
@@ -1128,6 +1180,15 @@ function refreshUIFromState(providedState = null) {
   // Fallback: loader (reads from localStorage)
   if (typeof window.loadMiniCycle === 'function') {
     window.loadMiniCycle();
+    
+    // ✅ Also restore arrow visibility after fallback load
+    setTimeout(() => {
+      if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+        updateArrowsInDOM(arrowsVisible);
+      }
+    }, 50);
   }
 }
 // ✅ Update button states
@@ -1206,7 +1267,19 @@ function renderTasks(tasksArray = []) {
   checkCompleteAllButton();
   updateStatsPanel();
   
-  console.log('✅ Task rendering completed');
+  // ✅ Update recurring panel button visibility
+  if (typeof updateRecurringPanelButtonVisibility === 'function') {
+    updateRecurringPanelButtonVisibility();
+  }
+  
+  // ✅ Restore arrow visibility from state after rendering
+  if (window.AppState?.isReady?.()) {
+    const currentState = window.AppState.get();
+    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+    updateArrowsInDOM(arrowsVisible);
+  }
+  
+  console.log('✅ Task rendering completed and UI state restored');
 }
 
 
@@ -5455,6 +5528,9 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
  */
   
 function showNotification(message, type = "default", duration = null) {
+  if (!window.notifications || typeof window.notifications.show !== 'function') {
+    return null;
+  }
   return window.notifications.show(message, type, duration);
 }
 
@@ -5476,6 +5552,9 @@ const educationalTips = notifications.educationalTips;
  * Updated implementation for your recurring feature
  */
 function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) {
+  if (!window.notifications || typeof window.notifications.createRecurringNotificationWithTip !== 'function') {
+    return `Task set to recurring (${frequency}, ${pattern})`;
+  }
   return notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
 }
 
@@ -5484,6 +5563,9 @@ function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) 
  * ✅ Enhanced recurring notification listeners with proper event handling (Schema 2.5 only)
  */
 function initializeRecurringNotificationListeners(notification) {
+  if (!window.notifications || typeof window.notifications.initializeRecurringNotificationListeners !== 'function') {
+    return;
+  }
   return notifications.initializeRecurringNotificationListeners(notification);
 }
 
@@ -5496,9 +5578,23 @@ function showApplyConfirmation(targetElement) {
 
 // 🛠 Unified recurring update helper (Schema 2.5 only)
 function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) {
-  const cycleData = cycles[activeCycle];
-  if (!cycleData) {
+  // ✅ Use AppState instead of direct parameter passing
+  if (!AppState.isReady()) {
+    console.warn('⚠️ AppState not ready for applyRecurringToTaskSchema25');
+    return;
+  }
+
+  const state = AppState.get();
+  const activeCycleId = state.appState?.activeCycleId;
+  
+  if (!activeCycleId) {
     console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
+    return;
+  }
+
+  const cycleData = state.data?.cycles?.[activeCycleId];
+  if (!cycleData) {
+    console.error('❌ Cycle data not found for applyRecurringToTaskSchema25');
     return;
   }
 
@@ -5508,30 +5604,32 @@ function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) 
     return;
   }
 
-  // Merge instead of overwrite so we keep advanced panel settings
-  task.recurringSettings = {
-    ...task.recurringSettings,
-    ...newSettings
-  };
-  task.recurring = true;
-  task.schemaVersion = 2;
+  // ✅ Update via AppState instead of localStorage
+  AppState.update(draft => {
+    const cycle = draft.data.cycles[activeCycleId];
+    const targetTask = cycle.tasks.find(t => t.id === taskId);
+    
+    if (targetTask) {
+      // Merge instead of overwrite so we keep advanced panel settings
+      targetTask.recurringSettings = {
+        ...targetTask.recurringSettings,
+        ...newSettings
+      };
+      targetTask.recurring = true;
+      targetTask.schemaVersion = 2;
 
-  // Keep recurringTemplates in sync
-  if (!cycleData.recurringTemplates) cycleData.recurringTemplates = {};
-  cycleData.recurringTemplates[taskId] = {
-    ...(cycleData.recurringTemplates[taskId] || {}),
-    id: taskId,
-    text: task.text,
-    recurring: true,
-    schemaVersion: 2,
-    recurringSettings: { ...task.recurringSettings }
-  };
-
-  // ✅ Save to Schema 2.5
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  fullSchemaData.data.cycles[activeCycle] = cycleData;
-  fullSchemaData.metadata.lastModified = Date.now();
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+      // Keep recurringTemplates in sync
+      if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
+      cycle.recurringTemplates[taskId] = {
+        ...(cycle.recurringTemplates[taskId] || {}),
+        id: taskId,
+        text: targetTask.text,
+        recurring: true,
+        schemaVersion: 2,
+        recurringSettings: { ...targetTask.recurringSettings }
+      };
+    }
+  });
 
   // Update DOM attributes for this task
   const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
@@ -5544,6 +5642,21 @@ function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) 
       recurringBtn.setAttribute("aria-pressed", "true");
     }
   }
+
+  // ✅ Update recurring panel display if it's open
+  if (typeof updateRecurringPanel === 'function') {
+    updateRecurringPanel();
+  }
+  
+  // ✅ Update recurring summary to reflect changes
+  if (typeof updateRecurringSummary === 'function') {
+    updateRecurringSummary();
+  }
+  
+  // ✅ Update panel button visibility based on recurring task count
+  if (typeof updateRecurringPanelButtonVisibility === 'function') {
+    updateRecurringPanelButtonVisibility();
+  }
 }
 
 // Make recurring function globally accessible for the notification module
@@ -5553,6 +5666,9 @@ window.applyRecurringToTaskSchema25 = applyRecurringToTaskSchema25;
  * 🔧 Enhanced showNotification function with educational tips support (Schema 2.5 only)
  */
 function showNotificationWithTip(content, type = "default", duration = null, tipId = null) {
+  if (!window.notifications || typeof window.notifications.showWithTip !== 'function') {
+    return showNotification(content, type, duration);
+  }
   return notifications.showWithTip(content, type, duration, tipId);
 }
 
@@ -5879,8 +5995,23 @@ function updateRecurringPanel(currentCycleData = null) {
     
     const recurringList = document.getElementById("recurring-task-list");
     
-    // ✅ Schema 2.5 only
-    const schemaData = window.loadMiniCycleData();
+    // ✅ Use AppState only - no fallback to avoid state drift
+    if (!window.AppState || !window.AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for updateRecurringPanel');
+        return;
+    }
+    
+    const state = window.AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
+    
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring panel');
+        return;
+    }
+    
+    const cycles = state.data?.cycles || {};
+    const schemaData = { cycles, activeCycle: activeCycleId };
+    
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for updateRecurringPanel');
         throw new Error('Schema 2.5 data not found');
@@ -6040,9 +6171,12 @@ function updateRecurringPanel(currentCycleData = null) {
 
 // Make updateRecurringPanel globally accessible for the notification module
 window.updateRecurringPanel = updateRecurringPanel;
+
+// Make openRecurringSettingsPanelForTask globally accessible for the notification module
+window.openRecurringSettingsPanelForTask = openRecurringSettingsPanelForTask;
   
   function openRecurringSettingsPanelForTask(taskIdToPreselect) {
-      console.log('⚙️ Opening recurring settings panel (Schema 2.5 only)...', taskIdToPreselect);
+      console.log('⚙️ Opening recurring settings panel (AppState-based)...', taskIdToPreselect);
       
       updateRecurringPanel(); // Render panel fresh
   
@@ -6057,15 +6191,16 @@ window.updateRecurringPanel = updateRecurringPanel;
               itemToSelect.classList.add("checked");
           }
   
-          // ✅ Update the preview with Schema 2.5 only
-          const schemaData = window.loadMiniCycleData();
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for task preview');
+          // ✅ Use AppState instead of loadMiniCycleData
+          if (!AppState.isReady()) {
+              console.warn('⚠️ AppState not ready for task preview');
               return;
           }
-  
-          const { cycles, activeCycle } = schemaData;
-          const task = cycles[activeCycle]?.tasks.find(t => t.id === taskIdToPreselect);
+
+          const state = AppState.get();
+          const activeCycleId = state.appState?.activeCycleId;
+          const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskIdToPreselect);
+          
           if (task) {
               showTaskSummaryPreview(task);
           } else {
@@ -6264,61 +6399,71 @@ function deleteRecurringTemplate(taskId, cycleName) {
 }
 
 function saveAlwaysShowRecurringSetting() {
-    console.log('💾 Saving always show recurring setting (Schema 2.5 only)...');
+    console.log('💾 Saving always show recurring setting (AppState-based)...');
     
     const alwaysShow = document.getElementById("always-show-recurring").checked;
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveAlwaysShowRecurringSetting');
+    // ✅ Check AppState readiness
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for saveAlwaysShowRecurringSetting');
         return;
     }
     
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.settings.alwaysShowRecurring = alwaysShow;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Update via AppState instead of localStorage
+    AppState.update(draft => {
+        if (!draft.settings) draft.settings = {};
+        draft.settings.alwaysShowRecurring = alwaysShow;
+    });
     
-    console.log('✅ Always show recurring setting saved to Schema 2.5:', alwaysShow);
+    console.log('✅ Always show recurring setting saved via AppState:', alwaysShow);
     
     refreshTaskListUI();
     updateRecurringButtonVisibility();
 }
 
 function loadAlwaysShowRecurringSetting() {
-    console.log('📥 Loading always show recurring setting (Schema 2.5 only)...');
+    console.log('📥 Loading always show recurring setting (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for loadAlwaysShowRecurringSetting');
+    // ✅ Use AppState instead of loadMiniCycleData
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for loadAlwaysShowRecurringSetting');
         return;
     }
     
-    const isEnabled = schemaData.settings.alwaysShowRecurring || false;
+    const state = AppState.get();
+    const isEnabled = state.settings?.alwaysShowRecurring || false;
     
-    console.log('📊 Loaded always show recurring setting:', isEnabled);
+    console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
     
-    document.getElementById("always-show-recurring").checked = isEnabled;
+    const checkbox = document.getElementById("always-show-recurring");
+    if (checkbox) {
+        checkbox.checked = isEnabled;
+    }
 }
 
 document.getElementById("always-show-recurring").addEventListener("change", saveAlwaysShowRecurringSetting);
 
 document.getElementById("apply-recurring-settings")?.addEventListener("click", () => {
-    console.log('📝 Applying recurring settings (Schema 2.5 only)...');
+    console.log('📝 Applying recurring settings (AppState-based)...');
     
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for apply recurring settings');
-        showNotification("❌ Schema 2.5 data required.", "error");
+    // ✅ Check AppState readiness
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for apply recurring settings');
+        showNotification("❌ App not ready. Please try again.", "error");
         return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
     
-    if (!activeCycle || !cycleData) {
+    if (!activeCycleId) {
         showNotification("⚠ No active cycle found.");
+        return;
+    }
+
+    const cycleData = state.data?.cycles?.[activeCycleId];
+    if (!cycleData) {
+        showNotification("⚠ Active cycle data not found.");
         return;
     }
 
@@ -6336,51 +6481,59 @@ document.getElementById("apply-recurring-settings")?.addEventListener("click", (
         settings.defaultRecurTime = new Date().toISOString();
     }
 
-    // 💾 Save default recurring settings if requested
-    if (document.getElementById("set-default-recurring")?.checked) {
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.defaultRecurringSettings = settings;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        showNotification("✅ Default recurring settings saved!", "success", 1500);
-    }
+    // ✅ Batch all updates in one AppState operation
+    AppState.update(draft => {
+        // 💾 Save default recurring settings if requested
+        if (document.getElementById("set-default-recurring")?.checked) {
+            if (!draft.settings) draft.settings = {};
+            draft.settings.defaultRecurringSettings = settings;
+        }
 
-    if (!cycleData.recurringTemplates) {
-        cycleData.recurringTemplates = {};
-    }
+        const cycle = draft.data.cycles[activeCycleId];
+        if (!cycle.recurringTemplates) {
+            cycle.recurringTemplates = {};
+        }
 
-    checkedEls.forEach(checkbox => {
-        const taskEl = checkbox.closest("[data-task-id]");
-        const taskId = taskEl?.dataset.taskId;
-        if (!taskId || !taskEl) return;
+        checkedEls.forEach(checkbox => {
+            const taskEl = checkbox.closest("[data-task-id]");
+            const taskId = taskEl?.dataset.taskId;
+            if (!taskId || !taskEl) return;
 
-        let task = cycleData.tasks.find(t => t.id === taskId);
-        if (!task) {
-            task = {
-                id: taskId,
-                text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+            let task = cycle.tasks.find(t => t.id === taskId);
+            if (!task) {
+                task = {
+                    id: taskId,
+                    text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+                    recurring: true,
+                    recurringSettings: structuredClone(settings),
+                    schemaVersion: 2
+                };
+                cycle.tasks.push(task);
+            }
+
+            // ✅ Apply recurring settings to task
+            task.recurring = true;
+            task.schemaVersion = 2;
+            task.recurringSettings = structuredClone(settings);
+
+            // ✅ Update recurringTemplates
+            cycle.recurringTemplates[task.id] = {
+                id: task.id,
+                text: task.text,
+                dueDate: task.dueDate || null,
+                highPriority: task.highPriority || false,
+                remindersEnabled: task.remindersEnabled || false,
                 recurring: true,
                 recurringSettings: structuredClone(settings),
                 schemaVersion: 2
             };
-        }
+        });
+    });
 
-        // ✅ Apply recurring settings to task
-        task.recurring = true;
-        task.schemaVersion = 2;
-        task.recurringSettings = structuredClone(settings);
-
-        // ✅ Update recurringTemplates
-        cycleData.recurringTemplates[task.id] = {
-            id: task.id,
-            text: task.text,
-            dueDate: task.dueDate || null,
-            highPriority: task.highPriority || false,
-            remindersEnabled: task.remindersEnabled || false,
-            recurring: true,
-            recurringSettings: structuredClone(settings),
-            schemaVersion: 2
-        };
+    // ✅ Update DOM after state changes
+    checkedEls.forEach(checkbox => {
+        const taskEl = checkbox.closest("[data-task-id]");
+        if (!taskEl) return;
 
         // ✅ Update DOM
         taskEl.classList.add("recurring");
@@ -6394,15 +6547,27 @@ document.getElementById("apply-recurring-settings")?.addEventListener("click", (
         syncRecurringStateToDOM(taskEl, settings);
     });
 
-    // ✅ Save to Schema 2.5
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycleData;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // Show success notifications
+    if (document.getElementById("set-default-recurring")?.checked) {
+        showNotification("✅ Default recurring settings saved!", "success", 1500);
+    }
 
     updateRecurringSummary();
     showNotification("✅ Recurring settings applied!", "success", 2000);
     updateRecurringPanel();
+
+    // ✅ Refresh task preview if a task is currently selected
+    const selectedTask = document.querySelector(".recurring-task-item.selected");
+    if (selectedTask) {
+        const taskId = selectedTask.dataset.taskId;
+        const state = AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
+        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+        
+        if (task) {
+            showTaskSummaryPreview(task);
+        }
+    }
 
     // ✅ Clean up UI state - remove selections and hide panels
     document.querySelectorAll(".recurring-task-item").forEach(el => {
@@ -6425,6 +6590,9 @@ document.getElementById("apply-recurring-settings")?.addEventListener("click", (
     if (preview) preview.classList.add("hidden");
 
     updateRecurringPanelButtonVisibility();
+    
+    // ✅ Clear the form since no task is selected anymore
+    clearRecurringForm();
     
     console.log('✅ Recurring settings applied successfully');
 });
@@ -7102,28 +7270,71 @@ function setupSpecificDatesPanel() {
     countContainer.classList.toggle("hidden", !shouldShow);
   }
 
+// ✅ Helper function to build task context for existing tasks (AppState-based)
+function buildTaskContext(taskItem, taskId) {
+    try {
+        // ✅ Use AppState instead of loadMiniCycleData
+        if (!AppState.isReady()) {
+            console.warn('⚠️ AppState not ready for buildTaskContext');
+            return null;
+        }
+
+        const state = AppState.get();
+        const activeCycleId = state.appState?.activeCycleId;
+        
+        if (!activeCycleId) return null;
+
+        const currentCycle = state.data?.cycles?.[activeCycleId];
+        if (!currentCycle) return null;
+
+        const taskText = taskItem.querySelector('.task-text')?.textContent?.trim() || '';
+        
+        return {
+            taskTextTrimmed: taskText,
+            assignedTaskId: taskId,
+            schemaData: state, // Pass the full state for backward compatibility
+            cycles: state.data.cycles,
+            activeCycle: activeCycleId,
+            currentCycle,
+            settings: state.settings || {},
+            autoResetEnabled: currentCycle.autoReset || false,
+            deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false
+        };
+    } catch (error) {
+        console.warn('⚠️ Failed to build task context:', error);
+        return null;
+    }
+}
 
 
 
 function updateRecurringButtonVisibility() {
-    console.log('🔄 Updating recurring button visibility (Schema 2.5 only)...');
+    console.log('🔄 Updating recurring button visibility (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateRecurringButtonVisibility');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use AppState instead of loadMiniCycleData
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for updateRecurringButtonVisibility');
+        return;
     }
 
-    const { cycles, activeCycle, settings } = schemaData;
-    const cycleData = cycles[activeCycle];
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
     
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring button visibility');
+        return;
+    }
+
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn("⚠️ No active cycle found for recurring button visibility");
         return;
     }
     
+    const settings = state.settings || {};
+    
     console.log('📊 Checking visibility conditions:', {
-        activeCycle,
+        activeCycle: activeCycleId,
         autoReset: cycleData.autoReset,
         deleteCheckedTasks: cycleData.deleteCheckedTasks,
         alwaysShowRecurring: settings.alwaysShowRecurring
@@ -7150,6 +7361,17 @@ function updateRecurringButtonVisibility() {
         if (shouldShowButtons) {
             recurringButton.classList.remove("hidden");
             console.log('👁️ Showing recurring button for task:', taskItem.dataset.taskId);
+            
+            // ✅ Ensure event handler is attached when button becomes visible
+            if (!recurringButton.dataset.handlerAttached) {
+                const taskId = taskItem.dataset.taskId;
+                const taskContext = buildTaskContext(taskItem, taskId);
+                if (taskContext) {
+                    setupRecurringButtonHandler(recurringButton, taskContext);
+                    recurringButton.dataset.handlerAttached = 'true';
+                    console.log('🔗 Attached recurring handler for task:', taskId);
+                }
+            }
         } else {
             recurringButton.classList.add("hidden");
             console.log('🙈 Hiding recurring button for task:', taskItem.dataset.taskId);
@@ -7178,40 +7400,25 @@ function isAlwaysShowRecurringEnabled() {
 }
   
 function updateRecurringPanelButtonVisibility() {
-    if (!window.AppInit?.isReady?.()) return; // Ensure app is fully initialized
-    console.log('🔄 Updating recurring panel button visibility (Schema 2.5 only)...');
+    const panelButton = document.getElementById("open-recurring-panel");
+    if (!panelButton) return;
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateRecurringPanelButtonVisibility');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-    const button = document.getElementById("open-recurring-panel");
+    // Simple check: get current data and look for recurring tasks
+    let hasRecurring = false;
     
-    if (!cycleData || !Array.isArray(cycleData.tasks) || !button) {
-        console.warn('⚠️ Missing cycle data, tasks array, or button element');
+    try {
+        const schemaData = loadMiniCycleData();
+        if (schemaData?.cycles?.[schemaData.activeCycle]) {
+            const cycle = schemaData.cycles[schemaData.activeCycle];
+            hasRecurring = cycle.tasks.some(task => task.recurring) || 
+                          Object.keys(cycle.recurringTemplates || {}).length > 0;
+        }
+    } catch (error) {
+        console.warn('Could not check recurring tasks:', error);
         return;
     }
     
-    console.log('📊 Checking for recurring tasks:', {
-        activeCycle,
-        taskCount: cycleData.tasks.length,
-        templateCount: Object.keys(cycleData.recurringTemplates || {}).length
-    });
-    
-    const hasRecurring =
-        cycleData.tasks.some(task => task.recurring) ||
-        Object.keys(cycleData.recurringTemplates || {}).length > 0;
-    
-    button.classList.toggle("hidden", !hasRecurring);
-    
-    console.log('✅ Recurring panel button visibility updated:', {
-        hasRecurring,
-        buttonVisible: !hasRecurring ? 'hidden' : 'visible'
-    });
+    panelButton.classList.toggle("hidden", !hasRecurring);
 }
   
 function updateRecurringSummary() {
@@ -7287,16 +7494,21 @@ function showTaskSummaryPreview(task) {
     const summaryContainer = document.getElementById("recurring-summary-preview") || createTaskSummaryPreview();
     summaryContainer.innerHTML = "";
 
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for showTaskSummaryPreview');
-        throw new Error('Schema 2.5 data not found');
+    // ✅ Use AppState instead of loadMiniCycleData
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for showTaskSummaryPreview');
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
     
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for task preview');
+        return;
+    }
+
+    const currentCycle = state.data?.cycles?.[activeCycleId];
     if (!currentCycle) {
         console.warn('⚠️ No active cycle found for task preview');
         return;
@@ -7342,7 +7554,138 @@ function showTaskSummaryPreview(task) {
     summaryContainer.appendChild(changeBtn);
     summaryContainer.classList.remove("hidden");
     
+    // ✅ Populate form with task's current settings
+    if (recurringSettings) {
+        populateRecurringFormWithSettings(recurringSettings);
+    }
+    
     console.log('✅ Task summary preview displayed successfully');
+}
+
+// ✅ New function to populate form with existing settings
+function populateRecurringFormWithSettings(settings) {
+    console.log('📝 Populating recurring form with settings:', settings);
+    
+    try {
+        // Frequency dropdown
+        const frequencySelect = document.getElementById('recur-frequency');
+        if (frequencySelect && settings.frequency) {
+            frequencySelect.value = settings.frequency;
+            frequencySelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Indefinite checkbox
+        const indefiniteCheckbox = document.getElementById('indefiniteCheckbox');
+        if (indefiniteCheckbox) {
+            indefiniteCheckbox.checked = settings.indefinitely !== false;
+        }
+        
+        // Repeat count
+        if (settings.indefinitely === false && settings.repeatCount) {
+            const repeatCountInput = document.getElementById('repeatCount');
+            if (repeatCountInput) {
+                repeatCountInput.value = settings.repeatCount;
+            }
+        }
+        
+        // Specific time settings
+        if (settings.useSpecificTime && settings.specificTime) {
+            const useTimeCheckbox = document.getElementById('useSpecificTime');
+            const timeInput = document.getElementById('specificTime');
+            
+            if (useTimeCheckbox) useTimeCheckbox.checked = true;
+            if (timeInput) {
+                // Convert ISO string to HH:MM format
+                const timeDate = new Date(settings.specificTime);
+                const hours = timeDate.getHours().toString().padStart(2, '0');
+                const minutes = timeDate.getMinutes().toString().padStart(2, '0');
+                timeInput.value = `${hours}:${minutes}`;
+            }
+        }
+        
+        // Populate frequency-specific settings
+        if (settings.frequency === 'weekly' && settings.daysOfWeek) {
+            settings.daysOfWeek.forEach(day => {
+                const dayBox = document.querySelector(`.weekly-day-box[data-day="${day}"]`);
+                if (dayBox) dayBox.classList.add('selected');
+            });
+        }
+        
+        if (settings.frequency === 'monthly' && settings.days) {
+            settings.days.forEach(day => {
+                const dayBox = document.querySelector(`.monthly-day-box[data-day="${day}"]`);
+                if (dayBox) dayBox.classList.add('selected');
+            });
+        }
+        
+        if (settings.frequency === 'yearly' && settings.daysByMonth) {
+            Object.entries(settings.daysByMonth).forEach(([month, days]) => {
+                if (month !== 'all') {
+                    const monthBox = document.querySelector(`.yearly-month-box[data-month="${month}"]`);
+                    if (monthBox) monthBox.classList.add('selected');
+                }
+                
+                days.forEach(day => {
+                    const dayBox = document.querySelector(`.yearly-day-box[data-day="${day}"]`);
+                    if (dayBox) dayBox.classList.add('selected');
+                });
+            });
+        }
+        
+        // Update the summary display
+        updateRecurringSummary();
+        
+        console.log('✅ Form populated successfully');
+        
+    } catch (error) {
+        console.error('❌ Error populating form with settings:', error);
+    }
+}
+
+// ✅ New function to clear/reset the recurring form
+function clearRecurringForm() {
+    console.log('🧹 Clearing recurring form');
+    
+    try {
+        // Reset frequency to default
+        const frequencySelect = document.getElementById('recur-frequency');
+        if (frequencySelect) {
+            frequencySelect.value = 'daily';
+            frequencySelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Reset indefinite checkbox
+        const indefiniteCheckbox = document.getElementById('indefiniteCheckbox');
+        if (indefiniteCheckbox) {
+            indefiniteCheckbox.checked = true;
+        }
+        
+        // Clear repeat count
+        const repeatCountInput = document.getElementById('repeatCount');
+        if (repeatCountInput) {
+            repeatCountInput.value = '';
+        }
+        
+        // Clear specific time settings
+        const useTimeCheckbox = document.getElementById('useSpecificTime');
+        const timeInput = document.getElementById('specificTime');
+        
+        if (useTimeCheckbox) useTimeCheckbox.checked = false;
+        if (timeInput) timeInput.value = '';
+        
+        // Clear all selected day boxes
+        document.querySelectorAll('.weekly-day-box.selected, .biweekly-day-box.selected, .monthly-day-box.selected, .yearly-day-box.selected, .yearly-month-box.selected').forEach(box => {
+            box.classList.remove('selected');
+        });
+        
+        // Update the summary
+        updateRecurringSummary();
+        
+        console.log('✅ Form cleared successfully');
+        
+    } catch (error) {
+        console.error('❌ Error clearing form:', error);
+    }
 }
   // Helper to create the preview container if it doesn’t exist yet
   function createTaskSummaryPreview() {
@@ -7687,17 +8030,29 @@ function shouldRecreateRecurringTask(template, taskList, now) {
 }
 
 function watchRecurringTasks() {
-    console.log('👁️ Watching recurring tasks (Schema 2.5 only)...');
+    console.log('👁️ Watching recurring tasks (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for watchRecurringTasks');
+    // ✅ Check feature flag
+    if (!window.FeatureFlags?.recurringEnabled) {
+        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
     
+    // ✅ Read from AppState instead of localStorage
+    if (!AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for recurring task watch');
+        return;
+    }
+    
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
+    
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring task watch');
+        return;
+    }
+    
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for recurring task watch');
         return;
@@ -7714,8 +8069,10 @@ function watchRecurringTasks() {
     console.log('🔍 Checking recurring templates:', Object.keys(templates).length);
 
     const now = new Date();
-    let taskAdded = false;
+    const tasksToAdd = [];
+    const templateUpdates = {};
 
+    // ✅ Collect changes without mutating state directly
     Object.values(templates).forEach(template => {
         // ⛔ Prevent re-adding if task already exists by ID
         if (taskList.some(task => task.id === template.id)) return;
@@ -7723,48 +8080,75 @@ function watchRecurringTasks() {
 
         console.log("⏱ Auto‑recreating recurring task:", template.text);
 
-        addTask(
-            template.text,
-            false,  // not completed
-            false,  // shouldSave = false (batch save at end)
-            template.dueDate,
-            template.highPriority,
-            true,   // isLoading = true
-            template.remindersEnabled,
-            true,   // recurring = true
-            template.id,
-            template.recurringSettings
-        );
+        tasksToAdd.push({
+            text: template.text,
+            completed: false,
+            dueDate: template.dueDate,
+            highPriority: template.highPriority,
+            remindersEnabled: template.remindersEnabled,
+            recurring: true,
+            id: template.id,
+            recurringSettings: template.recurringSettings
+        });
 
-        template.lastTriggeredTimestamp = now.getTime();
-        taskAdded = true;
+        templateUpdates[template.id] = {
+            ...template,
+            lastTriggeredTimestamp: now.getTime()
+        };
     });
 
-    if (taskAdded) {
-        // Update the full schema data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycleData;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Batch all changes in one AppState update
+    if (tasksToAdd.length > 0) {
+        AppState.update(draft => {
+            const cycle = draft.data.cycles[activeCycleId];
+            
+            // Add new recurring tasks
+            tasksToAdd.forEach(taskData => {
+                cycle.tasks.push({
+                    ...taskData,
+                    dateCreated: now.toISOString()
+                });
+            });
+            
+            // Update template timestamps
+            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+                cycle.recurringTemplates[templateId] = updatedTemplate;
+            });
+        });
         
-        console.log('✅ Recurring tasks added and saved to Schema 2.5');
+        console.log(`✅ Added ${tasksToAdd.length} recurring tasks via AppState`);
     }
 }
 
 function setupRecurringWatcher() {
-
-    if (!window.AppInit?.isReady?.()) return;
-    console.log('⚙️ Setting up recurring watcher (Schema 2.5 only)...');
+    console.log('⚙️ Setting up recurring watcher (AppState-based)...');
     
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for setupRecurringWatcher');
+    // ✅ Check feature flag
+    if (!window.FeatureFlags?.recurringEnabled) {
+        console.log('🚫 Recurring feature disabled via FeatureFlags');
         return;
     }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
     
+    // ✅ Check AppState readiness with deferred setup
+    if (!AppState.isReady()) {
+        console.log('⏳ AppState not ready, deferring recurring watcher setup...');
+        
+        // Defer setup until AppState is ready
+        window._deferredRecurringSetup = window._deferredRecurringSetup || [];
+        window._deferredRecurringSetup.push(() => setupRecurringWatcher());
+        return;
+    }
+    
+    // ✅ Read from AppState instead of loadMiniCycleData
+    const state = AppState.get();
+    const activeCycleId = state.appState?.activeCycleId;
+    
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for recurring watcher setup');
+        return;
+    }
+    
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn('⚠️ No active cycle found for recurring watcher setup');
         return;
@@ -7860,9 +8244,19 @@ if (moveArrowsToggle) {
         return;
     }
     
-    const moveArrowsEnabled = schemaData.settings.showMoveArrows || false;
+    // ✅ Use state-based approach for move arrows setting
+    let moveArrowsEnabled = false;
     
-    console.log('📊 Loading move arrows setting from Schema 2.5:', moveArrowsEnabled);
+    if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
+    } else {
+        // Fallback for legacy or when state isn't ready
+        const schemaData = loadMiniCycleData();
+        moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
+    }
+    
+    console.log('📊 Loading move arrows setting from state:', moveArrowsEnabled);
     
     moveArrowsToggle.checked = moveArrowsEnabled;
     
@@ -7871,18 +8265,26 @@ if (moveArrowsToggle) {
         
         console.log('🔄 Move arrows toggle changed:', enabled);
         
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for saving move arrows setting');
-            return;
+        // ✅ Use state system if available
+        if (window.AppState?.isReady?.()) {
+            window.AppState.update(state => {
+                if (!state.ui) state.ui = {};
+                state.ui.moveArrowsVisible = enabled;
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save
+            
+            console.log('✅ Move arrows setting saved to state:', enabled);
+        } else {
+            // ✅ Fallback to localStorage if state not ready
+            console.warn('⚠️ AppState not ready, using localStorage fallback');
+            const schemaData = loadMiniCycleData();
+            if (schemaData) {
+                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                fullSchemaData.settings.showMoveArrows = enabled;
+                fullSchemaData.metadata.lastModified = Date.now();
+                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            }
         }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.showMoveArrows = enabled;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Move arrows setting saved to Schema 2.5:', enabled);
         
         updateMoveArrowsVisibility();
     });
@@ -8696,6 +9098,12 @@ function updateProgressBar() {
  */
 
 function checkMiniCycle() {
+    // ✅ Early return if AppState not ready to prevent initialization race conditions
+    if (!window.AppState?.isReady?.()) {
+        console.log('⏳ checkMiniCycle deferred - AppState not ready');
+        return;
+    }
+    
     const allCompleted = [...taskList.children].every(task => task.querySelector("input").checked);
 
     // ✅ Retrieve miniCycle variables
@@ -9343,6 +9751,18 @@ function setupRearrange() {
   if (window.AppGlobalState.rearrangeInitialized) return;
   window.AppGlobalState.rearrangeInitialized = true; // ✅ Use centralized state
 
+  // ✅ Add event delegation for arrow clicks (survives DOM re-renders)
+  const taskList = document.getElementById("taskList");
+  if (taskList) {
+    taskList.addEventListener("click", (event) => {
+      if (event.target.matches('.move-up, .move-down')) {
+        event.preventDefault();
+        event.stopPropagation();
+        handleArrowClick(event.target);
+      }
+    });
+  }
+
   document.addEventListener("dragover", (event) => {
     event.preventDefault();
     requestAnimationFrame(() => {
@@ -9375,6 +9795,55 @@ function setupRearrange() {
     window.AppGlobalState.lastReorderTime = 0; // ✅ Use centralized state
     window.AppGlobalState.didDragReorderOccur = false; // ✅ Use centralized state
   });
+}
+
+// ✅ Add arrow click handler
+function handleArrowClick(button) {
+    const taskItem = button.closest('.task');
+    if (!taskItem) return;
+
+    const taskList = document.getElementById('taskList');
+    const allTasks = Array.from(taskList.children);
+    const currentIndex = allTasks.indexOf(taskItem);
+    
+    let newIndex;
+    if (button.classList.contains('move-up')) {
+        newIndex = Math.max(0, currentIndex - 1);
+    } else {
+        newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
+    }
+    
+    if (newIndex === currentIndex) return; // No movement needed
+    
+    // ✅ Reorder via state system (splice in array)
+    if (window.AppState?.isReady?.()) {
+        // ✅ Capture undo snapshot BEFORE reordering
+        const currentState = window.AppState.get();
+        if (currentState) captureStateSnapshot(currentState);
+        
+        window.AppState.update(state => {
+            const activeCycleId = state.appState.activeCycleId;
+            if (activeCycleId && state.data.cycles[activeCycleId]) {
+                const tasks = state.data.cycles[activeCycleId].tasks;
+                if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
+                    // Remove task from current position and insert at new position
+                    const [movedTask] = tasks.splice(currentIndex, 1);
+                    tasks.splice(newIndex, 0, movedTask);
+                    state.metadata.lastModified = Date.now();
+                }
+            }
+        }, true); // immediate save
+        
+        // ✅ Re-render from state to reflect changes
+        refreshUIFromState();
+        
+        // ✅ Update undo/redo buttons
+        updateUndoRedoButtons();
+        
+        console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
+    } else {
+        console.warn('⚠️ AppState not ready for arrow reordering');
+    }
 }
 
 
@@ -9415,33 +9884,32 @@ function dragEndCleanup () {
  * @returns {void}
  */
 function updateMoveArrowsVisibility() {
-    console.log('🔄 Updating move arrows visibility (Schema 2.5 only)...');
+    console.log('🔄 Updating move arrows visibility (state-based)...');
     
-    // ✅ Try Schema 2.5 first
-    const schemaData = loadMiniCycleData();
+    // ✅ Use state-based system
     let showArrows = false;
     
-    if (schemaData) {
-        showArrows = schemaData.settings.showMoveArrows || false;
+    if (window.AppState?.isReady?.()) {
+        const currentState = window.AppState.get();
+        showArrows = currentState?.ui?.moveArrowsVisible || false;
+        console.log('📊 Arrow visibility from AppState:', showArrows);
     } else {
-        // ✅ Fallback to legacy (this shouldn't happen in Schema 2.5 only app)
-        showArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
+        // ✅ Silent fallback when state isn't ready (during initialization)
+        const storedValue = localStorage.getItem("miniCycleMoveArrows");
+        if (storedValue !== null) {
+            showArrows = storedValue === "true";
+            console.log('📊 Arrow visibility from localStorage fallback:', showArrows);
+        } else {
+            // Default to false if no setting exists
+            showArrows = false;
+            console.log('📊 Arrow visibility using default:', showArrows);
+        }
     }
 
-    document.querySelectorAll(".move-btn").forEach(button => {
-        button.style.visibility = showArrows ? "visible" : "hidden";
-        button.style.opacity = showArrows ? "1" : "0";
-    });
+    // ✅ Update DOM to reflect current state
+    updateArrowsInDOM(showArrows);
 
-    // ✅ Ensure `.task-options` remains interactive
-    document.querySelectorAll(".task-options").forEach(options => {
-        options.style.pointerEvents = "auto"; // 🔥 Fixes buttons becoming unclickable
-    });
-
-    console.log("✅ Move Arrows Toggled (Schema 2.5)");
-    
-    toggleArrowVisibility();
-    dragEndCleanup();
+    console.log(`✅ Move arrows visibility updated: ${showArrows ? "visible" : "hidden"}`);
 }
 
 /**
@@ -9450,26 +9918,53 @@ function updateMoveArrowsVisibility() {
  * @returns {void}
  */
 function toggleArrowVisibility() {
-    console.log('🔄 Toggling arrow visibility (Schema 2.5 only)...');
+    console.log('🔄 Toggling arrow visibility (state-based)...');
     
-    // ✅ Try Schema 2.5 first
-    const schemaData = loadMiniCycleData();
-    let showArrows = false;
-    
-    if (schemaData) {
-        showArrows = schemaData.settings.showMoveArrows || false;
-    } else {
-        // ✅ Fallback to legacy (this shouldn't happen in Schema 2.5 only app)
-        showArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
+    // ✅ Use state-based system
+    if (!window.AppState?.isReady?.()) {
+        console.log('⚠️ AppState not ready yet, deferring toggle until ready');
+        // Defer the toggle until AppState is ready
+        setTimeout(() => {
+            if (window.AppState?.isReady?.()) {
+                toggleArrowVisibility();
+            } else {
+                console.warn('❌ AppState still not ready after timeout');
+            }
+        }, 100);
+        return;
     }
-    
+
+    const currentState = window.AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for toggleArrowVisibility');
+        return;
+    }
+
+    const currentlyVisible = currentState.ui?.moveArrowsVisible || false;
+    const newVisibility = !currentlyVisible;
+
+    // ✅ Update through state system
+    window.AppState.update(state => {
+        if (!state.ui) state.ui = {};
+        state.ui.moveArrowsVisible = newVisibility;
+        state.metadata.lastModified = Date.now();
+    }, true); // immediate save
+
+    // ✅ Update DOM to reflect new state
+    updateArrowsInDOM(newVisibility);
+
+    console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
+}
+
+// ✅ Extracted DOM update logic
+function updateArrowsInDOM(showArrows) {
     const allTasks = document.querySelectorAll(".task");
 
     allTasks.forEach((task, index) => {
         const upButton = task.querySelector('.move-up');
         const downButton = task.querySelector('.move-down');
-        const taskOptions = task.querySelector('.task-options'); // ✅ Select task options
-        const taskButtons = task.querySelectorAll('.task-btn'); // ✅ Select all task buttons
+        const taskOptions = task.querySelector('.task-options');
+        const taskButtons = task.querySelectorAll('.task-btn');
 
         if (upButton) {
             upButton.style.visibility = (showArrows && index !== 0) ? "visible" : "hidden";
@@ -9492,8 +9987,6 @@ function toggleArrowVisibility() {
             button.style.pointerEvents = "auto";
         });
     });
-
-    console.log(`✅ Move arrows and buttons are now ${showArrows ? "enabled" : "disabled"} (Schema 2.5)`);
 }
     
     /***********************
@@ -9862,6 +10355,9 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
         setupRecurringButtonHandler(button, taskContext);
     } else if (btnClass === "enable-task-reminders") {
         setupReminderButtonHandler(button, taskContext);
+    } else if (btnClass === "move-up" || btnClass === "move-down") {
+        // ✅ Skip attaching old handlers to move buttons - using event delegation
+        console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
     } else {
         button.addEventListener("click", handleTaskButtonClick);
     }
@@ -9871,8 +10367,16 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
 function setupRecurringButtonHandler(button, taskContext) {
     const { assignedTaskId, currentCycle, settings, activeCycle } = taskContext;
     
+    // ✅ Mark that handler is attached to prevent double-attachment
+    button.dataset.handlerAttached = 'true';
+    
     button.addEventListener("click", () => {
         const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
+        if (!task) {
+            console.warn('⚠️ Task not found:', assignedTaskId);
+            return;
+        }
+
         if (!task) return;
 
         
@@ -9895,7 +10399,11 @@ function setupRecurringButtonHandler(button, taskContext) {
         // Save to Schema 2.5
         saveTaskToSchema25(activeCycle, currentCycle);
         
+        // ✅ Simple panel button visibility update
         updateRecurringPanelButtonVisibility();
+        
+        updateRecurringPanel?.();
+        
         updateRecurringPanel?.();
     });
 }
@@ -9938,9 +10446,35 @@ function handleRecurringTaskActivation(task, taskContext, button) {
     const frequency = rs.frequency || "daily";
     const pattern = rs.indefinitely ? "Indefinitely" : "Limited";
 
-    const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
-    const notification = showNotificationWithTip(notificationContent, "recurring", 20000, "recurring-cycle-explanation");
-    initializeRecurringNotificationListeners(notification);
+    try {
+        const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
+        const notification = showNotificationWithTip(notificationContent, "recurring", 20000, "recurring-cycle-explanation");
+        if (notification) {
+            initializeRecurringNotificationListeners(notification);
+        } else {
+            // Fallback to basic notification
+            const notificationDiv = document.createElement('div');
+            notificationDiv.className = 'notification success';
+            notificationDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
+            notificationDiv.innerHTML = `
+                <div>🔄 Task set to recurring (${frequency})</div>
+                <div style="margin-top: 10px; font-size: 12px;">
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Change</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;">More Options</button>
+                </div>
+            `;
+            document.body.appendChild(notificationDiv);
+            setTimeout(() => notificationDiv.remove(), 5000);
+        }
+    } catch (error) {
+        // Silent fallback - basic notification
+        const notificationDiv = document.createElement('div');
+        notificationDiv.className = 'notification success';
+        notificationDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
+        notificationDiv.innerHTML = `🔄 Task set to recurring (${frequency})`;
+        document.body.appendChild(notificationDiv);
+        setTimeout(() => notificationDiv.remove(), 3000);
+    }
 }
 
 // ✅ 15. Recurring Task Deactivation Handler
@@ -10235,6 +10769,12 @@ function updateUIAfterTaskCreation(shouldSave) {
     checkCompleteAllButton();
     updateProgressBar();
     updateStatsPanel();
+    
+    // ✅ Update recurring panel button visibility when tasks are added
+    if (typeof updateRecurringPanelButtonVisibility === 'function') {
+        updateRecurringPanelButtonVisibility();
+    }
+    
     if (shouldSave) autoSave();
 }
 
@@ -10248,6 +10788,22 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 
 // ✅ 32. Schema 2.5 Save Helper
 function saveTaskToSchema25(activeCycle, currentCycle) {
+    // Use AppState if available, otherwise fallback to localStorage
+    if (window.AppState && window.AppState.isReady()) {
+        try {
+            window.AppState.update(state => {
+                if (state && state.data && state.data.cycles) {
+                    state.data.cycles[activeCycle] = currentCycle;
+                    state.metadata.lastModified = Date.now();
+                }
+            });
+            return;
+        } catch (error) {
+            // Fall through to localStorage fallback
+        }
+    }
+    
+    // Fallback to localStorage if AppState not ready or failed
     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
     fullSchemaData.data.cycles[activeCycle] = currentCycle;
     fullSchemaData.metadata.lastModified = Date.now();
@@ -10511,11 +11067,19 @@ function revealTaskButtons(taskItem) {
   const remindersEnabledGlobal = reminderSettings.enabled === true;
   const autoResetEnabled = toggleAutoReset.checked;
 
+  // ✅ Early return if AppState not ready to prevent initialization race conditions
+  if (!window.AppState?.isReady?.()) {
+    console.log('⏳ revealTaskButtons deferred - AppState not ready');
+    return;
+  }
+
   const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
   const cycleData = savedMiniCycles?.[lastUsedMiniCycle] ?? {};
   const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
 
-  const alwaysShow = JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
+  const alwaysShow = AppState.isReady() ? 
+    AppState.get()?.settings?.alwaysShowRecurring === true : 
+    JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
   const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
 
   taskOptions.querySelectorAll(".task-btn").forEach(btn => {
@@ -10655,40 +11219,10 @@ function handleTaskButtonClick(event) {
 
     let shouldSave = false;
 
-    if (button.classList.contains("move-up")) {
-        const prevTask = taskItem.previousElementSibling;
-        if (prevTask) {
-            // ✅ ADD: Capture undo snapshot BEFORE reordering
-            if (window.AppState?.isReady?.()) {
-                const currentState = window.AppState.get();
-                if (currentState) captureStateSnapshot(currentState);
-            }
-
-            taskItem.parentNode.insertBefore(taskItem, prevTask);
-            revealTaskButtons(taskItem);
-            toggleArrowVisibility();
-
-            // ✅ Persist via AppState to trigger undo snapshots
-            saveCurrentTaskOrder();
-            shouldSave = false;
-        }
-    } else if (button.classList.contains("move-down")) {
-        const nextTask = taskItem.nextElementSibling;
-        if (nextTask) {
-            // ✅ ADD: Capture undo snapshot BEFORE reordering
-            if (window.AppState?.isReady?.()) {
-                const currentState = window.AppState.get();
-                if (currentState) captureStateSnapshot(currentState);
-            }
-
-            taskItem.parentNode.insertBefore(taskItem, nextTask.nextSibling);
-            revealTaskButtons(taskItem);
-            toggleArrowVisibility();
-
-            // ✅ Persist via AppState to trigger undo snapshots
-            saveCurrentTaskOrder();
-            shouldSave = false;
-        }
+    // ✅ DISABLED: Old arrow handling logic - now using event delegation
+    if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
+        console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
+        return; // Let the new event delegation handle this
     } else if (button.classList.contains("edit-btn")) {
         const taskLabel = taskItem.querySelector("span");
         const oldText = taskLabel.textContent.trim();
@@ -11198,6 +11732,9 @@ function saveToggleAutoReset() {
                 cycle.deleteCheckedTasks = event.target.checked;
             }
         }, true); // immediate save
+        
+        // ✅ Update recurring button visibility when setting changes
+        updateRecurringButtonVisibility();
         
         console.log('✅ Delete checked tasks setting saved (state-based)');
     }
@@ -12240,10 +12777,14 @@ function syncModeFromToggles() {
     
     // ✅ FIXED: Update container visibility based on mode, not just autoReset
     const deleteContainer = document.getElementById('deleteCheckedTasksContainer');
+    const autoResetContainer = document.getElementById('autoResetContainer');
+    
+    // Hide both individual toggle containers since mode selector controls this functionality
     if (deleteContainer) {
-        // Show delete container in manual-cycle and todo-mode, hide in auto-cycle
-        const shouldShow = (mode === 'manual-cycle' || mode === 'todo-mode');
-        deleteContainer.style.display = shouldShow ? 'block' : 'none';
+        deleteContainer.style.display = 'none';
+    }
+    if (autoResetContainer) {
+        autoResetContainer.style.display = 'none';
     }
     
     console.log('✅ Mode selectors synced to Schema 2.5:', mode);
@@ -12572,7 +13113,7 @@ updateCycleModeDescription();
       setupUploadMiniCycle();
       setupRearrange();
       dragEndCleanup();
-      updateMoveArrowsVisibility();
+      // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
       checkDueDates();
       loadAlwaysShowRecurringSetting();
       updateCycleModeDescription();
