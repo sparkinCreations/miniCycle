@@ -1,0 +1,130 @@
+{
+  "name": "imported_1759571573884",
+  "title": "\ud83c\udf57 Weeknight Chicken Stir\u2011Fry (Recipe)",
+  "tasks": [
+    {
+      "id": "task-1759571573884-529",
+      "text": "\ud83e\uddfc Wash hands & prep station",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-619",
+      "text": "\ud83d\udd2a Slice chicken thinly across the grain",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-777",
+      "text": "\ud83e\udd63 Quick marinade: 1 tbsp soy + 1 tsp cornstarch + 1 tsp oil (10 min)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-387",
+      "text": "\ud83e\udd55 Prep veggies (e.g., broccoli, bell pepper, snap peas, carrots)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-554",
+      "text": "\ud83e\udd63 Sauce: 2 tbsp soy + 1 tbsp oyster/hoisin + 1 tsp sugar + 1 tsp cornstarch + 1/3 cup water",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-561",
+      "text": "\ud83d\udd25 Heat wok/skillet until very hot; add 1\u20132 tbsp oil",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-105",
+      "text": "\ud83c\udf57 Sear chicken in single layer 2\u20133 min; remove",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-465",
+      "text": "\ud83e\udd66 Stir-fry veggies 2\u20134 min (tender\u2011crisp)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-654",
+      "text": "\ud83e\udd58 Return chicken, pour in sauce; toss until glossy & thickened",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-146",
+      "text": "\ud83c\udf36 Adjust with chili/pepper; taste & season",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-571",
+      "text": "\ud83c\udf5a Serve immediately over rice; garnish with scallions/sesame",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

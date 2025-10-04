@@ -1,0 +1,141 @@
+{
+  "name": "imported_1759571573884",
+  "title": "\ud83c\udf73 Classic Breakfast Burrito (Recipe)",
+  "tasks": [
+    {
+      "id": "task-1759571573884-775",
+      "text": "\ud83e\uddfc Wash hands & prep station",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-250",
+      "text": "\ud83e\udd54 (Optional) Dice potatoes; dice onion & bell pepper",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-461",
+      "text": "\ud83c\udf73 Whisk eggs with pinch of salt & pepper",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-221",
+      "text": "\ud83e\uddf4 Warm a little oil in skillet on medium",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-635",
+      "text": "\ud83e\udd54 Cook potatoes until golden; remove (optional step)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-125",
+      "text": "\ud83e\uddc5 Saut\u00e9 onion & pepper 3\u20134 min until soft",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-814",
+      "text": "\ud83c\udf73 Add eggs; scramble gently till just set",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-752",
+      "text": "\ud83c\udf2e Warm tortillas (pan 20\u201330s each or microwave)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-361",
+      "text": "\ud83e\uddc0 Assemble: tortilla + eggs (+ potatoes) + cheese + salsa",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-584",
+      "text": "\ud83c\udf2f Roll tightly: fold sides in, then roll forward",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-977",
+      "text": "\ud83d\udd25 (Optional) Sear seam-side down 30\u201360s for crisp",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-650",
+      "text": "\ud83c\udf7d Serve with hot sauce; enjoy!",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

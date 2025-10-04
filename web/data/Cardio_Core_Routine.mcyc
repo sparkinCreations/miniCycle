@@ -1,0 +1,97 @@
+{
+  "name": "imported_1759571694212",
+  "title": "\ud83c\udfc3 Cardio & Core Routine",
+  "tasks": [
+    {
+      "id": "task-1759571694212-631",
+      "text": "\ud83e\uddd8 Warm-up: 3 min march in place + arm circles",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-380",
+      "text": "\ud83c\udfc3 30 sec high knees \u2192 30 sec rest \u00d7 4",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-793",
+      "text": "\ud83e\uddb5 Mountain Climbers \u2013 3 rounds \u00d7 20 sec on / 20 sec rest",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-735",
+      "text": "\ud83e\uddcd Jump Squats (or Bodyweight Squats) \u2013 3 sets \u00d7 12 reps",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-130",
+      "text": "\ud83d\udca5 Sit-ups or Crunches \u2013 3 sets \u00d7 15 reps",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-113",
+      "text": "\ud83d\udd25 Bicycle Kicks \u2013 3 rounds \u00d7 30 sec",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-695",
+      "text": "\u23f1 1\u2011min plank hold (modify as needed)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-292",
+      "text": "\ud83e\uddd8 Cooldown: gentle stretch, deep breathing (3\u20135 min)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

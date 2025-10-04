@@ -1,0 +1,119 @@
+{
+  "name": "imported_1759571694213",
+  "title": "\ud83e\uddd8 Morning Mobility & Stretch Flow",
+  "tasks": [
+    {
+      "id": "task-1759571694213-281",
+      "text": "\ud83c\udf05 Begin with deep breathing \u2013 5 slow inhales/exhales",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-831",
+      "text": "\ud83e\uddcd Neck rolls \u2013 5 each direction",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-543",
+      "text": "\ud83d\udcaa Shoulder circles \u2013 10 forward / 10 backward",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-128",
+      "text": "\ud83e\uddb5 Hip circles \u2013 10 each direction",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-311",
+      "text": "\ud83e\udd38 Cat\u2013Cow stretch \u2013 5 slow reps",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-432",
+      "text": "\ud83e\uddd8 Downward Dog \u2192 Cobra Flow \u2013 3 rounds",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-190",
+      "text": "\ud83e\uddb6 Standing forward fold \u2013 hold 20\u201330 sec",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-305",
+      "text": "\ud83e\uddb5 Lunge stretch (hip flexors) \u2013 20 sec each side",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-609",
+      "text": "\ud83e\uddcd Arm & chest opener \u2013 20 sec hold",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694213-164",
+      "text": "\ud83e\uddd8 Finish with seated breathing (2 min calm focus)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

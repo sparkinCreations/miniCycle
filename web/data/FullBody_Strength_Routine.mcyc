@@ -1,0 +1,86 @@
+{
+  "name": "imported_1759571694212",
+  "title": "\ud83c\udfcb\ufe0f Full\u2011Body Strength Routine",
+  "tasks": [
+    {
+      "id": "task-1759571694212-656",
+      "text": "\ud83e\udd38 Warm-up: 3\u20135 min light cardio (jumping jacks or brisk walk)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-735",
+      "text": "\ud83c\udfcb\ufe0f Squats \u2013 3 sets \u00d7 10\u201312 reps (bodyweight or dumbbells)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-257",
+      "text": "\ud83d\udcaa Push-ups \u2013 3 sets \u00d7 8\u201312 reps (knees or full)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-559",
+      "text": "\ud83d\udeb6 Lunges \u2013 3 sets \u00d7 10 reps per leg",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-711",
+      "text": "\ud83c\udfcb\ufe0f Dumbbell Rows \u2013 3 sets \u00d7 10 reps per arm (or use backpack)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-538",
+      "text": "\ud83d\udd25 Plank \u2013 hold 30\u201345 sec \u00d7 3 rounds",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571694212-455",
+      "text": "\ud83e\uddd8 Stretch & cooldown: hamstrings, shoulders, back (5 min)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}

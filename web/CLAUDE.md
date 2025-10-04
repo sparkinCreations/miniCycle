@@ -1,0 +1,216 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Essential Commands
+
+### Development Server
+```bash
+npm start                    # Starts Python HTTP server on port 8080
+# Alternative: python3 -m http.server 8080
+```
+
+### Version Management
+```bash
+./update-version.sh          # Interactive version updater for app and service worker
+                            # Updates all files with version references
+                            # Creates automatic timestamped backups
+                            # Validates changes after completion
+```
+
+### Blog System (Optional)
+```bash
+npm run blog:install        # Install blog dependencies
+npm run blog:build          # Build static blog from markdown posts
+```
+
+### File Access
+- **Main App**: http://localhost:8080/miniCycle.html (full version)
+- **Lite Version**: http://localhost:8080/miniCycle-lite.html (ES5 compatible)
+
+## Architecture Overview
+
+### Core Philosophy
+miniCycle implements **task cycling** - a methodology where task lists persist and only completion status resets, enabling routine building rather than traditional to-do management. This is fundamentally different from standard task apps.
+
+### Dual Version System
+- **miniCycle.html + miniCycle-scripts.js**: Full ES6+ version with all features
+- **miniCycle-lite.html + miniCycle-lite-scripts.js**: ES5 compatible version for older browsers
+
+### Modular ES6 Architecture
+The main application (`miniCycle-scripts.js`) serves as an orchestrator that dynamically imports specialized modules:
+
+```javascript
+// Core module loading pattern
+const { MiniCycleNotifications } = await import('./utilities/notifications.js');
+const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+const { MiniCycleState } = await import('./utilities/state.js');
+```
+
+### Key Architectural Components
+
+#### State Management (`utilities/state.js`)
+- Centralized state with undo/redo capabilities
+- Event-driven architecture with `cycle:ready` events
+- Automatic localStorage persistence with migration system
+- Schema version 2.5 with backward compatibility
+
+#### Module System (`utilities/`)
+- **notifications.js**: Advanced notification system with drag support and educational tips
+- **statsPanel.js**: Statistics panel with swipe navigation and achievement system
+- **deviceDetection.js**: Platform-specific feature detection and optimization
+- **themeManager.js**: Dynamic theming system with unlockable themes
+- **cycleLoader.js**: Data loading, migration, and file import/export (.mcyc format)
+
+#### Global State Management
+```javascript
+window.AppGlobalState = {
+  // Drag and touch interaction state
+  draggedTask: null,
+  isDragging: false,
+  // Undo/redo system
+  undoStack: [],
+  redoStack: [],
+  // UI state tracking
+  advancedVisible: false,
+  // Feature flags
+  hasInteracted: false
+};
+```
+
+### Data Schema (Version 2.5)
+```javascript
+{
+  schemaVersion: 2.5,
+  cycles: {
+    [cycleId]: {
+      name: string,
+      tasks: Task[],
+      cycleCount: number,
+      autoReset: boolean,        // Auto Cycle Mode
+      deleteCheckedTasks: boolean // To-Do Mode
+    }
+  },
+  appState: {
+    activeCycleId: string,
+    currentMode: 'auto-cycle' | 'manual-cycle' | 'todo-mode'
+  }
+}
+```
+
+### PWA Implementation
+- **service-worker.js**: Cache-first strategy with versioned updates
+- **manifest.json / manifest-lite.json**: PWA configuration for both versions
+- Offline functionality with background sync capabilities
+
+## Critical Development Patterns
+
+### Event-Driven Initialization
+The app uses a sophisticated initialization system to ensure modules load after data is ready:
+
+```javascript
+// Wait for data before initializing UI components
+document.addEventListener('cycle:ready', () => {
+  // Safe to access cycle data and update UI
+});
+```
+
+### Version Synchronization
+All version references must stay synchronized across multiple files. Use `./update-version.sh` rather than manual updates:
+- HTML meta tags and cache-busters
+- JavaScript currentVersion variables
+- Service worker CACHE_VERSION and APP_VERSION
+- Manifest files
+- Module version annotations
+
+### Module Communication Pattern
+Modules communicate through dependency injection rather than global state:
+
+```javascript
+const statsPanel = new StatsPanelManager({
+  showNotification: notifications.show.bind(notifications),
+  loadMiniCycleData: window.loadMiniCycleData
+});
+```
+
+### Data Migration Strategy
+Always preserve backward compatibility when modifying data schema:
+- Increment schema version
+- Add migration logic in `cycleLoader.js`
+- Test with legacy data files
+- Create backup before migration
+
+## Task Cycling Core Concepts
+
+### Three Operational Modes
+1. **Auto Cycle Mode**: Tasks reset automatically when all completed
+2. **Manual Cycle Mode**: User controls when to reset via "Complete Cycle"
+3. **To-Do Mode**: Traditional behavior - completed tasks are deleted
+
+### Persistent vs Disposable Tasks
+- **Cycles**: Persistent task lists that reset completion status (routines, procedures)
+- **To-Do**: Disposable tasks that get deleted when completed (one-time actions)
+
+This distinction is fundamental to understanding miniCycle's value proposition and should be preserved in any modifications.
+
+## File Structure Significance
+
+### Backup System
+- `backup/`: Automatic timestamped backups created by update-version.sh
+- Each backup includes restore.sh script for easy rollback
+- Maintains last 3 backups automatically
+
+### Data Files
+- `data/*.mcyc`: Sample cycle files demonstrating the .mcyc export format
+- Used for testing import/export functionality
+
+### Legacy Code
+- `TTO/`: Contains older development artifacts and merge scripts
+- Generally safe to ignore for current development
+
+## PWA and Performance Considerations
+
+### Service Worker Updates
+When modifying core files, increment both app version and cache version to trigger proper PWA updates:
+- Users receive update prompts automatically
+- Cache invalidation prevents stale content
+- Offline functionality remains intact
+
+### Memory Management
+- Large task lists (>100 tasks) may impact performance
+- localStorage has browser-imposed limits
+- Modular loading reduces initial bundle size
+
+## Testing and Validation
+
+### Built-in Testing Modal
+Access via Settings → App Diagnostics & Testing:
+- Health checks for data integrity
+- Browser compatibility validation
+- Debug information export
+
+### Manual Testing Checklist
+1. Test both full and lite versions
+2. Verify PWA installation and offline functionality
+3. Test data migration with legacy files
+4. Validate undo/redo functionality
+5. Check stats panel updates after data loading
+
+## Important Notes for AI Assistants
+
+### Conceptual Understanding
+miniCycle is NOT a traditional task manager. It's a routine management system where:
+- Tasks represent steps in repeatable procedures
+- Completion status cycles, but task structure persists
+- The goal is habit formation and process consistency
+
+### Common Misconceptions to Avoid
+- Don't treat cycles as disposable to-do lists
+- Don't assume completed tasks should be deleted by default
+- The cycling mechanism is the core value proposition, not an edge case
+
+### When Making Changes
+- Always test the stats panel data synchronization (known previous issue)
+- Use the update-version.sh script for version changes
+- Preserve the modular architecture and async loading patterns
+- Maintain backward compatibility with existing .mcyc files

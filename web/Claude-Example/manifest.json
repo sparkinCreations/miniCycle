@@ -1,0 +1,32 @@
+{
+  "name": "CycleFlow - Task Cycling Demo",
+  "short_name": "CycleFlow",
+  "description": "A modern task cycling app built by Claude as a demonstration",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "lang": "en-US",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%236366f1'><circle cx='50' cy='50' r='45' fill='%23ffffff'/><path d='M30 50 L45 65 L70 35' stroke='%236366f1' stroke-width='4' fill='none'/><path d='M20 25 Q50 10 80 25' stroke='%236366f1' stroke-width='3' fill='none'/><path d='M80 75 Q50 90 20 75' stroke='%236366f1' stroke-width='3' fill='none'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%236366f1'><circle cx='50' cy='50' r='45' fill='%23ffffff'/><path d='M30 50 L45 65 L70 35' stroke='%236366f1' stroke-width='4' fill='none'/><path d='M20 25 Q50 10 80 25' stroke='%236366f1' stroke-width='3' fill='none'/><path d='M80 75 Q50 90 20 75' stroke='%236366f1' stroke-width='3' fill='none'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Task",
+      "url": "./index.html#add",
+      "description": "Quickly add a new task"
+    }
+  ]
+}

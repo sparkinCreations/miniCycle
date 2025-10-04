@@ -1,0 +1,97 @@
+{
+  "name": "imported_1759571573884",
+  "title": "\ud83c\udf5d One\u2011Pot Tomato Basil Pasta (Recipe)",
+  "tasks": [
+    {
+      "id": "task-1759571573884-304",
+      "text": "\ud83e\uddfc Wash hands & prep station",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-500",
+      "text": "\ud83e\uddc4 Slice garlic; halve tomatoes (or open canned)",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-445",
+      "text": "\ud83e\udd63 Pot: pasta + tomatoes + garlic + 2.5\u20133 cups water/stock + salt",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-222",
+      "text": "\ud83d\udd25 Bring to vigorous simmer; stir frequently",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-244",
+      "text": "\u23f1 Cook 9\u201311 min until pasta al dente & liquid mostly absorbed",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-997",
+      "text": "\ud83e\uddc2 Season to taste; add pinch of sugar if too acidic",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-489",
+      "text": "\ud83c\udf3f Stir in basil; finish with olive oil and parmesan",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-1759571573884-123",
+      "text": "\ud83c\udf7d Serve immediately; optional chili flakes",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
+}
