@@ -68,6 +68,10 @@ export class StatsPanelManager {
         this.cacheElements();
         this.setupEventListeners();
         this.initializeView();
+        
+        // ✅ FIX: Listen for data-ready events to update stats on session load
+        this.setupDataReadyListener();
+        
         console.log('✅ StatsPanelManager initialized successfully');
     }
 
@@ -230,6 +234,26 @@ export class StatsPanelManager {
         }
         if (this.elements.closeThemesBtn) {
             this.elements.closeThemesBtn.addEventListener("click", () => this.closeThemesPanel());
+        }
+    }
+
+    /**
+     * ✅ FIX: Setup data-ready listener to update stats when session loads
+     */
+    setupDataReadyListener() {
+        // Listen for the cycle:ready event
+        document.addEventListener('cycle:ready', () => {
+            console.log('📊 Stats panel detected data ready - updating stats...');
+            // Delay slightly to ensure DOM is fully updated
+            setTimeout(() => this.updateStatsPanel(), 100);
+        });
+
+        // Also listen for AppInit ready if available
+        if (window.AppInit && typeof window.AppInit.onReady === 'function') {
+            window.AppInit.onReady(() => {
+                console.log('📊 Stats panel detected AppInit ready - updating stats...');
+                setTimeout(() => this.updateStatsPanel(), 100);
+            });
         }
     }
 
@@ -1009,7 +1033,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.305',
+            version: '1.306',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config

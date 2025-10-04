@@ -1,0 +1,14 @@
+{
+  "name": "minicycle-web",
+  "version": "1.305",
+  "description": "miniCycle - Turn Your Routine Into Progress",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "blog:install": "cd blog && npm install",
+    "blog:build": "cd blog && npm run build"
+  },
+  "keywords": ["productivity", "routine", "cycle", "tasks"],
+  "author": "miniCycle",
+  "license": "UNLICENSED"
+}
