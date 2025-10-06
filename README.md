@@ -82,15 +82,6 @@ miniCycle/
 4. **Build Habits**: The cycling system encourages consistent routines
 5. **Earn Rewards**: Unlock themes and badges as you progress
 
----
-
-## 🔄 Upgrade to TaskCycle
-
-Need advanced features? Check out **[TaskCycle](https://taskcycle.app)** for:
-- Advanced analytics and insights
-- Team collaboration features
-- Cloud sync across devices
-- Professional reporting tools
 
 ---
 
