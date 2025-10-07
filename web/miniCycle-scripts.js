@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.309'
+        currentVersion: '1.310'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -9134,6 +9134,13 @@ function handleTaskButtonClick(event) {
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) t.highPriority = newHighPriority;
             }, true);
+
+            // ✅ Show notification after updating state
+            showNotification(
+                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
+                newHighPriority ? "error" : "info",
+                1500
+            );
         } else {
             // ...existing localStorage fallback...
             const schemaData = loadMiniCycleData();

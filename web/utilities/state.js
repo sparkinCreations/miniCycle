@@ -21,7 +21,7 @@ class MiniCycleState {
         this.isDirty = false;
         this.saveTimeout = null;
         this.listeners = new Map();
-        this.SAVE_DELAY = 2000;
+        this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
         this.version = '1.0.0';
         this.isInitialized = false; // ✅ Add this flag
     }

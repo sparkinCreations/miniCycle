@@ -694,10 +694,97 @@ try {
 ## 🏠 **Real miniCycle Examples**
 
 **See these patterns in action in your codebase:**
-- `utilities/globalUtils.js` → **Static Utility** ⚡ (DOM helpers, formatters)
-- `utilities/notifications.js` → **Simple Instance** 🎯 (notification system + educational tips)  
-- `utilities/statsPanel.js` → **Resilient Constructor** 🛡️ (stats panel with swipe detection)
-- `utilities/cycleLoader.js` → **Strict Injection** 🔧 (cycle loading with explicit dependencies)
+
+### **Static Utility Pattern** ⚡
+- ✅ `utilities/globalUtils.js` - DOM helpers, formatters, ID generators
+- 🎯 **Recommended Next:** `utilities/taskUtils.js` - Task data transformations, validation, filtering
+- 🎯 **Recommended Next:** `utilities/dateUtils.js` - Date formatting, parsing, relative time calculations
+
+### **Simple Instance Pattern** 🎯
+- ✅ `utilities/notifications.js` - Notification system + educational tips with drag support
+- ✅ `utilities/consoleCapture.js` - Console logging capture for debugging
+- ✅ `utilities/testing-modal.js` - Comprehensive testing interface
+- 🎯 **Recommended Next:** `utilities/themeManager.js` - Theme switching and dark mode
+- 🎯 **Recommended Next:** `utilities/modalManager.js` - Basic modal open/close management
+
+### **Resilient Constructor Pattern** 🛡️
+- ✅ `utilities/statsPanel.js` - Stats panel with swipe detection and achievement system
+- ✅ `utilities/recurringPanel.js` - Complex recurring task UI with form management
+- 🎯 **Recommended Next:** `utilities/undoManager.js` - Undo/redo with state snapshots
+
+### **Strict Injection Pattern** 🔧
+- ✅ `utilities/cycleLoader.js` - Cycle loading with explicit dependencies
+- ✅ `utilities/recurringCore.js` - Recurring task business logic and scheduling
+- ✅ `utilities/recurringIntegration.js` - Recurring system coordination layer
+- ✅ `utilities/state.js` - Centralized state management with persistence
+- 🎯 **Recommended Next:** `utilities/migrationManager.js` - Schema version migration and data validation
+
+---
+
+## 🗺️ **Extraction Roadmap for miniCycle**
+
+**Current Status (October 2025):**
+- Main script: **11,058 lines** (down from 15,677)
+- **29% reduction achieved**
+- **11 modules extracted**
+
+### **Phase 1: Low-Risk Utilities** (1-2 weeks) - Target: ~9,500 lines remaining
+
+**Priority 1A: Task Utilities** (⚡ Static Utility)
+- **Functions:** `extractTaskDataFromDOM()`, `validateTaskData()`, `generateTaskId()`, `sortTasksByProperty()`, `filterTasksByStatus()`
+- **Lines:** ~300
+- **Risk:** Very Low (pure functions)
+- **Effort:** 1 day
+
+**Priority 1B: Date Utilities** (⚡ Static Utility)
+- **Functions:** `formatDate()`, `parseDate()`, `isOverdue()`, `calculateTimeDiff()`, `getRelativeTime()`
+- **Lines:** ~200
+- **Risk:** Very Low (pure functions)
+- **Effort:** 1 day
+
+**Priority 1C: Theme Manager** (🎯 Simple Instance)
+- **Functions:** `applyTheme()`, `updateThemeColor()`, `setupDarkModeToggle()`, `setupQuickDarkToggle()`
+- **Lines:** ~800
+- **Risk:** Low (self-contained UI)
+- **Effort:** 2 days
+
+### **Phase 2: Medium-Risk Systems** (2-3 weeks) - Target: ~7,000 lines remaining
+
+**Priority 2A: Modal Manager** (🎯 Simple Instance)
+- **Functions:** `setupMainMenu()`, `closeMainMenu()`, `showCycleCreationModal()`, `setupGamesModalOutsideClick()`
+- **Lines:** ~400
+- **Risk:** Low (basic UI)
+- **Effort:** 2 days
+
+**Priority 2B: Migration Manager** (🔧 Strict Injection)
+- **Functions:** `checkMigrationNeeded()`, `simulateMigrationToSchema25()`, `performSchema25Migration()`, `validateAllMiniCycleTasksLenient()`, `fixTaskValidationIssues()`
+- **Lines:** ~700
+- **Risk:** Medium (critical data operations)
+- **Effort:** 3 days
+
+**Priority 2C: Undo/Redo Manager** (🛡️ Resilient Constructor)
+- **Functions:** `wireUndoRedoUI()`, `initializeUndoRedoButtons()`, `captureStateSnapshot()`, `setupStateBasedUndoRedo()`, `updateUndoRedoButtons()`, `buildSnapshotSignature()`, `snapshotsEqual()`
+- **Lines:** ~500
+- **Risk:** Medium (state management)
+- **Effort:** 2 days
+
+### **Phase 3: High-Risk Core** (3-4 weeks) - Target: ~5,000 lines remaining
+
+**Priority 3A: Task Manager Core** (🔧 Strict Injection)
+- **Functions:** `addTask()`, `deleteTask()`, `toggleTask()`, `editTask()`, `renderTasks()`, `updateTask()`, etc.
+- **Lines:** ~2000+
+- **Risk:** High (core business logic)
+- **Effort:** 2 weeks
+
+### **Success Metrics**
+
+| Phase | Target Lines | % Reduction | Est. Modules | Timeline |
+|-------|-------------|-------------|--------------|----------|
+| ✅ Completed | 11,058 | 29% | 11 modules | Oct 2025 |
+| Phase 1 | 9,500 | 39% | +3 modules | +1-2 weeks |
+| Phase 2 | 7,000 | 55% | +3 modules | +2-3 weeks |
+| Phase 3 | 5,000 | 68% | +1 module | +3-4 weeks |
+| **Final Goal** | **<5,000** | **68%+** | **18+ modules** | **6-9 weeks total** |
 
 ---
 
@@ -1160,6 +1247,240 @@ Mission-critical functionality:
 
 ---
 
+## 📝 **Quick Reference: Module Extraction Templates**
+
+### **Template: Static Utility Module** ⚡
+```javascript
+// utilities/taskUtils.js
+/**
+ * 🔧 miniCycle Task Utilities
+ * Pure utility functions for task operations
+ */
+
+export class TaskUtils {
+    /**
+     * Extract task data from DOM element
+     */
+    static extractTaskDataFromDOM(taskElement) {
+        if (!taskElement) {
+            console.warn('⚠️ No task element provided');
+            return null;
+        }
+
+        return {
+            id: taskElement.dataset.taskId,
+            text: taskElement.querySelector('.task-text')?.textContent || '',
+            completed: taskElement.classList.contains('completed'),
+            highPriority: taskElement.classList.contains('high-priority')
+        };
+    }
+
+    /**
+     * Validate task data structure
+     */
+    static validateTaskData(task) {
+        return task &&
+               typeof task.id === 'string' &&
+               typeof task.text === 'string' &&
+               task.text.trim().length > 0;
+    }
+
+    /**
+     * Generate unique task ID
+     */
+    static generateTaskId(prefix = 'task') {
+        return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+}
+
+// Global exports
+window.TaskUtils = TaskUtils;
+window.extractTaskDataFromDOM = TaskUtils.extractTaskDataFromDOM;
+window.validateTaskData = TaskUtils.validateTaskData;
+window.generateTaskId = TaskUtils.generateTaskId;
+
+console.log('🔧 Task Utilities loaded');
+```
+
+### **Template: Simple Instance Module** 🎯
+```javascript
+// utilities/themeManager.js
+/**
+ * 🎨 miniCycle Theme Manager
+ * Handles theme switching with graceful fallbacks
+ */
+
+export class ThemeManager {
+    constructor() {
+        this.currentTheme = 'default';
+        this.darkModeEnabled = false;
+        this.init();
+    }
+
+    init() {
+        try {
+            this.loadSavedTheme();
+            console.log('🎨 Theme Manager initialized');
+        } catch (error) {
+            console.warn('Theme initialization failed, using defaults:', error);
+        }
+    }
+
+    applyTheme(themeName) {
+        try {
+            // Remove old theme classes
+            const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
+            allThemes.forEach(t => document.body.classList.remove(t));
+
+            // Apply new theme
+            if (themeName && themeName !== 'default') {
+                document.body.classList.add(`theme-${themeName}`);
+                this.currentTheme = themeName;
+                this.saveTheme();
+            }
+        } catch (error) {
+            console.warn('Theme application failed:', error);
+            console.log('[Fallback] Using default theme');
+        }
+    }
+
+    toggleDarkMode() {
+        try {
+            this.darkModeEnabled = !this.darkModeEnabled;
+            document.body.classList.toggle('dark-mode', this.darkModeEnabled);
+            this.saveTheme();
+
+            if (window.updateThemeColor) {
+                window.updateThemeColor();
+            }
+        } catch (error) {
+            console.warn('Dark mode toggle failed:', error);
+        }
+    }
+
+    loadSavedTheme() {
+        try {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                const data = JSON.parse(saved);
+                this.currentTheme = data.theme || 'default';
+                this.darkModeEnabled = data.darkMode || false;
+
+                this.applyTheme(this.currentTheme);
+                if (this.darkModeEnabled) {
+                    document.body.classList.add('dark-mode');
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to load saved theme:', error);
+        }
+    }
+
+    saveTheme() {
+        try {
+            localStorage.setItem('theme', JSON.stringify({
+                theme: this.currentTheme,
+                darkMode: this.darkModeEnabled
+            }));
+        } catch (error) {
+            console.warn('Failed to save theme:', error);
+        }
+    }
+}
+
+// Create instance
+const themeManager = new ThemeManager();
+
+// Global wrappers
+window.themeManager = themeManager;
+window.applyTheme = (theme) => themeManager.applyTheme(theme);
+window.toggleDarkMode = () => themeManager.toggleDarkMode();
+
+console.log('🎨 Theme Manager loaded and ready');
+```
+
+### **Template: Strict Injection Module** 🔧
+```javascript
+// utilities/migrationManager.js
+/**
+ * 🔄 miniCycle Migration Manager
+ * Handles schema version migrations with strict dependencies
+ */
+
+const Deps = {
+    loadData: null,
+    saveData: null,
+    showNotification: null,
+    validateData: null
+};
+
+function setMigrationManagerDependencies(overrides = {}) {
+    Object.assign(Deps, overrides);
+    console.log('🔄 Migration Manager dependencies configured');
+}
+
+function assertInjected(name, fn) {
+    if (typeof fn !== 'function') {
+        throw new Error(`migrationManager: missing required dependency '${name}'. Call setMigrationManagerDependencies() first.`);
+    }
+}
+
+export function checkMigrationNeeded() {
+    assertInjected('loadData', Deps.loadData);
+
+    try {
+        const data = Deps.loadData();
+        const currentVersion = data?.schemaVersion || '1.0';
+        const targetVersion = '2.5';
+
+        return currentVersion !== targetVersion;
+    } catch (error) {
+        console.error('Migration check failed:', error);
+        throw error;
+    }
+}
+
+export function performMigration() {
+    assertInjected('loadData', Deps.loadData);
+    assertInjected('saveData', Deps.saveData);
+    assertInjected('showNotification', Deps.showNotification);
+    assertInjected('validateData', Deps.validateData);
+
+    try {
+        const data = Deps.loadData();
+
+        // Perform migration logic
+        const migratedData = {
+            ...data,
+            schemaVersion: '2.5',
+            metadata: {
+                ...data.metadata,
+                lastMigration: Date.now()
+            }
+        };
+
+        // Validate migrated data
+        if (!Deps.validateData(migratedData)) {
+            throw new Error('Migration produced invalid data');
+        }
+
+        // Save migrated data
+        Deps.saveData(migratedData);
+
+        Deps.showNotification('✅ Data migration completed', 'success');
+        return migratedData;
+
+    } catch (error) {
+        Deps.showNotification('❌ Migration failed: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+export { setMigrationManagerDependencies };
+```
+
+---
+
 ## ✅ **Success Indicators**
 
 You'll know you chose the right pattern when:
@@ -1229,7 +1550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 1. **Different modules need different approaches** - not everything should use the same pattern
 2. **Static utilities should stay pure** - no state, no dependencies, just input → output
 3. **Simple instances should gracefully degrade** - always provide a fallback that works
-4. **Complex UI should be resilient** - handle missing dependencies with user-visible degradation  
+4. **Complex UI should be resilient** - handle missing dependencies with user-visible degradation
 5. **Critical business logic should fail fast** - missing dependencies should throw clear errors
 6. **Global wrappers ease migration** - but mark them for eventual removal
 7. **Consistent naming prevents confusion** - use standard dependency names across modules
@@ -1237,11 +1558,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 ---
 
+## 📈 **Progress & Next Steps**
+
+**Where You Are (October 2025):**
+- ✅ **11 modules extracted** - 29% reduction (15,677 → 11,058 lines)
+- ✅ **All 4 patterns proven** in production
+- ✅ **Comprehensive guide** with real examples
+
+**Next Recommended Extractions:**
+1. 🎯 **Start this week:** Task Utilities (⚡ Static) + Date Utilities (⚡ Static) - 500 lines total
+2. 🎯 **Next week:** Theme Manager (🎯 Simple Instance) - 800 lines
+3. 🎯 **Following weeks:** Modal Manager → Migration Manager → Undo/Redo Manager
+
+**Target Goal:**
+- **Phase 1 (1-2 weeks):** Remove 1,500 lines → Target: ~9,500 lines
+- **Phase 2 (2-3 weeks):** Remove 2,500 lines → Target: ~7,000 lines
+- **Phase 3 (3-4 weeks):** Remove 2,000 lines → Target: ~5,000 lines
+- **Final:** **68% reduction** from original monolith
+
+---
+
 **Remember:** These patterns aren't theoretical - they're proven in your production miniCycle app. You've already successfully implemented each pattern for different purposes:
 
 - **globalUtils.js** shows how Static Utilities provide zero-config foundation functions
-- **notifications.js** demonstrates how Simple Instances work immediately with graceful fallbacks  
+- **notifications.js** demonstrates how Simple Instances work immediately with graceful fallbacks
 - **statsPanel.js** proves Resilient Constructors can handle missing dependencies elegantly
 - **cycleLoader.js** validates that Strict Injection ensures critical code gets what it needs
 
-This guide simply helps you **apply the right pattern to each new module** as you continue modernizing your codebase. **Choose the pattern that fits the job, not the other way around.**
+This guide helps you **apply the right pattern to each new module** as you continue modernizing your codebase. The roadmap provides a clear path from 11,058 lines to under 5,000 lines. **Choose the pattern that fits the job, not the other way around.**
+
+**Start with the low-risk utilities this week and build momentum!** 🚀

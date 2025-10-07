@@ -1,5 +1,5 @@
 #!/bin/bash
-# Auto-generated restore script for version update on 20251004_171437
+# Auto-generated restore script for version update on 20251007_141516
 echo "🔄 Restoring files from backup..."
 
 cp miniCycle.html ../miniCycle.html 2>/dev/null && echo "✅ Restored miniCycle.html"

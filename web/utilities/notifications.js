@@ -398,18 +398,22 @@ export class MiniCycleNotifications {
    */
   resetPosition() {
     console.log("🔄 Resetting notification position (Schema 2.5 only)...");
-    
-    const schemaData = window.loadMiniCycleData();
-    if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for resetPosition');
-      throw new Error('Schema 2.5 data not found');
+
+    // ✅ Use AppState for consistent state management
+    if (!window.AppState?.isReady()) {
+      console.error('❌ AppState not ready for reset');
+      throw new Error('AppState not initialized');
     }
 
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.settings.notificationPosition = { x: 0, y: 0 };
-    fullSchemaData.settings.notificationPositionModified = false;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ AppState.update() expects a function, not an object
+    window.AppState.update((state) => {
+      if (!state.settings) {
+        console.error('❌ Invalid state structure');
+        throw new Error('Invalid state structure');
+      }
+      state.settings.notificationPosition = { x: 0, y: 0 };
+      state.settings.notificationPositionModified = false;
+    }, true); // Immediate save
 
     // Reset DOM position
     const container = document.getElementById("notification-container");
@@ -478,13 +482,13 @@ setDefaultPosition(notificationContainer) {
     
     // Save this default position to Schema 2.5 so it persists
     try {
-        const schemaData = window.loadMiniCycleData();
-        if (schemaData) {
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.settings.notificationPosition = { x: defaultX, y: defaultY };
-            fullSchemaData.settings.notificationPositionModified = false; // Mark as default
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        if (window.AppState?.isReady()) {
+            window.AppState.update((state) => {
+                if (state.settings) {
+                    state.settings.notificationPosition = { x: defaultX, y: defaultY };
+                    state.settings.notificationPositionModified = false; // Mark as default
+                }
+            }, true);
         }
     } catch (error) {
         console.warn("⚠️ Failed to save default notification position:", error);
@@ -541,20 +545,26 @@ setDefaultPosition(notificationContainer) {
       'button', 'input', 'select', 'textarea', 'a[href]'
     ];
 
-    // Save position to Schema 2.5
+    // Save position to Schema 2.5 via AppState
     const savePositionToSchema25 = (x, y) => {
       try {
-        const schemaData = window.loadMiniCycleData();
-        if (!schemaData) {
-          console.error('❌ Schema 2.5 data required for saving notification position');
+        // ✅ Use AppState to ensure position isn't overwritten by other saves
+        if (!window.AppState?.isReady()) {
+          console.error('❌ AppState not ready for saving notification position');
           return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.notificationPosition = { x, y };
-        fullSchemaData.settings.notificationPositionModified = true;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ AppState.update() expects a function, not an object
+        window.AppState.update((state) => {
+          if (!state.settings) {
+            console.error('❌ Invalid state structure for notification position');
+            return;
+          }
+          state.settings.notificationPosition = { x, y };
+          state.settings.notificationPositionModified = true;
+        }, true); // Immediate save to prevent race conditions
+
+        console.log('💾 Notification position saved via AppState:', { x, y });
       } catch (error) {
         console.warn("⚠️ Failed to save notification position:", error);
       }

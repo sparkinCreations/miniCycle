@@ -1,423 +1,1044 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.306  
-**Last Updated**: October 2025  
-**Target Audience**: Developers, Contributors, Technical Partners  
-**Purpose**: Comprehensive technical guide reflecting current implemented features
+**Version**: 1.309
+**Service Worker**: v82
+**Last Updated**: October 7, 2025
+**Target Audience**: Developers, Contributors, Technical Partners
 
 ---
 
-## Table of Contents
+## 📖 Table of Contents
 
-1. [Executive Summary](#executive-summary)
-2. [Architecture Overview](#architecture-overview)
-3. [Core Features](#core-features)
-4. [Technical Implementation](#technical-implementation)
-5. [API Reference](#api-reference)
-6. [Development Setup](#development-setup)
-7. [Deployment Guide](#deployment-guide)
-8. [Troubleshooting](#troubleshooting)
-
----
-
-## Executive Summary
-
-miniCycle is a **progressive web application** that revolutionizes task management through the concept of "cycling" - automatic task reset functionality that promotes habit formation and routine establishment. Built with pure vanilla JavaScript, it prioritizes privacy, performance, and accessibility.
-
-### Key Differentiators
-
-- **🔄 Cycling Methodology**: Tasks reset automatically to encourage routine building
-- **🔒 Privacy-First**: 100% client-side with zero data transmission
-- **📱 Progressive Web App**: Full offline functionality with service worker
-- **🎯 Dual-Mode Architecture**: Full and lite versions for maximum compatibility
-- **🧩 Modular Design**: Clean separation of concerns with ES6 modules
-
-### Current Status
-
-- **Production Ready**: Deployed and actively maintained
-- **Schema Version**: 2.5 with automatic migration
-- **Browser Support**: Modern browsers + ES5 fallback
-- **Performance**: ~13K lines, modular loading, optimized caching
+1. [Quick Start for Developers](#quick-start-for-developers)
+2. [What Makes miniCycle Different](#what-makes-minicycle-different)
+3. [Architecture at a Glance](#architecture-at-a-glance)
+4. [Core Concepts with Real Examples](#core-concepts-with-real-examples)
+5. [Module System Deep Dive](#module-system-deep-dive)
+6. [Data Schema Guide](#data-schema-guide)
+7. [API Reference](#api-reference)
+8. [Development Workflow](#development-workflow)
+9. [Common Tasks & How-Tos](#common-tasks--how-tos)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
-## Architecture Overview
+## 🚀 Quick Start for Developers
+
+### Get Running in 2 Minutes
+
+```bash
+# 1. Navigate to project
+cd miniCycle/web
+
+# 2. Start local server (choose one)
+python3 -m http.server 8080        # Python (recommended)
+# OR
+npx serve .                         # Node.js
+
+# 3. Open browser
+# Full version: http://localhost:8080/miniCycle.html
+# Lite version: http://localhost:8080/miniCycle-lite.html
+```
+
+**That's it!** No build process, no npm install, no webpack config. Pure vanilla JavaScript.
+
+### Your First Code Change
+
+**Example: Add a custom notification**
+
+```javascript
+// Open miniCycle-scripts.js and add this function anywhere
+
+function showWelcomeMessage() {
+    showNotification('👋 Welcome to miniCycle!', 'success', 3000);
+}
+
+// Call it when app loads
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(showWelcomeMessage, 1000);
+});
+```
+
+Refresh the page and see your notification appear!
+
+---
+
+## 💡 What Makes miniCycle Different
+
+### The "Cycling" Philosophy
+
+**Traditional Task Apps:**
+- ❌ Tasks get deleted when completed
+- ❌ Lists disappear over time
+- ❌ Repetition feels like re-work
+
+**miniCycle's Approach:**
+- ✅ Tasks **reset** when completed, not deleted
+- ✅ Lists **persist** for recurring routines
+- ✅ Promotes **habit formation** through repetition
+
+### Real-World Example
+
+```javascript
+// Your morning routine cycle:
+const morningRoutine = {
+    name: "Morning Routine",
+    tasks: [
+        "☕ Make coffee",
+        "🧘 Meditate 10 mins",
+        "📧 Check emails",
+        "🏃 Quick workout"
+    ],
+    autoReset: true  // When all done, they all uncheck automatically!
+};
+
+// You complete all 4 tasks → miniCycle resets them for tomorrow
+// Your routine stays intact, just completion status resets
+```
+
+This is fundamentally different from traditional to-do apps where completed tasks vanish.
+
+---
+
+## 🏗️ Architecture at a Glance
+
+### Current Stats (October 2025)
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Main Script** | 11,058 lines | Down from 15,677 (29% reduction) |
+| **Modules** | 16 modules | Modular architecture |
+| **Schema Version** | 2.5 | Auto-migration from older versions |
+| **App Version** | 1.309 | Stable production release |
+| **SW Cache** | v82 | Service worker version |
+| **Browser Support** | Modern + ES5 | Dual-version system |
 
 ### Technology Stack
 
-```mermaid
-graph TB
-    A[miniCycle Application] --> B[Frontend Layer]
-    A --> C[Data Layer]
-    A --> D[Service Layer]
-    
-    B --> B1[HTML5 + Semantic Structure]
-    B --> B2[CSS3 + Custom Properties]
-    B --> B3[Vanilla JavaScript ES6+]
-    B --> B4[Progressive Web App APIs]
-    
-    C --> C1[localStorage Primary Storage]
-    C --> C2[JSON Schema v2.5]
-    C --> C3[Data Migration System]
-    C --> C4[Export/Import .mcyc]
-    
-    D --> D1[Service Worker v79]
-    D --> D2[Cache Management]
-    D --> D3[Offline Synchronization]
-    D --> D4[Background Processing]
+```
+Frontend:
+├─ Pure Vanilla JavaScript (ES6+)
+├─ HTML5 Semantic Markup
+├─ CSS3 with Custom Properties
+└─ No frameworks or dependencies
+
+Data:
+├─ localStorage (primary storage)
+├─ JSON Schema 2.5
+├─ Export/Import (.mcyc format)
+└─ Automatic migration system
+
+PWA:
+├─ Service Worker v82
+├─ Cache-first strategy
+├─ Offline functionality
+└─ Install prompts
 ```
 
-### Project Structure
+### Project Structure (Simplified)
 
 ```
-miniCycle/
-├── 📄 Core Application
-│   ├── miniCycle.html              # Main app entry point
-│   ├── miniCycle-scripts.js        # Core application logic (13K+ lines)
-│   ├── miniCycle-styles.css        # Main stylesheet
-│   └── service-worker.js           # PWA service worker
+web/
+├── miniCycle.html                   # Main entry point
+├── miniCycle-scripts.js             # Core app (11,058 lines)
+├── miniCycle-styles.css             # Styles
+├── service-worker.js                # PWA service worker (v82)
 │
-├── 🧩 Modular System
-│   ├── utilities/
-│   │   ├── notifications.js        # Advanced notification system
-│   │   ├── statsPanel.js          # Statistics & swipe navigation
-│   │   ├── state.js               # State management with undo/redo
-│   │   ├── cycleLoader.js         # Data loading & migration
-│   │   ├── deviceDetection.js    # Platform-specific features
-│   │   ├── themeManager.js       # Theme system & unlocks
-│   │   ├── globalUtils.js        # Shared utilities
-│   │   └── testing-modal.js      # Development & debugging tools
-│   │
-├── 📱 Compatibility Layer
-│   ├── miniCycle-lite.html        # ES5 compatible version
-│   ├── miniCycle-lite-scripts.js  # Legacy browser support
-│   └── miniCycle-lite-styles.css  # Optimized styles
+├── utilities/                        # 16 modular components
+│   ├── state.js                     # ✅ Centralized state (379 lines)
+│   ├── notifications.js             # ✅ Notifications (946 lines)
+│   ├── statsPanel.js                # ✅ Stats panel (1,089 lines)
+│   ├── recurringCore.js             # ✅ Recurring logic (980 lines)
+│   ├── recurringPanel.js            # ✅ Recurring UI (2,460 lines)
+│   ├── recurringIntegration.js      # ✅ Recurring coordination (391 lines)
+│   ├── cycleLoader.js               # ✅ Data loading (200 lines)
+│   ├── globalUtils.js               # ✅ Utilities (442 lines)
+│   ├── deviceDetection.js           # ✅ Device detection (293 lines)
+│   ├── consoleCapture.js            # ✅ Debug logging (505 lines)
+│   ├── testing-modal.js             # ✅ Testing UI (2,669 lines)
+│   └── ... (5 more modules)
 │
-├── 🎨 Assets & Resources
-│   ├── assets/
-│   │   ├── images/logo/           # Branding assets
-│   │   ├── images/screenshots/    # PWA store assets
-│   │   └── videos/samples/        # Demo content
-│   │
-├── 📚 Documentation & Support
-│   ├── docs/                      # Developer documentation
-│   ├── user-manual.html          # End-user guide
-│   ├── product.html              # Marketing landing page
-│   ├── privacy.html              # Privacy policy
-│   └── terms.html                # Terms of service
-│
-├── 🔧 Development Tools
-│   ├── backup/                   # Automated version backups
-│   ├── update-version.sh         # Version management script
-│   └── netlify.toml              # Deployment configuration
-│
-└── 📊 Data & Configuration
-    ├── manifest.json             # PWA manifest (full version)
-    ├── manifest-lite.json        # PWA manifest (lite version)
-    ├── data/*.mcyc              # Sample cycle files
-    └── robots.txt               # SEO configuration
+└── docs/                             # Documentation
+    ├── DEVELOPER_DOCUMENTATION.md    # This file!
+    ├── CLAUDE.md                     # Architecture for AI
+    ├── minicycle_modularization_guide_v3.md
+    └── FINAL-MODULE-STRUCTURE.md
 ```
 
 ---
 
-## Core Features
+## 🎯 Core Concepts with Real Examples
 
-### 🔄 Task Cycling System
+### 1. Task Cycling System
 
-**Core Concept**: Unlike traditional task managers, miniCycle automatically resets completed task lists to promote habit formation.
+**The Heart of miniCycle**
 
 ```javascript
-// Example: Auto-reset when all tasks completed
+// From miniCycle-scripts.js (real code)
+
+// When user checks off the last task:
 function checkForAutoReset() {
-    const allTasks = getCurrentCycleTasks();
-    const completedTasks = allTasks.filter(task => task.completed);
-    
-    if (allTasks.length > 0 && completedTasks.length === allTasks.length) {
-        if (isAutoResetEnabled()) {
-            resetCycle();
-            incrementCycleCount();
-            showNotification('🎉 Cycle completed! Starting fresh.', 'success');
-        }
+    const currentState = window.AppState?.get();
+    const activeCycleId = currentState.appState?.activeCycleId;
+    const currentCycle = currentState.data?.cycles?.[activeCycleId];
+
+    if (!currentCycle) return;
+
+    const tasks = currentCycle.tasks || [];
+    const completedCount = tasks.filter(t => t.completed).length;
+
+    // All tasks completed AND auto-reset is enabled?
+    if (tasks.length > 0 && completedCount === tasks.length && currentCycle.autoReset) {
+        // 🎉 Reset all tasks!
+        tasks.forEach(task => task.completed = false);
+
+        // Increment cycle count (for stats/achievements)
+        currentCycle.cycleCount = (currentCycle.cycleCount || 0) + 1;
+
+        // Save and notify
+        window.AppState.update(state => {
+            state.data.cycles[activeCycleId] = currentCycle;
+        }, true);
+
+        showNotification('🎉 Cycle completed! Starting fresh.', 'success', 3000);
+
+        // Update UI
+        refreshUIFromState();
     }
 }
 ```
 
-### 📊 Progressive Statistics
+**What this means for users:**
+- Complete all tasks → Everything unchecks automatically
+- Cycle counter increases (unlocks achievements!)
+- Perfect for daily routines, weekly checklists, recurring workflows
 
-- **Real-time Progress Tracking**: Live completion rates and cycle counts
-- **Milestone Badges**: Unlockable achievements at 5, 25, 50, 75, 100 cycles
-- **Theme Rewards**: New visual themes unlocked through usage
-- **Swipe Navigation**: Touch-optimized stats panel with gesture support
+### 2. Centralized State Management (AppState)
 
-### 🔁 Advanced Recurring Tasks
+**The Brain of the App**
 
-**Supported Frequencies:**
-- Hourly (with specific minute selection)
-- Daily (with specific time selection)
-- Weekly (with day selection)
-- Biweekly (every two weeks)
-- Monthly (with date selection)
-- Yearly (with month/date selection)
-
-**Advanced Options:**
-- Specific date selection
-- Time-based scheduling
-- Indefinite or limited recurrence
-- Pattern-based repetition
-
-### 🧩 Modular Architecture
-
-**ES6 Module System:**
 ```javascript
-// Example module import
-import { MiniCycleNotifications } from './utilities/notifications.js';
-import { StatsPanelManager } from './utilities/statsPanel.js';
+// From utilities/state.js (real code)
 
-// Initialize with dependency injection
-const notifications = new MiniCycleNotifications();
-const statsPanel = new StatsPanelManager({
-    showNotification: notifications.show.bind(notifications)
-});
-```
-
-### 🎨 Dynamic Theming
-
-**Unlockable Theme System:**
-- Default themes available immediately
-- **Dark Ocean**: Unlocked at 5 cycles
-- **Golden Glow**: Unlocked at 50 cycles
-- Custom color schemes with CSS custom properties
-
-### 📱 Progressive Web App
-
-**PWA Features:**
-- **Offline Functionality**: Full app works without internet
-- **Installation**: Add to home screen on mobile/desktop
-- **Background Sync**: Service worker handles updates
-- **App Shortcuts**: Quick actions from launcher
-- **Responsive Design**: Optimized for all screen sizes
-
----
-
-## Technical Implementation
-
-### Data Schema (Version 2.5)
-
-```typescript
-interface MiniCycleData {
-    schemaVersion: 2.5;
-    metadata: {
-        lastModified: number;
-        appVersion: string;
-        migrationHistory: string[];
-    };
-    cycles: {
-        [cycleId: string]: {
-            name: string;
-            tasks: Task[];
-            cycleCount: number;
-            autoReset: boolean;
-            deleteCheckedTasks: boolean;
-            settings: CycleSettings;
-        };
-    };
-    appState: {
-        activeCycleId: string;
-        currentMode: 'auto-cycle' | 'manual-cycle' | 'todo-mode';
-    };
-    settings: {
-        globalSettings: GlobalSettings;
-        unlockedThemes: string[];
-        unlockedFeatures: string[];
-        dismissedEducationalTips: Record<string, boolean>;
-        notificationPosition: { x: number; y: number };
-        defaultRecurringSettings: RecurringSettings;
-    };
-}
-
-interface Task {
-    id: string;
-    text: string;
-    completed: boolean;
-    highPriority: boolean;
-    dueDate: string | null;
-    remindersEnabled: boolean;
-    recurring: boolean;
-    recurringSettings: RecurringSettings;
-    schemaVersion: 2.5;
-    createdAt: string;
-    completedAt: string | null;
-}
-```
-
-### State Management System
-
-**Centralized State with Undo/Redo:**
-```javascript
-// utilities/state.js
 class MiniCycleState {
     constructor() {
-        this.data = null;
-        this.undoStack = [];
-        this.redoStack = [];
-        this.listeners = new Map();
+        this.data = null;              // Current app data
+        this.isDirty = false;          // Has data changed?
+        this.saveTimeout = null;       // Debounced save timer
+        this.listeners = new Map();    // Event subscribers
+        this.SAVE_DELAY = 600;         // Save after 600ms of inactivity
+        this.isInitialized = false;
     }
-    
-    // Capture state snapshots for undo functionality
-    captureSnapshot(description) {
-        const snapshot = {
-            data: structuredClone(this.data),
-            timestamp: Date.now(),
-            description
-        };
-        this.undoStack.push(snapshot);
-        this.redoStack = []; // Clear redo stack
+
+    // Get current state
+    get() {
+        return this.data;
     }
-    
+
+    // Update state with a function
+    async update(updateFn, immediate = false) {
+        if (!this.data) {
+            console.warn('⚠️ State not ready');
+            return;
+        }
+
+        const oldData = structuredClone(this.data);
+
+        try {
+            // Call the update function with current state
+            updateFn(this.data);
+
+            this.isDirty = true;
+            this.data.metadata.lastModified = Date.now();
+
+            // Save with debounce (or immediately if requested)
+            this.scheduleSave(immediate);
+            this.notifyListeners(oldData, this.data);
+
+        } catch (error) {
+            console.error('❌ State update failed:', error);
+            this.data = oldData;  // Rollback on error
+            throw error;
+        }
+    }
+
+    // Debounced save to localStorage
+    scheduleSave(immediate = false) {
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+        }
+
+        if (immediate) {
+            this.save();  // Save right now
+        } else {
+            // Wait 600ms of inactivity before saving
+            this.saveTimeout = setTimeout(() => this.save(), this.SAVE_DELAY);
+        }
+    }
+
+    save() {
+        if (!this.isDirty) return;
+
+        try {
+            localStorage.setItem("miniCycleData", JSON.stringify(this.data));
+            this.isDirty = false;
+            console.log('✅ State saved to localStorage');
+        } catch (error) {
+            console.error('❌ Save failed:', error);
+        }
+    }
+}
+
+// Global instance
+window.AppState = new MiniCycleState();
+```
+
+**How to use AppState in your code:**
+
+```javascript
+// Reading state
+const currentState = window.AppState.get();
+const activeCycleId = currentState.appState.activeCycleId;
+const tasks = currentState.data.cycles[activeCycleId].tasks;
+
+// Updating state
+window.AppState.update((state) => {
+    // Modify state directly
+    state.data.cycles[activeCycleId].tasks.push(newTask);
+}, true);  // true = save immediately
+
+// Checking if ready
+if (window.AppState?.isReady()) {
+    // Safe to use AppState
+}
+```
+
+### 3. Recurring Tasks System
+
+**Automatic Task Generation**
+
+```javascript
+// From utilities/recurringCore.js (real code)
+
+// Check if a recurring task is due right now
+export function isRecurringTaskDue(template, now = new Date()) {
+    const settings = template.recurringSettings;
+    if (!settings || !settings.frequency) return false;
+
+    switch (settings.frequency) {
+        case "daily":
+            // If specific time is set, check if it matches
+            if (settings.daily?.time) {
+                const [targetHour, targetMin] = settings.daily.time.split(':').map(Number);
+                const nowHour = now.getHours();
+                const nowMin = now.getMinutes();
+                return nowHour === targetHour && nowMin === targetMin;
+            }
+            return true;  // No time constraint = due any time today
+
+        case "weekly":
+            const weekday = now.toLocaleString('en-US', { weekday: 'long' });
+            return settings.weekly?.days?.includes(weekday);
+
+        case "biweekly":
+            // Check if it's the right week (alternating)
+            if (!settings.biweekly?.days?.includes(weekday)) return false;
+            const referenceDate = new Date(settings.biweekly.referenceDate);
+            const daysSince = Math.floor((now - referenceDate) / (1000 * 60 * 60 * 24));
+            const weeksSince = Math.floor(daysSince / 7);
+            return weeksSince % 2 === 0;  // Every other week
+
+        case "monthly":
+            return now.getDate() === settings.monthly?.date;
+
+        case "yearly":
+            return now.getMonth() === settings.yearly?.month &&
+                   now.getDate() === settings.yearly?.date;
+
+        default:
+            return false;
+    }
+}
+
+// Generate a live task from a recurring template
+function generateRecurringTask(template) {
+    return {
+        id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        text: template.taskText,
+        completed: false,
+        highPriority: template.highPriority || false,
+        dueDate: template.dueDate || null,
+        remindersEnabled: template.remindersEnabled || false,
+        recurring: true,
+        recurringSettings: structuredClone(template.recurringSettings),
+        schemaVersion: 2.5,
+        createdAt: new Date().toISOString(),
+        completedAt: null
+    };
+}
+```
+
+**Real-world recurring task flow:**
+
+```javascript
+// User creates "Take medication" as daily at 9:00 AM
+
+// 1. Template is stored (not a live task yet)
+const template = {
+    taskText: "💊 Take medication",
+    recurringSettings: {
+        frequency: "daily",
+        daily: { time: "09:00" },
+        indefinitely: true
+    }
+};
+
+// 2. Every 30 seconds, the watcher checks:
+setInterval(() => {
+    const now = new Date();
+    if (isRecurringTaskDue(template, now)) {
+        // Generate live task and add to cycle
+        const liveTask = generateRecurringTask(template);
+        addTaskToCurrentCycle(liveTask);
+        showNotification('💊 Time to take medication!', 'info');
+    }
+}, 30000);
+
+// 3. When cycle resets, recurring tasks are deleted
+//    But templates remain, so they'll regenerate next time they're due
+```
+
+### 4. Undo/Redo System
+
+**Time Travel for Your Data**
+
+```javascript
+// From miniCycle-scripts.js (real code)
+
+// Capture a snapshot before making changes
+function captureStateSnapshot(state) {
+    if (!window.AppState?.isReady()) return;
+
+    const snapshot = {
+        data: structuredClone(state),
+        timestamp: Date.now(),
+        signature: buildSnapshotSignature(state)
+    };
+
+    window.AppGlobalState.undoStack.push(snapshot);
+
+    // Limit undo stack size
+    if (window.AppGlobalState.undoStack.length > 50) {
+        window.AppGlobalState.undoStack.shift();
+    }
+
+    // Clear redo stack (can't redo after new action)
+    window.AppGlobalState.redoStack = [];
+
+    updateUndoRedoButtons();
+}
+
+// Undo last action
+function performUndo() {
+    if (window.AppGlobalState.undoStack.length === 0) {
+        showNotification('Nothing to undo', 'info', 2000);
+        return;
+    }
+
+    // Save current state to redo stack
+    const currentState = window.AppState.get();
+    window.AppGlobalState.redoStack.push({
+        data: structuredClone(currentState),
+        timestamp: Date.now()
+    });
+
     // Restore previous state
-    undo() {
-        if (this.undoStack.length === 0) return false;
-        
-        const currentSnapshot = {
-            data: structuredClone(this.data),
-            timestamp: Date.now(),
-            description: 'Before undo'
+    const previousSnapshot = window.AppGlobalState.undoStack.pop();
+    window.AppState.update(() => {
+        Object.assign(window.AppState.data, previousSnapshot.data);
+    }, true);
+
+    refreshUIFromState();
+    updateUndoRedoButtons();
+    showNotification('↶ Undone', 'info', 1500);
+}
+
+// Redo last undone action
+function performRedo() {
+    if (window.AppGlobalState.redoStack.length === 0) {
+        showNotification('Nothing to redo', 'info', 2000);
+        return;
+    }
+
+    // Similar logic in reverse
+    const nextSnapshot = window.AppGlobalState.redoStack.pop();
+    captureStateSnapshot(window.AppState.get());  // Save for undo
+
+    window.AppState.update(() => {
+        Object.assign(window.AppState.data, nextSnapshot.data);
+    }, true);
+
+    refreshUIFromState();
+    showNotification('↷ Redone', 'info', 1500);
+}
+```
+
+**What users can undo/redo:**
+- Adding/deleting tasks
+- Checking/unchecking tasks
+- Changing task order
+- Modifying recurring settings
+- Theme changes
+- Cycle operations
+
+---
+
+## 🧩 Module System Deep Dive
+
+### The 4 Module Patterns
+
+Your codebase uses 4 distinct patterns based on module purpose:
+
+#### ⚡ **Static Utilities** (Pure Functions)
+
+**Example: globalUtils.js**
+
+```javascript
+// utilities/globalUtils.js (actual code)
+
+export class GlobalUtils {
+    /**
+     * Safely add event listener (removes existing first)
+     */
+    static safeAddEventListenerById(elementId, event, handler) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            console.warn(`⚠️ Element #${elementId} not found`);
+            return;
+        }
+        element.removeEventListener(event, handler);
+        element.addEventListener(event, handler);
+    }
+
+    /**
+     * Generate unique ID with prefix
+     */
+    static generateId(prefix = 'id') {
+        return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    /**
+     * Format date for display
+     */
+    static formatDate(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    }
+}
+
+// Make available globally
+window.safeAddEventListenerById = GlobalUtils.safeAddEventListenerById;
+window.generateId = GlobalUtils.generateId;
+window.formatDate = GlobalUtils.formatDate;
+```
+
+**Use case:** Pure utility functions with no dependencies.
+
+#### 🎯 **Simple Instance** (Self-Contained)
+
+**Example: notifications.js**
+
+```javascript
+// utilities/notifications.js (actual code excerpt)
+
+export class MiniCycleNotifications {
+    constructor() {
+        this.activeNotifications = new Set();
+        this.isDragging = false;
+        this.container = this.findOrCreateContainer();
+    }
+
+    show(message, type = "info", duration = 3000) {
+        try {
+            const notification = this.createNotification(message, type);
+            this.container.appendChild(notification);
+            this.activeNotifications.add(notification);
+
+            if (duration) {
+                setTimeout(() => this.remove(notification), duration);
+            }
+
+            return notification;
+        } catch (error) {
+            // Graceful fallback
+            console.log(`[Notification] ${message}`);
+            console.warn('Notification system error:', error);
+        }
+    }
+
+    findOrCreateContainer() {
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.className = 'notification-container';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+}
+
+// Create global instance
+const notifications = new MiniCycleNotifications();
+window.notifications = notifications;
+window.showNotification = (msg, type, dur) => notifications.show(msg, type, dur);
+```
+
+**Use case:** Services that should always work, even if DOM is missing.
+
+#### 🛡️ **Resilient Constructor** (Graceful Degradation)
+
+**Example: statsPanel.js**
+
+```javascript
+// utilities/statsPanel.js (actual code excerpt)
+
+export class StatsPanelManager {
+    constructor(dependencies = {}) {
+        // Store dependencies with fallbacks
+        this.deps = {
+            showNotification: dependencies.showNotification || this.fallbackNotification,
+            loadData: dependencies.loadData || this.fallbackLoadData,
+            updateThemeColor: dependencies.updateThemeColor || (() => {})
         };
-        this.redoStack.push(currentSnapshot);
-        
-        const previousSnapshot = this.undoStack.pop();
-        this.data = previousSnapshot.data;
-        this.save();
-        this.notifyListeners('undo', previousSnapshot);
-        
-        return true;
+
+        this.state = {
+            currentView: 'tasks',
+            lastUpdate: null
+        };
+
+        this.init();
+    }
+
+    updateStatsPanel() {
+        try {
+            const data = this.deps.loadData();
+            if (!data) {
+                this.showPlaceholder();
+                return;
+            }
+
+            // Calculate stats
+            const stats = this.calculateStats(data);
+
+            // Update DOM
+            this.renderStats(stats);
+
+            this.deps.showNotification('Stats updated', 'success', 2000);
+        } catch (error) {
+            console.warn('Stats update failed:', error);
+            this.showError();
+        }
+    }
+
+    // Fallback methods
+    fallbackNotification(msg) {
+        console.log(`[Stats] ${msg}`);
+    }
+
+    fallbackLoadData() {
+        console.warn('⚠️ Data loading not available');
+        return null;
+    }
+}
+
+// Main script initializes with dependencies
+const statsPanel = new StatsPanelManager({
+    showNotification: window.showNotification,
+    loadData: window.loadMiniCycleData,
+    updateThemeColor: window.updateThemeColor
+});
+
+window.statsPanel = statsPanel;
+```
+
+**Use case:** Complex UI that needs external functions but must work even when they're missing.
+
+#### 🔧 **Strict Injection** (Fail Fast)
+
+**Example: cycleLoader.js**
+
+```javascript
+// utilities/cycleLoader.js (actual code)
+
+const Deps = {
+    loadMiniCycleData: null,
+    createInitialSchema25Data: null,
+    addTask: null,
+    updateThemeColor: null,
+    startReminders: null,
+    updateProgressBar: null,
+    checkCompleteAllButton: null,
+    updateMainMenuHeader: null,
+    updateStatsPanel: null
+};
+
+function setCycleLoaderDependencies(overrides = {}) {
+    Object.assign(Deps, overrides);
+}
+
+function assertInjected(name, fn) {
+    if (typeof fn !== 'function') {
+        throw new Error(`cycleLoader: missing dependency ${name}`);
+    }
+}
+
+// Main coordination function
+function loadMiniCycle() {
+    console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
+
+    // MUST have these dependencies
+    assertInjected('loadMiniCycleData', Deps.loadMiniCycleData);
+    assertInjected('addTask', Deps.addTask);
+
+    const schemaData = Deps.loadMiniCycleData();
+    if (!schemaData) {
+        console.error('❌ No Schema 2.5 data found');
+        Deps.createInitialSchema25Data?.();
+        return;
+    }
+
+    // Load cycle data...
+    const cycles = schemaData.cycles || {};
+    const activeCycleId = schemaData.activeCycle || schemaData.activeCycleId;
+
+    if (!activeCycleId || !cycles[activeCycleId]) {
+        console.error('❌ No valid active cycle found');
+        return;
+    }
+
+    const currentCycle = cycles[activeCycleId];
+
+    // Render tasks to DOM
+    currentCycle.tasks.forEach(task => {
+        Deps.addTask(
+            task.text,
+            task.completed,
+            false,  // don't save during load
+            task.dueDate,
+            task.highPriority,
+            true,   // isLoading = true
+            task.remindersEnabled,
+            task.recurring,
+            task.id,
+            task.recurringSettings
+        );
+    });
+
+    // Update dependent UI
+    Deps.updateProgressBar?.();
+    Deps.updateStatsPanel?.();
+
+    console.log('✅ Cycle loading completed');
+}
+
+export { loadMiniCycle, setCycleLoaderDependencies };
+```
+
+**Main script configures dependencies:**
+
+```javascript
+// miniCycle-scripts.js
+
+const cycleLoader = await import('./utilities/cycleLoader.js');
+
+cycleLoader.setCycleLoaderDependencies({
+    loadMiniCycleData: window.loadMiniCycleData,
+    createInitialSchema25Data: createInitialSchema25Data,
+    addTask: addTask,
+    updateThemeColor: updateThemeColor,
+    startReminders: startReminders,
+    updateProgressBar: updateProgressBar,
+    checkCompleteAllButton: checkCompleteAllButton,
+    updateMainMenuHeader: updateMainMenuHeader,
+    updateStatsPanel: updateStatsPanel
+});
+
+// Now safe to use
+cycleLoader.loadMiniCycle();
+```
+
+**Use case:** Critical business logic that CANNOT work without proper dependencies. Fails fast with clear errors.
+
+---
+
+## 📊 Data Schema Guide
+
+### Schema 2.5 Structure (Current)
+
+```typescript
+{
+    schemaVersion: "2.5",
+
+    metadata: {
+        lastModified: 1696723445123,        // Unix timestamp
+        appVersion: "1.309",
+        migrationHistory: ["2.0 → 2.5"]
+    },
+
+    data: {
+        cycles: {
+            "cycle-abc123": {
+                name: "Morning Routine",
+                cycleCount: 42,              // Times completed
+                autoReset: true,             // Auto-cycle mode
+                deleteCheckedTasks: false,
+                tasks: [
+                    {
+                        id: "task-xyz789",
+                        text: "☕ Make coffee",
+                        completed: false,
+                        highPriority: false,
+                        dueDate: null,
+                        remindersEnabled: false,
+                        recurring: false,
+                        recurringSettings: {},
+                        schemaVersion: 2.5,
+                        createdAt: "2025-10-07T09:00:00.000Z",
+                        completedAt: null
+                    }
+                ],
+                recurringTemplates: {
+                    "template-def456": {
+                        taskText: "💊 Take medication",
+                        highPriority: true,
+                        dueDate: null,
+                        remindersEnabled: true,
+                        recurringSettings: {
+                            frequency: "daily",
+                            daily: { time: "09:00" },
+                            indefinitely: true
+                        },
+                        createdAt: "2025-10-01T12:00:00.000Z"
+                    }
+                }
+            }
+        }
+    },
+
+    appState: {
+        activeCycleId: "cycle-abc123",
+        currentMode: "auto-cycle",           // or "manual-cycle" or "todo-mode"
+        ui: {
+            moveArrowsVisible: true,
+            statsView: "tasks"
+        }
+    },
+
+    settings: {
+        darkMode: true,
+        theme: "dark-ocean",
+        unlockedThemes: ["dark-ocean"],
+        dismissedEducationalTips: {
+            "recurring-cycle-explanation": true
+        },
+        notificationPosition: { x: 100, y: 20 },
+        defaultRecurringSettings: {
+            frequency: "daily",
+            indefinitely: true
+        }
+    },
+
+    reminders: {
+        enabled: true,
+        frequency: 30,
+        customMessages: []
+    },
+
+    userProgress: {
+        cyclesCompleted: 42,
+        totalTasksCompleted: 156,
+        achievementsUnlocked: ["cycle-5", "cycle-25"],
+        streaks: {
+            current: 7,
+            longest: 14
+        }
     }
 }
 ```
 
-### Service Worker Implementation
+### How Data Flows
 
-**Cache-First Strategy with Update Management:**
-```javascript
-// service-worker.js
-const CACHE_VERSION = 'v79';
-const APP_VERSION = '1.306';
-
-// Install: Cache core resources
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(STATIC_CACHE)
-            .then(cache => cache.addAll([
-                './',
-                './miniCycle.html',
-                './miniCycle-scripts.js',
-                './miniCycle-styles.css',
-                './utilities/notifications.js',
-                './utilities/statsPanel.js'
-            ]))
-    );
-});
-
-// Fetch: Serve from cache, fallback to network
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => response || fetch(event.request))
-    );
-});
+```
+User Action
+    ↓
+DOM Event Handler
+    ↓
+AppState.update((state) => {
+    // Modify state
+})
+    ↓
+Debounced Save (600ms)
+    ↓
+localStorage.setItem("miniCycleData", JSON.stringify(state))
+    ↓
+State Listeners Notified
+    ↓
+UI Components Refresh
 ```
 
-### Notification System
+### Real Example: Adding a Task
 
-**Advanced Notification Management:**
 ```javascript
-// utilities/notifications.js
-export class MiniCycleNotifications {
-    constructor() {
-        this.educationalTips = new EducationalTipManager();
-        this.isDraggingNotification = false;
-    }
-    
-    show(message, type = 'default', duration = null) {
-        // Create notification with auto-remove and hover pause
-        const notification = this.createNotificationElement(message, type);
-        this.setupDragSupport(notification);
-        
-        if (duration) {
-            this.setupAutoRemove(notification, duration);
-        }
-        
-        return notification;
-    }
-    
-    // Draggable notifications with position persistence
-    setupDragSupport(container) {
-        // Touch and mouse drag support
-        // Saves position to localStorage
-    }
+// User types "Buy groceries" and clicks Add
+
+function addTask(taskText) {
+    // 1. Generate unique ID
+    const taskId = generateId('task');
+
+    // 2. Create task object
+    const newTask = {
+        id: taskId,
+        text: taskText,
+        completed: false,
+        highPriority: false,
+        dueDate: null,
+        remindersEnabled: false,
+        recurring: false,
+        recurringSettings: {},
+        schemaVersion: 2.5,
+        createdAt: new Date().toISOString(),
+        completedAt: null
+    };
+
+    // 3. Update AppState
+    window.AppState.update((state) => {
+        const activeCycleId = state.appState.activeCycleId;
+        state.data.cycles[activeCycleId].tasks.push(newTask);
+    }, true);  // true = save immediately
+
+    // 4. Update DOM
+    const taskElement = createTaskElement(newTask);
+    document.getElementById('taskList').appendChild(taskElement);
+
+    // 5. Notify user
+    showNotification('Task added!', 'success', 2000);
 }
 ```
 
 ---
 
-## API Reference
+## 🔌 API Reference
 
-### Core Functions
+### Global Functions (Available Everywhere)
 
 #### Task Management
 
 ```javascript
-// Add new task
-addTask(taskText, options = {})
-→ Returns: Task object
+// Add task
+addTask(text, completed, shouldSave, dueDate, highPriority, isLoading, remindersEnabled, recurring, taskId, recurringSettings)
+→ Creates and adds task to current cycle
 
-// Complete task
-completeTask(taskId)
-→ Returns: boolean
+// Example:
+addTask("Buy milk", false, true, null, false, false, false, false);
+
+// Toggle task completion
+function toggleTaskCompletion(taskId)
+→ Marks task as done/undone, checks for auto-reset
 
 // Delete task
-deleteTask(taskId)
-→ Returns: boolean
+function deleteTask(taskId)
+→ Removes task from cycle
 
-// Reorder tasks
-reorderTasks(sourceIndex, targetIndex)
-→ Returns: boolean
+// Edit task text
+function editTaskText(taskId, newText)
+→ Updates task text and saves
 ```
 
 #### Cycle Management
 
 ```javascript
 // Create new cycle
-createNewCycle(cycleName)
-→ Returns: Cycle object
+function createNewCycle(cycleName)
+→ Creates empty cycle and switches to it
 
-// Switch active cycle
-switchToCycle(cycleId)
-→ Returns: boolean
+// Switch cycles
+function switchActiveCycle(cycleId)
+→ Changes active cycle, updates UI
+
+// Get current cycle
+function getCurrentCycle()
+→ Returns: { name, tasks, cycleCount, autoReset, ... }
 
 // Export cycle
-exportCycle(cycleId, format = 'mcyc')
-→ Returns: Blob
+function exportCurrentCycle()
+→ Downloads .mcyc file
 
 // Import cycle
-importCycle(fileData)
-→ Returns: Promise<Cycle>
+function importCycleFile(file)
+→ Loads .mcyc file and adds to cycles
 ```
 
-#### Recurring Tasks
+#### State Management
 
 ```javascript
-// Apply recurring settings
-applyRecurringToTask(taskId, recurringSettings)
-→ Returns: boolean
+// Get current state
+const state = window.AppState.get();
 
-// Check for due recurring tasks
-checkRecurringTasks()
-→ Returns: Task[]
+// Update state
+window.AppState.update((state) => {
+    // Modify state directly
+    state.appState.activeCycleId = newId;
+}, immediate);  // immediate = true/false
 
-// Generate next occurrence
-generateNextOccurrence(task)
-→ Returns: Date
+// Check if ready
+if (window.AppState?.isReady()) {
+    // Safe to use
+}
+```
+
+#### UI Functions
+
+```javascript
+// Show notification
+showNotification(message, type, duration)
+→ Types: 'success', 'error', 'info', 'warning'
+
+// Example:
+showNotification('Task completed!', 'success', 3000);
+
+// Refresh UI from state
+refreshUIFromState()
+→ Rebuilds entire UI from AppState
+
+// Update progress bar
+updateProgressBar()
+→ Recalculates and updates completion percentage
+
+// Update stats panel
+updateStatsPanel()
+→ Refreshes statistics and achievements
+```
+
+#### Undo/Redo
+
+```javascript
+// Undo last action
+performUndo()
+→ Returns to previous state
+
+// Redo undone action
+performRedo()
+→ Restores undone state
+
+// Check if can undo/redo
+canUndo()  → boolean
+canRedo()  → boolean
 ```
 
 ### Module APIs
@@ -427,20 +1048,16 @@ generateNextOccurrence(task)
 ```javascript
 import { MiniCycleNotifications } from './utilities/notifications.js';
 
-const notifications = new MiniCycleNotifications();
+const notif = new MiniCycleNotifications();
 
 // Show notification
-notifications.show(message, type, duration);
+notif.show(message, type, duration);
 
 // Show with educational tip
-notifications.showWithTip(content, type, duration, tipId);
+notif.showWithTip(content, type, duration, tipId);
 
-// Show confirmation modal
-notifications.showConfirmationModal({
-    title: 'Confirm Action',
-    message: 'Are you sure?',
-    callback: (confirmed) => { /* handle result */ }
-});
+// Reset position
+notif.resetPosition();
 ```
 
 #### Stats Panel Module
@@ -448,122 +1065,155 @@ notifications.showConfirmationModal({
 ```javascript
 import { StatsPanelManager } from './utilities/statsPanel.js';
 
-const statsPanel = new StatsPanelManager({
-    showNotification: notifications.show,
-    loadMiniCycleData: window.loadMiniCycleData
+const stats = new StatsPanelManager({
+    showNotification,
+    loadData,
+    updateThemeColor
 });
 
-// Update statistics
-statsPanel.updateStatsPanel();
+// Update stats
+stats.updateStatsPanel();
 
-// Show/hide panels
-statsPanel.showStatsPanel();
-statsPanel.showTaskView();
+// Show/hide
+stats.showStatsPanel();
+stats.showTaskView();
+
+// Get stats
+stats.getStatistics();
 ```
 
-#### State Management Module
+#### Recurring Core Module
 
 ```javascript
-import { MiniCycleState } from './utilities/state.js';
+import * as recurringCore from './utilities/recurringCore.js';
 
-const state = new MiniCycleState();
-
-// Initialize with data
-await state.init();
-
-// Subscribe to changes
-state.subscribe('taskUpdate', (data) => {
-    console.log('Tasks updated:', data);
+// Set dependencies
+recurringCore.setRecurringCoreDependencies({
+    updateAppState,
+    showNotification,
+    refreshUI
 });
 
-// Undo/Redo operations
-state.undo();
-state.redo();
+// Check if task is due
+const isDue = recurringCore.isRecurringTaskDue(template, new Date());
+
+// Generate task from template
+const task = recurringCore.generateRecurringTask(template);
 ```
 
 ---
 
-## Development Setup
+## 🛠️ Development Workflow
 
-### Prerequisites
+### Making Changes
 
-- **Node.js**: For blog build system (optional)
-- **Modern Browser**: Chrome, Firefox, Safari, or Edge
-- **HTTP Server**: Python, Node.js, or any static server
+#### 1. **Edit JavaScript Files**
 
-### Quick Start
+```javascript
+// Example: Add a new feature to miniCycle-scripts.js
 
-1. **Clone/Download Project**
-   ```bash
-   # No build process required - it's vanilla JavaScript!
-   cd miniCycle/web
-   ```
+function myNewFeature() {
+    showNotification('New feature activated!', 'success');
 
-2. **Start Local Server**
-   ```bash
-   # Option 1: Python (recommended)
-   python3 -m http.server 8080
-   
-   # Option 2: Node.js
-   npx serve .
-   
-   # Option 3: Any static file server
-   ```
+    // Access current state
+    const state = window.AppState.get();
 
-3. **Access Application**
-   - **Full Version**: http://localhost:8080/miniCycle.html
-   - **Lite Version**: http://localhost:8080/miniCycle-lite.html
+    // Make changes
+    window.AppState.update((state) => {
+        state.settings.myNewSetting = true;
+    }, true);
+}
 
-### Development Workflow
-
-1. **Make Changes**: Edit HTML, CSS, or JavaScript files directly
-2. **Test Locally**: Refresh browser to see changes
-3. **Version Update**: Run `./update-version.sh` for releases
-4. **Validate**: Use built-in testing modal for diagnostics
-
-### Blog Development (Optional)
-
-```bash
-cd blog
-npm install
-npm run build  # Generates static blog files
+// Make it available globally
+window.myNewFeature = myNewFeature;
 ```
 
----
+Refresh browser → See changes immediately!
 
-## Deployment Guide
+#### 2. **Create a New Module**
 
-### Static Hosting (Recommended)
+```javascript
+// utilities/myModule.js
 
-**Compatible Platforms:**
-- Netlify ✅ (includes `netlify.toml` config)
-- Vercel ✅
-- GitHub Pages ✅
-- Any static hosting service ✅
+export class MyModule {
+    constructor() {
+        console.log('MyModule initialized');
+    }
 
-### Netlify Deployment
+    doSomething() {
+        showNotification('Module working!', 'success');
+    }
+}
 
-```toml
-# netlify.toml (included)
-[build]
-  publish = "."
-
-[[redirects]]
-  from = "/*"
-  to = "/miniCycle.html"
-  status = 200
-  conditions = {Role = ["admin"]}
-
-[build.environment]
-  NODE_VERSION = "18"
+// Create instance and expose globally
+const myModule = new MyModule();
+window.myModule = myModule;
 ```
 
-### Manual Deployment
+**Import in main script:**
 
-1. **Upload Files**: Copy entire project directory
-2. **Configure Server**: Ensure proper MIME types for `.mcyc` files
-3. **HTTPS Required**: PWA features require secure context
-4. **Cache Headers**: Configure for optimal performance
+```javascript
+// miniCycle-scripts.js
+document.addEventListener('DOMContentLoaded', async () => {
+    await import('./utilities/myModule.js');
+    console.log('✅ MyModule loaded');
+});
+```
+
+#### 3. **Update Styles**
+
+```css
+/* miniCycle-styles.css */
+
+.my-new-class {
+    background: var(--primary-color);
+    padding: 10px;
+    border-radius: 8px;
+}
+```
+
+Refresh → Styles applied!
+
+### Testing Your Changes
+
+#### Use Built-in Testing Modal
+
+```javascript
+// Open Settings → App Diagnostics & Testing
+
+// Or via console:
+window.openTestingModal();
+```
+
+Features:
+- ✅ Health checks
+- ✅ Data validation
+- ✅ Browser compatibility tests
+- ✅ Performance metrics
+- ✅ State inspection
+
+#### Console Debugging
+
+```javascript
+// Check current state
+console.log(window.AppState.get());
+
+// Check active cycle
+const state = window.AppState.get();
+console.log(state.data.cycles[state.appState.activeCycleId]);
+
+// Check all tasks
+const cycle = getCurrentCycle();
+console.log(cycle.tasks);
+
+// Test notification system
+showNotification('Test message', 'info', 3000);
+
+// Check recurring templates
+const state = window.AppState.get();
+const cycle = state.data.cycles[state.appState.activeCycleId];
+console.log(cycle.recurringTemplates);
+```
 
 ### Version Management
 
@@ -571,117 +1221,357 @@ npm run build  # Generates static blog files
 # Update version numbers across all files
 ./update-version.sh
 
-# Follow prompts for:
-# - App version (e.g., 1.307)
-# - Service Worker version (e.g., v80)
+# Prompts:
+# - New app version (e.g., 1.310)
+# - New service worker version (e.g., v83)
 
-# Creates automatic backups in backup/ directory
+# Automatically updates:
+# - miniCycle.html meta tags
+# - service-worker.js versions
+# - manifest.json
+# - Creates backup in backup/version_update_TIMESTAMP/
+```
+
+### Deploying Changes
+
+#### For Netlify:
+
+```bash
+# 1. Update version
+./update-version.sh
+
+# 2. Commit changes
+git add .
+git commit -m "feat: Add new feature"
+
+# 3. Push to main
+git push origin main
+
+# Netlify auto-deploys from main branch!
+```
+
+#### For other platforms:
+
+```bash
+# Just upload the /web directory
+# No build step needed!
 ```
 
 ---
 
-## Troubleshooting
+## 📚 Common Tasks & How-Tos
 
-### Common Issues
+### How to Add a New Task Type
 
-#### 1. **Stats Panel Not Updating**
-**Problem**: Stats show zeros when loading saved sessions  
-**Solution**: Fixed in v1.306 - stats now update immediately on data load  
-**Implementation**: Added data-ready event listeners to stats panel
-
-#### 2. **Service Worker Update Issues**
-**Problem**: App doesn't show update prompts  
-**Solution**: Check service worker registration and cache versions  
 ```javascript
-// Manual update check
-window.checkForUpdates();
+// 1. Add to task object structure
+const newTask = {
+    id: generateId('task'),
+    text: "My task",
+    completed: false,
+    highPriority: false,
+    dueDate: null,
+    remindersEnabled: false,
+    recurring: false,
+    recurringSettings: {},
 
-// Force service worker update
+    // Add your new property:
+    myCustomProperty: "custom value",
+
+    schemaVersion: 2.5,
+    createdAt: new Date().toISOString(),
+    completedAt: null
+};
+
+// 2. Update addTask function to accept it
+function addTask(text, completed, shouldSave, dueDate, highPriority,
+                 isLoading, remindersEnabled, recurring, taskId,
+                 recurringSettings, myCustomProperty) {
+
+    const task = {
+        // ... existing properties
+        myCustomProperty: myCustomProperty || null
+    };
+
+    // ... rest of function
+}
+
+// 3. Update UI to display it
+function createTaskElement(task) {
+    // ... existing code
+
+    if (task.myCustomProperty) {
+        const customEl = document.createElement('span');
+        customEl.className = 'custom-property';
+        customEl.textContent = task.myCustomProperty;
+        taskElement.appendChild(customEl);
+    }
+}
+
+// 4. Don't forget to increment schema version if this is a breaking change!
+```
+
+### How to Add a New Theme
+
+```javascript
+// 1. Add CSS variables
+:root[data-theme="my-new-theme"] {
+    --primary-color: #6366f1;
+    --secondary-color: #8b5cf6;
+    --background-color: #1e1b4b;
+    --text-color: #f8fafc;
+}
+
+// 2. Register theme
+const themes = {
+    default: { name: "Default", unlockAt: 0 },
+    "dark-ocean": { name: "Dark Ocean", unlockAt: 5 },
+    "golden-glow": { name: "Golden Glow", unlockAt: 50 },
+    "my-new-theme": { name: "My New Theme", unlockAt: 100 }  // ← Add here
+};
+
+// 3. Apply theme
+function applyTheme(themeName) {
+    document.documentElement.setAttribute('data-theme', themeName);
+
+    // Save to state
+    window.AppState.update((state) => {
+        state.settings.theme = themeName;
+    }, true);
+}
+```
+
+### How to Add a New Statistic
+
+```javascript
+// In utilities/statsPanel.js
+
+calculateStats(data) {
+    const activeCycle = data.data.cycles[data.appState.activeCycleId];
+    const tasks = activeCycle?.tasks || [];
+
+    return {
+        // Existing stats
+        totalTasks: tasks.length,
+        completedTasks: tasks.filter(t => t.completed).length,
+        cycleCount: activeCycle?.cycleCount || 0,
+
+        // Add new stat:
+        highPriorityTasks: tasks.filter(t => t.highPriority).length,
+        tasksWithDueDates: tasks.filter(t => t.dueDate).length,
+
+        // Custom calculation:
+        averageTasksPerCycle: tasks.length / Math.max(activeCycle?.cycleCount || 1, 1)
+    };
+}
+
+// Then display it
+renderStats(stats) {
+    document.getElementById('my-custom-stat').textContent =
+        `High Priority: ${stats.highPriorityTasks}`;
+}
+```
+
+### How to Add a Keyboard Shortcut
+
+```javascript
+// Add to miniCycle-scripts.js
+
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + Z = Undo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        performUndo();
+    }
+
+    // Ctrl/Cmd + Shift + Z = Redo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        performRedo();
+    }
+
+    // Add your custom shortcut:
+    // Ctrl/Cmd + N = New task
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        document.getElementById('taskInput').focus();
+    }
+});
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues & Solutions
+
+#### Issue: "AppState is not ready"
+
+**Symptoms:** Console shows "⚠️ AppState not ready"
+
+**Cause:** Trying to use AppState before it's initialized
+
+**Solution:**
+```javascript
+// Always check if ready first
+if (window.AppState?.isReady()) {
+    window.AppState.update(/* ... */);
+} else {
+    console.log('Waiting for AppState...');
+    // Or queue the operation:
+    window._deferredOperations = window._deferredOperations || [];
+    window._deferredOperations.push(() => {
+        window.AppState.update(/* ... */);
+    });
+}
+```
+
+#### Issue: Stats Panel Shows Zeros
+
+**Symptoms:** Stats show 0 tasks, 0 cycles even when data exists
+
+**Cause:** Stats updated before data loaded
+
+**Solution:** Already fixed in v1.309! Stats now listen for `cycle:ready` event.
+
+**If still seeing it:**
+```javascript
+// Manually refresh stats after data loads
+document.addEventListener('cycle:ready', () => {
+    setTimeout(() => {
+        updateStatsPanel();
+    }, 100);
+});
+```
+
+#### Issue: Recurring Tasks Not Appearing
+
+**Symptoms:** Created recurring task but never shows up
+
+**Cause:** Template created but watcher not running, or time hasn't matched yet
+
+**Solution:**
+```javascript
+// Check if watcher is running
+console.log('Recurring watcher active:',
+    window._recurringWatcherActive);
+
+// Check templates
+const state = window.AppState.get();
+const cycle = state.data.cycles[state.appState.activeCycleId];
+console.log('Templates:', cycle.recurringTemplates);
+
+// Manually trigger check
+window.checkRecurringTasksNow();
+```
+
+#### Issue: Changes Not Saving
+
+**Symptoms:** Make changes, refresh page, changes gone
+
+**Cause:** State not marked dirty or save not triggered
+
+**Solution:**
+```javascript
+// Always use AppState.update() for changes
+window.AppState.update((state) => {
+    // Make changes here
+}, true);  // ← true = immediate save
+
+// Check if saved
+setTimeout(() => {
+    const saved = localStorage.getItem('miniCycleData');
+    console.log('Data saved:', saved !== null);
+}, 1000);
+```
+
+#### Issue: Service Worker Not Updating
+
+**Symptoms:** Code changes not reflected in app
+
+**Cause:** Browser serving cached version
+
+**Solution:**
+```javascript
+// Option 1: Hard refresh
+// Chrome: Ctrl+Shift+R or Cmd+Shift+R
+// Firefox: Ctrl+F5
+
+// Option 2: Force update via console
 window.forceServiceWorkerUpdate();
+
+// Option 3: Unregister service worker
+navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(reg => reg.unregister());
+    location.reload();
+});
 ```
 
-#### 3. **Data Migration Problems**
-**Problem**: Data corruption during schema upgrades  
-**Solution**: Built-in migration system with backup recovery  
+### Debug Commands
+
 ```javascript
-// Check migration status
-window.checkMigrationStatus();
+// === Data Inspection ===
+window.AppState.get()                    // Full state
+getCurrentCycle()                        // Active cycle
+window.AppState.get().settings           // All settings
 
-// Restore from backup if needed
-window.restoreFromBackup(backupId);
+// === System Info ===
+window.generateDebugReport()             // Comprehensive info
+window.getServiceWorkerInfo()            // SW status
+window.checkDataIntegrity()              // Validate data
+
+// === Manual Operations ===
+updateStatsPanel()                       // Force stats refresh
+refreshUIFromState()                     // Rebuild entire UI
+window.checkRecurringTasksNow()          // Trigger recurring check
+
+// === Testing ===
+window.openTestingModal()                // Open test interface
+window.showNotification('Test', 'info')  // Test notifications
+
+// === Data Export ===
+window.exportCurrentCycle()              // Download cycle
+window.exportDebugData()                 // Debug package
 ```
-
-#### 4. **Performance Issues**
-**Problem**: Slow loading or laggy interactions  
-**Solution**: Check browser compatibility and enable lite version  
-```javascript
-// Force lite version for older devices
-localStorage.setItem('miniCycleForceFullVersion', 'false');
-location.reload();
-```
-
-### Debugging Tools
-
-#### Built-in Testing Modal
-- **Access**: Settings → App Diagnostics & Testing
-- **Features**: Health checks, data analysis, migration tools
-- **Debug Info**: Browser capabilities, feature flags, localStorage
-
-#### Console Commands
-```javascript
-// Global debug functions
-window.getServiceWorkerInfo()  // Service worker status
-window.generateDebugReport()   // Comprehensive system info
-window.checkDataIntegrity()    // Validate data structure
-window.exportDebugData()       // Export debug package
-```
-
-#### Version Information
-```javascript
-// Check current versions
-console.log('App Version:', document.querySelector('meta[name="app-version"]')?.content);
-console.log('SW Version:', await window.getServiceWorkerVersion());
-console.log('Schema Version:', window.getCurrentSchemaVersion());
-```
-
-### Performance Optimization
-
-#### Recommendations
-1. **Enable Service Worker**: Automatic caching and offline support
-2. **Use Appropriate Version**: Lite version for older devices
-3. **Regular Cleanup**: Clear old data and notifications
-4. **Monitor Memory**: Large task lists may impact performance
-
-#### Metrics to Monitor
-- Task count per cycle (recommended: <100)
-- Total cycles (impacts loading time)
-- localStorage usage (browser limits apply)
-- Service worker cache size
 
 ---
 
-## Contributing
+## 📖 Additional Resources
 
-### Code Style
-- **Vanilla JavaScript**: No external dependencies
-- **ES6+ Features**: With ES5 fallback support
-- **Modular Design**: Separate concerns into utilities
-- **Comprehensive Comments**: Document complex logic
+### Documentation Files
 
-### Testing
-- Use built-in testing modal for validation
-- Test both full and lite versions
-- Verify PWA functionality offline
-- Check responsive design on multiple devices
+- **CLAUDE.md** - Architecture overview for AI assistants
+- **minicycle_modularization_guide_v3.md** - Module patterns and extraction guide
+- **FINAL-MODULE-STRUCTURE.md** - Target modular architecture
+- **user-manual.html** - End-user documentation
 
-### Pull Request Guidelines
-1. Update version numbers using `update-version.sh`
-2. Test on multiple browsers
-3. Update documentation if needed
-4. Include performance impact assessment
+### Code Organization
+
+```
+web/
+├── miniCycle-scripts.js          # Start here for main app logic
+├── utilities/
+│   ├── state.js                  # AppState implementation
+│   ├── cycleLoader.js            # Data loading
+│   ├── recurringCore.js          # Recurring task logic
+│   └── (13 more modules)
+└── docs/
+    └── DEVELOPER_DOCUMENTATION.md  # This file!
+```
+
+### Key Concepts Summary
+
+1. **Task Cycling** - Tasks reset, don't delete
+2. **AppState** - Centralized state with 600ms debounced saves
+3. **Recurring Tasks** - Template-based, checked every 30s
+4. **Undo/Redo** - State snapshots with max 50 history
+5. **Modules** - 4 patterns: Static, Simple Instance, Resilient, Strict Injection
+6. **Schema 2.5** - Current data format with auto-migration
 
 ---
 
-**Documentation Version**: 1.306  
-**Last Updated**: October 2025  
-**Maintained By**: sparkinCreations Development Team
+**Version**: 1.309
+**Last Updated**: October 7, 2025
+**Maintained By**: sparkinCreations
+
+**Questions?** Check console for debug info, use built-in testing modal, or review code comments!

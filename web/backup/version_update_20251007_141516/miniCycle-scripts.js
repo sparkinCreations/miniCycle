@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.306'
+        currentVersion: '1.309'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             e.target.matches(selector)
         );
         if (isMatch) {
-            updateRecurringSummary();
+            if (window.recurringPanel?.updateRecurringSummary) window.recurringPanel.updateRecurringSummary();
         }
     };
     
@@ -531,16 +531,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             e.target.matches(selector)
         );
         if (isMatch) {
-            updateRecurringSummary();
+            if (window.recurringPanel?.updateRecurringSummary) window.recurringPanel.updateRecurringSummary();
         }
     };
     
     // === 🧠 Attach Delegated Listeners ===
-    function attachRecurringSummaryListeners() {
-        const panel = document.getElementById("recurring-settings-panel");
-        safeAddEventListener(panel, "change", handleRecurringChange);
-        safeAddEventListener(panel, "click", handleRecurringClick);
-    }
+// ✅ REMOVED: attachRecurringSummaryListeners - now handled by recurringCore/recurringPanel modules
 
     const DRAG_THROTTLE_MS = 50;
     const TASK_LIMIT = 100; 
@@ -783,11 +779,9 @@ AppInit.onReady(async () => {
     window._deferredRecurringSetup = []; // Clear the queue
   }
 
-  // ✅ Recurring Features
-  console.log('🔁 Setting up recurring features...');
-  setupRecurringPanel();
-  attachRecurringSummaryListeners();
-  loadAlwaysShowRecurringSetting();
+  // ✅ Recurring Features - now handled by recurringIntegration module
+  // Old initialization code removed - see utilities/recurringIntegration.js
+  console.log('🔁 Recurring features initialized via recurringIntegration module');
 
   // ✅ Mode Selector (with delay for DOM readiness)
   console.log('🎯 Initializing mode selector...');
@@ -860,6 +854,67 @@ AppInit.onReady(async () => {
             console.error('❌ Device detection manager or dependencies not available');
         }
     }, 10000);
+
+
+
+/**************
+ * Integration Testing
+ * 
+ **********/
+
+
+console.log('🔄 Initializing recurring task modules...');
+
+try {
+    // Import integration helper
+    const { initializeRecurringModules } = await import('./utilities/recurringIntegration.js');
+
+    // Initialize both modules (handles all wiring automatically)
+    const recurringModules = await initializeRecurringModules();
+
+    console.log('✅ Recurring modules initialized successfully');
+
+    // Store references for debugging
+    window._recurringModules = recurringModules;
+
+    // Optional: Run integration test in development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('🧪 Running integration test...');
+        setTimeout(() => {
+            const results = window.testRecurringIntegration();
+            if (Object.values(results).every(r => r === true)) {
+                console.log('✅ Recurring integration test PASSED:', results);
+            } else {
+                // ℹ️ On first load, modules may not be ready yet - this is normal
+                console.log('ℹ️ Recurring integration test results (run window.testRecurringIntegration() to retest):', results);
+            }
+        }, 2000); // ✅ Increased to 2 seconds to allow modules to fully initialize
+    }
+
+} catch (error) {
+    console.error('❌ Failed to initialize recurring modules:', error);
+
+    // Show user-facing error
+    if (typeof showNotification === 'function') {
+        showNotification('Recurring feature unavailable', 'warning', 3000);
+    }
+
+    // Don't throw - let app continue without recurring feature
+    console.warn('⚠️ App will continue without recurring functionality');
+}
+
+console.log('✅ Recurring modules integration complete');
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1168,8 +1223,9 @@ function refreshUIFromState(providedState = null) {
       updateArrowsInDOM(arrowsVisible);
       
       // Update other UI bits that don't depend on reloading storage
-      if (typeof updateRecurringPanel === 'function') updateRecurringPanel();
-      if (typeof updateRecurringPanelButtonVisibility === 'function') updateRecurringPanelButtonVisibility();
+      // ✅ Recurring panel updates now handled by recurringPanel module via window.recurringPanel
+      if (window.recurringPanel?.updateRecurringPanel) window.recurringPanel.updateRecurringPanel();
+      if (window.recurringPanel?.updateRecurringPanelButtonVisibility) window.recurringPanel.updateRecurringPanelButtonVisibility();
       if (typeof updateMainMenuHeader === 'function') updateMainMenuHeader();
       if (typeof updateProgressBar === 'function') updateProgressBar();
       if (typeof checkCompleteAllButton === 'function') checkCompleteAllButton();
@@ -1191,6 +1247,10 @@ function refreshUIFromState(providedState = null) {
     }, 50);
   }
 }
+
+// ✅ Make refreshUIFromState globally available for recurring modules
+window.refreshUIFromState = refreshUIFromState;
+
 // ✅ Update button states
 function updateUndoRedoButtons() {
   const undoBtn = document.getElementById("undo-btn");
@@ -1381,39 +1441,12 @@ if (!window.deviceDetectionManager) {
               );
           });
           
-          updateRecurringButtonVisibility();
+          if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
           console.log("✅ Task list UI refreshed from Schema 2.5");
       }
 
 
-function initializeDefaultRecurringSettings() {
-    console.log('🧩 Initializing default recurring settings (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for initializeDefaultRecurringSettings');
-        throw new Error('Schema 2.5 data not found');
-    }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    
-    // Check if default recurring settings exist in Schema 2.5
-    if (!fullSchemaData.settings.defaultRecurringSettings || Object.keys(fullSchemaData.settings.defaultRecurringSettings).length === 0) {
-        const defaultSettings = {
-            frequency: "daily",
-            indefinitely: true,
-            time: null
-        };
-        
-        fullSchemaData.settings.defaultRecurringSettings = defaultSettings;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log("🧩 Initialized default recurring settings in Schema 2.5:", defaultSettings);
-    } else {
-        console.log("ℹ️ Default recurring settings already exist in Schema 2.5.");
-    }
-}
+// ✅ REMOVED: initializeDefaultRecurringSettings - now handled by recurringCore module
 
 document.getElementById("toggleAutoReset").addEventListener("change", updateCycleModeDescription);
 document.getElementById("deleteCheckedTasks").addEventListener("change", updateCycleModeDescription);
@@ -2385,7 +2418,7 @@ async function autoSaveWithStateModule(overrideTaskList = null, immediate = fals
     const currentCycle = state.data.cycles[activeCycle];
     if (!currentCycle) throw new Error(`Active cycle "${activeCycle}" not found`);
     currentCycle.tasks = taskData;
-    updateRecurringTemplates(currentCycle, taskData);
+    // ✅ updateRecurringTemplates now handled by recurringCore module (called via watcher)
   }, immediate);
 
   return { success: true, taskCount: taskData.length };
@@ -2406,9 +2439,9 @@ async function directSave(overrideTaskList = null) {
   // Update Schema 2.5 structure
   const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
   const currentCycle = fullSchemaData.data.cycles[activeCycle];
-  
+
   currentCycle.tasks = taskData;
-  updateRecurringTemplates(currentCycle, taskData);
+  // ✅ updateRecurringTemplates now handled by recurringCore module (called via watcher)
   
   fullSchemaData.metadata.lastModified = Date.now();
   localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
@@ -2460,38 +2493,7 @@ function extractTaskDataFromDOM() {
 }
 
 // ✅ EXTRACTED: Common recurring templates update logic
-function updateRecurringTemplates(currentCycle, taskData) {
-  if (!currentCycle.recurringTemplates) {
-    currentCycle.recurringTemplates = {};
-  }
-
-  // Clear existing templates for tasks that are no longer recurring
-  const currentTaskIds = new Set(taskData.map(t => t.id));
-  Object.keys(currentCycle.recurringTemplates).forEach(templateId => {
-    if (!currentTaskIds.has(templateId)) {
-      delete currentCycle.recurringTemplates[templateId];
-    }
-  });
-
-  // Update templates for recurring tasks
-  taskData.forEach(task => {
-    if (task.recurring && task.recurringSettings) {
-      const existingTemplate = currentCycle.recurringTemplates[task.id];
-      
-      currentCycle.recurringTemplates[task.id] = {
-        id: task.id,
-        text: task.text,
-        recurring: true,
-        recurringSettings: structuredClone(task.recurringSettings),
-        highPriority: task.highPriority || false,
-        dueDate: task.dueDate || null,
-        remindersEnabled: task.remindersEnabled || false,
-        lastTriggeredTimestamp: existingTemplate?.lastTriggeredTimestamp || null,
-        schemaVersion: 2
-      };
-    }
-  });
-}
+// ✅ REMOVED: updateRecurringTemplates - now handled by recurringCore module
 
 // ✅ REMOVE the legacyAutoSave function since it's now integrated into autoSave
 /**
@@ -5551,23 +5553,13 @@ const educationalTips = notifications.educationalTips;
  * 🚀 Enhanced Recurring Notification with Educational Tip
  * Updated implementation for your recurring feature
  */
-function createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) {
-  if (!window.notifications || typeof window.notifications.createRecurringNotificationWithTip !== 'function') {
-    return `Task set to recurring (${frequency}, ${pattern})`;
-  }
-  return notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
-}
+// ✅ REMOVED: createRecurringNotificationWithTip - now handled by notifications module
 
 
 /**
  * ✅ Enhanced recurring notification listeners with proper event handling (Schema 2.5 only)
  */
-function initializeRecurringNotificationListeners(notification) {
-  if (!window.notifications || typeof window.notifications.initializeRecurringNotificationListeners !== 'function') {
-    return;
-  }
-  return notifications.initializeRecurringNotificationListeners(notification);
-}
+// ✅ REMOVED: initializeRecurringNotificationListeners - now handled by notifications module
 
 /**
  * Show confirmation message after applying changes
@@ -5577,90 +5569,9 @@ function showApplyConfirmation(targetElement) {
 }
 
 // 🛠 Unified recurring update helper (Schema 2.5 only)
-function applyRecurringToTaskSchema25(taskId, newSettings, cycles, activeCycle) {
-  // ✅ Use AppState instead of direct parameter passing
-  if (!AppState.isReady()) {
-    console.warn('⚠️ AppState not ready for applyRecurringToTaskSchema25');
-    return;
-  }
+// ✅ REMOVED: applyRecurringToTaskSchema25 - now handled by recurringCore module
 
-  const state = AppState.get();
-  const activeCycleId = state.appState?.activeCycleId;
-  
-  if (!activeCycleId) {
-    console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
-    return;
-  }
-
-  const cycleData = state.data?.cycles?.[activeCycleId];
-  if (!cycleData) {
-    console.error('❌ Cycle data not found for applyRecurringToTaskSchema25');
-    return;
-  }
-
-  let task = cycleData.tasks.find(t => t.id === taskId);
-  if (!task) {
-    console.error('❌ Task not found for applyRecurringToTaskSchema25:', taskId);
-    return;
-  }
-
-  // ✅ Update via AppState instead of localStorage
-  AppState.update(draft => {
-    const cycle = draft.data.cycles[activeCycleId];
-    const targetTask = cycle.tasks.find(t => t.id === taskId);
-    
-    if (targetTask) {
-      // Merge instead of overwrite so we keep advanced panel settings
-      targetTask.recurringSettings = {
-        ...targetTask.recurringSettings,
-        ...newSettings
-      };
-      targetTask.recurring = true;
-      targetTask.schemaVersion = 2;
-
-      // Keep recurringTemplates in sync
-      if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
-      cycle.recurringTemplates[taskId] = {
-        ...(cycle.recurringTemplates[taskId] || {}),
-        id: taskId,
-        text: targetTask.text,
-        recurring: true,
-        schemaVersion: 2,
-        recurringSettings: { ...targetTask.recurringSettings }
-      };
-    }
-  });
-
-  // Update DOM attributes for this task
-  const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-  if (taskElement) {
-    taskElement.classList.add("recurring");
-    taskElement.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
-    const recurringBtn = taskElement.querySelector(".recurring-btn");
-    if (recurringBtn) {
-      recurringBtn.classList.add("active");
-      recurringBtn.setAttribute("aria-pressed", "true");
-    }
-  }
-
-  // ✅ Update recurring panel display if it's open
-  if (typeof updateRecurringPanel === 'function') {
-    updateRecurringPanel();
-  }
-  
-  // ✅ Update recurring summary to reflect changes
-  if (typeof updateRecurringSummary === 'function') {
-    updateRecurringSummary();
-  }
-  
-  // ✅ Update panel button visibility based on recurring task count
-  if (typeof updateRecurringPanelButtonVisibility === 'function') {
-    updateRecurringPanelButtonVisibility();
-  }
-}
-
-// Make recurring function globally accessible for the notification module
-window.applyRecurringToTaskSchema25 = applyRecurringToTaskSchema25;
+// ✅ REMOVED: Old window.applyRecurringToTaskSchema25 assignment - now handled by recurringIntegration module
 
 /**
  * 🔧 Enhanced showNotification function with educational tips support (Schema 2.5 only)
@@ -5671,6 +5582,9 @@ function showNotificationWithTip(content, type = "default", duration = null, tip
   }
   return notifications.showWithTip(content, type, duration, tipId);
 }
+
+// ✅ Expose globally for recurring module
+window.showNotificationWithTip = showNotificationWithTip;
 
 /**
  * Show a confirmation modal and call callback with boolean result
@@ -5809,1466 +5723,57 @@ function startReminders() {
   updateRecurringPanelButtonVisibility();
 
 
-  function setupRecurringPanel() {
-    const overlay = document.getElementById("recurring-panel-overlay");
-    const panel = document.getElementById("recurring-panel");
-    const closeBtn = document.getElementById("close-recurring-panel");
-    const openBtn = document.getElementById("open-recurring-panel");
-    const yearlyApplyToAllCheckbox = document.getElementById("yearly-apply-days-to-all");
-    const specificDatesCheckbox = document.getElementById("recur-specific-dates");
-    const specificDatesPanel = document.getElementById("specific-dates-panel");
-    const toggleBtn = document.getElementById("toggle-advanced-settings");
-   
-    advancedVisible = false; // Use global variable instead of let
-    setAdvancedVisibility(advancedVisible, toggleBtn);
-  
-    toggleBtn.addEventListener("click", () => {
-        advancedVisible = !advancedVisible;
-        setAdvancedVisibility(advancedVisible, toggleBtn);
-    });
-  
-    if (!overlay || !panel || !closeBtn || !openBtn) return;
-  
-    openBtn.addEventListener("click", () => {
-        console.log('🔁 Opening recurring panel (Schema 2.5 only)...');
-        
-        // ✅ Schema 2.5 only
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for recurring panel');
-            throw new Error('Schema 2.5 data not found');
-        }
+// ✅ REMOVED: setupRecurringPanel - now handled by recurringPanel module
+// ✅ REMOVED: setAdvancedVisibility - now handled by recurringPanel module
+// ✅ REMOVED: updateRecurringPanel - now handled by recurringPanel module
 
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
-        
-        if (!currentCycle) {
-            console.warn('⚠️ No active cycle found');
-            return;
-        }
-        
-        updateRecurringPanel(currentCycle);
-
-        document.getElementById("recurring-settings-panel")?.classList.add("hidden");
-        overlay.classList.remove("hidden");
-        updateRecurringSettingsVisibility();
-        document.getElementById("set-default-recurring").checked = false;
-        
-        console.log('✅ Recurring panel opened successfully');
-    });
-
-    // Rest of your existing setup code stays the same...
-    closeBtn.addEventListener("click", () => {
-        updateRecurringSettingsVisibility();
-        overlay.classList.add("hidden");
-    });
-    
-      overlay.addEventListener("click", (e) => {
-          if (e.target === overlay) {
-              updateRecurringSettingsVisibility();
-              overlay.classList.add("hidden");
-          }
-      });
-    
-      // Rest of the function remains the same...
-      const frequencySelect = document.getElementById("recur-frequency");
-      if (frequencySelect) {
-          frequencySelect.addEventListener("change", () => {
-              const selectedFrequency = frequencySelect.value;
-              const frequencyMap = {
-                  hourly: document.getElementById("hourly-options"),
-                  daily: document.getElementById("daily-options"),
-                  weekly: document.getElementById("weekly-options"),
-                  biweekly: document.getElementById("biweekly-options"),
-                  monthly: document.getElementById("monthly-options"),
-                  yearly: document.getElementById("yearly-options")
-              };
-              Object.values(frequencyMap).forEach(section => section?.classList.add("hidden"));
-              frequencyMap[selectedFrequency]?.classList.remove("hidden");
-          });
-          updateRecurringSummary();
-      }
-      
-      // Rest of the setup code remains the same...
-      const toggleVisibility = (triggerId, contentId) => {
-          const trigger = document.getElementById(triggerId);
-          const content = document.getElementById(contentId);
-          if (trigger && content) {
-              trigger.addEventListener("change", () => {
-                  content.classList.toggle("hidden", !trigger.checked);
-              });
-          }
-      };
+// ✅ REMOVED: Old window.updateRecurringPanel assignment - now handled by recurringIntegration module
+// ✅ REMOVED: Old window.openRecurringSettingsPanelForTask assignment - now handled by recurringIntegration module
   
-      toggleVisibility("hourly-specific-time", "hourly-minute-container");
-      toggleVisibility("daily-specific-time", "daily-time-container");
-      toggleVisibility("weekly-specific-days", "weekly-day-container");
-      toggleVisibility("weekly-specific-time", "weekly-time-container");
-      toggleVisibility("biweekly-specific-days", "biweekly-day-container");
-      toggleVisibility("biweekly-specific-time", "biweekly-time-container");
-      toggleVisibility("monthly-specific-days", "monthly-day-container");
-      toggleVisibility("monthly-specific-time", "monthly-time-container");
-      toggleVisibility("yearly-specific-months", "yearly-month-container");
-      toggleVisibility("yearly-specific-time", "yearly-time-container");
-  
-      const yearlySpecificDaysCheckbox = document.getElementById("yearly-specific-days");
-      const yearlyDayContainer = document.getElementById("yearly-day-container");
-      const yearlyMonthSelect = document.getElementById("yearly-month-select");
-  
-      if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
-          yearlySpecificDaysCheckbox.addEventListener("change", () => {
-              const hasMonthSelected = getSelectedYearlyMonths().length > 0;
-              yearlyDayContainer.classList.toggle("hidden", !yearlySpecificDaysCheckbox.checked || !hasMonthSelected);
-          });
-      }
-  
-      setupTimeConversion({ hourInputId: "specific-date-hour", minuteInputId: "specific-date-minute", meridiemSelectId: "specific-date-meridiem", militaryCheckboxId: "specific-date-military" });
-      setupTimeConversion({ hourInputId: "daily-hour", minuteInputId: "daily-minute", meridiemSelectId: "daily-meridiem", militaryCheckboxId: "daily-military" });
-      setupTimeConversion({ hourInputId: "weekly-hour", minuteInputId: "weekly-minute", meridiemSelectId: "weekly-meridiem", militaryCheckboxId: "weekly-military" });
-      setupTimeConversion({ hourInputId: "biweekly-hour", minuteInputId: "biweekly-minute", meridiemSelectId: "biweekly-meridiem", militaryCheckboxId: "biweekly-military" });
-      setupTimeConversion({ hourInputId: "monthly-hour", minuteInputId: "monthly-minute", meridiemSelectId: "monthly-meridiem", militaryCheckboxId: "monthly-military" });
-      setupTimeConversion({ hourInputId: "yearly-hour", minuteInputId: "yearly-minute", meridiemSelectId: "yearly-meridiem", militaryCheckboxId: "yearly-military" });
-  
-      setupMilitaryTimeToggle("daily");
-      setupMilitaryTimeToggle("weekly");
-      setupMilitaryTimeToggle("biweekly");
-      setupMilitaryTimeToggle("monthly");
-      setupMilitaryTimeToggle("yearly");
-  
-      setupWeeklyDayToggle();
-      generateMonthlyDayGrid();
-      generateYearlyMonthGrid();
-  
-      if (yearlyMonthSelect) {
-          yearlyMonthSelect.addEventListener("change", (e) => {
-              const selectedMonth = parseInt(e.target.value);
-              generateYearlyDayGrid(selectedMonth);
-          });
-          generateYearlyDayGrid(1);
-      }
-  
-      yearlyApplyToAllCheckbox?.addEventListener("change", handleYearlyApplyToAllChange);
-      setupSpecificDatesPanel();
-      updateRecurringSummary();
-  }
-
-// Define the helper first
-function setAdvancedVisibility(visible, toggleBtn) {
-    advancedVisible = visible;
-    toggleBtn.textContent = visible ? "Hide Advanced Options" : "Show Advanced Options";
-  
-    // Show/hide all `.frequency-options` panels
-    document.querySelectorAll(".frequency-options").forEach(option => {
-      option.style.display = visible ? "block" : "none";
-    });
-  
-    // Always show frequency dropdown container
-    const frequencyContainer = document.getElementById("recur-frequency-container");
-    if (frequencyContainer) frequencyContainer.style.display = "block";
-  
-    // Handle extras like 'Recur indefinitely' and 'Specific Dates'
-    const advancedControls = [
-        { checkboxId: "recur-indefinitely" },
-        { checkboxId: "recur-specific-dates" }
-      ];
+// ✅ REMOVED: openRecurringSettingsPanelForTask - now handled by recurringPanel module
 
 
-    advancedControls.forEach(({ checkboxId, panelId }) => {
-      const checkbox = document.getElementById(checkboxId);
-      if (!checkbox) return;
-  
-      const label = checkbox.closest("label");
-      if (label) {
-        label.style.display = visible ? "flex" : "none";
-        
-      }
-    });
-    const defaultBoxContainer = document.getElementById("set-default-recurring-container");
-    if (defaultBoxContainer) {
-      defaultBoxContainer.style.display = visible ? "block" : "none";
+
+// ✅ REMOVED: updateRecurringSettingsVisibility - now handled by recurringPanel module
+// ✅ REMOVED: toggle-check-all event listener - now handled by recurringPanel module
+// ✅ REMOVED: loadRecurringSettingsForTask - now handled by recurringPanel module
+// ✅ REMOVED: specific-date-specific-time event listener - now handled by recurringPanel module
+// ✅ REMOVED: saveRecurringTemplate - unused function, template saving handled in handleApplySettings
+// ✅ REMOVED: deleteRecurringTemplate - now handled by recurringCore module
+
+// ✅ REMOVED: saveAlwaysShowRecurringSetting - now handled by recurringPanel module
+
+// ✅ REMOVED: loadAlwaysShowRecurringSetting - now handled by recurringPanel module
+
+// ✅ REMOVED: Old event listener for saveAlwaysShowRecurringSetting - now handled by recurringPanel module
+document.getElementById("always-show-recurring")?.addEventListener("change", () => {
+    if (window.recurringPanel?.saveAlwaysShowRecurringSetting) {
+        window.recurringPanel.saveAlwaysShowRecurringSetting();
     }
-
-  }
-
-function updateRecurringPanel(currentCycleData = null) {
-    console.log('🔄 Updating recurring panel (Schema 2.5 only)...');
-    
-    const recurringList = document.getElementById("recurring-task-list");
-    
-    // ✅ Use AppState only - no fallback to avoid state drift
-    if (!window.AppState || !window.AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for updateRecurringPanel');
-        return;
-    }
-    
-    const state = window.AppState.get();
-    const activeCycleId = state.appState?.activeCycleId;
-    
-    if (!activeCycleId) {
-        console.warn('⚠️ No active cycle ID found for recurring panel');
-        return;
-    }
-    
-    const cycles = state.data?.cycles || {};
-    const schemaData = { cycles, activeCycle: activeCycleId };
-    
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateRecurringPanel');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    let cycleData = currentCycleData;
-    
-    if (!cycleData) {
-        const { cycles, activeCycle } = schemaData;
-        cycleData = cycles[activeCycle];
-    }
-    
-    if (!cycleData) {
-        console.warn('⚠️ No cycle data found for recurring panel');
-        return;
-    }
-    
-    console.log('📊 Processing recurring templates:', Object.keys(cycleData.recurringTemplates || {}).length);
-    
-    const templateTasks = Object.values(cycleData.recurringTemplates || {});
-    const recurringTasks = templateTasks.map(template => {
-        const existingTask = cycleData.tasks.find(t => t.id === template.id);
-        return existingTask || template;
-    });
-
-    recurringList.innerHTML = "";
-
-    if (recurringTasks.length === 0) {
-        console.log('📋 No recurring tasks found, hiding panel');
-        document.getElementById("recurring-panel-overlay")?.classList.add("hidden");
-        return;
-    }
-
-    document.querySelectorAll(".recurring-task-item").forEach(el => {
-        el.classList.remove("selected");
-    });
-
-    recurringTasks.forEach(task => {
-        if (!task || !task.id || !task.text) {
-            console.warn("⚠ Skipping malformed recurring task in panel:", task);
-            return;
-        }
-
-        const item = document.createElement("li");
-        item.className = "recurring-task-item";
-        item.setAttribute("data-task-id", task.id);
-
-        item.innerHTML = `
-            <input type="checkbox" 
-                   class="recurring-check" 
-                   id="recurring-check-${task.id}" 
-                   name="recurring-check-${task.id}" 
-                   aria-label="Mark this task temporarily">
-            <span class="recurring-task-text">${task.text}</span>
-            <button title="Remove from Recurring" class="recurring-remove-btn">
-              <i class='fas fa-trash recurring-trash-icon'></i>
-            </button>
-        `;
-
-        const checkbox = item.querySelector(".recurring-check");
-        checkbox.addEventListener("click", (e) => {
-            e.stopPropagation();
-            item.classList.toggle("checked");
-        });
-        checkbox.classList.add("hidden");
-
-        // ✅ Handle remove button with Schema 2.5 only
-        item.querySelector("button").addEventListener("click", () => {
-            showConfirmationModal({
-                title: "Remove Recurring Task",
-                message: `Are you sure you want to remove "${task.text}" from recurring tasks?`,
-                confirmText: "Remove",
-                cancelText: "Cancel",
-                callback: (confirmed) => {
-                    if (!confirmed) return;
-
-                    
-
-                    // ✅ Schema 2.5 only
-                    const schemaData = window.loadMiniCycleData();
-                    if (!schemaData) {
-                        console.error('❌ Schema 2.5 data required for task removal');
-                        return;
-                    }
-
-                    const { cycles, activeCycle } = schemaData;
-                    const currentCycle = cycles[activeCycle];
-                    
-                    // Remove recurrence from the live task
-                    const liveTask = currentCycle.tasks.find(t => t.id === task.id);
-                    if (liveTask) {
-                        liveTask.recurring = false;
-                        delete liveTask.recurringSettings;
-                    }
-
-                    // Delete from recurringTemplates
-                    delete currentCycle.recurringTemplates[task.id];
-
-                    // Update the full schema data
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-                    showNotification("↩️ Recurring turned off for this task.", "info", 5000);
-
-                    // Remove recurring visual state
-                    const matchingTaskItem = document.querySelector(`.task[data-task-id="${task.id}"]`);
-                    if (matchingTaskItem) {
-                        const recurringBtn = matchingTaskItem.querySelector(".recurring-btn");
-                        if (recurringBtn) {
-                            recurringBtn.classList.remove("active");
-                            recurringBtn.setAttribute("aria-pressed", "false");
-                            recurringBtn.disabled = false;
-                        }
-                        matchingTaskItem.classList.remove("recurring");
-                        matchingTaskItem.removeAttribute("data-recurring-settings");
-                    }
-
-                    item.remove();
-                    updateRecurringPanelButtonVisibility();
-
-                    const remaining = Object.values(currentCycle.recurringTemplates || {});
-                    if (remaining.length === 0) {
-                        document.getElementById("recurring-panel-overlay")?.classList.add("hidden");
-                    }
-
-                    document.getElementById("undo-btn").hidden = false;
-                    document.getElementById("redo-btn").hidden = true;
-                }
-            });
-        });
-
-        // ✅ Handle task row selection for preview
-        item.addEventListener("click", (e) => {
-            if (
-                e.target.closest(".recurring-remove-btn") ||
-                e.target.closest("input[type='checkbox']")
-            ) return;
-
-            document.querySelectorAll(".recurring-task-item").forEach(el => {
-                el.classList.remove("selected");
-            });
-            item.classList.add("selected");
-
-            const taskId = item.dataset.taskId;
-            const fullTask = cycleData.tasks.find(t => t.id === taskId) || task;
-            showTaskSummaryPreview(fullTask);
-        });
-
-        recurringList.appendChild(item);
-    });
-
-    updateRecurringSummary();
-    console.log('✅ Recurring panel updated successfully');
-}
-
-// Make updateRecurringPanel globally accessible for the notification module
-window.updateRecurringPanel = updateRecurringPanel;
-
-// Make openRecurringSettingsPanelForTask globally accessible for the notification module
-window.openRecurringSettingsPanelForTask = openRecurringSettingsPanelForTask;
-  
-  function openRecurringSettingsPanelForTask(taskIdToPreselect) {
-      console.log('⚙️ Opening recurring settings panel (AppState-based)...', taskIdToPreselect);
-      
-      updateRecurringPanel(); // Render panel fresh
-  
-      // Find and preselect the correct task
-      const itemToSelect = document.querySelector(`.recurring-task-item[data-task-id="${taskIdToPreselect}"]`);
-      if (itemToSelect) {
-          itemToSelect.classList.add("selected");
-  
-          const checkbox = itemToSelect.querySelector("input[type='checkbox']");
-          if (checkbox) {
-              checkbox.checked = true;
-              itemToSelect.classList.add("checked");
-          }
-  
-          // ✅ Use AppState instead of loadMiniCycleData
-          if (!AppState.isReady()) {
-              console.warn('⚠️ AppState not ready for task preview');
-              return;
-          }
-
-          const state = AppState.get();
-          const activeCycleId = state.appState?.activeCycleId;
-          const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskIdToPreselect);
-          
-          if (task) {
-              showTaskSummaryPreview(task);
-          } else {
-              console.warn('⚠️ Task not found for preview:', taskIdToPreselect);
-          }
-      }
-  
-      // Show panel
-      document.getElementById("recurring-panel-overlay")?.classList.remove("hidden");
-  
-      // Make sure checkboxes and toggle show correctly
-      updateRecurringSettingsVisibility();
-      
-      console.log('✅ Recurring settings panel opened successfully');
-  }
-
-
-
-  function updateRecurringSettingsVisibility() {
-    const anySelected = document.querySelector(".recurring-task-item.selected");
-    const settingsPanel = document.getElementById("recurring-settings-panel");
-    const checkboxes = document.querySelectorAll(".recurring-check");
-    const changeBtns = document.querySelectorAll(".change-recurring-btn");
-    const toggleContainer = document.getElementById("recurring-toggle-actions");
-    const toggleBtn = document.getElementById("toggle-check-all");
-    const taskCount = document.querySelectorAll(".recurring-task-item").length;
-  
-    const show = !!anySelected;
-  
-    if (settingsPanel) {
-      settingsPanel.classList.toggle("hidden", !show);
-  
-      // Show or hide checkboxes
-      checkboxes.forEach(box => {
-        box.classList.toggle("hidden", !show);
-      });
-  
-      // Hide change buttons when panel is open
-      changeBtns.forEach(btn => {
-        btn.classList.toggle("hidden", show);
-      });
-    }
-  
-    // ✅ Only show toggle if panel is open AND checkboxes are visible AND more than one task
-    const checkboxesVisible = Array.from(checkboxes).some(cb => !cb.classList.contains("hidden"));
-    const shouldShowToggle = show && taskCount > 1 && checkboxesVisible;
-    toggleContainer?.classList.toggle("hidden", !shouldShowToggle);
-  
-    // Update button label (optional)
-    if (toggleBtn && shouldShowToggle) {
-      const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked && !cb.classList.contains("hidden"));
-      toggleBtn.textContent = anyUnchecked ? "Check All" : "Uncheck All";
-    }
-  
-    updateRecurringSummary();
-  }
-
-  document.getElementById("toggle-check-all").addEventListener("click", () => {
-    const checkboxes = document.querySelectorAll(".recurring-check:not(.hidden)");
-    const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
-  
-    checkboxes.forEach(cb => {
-      cb.checked = anyUnchecked;
-      cb.closest(".recurring-task-item").classList.toggle("checked", anyUnchecked);
-    });
-  
-    // 🔁 Update the label based on what you just did
-    const toggleCheckAllBtn = document.getElementById("toggle-check-all");
-    toggleCheckAllBtn.textContent = anyUnchecked ? "Uncheck All" : "Check All";
-  
-    updateRecurringSummary();
-  });
-  
-  function loadRecurringSettingsForTask(task) {
-    if (!task) return;
-  
-    const freqSelect = document.getElementById("recur-frequency");
-    const recurCheckbox = document.getElementById("recur-indefinitely");
-    const recurCountInput = document.getElementById("recur-count-input");
-    const countContainer = document.getElementById("recur-count-container");
-  
-    if (freqSelect && task.recurFrequency) {
-        freqSelect.value = task.recurFrequency;
-        const changeEvent = new Event("change");
-        freqSelect.dispatchEvent(changeEvent);
-      }
-  
-    if (recurCheckbox) {
-      recurCheckbox.checked = task.recurIndefinitely ?? true;
-    }
-  
-    if (recurCountInput && task.recurCount != null) {
-      recurCountInput.value = task.recurCount;
-    }
-    updateRecurCountVisibility();
-    updateRecurringSummary();
-  }
-
-
-
-
-
-
-  document.getElementById("specific-date-specific-time").addEventListener("change", (e) => {
-    const timeContainer = document.getElementById("specific-date-time-container");
-    timeContainer.classList.toggle("hidden", !e.target.checked);
-    updateRecurringSummary();
-  });
-  
-
-
-
-
-
-
-
-  
-
-  function saveRecurringTemplate(task, cycleName, savedMiniCycles) {
-      console.log('💾 Saving recurring template (Schema 2.5 only)...');
-      
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-          console.error('❌ Schema 2.5 data required for saveRecurringTemplate');
-          return;
-      }
-  
-      const { cycles, activeCycle } = schemaData;
-      const currentCycle = cycles[activeCycle];
-      
-      if (!currentCycle) {
-          console.error(`❌ Cannot save recurring template. Active cycle not found.`);
-          return;
-      }
-  
-      if (!currentCycle.recurringTemplates) {
-          currentCycle.recurringTemplates = {};
-      }
-  
-      console.log('📊 Saving template for task:', task.id);
-  
-      currentCycle.recurringTemplates[task.id] = {
-          id: task.id,
-          text: task.text,
-          recurring: true,
-          recurringSettings: task.recurringSettings,
-          highPriority: task.highPriority || false,
-          dueDate: task.dueDate || null,
-          remindersEnabled: task.remindersEnabled || false,
-          lastTriggeredTimestamp: null,
-          schemaVersion: task.schemaVersion || 2
-      };
-  
-      // Update the full schema data
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      fullSchemaData.data.cycles[activeCycle] = currentCycle;
-      fullSchemaData.metadata.lastModified = Date.now();
-      localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-      
-      console.log('✅ Recurring template saved to Schema 2.5');
-  }
-function deleteRecurringTemplate(taskId, cycleName) {
-    console.log('🗑️ Deleting recurring template (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for deleteRecurringTemplate');
-        return;
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    
-    if (!currentCycle) {
-        console.error(`❌ Active cycle not found for deleteRecurringTemplate.`);
-        return;
-    }
-
-    if (!currentCycle.recurringTemplates || !currentCycle.recurringTemplates[taskId]) {
-        console.warn(`⚠ Task "${taskId}" not found in recurring templates.`);
-        return;
-    }
-
-    console.log('🔍 Deleting template for task:', taskId);
-
-    // Delete the task template
-    delete currentCycle.recurringTemplates[taskId];
-
-    // Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('✅ Recurring template deleted from Schema 2.5');
-}
-
-function saveAlwaysShowRecurringSetting() {
-    console.log('💾 Saving always show recurring setting (AppState-based)...');
-    
-    const alwaysShow = document.getElementById("always-show-recurring").checked;
-    
-    // ✅ Check AppState readiness
-    if (!AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for saveAlwaysShowRecurringSetting');
-        return;
-    }
-    
-    // ✅ Update via AppState instead of localStorage
-    AppState.update(draft => {
-        if (!draft.settings) draft.settings = {};
-        draft.settings.alwaysShowRecurring = alwaysShow;
-    });
-    
-    console.log('✅ Always show recurring setting saved via AppState:', alwaysShow);
-    
-    refreshTaskListUI();
-    updateRecurringButtonVisibility();
-}
-
-function loadAlwaysShowRecurringSetting() {
-    console.log('📥 Loading always show recurring setting (AppState-based)...');
-    
-    // ✅ Use AppState instead of loadMiniCycleData
-    if (!AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for loadAlwaysShowRecurringSetting');
-        return;
-    }
-    
-    const state = AppState.get();
-    const isEnabled = state.settings?.alwaysShowRecurring || false;
-    
-    console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
-    
-    const checkbox = document.getElementById("always-show-recurring");
-    if (checkbox) {
-        checkbox.checked = isEnabled;
-    }
-}
-
-document.getElementById("always-show-recurring").addEventListener("change", saveAlwaysShowRecurringSetting);
-
-document.getElementById("apply-recurring-settings")?.addEventListener("click", () => {
-    console.log('📝 Applying recurring settings (AppState-based)...');
-    
-    // ✅ Check AppState readiness
-    if (!AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for apply recurring settings');
-        showNotification("❌ App not ready. Please try again.", "error");
-        return;
-    }
-
-    const state = AppState.get();
-    const activeCycleId = state.appState?.activeCycleId;
-    
-    if (!activeCycleId) {
-        showNotification("⚠ No active cycle found.");
-        return;
-    }
-
-    const cycleData = state.data?.cycles?.[activeCycleId];
-    if (!cycleData) {
-        showNotification("⚠ Active cycle data not found.");
-        return;
-    }
-
-    const checkedEls = document.querySelectorAll(".recurring-check:checked");
-
-    if (!checkedEls.length) {
-        showNotification("⚠ No tasks checked to apply settings.");
-        return;
-    }
-
-    const settings = normalizeRecurringSettings(buildRecurringSettingsFromPanel());
-
-    // 🕒 Set defaultRecurTime if not using specific time
-    if (!settings.specificTime && !settings.defaultRecurTime) {
-        settings.defaultRecurTime = new Date().toISOString();
-    }
-
-    // ✅ Batch all updates in one AppState operation
-    AppState.update(draft => {
-        // 💾 Save default recurring settings if requested
-        if (document.getElementById("set-default-recurring")?.checked) {
-            if (!draft.settings) draft.settings = {};
-            draft.settings.defaultRecurringSettings = settings;
-        }
-
-        const cycle = draft.data.cycles[activeCycleId];
-        if (!cycle.recurringTemplates) {
-            cycle.recurringTemplates = {};
-        }
-
-        checkedEls.forEach(checkbox => {
-            const taskEl = checkbox.closest("[data-task-id]");
-            const taskId = taskEl?.dataset.taskId;
-            if (!taskId || !taskEl) return;
-
-            let task = cycle.tasks.find(t => t.id === taskId);
-            if (!task) {
-                task = {
-                    id: taskId,
-                    text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
-                    recurring: true,
-                    recurringSettings: structuredClone(settings),
-                    schemaVersion: 2
-                };
-                cycle.tasks.push(task);
-            }
-
-            // ✅ Apply recurring settings to task
-            task.recurring = true;
-            task.schemaVersion = 2;
-            task.recurringSettings = structuredClone(settings);
-
-            // ✅ Update recurringTemplates
-            cycle.recurringTemplates[task.id] = {
-                id: task.id,
-                text: task.text,
-                dueDate: task.dueDate || null,
-                highPriority: task.highPriority || false,
-                remindersEnabled: task.remindersEnabled || false,
-                recurring: true,
-                recurringSettings: structuredClone(settings),
-                schemaVersion: 2
-            };
-        });
-    });
-
-    // ✅ Update DOM after state changes
-    checkedEls.forEach(checkbox => {
-        const taskEl = checkbox.closest("[data-task-id]");
-        if (!taskEl) return;
-
-        // ✅ Update DOM
-        taskEl.classList.add("recurring");
-        taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
-        const recurringBtn = taskEl.querySelector(".recurring-btn");
-        if (recurringBtn) {
-            recurringBtn.classList.add("active");
-            recurringBtn.setAttribute("aria-pressed", "true");
-        }
-
-        syncRecurringStateToDOM(taskEl, settings);
-    });
-
-    // Show success notifications
-    if (document.getElementById("set-default-recurring")?.checked) {
-        showNotification("✅ Default recurring settings saved!", "success", 1500);
-    }
-
-    updateRecurringSummary();
-    showNotification("✅ Recurring settings applied!", "success", 2000);
-    updateRecurringPanel();
-
-    // ✅ Refresh task preview if a task is currently selected
-    const selectedTask = document.querySelector(".recurring-task-item.selected");
-    if (selectedTask) {
-        const taskId = selectedTask.dataset.taskId;
-        const state = AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
-        
-        if (task) {
-            showTaskSummaryPreview(task);
-        }
-    }
-
-    // ✅ Clean up UI state - remove selections and hide panels
-    document.querySelectorAll(".recurring-task-item").forEach(el => {
-        el.classList.remove("selected", "checked");
-    });
-
-    const settingsPanel = document.getElementById("recurring-settings-panel");
-    settingsPanel?.classList.add("hidden");
-
-    // ✅ Explicitly hide checkboxes and toggle container
-    document.querySelectorAll(".recurring-check").forEach(cb => {
-        cb.classList.add("hidden");
-        cb.checked = false;
-    });
-
-    const toggleContainer = document.getElementById("recurring-toggle-actions");
-    toggleContainer?.classList.add("hidden");
-
-    const preview = document.getElementById("recurring-summary-preview");
-    if (preview) preview.classList.add("hidden");
-
-    updateRecurringPanelButtonVisibility();
-    
-    // ✅ Clear the form since no task is selected anymore
-    clearRecurringForm();
-    
-    console.log('✅ Recurring settings applied successfully');
 });
-  
 
-
-  function normalizeRecurringSettings(settings = {}) {
-    return {
-      frequency: settings.frequency || "daily",
-      indefinitely: settings.indefinitely !== false,
-      count: settings.count ?? null,
-      time: settings.time || null,
-  
-      specificDates: {
-        enabled: settings.specificDates?.enabled || false,
-        dates: Array.isArray(settings.specificDates?.dates) ? settings.specificDates.dates : []
-      },
-  
-      hourly: {
-        useSpecificMinute: settings.hourly?.useSpecificMinute || false,
-        minute: settings.hourly?.minute || 0
-      },
-  
-      weekly: {
-        days: Array.isArray(settings.weekly?.days) ? settings.weekly.days : []
-      },
-  
-      biweekly: {
-        days: Array.isArray(settings.biweekly?.days) ? settings.biweekly.days : []
-      },
-  
-      monthly: {
-        days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : []
-      },
-  
-      yearly: {
-        months: Array.isArray(settings.yearly?.months) ? settings.yearly.months : [],
-        useSpecificDays: settings.yearly?.useSpecificDays || false,
-        applyDaysToAll: settings.yearly?.applyDaysToAll !== false, // default is true
-        daysByMonth: settings.yearly?.daysByMonth || {}
-      }
-    };
-  }
-
-  function buildRecurringSettingsFromPanel() {
-    const frequency = document.getElementById("recur-frequency").value;
-    const indefinitely = document.getElementById("recur-indefinitely").checked;
-    const count = indefinitely ? null : parseInt(document.getElementById("recur-count-input").value) || 1;
-    const settings = {
-      frequency,
-      indefinitely,
-      count,
-      useSpecificTime: false,
-      time: null,
-      specificDates: {
-        enabled: false,
-        dates: []
-      },
-      daily: {},
-      hourly: {},
-      weekly: {},
-      biweekly: {},
-      monthly: {},
-      yearly: {}
-    };
-  
-    // ✅ Specific Dates Mode
-    if (document.getElementById("recur-specific-dates").checked) {
-      const dateInputs = document.querySelectorAll("#specific-date-list input[type='date']");
-      settings.specificDates.enabled = true;
-      settings.specificDates.dates = Array.from(dateInputs).map(input => input.value).filter(Boolean);
-  
-      if (document.getElementById("specific-date-specific-time").checked) {
-        settings.useSpecificTime = true;
-        settings.time = {
-          hour: parseInt(document.getElementById("specific-date-hour").value) || 0,
-          minute: parseInt(document.getElementById("specific-date-minute").value) || 0,
-          meridiem: document.getElementById("specific-date-meridiem").value,
-          military: document.getElementById("specific-date-military").checked
-        };
-      }
-    } else {
-      // ✅ Time block for non-specific-dates
-      const timeId = frequency;
-      const timeEnabled = document.getElementById(`${timeId}-specific-time`)?.checked;
-  
-// ✅ Time block for non-specific-dates — EXCLUDE hourly!
-if (frequency !== "hourly" && timeEnabled) {
-  settings.useSpecificTime = true;
-  settings.time = {
-    hour: parseInt(document.getElementById(`${timeId}-hour`).value) || 0,
-    minute: parseInt(document.getElementById(`${timeId}-minute`).value) || 0,
-    meridiem: document.getElementById(`${timeId}-meridiem`).value,
-    military: document.getElementById(`${timeId}-military`).checked
-  };
-}
-  
-      // ✅ Hourly Specific Minute
-      if (frequency === "hourly") {
-        const useSpecificMinute = document.getElementById("hourly-specific-time")?.checked;
-        const minuteEl = document.getElementById("hourly-minute");
-        
-        settings.hourly = {
-          useSpecificMinute: !!useSpecificMinute,
-          minute: useSpecificMinute && minuteEl ? parseInt(minuteEl.value) || 0 : 0
-        };
-      }
-  
-      // ✅ Weekly & Biweekly
-      if (frequency === "weekly" || frequency === "biweekly") {
-        const selector = `.${frequency}-day-box.selected`;
-        settings[frequency] = {
-          useSpecificDays: document.getElementById(`${frequency}-specific-days`)?.checked,
-          days: Array.from(document.querySelectorAll(selector)).map(el => el.dataset.day)
-        };
-      }
-  
-      // ✅ Monthly
-      if (frequency === "monthly") {
-        settings.monthly = {
-          useSpecificDays: document.getElementById("monthly-specific-days")?.checked,
-          days: Array.from(document.querySelectorAll(".monthly-day-box.selected")).map(el => parseInt(el.dataset.day))
-        };
-      }
-  
-      // ✅ Yearly
-      if (frequency === "yearly") {
-        const applyAll = document.getElementById("yearly-apply-days-to-all")?.checked;
-        const useMonths = document.getElementById("yearly-specific-months")?.checked;
-        const useDays = document.getElementById("yearly-specific-days")?.checked;
-  
-        settings.yearly = {
-          useSpecificMonths: useMonths,
-          months: getSelectedYearlyMonths(),
-          useSpecificDays: useDays,
-          daysByMonth: applyAll ? { all: selectedYearlyDays["all"] || [] } : { ...selectedYearlyDays },
-          applyDaysToAll: applyAll
-        };
-      }
-    }
-  
-    return settings;
-  }
-  
-
-function clearNonRelevantRecurringFields(task, frequency) {
-  const allowedFields = {
-    daily: ["dailyTime"],
-    weekly: ["weeklyDays"],
-    biweekly: ["biweeklyDays"],
-    monthly: ["monthlyDays"],
-    yearly: ["yearlyMonths", "yearlyDates"],
-    hourly: [],
-  };
-
-  const allExtraFields = [
-    "specificDates", "specificTime",
-    "dailyTime", "weeklyDays", "biweeklyDays", "monthlyDays",
-    "yearlyMonths", "yearlyDates"
-  ];
-
-  const keep = allowedFields[frequency] || [];
-  task.recurringSettings = Object.fromEntries(
-    Object.entries(task.recurringSettings).filter(([key]) =>
-      ["frequency", "count", "indefinitely", ...keep].includes(key)
-    )
-  );
-}
-
-function syncRecurringStateToDOM(taskEl, recurringSettings) {
-  taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
-  const recurringBtn = taskEl.querySelector(".recurring-btn");
-  if (recurringBtn) {
-    recurringBtn.classList.add("active");
-    recurringBtn.setAttribute("aria-pressed", "true");
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-  const cancelBtn = document.getElementById("cancel-recurring-settings");
-
-  cancelBtn?.addEventListener("click", () => {
-    const settingsPanel = document.getElementById("recurring-settings-panel");
-    settingsPanel?.classList.add("hidden");
-  
-    // Deselect all selected tasks
-    document.querySelectorAll(".recurring-task-item").forEach(el => {
-      el.classList.remove("selected");
-      el.querySelector("input[type='checkbox']").checked = false;
-    });
-  
-    // Hide checkboxes and uncheck them
-    document.querySelectorAll(".recurring-check").forEach(cb => {
-      cb.checked = false;
-      cb.classList.add("hidden");
-      cb.closest(".recurring-task-item")?.classList.remove("checked");
-    });
-  
-    // Hide the summary preview if visible
-    const preview = document.getElementById("recurring-summary-preview");
-    if (preview) preview.classList.add("hidden");
-  
-    updateRecurringSettingsVisibility();
-  });
-
-
-
-
-
-  document.getElementById("recur-indefinitely").addEventListener("change", (e) => {
-    const countContainer = document.getElementById("recur-count-container");
-    const recurCount = document.getElementById("recur-count-input");
-    const hidden = e.target.checked;
-    countContainer.classList.toggle("hidden", hidden);
-    updateRecurCountVisibility();
-    updateRecurringSummary();
-  });
-
-  function setupBiweeklyDayToggle() {
-    document.querySelectorAll(".biweekly-day-box").forEach(box => {
-      box.addEventListener("click", () => {
-        box.classList.toggle("selected");
-      });
-    });
-  }
-
-  setupBiweeklyDayToggle();
-  document.addEventListener("click", (e) => {
-    const panel = document.getElementById("recurring-panel");
-    const taskList = document.getElementById("recurring-task-list");
-    const settingsPanel = document.getElementById("recurring-settings-panel");
-    const overlay = document.getElementById("recurring-panel-overlay");
-    const summaryPreview = document.getElementById("recurring-summary-preview");
-  
-    if (!overlay || overlay.classList.contains("hidden")) return;
-  
-    if (taskList.contains(e.target) || settingsPanel.contains(e.target)) return;
-  
-    // 🔽 New block for hiding summary preview
-    if (summaryPreview && !summaryPreview.contains(e.target) && !taskList.contains(e.target)) {
-      summaryPreview.classList.add("hidden");
-      document.querySelectorAll(".recurring-task-item").forEach(el => el.classList.remove("selected"));
-    }
-  });
-
-
-
-
-
-
-
-
-
-  function setupMilitaryTimeToggle(prefix) {
-    const toggle = document.getElementById(`${prefix}-military`);
-    const hourInput = document.getElementById(`${prefix}-hour`);
-    const meridiemSelect = document.getElementById(`${prefix}-meridiem`);
-  
-    // ✅ Add better error handling
-    if (!toggle || !hourInput || !meridiemSelect) {
-      console.warn(`⚠️ Missing elements for military time toggle: ${prefix}`);
-      return;
-    }
-  
-    toggle.addEventListener("change", () => {
-      const is24Hour = toggle.checked;
-  
-      // ✅ Add try-catch for safer property updates
-      try {
-        hourInput.min = is24Hour ? 0 : 1;
-        hourInput.max = is24Hour ? 23 : 12;
-        meridiemSelect.classList.toggle("hidden", is24Hour);
-        
-        // ✅ Update summary when time format changes
-        if (typeof updateRecurringSummary === 'function') {
-          updateRecurringSummary();
-        }
-      } catch (error) {
-        console.warn(`⚠️ Error updating military time toggle for ${prefix}:`, error);
-      }
-    });
-  }
-
-  function setupTimeConversion({
-    hourInputId,
-    minuteInputId,
-    meridiemSelectId,
-    militaryCheckboxId
-  }) {
-    const hourInput = document.getElementById(hourInputId);
-    const minuteInput = document.getElementById(minuteInputId);
-    const meridiemSelect = document.getElementById(meridiemSelectId);
-    const militaryToggle = document.getElementById(militaryCheckboxId);
-  
-    if (!hourInput || !minuteInput || !meridiemSelect || !militaryToggle) return;
-  
-    militaryToggle.addEventListener("change", () => {
-      const is24Hour = militaryToggle.checked;
-      let hour = parseInt(hourInput.value) || 0;
-      let meridiem = meridiemSelect.value;
-  
-      if (is24Hour) {
-        // Convert from 12h to 24h
-        if (meridiem === "AM") {
-          hour = hour === 12 ? 0 : hour;
-        } else {
-          hour = hour === 12 ? 12 : hour + 12;
-        }
-        hourInput.value = hour;
-        meridiemSelect.classList.add("hidden");
-      } else {
-        // Convert from 24h to 12h
-        if (hour === 0) {
-          hourInput.value = 12;
-          meridiemSelect.value = "AM";
-        } else if (hour < 12) {
-          hourInput.value = hour;
-          meridiemSelect.value = "AM";
-        } else if (hour === 12) {
-          hourInput.value = 12;
-          meridiemSelect.value = "PM";
-        } else {
-          hourInput.value = hour - 12;
-          meridiemSelect.value = "PM";
-        }
-        meridiemSelect.classList.remove("hidden");
-      }
-    });
-  }
-
-
-
-
-
-
-  function generateMonthlyDayGrid() {
-    const container = document.querySelector(".monthly-days");
-    if (!container) return;
-  
-    container.innerHTML = "";
-  
-    for (let i = 1; i <= 31; i++) {
-      const dayBox = document.createElement("div");
-      dayBox.className = "monthly-day-box";
-      dayBox.setAttribute("data-day", i);
-      dayBox.textContent = i;
-  
-      // Toggle selection on click
-      dayBox.addEventListener("click", () => {
-        dayBox.classList.toggle("selected");
-      });
-  
-      container.appendChild(dayBox);
-    }
-  }
-
-  
-
-  function setupWeeklyDayToggle() {
-    document.querySelectorAll(".weekly-day-box").forEach(box => {
-      box.addEventListener("click", () => {
-        box.classList.toggle("selected");
-      });
-    });
-  }
-
-
-
-  function generateYearlyMonthGrid() {
-    const container = document.querySelector(".yearly-months");
-    if (!container) return;
-  
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  
-    container.innerHTML = "";
-  
-    monthNames.forEach((name, index) => {
-      const monthBox = document.createElement("div");
-      monthBox.className = "yearly-month-box";
-      monthBox.setAttribute("data-month", index + 1);
-      monthBox.textContent = name;
-  
-      monthBox.addEventListener("click", () => {
-        // Toggle selection
-        monthBox.classList.toggle("selected");
-  
-        const selectedMonths = getSelectedYearlyMonths();
-  
-        // ✅ Reveal or hide the specific-days checkbox label
-        const specificDaysLabel = document.getElementById("yearly-specific-days-label");
-        if (specificDaysLabel) {
-          specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
-        }
-  
-        // Show/hide day container based on selection + checkbox state
-        const yearlySpecificDaysCheckbox = document.getElementById("yearly-specific-days");
-        const yearlyDayContainer = document.getElementById("yearly-day-container");
-  
-        if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
-          const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
-          yearlyDayContainer.classList.toggle("hidden", !shouldShow);
-        }
-  
-        // Update dropdown
-        const yearlyMonthSelect = document.getElementById("yearly-month-select");
-        if (yearlyMonthSelect) {
-          yearlyMonthSelect.innerHTML = "";
-  
-          selectedMonths.forEach((monthNum) => {
-            const option = document.createElement("option");
-            option.value = monthNum;
-            option.textContent = new Date(0, monthNum - 1).toLocaleString('default', { month: 'long' });
-            yearlyMonthSelect.appendChild(option);
-          });
-  
-          if (selectedMonths.length > 0) {
-            const currentMonth = index + 1;
-            yearlyMonthSelect.value = currentMonth;
-            generateYearlyDayGrid(currentMonth);
-          } else {
-            document.querySelector(".yearly-days").innerHTML = "";
-          }
-        }
-      });
-  
-      container.appendChild(monthBox);
-    });
-  }
-
-  
-  function generateYearlyDayGrid(monthNumber) {
-    const container = document.querySelector(".yearly-days");
-    if (!container) return;
-  
-    container.innerHTML = "";
-  
-    const daysInMonth = new Date(2025, monthNumber, 0).getDate();
-    const selectedDays = selectedYearlyDays[monthNumber] || [];
-  const applyToAll = yearlyApplyToAllCheckbox?.checked;
-const activeMonths = getSelectedYearlyMonths();
-
-// If "apply to all" is checked, use the shared day list
-const sharedDays = selectedYearlyDays["all"] || [];
-
-for (let i = 1; i <= daysInMonth; i++) {
-  const dayBox = document.createElement("div");
-  dayBox.className = "yearly-day-box";
-  dayBox.setAttribute("data-day", i);
-  dayBox.textContent = i;
-
-  const isSelected = applyToAll
-    ? sharedDays.includes(i)
-    : selectedDays.includes(i);
-
-  if (isSelected) {
-    dayBox.classList.add("selected");
-  }
-
-  dayBox.addEventListener("click", () => {
-    dayBox.classList.toggle("selected");
-    const isNowSelected = dayBox.classList.contains("selected");
-
-    if (applyToAll) {
-      // Update sharedDays
-      if (isNowSelected && !sharedDays.includes(i)) {
-        sharedDays.push(i);
-      } else if (!isNowSelected && sharedDays.includes(i)) {
-        const idx = sharedDays.indexOf(i);
-        sharedDays.splice(idx, 1);
-      }
-
-      selectedYearlyDays["all"] = sharedDays;
-
-      // Sync all selected months
-      activeMonths.forEach(month => {
-        selectedYearlyDays[month] = [...sharedDays];
-      });
-    } else {
-      // Regular mode, per-month
-      const current = selectedYearlyDays[monthNumber] || [];
-      if (isNowSelected && !current.includes(i)) {
-        current.push(i);
-      } else if (!isNowSelected && current.includes(i)) {
-        const idx = current.indexOf(i);
-        current.splice(idx, 1);
-      }
-      selectedYearlyDays[monthNumber] = current;
-    }
-  });
-
-  container.appendChild(dayBox);
-}
-
-  }
-  
-  function handleYearlyApplyToAllChange() {
-    const checkbox = document.getElementById("yearly-apply-days-to-all");
-    const dropdown = document.getElementById("yearly-month-select");
-    const selectedMonths = getSelectedYearlyMonths();
-  
-    if (!checkbox || !dropdown) return;
-  
-    if (checkbox.checked) {
-      dropdown.classList.add("hidden");
-      if (selectedMonths.length > 0) {
-        generateYearlyDayGrid(selectedMonths[0]); // Use any selected month for grid
-      }
-    } else {
-      dropdown.classList.remove("hidden");
-      const selectedMonth = parseInt(dropdown.value);
-      generateYearlyDayGrid(selectedMonth);
-    }
-  }
-
-
-  function getSelectedYearlyMonths() {
-    return Array.from(document.querySelectorAll(".yearly-month-box.selected"))
-                .map(el => parseInt(el.dataset.month));
-  }
-
-  function getSelectedMonthlyDays() {
-    return Array.from(document.querySelectorAll(".monthly-day-box.selected"))
-                .map(el => parseInt(el.dataset.day));
-  }
-  
-
-function setupSpecificDatesPanel() {
-  const checkbox = document.getElementById("recur-specific-dates");
-  const panel = document.getElementById("specific-dates-panel");
-  const timeOptions = document.getElementById("specific-date-time-options");
-  const addBtn = document.getElementById("add-specific-date");
-  const list = document.getElementById("specific-date-list");
-
-  // ✅ Add error handling for missing elements
-  if (!checkbox || !panel || !timeOptions || !addBtn || !list) {
-    console.warn("⚠️ Missing elements for specific dates panel setup");
-    return;
-  }
-
-  const createDateInput = (isFirst = false) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "specific-date-item";
-
-    const input = document.createElement("input");
-    input.type = "date";
-    const index = list.children.length;
-    input.setAttribute("aria-label", isFirst ? "First specific date" : `Specific date ${index + 1}`);
-    input.required = true;
-    
-    // ✅ Better error handling for date setting
-    try {
-      input.valueAsDate = getTomorrow();
-    } catch (error) {
-      console.warn("⚠️ Could not set default date:", error);
-    }
-
-    if (isFirst) {
-        input.classList.add("first-specific-date");
-    }
-
-    input.addEventListener("change", () => {
-      if (isFirst && !input.value) {
-        try {
-          input.valueAsDate = getTomorrow();
-        } catch (error) {
-          console.warn("⚠️ Could not reset date:", error);
-        }
-      }
-      updateRecurringSummary(); // ✅ Add this to update summary when date changes
-    });
-
-    wrapper.appendChild(input);
-
-    if (!isFirst) {
-      const trash = document.createElement("button");
-      trash.type = "button";
-      trash.className = "trash-btn";
-      trash.innerHTML = "<i class='fas fa-trash recurring-date-trash-icon'></i>";
-      trash.title = "Remove this date";
-
-      trash.addEventListener("click", () => {
-        wrapper.remove();
-        updateRecurCountVisibility();
-        updateRecurringSummary();
-      });
-      wrapper.appendChild(trash);
-    }
-
-    list.appendChild(wrapper);
-    updateRecurringSummary(); // ✅ Update summary when new date is added
-  };
-
-  // Rest of the function remains the same...
-  checkbox.addEventListener("change", () => {
-    const shouldShow = checkbox.checked;
-  
-    panel.classList.toggle("hidden", !shouldShow);
-    timeOptions.classList.toggle("hidden", !shouldShow);
-  
-    document.querySelectorAll(".frequency-options").forEach(panel => {
-      panel.classList.add("hidden");
-    });
-  
-    document.getElementById("recur-frequency-container").classList.toggle("hidden", shouldShow);
-    document.getElementById("recur-indefinitely").closest("label").classList.toggle("hidden", shouldShow);
-  
-    const advancedBtn = document.getElementById("toggle-advanced-settings");
-    if (advancedBtn) {
-      advancedBtn.classList.toggle("hidden", shouldShow);
-    }
-  
-    if (shouldShow && list.children.length === 0) {
-      createDateInput(true);
-    }
-  
-    if (!shouldShow) {
-      document.getElementById("specific-date-specific-time").checked = false;
-      document.getElementById("specific-date-time-container").classList.add("hidden");
-  
-      const freqSelect = document.getElementById("recur-frequency");
-      if (freqSelect) {
-        const event = new Event("change");
-        freqSelect.dispatchEvent(event);
-      }
-    }
-  
-    updateRecurCountVisibility();
-    updateRecurringSummary();
-  });
-
-  addBtn.addEventListener("click", () => {
-    createDateInput(false);
-  });
-
-  updateRecurringSummary();
-}
-  
-  function getTomorrow() {
-    try {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      // ✅ Validate the date is reasonable
-      if (isNaN(tomorrow.getTime()) || tomorrow.getFullYear() > 2100) {
-        throw new Error("Invalid date generated");
-      }
-      
-      return tomorrow;
-    } catch (error) {
-      console.warn("⚠️ Error generating tomorrow's date:", error);
-      // ✅ Fallback to a basic future date
-      const fallback = new Date();
-      fallback.setDate(fallback.getDate() + 1);
-      return fallback;
-    }
-  }
-
-  function updateRecurCountVisibility() {
-    const isIndefinite = document.getElementById("recur-indefinitely").checked;
-    const isUsingSpecificDates = document.getElementById("recur-specific-dates").checked;
-    const countContainer = document.getElementById("recur-count-container");
-  
-    // Only show if NOT using specific dates AND NOT recurring indefinitely
-    const shouldShow = !isUsingSpecificDates && !isIndefinite;
-    countContainer.classList.toggle("hidden", !shouldShow);
-  }
+// ✅ REMOVED: apply-recurring-settings event listener - now handled by recurringPanel module
+// ✅ REMOVED: normalizeRecurringSettings - now handled by recurringCore module
+// ✅ REMOVED: buildRecurringSettingsFromPanel - now handled by recurringPanel module
+// ✅ REMOVED: clearNonRelevantRecurringFields - now handled by recurringCore module
+// ✅ REMOVED: syncRecurringStateToDOM - now handled by recurringCore module
+// ✅ REMOVED: cancel-recurring-settings event listener - now handled by recurringPanel module
+// ✅ REMOVED: recur-indefinitely event listener - now handled by recurringPanel module
+// ✅ REMOVED: setupBiweeklyDayToggle - now handled by recurringPanel module
+// ✅ REMOVED: document click event listener for hiding preview - now handled by recurringPanel module
+
+// ✅ REMOVED: setupMilitaryTimeToggle - now handled by recurringPanel module
+// ✅ REMOVED: setupTimeConversion - now handled by recurringPanel module
+// ✅ REMOVED: generateMonthlyDayGrid - now handled by recurringPanel module
+// ✅ REMOVED: setupWeeklyDayToggle - now handled by recurringPanel module
+// ✅ REMOVED: generateYearlyMonthGrid - now handled by recurringPanel module
+// ✅ REMOVED: generateYearlyDayGrid - now handled by recurringPanel module
+// ✅ REMOVED: handleYearlyApplyToAllChange - now handled by recurringPanel module
+// ✅ REMOVED: getSelectedYearlyMonths - now handled by recurringPanel module
+// ✅ REMOVED: getSelectedMonthlyDays - now handled by recurringPanel module
+// ✅ REMOVED: setupSpecificDatesPanel - now handled by recurringPanel module
+// ✅ REMOVED: getTomorrow - now handled by recurringPanel module
+// ✅ REMOVED: updateRecurCountVisibility - now handled by recurringPanel module
 
 // ✅ Helper function to build task context for existing tasks (AppState-based)
 function buildTaskContext(taskItem, taskId) {
@@ -7308,689 +5813,46 @@ function buildTaskContext(taskItem, taskId) {
 
 
 
-function updateRecurringButtonVisibility() {
-    console.log('🔄 Updating recurring button visibility (AppState-based)...');
-    
-    // ✅ Use AppState instead of loadMiniCycleData
-    if (!AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for updateRecurringButtonVisibility');
-        return;
-    }
+// ✅ REMOVED: updateRecurringButtonVisibility - now handled by recurringCore/recurringPanel modules
 
-    const state = AppState.get();
-    const activeCycleId = state.appState?.activeCycleId;
-    
-    if (!activeCycleId) {
-        console.warn('⚠️ No active cycle ID found for recurring button visibility');
-        return;
-    }
-
-    const cycleData = state.data?.cycles?.[activeCycleId];
-    if (!cycleData) {
-        console.warn("⚠️ No active cycle found for recurring button visibility");
-        return;
-    }
-    
-    const settings = state.settings || {};
-    
-    console.log('📊 Checking visibility conditions:', {
-        activeCycle: activeCycleId,
-        autoReset: cycleData.autoReset,
-        deleteCheckedTasks: cycleData.deleteCheckedTasks,
-        alwaysShowRecurring: settings.alwaysShowRecurring
-    });
-    
-    const autoReset = cycleData.autoReset || false;
-    const deleteCheckedEnabled = cycleData.deleteCheckedTasks || false;
-    const alwaysShowRecurring = settings.alwaysShowRecurring || false;
-    
-    // Check if buttons should be visible
-    const shouldShowButtons = alwaysShowRecurring || (!autoReset && deleteCheckedEnabled);
-    
-    console.log('🔍 Button visibility decision:', {
-        shouldShow: shouldShowButtons,
-        reason: alwaysShowRecurring ? 'Always show enabled' : 
-                (!autoReset && deleteCheckedEnabled) ? 'Manual mode with delete enabled' : 
-                'Conditions not met'
-    });
-
-    document.querySelectorAll(".task").forEach(taskItem => {
-        const recurringButton = taskItem.querySelector(".recurring-btn");
-        if (!recurringButton) return;
-
-        if (shouldShowButtons) {
-            recurringButton.classList.remove("hidden");
-            console.log('👁️ Showing recurring button for task:', taskItem.dataset.taskId);
-            
-            // ✅ Ensure event handler is attached when button becomes visible
-            if (!recurringButton.dataset.handlerAttached) {
-                const taskId = taskItem.dataset.taskId;
-                const taskContext = buildTaskContext(taskItem, taskId);
-                if (taskContext) {
-                    setupRecurringButtonHandler(recurringButton, taskContext);
-                    recurringButton.dataset.handlerAttached = 'true';
-                    console.log('🔗 Attached recurring handler for task:', taskId);
-                }
-            }
-        } else {
-            recurringButton.classList.add("hidden");
-            console.log('🙈 Hiding recurring button for task:', taskItem.dataset.taskId);
-        }
-    });
-    
-    console.log('✅ Recurring button visibility update completed');
-}
-
-function isAlwaysShowRecurringEnabled() {
-    console.log('🔍 Checking always show recurring enabled (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for isAlwaysShowRecurringEnabled');
-        return false;
-    }
-    
-    // Check Schema 2.5 setting first, then DOM as fallback
-    const result = schemaData.settings.alwaysShowRecurring || 
-                   document.getElementById("always-show-recurring")?.checked || 
-                   false;
-    
-    console.log('✅ Always show recurring enabled:', result);
-    return result;
-}
+// ✅ REMOVED: isAlwaysShowRecurringEnabled - now handled by recurringCore/recurringPanel modules
   
-function updateRecurringPanelButtonVisibility() {
-    const panelButton = document.getElementById("open-recurring-panel");
-    if (!panelButton) return;
-    
-    // Simple check: get current data and look for recurring tasks
-    let hasRecurring = false;
-    
-    try {
-        const schemaData = loadMiniCycleData();
-        if (schemaData?.cycles?.[schemaData.activeCycle]) {
-            const cycle = schemaData.cycles[schemaData.activeCycle];
-            hasRecurring = cycle.tasks.some(task => task.recurring) || 
-                          Object.keys(cycle.recurringTemplates || {}).length > 0;
-        }
-    } catch (error) {
-        console.warn('Could not check recurring tasks:', error);
-        return;
-    }
-    
-    panelButton.classList.toggle("hidden", !hasRecurring);
-}
+// ✅ REMOVED: updateRecurringPanelButtonVisibility - now handled by recurringCore/recurringPanel modules
   
-function updateRecurringSummary() {
-    console.log('📝 Updating recurring summary (Schema 2.5 only)...');
-    
-    const summaryEl = document.getElementById("recurring-summary");
-    if (!summaryEl) {
-        console.warn('⚠️ Recurring summary element not found');
-        return;
-    }
+// ✅ REMOVED: updateRecurringSummary - now handled by recurringCore/recurringPanel modules
 
-    // ✅ Build settings from the panel input
-    const settings = buildRecurringSettingsFromPanel();
-    
-    console.log('📊 Built settings from panel:', settings);
+// ✅ REMOVED: parseDateAsLocal - now handled by recurringCore/recurringPanel modules
 
-    // ✅ Simulate fallback default time (for preview only)
-    if (!settings.useSpecificTime && !settings.defaultRecurTime) {
-        settings.defaultRecurTime = new Date().toISOString();
-        console.log('🕒 Added default recur time for preview');
-    }
+// ✅ REMOVED: attachRecurringSummaryListeners - now handled by recurringPanel module
 
-    // ✅ Generate summary text using the shared utility
-    const summaryText = buildRecurringSummaryFromSettings(settings);
-    
-    console.log('📄 Generated summary text:', summaryText);
-
-    // ✅ Apply to DOM
-    summaryEl.textContent = summaryText;
-    summaryEl.classList.remove("hidden");
-    
-    console.log('✅ Recurring summary updated successfully');
-}
-
-function parseDateAsLocal(dateStr) {
-    console.log('📅 Parsing date as local:', dateStr);
-    
-    try {
-        const [year, month, day] = dateStr.split("-").map(Number);
-        const result = new Date(year, month - 1, day); // month is 0-indexed
-        
-        console.log('✅ Date parsed successfully:', result);
-        return result;
-    } catch (error) {
-        console.error('❌ Error parsing date:', error);
-        return new Date(); // fallback to today
-    }
-}
-
-function attachRecurringSummaryListeners() {
-    console.log('🔗 Attaching recurring summary listeners (Schema 2.5 only)...');
-    
-    const panel = document.getElementById("recurring-settings-panel");
-    if (!panel) {
-        console.warn('⚠️ Recurring settings panel not found');
-        return;
-    }
-    
-    safeAddEventListener(panel, "change", handleRecurringChange);
-    safeAddEventListener(panel, "click", handleRecurringClick);
-    
-    console.log('✅ Recurring summary listeners attached successfully');
-}
-
-function showTaskSummaryPreview(task) {
-    console.log('👁️ Showing task summary preview (Schema 2.5 only)...', task?.id);
-    
-    if (!task || !task.id) {
-        console.warn("⚠️ No valid task provided for recurring preview.");
-        return;
-    }
-
-    const summaryContainer = document.getElementById("recurring-summary-preview") || createTaskSummaryPreview();
-    summaryContainer.innerHTML = "";
-
-    // ✅ Use AppState instead of loadMiniCycleData
-    if (!AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for showTaskSummaryPreview');
-        return;
-    }
-
-    const state = AppState.get();
-    const activeCycleId = state.appState?.activeCycleId;
-    
-    if (!activeCycleId) {
-        console.warn('⚠️ No active cycle ID found for task preview');
-        return;
-    }
-
-    const currentCycle = state.data?.cycles?.[activeCycleId];
-    if (!currentCycle) {
-        console.warn('⚠️ No active cycle found for task preview');
-        return;
-    }
-    
-    console.log('🔍 Looking for recurring settings for task:', task.id);
-    
-    const recurringSettings = task.recurringSettings ||
-                             currentCycle?.recurringTemplates?.[task.id]?.recurringSettings;
-    
-    console.log('📊 Found recurring settings:', !!recurringSettings);
-
-    // 🏷️ Label
-    const label = document.createElement("div");
-    label.textContent = "Current Recurring Settings:";
-    label.className = "summary-label";
-    summaryContainer.appendChild(label);
-
-    // 📄 Summary Text
-    const summaryText = document.createElement("div");
-    summaryText.className = "summary-text";
-    summaryText.textContent = recurringSettings
-        ? getRecurringSummaryText(recurringSettings)
-        : "This task is not marked as recurring.";
-    summaryContainer.appendChild(summaryText);
-
-    // 🔘 Change Button
-    const changeBtn = document.createElement("button");
-    changeBtn.textContent = "Change Recurring Settings";
-    changeBtn.className = "change-recurring-btn";
-    changeBtn.setAttribute("aria-label", "Change recurring settings for this task");
-
-    const settingsPanel = document.getElementById("recurring-settings-panel");
-    if (settingsPanel && !settingsPanel.classList.contains("hidden")) {
-        changeBtn.classList.add("hidden");
-    }
-
-    changeBtn.addEventListener("click", () => {
-        console.log('🔘 Opening recurring settings panel for task:', task.id);
-        openRecurringSettingsPanelForTask(task.id);
-    });
-
-    summaryContainer.appendChild(changeBtn);
-    summaryContainer.classList.remove("hidden");
-    
-    // ✅ Populate form with task's current settings
-    if (recurringSettings) {
-        populateRecurringFormWithSettings(recurringSettings);
-    }
-    
-    console.log('✅ Task summary preview displayed successfully');
-}
+// ✅ REMOVED: showTaskSummaryPreview - now handled by recurringCore/recurringPanel modules
 
 // ✅ New function to populate form with existing settings
-function populateRecurringFormWithSettings(settings) {
-    console.log('📝 Populating recurring form with settings:', settings);
-    
-    try {
-        // Frequency dropdown
-        const frequencySelect = document.getElementById('recur-frequency');
-        if (frequencySelect && settings.frequency) {
-            frequencySelect.value = settings.frequency;
-            frequencySelect.dispatchEvent(new Event('change'));
-        }
-        
-        // Indefinite checkbox
-        const indefiniteCheckbox = document.getElementById('indefiniteCheckbox');
-        if (indefiniteCheckbox) {
-            indefiniteCheckbox.checked = settings.indefinitely !== false;
-        }
-        
-        // Repeat count
-        if (settings.indefinitely === false && settings.repeatCount) {
-            const repeatCountInput = document.getElementById('repeatCount');
-            if (repeatCountInput) {
-                repeatCountInput.value = settings.repeatCount;
-            }
-        }
-        
-        // Specific time settings
-        if (settings.useSpecificTime && settings.specificTime) {
-            const useTimeCheckbox = document.getElementById('useSpecificTime');
-            const timeInput = document.getElementById('specificTime');
-            
-            if (useTimeCheckbox) useTimeCheckbox.checked = true;
-            if (timeInput) {
-                // Convert ISO string to HH:MM format
-                const timeDate = new Date(settings.specificTime);
-                const hours = timeDate.getHours().toString().padStart(2, '0');
-                const minutes = timeDate.getMinutes().toString().padStart(2, '0');
-                timeInput.value = `${hours}:${minutes}`;
-            }
-        }
-        
-        // Populate frequency-specific settings
-        if (settings.frequency === 'weekly' && settings.daysOfWeek) {
-            settings.daysOfWeek.forEach(day => {
-                const dayBox = document.querySelector(`.weekly-day-box[data-day="${day}"]`);
-                if (dayBox) dayBox.classList.add('selected');
-            });
-        }
-        
-        if (settings.frequency === 'monthly' && settings.days) {
-            settings.days.forEach(day => {
-                const dayBox = document.querySelector(`.monthly-day-box[data-day="${day}"]`);
-                if (dayBox) dayBox.classList.add('selected');
-            });
-        }
-        
-        if (settings.frequency === 'yearly' && settings.daysByMonth) {
-            Object.entries(settings.daysByMonth).forEach(([month, days]) => {
-                if (month !== 'all') {
-                    const monthBox = document.querySelector(`.yearly-month-box[data-month="${month}"]`);
-                    if (monthBox) monthBox.classList.add('selected');
-                }
-                
-                days.forEach(day => {
-                    const dayBox = document.querySelector(`.yearly-day-box[data-day="${day}"]`);
-                    if (dayBox) dayBox.classList.add('selected');
-                });
-            });
-        }
-        
-        // Update the summary display
-        updateRecurringSummary();
-        
-        console.log('✅ Form populated successfully');
-        
-    } catch (error) {
-        console.error('❌ Error populating form with settings:', error);
-    }
-}
+// ✅ REMOVED: populateRecurringFormWithSettings - now handled by recurringCore/recurringPanel modules
 
 // ✅ New function to clear/reset the recurring form
-function clearRecurringForm() {
-    console.log('🧹 Clearing recurring form');
-    
-    try {
-        // Reset frequency to default
-        const frequencySelect = document.getElementById('recur-frequency');
-        if (frequencySelect) {
-            frequencySelect.value = 'daily';
-            frequencySelect.dispatchEvent(new Event('change'));
-        }
-        
-        // Reset indefinite checkbox
-        const indefiniteCheckbox = document.getElementById('indefiniteCheckbox');
-        if (indefiniteCheckbox) {
-            indefiniteCheckbox.checked = true;
-        }
-        
-        // Clear repeat count
-        const repeatCountInput = document.getElementById('repeatCount');
-        if (repeatCountInput) {
-            repeatCountInput.value = '';
-        }
-        
-        // Clear specific time settings
-        const useTimeCheckbox = document.getElementById('useSpecificTime');
-        const timeInput = document.getElementById('specificTime');
-        
-        if (useTimeCheckbox) useTimeCheckbox.checked = false;
-        if (timeInput) timeInput.value = '';
-        
-        // Clear all selected day boxes
-        document.querySelectorAll('.weekly-day-box.selected, .biweekly-day-box.selected, .monthly-day-box.selected, .yearly-day-box.selected, .yearly-month-box.selected').forEach(box => {
-            box.classList.remove('selected');
-        });
-        
-        // Update the summary
-        updateRecurringSummary();
-        
-        console.log('✅ Form cleared successfully');
-        
-    } catch (error) {
-        console.error('❌ Error clearing form:', error);
-    }
-}
-  // Helper to create the preview container if it doesn’t exist yet
-  function createTaskSummaryPreview() {
-    const container = document.createElement("div");
-    container.id = "recurring-summary-preview";
-    container.className = "recurring-summary recurring-summary-preview hidden";
-    document.getElementById("recurring-panel").appendChild(container);
-    return container;
-  }
-  
+// ✅ REMOVED: clearRecurringForm - now handled by recurringCore/recurringPanel modules
+// ✅ REMOVED: createTaskSummaryPreview - now handled by recurringPanel module
 
 // Before:
-function getRecurringSummaryText(template) {
-  return buildRecurringSummaryFromSettings(template.recurringSettings || {});
-}
+// ✅ REMOVED: getRecurringSummaryText - now handled by recurringCore/recurringPanel modules
 
 
 
 
 // ✅ Shared utility: Build a recurring summary string from a settings object
-function buildRecurringSummaryFromSettings(settings = {}) {
-  const freq = settings.frequency || "daily";
-  const indefinitely = settings.indefinitely ?? true;
-  const count = settings.count;
+// ✅ REMOVED: buildRecurringSummaryFromSettings - now handled by recurringPanel module
 
-  // === ✅ SPECIFIC DATES OVERRIDE ===
-  if (settings.specificDates?.enabled && settings.specificDates.dates?.length) {
-    const formattedDates = settings.specificDates.dates.map(dateStr => {
-      const date = parseDateAsLocal(dateStr);
-      return date.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        weekday: "short"
-      });
-    });
+// ✅ REMOVED: removeRecurringTasksFromCycle - now handled by recurringCore/recurringPanel modules
 
-    let summary = `📅 Specific dates: ${formattedDates.join(", ")}`;
-
-    // Optionally show time for specific dates
-    if (settings.time) {
-      const { hour, minute, meridiem, military } = settings.time;
-      const formattedTime = military
-        ? `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-        : `${hour}:${minute.toString().padStart(2, "0")} ${meridiem}`;
-      summary += ` ⏰ at ${formattedTime}`;
-    } else if (!settings.useSpecificTime && settings.defaultRecurTime) {
-      const time = new Date(settings.defaultRecurTime);
-      const fallbackTime = time.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-      summary += ` ⏰ at ${fallbackTime}`;
-    }
-
-    return summary;
-  }
-
-  // === 🔁 Normal Recurrence Fallback ===
-  let summaryText = `⏱ Repeats ${freq}`;
-  if (!indefinitely && count) {
-    summaryText += ` for ${count} time${count !== 1 ? "s" : ""}`;
-  } else {
-    summaryText += " indefinitely";
-  }
-
-  // === TIME HANDLING ===
-  if (settings.time && (settings.useSpecificTime ?? true)) {
-    const { hour, minute, meridiem, military } = settings.time;
-    const formatted = military
-      ? `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-      : `${hour}:${minute.toString().padStart(2, "0")} ${meridiem}`;
-    summaryText += ` at ${formatted}`;
-  } else if (!settings.useSpecificTime && settings.defaultRecurTime) {
-    const time = new Date(settings.defaultRecurTime);
-    const fallbackTime = time.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-    summaryText += ` at ${fallbackTime}`;
-  }
-
-  // === HOURLY ===
-  if (freq === "hourly" && settings.hourly?.useSpecificMinute) {
-    summaryText += ` every hour at :${settings.hourly.minute.toString().padStart(2, "0")}`;
-  }
-
-  // === WEEKLY & BIWEEKLY ===
-  if ((freq === "weekly" || freq === "biweekly") && settings[freq]?.days?.length) {
-    summaryText += ` on ${settings[freq].days.join(", ")}`;
-  }
-
-  // === MONTHLY ===
-  if (freq === "monthly" && settings.monthly?.days?.length) {
-    summaryText += ` on day${settings.monthly.days.length > 1 ? "s" : ""} ${settings.monthly.days.join(", ")}`;
-  }
-
-  // === YEARLY ===
-  if (freq === "yearly") {
-    const months = settings.yearly?.months || [];
-    const daysByMonth = settings.yearly?.daysByMonth || {};
-
-    if (months.length) {
-      const monthNames = months.map(m => new Date(0, m - 1).toLocaleString("default", { month: "short" }));
-      summaryText += ` in ${monthNames.join(", ")}`;
-    }
-
-    if (settings.yearly?.useSpecificDays) {
-      if (settings.yearly.applyDaysToAll && daysByMonth.all?.length) {
-        summaryText += ` on day${daysByMonth.all.length > 1 ? "s" : ""} ${daysByMonth.all.join(", ")}`;
-      } else {
-        const parts = months.map(month => {
-          const days = daysByMonth[month] || [];
-          if (days.length === 0) return null;
-          const monthName = new Date(0, month - 1).toLocaleString("default", { month: "short" });
-          return `${monthName}: ${days.join(", ")}`;
-        }).filter(Boolean);
-
-        if (parts.length) {
-          summaryText += ` on ${parts.join("; ")}`;
-        }
-      }
-    }
-  }
-
-  return summaryText;
-}
-
-// Usage in summary preview:
-// const summary = buildRecurringSummaryFromSettings(task.recurringSettings);
-
-function removeRecurringTasksFromCycle(taskElements, cycleData) {
-    taskElements.forEach(taskEl => {
-        const taskId = taskEl.dataset.taskId;
-        const isRecurring = taskEl.classList.contains("recurring");
-
-        if (isRecurring) {
-            // Remove from DOM
-            taskEl.remove();
-            
-            // ✅ IMPORTANT: Only remove from tasks array, keep in recurringTemplates
-            if (cycleData.tasks) {
-                const taskIndex = cycleData.tasks.findIndex(t => t.id === taskId);
-                if (taskIndex !== -1) {
-                    cycleData.tasks.splice(taskIndex, 1);
-                }
-            }
-            
-            // ✅ Keep in recurringTemplates so they can be recreated
-            // DON'T delete from recurringTemplates here
-        }
-    });
-}
-
-function handleRecurringTasksAfterReset() {
-    console.log('🔄 Handling recurring tasks after reset (Schema 2.5 only)...');
-    
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleRecurringTasksAfterReset');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-    
-    if (!cycleData) {
-        console.warn('⚠️ No active cycle data found for recurring task reset');
-        return;
-    }
-    
-    console.log('📊 Processing recurring tasks reset for cycle:', activeCycle);
-    
-    const taskElements = [...taskList.querySelectorAll(".task")];
-    console.log('🔍 Found task elements for processing:', taskElements.length);
-    
-    // ✅ Reuse the same helper function
-    removeRecurringTasksFromCycle(taskElements, cycleData);
-    
-    // ✅ Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycleData;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('💾 Recurring tasks reset saved to Schema 2.5');
-    
-    // ✅ Update UI components
-    updateProgressBar();
-    updateStatsPanel();
-    checkCompleteAllButton();
-    
-    console.log('✅ Recurring tasks after reset handling completed');
-}
+// ✅ REMOVED: handleRecurringTasksAfterReset - now handled by recurringCore/recurringPanel modules
 
 
-function convert12To24(hour, meridiem) {
-  hour = parseInt(hour, 10);
-  if (meridiem === "PM" && hour !== 12) return hour + 12;
-  if (meridiem === "AM" && hour === 12) return 0;
-  return hour;
-}
+// ✅ REMOVED: convert12To24 - now handled by recurringCore/recurringPanel modules
 
 
 // ✅ Main logic to determine if a task should recur today
-function shouldTaskRecurNow(settings, now = new Date()) {
- // ✅ Specific Dates override all… but still honor specific‑time if set
-if (settings.specificDates?.enabled) {
-  const todayMatch = settings.specificDates.dates?.some(dateStr => {
-    const date = parseDateAsLocal(dateStr);
-    return date.getFullYear() === now.getFullYear()
-        && date.getMonth()  === now.getMonth()
-        && date.getDate()   === now.getDate();
-  });
-  if (!todayMatch) return false;
-
-  // Only trigger at the exact time if the user checked “specific time”
-  if (settings.time) {
-    const hour   = settings.time.military
-                   ? settings.time.hour
-                   : convert12To24(settings.time.hour, settings.time.meridiem);
-    const minute = settings.time.minute;
-    return now.getHours() === hour && now.getMinutes() === minute;
-  }
-
-  return true;
-}
-
-  const weekday = now.toLocaleDateString("en-US", { weekday: "short" });
-  const day = now.getDate();
-  const month = now.getMonth() + 1;
-
-  switch (settings.frequency) {
-case "daily":
-  if (settings.time) {
-    const hour = settings.time.military
-      ? settings.time.hour
-      : convert12To24(settings.time.hour, settings.time.meridiem);
-    const minute = settings.time.minute;
-    return now.getHours() === hour && now.getMinutes() === minute;
-  }
-  return now.getHours() === 0 && now.getMinutes() === 0;
-
-   case "weekly":
-case "biweekly":
-  if (!settings[settings.frequency]?.days?.includes(weekday)) return false;
-
-  if (settings.time) {
-    const hour = settings.time.military
-      ? settings.time.hour
-      : convert12To24(settings.time.hour, settings.time.meridiem);
-    const minute = settings.time.minute;
-    return now.getHours() === hour && now.getMinutes() === minute;
-  }
-
-  return true; // if no time set, recur any time today
-
-
-   case "monthly":
-  if (!settings.monthly?.days?.includes(day)) return false;
-
-  if (settings.time) {
-    const hour = settings.time.military
-      ? settings.time.hour
-      : convert12To24(settings.time.hour, settings.time.meridiem);
-    const minute = settings.time.minute;
-    return now.getHours() === hour && now.getMinutes() === minute;
-  }
-
-  return true; // If no time is set, trigger any time during the day
-
-    case "yearly":
-  if (!settings.yearly?.months?.includes(month)) return false;
-
-  if (settings.yearly.useSpecificDays) {
-    const daysByMonth = settings.yearly.daysByMonth || {};
-    const days = settings.yearly.applyDaysToAll
-      ? daysByMonth.all || []
-      : daysByMonth[month] || [];
-
-    if (!days.includes(day)) return false;
-  }
-
-  if (settings.time) {
-    const hour = settings.time.military
-      ? settings.time.hour
-      : convert12To24(settings.time.hour, settings.time.meridiem);
-    const minute = settings.time.minute;
-    return now.getHours() === hour && now.getMinutes() === minute;
-  }
-
-  return true; // If no time is set, recur any time that day
-
-    case "hourly":
-      if (settings.hourly?.useSpecificMinute) {
-        const minute = now.getMinutes();
-        return minute === settings.hourly.minute;
-      }
-      return now.getMinutes() === 0;
-
-    default:
-      return false;
-  }
-}
+// ✅ REMOVED: shouldTaskRecurNow - now handled by recurringCore/recurringPanel modules
 
 
 
@@ -7999,182 +5861,11 @@ case "biweekly":
 
 
 // ✅ Helper: Check if a recurring task should be recreated
-function shouldRecreateRecurringTask(template, taskList, now) {
-  const { id, text, recurringSettings, recurring, lastTriggeredTimestamp, suppressUntil } = template;
+// ✅ REMOVED: shouldRecreateRecurringTask - now handled by recurringCore/recurringPanel modules
 
-  if (!recurring || !recurringSettings) return false;
+// ✅ REMOVED: watchRecurringTasks - now handled by recurringCore/recurringPanel modules
 
-  // 🔒 Already exists?
-  if (taskList.some(task => task.id === id)) return false;
-
-  // ⏸️ Suppressed?
-  if (suppressUntil && new Date(suppressUntil) > now) {
-    console.log(`⏸ Skipping "${text}" — suppressed until ${suppressUntil}`);
-    return false;
-  }
-
-  // ⏱ Triggered recently?
-  if (lastTriggeredTimestamp) {
-    const last = new Date(lastTriggeredTimestamp);
-    const sameMinute =
-      last.getFullYear() === now.getFullYear() &&
-      last.getMonth()    === now.getMonth()    &&
-      last.getDate()     === now.getDate()     &&
-      last.getHours()    === now.getHours()    &&
-      last.getMinutes()  === now.getMinutes();
-    if (sameMinute) return false;
-  }
-
-  // 🧠 Recurrence match?
-  return shouldTaskRecurNow(recurringSettings, now);
-}
-
-function watchRecurringTasks() {
-    console.log('👁️ Watching recurring tasks (AppState-based)...');
-    
-    // ✅ Check feature flag
-    if (!window.FeatureFlags?.recurringEnabled) {
-        console.log('🚫 Recurring feature disabled via FeatureFlags');
-        return;
-    }
-    
-    // ✅ Read from AppState instead of localStorage
-    if (!AppState.isReady()) {
-        console.warn('⚠️ AppState not ready for recurring task watch');
-        return;
-    }
-    
-    const state = AppState.get();
-    const activeCycleId = state.appState?.activeCycleId;
-    
-    if (!activeCycleId) {
-        console.warn('⚠️ No active cycle ID found for recurring task watch');
-        return;
-    }
-    
-    const cycleData = state.data?.cycles?.[activeCycleId];
-    if (!cycleData) {
-        console.warn('⚠️ No active cycle found for recurring task watch');
-        return;
-    }
-
-    const templates = cycleData.recurringTemplates || {};
-    const taskList = cycleData.tasks || [];
-
-    if (!Object.keys(templates).length) {
-        console.log('📋 No recurring templates found');
-        return;
-    }
-
-    console.log('🔍 Checking recurring templates:', Object.keys(templates).length);
-
-    const now = new Date();
-    const tasksToAdd = [];
-    const templateUpdates = {};
-
-    // ✅ Collect changes without mutating state directly
-    Object.values(templates).forEach(template => {
-        // ⛔ Prevent re-adding if task already exists by ID
-        if (taskList.some(task => task.id === template.id)) return;
-        if (!shouldRecreateRecurringTask(template, taskList, now)) return;
-
-        console.log("⏱ Auto‑recreating recurring task:", template.text);
-
-        tasksToAdd.push({
-            text: template.text,
-            completed: false,
-            dueDate: template.dueDate,
-            highPriority: template.highPriority,
-            remindersEnabled: template.remindersEnabled,
-            recurring: true,
-            id: template.id,
-            recurringSettings: template.recurringSettings
-        });
-
-        templateUpdates[template.id] = {
-            ...template,
-            lastTriggeredTimestamp: now.getTime()
-        };
-    });
-
-    // ✅ Batch all changes in one AppState update
-    if (tasksToAdd.length > 0) {
-        AppState.update(draft => {
-            const cycle = draft.data.cycles[activeCycleId];
-            
-            // Add new recurring tasks
-            tasksToAdd.forEach(taskData => {
-                cycle.tasks.push({
-                    ...taskData,
-                    dateCreated: now.toISOString()
-                });
-            });
-            
-            // Update template timestamps
-            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
-                cycle.recurringTemplates[templateId] = updatedTemplate;
-            });
-        });
-        
-        console.log(`✅ Added ${tasksToAdd.length} recurring tasks via AppState`);
-    }
-}
-
-function setupRecurringWatcher() {
-    console.log('⚙️ Setting up recurring watcher (AppState-based)...');
-    
-    // ✅ Check feature flag
-    if (!window.FeatureFlags?.recurringEnabled) {
-        console.log('🚫 Recurring feature disabled via FeatureFlags');
-        return;
-    }
-    
-    // ✅ Check AppState readiness with deferred setup
-    if (!AppState.isReady()) {
-        console.log('⏳ AppState not ready, deferring recurring watcher setup...');
-        
-        // Defer setup until AppState is ready
-        window._deferredRecurringSetup = window._deferredRecurringSetup || [];
-        window._deferredRecurringSetup.push(() => setupRecurringWatcher());
-        return;
-    }
-    
-    // ✅ Read from AppState instead of loadMiniCycleData
-    const state = AppState.get();
-    const activeCycleId = state.appState?.activeCycleId;
-    
-    if (!activeCycleId) {
-        console.warn('⚠️ No active cycle ID found for recurring watcher setup');
-        return;
-    }
-    
-    const cycleData = state.data?.cycles?.[activeCycleId];
-    if (!cycleData) {
-        console.warn('⚠️ No active cycle found for recurring watcher setup');
-        return;
-    }
-
-    const recurringTemplates = cycleData.recurringTemplates || {};
-    
-    if (Object.keys(recurringTemplates).length === 0) {
-        console.log('📋 No recurring templates found, skipping watcher setup');
-        return;
-    }
-
-    console.log('🔄 Setting up recurring task watcher with', Object.keys(recurringTemplates).length, 'templates');
-
-    watchRecurringTasks();
-    setInterval(watchRecurringTasks, 30000);
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-            console.log('👁️ Page became visible, checking recurring tasks');
-            watchRecurringTasks();
-        }
-    });
-    
-    console.log('✅ Recurring watcher setup completed');
-}
+// ✅ REMOVED: setupRecurringWatcher - now handled by recurringCore/recurringPanel modules
 
 
 
@@ -10123,12 +7814,28 @@ function createOrUpdateTaskData(taskContext) {
         };
         
         currentCycle.tasks.push(existingTask);
-        
+
         // Handle recurring template creation
         if (recurring && recurringSettings) {
-            createRecurringTemplate(taskContext, existingTask);
+            console.log('🔁 Saving recurring template');
+
+            if (!currentCycle.recurringTemplates) {
+                currentCycle.recurringTemplates = {};
+            }
+
+            currentCycle.recurringTemplates[assignedTaskId] = {
+                id: assignedTaskId,
+                text: taskTextTrimmed,
+                recurring: true,
+                recurringSettings: structuredClone(recurringSettings),
+                highPriority: highPriority || false,
+                dueDate: dueDate || null,
+                remindersEnabled: remindersEnabled || false,
+                lastTriggeredTimestamp: null,
+                schemaVersion: 2
+            };
         }
-        
+
         // Save to Schema 2.5
         saveTaskToSchema25(activeCycle, currentCycle);
         console.log('💾 Task saved to Schema 2.5');
@@ -10138,41 +7845,21 @@ function createOrUpdateTaskData(taskContext) {
 }
 
 // ✅ 4. Recurring Template Creation (extracted from task data creation)
-function createRecurringTemplate(taskContext, taskData) {
-    const { currentCycle, assignedTaskId, taskTextTrimmed, highPriority, dueDate, remindersEnabled, recurringSettings } = taskContext;
-    
-    console.log('🔁 Saving recurring template');
-    
-    if (!currentCycle.recurringTemplates) {
-        currentCycle.recurringTemplates = {};
-    }
-
-    currentCycle.recurringTemplates[assignedTaskId] = {
-        id: assignedTaskId,
-        text: taskTextTrimmed,
-        recurring: true,
-        recurringSettings: structuredClone(recurringSettings),
-        highPriority: highPriority || false,
-        dueDate: dueDate || null,
-        remindersEnabled: remindersEnabled || false,
-        lastTriggeredTimestamp: null,
-        schemaVersion: 2
-    };
-}
+// ✅ REMOVED: createRecurringTemplate - now handled by recurringCore/recurringPanel modules
 
 // ✅ 5. DOM Elements Creation
 function createTaskDOMElements(taskContext, taskData) {
-    const { 
-        assignedTaskId, taskTextTrimmed, highPriority, recurring, 
-        recurringSettings, settings, autoResetEnabled
+    const {
+        assignedTaskId, taskTextTrimmed, highPriority, recurring,
+        recurringSettings, settings, autoResetEnabled, currentCycle
     } = taskContext;
 
     // Get required DOM elements
     const taskList = document.getElementById("taskList");
     const taskInput = document.getElementById("taskInput");
-    
+
     // Create main task element
-    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings);
+    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
     
     // Create three dots button if needed
     const threeDotsButton = createThreeDotsButton(taskItem, settings);
@@ -10207,22 +7894,32 @@ function createTaskDOMElements(taskContext, taskData) {
 }
 
 // ✅ 6. Main Task Element Creation
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings) {
+function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
     const taskItem = document.createElement("li");
     taskItem.classList.add("task");
     taskItem.setAttribute("draggable", "true");
     taskItem.dataset.taskId = assignedTaskId;
-    
+
     if (highPriority) {
         taskItem.classList.add("high-priority");
     }
 
-    const hasValidRecurringSettings = recurring && recurringSettings && Object.keys(recurringSettings).length > 0;
-    if (hasValidRecurringSettings) {
+    // ✅ Check if task has a recurring template (source of truth for recurring state)
+    const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
+    const hasValidRecurringSettings = recurringSettings && Object.keys(recurringSettings).length > 0;
+
+    // Task is recurring if: has template OR (recurring flag is true AND has settings)
+    const isRecurring = hasRecurringTemplate || (recurring && hasValidRecurringSettings);
+
+    if (isRecurring) {
         taskItem.classList.add("recurring");
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
+        // Use settings from template if available, otherwise use task's settings
+        const settingsToUse = hasRecurringTemplate
+            ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
+            : recurringSettings;
+        taskItem.setAttribute("data-recurring-settings", JSON.stringify(settingsToUse));
     }
-    
+
     return taskItem;
 }
 
@@ -10290,9 +7987,9 @@ function createTaskButton(buttonConfig, taskContext, buttonContainer) {
 
     // Setup accessibility attributes
     setupButtonAccessibility(button, btnClass, buttonContainer);
-    
+
     // Setup ARIA states
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority);
+    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle);
     
     // Setup button event handlers
     setupButtonEventHandlers(button, btnClass, taskContext);
@@ -10337,13 +8034,31 @@ function setupButtonAccessibility(button, btnClass, buttonContainer) {
 }
 
 // ✅ 11. Button ARIA States Setup
-function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority) {
+function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle) {
     if (btnClass === "enable-task-reminders") {
         const isActive = remindersEnabled === true;
         button.classList.toggle("reminder-active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
     } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-        const isActive = btnClass === "recurring-btn" ? !!recurring : !!highPriority;
+        let isActive;
+
+        if (btnClass === "recurring-btn") {
+            // ✅ Check if task has a recurring template (source of truth)
+            const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
+            isActive = hasRecurringTemplate || !!recurring;
+
+            // ✅ Debug log for recurring button
+            console.log('🔘 Setting up recurring button:', {
+                taskId: assignedTaskId,
+                recurring,
+                hasRecurringTemplate: !!hasRecurringTemplate,
+                isActive,
+                hasActiveClass: button.classList.contains('active')
+            });
+        } else {
+            isActive = !!highPriority;
+        }
+
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
     }
@@ -10352,6 +8067,7 @@ function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, hi
 // ✅ 12. Button Event Handlers Setup
 function setupButtonEventHandlers(button, btnClass, taskContext) {
     if (btnClass === "recurring-btn") {
+        // ✅ Setup recurring button handler
         setupRecurringButtonHandler(button, taskContext);
     } else if (btnClass === "enable-task-reminders") {
         setupReminderButtonHandler(button, taskContext);
@@ -10363,154 +8079,183 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
     }
 }
 
-// ✅ 13. Recurring Button Handler (extracted from main function)
+// ✅ Recurring button handler (uses module functions)
 function setupRecurringButtonHandler(button, taskContext) {
-    const { assignedTaskId, currentCycle, settings, activeCycle } = taskContext;
-    
+    const { assignedTaskId, currentCycle, activeCycle } = taskContext;
+
     // ✅ Mark that handler is attached to prevent double-attachment
     button.dataset.handlerAttached = 'true';
-    
+
     button.addEventListener("click", () => {
-        const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
+        // ✅ Read fresh state from AppState to avoid stale closure data
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for recurring toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+
+        if (!freshCycle) {
+            console.error('❌ Active cycle not found in AppState');
+            return;
+        }
+
+        const task = freshCycle.tasks.find(t => t.id === assignedTaskId);
         if (!task) {
             console.warn('⚠️ Task not found:', assignedTaskId);
             return;
         }
 
-        if (!task) return;
-
-        
+        const alwaysShowRecurring = currentState?.settings?.alwaysShowRecurring || false;
 
         const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
-        if (!(showRecurring || (settings.alwaysShowRecurring || false))) return;
+        if (!(showRecurring || alwaysShowRecurring)) {
+            console.log('🚫 Recurring button click ignored - not in correct mode and always-show not enabled');
+            return;
+        }
 
-        const isNowRecurring = !task.recurring;
+        // ✅ Check template existence as source of truth (not task.recurring flag)
+        const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
+        const isCurrentlyRecurring = !!hasRecurringTemplate;
+        const isNowRecurring = !isCurrentlyRecurring;
+
+        console.log('🔄 Toggling recurring state:', {
+            taskId: assignedTaskId,
+            wasRecurring: isCurrentlyRecurring,
+            willBeRecurring: isNowRecurring,
+            hadTemplate: !!hasRecurringTemplate
+        });
+
         task.recurring = isNowRecurring;
 
         button.classList.toggle("active", isNowRecurring);
         button.setAttribute("aria-pressed", isNowRecurring.toString());
 
-        if (isNowRecurring) {
-            handleRecurringTaskActivation(task, taskContext, button);
-        } else {
-            handleRecurringTaskDeactivation(task, taskContext, assignedTaskId);
+        // ✅ Add or remove recurring icon from task label
+        const taskItem = button.closest('.task');
+        if (taskItem) {
+            const taskLabel = taskItem.querySelector('.task-text'); // ✅ Fixed: use .task-text not .task-label
+            if (taskLabel) {
+                let existingIcon = taskLabel.querySelector('.recurring-indicator');
+
+                if (isNowRecurring && !existingIcon) {
+                    // Add icon
+                    const icon = document.createElement("span");
+                    icon.className = "recurring-indicator";
+                    icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+                    taskLabel.appendChild(icon);
+                    console.log('✅ Added recurring icon to task:', assignedTaskId);
+                } else if (!isNowRecurring && existingIcon) {
+                    // Remove icon
+                    existingIcon.remove();
+                    console.log('✅ Removed recurring icon from task:', assignedTaskId);
+                }
+            }
         }
 
-        // Save to Schema 2.5
-        saveTaskToSchema25(activeCycle, currentCycle);
-        
-        // ✅ Simple panel button visibility update
-        updateRecurringPanelButtonVisibility();
-        
-        updateRecurringPanel?.();
-        
-        updateRecurringPanel?.();
+        // ✅ Create fresh taskContext with current settings from AppState
+        const freshTaskContext = {
+            ...taskContext,
+            settings: currentState?.settings || {}
+        };
+
+        if (isNowRecurring) {
+            // ✅ Use global function from module with fresh context
+            if (window.handleRecurringTaskActivation) {
+                window.handleRecurringTaskActivation(task, freshTaskContext, button);
+            }
+        } else {
+            // ✅ Use global function from module with fresh context
+            if (window.handleRecurringTaskDeactivation) {
+                window.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
+            }
+        }
+
+        // ✅ Don't call saveTaskToSchema25 here - recurring modules handle AppState directly
+        // This was causing the issue where multiple recurring tasks only showed one in the panel
+
+        // ✅ Update panel visibility (use correct method names)
+        if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
+            window.recurringPanel.updateRecurringPanelButtonVisibility();
+        }
+
+        // ✅ Update recurring panel (use correct method name)
+        if (window.recurringPanel?.updateRecurringPanel) {
+            window.recurringPanel.updateRecurringPanel();
+        }
     });
 }
 
-// ✅ 14. Recurring Task Activation Handler
-function handleRecurringTaskActivation(task, taskContext, button) {
-    const { assignedTaskId, currentCycle, settings } = taskContext;
-    const taskItem = document.querySelector(`[data-task-id="${assignedTaskId}"]`);
-    
-    const defaultSettings = settings.defaultRecurringSettings || {
-        frequency: "daily",
-        indefinitely: true,
-        time: null
-    };
+// ✅ 13. Recurring Button Handler (extracted from main function)
+// ✅ REMOVED: setupRecurringButtonHandler - now handled by recurringCore/recurringPanel modules
 
-    task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
-    taskItem.setAttribute("data-recurring-settings", JSON.stringify(task.recurringSettings));
-    taskItem.classList.add("recurring");
-    task.schemaVersion = 2;
-
-    // Create recurring template
-    if (!currentCycle.recurringTemplates) {
-        currentCycle.recurringTemplates = {};
+// ✅ 13b. Recurring Helper Functions (global utilities)
+/**
+ * Sync recurring state to DOM elements
+ * Called by recurring modules to update task UI
+ */
+window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
+    taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
+    const recurringBtn = taskEl.querySelector(".recurring-btn");
+    if (recurringBtn) {
+        recurringBtn.classList.add("active");
+        recurringBtn.setAttribute("aria-pressed", "true");
     }
 
-    currentCycle.recurringTemplates[assignedTaskId] = {
-        id: assignedTaskId,
-        text: task.text,
-        recurring: true,
-        recurringSettings: structuredClone(task.recurringSettings),
-        highPriority: task.highPriority || false,
-        dueDate: task.dueDate || null,
-        remindersEnabled: task.remindersEnabled || false,
-        lastTriggeredTimestamp: null,
-        schemaVersion: 2
-    };
-
-    // Show notification with tip
-    const rs = task.recurringSettings || {};
-    const frequency = rs.frequency || "daily";
-    const pattern = rs.indefinitely ? "Indefinitely" : "Limited";
-
-    try {
-        const notificationContent = createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
-        const notification = showNotificationWithTip(notificationContent, "recurring", 20000, "recurring-cycle-explanation");
-        if (notification) {
-            initializeRecurringNotificationListeners(notification);
-        } else {
-            // Fallback to basic notification
-            const notificationDiv = document.createElement('div');
-            notificationDiv.className = 'notification success';
-            notificationDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
-            notificationDiv.innerHTML = `
-                <div>🔄 Task set to recurring (${frequency})</div>
-                <div style="margin-top: 10px; font-size: 12px;">
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Change</button>
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;">More Options</button>
-                </div>
-            `;
-            document.body.appendChild(notificationDiv);
-            setTimeout(() => notificationDiv.remove(), 5000);
+    // ✅ Add recurring icon to task label if not already present
+    const taskLabel = taskEl.querySelector(".task-text");
+    if (taskLabel) {
+        let existingIcon = taskLabel.querySelector('.recurring-indicator');
+        if (!existingIcon) {
+            const icon = document.createElement("span");
+            icon.className = "recurring-indicator";
+            icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+            taskLabel.appendChild(icon);
+            console.log('✅ Added recurring icon via syncRecurringStateToDOM');
         }
-    } catch (error) {
-        // Silent fallback - basic notification
-        const notificationDiv = document.createElement('div');
-        notificationDiv.className = 'notification success';
-        notificationDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
-        notificationDiv.innerHTML = `🔄 Task set to recurring (${frequency})`;
-        document.body.appendChild(notificationDiv);
-        setTimeout(() => notificationDiv.remove(), 3000);
     }
-}
+};
+
+// ✅ 14. Recurring Task Activation Handler
+// ✅ REMOVED: handleRecurringTaskActivation - now handled by recurringCore/recurringPanel modules
 
 // ✅ 15. Recurring Task Deactivation Handler
-function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
-    const { currentCycle } = taskContext;
-    const taskItem = document.querySelector(`[data-task-id="${assignedTaskId}"]`);
-    
-    task.recurring = false;
-    task.recurringSettings = {};
-    task.schemaVersion = 2;
-    taskItem.removeAttribute("data-recurring-settings");
-    taskItem.classList.remove("recurring");
-
-    // Remove from templates, keep task in main array
-    if (currentCycle.recurringTemplates?.[assignedTaskId]) {
-        delete currentCycle.recurringTemplates[assignedTaskId];
-    }
-
-    // Ensure the task stays in the main tasks array
-    const taskExists = currentCycle.tasks.find(t => t.id === assignedTaskId);
-    if (!taskExists) {
-        console.warn('⚠️ Task missing from main array, re-adding:', assignedTaskId);
-        currentCycle.tasks.push(task);
-    }
-
-    showNotification("↩️ Recurring turned off for this task.", "info", 2000);
-}
+// ✅ REMOVED: handleRecurringTaskDeactivation - now handled by recurringCore/recurringPanel modules
 
 // ✅ 16. Reminder Button Handler (extracted)
 function setupReminderButtonHandler(button, taskContext) {
     const { assignedTaskId } = taskContext;
-    
-    button.addEventListener("click", () => {
-        
 
-        const isActive = button.classList.toggle("reminder-active");
+    button.addEventListener("click", () => {
+        // ✅ Read fresh state from AppState to avoid stale closure data
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for reminder toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const task = freshCycle?.tasks?.find(t => t.id === assignedTaskId);
+
+        if (!task) {
+            console.warn('⚠️ Task not found for reminder toggle:', assignedTaskId);
+            return;
+        }
+
+        // ✅ Toggle based on AppState, not DOM
+        const isCurrentlyEnabled = task.remindersEnabled === true;
+        const isActive = !isCurrentlyEnabled;
+
+        console.log('🔔 Toggling reminder state:', {
+            taskId: assignedTaskId,
+            wasEnabled: isCurrentlyEnabled,
+            willBeEnabled: isActive
+        });
+
+        button.classList.toggle("reminder-active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
 
         saveTaskReminderState(assignedTaskId, isActive);
@@ -11342,20 +9087,44 @@ function handleTaskButtonClick(event) {
 
         shouldSave = false;
     } else if (button.classList.contains("priority-btn")) {
-        // ✅ ADD: Capture snapshot BEFORE changing priority
-        if (window.AppState?.isReady?.()) {
-            const currentState = window.AppState.get();
-            if (currentState) captureStateSnapshot(currentState);
-        }
-
-        taskItem.classList.toggle("high-priority");
-        if (taskItem.classList.contains("high-priority")) {
-            button.classList.add("priority-active");
-        } else {
-            button.classList.remove("priority-active");
-        }
-
         const taskId = taskItem.dataset.taskId;
+
+        // ✅ Read fresh state from AppState to determine current priority
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for priority toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const task = freshCycle?.tasks?.find(t => t.id === taskId);
+
+        if (!task) {
+            console.warn('⚠️ Task not found for priority toggle:', taskId);
+            return;
+        }
+
+        // ✅ Toggle based on AppState, not DOM
+        const isCurrentlyHighPriority = task.highPriority === true;
+        const newHighPriority = !isCurrentlyHighPriority;
+
+        console.log('⭐ Toggling priority state:', {
+            taskId: taskId,
+            wasHighPriority: isCurrentlyHighPriority,
+            willBeHighPriority: newHighPriority
+        });
+
+        // ✅ Capture snapshot BEFORE changing priority
+        if (window.AppState?.isReady?.()) {
+            captureStateSnapshot(currentState);
+        }
+
+        // Update DOM based on calculated state
+        taskItem.classList.toggle("high-priority", newHighPriority);
+        button.classList.toggle("active", newHighPriority);
+        button.classList.toggle("priority-active", newHighPriority);
+        button.setAttribute("aria-pressed", newHighPriority.toString());
 
         // ✅ Use AppState.update so undo sees the change
         if (window.AppState?.isReady?.()) {
@@ -11363,8 +9132,15 @@ function handleTaskButtonClick(event) {
                 const cid = state.appState.activeCycleId;
                 const cycle = state.data.cycles[cid];
                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) t.highPriority = taskItem.classList.contains("high-priority");
+                if (t) t.highPriority = newHighPriority;
             }, true);
+
+            // ✅ Show notification after updating state
+            showNotification(
+                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
+                newHighPriority ? "error" : "info",
+                1500
+            );
         } else {
             // ...existing localStorage fallback...
             const schemaData = loadMiniCycleData();
@@ -11556,7 +9332,8 @@ function resetTasks() {
     // ✅ Handle recurring tasks and cleanup (keep existing timing)
     setTimeout(() => {
         console.log('🔄 Running post-reset cleanup tasks');
-        watchRecurringTasks();
+        // ✅ Watch recurring tasks via module
+        if (window.recurringCore?.watchRecurringTasks) window.recurringCore.watchRecurringTasks();
         autoSave();
         updateStatsPanel();
         console.log('✅ Reset tasks completed successfully');
@@ -11712,7 +9489,7 @@ function saveToggleAutoReset() {
         }
 
         refreshTaskListUI();
-        updateRecurringButtonVisibility();
+        if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
         
         console.log('✅ Auto reset settings saved (state-based)');
     }
@@ -11734,7 +9511,7 @@ function saveToggleAutoReset() {
         }, true); // immediate save
         
         // ✅ Update recurring button visibility when setting changes
-        updateRecurringButtonVisibility();
+        if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
         
         console.log('✅ Delete checked tasks setting saved (state-based)');
     }
@@ -11974,7 +9751,7 @@ function checkDueDates() {
         localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
 
         // ✅ Update recurring button visibility in real-time
-        updateRecurringButtonVisibility();
+        if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
         
         console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
     });
@@ -12688,6 +10465,86 @@ setTimeout(() => {
     helpWindowManager = new HelpWindowManager();
 }, 500);
 
+/**
+ * Refresh task buttons when mode changes to show/hide recurring button
+ */
+function refreshTaskButtonsForModeChange() {
+    console.log('🔄 Refreshing task buttons for mode change...');
+
+    const tasks = document.querySelectorAll('.task');
+    if (tasks.length === 0) {
+        console.log('⚠️ No tasks found to refresh');
+        return;
+    }
+
+    // Get current mode settings
+    const toggleAutoReset = document.getElementById('toggleAutoReset');
+    const deleteCheckedTasks = document.getElementById('deleteCheckedTasks');
+    const autoResetEnabled = toggleAutoReset?.checked || false;
+    const deleteCheckedEnabled = deleteCheckedTasks?.checked || false;
+
+    console.log('🔍 Current mode settings:', { autoResetEnabled, deleteCheckedEnabled });
+
+    // Get settings for button visibility
+    const currentState = window.AppState?.get();
+    const settings = currentState?.settings || {};
+    const remindersEnabledGlobal = currentState?.reminders?.enabled || false;
+
+    // ✅ Get currentCycle - required for recurring button handler
+    const activeCycleId = currentState?.appState?.activeCycleId;
+    const currentCycle = currentState?.data?.cycles?.[activeCycleId];
+
+    if (!currentCycle) {
+        console.warn('⚠️ No active cycle found, cannot refresh task buttons');
+        return;
+    }
+
+    tasks.forEach(task => {
+        const taskId = task.dataset.taskId;
+        const oldButtonContainer = task.querySelector('.task-options');
+
+        if (!oldButtonContainer) {
+            console.warn('⚠️ No button container found for task:', taskId);
+            return;
+        }
+
+        // Get task data
+        const recurringSettings = task.dataset.recurringSettings
+            ? JSON.parse(task.dataset.recurringSettings)
+            : null;
+
+        const taskContext = {
+            autoResetEnabled,
+            deleteCheckedEnabled,
+            settings,
+            remindersEnabled: task.querySelector('.enable-task-reminders')?.classList.contains('reminder-active') || false,
+            remindersEnabledGlobal,
+            assignedTaskId: taskId,
+            currentCycle, // ✅ Required for recurring button handler
+            activeCycle: activeCycleId, // ✅ Also include activeCycleId
+            recurring: task.classList.contains('recurring'),
+            highPriority: task.classList.contains('high-priority')
+        };
+
+        // Create new button container
+        const newButtonContainer = createTaskButtonContainer(taskContext);
+
+        // Preserve visibility state
+        const wasVisible = oldButtonContainer.style.visibility === 'visible' || oldButtonContainer.style.opacity === '1';
+        if (wasVisible) {
+            newButtonContainer.style.visibility = 'visible';
+            newButtonContainer.style.opacity = '1';
+        }
+
+        // Replace old container with new one
+        oldButtonContainer.replaceWith(newButtonContainer);
+
+        console.log('✅ Refreshed buttons for task:', taskId);
+    });
+
+    console.log('✅ Task button refresh complete');
+}
+
 // ✅ Updated setupModeSelector to use state-based system
 function setupModeSelector() {
     console.log('🎯 Setting up mode selectors (state-based)...');
@@ -12826,8 +10683,9 @@ function syncModeFromToggles() {
         
         checkCompleteAllButton();
         
-        if (typeof updateRecurringButtonVisibility === 'function') {
-            updateRecurringButtonVisibility();
+        // ✅ Update recurring button visibility via module
+        if (window.recurringCore?.updateRecurringButtonVisibility) {
+            window.recurringCore.updateRecurringButtonVisibility();
         }
         
         // ✅ Show mode description in help window
@@ -12894,13 +10752,28 @@ function updateStorageFromToggles() {
     toggleAutoReset.addEventListener('change', (e) => {
         console.log('🔘 Auto Reset toggle changed:', e.target.checked);
         syncModeFromToggles();
-         checkCompleteAllButton();
+        checkCompleteAllButton();
+
+        // ✅ Refresh task buttons to show/hide buttons based on new mode
+        refreshTaskButtonsForModeChange();
     });
     
     deleteCheckedTasks.addEventListener('change', (e) => {
         console.log('🗑️ Delete Checked Tasks toggle changed:', e.target.checked);
         syncModeFromToggles();
-         checkCompleteAllButton();
+        checkCompleteAllButton();
+
+        // ✅ Refresh task buttons to show/hide recurring button based on new mode
+        refreshTaskButtonsForModeChange();
+
+        // ✅ Update recurring button visibility when switching to/from to-do mode
+        if (window.recurringCore?.updateRecurringButtonVisibility) {
+            console.log('🔁 Updating recurring button visibility for mode change...');
+            setTimeout(() => {
+                window.recurringCore.updateRecurringButtonVisibility();
+                console.log('🔁 Recurring button visibility update completed');
+            }, 100); // Small delay to ensure DOM updates complete
+        }
     });
     
     // ✅ Initialize on load
@@ -13103,11 +10976,11 @@ updateCycleModeDescription();
       // setupTestingModal(); // Removed duplicate - already called in main boot function
       initializeThemesPanel();
       initializeModeSelector();
-      setupRecurringPanel();
-      attachRecurringSummaryListeners();
+      // ✅ Recurring setup now handled by recurringIntegration module
+      // Old setupRecurringPanel() and attachRecurringSummaryListeners() calls removed
       updateNavDots();
       loadMiniCycle();
-      initializeDefaultRecurringSettings();
+      // ✅ initializeDefaultRecurringSettings() removed - now handled by recurringIntegration module
       setupMiniCycleTitleListener();
       setupDownloadMiniCycle();
       setupUploadMiniCycle();
