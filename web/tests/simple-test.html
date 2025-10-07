@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick ThemeManager Test</title>
+    <style>
+        body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { padding: 8px; margin: 4px 0; border-radius: 4px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Quick ThemeManager Test</h1>
+    <p>Simple browser test for when you don't have Node.js/Jest set up yet.</p>
+    
+    <button onclick="runTests()">Run Tests</button>
+    <div id="results"></div>
+    
+    <!-- Load module -->
+    <script src="../utilities/themeManager.js"></script>
+    
+    <script>
+        function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Running tests...</h3>';
+            
+            let passed = 0;
+            let total = 0;
+            
+            function test(name, testFn) {
+                total++;
+                try {
+                    // Reset DOM
+                    document.body.className = '';
+                    localStorage.clear();
+                    
+                    testFn();
+                    results.innerHTML += `<div class="result pass">✅ ${name}</div>`;
+                    passed++;
+                } catch (error) {
+                    results.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+                }
+            }
+            
+            // Tests
+            test('ThemeManager creates successfully', () => {
+                const tm = new ThemeManager();
+                if (!tm || typeof tm.applyTheme !== 'function') {
+                    throw new Error('ThemeManager not properly initialized');
+                }
+            });
+            
+            test('applies themes correctly', () => {
+                const tm = new ThemeManager();
+                const mockData = {
+                    metadata: { version: "2.5", lastModified: Date.now() },
+                    settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
+                };
+                localStorage.setItem('miniCycleData', JSON.stringify(mockData));
+                
+                tm.applyTheme('dark-ocean');
+                if (!document.body.classList.contains('theme-dark-ocean')) {
+                    throw new Error('Theme not applied');
+                }
+            });
+            
+            test('toggles dark mode', () => {
+                const tm = new ThemeManager();
+                tm.toggleDarkMode(true);
+                if (!document.body.classList.contains('dark-mode')) {
+                    throw new Error('Dark mode not applied');
+                }
+            });
+            
+            // Summary
+            results.innerHTML += `<h3>Results: ${passed}/${total} tests passed</h3>`;
+        }
+    </script>
+</body>
+</html>
