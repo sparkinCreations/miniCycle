@@ -1003,11 +1003,107 @@ window._deferredStatsUpdates = [];
 - **Solution:** Wrap state operations in readiness checks
 - **Learning:** **Simple Instance** 🎯 pattern needs more error handling than expected
 
+### **11. Complete Function Migration is Critical**
+- **Problem:** Copying function signatures but leaving body as "// TODO" or skeleton
+- **Lesson:** Always migrate COMPLETE function implementations, not just signatures
+- **Solution:** Copy entire function body from backup file, verify no TODOs remain
+- **Real Example:** `buildRecurringSettingsFromPanel()` appeared complete but only extracted basic fields, missing 50+ lines of form field extraction logic
+- **Pattern Impact:** Critical for **Strict Injection** 🔧 where business logic must be complete
+
+**Code Smell to Avoid:**
+```javascript
+// ❌ BAD - Incomplete skeleton that looks done
+buildRecurringSettingsFromPanel() {
+    const frequency = this.deps.getElementById("recur-frequency")?.value || "daily";
+    const settings = { frequency, indefinitely: true };
+
+    // Add frequency-specific settings extraction here
+    // This would involve reading checkboxes, day selectors, etc.
+    // Simplified for now - can be extended as needed
+
+    return this.deps.normalizeRecurringSettings(settings);
+}
+```
+
+**What Actually Works:**
+```javascript
+// ✅ GOOD - Complete implementation with all fields
+buildRecurringSettingsFromPanel() {
+    const frequency = this.deps.getElementById("recur-frequency")?.value || "daily";
+    const settings = { frequency, indefinitely: true };
+
+    // ✅ Actually extract ALL form fields (50+ lines)
+    if (frequency === "weekly") {
+        settings.weekly = {
+            days: Array.from(this.deps.querySelectorAll(".weekly-day-box.selected"))
+                       .map(el => el.dataset.day)
+        };
+    }
+    // ... complete extraction for all frequencies
+
+    return this.deps.normalizeRecurringSettings(settings);
+}
+```
+
+### **12. Helper Function Audit is Mandatory**
+- **Problem:** Modules calling `window.helperFunc()` but helper was never migrated
+- **Lesson:** Grep for ALL `window.*` calls in modules and verify implementations exist
+- **Solution:** Create checklist of helper functions, ensure each is defined and exposed globally
+- **Real Example:** `recurringPanel.js` called `window.syncRecurringStateToDOM()` but function was never added to main script
+- **Detection Method:**
+```bash
+# Find all window.* calls in your modules
+grep -rn "window\." utilities/yourModule.js | grep -v "window.AppState\|window.console"
+
+# Verify each has a definition in main script
+grep -n "window.functionName\s*=" miniCycle-scripts.js
+```
+
+**Common Missing Helpers:**
+- DOM sync functions (like `syncRecurringStateToDOM`)
+- UI refresh triggers (like `refreshTaskButtonsForModeChange`)
+- Utility wrappers that bridge old and new systems
+
+### **13. State Updates Require Explicit DOM Refresh**
+- **Problem:** AppState updates didn't appear in UI until manual page refresh
+- **Lesson:** Data layer and UI layer are separate - updating one doesn't auto-update the other
+- **Solution:** Always call `refreshUIFromState()` after AppState changes that affect visible UI
+- **Real Example:** Recurring task watcher added tasks to AppState but they only appeared after page reload
+- **Critical Pattern:**
+```javascript
+// ❌ BAD - State updates but UI doesn't refresh
+updateAppState(draft => {
+    draft.data.cycles[cycleId].tasks.push(newTask);
+});
+console.log('✅ Task added'); // Misleading - not visible yet!
+
+// ✅ GOOD - Explicit DOM refresh after state change
+updateAppState(draft => {
+    draft.data.cycles[cycleId].tasks.push(newTask);
+});
+
+// Use setTimeout to ensure state update completes
+setTimeout(() => {
+    if (Deps.refreshUIFromState) {
+        Deps.refreshUIFromState();
+        console.log('🔄 DOM refreshed - task now visible');
+    }
+}, 0);
+```
+
+**Don't Forget to:**
+1. Add `refreshUIFromState` to Deps object
+2. Inject it in integration module
+3. Expose `window.refreshUIFromState` globally
+4. Call it after EVERY AppState change that should show in UI
+
 ### **💡 The Biggest Insight**
 
 **Modern web apps need orchestrated initialization** - the days of "just put a script tag and it works" are over for complex applications. Every module needs to coordinate with the application lifecycle.
 
-This validates the **multi-pattern approach** in this guide - different modules have different initialization needs and error tolerance levels.
+**AND: State and UI are separate layers** - changing data doesn't automatically update the view. You must explicitly trigger DOM refreshes after state changes.
+
+This validates the **multi-pattern approach** in this guide - different modules have different initialization needs, error tolerance levels, and UI synchronization requirements.
 
 ---
 
