@@ -138,7 +138,9 @@ export function normalizeRecurringSettings(settings = {}) {
         },
 
         biweekly: {
-            days: Array.isArray(settings.biweekly?.days) ? settings.biweekly.days : []
+            days: Array.isArray(settings.biweekly?.days) ? settings.biweekly.days : [],
+            // Reference date to calculate which week we're in (defaults to creation date)
+            referenceDate: settings.biweekly?.referenceDate || new Date().toISOString()
         },
 
         monthly: {
@@ -203,8 +205,31 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
             return now.getHours() === 0 && now.getMinutes() === 0;
 
         case "weekly":
+            if (!settings.weekly?.days?.includes(weekday)) return false;
+
+            if (settings.time) {
+                const hour = settings.time.military
+                    ? settings.time.hour
+                    : convert12To24(settings.time.hour, settings.time.meridiem);
+                const minute = settings.time.minute;
+                return now.getHours() === hour && now.getMinutes() === minute;
+            }
+
+            return true; // if no time set, recur any time today
+
         case "biweekly":
-            if (!settings[settings.frequency]?.days?.includes(weekday)) return false;
+            if (!settings.biweekly?.days?.includes(weekday)) return false;
+
+            // ✅ Calculate which week we're in relative to reference date
+            // The reference date is set when the recurring task is created.
+            // Week 0 = reference week, Week 1 = next week, Week 2 = week after that, etc.
+            // Biweekly tasks trigger on even weeks (0, 2, 4, 6...) = every other week
+            const referenceDate = new Date(settings.biweekly.referenceDate);
+            const daysSinceReference = Math.floor((now - referenceDate) / (1000 * 60 * 60 * 24));
+            const weeksSinceReference = Math.floor(daysSinceReference / 7);
+
+            // Only trigger on even weeks (0, 2, 4, 6...)
+            if (weeksSinceReference % 2 !== 0) return false;
 
             if (settings.time) {
                 const hour = settings.time.military

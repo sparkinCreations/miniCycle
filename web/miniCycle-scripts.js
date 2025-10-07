@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.308'
+        currentVersion: '1.309'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -8136,7 +8136,7 @@ function setupRecurringButtonHandler(button, taskContext) {
         // ✅ Add or remove recurring icon from task label
         const taskItem = button.closest('.task');
         if (taskItem) {
-            const taskLabel = taskItem.querySelector('.task-label');
+            const taskLabel = taskItem.querySelector('.task-text'); // ✅ Fixed: use .task-text not .task-label
             if (taskLabel) {
                 let existingIcon = taskLabel.querySelector('.recurring-indicator');
 
@@ -8202,6 +8202,19 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
     if (recurringBtn) {
         recurringBtn.classList.add("active");
         recurringBtn.setAttribute("aria-pressed", "true");
+    }
+
+    // ✅ Add recurring icon to task label if not already present
+    const taskLabel = taskEl.querySelector(".task-text");
+    if (taskLabel) {
+        let existingIcon = taskLabel.querySelector('.recurring-indicator');
+        if (!existingIcon) {
+            const icon = document.createElement("span");
+            icon.className = "recurring-indicator";
+            icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+            taskLabel.appendChild(icon);
+            console.log('✅ Added recurring icon via syncRecurringStateToDOM');
+        }
     }
 };
 
