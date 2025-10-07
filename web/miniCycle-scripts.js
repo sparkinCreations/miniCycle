@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.310'
+        currentVersion: '1.311'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -9448,8 +9448,8 @@ function saveToggleAutoReset() {
         deleteCheckedTasks.checked = false;
     }
     
-    // ✅ Show "Delete Checked Tasks" only when Auto Reset is OFF
-    deleteCheckedTasksContainer.style.display = toggleAutoReset.checked ? "none" : "block";
+    // ✅ Hide "Delete Checked Tasks" - always hidden regardless of Auto Reset state
+    deleteCheckedTasksContainer.style.display = "none";
 
     // ✅ Remove previous event listeners before adding new ones to prevent stacking
     toggleAutoReset.removeEventListener("change", handleAutoResetChange);
@@ -9479,8 +9479,8 @@ function saveToggleAutoReset() {
             }
         }, true); // immediate save
 
-        // ✅ Show/Hide "Delete Checked Tasks" toggle dynamically
-        deleteCheckedTasksContainer.style.display = event.target.checked ? "none" : "block";
+        // ✅ Keep "Delete Checked Tasks" always hidden regardless of Auto Reset state
+        deleteCheckedTasksContainer.style.display = "none";
 
         // ✅ Only trigger miniCycle reset if AutoReset is enabled
         if (event.target.checked) {

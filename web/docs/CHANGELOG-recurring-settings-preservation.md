@@ -125,6 +125,4 @@ if (targetTask) {
 ---
 
 ## Migration Notes
-- **No data migration needed** - existing tasks already have `recurringSettings` field
-- **Backward compatible** - old tasks with empty settings will use defaults
-- **No breaking changes** - purely additive logic
+- **No data migration needed** - existing tasks already have `recurringSettings` fieldmin

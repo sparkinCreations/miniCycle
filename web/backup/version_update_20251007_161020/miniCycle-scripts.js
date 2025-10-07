@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.307'
+        currentVersion: '1.310'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -7849,17 +7849,17 @@ function createOrUpdateTaskData(taskContext) {
 
 // ✅ 5. DOM Elements Creation
 function createTaskDOMElements(taskContext, taskData) {
-    const { 
-        assignedTaskId, taskTextTrimmed, highPriority, recurring, 
-        recurringSettings, settings, autoResetEnabled
+    const {
+        assignedTaskId, taskTextTrimmed, highPriority, recurring,
+        recurringSettings, settings, autoResetEnabled, currentCycle
     } = taskContext;
 
     // Get required DOM elements
     const taskList = document.getElementById("taskList");
     const taskInput = document.getElementById("taskInput");
-    
+
     // Create main task element
-    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings);
+    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
     
     // Create three dots button if needed
     const threeDotsButton = createThreeDotsButton(taskItem, settings);
@@ -7894,22 +7894,32 @@ function createTaskDOMElements(taskContext, taskData) {
 }
 
 // ✅ 6. Main Task Element Creation
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings) {
+function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
     const taskItem = document.createElement("li");
     taskItem.classList.add("task");
     taskItem.setAttribute("draggable", "true");
     taskItem.dataset.taskId = assignedTaskId;
-    
+
     if (highPriority) {
         taskItem.classList.add("high-priority");
     }
 
-    const hasValidRecurringSettings = recurring && recurringSettings && Object.keys(recurringSettings).length > 0;
-    if (hasValidRecurringSettings) {
+    // ✅ Check if task has a recurring template (source of truth for recurring state)
+    const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
+    const hasValidRecurringSettings = recurringSettings && Object.keys(recurringSettings).length > 0;
+
+    // Task is recurring if: has template OR (recurring flag is true AND has settings)
+    const isRecurring = hasRecurringTemplate || (recurring && hasValidRecurringSettings);
+
+    if (isRecurring) {
         taskItem.classList.add("recurring");
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
+        // Use settings from template if available, otherwise use task's settings
+        const settingsToUse = hasRecurringTemplate
+            ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
+            : recurringSettings;
+        taskItem.setAttribute("data-recurring-settings", JSON.stringify(settingsToUse));
     }
-    
+
     return taskItem;
 }
 
@@ -7977,9 +7987,9 @@ function createTaskButton(buttonConfig, taskContext, buttonContainer) {
 
     // Setup accessibility attributes
     setupButtonAccessibility(button, btnClass, buttonContainer);
-    
+
     // Setup ARIA states
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority);
+    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle);
     
     // Setup button event handlers
     setupButtonEventHandlers(button, btnClass, taskContext);
@@ -8024,24 +8034,33 @@ function setupButtonAccessibility(button, btnClass, buttonContainer) {
 }
 
 // ✅ 11. Button ARIA States Setup
-function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority) {
+function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle) {
     if (btnClass === "enable-task-reminders") {
         const isActive = remindersEnabled === true;
         button.classList.toggle("reminder-active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
     } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-        const isActive = btnClass === "recurring-btn" ? !!recurring : !!highPriority;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
+        let isActive;
 
-        // ✅ Debug log for recurring button
         if (btnClass === "recurring-btn") {
+            // ✅ Check if task has a recurring template (source of truth)
+            const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
+            isActive = hasRecurringTemplate || !!recurring;
+
+            // ✅ Debug log for recurring button
             console.log('🔘 Setting up recurring button:', {
+                taskId: assignedTaskId,
                 recurring,
+                hasRecurringTemplate: !!hasRecurringTemplate,
                 isActive,
                 hasActiveClass: button.classList.contains('active')
             });
+        } else {
+            isActive = !!highPriority;
         }
+
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive.toString());
     }
 }
 
@@ -8068,14 +8087,27 @@ function setupRecurringButtonHandler(button, taskContext) {
     button.dataset.handlerAttached = 'true';
 
     button.addEventListener("click", () => {
-        const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
+        // ✅ Read fresh state from AppState to avoid stale closure data
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for recurring toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+
+        if (!freshCycle) {
+            console.error('❌ Active cycle not found in AppState');
+            return;
+        }
+
+        const task = freshCycle.tasks.find(t => t.id === assignedTaskId);
         if (!task) {
             console.warn('⚠️ Task not found:', assignedTaskId);
             return;
         }
 
-        // ✅ Read fresh settings from AppState instead of using captured settings
-        const currentState = window.AppState?.get();
         const alwaysShowRecurring = currentState?.settings?.alwaysShowRecurring || false;
 
         const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
@@ -8084,7 +8116,18 @@ function setupRecurringButtonHandler(button, taskContext) {
             return;
         }
 
-        const isNowRecurring = !task.recurring;
+        // ✅ Check template existence as source of truth (not task.recurring flag)
+        const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
+        const isCurrentlyRecurring = !!hasRecurringTemplate;
+        const isNowRecurring = !isCurrentlyRecurring;
+
+        console.log('🔄 Toggling recurring state:', {
+            taskId: assignedTaskId,
+            wasRecurring: isCurrentlyRecurring,
+            willBeRecurring: isNowRecurring,
+            hadTemplate: !!hasRecurringTemplate
+        });
+
         task.recurring = isNowRecurring;
 
         button.classList.toggle("active", isNowRecurring);
@@ -8093,7 +8136,7 @@ function setupRecurringButtonHandler(button, taskContext) {
         // ✅ Add or remove recurring icon from task label
         const taskItem = button.closest('.task');
         if (taskItem) {
-            const taskLabel = taskItem.querySelector('.task-label');
+            const taskLabel = taskItem.querySelector('.task-text'); // ✅ Fixed: use .task-text not .task-label
             if (taskLabel) {
                 let existingIcon = taskLabel.querySelector('.recurring-indicator');
 
@@ -8160,6 +8203,19 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
         recurringBtn.classList.add("active");
         recurringBtn.setAttribute("aria-pressed", "true");
     }
+
+    // ✅ Add recurring icon to task label if not already present
+    const taskLabel = taskEl.querySelector(".task-text");
+    if (taskLabel) {
+        let existingIcon = taskLabel.querySelector('.recurring-indicator');
+        if (!existingIcon) {
+            const icon = document.createElement("span");
+            icon.className = "recurring-indicator";
+            icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+            taskLabel.appendChild(icon);
+            console.log('✅ Added recurring icon via syncRecurringStateToDOM');
+        }
+    }
 };
 
 // ✅ 14. Recurring Task Activation Handler
@@ -8171,11 +8227,35 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
 // ✅ 16. Reminder Button Handler (extracted)
 function setupReminderButtonHandler(button, taskContext) {
     const { assignedTaskId } = taskContext;
-    
-    button.addEventListener("click", () => {
-        
 
-        const isActive = button.classList.toggle("reminder-active");
+    button.addEventListener("click", () => {
+        // ✅ Read fresh state from AppState to avoid stale closure data
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for reminder toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const task = freshCycle?.tasks?.find(t => t.id === assignedTaskId);
+
+        if (!task) {
+            console.warn('⚠️ Task not found for reminder toggle:', assignedTaskId);
+            return;
+        }
+
+        // ✅ Toggle based on AppState, not DOM
+        const isCurrentlyEnabled = task.remindersEnabled === true;
+        const isActive = !isCurrentlyEnabled;
+
+        console.log('🔔 Toggling reminder state:', {
+            taskId: assignedTaskId,
+            wasEnabled: isCurrentlyEnabled,
+            willBeEnabled: isActive
+        });
+
+        button.classList.toggle("reminder-active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
 
         saveTaskReminderState(assignedTaskId, isActive);
@@ -9007,20 +9087,44 @@ function handleTaskButtonClick(event) {
 
         shouldSave = false;
     } else if (button.classList.contains("priority-btn")) {
-        // ✅ ADD: Capture snapshot BEFORE changing priority
-        if (window.AppState?.isReady?.()) {
-            const currentState = window.AppState.get();
-            if (currentState) captureStateSnapshot(currentState);
-        }
-
-        taskItem.classList.toggle("high-priority");
-        if (taskItem.classList.contains("high-priority")) {
-            button.classList.add("priority-active");
-        } else {
-            button.classList.remove("priority-active");
-        }
-
         const taskId = taskItem.dataset.taskId;
+
+        // ✅ Read fresh state from AppState to determine current priority
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for priority toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const task = freshCycle?.tasks?.find(t => t.id === taskId);
+
+        if (!task) {
+            console.warn('⚠️ Task not found for priority toggle:', taskId);
+            return;
+        }
+
+        // ✅ Toggle based on AppState, not DOM
+        const isCurrentlyHighPriority = task.highPriority === true;
+        const newHighPriority = !isCurrentlyHighPriority;
+
+        console.log('⭐ Toggling priority state:', {
+            taskId: taskId,
+            wasHighPriority: isCurrentlyHighPriority,
+            willBeHighPriority: newHighPriority
+        });
+
+        // ✅ Capture snapshot BEFORE changing priority
+        if (window.AppState?.isReady?.()) {
+            captureStateSnapshot(currentState);
+        }
+
+        // Update DOM based on calculated state
+        taskItem.classList.toggle("high-priority", newHighPriority);
+        button.classList.toggle("active", newHighPriority);
+        button.classList.toggle("priority-active", newHighPriority);
+        button.setAttribute("aria-pressed", newHighPriority.toString());
 
         // ✅ Use AppState.update so undo sees the change
         if (window.AppState?.isReady?.()) {
@@ -9028,8 +9132,15 @@ function handleTaskButtonClick(event) {
                 const cid = state.appState.activeCycleId;
                 const cycle = state.data.cycles[cid];
                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) t.highPriority = taskItem.classList.contains("high-priority");
+                if (t) t.highPriority = newHighPriority;
             }, true);
+
+            // ✅ Show notification after updating state
+            showNotification(
+                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
+                newHighPriority ? "error" : "info",
+                1500
+            );
         } else {
             // ...existing localStorage fallback...
             const schemaData = loadMiniCycleData();
@@ -9337,8 +9448,8 @@ function saveToggleAutoReset() {
         deleteCheckedTasks.checked = false;
     }
     
-    // ✅ Show "Delete Checked Tasks" only when Auto Reset is OFF
-    deleteCheckedTasksContainer.style.display = toggleAutoReset.checked ? "none" : "block";
+    // ✅ Hide "Delete Checked Tasks" - always hidden regardless of Auto Reset state
+    deleteCheckedTasksContainer.style.display = "none";
 
     // ✅ Remove previous event listeners before adding new ones to prevent stacking
     toggleAutoReset.removeEventListener("change", handleAutoResetChange);
@@ -9368,8 +9479,8 @@ function saveToggleAutoReset() {
             }
         }, true); // immediate save
 
-        // ✅ Show/Hide "Delete Checked Tasks" toggle dynamically
-        deleteCheckedTasksContainer.style.display = event.target.checked ? "none" : "block";
+        // ✅ Keep "Delete Checked Tasks" always hidden regardless of Auto Reset state
+        deleteCheckedTasksContainer.style.display = "none";
 
         // ✅ Only trigger miniCycle reset if AutoReset is enabled
         if (event.target.checked) {
