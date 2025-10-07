@@ -137,16 +137,19 @@ class MiniCycleState {
         }
 
         const oldData = structuredClone(this.data);
-        
+
         try {
             // ✅ FIXED: Call updateFn with this.data, not as async
+            console.log('🔄 Updating state...', { immediate });
             const result = updateFn(this.data);
-            
+
             this.isDirty = true;
             this.data.metadata.lastModified = Date.now();
+
+            console.log('📊 State updated, scheduling save...', { isDirty: this.isDirty, immediate });
             this.scheduleSave(immediate);
             this.notifyListeners(oldData, this.data);
-            
+
             return result; // Return any result from updateFn
         } catch (error) {
             console.error('❌ State update failed:', error);
@@ -162,22 +165,43 @@ class MiniCycleState {
             clearTimeout(this.saveTimeout);
         }
 
-        const delay = immediate ? 0 : this.SAVE_DELAY;
-        
-        this.saveTimeout = setTimeout(() => {
+        if (immediate) {
+            // ✅ For immediate saves, call save() synchronously to prevent data loss on quick refresh
+            console.log('💾 Immediate save requested - saving synchronously...');
             this.save();
-        }, delay);
+            console.log('✅ Immediate save completed');
+        } else {
+            // ✅ For normal saves, use debounce delay
+            this.saveTimeout = setTimeout(() => {
+                this.save();
+            }, this.SAVE_DELAY);
+        }
     }
 
     // Actually save to localStorage
     save() {
-        if (!this.isDirty || !this.data) return;
+        if (!this.isDirty) {
+            console.log('⏭️ Save skipped - not dirty');
+            return;
+        }
+
+        if (!this.data) {
+            console.log('⏭️ Save skipped - no data');
+            return;
+        }
 
         try {
+            console.log('💾 Saving to localStorage...', {
+                isDirty: this.isDirty,
+                dataSize: JSON.stringify(this.data).length,
+                timestamp: Date.now()
+            });
+
             this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
             this.isDirty = false;
             this.saveTimeout = null;
-            console.log('💾 State saved to localStorage');
+
+            console.log('✅ State saved to localStorage successfully');
         } catch (error) {
             console.error('❌ Save failed:', error);
             this.deps.showNotification('Failed to save data', 'error');

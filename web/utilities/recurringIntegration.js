@@ -78,6 +78,12 @@ export async function initializeRecurringModules() {
             updateRecurringPanel: null,        // Set later
             updateRecurringSummary: null,      // Set later
             updatePanelButtonVisibility: null, // Set later
+            refreshUIFromState: () => {
+                if (typeof window.refreshUIFromState === 'function') {
+                    return window.refreshUIFromState();
+                }
+                console.warn('⚠️ refreshUIFromState not available');
+            },
 
             // Time/scheduling (required)
             now: () => Date.now(),
@@ -176,6 +182,18 @@ export async function initializeRecurringModules() {
         console.log('✅ Recurring watcher initialized');
 
         // ============================================
+        // STEP 6.5: Load always-show-recurring setting
+        // ============================================
+
+        console.log('⚙️ Loading always-show-recurring setting...');
+
+        // Load the setting after a small delay to ensure DOM is ready
+        setTimeout(() => {
+            recurringPanel.loadAlwaysShowRecurringSetting();
+            console.log('✅ Always-show-recurring setting loaded');
+        }, 100);
+
+        // ============================================
         // STEP 7: Make functions globally accessible
         // ============================================
 
@@ -189,7 +207,9 @@ export async function initializeRecurringModules() {
             deleteTemplate: recurringCore.deleteRecurringTemplate,
             removeTasksFromCycle: recurringCore.removeRecurringTasksFromCycle,
             handleAfterReset: recurringCore.handleRecurringTasksAfterReset,
-            watchTasks: recurringCore.watchRecurringTasks
+            watchTasks: recurringCore.watchRecurringTasks,
+            // Backward compatibility - redirect button visibility to panel
+            updateRecurringButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
         };
 
         // Panel functions
@@ -199,7 +219,9 @@ export async function initializeRecurringModules() {
             updateButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility(),
             openPanel: () => recurringPanel.openPanel(),
             closePanel: () => recurringPanel.closePanel(),
-            openForTask: (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId)
+            openForTask: (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId),
+            saveAlwaysShowRecurringSetting: () => recurringPanel.saveAlwaysShowRecurringSetting(),
+            loadAlwaysShowRecurringSetting: () => recurringPanel.loadAlwaysShowRecurringSetting()
         };
 
         // Backward compatibility - map old function names to new modules
@@ -215,6 +237,7 @@ export async function initializeRecurringModules() {
         window.updateRecurringPanel = () => recurringPanel.updateRecurringPanel();
         window.updateRecurringSummary = () => recurringPanel.updateRecurringSummary();
         window.updateRecurringPanelButtonVisibility = () => recurringPanel.updateRecurringPanelButtonVisibility();
+        window.openRecurringSettingsPanelForTask = (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId);
         window.buildRecurringSummaryFromSettings = buildRecurringSummaryFromSettings;
 
         console.log('✅ Recurring functions globally accessible');
@@ -304,7 +327,8 @@ export function testRecurringIntegration() {
             'handleRecurringTaskActivation',
             'handleRecurringTaskDeactivation',
             'updateRecurringPanel',
-            'updateRecurringSummary'
+            'updateRecurringSummary',
+            'openRecurringSettingsPanelForTask'
         ];
 
         tests.globalFunctionsAvailable = requiredFunctions.every(fn => typeof window[fn] === 'function');

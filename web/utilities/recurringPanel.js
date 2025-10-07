@@ -38,6 +38,7 @@ export class RecurringPanelManager {
 
             // State management
             getAppState: dependencies.getAppState || (() => window.AppState?.get()),
+            updateAppState: dependencies.updateAppState || ((updateFn) => window.AppState?.update(updateFn)),
             isAppStateReady: dependencies.isAppStateReady || (() => window.AppState?.isReady()),
             loadData: dependencies.loadData || (() => window.loadMiniCycleData?.()),
 
@@ -56,7 +57,8 @@ export class RecurringPanelManager {
         this.state = {
             isInitialized: false,
             panelOpen: false,
-            selectedTaskId: null
+            selectedTaskId: null,
+            selectedYearlyDays: {} // key = month number, value = array of selected days
         };
 
         console.log('✅ RecurringPanelManager initialized');
@@ -131,6 +133,19 @@ export class RecurringPanelManager {
                 }
             });
 
+            // Setup change recurring settings button
+            const changeSettingsBtn = this.deps.getElementById("change-recurring-settings");
+            if (changeSettingsBtn) {
+                changeSettingsBtn.addEventListener("click", () => {
+                    console.log('🔧 Change recurring settings clicked');
+                    if (this.state.selectedTaskId) {
+                        this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
+                    } else {
+                        console.warn('⚠️ No task selected for changing settings');
+                    }
+                });
+            }
+
             // Setup frequency selector
             this.setupFrequencySelector();
 
@@ -142,6 +157,94 @@ export class RecurringPanelManager {
 
             // Setup advanced settings toggle
             this.setupAdvancedToggle();
+
+            // Setup time conversion for all frequencies
+            this.setupTimeConversion({
+                hourInputId: "specific-date-hour",
+                minuteInputId: "specific-date-minute",
+                meridiemSelectId: "specific-date-meridiem",
+                militaryCheckboxId: "specific-date-military"
+            });
+            this.setupTimeConversion({
+                hourInputId: "daily-hour",
+                minuteInputId: "daily-minute",
+                meridiemSelectId: "daily-meridiem",
+                militaryCheckboxId: "daily-military"
+            });
+            this.setupTimeConversion({
+                hourInputId: "weekly-hour",
+                minuteInputId: "weekly-minute",
+                meridiemSelectId: "weekly-meridiem",
+                militaryCheckboxId: "weekly-military"
+            });
+            this.setupTimeConversion({
+                hourInputId: "biweekly-hour",
+                minuteInputId: "biweekly-minute",
+                meridiemSelectId: "biweekly-meridiem",
+                militaryCheckboxId: "biweekly-military"
+            });
+            this.setupTimeConversion({
+                hourInputId: "monthly-hour",
+                minuteInputId: "monthly-minute",
+                meridiemSelectId: "monthly-meridiem",
+                militaryCheckboxId: "monthly-military"
+            });
+            this.setupTimeConversion({
+                hourInputId: "yearly-hour",
+                minuteInputId: "yearly-minute",
+                meridiemSelectId: "yearly-meridiem",
+                militaryCheckboxId: "yearly-military"
+            });
+
+            // Setup military time toggles
+            this.setupMilitaryTimeToggle("daily");
+            this.setupMilitaryTimeToggle("weekly");
+            this.setupMilitaryTimeToggle("biweekly");
+            this.setupMilitaryTimeToggle("monthly");
+            this.setupMilitaryTimeToggle("yearly");
+
+            // Setup day/week/month grids
+            this.setupWeeklyDayToggle();
+            this.generateMonthlyDayGrid();
+            this.generateYearlyMonthGrid();
+
+            // Setup yearly options
+            const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
+            if (yearlyMonthSelect) {
+                yearlyMonthSelect.addEventListener("change", (e) => {
+                    const selectedMonth = parseInt(e.target.value);
+                    this.generateYearlyDayGrid(selectedMonth);
+                });
+                this.generateYearlyDayGrid(1);
+            }
+
+            const yearlyApplyToAllCheckbox = this.deps.getElementById("yearly-apply-days-to-all");
+            if (yearlyApplyToAllCheckbox) {
+                yearlyApplyToAllCheckbox.addEventListener("change", () => {
+                    this.handleYearlyApplyToAllChange();
+                });
+            }
+
+            const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
+            const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
+            if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
+                yearlySpecificDaysCheckbox.addEventListener("change", () => {
+                    const hasMonthSelected = this.getSelectedYearlyMonths().length > 0;
+                    yearlyDayContainer.classList.toggle("hidden", !yearlySpecificDaysCheckbox.checked || !hasMonthSelected);
+                });
+            }
+
+            // Setup specific dates panel
+            this.setupSpecificDatesPanel();
+
+            // Setup biweekly day toggle
+            this.setupBiweeklyDayToggle();
+
+            // Setup additional event listeners
+            this.setupAdditionalListeners();
+
+            // Setup apply/cancel button handlers
+            this.setupApplyCancelButtons();
 
             // Attach summary listeners
             this.attachRecurringSummaryListeners();
@@ -249,11 +352,37 @@ export class RecurringPanelManager {
         let advancedVisible = false;
 
         const setAdvancedVisibility = (visible) => {
-            const advancedPanel = this.deps.getElementById("advanced-recurring-settings");
-            if (advancedPanel) {
-                advancedPanel.classList.toggle("hidden", !visible);
+            toggleBtn.textContent = visible ? "Hide Advanced Options" : "Show Advanced Options";
+
+            // Show/hide all `.frequency-options` panels
+            this.deps.querySelectorAll(".frequency-options").forEach(option => {
+                option.style.display = visible ? "block" : "none";
+            });
+
+            // Always show frequency dropdown container
+            const frequencyContainer = this.deps.getElementById("recur-frequency-container");
+            if (frequencyContainer) frequencyContainer.style.display = "block";
+
+            // Handle extras like 'Recur indefinitely' and 'Specific Dates'
+            const advancedControls = [
+                { checkboxId: "recur-indefinitely" },
+                { checkboxId: "recur-specific-dates" }
+            ];
+
+            advancedControls.forEach(({ checkboxId }) => {
+                const checkbox = this.deps.getElementById(checkboxId);
+                if (!checkbox) return;
+
+                const label = checkbox.closest("label");
+                if (label) {
+                    label.style.display = visible ? "flex" : "none";
+                }
+            });
+
+            const defaultBoxContainer = this.deps.getElementById("set-default-recurring-container");
+            if (defaultBoxContainer) {
+                defaultBoxContainer.style.display = visible ? "block" : "none";
             }
-            toggleBtn.textContent = visible ? "Hide Advanced" : "Show Advanced";
         };
 
         setAdvancedVisibility(advancedVisible);
@@ -261,6 +390,756 @@ export class RecurringPanelManager {
         toggleBtn.addEventListener("click", () => {
             advancedVisible = !advancedVisible;
             setAdvancedVisibility(advancedVisible);
+        });
+    }
+
+    /**
+     * Setup time conversion between 12hr and 24hr formats
+     */
+    setupTimeConversion({ hourInputId, minuteInputId, meridiemSelectId, militaryCheckboxId }) {
+        const hourInput = this.deps.getElementById(hourInputId);
+        const minuteInput = this.deps.getElementById(minuteInputId);
+        const meridiemSelect = this.deps.getElementById(meridiemSelectId);
+        const militaryToggle = this.deps.getElementById(militaryCheckboxId);
+
+        if (!hourInput || !minuteInput || !meridiemSelect || !militaryToggle) return;
+
+        militaryToggle.addEventListener("change", () => {
+            const is24Hour = militaryToggle.checked;
+            let hour = parseInt(hourInput.value) || 0;
+            let meridiem = meridiemSelect.value;
+
+            if (is24Hour) {
+                // Convert from 12h to 24h
+                if (meridiem === "AM") {
+                    hour = hour === 12 ? 0 : hour;
+                } else {
+                    hour = hour === 12 ? 12 : hour + 12;
+                }
+                hourInput.value = hour;
+                meridiemSelect.classList.add("hidden");
+            } else {
+                // Convert from 24h to 12h
+                if (hour === 0) {
+                    hourInput.value = 12;
+                    meridiemSelect.value = "AM";
+                } else if (hour < 12) {
+                    hourInput.value = hour;
+                    meridiemSelect.value = "AM";
+                } else if (hour === 12) {
+                    hourInput.value = 12;
+                    meridiemSelect.value = "PM";
+                } else {
+                    hourInput.value = hour - 12;
+                    meridiemSelect.value = "PM";
+                }
+                meridiemSelect.classList.remove("hidden");
+            }
+        });
+    }
+
+    /**
+     * Setup military time toggle for a frequency prefix
+     */
+    setupMilitaryTimeToggle(prefix) {
+        const toggle = this.deps.getElementById(`${prefix}-military`);
+        const hourInput = this.deps.getElementById(`${prefix}-hour`);
+        const meridiemSelect = this.deps.getElementById(`${prefix}-meridiem`);
+
+        if (!toggle || !hourInput || !meridiemSelect) {
+            console.warn(`⚠️ Missing elements for military time toggle: ${prefix}`);
+            return;
+        }
+
+        toggle.addEventListener("change", () => {
+            const is24Hour = toggle.checked;
+
+            try {
+                hourInput.min = is24Hour ? 0 : 1;
+                hourInput.max = is24Hour ? 23 : 12;
+                meridiemSelect.classList.toggle("hidden", is24Hour);
+
+                // Update summary when time format changes
+                this.updateRecurringSummary();
+            } catch (error) {
+                console.warn(`⚠️ Error updating military time toggle for ${prefix}:`, error);
+            }
+        });
+    }
+
+    /**
+     * Generate monthly day selection grid (1-31)
+     */
+    generateMonthlyDayGrid() {
+        const container = this.deps.querySelector(".monthly-days");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        for (let i = 1; i <= 31; i++) {
+            const dayBox = document.createElement("div");
+            dayBox.className = "monthly-day-box";
+            dayBox.setAttribute("data-day", i);
+            dayBox.textContent = i;
+
+            dayBox.addEventListener("click", () => {
+                dayBox.classList.toggle("selected");
+            });
+
+            container.appendChild(dayBox);
+        }
+    }
+
+    /**
+     * Setup weekly day toggle handlers
+     */
+    setupWeeklyDayToggle() {
+        this.deps.querySelectorAll(".weekly-day-box").forEach(box => {
+            box.addEventListener("click", () => {
+                box.classList.toggle("selected");
+            });
+        });
+    }
+
+    /**
+     * Generate yearly month selection grid
+     */
+    generateYearlyMonthGrid() {
+        const container = this.deps.querySelector(".yearly-months");
+        if (!container) return;
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        container.innerHTML = "";
+
+        monthNames.forEach((name, index) => {
+            const monthBox = document.createElement("div");
+            monthBox.className = "yearly-month-box";
+            monthBox.setAttribute("data-month", index + 1);
+            monthBox.textContent = name;
+
+            monthBox.addEventListener("click", () => {
+                // Toggle selection
+                monthBox.classList.toggle("selected");
+
+                const selectedMonths = this.getSelectedYearlyMonths();
+
+                // Reveal or hide the specific-days checkbox label
+                const specificDaysLabel = this.deps.getElementById("yearly-specific-days-label");
+                if (specificDaysLabel) {
+                    specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
+                }
+
+                // Show/hide day container based on selection + checkbox state
+                const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
+                const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
+
+                if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
+                    const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
+                    yearlyDayContainer.classList.toggle("hidden", !shouldShow);
+                }
+
+                // Update dropdown
+                const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
+                if (yearlyMonthSelect) {
+                    yearlyMonthSelect.innerHTML = "";
+
+                    selectedMonths.forEach((monthNum) => {
+                        const option = document.createElement("option");
+                        option.value = monthNum;
+                        option.textContent = new Date(0, monthNum - 1).toLocaleString('default', { month: 'long' });
+                        yearlyMonthSelect.appendChild(option);
+                    });
+
+                    if (selectedMonths.length > 0) {
+                        const currentMonth = index + 1;
+                        yearlyMonthSelect.value = currentMonth;
+                        this.generateYearlyDayGrid(currentMonth);
+                    } else {
+                        this.deps.querySelector(".yearly-days").innerHTML = "";
+                    }
+                }
+            });
+
+            container.appendChild(monthBox);
+        });
+    }
+
+    /**
+     * Generate yearly day grid for a specific month
+     */
+    generateYearlyDayGrid(monthNumber) {
+        const container = this.deps.querySelector(".yearly-days");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        const daysInMonth = new Date(2025, monthNumber, 0).getDate();
+        const selectedDays = this.state.selectedYearlyDays[monthNumber] || [];
+        const yearlyApplyToAllCheckbox = this.deps.getElementById("yearly-apply-days-to-all");
+        const applyToAll = yearlyApplyToAllCheckbox?.checked;
+        const activeMonths = this.getSelectedYearlyMonths();
+
+        // If "apply to all" is checked, use the shared day list
+        const sharedDays = this.state.selectedYearlyDays["all"] || [];
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayBox = document.createElement("div");
+            dayBox.className = "yearly-day-box";
+            dayBox.setAttribute("data-day", i);
+            dayBox.textContent = i;
+
+            const isSelected = applyToAll
+                ? sharedDays.includes(i)
+                : selectedDays.includes(i);
+
+            if (isSelected) {
+                dayBox.classList.add("selected");
+            }
+
+            dayBox.addEventListener("click", () => {
+                dayBox.classList.toggle("selected");
+                const isNowSelected = dayBox.classList.contains("selected");
+
+                if (applyToAll) {
+                    // Update sharedDays
+                    if (isNowSelected && !sharedDays.includes(i)) {
+                        sharedDays.push(i);
+                    } else if (!isNowSelected && sharedDays.includes(i)) {
+                        const idx = sharedDays.indexOf(i);
+                        sharedDays.splice(idx, 1);
+                    }
+
+                    this.state.selectedYearlyDays["all"] = sharedDays;
+
+                    // Sync all selected months
+                    activeMonths.forEach(month => {
+                        this.state.selectedYearlyDays[month] = [...sharedDays];
+                    });
+                } else {
+                    // Regular mode, per-month
+                    const current = this.state.selectedYearlyDays[monthNumber] || [];
+                    if (isNowSelected && !current.includes(i)) {
+                        current.push(i);
+                    } else if (!isNowSelected && current.includes(i)) {
+                        const idx = current.indexOf(i);
+                        current.splice(idx, 1);
+                    }
+                    this.state.selectedYearlyDays[monthNumber] = current;
+                }
+            });
+
+            container.appendChild(dayBox);
+        }
+    }
+
+    /**
+     * Handle yearly "apply to all months" checkbox change
+     */
+    handleYearlyApplyToAllChange() {
+        const checkbox = this.deps.getElementById("yearly-apply-days-to-all");
+        const dropdown = this.deps.getElementById("yearly-month-select");
+        const selectedMonths = this.getSelectedYearlyMonths();
+
+        if (!checkbox || !dropdown) return;
+
+        if (checkbox.checked) {
+            dropdown.classList.add("hidden");
+            if (selectedMonths.length > 0) {
+                this.generateYearlyDayGrid(selectedMonths[0]); // Use any selected month for grid
+            }
+        } else {
+            dropdown.classList.remove("hidden");
+            const selectedMonth = parseInt(dropdown.value);
+            this.generateYearlyDayGrid(selectedMonth);
+        }
+    }
+
+    /**
+     * Get selected yearly months
+     */
+    getSelectedYearlyMonths() {
+        return Array.from(this.deps.querySelectorAll(".yearly-month-box.selected"))
+                    .map(el => parseInt(el.dataset.month));
+    }
+
+    /**
+     * Get selected monthly days
+     */
+    getSelectedMonthlyDays() {
+        return Array.from(this.deps.querySelectorAll(".monthly-day-box.selected"))
+                    .map(el => parseInt(el.dataset.day));
+    }
+
+    /**
+     * Setup specific dates panel
+     */
+    setupSpecificDatesPanel() {
+        const checkbox = this.deps.getElementById("recur-specific-dates");
+        const panel = this.deps.getElementById("specific-dates-panel");
+        const timeOptions = this.deps.getElementById("specific-date-time-options");
+        const addBtn = this.deps.getElementById("add-specific-date");
+        const list = this.deps.getElementById("specific-date-list");
+
+        if (!checkbox || !panel || !timeOptions || !addBtn || !list) {
+            console.warn("⚠️ Missing elements for specific dates panel setup");
+            return;
+        }
+
+        const createDateInput = (isFirst = false) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "specific-date-item";
+
+            const input = document.createElement("input");
+            input.type = "date";
+            const index = list.children.length;
+            input.setAttribute("aria-label", isFirst ? "First specific date" : `Specific date ${index + 1}`);
+            input.required = true;
+
+            try {
+                input.valueAsDate = this.getTomorrow();
+            } catch (error) {
+                console.warn("⚠️ Could not set default date:", error);
+            }
+
+            if (isFirst) {
+                input.classList.add("first-specific-date");
+            }
+
+            input.addEventListener("change", () => {
+                if (isFirst && !input.value) {
+                    try {
+                        input.valueAsDate = this.getTomorrow();
+                    } catch (error) {
+                        console.warn("⚠️ Could not reset date:", error);
+                    }
+                }
+                this.updateRecurringSummary();
+            });
+
+            wrapper.appendChild(input);
+
+            if (!isFirst) {
+                const trash = document.createElement("button");
+                trash.type = "button";
+                trash.className = "trash-btn";
+                trash.innerHTML = "<i class='fas fa-trash recurring-date-trash-icon'></i>";
+                trash.title = "Remove this date";
+
+                trash.addEventListener("click", () => {
+                    wrapper.remove();
+                    this.updateRecurCountVisibility();
+                    this.updateRecurringSummary();
+                });
+                wrapper.appendChild(trash);
+            }
+
+            list.appendChild(wrapper);
+            this.updateRecurringSummary();
+        };
+
+        checkbox.addEventListener("change", () => {
+            const shouldShow = checkbox.checked;
+
+            panel.classList.toggle("hidden", !shouldShow);
+            timeOptions.classList.toggle("hidden", !shouldShow);
+
+            this.deps.querySelectorAll(".frequency-options").forEach(panel => {
+                panel.classList.add("hidden");
+            });
+
+            this.deps.getElementById("recur-frequency-container").classList.toggle("hidden", shouldShow);
+            this.deps.getElementById("recur-indefinitely").closest("label").classList.toggle("hidden", shouldShow);
+
+            const advancedBtn = this.deps.getElementById("toggle-advanced-settings");
+            if (advancedBtn) {
+                advancedBtn.classList.toggle("hidden", shouldShow);
+            }
+
+            if (shouldShow && list.children.length === 0) {
+                createDateInput(true);
+            }
+
+            if (!shouldShow) {
+                this.deps.getElementById("specific-date-specific-time").checked = false;
+                this.deps.getElementById("specific-date-time-container").classList.add("hidden");
+
+                const freqSelect = this.deps.getElementById("recur-frequency");
+                if (freqSelect) {
+                    const event = new Event("change");
+                    freqSelect.dispatchEvent(event);
+                }
+            }
+
+            this.updateRecurCountVisibility();
+            this.updateRecurringSummary();
+        });
+
+        addBtn.addEventListener("click", () => {
+            createDateInput(false);
+        });
+
+        this.updateRecurringSummary();
+    }
+
+    /**
+     * Get tomorrow's date
+     */
+    getTomorrow() {
+        try {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            if (isNaN(tomorrow.getTime()) || tomorrow.getFullYear() > 2100) {
+                throw new Error("Invalid date generated");
+            }
+
+            return tomorrow;
+        } catch (error) {
+            console.warn("⚠️ Error generating tomorrow's date:", error);
+            const fallback = new Date();
+            fallback.setDate(fallback.getDate() + 1);
+            return fallback;
+        }
+    }
+
+    /**
+     * Update recurring count visibility based on settings
+     */
+    updateRecurCountVisibility() {
+        const isIndefinite = this.deps.getElementById("recur-indefinitely")?.checked;
+        const isUsingSpecificDates = this.deps.getElementById("recur-specific-dates")?.checked;
+        const countContainer = this.deps.getElementById("recur-count-container");
+
+        if (!countContainer) return;
+
+        // Only show if NOT using specific dates AND NOT recurring indefinitely
+        const shouldShow = !isUsingSpecificDates && !isIndefinite;
+        countContainer.classList.toggle("hidden", !shouldShow);
+    }
+
+    /**
+     * Update recurring settings panel visibility
+     */
+    updateRecurringSettingsVisibility() {
+        const anySelected = this.deps.querySelector(".recurring-task-item.selected");
+        const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+        const checkboxes = this.deps.querySelectorAll(".recurring-check");
+        const changeBtns = this.deps.querySelectorAll(".change-recurring-btn");
+        const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
+        const taskCount = this.deps.querySelectorAll(".recurring-task-item").length;
+
+        const show = !!anySelected;
+
+        if (settingsPanel) {
+            settingsPanel.classList.toggle("hidden", !show);
+
+            // Show or hide checkboxes
+            checkboxes.forEach(box => {
+                box.classList.toggle("hidden", !show);
+            });
+
+            // Hide change buttons when panel is open
+            changeBtns.forEach(btn => {
+                btn.classList.toggle("hidden", show);
+            });
+        }
+
+        // Only show toggle if panel is open AND checkboxes are visible AND more than one task
+        const checkboxesVisible = Array.from(checkboxes).some(cb => !cb.classList.contains("hidden"));
+        const shouldShowToggle = show && taskCount > 1 && checkboxesVisible;
+        toggleContainer?.classList.toggle("hidden", !shouldShowToggle);
+    }
+
+    /**
+     * Setup Apply and Cancel button handlers
+     */
+    setupApplyCancelButtons() {
+        const applyBtn = this.deps.getElementById("apply-recurring-settings");
+        const cancelBtn = this.deps.getElementById("cancel-recurring-settings");
+
+        if (applyBtn) {
+            applyBtn.addEventListener("click", () => this.handleApplySettings());
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener("click", () => this.handleCancelSettings());
+        }
+    }
+
+    /**
+     * Handle applying recurring settings to checked tasks
+     */
+    handleApplySettings() {
+        console.log('📝 Applying recurring settings (AppState-based)...');
+
+        // Check AppState readiness
+        if (!this.deps.isAppStateReady()) {
+            console.warn('⚠️ AppState not ready for apply recurring settings');
+            this.deps.showNotification("❌ App not ready. Please try again.", "error");
+            return;
+        }
+
+        const state = this.deps.getAppState();
+        const activeCycleId = state.appState?.activeCycleId;
+
+        if (!activeCycleId) {
+            this.deps.showNotification("⚠ No active cycle found.");
+            return;
+        }
+
+        const cycleData = state.data?.cycles?.[activeCycleId];
+        if (!cycleData) {
+            this.deps.showNotification("⚠ Active cycle data not found.");
+            return;
+        }
+
+        const checkedEls = this.deps.querySelectorAll(".recurring-check:checked");
+
+        if (!checkedEls.length) {
+            this.deps.showNotification("⚠ No tasks checked to apply settings.");
+            return;
+        }
+
+        const settings = this.deps.normalizeRecurringSettings(this.buildRecurringSettingsFromPanel());
+
+        // Set defaultRecurTime if not using specific time
+        if (!settings.specificTime && !settings.defaultRecurTime) {
+            settings.defaultRecurTime = new Date().toISOString();
+        }
+
+        // Batch all updates in one AppState operation
+        if (window.AppState && window.AppState.update) {
+            window.AppState.update(draft => {
+                // Save default recurring settings if requested
+                if (this.deps.getElementById("set-default-recurring")?.checked) {
+                    if (!draft.settings) draft.settings = {};
+                    draft.settings.defaultRecurringSettings = settings;
+                }
+
+                const cycle = draft.data.cycles[activeCycleId];
+                if (!cycle.recurringTemplates) {
+                    cycle.recurringTemplates = {};
+                }
+
+                checkedEls.forEach(checkbox => {
+                    const taskEl = checkbox.closest("[data-task-id]");
+                    const taskId = taskEl?.dataset.taskId;
+                    if (!taskId || !taskEl) return;
+
+                    let task = cycle.tasks.find(t => t.id === taskId);
+                    if (!task) {
+                        task = {
+                            id: taskId,
+                            text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+                            recurring: true,
+                            recurringSettings: structuredClone(settings),
+                            schemaVersion: 2
+                        };
+                        cycle.tasks.push(task);
+                    }
+
+                    // Apply recurring settings to task
+                    task.recurring = true;
+                    task.schemaVersion = 2;
+                    task.recurringSettings = structuredClone(settings);
+
+                    // Update recurringTemplates
+                    cycle.recurringTemplates[task.id] = {
+                        id: task.id,
+                        text: task.text,
+                        dueDate: task.dueDate || null,
+                        highPriority: task.highPriority || false,
+                        remindersEnabled: task.remindersEnabled || false,
+                        recurring: true,
+                        recurringSettings: structuredClone(settings),
+                        schemaVersion: 2
+                    };
+                });
+            });
+        }
+
+        // Update DOM after state changes
+        if (window.syncRecurringStateToDOM) {
+            checkedEls.forEach(checkbox => {
+                const taskEl = checkbox.closest("[data-task-id]");
+                if (!taskEl) return;
+
+                // Update DOM
+                taskEl.classList.add("recurring");
+                taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
+                const recurringBtn = taskEl.querySelector(".recurring-btn");
+                if (recurringBtn) {
+                    recurringBtn.classList.add("active");
+                    recurringBtn.setAttribute("aria-pressed", "true");
+                }
+
+                window.syncRecurringStateToDOM(taskEl, settings);
+            });
+        }
+
+        // Show success notifications
+        if (this.deps.getElementById("set-default-recurring")?.checked) {
+            this.deps.showNotification("✅ Default recurring settings saved!", "success", 1500);
+        }
+
+        this.updateRecurringSummary();
+        this.deps.showNotification("✅ Recurring settings applied!", "success", 2000);
+        this.updateRecurringPanel();
+
+        // ✅ Use setTimeout to ensure DOM has updated before querying for checked tasks
+        setTimeout(() => {
+            // ✅ Keep first checked task selected and show updated preview
+            const checkedTasks = this.deps.querySelectorAll(".recurring-task-item.checked");
+            let firstCheckedTask = null;
+
+            console.log('🔍 Looking for checked tasks after apply:', checkedTasks.length);
+
+            if (checkedTasks.length > 0) {
+                firstCheckedTask = checkedTasks[0];
+
+                // Keep first task selected, clear the rest
+                this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+                    if (el !== firstCheckedTask) {
+                        el.classList.remove("selected", "checked");
+                    }
+                });
+
+                // Update preview with new settings
+                const taskId = firstCheckedTask.dataset.taskId;
+                const state = this.deps.getAppState();
+                const activeCycleId = state.appState?.activeCycleId;
+                const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+
+                if (task) {
+                    this.showTaskSummaryPreview(task);
+                    console.log('✅ Updated preview with new settings for task:', taskId);
+                    
+                    // ✅ Debug: Check if preview is visible
+                    const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+                    console.log('🔍 Preview container visibility after apply:', {
+                        exists: !!summaryContainer,
+                        hasHiddenClass: summaryContainer?.classList.contains("hidden"),
+                        innerHTML: summaryContainer?.innerHTML.substring(0, 100)
+                    });
+                }
+            } else {
+                // No checked tasks - clear all selections
+                this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+                    el.classList.remove("selected", "checked");
+                });
+                console.log('⚠️ No checked tasks found after apply settings');
+            }
+        }, 10);
+
+        const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+        settingsPanel?.classList.add("hidden");
+
+        // Explicitly hide checkboxes and toggle container
+        this.deps.querySelectorAll(".recurring-check").forEach(cb => {
+            cb.classList.add("hidden");
+            cb.checked = false;
+        });
+
+        const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
+        toggleContainer?.classList.add("hidden");
+
+        // Update button visibility
+        this.updateRecurringPanelButtonVisibility();
+
+        // Clear the form
+        this.clearRecurringForm();
+
+        console.log('✅ Recurring settings applied successfully');
+    }
+
+    /**
+     * Handle canceling recurring settings changes
+     */
+    handleCancelSettings() {
+        const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+        settingsPanel?.classList.add("hidden");
+
+        // Deselect all selected tasks
+        this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+            el.classList.remove("selected");
+            const checkbox = el.querySelector("input[type='checkbox']");
+            if (checkbox) checkbox.checked = false;
+        });
+
+        // Hide checkboxes and uncheck them
+        this.deps.querySelectorAll(".recurring-check").forEach(cb => {
+            cb.checked = false;
+            cb.classList.add("hidden");
+            cb.closest(".recurring-task-item")?.classList.remove("checked");
+        });
+
+        // Hide the summary preview if visible
+        const preview = this.deps.getElementById("recurring-summary-preview");
+        if (preview) preview.classList.add("hidden");
+
+        this.updateRecurringSettingsVisibility();
+    }
+
+    /**
+     * Setup biweekly day toggle
+     */
+    setupBiweeklyDayToggle() {
+        this.deps.querySelectorAll(".biweekly-day-box").forEach(box => {
+            box.addEventListener("click", () => {
+                box.classList.toggle("selected");
+            });
+        });
+    }
+
+    /**
+     * Setup additional event listeners for recurring panel
+     */
+    setupAdditionalListeners() {
+        // Specific date time checkbox
+        const specificDateTime = this.deps.getElementById("specific-date-specific-time");
+        if (specificDateTime) {
+            specificDateTime.addEventListener("change", (e) => {
+                const timeContainer = this.deps.getElementById("specific-date-time-container");
+                if (timeContainer) {
+                    timeContainer.classList.toggle("hidden", !e.target.checked);
+                }
+                this.updateRecurringSummary();
+            });
+        }
+
+        // Recur indefinitely checkbox
+        const recurIndefinitely = this.deps.getElementById("recur-indefinitely");
+        if (recurIndefinitely) {
+            recurIndefinitely.addEventListener("change", (e) => {
+                const countContainer = this.deps.getElementById("recur-count-container");
+                if (countContainer) {
+                    countContainer.classList.toggle("hidden", e.target.checked);
+                }
+                this.updateRecurCountVisibility();
+                this.updateRecurringSummary();
+            });
+        }
+
+        // Document click handler for hiding preview when clicking outside
+        document.addEventListener("click", (e) => {
+            const overlay = this.deps.getElementById("recurring-panel-overlay");
+            if (!overlay || overlay.classList.contains("hidden")) return;
+
+            const taskList = this.deps.getElementById("recurring-task-list");
+            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+            const summaryPreview = this.deps.getElementById("recurring-summary-preview");
+
+            if (taskList?.contains(e.target) || settingsPanel?.contains(e.target)) return;
+
+            // Hide summary preview when clicking outside
+            if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {
+                summaryPreview.classList.add("hidden");
+                this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+                    el.classList.remove("selected");
+                });
+            }
         });
     }
 
@@ -320,6 +1199,12 @@ export class RecurringPanelManager {
                 overlay.classList.add("hidden");
             }
 
+            // ✅ Hide the preview when panel closes
+            const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+            if (summaryContainer) {
+                summaryContainer.classList.add("hidden");
+            }
+
             this.updateRecurringSettingsVisibility();
 
             this.state.panelOpen = false;
@@ -372,8 +1257,11 @@ export class RecurringPanelManager {
             }
 
             console.log('📊 Processing recurring templates:', Object.keys(cycleData.recurringTemplates || {}).length);
+            console.log('🔍 Template IDs found:', Object.keys(cycleData.recurringTemplates || {}));
 
             const templateTasks = Object.values(cycleData.recurringTemplates || {});
+            console.log('📋 Template tasks:', templateTasks.map(t => ({ id: t.id, text: t.text })));
+            
             const recurringTasks = templateTasks.map(template => {
                 const existingTask = cycleData.tasks.find(t => t.id === template.id);
                 return existingTask || template;
@@ -386,8 +1274,20 @@ export class RecurringPanelManager {
                 console.log('📋 No recurring tasks found, hiding panel');
                 const overlay = this.deps.getElementById("recurring-panel-overlay");
                 if (overlay) overlay.classList.add("hidden");
+                
+                // ✅ Hide preview when no tasks
+                const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+                if (summaryContainer) {
+                    summaryContainer.classList.add("hidden");
+                }
                 return;
             }
+
+            // Remember previously selected task AND checked tasks
+            const previouslySelectedId = this.state.selectedTaskId;
+            const previouslyCheckedIds = Array.from(
+                this.deps.querySelectorAll(".recurring-task-item.checked")
+            ).map(el => el.dataset.taskId);
 
             // Clear previous selections
             this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
@@ -403,6 +1303,21 @@ export class RecurringPanelManager {
 
                 const item = this.createRecurringTaskItem(task, cycleData);
                 recurringList.appendChild(item);
+
+                // ✅ Restore selection if this was the previously selected task
+                if (previouslySelectedId && task.id === previouslySelectedId) {
+                    item.classList.add("selected");
+                    this.showTaskSummaryPreview(task);
+                }
+
+                // ✅ Restore checked state if this task was previously checked
+                if (previouslyCheckedIds.includes(task.id)) {
+                    item.classList.add("checked");
+                    const checkbox = item.querySelector(".recurring-check");
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                }
             });
 
             this.updateRecurringSummary();
@@ -461,8 +1376,19 @@ export class RecurringPanelManager {
             item.classList.add("selected");
 
             this.state.selectedTaskId = task.id;
-            const fullTask = cycleData.tasks.find(t => t.id === task.id) || task;
-            this.showTaskSummaryPreview(fullTask);
+            
+            // ✅ Get fresh data from AppState instead of using stale cycleData
+            if (this.deps.isAppStateReady()) {
+                const currentState = this.deps.getAppState();
+                const activeCycleId = currentState.appState?.activeCycleId;
+                const currentCycle = currentState.data?.cycles?.[activeCycleId];
+                const fullTask = currentCycle?.tasks.find(t => t.id === task.id) || task;
+                this.showTaskSummaryPreview(fullTask);
+            } else {
+                // Fallback to original behavior if AppState not ready
+                const fullTask = cycleData.tasks.find(t => t.id === task.id) || task;
+                this.showTaskSummaryPreview(fullTask);
+            }
         });
 
         return item;
@@ -483,30 +1409,38 @@ export class RecurringPanelManager {
                 if (!confirmed) return;
 
                 try {
-                    const schemaData = this.deps.loadData();
-                    if (!schemaData) {
-                        console.error('❌ Schema 2.5 data required for task removal');
+                    // ✅ Use AppState instead of direct localStorage manipulation
+                    if (!this.deps.isAppStateReady()) {
+                        console.error('❌ AppState not ready for task removal');
+                        this.deps.showNotification('App not ready, please try again', 'error');
                         return;
                     }
 
-                    const { cycles, activeCycle } = schemaData;
-                    const currentCycle = cycles[activeCycle];
+                    const state = this.deps.getAppState();
+                    const activeCycleId = state.appState?.activeCycleId;
 
-                    // Remove recurrence from the live task
-                    const liveTask = currentCycle.tasks.find(t => t.id === task.id);
-                    if (liveTask) {
-                        liveTask.recurring = false;
-                        delete liveTask.recurringSettings;
+                    if (!activeCycleId) {
+                        console.error('❌ No active cycle found for task removal');
+                        this.deps.showNotification('No active cycle found', 'error');
+                        return;
                     }
 
-                    // Delete from recurringTemplates
-                    delete currentCycle.recurringTemplates[task.id];
+                    // ✅ Update via AppState instead of direct manipulation (immediate save)
+                    this.deps.updateAppState(draft => {
+                        const cycle = draft.data.cycles[activeCycleId];
 
-                    // Update the full schema data
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                        // Remove recurrence from the live task
+                        const liveTask = cycle.tasks.find(t => t.id === task.id);
+                        if (liveTask) {
+                            liveTask.recurring = false;
+                            delete liveTask.recurringSettings;
+                        }
+
+                        // Delete from recurringTemplates
+                        if (cycle.recurringTemplates?.[task.id]) {
+                            delete cycle.recurringTemplates[task.id];
+                        }
+                    }, true); // ✅ Immediate save when removing recurring from panel
 
                     this.deps.showNotification("↩️ Recurring turned off for this task.", "info", 5000);
 
@@ -526,7 +1460,10 @@ export class RecurringPanelManager {
                     item.remove();
                     this.updateRecurringPanelButtonVisibility();
 
-                    const remaining = Object.values(currentCycle.recurringTemplates || {});
+                    // ✅ Check remaining templates via AppState
+                    const updatedState = this.deps.getAppState();
+                    const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
+                    const remaining = Object.values(updatedCycle?.recurringTemplates || {});
                     if (remaining.length === 0) {
                         const overlay = this.deps.getElementById("recurring-panel-overlay");
                         if (overlay) overlay.classList.add("hidden");
@@ -622,7 +1559,8 @@ export class RecurringPanelManager {
                 summaryContainer = this.createTaskSummaryPreview();
             }
 
-            summaryContainer.innerHTML = "";
+            // ✅ Remove hidden class to show the preview
+            summaryContainer.classList.remove("hidden");
 
             // Get recurring settings
             if (!this.deps.isAppStateReady()) {
@@ -647,24 +1585,52 @@ export class RecurringPanelManager {
             const recurringSettings = task.recurringSettings ||
                 currentCycle?.recurringTemplates?.[task.id]?.recurringSettings;
 
+            // ✅ Update the preview text element instead of replacing entire innerHTML
+            const previewText = this.deps.getElementById("recurring-preview-text");
+            if (!previewText) {
+                console.warn('⚠️ recurring-preview-text element not found');
+                return;
+            }
+
+            // ✅ Debug: Check button state before updating preview
+            const changeBtnBefore = this.deps.getElementById("change-recurring-settings");
+            console.log('🔍 Button state before preview update:', {
+                exists: !!changeBtnBefore,
+                visible: changeBtnBefore ? !changeBtnBefore.classList.contains("hidden") : false,
+                hasEventListener: changeBtnBefore ? changeBtnBefore.onclick !== null : false
+            });
+
             if (!recurringSettings) {
-                summaryContainer.innerHTML = `
-                    <div class="task-preview-item">
-                        <strong>${task.text}</strong>
-                        <p>No recurring settings configured</p>
-                    </div>
+                previewText.innerHTML = `
+                    <strong>${task.text}</strong><br>
+                    <em>No recurring settings configured</em>
                 `;
                 return;
             }
 
             const summaryText = this.deps.buildRecurringSummary(recurringSettings);
 
-            summaryContainer.innerHTML = `
-                <div class="task-preview-item">
-                    <strong>${task.text}</strong>
-                    <p class="recurring-summary-text">${summaryText}</p>
-                </div>
+            previewText.innerHTML = `
+                <strong>${task.text}</strong><br>
+                <span class="recurring-summary-text">${summaryText}</span>
             `;
+
+            // ✅ Ensure the button is visible after updating preview
+            const changeBtn = this.deps.getElementById("change-recurring-settings");
+            if (changeBtn) {
+                changeBtn.style.display = ""; // Remove any display: none
+                changeBtn.classList.remove("hidden"); // Remove hidden class if present
+                console.log('✅ Change recurring settings button made visible');
+            } else {
+                console.warn('⚠️ Change recurring settings button not found in DOM');
+            }
+
+            // ✅ Debug: Check button state after updating preview
+            console.log('🔍 Button state after preview update:', {
+                exists: !!changeBtn,
+                visible: changeBtn ? !changeBtn.classList.contains("hidden") : false,
+                parentVisible: summaryContainer ? !summaryContainer.classList.contains("hidden") : false
+            });
 
             console.log('✅ Task summary preview displayed');
 
@@ -753,30 +1719,88 @@ export class RecurringPanelManager {
                     enabled: false,
                     dates: []
                 },
-                hourly: {
-                    useSpecificMinute: false,
-                    minute: 0
-                },
-                weekly: {
-                    days: []
-                },
-                biweekly: {
-                    days: []
-                },
-                monthly: {
-                    days: []
-                },
-                yearly: {
-                    months: [],
-                    useSpecificDays: false,
-                    applyDaysToAll: true,
-                    daysByMonth: {}
-                }
+                daily: {},
+                hourly: {},
+                weekly: {},
+                biweekly: {},
+                monthly: {},
+                yearly: {}
             };
 
-            // Add frequency-specific settings extraction here
-            // This would involve reading checkboxes, day selectors, etc.
-            // Simplified for now - can be extended as needed
+            // ✅ Specific Dates Mode
+            if (this.deps.getElementById("recur-specific-dates")?.checked) {
+                const dateInputs = this.deps.querySelectorAll("#specific-date-list input[type='date']");
+                settings.specificDates.enabled = true;
+                settings.specificDates.dates = Array.from(dateInputs).map(input => input.value).filter(Boolean);
+
+                if (this.deps.getElementById("specific-date-specific-time")?.checked) {
+                    settings.useSpecificTime = true;
+                    settings.time = {
+                        hour: parseInt(this.deps.getElementById("specific-date-hour")?.value) || 0,
+                        minute: parseInt(this.deps.getElementById("specific-date-minute")?.value) || 0,
+                        meridiem: this.deps.getElementById("specific-date-meridiem")?.value,
+                        military: this.deps.getElementById("specific-date-military")?.checked
+                    };
+                }
+            } else {
+                // ✅ Time block for non-specific-dates
+                const timeId = frequency;
+                const timeEnabled = this.deps.getElementById(`${timeId}-specific-time`)?.checked;
+
+                // ✅ Time block for non-specific-dates — EXCLUDE hourly!
+                if (frequency !== "hourly" && timeEnabled) {
+                    settings.useSpecificTime = true;
+                    settings.time = {
+                        hour: parseInt(this.deps.getElementById(`${timeId}-hour`)?.value) || 0,
+                        minute: parseInt(this.deps.getElementById(`${timeId}-minute`)?.value) || 0,
+                        meridiem: this.deps.getElementById(`${timeId}-meridiem`)?.value,
+                        military: this.deps.getElementById(`${timeId}-military`)?.checked
+                    };
+                }
+
+                // ✅ Hourly Specific Minute
+                if (frequency === "hourly") {
+                    const useSpecificMinute = this.deps.getElementById("hourly-specific-time")?.checked;
+                    const minuteEl = this.deps.getElementById("hourly-minute");
+
+                    settings.hourly = {
+                        useSpecificMinute: !!useSpecificMinute,
+                        minute: useSpecificMinute && minuteEl ? parseInt(minuteEl.value) || 0 : 0
+                    };
+                }
+
+                // ✅ Weekly & Biweekly
+                if (frequency === "weekly" || frequency === "biweekly") {
+                    const selector = `.${frequency}-day-box.selected`;
+                    settings[frequency] = {
+                        useSpecificDays: this.deps.getElementById(`${frequency}-specific-days`)?.checked,
+                        days: Array.from(this.deps.querySelectorAll(selector)).map(el => el.dataset.day)
+                    };
+                }
+
+                // ✅ Monthly
+                if (frequency === "monthly") {
+                    settings.monthly = {
+                        useSpecificDays: this.deps.getElementById("monthly-specific-days")?.checked,
+                        days: Array.from(this.deps.querySelectorAll(".monthly-day-box.selected")).map(el => parseInt(el.dataset.day))
+                    };
+                }
+
+                // ✅ Yearly
+                if (frequency === "yearly") {
+                    const applyAll = this.deps.getElementById("yearly-apply-days-to-all")?.checked;
+                    const useMonths = this.deps.getElementById("yearly-specific-months")?.checked;
+                    const useDays = this.deps.getElementById("yearly-specific-days")?.checked;
+
+                    settings.yearly = {
+                        useSpecificMonths: useMonths,
+                        months: this.getSelectedYearlyMonths(),
+                        useSpecificDays: useDays,
+                        daysByMonth: applyAll ? { all: this.state.selectedYearlyDays["all"] || [] } : { ...this.state.selectedYearlyDays },
+                        applyDaysToAll: applyAll
+                    };
+                }
+            }
 
             return this.deps.normalizeRecurringSettings(settings);
 
@@ -873,27 +1897,122 @@ export class RecurringPanelManager {
     updateRecurringPanelButtonVisibility() {
         try {
             const panelButton = this.deps.getElementById("open-recurring-panel");
-            if (!panelButton) return;
-
-            // Simple check: get current data and look for recurring tasks
-            let hasRecurring = false;
-
-            try {
-                const schemaData = this.deps.loadData();
-                if (schemaData?.cycles?.[schemaData.activeCycle]) {
-                    const cycle = schemaData.cycles[schemaData.activeCycle];
-                    hasRecurring = cycle.tasks.some(task => task.recurring) ||
-                        Object.keys(cycle.recurringTemplates || {}).length > 0;
-                }
-            } catch (error) {
-                console.warn('Could not check recurring tasks:', error);
+            if (!panelButton) {
+                console.warn('⚠️ Recurring panel button not found in DOM');
                 return;
             }
 
+            let hasRecurring = false;
+
+            try {
+                // ✅ Use AppState instead of loadData
+                if (!this.deps.isAppStateReady()) {
+                    console.warn('⚠️ AppState not ready for button visibility check');
+                    panelButton.classList.add("hidden"); // Hide by default
+                    return;
+                }
+
+                const state = this.deps.getAppState();
+                const activeCycleId = state.appState?.activeCycleId;
+                const currentCycle = state.data?.cycles?.[activeCycleId];
+
+                if (currentCycle?.recurringTemplates) {
+                    const templateCount = Object.keys(currentCycle.recurringTemplates).length;
+                    hasRecurring = templateCount > 0;
+
+                    console.log('🔍 Recurring button visibility:', {
+                        activeCycleId,
+                        templateCount,
+                        willShow: hasRecurring
+                    });
+                }
+            } catch (error) {
+                console.warn('⚠️ Could not check recurring tasks:', error);
+                panelButton.classList.add("hidden"); // Hide on error
+                return;
+            }
+
+            // Toggle visibility
             panelButton.classList.toggle("hidden", !hasRecurring);
+            console.log(`🔘 Recurring button ${hasRecurring ? 'SHOWN' : 'HIDDEN'}`);
 
         } catch (error) {
             console.error('❌ Error updating panel button visibility:', error);
+        }
+    }
+
+    // ============================================
+    // ALWAYS SHOW RECURRING SETTING
+    // ============================================
+
+    /**
+     * Save always show recurring setting to AppState
+     */
+    saveAlwaysShowRecurringSetting() {
+        console.log('💾 Saving always show recurring setting...');
+
+        try {
+            const checkbox = this.deps.getElementById("always-show-recurring");
+            if (!checkbox) {
+                console.warn('⚠️ Always show recurring checkbox not found');
+                return;
+            }
+
+            const alwaysShow = checkbox.checked;
+
+            // ✅ Save via AppState
+            if (!this.deps.isAppStateReady || !this.deps.isAppStateReady()) {
+                console.warn('⚠️ AppState not ready for saving always show recurring setting');
+                return;
+            }
+
+            this.deps.updateAppState(draft => {
+                if (!draft.settings) {
+                    draft.settings = {};
+                }
+                draft.settings.alwaysShowRecurring = alwaysShow;
+            }, true); // ✅ Immediate save for always-show-recurring setting
+
+            console.log('✅ Always show recurring setting saved via AppState:', alwaysShow);
+
+            // ✅ Trigger button refresh to show/hide recurring buttons after small delay
+            // This ensures AppState changes have fully propagated
+            setTimeout(() => {
+                if (typeof window.refreshTaskButtonsForModeChange === 'function') {
+                    console.log('🔄 Refreshing task buttons for always-show-recurring change...');
+                    window.refreshTaskButtonsForModeChange();
+                }
+            }, 50);
+
+        } catch (error) {
+            console.error('❌ Error saving always show recurring setting:', error);
+        }
+    }
+
+    /**
+     * Load always show recurring setting from AppState
+     */
+    loadAlwaysShowRecurringSetting() {
+        console.log('📥 Loading always show recurring setting...');
+
+        try {
+            if (!this.deps.isAppStateReady || !this.deps.isAppStateReady()) {
+                console.warn('⚠️ AppState not ready for loading always show recurring setting');
+                return;
+            }
+
+            const state = this.deps.getAppState();
+            const isEnabled = state.settings?.alwaysShowRecurring || false;
+
+            console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
+
+            const checkbox = this.deps.getElementById("always-show-recurring");
+            if (checkbox) {
+                checkbox.checked = isEnabled;
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading always show recurring setting:', error);
         }
     }
 

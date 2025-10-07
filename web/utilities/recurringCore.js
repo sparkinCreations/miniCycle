@@ -42,6 +42,7 @@ const Deps = {
     updateRecurringPanel: null,        // () => updateRecurringPanel()
     updateRecurringSummary: null,      // () => updateRecurringSummary()
     updatePanelButtonVisibility: null, // () => updateRecurringPanelButtonVisibility()
+    refreshUIFromState: null,          // () => refreshUIFromState() - refresh DOM after data changes
 
     // Time/scheduling
     now: null,                // () => Date.now()
@@ -402,6 +403,17 @@ export function watchRecurringTasks() {
         });
 
         console.log(`✅ Added ${tasksToAdd.length} recurring tasks via AppState`);
+
+        // ✅ Refresh DOM to show newly added recurring tasks
+        // Use setTimeout to ensure state update has completed before refreshing DOM
+        setTimeout(() => {
+            if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
+                Deps.refreshUIFromState();
+                console.log('🔄 DOM refreshed after adding recurring tasks');
+            } else {
+                console.warn('⚠️ refreshUIFromState not available - tasks added to state but DOM not refreshed');
+            }
+        }, 0);
     }
 }
 
@@ -505,24 +517,89 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
 
     task.schemaVersion = 2;
 
-    // Create recurring template
-    if (!currentCycle.recurringTemplates) {
-        currentCycle.recurringTemplates = {};
+    // ✅ Create recurring template using AppState for consistency (immediate save)
+    assertInjected('updateAppState', Deps.updateAppState);
+    Deps.updateAppState(draft => {
+        const activeCycleId = draft.appState?.activeCycleId;
+        const currentCycleInState = draft.data?.cycles?.[activeCycleId];
+
+        if (!currentCycleInState) {
+            console.warn('⚠️ No active cycle found in AppState for template creation');
+            return;
+        }
+
+        if (!currentCycleInState.recurringTemplates) {
+            currentCycleInState.recurringTemplates = {};
+        }
+
+        currentCycleInState.recurringTemplates[assignedTaskId] = {
+            id: assignedTaskId,
+            text: task.text,
+            recurring: true,
+            recurringSettings: structuredClone(task.recurringSettings),
+            highPriority: task.highPriority || false,
+            dueDate: task.dueDate || null,
+            remindersEnabled: task.remindersEnabled || false,
+            lastTriggeredTimestamp: null,
+            schemaVersion: 2
+        };
+    }, true); // ✅ Immediate save to prevent data loss on quick refresh
+
+    console.log('✅ Recurring template created via AppState:', {
+        taskId: assignedTaskId,
+        taskText: task.text,
+        settings: task.recurringSettings
+    });
+
+    // ✅ Show notification with Quick Actions (handled by notifications module)
+    const frequency = task.recurringSettings?.frequency || 'daily';
+    const pattern = task.recurringSettings?.indefinitely ? 'Indefinitely' : 'Limited';
+
+    console.log('📢 Attempting to show notification:', { frequency, pattern, assignedTaskId });
+
+    // Use notifications module if available
+    if (window.notifications?.createRecurringNotificationWithTip) {
+        console.log('📝 Creating notification content...');
+        const notificationContent = window.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
+        console.log('📝 Notification content created:', notificationContent.substring(0, 100) + '...');
+
+        // Use showNotificationWithTip if available
+        if (window.showNotificationWithTip) {
+            console.log('📤 Showing notification with tip...');
+            const notification = window.showNotificationWithTip(notificationContent, "recurring", 20000, 'recurring-cycle-explanation');
+            console.log('📤 Notification result:', notification);
+
+            // Initialize listeners if notification was created
+            if (notification && window.notifications.initializeRecurringNotificationListeners) {
+                console.log('🎧 Initializing notification listeners...');
+                window.notifications.initializeRecurringNotificationListeners(notification);
+            }
+        } else {
+            console.log('📤 Falling back to regular showNotification...');
+            // Fallback to regular showNotification
+            assertInjected('showNotification', Deps.showNotification);
+            const notification = Deps.showNotification(notificationContent, "recurring", 20000);
+
+            if (notification && window.notifications.initializeRecurringNotificationListeners) {
+                window.notifications.initializeRecurringNotificationListeners(notification);
+            }
+        }
+    } else {
+        console.log('⚠️ Notifications module not available, using fallback');
+        // Fallback to simple notification
+        assertInjected('showNotification', Deps.showNotification);
+        Deps.showNotification(`✅ Task set to recurring (${frequency})`, "success", 5000);
     }
 
-    currentCycle.recurringTemplates[assignedTaskId] = {
-        id: assignedTaskId,
-        text: task.text,
-        recurring: true,
-        recurringSettings: structuredClone(task.recurringSettings),
-        highPriority: task.highPriority || false,
-        dueDate: task.dueDate || null,
-        remindersEnabled: task.remindersEnabled || false,
-        lastTriggeredTimestamp: null,
-        schemaVersion: 2
-    };
-
     console.log('✅ Task activated as recurring:', assignedTaskId);
+
+    // ✅ Update panel button visibility after small delay to ensure AppState has propagated
+    if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
+        setTimeout(() => {
+            console.log('🔘 Updating button visibility after recurring activation...');
+            Deps.updatePanelButtonVisibility();
+        }, 100); // Small delay to ensure AppState changes have propagated
+    }
 }
 
 /**
@@ -532,14 +609,53 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
  * @param {string} assignedTaskId - The task ID
  */
 export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
-    const { currentCycle } = taskContext;
-
     assertInjected('querySelector', Deps.querySelector);
+    assertInjected('updateAppState', Deps.updateAppState);
+    assertInjected('getAppState', Deps.getAppState);
+    assertInjected('isAppStateReady', Deps.isAppStateReady);
+
+    if (!Deps.isAppStateReady()) {
+        console.warn('⚠️ AppState not ready for handleRecurringTaskDeactivation');
+        return;
+    }
+
+    const state = Deps.getAppState();
+    const activeCycleId = state.appState?.activeCycleId;
+
+    if (!activeCycleId) {
+        console.error('❌ No active cycle found for handleRecurringTaskDeactivation');
+        return;
+    }
+
     const taskItem = Deps.querySelector(`[data-task-id="${assignedTaskId}"]`);
 
-    task.recurring = false;
-    task.recurringSettings = {};
-    task.schemaVersion = 2;
+    // ✅ Update via AppState instead of direct manipulation (immediate save)
+    Deps.updateAppState(draft => {
+        const cycle = draft.data.cycles[activeCycleId];
+        const targetTask = cycle.tasks.find(t => t.id === assignedTaskId);
+
+        if (targetTask) {
+            targetTask.recurring = false;
+            targetTask.recurringSettings = {};
+            targetTask.schemaVersion = 2;
+        }
+
+        // Remove from templates, keep task in main array
+        if (cycle.recurringTemplates?.[assignedTaskId]) {
+            delete cycle.recurringTemplates[assignedTaskId];
+        }
+
+        // Ensure the task stays in the main tasks array
+        if (!targetTask) {
+            console.warn('⚠️ Task missing from main array, re-adding:', assignedTaskId);
+            cycle.tasks.push({
+                ...task,
+                recurring: false,
+                recurringSettings: {},
+                schemaVersion: 2
+            });
+        }
+    }, true); // ✅ Immediate save to prevent data loss on quick refresh
 
     // Update DOM if element exists
     if (taskItem) {
@@ -547,22 +663,15 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
         taskItem.classList.remove("recurring");
     }
 
-    // Remove from templates, keep task in main array
-    if (currentCycle.recurringTemplates?.[assignedTaskId]) {
-        delete currentCycle.recurringTemplates[assignedTaskId];
-    }
-
-    // Ensure the task stays in the main tasks array
-    const taskExists = currentCycle.tasks.find(t => t.id === assignedTaskId);
-    if (!taskExists) {
-        console.warn('⚠️ Task missing from main array, re-adding:', assignedTaskId);
-        currentCycle.tasks.push(task);
-    }
-
     assertInjected('showNotification', Deps.showNotification);
     Deps.showNotification("↩️ Recurring turned off for this task.", "info", 2000);
 
     console.log('✅ Task deactivated from recurring:', assignedTaskId);
+    
+    // ✅ Update panel button visibility immediately
+    if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
+        Deps.updatePanelButtonVisibility();
+    }
 }
 
 // ============================================
@@ -605,7 +714,7 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
         return;
     }
 
-    // ✅ Update via AppState instead of localStorage
+    // ✅ Update via AppState instead of localStorage (immediate save)
     Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
         const targetTask = cycle.tasks.find(t => t.id === taskId);
@@ -630,7 +739,7 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
                 recurringSettings: { ...targetTask.recurringSettings }
             };
         }
-    });
+    }, true); // ✅ Immediate save for recurring settings changes
 
     // Update DOM attributes for this task
     assertInjected('querySelector', Deps.querySelector);
@@ -672,49 +781,47 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
  * @param {string} taskId - The task ID
  */
 export function deleteRecurringTemplate(taskId) {
-    console.log('🗑️ Deleting recurring template (Schema 2.5 only)...');
+    console.log('🗑️ Deleting recurring template (AppState-based)...');
 
-    assertInjected('loadData', Deps.loadData);
-    const schemaData = Deps.loadData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for deleteRecurringTemplate');
+    assertInjected('updateAppState', Deps.updateAppState);
+    assertInjected('getAppState', Deps.getAppState);
+    assertInjected('isAppStateReady', Deps.isAppStateReady);
+
+    if (!Deps.isAppStateReady()) {
+        console.warn('⚠️ AppState not ready for deleteRecurringTemplate');
         return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
+    const state = Deps.getAppState();
+    const activeCycleId = state.appState?.activeCycleId;
 
-    if (!currentCycle) {
-        console.error(`❌ Active cycle not found for deleteRecurringTemplate.`);
+    if (!activeCycleId) {
+        console.error('❌ No active cycle found for deleteRecurringTemplate');
         return;
     }
 
-    if (!currentCycle.recurringTemplates || !currentCycle.recurringTemplates[taskId]) {
+    const cycleData = state.data?.cycles?.[activeCycleId];
+    if (!cycleData) {
+        console.error('❌ Cycle data not found for deleteRecurringTemplate');
+        return;
+    }
+
+    if (!cycleData.recurringTemplates || !cycleData.recurringTemplates[taskId]) {
         console.warn(`⚠ Task "${taskId}" not found in recurring templates.`);
         return;
     }
 
     console.log('🔍 Deleting template for task:', taskId);
 
-    // Delete the task template
-    delete currentCycle.recurringTemplates[taskId];
+    // ✅ Delete via AppState instead of direct manipulation (immediate save)
+    Deps.updateAppState(draft => {
+        const cycle = draft.data.cycles[activeCycleId];
+        if (cycle?.recurringTemplates?.[taskId]) {
+            delete cycle.recurringTemplates[taskId];
+        }
+    }, true); // ✅ Immediate save when deleting recurring templates
 
-    // Update the full schema data via AppState
-    assertInjected('updateAppState', Deps.updateAppState);
-    assertInjected('getAppState', Deps.getAppState);
-
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
-
-    if (activeCycleId) {
-        Deps.updateAppState(draft => {
-            if (draft.data.cycles[activeCycleId]?.recurringTemplates) {
-                delete draft.data.cycles[activeCycleId].recurringTemplates[taskId];
-            }
-        });
-    }
-
-    console.log('✅ Recurring template deleted from Schema 2.5');
+    console.log('✅ Recurring template deleted via AppState');
 }
 
 /**
@@ -750,18 +857,25 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
  * Called after completeMiniCycle to clean up recurring tasks
  */
 export function handleRecurringTasksAfterReset() {
-    console.log('🔄 Handling recurring tasks after reset (Schema 2.5 only)...');
+    console.log('🔄 Handling recurring tasks after reset (AppState-based)...');
 
-    assertInjected('loadData', Deps.loadData);
-    const schemaData = Deps.loadData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleRecurringTasksAfterReset');
-        throw new Error('Schema 2.5 data not found');
+    assertInjected('getAppState', Deps.getAppState);
+    assertInjected('isAppStateReady', Deps.isAppStateReady);
+
+    if (!Deps.isAppStateReady()) {
+        console.warn('⚠️ AppState not ready for handleRecurringTasksAfterReset');
+        return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
+    const state = Deps.getAppState();
+    const activeCycleId = state.appState?.activeCycleId;
 
+    if (!activeCycleId) {
+        console.error('❌ No active cycle found for handleRecurringTasksAfterReset');
+        return;
+    }
+
+    const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
         console.warn('⚠️ No active cycle data found for recurring task reset');
         return;

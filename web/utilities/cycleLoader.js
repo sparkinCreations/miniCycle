@@ -92,19 +92,38 @@ function repairAndCleanTasks(currentCycle) {
 
   currentCycle.tasks.forEach((task, index) => {
     if (!task) return;
+    
+    // ✅ Repair missing text (don't filter out yet)
     const hasText = task.text || task.taskText;
-    if (!hasText) {
-      task.text = task.text || task.taskText || `[Task ${index + 1}]`;
+    if (!hasText || (typeof hasText === 'string' && hasText.trim() === '')) {
+      task.text = `[Task ${index + 1}]`;
       tasksModified = true;
+      console.warn('⚠️ Repaired task with missing text:', task.id);
     }
+    
+    // ✅ Repair missing ID
     if (!task.id) {
       task.id = `task-${Date.now()}-${index}`;
       tasksModified = true;
+      console.warn('⚠️ Repaired task with missing ID');
     }
   });
 
-  const validTasks = currentCycle.tasks.filter(t => t && (t.text || t.taskText));
+  // ✅ ONLY filter out tasks that are completely null/undefined
+  // DO NOT filter out tasks with empty strings (they've been repaired above)
+  const validTasks = currentCycle.tasks.filter(t => {
+    if (!t) return false; // Null or undefined
+    if (typeof t !== 'object') return false; // Not an object
+    // At this point, all tasks have been repaired to have .text and .id
+    return true;
+  });
+  
   currentCycle.tasks = validTasks;
+
+  const removedCount = originalLength - validTasks.length;
+  if (removedCount > 0) {
+    console.warn(`⚠️ Removed ${removedCount} corrupted tasks during sanitization`);
+  }
 
   return {
     tasks: validTasks,
