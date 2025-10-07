@@ -507,7 +507,16 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
         time: null
     };
 
-    task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
+    // ✅ Use existing settings if task was previously recurring, otherwise use defaults
+    if (!task.recurringSettings || Object.keys(task.recurringSettings).length === 0) {
+        // First time setting to recurring - use defaults
+        task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
+        console.log('📝 First-time recurring activation - using default settings');
+    } else {
+        // Task was previously recurring - preserve existing settings
+        task.recurringSettings = normalizeRecurringSettings(structuredClone(task.recurringSettings));
+        console.log('📝 Re-activating recurring - preserving previous settings:', task.recurringSettings);
+    }
 
     // Update DOM if element exists
     if (taskItem) {
@@ -636,7 +645,8 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
 
         if (targetTask) {
             targetTask.recurring = false;
-            targetTask.recurringSettings = {};
+            // ✅ Keep recurringSettings so they can be restored if user toggles back on
+            // Don't set to {} - preserve the settings!
             targetTask.schemaVersion = 2;
         }
 
@@ -651,7 +661,8 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
             cycle.tasks.push({
                 ...task,
                 recurring: false,
-                recurringSettings: {},
+                // ✅ Preserve recurringSettings from original task
+                recurringSettings: task.recurringSettings || {},
                 schemaVersion: 2
             });
         }

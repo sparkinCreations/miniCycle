@@ -7849,17 +7849,17 @@ function createOrUpdateTaskData(taskContext) {
 
 // ✅ 5. DOM Elements Creation
 function createTaskDOMElements(taskContext, taskData) {
-    const { 
-        assignedTaskId, taskTextTrimmed, highPriority, recurring, 
-        recurringSettings, settings, autoResetEnabled
+    const {
+        assignedTaskId, taskTextTrimmed, highPriority, recurring,
+        recurringSettings, settings, autoResetEnabled, currentCycle
     } = taskContext;
 
     // Get required DOM elements
     const taskList = document.getElementById("taskList");
     const taskInput = document.getElementById("taskInput");
-    
+
     // Create main task element
-    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings);
+    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
     
     // Create three dots button if needed
     const threeDotsButton = createThreeDotsButton(taskItem, settings);
@@ -7894,22 +7894,32 @@ function createTaskDOMElements(taskContext, taskData) {
 }
 
 // ✅ 6. Main Task Element Creation
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings) {
+function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
     const taskItem = document.createElement("li");
     taskItem.classList.add("task");
     taskItem.setAttribute("draggable", "true");
     taskItem.dataset.taskId = assignedTaskId;
-    
+
     if (highPriority) {
         taskItem.classList.add("high-priority");
     }
 
-    const hasValidRecurringSettings = recurring && recurringSettings && Object.keys(recurringSettings).length > 0;
-    if (hasValidRecurringSettings) {
+    // ✅ Check if task has a recurring template (source of truth for recurring state)
+    const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
+    const hasValidRecurringSettings = recurringSettings && Object.keys(recurringSettings).length > 0;
+
+    // Task is recurring if: has template OR (recurring flag is true AND has settings)
+    const isRecurring = hasRecurringTemplate || (recurring && hasValidRecurringSettings);
+
+    if (isRecurring) {
         taskItem.classList.add("recurring");
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
+        // Use settings from template if available, otherwise use task's settings
+        const settingsToUse = hasRecurringTemplate
+            ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
+            : recurringSettings;
+        taskItem.setAttribute("data-recurring-settings", JSON.stringify(settingsToUse));
     }
-    
+
     return taskItem;
 }
 
@@ -7977,9 +7987,9 @@ function createTaskButton(buttonConfig, taskContext, buttonContainer) {
 
     // Setup accessibility attributes
     setupButtonAccessibility(button, btnClass, buttonContainer);
-    
+
     // Setup ARIA states
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority);
+    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle);
     
     // Setup button event handlers
     setupButtonEventHandlers(button, btnClass, taskContext);
@@ -8024,24 +8034,33 @@ function setupButtonAccessibility(button, btnClass, buttonContainer) {
 }
 
 // ✅ 11. Button ARIA States Setup
-function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority) {
+function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle) {
     if (btnClass === "enable-task-reminders") {
         const isActive = remindersEnabled === true;
         button.classList.toggle("reminder-active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
     } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-        const isActive = btnClass === "recurring-btn" ? !!recurring : !!highPriority;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
+        let isActive;
 
-        // ✅ Debug log for recurring button
         if (btnClass === "recurring-btn") {
+            // ✅ Check if task has a recurring template (source of truth)
+            const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
+            isActive = hasRecurringTemplate || !!recurring;
+
+            // ✅ Debug log for recurring button
             console.log('🔘 Setting up recurring button:', {
+                taskId: assignedTaskId,
                 recurring,
+                hasRecurringTemplate: !!hasRecurringTemplate,
                 isActive,
                 hasActiveClass: button.classList.contains('active')
             });
+        } else {
+            isActive = !!highPriority;
         }
+
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive.toString());
     }
 }
 
@@ -8068,14 +8087,27 @@ function setupRecurringButtonHandler(button, taskContext) {
     button.dataset.handlerAttached = 'true';
 
     button.addEventListener("click", () => {
-        const task = currentCycle.tasks.find(t => t.id === assignedTaskId);
+        // ✅ Read fresh state from AppState to avoid stale closure data
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for recurring toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+
+        if (!freshCycle) {
+            console.error('❌ Active cycle not found in AppState');
+            return;
+        }
+
+        const task = freshCycle.tasks.find(t => t.id === assignedTaskId);
         if (!task) {
             console.warn('⚠️ Task not found:', assignedTaskId);
             return;
         }
 
-        // ✅ Read fresh settings from AppState instead of using captured settings
-        const currentState = window.AppState?.get();
         const alwaysShowRecurring = currentState?.settings?.alwaysShowRecurring || false;
 
         const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
@@ -8084,7 +8116,18 @@ function setupRecurringButtonHandler(button, taskContext) {
             return;
         }
 
-        const isNowRecurring = !task.recurring;
+        // ✅ Check template existence as source of truth (not task.recurring flag)
+        const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
+        const isCurrentlyRecurring = !!hasRecurringTemplate;
+        const isNowRecurring = !isCurrentlyRecurring;
+
+        console.log('🔄 Toggling recurring state:', {
+            taskId: assignedTaskId,
+            wasRecurring: isCurrentlyRecurring,
+            willBeRecurring: isNowRecurring,
+            hadTemplate: !!hasRecurringTemplate
+        });
+
         task.recurring = isNowRecurring;
 
         button.classList.toggle("active", isNowRecurring);

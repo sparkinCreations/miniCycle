@@ -874,184 +874,205 @@ export class RecurringPanelManager {
     handleApplySettings() {
         console.log('📝 Applying recurring settings (AppState-based)...');
 
-        // Check AppState readiness
-        if (!this.deps.isAppStateReady()) {
-            console.warn('⚠️ AppState not ready for apply recurring settings');
-            this.deps.showNotification("❌ App not ready. Please try again.", "error");
-            return;
-        }
+        try {
+            // Check AppState readiness
+            if (!this.deps.isAppStateReady()) {
+                console.warn('⚠️ AppState not ready for apply recurring settings');
+                this.deps.showNotification("❌ App not ready. Please try again.", "error");
+                return;
+            }
 
-        const state = this.deps.getAppState();
-        const activeCycleId = state.appState?.activeCycleId;
+            const state = this.deps.getAppState();
+            const activeCycleId = state.appState?.activeCycleId;
 
-        if (!activeCycleId) {
-            this.deps.showNotification("⚠ No active cycle found.");
-            return;
-        }
+            if (!activeCycleId) {
+                this.deps.showNotification("⚠ No active cycle found.");
+                return;
+            }
 
-        const cycleData = state.data?.cycles?.[activeCycleId];
-        if (!cycleData) {
-            this.deps.showNotification("⚠ Active cycle data not found.");
-            return;
-        }
+            const cycleData = state.data?.cycles?.[activeCycleId];
+            if (!cycleData) {
+                this.deps.showNotification("⚠ Active cycle data not found.");
+                return;
+            }
 
-        const checkedEls = this.deps.querySelectorAll(".recurring-check:checked");
+            const checkedEls = this.deps.querySelectorAll(".recurring-check:checked");
 
-        if (!checkedEls.length) {
-            this.deps.showNotification("⚠ No tasks checked to apply settings.");
-            return;
-        }
+            if (!checkedEls.length) {
+                this.deps.showNotification("⚠ No tasks checked to apply settings.");
+                return;
+            }
 
-        const settings = this.deps.normalizeRecurringSettings(this.buildRecurringSettingsFromPanel());
+            const settings = this.deps.normalizeRecurringSettings(this.buildRecurringSettingsFromPanel());
 
-        // Set defaultRecurTime if not using specific time
-        if (!settings.specificTime && !settings.defaultRecurTime) {
-            settings.defaultRecurTime = new Date().toISOString();
-        }
+            // Set defaultRecurTime if not using specific time
+            if (!settings.specificTime && !settings.defaultRecurTime) {
+                settings.defaultRecurTime = new Date().toISOString();
+            }
 
-        // Batch all updates in one AppState operation
-        if (window.AppState && window.AppState.update) {
-            window.AppState.update(draft => {
-                // Save default recurring settings if requested
-                if (this.deps.getElementById("set-default-recurring")?.checked) {
-                    if (!draft.settings) draft.settings = {};
-                    draft.settings.defaultRecurringSettings = settings;
-                }
+            // Batch all updates in one AppState operation
+            if (window.AppState && window.AppState.update) {
+                window.AppState.update(draft => {
+                    // Save default recurring settings if requested
+                    if (this.deps.getElementById("set-default-recurring")?.checked) {
+                        if (!draft.settings) draft.settings = {};
+                        draft.settings.defaultRecurringSettings = settings;
+                    }
 
-                const cycle = draft.data.cycles[activeCycleId];
-                if (!cycle.recurringTemplates) {
-                    cycle.recurringTemplates = {};
-                }
+                    const cycle = draft.data.cycles[activeCycleId];
+                    if (!cycle.recurringTemplates) {
+                        cycle.recurringTemplates = {};
+                    }
 
-                checkedEls.forEach(checkbox => {
-                    const taskEl = checkbox.closest("[data-task-id]");
-                    const taskId = taskEl?.dataset.taskId;
-                    if (!taskId || !taskEl) return;
+                    checkedEls.forEach(checkbox => {
+                        const taskEl = checkbox.closest("[data-task-id]");
+                        const taskId = taskEl?.dataset.taskId;
+                        if (!taskId || !taskEl) return;
 
-                    let task = cycle.tasks.find(t => t.id === taskId);
-                    if (!task) {
-                        task = {
-                            id: taskId,
-                            text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+                        let task = cycle.tasks.find(t => t.id === taskId);
+                        if (!task) {
+                            task = {
+                                id: taskId,
+                                text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
+                                recurring: true,
+                                recurringSettings: structuredClone(settings),
+                                schemaVersion: 2
+                            };
+                            cycle.tasks.push(task);
+                        }
+
+                        // Apply recurring settings to task
+                        task.recurring = true;
+                        task.schemaVersion = 2;
+                        task.recurringSettings = structuredClone(settings);
+
+                        // Update recurringTemplates
+                        cycle.recurringTemplates[task.id] = {
+                            id: task.id,
+                            text: task.text,
+                            dueDate: task.dueDate || null,
+                            highPriority: task.highPriority || false,
+                            remindersEnabled: task.remindersEnabled || false,
                             recurring: true,
                             recurringSettings: structuredClone(settings),
                             schemaVersion: 2
                         };
-                        cycle.tasks.push(task);
-                    }
-
-                    // Apply recurring settings to task
-                    task.recurring = true;
-                    task.schemaVersion = 2;
-                    task.recurringSettings = structuredClone(settings);
-
-                    // Update recurringTemplates
-                    cycle.recurringTemplates[task.id] = {
-                        id: task.id,
-                        text: task.text,
-                        dueDate: task.dueDate || null,
-                        highPriority: task.highPriority || false,
-                        remindersEnabled: task.remindersEnabled || false,
-                        recurring: true,
-                        recurringSettings: structuredClone(settings),
-                        schemaVersion: 2
-                    };
-                });
-            });
-        }
-
-        // Update DOM after state changes
-        if (window.syncRecurringStateToDOM) {
-            checkedEls.forEach(checkbox => {
-                const taskEl = checkbox.closest("[data-task-id]");
-                if (!taskEl) return;
-
-                // Update DOM
-                taskEl.classList.add("recurring");
-                taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
-                const recurringBtn = taskEl.querySelector(".recurring-btn");
-                if (recurringBtn) {
-                    recurringBtn.classList.add("active");
-                    recurringBtn.setAttribute("aria-pressed", "true");
-                }
-
-                window.syncRecurringStateToDOM(taskEl, settings);
-            });
-        }
-
-        // Show success notifications
-        if (this.deps.getElementById("set-default-recurring")?.checked) {
-            this.deps.showNotification("✅ Default recurring settings saved!", "success", 1500);
-        }
-
-        this.updateRecurringSummary();
-        this.deps.showNotification("✅ Recurring settings applied!", "success", 2000);
-        this.updateRecurringPanel();
-
-        // ✅ Use setTimeout to ensure DOM has updated before querying for checked tasks
-        setTimeout(() => {
-            // ✅ Keep first checked task selected and show updated preview
-            const checkedTasks = this.deps.querySelectorAll(".recurring-task-item.checked");
-            let firstCheckedTask = null;
-
-            console.log('🔍 Looking for checked tasks after apply:', checkedTasks.length);
-
-            if (checkedTasks.length > 0) {
-                firstCheckedTask = checkedTasks[0];
-
-                // Keep first task selected, clear the rest
-                this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                    if (el !== firstCheckedTask) {
-                        el.classList.remove("selected", "checked");
-                    }
-                });
-
-                // Update preview with new settings
-                const taskId = firstCheckedTask.dataset.taskId;
-                const state = this.deps.getAppState();
-                const activeCycleId = state.appState?.activeCycleId;
-                const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
-
-                if (task) {
-                    this.showTaskSummaryPreview(task);
-                    console.log('✅ Updated preview with new settings for task:', taskId);
-                    
-                    // ✅ Debug: Check if preview is visible
-                    const summaryContainer = this.deps.getElementById("recurring-summary-preview");
-                    console.log('🔍 Preview container visibility after apply:', {
-                        exists: !!summaryContainer,
-                        hasHiddenClass: summaryContainer?.classList.contains("hidden"),
-                        innerHTML: summaryContainer?.innerHTML.substring(0, 100)
                     });
-                }
-            } else {
-                // No checked tasks - clear all selections
-                this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                    el.classList.remove("selected", "checked");
-                });
-                console.log('⚠️ No checked tasks found after apply settings');
+                }, true); // ✅ Immediate save to prevent data loss on browser crash
             }
-        }, 10);
 
-        const settingsPanel = this.deps.getElementById("recurring-settings-panel");
-        settingsPanel?.classList.add("hidden");
+            // Update DOM after state changes
+            if (window.syncRecurringStateToDOM) {
+                checkedEls.forEach(checkbox => {
+                    const taskEl = checkbox.closest("[data-task-id]");
+                    if (!taskEl) return;
 
-        // Explicitly hide checkboxes and toggle container
-        this.deps.querySelectorAll(".recurring-check").forEach(cb => {
-            cb.classList.add("hidden");
-            cb.checked = false;
-        });
+                    // Update DOM
+                    taskEl.classList.add("recurring");
+                    taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
+                    const recurringBtn = taskEl.querySelector(".recurring-btn");
+                    if (recurringBtn) {
+                        recurringBtn.classList.add("active");
+                        recurringBtn.setAttribute("aria-pressed", "true");
+                    }
 
-        const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
-        toggleContainer?.classList.add("hidden");
+                    window.syncRecurringStateToDOM(taskEl, settings);
+                });
+            }
 
-        // Update button visibility
-        this.updateRecurringPanelButtonVisibility();
+            // Show success notifications
+            if (this.deps.getElementById("set-default-recurring")?.checked) {
+                this.deps.showNotification("✅ Default recurring settings saved!", "success", 1500);
+            }
 
-        // Clear the form
-        this.clearRecurringForm();
+            this.updateRecurringSummary();
+            this.deps.showNotification("✅ Recurring settings applied!", "success", 2000);
+            this.updateRecurringPanel();
 
-        console.log('✅ Recurring settings applied successfully');
+            // ✅ Use setTimeout to ensure DOM has updated before querying for checked tasks
+            setTimeout(() => {
+                // ✅ Keep first checked task selected and show updated preview
+                const checkedTasks = this.deps.querySelectorAll(".recurring-task-item.checked");
+                let firstCheckedTask = null;
+
+                console.log('🔍 Looking for checked tasks after apply:', checkedTasks.length);
+
+                if (checkedTasks.length > 0) {
+                    firstCheckedTask = checkedTasks[0];
+
+                    // Keep first task selected, clear the rest
+                    this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+                        if (el !== firstCheckedTask) {
+                            el.classList.remove("selected", "checked");
+                        }
+                    });
+
+                    // Update preview with new settings
+                    const taskId = firstCheckedTask.dataset.taskId;
+                    const state = this.deps.getAppState();
+                    const activeCycleId = state.appState?.activeCycleId;
+                    const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
+
+                    if (task) {
+                        this.showTaskSummaryPreview(task);
+                        console.log('✅ Updated preview with new settings for task:', taskId);
+
+                        // ✅ Debug: Check if preview is visible
+                        const summaryContainer = this.deps.getElementById("recurring-summary-preview");
+                        console.log('🔍 Preview container visibility after apply:', {
+                            exists: !!summaryContainer,
+                            hasHiddenClass: summaryContainer?.classList.contains("hidden"),
+                            innerHTML: summaryContainer?.innerHTML.substring(0, 100)
+                        });
+                    }
+                } else {
+                    // No checked tasks - clear all selections
+                    this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+                        el.classList.remove("selected", "checked");
+                    });
+                    console.log('⚠️ No checked tasks found after apply settings');
+                }
+            }, 10);
+
+            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+            settingsPanel?.classList.add("hidden");
+
+            // Explicitly hide checkboxes and toggle container
+            this.deps.querySelectorAll(".recurring-check").forEach(cb => {
+                cb.classList.add("hidden");
+                cb.checked = false;
+            });
+
+            const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
+            toggleContainer?.classList.add("hidden");
+
+            // Update button visibility
+            this.updateRecurringPanelButtonVisibility();
+
+            // Clear the form
+            this.clearRecurringForm();
+
+            console.log('✅ Recurring settings applied successfully');
+
+        } catch (error) {
+            console.error('❌ Failed to apply recurring settings:', error);
+            this.deps.showNotification('❌ Failed to apply settings. Please try again.', 'error', 5000);
+
+            // Cleanup on error: hide settings panel and reset form
+            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+            if (settingsPanel) {
+                settingsPanel.classList.add("hidden");
+            }
+
+            // Reset checkboxes
+            this.deps.querySelectorAll(".recurring-check").forEach(cb => {
+                cb.classList.add("hidden");
+                cb.checked = false;
+            });
+
+            // Re-throw to allow caller to handle if needed
+            throw error;
+        }
     }
 
     /**
