@@ -8214,11 +8214,35 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
 // ✅ 16. Reminder Button Handler (extracted)
 function setupReminderButtonHandler(button, taskContext) {
     const { assignedTaskId } = taskContext;
-    
-    button.addEventListener("click", () => {
-        
 
-        const isActive = button.classList.toggle("reminder-active");
+    button.addEventListener("click", () => {
+        // ✅ Read fresh state from AppState to avoid stale closure data
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for reminder toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const task = freshCycle?.tasks?.find(t => t.id === assignedTaskId);
+
+        if (!task) {
+            console.warn('⚠️ Task not found for reminder toggle:', assignedTaskId);
+            return;
+        }
+
+        // ✅ Toggle based on AppState, not DOM
+        const isCurrentlyEnabled = task.remindersEnabled === true;
+        const isActive = !isCurrentlyEnabled;
+
+        console.log('🔔 Toggling reminder state:', {
+            taskId: assignedTaskId,
+            wasEnabled: isCurrentlyEnabled,
+            willBeEnabled: isActive
+        });
+
+        button.classList.toggle("reminder-active", isActive);
         button.setAttribute("aria-pressed", isActive.toString());
 
         saveTaskReminderState(assignedTaskId, isActive);
@@ -9050,20 +9074,44 @@ function handleTaskButtonClick(event) {
 
         shouldSave = false;
     } else if (button.classList.contains("priority-btn")) {
-        // ✅ ADD: Capture snapshot BEFORE changing priority
-        if (window.AppState?.isReady?.()) {
-            const currentState = window.AppState.get();
-            if (currentState) captureStateSnapshot(currentState);
-        }
-
-        taskItem.classList.toggle("high-priority");
-        if (taskItem.classList.contains("high-priority")) {
-            button.classList.add("priority-active");
-        } else {
-            button.classList.remove("priority-active");
-        }
-
         const taskId = taskItem.dataset.taskId;
+
+        // ✅ Read fresh state from AppState to determine current priority
+        const currentState = window.AppState?.get();
+        if (!currentState) {
+            console.error('❌ AppState not available for priority toggle');
+            return;
+        }
+
+        const activeCycleId = currentState.appState?.activeCycleId;
+        const freshCycle = currentState.data?.cycles?.[activeCycleId];
+        const task = freshCycle?.tasks?.find(t => t.id === taskId);
+
+        if (!task) {
+            console.warn('⚠️ Task not found for priority toggle:', taskId);
+            return;
+        }
+
+        // ✅ Toggle based on AppState, not DOM
+        const isCurrentlyHighPriority = task.highPriority === true;
+        const newHighPriority = !isCurrentlyHighPriority;
+
+        console.log('⭐ Toggling priority state:', {
+            taskId: taskId,
+            wasHighPriority: isCurrentlyHighPriority,
+            willBeHighPriority: newHighPriority
+        });
+
+        // ✅ Capture snapshot BEFORE changing priority
+        if (window.AppState?.isReady?.()) {
+            captureStateSnapshot(currentState);
+        }
+
+        // Update DOM based on calculated state
+        taskItem.classList.toggle("high-priority", newHighPriority);
+        button.classList.toggle("active", newHighPriority);
+        button.classList.toggle("priority-active", newHighPriority);
+        button.setAttribute("aria-pressed", newHighPriority.toString());
 
         // ✅ Use AppState.update so undo sees the change
         if (window.AppState?.isReady?.()) {
@@ -9071,7 +9119,7 @@ function handleTaskButtonClick(event) {
                 const cid = state.appState.activeCycleId;
                 const cycle = state.data.cycles[cid];
                 const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) t.highPriority = taskItem.classList.contains("high-priority");
+                if (t) t.highPriority = newHighPriority;
             }, true);
         } else {
             // ...existing localStorage fallback...
