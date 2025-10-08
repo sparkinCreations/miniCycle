@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Test Suite</title>
+    <style>
+        body { font-family: system-ui; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .result { padding: 8px; margin: 4px 0; border-radius: 4px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 20px; font-size: 16px; }
+        .module-selector { margin: 20px 0; }
+        .test-section { margin-top: 20px; }
+        .test-element { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Module Test Suite</h1>
+    <p>Simple browser tests for miniCycle modules.</p>
+
+    <div class="module-selector">
+        <label for="module-select">Choose a module to test:</label>
+        <select id="module-select">
+            <option value="">-- Select Module --</option>
+            <option value="themeManager">ThemeManager</option>
+            <option value="globalUtils">GlobalUtils</option>
+        </select>
+        <button id="run-tests-btn">Run Tests</button>
+    </div>
+
+    <div id="results"></div>
+
+    <!-- Test Elements -->
+    <div id="test-element" class="test-element">Test Element</div>
+    <div id="test-element-2" class="test-element">Test Element 2</div>
+    <div class="selector-test">Selector 1</div>
+    <div class="selector-test">Selector 2</div>
+    <div class="selector-test">Selector 3</div>
+
+    <script type="module">
+        import { runThemeManagerTests } from './themeManager.tests.js';
+        import { runGlobalUtilsTests } from './globalUtils.tests.js';
+
+        let currentModule = null;
+
+        const moduleSelect = document.getElementById('module-select');
+        const runTestsBtn = document.getElementById('run-tests-btn');
+        const resultsDiv = document.getElementById('results');
+
+        // Load selected module
+        moduleSelect.addEventListener('change', async (e) => {
+            const moduleName = e.target.value;
+            if (!moduleName) return;
+
+            resultsDiv.innerHTML = '<p>Loading module...</p>';
+
+            try {
+                if (moduleName === 'themeManager') {
+                    await import('../utilities/themeManager.js');
+                    currentModule = 'themeManager';
+                    resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'globalUtils') {
+                    await import('../utilities/globalUtils.js');
+                    currentModule = 'globalUtils';
+                    resultsDiv.innerHTML = '<p>✅ GlobalUtils loaded. Click "Run Tests" to begin.</p>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
+            }
+        });
+
+        // Run tests
+        runTestsBtn.addEventListener('click', () => {
+            if (!currentModule) {
+                resultsDiv.innerHTML = '<div class="result fail">❌ Please select a module first</div>';
+                return;
+            }
+
+            if (currentModule === 'themeManager') {
+                runThemeManagerTests(resultsDiv);
+            } else if (currentModule === 'globalUtils') {
+                runGlobalUtilsTests(resultsDiv);
+            }
+        });
+    </script>
+</body>
+</html>
