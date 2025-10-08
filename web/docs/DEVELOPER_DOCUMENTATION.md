@@ -1536,6 +1536,635 @@ window.exportDebugData()                 // Debug package
 
 ---
 
+## 🧪 Testing System
+
+### Overview
+
+miniCycle uses a browser-based testing system that runs directly in the browser without external dependencies. Tests are written as ES6 modules and can be run manually via a web interface or automatically via Playwright.
+
+### Test Structure
+
+```
+web/tests/
+├── module-test-suite.html          # Main test runner UI
+├── automated/
+│   └── run-browser-tests.js        # Automated test runner (Playwright)
+├── MODULE_TEMPLATE.tests.js        # Template for creating new tests
+├── globalUtils.tests.js            # Example: GlobalUtils module tests
+├── themeManager.tests.js           # Example: ThemeManager module tests
+├── deviceDetection.tests.js        # Example: DeviceDetection tests
+├── cycleLoader.tests.js            # Example: CycleLoader tests
+└── notifications.tests.js          # Example: Notifications tests
+```
+
+### Running Tests Manually
+
+#### 1. Start Local Server
+
+```bash
+# Navigate to project
+cd miniCycle/web
+
+# Start server
+python3 -m http.server 8080
+```
+
+#### 2. Open Test Suite in Browser
+
+```
+http://localhost:8080/tests/module-test-suite.html
+```
+
+#### 3. Run Tests
+
+1. Select a module from the dropdown (e.g., "GlobalUtils")
+2. Click **"Run Tests"** button
+3. View results in the page
+4. Click **"📋 Copy Results"** to copy test output to clipboard
+
+**Test Results:**
+- ✅ Green = Passing test
+- ❌ Red = Failing test
+- Summary shows: "X/Y tests passed"
+
+### Running Tests Automatically
+
+#### Prerequisites
+
+```bash
+# Install Playwright (one-time setup)
+npm install playwright
+```
+
+#### Run Automated Tests
+
+```bash
+# Make sure server is running on port 8080
+python3 -m http.server 8080
+
+# In another terminal, run automated tests
+node tests/automated/run-browser-tests.js
+```
+
+**Output:**
+```
+============================================================
+🚀 miniCycle Automated Test Suite
+============================================================
+
+🌐 Launching browser...
+
+🧪 Testing themeManager...
+   ✅ Results: 25/25 tests passed
+
+🧪 Testing deviceDetection...
+   ✅ Results: 15/15 tests passed
+
+🧪 Testing cycleLoader...
+   ✅ Results: 12/12 tests passed
+
+🧪 Testing globalUtils...
+   ✅ Results: 28/28 tests passed
+
+🧪 Testing notifications...
+   ✅ Results: 18/18 tests passed
+
+============================================================
+📊 Test Summary (3.42s)
+============================================================
+   ✅ PASS themeManager       25/25 tests
+   ✅ PASS deviceDetection    15/15 tests
+   ✅ PASS cycleLoader        12/12 tests
+   ✅ PASS globalUtils        28/28 tests
+   ✅ PASS notifications      18/18 tests
+============================================================
+🎉 All tests passed! (98/98 - 100%)
+============================================================
+```
+
+### Creating New Tests
+
+#### 1. Copy the Template
+
+```bash
+cp tests/MODULE_TEMPLATE.tests.js tests/myModule.tests.js
+```
+
+#### 2. Update Test File
+
+```javascript
+/**
+ * 🧪 MyModule Tests
+ */
+
+export function runMyModuleTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎯 MyModule Tests</h2><h3>Running tests...</h3>';
+
+    let passed = { count: 0 };
+    let total = { count: 0 };
+
+    // Test helper function
+    function test(name, testFn) {
+        total.count++;
+        try {
+            testFn();
+            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
+            passed.count++;
+        } catch (error) {
+            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+        }
+    }
+
+    // === INITIALIZATION TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
+
+    test('MyModule class is defined', () => {
+        if (typeof MyModule === 'undefined') {
+            throw new Error('MyModule class not found');
+        }
+    });
+
+    test('creates instance successfully', () => {
+        const instance = new MyModule();
+        if (!instance || typeof instance.myMethod !== 'function') {
+            throw new Error('MyModule not properly initialized');
+        }
+    });
+
+    // === FUNCTIONALITY TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">⚡ Core Functionality</h4>';
+
+    test('myMethod works correctly', () => {
+        const instance = new MyModule();
+        const result = instance.myMethod('test');
+
+        if (result !== 'expected-value') {
+            throw new Error(`Expected "expected-value", got "${result}"`);
+        }
+    });
+
+    // === DISPLAY RESULTS ===
+    resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
+
+    return { passed: passed.count, total: total.count };
+}
+```
+
+#### 3. Add to Test Suite
+
+Edit `module-test-suite.html`:
+
+```html
+<!-- Add import at top -->
+<script type="module">
+    import { runMyModuleTests } from './myModule.tests.js';
+    // ... other imports
+</script>
+
+<!-- Add option to dropdown -->
+<select id="module-select">
+    <option value="">-- Select Module --</option>
+    <option value="myModule">MyModule</option>
+    <!-- ... other options -->
+</select>
+```
+
+```javascript
+// Add to module loader
+moduleSelect.addEventListener('change', async (e) => {
+    const moduleName = e.target.value;
+    // ...
+
+    if (moduleName === 'myModule') {
+        await import('../utilities/myModule.js');
+        currentModule = 'myModule';
+        resultsDiv.innerHTML = '<p>✅ MyModule loaded. Click "Run Tests" to begin.</p>';
+    }
+});
+
+// Add to test runner
+runTestsBtn.addEventListener('click', () => {
+    // ...
+
+    if (currentModule === 'myModule') {
+        runMyModuleTests(resultsDiv);
+    }
+});
+```
+
+#### 4. Add to Automated Runner
+
+Edit `automated/run-browser-tests.js`:
+
+```javascript
+// Add module to test list
+const modules = [
+    'themeManager',
+    'deviceDetection',
+    'cycleLoader',
+    'globalUtils',
+    'notifications',
+    'myModule'  // ← Add here
+];
+```
+
+### Test Patterns and Best Practices
+
+#### Test Organization
+
+```javascript
+// Group tests by functionality
+resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
+// ... initialization tests
+
+resultsDiv.innerHTML += '<h4 class="test-section">⚡ Core Functionality</h4>';
+// ... core feature tests
+
+resultsDiv.innerHTML += '<h4 class="test-section">🎨 UI Integration</h4>';
+// ... UI-related tests
+
+resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
+// ... error handling tests
+```
+
+#### Common Test Patterns
+
+**Testing module loading:**
+```javascript
+test('module class is defined', () => {
+    if (typeof MyModule === 'undefined') {
+        throw new Error('MyModule class not found');
+    }
+});
+
+test('global functions are exported', () => {
+    const requiredFunctions = ['myFunction', 'anotherFunction'];
+    for (const func of requiredFunctions) {
+        if (typeof window[func] !== 'function') {
+            throw new Error(`${func} not found on window`);
+        }
+    }
+});
+```
+
+**Testing with mock data:**
+```javascript
+test('processes schema data correctly', () => {
+    const mockData = {
+        metadata: { version: '2.5', lastModified: Date.now() },
+        settings: { theme: 'default' },
+        cycles: {}
+    };
+
+    const result = MyModule.processData(mockData);
+
+    if (!result || result.status !== 'success') {
+        throw new Error('Data processing failed');
+    }
+});
+```
+
+**Testing DOM manipulation:**
+```javascript
+test('updates UI element', () => {
+    const element = document.getElementById('test-element');
+    MyModule.updateElement(element, 'new value');
+
+    if (element.textContent !== 'new value') {
+        throw new Error('Element not updated correctly');
+    }
+});
+```
+
+**Testing error handling:**
+```javascript
+test('handles null input gracefully', () => {
+    // Should not throw
+    MyModule.processInput(null);
+});
+
+test('throws error for invalid input', () => {
+    let errorThrown = false;
+    try {
+        MyModule.validateInput('invalid');
+    } catch (error) {
+        errorThrown = true;
+    }
+
+    if (!errorThrown) {
+        throw new Error('Should have thrown error for invalid input');
+    }
+});
+```
+
+**Testing dependency injection:**
+```javascript
+test('accepts dependency injection', () => {
+    const mockNotification = (msg) => ({ message: msg });
+
+    const instance = new MyModule({
+        showNotification: mockNotification,
+        loadData: () => ({ data: 'test' })
+    });
+
+    if (!instance) {
+        throw new Error('Dependency injection failed');
+    }
+});
+```
+
+#### Test Data Setup
+
+```javascript
+// Create mock Schema 2.5 data
+function createMockData() {
+    return {
+        metadata: {
+            version: "2.5",
+            lastModified: Date.now()
+        },
+        settings: {
+            theme: 'default',
+            darkMode: false,
+            unlockedThemes: []
+        },
+        data: {
+            cycles: {
+                'cycle-123': {
+                    name: 'Test Cycle',
+                    tasks: [],
+                    cycleCount: 5,
+                    autoReset: true
+                }
+            }
+        },
+        appState: {
+            activeCycleId: 'cycle-123',
+            currentMode: 'auto-cycle'
+        },
+        userProgress: {
+            cyclesCompleted: 10,
+            totalTasksCompleted: 50
+        }
+    };
+}
+
+// Use in tests
+test('loads data correctly', () => {
+    const mockData = createMockData();
+    localStorage.setItem('miniCycleData', JSON.stringify(mockData));
+
+    const loaded = MyModule.loadData();
+    if (!loaded || loaded.metadata.version !== '2.5') {
+        throw new Error('Data not loaded correctly');
+    }
+});
+```
+
+### Example: Complete Test File
+
+```javascript
+/**
+ * 🧪 StatsPanelManager Tests
+ */
+
+export function runStatsPanelTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>📊 StatsPanelManager Tests</h2><h3>Running tests...</h3>';
+
+    let passed = { count: 0 };
+    let total = { count: 0 };
+
+    function test(name, testFn) {
+        total.count++;
+        try {
+            // Reset before each test
+            localStorage.clear();
+            document.body.className = '';
+            delete window.AppState;
+
+            testFn();
+            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
+            passed.count++;
+        } catch (error) {
+            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+        }
+    }
+
+    // === MODULE LOADING ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
+
+    test('StatsPanelManager class is defined', () => {
+        if (typeof StatsPanelManager === 'undefined') {
+            throw new Error('StatsPanelManager not found');
+        }
+    });
+
+    test('creates instance with dependencies', () => {
+        const stats = new StatsPanelManager({
+            showNotification: () => {},
+            loadData: () => ({ cycles: {} })
+        });
+
+        if (!stats) {
+            throw new Error('Failed to create instance');
+        }
+    });
+
+    // === STATS CALCULATION ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📈 Stats Calculation</h4>';
+
+    test('calculates total tasks correctly', () => {
+        const mockData = {
+            data: {
+                cycles: {
+                    'cycle-1': {
+                        tasks: [
+                            { id: 't1', completed: true },
+                            { id: 't2', completed: false },
+                            { id: 't3', completed: true }
+                        ]
+                    }
+                }
+            },
+            appState: { activeCycleId: 'cycle-1' }
+        };
+
+        const stats = new StatsPanelManager({
+            loadData: () => mockData
+        });
+
+        const calculated = stats.calculateStats(mockData);
+
+        if (calculated.totalTasks !== 3) {
+            throw new Error(`Expected 3 tasks, got ${calculated.totalTasks}`);
+        }
+        if (calculated.completedTasks !== 2) {
+            throw new Error(`Expected 2 completed, got ${calculated.completedTasks}`);
+        }
+    });
+
+    // === UI UPDATES ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 UI Updates</h4>';
+
+    test('updates stats panel DOM', () => {
+        // Create DOM elements
+        document.body.innerHTML += `
+            <div id="stats-total-tasks">0</div>
+            <div id="stats-completed">0</div>
+        `;
+
+        const stats = new StatsPanelManager({
+            loadData: () => ({
+                data: {
+                    cycles: {
+                        'c1': { tasks: [{ completed: true }] }
+                    }
+                },
+                appState: { activeCycleId: 'c1' }
+            })
+        });
+
+        stats.updateStatsPanel();
+
+        const totalEl = document.getElementById('stats-total-tasks');
+        if (totalEl.textContent !== '1') {
+            throw new Error('Stats not updated in DOM');
+        }
+    });
+
+    // === ERROR HANDLING ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
+
+    test('handles missing data gracefully', () => {
+        const stats = new StatsPanelManager({
+            loadData: () => null
+        });
+
+        // Should not throw
+        stats.updateStatsPanel();
+    });
+
+    // === RESULTS ===
+    resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
+
+    return { passed: passed.count, total: total.count };
+}
+```
+
+### Debugging Tests
+
+#### View Test Output in Console
+
+```javascript
+// Add console logging to tests
+test('my test', () => {
+    const result = myFunction();
+    console.log('Result:', result);
+
+    if (result !== expected) {
+        console.error('Expected:', expected);
+        console.error('Got:', result);
+        throw new Error('Test failed');
+    }
+});
+```
+
+#### Inspect Test DOM
+
+```javascript
+// Keep test elements visible
+test('UI test', () => {
+    const element = document.getElementById('test-element');
+    element.style.display = 'block'; // Make visible
+    element.style.position = 'fixed';
+    element.style.top = '10px';
+    element.style.right = '10px';
+    element.style.background = 'white';
+    element.style.padding = '10px';
+
+    // Run test...
+});
+```
+
+#### Test Specific Modules
+
+```javascript
+// In browser console on module-test-suite.html
+import { runGlobalUtilsTests } from './globalUtils.tests.js';
+const resultsDiv = document.getElementById('results');
+runGlobalUtilsTests(resultsDiv);
+```
+
+### Continuous Integration
+
+The automated test runner (`run-browser-tests.js`) is designed for CI/CD:
+
+- ✅ Returns exit code 0 for success
+- ❌ Returns exit code 1 for failure
+- 📊 Outputs test results to stdout
+- ⏱️ Shows execution time
+
+**Example CI Configuration (.github/workflows/test.yml):**
+
+```yaml
+name: Run Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Playwright
+        run: npm install playwright
+
+      - name: Start Server
+        run: |
+          cd web
+          python3 -m http.server 8080 &
+          sleep 3
+
+      - name: Run Tests
+        run: node web/tests/automated/run-browser-tests.js
+```
+
+### Test Coverage
+
+Current module test coverage:
+
+| Module | Test File | Tests | Status |
+|--------|-----------|-------|--------|
+| GlobalUtils | `globalUtils.tests.js` | 28 | ✅ |
+| ThemeManager | `themeManager.tests.js` | 25 | ✅ |
+| DeviceDetection | `deviceDetection.tests.js` | 15 | ✅ |
+| CycleLoader | `cycleLoader.tests.js` | 12 | ✅ |
+| Notifications | `notifications.tests.js` | 18 | ✅ |
+
+**Total: 98 tests across 5 modules**
+
+### Tips for Writing Good Tests
+
+1. **Test one thing per test** - Makes failures easier to debug
+2. **Use descriptive names** - "calculates total tasks correctly" vs "test1"
+3. **Reset state before each test** - Clear localStorage, DOM, globals
+4. **Test edge cases** - null inputs, empty arrays, missing properties
+5. **Test error handling** - Not just happy paths
+6. **Keep tests independent** - Don't rely on test execution order
+7. **Mock external dependencies** - AppState, notifications, data loading
+8. **Test public APIs only** - Don't test internal implementation details
+9. **Use meaningful assertions** - Throw errors with clear messages
+10. **Document complex tests** - Add comments explaining tricky logic
+
+---
+
 ## 📖 Additional Resources
 
 ### Documentation Files
