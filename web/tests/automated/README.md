@@ -2,30 +2,93 @@
 
 **Playwright-powered automation for your existing browser test suite.**
 
+---
+
 ## 🚀 Quick Start
 
-### Run All Tests Automatically
+### Prerequisites
+
 ```bash
-npm test
+# One-time setup: Install Playwright
+cd /path/to/miniCycle/web
+npm install playwright
+npx playwright install chromium
 ```
 
-### Run Tests Manually (Visual)
+### Run Automated Tests
+
+**Two-Terminal Method (Recommended):**
+
 ```bash
-npm run test:manual
-# Open browser to: http://localhost:8080/tests/module-test-suite.html
+# Terminal 1: Start HTTP server
+cd /path/to/miniCycle/web
+python3 -m http.server 8080
+
+# Terminal 2: Run automated tests
+cd /path/to/miniCycle/web
+node tests/automated/run-browser-tests.js
+```
+
+**One-Terminal Method (Background Server):**
+
+```bash
+cd /path/to/miniCycle/web
+
+# Start server in background
+python3 -m http.server 8080 &
+
+# Run tests
+node tests/automated/run-browser-tests.js
+
+# Stop server when done
+killall python3
+```
+
+### Run Manual Tests (Visual)
+
+```bash
+# Start server
+python3 -m http.server 8080
+
+# Open in browser
+# http://localhost:8080/tests/module-test-suite.html
 ```
 
 ---
 
-## 📋 Available Commands
+## 📦 Installation
 
-| Command | Description |
-|---------|-------------|
-| `npm test` | Run automated tests (headless) |
-| `npm run test:browser` | Same as `npm test` |
-| `npm run test:manual` | Start server for manual testing |
-| `npm run test:jest` | Run Jest unit tests |
-| `npm run test:coverage` | Run tests with coverage report |
+### First Time Setup
+
+If you're setting up on a new machine:
+
+```bash
+# 1. Clone repository
+git clone <your-repo>
+cd miniCycle/web
+
+# 2. Install Playwright
+npm install playwright
+
+# 3. Install Chromium browser
+npx playwright install chromium
+
+# 4. Start server
+python3 -m http.server 8080
+
+# 5. Run tests (in another terminal)
+node tests/automated/run-browser-tests.js
+```
+
+### Optional: npm Scripts
+
+If you have a `package.json` with test scripts:
+
+```bash
+npm test                # Run automated tests (headless)
+npm run test:browser    # Same as npm test
+npm run test:manual     # Start server for manual testing
+```
 
 ---
 
@@ -34,155 +97,34 @@ npm run test:manual
 The automated runner uses **Playwright** to:
 
 1. ✅ Launch a headless Chrome browser
-2. ✅ Navigate to your test suite
-3. ✅ Select each module (ThemeManager, DeviceDetection, GlobalUtils, Notifications)
+2. ✅ Navigate to your test suite at `http://localhost:8080/tests/module-test-suite.html`
+3. ✅ Select each module (ThemeManager, DeviceDetection, CycleLoader, StatsPanel, GlobalUtils, Notifications)
 4. ✅ Click "Run Tests" button
-5. ✅ Extract results and display in terminal
-6. ✅ Exit with proper code (0 = pass, 1 = fail) for CI/CD
+5. ✅ Extract test results
+6. ✅ Display results in terminal with color-coded output
+7. ✅ Exit with proper code (0 = pass, 1 = fail) for CI/CD
 
 **Your existing browser tests remain unchanged!** The automation just runs them programmatically.
 
 ---
 
-## 📦 Dependencies & Project Structure
+## 📊 Current Test Coverage
 
-### What Goes to GitHub vs What Stays Local
+The automated runner tests **6 modules** with **124 tests total**:
 
-**Committed to GitHub** (tracked in git):
-- ✅ `package.json` - Lists all dependencies
-- ✅ `.gitignore` - Prevents unnecessary files from being committed
-- ✅ All source code and tests
-- ✅ GitHub Actions workflow
-
-**Stays Local** (ignored by git):
-- ❌ `node_modules/` - 50-300MB of dependencies (automatically ignored)
-- ❌ Test artifacts and logs
-- ❌ Coverage reports
-- ❌ OS files like `.DS_Store`
-
-### First Time Setup (for new developers)
-
-When someone clones your repo:
-
-```bash
-git clone <your-repo>
-cd web
-npm install              # Downloads all dependencies from package.json
-npx playwright install   # Downloads Chromium browser
-npm test                 # Run tests
-```
-
-**Your app remains 100% vanilla JavaScript** - Playwright and Jest are **devDependencies** only, never loaded in the browser.
+| Module | Tests | Description |
+|--------|-------|-------------|
+| ThemeManager | 25 | Theme system and dark mode |
+| DeviceDetection | 15 | Device capability detection |
+| CycleLoader | 11 | Data loading and migration |
+| StatsPanel | 27 | Statistics panel and view switching |
+| GlobalUtils | 28 | Utility functions and helpers |
+| Notifications | 18 | Notification system |
+| **Total** | **124** | **All modules** |
 
 ---
 
-## 🔧 Configuration
-
-### Test More Modules
-
-Edit `tests/automated/run-browser-tests.js`:
-
-```javascript
-// Add your new module here
-const modules = ['themeManager', 'globalUtils', 'notifications', 'yourNewModule'];
-```
-
-### See the Browser (Debug Mode)
-
-Change `headless` setting:
-
-```javascript
-const browser = await chromium.launch({
-    headless: false  // Watch the browser run tests
-});
-```
-
-### Adjust Timeouts
-
-If tests are slow, increase timeouts:
-
-```javascript
-await page.waitForSelector('h3:has-text("Results:")', {
-    timeout: 60000  // 60 seconds instead of 30
-});
-```
-
----
-
-## 🤖 CI/CD Integration
-
-### GitHub Actions
-
-Already configured! Tests run automatically on:
-- ✅ Every push to `main` or `develop`
-- ✅ Every pull request
-- ✅ Manual trigger from Actions tab
-
-See: `.github/workflows/test.yml`
-
-### Other CI Platforms
-
-**GitLab CI** (`.gitlab-ci.yml`):
-```yaml
-test:
-  stage: test
-  script:
-    - npm ci
-    - npm test
-```
-
-**CircleCI** (`.circleci/config.yml`):
-```yaml
-jobs:
-  test:
-    docker:
-      - image: mcr.microsoft.com/playwright:v1.40.0-focal
-    steps:
-      - checkout
-      - run: npm ci
-      - run: npm test
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Tests fail with "Cannot reach server"
-
-**Problem**: HTTP server not running
-
-**Solution**:
-```bash
-# Terminal 1: Start server
-npm run test:manual
-
-# Terminal 2: Run tests
-npm test
-```
-
-### Tests timeout
-
-**Problem**: Tests take longer than 30 seconds
-
-**Solution**: Increase timeout in `run-browser-tests.js`:
-```javascript
-await page.waitForSelector('h3:has-text("Results:")', {
-    timeout: 60000
-});
-```
-
-### Browser launch fails
-
-**Problem**: Playwright browsers not installed
-
-**Solution**:
-```bash
-npx playwright install chromium
-```
-
----
-
-## 📊 Example Output
+## 📋 Example Output
 
 ```
 ============================================================
@@ -192,62 +134,369 @@ npx playwright install chromium
 🌐 Launching browser...
 
 🧪 Testing themeManager...
-   ✅ Results: 25/25 tests passed (100%)
+   ✅ Results: 25/25 tests passed
+
+🧪 Testing deviceDetection...
+   ✅ Results: 15/15 tests passed
+
+🧪 Testing cycleLoader...
+   ✅ Results: 11/11 tests passed
+
+🧪 Testing statsPanel...
+   ✅ Results: 27/27 tests passed
 
 🧪 Testing globalUtils...
-   ✅ Results: 45/45 tests passed (100%)
+   ✅ Results: 28/28 tests passed
 
 🧪 Testing notifications...
-   ✅ Results: 39/39 tests passed (100%)
+   ✅ Results: 18/18 tests passed
 
 ============================================================
-📊 Test Summary (3.42s)
+📊 Test Summary (4.2s)
 ============================================================
    ✅ PASS themeManager         25/25 tests
-   ✅ PASS globalUtils          45/45 tests
-   ✅ PASS notifications        39/39 tests
+   ✅ PASS deviceDetection      15/15 tests
+   ✅ PASS cycleLoader          11/11 tests
+   ✅ PASS statsPanel           27/27 tests
+   ✅ PASS globalUtils          28/28 tests
+   ✅ PASS notifications        18/18 tests
 ============================================================
-🎉 All tests passed! (109/109 - 100%)
+🎉 All tests passed! (124/124 - 100%)
 ============================================================
 ```
+
+---
+
+## 🔧 Configuration
+
+### Add New Module to Tests
+
+Edit `tests/automated/run-browser-tests.js`:
+
+```javascript
+// Add your new module to this array
+const modules = [
+    'themeManager',
+    'deviceDetection',
+    'cycleLoader',
+    'statsPanel',
+    'globalUtils',
+    'notifications',
+    'yourNewModule'  // ← Add here
+];
+```
+
+Then create your test file following the pattern in `tests/MODULE_TEMPLATE.tests.js`.
+
+### Debug Mode (Watch Browser)
+
+Edit `tests/automated/run-browser-tests.js`:
+
+```javascript
+const browser = await chromium.launch({
+    headless: false  // ← Change to false to watch browser
+});
+```
+
+### Adjust Timeouts
+
+If tests are slow, increase timeouts in `run-browser-tests.js`:
+
+```javascript
+await page.waitForSelector('h3:has-text("Results:")', {
+    timeout: 60000  // ← Increase from 30s to 60s
+});
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### "Cannot reach server"
+
+**Problem**: HTTP server not running on port 8080
+
+**Solution**:
+```bash
+# Make sure server is running first
+python3 -m http.server 8080
+
+# Then run tests in another terminal
+node tests/automated/run-browser-tests.js
+
+# Verify server is accessible
+# Open: http://localhost:8080/tests/module-test-suite.html
+```
+
+### "Playwright not found"
+
+**Problem**: Playwright not installed
+
+**Solution**:
+```bash
+npm install playwright
+npx playwright install chromium
+```
+
+### "Browser launch failed"
+
+**Problem**: Chromium browser not installed
+
+**Solution**:
+```bash
+npx playwright install chromium
+```
+
+### "Port 8080 already in use"
+
+**Problem**: Another process is using port 8080
+
+**Solution**:
+```bash
+# Option 1: Find and kill the process
+lsof -ti:8080 | xargs kill
+
+# Option 2: Use a different port
+python3 -m http.server 8081
+
+# Then update run-browser-tests.js:
+await page.goto('http://localhost:8081/tests/module-test-suite.html', {
+    waitUntil: 'networkidle',
+    timeout: 10000
+});
+```
+
+### Tests timeout or hang
+
+**Problem**: Tests take longer than expected
+
+**Solutions**:
+1. **Increase timeout** in `run-browser-tests.js` (see Configuration section)
+2. **Check for console errors** - Run with `headless: false` to debug
+3. **Verify server is responding** - Open test page manually in browser
+4. **Clear browser cache** - `npx playwright install chromium --force`
+
+### Tests fail but manual tests pass
+
+**Problem**: Timing issues or DOM not ready
+
+**Solutions**:
+1. **Add delays** in specific test files
+2. **Increase `waitForSelector` timeout**
+3. **Check for race conditions** in async operations
+4. **Run in debug mode** with `headless: false`
+
+---
+
+## 🤖 CI/CD Integration
+
+### GitHub Actions
+
+Create `.github/workflows/test.yml`:
+
+```yaml
+name: Run Browser Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm install playwright
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Start HTTP server
+        run: |
+          cd web
+          python3 -m http.server 8080 &
+          sleep 3
+
+      - name: Run tests
+        run: |
+          cd web
+          node tests/automated/run-browser-tests.js
+```
+
+### GitLab CI
+
+Create `.gitlab-ci.yml`:
+
+```yaml
+test:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.40.0-focal
+  script:
+    - cd web
+    - npm install playwright
+    - python3 -m http.server 8080 &
+    - sleep 3
+    - node tests/automated/run-browser-tests.js
+```
+
+### CircleCI
+
+Create `.circleci/config.yml`:
+
+```yaml
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.40.0-focal
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            cd web
+            npm install playwright
+      - run:
+          name: Start server and run tests
+          command: |
+            cd web
+            python3 -m http.server 8080 &
+            sleep 3
+            node tests/automated/run-browser-tests.js
+
+workflows:
+  test:
+    jobs:
+      - test
+```
+
+---
+
+## 📦 Dependencies & Project Structure
+
+### What Goes to GitHub
+
+**Committed to repository** (tracked in git):
+- ✅ `tests/automated/run-browser-tests.js` - Test runner script
+- ✅ `tests/automated/README.md` - This documentation
+- ✅ `tests/*.tests.js` - All test files
+- ✅ `tests/module-test-suite.html` - Manual test interface
+- ✅ `.gitignore` - Prevents unnecessary files from being committed
+
+### What Stays Local
+
+**Not committed** (ignored by git):
+- ❌ `node_modules/` - Playwright dependencies (50-300MB)
+- ❌ `package-lock.json` - Dependency lock file (if created)
+- ❌ Test artifacts and screenshots
+- ❌ `.DS_Store` and OS-specific files
+
+### Key Point
+
+**Your app remains 100% vanilla JavaScript!**
+
+- Playwright is a **devDependency** only
+- Never loaded in production code
+- Only used for automated testing
+- Users don't need it to run the app
 
 ---
 
 ## 🎓 Best Practices
 
 ### During Development
-- Use **manual tests** (`npm run test:manual`) for visual debugging
-- Use **automated tests** (`npm test`) before committing
 
-### Before Commits
+1. **Manual tests first** - Use visual test suite for debugging
+   ```bash
+   python3 -m http.server 8080
+   # Open: http://localhost:8080/tests/module-test-suite.html
+   ```
+
+2. **Automated tests before commit** - Verify all tests pass
+   ```bash
+   node tests/automated/run-browser-tests.js
+   ```
+
+3. **Fix issues immediately** - Don't commit failing tests
+
+### Before Committing
+
 ```bash
-npm test  # Make sure all tests pass
+# 1. Start server
+python3 -m http.server 8080 &
+
+# 2. Run all automated tests
+node tests/automated/run-browser-tests.js
+
+# 3. Verify 124/124 tests pass
+# 4. Commit with confidence
+git add .
+git commit -m "feat: Add new feature with tests"
+
+# 5. Stop server
+killall python3
 ```
 
 ### In CI/CD
-- Tests run automatically
-- Failed tests block merges
-- View results in Actions tab
+
+- ✅ Tests run automatically on every push/PR
+- ✅ Failed tests block merges
+- ✅ View results in Actions/Pipeline tab
+- ✅ Exit code 0 = success, 1 = failure
 
 ---
 
-## 🔄 Workflow
+## 🔄 Development Workflow
 
 ```
-Write Code → Manual Test (Visual) → Fix Issues → Automated Test → Commit
-     ↓              ↓                    ↓             ↓             ↓
-  Feature     See results in       Quick fixes    Verify all    Push with
-  change        browser                           pass (CLI)   confidence
+┌─────────────┐
+│  Write Code │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────┐
+│  Manual Test        │
+│  (Visual Browser)   │
+│  - See results      │
+│  - Debug visually   │
+└──────┬──────────────┘
+       │
+       ▼
+┌─────────────────────┐
+│  Fix Issues         │
+│  - Iterate quickly  │
+│  - Verify in UI     │
+└──────┬──────────────┘
+       │
+       ▼
+┌─────────────────────┐
+│  Automated Test     │
+│  (Headless CLI)     │
+│  - Verify all pass  │
+│  - 124/124 tests    │
+└──────┬──────────────┘
+       │
+       ▼
+┌─────────────────────┐
+│  Commit & Push      │
+│  - CI/CD runs       │
+│  - Tests pass       │
+│  - Deploy ready     │
+└─────────────────────┘
 ```
-
----
-
-## 💡 Tips
-
-1. **Add new modules**: Just update the `modules` array
-2. **Debug failures**: Set `headless: false` to watch browser
-3. **Speed up tests**: Run in parallel (coming soon)
-4. **Screenshot failures**: Enable in Playwright config
 
 ---
 
@@ -257,55 +506,143 @@ Write Code → Manual Test (Visual) → Fix Issues → Automated Test → Commit
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Your Vanilla JavaScript App                            │
-│  ├── utilities/themeManager.js (ES6 module)             │
+│  miniCycle App (Vanilla JavaScript)                     │
+│  ├── utilities/themeManager.js                          │
+│  ├── utilities/deviceDetection.js                       │
+│  ├── utilities/cycleLoader.js                           │
+│  ├── utilities/statsPanel.js                            │
 │  ├── utilities/globalUtils.js                           │
 │  └── utilities/notifications.js                         │
+│                                                          │
+│  No build step - runs directly in browser               │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
 │  Browser Test Suite (Manual)                            │
 │  ├── tests/module-test-suite.html                       │
 │  ├── tests/themeManager.tests.js                        │
+│  ├── tests/deviceDetection.tests.js                     │
+│  ├── tests/cycleLoader.tests.js                         │
+│  ├── tests/statsPanel.tests.js                          │
 │  ├── tests/globalUtils.tests.js                         │
 │  └── tests/notifications.tests.js                       │
 │                                                          │
-│  Run: npm run test:manual                               │
-│  Opens browser at http://localhost:8080                 │
+│  Run: python3 -m http.server 8080                       │
+│  Open: http://localhost:8080/tests/module-test-suite.html │
+│                                                          │
+│  - Visual feedback                                      │
+│  - Interactive debugging                                │
+│  - Manual test selection                                │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
-│  Playwright Automation Layer (This README)              │
+│  Playwright Automation Layer                            │
 │  └── tests/automated/run-browser-tests.js               │
 │                                                          │
 │  - Launches headless Chrome                             │
 │  - Runs same browser tests programmatically             │
-│  - Outputs results to terminal                          │
+│  - Extracts results from DOM                            │
+│  - Outputs colored terminal results                     │
 │  - Exits with proper code for CI/CD                     │
 │                                                          │
-│  Run: npm test                                          │
+│  Run: node tests/automated/run-browser-tests.js         │
+│                                                          │
+│  - No visual UI                                         │
+│  - Fast execution                                       │
+│  - CI/CD friendly                                       │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
-│  GitHub Actions (CI/CD)                                 │
-│  └── .github/workflows/test.yml                         │
+│  CI/CD (GitHub Actions / GitLab CI / CircleCI)          │
 │                                                          │
 │  - Runs on every push/PR                                │
-│  - Installs dependencies (npm ci)                       │
-│  - Installs Playwright browsers                         │
-│  - Starts HTTP server                                   │
-│  - Runs npm test                                        │
-│  - Reports pass/fail                                    │
+│  - Installs dependencies (npm install playwright)       │
+│  - Installs browsers (npx playwright install chromium)  │
+│  - Starts HTTP server (python3 -m http.server 8080 &)   │
+│  - Runs automated tests                                 │
+│  - Reports pass/fail status                             │
+│  - Blocks merge if tests fail                           │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Key Design Decisions
 
-1. **No Test Code Duplication**: One set of tests runs both manually and automatically
-2. **Vanilla JavaScript**: App has zero runtime dependencies
-3. **DevDependencies Only**: Testing tools (Playwright, Jest) never touch production code
-4. **Clean Git History**: `.gitignore` keeps `node_modules` out of GitHub
-5. **Fast Feedback Loop**: Manual tests for debugging, automated for confidence
+1. **No Test Code Duplication**
+   - One set of test files
+   - Run manually OR automatically
+   - Same assertions, same results
+
+2. **Zero Runtime Dependencies**
+   - App is pure vanilla JavaScript
+   - No webpack, no babel, no bundler
+   - Playwright only for testing (dev only)
+
+3. **DevDependencies Only**
+   - Testing tools never touch production
+   - Users don't need npm to run app
+   - Clean separation of concerns
+
+4. **Clean Git History**
+   - `.gitignore` keeps `node_modules` out
+   - Only source code in repository
+   - Fast clones and pulls
+
+5. **Fast Feedback Loop**
+   - Manual tests for visual debugging
+   - Automated tests for confidence
+   - Both use exact same test code
+
+---
+
+## 💡 Pro Tips
+
+### 1. Debug Failed Tests Visually
+
+```javascript
+// In run-browser-tests.js
+const browser = await chromium.launch({
+    headless: false,      // See the browser
+    slowMo: 1000         // Slow down by 1 second per action
+});
+```
+
+### 2. Screenshot on Failure
+
+```javascript
+// In run-browser-tests.js, inside the catch block
+if (failedTests > 0) {
+    await page.screenshot({
+        path: `test-failure-${moduleName}.png`,
+        fullPage: true
+    });
+}
+```
+
+### 3. Test Single Module
+
+```javascript
+// Temporarily modify modules array
+const modules = ['statsPanel'];  // Test only statsPanel
+```
+
+### 4. Add Test Timing
+
+```javascript
+// Track slow tests
+const startTime = Date.now();
+// ... run tests ...
+const duration = Date.now() - startTime;
+console.log(`⏱️  ${moduleName} took ${duration}ms`);
+```
+
+### 5. Parallel Execution (Advanced)
+
+```javascript
+// Run multiple modules in parallel
+const results = await Promise.all(
+    modules.map(module => runModuleTests(page, module))
+);
+```
 
 ---
 
@@ -313,9 +650,27 @@ Write Code → Manual Test (Visual) → Fix Issues → Automated Test → Commit
 
 **You get the best of both worlds:**
 
-✅ **Manual tests**: Visual, interactive, debuggable
-✅ **Automated tests**: Fast, reliable, CI/CD ready
-✅ **Clean repository**: No dependencies bloat in GitHub
-✅ **Professional workflow**: Industry-standard testing setup
+✅ **Manual tests** - Visual, interactive, debuggable
+✅ **Automated tests** - Fast, reliable, CI/CD ready
+✅ **Clean repository** - No dependency bloat
+✅ **Professional workflow** - Industry-standard setup
+✅ **Zero duplication** - One test suite, two modes
+✅ **124 tests** - Comprehensive coverage
+✅ **6 modules** - All core functionality tested
 
-No code duplication - one test suite, two ways to run it!
+**No build step. No configuration. Just works.** 🚀
+
+---
+
+## 📚 Related Documentation
+
+- **Test Writing Guide**: `../DEVELOPER_DOCUMENTATION.md` (Testing System section)
+- **Quick Reference**: `../../docs/TESTING_QUICK_REFERENCE.md`
+- **Test Template**: `../MODULE_TEMPLATE.tests.js`
+- **Main Docs**: `../../docs/QUICK_REFERENCE.md`
+
+---
+
+**Last Updated**: October 8, 2025
+**Test Coverage**: 124 tests across 6 modules
+**Maintained By**: sparkinCreations

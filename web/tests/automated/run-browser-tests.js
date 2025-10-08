@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'globalUtils', 'notifications'];
+const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'globalUtils', 'notifications'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
@@ -37,8 +37,11 @@ async function runModuleTests(page, moduleName) {
         // Click Run Tests button
         await page.click('#run-tests-btn');
 
-        // Wait for results
-        await page.waitForSelector('h3:has-text("Results:")', { timeout: 30000 });
+        // Wait a bit for tests to start
+        await page.waitForTimeout(500);
+
+        // Wait for results (increased timeout for statsPanel with 27 tests)
+        await page.waitForSelector('h3:has-text("Results:")', { timeout: 45000 });
 
         // Extract summary
         const summary = await page.textContent('h3:last-of-type');

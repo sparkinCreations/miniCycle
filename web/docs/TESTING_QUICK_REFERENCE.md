@@ -314,9 +314,10 @@ function test(name, testFn) {
 | GlobalUtils | 28 | ✅ |
 | ThemeManager | 25 | ✅ |
 | DeviceDetection | 15 | ✅ |
-| CycleLoader | 12 | ✅ |
+| CycleLoader | 11 | ✅ |
+| StatsPanel | 27 | ✅ |
 | Notifications | 18 | ✅ |
-| **Total** | **98** | **✅** |
+| **Total** | **124** | **✅** |
 
 ---
 

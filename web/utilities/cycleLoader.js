@@ -92,7 +92,8 @@ function repairAndCleanTasks(currentCycle) {
 
   currentCycle.tasks.forEach((task, index) => {
     if (!task) return;
-    
+    if (typeof task !== 'object') return; // Skip non-objects (strings, numbers, etc.)
+
     // ✅ Repair missing text (don't filter out yet)
     const hasText = task.text || task.taskText;
     if (!hasText || (typeof hasText === 'string' && hasText.trim() === '')) {

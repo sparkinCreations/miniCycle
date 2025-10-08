@@ -1,0 +1,557 @@
+/**
+ * StatsPanel Module Tests (Schema 2.5)
+ * Tests for the stats panel manager and view switching functionality
+ */
+
+import { StatsPanelManager } from '../utilities/statsPanel.js';
+
+// Helper to create complete AppState mock (outside function scope)
+function createMockAppState(mockData) {
+    return {
+        isReady: () => true,
+        get: () => mockData,
+        update: (updateFn, immediate) => {
+            updateFn(mockData);
+            if (immediate) {
+                localStorage.setItem('miniCycleData', JSON.stringify(mockData));
+            }
+        }
+    };
+}
+
+export function runStatsPanelTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>📊 StatsPanel Tests</h2><h3>Running tests...</h3>';
+
+    let passed = { count: 0 };
+    let total = { count: 0 };
+
+    function test(name, testFn) {
+        total.count++;
+        try {
+            // Create fresh mock Schema 2.5 data for each test
+            const mockSchemaData = {
+                metadata: {
+                    version: "2.5",
+                    lastModified: Date.now()
+                },
+                settings: {
+                    darkMode: false,
+                    theme: 'default',
+                    unlockedThemes: ['default'],
+                    unlockedFeatures: []
+                },
+                data: {
+                    cycles: {
+                        'cycle1': {
+                            id: 'cycle1',
+                            title: 'Test Cycle',
+                            tasks: [
+                                { id: 'task1', text: 'Task 1', completed: false },
+                                { id: 'task2', text: 'Task 2', completed: true }
+                            ],
+                            cycleCount: 10
+                        }
+                    }
+                },
+                appState: {
+                    activeCycleId: 'cycle1'
+                },
+                userProgress: {
+                    rewardMilestones: []
+                }
+            };
+            localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
+
+            // Mock AppState globally for all tests to prevent errors
+            window.AppState = createMockAppState(mockSchemaData);
+
+            // Create minimal DOM structure for tests
+            createTestDOM();
+
+            testFn();
+            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
+            passed.count++;
+        } catch (error) {
+            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+            console.error(`Test failed: ${name}`, error);
+        } finally {
+            // Cleanup
+            delete window.AppState;
+            cleanupTestDOM();
+        }
+    }
+
+    // === INITIALIZATION TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
+
+    test('creates instance successfully', () => {
+        const statsPanel = new StatsPanelManager();
+
+        if (!statsPanel || typeof statsPanel.updateStatsPanel !== 'function') {
+            throw new Error('StatsPanelManager not properly initialized');
+        }
+    });
+
+    test('accepts dependency injection', () => {
+        const mockDeps = {
+            showNotification: (msg) => msg,
+            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
+            updateThemeColor: () => {}
+        };
+
+        const statsPanel = new StatsPanelManager(mockDeps);
+
+        if (!statsPanel || !statsPanel.dependencies.showNotification) {
+            throw new Error('Dependency injection failed');
+        }
+    });
+
+    test('caches DOM elements', () => {
+        const statsPanel = new StatsPanelManager();
+
+        if (!statsPanel.elements || typeof statsPanel.elements !== 'object') {
+            throw new Error('Elements not cached properly');
+        }
+    });
+
+    test('initializes with correct state', () => {
+        const statsPanel = new StatsPanelManager();
+        const state = statsPanel.getState();
+
+        if (state.isStatsVisible !== false) {
+            throw new Error('Initial state should have stats hidden');
+        }
+
+        if (state.isSwiping !== false) {
+            throw new Error('Initial state should not be swiping');
+        }
+    });
+
+    // === VIEW SWITCHING TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">👁️ View Switching</h4>';
+
+    test('shows task view correctly', () => {
+        const statsPanel = new StatsPanelManager();
+        statsPanel.showTaskView();
+
+        const taskView = document.getElementById('task-view');
+        const statsView = document.getElementById('stats-panel');
+
+        if (!taskView.classList.contains('show')) {
+            throw new Error('Task view should be visible');
+        }
+
+        if (statsView.classList.contains('show')) {
+            throw new Error('Stats panel should be hidden');
+        }
+
+        if (statsPanel.isStatsVisible()) {
+            throw new Error('State should show stats as not visible');
+        }
+    });
+
+    test('shows stats panel correctly', () => {
+        const statsPanel = new StatsPanelManager();
+        statsPanel.showStatsPanel();
+
+        const taskView = document.getElementById('task-view');
+        const statsView = document.getElementById('stats-panel');
+
+        if (taskView.classList.contains('show')) {
+            throw new Error('Task view should be hidden');
+        }
+
+        if (!statsView.classList.contains('show')) {
+            throw new Error('Stats panel should be visible');
+        }
+
+        if (!statsPanel.isStatsVisible()) {
+            throw new Error('State should show stats as visible');
+        }
+    });
+
+    test('toggles between views', () => {
+        const statsPanel = new StatsPanelManager();
+
+        statsPanel.showStatsPanel();
+        if (!statsPanel.isStatsVisible()) {
+            throw new Error('Stats should be visible after showing');
+        }
+
+        statsPanel.showTaskView();
+        if (statsPanel.isStatsVisible()) {
+            throw new Error('Stats should not be visible after hiding');
+        }
+    });
+
+    // === STATS CALCULATION TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📈 Stats Calculation</h4>';
+
+    test('calculates task statistics correctly', () => {
+        // Add some test tasks to DOM
+        const taskList = document.getElementById('taskList');
+        taskList.innerHTML = `
+            <div class="task"><input type="checkbox" /></div>
+            <div class="task"><input type="checkbox" checked /></div>
+            <div class="task"><input type="checkbox" checked /></div>
+        `;
+
+        const statsPanel = new StatsPanelManager({
+            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+        });
+
+        statsPanel.updateStatsPanel();
+
+        const totalTasks = document.getElementById('total-tasks');
+        const completedTasks = document.getElementById('completed-tasks');
+
+        if (totalTasks.textContent !== '3') {
+            throw new Error(`Expected 3 total tasks, got ${totalTasks.textContent}`);
+        }
+
+        if (completedTasks.textContent !== '2') {
+            throw new Error(`Expected 2 completed tasks, got ${completedTasks.textContent}`);
+        }
+    });
+
+    test('updates completion rate correctly', () => {
+        const taskList = document.getElementById('taskList');
+        taskList.innerHTML = `
+            <div class="task"><input type="checkbox" checked /></div>
+            <div class="task"><input type="checkbox" /></div>
+        `;
+
+        const statsPanel = new StatsPanelManager({
+            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+        });
+
+        statsPanel.updateStatsPanel();
+
+        const completionRate = document.getElementById('completion-rate');
+        if (completionRate.textContent !== '50.0%') {
+            throw new Error(`Expected 50.0%, got ${completionRate.textContent}`);
+        }
+    });
+
+    test('displays cycle count from state', () => {
+        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+        mockData.data.cycles.cycle1.cycleCount = 25;
+        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
+
+        // Update the global AppState mock with new cycle count
+        window.AppState = createMockAppState(mockData);
+
+        const statsPanel = new StatsPanelManager();
+        statsPanel.updateStatsPanel();
+
+        const cycleCount = document.getElementById('mini-cycle-count');
+        if (cycleCount.textContent !== '25') {
+            throw new Error(`Expected cycle count 25, got ${cycleCount.textContent}`);
+        }
+    });
+
+    test('handles zero tasks gracefully', () => {
+        const taskList = document.getElementById('taskList');
+        taskList.innerHTML = '';
+
+        const statsPanel = new StatsPanelManager();
+        statsPanel.updateStatsPanel();
+
+        const totalTasks = document.getElementById('total-tasks');
+        const completionRate = document.getElementById('completion-rate');
+
+        if (totalTasks.textContent !== '0') {
+            throw new Error('Should show 0 total tasks');
+        }
+
+        if (completionRate.textContent !== '0%') {
+            throw new Error('Should show 0% completion rate');
+        }
+    });
+
+    // === BADGE TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🏆 Badge Updates</h4>';
+
+    test('updates badges based on cycle count', () => {
+        const statsPanel = new StatsPanelManager();
+        statsPanel.updateBadges(10);
+
+        const badge5 = document.querySelector('[data-milestone="5"]');
+        const badge50 = document.querySelector('[data-milestone="50"]');
+
+        if (!badge5.classList.contains('unlocked')) {
+            throw new Error('Badge for 5 cycles should be unlocked');
+        }
+
+        if (badge50.classList.contains('unlocked')) {
+            throw new Error('Badge for 50 cycles should not be unlocked yet');
+        }
+    });
+
+    test('applies theme classes to unlocked badges', () => {
+        const statsPanel = new StatsPanelManager();
+        statsPanel.updateBadges(50);
+
+        const badge5 = document.querySelector('[data-milestone="5"]');
+        const badge50 = document.querySelector('[data-milestone="50"]');
+
+        if (!badge5.classList.contains('ocean-theme')) {
+            throw new Error('Badge 5 should have ocean-theme class');
+        }
+
+        if (!badge50.classList.contains('golden-theme')) {
+            throw new Error('Badge 50 should have golden-theme class');
+        }
+    });
+
+    // === THEME UNLOCK TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Unlock</h4>';
+
+    test('displays correct theme unlock messages', () => {
+        const statsPanel = new StatsPanelManager();
+        const milestoneUnlocks = {
+            darkOcean: false,
+            goldenGlow: false,
+            taskOrderGame: false
+        };
+
+        statsPanel.updateThemeMessages(3, milestoneUnlocks);
+
+        const themeMessage = document.getElementById('theme-unlock-message');
+        if (!themeMessage.textContent.includes('2 more cycle')) {
+            throw new Error('Should show correct cycles remaining');
+        }
+    });
+
+    test('shows unlocked message for completed milestones', () => {
+        const statsPanel = new StatsPanelManager();
+        const milestoneUnlocks = {
+            darkOcean: true,
+            goldenGlow: false,
+            taskOrderGame: false
+        };
+
+        statsPanel.updateThemeMessages(10, milestoneUnlocks);
+
+        const themeMessage = document.getElementById('theme-unlock-message');
+        if (!themeMessage.textContent.includes('unlocked')) {
+            throw new Error('Should show unlocked message');
+        }
+
+        if (!themeMessage.classList.contains('unlocked-message')) {
+            throw new Error('Should have unlocked-message class');
+        }
+    });
+
+    test('hides golden glow until ocean unlocked', () => {
+        const statsPanel = new StatsPanelManager();
+        const milestoneUnlocks = {
+            darkOcean: false,
+            goldenGlow: false,
+            taskOrderGame: false
+        };
+
+        statsPanel.updateThemeMessages(10, milestoneUnlocks);
+
+        const goldenMessage = document.getElementById('golden-unlock-message');
+        if (goldenMessage.textContent !== '') {
+            throw new Error('Golden Glow should be hidden until Ocean is unlocked');
+        }
+    });
+
+    // === NAVIGATION TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🎯 Navigation</h4>';
+
+    test('updates navigation dots correctly', () => {
+        const statsPanel = new StatsPanelManager();
+
+        statsPanel.showTaskView();
+        statsPanel.updateNavDots();
+
+        const dots = document.querySelectorAll('.dot');
+        if (!dots[0].classList.contains('active')) {
+            throw new Error('First dot should be active on task view');
+        }
+
+        if (dots[1].classList.contains('active')) {
+            throw new Error('Second dot should not be active on task view');
+        }
+    });
+
+    test('handles dot clicks', () => {
+        const statsPanel = new StatsPanelManager();
+
+        statsPanel.handleDotClick(1);
+        if (!statsPanel.isStatsVisible()) {
+            throw new Error('Clicking second dot should show stats');
+        }
+
+        statsPanel.handleDotClick(0);
+        if (statsPanel.isStatsVisible()) {
+            throw new Error('Clicking first dot should show tasks');
+        }
+    });
+
+    // === FALLBACK TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Fallback Methods</h4>';
+
+    test('uses fallback notification when dependency missing', () => {
+        const statsPanel = new StatsPanelManager({});
+
+        // Should not throw error
+        statsPanel.dependencies.showNotification('Test message', 'info');
+    });
+
+    test('uses fallback data loader when dependency missing', () => {
+        const statsPanel = new StatsPanelManager({});
+
+        // Should not throw error
+        const data = statsPanel.dependencies.loadMiniCycleData();
+    });
+
+    test('uses fallback overlay check when dependency missing', () => {
+        const statsPanel = new StatsPanelManager({});
+
+        // Should not throw error
+        const isActive = statsPanel.dependencies.isOverlayActive();
+
+        if (typeof isActive !== 'boolean') {
+            throw new Error('Should return boolean');
+        }
+    });
+
+    // === STATE MANAGEMENT TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🗂️ State Management</h4>';
+
+    test('getState returns current state', () => {
+        const statsPanel = new StatsPanelManager();
+        const state = statsPanel.getState();
+
+        if (!state || typeof state !== 'object') {
+            throw new Error('Should return state object');
+        }
+
+        if (!state.hasOwnProperty('isStatsVisible')) {
+            throw new Error('State should have isStatsVisible property');
+        }
+    });
+
+    test('isStatsVisible returns correct value', () => {
+        const statsPanel = new StatsPanelManager();
+
+        if (statsPanel.isStatsVisible() !== false) {
+            throw new Error('Should initially return false');
+        }
+
+        statsPanel.showStatsPanel();
+        if (statsPanel.isStatsVisible() !== true) {
+            throw new Error('Should return true after showing stats');
+        }
+    });
+
+    test('getModuleInfo returns module information', () => {
+        const statsPanel = new StatsPanelManager();
+        const info = statsPanel.getModuleInfo();
+
+        if (info.name !== 'StatsPanelManager') {
+            throw new Error('Should return correct module name');
+        }
+
+        if (!info.version) {
+            throw new Error('Should include version');
+        }
+
+        if (!info.state) {
+            throw new Error('Should include state');
+        }
+    });
+
+    // === ERROR HANDLING TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
+
+    test('handles missing DOM elements gracefully', () => {
+        // Remove critical elements
+        document.getElementById('stats-panel')?.remove();
+        document.getElementById('task-view')?.remove();
+
+        const statsPanel = new StatsPanelManager();
+
+        // Should not throw error
+        statsPanel.showTaskView();
+        statsPanel.showStatsPanel();
+    });
+
+    test('handles updateStatsPanel without AppState', () => {
+        delete window.AppState;
+
+        const statsPanel = new StatsPanelManager({
+            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+        });
+
+        // Should not throw error
+        statsPanel.updateStatsPanel();
+    });
+
+    test('handles updateStatsPanel with missing data', () => {
+        localStorage.removeItem('miniCycleData');
+
+        const statsPanel = new StatsPanelManager({
+            loadMiniCycleData: () => null
+        });
+
+        // Should not throw error
+        statsPanel.updateStatsPanel();
+    });
+
+    // === RESULTS SUMMARY ===
+    const percentage = Math.round((passed.count / total.count) * 100);
+    resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
+
+    if (passed.count === total.count) {
+        resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
+    }
+
+    return { passed: passed.count, total: total.count };
+}
+
+// Helper functions for test setup
+function createTestDOM() {
+    // Create container for test elements (don't modify body.innerHTML to avoid detaching resultsDiv)
+    const container = document.createElement('div');
+    container.id = 'test-container';
+    container.innerHTML = `
+        <div id="stats-panel" class="hide">
+            <div id="total-tasks">0</div>
+            <div id="completed-tasks">0</div>
+            <div id="completion-rate">0%</div>
+            <div id="mini-cycle-count">0</div>
+            <div id="stats-progress-bar" style="width: 0%"></div>
+            <div id="theme-unlock-message"></div>
+            <div id="golden-unlock-message"></div>
+            <div id="game-unlock-message"></div>
+            <div id="theme-unlock-status"></div>
+        </div>
+        <div id="task-view" class="show">
+            <div id="taskList"></div>
+            <button id="addTask">Add Task</button>
+        </div>
+        <div id="live-region"></div>
+        <button id="slide-left">←</button>
+        <button id="slide-right">→</button>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="badge" data-milestone="5"></div>
+        <div class="badge" data-milestone="50"></div>
+        <div class="badge" data-milestone="100"></div>
+        <div id="themes-modal" style="display: none;"></div>
+        <button id="open-themes-panel"></button>
+        <button id="close-themes-btn"></button>
+        <button id="quick-dark-toggle"></button>
+    `;
+    document.body.appendChild(container);
+}
+
+function cleanupTestDOM() {
+    // Remove the test container (much cleaner than removing individual elements)
+    document.getElementById('test-container')?.remove();
+}
