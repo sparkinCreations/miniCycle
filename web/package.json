@@ -7,21 +7,34 @@
     "start": "python3 -m http.server 8080",
     "blog:install": "cd blog && npm install",
     "blog:build": "cd blog && npm run build",
-    "test": "jest",
+    "test": "node tests/automated/run-browser-tests.js",
+    "test:browser": "node tests/automated/run-browser-tests.js",
+    "test:manual": "python3 -m http.server 8080",
+    "test:jest": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
-  "keywords": ["productivity", "routine", "cycle", "tasks"],
+  "keywords": [
+    "productivity",
+    "routine",
+    "cycle",
+    "tasks"
+  ],
   "author": "miniCycle",
   "license": "UNLICENSED",
   "devDependencies": {
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest-environment-jsdom": "^29.7.0",
+    "playwright": "^1.56.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
-    "testMatch": ["**/tests/**/*.test.js"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
     "collectCoverageFrom": [
       "utilities/*.js",
       "!utilities/*.test.js"

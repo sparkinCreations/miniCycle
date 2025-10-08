@@ -1,28 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Module Test Suite</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#5680ff">
+    <title>🧪 miniCycle Module Test Suite</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
     <style>
-        body { font-family: system-ui; max-width: 900px; margin: 0 auto; padding: 20px; }
-        .result { padding: 8px; margin: 4px 0; border-radius: 4px; }
-        .pass { background: #d4edda; color: #155724; }
-        .fail { background: #f8d7da; color: #721c24; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
-        select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 20px; font-size: 16px; }
-        .module-selector { margin: 20px 0; }
-        .test-section { margin-top: 20px; }
-        .test-element { display: none; }
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4c79ff, #74c0fc);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: white;
+        }
+
+        body {
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 20px 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .module-selector {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        select:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: white;
+            background: white;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.95);
+            color: #4c79ff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px 0 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover {
+            background: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #results {
+            margin-top: 30px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 25px 0 15px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 20px 0 15px;
+            opacity: 0.95;
+        }
+
+        .test-section {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 25px 0 10px;
+            padding: 8px 0;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .result {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .result:hover {
+            transform: translateX(4px);
+        }
+
+        .pass {
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .fail {
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .test-element {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .module-selector {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>🧪 Module Test Suite</h1>
-    <p>Simple browser tests for miniCycle modules.</p>
+    <div class="container">
+        <h1>🧪 miniCycle Module Test Suite</h1>
+        <p class="subtitle">Simple browser tests for miniCycle modules.</p>
 
     <div class="module-selector">
         <label for="module-select">Choose a module to test:</label>
         <select id="module-select">
             <option value="">-- Select Module --</option>
             <option value="themeManager">ThemeManager</option>
+            <option value="deviceDetection">DeviceDetection</option>
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
         </select>
@@ -41,6 +214,7 @@
 
     <script type="module">
         import { runThemeManagerTests } from './themeManager.tests.js';
+        import { runDeviceDetectionTests } from './deviceDetection.tests.js';
         import { runGlobalUtilsTests } from './globalUtils.tests.js';
         import { runNotificationsTests } from './notifications.tests.js';
 
@@ -63,6 +237,10 @@
                     await import('../utilities/themeManager.js');
                     currentModule = 'themeManager';
                     resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'deviceDetection') {
+                    await import('../utilities/deviceDetection.js');
+                    currentModule = 'deviceDetection';
+                    resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
                     await import('../utilities/globalUtils.js');
                     currentModule = 'globalUtils';
@@ -86,6 +264,8 @@
 
             if (currentModule === 'themeManager') {
                 runThemeManagerTests(resultsDiv);
+            } else if (currentModule === 'deviceDetection') {
+                runDeviceDetectionTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
                 runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {
@@ -155,5 +335,6 @@
             return text;
         }
     </script>
+    </div> <!-- Close container -->
 </body>
 </html>

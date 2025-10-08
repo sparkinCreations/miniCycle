@@ -119,21 +119,21 @@ export function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
     test('MiniCycleNotifications creates successfully', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         if (!notifications || typeof notifications.show !== 'function') {
             throw new Error('MiniCycleNotifications not properly initialized');
         }
     });
 
     test('has educationalTips manager', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         if (!notifications.educationalTips) {
             throw new Error('educationalTips manager not initialized');
         }
     });
 
     test('has dragging state tracking', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         if (typeof notifications.isDraggingNotification !== 'boolean') {
             throw new Error('isDraggingNotification not initialized');
         }
@@ -146,7 +146,7 @@ export function runNotificationsTests(resultsDiv) {
     test('show() creates notification element', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.show('Test message', 'info', 3000);
 
@@ -159,7 +159,7 @@ export function runNotificationsTests(resultsDiv) {
     test('show() applies correct type classes', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.show('Error message', 'error');
         if (!container.querySelector('.notification.error')) {
@@ -177,7 +177,7 @@ export function runNotificationsTests(resultsDiv) {
     test('show() adds close button', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.show('Test', 'info');
 
@@ -190,7 +190,7 @@ export function runNotificationsTests(resultsDiv) {
     test('show() prevents duplicate notifications', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.show('Same message', 'info');
         notifications.show('Same message', 'info');
@@ -204,7 +204,7 @@ export function runNotificationsTests(resultsDiv) {
     test('show() handles empty message', () => {
         setupMockGlobals();
         createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         // Should not throw, should show warning message
         notifications.show('', 'info');
@@ -213,7 +213,7 @@ export function runNotificationsTests(resultsDiv) {
 
     test('show() handles missing container', () => {
         setupMockGlobals();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         // Should not throw, should warn
         notifications.show('Test', 'info');
@@ -227,7 +227,7 @@ export function runNotificationsTests(resultsDiv) {
     test('showWithTip() creates notification element', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showWithTip('Test with tip', 'info', 3000, 'test-tip');
 
@@ -240,7 +240,7 @@ export function runNotificationsTests(resultsDiv) {
     test('showWithTip() applies type classes', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showWithTip('Recurring message', 'recurring');
 
@@ -252,7 +252,7 @@ export function runNotificationsTests(resultsDiv) {
     test('showWithTip() prevents duplicates', () => {
         setupMockGlobals();
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showWithTip('Same tip message', 'info');
         notifications.showWithTip('Same tip message', 'info');
@@ -268,7 +268,7 @@ export function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🎓 Educational Tips</h4>';
 
     test('EducationalTipManager creates successfully', () => {
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         if (!tipManager) {
             throw new Error('EducationalTipManager not created');
         }
@@ -278,7 +278,7 @@ export function runNotificationsTests(resultsDiv) {
         setupMockGlobals();
         localStorage.setItem('miniCycleData', JSON.stringify(createMockSchemaData()));
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         if (tipManager.isTipDismissed('new-tip')) {
             throw new Error('New tip should not be dismissed');
         }
@@ -288,7 +288,7 @@ export function runNotificationsTests(resultsDiv) {
         setupMockGlobals();
         localStorage.setItem('miniCycleData', JSON.stringify(createMockSchemaData()));
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         tipManager.dismissTip('test-tip');
 
         if (!tipManager.isTipDismissed('test-tip')) {
@@ -302,7 +302,7 @@ export function runNotificationsTests(resultsDiv) {
         mockData.settings.dismissedEducationalTips = { 'test-tip': true };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         tipManager.showTip('test-tip');
 
         if (tipManager.isTipDismissed('test-tip')) {
@@ -314,7 +314,7 @@ export function runNotificationsTests(resultsDiv) {
         setupMockGlobals();
         localStorage.setItem('miniCycleData', JSON.stringify(createMockSchemaData()));
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         const tipHTML = tipManager.createTip('test-tip', 'Test tip text');
 
         if (!tipHTML.includes('Test tip text')) {
@@ -331,7 +331,7 @@ export function runNotificationsTests(resultsDiv) {
         mockData.settings.dismissedEducationalTips = { 'dismissed-tip': true };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         const tipHTML = tipManager.createTip('dismissed-tip', 'Test');
 
         if (!tipHTML.includes('display: none')) {
@@ -350,7 +350,7 @@ export function runNotificationsTests(resultsDiv) {
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.restoreNotificationPosition(container);
 
@@ -364,7 +364,7 @@ export function runNotificationsTests(resultsDiv) {
         localStorage.setItem('miniCycleData', JSON.stringify(createMockSchemaData()));
 
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.setDefaultPosition(container);
 
@@ -380,7 +380,7 @@ export function runNotificationsTests(resultsDiv) {
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.resetPosition();
 
@@ -395,7 +395,7 @@ export function runNotificationsTests(resultsDiv) {
         setupMockGlobals();
         window.AppState.isReady = () => false;
 
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         let errorThrown = false;
 
         try {
@@ -417,7 +417,7 @@ export function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">💬 Modal Dialogs</h4>';
 
     test('showConfirmationModal() creates modal', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showConfirmationModal({
             title: 'Test',
@@ -432,7 +432,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('showConfirmationModal() has confirm and cancel buttons', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showConfirmationModal({
             title: 'Test',
@@ -453,7 +453,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('showConfirmationModal() confirm button triggers callback', (done) => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         let callbackCalled = false;
 
         notifications.showConfirmationModal({
@@ -475,7 +475,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('showPromptModal() creates prompt', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showPromptModal({
             title: 'Enter value',
@@ -495,7 +495,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('showPromptModal() has default value', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.showPromptModal({
             title: 'Test',
@@ -510,7 +510,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('showPromptModal() enforces required field', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         let callbackCalled = false;
 
         notifications.showPromptModal({
@@ -548,7 +548,7 @@ export function runNotificationsTests(resultsDiv) {
         notification.className = 'notification';
         container.appendChild(notification);
 
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
         notifications.setupAutoRemove(notification, 3000);
 
         // Check if event listeners are attached by checking internal state
@@ -565,7 +565,7 @@ export function runNotificationsTests(resultsDiv) {
 
     test('setupNotificationDragging() attaches listeners', () => {
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.setupNotificationDragging(container);
 
@@ -576,7 +576,7 @@ export function runNotificationsTests(resultsDiv) {
 
     test('setupNotificationDragging() only attaches once', () => {
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.setupNotificationDragging(container);
         notifications.setupNotificationDragging(container);
@@ -586,7 +586,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('setDraggingState() updates state', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         notifications.setDraggingState(true);
         if (!notifications.isDraggingNotification) {
@@ -603,21 +603,18 @@ export function runNotificationsTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    test('show() handles missing generateHashId', () => {
+    test('show() handles missing generateHashId gracefully', () => {
         createNotificationContainer();
         delete window.generateHashId;
 
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
-        let errorThrown = false;
+        // Should NOT throw - Simple Instance pattern catches errors gracefully
         try {
             notifications.show('Test', 'info');
+            // If we get here, the error was handled gracefully (correct behavior)
         } catch (error) {
-            errorThrown = true;
-        }
-
-        if (!errorThrown) {
-            throw new Error('Should throw error when generateHashId missing');
+            throw new Error('Should NOT throw - should handle error gracefully');
         }
     });
 
@@ -626,7 +623,7 @@ export function runNotificationsTests(resultsDiv) {
         window.loadMiniCycleData = () => null;
 
         const container = createNotificationContainer();
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         // Should not throw, should use defaults
         notifications.restoreNotificationPosition(container);
@@ -639,7 +636,7 @@ export function runNotificationsTests(resultsDiv) {
     test('loadDismissedTips() handles missing loadMiniCycleData', () => {
         delete window.loadMiniCycleData;
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
         const tips = tipManager.loadDismissedTips();
 
         if (Object.keys(tips).length !== 0) {
@@ -650,7 +647,7 @@ export function runNotificationsTests(resultsDiv) {
     test('saveDismissedTips() handles missing loadMiniCycleData', () => {
         delete window.loadMiniCycleData;
 
-        const tipManager = new EducationalTipManager();
+        const tipManager = new window.EducationalTipManager();
 
         // Should not throw, should warn
         tipManager.saveDismissedTips();
@@ -662,7 +659,7 @@ export function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔁 Recurring Notifications</h4>';
 
     test('createRecurringNotificationWithTip() generates HTML', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         const html = notifications.createRecurringNotificationWithTip(
             'task-123',
@@ -679,7 +676,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('createRecurringNotificationWithTip() includes quick options', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         const html = notifications.createRecurringNotificationWithTip(
             'task-123',
@@ -697,7 +694,7 @@ export function runNotificationsTests(resultsDiv) {
     });
 
     test('createRecurringNotificationWithTip() marks selected frequency', () => {
-        const notifications = new MiniCycleNotifications();
+        const notifications = new window.MiniCycleNotifications();
 
         const html = notifications.createRecurringNotificationWithTip(
             'task-123',

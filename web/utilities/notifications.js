@@ -1021,3 +1021,11 @@ setDefaultPosition(notificationContainer) {
 
 // Export both the main class and the tip manager for flexibility
 export { EducationalTipManager };
+
+// Expose to window for testing and global access
+window.MiniCycleNotifications = MiniCycleNotifications;
+window.EducationalTipManager = EducationalTipManager;
+
+console.log('🔔 Notification system loaded and ready');
+console.log('  - MiniCycleNotifications:', typeof window.MiniCycleNotifications);
+console.log('  - EducationalTipManager:', typeof window.EducationalTipManager);

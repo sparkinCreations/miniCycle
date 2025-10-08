@@ -286,24 +286,34 @@ export class DeviceDetectionManager {
 // Global compatibility wrapper functions
 let deviceDetectionManager = null;
 
+// Initialize global instance
+function initializeDeviceDetectionManager() {
+  if (!deviceDetectionManager) {
+    deviceDetectionManager = new DeviceDetectionManager();
+  }
+  return deviceDetectionManager;
+}
+
 function runDeviceDetection() {
-  return deviceDetectionManager?.runDeviceDetection();
+  return initializeDeviceDetectionManager().runDeviceDetection();
 }
 
 function autoRedetectOnVersionChange() {
-  return deviceDetectionManager?.autoRedetectOnVersionChange();
+  return initializeDeviceDetectionManager().autoRedetectOnVersionChange();
 }
 
 function reportDeviceCompatibility() {
-  return deviceDetectionManager?.reportDeviceCompatibility();
+  return initializeDeviceDetectionManager().reportDeviceCompatibility();
 }
 
 function testDeviceDetection() {
-  return deviceDetectionManager?.testDeviceDetection();
+  return initializeDeviceDetectionManager().testDeviceDetection();
 }
 
 // Make functions globally accessible
 if (typeof window !== 'undefined') {
+  window.DeviceDetectionManager = DeviceDetectionManager;
+  window.deviceDetectionManager = initializeDeviceDetectionManager();
   window.runDeviceDetection = runDeviceDetection;
   window.autoRedetectOnVersionChange = autoRedetectOnVersionChange;
   window.reportDeviceCompatibility = reportDeviceCompatibility;
