@@ -43,12 +43,14 @@ async function runModuleTests(page, moduleName) {
         // Wait for results (increased timeout for statsPanel with 27 tests)
         await page.waitForSelector('h3:has-text("Results:")', { timeout: 45000 });
 
-        // Extract summary
-        const summary = await page.textContent('h3:last-of-type');
+        // Extract summary (h3 with "Results:" text)
+        const summary = await page.textContent('h3:has-text("Results:")');
 
-        // Extract individual test results
-        const passedTests = await page.$$eval('.result.pass', els => els.length);
-        const failedTests = await page.$$eval('.result.fail', els => els.length);
+        // Parse passed/total from summary text (e.g., "Results: 27/27 tests passed (100%)")
+        const match = summary.match(/(\d+)\/(\d+)/);
+        const passedTests = match ? parseInt(match[1]) : 0;
+        const totalTests = match ? parseInt(match[2]) : 0;
+        const failedTests = totalTests - passedTests;
 
         // Get failed test details if any
         let failedDetails = [];

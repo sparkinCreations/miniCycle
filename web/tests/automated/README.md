@@ -110,17 +110,17 @@ The automated runner uses **Playwright** to:
 
 ## 📊 Current Test Coverage
 
-The automated runner tests **6 modules** with **124 tests total**:
+The automated runner tests **6 modules** with **148 tests total**:
 
 | Module | Tests | Description |
 |--------|-------|-------------|
-| ThemeManager | 25 | Theme system and dark mode |
-| DeviceDetection | 15 | Device capability detection |
+| ThemeManager | 18 | Theme system and dark mode |
+| DeviceDetection | 17 | Device capability detection |
 | CycleLoader | 11 | Data loading and migration |
 | StatsPanel | 27 | Statistics panel and view switching |
-| GlobalUtils | 28 | Utility functions and helpers |
-| Notifications | 18 | Notification system |
-| **Total** | **124** | **All modules** |
+| GlobalUtils | 36 | Utility functions and helpers |
+| Notifications | 39 | Notification system |
+| **Total** | **148** | **All modules** |
 
 ---
 
@@ -134,34 +134,34 @@ The automated runner tests **6 modules** with **124 tests total**:
 🌐 Launching browser...
 
 🧪 Testing themeManager...
-   ✅ Results: 25/25 tests passed
+   ✅ Results: 18/18 tests passed (100%)
 
 🧪 Testing deviceDetection...
-   ✅ Results: 15/15 tests passed
+   ✅ Results: 17/17 tests passed (100%)
 
 🧪 Testing cycleLoader...
    ✅ Results: 11/11 tests passed
 
 🧪 Testing statsPanel...
-   ✅ Results: 27/27 tests passed
+   ✅ Results: 27/27 tests passed (100%)
 
 🧪 Testing globalUtils...
-   ✅ Results: 28/28 tests passed
+   ✅ Results: 36/36 tests passed (100%)
 
 🧪 Testing notifications...
-   ✅ Results: 18/18 tests passed
+   ✅ Results: 39/39 tests passed (100%)
 
 ============================================================
-📊 Test Summary (4.2s)
+📊 Test Summary (12.07s)
 ============================================================
-   ✅ PASS themeManager         25/25 tests
-   ✅ PASS deviceDetection      15/15 tests
+   ✅ PASS themeManager         18/18 tests
+   ✅ PASS deviceDetection      17/17 tests
    ✅ PASS cycleLoader          11/11 tests
    ✅ PASS statsPanel           27/27 tests
-   ✅ PASS globalUtils          28/28 tests
-   ✅ PASS notifications        18/18 tests
+   ✅ PASS globalUtils          36/36 tests
+   ✅ PASS notifications        39/39 tests
 ============================================================
-🎉 All tests passed! (124/124 - 100%)
+🎉 All tests passed! (148/148 - 100%)
 ============================================================
 ```
 
@@ -441,7 +441,7 @@ python3 -m http.server 8080 &
 # 2. Run all automated tests
 node tests/automated/run-browser-tests.js
 
-# 3. Verify 124/124 tests pass
+# 3. Verify 148/148 tests pass
 # 4. Commit with confidence
 git add .
 git commit -m "feat: Add new feature with tests"
@@ -486,7 +486,7 @@ killall python3
 │  Automated Test     │
 │  (Headless CLI)     │
 │  - Verify all pass  │
-│  - 124/124 tests    │
+│  - 148/148 tests    │
 └──────┬──────────────┘
        │
        ▼
@@ -655,7 +655,7 @@ const results = await Promise.all(
 ✅ **Clean repository** - No dependency bloat
 ✅ **Professional workflow** - Industry-standard setup
 ✅ **Zero duplication** - One test suite, two modes
-✅ **124 tests** - Comprehensive coverage
+✅ **148 tests** - Comprehensive coverage
 ✅ **6 modules** - All core functionality tested
 
 **No build step. No configuration. Just works.** 🚀
@@ -672,5 +672,5 @@ const results = await Promise.all(
 ---
 
 **Last Updated**: October 8, 2025
-**Test Coverage**: 124 tests across 6 modules
+**Test Coverage**: 148 tests across 6 modules
 **Maintained By**: sparkinCreations

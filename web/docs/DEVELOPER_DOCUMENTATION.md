@@ -2142,13 +2142,14 @@ Current module test coverage:
 
 | Module | Test File | Tests | Status |
 |--------|-----------|-------|--------|
-| GlobalUtils | `globalUtils.tests.js` | 28 | ✅ |
-| ThemeManager | `themeManager.tests.js` | 25 | ✅ |
-| DeviceDetection | `deviceDetection.tests.js` | 15 | ✅ |
-| CycleLoader | `cycleLoader.tests.js` | 12 | ✅ |
-| Notifications | `notifications.tests.js` | 18 | ✅ |
+| GlobalUtils | `globalUtils.tests.js` | 36 | ✅ |
+| ThemeManager | `themeManager.tests.js` | 18 | ✅ |
+| DeviceDetection | `deviceDetection.tests.js` | 17 | ✅ |
+| CycleLoader | `cycleLoader.tests.js` | 11 | ✅ |
+| StatsPanel | `statsPanel.tests.js` | 27 | ✅ |
+| Notifications | `notifications.tests.js` | 39 | ✅ |
 
-**Total: 98 tests across 5 modules**
+**Total: 148 tests across 6 modules**
 
 ### Tips for Writing Good Tests
 

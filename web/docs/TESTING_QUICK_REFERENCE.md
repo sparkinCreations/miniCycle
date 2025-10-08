@@ -311,13 +311,13 @@ function test(name, testFn) {
 
 | Module | Tests | Status |
 |--------|-------|--------|
-| GlobalUtils | 28 | ✅ |
-| ThemeManager | 25 | ✅ |
-| DeviceDetection | 15 | ✅ |
+| GlobalUtils | 36 | ✅ |
+| ThemeManager | 18 | ✅ |
+| DeviceDetection | 17 | ✅ |
 | CycleLoader | 11 | ✅ |
 | StatsPanel | 27 | ✅ |
-| Notifications | 18 | ✅ |
-| **Total** | **124** | **✅** |
+| Notifications | 39 | ✅ |
+| **Total** | **148** | **✅** |
 
 ---
 
