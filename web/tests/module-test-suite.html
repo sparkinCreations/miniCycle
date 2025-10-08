@@ -24,8 +24,10 @@
             <option value="">-- Select Module --</option>
             <option value="themeManager">ThemeManager</option>
             <option value="globalUtils">GlobalUtils</option>
+            <option value="notifications">Notifications</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
+        <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
     <div id="results"></div>
@@ -33,18 +35,20 @@
     <!-- Test Elements -->
     <div id="test-element" class="test-element">Test Element</div>
     <div id="test-element-2" class="test-element">Test Element 2</div>
-    <div class="selector-test">Selector 1</div>
-    <div class="selector-test">Selector 2</div>
-    <div class="selector-test">Selector 3</div>
+    <div class="selector-test test-element">Selector 1</div>
+    <div class="selector-test test-element">Selector 2</div>
+    <div class="selector-test test-element">Selector 3</div>
 
     <script type="module">
         import { runThemeManagerTests } from './themeManager.tests.js';
         import { runGlobalUtilsTests } from './globalUtils.tests.js';
+        import { runNotificationsTests } from './notifications.tests.js';
 
         let currentModule = null;
 
         const moduleSelect = document.getElementById('module-select');
         const runTestsBtn = document.getElementById('run-tests-btn');
+        const copyResultsBtn = document.getElementById('copy-results-btn');
         const resultsDiv = document.getElementById('results');
 
         // Load selected module
@@ -63,6 +67,10 @@
                     await import('../utilities/globalUtils.js');
                     currentModule = 'globalUtils';
                     resultsDiv.innerHTML = '<p>✅ GlobalUtils loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'notifications') {
+                    await import('../utilities/notifications.js');
+                    currentModule = 'notifications';
+                    resultsDiv.innerHTML = '<p>✅ Notifications loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -80,8 +88,72 @@
                 runThemeManagerTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
                 runGlobalUtilsTests(resultsDiv);
+            } else if (currentModule === 'notifications') {
+                runNotificationsTests(resultsDiv);
+            }
+
+            // Show copy button after tests run
+            copyResultsBtn.style.display = 'inline-block';
+        });
+
+        // Copy results to clipboard
+        copyResultsBtn.addEventListener('click', async () => {
+            try {
+                const textResults = convertResultsToText();
+                await navigator.clipboard.writeText(textResults);
+
+                // Show feedback
+                const originalText = copyResultsBtn.textContent;
+                copyResultsBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    copyResultsBtn.textContent = originalText;
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                alert('Failed to copy results to clipboard');
             }
         });
+
+        // Convert HTML results to plain text format
+        function convertResultsToText() {
+            const h2 = resultsDiv.querySelector('h2');
+            const h3 = resultsDiv.querySelector('h3');
+            const sections = resultsDiv.querySelectorAll('.test-section');
+            const results = resultsDiv.querySelectorAll('.result');
+            const summary = resultsDiv.querySelector('h3:last-of-type');
+
+            let text = '='.repeat(60) + '\n';
+            text += h2 ? h2.textContent + '\n' : 'Test Results\n';
+            text += '='.repeat(60) + '\n\n';
+
+            if (h3 && h3.textContent.includes('Running')) {
+                // Skip the "Running tests..." message
+            }
+
+            let currentSection = '';
+            results.forEach(result => {
+                // Check if there's a section header before this result
+                const prevSibling = result.previousElementSibling;
+                if (prevSibling && prevSibling.classList.contains('test-section')) {
+                    currentSection = prevSibling.textContent;
+                    text += '\n' + currentSection + '\n';
+                    text += '-'.repeat(currentSection.length) + '\n';
+                }
+
+                // Add the test result
+                const isPassing = result.classList.contains('pass');
+                const symbol = isPassing ? '✅' : '❌';
+                text += symbol + ' ' + result.textContent + '\n';
+            });
+
+            text += '\n' + '='.repeat(60) + '\n';
+            if (summary) {
+                text += summary.textContent + '\n';
+            }
+            text += '='.repeat(60) + '\n';
+
+            return text;
+        }
     </script>
 </body>
 </html>

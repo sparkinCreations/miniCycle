@@ -102,6 +102,7 @@ resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
 - ✅ **ThemeManager** - Theme application, dark mode, storage
 - ✅ **GlobalUtils** - DOM helpers, event listeners, utilities
+- ✅ **Notifications** - Show/hide, tips, dragging, modals, position management
 
 ## 💡 Tips
 
