@@ -119,17 +119,29 @@ export class DeviceDetectionManager {
       return;
     }
     
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    if (!fullSchemaData.settings) fullSchemaData.settings = {};
-    
-    fullSchemaData.settings.deviceCompatibility = {
-      ...compatibilityData,
-      lastDetectionVersion: this.currentVersion,
-      detectionDate: new Date().toISOString()
-    };
-    
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    try {
+      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+      if (!fullSchemaData) {
+        console.error('❌ No Schema 2.5 data found in localStorage');
+        return;
+      }
+      
+      if (!fullSchemaData.settings) fullSchemaData.settings = {};
+      
+      fullSchemaData.settings.deviceCompatibility = {
+        ...compatibilityData,
+        lastDetectionVersion: this.currentVersion,
+        detectionDate: new Date().toISOString()
+      };
+      
+      // Ensure metadata exists and update timestamp
+      if (!fullSchemaData.metadata) fullSchemaData.metadata = {};
+      fullSchemaData.metadata.lastModified = Date.now();
+      
+      localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    } catch (error) {
+      console.error('❌ Error saving compatibility data:', error);
+    }
   }
 
   redirectToLite() {

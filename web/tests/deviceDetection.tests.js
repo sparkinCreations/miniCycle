@@ -212,10 +212,17 @@ export function runDeviceDetectionTests(resultsDiv) {
         const originalData = JSON.parse(localStorage.getItem('miniCycleData'));
         const originalTimestamp = originalData.metadata.lastModified;
         
-        // Small delay to ensure timestamp difference
+        // Add small delay to ensure timestamp difference is detectable
+        const delayedTimestamp = Date.now() + 1;
+        
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
         });
+        
+        // Ensure some time passes before saving
+        while (Date.now() < delayedTimestamp) {
+            // Small busy wait to ensure time passes
+        }
         
         manager.saveCompatibilityData({
             shouldUseLite: true,
@@ -224,7 +231,7 @@ export function runDeviceDetectionTests(resultsDiv) {
         
         const updatedData = JSON.parse(localStorage.getItem('miniCycleData'));
         
-        if (updatedData.metadata.lastModified <= originalTimestamp) {
+        if (!updatedData.metadata || updatedData.metadata.lastModified <= originalTimestamp) {
             throw new Error('Schema 2.5 timestamp not updated');
         }
     });

@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#5680ff">
-    <title>🧪 miniCycle Module Test Suite</title>
+    <t        import { runThemeManagerTests } from './themeManager.test.js';
+        import { runDeviceDetectionTests } from './deviceDetection.tests.js';
+        import { runCycleLoaderTests } from './cycleLoader.tests.simple.js';
+        import { runGlobalUtilsTests } from './globalUtils.tests.js';
+        import { runNotificationsTests } from './notifications.tests.js';>🧪 miniCycle Module Test Suite</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
@@ -196,6 +200,7 @@
             <option value="">-- Select Module --</option>
             <option value="themeManager">ThemeManager</option>
             <option value="deviceDetection">DeviceDetection</option>
+            <option value="cycleLoader">CycleLoader</option>
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
         </select>
@@ -241,6 +246,10 @@
                     await import('../utilities/deviceDetection.js');
                     currentModule = 'deviceDetection';
                     resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'cycleLoader') {
+                    await import('../utilities/cycleLoader.js');
+                    currentModule = 'cycleLoader';
+                    resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
                     await import('../utilities/globalUtils.js');
                     currentModule = 'globalUtils';
@@ -266,6 +275,8 @@
                 runThemeManagerTests(resultsDiv);
             } else if (currentModule === 'deviceDetection') {
                 runDeviceDetectionTests(resultsDiv);
+            } else if (currentModule === 'cycleLoader') {
+                runCycleLoaderTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
                 runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {
