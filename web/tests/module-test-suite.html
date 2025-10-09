@@ -200,6 +200,8 @@
             <option value="statsPanel">StatsPanel</option>
             <option value="consoleCapture">ConsoleCapture</option>
             <option value="state">State</option>
+            <option value="recurringCore">RecurringCore</option>
+            <option value="recurringIntegration">RecurringIntegration</option>
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
         </select>
@@ -223,6 +225,8 @@
         import { runStatsPanelTests } from './statsPanel.tests.js';
         import { runConsoleCaptureTests } from './consoleCapture.tests.js';
         import { runStateTests } from './state.tests.js';
+        import { runRecurringCoreTests } from './recurringCore.tests.js';
+        import { runRecurringIntegrationTests } from './recurringIntegration.tests.js';
         import { runGlobalUtilsTests } from './globalUtils.tests.js';
         import { runNotificationsTests } from './notifications.tests.js';
 
@@ -265,6 +269,14 @@
                     await import('../utilities/state.js');
                     currentModule = 'state';
                     resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringCore') {
+                    await import('../utilities/recurringCore.js');
+                    currentModule = 'recurringCore';
+                    resultsDiv.innerHTML = '<p>✅ RecurringCore loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringIntegration') {
+                    await import('../utilities/recurringIntegration.js');
+                    currentModule = 'recurringIntegration';
+                    resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
                     await import('../utilities/globalUtils.js');
                     currentModule = 'globalUtils';
@@ -298,6 +310,10 @@
                 runConsoleCaptureTests(resultsDiv);
             } else if (currentModule === 'state') {
                 runStateTests(resultsDiv);
+            } else if (currentModule === 'recurringCore') {
+                runRecurringCoreTests(resultsDiv);
+            } else if (currentModule === 'recurringIntegration') {
+                runRecurringIntegrationTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
                 runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {
