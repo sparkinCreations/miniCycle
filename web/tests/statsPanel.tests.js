@@ -19,13 +19,20 @@ function createMockAppState(mockData) {
     };
 }
 
-export function runStatsPanelTests(resultsDiv) {
+export async function runStatsPanelTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>📊 StatsPanel Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    function test(name, testFn) {
+    // ✅ CRITICAL: Mark core as ready for test environment
+    // This allows StatsPanelManager to initialize without hanging
+    if (window.appInit && !window.appInit.isCoreReady()) {
+        await window.appInit.markCoreSystemsReady();
+        console.log('✅ Test environment: AppInit core systems marked as ready');
+    }
+
+    async function test(name, testFn) {
         total.count++;
         try {
             // Create fresh mock Schema 2.5 data for each test
@@ -68,7 +75,7 @@ export function runStatsPanelTests(resultsDiv) {
             // Create minimal DOM structure for tests
             createTestDOM();
 
-            testFn();
+            await testFn();
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -84,7 +91,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    test('creates instance successfully', () => {
+    await test('creates instance successfully', () => {
         const statsPanel = new StatsPanelManager();
 
         if (!statsPanel || typeof statsPanel.updateStatsPanel !== 'function') {
@@ -92,7 +99,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('accepts dependency injection', () => {
+    await test('accepts dependency injection', () => {
         const mockDeps = {
             showNotification: (msg) => msg,
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
@@ -106,7 +113,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('caches DOM elements', () => {
+    await test('caches DOM elements', () => {
         const statsPanel = new StatsPanelManager();
 
         if (!statsPanel.elements || typeof statsPanel.elements !== 'object') {
@@ -114,7 +121,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('initializes with correct state', () => {
+    await test('initializes with correct state', () => {
         const statsPanel = new StatsPanelManager();
         const state = statsPanel.getState();
 
@@ -130,7 +137,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === VIEW SWITCHING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">👁️ View Switching</h4>';
 
-    test('shows task view correctly', () => {
+    await test('shows task view correctly', () => {
         const statsPanel = new StatsPanelManager();
         statsPanel.showTaskView();
 
@@ -150,7 +157,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('shows stats panel correctly', () => {
+    await test('shows stats panel correctly', () => {
         const statsPanel = new StatsPanelManager();
         statsPanel.showStatsPanel();
 
@@ -170,7 +177,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('toggles between views', () => {
+    await test('toggles between views', () => {
         const statsPanel = new StatsPanelManager();
 
         statsPanel.showStatsPanel();
@@ -187,7 +194,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === STATS CALCULATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📈 Stats Calculation</h4>';
 
-    test('calculates task statistics correctly', () => {
+    await test('calculates task statistics correctly', async () => {
         // Add some test tasks to DOM
         const taskList = document.getElementById('taskList');
         taskList.innerHTML = `
@@ -200,7 +207,7 @@ export function runStatsPanelTests(resultsDiv) {
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
         });
 
-        statsPanel.updateStatsPanel();
+        await statsPanel.updateStatsPanel();
 
         const totalTasks = document.getElementById('total-tasks');
         const completedTasks = document.getElementById('completed-tasks');
@@ -214,7 +221,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('updates completion rate correctly', () => {
+    await test('updates completion rate correctly', async () => {
         const taskList = document.getElementById('taskList');
         taskList.innerHTML = `
             <div class="task"><input type="checkbox" checked /></div>
@@ -225,7 +232,7 @@ export function runStatsPanelTests(resultsDiv) {
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
         });
 
-        statsPanel.updateStatsPanel();
+        await statsPanel.updateStatsPanel();
 
         const completionRate = document.getElementById('completion-rate');
         if (completionRate.textContent !== '50.0%') {
@@ -233,7 +240,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('displays cycle count from state', () => {
+    await test('displays cycle count from state', async () => {
         const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
         mockData.data.cycles.cycle1.cycleCount = 25;
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -242,7 +249,7 @@ export function runStatsPanelTests(resultsDiv) {
         window.AppState = createMockAppState(mockData);
 
         const statsPanel = new StatsPanelManager();
-        statsPanel.updateStatsPanel();
+        await statsPanel.updateStatsPanel();
 
         const cycleCount = document.getElementById('mini-cycle-count');
         if (cycleCount.textContent !== '25') {
@@ -250,12 +257,12 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('handles zero tasks gracefully', () => {
+    await test('handles zero tasks gracefully', async () => {
         const taskList = document.getElementById('taskList');
         taskList.innerHTML = '';
 
         const statsPanel = new StatsPanelManager();
-        statsPanel.updateStatsPanel();
+        await statsPanel.updateStatsPanel();
 
         const totalTasks = document.getElementById('total-tasks');
         const completionRate = document.getElementById('completion-rate');
@@ -272,7 +279,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === BADGE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🏆 Badge Updates</h4>';
 
-    test('updates badges based on cycle count', () => {
+    await test('updates badges based on cycle count', () => {
         const statsPanel = new StatsPanelManager();
         statsPanel.updateBadges(10);
 
@@ -288,7 +295,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('applies theme classes to unlocked badges', () => {
+    await test('applies theme classes to unlocked badges', () => {
         const statsPanel = new StatsPanelManager();
         statsPanel.updateBadges(50);
 
@@ -307,7 +314,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === THEME UNLOCK TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Unlock</h4>';
 
-    test('displays correct theme unlock messages', () => {
+    await test('displays correct theme unlock messages', () => {
         const statsPanel = new StatsPanelManager();
         const milestoneUnlocks = {
             darkOcean: false,
@@ -323,7 +330,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('shows unlocked message for completed milestones', () => {
+    await test('shows unlocked message for completed milestones', () => {
         const statsPanel = new StatsPanelManager();
         const milestoneUnlocks = {
             darkOcean: true,
@@ -343,7 +350,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('hides golden glow until ocean unlocked', () => {
+    await test('hides golden glow until ocean unlocked', () => {
         const statsPanel = new StatsPanelManager();
         const milestoneUnlocks = {
             darkOcean: false,
@@ -362,7 +369,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === NAVIGATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 Navigation</h4>';
 
-    test('updates navigation dots correctly', () => {
+    await test('updates navigation dots correctly', () => {
         const statsPanel = new StatsPanelManager();
 
         statsPanel.showTaskView();
@@ -378,7 +385,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('handles dot clicks', () => {
+    await test('handles dot clicks', () => {
         const statsPanel = new StatsPanelManager();
 
         statsPanel.handleDotClick(1);
@@ -395,21 +402,21 @@ export function runStatsPanelTests(resultsDiv) {
     // === FALLBACK TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Fallback Methods</h4>';
 
-    test('uses fallback notification when dependency missing', () => {
+    await test('uses fallback notification when dependency missing', () => {
         const statsPanel = new StatsPanelManager({});
 
         // Should not throw error
         statsPanel.dependencies.showNotification('Test message', 'info');
     });
 
-    test('uses fallback data loader when dependency missing', () => {
+    await test('uses fallback data loader when dependency missing', () => {
         const statsPanel = new StatsPanelManager({});
 
         // Should not throw error
         const data = statsPanel.dependencies.loadMiniCycleData();
     });
 
-    test('uses fallback overlay check when dependency missing', () => {
+    await test('uses fallback overlay check when dependency missing', () => {
         const statsPanel = new StatsPanelManager({});
 
         // Should not throw error
@@ -423,7 +430,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === STATE MANAGEMENT TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🗂️ State Management</h4>';
 
-    test('getState returns current state', () => {
+    await test('getState returns current state', () => {
         const statsPanel = new StatsPanelManager();
         const state = statsPanel.getState();
 
@@ -436,7 +443,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('isStatsVisible returns correct value', () => {
+    await test('isStatsVisible returns correct value', () => {
         const statsPanel = new StatsPanelManager();
 
         if (statsPanel.isStatsVisible() !== false) {
@@ -449,7 +456,7 @@ export function runStatsPanelTests(resultsDiv) {
         }
     });
 
-    test('getModuleInfo returns module information', () => {
+    await test('getModuleInfo returns module information', () => {
         const statsPanel = new StatsPanelManager();
         const info = statsPanel.getModuleInfo();
 
@@ -469,7 +476,7 @@ export function runStatsPanelTests(resultsDiv) {
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    test('handles missing DOM elements gracefully', () => {
+    await test('handles missing DOM elements gracefully', () => {
         // Remove critical elements
         document.getElementById('stats-panel')?.remove();
         document.getElementById('task-view')?.remove();
@@ -481,7 +488,7 @@ export function runStatsPanelTests(resultsDiv) {
         statsPanel.showStatsPanel();
     });
 
-    test('handles updateStatsPanel without AppState', () => {
+    await test('handles updateStatsPanel without AppState', async () => {
         delete window.AppState;
 
         const statsPanel = new StatsPanelManager({
@@ -489,10 +496,10 @@ export function runStatsPanelTests(resultsDiv) {
         });
 
         // Should not throw error
-        statsPanel.updateStatsPanel();
+        await statsPanel.updateStatsPanel();
     });
 
-    test('handles updateStatsPanel with missing data', () => {
+    await test('handles updateStatsPanel with missing data', async () => {
         localStorage.removeItem('miniCycleData');
 
         const statsPanel = new StatsPanelManager({
@@ -500,7 +507,7 @@ export function runStatsPanelTests(resultsDiv) {
         });
 
         // Should not throw error
-        statsPanel.updateStatsPanel();
+        await statsPanel.updateStatsPanel();
     });
 
     // === RESULTS SUMMARY ===

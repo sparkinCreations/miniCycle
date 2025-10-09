@@ -50,6 +50,9 @@ class EventBus {
 
 /**
  * Base Plugin Class
+ *
+ * Integrated with AppInit for proper initialization timing.
+ * All plugins automatically wait for core systems before loading.
  */
 class MiniCyclePlugin {
     constructor(name, version = '1.0.0') {
@@ -59,9 +62,34 @@ class MiniCyclePlugin {
         this.initialized = false;
     }
 
+    /**
+     * Wait for core systems to be ready (AppState + cycle data)
+     * Plugins should call this before accessing AppState or cycle data
+     */
+    async waitForCore() {
+        if (window.appInit) {
+            await window.appInit.waitForCore();
+        } else {
+            console.warn(`⚠️ AppInit not available for plugin ${this.name}, may load before dependencies ready`);
+        }
+    }
+
+    /**
+     * Wait for full miniCycle app to be ready (all modules initialized)
+     */
+    async waitForApp() {
+        if (window.appInit) {
+            await window.appInit.waitForApp();
+        } else {
+            console.warn(`⚠️ AppInit not available for plugin ${this.name}`);
+        }
+    }
+
     // Lifecycle methods (override in your plugins)
     async onLoad() {
-        console.log(`🔌 Plugin ${this.name} loaded`);
+        // ✅ Automatically wait for core systems before plugin loads
+        await this.waitForCore();
+        console.log(`🔌 Plugin ${this.name} loaded (core systems ready)`);
     }
 
     async onUnload() {

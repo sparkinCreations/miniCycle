@@ -297,35 +297,35 @@
             }
         });
 
-        // Run tests
-        runTestsBtn.addEventListener('click', () => {
+        // Run tests (async to handle async test functions)
+        runTestsBtn.addEventListener('click', async () => {
             if (!currentModule) {
                 resultsDiv.innerHTML = '<div class="result fail">❌ Please select a module first</div>';
                 return;
             }
 
             if (currentModule === 'themeManager') {
-                runThemeManagerTests(resultsDiv);
+                await runThemeManagerTests(resultsDiv);
             } else if (currentModule === 'deviceDetection') {
-                runDeviceDetectionTests(resultsDiv);
+                await runDeviceDetectionTests(resultsDiv);
             } else if (currentModule === 'cycleLoader') {
-                runCycleLoaderTests(resultsDiv);
+                await runCycleLoaderTests(resultsDiv);
             } else if (currentModule === 'statsPanel') {
-                runStatsPanelTests(resultsDiv);
+                await runStatsPanelTests(resultsDiv);
             } else if (currentModule === 'consoleCapture') {
-                runConsoleCaptureTests(resultsDiv);
+                await runConsoleCaptureTests(resultsDiv);
             } else if (currentModule === 'state') {
-                runStateTests(resultsDiv);
+                await runStateTests(resultsDiv);
             } else if (currentModule === 'recurringCore') {
-                runRecurringCoreTests(resultsDiv);
+                await runRecurringCoreTests(resultsDiv);
             } else if (currentModule === 'recurringIntegration') {
-                runRecurringIntegrationTests(resultsDiv);
+                await runRecurringIntegrationTests(resultsDiv);
             } else if (currentModule === 'recurringPanel') {
-                runRecurringPanelTests(resultsDiv);
+                await runRecurringPanelTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
-                runGlobalUtilsTests(resultsDiv);
+                await runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {
-                runNotificationsTests(resultsDiv);
+                await runNotificationsTests(resultsDiv);
             }
 
             // Show copy button after tests run

@@ -303,6 +303,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
+
+  // ✅ Load AppInit for 2-phase initialization coordination
+  const { appInit } = await import('./utilities/appInitialization.js');
+  console.log('🚀 AppInit loaded');
+
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
 // ======================================================================
@@ -393,26 +398,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
-    
-    // ✅ Create a deferred stats update queue
-    window._deferredStatsUpdates = [];
-    
-    window.updateStatsPanel = () => {
-        const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
-        if (dataAvailable) {
-            // ✅ Check if AppState is ready before updating
-            if (window.AppState?.isReady?.()) {
-                return statsPanelManager.updateStatsPanel();
-            } else {
-                // ✅ Defer the update until AppState is ready
-                console.log('📊 Deferring stats update - AppState not ready yet');
-                window._deferredStatsUpdates.push(() => statsPanelManager.updateStatsPanel());
-                return;
-            }
-        } else {
-            console.log('📊 Skipping stats update - data not ready');
-        }
-    };
+
+    // ✅ NEW: updateStatsPanel is now async and waits for core
+    window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
     console.log('📊 StatsPanelManager global functions updated');
     
     // Centralized overlay detection for UI state management
@@ -681,6 +669,9 @@ AppInit.onReady(async () => {
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
+        // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
+        await appInit.markCoreSystemsReady();
+
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
 
@@ -750,21 +741,8 @@ AppInit.onReady(async () => {
     window.AppState = null;
   }
 
-  // ✅ Give AppState a moment to fully initialize before other modules try to use it
-  await new Promise(resolve => setTimeout(resolve, 50));
-
-  // ✅ Process any deferred stats updates now that AppState is ready
-  if (window._deferredStatsUpdates && window._deferredStatsUpdates.length > 0) {
-    console.log(`📊 Processing ${window._deferredStatsUpdates.length} deferred stats updates`);
-    window._deferredStatsUpdates.forEach(updateFn => {
-      try {
-        updateFn();
-      } catch (error) {
-        console.warn('⚠️ Deferred stats update failed:', error);
-      }
-    });
-    window._deferredStatsUpdates = []; // Clear the queue
-  }
+  // ✅ REMOVED: No more setTimeout hacks - InitGuard handles timing
+  // ✅ REMOVED: No more deferred queue processing - modules wait for core
 
   // ✅ Process any deferred recurring setups now that AppState is ready
   if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {

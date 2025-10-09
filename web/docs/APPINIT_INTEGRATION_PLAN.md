@@ -1,4 +1,4 @@
-# InitGuard Integration Plan
+# AppInit Integration Plan
 **Status:** Implementation Ready
 **Date:** October 9, 2025
 
@@ -14,18 +14,18 @@ Replace all race condition hacks with clean 2-phase initialization:
 - ❌ Line 757-767: Manual deferred queue processing
 - ❌ Line 727-734: Another setTimeout(50ms) hack for undo snapshot
 
-### **InitGuard Solution:**
+### **AppInit Solution:**
 - ✅ Phase 1 (Core): AppState + Data loaded
 - ✅ Phase 2 (App): All modules initialized
-- ✅ Modules use `await initGuard.waitForCore()` instead of deferred queues
+- ✅ Modules use `await appInit.waitForCore()` instead of deferred queues
 - ✅ Plugin support built-in for future extensibility
 
 ---
 
 ## 📋 Implementation Steps
 
-### **Step 1: Import InitGuard** ✅ DONE
-Created `/utilities/initGuard.js` with:
+### **Step 1: Import AppInit** ✅ DONE
+Created `/utilities/appInit.js` with:
 - 2-phase system (core + app)
 - Plugin registry
 - Hook system (beforeCore, afterCore, beforeApp, afterApp)
@@ -39,7 +39,7 @@ Created `/utilities/initGuard.js` with:
 
 ```javascript
 // ADD at top of DOMContentLoaded (after line 301)
-import { initGuard } from './utilities/initGuard.js';
+import { appInit } from './utilities/appInit.js';
 
 // CURRENT (lines 348-416):
 await import('./utilities/globalUtils.js');
@@ -65,7 +65,7 @@ await window.AppState.init();
 await loadMiniCycleData(); // or whatever your data load function is
 
 // 1D: Mark core ready (CRITICAL - unblocks all waiting modules)
-await initGuard.markCoreReady();
+await appInit.markCoreSystemsReady();
 console.log('✅ Core ready - modules can now safely access AppState and data');
 
 // ============ PHASE 2: MODULES ============
@@ -79,7 +79,7 @@ await Promise.all([
 ]);
 
 // Mark app ready
-await initGuard.markAppReady();
+await appInit.markAppReady();
 
 // ============ PHASE 3: UI ============
 refreshUIFromState();
@@ -102,7 +102,7 @@ updateStatsPanel();
 
 ```javascript
 // ADD import at top
-import { initGuard } from './initGuard.js';
+import { appInit } from './appInit.js';
 
 // CURRENT updateStatsPanel() (has no async/await):
 updateStatsPanel() {
@@ -114,7 +114,7 @@ updateStatsPanel() {
 // NEW updateStatsPanel():
 async updateStatsPanel() {
     // Wait for core if needed
-    await initGuard.waitForCore();
+    await appInit.waitForCore();
 
     // Now safe to access AppState
     const state = this.deps.loadData();
@@ -125,7 +125,7 @@ async updateStatsPanel() {
 **Also update init():**
 ```javascript
 async init() {
-    await initGuard.waitForCore();
+    await appInit.waitForCore();
     // Rest of init logic
 }
 ```
@@ -138,7 +138,7 @@ async init() {
 
 ```javascript
 // ADD import
-import { initGuard } from './initGuard.js';
+import { appInit } from './appInit.js';
 
 // CURRENT watchRecurringTasks():
 function watchRecurringTasks() {
@@ -151,11 +151,11 @@ function watchRecurringTasks() {
 // NEW watchRecurringTasks():
 async function watchRecurringTasks() {
     // Don't start watching until core is ready
-    await initGuard.waitForCore();
+    await appInit.waitForCore();
 
     setInterval(() => {
         // Safe to check - core was ready when watcher started
-        if (initGuard.isCoreReady()) {
+        if (appInit.isCoreReady()) {
             checkAndRecreateRecurringTasks();
         }
     }, 30000);
@@ -170,18 +170,18 @@ async function watchRecurringTasks() {
 
 ```javascript
 // ADD import
-import { initGuard } from './initGuard.js';
+import { appInit } from './appInit.js';
 
 // Update methods that access AppState:
 async updateRecurringPanel() {
-    await initGuard.waitForCore();
+    await appInit.waitForCore();
     // Safe to proceed
     const state = this.deps.getAppState();
     // ...
 }
 
 async openPanel() {
-    await initGuard.waitForCore();
+    await appInit.waitForCore();
     // Safe to open panel
     // ...
 }
@@ -195,7 +195,7 @@ async openPanel() {
 
 ```javascript
 // ADD import
-import { initGuard } from './initGuard.js';
+import { appInit } from './appInit.js';
 
 // CURRENT initializeRecurringModules():
 export async function initializeRecurringModules() {
@@ -209,7 +209,7 @@ export async function initializeRecurringModules() {
 // NEW initializeRecurringModules():
 export async function initializeRecurringModules() {
     // Wait for core instead of checking
-    await initGuard.waitForCore();
+    await appInit.waitForCore();
 
     // Now safe to proceed - no need for checks
     // ...
@@ -229,8 +229,8 @@ export async function initializeRecurringModules() {
 - [ ] Defensive `if (window.AppState?.isReady())` checks (replace with await)
 
 ### **Replace These:**
-- [ ] `if (!AppState.isReady()) { defer(); return; }` → `await initGuard.waitForCore()`
-- [ ] `setTimeout(() => { ... }, 50)` → `await initGuard.waitForCore()`
+- [ ] `if (!AppState.isReady()) { defer(); return; }` → `await appInit.waitForCore()`
+- [ ] `setTimeout(() => { ... }, 50)` → `await appInit.waitForCore()`
 - [ ] Manual queue processing → Module methods are now async and wait properly
 
 ---
@@ -240,7 +240,7 @@ export async function initializeRecurringModules() {
 ### **Phase 1: Verify Core Phase**
 1. Open browser console
 2. Check logs: `✅ Core ready` should appear after AppState init
-3. Run: `initGuard.printStatus()` - should show `coreReady: true`
+3. Run: `appInit.printStatus()` - should show `coreReady: true`
 
 ### **Phase 2: Verify Module Wait**
 1. Add console.log in statsPanel before/after waitForCore
@@ -267,7 +267,7 @@ export async function initializeRecurringModules() {
 
 ## 🔌 Future: Plugin Examples
 
-Once InitGuard is integrated, adding plugins is trivial:
+Once AppInit is integrated, adding plugins is trivial:
 
 ### **Example: Analytics Plugin**
 ```javascript
@@ -279,7 +279,7 @@ export class AnalyticsPlugin {
     }
 
     async init() {
-        await initGuard.waitForCore();
+        await appInit.waitForCore();
 
         // Track state changes
         window.AppState.subscribe('tasks', (newState) => {
@@ -298,14 +298,14 @@ export class AnalyticsPlugin {
 // In main script:
 import { AnalyticsPlugin } from './plugins/analytics.js';
 const analytics = new AnalyticsPlugin();
-initGuard.registerPlugin('analytics', analytics);
+appInit.registerPlugin('analytics', analytics);
 await analytics.init();
 ```
 
 ### **Example: Using Hooks**
 ```javascript
 // Add a hook to run after core ready
-initGuard.addHook('afterCore', async () => {
+appInit.addHook('afterCore', async () => {
     console.log('🎉 Core is ready, doing custom initialization');
     await myCustomSetup();
 });
@@ -331,7 +331,7 @@ initGuard.addHook('afterCore', async () => {
 - One clear initialization pattern
 - Easy to add new modules (just await core)
 - Plugin system for future extensibility
-- Clear debug info: `initGuard.printStatus()`
+- Clear debug info: `appInit.printStatus()`
 
 ### **Reliability:**
 - No race conditions
@@ -343,7 +343,7 @@ initGuard.addHook('afterCore', async () => {
 
 ## 🚀 Implementation Order
 
-1. ✅ **Day 1 Morning:** Create InitGuard (DONE)
+1. ✅ **Day 1 Morning:** Create AppInit (DONE)
 2. ⏳ **Day 1 Afternoon:** Integrate into main script
 3. ⏳ **Day 2 Morning:** Update statsPanel, deviceDetection
 4. ⏳ **Day 2 Afternoon:** Update recurring system (core + panel + integration)
@@ -357,7 +357,7 @@ initGuard.addHook('afterCore', async () => {
 
 - [ ] No `window._deferredStatsUpdates` in codebase
 - [ ] No `setTimeout(..., 50)` for AppState timing
-- [ ] All modules use `await initGuard.waitForCore()`
+- [ ] All modules use `await appInit.waitForCore()`
 - [ ] Hard refresh works perfectly (no race conditions)
 - [ ] Console shows clean phase progression
 - [ ] Stats panel loads on first try

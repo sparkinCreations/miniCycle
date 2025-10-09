@@ -1,16 +1,16 @@
 /**
- * InitGuard - 2-Phase Initialization Coordinator with Plugin Support
+ * AppInit - 2-Phase Initialization Coordinator for miniCycle
  *
- * Solves race conditions by coordinating module initialization:
- * - Phase 1 (Core): AppState + Data loaded
- * - Phase 2 (App): All modules initialized
+ * Solves race conditions by coordinating miniCycle module initialization:
+ * - Phase 1 (Core Systems): AppState + cycle data loaded
+ * - Phase 2 (App Ready): All miniCycle modules initialized
  *
- * Also provides basic plugin support with hooks.
+ * Also provides plugin support with lifecycle hooks for extensibility.
  *
  * @version 1.0.0
  */
 
-class InitGuard {
+class AppInit {
     constructor() {
         // Phase tracking
         this.coreReady = false;
@@ -36,14 +36,15 @@ class InitGuard {
         this.phaseTimings = {};
     }
 
-    // ========== PHASE 1: CORE READY ==========
+    // ========== PHASE 1: CORE SYSTEMS READY ==========
 
     /**
-     * Mark core systems as ready (AppState + data loaded)
+     * Mark core systems as ready (AppState + cycle data loaded)
+     * Call this after AppState.init() completes in miniCycle-scripts.js
      */
-    async markCoreReady() {
+    async markCoreSystemsReady() {
         if (this.coreReady) {
-            console.warn('⚠️ Core already marked as ready');
+            console.warn('⚠️ Core systems already marked as ready');
             return;
         }
 
@@ -60,7 +61,7 @@ class InitGuard {
             this._coreResolve();
         }
 
-        console.log(`✅ Core ready (${this.phaseTimings.core}ms)`);
+        console.log(`✅ Core systems ready (${this.phaseTimings.core}ms)`);
 
         // Run after-core hooks
         await this.runHooks('afterCore');
@@ -70,8 +71,8 @@ class InitGuard {
     }
 
     /**
-     * Wait for core systems to be ready
-     * Use this in modules that need AppState or data
+     * Wait for core systems to be ready (AppState + data)
+     * Use this in miniCycle modules that need AppState or cycle data
      */
     async waitForCore() {
         if (this.coreReady) {
@@ -85,12 +86,12 @@ class InitGuard {
             });
         }
 
-        console.log('⏳ Waiting for core...');
+        console.log('⏳ Waiting for core systems...');
         await this._corePromise;
     }
 
     /**
-     * Check if core is ready (synchronous)
+     * Check if core systems are ready (synchronous)
      */
     isCoreReady() {
         return this.coreReady;
@@ -99,11 +100,12 @@ class InitGuard {
     // ========== PHASE 2: APP READY ==========
 
     /**
-     * Mark full app as ready (all modules initialized)
+     * Mark full miniCycle app as ready (all modules initialized)
+     * Call this after all modules are loaded and initialized
      */
     async markAppReady() {
         if (this.appReady) {
-            console.warn('⚠️ App already marked as ready');
+            console.warn('⚠️ miniCycle app already marked as ready');
             return;
         }
 
@@ -121,7 +123,7 @@ class InitGuard {
             this._appResolve();
         }
 
-        console.log(`✅ App ready (${this.phaseTimings.app}ms) - Total: ${this.phaseTimings.total}ms`);
+        console.log(`✅ miniCycle app ready (${this.phaseTimings.app}ms) - Total: ${this.phaseTimings.total}ms`);
 
         // Run after-app hooks
         await this.runHooks('afterApp');
@@ -131,8 +133,8 @@ class InitGuard {
     }
 
     /**
-     * Wait for full app to be ready
-     * Use this for non-critical features that need everything
+     * Wait for full miniCycle app to be ready
+     * Use this for non-critical features that need all modules
      */
     async waitForApp() {
         if (this.appReady) {
@@ -146,12 +148,12 @@ class InitGuard {
             });
         }
 
-        console.log('⏳ Waiting for app...');
+        console.log('⏳ Waiting for miniCycle app...');
         await this._appPromise;
     }
 
     /**
-     * Check if app is ready (synchronous)
+     * Check if miniCycle app is ready (synchronous)
      */
     isAppReady() {
         return this.appReady;
@@ -160,7 +162,7 @@ class InitGuard {
     // ========== PLUGIN SYSTEM ==========
 
     /**
-     * Register a plugin
+     * Register a miniCycle plugin
      * Plugins can add hooks and extend functionality
      */
     registerPlugin(name, plugin) {
@@ -201,13 +203,13 @@ class InitGuard {
     }
 
     /**
-     * Add a hook callback
+     * Add a hook callback for miniCycle initialization lifecycle
      *
      * Available hooks:
-     * - beforeCore: Before core systems marked ready
-     * - afterCore: After core systems ready
-     * - beforeApp: Before app marked ready
-     * - afterApp: After app fully ready
+     * - beforeCore: Before core systems marked ready (before AppState + data)
+     * - afterCore: After core systems ready (after AppState + data)
+     * - beforeApp: Before miniCycle app marked ready (before all modules)
+     * - afterApp: After miniCycle app fully ready (after all modules)
      */
     addHook(hookName, callback) {
         if (!this.pluginHooks[hookName]) {
@@ -243,7 +245,7 @@ class InitGuard {
     // ========== DEBUG & UTILITIES ==========
 
     /**
-     * Get initialization status
+     * Get miniCycle initialization status
      */
     getStatus() {
         return {
@@ -260,8 +262,8 @@ class InitGuard {
      */
     printStatus() {
         const status = this.getStatus();
-        console.log('📊 InitGuard Status:', {
-            '✅ Core Ready': status.coreReady,
+        console.log('📊 miniCycle AppInit Status:', {
+            '✅ Core Systems Ready': status.coreReady,
             '✅ App Ready': status.appReady,
             '🔌 Plugins': status.pluginCount,
             '⏱️ Timings': status.timings,
@@ -271,9 +273,9 @@ class InitGuard {
 }
 
 // Create singleton instance
-export const initGuard = new InitGuard();
+export const appInit = new AppInit();
 
 // Expose globally for debugging and legacy code
-window.initGuard = initGuard;
+window.appInit = appInit;
 
-console.log('🛡️ InitGuard loaded - 2-phase initialization + plugin support ready');
+console.log('🚀 miniCycle AppInit loaded - 2-phase initialization + plugin support ready');

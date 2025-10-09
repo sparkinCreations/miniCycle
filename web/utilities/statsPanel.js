@@ -2,17 +2,19 @@
  * ==========================================
  * 📊 STATS PANEL MODULE WITH SWIPE SUPPORT
  * ==========================================
- * 
+ *
  * Manages the stats panel functionality including:
  * - Multi-platform swipe detection (touch, mouse, wheel, pointer)
  * - View switching between task view and stats panel
  * - Stats data calculation and display
  * - Theme unlock status management
  * - Navigation dot updates
- * 
+ *
  * @version 1.280
  * @author miniCycle Development Team
  */
+
+import { appInit } from './appInitialization.js';
 
 export class StatsPanelManager {
     constructor(dependencies = {}) {
@@ -56,23 +58,30 @@ export class StatsPanelManager {
         
         // Event handler bindings (for proper removal)
         this.boundHandlers = {};
-        
+
         console.log('📊 StatsPanelManager initializing...');
+
+        // ✅ Cache DOM elements synchronously (needed for tests)
+        this.cacheElements();
+
+        // ✅ Start async initialization (waits for core)
         this.init();
     }
 
     /**
      * Initialize the stats panel manager
      */
-    init() {
-        this.cacheElements();
+    async init() {
+        // ✅ Wait for core systems to be ready (AppState + data)
+        await appInit.waitForCore();
+
         this.setupEventListeners();
         this.initializeView();
-        
+
         // ✅ FIX: Listen for data-ready events to update stats on session load
         this.setupDataReadyListener();
-        
-        console.log('✅ StatsPanelManager initialized successfully');
+
+        console.log('✅ StatsPanelManager initialized successfully (core ready)');
     }
 
     /**
@@ -540,45 +549,34 @@ export class StatsPanelManager {
     /**
      * Update stats panel with current data
      */
-    updateStatsPanel() {
-        console.log('📊 Updating stats panel (state-based)...');
-        
+    async updateStatsPanel() {
+        console.log('📊 Updating stats panel...');
+
+        // ✅ Wait for core systems (AppState + data) to be ready
+        await appInit.waitForCore();
+
+        // ✅ Defensive check for test environment (AppState may be deleted during cleanup)
+        if (!window.AppState) {
+            console.warn('⚠️ AppState not available (test cleanup race condition)');
+            return;
+        }
+
         // Calculate current stats
         const totalTasks = document.querySelectorAll(".task").length;
         const completedTasks = document.querySelectorAll(".task input:checked").length;
         const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
-        
+
         let cycleCount = 0;
-        
-        // ✅ Use state-based data access
-        if (window.AppState?.isReady?.()) {
-            const currentState = window.AppState.get();
-            if (currentState) {
-                const { data, appState } = currentState;
-                const activeCycle = appState.activeCycleId;
-                const cycleData = data.cycles[activeCycle];
-                
-                if (activeCycle && cycleData) {
-                    cycleCount = cycleData.cycleCount || 0;
-                }
-            }
-        } else {
-            // ✅ Silent fallback during initialization (no warning spam)
-            if (window.AppBootStarted && Date.now() - window.AppBootStartTime < 5000) {
-                // App is still booting, silently use fallback
-            } else {
-                console.warn('⚠️ AppState not ready - using fallback data access');
-            }
-            
-            // Fallback to old method if state not ready
-            if (typeof this.dependencies.loadMiniCycleData === 'function') {
-                const schemaData = this.dependencies.loadMiniCycleData();
-                if (schemaData) {
-                    const { cycles, activeCycle } = schemaData;
-                    if (activeCycle && cycles[activeCycle]) {
-                        cycleCount = cycles[activeCycle].cycleCount || 0;
-                    }
-                }
+
+        // ✅ Safe to access AppState - core is guaranteed ready
+        const currentState = window.AppState.get();
+        if (currentState) {
+            const { data, appState } = currentState;
+            const activeCycle = appState.activeCycleId;
+            const cycleData = data.cycles[activeCycle];
+
+            if (activeCycle && cycleData) {
+                cycleCount = cycleData.cycleCount || 0;
             }
         }
 
@@ -592,7 +590,7 @@ export class StatsPanelManager {
         // Update badges and themes
         this.updateBadges(cycleCount);
         this.updateThemeUnlockStatus(cycleCount);
-        
+
         console.log('✅ Stats panel updated successfully');
     }
     /**
