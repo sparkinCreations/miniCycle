@@ -783,10 +783,14 @@ AppInit.onReady(async () => {
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
-  
+
   // ✅ Now that AppState is ready, setup arrow visibility
   updateMoveArrowsVisibility();
-  
+
+  // ✅ CRITICAL: Mark app as fully ready (Phase 2: All modules loaded)
+  await appInit.markAppReady();
+  console.log('✅ miniCycle initialization complete - app is ready');
+
   window.onload = () => {
     if (taskInput) {
       taskInput.focus();

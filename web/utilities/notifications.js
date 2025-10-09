@@ -1,18 +1,22 @@
 /**
  * 🔔 MiniCycle Notifications Module (Schema 2.5 only)
- * 
+ *
  * A comprehensive notification system with:
  * - Drag-enabled position persistence
  * - Educational tips management
  * - Recurring task notifications
  * - Modal dialogs (confirmation & prompt)
  * - Schema 2.5 data integration
- * 
+ *
  * Usage:
  *   import { MiniCycleNotifications } from './utilities/notifications.js';
  *   const notifications = new MiniCycleNotifications();
  *   notifications.show("Hello World!", "success", 3000);
+ *
+ * @requires AppInit (for initialization coordination)
  */
+
+import { appInit } from './appInitialization.js';
 
 /**
  * 🎓 Educational Tips Manager Class
@@ -396,14 +400,11 @@ export class MiniCycleNotifications {
   /**
    * 🔄 Reset notification position
    */
-  resetPosition() {
+  async resetPosition() {
     console.log("🔄 Resetting notification position (Schema 2.5 only)...");
 
-    // ✅ Use AppState for consistent state management
-    if (!window.AppState?.isReady()) {
-      console.error('❌ AppState not ready for reset');
-      throw new Error('AppState not initialized');
-    }
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
 
     // ✅ AppState.update() expects a function, not an object
     window.AppState.update((state) => {
@@ -457,14 +458,14 @@ restoreNotificationPosition(notificationContainer) {
 /**
  * 📍 Set smart default notification position
  */
-setDefaultPosition(notificationContainer) {
+async setDefaultPosition(notificationContainer) {
     // Get viewport dimensions
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    
+
     // Smart positioning based on screen size
     let defaultX, defaultY;
-    
+
     if (viewportWidth <= 768) {
         // Mobile: Center horizontally, avoid top menu area
         defaultX = Math.max(20, (viewportWidth - 320) / 2); // Assume 320px notification width
@@ -474,22 +475,23 @@ setDefaultPosition(notificationContainer) {
         defaultX = viewportWidth - 350; // 350px from right edge
         defaultY = 15; // Below potential menu area
     }
-    
+
     // Apply the position
     notificationContainer.style.top = `${defaultY}px`;
     notificationContainer.style.left = `${defaultX}px`;
     notificationContainer.style.right = "auto";
-    
+
     // Save this default position to Schema 2.5 so it persists
     try {
-        if (window.AppState?.isReady()) {
-            window.AppState.update((state) => {
-                if (state.settings) {
-                    state.settings.notificationPosition = { x: defaultX, y: defaultY };
-                    state.settings.notificationPositionModified = false; // Mark as default
-                }
-            }, true);
-        }
+        // ✅ Wait for core systems to be ready (AppState + data)
+        await appInit.waitForCore();
+
+        window.AppState.update((state) => {
+            if (state.settings) {
+                state.settings.notificationPosition = { x: defaultX, y: defaultY };
+                state.settings.notificationPositionModified = false; // Mark as default
+            }
+        }, true);
     } catch (error) {
         console.warn("⚠️ Failed to save default notification position:", error);
     }
@@ -546,13 +548,10 @@ setDefaultPosition(notificationContainer) {
     ];
 
     // Save position to Schema 2.5 via AppState
-    const savePositionToSchema25 = (x, y) => {
+    const savePositionToSchema25 = async (x, y) => {
       try {
-        // ✅ Use AppState to ensure position isn't overwritten by other saves
-        if (!window.AppState?.isReady()) {
-          console.error('❌ AppState not ready for saving notification position');
-          return;
-        }
+        // ✅ Wait for core systems to be ready (AppState + data)
+        await appInit.waitForCore();
 
         // ✅ AppState.update() expects a function, not an object
         window.AppState.update((state) => {
@@ -768,7 +767,7 @@ setDefaultPosition(notificationContainer) {
     }
 
     // Delegate clicks inside notification
-    notification.addEventListener("click", (e) => {
+    notification.addEventListener("click", async (e) => {
       e.stopPropagation();
 
       const taskId = e.target.dataset.taskId || 
@@ -796,12 +795,9 @@ setDefaultPosition(notificationContainer) {
         if (!selectedCircle || !taskId) return;
 
         const newFrequency = selectedCircle.dataset.freq;
-        
-        // ✅ Use AppState instead of loadMiniCycleData
-        if (!window.AppState?.isReady()) {
-          console.error('❌ AppState not ready for apply-quick-recurring');
-          return;
-        }
+
+        // ✅ Wait for core systems to be ready (AppState + data)
+        await appInit.waitForCore();
 
         const state = window.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
@@ -826,11 +822,8 @@ setDefaultPosition(notificationContainer) {
 
       // Handle advanced settings button
       if (e.target.classList.contains("open-recurring-settings") && taskId) {
-        // ✅ Use AppState instead of loadMiniCycleData
-        if (!window.AppState?.isReady()) {
-          console.error('❌ AppState not ready for open-recurring-settings');
-          return;
-        }
+        // ✅ Wait for core systems to be ready (AppState + data)
+        await appInit.waitForCore();
 
         const state = window.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;

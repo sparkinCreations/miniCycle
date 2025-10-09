@@ -3,7 +3,7 @@
  * Tests for the centralized state management system
  */
 
-import { createStateManager } from '../utilities/state.js';
+import { createStateManager, resetStateManager } from '../utilities/state.js';
 
 export function runStateTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🗄️ State Tests</h2><h3>Running tests...</h3>';
@@ -24,6 +24,9 @@ export function runStateTests(resultsDiv) {
         }
 
         try {
+            // ✅ CRITICAL: Reset singleton state manager before each test
+            resetStateManager();
+
             // Clear miniCycle localStorage before test
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith('miniCycle')) {
