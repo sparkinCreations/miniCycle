@@ -742,20 +742,7 @@ AppInit.onReady(async () => {
   }
 
   // ✅ REMOVED: No more setTimeout hacks - InitGuard handles timing
-  // ✅ REMOVED: No more deferred queue processing - modules wait for core
-
-  // ✅ Process any deferred recurring setups now that AppState is ready
-  if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
-    console.log(`🔁 Processing ${window._deferredRecurringSetup.length} deferred recurring setups`);
-    window._deferredRecurringSetup.forEach(setupFn => {
-      try {
-        setupFn();
-      } catch (error) {
-        console.warn('⚠️ Deferred recurring setup failed:', error);
-      }
-    });
-    window._deferredRecurringSetup = []; // Clear the queue
-  }
+  // ✅ REMOVED: No more deferred queue processing - modules wait for core via AppInit
 
   // ✅ Recurring Features - now handled by recurringIntegration module
   // Old initialization code removed - see utilities/recurringIntegration.js
@@ -785,18 +772,11 @@ AppInit.onReady(async () => {
     }
   }, 200);
 
-  // ✅ Recurring Watcher Setup (with Schema 2.5 compatibility)
+  // ✅ Recurring Watcher Setup (now uses AppInit)
   console.log('👁️ Setting up recurring task watcher...');
   try {
-    // ✅ Use AppState-based watcher setup
-    if (window.AppState && window.AppState.isReady()) {
-      setupRecurringWatcher();
-    } else {
-      console.log('⏳ AppState not ready, deferring recurring watcher setup...');
-      // Defer setup until AppState is ready
-      window._deferredRecurringSetup = window._deferredRecurringSetup || [];
-      window._deferredRecurringSetup.push(() => setupRecurringWatcher());
-    }
+    // ✅ setupRecurringWatcher() now uses appInit.waitForCore() internally - no need for deferred queue
+    await setupRecurringWatcher();
   } catch (error) {
     console.warn('⚠️ Recurring watcher setup failed:', error);
   }

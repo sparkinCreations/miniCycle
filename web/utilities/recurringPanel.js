@@ -14,7 +14,10 @@
  * @module recurringPanel
  * @version 1.0.0
  * @requires recurringCore (via dependency injection)
+ * @requires AppInit (for initialization coordination)
  */
+
+import { appInit } from './appInitialization.js';
 
 // ============================================
 // RECURRING PANEL MANAGER CLASS
@@ -871,16 +874,12 @@ export class RecurringPanelManager {
     /**
      * Handle applying recurring settings to checked tasks
      */
-    handleApplySettings() {
+    async handleApplySettings() {
         console.log('📝 Applying recurring settings (AppState-based)...');
 
         try {
-            // Check AppState readiness
-            if (!this.deps.isAppStateReady()) {
-                console.warn('⚠️ AppState not ready for apply recurring settings');
-                this.deps.showNotification("❌ App not ready. Please try again.", "error");
-                return;
-            }
+            // ✅ Wait for core systems to be ready (AppState + data)
+            await appInit.waitForCore();
 
             const state = this.deps.getAppState();
             const activeCycleId = state.appState?.activeCycleId;
@@ -987,7 +986,7 @@ export class RecurringPanelManager {
 
             this.updateRecurringSummary();
             this.deps.showNotification("✅ Recurring settings applied!", "success", 2000);
-            this.updateRecurringPanel();
+            await this.updateRecurringPanel();
 
             // ✅ Use setTimeout to ensure DOM has updated before querying for checked tasks
             setTimeout(() => {
@@ -1171,19 +1170,15 @@ export class RecurringPanelManager {
     /**
      * Open the recurring panel
      */
-    openPanel() {
+    async openPanel() {
         console.log('🔁 Opening recurring panel...');
 
         try {
-            // Check AppState readiness
-            if (!this.deps.isAppStateReady()) {
-                console.warn('⚠️ AppState not ready for panel open');
-                this.deps.showNotification('Data not ready - please wait', 'warning');
-                return;
-            }
+            // ✅ Wait for core systems to be ready (AppState + data)
+            await appInit.waitForCore();
 
             // Update panel with current data
-            this.updateRecurringPanel();
+            await this.updateRecurringPanel();
 
             // Show overlay
             const overlay = this.deps.getElementById("recurring-panel-overlay");
@@ -1245,7 +1240,7 @@ export class RecurringPanelManager {
      * Update the recurring panel with current tasks
      * @param {Object} currentCycleData - Optional cycle data override
      */
-    updateRecurringPanel(currentCycleData = null) {
+    async updateRecurringPanel(currentCycleData = null) {
         console.log('🔄 Updating recurring panel...');
 
         try {
@@ -1255,11 +1250,8 @@ export class RecurringPanelManager {
                 return;
             }
 
-            // ✅ Use AppState only - no fallback to avoid state drift
-            if (!this.deps.isAppStateReady()) {
-                console.warn('⚠️ AppState not ready for updateRecurringPanel');
-                return;
-            }
+            // ✅ Wait for core systems to be ready (AppState + data)
+            await appInit.waitForCore();
 
             const state = this.deps.getAppState();
             const activeCycleId = state.appState?.activeCycleId;
@@ -2073,11 +2065,11 @@ export class RecurringPanelManager {
      * Open recurring settings panel for a specific task
      * @param {string} taskIdToPreselect - Task ID to preselect
      */
-    openRecurringSettingsPanelForTask(taskIdToPreselect) {
+    async openRecurringSettingsPanelForTask(taskIdToPreselect) {
         console.log('⚙️ Opening recurring settings panel for task:', taskIdToPreselect);
 
         try {
-            this.updateRecurringPanel(); // Render panel fresh
+            await this.updateRecurringPanel(); // Render panel fresh
 
             // Find and preselect the correct task
             const itemToSelect = this.deps.querySelector(`.recurring-task-item[data-task-id="${taskIdToPreselect}"]`);

@@ -238,21 +238,36 @@ export function runRecurringPanelTests(resultsDiv) {
     // ===== PANEL OPERATIONS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🔁 Panel Operations</h4>';
 
-    test('openPanel requires AppState ready', () => {
+    test('openPanel waits for core systems', async () => {
+        // ✅ Test updated: With AppInit, openPanel() waits for core instead of failing
+
+        // Mark core ready so the test completes
+        if (window.appInit && !window.appInit.isCoreReady()) {
+            await window.appInit.markCoreSystemsReady();
+        }
+
         const panel = new RecurringPanelManager({
-            isAppStateReady: () => false,
-            showNotification: (msg) => msg
+            getAppState: () => ({
+                data: { cycles: {} },
+                appState: { activeCycleId: 'cycle-1' }
+            }),
+            getElementById: () => ({ classList: { remove: () => {}, add: () => {} } })
         });
 
-        // Should not throw, but should warn
-        panel.openPanel();
+        // Should wait and then open successfully
+        await panel.openPanel();
 
-        if (panel.state.panelOpen) {
-            throw new Error('Panel should not open when AppState not ready');
+        if (!panel.state.panelOpen) {
+            throw new Error('Panel should open after waiting for core');
         }
     });
 
-    test('openPanel sets panelOpen state', () => {
+    test('openPanel sets panelOpen state', async () => {
+        // ✅ Mark core systems ready for test
+        if (window.appInit && !window.appInit.isCoreReady()) {
+            await window.appInit.markCoreSystemsReady();
+        }
+
         const panel = new RecurringPanelManager({
             isAppStateReady: () => true,
             getAppState: () => ({
@@ -262,7 +277,7 @@ export function runRecurringPanelTests(resultsDiv) {
             getElementById: () => ({ classList: { remove: () => {}, add: () => {} } })
         });
 
-        panel.openPanel();
+        await panel.openPanel();
 
         if (!panel.state.panelOpen) {
             throw new Error('Panel should be marked as open');
@@ -915,18 +930,30 @@ export function runRecurringPanelTests(resultsDiv) {
         panel.setup();
     });
 
-    test('handles AppState not ready in openPanel', () => {
-        let notificationShown = false;
+    test('handles AppState not ready in openPanel', async () => {
+        // ✅ Test updated: With AppInit, openPanel() now waits for core instead of checking readiness
+        // The old behavior (show notification immediately) no longer applies
+        // New behavior: waits silently via appInit.waitForCore()
+
+        // Mark core ready so the test completes
+        if (window.appInit && !window.appInit.isCoreReady()) {
+            await window.appInit.markCoreSystemsReady();
+        }
 
         const panel = new RecurringPanelManager({
-            isAppStateReady: () => false,
-            showNotification: (msg) => { notificationShown = true; }
+            getAppState: () => ({
+                data: { cycles: {} },
+                appState: { activeCycleId: 'cycle-1' }
+            }),
+            getElementById: () => ({ classList: { remove: () => {}, add: () => {} } })
         });
 
-        panel.openPanel();
+        // Should complete successfully (waits for core internally)
+        await panel.openPanel();
 
-        if (!notificationShown) {
-            throw new Error('Should show notification when AppState not ready');
+        // Verify it opened successfully
+        if (!panel.state.panelOpen) {
+            throw new Error('Panel should open after waiting for core');
         }
     });
 

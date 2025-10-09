@@ -9,16 +9,23 @@
  *
  * @module recurringIntegration
  * @version 1.0.0
+ * @requires AppInit (for initialization coordination)
  */
+
+import { appInit } from './appInitialization.js';
 
 /**
  * Initialize recurring task modules
- * Call this from DOMContentLoaded after AppState and notifications are ready
+ * Automatically waits for core systems (AppState + data) to be ready
  *
  * @returns {Promise<Object>} Object containing core and panel instances
  */
 export async function initializeRecurringModules() {
     console.log('🔄 Initializing recurring task modules...');
+
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+    console.log('✅ Core systems ready - initializing recurring modules');
 
     try {
         // ============================================

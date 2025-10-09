@@ -13,7 +13,10 @@
  * @module recurringCore
  * @version 1.0.0
  * @requires AppState (via dependency injection)
+ * @requires AppInit (for initialization coordination)
  */
+
+import { appInit } from './appInitialization.js';
 
 // ============================================
 // DEPENDENCY INJECTION SETUP
@@ -333,7 +336,7 @@ export function shouldRecreateRecurringTask(template, taskList, now) {
  * Watch recurring tasks and recreate them when due
  * Runs as part of the 30-second interval check
  */
-export function watchRecurringTasks() {
+export async function watchRecurringTasks() {
     console.log('👁️ Watching recurring tasks (AppState-based)...');
 
     // ✅ Check feature flag
@@ -343,14 +346,11 @@ export function watchRecurringTasks() {
         return;
     }
 
-    // ✅ Read from AppState instead of localStorage
-    assertInjected('isAppStateReady', Deps.isAppStateReady);
-    assertInjected('getAppState', Deps.getAppState);
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
 
-    if (!Deps.isAppStateReady()) {
-        console.warn('⚠️ AppState not ready for recurring task watch');
-        return;
-    }
+    // ✅ Read from AppState
+    assertInjected('getAppState', Deps.getAppState);
 
     const state = Deps.getAppState();
     const activeCycleId = state.appState?.activeCycleId;
@@ -446,7 +446,7 @@ export function watchRecurringTasks() {
  * Setup the recurring task watcher interval
  * Checks every 30 seconds for tasks that need to be recreated
  */
-export function setupRecurringWatcher() {
+export async function setupRecurringWatcher() {
     console.log('⚙️ Setting up recurring watcher (AppState-based)...');
 
     // ✅ Check feature flag
@@ -456,18 +456,11 @@ export function setupRecurringWatcher() {
         return;
     }
 
-    // ✅ Check AppState readiness with deferred setup
-    assertInjected('isAppStateReady', Deps.isAppStateReady);
-    if (!Deps.isAppStateReady()) {
-        console.log('⏳ AppState not ready, deferring recurring watcher setup...');
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+    console.log('✅ Core systems ready - setting up recurring watcher');
 
-        // Defer setup until AppState is ready
-        window._deferredRecurringSetup = window._deferredRecurringSetup || [];
-        window._deferredRecurringSetup.push(() => setupRecurringWatcher());
-        return;
-    }
-
-    // ✅ Read from AppState instead of loadMiniCycleData
+    // ✅ Read from AppState
     assertInjected('getAppState', Deps.getAppState);
     const state = Deps.getAppState();
     const activeCycleId = state.appState?.activeCycleId;
@@ -493,17 +486,17 @@ export function setupRecurringWatcher() {
     console.log('🔄 Setting up recurring task watcher with', Object.keys(recurringTemplates).length, 'templates');
 
     // Initial check
-    watchRecurringTasks();
+    await watchRecurringTasks();
 
     // Setup 30-second interval
     assertInjected('setInterval', Deps.setInterval);
-    Deps.setInterval(watchRecurringTasks, 30000);
+    Deps.setInterval(() => watchRecurringTasks(), 30000);
 
     // Re-check when tab becomes visible (user might have been away)
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "visible") {
             console.log('👁️ Tab visible again, checking recurring tasks...');
-            watchRecurringTasks();
+            await watchRecurringTasks();
         }
     });
 
