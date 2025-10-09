@@ -17,19 +17,22 @@
 
 ## 📚 Documentation
 
-- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Complete setup guide with examples
+- **[TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)** - Complete reference guide with advanced patterns
+- **[TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md)** - Quick template workflow for new modules
 - **[module-test-suite.html](./module-test-suite.html)** - Test runner (open in browser)
 
 ## 📁 Structure
 
 ```
 tests/
-├── TESTING_GUIDE.md          # 📖 Complete documentation
-├── README.md                  # 📄 This file (quick reference)
-├── module-test-suite.html     # 🧪 Browser test runner
-├── themeManager.tests.js      # ✅ ThemeManager tests
-├── globalUtils.tests.js       # ✅ GlobalUtils tests
-└── [yourModule].tests.js      # ➕ Add your tests here
+├── TESTING_QUICK_REFERENCE.md # 📖 Complete reference guide
+├── TEMPLATE_QUICK_START.md    # 🚀 Template workflow guide
+├── README.md                   # 📄 This file (quick start)
+├── module-test-suite.html      # 🧪 Browser test runner
+├── MODULE_TEMPLATE.tests.js    # 📋 Copy this for new modules
+├── themeManager.tests.js       # ✅ ThemeManager tests
+├── globalUtils.tests.js        # ✅ GlobalUtils tests
+└── [yourModule].tests.js       # ➕ Add your tests here
 ```
 
 ## ➕ Adding a New Module
@@ -51,7 +54,7 @@ tests/
 
 3. Open in browser and test!
 
-**[See detailed guide →](./TESTING_GUIDE.md)**
+**[See complete reference →](./TESTING_QUICK_REFERENCE.md)** | **[Use template →](./TEMPLATE_QUICK_START.md)**
 
 ## ✅ Test Patterns
 
@@ -98,11 +101,18 @@ resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 | 🛡️ Resilient Constructor | 80%+ |
 | 🔧 Strict Injection | 85%+ |
 
-## 🎯 Current Test Suites
+## 🎯 Current Test Suites (343+ Tests)
 
-- ✅ **ThemeManager** - Theme application, dark mode, storage
-- ✅ **GlobalUtils** - DOM helpers, event listeners, utilities
-- ✅ **Notifications** - Show/hide, tips, dragging, modals, position management
+- ✅ **GlobalUtils** (36 tests) - DOM helpers, event listeners, utilities
+- ✅ **ThemeManager** (18 tests) - Theme application, dark mode, storage
+- ✅ **DeviceDetection** (17 tests) - Device info, timestamps, performance
+- ✅ **CycleLoader** (11 tests) - Data loading, schema validation
+- ✅ **StatsPanel** (27 tests) - Statistics tracking, UI updates
+- ✅ **Notifications** (39 tests) - Show/hide, tips, dragging, modals
+- ✅ **ConsoleCapture** (41 tests) - Console interception, logging
+- ✅ **State** (58 tests) - State management, persistence, listeners
+- ✅ **RecurringCore** (69 tests) - Recurring tasks, date/time logic
+- ✅ **RecurringIntegration** (27 tests) - Module integration, initialization
 
 ## 💡 Tips
 
@@ -120,9 +130,13 @@ resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
 ## 📖 Full Documentation
 
-**For complete setup instructions, examples, and best practices:**
+**For complete reference with advanced patterns:**
 
-👉 **[Read TESTING_GUIDE.md](./TESTING_GUIDE.md)**
+👉 **[Read TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)**
+
+**For template-based workflow:**
+
+👉 **[Read TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md)**
 
 ---
 

@@ -202,6 +202,7 @@
             <option value="state">State</option>
             <option value="recurringCore">RecurringCore</option>
             <option value="recurringIntegration">RecurringIntegration</option>
+            <option value="recurringPanel">RecurringPanel</option>
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
         </select>
@@ -227,6 +228,7 @@
         import { runStateTests } from './state.tests.js';
         import { runRecurringCoreTests } from './recurringCore.tests.js';
         import { runRecurringIntegrationTests } from './recurringIntegration.tests.js';
+        import { runRecurringPanelTests } from './recurringPanel.tests.js';
         import { runGlobalUtilsTests } from './globalUtils.tests.js';
         import { runNotificationsTests } from './notifications.tests.js';
 
@@ -277,6 +279,10 @@
                     await import('../utilities/recurringIntegration.js');
                     currentModule = 'recurringIntegration';
                     resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'recurringPanel') {
+                    await import('../utilities/recurringPanel.js');
+                    currentModule = 'recurringPanel';
+                    resultsDiv.innerHTML = '<p>✅ RecurringPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
                     await import('../utilities/globalUtils.js');
                     currentModule = 'globalUtils';
@@ -314,6 +320,8 @@
                 runRecurringCoreTests(resultsDiv);
             } else if (currentModule === 'recurringIntegration') {
                 runRecurringIntegrationTests(resultsDiv);
+            } else if (currentModule === 'recurringPanel') {
+                runRecurringPanelTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
                 runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {
