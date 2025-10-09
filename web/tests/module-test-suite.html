@@ -198,6 +198,8 @@
             <option value="deviceDetection">DeviceDetection</option>
             <option value="cycleLoader">CycleLoader</option>
             <option value="statsPanel">StatsPanel</option>
+            <option value="consoleCapture">ConsoleCapture</option>
+            <option value="state">State</option>
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
         </select>
@@ -219,6 +221,8 @@
         import { runDeviceDetectionTests } from './deviceDetection.tests.js';
         import { runCycleLoaderTests } from './cycleLoader.tests.js';
         import { runStatsPanelTests } from './statsPanel.tests.js';
+        import { runConsoleCaptureTests } from './consoleCapture.tests.js';
+        import { runStateTests } from './state.tests.js';
         import { runGlobalUtilsTests } from './globalUtils.tests.js';
         import { runNotificationsTests } from './notifications.tests.js';
 
@@ -253,6 +257,14 @@
                     await import('../utilities/statsPanel.js');
                     currentModule = 'statsPanel';
                     resultsDiv.innerHTML = '<p>✅ StatsPanel loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'consoleCapture') {
+                    await import('../utilities/consoleCapture.js');
+                    currentModule = 'consoleCapture';
+                    resultsDiv.innerHTML = '<p>✅ ConsoleCapture loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'state') {
+                    await import('../utilities/state.js');
+                    currentModule = 'state';
+                    resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
                     await import('../utilities/globalUtils.js');
                     currentModule = 'globalUtils';
@@ -282,6 +294,10 @@
                 runCycleLoaderTests(resultsDiv);
             } else if (currentModule === 'statsPanel') {
                 runStatsPanelTests(resultsDiv);
+            } else if (currentModule === 'consoleCapture') {
+                runConsoleCaptureTests(resultsDiv);
+            } else if (currentModule === 'state') {
+                runStateTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
                 runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {

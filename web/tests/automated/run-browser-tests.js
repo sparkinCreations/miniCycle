@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'globalUtils', 'notifications'];
+const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'globalUtils', 'notifications'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
