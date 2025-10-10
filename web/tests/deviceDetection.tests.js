@@ -5,7 +5,7 @@
  * Following miniCycle browser testing patterns
  */
 
-export async function runDeviceDetectionTests(resultsDiv) {
+export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
 
@@ -25,11 +25,9 @@ export async function runDeviceDetectionTests(resultsDiv) {
         return { passed: 0, total: 1 };
     }
 
-    async function test(name, testFn) {
-        total.count++;
-
-        // 🔒 SAVE REAL APP DATA before test runs
-        const savedRealData = {};
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
         const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
         protectedKeys.forEach(key => {
             const value = localStorage.getItem(key);
@@ -37,6 +35,22 @@ export async function runDeviceDetectionTests(resultsDiv) {
                 savedRealData[key] = value;
             }
         });
+        console.log('🔒 Saved original localStorage for individual DeviceDetection test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual DeviceDetection test completed - original localStorage restored');
+        }
+    }
+
+    async function test(name, testFn) {
+        total.count++;
 
         try {
             // Reset environment before each test
@@ -66,12 +80,6 @@ export async function runDeviceDetectionTests(resultsDiv) {
             passed.count++;
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-        } finally {
-            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
         }
     }
 
@@ -398,6 +406,11 @@ export async function runDeviceDetectionTests(resultsDiv) {
         resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
     } else {
         resultsDiv.innerHTML += '<div class="result fail">⚠️ Some tests failed</div>';
+    }
+
+    // 🔒 RESTORE REAL APP DATA after individual test complete (only when running individually)
+    if (!isPartOfSuite) {
+        restoreOriginalData();
     }
 
     return { passed: passed.count, total: total.count };

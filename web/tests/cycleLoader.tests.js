@@ -16,7 +16,7 @@ import {
     setCycleLoaderDependencies
 } from '../utilities/cycleLoader.js';
 
-export async function runCycleLoaderTests(resultsDiv) {
+export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 CycleLoader Tests</h2><h3>Running tests...</h3>';
 
     // ✅ CRITICAL: Mark core as ready for test environment
@@ -29,11 +29,9 @@ export async function runCycleLoaderTests(resultsDiv) {
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    async function test(name, testFn) {
-        total.count++;
-
-        // 🔒 SAVE REAL APP DATA before test runs
-        const savedRealData = {};
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
         const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
         protectedKeys.forEach(key => {
             const value = localStorage.getItem(key);
@@ -41,6 +39,22 @@ export async function runCycleLoaderTests(resultsDiv) {
                 savedRealData[key] = value;
             }
         });
+        console.log('🔒 Saved original localStorage for individual CycleLoader test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual CycleLoader test completed - original localStorage restored');
+        }
+    }
+
+    async function test(name, testFn) {
+        total.count++;
 
         try {
             // Reset environment before each test
@@ -107,12 +121,6 @@ export async function runCycleLoaderTests(resultsDiv) {
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
             console.error(`Test failed: ${name}`, error);
-        } finally {
-            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
         }
     }
 
@@ -332,6 +340,11 @@ export async function runCycleLoaderTests(resultsDiv) {
 
     // === RESULTS SUMMARY ===
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
+
+    // 🔒 RESTORE REAL APP DATA after individual test complete (only when running individually)
+    if (!isPartOfSuite) {
+        restoreOriginalData();
+    }
 
     return { passed: passed.count, total: total.count };
 }

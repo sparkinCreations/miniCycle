@@ -5,17 +5,15 @@
 
 import { createStateManager, resetStateManager } from '../utilities/state.js';
 
-export function runStateTests(resultsDiv) {
+export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🗄️ State Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    function test(name, testFn) {
-        total.count++;
-
-        // 🔒 SAVE REAL APP DATA before test runs
-        const savedRealData = {};
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
         const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
         protectedKeys.forEach(key => {
             const value = localStorage.getItem(key);
@@ -23,31 +21,48 @@ export function runStateTests(resultsDiv) {
                 savedRealData[key] = value;
             }
         });
+        console.log('🔒 Saved original localStorage for individual state test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual state test completed - original localStorage restored');
+        }
+    }
+
+    async function test(name, testFn) {
+        total.count++;
 
         try {
             // ✅ CRITICAL: Reset singleton state manager before each test
             resetStateManager();
 
-            testFn();
+            // Clear test data from previous test
+            localStorage.clear();
+
+            // ✅ AWAIT async tests!
+            await testFn();
 
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
             console.error(`Test failed: ${name}`, error);
-        } finally {
-            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
         }
     }
+
+    // Wrap all tests in try-finally to handle restoration properly
+    try {
 
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    test('creates instance with default dependencies', () => {
+    await test('creates instance with default dependencies', () => {
         const state = createStateManager();
 
         if (!state || typeof state.init !== 'function') {
@@ -55,7 +70,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('accepts custom dependencies', () => {
+    await test('accepts custom dependencies', () => {
         const customDeps = {
             showNotification: (msg) => msg,
             storage: localStorage,
@@ -70,7 +85,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('initializes with null data', () => {
+    await test('initializes with null data', () => {
         const state = createStateManager();
 
         if (state.data !== null && typeof state.data === 'undefined') {
@@ -78,7 +93,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('initializes as not ready', () => {
+    await test('initializes as not ready', () => {
         const state = createStateManager();
 
         if (state.isReady()) {
@@ -86,7 +101,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('sets correct version', () => {
+    await test('sets correct version', () => {
         const state = createStateManager();
 
         if (state.version !== '1.0.0') {
@@ -97,7 +112,7 @@ export function runStateTests(resultsDiv) {
     // === SCHEMA VALIDATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">✅ Schema Validation</h4>';
 
-    test('validates correct Schema 2.5 structure', () => {
+    await test('validates correct Schema 2.5 structure', () => {
         const state = createStateManager();
         const validData = {
             schemaVersion: "2.5",
@@ -112,7 +127,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('rejects invalid schema version', () => {
+    await test('rejects invalid schema version', () => {
         const state = createStateManager();
         const invalidData = {
             schemaVersion: "1.0",
@@ -127,7 +142,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('rejects missing data.cycles', () => {
+    await test('rejects missing data.cycles', () => {
         const state = createStateManager();
         const invalidData = {
             schemaVersion: "2.5",
@@ -142,7 +157,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('rejects missing appState', () => {
+    await test('rejects missing appState', () => {
         const state = createStateManager();
         const invalidData = {
             schemaVersion: "2.5",
@@ -156,7 +171,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('handles null data gracefully', () => {
+    await test('handles null data gracefully', () => {
         const state = createStateManager();
         const isValid = state.validateSchema25Structure(null);
 
@@ -168,7 +183,7 @@ export function runStateTests(resultsDiv) {
     // === ASYNC INIT TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 Async Initialization</h4>';
 
-    test('loads existing Schema 2.5 data from localStorage', async () => {
+    await test('loads existing Schema 2.5 data from localStorage', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: Date.now() },
@@ -190,7 +205,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('returns null when no valid data exists', async () => {
+    await test('returns null when no valid data exists', async () => {
         const state = createStateManager();
         const result = await state.init();
 
@@ -199,7 +214,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('handles corrupted localStorage data', async () => {
+    await test('handles corrupted localStorage data', async () => {
         localStorage.setItem('miniCycleData', 'invalid json{{{');
 
         const state = createStateManager();
@@ -210,7 +225,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('prevents double initialization', async () => {
+    await test('prevents double initialization', async () => {
         const mockData = {
             schemaVersion: "2.5",
             data: { cycles: {} },
@@ -232,7 +247,7 @@ export function runStateTests(resultsDiv) {
     // === GET/READY TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📊 State Access</h4>';
 
-    test('get() returns current data', async () => {
+    await test('get() returns current data', async () => {
         const mockData = {
             schemaVersion: "2.5",
             data: { cycles: {} },
@@ -251,7 +266,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('isReady() reflects initialization state', async () => {
+    await test('isReady() reflects initialization state', async () => {
         const state = createStateManager();
 
         if (state.isReady()) {
@@ -275,7 +290,7 @@ export function runStateTests(resultsDiv) {
     // === UPDATE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔄 State Updates</h4>';
 
-    test('updates state successfully', async () => {
+    await test('updates state successfully', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -297,7 +312,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('marks state as dirty after update', async () => {
+    await test('marks state as dirty after update', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -319,7 +334,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('updates lastModified timestamp', async () => {
+    await test('updates lastModified timestamp', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -346,7 +361,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('rolls back on update error', async () => {
+    await test('rolls back on update error', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -376,7 +391,7 @@ export function runStateTests(resultsDiv) {
     // === SAVE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Persistence</h4>';
 
-    test('saves state to localStorage', async () => {
+    await test('saves state to localStorage', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -400,7 +415,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('clears dirty flag after save', async () => {
+    await test('clears dirty flag after save', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -422,7 +437,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('skips save when not dirty', () => {
+    await test('skips save when not dirty', () => {
         const state = createStateManager();
         state.isDirty = false;
 
@@ -430,7 +445,7 @@ export function runStateTests(resultsDiv) {
         state.save();
     });
 
-    test('forceSave triggers immediate save', async () => {
+    await test('forceSave triggers immediate save', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -459,7 +474,7 @@ export function runStateTests(resultsDiv) {
     // === LISTENER TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">👂 Event Listeners</h4>';
 
-    test('subscribes to state changes', () => {
+    await test('subscribes to state changes', () => {
         const state = createStateManager();
         let called = false;
 
@@ -470,7 +485,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('notifies listeners on update', async () => {
+    await test('notifies listeners on update', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -497,7 +512,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('provides old and new data to listeners', async () => {
+    await test('provides old and new data to listeners', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -527,7 +542,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('unsubscribes from state changes', () => {
+    await test('unsubscribes from state changes', () => {
         const state = createStateManager();
         const callback = () => {};
 
@@ -543,7 +558,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('safeSubscribe prevents duplicate listeners', () => {
+    await test('safeSubscribe prevents duplicate listeners', () => {
         const state = createStateManager();
         const callback = () => {};
 
@@ -555,7 +570,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('unsubscribeAll removes all listeners for key', () => {
+    await test('unsubscribeAll removes all listeners for key', () => {
         const state = createStateManager();
 
         state.subscribe('test', () => {});
@@ -573,7 +588,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('getListenerCount returns correct total', () => {
+    await test('getListenerCount returns correct total', () => {
         const state = createStateManager();
 
         state.subscribe('key1', () => {});
@@ -587,7 +602,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('handles listener errors gracefully', async () => {
+    await test('handles listener errors gracefully', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -613,7 +628,7 @@ export function runStateTests(resultsDiv) {
     // === HELPER METHOD TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🛠️ Helper Methods</h4>';
 
-    test('getActiveCycle returns current cycle', async () => {
+    await test('getActiveCycle returns current cycle', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -637,7 +652,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('getActiveCycle returns null when no active cycle', async () => {
+    await test('getActiveCycle returns null when no active cycle', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -657,7 +672,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('getTasks returns active cycle tasks', async () => {
+    await test('getTasks returns active cycle tasks', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -684,7 +699,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('getTasks returns empty array when no cycle', () => {
+    await test('getTasks returns empty array when no cycle', () => {
         const state = createStateManager();
         const tasks = state.getTasks();
 
@@ -693,7 +708,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('setActiveCycle updates active cycle', async () => {
+    await test('setActiveCycle updates active cycle', async () => {
         const mockData = {
             schemaVersion: "2.5",
             metadata: { lastModified: 0 },
@@ -721,7 +736,7 @@ export function runStateTests(resultsDiv) {
     // === INITIAL STATE CREATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🏗️ Initial State Creation</h4>';
 
-    test('creates valid Schema 2.5 initial state', () => {
+    await test('creates valid Schema 2.5 initial state', () => {
         const state = createStateManager();
         const initialState = state.createInitialState();
 
@@ -738,7 +753,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('initial state includes all required properties', () => {
+    await test('initial state includes all required properties', () => {
         const state = createStateManager();
         const initialState = state.createInitialState();
 
@@ -751,7 +766,7 @@ export function runStateTests(resultsDiv) {
         });
     });
 
-    test('initial state has correct metadata', () => {
+    await test('initial state has correct metadata', () => {
         const state = createStateManager();
         const initialState = state.createInitialState();
 
@@ -768,7 +783,7 @@ export function runStateTests(resultsDiv) {
         }
     });
 
-    test('creates minimal fallback state', () => {
+    await test('creates minimal fallback state', () => {
         const state = createStateManager();
         const fallback = state.createMinimalFallbackState();
 
@@ -783,6 +798,19 @@ export function runStateTests(resultsDiv) {
 
     if (passed.count === total.count) {
         resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
+    }
+
+    } catch (error) {
+        console.error('Error running state tests:', error);
+        resultsDiv.innerHTML += `<div class="result fail">❌ Fatal error: ${error.message}</div>`;
+    } finally {
+        if (!isPartOfSuite) {
+            // ⏱️ WAIT for any debounced saves to complete (state manager has 600ms debounce)
+            await new Promise(resolve => setTimeout(resolve, 700));
+            
+            // 🔒 RESTORE REAL APP DATA after individual test complete
+            restoreOriginalData();
+        }
     }
 
     return { passed: passed.count, total: total.count };
