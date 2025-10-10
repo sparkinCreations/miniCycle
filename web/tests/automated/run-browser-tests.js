@@ -22,8 +22,9 @@ async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
 
     try {
-        // Navigate to test suite
-        await page.goto('http://localhost:8080/tests/module-test-suite.html', {
+        // Navigate to test suite with cache buster to force fresh module loads
+        const cacheBuster = Date.now();
+        await page.goto(`http://localhost:8080/tests/module-test-suite.html?v=${cacheBuster}`, {
             waitUntil: 'networkidle',
             timeout: 10000
         });
@@ -109,16 +110,26 @@ async function runAllTests() {
         headless: true // Set to false to see browser
     });
 
+    // Create context with cache disabled to ensure fresh module loads
+    const context = await browser.newContext({
+        bypassCSP: true
+    });
+
     const results = [];
 
     // Run tests for each module
     for (const module of modules) {
-        const page = await browser.newPage();
+        const page = await context.newPage();
+        // Disable cache for this page to ensure fresh module loads
+        await page.route('**/*', async (route) => {
+            await route.continue({ headers: { ...route.request().headers(), 'Cache-Control': 'no-cache' } });
+        });
         const result = await runModuleTests(page, module);
         results.push(result);
         await page.close();
     }
 
+    await context.close();
     await browser.close();
 
     const endTime = Date.now();

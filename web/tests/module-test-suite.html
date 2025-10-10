@@ -220,17 +220,21 @@
     <div class="selector-test test-element">Selector 3</div>
 
     <script type="module">
-        import { runThemeManagerTests } from './themeManager.tests.js';
-        import { runDeviceDetectionTests } from './deviceDetection.tests.js';
-        import { runCycleLoaderTests } from './cycleLoader.tests.js';
-        import { runStatsPanelTests } from './statsPanel.tests.js';
-        import { runConsoleCaptureTests } from './consoleCapture.tests.js';
-        import { runStateTests } from './state.tests.js';
-        import { runRecurringCoreTests } from './recurringCore.tests.js';
-        import { runRecurringIntegrationTests } from './recurringIntegration.tests.js';
-        import { runRecurringPanelTests } from './recurringPanel.tests.js';
-        import { runGlobalUtilsTests } from './globalUtils.tests.js';
-        import { runNotificationsTests } from './notifications.tests.js';
+        // Cache-busting timestamp to force fresh module loads during development
+        const cacheBuster = Date.now();
+
+        // Import test modules with cache busting
+        const { runThemeManagerTests } = await import(`./themeManager.tests.js?v=${cacheBuster}`);
+        const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
+        const { runCycleLoaderTests } = await import(`./cycleLoader.tests.js?v=${cacheBuster}`);
+        const { runStatsPanelTests } = await import(`./statsPanel.tests.js?v=${cacheBuster}`);
+        const { runConsoleCaptureTests } = await import(`./consoleCapture.tests.js?v=${cacheBuster}`);
+        const { runStateTests } = await import(`./state.tests.js?v=${cacheBuster}`);
+        const { runRecurringCoreTests } = await import(`./recurringCore.tests.js?v=${cacheBuster}`);
+        const { runRecurringIntegrationTests } = await import(`./recurringIntegration.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelTests } = await import(`./recurringPanel.tests.js?v=${cacheBuster}`);
+        const { runGlobalUtilsTests } = await import(`./globalUtils.tests.js?v=${cacheBuster}`);
+        const { runNotificationsTests } = await import(`./notifications.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -247,48 +251,49 @@
             resultsDiv.innerHTML = '<p>Loading module...</p>';
 
             try {
+                // Use cache buster for module imports to force fresh loads
                 if (moduleName === 'themeManager') {
-                    await import('../utilities/themeManager.js');
+                    await import(`../utilities/themeManager.js?v=${cacheBuster}`);
                     currentModule = 'themeManager';
                     resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'deviceDetection') {
-                    await import('../utilities/deviceDetection.js');
+                    await import(`../utilities/deviceDetection.js?v=${cacheBuster}`);
                     currentModule = 'deviceDetection';
                     resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleLoader') {
-                    await import('../utilities/cycleLoader.js');
+                    await import(`../utilities/cycleLoader.js?v=${cacheBuster}`);
                     currentModule = 'cycleLoader';
                     resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'statsPanel') {
-                    await import('../utilities/statsPanel.js');
+                    await import(`../utilities/statsPanel.js?v=${cacheBuster}`);
                     currentModule = 'statsPanel';
                     resultsDiv.innerHTML = '<p>✅ StatsPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'consoleCapture') {
-                    await import('../utilities/consoleCapture.js');
+                    await import(`../utilities/consoleCapture.js?v=${cacheBuster}`);
                     currentModule = 'consoleCapture';
                     resultsDiv.innerHTML = '<p>✅ ConsoleCapture loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'state') {
-                    await import('../utilities/state.js');
+                    await import(`../utilities/state.js?v=${cacheBuster}`);
                     currentModule = 'state';
                     resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringCore') {
-                    await import('../utilities/recurringCore.js');
+                    await import(`../utilities/recurringCore.js?v=${cacheBuster}`);
                     currentModule = 'recurringCore';
                     resultsDiv.innerHTML = '<p>✅ RecurringCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringIntegration') {
-                    await import('../utilities/recurringIntegration.js');
+                    await import(`../utilities/recurringIntegration.js?v=${cacheBuster}`);
                     currentModule = 'recurringIntegration';
                     resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringPanel') {
-                    await import('../utilities/recurringPanel.js');
+                    await import(`../utilities/recurringPanel.js?v=${cacheBuster}`);
                     currentModule = 'recurringPanel';
                     resultsDiv.innerHTML = '<p>✅ RecurringPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
-                    await import('../utilities/globalUtils.js');
+                    await import(`../utilities/globalUtils.js?v=${cacheBuster}`);
                     currentModule = 'globalUtils';
                     resultsDiv.innerHTML = '<p>✅ GlobalUtils loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'notifications') {
-                    await import('../utilities/notifications.js');
+                    await import(`../utilities/notifications.js?v=${cacheBuster}`);
                     currentModule = 'notifications';
                     resultsDiv.innerHTML = '<p>✅ Notifications loaded. Click "Run Tests" to begin.</p>';
                 }

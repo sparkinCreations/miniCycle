@@ -24,6 +24,16 @@ export function runRecurringPanelTests(resultsDiv) {
     function test(name, testFn) {
         total.count++;
 
+        // 🔒 SAVE REAL APP DATA before test runs
+        const savedRealData = {};
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+
         // Save global state
         const savedGlobals = {
             AppState: window.AppState,
@@ -55,6 +65,12 @@ export function runRecurringPanelTests(resultsDiv) {
             console.error = originalConsole.error;
             console.warn = originalConsole.warn;
             console.info = originalConsole.info;
+
+            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
         }
     }
 

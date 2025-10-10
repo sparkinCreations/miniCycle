@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // If completeInitialSetup ran earlier and queued a load, honor it.
     if (window.__pendingCycleLoad) {
-      mod.loadMiniCycle();
+      await mod.loadMiniCycle();
       window.__pendingCycleLoad = false;
     }
 
@@ -791,6 +791,14 @@ AppInit.onReady(async () => {
   await appInit.markAppReady();
   console.log('✅ miniCycle initialization complete - app is ready');
 
+  // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
+  console.log('📱 Running device detection...');
+  if (window.deviceDetectionManager && window.loadMiniCycleData) {
+    await window.deviceDetectionManager.autoRedetectOnVersionChange();
+  } else {
+    console.error('❌ Device detection manager or dependencies not available');
+  }
+
   window.onload = () => {
     if (taskInput) {
       taskInput.focus();
@@ -807,15 +815,6 @@ AppInit.onReady(async () => {
 
     
   
-    // ✅ FIXED: Device detection call at the end, after everything is initialized
-    setTimeout(() => {
-        console.log('📱 Running device detection...');
-        if (window.deviceDetectionManager && window.loadMiniCycleData) {
-            window.deviceDetectionManager.autoRedetectOnVersionChange();
-        } else {
-            console.error('❌ Device detection manager or dependencies not available');
-        }
-    }, 10000);
 
 
 
@@ -1473,7 +1472,9 @@ function checkGamesUnlock() {
         return;
     }
     
-    const hasGameUnlock = schemaData.settings.unlockedFeatures.includes("task-order-game");
+    // Ensure unlockedFeatures exists and is an array
+    const unlockedFeatures = schemaData.settings?.unlockedFeatures || [];
+    const hasGameUnlock = unlockedFeatures.includes("task-order-game");
     
     console.log('🔍 Game unlock status:', hasGameUnlock);
     
@@ -1882,13 +1883,13 @@ function showOnboarding() {
 }
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
-function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
+async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
   console.log('✅ Completing initial setup for cycle:', activeCycle);
 
   // Call the loader only via the global (attached by cycleLoader import)
   console.log('🎯 Loading miniCycle...');
   if (typeof window.loadMiniCycle === 'function') {
-    window.loadMiniCycle();
+    await window.loadMiniCycle();
   } else {
     console.log('⏳ Loader not ready yet, flagging pending load');
     window.__pendingCycleLoad = true;
@@ -6873,7 +6874,8 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
 
     // ✅ Game unlock with state-based tracking
     if (cycleCount >= 100) {
-        const hasGameUnlock = currentState.settings.unlockedFeatures.includes("task-order-game");
+        const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
+        const hasGameUnlock = unlockedFeatures.includes("task-order-game");
         
         if (!hasGameUnlock) {
             showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
@@ -6898,8 +6900,10 @@ function unlockMiniGame() {
         return;
     }
     
-    if (!currentState.settings.unlockedFeatures.includes("task-order-game")) {
+    const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
+    if (!unlockedFeatures.includes("task-order-game")) {
         window.AppState.update(state => {
+            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
             state.settings.unlockedFeatures.push("task-order-game");
             state.userProgress.rewardMilestones.push("task-order-game-100");
         }, true);

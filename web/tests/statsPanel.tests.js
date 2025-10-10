@@ -34,6 +34,17 @@ export async function runStatsPanelTests(resultsDiv) {
 
     async function test(name, testFn) {
         total.count++;
+
+        // 🔒 SAVE REAL APP DATA before test runs
+        const savedRealData = {};
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+
         try {
             // Create fresh mock Schema 2.5 data for each test
             const mockSchemaData = {
@@ -82,9 +93,15 @@ export async function runStatsPanelTests(resultsDiv) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
             console.error(`Test failed: ${name}`, error);
         } finally {
-            // Cleanup
+            // Cleanup test environment
             delete window.AppState;
             cleanupTestDOM();
+
+            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
         }
     }
 

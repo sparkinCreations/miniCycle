@@ -4,6 +4,8 @@
  * - No window probing, no stubs, no retry loops
  */
 
+import { appInit } from './appInitialization.js';
+
 const Deps = {
   loadMiniCycleData: null,
   createInitialSchema25Data: null,
@@ -29,7 +31,7 @@ function assertInjected(name, fn) {
 /**
  * Main coordination function
  */
-function loadMiniCycle() {
+async function loadMiniCycle() {
   console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
 
   assertInjected('loadMiniCycleData', Deps.loadMiniCycleData);
@@ -60,7 +62,7 @@ function loadMiniCycle() {
   // 1) Repair/clean
   const cleaned = repairAndCleanTasks(currentCycle);
   if (cleaned.wasModified) {
-    saveCycleData(activeCycleId, currentCycle);
+    await saveCycleData(activeCycleId, currentCycle);
   }
 
   // 2) Render tasks
@@ -231,7 +233,11 @@ function updateDependentComponents() {
 /**
  * Persist cycle changes
  */
-function saveCycleData(activeCycle, currentCycle) {
+async function saveCycleData(activeCycle, currentCycle) {
+  // ✅ Wait for core systems to be ready (AppState + data)
+  // This prevents conflicts with AppState initialization
+  await appInit.waitForCore();
+
   const raw = localStorage.getItem('miniCycleData');
   if (!raw) return;
   try {

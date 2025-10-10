@@ -1,22 +1,31 @@
 /**
  * 📱 miniCycle Device Detection Module
- * 
+ *
  * Handles device capability detection and app version routing
- * 
+ *
  * Features:
  * - User agent analysis
- * - Hardware capability detection  
+ * - Hardware capability detection
  * - Network connection assessment
  * - Schema 2.5 compatibility data storage
  * - Automatic lite version routing
  */
+
+import { appInit } from './appInitialization.js';
 
 export class DeviceDetectionManager {
   constructor(dependencies = {}) {
     // Dependency injection for testability
     this.loadMiniCycleData = dependencies.loadMiniCycleData || this.getGlobalFunction('loadMiniCycleData');
     this.showNotification = dependencies.showNotification || this.getGlobalFunction('showNotification');
-    this.currentVersion = dependencies.currentVersion || '1.280';
+    // Explicitly handle currentVersion with proper dependency injection
+    if (dependencies && typeof dependencies === 'object' && dependencies.hasOwnProperty('currentVersion')) {
+      this.currentVersion = dependencies.currentVersion;
+    } else {
+      this.currentVersion = '1.280';
+    }
+    // Debug logging (can be removed after fix is confirmed)
+    console.log('[DeviceDetection] Constructor: received version =', dependencies.currentVersion, 'set version =', this.currentVersion);
   }
 
   // Safe global function access
@@ -27,37 +36,40 @@ export class DeviceDetectionManager {
   }
 
   // Main detection function
-  runDeviceDetection() {
+  async runDeviceDetection() {
     const userAgent = navigator.userAgent;
-    
+
     console.log('🔍 Running device detection (Schema 2.5 only)...', userAgent);
-    
+
     // Check manual override first
-    if (this.checkManualOverride(userAgent)) {
+    if (await this.checkManualOverride(userAgent)) {
       return;
     }
-    
+
     // Perform detection and routing
-    this.performDetectionAndRouting(userAgent);
+    await this.performDetectionAndRouting(userAgent);
   }
 
-  checkManualOverride(userAgent) {
+  async checkManualOverride(userAgent) {
     const manualOverride = localStorage.getItem('miniCycleForceFullVersion');
     if (manualOverride === 'true') {
       console.log('🚀 Manual override detected - user chose full version');
-      
+
+      // ✅ Wait for core systems to be ready (AppState + data)
+      await appInit.waitForCore();
+
       const schemaData = this.loadMiniCycleData();
       if (!schemaData) {
         console.error('❌ Schema 2.5 data required for device detection');
         return false;
       }
-      
-      this.saveCompatibilityData({
+
+      await this.saveCompatibilityData({
         shouldUseLite: false,
         reason: 'manual_override',
         userAgent: userAgent
       });
-      
+
       console.log('✅ Manual override saved to Schema 2.5');
       this.showNotification('✅ Device detection complete - using full version by user choice', 'success', 3000);
       return true;
@@ -85,10 +97,10 @@ export class DeviceDetectionManager {
     return isOldDevice || hasLowMemory || hasSlowConnection;
   }
 
-  performDetectionAndRouting(userAgent) {
+  async performDetectionAndRouting(userAgent) {
     const shouldUseLite = this.shouldRedirectToLite();
     const reason = shouldUseLite ? 'device_compatibility' : 'device_capable';
-    
+
     const compatibilityData = {
       shouldUseLite: shouldUseLite,
       reason: reason,
@@ -101,10 +113,10 @@ export class DeviceDetectionManager {
       }
     };
 
-    this.saveCompatibilityData(compatibilityData);
-    
+    await this.saveCompatibilityData(compatibilityData);
+
     console.log('✅ Device detection saved to Schema 2.5:', compatibilityData);
-    
+
     if (shouldUseLite) {
       this.redirectToLite();
     } else {
@@ -112,7 +124,10 @@ export class DeviceDetectionManager {
     }
   }
 
-  saveCompatibilityData(compatibilityData) {
+  async saveCompatibilityData(compatibilityData) {
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+
     const schemaData = this.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for device detection');
@@ -155,9 +170,12 @@ export class DeviceDetectionManager {
   }
 
   // Auto-redetection on version change
-  autoRedetectOnVersionChange() {
+  async autoRedetectOnVersionChange() {
     console.log('🔄 Checking version change (Schema 2.5 only)...');
-    
+
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+
     const schemaData = this.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for version detection');
@@ -177,19 +195,21 @@ export class DeviceDetectionManager {
       console.log('🔄 Version changed or first run - running device detection');
       console.log('   Previous version:', lastDetectionVersion || 'None');
       console.log('   Current version:', this.currentVersion);
-      
-      setTimeout(() => {
-        this.runDeviceDetection();
-      }, 1000);
+
+      // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
+      await this.runDeviceDetection();
     } else {
       console.log('✅ Device detection up-to-date for version', this.currentVersion);
     }
   }
 
   // Generate compatibility report
-  reportDeviceCompatibility() {
+  async reportDeviceCompatibility() {
     console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
-    
+
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+
     const schemaData = this.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for compatibility report');
@@ -256,9 +276,12 @@ export class DeviceDetectionManager {
   }
 
   // Test function for manual testing
-  testDeviceDetection() {
+  async testDeviceDetection() {
     this.showNotification('🧪 Starting manual device detection test (Schema 2.5 only)...', 'info', 2000);
-    
+
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+
     const schemaData = this.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for device detection test');
@@ -268,12 +291,10 @@ export class DeviceDetectionManager {
     
     // Clear detection data for fresh test
     this.clearDetectionData();
-    
-    // Wait a moment then run detection
-    setTimeout(() => {
-      console.log('🔄 Running fresh device detection...');
-      this.runDeviceDetection();
-    }, 2500);
+
+    // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
+    console.log('🔄 Running fresh device detection...');
+    await this.runDeviceDetection();
   }
 
   clearDetectionData() {

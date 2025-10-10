@@ -14,25 +14,19 @@ export function runStateTests(resultsDiv) {
     function test(name, testFn) {
         total.count++;
 
-        // Save localStorage state
-        const savedStorage = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('miniCycle')) {
-                savedStorage[key] = localStorage.getItem(key);
+        // 🔒 SAVE REAL APP DATA before test runs
+        const savedRealData = {};
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
             }
-        }
+        });
 
         try {
             // ✅ CRITICAL: Reset singleton state manager before each test
             resetStateManager();
-
-            // Clear miniCycle localStorage before test
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('miniCycle')) {
-                    localStorage.removeItem(key);
-                }
-            });
 
             testFn();
 
@@ -42,9 +36,10 @@ export function runStateTests(resultsDiv) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
             console.error(`Test failed: ${name}`, error);
         } finally {
-            // Restore localStorage
-            Object.keys(savedStorage).forEach(key => {
-                localStorage.setItem(key, savedStorage[key]);
+            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
             });
         }
     }

@@ -18,6 +18,17 @@ export async function runNotificationsTests(resultsDiv) {
 
     async function test(name, testFn) {
         total.count++;
+
+        // 🔒 SAVE REAL APP DATA before test runs
+        const savedRealData = {};
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+
         try {
             // Clean up before each test
             cleanupTestEnvironment();
@@ -41,6 +52,12 @@ export async function runNotificationsTests(resultsDiv) {
             delete window.AppState;
             delete window.loadMiniCycleData;
             delete window.generateHashId;
+
+            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
         }
     }
 
