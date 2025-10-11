@@ -432,9 +432,16 @@ export class MiniCycleNotifications {
    */
 restoreNotificationPosition(notificationContainer) {
     try {
+        // ✅ Check if loadMiniCycleData is available (may not be during early initialization)
+        if (typeof window.loadMiniCycleData !== 'function') {
+            console.log('⏳ loadMiniCycleData not yet available, using default position');
+            this.setDefaultPosition(notificationContainer);
+            return;
+        }
+
         const schemaData = window.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for notification position');
+            console.log('📋 No schema data available, using default position');
             this.setDefaultPosition(notificationContainer);
             return;
         }
@@ -476,13 +483,19 @@ async setDefaultPosition(notificationContainer) {
         defaultY = 15; // Below potential menu area
     }
 
-    // Apply the position
+    // Apply the position immediately (synchronous)
     notificationContainer.style.top = `${defaultY}px`;
     notificationContainer.style.left = `${defaultX}px`;
     notificationContainer.style.right = "auto";
 
-    // Save this default position to Schema 2.5 so it persists
+    // Save this default position to Schema 2.5 so it persists (asynchronous, non-blocking)
     try {
+        // ✅ Only save if AppState is available
+        if (!window.AppState || typeof window.AppState.update !== 'function') {
+            console.log('⏳ AppState not ready, position not saved (will use default next time)');
+            return;
+        }
+
         // ✅ Wait for core systems to be ready (AppState + data)
         await appInit.waitForCore();
 
@@ -493,7 +506,7 @@ async setDefaultPosition(notificationContainer) {
             }
         }, true);
     } catch (error) {
-        console.warn("⚠️ Failed to save default notification position:", error);
+        console.log('⏭️ Could not save default notification position (not critical):', error.message);
     }
 }
   /**

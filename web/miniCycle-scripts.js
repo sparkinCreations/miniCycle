@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.311'
+        currentVersion: '1.313'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -772,14 +772,8 @@ AppInit.onReady(async () => {
     }
   }, 200);
 
-  // ✅ Recurring Watcher Setup (now uses AppInit)
-  console.log('👁️ Setting up recurring task watcher...');
-  try {
-    // ✅ setupRecurringWatcher() now uses appInit.waitForCore() internally - no need for deferred queue
-    await setupRecurringWatcher();
-  } catch (error) {
-    console.warn('⚠️ Recurring watcher setup failed:', error);
-  }
+  // ✅ Note: setupRecurringWatcher() is now called by initializeRecurringModules() below
+  // No need to call it here - it would cause "setupRecurringWatcher is not defined" error
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
@@ -796,7 +790,8 @@ AppInit.onReady(async () => {
   if (window.deviceDetectionManager && window.loadMiniCycleData) {
     await window.deviceDetectionManager.autoRedetectOnVersionChange();
   } else {
-    console.error('❌ Device detection manager or dependencies not available');
+    // Not critical - device detection will be available on next full load
+    console.log('⏭️ Skipping device detection (not fully initialized yet)');
   }
 
   window.onload = () => {
@@ -1317,29 +1312,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 
-// 🔧 Utility Function (can go at top of your scripts)
-function generateNotificationId(message) {
-    return message
-        .replace(/<br\s*\/?>/gi, '\n')   // Convert <br> to newline
-        .replace(/<[^>]*>/g, '')         // Remove all HTML tags
-        .replace(/\s+/g, ' ')            // Collapse whitespace
-        .trim()
-        .toLowerCase();                  // Normalize case
-}
-
-function generateHashId(message) {
-    const text = generateNotificationId(message);
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-        hash = (hash << 5) - hash + text.charCodeAt(i);
-        hash |= 0; // Force 32-bit int
-    }
-    return `note-${Math.abs(hash)}`;
-}
-
-// Make utility functions globally accessible for the notification module
-window.generateNotificationId = generateNotificationId;
-window.generateHashId = generateHashId;
+// ✅ Note: generateNotificationId and generateHashId are now in utilities/globalUtils.js
+// They are automatically available globally via window.generateNotificationId and window.generateHashId
 
 /**
  * Detects the device type and applies the appropriate class to the body.

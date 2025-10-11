@@ -303,6 +303,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
+
+  // ✅ Load AppInit for 2-phase initialization coordination
+  const { appInit } = await import('./utilities/appInitialization.js');
+  console.log('🚀 AppInit loaded');
+
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
 // ======================================================================
@@ -363,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.308'
+        currentVersion: '1.312'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -393,26 +398,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
-    
-    // ✅ Create a deferred stats update queue
-    window._deferredStatsUpdates = [];
-    
-    window.updateStatsPanel = () => {
-        const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
-        if (dataAvailable) {
-            // ✅ Check if AppState is ready before updating
-            if (window.AppState?.isReady?.()) {
-                return statsPanelManager.updateStatsPanel();
-            } else {
-                // ✅ Defer the update until AppState is ready
-                console.log('📊 Deferring stats update - AppState not ready yet');
-                window._deferredStatsUpdates.push(() => statsPanelManager.updateStatsPanel());
-                return;
-            }
-        } else {
-            console.log('📊 Skipping stats update - data not ready');
-        }
-    };
+
+    // ✅ NEW: updateStatsPanel is now async and waits for core
+    window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
     console.log('📊 StatsPanelManager global functions updated');
     
     // Centralized overlay detection for UI state management
@@ -608,7 +596,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // If completeInitialSetup ran earlier and queued a load, honor it.
     if (window.__pendingCycleLoad) {
-      mod.loadMiniCycle();
+      await mod.loadMiniCycle();
       window.__pendingCycleLoad = false;
     }
 
@@ -681,6 +669,9 @@ AppInit.onReady(async () => {
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
+        // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
+        await appInit.markCoreSystemsReady();
+
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
 
@@ -750,34 +741,8 @@ AppInit.onReady(async () => {
     window.AppState = null;
   }
 
-  // ✅ Give AppState a moment to fully initialize before other modules try to use it
-  await new Promise(resolve => setTimeout(resolve, 50));
-
-  // ✅ Process any deferred stats updates now that AppState is ready
-  if (window._deferredStatsUpdates && window._deferredStatsUpdates.length > 0) {
-    console.log(`📊 Processing ${window._deferredStatsUpdates.length} deferred stats updates`);
-    window._deferredStatsUpdates.forEach(updateFn => {
-      try {
-        updateFn();
-      } catch (error) {
-        console.warn('⚠️ Deferred stats update failed:', error);
-      }
-    });
-    window._deferredStatsUpdates = []; // Clear the queue
-  }
-
-  // ✅ Process any deferred recurring setups now that AppState is ready
-  if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
-    console.log(`🔁 Processing ${window._deferredRecurringSetup.length} deferred recurring setups`);
-    window._deferredRecurringSetup.forEach(setupFn => {
-      try {
-        setupFn();
-      } catch (error) {
-        console.warn('⚠️ Deferred recurring setup failed:', error);
-      }
-    });
-    window._deferredRecurringSetup = []; // Clear the queue
-  }
+  // ✅ REMOVED: No more setTimeout hacks - InitGuard handles timing
+  // ✅ REMOVED: No more deferred queue processing - modules wait for core via AppInit
 
   // ✅ Recurring Features - now handled by recurringIntegration module
   // Old initialization code removed - see utilities/recurringIntegration.js
@@ -807,28 +772,28 @@ AppInit.onReady(async () => {
     }
   }, 200);
 
-  // ✅ Recurring Watcher Setup (with Schema 2.5 compatibility)
-  console.log('👁️ Setting up recurring task watcher...');
-  try {
-    // ✅ Use AppState-based watcher setup
-    if (window.AppState && window.AppState.isReady()) {
-      setupRecurringWatcher();
-    } else {
-      console.log('⏳ AppState not ready, deferring recurring watcher setup...');
-      // Defer setup until AppState is ready
-      window._deferredRecurringSetup = window._deferredRecurringSetup || [];
-      window._deferredRecurringSetup.push(() => setupRecurringWatcher());
-    }
-  } catch (error) {
-    console.warn('⚠️ Recurring watcher setup failed:', error);
-  }
+  // ✅ Note: setupRecurringWatcher() is now called by initializeRecurringModules() below
+  // No need to call it here - it would cause "setupRecurringWatcher is not defined" error
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
-  
+
   // ✅ Now that AppState is ready, setup arrow visibility
   updateMoveArrowsVisibility();
-  
+
+  // ✅ CRITICAL: Mark app as fully ready (Phase 2: All modules loaded)
+  await appInit.markAppReady();
+  console.log('✅ miniCycle initialization complete - app is ready');
+
+  // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
+  console.log('📱 Running device detection...');
+  if (window.deviceDetectionManager && window.loadMiniCycleData) {
+    await window.deviceDetectionManager.autoRedetectOnVersionChange();
+  } else {
+    // Not critical - device detection will be available on next full load
+    console.log('⏭️ Skipping device detection (not fully initialized yet)');
+  }
+
   window.onload = () => {
     if (taskInput) {
       taskInput.focus();
@@ -845,15 +810,6 @@ AppInit.onReady(async () => {
 
     
   
-    // ✅ FIXED: Device detection call at the end, after everything is initialized
-    setTimeout(() => {
-        console.log('📱 Running device detection...');
-        if (window.deviceDetectionManager && window.loadMiniCycleData) {
-            window.deviceDetectionManager.autoRedetectOnVersionChange();
-        } else {
-            console.error('❌ Device detection manager or dependencies not available');
-        }
-    }, 10000);
 
 
 
@@ -1356,29 +1312,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 
-// 🔧 Utility Function (can go at top of your scripts)
-function generateNotificationId(message) {
-    return message
-        .replace(/<br\s*\/?>/gi, '\n')   // Convert <br> to newline
-        .replace(/<[^>]*>/g, '')         // Remove all HTML tags
-        .replace(/\s+/g, ' ')            // Collapse whitespace
-        .trim()
-        .toLowerCase();                  // Normalize case
-}
-
-function generateHashId(message) {
-    const text = generateNotificationId(message);
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-        hash = (hash << 5) - hash + text.charCodeAt(i);
-        hash |= 0; // Force 32-bit int
-    }
-    return `note-${Math.abs(hash)}`;
-}
-
-// Make utility functions globally accessible for the notification module
-window.generateNotificationId = generateNotificationId;
-window.generateHashId = generateHashId;
+// ✅ Note: generateNotificationId and generateHashId are now in utilities/globalUtils.js
+// They are automatically available globally via window.generateNotificationId and window.generateHashId
 
 /**
  * Detects the device type and applies the appropriate class to the body.
@@ -1511,7 +1446,9 @@ function checkGamesUnlock() {
         return;
     }
     
-    const hasGameUnlock = schemaData.settings.unlockedFeatures.includes("task-order-game");
+    // Ensure unlockedFeatures exists and is an array
+    const unlockedFeatures = schemaData.settings?.unlockedFeatures || [];
+    const hasGameUnlock = unlockedFeatures.includes("task-order-game");
     
     console.log('🔍 Game unlock status:', hasGameUnlock);
     
@@ -1920,13 +1857,13 @@ function showOnboarding() {
 }
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
-function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
+async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
   console.log('✅ Completing initial setup for cycle:', activeCycle);
 
   // Call the loader only via the global (attached by cycleLoader import)
   console.log('🎯 Loading miniCycle...');
   if (typeof window.loadMiniCycle === 'function') {
-    window.loadMiniCycle();
+    await window.loadMiniCycle();
   } else {
     console.log('⏳ Loader not ready yet, flagging pending load');
     window.__pendingCycleLoad = true;
@@ -6911,7 +6848,8 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
 
     // ✅ Game unlock with state-based tracking
     if (cycleCount >= 100) {
-        const hasGameUnlock = currentState.settings.unlockedFeatures.includes("task-order-game");
+        const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
+        const hasGameUnlock = unlockedFeatures.includes("task-order-game");
         
         if (!hasGameUnlock) {
             showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
@@ -6936,8 +6874,10 @@ function unlockMiniGame() {
         return;
     }
     
-    if (!currentState.settings.unlockedFeatures.includes("task-order-game")) {
+    const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
+    if (!unlockedFeatures.includes("task-order-game")) {
         window.AppState.update(state => {
+            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
             state.settings.unlockedFeatures.push("task-order-game");
             state.userProgress.rewardMilestones.push("task-order-game-100");
         }, true);
@@ -9134,6 +9074,13 @@ function handleTaskButtonClick(event) {
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) t.highPriority = newHighPriority;
             }, true);
+
+            // ✅ Show notification after updating state
+            showNotification(
+                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
+                newHighPriority ? "error" : "info",
+                1500
+            );
         } else {
             // ...existing localStorage fallback...
             const schemaData = loadMiniCycleData();
@@ -9441,8 +9388,8 @@ function saveToggleAutoReset() {
         deleteCheckedTasks.checked = false;
     }
     
-    // ✅ Show "Delete Checked Tasks" only when Auto Reset is OFF
-    deleteCheckedTasksContainer.style.display = toggleAutoReset.checked ? "none" : "block";
+    // ✅ Hide "Delete Checked Tasks" - always hidden regardless of Auto Reset state
+    deleteCheckedTasksContainer.style.display = "none";
 
     // ✅ Remove previous event listeners before adding new ones to prevent stacking
     toggleAutoReset.removeEventListener("change", handleAutoResetChange);
@@ -9472,8 +9419,8 @@ function saveToggleAutoReset() {
             }
         }, true); // immediate save
 
-        // ✅ Show/Hide "Delete Checked Tasks" toggle dynamically
-        deleteCheckedTasksContainer.style.display = event.target.checked ? "none" : "block";
+        // ✅ Keep "Delete Checked Tasks" always hidden regardless of Auto Reset state
+        deleteCheckedTasksContainer.style.display = "none";
 
         // ✅ Only trigger miniCycle reset if AutoReset is enabled
         if (event.target.checked) {
