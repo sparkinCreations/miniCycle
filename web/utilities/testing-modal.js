@@ -103,6 +103,9 @@ function setupTestingModal() {
     // Open testing modal with enhanced features
     safeAddEventListener(openTestingBtn, "click", () => {
         testingModal.style.display = "flex";
+        // Ensure the tab bar is visible on open
+        const bodyEl = testingModal.querySelector('.testing-modal-body');
+        if (bodyEl) bodyEl.scrollTop = 0;
         initializeTestingModalDrag();
         showNotification("🔬 Testing panel opened", "info", 2000);
         
@@ -157,6 +160,21 @@ function setupTestingTabs() {
     
     tabButtons.forEach(button => {
         safeAddEventListener(button, 'click', () => {
+            // Keep the tab bar in view when switching tabs
+            const modal = document.getElementById('testing-modal');
+            const bodyEl = modal?.querySelector('.testing-modal-body');
+            if (bodyEl) bodyEl.scrollTop = 0;
+            const tabsEl = modal?.querySelector('.testing-tabs');
+            if (tabsEl && typeof tabsEl.scrollIntoView === 'function') {
+                tabsEl.scrollIntoView({ block: 'start', behavior: 'auto' });
+            }
+            // Re-assert scroll top after layout settles
+            requestAnimationFrame(() => {
+                if (bodyEl) bodyEl.scrollTop = 0;
+            });
+            setTimeout(() => {
+                if (bodyEl) bodyEl.scrollTop = 0;
+            }, 60);
             const targetTab = button.getAttribute('data-tab');
             
             // Remove active class from all tabs and buttons
@@ -246,6 +264,14 @@ function setupResultsControls() {
                     showNotification("🔬 Testing panel closed", "info", 1500);
                 } else {
                     testingModal.style.display = "flex";
+                    const bodyEl = testingModal.querySelector('.testing-modal-body');
+                    if (bodyEl) bodyEl.scrollTop = 0;
+                    requestAnimationFrame(() => {
+                        if (bodyEl) bodyEl.scrollTop = 0;
+                    });
+                    setTimeout(() => {
+                        if (bodyEl) bodyEl.scrollTop = 0;
+                    }, 60);
                     initializeTestingModalDrag();
                     showNotification("🔬 Testing panel opened", "success", 2000);
                     

@@ -1242,8 +1242,8 @@ window.installApp = () => {
                 </div>
             </div>
 
-            <!-- Automated Tests Tab -->
-            <div id="automated-tests-tab" class="testing-tab-content">
+      <!-- Automated Tests Tab -->
+      <div id="automated-tests-tab" class="testing-tab-content">
                 <div class="testing-section">
                     <h3>🚀 Quick Actions</h3>
                     <button id="run-all-automated-tests" class="test-btn test-primary">
@@ -1281,18 +1281,18 @@ window.installApp = () => {
                     <button id="test-state" class="test-btn test-secondary">
                         💾 State Management (41 tests)
                     </button>
-                    <button id="test-consolecapture" class="test-btn test-secondary">
-                        � Console Capture (17 tests)
-                    </button>
+          <button id="test-consolecapture" class="test-btn test-secondary">
+            🔍 Console Capture (17 tests)
+          </button>
                 </div>
 
                 <div class="testing-section">
-                    <h3>� Recurring Features</h3>
+          <h3>🔁 Recurring Features</h3>
                     <button id="test-recurringcore" class="test-btn test-warning">
                         🔁 Recurring Core (37 tests)
                     </button>
                     <button id="test-recurringintegration" class="test-btn test-warning">
-                        � Recurring Integration (35 tests)
+            🔗 Recurring Integration (35 tests)
                     </button>
                     <button id="test-recurringpanel" class="test-btn test-warning">
                         🎛️ Recurring Panel (31 tests)
@@ -1300,11 +1300,21 @@ window.installApp = () => {
                 </div>
 
                 <div class="testing-section">
-                    <h3>� Analytics & Stats</h3>
+          <h3>📊 Analytics & Stats</h3>
                     <button id="test-statspanel" class="test-btn test-success">
-                        � Stats Panel (25 tests)
+            📊 Stats Panel (25 tests)
                     </button>
                 </div>
+
+        <!-- Dedicated output area shown when this tab is active -->
+        <div class="testing-section">
+          <h3>📋 Test Results</h3>
+          <div class="testing-results">
+            <div id="automated-test-output" class="testing-output" aria-live="polite">
+              Ready to run tests...
+            </div>
+          </div>
+        </div>
             </div>
         </div>
         

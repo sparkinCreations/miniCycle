@@ -91,6 +91,20 @@ function setupAutomatedTestsTabSwitching() {
     const automatedTab = document.querySelector('[data-tab="automated-tests"]');
     if (automatedTab) {
         automatedTab.addEventListener('click', () => {
+            // Ensure the tabs remain visible when entering this tab
+            const modal = document.getElementById('testing-modal');
+            const bodyEl = modal?.querySelector('.testing-modal-body');
+            if (bodyEl) bodyEl.scrollTop = 0;
+            const tabsEl = modal?.querySelector('.testing-tabs');
+            if (tabsEl && typeof tabsEl.scrollIntoView === 'function') {
+                tabsEl.scrollIntoView({ block: 'start', behavior: 'auto' });
+            }
+            requestAnimationFrame(() => {
+                if (bodyEl) bodyEl.scrollTop = 0;
+            });
+            setTimeout(() => {
+                if (bodyEl) bodyEl.scrollTop = 0;
+            }, 60);
             // Show welcome message when tab is first opened (if no results present)
             setTimeout(() => {
                 const currentOutput = getAutomatedTestOutput();
