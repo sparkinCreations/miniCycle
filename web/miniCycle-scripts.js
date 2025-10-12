@@ -61,8 +61,9 @@ window.AppGlobalState = {
   lastReorderTime: 0,
   advancedVisible: false,
   isPerformingUndoRedo: false,
-  lastSnapshotSignature: null, 
-  lastSnapshotTs: 0   
+  lastSnapshotSignature: null,
+  lastSnapshotTs: 0,
+  isInitializing: true  // ✅ Track if app is still initializing
 };
 
 
@@ -785,6 +786,10 @@ AppInit.onReady(async () => {
   await appInit.markAppReady();
   console.log('✅ miniCycle initialization complete - app is ready');
 
+  // ✅ Keep isInitializing true - will be disabled on first user interaction
+  // This prevents the undo button from appearing on page load
+  console.log('✅ Initialization complete - undo system will activate on first user action');
+
   // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
   console.log('📱 Running device detection...');
   if (window.deviceDetectionManager && window.loadMiniCycleData) {
@@ -893,17 +898,17 @@ console.log('✅ Recurring modules integration complete');
 function initializeUndoRedoButtons() {
     const undoBtn = document.getElementById("undo-btn");
     const redoBtn = document.getElementById("redo-btn");
-    
+
     if (undoBtn) {
-        undoBtn.hidden = false; // Show the button
+        undoBtn.hidden = true; // ✅ Start hidden until there's undo history
         undoBtn.disabled = true; // Initially disabled
     }
     if (redoBtn) {
-        redoBtn.hidden = false; // Show the button  
+        redoBtn.hidden = true; // ✅ Start hidden until there's redo history
         redoBtn.disabled = true; // Initially disabled
     }
-    
-    console.log('🔘 Undo/redo buttons initialized');
+
+    console.log('🔘 Undo/redo buttons initialized (hidden by default)');
 }
 
 // ✅ Add this function
@@ -958,8 +963,25 @@ function setupStateBasedUndoRedo() {
     }
 }
 
+/**
+ * Enable undo system on first user interaction
+ * Call this when user performs their first action (task completion, add task, etc.)
+ */
+function enableUndoSystemOnFirstInteraction() {
+    if (window.AppGlobalState.isInitializing) {
+        console.log('✅ First user interaction detected - enabling undo system');
+        window.AppGlobalState.isInitializing = false;
+    }
+}
+
 // ✅ Capture complete state snapshots instead of manual extraction
 function captureStateSnapshot(state) {
+    // ✅ Don't capture snapshots during initial app load
+    if (window.AppGlobalState.isInitializing) {
+        console.log('⏭️ Skipping snapshot during initialization');
+        return;
+    }
+
     if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
         console.warn('⚠️ Invalid state for snapshot');
         return;
@@ -1069,14 +1091,21 @@ async function performStateBasedUndo() {
     };
 
     let snap = null;
+    let skippedDuplicates = 0;
     while (window.AppGlobalState.undoStack.length) {
       const candidate = window.AppGlobalState.undoStack.pop();
       if (!snapshotsEqual(candidate, currentSnapshot)) {
         snap = candidate;
         break;
       }
+      skippedDuplicates++;
     }
-    if (!snap) { updateUndoRedoButtons(); return; }
+    console.log(`🔍 Undo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
+    if (!snap) {
+      console.warn('⚠️ No valid undo snapshot found');
+      updateUndoRedoButtons();
+      return;
+    }
 
     window.AppGlobalState.redoStack.push(currentSnapshot);
 
@@ -1095,6 +1124,10 @@ async function performStateBasedUndo() {
 
     await Promise.resolve();
     refreshUIFromState(window.AppState.get());
+
+    // ✅ Wait for next tick to ensure all rendering state updates complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     updateUndoRedoButtons();
   } catch (e) {
     console.error('❌ Undo failed:', e);
@@ -1127,14 +1160,21 @@ async function performStateBasedRedo() {
     };
 
     let snap = null;
+    let skippedDuplicates = 0;
     while (window.AppGlobalState.redoStack.length) {
       const candidate = window.AppGlobalState.redoStack.pop();
       if (!snapshotsEqual(candidate, currentSnapshot)) {
         snap = candidate;
         break;
       }
+      skippedDuplicates++;
     }
-    if (!snap) { updateUndoRedoButtons(); return; }
+    console.log(`🔍 Redo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
+    if (!snap) {
+      console.warn('⚠️ No valid redo snapshot found');
+      updateUndoRedoButtons();
+      return;
+    }
 
     window.AppGlobalState.undoStack.push(currentSnapshot);
 
@@ -1153,6 +1193,10 @@ async function performStateBasedRedo() {
 
     await Promise.resolve();
     refreshUIFromState(window.AppState.get());
+
+    // ✅ Wait for next tick to ensure all rendering state updates complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     updateUndoRedoButtons();
   } catch (e) {
     console.error('❌ Redo failed:', e);
@@ -1216,18 +1260,17 @@ function updateUndoRedoButtons() {
 
   if (undoBtn) {
     undoBtn.disabled = undoCount === 0;
-    undoBtn.hidden = (undoCount === 0 && redoCount === 0);
+    undoBtn.hidden = undoCount === 0; // ✅ Hide when no undo history
     undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
   }
   if (redoBtn) {
     redoBtn.disabled = redoCount === 0;
-    redoBtn.hidden = (redoCount === 0);
+    redoBtn.hidden = redoCount === 0; // ✅ Hide when no redo history
     redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
   }
-      console.log('🔘 Button states updated:', {
-        undoCount: window.AppGlobalState.undoStack.length,
-        redoCount: window.AppGlobalState.redoStack.length
-    });
+  const undoCountValue = window.AppGlobalState.undoStack.length;
+  const redoCountValue = window.AppGlobalState.redoStack.length;
+  console.log(`🔘 Button states: undo=${undoCountValue} (hidden=${undoBtn?.hidden}), redo=${redoCountValue} (hidden=${redoBtn?.hidden})`);
 }
     
 
@@ -2305,8 +2348,7 @@ function setupMiniCycleTitleListener() {
 
                 // 🔄 Refresh UI
                 updateMainMenuHeader();
-                document.getElementById("undo-btn").hidden = false;
-                document.getElementById("redo-btn").hidden = true;
+                updateUndoRedoButtons(); // ✅ Use centralized button management
             }
         });
 
@@ -4950,9 +4992,8 @@ function clearAllTasks() {
     updateRecurringPanelButtonVisibility();
     hideMainMenu();
 
-    // ✅ Show undo/hide redo buttons
-    document.getElementById("undo-btn").hidden = false;
-    document.getElementById("redo-btn").hidden = true;
+    // ✅ Update undo/redo button states
+    updateUndoRedoButtons();
 
     console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
     showNotification(`✅ All tasks unchecked for "${currentCycle.title}"`, "success", 2000);
@@ -5029,9 +5070,8 @@ function deleteAllTasks() {
             checkCompleteAllButton();
             updateRecurringPanelButtonVisibility();
 
-            // ✅ Show undo/hide redo buttons
-            document.getElementById("undo-btn").hidden = false;
-            document.getElementById("redo-btn").hidden = true;
+            // ✅ Update undo/redo button states
+            updateUndoRedoButtons();
 
             console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
             showNotification(`✅ All tasks deleted from "${currentCycle.title}"`, "success", 3000);
@@ -7420,6 +7460,10 @@ function DragAndDrop(taskElement) {
     // 🖱️ **Mouse-based Drag for Desktop**
     taskElement.addEventListener("dragstart", (event) => {
         if (event.target.closest(".task-options")) return;
+
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
         event.dataTransfer.setData("text/plain", "");
 
@@ -7547,8 +7591,8 @@ function setupRearrange() {
       updateStatsPanel();
       checkCompleteAllButton();
 
-      document.getElementById("undo-btn").hidden = false;
-      document.getElementById("redo-btn").hidden = true;
+      // ✅ Update undo/redo button states
+      updateUndoRedoButtons();
 
       console.log("🔁 Drag reorder completed and saved with undo snapshot.");
     }
@@ -8333,10 +8377,8 @@ function setupReminderButtonHandler(button, taskContext) {
         autoSaveReminders();
         startReminders();
 
-        const undoBtn = document.getElementById("undo-btn");
-        const redoBtn = document.getElementById("redo-btn");
-        if (undoBtn) undoBtn.hidden = false;
-        if (redoBtn) redoBtn.hidden = true;
+        // ✅ Update undo/redo button states
+        updateUndoRedoButtons();
 
         showNotification(`Reminders ${isActive ? "enabled" : "disabled"} for task.`, "info", 1500);
     });
@@ -8373,16 +8415,16 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
     checkbox.setAttribute("aria-checked", checkbox.checked);
     
     safeAddEventListener(checkbox, "change", () => {
-        
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         handleTaskCompletionChange(checkbox);
         checkMiniCycle();
         autoSave();
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
 
-        const undoBtn = document.getElementById("undo-btn");
-        const redoBtn = document.getElementById("redo-btn");
-        if (undoBtn) undoBtn.hidden = false;
-        if (redoBtn) redoBtn.hidden = true;
+        // ✅ Update undo/redo button states
+        updateUndoRedoButtons();
 
         console.log("✅ Task completion toggled — undo snapshot pushed.");
     });
@@ -8481,11 +8523,14 @@ function setupTaskInteractions(taskElements, taskContext) {
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
     taskItem.addEventListener("click", (event) => {
         if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
-        
+
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event("change"));
         checkbox.setAttribute("aria-checked", checkbox.checked);
-    
+
         checkMiniCycle();
         autoSave();
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
@@ -9111,6 +9156,9 @@ function handleTaskButtonClick(event) {
                     return;
                 }
 
+                // ✅ Enable undo system on first user interaction
+                enableUndoSystemOnFirstInteraction();
+
                 // ✅ ADD: Capture snapshot BEFORE deletion
                 if (window.AppState?.isReady?.()) {
                     const currentState = window.AppState.get();
@@ -9158,6 +9206,9 @@ function handleTaskButtonClick(event) {
 
         shouldSave = false;
     } else if (button.classList.contains("priority-btn")) {
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         const taskId = taskItem.dataset.taskId;
 
         // ✅ Read fresh state from AppState to determine current priority
@@ -9978,13 +10029,16 @@ safeAddEventListener(completeAllButton, "click", handleCompleteAllTasks);
  ************************/
 // 🟢 Add Task Button (Click)
 safeAddEventListener(addTaskButton, "click", () => {
+    // ✅ Enable undo system on first user interaction
+    enableUndoSystemOnFirstInteraction();
+
     const taskText = taskInput.value ? taskInput.value.trim() : "";
     if (!taskText) {
         console.warn("⚠ Cannot add an empty task.");
         return;
     }
 
-     
+
     addTask(taskText);
     taskInput.value = "";
 });
@@ -9992,6 +10046,9 @@ safeAddEventListener(addTaskButton, "click", () => {
 // 🟢 Task Input (Enter Key)
 safeAddEventListener(taskInput, "keypress", function (event) {
     if (event.key === "Enter") {
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         event.preventDefault();
         const taskText = taskInput.value ? taskInput.value.trim() : "";
         if (!taskText) {
@@ -9999,7 +10056,7 @@ safeAddEventListener(taskInput, "keypress", function (event) {
             return;
         }
 
-     
+
         addTask(taskText);
         taskInput.value = "";
     }
