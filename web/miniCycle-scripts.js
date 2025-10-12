@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.313'
+        currentVersion: '1.314'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -2787,7 +2787,63 @@ function loadMiniCycleData() {
 // Make loadMiniCycleData globally accessible for the notification module
 window.loadMiniCycleData = loadMiniCycleData;
 
+/**
+ * Safely update cycle data - handles AppState or falls back to localStorage
+ * Prevents race conditions with debounced saves by using AppState when available
+ *
+ * @param {string} cycleId - The cycle ID to update
+ * @param {function} updateFn - Function that receives the cycle and modifies it
+ * @param {boolean} immediate - Force immediate save (default: true for safety)
+ * @returns {boolean} - True if update succeeded, false otherwise
+ */
+function updateCycleData(cycleId, updateFn, immediate = true) {
+    console.log(`🔄 Updating cycle data for: ${cycleId} (immediate: ${immediate})`);
 
+    if (!cycleId) {
+        console.error('❌ cycleId is required for updateCycleData');
+        return false;
+    }
+
+    if (typeof updateFn !== 'function') {
+        console.error('❌ updateFn must be a function');
+        return false;
+    }
+
+    try {
+        // ✅ Use AppState if available (prevents race conditions)
+        if (window.AppState?.isReady?.()) {
+            window.AppState.update(state => {
+                const cycle = state.data.cycles[cycleId];
+                if (cycle) {
+                    updateFn(cycle);
+                    console.log('✅ Cycle updated via AppState');
+                } else {
+                    console.warn(`⚠️ Cycle not found: ${cycleId}`);
+                }
+            }, immediate);
+            return true;
+        } else {
+            // ✅ Fallback to direct localStorage if AppState not ready
+            console.warn('⚠️ AppState not ready, using localStorage fallback');
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+
+            if (!fullSchemaData?.data?.cycles?.[cycleId]) {
+                console.error(`❌ Cycle not found in localStorage: ${cycleId}`);
+                return false;
+            }
+
+            const cycle = fullSchemaData.data.cycles[cycleId];
+            updateFn(cycle);
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            console.log('✅ Cycle updated via localStorage (fallback)');
+            return true;
+        }
+    } catch (error) {
+        console.error('❌ updateCycleData failed:', error);
+        return false;
+    }
+}
 
 
 
@@ -4862,16 +4918,18 @@ function clearAllTasks() {
     console.log('📊 Clearing tasks for cycle:', activeCycle);
 
     // ✅ Create undo snapshot before making changes
-    
 
-    // ✅ Uncheck all tasks (DO NOT DELETE)
-    currentCycle.tasks.forEach(task => task.completed = false);
 
-    // ✅ Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
+    const updateSuccess = updateCycleData(activeCycle, cycle => {
+        cycle.tasks.forEach(task => task.completed = false);
+    }, true);
+
+    if (!updateSuccess) {
+        console.error('❌ Failed to update cycle data');
+        showNotification("❌ Failed to clear tasks. Please try again.", "error");
+        return;
+    }
 
     console.log('💾 Tasks unchecked and saved to Schema 2.5');
 
@@ -4941,21 +4999,22 @@ function deleteAllTasks() {
             console.log('🔄 Proceeding with task deletion...');
 
             // ✅ Push undo snapshot before deletion
-            
 
-            // ✅ Clear tasks completely
-            currentCycle.tasks = [];
 
-            // ✅ Clear recurring templates too
-            if (currentCycle.recurringTemplates) {
-                currentCycle.recurringTemplates = {};
+            // ✅ Clear tasks completely - Use helper to prevent race conditions
+            const updateSuccess = updateCycleData(activeCycle, cycle => {
+                cycle.tasks = [];
+                // ✅ Clear recurring templates too
+                if (cycle.recurringTemplates) {
+                    cycle.recurringTemplates = {};
+                }
+            }, true);
+
+            if (!updateSuccess) {
+                console.error('❌ Failed to delete tasks');
+                showNotification("❌ Failed to delete tasks. Please try again.", "error");
+                return;
             }
-
-            // ✅ Update the full schema data
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
 
             console.log('💾 All tasks deleted and saved to Schema 2.5');
 
@@ -6173,24 +6232,38 @@ if (threeDotsToggle) {
           showNotification("🔁 Recurring default reset to Daily Indefinitely.", "success");
       }
       
-      // ✅ Update Factory Reset for Schema 2.5 only
-      document.getElementById("factory-reset").addEventListener("click", async () => {
-          const confirmed = showConfirmationModal({
-              title: "Factory Reset",
-              message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
-              confirmText: "Delete Everything",
-              cancelText: "Cancel",
-              callback: (confirmed) => {
-                  if (!confirmed) {
-                      showNotification("❌ Factory reset cancelled.", "info", 2000);
-                      return;
+      // ✅ Update Factory Reset for Schema 2.5 only (awaits all cleanup; no IndexedDB used)
+      (function setupFactoryReset() {
+          const resetBtn = document.getElementById("factory-reset");
+          if (!resetBtn) return;
+
+          const runFactoryReset = async () => {
+              console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
+
+              // 0) CRITICAL: Stop AppState from auto-saving over our deletion
+              if (window.AppState) {
+                  console.log('🛑 Stopping AppState auto-save...');
+                  try {
+                      // Clear the debounced save timeout
+                      if (window.AppState.saveTimeout) {
+                          clearTimeout(window.AppState.saveTimeout);
+                          window.AppState.saveTimeout = null;
+                      }
+                      // Clear in-memory data so it won't be saved
+                      window.AppState.data = null;
+                      window.AppState.isDirty = false;
+                      window.AppState.isInitialized = false;
+                      console.log('✅ AppState neutralized');
+                  } catch (e) {
+                      console.warn('⚠️ AppState cleanup warning:', e);
                   }
-                  
-                  console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
-                  
+              }
+
+              // 1) Local storage cleanup (primary + legacy + dynamic)
+              try {
                   // Schema 2.5 - Single key cleanup
                   localStorage.removeItem("miniCycleData");
-                  
+
                   // Also clean up any remaining legacy keys for thorough cleanup
                   const legacyKeysToRemove = [
                       "miniCycleStorage",
@@ -6212,13 +6285,11 @@ if (threeDotsToggle) {
                       "miniCycle_console_capture_start",
                       "miniCycle_console_capture_enabled"
                   ];
-                  
                   legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
-                  
+
                   // Clean up any backup files and dynamic keys
                   const allKeys = Object.keys(localStorage);
                   let dynamicKeysRemoved = 0;
-                  
                   allKeys.forEach(key => {
                       // Backup files
                       if (key.startsWith('miniCycle_backup_') || key.startsWith('pre_migration_backup_')) {
@@ -6226,7 +6297,6 @@ if (threeDotsToggle) {
                           dynamicKeysRemoved++;
                           return;
                       }
-                      
                       // Any key containing miniCycle, minicycle, or TaskCycle (case-insensitive)
                       const keyLower = key.toLowerCase();
                       if (keyLower.includes('minicycle') || keyLower.includes('taskcycle')) {
@@ -6235,38 +6305,99 @@ if (threeDotsToggle) {
                           dynamicKeysRemoved++;
                       }
                   });
-                  
                   console.log(`🧹 Removed ${dynamicKeysRemoved} additional dynamic keys`);
-                  
-                  // Optional: Clear service worker cache for complete reset
-                  if ('serviceWorker' in navigator) {
-                      navigator.serviceWorker.getRegistrations().then(registrations => {
-                          registrations.forEach(registration => {
-                              console.log('🧹 Unregistering service worker:', registration.scope);
-                              registration.unregister();
-                          });
-                      }).catch(err => console.warn('⚠️ Service worker cleanup failed:', err));
-                  }
-                  
-                  // Clear any cached data in memory
-                  if (typeof window.caches !== 'undefined') {
-                      caches.keys().then(cacheNames => {
-                          return Promise.all(
-                              cacheNames.map(cacheName => {
-                                  if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
-                                      console.log('🧹 Clearing cache:', cacheName);
-                                      return caches.delete(cacheName);
-                                  }
-                              })
-                          );
-                      }).catch(err => console.warn('⚠️ Cache cleanup failed:', err));
-                  }
-      
-                  showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
-                  setTimeout(() => location.reload(), 1000);
+              } catch (e) {
+                  console.warn('⚠️ Local storage cleanup encountered an issue:', e);
               }
+
+              // 2) Session storage cleanup
+              try {
+                  if (typeof sessionStorage !== 'undefined') {
+                      sessionStorage.clear();
+                      console.log('🧹 sessionStorage cleared');
+                  }
+              } catch (e) {
+                  console.warn('⚠️ sessionStorage cleanup failed:', e);
+              }
+
+              // 3) Service Worker: unsubscribe push (if any) and unregister
+              try {
+                  if ('serviceWorker' in navigator) {
+                      const registrations = await navigator.serviceWorker.getRegistrations();
+                      await Promise.allSettled(registrations.map(async (registration) => {
+                          try {
+                              // Try to unsubscribe from Push
+                              if (registration.pushManager && typeof registration.pushManager.getSubscription === 'function') {
+                                  const sub = await registration.pushManager.getSubscription();
+                                  if (sub) {
+                                      console.log('🧹 Unsubscribing push subscription');
+                                      await sub.unsubscribe();
+                                  }
+                              }
+                          } catch (e) {
+                              console.warn('⚠️ Push unsubscribe failed:', e);
+                          }
+                          try {
+                              console.log('🧹 Unregistering service worker:', registration.scope);
+                              await registration.unregister();
+                          } catch (e) {
+                              console.warn('⚠️ Service worker unregister failed:', e);
+                          }
+                      }));
+                  }
+              } catch (e) {
+                  console.warn('⚠️ Service worker cleanup failed:', e);
+              }
+
+              // 4) Cache Storage cleanup (filtered)
+              try {
+                  if (typeof window.caches !== 'undefined') {
+                      const cacheNames = await caches.keys();
+                      await Promise.allSettled(
+                          cacheNames.map((cacheName) => {
+                              if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
+                                  console.log('🧹 Clearing cache:', cacheName);
+                                  return caches.delete(cacheName);
+                              }
+                              return Promise.resolve(false);
+                          })
+                      );
+                  }
+              } catch (e) {
+                  console.warn('⚠️ Cache cleanup failed:', e);
+              }
+
+              // 5) Finalize
+              showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
+              setTimeout(() => location.reload(), 800);
+          };
+
+          // Attach click with confirmation, guard against double-activation
+          resetBtn.addEventListener("click", () => {
+              showConfirmationModal({
+                  title: "Factory Reset",
+                  message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
+                  confirmText: "Delete Everything",
+                  cancelText: "Cancel",
+                  callback: async (confirmed) => {
+                      if (!confirmed) {
+                          showNotification("❌ Factory reset cancelled.", "info", 2000);
+                          return;
+                      }
+
+                      // prevent double triggers during reset
+                      const prevDisabled = resetBtn.disabled;
+                      resetBtn.disabled = true;
+                      try {
+                          await runFactoryReset();
+                      } finally {
+                          // If reload fails for some reason, re-enable button
+                          resetBtn.disabled = prevDisabled;
+                      }
+                  }
+              });
           });
-      });
+      })();
 
     }
 

@@ -303,6 +303,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
+
+  // ✅ Load AppInit for 2-phase initialization coordination
+  const { appInit } = await import('./utilities/appInitialization.js');
+  console.log('🚀 AppInit loaded');
+
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
 // ======================================================================
@@ -363,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.310'
+        currentVersion: '1.313'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -393,26 +398,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.statsPanelManager = statsPanelManager;
     window.showStatsPanel = () => statsPanelManager.showStatsPanel();
     window.showTaskView = () => statsPanelManager.showTaskView();
-    
-    // ✅ Create a deferred stats update queue
-    window._deferredStatsUpdates = [];
-    
-    window.updateStatsPanel = () => {
-        const dataAvailable = window.loadMiniCycleData && window.loadMiniCycleData();
-        if (dataAvailable) {
-            // ✅ Check if AppState is ready before updating
-            if (window.AppState?.isReady?.()) {
-                return statsPanelManager.updateStatsPanel();
-            } else {
-                // ✅ Defer the update until AppState is ready
-                console.log('📊 Deferring stats update - AppState not ready yet');
-                window._deferredStatsUpdates.push(() => statsPanelManager.updateStatsPanel());
-                return;
-            }
-        } else {
-            console.log('📊 Skipping stats update - data not ready');
-        }
-    };
+
+    // ✅ NEW: updateStatsPanel is now async and waits for core
+    window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
     console.log('📊 StatsPanelManager global functions updated');
     
     // Centralized overlay detection for UI state management
@@ -608,7 +596,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // If completeInitialSetup ran earlier and queued a load, honor it.
     if (window.__pendingCycleLoad) {
-      mod.loadMiniCycle();
+      await mod.loadMiniCycle();
       window.__pendingCycleLoad = false;
     }
 
@@ -681,6 +669,9 @@ AppInit.onReady(async () => {
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
+        // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
+        await appInit.markCoreSystemsReady();
+
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
 
@@ -750,34 +741,8 @@ AppInit.onReady(async () => {
     window.AppState = null;
   }
 
-  // ✅ Give AppState a moment to fully initialize before other modules try to use it
-  await new Promise(resolve => setTimeout(resolve, 50));
-
-  // ✅ Process any deferred stats updates now that AppState is ready
-  if (window._deferredStatsUpdates && window._deferredStatsUpdates.length > 0) {
-    console.log(`📊 Processing ${window._deferredStatsUpdates.length} deferred stats updates`);
-    window._deferredStatsUpdates.forEach(updateFn => {
-      try {
-        updateFn();
-      } catch (error) {
-        console.warn('⚠️ Deferred stats update failed:', error);
-      }
-    });
-    window._deferredStatsUpdates = []; // Clear the queue
-  }
-
-  // ✅ Process any deferred recurring setups now that AppState is ready
-  if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
-    console.log(`🔁 Processing ${window._deferredRecurringSetup.length} deferred recurring setups`);
-    window._deferredRecurringSetup.forEach(setupFn => {
-      try {
-        setupFn();
-      } catch (error) {
-        console.warn('⚠️ Deferred recurring setup failed:', error);
-      }
-    });
-    window._deferredRecurringSetup = []; // Clear the queue
-  }
+  // ✅ REMOVED: No more setTimeout hacks - InitGuard handles timing
+  // ✅ REMOVED: No more deferred queue processing - modules wait for core via AppInit
 
   // ✅ Recurring Features - now handled by recurringIntegration module
   // Old initialization code removed - see utilities/recurringIntegration.js
@@ -807,28 +772,28 @@ AppInit.onReady(async () => {
     }
   }, 200);
 
-  // ✅ Recurring Watcher Setup (with Schema 2.5 compatibility)
-  console.log('👁️ Setting up recurring task watcher...');
-  try {
-    // ✅ Use AppState-based watcher setup
-    if (window.AppState && window.AppState.isReady()) {
-      setupRecurringWatcher();
-    } else {
-      console.log('⏳ AppState not ready, deferring recurring watcher setup...');
-      // Defer setup until AppState is ready
-      window._deferredRecurringSetup = window._deferredRecurringSetup || [];
-      window._deferredRecurringSetup.push(() => setupRecurringWatcher());
-    }
-  } catch (error) {
-    console.warn('⚠️ Recurring watcher setup failed:', error);
-  }
+  // ✅ Note: setupRecurringWatcher() is now called by initializeRecurringModules() below
+  // No need to call it here - it would cause "setupRecurringWatcher is not defined" error
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
-  
+
   // ✅ Now that AppState is ready, setup arrow visibility
   updateMoveArrowsVisibility();
-  
+
+  // ✅ CRITICAL: Mark app as fully ready (Phase 2: All modules loaded)
+  await appInit.markAppReady();
+  console.log('✅ miniCycle initialization complete - app is ready');
+
+  // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
+  console.log('📱 Running device detection...');
+  if (window.deviceDetectionManager && window.loadMiniCycleData) {
+    await window.deviceDetectionManager.autoRedetectOnVersionChange();
+  } else {
+    // Not critical - device detection will be available on next full load
+    console.log('⏭️ Skipping device detection (not fully initialized yet)');
+  }
+
   window.onload = () => {
     if (taskInput) {
       taskInput.focus();
@@ -845,15 +810,6 @@ AppInit.onReady(async () => {
 
     
   
-    // ✅ FIXED: Device detection call at the end, after everything is initialized
-    setTimeout(() => {
-        console.log('📱 Running device detection...');
-        if (window.deviceDetectionManager && window.loadMiniCycleData) {
-            window.deviceDetectionManager.autoRedetectOnVersionChange();
-        } else {
-            console.error('❌ Device detection manager or dependencies not available');
-        }
-    }, 10000);
 
 
 
@@ -1356,29 +1312,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 
-// 🔧 Utility Function (can go at top of your scripts)
-function generateNotificationId(message) {
-    return message
-        .replace(/<br\s*\/?>/gi, '\n')   // Convert <br> to newline
-        .replace(/<[^>]*>/g, '')         // Remove all HTML tags
-        .replace(/\s+/g, ' ')            // Collapse whitespace
-        .trim()
-        .toLowerCase();                  // Normalize case
-}
-
-function generateHashId(message) {
-    const text = generateNotificationId(message);
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-        hash = (hash << 5) - hash + text.charCodeAt(i);
-        hash |= 0; // Force 32-bit int
-    }
-    return `note-${Math.abs(hash)}`;
-}
-
-// Make utility functions globally accessible for the notification module
-window.generateNotificationId = generateNotificationId;
-window.generateHashId = generateHashId;
+// ✅ Note: generateNotificationId and generateHashId are now in utilities/globalUtils.js
+// They are automatically available globally via window.generateNotificationId and window.generateHashId
 
 /**
  * Detects the device type and applies the appropriate class to the body.
@@ -1511,7 +1446,9 @@ function checkGamesUnlock() {
         return;
     }
     
-    const hasGameUnlock = schemaData.settings.unlockedFeatures.includes("task-order-game");
+    // Ensure unlockedFeatures exists and is an array
+    const unlockedFeatures = schemaData.settings?.unlockedFeatures || [];
+    const hasGameUnlock = unlockedFeatures.includes("task-order-game");
     
     console.log('🔍 Game unlock status:', hasGameUnlock);
     
@@ -1920,13 +1857,13 @@ function showOnboarding() {
 }
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
-function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
+async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
   console.log('✅ Completing initial setup for cycle:', activeCycle);
 
   // Call the loader only via the global (attached by cycleLoader import)
   console.log('🎯 Loading miniCycle...');
   if (typeof window.loadMiniCycle === 'function') {
-    window.loadMiniCycle();
+    await window.loadMiniCycle();
   } else {
     console.log('⏳ Loader not ready yet, flagging pending load');
     window.__pendingCycleLoad = true;
@@ -6236,24 +6173,19 @@ if (threeDotsToggle) {
           showNotification("🔁 Recurring default reset to Daily Indefinitely.", "success");
       }
       
-      // ✅ Update Factory Reset for Schema 2.5 only
-      document.getElementById("factory-reset").addEventListener("click", async () => {
-          const confirmed = showConfirmationModal({
-              title: "Factory Reset",
-              message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
-              confirmText: "Delete Everything",
-              cancelText: "Cancel",
-              callback: (confirmed) => {
-                  if (!confirmed) {
-                      showNotification("❌ Factory reset cancelled.", "info", 2000);
-                      return;
-                  }
-                  
-                  console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
-                  
+      // ✅ Update Factory Reset for Schema 2.5 only (awaits all cleanup; no IndexedDB used)
+      (function setupFactoryReset() {
+          const resetBtn = document.getElementById("factory-reset");
+          if (!resetBtn) return;
+
+          const runFactoryReset = async () => {
+              console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
+
+              // 1) Local storage cleanup (primary + legacy + dynamic)
+              try {
                   // Schema 2.5 - Single key cleanup
                   localStorage.removeItem("miniCycleData");
-                  
+
                   // Also clean up any remaining legacy keys for thorough cleanup
                   const legacyKeysToRemove = [
                       "miniCycleStorage",
@@ -6275,13 +6207,11 @@ if (threeDotsToggle) {
                       "miniCycle_console_capture_start",
                       "miniCycle_console_capture_enabled"
                   ];
-                  
                   legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
-                  
+
                   // Clean up any backup files and dynamic keys
                   const allKeys = Object.keys(localStorage);
                   let dynamicKeysRemoved = 0;
-                  
                   allKeys.forEach(key => {
                       // Backup files
                       if (key.startsWith('miniCycle_backup_') || key.startsWith('pre_migration_backup_')) {
@@ -6289,7 +6219,6 @@ if (threeDotsToggle) {
                           dynamicKeysRemoved++;
                           return;
                       }
-                      
                       // Any key containing miniCycle, minicycle, or TaskCycle (case-insensitive)
                       const keyLower = key.toLowerCase();
                       if (keyLower.includes('minicycle') || keyLower.includes('taskcycle')) {
@@ -6298,38 +6227,99 @@ if (threeDotsToggle) {
                           dynamicKeysRemoved++;
                       }
                   });
-                  
                   console.log(`🧹 Removed ${dynamicKeysRemoved} additional dynamic keys`);
-                  
-                  // Optional: Clear service worker cache for complete reset
-                  if ('serviceWorker' in navigator) {
-                      navigator.serviceWorker.getRegistrations().then(registrations => {
-                          registrations.forEach(registration => {
-                              console.log('🧹 Unregistering service worker:', registration.scope);
-                              registration.unregister();
-                          });
-                      }).catch(err => console.warn('⚠️ Service worker cleanup failed:', err));
-                  }
-                  
-                  // Clear any cached data in memory
-                  if (typeof window.caches !== 'undefined') {
-                      caches.keys().then(cacheNames => {
-                          return Promise.all(
-                              cacheNames.map(cacheName => {
-                                  if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
-                                      console.log('🧹 Clearing cache:', cacheName);
-                                      return caches.delete(cacheName);
-                                  }
-                              })
-                          );
-                      }).catch(err => console.warn('⚠️ Cache cleanup failed:', err));
-                  }
-      
-                  showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
-                  setTimeout(() => location.reload(), 1000);
+              } catch (e) {
+                  console.warn('⚠️ Local storage cleanup encountered an issue:', e);
               }
+
+              // 2) Session storage cleanup
+              try {
+                  if (typeof sessionStorage !== 'undefined') {
+                      sessionStorage.clear();
+                      console.log('🧹 sessionStorage cleared');
+                  }
+              } catch (e) {
+                  console.warn('⚠️ sessionStorage cleanup failed:', e);
+              }
+
+              // 3) Service Worker: unsubscribe push (if any) and unregister
+              try {
+                  if ('serviceWorker' in navigator) {
+                      const registrations = await navigator.serviceWorker.getRegistrations();
+                      await Promise.allSettled(registrations.map(async (registration) => {
+                          try {
+                              // Try to unsubscribe from Push
+                              if (registration.pushManager && typeof registration.pushManager.getSubscription === 'function') {
+                                  const sub = await registration.pushManager.getSubscription();
+                                  if (sub) {
+                                      console.log('🧹 Unsubscribing push subscription');
+                                      await sub.unsubscribe();
+                                  }
+                              }
+                          } catch (e) {
+                              console.warn('⚠️ Push unsubscribe failed:', e);
+                          }
+                          try {
+                              console.log('🧹 Unregistering service worker:', registration.scope);
+                              await registration.unregister();
+                          } catch (e) {
+                              console.warn('⚠️ Service worker unregister failed:', e);
+                          }
+                      }));
+                  }
+              } catch (e) {
+                  console.warn('⚠️ Service worker cleanup failed:', e);
+              }
+
+              // 4) Cache Storage cleanup (filtered)
+              try {
+                  if (typeof window.caches !== 'undefined') {
+                      const cacheNames = await caches.keys();
+                      await Promise.allSettled(
+                          cacheNames.map((cacheName) => {
+                              if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
+                                  console.log('🧹 Clearing cache:', cacheName);
+                                  return caches.delete(cacheName);
+                              }
+                              return Promise.resolve(false);
+                          })
+                      );
+                  }
+              } catch (e) {
+                  console.warn('⚠️ Cache cleanup failed:', e);
+              }
+
+              // 5) Finalize
+              showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
+              setTimeout(() => location.reload(), 800);
+          };
+
+          // Attach click with confirmation, guard against double-activation
+          resetBtn.addEventListener("click", () => {
+              showConfirmationModal({
+                  title: "Factory Reset",
+                  message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
+                  confirmText: "Delete Everything",
+                  cancelText: "Cancel",
+                  callback: async (confirmed) => {
+                      if (!confirmed) {
+                          showNotification("❌ Factory reset cancelled.", "info", 2000);
+                          return;
+                      }
+
+                      // prevent double triggers during reset
+                      const prevDisabled = resetBtn.disabled;
+                      resetBtn.disabled = true;
+                      try {
+                          await runFactoryReset();
+                      } finally {
+                          // If reload fails for some reason, re-enable button
+                          resetBtn.disabled = prevDisabled;
+                      }
+                  }
+              });
           });
-      });
+      })();
 
     }
 
@@ -6911,7 +6901,8 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
 
     // ✅ Game unlock with state-based tracking
     if (cycleCount >= 100) {
-        const hasGameUnlock = currentState.settings.unlockedFeatures.includes("task-order-game");
+        const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
+        const hasGameUnlock = unlockedFeatures.includes("task-order-game");
         
         if (!hasGameUnlock) {
             showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
@@ -6936,8 +6927,10 @@ function unlockMiniGame() {
         return;
     }
     
-    if (!currentState.settings.unlockedFeatures.includes("task-order-game")) {
+    const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
+    if (!unlockedFeatures.includes("task-order-game")) {
         window.AppState.update(state => {
+            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
             state.settings.unlockedFeatures.push("task-order-game");
             state.userProgress.rewardMilestones.push("task-order-game-100");
         }, true);
