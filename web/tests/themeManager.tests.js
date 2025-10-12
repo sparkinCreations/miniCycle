@@ -294,4 +294,6 @@ export function runThemeManagerTests(resultsDiv) {
     if (passed.count === total.count) {
         resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
     }
+
+    return { passed: passed.count, total: total.count };
 }

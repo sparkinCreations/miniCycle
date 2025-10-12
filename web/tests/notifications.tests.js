@@ -752,4 +752,6 @@ export async function runNotificationsTests(resultsDiv) {
     } else {
         resultsDiv.innerHTML += `<div class="result fail">⚠️ ${total.count - passed.count} test(s) failed</div>`;
     }
+
+    return { passed: passed.count, total: total.count };
 }
