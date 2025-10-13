@@ -285,6 +285,163 @@ initializeAppWithAutoMigration();
 - Without optional chaining: ❌ Checks at line 679, function doesn't exist yet
 - With optional chaining: ✅ Checks when actually called (during user interaction), function exists by then
 
+### **Step 8: Lessons Learned - Migration Manager Integration** ✅ COMPLETED
+
+**File:** `utilities/cycle/migrationManager.js`
+
+**New lessons that apply to ALL modules:**
+
+#### **Lesson 1: Use window.* for Early Dependency Configuration**
+
+When configuring dependencies BEFORE functions are defined, you MUST reference them via `window.*`:
+
+```javascript
+// ❌ WRONG: Direct reference to function that doesn't exist yet
+mod.setDependencies({
+    updateStatsPanel: () => updateStatsPanel?.()  // Function doesn't exist at line 530!
+});
+
+// ✅ CORRECT: Reference via window (resolved at call-time)
+mod.setDependencies({
+    updateStatsPanel: () => window.updateStatsPanel?.()  // Exists when actually called
+});
+```
+
+**Why this matters:**
+- CycleLoader configured at line 530 (Phase 1)
+- `updateStatsPanel` defined at line 709 (Phase 2)
+- Direct reference fails because function doesn't exist at configuration time
+- `window.*` reference succeeds because it resolves when the function is **called**, not when configured
+
+**Rule:** If dependency setup happens BEFORE the function is defined, use `window.functionName?.()` not just `functionName?.()`.
+
+#### **Lesson 2: Phase Placement is Based on "Depends On", Not "Used By"**
+
+Modules belong in phases based on what they **depend on**, not when they're used:
+
+```javascript
+// ❌ WRONG THINKING: "DeviceDetection is configured early, so it's Phase 1"
+// Phase 1:
+const deviceDetection = new DeviceDetectionManager({...});  // NO!
+
+// ✅ CORRECT: "DeviceDetection depends on AppState, so it's Phase 2"
+// Phase 1: Core systems
+await appInit.markCoreSystemsReady();
+
+// Phase 2: Modules
+const deviceDetection = new DeviceDetectionManager({...});  // YES!
+```
+
+**The Rule:**
+- **Phase 1 (Core):** Only utilities, migration manager, AppState, and data loading
+- **Phase 2 (Modules):** Anything that depends on AppState or cycle data, regardless of when it's configured or used
+- **Phase 3 (UI/Data):** UI setup and data initialization
+
+**Why we got this wrong initially:**
+- DeviceDetection and StatsPanel were configured early in the file
+- They're also used by code that runs later
+- But they **depend on AppState**, so they belong in Phase 2, not Phase 1
+
+#### **Lesson 3: All Modules Must Be Inside a Phase**
+
+Modules initialized outside phase structure cause timing issues:
+
+```javascript
+// ❌ WRONG: Floating module initialization
+document.addEventListener('DOMContentLoaded', async () => {
+    // ... Phase 1 code ...
+    // ... Phase 2 code ...
+});  // DOMContentLoaded ends
+
+// Floating initialization outside phases!
+console.log('🔄 Initializing recurring task modules...');
+const { initializeRecurringModules } = await import('./utilities/recurringIntegration.js');
+// ❌ This runs at top level, not inside proper phase structure!
+
+// ✅ CORRECT: All modules inside Phase 2
+document.addEventListener('DOMContentLoaded', async () => {
+    // Phase 1: Core
+    await appInit.markCoreSystemsReady();
+
+    // Phase 2: Modules (ALL modules here!)
+    const { initializeRecurringModules } = await import('./utilities/recurringIntegration.js');
+    await initializeRecurringModules();
+});
+```
+
+**The Rule:** ALL module initialization must happen inside the DOMContentLoaded handler, within the proper phase boundaries.
+
+#### **Lesson 4: Module Method Calls Need Defensive Checks**
+
+When refactoring from standalone functions to module methods, add defensive checks:
+
+```javascript
+// ❌ WRONG: Direct call to module method
+updateRecurringPanelButtonVisibility();  // Function removed!
+
+// ✅ CORRECT: Check if module is loaded first
+if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
+    window.recurringPanel.updateRecurringPanelButtonVisibility();
+}
+```
+
+**Why this matters:**
+- Old code: `updateRecurringPanelButtonVisibility()` was a standalone function
+- New code: `window.recurringPanel.updateRecurringPanelButtonVisibility()` is a module method
+- Problem: Module might not be loaded yet when function is called
+- Solution: Always check if module exists before calling its methods
+
+**Pattern for all refactored functions:**
+```javascript
+// OLD (standalone function)
+function myFunction() { ... }
+myFunction();  // Works anywhere
+
+// NEW (module method)
+class MyModule {
+    myFunction() { ... }
+}
+window.myModule = new MyModule();
+
+// CALLING IT (add defensive check)
+if (window.myModule?.myFunction) {
+    window.myModule.myFunction();
+}
+```
+
+#### **Lesson 5: Modules Configured Early Need Special Handling**
+
+Some modules (like cycleLoader) are configured in Phase 1 but depend on functions defined much later:
+
+```javascript
+// Phase 1 (line 530): Configure cycleLoader
+mod.setCycleLoaderDependencies({
+    loadMiniCycleData: () => window.loadMiniCycleData?.(),      // Defined at line 2552
+    createInitialSchema25Data: () => window.createInitialSchema25Data?.(),  // Defined at line 360 (Phase 1) ✅
+    addTask: (text) => window.addTask?.(text),                  // Defined at line 6800+
+    updateThemeColor: () => window.updateThemeColor?.(),        // Defined at line 5000+
+    startReminders: () => window.startReminders?.(),            // Defined at line 4300+
+    updateProgressBar: () => window.updateProgressBar?.(),      // Defined at line 3000+
+    checkCompleteAllButton: () => window.checkCompleteAllButton?.(),  // Defined at line 3500+
+    updateMainMenuHeader: () => window.updateMainMenuHeader?.(),  // Defined at line 4000+
+    updateStatsPanel: () => window.updateStatsPanel?.()         // Defined at line 709 (Phase 2)
+});
+```
+
+**The Pattern:**
+1. Module is configured in Phase 1 (before most functions exist)
+2. Module is actually **used** in Phase 3 (after all functions are defined)
+3. ALL dependencies MUST use `window.*` references with optional chaining
+4. This defers resolution to call-time, not configuration-time
+
+**Why cycleLoader is special:**
+- It coordinates the initial data loading process
+- It needs to be configured early (Phase 1) so it's available when needed
+- But most of its dependencies (UI update functions) don't exist until later
+- Solution: Use `window.*` for ALL dependencies, even ones defined in Phase 1
+
+**Rule:** For modules configured early but used later, ALWAYS use `window.functionName?.()` for all dependencies.
+
 ---
 
 ## 🧹 Cleanup Checklist
