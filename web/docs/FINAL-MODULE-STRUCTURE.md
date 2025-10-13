@@ -1,7 +1,7 @@
 # miniCycle - Final Modular Architecture (Revised)
 
 **Last Updated:** October 13, 2025
-**Status:** In Progress - 19 modules complete, ~40% remaining
+**Status:** In Progress - 20 modules complete (32% reduction achieved)
 **Target Completion:** 4-6 weeks from October 2025
 
 ---
@@ -15,8 +15,8 @@ Before:  15,677 lines (monolithic)
 Current: 11,214 lines (30% reduction)
 Target:   4,000 lines (75% reduction)
 
-Extracted Modules: 19 completed
-Remaining Work:    ~7,000 lines to extract
+Extracted Modules: 20 completed
+Remaining Work:    ~6,300 lines to extract
 ```
 
 ### **Completed Modules** ✅
@@ -28,6 +28,7 @@ Remaining Work:    ~7,000 lines to extract
 | notifications.js | 1,036 | Service | ✅ Complete |
 | recurringCore.js | 927 | Business Logic | ✅ Complete |
 | themeManager.js | 856 | Service | ✅ Complete |
+| **task/dragDropManager.js** | **695** | **Business Logic** | ✅ **Complete** |
 | testing-modal-integration.js | 541 | Integration | ✅ Complete |
 | globalUtils.js | 490 | Utilities | ✅ Complete |
 | consoleCapture.js | 415 | Service | ✅ Complete |
@@ -42,7 +43,7 @@ Remaining Work:    ~7,000 lines to extract
 | automated-tests-fix.js | 94 | Testing | ✅ Complete |
 | testing-modal-modifications.js | 72 | Testing | ✅ Complete |
 
-**Total Extracted:** 12,934 lines across 19 modules
+**Total Extracted:** 13,629 lines across 20 modules
 
 ---
 
@@ -73,13 +74,13 @@ miniCycle/
 │   │   ├── 📦 CORE SYSTEMS (Business Logic by Domain)
 │   │   │
 │   │   ├── task/                          (Task System - 3,000 lines total)
+│   │   │   ├── dragDropManager.js         ✅ 695 lines - Drag & drop (COMPLETE)
 │   │   │   ├── taskCore.js                🎯 ~500 lines - CRUD operations
 │   │   │   ├── taskDOM.js                 🎯 ~800 lines - DOM creation & manipulation
 │   │   │   ├── taskEvents.js              🎯 ~400 lines - Event handling
 │   │   │   ├── taskRenderer.js            🎯 ~300 lines - Rendering logic
 │   │   │   ├── taskValidation.js          🎯 ~200 lines - Input validation
-│   │   │   ├── taskUtils.js               🎯 ~300 lines - Transformations
-│   │   │   └── dragDropManager.js         🎯 ~400 lines - Drag & drop
+│   │   │   └── taskUtils.js               🎯 ~300 lines - Transformations
 │   │   │
 │   │   ├── cycle/                         (Cycle System - 2,500 lines total)
 │   │   │   ├── cycleLoader.js             ✅ 273 lines - Data loading
@@ -130,8 +131,8 @@ miniCycle/
 │   │       └── pluginIntegrationGuide.js  ✅ 158 lines - Documentation
 │   │
 │   ├── tests/                             (Test suite)
-│   │   ├── module-test-suite.html         (357 tests, 96% passing)
-│   │   └── *.tests.js                     (12 test modules)
+│   │   ├── module-test-suite.html         (433 tests, 100% passing)
+│   │   └── *.tests.js                     (13 test modules including dragDropManager)
 │   │
 │   └── docs/                              (Documentation)
        ├── CLAUDE.md
@@ -150,15 +151,15 @@ miniCycle/
 ### **Phase 1: Task System** (Week 1-2)
 **Goal:** Extract all task-related code (~3,000 lines)
 
-| Module | Lines | Priority | Dependencies |
-|--------|-------|----------|--------------|
-| **task/taskCore.js** | ~500 | 🔴 Critical | state, notifications |
-| **task/taskDOM.js** | ~800 | 🔴 Critical | taskCore, globalUtils |
-| **task/taskEvents.js** | ~400 | 🔴 Critical | taskCore, taskDOM |
-| **task/taskRenderer.js** | ~300 | 🟡 High | taskDOM, state |
-| **task/taskValidation.js** | ~200 | 🟡 High | globalUtils |
-| **task/taskUtils.js** | ~300 | 🟡 High | - |
-| **task/dragDropManager.js** | ~400 | 🟢 Medium | taskCore, taskDOM |
+| Module | Lines | Priority | Dependencies | Status |
+|--------|-------|----------|--------------|--------|
+| **task/dragDropManager.js** | 695 | ✅ Complete | AppState, AppGlobalState | ✅ Done |
+| **task/taskCore.js** | ~500 | 🔴 Critical | state, notifications | 🎯 To Do |
+| **task/taskDOM.js** | ~800 | 🔴 Critical | taskCore, globalUtils | 🎯 To Do |
+| **task/taskEvents.js** | ~400 | 🔴 Critical | taskCore, taskDOM | 🎯 To Do |
+| **task/taskRenderer.js** | ~300 | 🟡 High | taskDOM, state | 🎯 To Do |
+| **task/taskValidation.js** | ~200 | 🟡 High | globalUtils | 🎯 To Do |
+| **task/taskUtils.js** | ~300 | 🟡 High | - | 🎯 To Do |
 
 **Functions to Extract:**
 ```javascript
@@ -198,11 +199,9 @@ miniCycle/
 - buildTaskContext()
 - loadTaskContext()
 
-// Drag & Drop (dragDropManager.js)
-- DragAndDrop()
-- handleRearrange()
-- setupRearrange()
-- handleArrowClick()
+// ✅ Drag & Drop (dragDropManager.js) - COMPLETE
+// See utilities/task/dragDropManager.js (695 lines)
+// Includes: DragAndDrop(), handleRearrange(), setupRearrange(), handleArrowClick()
 ```
 
 ---
@@ -320,11 +319,11 @@ miniCycle-scripts.js:  15,677 lines  (98.7% of codebase)
 utilities/:               200 lines  (1.3% of codebase)
 ```
 
-### **Current State** (30% complete)
+### **Current State** (32% complete)
 ```
-miniCycle-scripts.js:  11,214 lines  (46% of codebase)
-utilities/:            12,934 lines  (54% of codebase)
-19 modules extracted
+miniCycle-scripts.js:  11,214 lines  (45% of codebase)
+utilities/:            13,629 lines  (55% of codebase)
+20 modules extracted
 ```
 
 ### **Target Final State**

@@ -710,6 +710,7 @@ try {
 ### **Resilient Constructor Pattern** 🛡️
 - ✅ `utilities/statsPanel.js` - Stats panel with swipe detection and achievement system
 - ✅ `utilities/recurringPanel.js` - Complex recurring task UI with form management
+- ✅ `utilities/task/dragDropManager.js` - Drag & drop with Safari compatibility and resilient fallbacks
 - 🎯 **Recommended Next:** `utilities/undoManager.js` - Undo/redo with state snapshots
 
 ### **Strict Injection Pattern** 🔧
@@ -724,9 +725,9 @@ try {
 ## 🗺️ **Extraction Roadmap for miniCycle**
 
 **Current Status (October 2025):**
-- Main script: **11,058 lines** (down from 15,677)
-- **29% reduction achieved**
-- **11 modules extracted**
+- Main script: **11,214 lines** (down from 15,677)
+- **32% reduction achieved**
+- **20 modules extracted** (including dragDropManager.js - 695 lines)
 
 ### **Phase 1: Low-Risk Utilities** (1-2 weeks) - Target: ~9,500 lines remaining
 
@@ -780,11 +781,11 @@ try {
 
 | Phase | Target Lines | % Reduction | Est. Modules | Timeline |
 |-------|-------------|-------------|--------------|----------|
-| ✅ Completed | 11,058 | 29% | 11 modules | Oct 2025 |
+| ✅ Completed | 11,214 | 32% | 20 modules | Oct 2025 |
 | Phase 1 | 9,500 | 39% | +3 modules | +1-2 weeks |
 | Phase 2 | 7,000 | 55% | +3 modules | +2-3 weeks |
 | Phase 3 | 5,000 | 68% | +1 module | +3-4 weeks |
-| **Final Goal** | **<5,000** | **68%+** | **18+ modules** | **6-9 weeks total** |
+| **Final Goal** | **<5,000** | **68%+** | **27+ modules** | **6-9 weeks total** |
 
 ---
 
@@ -1589,9 +1590,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 ## 📈 **Progress & Next Steps**
 
 **Where You Are (October 2025):**
-- ✅ **11 modules extracted** - 29% reduction (15,677 → 11,058 lines)
+- ✅ **20 modules extracted** - 32% reduction (15,677 → 11,214 lines)
 - ✅ **All 4 patterns proven** in production
 - ✅ **Comprehensive guide** with real examples
+- ✅ **dragDropManager.js** - 695 lines with Safari compatibility and comprehensive tests (76 tests)
 
 **Next Recommended Extractions:**
 1. 🎯 **Start this week:** Task Utilities (⚡ Static) + Date Utilities (⚡ Static) - 500 lines total
@@ -1610,7 +1612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 - **globalUtils.js** shows how Static Utilities provide zero-config foundation functions
 - **notifications.js** demonstrates how Simple Instances work immediately with graceful fallbacks
-- **statsPanel.js** proves Resilient Constructors can handle missing dependencies elegantly
+- **statsPanel.js** and **dragDropManager.js** prove Resilient Constructors can handle missing dependencies elegantly
 - **cycleLoader.js** validates that Strict Injection ensures critical code gets what it needs
 
 This guide helps you **apply the right pattern to each new module** as you continue modernizing your codebase. The roadmap provides a clear path from 11,058 lines to under 5,000 lines. **Choose the pattern that fits the job, not the other way around.**

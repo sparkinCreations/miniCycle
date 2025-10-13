@@ -145,7 +145,7 @@ web/
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker (v82)
 │
-├── utilities/                        # 16 modular components
+├── utilities/                        # 17 modular components
 │   ├── state.js                     # ✅ Centralized state (379 lines)
 │   ├── notifications.js             # ✅ Notifications (946 lines)
 │   ├── statsPanel.js                # ✅ Stats panel (1,089 lines)
@@ -157,6 +157,8 @@ web/
 │   ├── deviceDetection.js           # ✅ Device detection (293 lines)
 │   ├── consoleCapture.js            # ✅ Debug logging (505 lines)
 │   ├── testing-modal.js             # ✅ Testing UI (2,669 lines)
+│   ├── task/
+│   │   └── dragDropManager.js       # ✅ Drag & drop (695 lines)
 │   └── ... (5 more modules)
 │
 └── docs/                             # Documentation
@@ -2475,8 +2477,9 @@ Current module test coverage:
 | CycleLoader | `cycleLoader.tests.js` | 11 | ✅ |
 | StatsPanel | `statsPanel.tests.js` | 27 | ✅ |
 | Notifications | `notifications.tests.js` | 39 | ✅ |
+| **DragDropManager** | **`dragDropManager.tests.js`** | **76** | ✅ |
 
-**Total: 148 tests across 6 modules**
+**Total: 224 tests across 7 modules**
 
 ### Tips for Writing Good Tests
 
@@ -2500,6 +2503,8 @@ Current module test coverage:
 - **CLAUDE.md** - Architecture overview for AI assistants
 - **minicycle_modularization_guide_v3.md** - Module patterns and extraction guide
 - **FINAL-MODULE-STRUCTURE.md** - Target modular architecture
+- **DRAG_DROP_ARCHITECTURE.md** - Complete drag & drop architecture and code deep dive
+- **SAFARI_DRAGDROP_FIX.md** - Safari desktop drag-and-drop compatibility fix
 - **user-manual.html** - End-user documentation
 
 ### Code Organization
