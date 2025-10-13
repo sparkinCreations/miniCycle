@@ -1,654 +1,736 @@
-# miniCycle - Final Modular Architecture
+# miniCycle - Final Modular Architecture (Revised)
 
-**Target Completion:** ~6-9 weeks from October 2025
+**Last Updated:** October 13, 2025
+**Status:** In Progress - 19 modules complete, ~40% remaining
+**Target Completion:** 4-6 weeks from October 2025
 
 ---
 
-## 📁 Complete File Structure
+## 📊 Current State
+
+### **Progress Overview**
+```
+Main Script Size:
+Before:  15,677 lines (monolithic)
+Current: 11,214 lines (30% reduction)
+Target:   4,000 lines (75% reduction)
+
+Extracted Modules: 19 completed
+Remaining Work:    ~7,000 lines to extract
+```
+
+### **Completed Modules** ✅
+| Module | Lines | Pattern | Status |
+|--------|-------|---------|--------|
+| testing-modal.js | 2,852 | UI Component | ✅ Complete |
+| recurringPanel.js | 2,219 | UI Component | ✅ Complete |
+| statsPanel.js | 1,047 | UI Component | ✅ Complete |
+| notifications.js | 1,036 | Service | ✅ Complete |
+| recurringCore.js | 927 | Business Logic | ✅ Complete |
+| themeManager.js | 856 | Service | ✅ Complete |
+| testing-modal-integration.js | 541 | Integration | ✅ Complete |
+| globalUtils.js | 490 | Utilities | ✅ Complete |
+| consoleCapture.js | 415 | Service | ✅ Complete |
+| state.js | 415 | Business Logic | ✅ Complete |
+| recurringIntegration.js | 361 | Integration | ✅ Complete |
+| deviceDetection.js | 353 | Utilities | ✅ Complete |
+| basicPluginSystem.js | 290 | System | ✅ Complete |
+| appInitialization.js | 281 | System | ✅ Complete |
+| cycleLoader.js | 273 | Business Logic | ✅ Complete |
+| exampleTimeTrackerPlugin.js | 254 | Plugin | ✅ Complete |
+| pluginIntegrationGuide.js | 158 | Docs | ✅ Complete |
+| automated-tests-fix.js | 94 | Testing | ✅ Complete |
+| testing-modal-modifications.js | 72 | Testing | ✅ Complete |
+
+**Total Extracted:** 12,934 lines across 19 modules
+
+---
+
+## 🎯 Revised Architecture: System-Based Organization
+
+### **Why System-Based?**
+
+After analyzing the actual code, the original 4-pattern approach (Static/Simple/Resilient/Strict) doesn't map well to miniCycle's architecture. The code naturally organizes into **3 major business domains**:
+
+1. **Task System** - 45 functions, ~3,000 lines
+2. **Cycle System** - 30 functions, ~2,500 lines
+3. **UI Coordination** - 45 functions, ~2,500 lines
+
+**System-based organization** matches how developers think: "I need to fix task validation" → `task/taskValidation.js`
+
+---
+
+## 📁 Proposed Final Structure
 
 ```
 miniCycle/
 ├── web/
-│   ├── miniCycle.html                    (Main app entry point)
-│   ├── miniCycle-scripts.js              (~5,000 lines - orchestration only)
+│   ├── miniCycle.html                    (Main entry point)
+│   ├── miniCycle-scripts.js              (~4,000 lines - orchestration only)
 │   │
-│   ├── utilities/                         (Modular components)
+│   ├── utilities/
 │   │   │
-│   │   ├── ⚡ STATIC UTILITIES (Pure Functions - No State)
-│   │   ├── globalUtils.js                ✅ 442 lines - DOM helpers, formatters
-│   │   ├── taskUtils.js                  🎯 ~300 lines - Task transformations
-│   │   ├── dateUtils.js                  🎯 ~200 lines - Date operations
-│   │   ├── deviceDetection.js            ✅ 293 lines - Device/platform detection
+│   │   ├── 📦 CORE SYSTEMS (Business Logic by Domain)
 │   │   │
-│   │   ├── 🎯 SIMPLE INSTANCES (Self-Contained Services)
-│   │   ├── notifications.js              ✅ 946 lines - Notification system
-│   │   ├── consoleCapture.js             ✅ 505 lines - Debug logging
-│   │   ├── testing-modal.js              ✅ 2,669 lines - Testing interface
-│   │   ├── themeManager.js               🎯 ~800 lines - Theme switching
-│   │   ├── modalManager.js               🎯 ~400 lines - Modal management
+│   │   ├── task/                          (Task System - 3,000 lines total)
+│   │   │   ├── taskCore.js                🎯 ~500 lines - CRUD operations
+│   │   │   ├── taskDOM.js                 🎯 ~800 lines - DOM creation & manipulation
+│   │   │   ├── taskEvents.js              🎯 ~400 lines - Event handling
+│   │   │   ├── taskRenderer.js            🎯 ~300 lines - Rendering logic
+│   │   │   ├── taskValidation.js          🎯 ~200 lines - Input validation
+│   │   │   ├── taskUtils.js               🎯 ~300 lines - Transformations
+│   │   │   └── dragDropManager.js         🎯 ~400 lines - Drag & drop
 │   │   │
-│   │   ├── 🛡️ RESILIENT CONSTRUCTORS (Complex UI with Fallbacks)
-│   │   ├── statsPanel.js                 ✅ 1,089 lines - Stats/achievements
-│   │   ├── recurringPanel.js             ✅ 2,460 lines - Recurring UI
-│   │   ├── undoManager.js                🎯 ~500 lines - Undo/redo system
+│   │   ├── cycle/                         (Cycle System - 2,500 lines total)
+│   │   │   ├── cycleLoader.js             ✅ 273 lines - Data loading
+│   │   │   ├── cycleManager.js            🎯 ~600 lines - CRUD operations
+│   │   │   ├── cycleSwitcher.js           🎯 ~400 lines - Switch between cycles
+│   │   │   ├── modeManager.js             🎯 ~500 lines - Auto/Manual/Todo modes
+│   │   │   └── migrationManager.js        🎯 ~700 lines - Schema migrations
 │   │   │
-│   │   ├── 🔧 STRICT INJECTION (Critical Business Logic)
-│   │   ├── state.js                      ✅ 379 lines - State management
-│   │   ├── cycleLoader.js                ✅ 200 lines - Cycle loading
-│   │   ├── recurringCore.js              ✅ 980 lines - Recurring logic
-│   │   ├── recurringIntegration.js       ✅ 391 lines - Recurring coordination
-│   │   ├── migrationManager.js           🎯 ~700 lines - Schema migrations
-│   │   ├── taskManager.js                🎯 ~2,000 lines - Core task operations
+│   │   ├── ui/                            (UI Coordination - 2,500 lines total)
+│   │   │   ├── modalManager.js            🎯 ~600 lines - All modal logic
+│   │   │   ├── menuManager.js             🎯 ~400 lines - Main menu
+│   │   │   ├── settingsManager.js         🎯 ~500 lines - Settings panels
+│   │   │   ├── onboardingManager.js       🎯 ~400 lines - First-time setup
+│   │   │   ├── gamesManager.js            🎯 ~300 lines - Mini-games
+│   │   │   └── undoManager.js             🎯 ~500 lines - Undo/redo system
 │   │   │
-│   │   └── (Optional future modules)
-│   │       ├── importExport.js           📅 ~300 lines - File import/export
-│   │       ├── searchFilter.js           📅 ~200 lines - Task search/filter
-│   │       └── analyticsEngine.js        📅 ~400 lines - Data analytics
+│   │   ├── 🛠️ SUPPORT SERVICES (Already Complete)
+│   │   │
+│   │   ├── state.js                       ✅ 415 lines - State management
+│   │   ├── notifications.js               ✅ 1,036 lines - Notification system
+│   │   ├── themeManager.js                ✅ 856 lines - Theming
+│   │   ├── statsPanel.js                  ✅ 1,047 lines - Stats/achievements
+│   │   ├── consoleCapture.js              ✅ 415 lines - Debug logging
+│   │   ├── appInitialization.js           ✅ 281 lines - 2-phase init
+│   │   │
+│   │   ├── 🔁 RECURRING TASK SYSTEM (Already Complete)
+│   │   │
+│   │   ├── recurringCore.js               ✅ 927 lines - Scheduling logic
+│   │   ├── recurringPanel.js              ✅ 2,219 lines - Recurring UI
+│   │   ├── recurringIntegration.js        ✅ 361 lines - Integration
+│   │   │
+│   │   ├── 🧪 TESTING SYSTEM (Already Complete)
+│   │   │
+│   │   ├── testing-modal.js               ✅ 2,852 lines - Test UI
+│   │   ├── testing-modal-integration.js   ✅ 541 lines - Integration
+│   │   ├── automated-tests-fix.js         ✅ 94 lines - Fixes
+│   │   ├── testing-modal-modifications.js ✅ 72 lines - Mods
+│   │   │
+│   │   ├── 🔧 UTILITIES (Already Complete)
+│   │   │
+│   │   ├── globalUtils.js                 ✅ 490 lines - DOM helpers
+│   │   ├── deviceDetection.js             ✅ 353 lines - Platform detection
+│   │   │
+│   │   └── 🔌 PLUGIN SYSTEM (Already Complete)
+│   │       │
+│   │       ├── basicPluginSystem.js       ✅ 290 lines - Plugin foundation
+│   │       ├── exampleTimeTrackerPlugin.js ✅ 254 lines - Example plugin
+│   │       └── pluginIntegrationGuide.js  ✅ 158 lines - Documentation
 │   │
-│   ├── docs/
-│   │   ├── CLAUDE.md                     (Architecture overview)
-│   │   ├── minicycle_modularization_guide_v3.md
-│   │   └── (module-specific docs)
+│   ├── tests/                             (Test suite)
+│   │   ├── module-test-suite.html         (357 tests, 96% passing)
+│   │   └── *.tests.js                     (12 test modules)
 │   │
-│   └── backup/                            (Version backups)
+│   └── docs/                              (Documentation)
+       ├── CLAUDE.md
+       ├── DEVELOPER_DOCUMENTATION.md
+       └── ...
 ```
 
 **Legend:**
-- ✅ Completed and in production
-- 🎯 Recommended next (Phases 1-3)
-- 📅 Optional future enhancements
+- ✅ Complete (in production)
+- 🎯 To Extract (from main script)
 
 ---
 
-## 📊 Module Inventory by Pattern
+## 🎯 Extraction Roadmap
 
-### ⚡ **Static Utility Modules** (4 total)
+### **Phase 1: Task System** (Week 1-2)
+**Goal:** Extract all task-related code (~3,000 lines)
 
-Pure functions with no state or external dependencies. Always work, zero configuration needed.
+| Module | Lines | Priority | Dependencies |
+|--------|-------|----------|--------------|
+| **task/taskCore.js** | ~500 | 🔴 Critical | state, notifications |
+| **task/taskDOM.js** | ~800 | 🔴 Critical | taskCore, globalUtils |
+| **task/taskEvents.js** | ~400 | 🔴 Critical | taskCore, taskDOM |
+| **task/taskRenderer.js** | ~300 | 🟡 High | taskDOM, state |
+| **task/taskValidation.js** | ~200 | 🟡 High | globalUtils |
+| **task/taskUtils.js** | ~300 | 🟡 High | - |
+| **task/dragDropManager.js** | ~400 | 🟢 Medium | taskCore, taskDOM |
 
-| Module | Lines | Purpose | Status |
-|--------|-------|---------|--------|
-| **globalUtils.js** | 442 | DOM helpers, ID generators, formatters | ✅ Complete |
-| **taskUtils.js** | ~300 | Task data transformations, validation | 🎯 Phase 1 |
-| **dateUtils.js** | ~200 | Date formatting, parsing, time calculations | 🎯 Phase 1 |
-| **deviceDetection.js** | 293 | Platform detection, feature flags | ✅ Complete |
-
-**Total:** ~1,235 lines
-
-**Usage Pattern:**
+**Functions to Extract:**
 ```javascript
-// Import once, use everywhere
-import './utilities/globalUtils.js';
+// Core CRUD (taskCore.js)
+- addTask()
+- deleteTask()
+- editTask()
+- completeTask()
+- duplicateTask()
 
-// Available globally
-const id = generateId('task');
-const element = safeGetElement('taskList');
+// DOM Creation (taskDOM.js)
+- createTaskDOMElements()
+- createMainTaskElement()
+- createTaskButton()
+- createTaskCheckbox()
+- createTaskLabel()
+- createDueDateInput()
+
+// Event Handling (taskEvents.js)
+- handleTaskButtonClick()
+- setupTaskInteractions()
+- setupTaskClickInteraction()
+- handleTaskCompletionChange()
+
+// Rendering (taskRenderer.js)
+- renderTasks()
+- refreshUIFromState()
+- updateUIAfterTaskCreation()
+
+// Validation (taskValidation.js)
+- validateAndSanitizeTaskInput()
+- sanitizeInput()
+- validateAllMiniCycleTasksLenient()
+
+// Utilities (taskUtils.js)
+- extractTaskDataFromDOM()
+- buildTaskContext()
+- loadTaskContext()
+
+// Drag & Drop (dragDropManager.js)
+- DragAndDrop()
+- handleRearrange()
+- setupRearrange()
+- handleArrowClick()
 ```
 
 ---
 
-### 🎯 **Simple Instance Modules** (5 total)
+### **Phase 2: Cycle System** (Week 3)
+**Goal:** Extract cycle management code (~2,500 lines)
 
-Self-contained services that work immediately with graceful degradation.
+| Module | Lines | Priority | Dependencies |
+|--------|-------|----------|--------------|
+| **cycle/cycleManager.js** | ~600 | 🔴 Critical | state, notifications |
+| **cycle/cycleSwitcher.js** | ~400 | 🔴 Critical | cycleManager, cycleLoader |
+| **cycle/modeManager.js** | ~500 | 🟡 High | cycleManager, state |
+| **cycle/migrationManager.js** | ~700 | 🟡 High | state, notifications |
 
-| Module | Lines | Purpose | Status |
-|--------|-------|---------|--------|
-| **notifications.js** | 946 | User notifications + educational tips | ✅ Complete |
-| **consoleCapture.js** | 505 | Debug logging and console capture | ✅ Complete |
-| **testing-modal.js** | 2,669 | Comprehensive testing interface | ✅ Complete |
-| **themeManager.js** | ~800 | Theme switching and dark mode | 🎯 Phase 1 |
-| **modalManager.js** | ~400 | Basic modal open/close logic | 🎯 Phase 2 |
-
-**Total:** ~5,320 lines
-
-**Usage Pattern:**
+**Functions to Extract:**
 ```javascript
-// Import and it just works
-import './utilities/notifications.js';
+// Cycle CRUD (cycleManager.js)
+- createNewMiniCycle()
+- deleteMiniCycle()
+- renameMiniCycle()
+- saveMiniCycleAsNew()
+- loadMiniCycleList()
+- assignCycleVariables()
 
-// Use immediately
-showNotification('Task completed!', 'success');
+// Cycle Switching (cycleSwitcher.js)
+- switchMiniCycle()
+- confirmMiniCycle()
+- hideSwitchMiniCycleModal()
+- showCycleCreationModal()
+
+// Mode Management (modeManager.js)
+- initializeModeSelector()
+- setupModeSelector()
+- syncModeFromToggles()
+- updateStorageFromToggles()
+- updateCycleModeDescription()
+- refreshTaskButtonsForModeChange()
+
+// Migration (migrationManager.js)
+- checkMigrationNeeded()
+- simulateMigrationToSchema25()
+- performSchema25Migration()
+- initializeAppWithAutoMigration()
+- forceAppMigration()
 ```
 
 ---
 
-### 🛡️ **Resilient Constructor Modules** (3 total)
+### **Phase 3: UI Coordination** (Week 4)
+**Goal:** Extract UI coordination code (~2,500 lines)
 
-Complex UI components with intelligent fallbacks for missing dependencies.
+| Module | Lines | Priority | Dependencies |
+|--------|-------|----------|--------------|
+| **ui/modalManager.js** | ~600 | 🔴 Critical | globalUtils |
+| **ui/undoManager.js** | ~500 | 🔴 Critical | state, notifications |
+| **ui/menuManager.js** | ~400 | 🟡 High | globalUtils |
+| **ui/settingsManager.js** | ~500 | 🟡 High | state, themeManager |
+| **ui/onboardingManager.js** | ~400 | 🟢 Medium | cycleManager |
+| **ui/gamesManager.js** | ~300 | 🟢 Low | statsPanel |
 
-| Module | Lines | Purpose | Status |
-|--------|-------|---------|--------|
-| **statsPanel.js** | 1,089 | Stats panel with swipe gestures | ✅ Complete |
-| **recurringPanel.js** | 2,460 | Recurring task UI with complex forms | ✅ Complete |
-| **undoManager.js** | ~500 | Undo/redo with state snapshots | 🎯 Phase 2 |
-
-**Total:** ~4,049 lines
-
-**Usage Pattern:**
+**Functions to Extract:**
 ```javascript
-// Import and configure with available dependencies
-const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+// Modal Management (modalManager.js)
+- setupModalClickOutside()
+- closeAllModals()
+- showConfirmationModal()
+- showPromptModal()
+- setupFeedbackModal()
+- openFeedbackModal()
 
-const statsPanel = new StatsPanelManager({
-    showNotification: window.showNotification,
-    loadData: window.loadMiniCycleData,
-    isOverlayActive: window.isOverlayActive
-});
+// Undo/Redo (undoManager.js)
+- wireUndoRedoUI()
+- initializeUndoRedoButtons()
+- captureStateSnapshot()
+- performStateBasedUndo()
+- performStateBasedRedo()
+- updateUndoRedoButtons()
+- setupStateBasedUndoRedo()
 
-// Works even if some dependencies are missing
+// Menu (menuManager.js)
+- setupMainMenu()
+- closeMainMenu()
+- hideMainMenu()
+- updateMainMenuHeader()
+- closeMenuOnClickOutside()
+
+// Settings (settingsManager.js)
+- setupSettingsMenu()
+- syncCurrentSettingsToStorage()
+- setupDownloadMiniCycle()
+- setupUploadMiniCycle()
+- exportMiniCycleData()
+
+// Onboarding (onboardingManager.js)
+- initialSetup()
+- showOnboarding()
+- showOnboardingThenCycleCreation()
+- completeInitialSetup()
+- preloadGettingStartedCycle()
+
+// Games (gamesManager.js)
+- checkGamesUnlock()
+- loadTaskOrderGame()
+- setupGamesModalOutsideClick()
+- unlockMiniGame()
 ```
 
 ---
 
-### 🔧 **Strict Injection Modules** (6 total)
-
-Mission-critical business logic that fails fast without proper configuration.
-
-| Module | Lines | Purpose | Status |
-|--------|-------|---------|--------|
-| **state.js** | 379 | Centralized state with persistence | ✅ Complete |
-| **cycleLoader.js** | 200 | Cycle loading and data repair | ✅ Complete |
-| **recurringCore.js** | 980 | Recurring task scheduling logic | ✅ Complete |
-| **recurringIntegration.js** | 391 | Recurring system coordination | ✅ Complete |
-| **migrationManager.js** | ~700 | Schema version migrations | 🎯 Phase 2 |
-| **taskManager.js** | ~2,000 | Core task CRUD operations | 🎯 Phase 3 |
-
-**Total:** ~4,650 lines
-
-**Usage Pattern:**
-```javascript
-// Import and MUST configure before use
-const { setTaskManagerDependencies } = await import('./utilities/taskManager.js');
-
-setTaskManagerDependencies({
-    loadData: loadMiniCycleData,
-    saveData: saveMiniCycleData,
-    showNotification: showNotification,
-    updateUI: refreshUIFromState
-});
-
-// Now safe to use - will throw clear errors if misconfigured
-```
-
----
-
-## 📈 Size Comparison
+## 📊 Size Comparison
 
 ### **Before Modularization**
 ```
-miniCycle-scripts.js:  15,677 lines  (99% of codebase)
-utilities/:               200 lines  (1% of codebase)
+miniCycle-scripts.js:  15,677 lines  (98.7% of codebase)
+utilities/:               200 lines  (1.3% of codebase)
 ```
 
-### **After Modularization (Target)**
+### **Current State** (30% complete)
 ```
-miniCycle-scripts.js:   5,000 lines  (25% of codebase - orchestration only)
-utilities/:            15,254 lines  (75% of codebase - 18 focused modules)
-
-Reduction: 68% of main script moved to modules
+miniCycle-scripts.js:  11,214 lines  (46% of codebase)
+utilities/:            12,934 lines  (54% of codebase)
+19 modules extracted
 ```
 
-### **Module Size Distribution**
-| Pattern | Count | Total Lines | Avg Lines/Module |
-|---------|-------|-------------|------------------|
-| ⚡ Static Utility | 4 | 1,235 | 309 |
-| 🎯 Simple Instance | 5 | 5,320 | 1,064 |
-| 🛡️ Resilient Constructor | 3 | 4,049 | 1,350 |
-| 🔧 Strict Injection | 6 | 4,650 | 775 |
-| **Total** | **18** | **15,254** | **847** |
+### **Target Final State**
+```
+miniCycle-scripts.js:   4,000 lines  (17% of codebase - orchestration only)
+utilities/:            19,848 lines  (83% of codebase - 35+ focused modules)
+
+Breakdown by system:
+- Task System:      3,000 lines (7 modules)
+- Cycle System:     2,500 lines (4 modules)
+- UI Coordination:  2,500 lines (6 modules)
+- Recurring System: 3,507 lines (3 modules) ✅
+- Testing System:   3,559 lines (4 modules) ✅
+- Support Services: 3,003 lines (9 modules) ✅
+- Utilities/Plugins:1,779 lines (5 modules) ✅
+
+Total: 35+ modules
+Average module size: ~567 lines (very manageable)
+Largest module: ~800 lines (taskDOM.js)
+```
 
 ---
 
-## 🏗️ Main Script Responsibilities (After Modularization)
+## 🏗️ Main Script Responsibilities (Final)
 
-**miniCycle-scripts.js** (~5,000 lines) handles ONLY:
+**miniCycle-scripts.js** (~4,000 lines) handles ONLY:
 
-### 1. **Module Orchestration** (~500 lines)
+### 1. **System Initialization** (~800 lines)
 ```javascript
-// Load and initialize all modules in correct order
 document.addEventListener('DOMContentLoaded', async () => {
-    // Phase 1: Static utilities
+    // Phase 1: Load utilities
     await import('./utilities/globalUtils.js');
-    await import('./utilities/taskUtils.js');
-    await import('./utilities/dateUtils.js');
+    await import('./utilities/deviceDetection.js');
 
-    // Phase 2: Simple instances
+    // Phase 2: Load support services
+    await import('./utilities/state.js');
     await import('./utilities/notifications.js');
     await import('./utilities/themeManager.js');
 
-    // Phase 3: Configure strict injection modules
-    const taskMgr = await import('./utilities/taskManager.js');
-    taskMgr.setTaskManagerDependencies({...});
+    // Phase 3: Load business logic systems
+    const taskCore = await import('./utilities/task/taskCore.js');
+    const cycleManager = await import('./utilities/cycle/cycleManager.js');
 
-    // Phase 4: Initialize resilient UI
-    const { StatsPanel } = await import('./utilities/statsPanel.js');
-    statsPanel = new StatsPanel({...});
+    // Phase 4: Configure dependencies
+    taskCore.setDependencies({
+        state: window.AppState,
+        notifications: window.showNotification
+    });
+
+    // Phase 5: Initialize UI
+    const undoMgr = await import('./utilities/ui/undoManager.js');
+    const modalMgr = await import('./utilities/ui/modalManager.js');
+
+    // Phase 6: Signal ready
+    await window.appInit.markAppReady();
 });
 ```
 
 ### 2. **Global State Coordination** (~800 lines)
 ```javascript
-// Central coordination state
+// High-level application state
 window.AppGlobalState = {
     draggedTask: null,
     isDragging: false,
-    hasInteracted: false
+    hasInteracted: false,
+    activeModal: null
 };
 ```
 
-### 3. **Event Coordination** (~1,200 lines)
+### 3. **Cross-System Coordination** (~1,000 lines)
 ```javascript
-// High-level event routing
-document.addEventListener('cycle:ready', () => {
-    // Coordinate between modules
+// Logic that coordinates multiple systems
+function handleCompleteAllTasks() {
+    // Uses: taskCore, cycleManager, statsPanel, notifications
+    // Stays in main script as it orchestrates across systems
+}
+
+function checkMiniCycle() {
+    // Uses: taskCore, cycleManager, statsPanel, themeManager
+    // Cross-system coordination stays here
+}
+```
+
+### 4. **Event Bus & Routing** (~800 lines)
+```javascript
+// High-level event routing between systems
+document.addEventListener('cycle:ready', async () => {
+    await taskRenderer.render();
+    statsPanel.update();
+});
+
+document.addEventListener('task:completed', (e) => {
+    cycleManager.checkCycleCompletion();
+    statsPanel.updateProgress();
 });
 ```
 
-### 4. **Legacy Compatibility Wrappers** (~1,000 lines)
+### 5. **Legacy Compatibility** (~600 lines)
 ```javascript
-// Temporary bridges during migration
-window.addTask = (...args) => taskManager.addTask(...args);
-window.deleteTask = (...args) => taskManager.deleteTask(...args);
-// (Remove these in future versions)
-```
-
-### 5. **App-Specific Coordination** (~1,500 lines)
-```javascript
-// Business logic that truly needs to coordinate multiple modules
-function completeCycle() {
-    // Uses: taskManager, statsPanel, notifications, state
-    // This stays in main script as it coordinates across modules
-}
+// Temporary global exports during migration
+// (Remove after full modularization)
+window.addTask = (...args) => taskCore.addTask(...args);
+window.deleteTask = (...args) => taskCore.deleteTask(...args);
+window.switchMiniCycle = (...args) => cycleSwitcher.switch(...args);
 ```
 
 ---
 
-## 🎯 Module Communication Patterns
+## 🔄 Module Communication Patterns
 
-### **Pattern 1: Direct Function Calls** (Static Utilities)
+### **Pattern 1: Dependency Injection** (Business Logic)
 ```javascript
-// Modules use static utilities directly
-const taskId = generateId('task');
-const element = safeGetElement('myElement');
-```
+// utilities/task/taskCore.js
+const Deps = {
+    state: null,
+    notifications: null,
+    renderer: null
+};
 
-### **Pattern 2: Dependency Injection** (Strict Injection)
-```javascript
-// Main script injects dependencies
-setTaskManagerDependencies({
-    showNotification: window.showNotification,
-    loadData: window.loadMiniCycleData
-});
-
-// Module uses injected functions
-function addTask(text) {
-    Deps.showNotification('Task added!');
-    Deps.loadData();
+export function setDependencies(deps) {
+    Object.assign(Deps, deps);
 }
+
+export function addTask(text) {
+    // Use injected dependencies
+    const state = Deps.state.get();
+    Deps.notifications.show('Task added!');
+    Deps.renderer.refresh();
+}
+
+// Main script configures
+import { setDependencies } from './utilities/task/taskCore.js';
+setDependencies({
+    state: window.AppState,
+    notifications: window.showNotification,
+    renderer: taskRenderer
+});
 ```
 
-### **Pattern 3: Event Bus** (Cross-Module Communication)
+### **Pattern 2: Event Bus** (Cross-System Communication)
 ```javascript
-// Module A emits event
-window.dispatchEvent(new CustomEvent('task:completed', {
+// Module A emits
+document.dispatchEvent(new CustomEvent('task:completed', {
     detail: { taskId: '123' }
 }));
 
 // Module B listens
-window.addEventListener('task:completed', (e) => {
-    statsPanel.updateStats();
+document.addEventListener('task:completed', (e) => {
+    cycleManager.checkCompletion();
+    statsPanel.update();
 });
 ```
 
-### **Pattern 4: Global State** (Shared State)
+### **Pattern 3: Shared State** (AppState)
 ```javascript
-// Modules read/write to centralized state
-if (!window.AppState.isReady()) return;
+// Modules read/write centralized state
+import { AppState } from './utilities/state.js';
 
-window.AppState.update((state) => {
-    state.data.cycles[cycleId].tasks.push(newTask);
-});
-```
-
----
-
-## 🔄 Initialization Flow
-
-**Proper loading sequence ensures modules initialize in correct order:**
-
-```
-1. DOM Ready Event Fires
-   ↓
-2. Load Static Utilities (⚡)
-   - globalUtils.js
-   - taskUtils.js
-   - dateUtils.js
-   - deviceDetection.js
-   ↓
-3. Load Simple Instances (🎯)
-   - notifications.js (creates instance automatically)
-   - themeManager.js (creates instance automatically)
-   - modalManager.js (creates instance automatically)
-   ↓
-4. Configure Strict Injection Modules (🔧)
-   - Import modules
-   - Call setXxxDependencies() for each
-   - Modules now ready to use
-   ↓
-5. Initialize Resilient UI (🛡️)
-   - Create instances with available deps
-   - Components gracefully handle missing deps
-   ↓
-6. Emit 'modules:ready' Event
-   ↓
-7. Main App Logic Begins
-```
-
----
-
-## 📦 Module Export Patterns
-
-### **Static Utility** ⚡
-```javascript
-// utilities/taskUtils.js
-export class TaskUtils {
-    static extractTaskDataFromDOM(el) { /* ... */ }
-    static validateTaskData(task) { /* ... */ }
+function addTask(text) {
+    AppState.update((state) => {
+        state.data.cycles[cycleId].tasks.push(newTask);
+    });
 }
-
-// Global exports
-window.TaskUtils = TaskUtils;
-window.extractTaskDataFromDOM = TaskUtils.extractTaskDataFromDOM;
 ```
 
-### **Simple Instance** 🎯
+### **Pattern 4: Direct Imports** (Within Same System)
 ```javascript
-// utilities/themeManager.js
-export class ThemeManager {
-    constructor() { /* ... */ }
-    applyTheme(name) { /* ... */ }
+// utilities/task/taskDOM.js
+import { validateTask } from './taskValidation.js';
+import { createTaskId } from './taskUtils.js';
+
+export function createTaskElement(text) {
+    if (!validateTask(text)) return null;
+    const taskId = createTaskId();
+    // ...
 }
-
-// Create singleton
-const themeManager = new ThemeManager();
-
-// Global exports
-window.themeManager = themeManager;
-window.applyTheme = (name) => themeManager.applyTheme(name);
-```
-
-### **Resilient Constructor** 🛡️
-```javascript
-// utilities/statsPanel.js
-export class StatsPanelManager {
-    constructor(dependencies = {}) { /* ... */ }
-    update() { /* ... */ }
-}
-
-// Main script creates instance
-const statsPanel = new StatsPanelManager({
-    showNotification,
-    loadData
-});
-
-window.statsPanel = statsPanel;
-```
-
-### **Strict Injection** 🔧
-```javascript
-// utilities/taskManager.js
-const Deps = { loadData: null, saveData: null };
-
-export function setTaskManagerDependencies(overrides) {
-    Object.assign(Deps, overrides);
-}
-
-export function addTask(text) {
-    assertInjected('loadData', Deps.loadData);
-    // ... use Deps.loadData()
-}
-
-// Main script configures
-setTaskManagerDependencies({ loadData, saveData });
 ```
 
 ---
 
-## 🧪 Testing Strategy by Pattern
+## 🎯 Module Design Principles
 
-### **Static Utilities** ⚡
+### **1. Single Responsibility**
+Each module does ONE thing:
+- ✅ `taskCore.js` - Task CRUD operations
+- ✅ `taskDOM.js` - Task DOM creation
+- ❌ DON'T create `taskEverything.js`
+
+### **2. Small & Focused**
+Target: 300-800 lines per module
+- ✅ Easy to understand in one sitting
+- ✅ Easy to test
+- ✅ Easy to refactor
+
+### **3. Clear Dependencies**
+Explicit, injected dependencies:
 ```javascript
-// Pure unit tests, no mocks needed
-describe('TaskUtils', () => {
-    test('extractTaskDataFromDOM', () => {
-        const mockElement = createMockElement();
-        const result = TaskUtils.extractTaskDataFromDOM(mockElement);
-        expect(result.id).toBe('task-123');
-    });
-});
+// ✅ Good - explicit
+setDependencies({ state, notifications });
+
+// ❌ Bad - hidden globals
+function addTask() {
+    window.AppState.update(...);  // Hidden dependency!
+}
 ```
 
-### **Simple Instances** 🎯
+### **4. System Cohesion**
+Related modules in same folder:
 ```javascript
-// Test with DOM + fallback verification
-describe('ThemeManager', () => {
-    test('applies theme correctly', () => {
-        const tm = new ThemeManager();
-        tm.applyTheme('dark-ocean');
-        expect(document.body.classList.contains('theme-dark-ocean')).toBe(true);
-    });
-
-    test('falls back gracefully when DOM unavailable', () => {
-        document.body = null; // Simulate missing DOM
-        const tm = new ThemeManager();
-        expect(() => tm.applyTheme('dark')).not.toThrow();
-    });
-});
-```
-
-### **Resilient Constructors** 🛡️
-```javascript
-// Test with dependency stubs
-describe('StatsPanelManager', () => {
-    test('works with all dependencies', () => {
-        const statsPanel = new StatsPanelManager({
-            showNotification: jest.fn(),
-            loadData: jest.fn(() => mockData)
-        });
-        statsPanel.update();
-        expect(statsPanel.deps.showNotification).toHaveBeenCalled();
-    });
-
-    test('works with missing dependencies', () => {
-        const statsPanel = new StatsPanelManager({}); // No deps
-        expect(() => statsPanel.update()).not.toThrow();
-    });
-});
-```
-
-### **Strict Injection** 🔧
-```javascript
-// Test assertion failures + happy path
-describe('TaskManager', () => {
-    test('throws when dependencies not configured', () => {
-        expect(() => addTask('Test')).toThrow('missing required dependency');
-    });
-
-    test('works when properly configured', () => {
-        setTaskManagerDependencies({
-            loadData: jest.fn(() => mockData),
-            saveData: jest.fn()
-        });
-        expect(() => addTask('Test')).not.toThrow();
-    });
-});
+task/
+  ├── taskCore.js      // These work together
+  ├── taskDOM.js       // as a system
+  └── taskEvents.js
 ```
 
 ---
 
-## 📚 Documentation Structure
+## 🧪 Testing Strategy
 
+### **Unit Tests** (Individual Modules)
+```javascript
+// Test taskValidation.js in isolation
+import { validateTaskInput } from './task/taskValidation.js';
+
+test('rejects empty input', () => {
+    expect(validateTaskInput('')).toBe(false);
+});
 ```
-docs/
-├── CLAUDE.md                              (Architecture overview for AI)
-├── minicycle_modularization_guide_v3.md   (Patterns and implementation guide)
-├── modules/
-│   ├── STATIC-UTILITIES.md                (Pattern-specific docs)
-│   ├── SIMPLE-INSTANCES.md
-│   ├── RESILIENT-CONSTRUCTORS.md
-│   └── STRICT-INJECTION.md
-├── api/
-│   ├── taskManager.md                     (Individual module APIs)
-│   ├── themeManager.md
-│   └── statsPanel.md
-└── migration/
-    ├── PHASE-1-UTILITIES.md               (Migration guides)
-    ├── PHASE-2-SYSTEMS.md
-    └── PHASE-3-CORE.md
+
+### **Integration Tests** (System Tests)
+```javascript
+// Test task system integration
+import { addTask } from './task/taskCore.js';
+import { renderTasks } from './task/taskRenderer.js';
+
+test('task appears after add', async () => {
+    await addTask('Test');
+    renderTasks();
+    expect(getTaskCount()).toBe(1);
+});
+```
+
+### **E2E Tests** (Full App)
+```javascript
+// Current: 357 tests, 96% passing
+// Tests full workflows across systems
 ```
 
 ---
 
-## 🎯 Module Dependency Map
-
-```
-Main Script (miniCycle-scripts.js)
-│
-├─→ ⚡ Static Utilities (no dependencies)
-│   ├─→ globalUtils.js
-│   ├─→ taskUtils.js
-│   ├─→ dateUtils.js
-│   └─→ deviceDetection.js
-│
-├─→ 🎯 Simple Instances (self-contained)
-│   ├─→ notifications.js
-│   ├─→ themeManager.js (uses: localStorage)
-│   └─→ modalManager.js (uses: DOM)
-│
-├─→ 🔧 Strict Injection (configured by main script)
-│   ├─→ state.js
-│   │   └─→ uses: localStorage, showNotification
-│   │
-│   ├─→ migrationManager.js
-│   │   └─→ uses: loadData, saveData, showNotification
-│   │
-│   ├─→ taskManager.js
-│   │   └─→ uses: loadData, saveData, showNotification, updateUI
-│   │
-│   └─→ recurringCore.js
-│       └─→ uses: state, taskManager, showNotification
-│
-└─→ 🛡️ Resilient Constructors (injected by main script)
-    ├─→ statsPanel.js
-    │   └─→ uses: loadData, showNotification, updateTheme
-    │
-    ├─→ recurringPanel.js
-    │   └─→ uses: recurringCore, taskManager, showNotification
-    │
-    └─→ undoManager.js
-        └─→ uses: state, refreshUI, showNotification
-```
-
-**Dependency Rules:**
-- ⚡ Static Utilities → **No dependencies** (pure functions)
-- 🎯 Simple Instances → **Optional dependencies** (graceful fallback)
-- 🛡️ Resilient Constructors → **Injected dependencies** (fallback functions)
-- 🔧 Strict Injection → **Required dependencies** (fail fast if missing)
-
----
-
-## 🚀 Benefits of Final Architecture
+## 🚀 Benefits of This Architecture
 
 ### **Developer Experience**
-- ✅ **Find code faster** - 18 focused modules vs 1 monolith
-- ✅ **Easier debugging** - Isolated concerns, clear boundaries
-- ✅ **Safer changes** - Modify one module without affecting others
-- ✅ **Better testing** - Unit test individual modules
-- ✅ **Parallel development** - Team can work on different modules
+- ✅ **Find code in 5 seconds** - "Task validation issue? → `task/taskValidation.js`"
+- ✅ **Change with confidence** - Modify `taskDOM.js` without touching `taskCore.js`
+- ✅ **Easier debugging** - Isolated systems with clear boundaries
+- ✅ **Parallel development** - Work on different systems simultaneously
 
 ### **Code Quality**
-- ✅ **Clear patterns** - 4 consistent approaches, not ad-hoc
-- ✅ **Explicit dependencies** - No hidden global coupling
-- ✅ **Error boundaries** - Failures isolated to modules
-- ✅ **Graceful degradation** - Non-critical features fail safely
-
-### **Maintenance**
-- ✅ **Easier onboarding** - Understand one module at a time
-- ✅ **Safer refactoring** - Change one module, test in isolation
-- ✅ **Reusability** - Export modules to other projects
-- ✅ **Documentation** - Each module self-documents its purpose
+- ✅ **No 2,000-line monsters** - Largest module: ~800 lines
+- ✅ **Clear ownership** - Each module has one purpose
+- ✅ **Testable** - Unit test individual modules
+- ✅ **Maintainable** - Small, focused modules are easy to understand
 
 ### **Performance**
-- ✅ **Faster initial load** - Can lazy-load non-critical modules
+- ✅ **Lazy loading** - Load `gamesManager.js` only when needed
 - ✅ **Better caching** - Browser caches modules separately
-- ✅ **Code splitting** - Load modules on demand
-- ✅ **Tree shaking** - Remove unused code more effectively
+- ✅ **Code splitting** - Ship only what's needed
+- ✅ **Tree shaking** - Remove unused modules
 
 ---
 
-## 📊 Final Metrics
+## 📈 Success Metrics
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Main script size | 15,677 lines | 5,000 lines | **68% reduction** |
-| Largest single file | 15,677 lines | 2,669 lines | **83% reduction** |
-| Average module size | N/A | 847 lines | **Manageable** |
-| Testable modules | 0 | 18 | **∞ improvement** |
-| Circular dependencies | High risk | Eliminated | **Significant** |
-| Time to find code | Minutes | Seconds | **10x faster** |
+### **Quantitative Goals**
+- ✅ Main script < 4,000 lines (currently 11,214)
+- ✅ 35+ focused modules (currently 19)
+- ✅ No module > 800 lines
+- ✅ Average module size ~567 lines
+- ✅ 100% backward compatible
 
----
-
-## 🎓 Success Indicators
-
-You'll know the modularization is complete when:
-
-1. ✅ **Main script < 5,000 lines** - Only orchestration logic remains
-2. ✅ **18+ focused modules** - Each with clear, single responsibility
-3. ✅ **All patterns implemented** - ⚡🎯🛡️🔧 all proven in production
-4. ✅ **No circular dependencies** - Clean dependency graph
-5. ✅ **100% backward compatible** - All existing features work
-6. ✅ **Unit tests possible** - Can test modules in isolation
-7. ✅ **Team can navigate** - New developers find code quickly
-8. ✅ **Deployment confidence** - Changes to one module don't break others
+### **Qualitative Goals**
+- ✅ New developer finds code in < 1 minute
+- ✅ Can change one module without breaking others
+- ✅ Unit tests possible for all business logic
+- ✅ Clear mental model of codebase structure
+- ✅ Documentation matches actual code
 
 ---
 
-## 🎯 What This Architecture Enables
+## 🎯 Next Steps
 
-### **Now Possible:**
-- 🚀 **Lazy loading** - Load modules on demand for faster startup
-- 🧪 **Unit testing** - Test business logic without DOM
+### **Week 1: Task System Foundation**
+1. Extract `task/taskCore.js` (500 lines)
+2. Extract `task/taskValidation.js` (200 lines)
+3. Extract `task/taskUtils.js` (300 lines)
+4. Test thoroughly
+
+### **Week 2: Task System UI**
+1. Extract `task/taskDOM.js` (800 lines)
+2. Extract `task/taskEvents.js` (400 lines)
+3. Extract `task/taskRenderer.js` (300 lines)
+4. Extract `task/dragDropManager.js` (400 lines)
+5. Test integration
+
+### **Week 3: Cycle System**
+1. Extract `cycle/cycleManager.js` (600 lines)
+2. Extract `cycle/cycleSwitcher.js` (400 lines)
+3. Extract `cycle/modeManager.js` (500 lines)
+4. Extract `cycle/migrationManager.js` (700 lines)
+
+### **Week 4: UI Coordination**
+1. Extract `ui/modalManager.js` (600 lines)
+2. Extract `ui/undoManager.js` (500 lines)
+3. Extract `ui/menuManager.js` (400 lines)
+4. Extract `ui/settingsManager.js` (500 lines)
+
+### **Weeks 5-6: Polish & Testing**
+1. Extract remaining modules (onboarding, games)
+2. Remove legacy compatibility layer
+3. Full integration testing
+4. Performance optimization
+5. Documentation updates
+
+---
+
+## 🎓 What This Enables
+
+### **Immediate Benefits**
+- 🔍 **Code navigation** - Find any function in seconds
+- 🧪 **Unit testing** - Test business logic in isolation
+- 🛡️ **Error isolation** - Bugs contained to modules
 - 📦 **Code reuse** - Export modules to other projects
-- 👥 **Team scaling** - Multiple developers work without conflicts
-- 🔄 **Progressive enhancement** - Add features without touching core
-- 📊 **Bundle analysis** - Identify bloat in specific modules
-- 🎨 **Theme modules** - Ship themes as separate modules
-- 🔌 **Plugin system** - Third-party modules can extend app
 
-### **Future Enhancements:**
+### **Future Possibilities**
 ```javascript
-// After modularization is complete:
-
-// 1. Add plugin support
-await import('./plugins/custom-theme.js');
-
-// 2. Lazy load heavy features
-const analytics = await import('./utilities/analyticsEngine.js');
-
-// 3. A/B test new features
-if (userGroup === 'beta') {
-    await import('./utilities/betaFeatures.js');
+// Lazy load heavy features
+if (userClickedGames) {
+    await import('./utilities/ui/gamesManager.js');
 }
 
-// 4. Ship themes separately
-await import('./themes/ocean-theme.js');
+// A/B test new features
+if (betaUser) {
+    await import('./utilities/task/taskAI.js');
+}
+
+// Plugin architecture
+await import('./plugins/custom-workflow.js');
+
+// Progressive enhancement
+if (supportsAdvancedFeatures) {
+    await import('./utilities/task/advancedEditor.js');
+}
 ```
 
 ---
 
-**This is your target architecture!** 🎯
+## 📊 Final Architecture Diagram
 
-Start with Phase 1 utilities this week, and in 6-9 weeks you'll have this beautiful, maintainable, modular codebase. Each module will be focused, testable, and easy to understand.
+```
+miniCycle App
+│
+├─── Core Orchestration (miniCycle-scripts.js - 4,000 lines)
+│    ├─ System initialization
+│    ├─ Cross-system coordination
+│    ├─ Event routing
+│    └─ Global state
+│
+├─── Task System (7 modules - 3,000 lines)
+│    ├─ taskCore.js       (CRUD)
+│    ├─ taskDOM.js        (DOM creation)
+│    ├─ taskEvents.js     (Event handling)
+│    ├─ taskRenderer.js   (Rendering)
+│    ├─ taskValidation.js (Validation)
+│    ├─ taskUtils.js      (Utilities)
+│    └─ dragDropManager.js (Drag & drop)
+│
+├─── Cycle System (4 modules - 2,500 lines)
+│    ├─ cycleLoader.js    (Loading) ✅
+│    ├─ cycleManager.js   (CRUD)
+│    ├─ cycleSwitcher.js  (Switching)
+│    ├─ modeManager.js    (Modes)
+│    └─ migrationManager.js (Migrations)
+│
+├─── UI Coordination (6 modules - 2,500 lines)
+│    ├─ modalManager.js     (Modals)
+│    ├─ undoManager.js      (Undo/redo)
+│    ├─ menuManager.js      (Menu)
+│    ├─ settingsManager.js  (Settings)
+│    ├─ onboardingManager.js (Setup)
+│    └─ gamesManager.js     (Games)
+│
+└─── Support Systems (17 modules - 11,848 lines) ✅
+     ├─ Recurring (3 modules) ✅
+     ├─ Testing (4 modules) ✅
+     ├─ Services (9 modules) ✅
+     └─ Utilities (5 modules) ✅
+```
 
-**The hard work is already done** - you've proven all 4 patterns work. Now it's just applying them systematically to the remaining code! 🚀
+---
+
+**This architecture is achievable in 4-6 weeks** and will result in a codebase that's:
+- ✅ Easy to navigate
+- ✅ Easy to test
+- ✅ Easy to maintain
+- ✅ Easy to extend
+- ✅ Production-ready
+
+**Let's build it!** 🚀
