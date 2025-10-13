@@ -177,7 +177,7 @@ export function runRecurringCoreTests(resultsDiv) {
     // === DAILY RECURRENCE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📅 Daily Recurrence</h4>';
 
-    test('daily: triggers at midnight without time', () => {
+    test('daily: triggers at any time without specific time (midnight)', () => {
         const settings = normalizeRecurringSettings({ frequency: 'daily' });
         const testDate = new Date(2025, 0, 15, 0, 0); // Jan 15, 2025, 00:00
 
@@ -188,14 +188,14 @@ export function runRecurringCoreTests(resultsDiv) {
         }
     });
 
-    test('daily: does not trigger at other times without time setting', () => {
+    test('daily: triggers at any time without specific time (10:30 AM)', () => {
         const settings = normalizeRecurringSettings({ frequency: 'daily' });
         const testDate = new Date(2025, 0, 15, 10, 30); // Jan 15, 2025, 10:30
 
         const result = shouldTaskRecurNow(settings, testDate);
 
-        if (result) {
-            throw new Error('Should not trigger at 10:30 without time setting');
+        if (!result) {
+            throw new Error('✅ FIX: Should trigger at 10:30 without time setting (relies on lastTriggeredTimestamp to prevent duplicates)');
         }
     });
 
@@ -642,7 +642,7 @@ export function runRecurringCoreTests(resultsDiv) {
     // === EDGE CASES ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔍 Edge Cases</h4>';
 
-    test('handles empty weekly days array', () => {
+    test('✅ FIX: empty weekly days array allows all days', () => {
         const settings = normalizeRecurringSettings({
             frequency: 'weekly',
             weekly: { days: [] }
@@ -651,12 +651,12 @@ export function runRecurringCoreTests(resultsDiv) {
 
         const result = shouldTaskRecurNow(settings, testDate);
 
-        if (result) {
-            throw new Error('Should not trigger with no days selected');
+        if (!result) {
+            throw new Error('✅ FIX: Should trigger on any day when no specific days selected');
         }
     });
 
-    test('handles empty monthly days array', () => {
+    test('✅ FIX: empty monthly days array allows all days', () => {
         const settings = normalizeRecurringSettings({
             frequency: 'monthly',
             monthly: { days: [] }
@@ -665,12 +665,12 @@ export function runRecurringCoreTests(resultsDiv) {
 
         const result = shouldTaskRecurNow(settings, testDate);
 
-        if (result) {
-            throw new Error('Should not trigger with no days selected');
+        if (!result) {
+            throw new Error('✅ FIX: Should trigger on any day when no specific days selected');
         }
     });
 
-    test('handles empty yearly months array', () => {
+    test('✅ FIX: empty yearly months array allows all months', () => {
         const settings = normalizeRecurringSettings({
             frequency: 'yearly',
             yearly: { months: [] }
@@ -679,8 +679,45 @@ export function runRecurringCoreTests(resultsDiv) {
 
         const result = shouldTaskRecurNow(settings, testDate);
 
-        if (result) {
-            throw new Error('Should not trigger with no months selected');
+        if (!result) {
+            throw new Error('✅ FIX: Should trigger in any month when no specific months selected');
+        }
+    });
+
+    test('✅ FIX: empty biweekly days array allows all days', () => {
+        const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
+        const settings = normalizeRecurringSettings({
+            frequency: 'biweekly',
+            biweekly: {
+                days: [],
+                referenceDate: referenceDate.toISOString()
+            }
+        });
+        const testDate = new Date(2025, 0, 6); // Monday, week 0
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('✅ FIX: Should trigger on any day when no specific days selected');
+        }
+    });
+
+    test('✅ FIX: yearly with useSpecificDays but empty days array allows all days', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'yearly',
+            yearly: {
+                months: [1],
+                useSpecificDays: true,
+                applyDaysToAll: true,
+                daysByMonth: { all: [] }
+            }
+        });
+        const testDate = new Date(2025, 0, 15); // Jan 15
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('✅ FIX: Should trigger on any day when useSpecificDays enabled but no days selected');
         }
     });
 
