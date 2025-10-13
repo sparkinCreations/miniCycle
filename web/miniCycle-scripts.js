@@ -816,6 +816,14 @@ function wireUndoRedoUI() {
 
   // ✅ Reminder System (with staggered timing)
   console.log('🔔 Setting up reminder system...');
+
+  // ✅ Setup reminder toggle event listener
+  try {
+    setupReminderToggle();
+  } catch (error) {
+    console.warn('⚠️ Reminder toggle setup failed:', error);
+  }
+
   setTimeout(() => {
     try {
       remindOverdueTasks();
