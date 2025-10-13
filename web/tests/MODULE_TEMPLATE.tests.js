@@ -1,15 +1,19 @@
 /**
- * 🧪 MODULE_NAME Tests Template
- * 
+ * MODULE_NAME Tests Template
+ *
  * Copy this template when creating tests for new modules
  * Replace placeholders in CAPS with your actual values
- * 
+ *
  * This template follows miniCycle browser testing patterns
  * Compatible with both manual browser testing and automated CI/CD
+ *
+ * IMPORTANT: If your tests require async operations, make test() async:
+ * async function test(name, testFn) { ... }
+ * And call with: await test('test name', async () => { ... });
  */
 
 export function runMODULE_NAMETests(resultsDiv) {
-    resultsDiv.innerHTML = '<h2>🎯 MODULE_NAME Tests</h2>';
+    resultsDiv.innerHTML = '<h2>MODULE_NAME Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
 
     // Import the module class (replace CLASS_NAME with your actual class)
@@ -17,7 +21,7 @@ export function runMODULE_NAMETests(resultsDiv) {
     
     // Check if class is available
     if (!CLASS_NAME) {
-        resultsDiv.innerHTML += '<div class="result fail">❌ CLASS_NAME class not found. Make sure the module is properly loaded.</div>';
+        resultsDiv.innerHTML += '<div class="result fail">CLASS_NAME class not found. Make sure the module is properly loaded.</div>';
         return { passed: 0, total: 1 };
     }
 
@@ -193,7 +197,7 @@ export function runMODULE_NAMETests(resultsDiv) {
     });
 
     // === ERROR HANDLING TESTS ===
-    resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
+    resultsDiv.innerHTML += '<h4>Error Handling</h4>';
     
     test('handles corrupted localStorage gracefully', () => {
         localStorage.setItem('miniCycleData', 'invalid-json');
@@ -312,9 +316,9 @@ export function runMODULE_NAMETests(resultsDiv) {
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
 
     if (passed.count === total.count) {
-        resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
+        resultsDiv.innerHTML += '<div class="result pass">All tests passed!</div>';
     } else {
-        resultsDiv.innerHTML += '<div class="result fail">⚠️ Some tests failed</div>';
+        resultsDiv.innerHTML += '<div class="result fail">WARNING: Some tests failed</div>';
     }
 
     return { passed: passed.count, total: total.count };
@@ -417,71 +421,4 @@ BEST PRACTICES:
 - Follow the exact Summary format for automation
 - Include performance checks for critical operations
 - Test error handling and edge cases
-*/
-
-// Helper function for exception testing
-function expect(fn) {
-    return {
-        not: {
-            toThrow: () => {
-                try {
-                    fn();
-                } catch (error) {
-                    throw new Error('Expected function not to throw, but it threw: ' + error.message);
-                }
-            }
-        },
-        toThrow: () => {
-            let threw = false;
-            try {
-                fn();
-            } catch (error) {
-                threw = true;
-            }
-            if (!threw) {
-                throw new Error('Expected function to throw, but it did not');
-            }
-        }
-    };
-}
-
-/*
-TEMPLATE USAGE INSTRUCTIONS:
-============================
-
-1. COPY THIS FILE
-   - Copy to: tests/[moduleName].tests.js
-   - Example: tests/taskUtils.tests.js
-
-2. FIND & REPLACE PLACEHOLDERS
-   - [MODULE_NAME] → Your module name (e.g., "TaskUtils")
-   - [ClassName] → Your class name (e.g., "TaskManager")
-   - [primaryMethod] → Main method to test (e.g., "processTask")
-   - [saveMethod] → Method that saves to storage (e.g., "saveTaskData")
-   - [moduleDataKey] → Schema 2.5 storage key (e.g., "taskData")
-   - [globalFunction1] → Global function name (e.g., "processTask")
-   - [moduleInstanceGlobal] → Global instance name (e.g., "taskManager")
-
-3. CUSTOMIZE TEST DATA
-   - Update mockSchemaData settings for your module
-   - Add module-specific test cases
-   - Adjust assertions based on your module's behavior
-
-4. ADD TO TEST SUITE
-   - Add option to tests/module-test-suite.html dropdown
-   - Add import and case to module-test-suite.html script
-   - Add to tests/automated/run-browser-tests.js modules array
-
-5. REMOVE UNUSED SECTIONS
-   - Delete test categories that don't apply to your module
-   - Remove placeholder tests that don't make sense
-   - Keep the structure but customize content
-
-TIPS:
-- Each test should be independent and fast (<100ms)
-- Always reset state in the test() function setup
-- Use Schema 2.5 data structure consistently
-- Test both success and error cases
-- Include performance checks for critical operations
-- Follow the Summary format exactly for automation compatibility
 */
