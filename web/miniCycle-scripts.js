@@ -266,29 +266,19 @@ window.debugAppState = function() {
 
 
 /**  🚦 App Initialization Lifecycle Manager
-// This system ensures that data-dependent initializers only run after an active cycle is ready.
-// It prevents race conditions between data loading and feature initialization by providing:
-// - onReady(fn): Queue functions to run when data is available
-// - isReady(): Check if initialization is complete  
-// - signalReady(activeCycle): Mark data as ready and trigger queued functions
+// ✅ REMOVED: Old AppInit system replaced with proper appInit from appInitialization.js
+// The new system provides 2-phase initialization:
+// - Phase 1 (Core): AppState + cycle data loaded (use appInit.waitForCore())
+// - Phase 2 (App): All modules initialized (use appInit.waitForApp())
+//
+// Old API mapping:
+// - AppInit.onReady(fn) → Use appInit.waitForCore() in async functions
+// - AppInit.isReady() → Use appInit.isCoreReady()
+// - AppInit.signalReady() → Use appInit.markCoreSystemsReady()
 **/
-const AppInit = (() => {
-  let resolveReady;
-  const ready = new Promise(r => (resolveReady = r));
-  let readyFlag = false;
 
-  return {
-    onReady(fn) { ready.then(() => { try { fn(); } catch (e) { console.error('onReady error:', e); } }); },
-    isReady() { return readyFlag; },
-    signalReady(activeCycle) {
-      if (readyFlag) return;
-      readyFlag = true;
-      document.dispatchEvent(new CustomEvent('cycle:ready', { detail: { activeCycle } }));
-      resolveReady();
-    }
-  };
-})();
-window.AppInit = AppInit;
+// ✅ Backward compatibility alias - will be set after appInit loads
+window.AppInit = null; // Will be replaced with appInit below
 
 
 
@@ -305,9 +295,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 
-  // ✅ Load AppInit for 2-phase initialization coordination
+  // ✅ Load appInit for 2-phase initialization coordination
   const { appInit } = await import('./utilities/appInitialization.js');
-  console.log('🚀 AppInit loaded');
+
+  // ✅ Set backward compatibility alias
+  window.AppInit = appInit;
+
+  console.log('🚀 appInit loaded (2-phase initialization system)');
 
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
@@ -651,9 +645,9 @@ function wireUndoRedoUI() {
   if (redoBtn) safeAddEventListener(redoBtn, "click", () => performStateBasedRedo());
 }
 
-// ✅ Defer anything that needs cycles/data until an active cycle exists
-// ...existing code...
-AppInit.onReady(async () => {
+// ✅ Data-ready initialization - runs immediately (no more deferral needed)
+// The code below will execute after data is loaded in the main sequence
+(async () => {
   console.log('🟢 Data-ready initializers running…');
 
   // ✅ Initialize state module SYNCHRONOUSLY after data exists
@@ -688,7 +682,8 @@ AppInit.onReady(async () => {
 
              window.AppState.update = async (producer, immediate) => {
               try {
-                if (window.AppInit?.isReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
+                // ✅ Use new appInit API
+                if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
                   if (prev) captureStateSnapshot(prev);
                 }
@@ -804,7 +799,7 @@ AppInit.onReady(async () => {
       taskInput.focus();
     }
   };
-});
+})(); // ✅ End of async IIFE - executes immediately
 // ...existing code...
 
 // ...existing code...
@@ -1445,11 +1440,12 @@ function getModeName(mode) {
     return result;
 }
 
-function initializeModeSelector() {
-      if (!window.AppInit?.isReady?.()) {
-    // Defer this whole initializer until data-ready (safety net)
-    return AppInit.onReady(() => initializeModeSelector());
-  }
+async function initializeModeSelector() {
+    // ✅ Wait for core systems to be ready
+    if (window.appInit && !window.appInit.isCoreReady()) {
+        await window.appInit.waitForCore();
+    }
+
     console.log('⏰ Initializing mode selector with 200ms delay...');
     setTimeout(() => {
         console.log('⏰ Delay complete, calling setupModeSelector...');
