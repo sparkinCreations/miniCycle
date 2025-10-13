@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.314'
+        currentVersion: '1.315'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -595,19 +595,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       window.__pendingCycleLoad = false;
     }
 
-    // 🎯 Core data initialization (move here so loader is ready)
-    console.log('🎯 About to start core data initialization...');
-    try {
-      console.log('🔧 Running fixTaskValidationIssues...');
-      fixTaskValidationIssues();
+    // ✅ MOVED: DragDropManager initialization moved to Phase 2 (after markCoreSystemsReady)
+    // See async IIFE around line ~690 for the new appInit-compliant location
 
-      console.log('🚀 Running initializeAppWithAutoMigration...');
-      initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup()
-      console.log('✅ Core initialization sequence started successfully');
-    } catch (error) {
-      console.error('❌ Critical initialization error:', error);
-      console.error('❌ Error stack:', error.stack);
-    }
+    // ✅ MOVED: Data initialization moved to async IIFE (after dragDropManager is ready)
+    // See line ~700 where initializeAppWithAutoMigration() is now called
+    // This ensures: cycleLoader → AppState → dragDropManager → data loading (proper order)
   } catch (e) {
     console.error('❌ cycleLoader import failed:', e);
   }
@@ -623,8 +616,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupMiniCycleTitleListener();
     setupDownloadMiniCycle();
     setupUploadMiniCycle();
-    setupRearrange();
-    dragEndCleanup();
+    // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
     // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
@@ -664,8 +656,52 @@ function wireUndoRedoUI() {
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
+    // ✅ MOVED: DragDropManager initialization moved earlier (before initializeAppWithAutoMigration)
+    // See line ~600 for the new location - must be initialized before any tasks are created
+
         // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
         await appInit.markCoreSystemsReady();
+
+        // ============ PHASE 2: MODULES ============
+        console.log('🔌 Phase 2: Loading modules (appInit-compliant)...');
+
+        // ✅ Initialize Drag & Drop Manager (Phase 2 module - waits for core internally)
+        console.log('🔄 Initializing drag & drop manager...');
+        const { initDragDropManager } = await import('./utilities/task/dragDropManager.js');
+
+        await initDragDropManager({
+          saveCurrentTaskOrder: () => saveCurrentTaskOrder?.(),
+          autoSave: () => autoSave?.(),
+          updateProgressBar: () => updateProgressBar?.(),
+          updateStatsPanel: () => updateStatsPanel?.(),
+          checkCompleteAllButton: () => checkCompleteAllButton?.(),
+          updateUndoRedoButtons: () => updateUndoRedoButtons?.(),
+          captureStateSnapshot: (state) => captureStateSnapshot?.(state),
+          refreshUIFromState: () => refreshUIFromState?.(),
+          revealTaskButtons: (task) => revealTaskButtons?.(task),
+          hideTaskButtons: (task) => hideTaskButtons?.(task),
+          isTouchDevice: () => isTouchDevice?.() || false,
+          enableUndoSystemOnFirstInteraction: () => enableUndoSystemOnFirstInteraction?.(),
+          showNotification: (msg, type, duration) => showNotification?.(msg, type, duration)
+        });
+
+        console.log('✅ DragDropManager initialized and ready (Phase 2)');
+
+        // ============ PHASE 3: DATA LOADING ============
+        console.log('📊 Phase 3: Loading app data...');
+
+        // 🎯 Now that all modules are ready, load data
+        try {
+          console.log('🔧 Running fixTaskValidationIssues...');
+          fixTaskValidationIssues();
+
+          console.log('🚀 Running initializeAppWithAutoMigration...');
+          initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup()
+          console.log('✅ Data initialization sequence completed');
+        } catch (error) {
+          console.error('❌ Critical initialization error:', error);
+          console.error('❌ Error stack:', error.stack);
+        }
 
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
@@ -773,6 +809,9 @@ function wireUndoRedoUI() {
 
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
+
+  // ✅ MOVED: DragDropManager initialization moved earlier (before markCoreSystemsReady)
+  // See line ~668 for the new location
 
   // ✅ Now that AppState is ready, setup arrow visibility
   updateMoveArrowsVisibility();
@@ -7352,477 +7391,14 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
 }
 
     /***********************
- * 
- * 
- * Rearrange Management Logic
- * 
- * 
+ *
+ *
+ * Rearrange Management Logic - MOVED TO MODULE
+ * See: utilities/task/dragDropManager.js
+ *
+ *
  ************************/
 
-
-/**
- * Draganddrop function.
- *
- * @param {any} taskElement - Description. * @returns {void}
- */
-
-function DragAndDrop(taskElement) {
-    // Prevent text selection on mobile
-    taskElement.style.userSelect = "none";
-    taskElement.style.webkitUserSelect = "none";
-    taskElement.style.msUserSelect = "none";
-    let readyToDrag = false; 
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let holdTimeout = null;
-    let isDragging = false;
-    let isLongPress = false;
-    let isTap = false;
-    let preventClick = false;
-    const moveThreshold = 15; // 🚀 Movement threshold for long press
-
-    // 📱 **Touch-based Drag for Mobile**
-    taskElement.addEventListener("touchstart", (event) => {
-        if (event.target.closest(".task-options")) return;
-        isLongPress = false;
-        isDragging = false;
-        isTap = true; 
-        readyToDrag = false; 
-        touchStartX = event.touches[0].clientX;
-        touchStartY = event.touches[0].clientY;
-        preventClick = false;
-
-        // ✅ NEW FIX: Remove `.long-pressed` from all other tasks before long press starts
-        document.querySelectorAll(".task").forEach(task => {
-            if (task !== taskElement) {
-                task.classList.remove("long-pressed");
-                hideTaskButtons(task);
-            }
-        });
-
-        holdTimeout = setTimeout(() => {
-            isLongPress = true;
-            isTap = false;
-            window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
-            isDragging = true;
-            taskElement.classList.add("dragging", "long-pressed");
-
-            event.preventDefault();
-
-            console.log("📱 Long Press Detected - Showing Task Options", taskElement);
-
-            // ✅ Ensure task options remain visible
-            revealTaskButtons(taskElement);
-
-        }, 500); // Long-press delay (500ms)
-    });
-
-    taskElement.addEventListener("touchmove", (event) => {
-        const touchMoveX = event.touches[0].clientX;
-        const touchMoveY = event.touches[0].clientY;
-        const deltaX = Math.abs(touchMoveX - touchStartX);
-        const deltaY = Math.abs(touchMoveY - touchStartY);
-
-        // ✅ Cancel long press if moving too much
-        if (deltaX > moveThreshold || deltaY > moveThreshold) {
-            clearTimeout(holdTimeout);
-            isLongPress = false;
-            isTap = false; // ✅ Prevent accidental taps after dragging
-            return;
-        }
-
-        // ✅ Allow normal scrolling if moving vertically
-        if (deltaY > deltaX) {
-            clearTimeout(holdTimeout);
-            isTap = false;
-            return;
-        }
-
-        if (isLongPress && readyToDrag && !isDragging) {
-            taskElement.setAttribute("draggable", "true");
-            isDragging = true;
-
-            if (event.cancelable) {
-                event.preventDefault();
-            }
-        }
-
-        if (isDragging && draggedTask) {
-            if (event.cancelable) {
-                event.preventDefault();
-            }
-            const movingTask = document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY);
-            if (movingTask) {
-              handleRearrange(movingTask, event);
-          }
-      
-        }
-    });
-
-    taskElement.addEventListener("touchend", () => {
-        clearTimeout(holdTimeout);
-
-        if (isTap) {
-            preventClick = true;
-            setTimeout(() => { 
-                preventClick = false; 
-            }, 100);
-        }
-
-        if (window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-            window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging"); // ✅ Use centralized state
-            window.AppGlobalState.draggedTask = null; // ✅ Use centralized state
-        }
-
-        isDragging = false;
-
-        // ✅ Ensure task options remain open only when a long press is detected
-        if (isLongPress) {
-            console.log("✅ Long Press Completed - Keeping Task Options Open", taskElement);
-            return;
-        }
-    
-        taskElement.classList.remove("long-pressed");
-    });
-
-    // 🖱️ **Mouse-based Drag for Desktop**
-    taskElement.addEventListener("dragstart", (event) => {
-        if (event.target.closest(".task-options")) return;
-
-        // ✅ Enable undo system on first user interaction
-        enableUndoSystemOnFirstInteraction();
-
-        window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
-        event.dataTransfer.setData("text/plain", "");
-
-        // ✅ NEW: Add dragging class for desktop as well
-        taskElement.classList.add("dragging");
-
-        // ✅ Hide ghost image on desktop
-        if (!isTouchDevice()) {
-            const transparentPixel = new Image();
-            transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-            event.dataTransfer.setDragImage(transparentPixel, 0, 0);
-        }
-    });
-}
-
-
-let rearrangeTimeout; // Prevents excessive reordering calls
-
-/**
- * Handles the rearrangement of tasks when dragged.
- *
- * @param {HTMLElement} target - The task element being moved.
- * @param {DragEvent | TouchEvent} event - The event triggering the rearrangement.
- */
-
-const REARRANGE_DELAY = 75; // ms delay to smooth reordering
-const REORDER_SNAPSHOT_INTERVAL = 500;
-
-// ✅ Update the handleRearrange function
-function handleRearrange(target, event) {
-  if (!target || !window.AppGlobalState.draggedTask || target === window.AppGlobalState.draggedTask) return; // ✅ Use centralized state
-
-  clearTimeout(rearrangeTimeout);
-
-  rearrangeTimeout = setTimeout(() => {
-    if (!document.contains(target) || !document.contains(window.AppGlobalState.draggedTask)) return; // ✅ Use centralized state
-
-    const parent = window.AppGlobalState.draggedTask.parentNode; // ✅ Use centralized state
-    if (!parent || !target.parentNode) return;
-
-    const bounding = target.getBoundingClientRect();
-    const offset = event.clientY - bounding.top;
-
-    // 🧠 Snapshot only if enough time has passed
-    const now = Date.now();
-    if (now - window.AppGlobalState.lastReorderTime > REORDER_SNAPSHOT_INTERVAL) { // ✅ Use centralized state
-      
-      window.AppGlobalState.lastReorderTime = now; // ✅ Use centralized state
-      window.AppGlobalState.didDragReorderOccur = true; // ✅ Use centralized state
-    }
-
-    const isLastTask = !target.nextElementSibling;
-    const isFirstTask = !target.previousElementSibling;
-
-    document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-
-    if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-      parent.appendChild(window.AppGlobalState.draggedTask); // ✅ Use centralized state
-      window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-      return;
-    }
-
-    if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-      parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild); // ✅ Use centralized state
-      window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-      return;
-    }
-
-    if (offset > bounding.height / 3) {
-      if (target.nextSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling); // ✅ Use centralized state
-      }
-    } else {
-      if (target.previousSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-        parent.insertBefore(window.AppGlobalState.draggedTask, target); // ✅ Use centralized state
-      }
-    }
-
-    window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-  }, REARRANGE_DELAY);
-}
-
-
-/**
- * Setuprearrange function.
- *
- * @returns {void}
- */
-// ✅ Update the setupRearrange function to use centralized state
-function setupRearrange() {
-  if (window.AppGlobalState.rearrangeInitialized) return;
-  window.AppGlobalState.rearrangeInitialized = true; // ✅ Use centralized state
-
-  // ✅ Add event delegation for arrow clicks (survives DOM re-renders)
-  const taskList = document.getElementById("taskList");
-  if (taskList) {
-    taskList.addEventListener("click", (event) => {
-      if (event.target.matches('.move-up, .move-down')) {
-        event.preventDefault();
-        event.stopPropagation();
-        handleArrowClick(event.target);
-      }
-    });
-  }
-
-  document.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    requestAnimationFrame(() => {
-      const movingTask = event.target.closest(".task");
-      if (movingTask) {
-        handleRearrange(movingTask, event);
-        // ❌ Don't save yet — just rearrange visually
-      }
-    });
-  });
-
-  document.addEventListener("drop", (event) => {
-    event.preventDefault();
-    if (!window.AppGlobalState.draggedTask) return; // ✅ Use centralized state
-
-    if (window.AppGlobalState.didDragReorderOccur) { // ✅ Use centralized state
-      saveCurrentTaskOrder();
-      autoSave();
-      updateProgressBar();
-      updateStatsPanel();
-      checkCompleteAllButton();
-
-      // ✅ Update undo/redo button states
-      updateUndoRedoButtons();
-
-      console.log("🔁 Drag reorder completed and saved with undo snapshot.");
-    }
-
-    cleanupDragState();
-    window.AppGlobalState.lastReorderTime = 0; // ✅ Use centralized state
-    window.AppGlobalState.didDragReorderOccur = false; // ✅ Use centralized state
-  });
-}
-
-// ✅ Add arrow click handler
-function handleArrowClick(button) {
-    const taskItem = button.closest('.task');
-    if (!taskItem) return;
-
-    const taskList = document.getElementById('taskList');
-    const allTasks = Array.from(taskList.children);
-    const currentIndex = allTasks.indexOf(taskItem);
-    
-    let newIndex;
-    if (button.classList.contains('move-up')) {
-        newIndex = Math.max(0, currentIndex - 1);
-    } else {
-        newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
-    }
-    
-    if (newIndex === currentIndex) return; // No movement needed
-    
-    // ✅ Reorder via state system (splice in array)
-    if (window.AppState?.isReady?.()) {
-        // ✅ Capture undo snapshot BEFORE reordering
-        const currentState = window.AppState.get();
-        if (currentState) captureStateSnapshot(currentState);
-        
-        window.AppState.update(state => {
-            const activeCycleId = state.appState.activeCycleId;
-            if (activeCycleId && state.data.cycles[activeCycleId]) {
-                const tasks = state.data.cycles[activeCycleId].tasks;
-                if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
-                    // Remove task from current position and insert at new position
-                    const [movedTask] = tasks.splice(currentIndex, 1);
-                    tasks.splice(newIndex, 0, movedTask);
-                    state.metadata.lastModified = Date.now();
-                }
-            }
-        }, true); // immediate save
-        
-        // ✅ Re-render from state to reflect changes
-        refreshUIFromState();
-        
-        // ✅ Update undo/redo buttons
-        updateUndoRedoButtons();
-        
-        console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
-    } else {
-        console.warn('⚠️ AppState not ready for arrow reordering');
-    }
-}
-
-
-/**
- * Cleanupdragstate function.
- *
- * @returns {void}
- */
-// ✅ Update the cleanupDragState function
-function cleanupDragState() {
-    if (window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-        window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
-        window.AppGlobalState.draggedTask = null; // ✅ Use centralized state
-    }
-
-    window.AppGlobalState.lastRearrangeTarget = null; // ✅ Use centralized state
-    document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-}
-
-
-/**
- * Dragendcleanup function.
- *
- * @returns {void}
- */
-
-function dragEndCleanup () {
-    document.addEventListener("drop", cleanupDragState);
-    document.addEventListener("dragover", () => {
-        document.querySelectorAll(".rearranging").forEach(task => task.classList.remove("rearranging"));
-    });
-    
-    
-    }
-/**
- * Updatemovearrowsvisibility function.
- *
- * @returns {void}
- */
-function updateMoveArrowsVisibility() {
-    console.log('🔄 Updating move arrows visibility (state-based)...');
-    
-    // ✅ Use state-based system
-    let showArrows = false;
-    
-    if (window.AppState?.isReady?.()) {
-        const currentState = window.AppState.get();
-        showArrows = currentState?.ui?.moveArrowsVisible || false;
-        console.log('📊 Arrow visibility from AppState:', showArrows);
-    } else {
-        // ✅ Silent fallback when state isn't ready (during initialization)
-        const storedValue = localStorage.getItem("miniCycleMoveArrows");
-        if (storedValue !== null) {
-            showArrows = storedValue === "true";
-            console.log('📊 Arrow visibility from localStorage fallback:', showArrows);
-        } else {
-            // Default to false if no setting exists
-            showArrows = false;
-            console.log('📊 Arrow visibility using default:', showArrows);
-        }
-    }
-
-    // ✅ Update DOM to reflect current state
-    updateArrowsInDOM(showArrows);
-
-    console.log(`✅ Move arrows visibility updated: ${showArrows ? "visible" : "hidden"}`);
-}
-
-/**
- * Togglearrowvisibility function.
- *
- * @returns {void}
- */
-function toggleArrowVisibility() {
-    console.log('🔄 Toggling arrow visibility (state-based)...');
-    
-    // ✅ Use state-based system
-    if (!window.AppState?.isReady?.()) {
-        console.log('⚠️ AppState not ready yet, deferring toggle until ready');
-        // Defer the toggle until AppState is ready
-        setTimeout(() => {
-            if (window.AppState?.isReady?.()) {
-                toggleArrowVisibility();
-            } else {
-                console.warn('❌ AppState still not ready after timeout');
-            }
-        }, 100);
-        return;
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for toggleArrowVisibility');
-        return;
-    }
-
-    const currentlyVisible = currentState.ui?.moveArrowsVisible || false;
-    const newVisibility = !currentlyVisible;
-
-    // ✅ Update through state system
-    window.AppState.update(state => {
-        if (!state.ui) state.ui = {};
-        state.ui.moveArrowsVisible = newVisibility;
-        state.metadata.lastModified = Date.now();
-    }, true); // immediate save
-
-    // ✅ Update DOM to reflect new state
-    updateArrowsInDOM(newVisibility);
-
-    console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
-}
-
-// ✅ Extracted DOM update logic
-function updateArrowsInDOM(showArrows) {
-    const allTasks = document.querySelectorAll(".task");
-
-    allTasks.forEach((task, index) => {
-        const upButton = task.querySelector('.move-up');
-        const downButton = task.querySelector('.move-down');
-        const taskOptions = task.querySelector('.task-options');
-        const taskButtons = task.querySelectorAll('.task-btn');
-
-        if (upButton) {
-            upButton.style.visibility = (showArrows && index !== 0) ? "visible" : "hidden";
-            upButton.style.opacity = (showArrows && index !== 0) ? "1" : "0";
-            upButton.style.pointerEvents = showArrows ? "auto" : "none"; 
-        }
-        if (downButton) {
-            downButton.style.visibility = (showArrows && index !== allTasks.length - 1) ? "visible" : "hidden";
-            downButton.style.opacity = (showArrows && index !== allTasks.length - 1) ? "1" : "0";
-            downButton.style.pointerEvents = showArrows ? "auto" : "none"; 
-        }
-
-        // ✅ Ensure task options remain interactive
-        if (taskOptions) {
-            taskOptions.style.pointerEvents = "auto";  
-        }
-
-        // ✅ Ensure individual buttons remain interactive
-        taskButtons.forEach(button => {
-            button.style.pointerEvents = "auto";
-        });
-    });
-}
-    
     /***********************
  * 
  * 
@@ -11002,16 +10578,7 @@ function updateCycleModeDescription() {
 
 /*****SPEACIAL EVENT LISTENERS *****/
 
-document.addEventListener("dragover", (event) => {
-  event.preventDefault();
-  requestAnimationFrame(() => {
-      const movingTask = event.target.closest(".task");
-      if (movingTask) {
-          handleRearrange(movingTask, event);
-      }
-      autoSave();
-  });
-});
+// ✅ REMOVED: dragover event listener - now handled by dragDropManager module via setupRearrange()
 document.addEventListener("touchstart", () => {
     hasInteracted = true;
 }, { once: true });
@@ -11140,8 +10707,7 @@ updateCycleModeDescription();
       setupMiniCycleTitleListener();
       setupDownloadMiniCycle();
       setupUploadMiniCycle();
-      setupRearrange();
-      dragEndCleanup();
+      // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
       // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
       checkDueDates();
       loadAlwaysShowRecurringSetting();

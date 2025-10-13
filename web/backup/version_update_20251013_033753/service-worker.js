@@ -1,6 +1,6 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-var APP_VERSION = '1.313';
-var CACHE_VERSION = 'v88';
+var APP_VERSION = '1.314';
+var CACHE_VERSION = 'v90';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -129,10 +129,16 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET') return;
 
   var url = new URL(request.url);
-  
+
   // ✅ FIXED: Skip unsupported schemes (browser extensions, etc.)
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     return; // Let the browser handle extension requests, data URLs, etc.
+  }
+
+  // ✅ BYPASS: Always fetch fresh for test files (network-only, no cache)
+  if (url.pathname.indexOf('/tests/') !== -1) {
+    event.respondWith(fetch(request));
+    return;
   }
 
   var accept = (request.headers && request.headers.get('accept')) || '';

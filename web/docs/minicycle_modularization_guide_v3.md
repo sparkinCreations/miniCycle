@@ -1184,6 +1184,34 @@ setTimeout(() => {
 3. Expose `window.refreshUIFromState` globally
 4. Call it after EVERY AppState change that should show in UI
 
+### **14. Optional Chaining for Deferred Function Resolution**
+- **Problem:** Dependency wrappers checking `window.*` at initialization time, but functions defined later in script
+- **Lesson:** Use optional chaining (`?.()`) instead of existence checks for deferred resolution
+- **Solution:** Check function existence at call-time, not initialization-time
+- **Real Example:** dragDropManager initialized at line 679, but `captureStateSnapshot` not defined until line 1012
+- **Pattern Impact:** Critical for **Resilient Constructor** 🛡️ pattern
+- **Code Example:**
+```javascript
+// ❌ BAD - Checks too early (at initialization time)
+captureStateSnapshot: (state) => window.captureStateSnapshot ?
+    window.captureStateSnapshot(state) :
+    console.warn('captureStateSnapshot not available')
+
+// ✅ GOOD - Defers check to call-time
+captureStateSnapshot: (state) => captureStateSnapshot?.(state)
+```
+
+**Why This Matters:**
+- **Old way:** Function existence checked when module initializes → fails because function defined later
+- **New way:** Function existence checked when actually called → works because function exists by then
+- **Timing:** Initialization happens early in script, actual calls happen during user interaction (much later)
+
+**When to Use:**
+- Dependencies in Resilient Constructor pattern
+- Functions defined later in main script
+- Wrapper functions that bridge old and new code
+- Any deferred function resolution scenario
+
 ### **💡 The Biggest Insight**
 
 **Modern web apps need orchestrated initialization** - the days of "just put a script tag and it works" are over for complex applications. Every module needs to coordinate with the application lifecycle.

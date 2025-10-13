@@ -61,8 +61,9 @@ window.AppGlobalState = {
   lastReorderTime: 0,
   advancedVisible: false,
   isPerformingUndoRedo: false,
-  lastSnapshotSignature: null, 
-  lastSnapshotTs: 0   
+  lastSnapshotSignature: null,
+  lastSnapshotTs: 0,
+  isInitializing: true  // ✅ Track if app is still initializing
 };
 
 
@@ -265,29 +266,19 @@ window.debugAppState = function() {
 
 
 /**  🚦 App Initialization Lifecycle Manager
-// This system ensures that data-dependent initializers only run after an active cycle is ready.
-// It prevents race conditions between data loading and feature initialization by providing:
-// - onReady(fn): Queue functions to run when data is available
-// - isReady(): Check if initialization is complete  
-// - signalReady(activeCycle): Mark data as ready and trigger queued functions
+// ✅ REMOVED: Old AppInit system replaced with proper appInit from appInitialization.js
+// The new system provides 2-phase initialization:
+// - Phase 1 (Core): AppState + cycle data loaded (use appInit.waitForCore())
+// - Phase 2 (App): All modules initialized (use appInit.waitForApp())
+//
+// Old API mapping:
+// - AppInit.onReady(fn) → Use appInit.waitForCore() in async functions
+// - AppInit.isReady() → Use appInit.isCoreReady()
+// - AppInit.signalReady() → Use appInit.markCoreSystemsReady()
 **/
-const AppInit = (() => {
-  let resolveReady;
-  const ready = new Promise(r => (resolveReady = r));
-  let readyFlag = false;
 
-  return {
-    onReady(fn) { ready.then(() => { try { fn(); } catch (e) { console.error('onReady error:', e); } }); },
-    isReady() { return readyFlag; },
-    signalReady(activeCycle) {
-      if (readyFlag) return;
-      readyFlag = true;
-      document.dispatchEvent(new CustomEvent('cycle:ready', { detail: { activeCycle } }));
-      resolveReady();
-    }
-  };
-})();
-window.AppInit = AppInit;
+// ✅ Backward compatibility alias - will be set after appInit loads
+window.AppInit = null; // Will be replaced with appInit below
 
 
 
@@ -304,9 +295,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 
-  // ✅ Load AppInit for 2-phase initialization coordination
+  // ✅ Load appInit for 2-phase initialization coordination
   const { appInit } = await import('./utilities/appInitialization.js');
-  console.log('🚀 AppInit loaded');
+
+  // ✅ Set backward compatibility alias
+  window.AppInit = appInit;
+
+  console.log('🚀 appInit loaded (2-phase initialization system)');
 
 // ======================================================================
 // 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
@@ -368,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.313'
+        currentVersion: '1.314'
     });
     
     window.deviceDetectionManager = deviceDetectionManager;
@@ -600,19 +595,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       window.__pendingCycleLoad = false;
     }
 
-    // 🎯 Core data initialization (move here so loader is ready)
-    console.log('🎯 About to start core data initialization...');
-    try {
-      console.log('🔧 Running fixTaskValidationIssues...');
-      fixTaskValidationIssues();
+    // ✅ MOVED: DragDropManager initialization moved to Phase 2 (after markCoreSystemsReady)
+    // See async IIFE around line ~690 for the new appInit-compliant location
 
-      console.log('🚀 Running initializeAppWithAutoMigration...');
-      initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup()
-      console.log('✅ Core initialization sequence started successfully');
-    } catch (error) {
-      console.error('❌ Critical initialization error:', error);
-      console.error('❌ Error stack:', error.stack);
-    }
+    // ✅ MOVED: Data initialization moved to async IIFE (after dragDropManager is ready)
+    // See line ~700 where initializeAppWithAutoMigration() is now called
+    // This ensures: cycleLoader → AppState → dragDropManager → data loading (proper order)
   } catch (e) {
     console.error('❌ cycleLoader import failed:', e);
   }
@@ -628,8 +616,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupMiniCycleTitleListener();
     setupDownloadMiniCycle();
     setupUploadMiniCycle();
-    setupRearrange();
-    dragEndCleanup();
+    // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
     // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
@@ -650,9 +637,9 @@ function wireUndoRedoUI() {
   if (redoBtn) safeAddEventListener(redoBtn, "click", () => performStateBasedRedo());
 }
 
-// ✅ Defer anything that needs cycles/data until an active cycle exists
-// ...existing code...
-AppInit.onReady(async () => {
+// ✅ Data-ready initialization - runs immediately (no more deferral needed)
+// The code below will execute after data is loaded in the main sequence
+(async () => {
   console.log('🟢 Data-ready initializers running…');
 
   // ✅ Initialize state module SYNCHRONOUSLY after data exists
@@ -669,8 +656,52 @@ AppInit.onReady(async () => {
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
+    // ✅ MOVED: DragDropManager initialization moved earlier (before initializeAppWithAutoMigration)
+    // See line ~600 for the new location - must be initialized before any tasks are created
+
         // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
         await appInit.markCoreSystemsReady();
+
+        // ============ PHASE 2: MODULES ============
+        console.log('🔌 Phase 2: Loading modules (appInit-compliant)...');
+
+        // ✅ Initialize Drag & Drop Manager (Phase 2 module - waits for core internally)
+        console.log('🔄 Initializing drag & drop manager...');
+        const { initDragDropManager } = await import('./utilities/task/dragDropManager.js');
+
+        await initDragDropManager({
+          saveCurrentTaskOrder: () => saveCurrentTaskOrder?.(),
+          autoSave: () => autoSave?.(),
+          updateProgressBar: () => updateProgressBar?.(),
+          updateStatsPanel: () => updateStatsPanel?.(),
+          checkCompleteAllButton: () => checkCompleteAllButton?.(),
+          updateUndoRedoButtons: () => updateUndoRedoButtons?.(),
+          captureStateSnapshot: (state) => captureStateSnapshot?.(state),
+          refreshUIFromState: () => refreshUIFromState?.(),
+          revealTaskButtons: (task) => revealTaskButtons?.(task),
+          hideTaskButtons: (task) => hideTaskButtons?.(task),
+          isTouchDevice: () => isTouchDevice?.() || false,
+          enableUndoSystemOnFirstInteraction: () => enableUndoSystemOnFirstInteraction?.(),
+          showNotification: (msg, type, duration) => showNotification?.(msg, type, duration)
+        });
+
+        console.log('✅ DragDropManager initialized and ready (Phase 2)');
+
+        // ============ PHASE 3: DATA LOADING ============
+        console.log('📊 Phase 3: Loading app data...');
+
+        // 🎯 Now that all modules are ready, load data
+        try {
+          console.log('🔧 Running fixTaskValidationIssues...');
+          fixTaskValidationIssues();
+
+          console.log('🚀 Running initializeAppWithAutoMigration...');
+          initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup()
+          console.log('✅ Data initialization sequence completed');
+        } catch (error) {
+          console.error('❌ Critical initialization error:', error);
+          console.error('❌ Error stack:', error.stack);
+        }
 
         // ✅ Idempotent wiring for Undo/Redo buttons
         wireUndoRedoUI();
@@ -687,7 +718,8 @@ AppInit.onReady(async () => {
 
              window.AppState.update = async (producer, immediate) => {
               try {
-                if (window.AppInit?.isReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
+                // ✅ Use new appInit API
+                if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
                   if (prev) captureStateSnapshot(prev);
                 }
@@ -778,12 +810,19 @@ AppInit.onReady(async () => {
   // ✅ Final Setup
   console.log('🎯 Completing initialization...');
 
+  // ✅ MOVED: DragDropManager initialization moved earlier (before markCoreSystemsReady)
+  // See line ~668 for the new location
+
   // ✅ Now that AppState is ready, setup arrow visibility
   updateMoveArrowsVisibility();
 
   // ✅ CRITICAL: Mark app as fully ready (Phase 2: All modules loaded)
   await appInit.markAppReady();
   console.log('✅ miniCycle initialization complete - app is ready');
+
+  // ✅ Keep isInitializing true - will be disabled on first user interaction
+  // This prevents the undo button from appearing on page load
+  console.log('✅ Initialization complete - undo system will activate on first user action');
 
   // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
   console.log('📱 Running device detection...');
@@ -799,7 +838,7 @@ AppInit.onReady(async () => {
       taskInput.focus();
     }
   };
-});
+})(); // ✅ End of async IIFE - executes immediately
 // ...existing code...
 
 // ...existing code...
@@ -893,17 +932,17 @@ console.log('✅ Recurring modules integration complete');
 function initializeUndoRedoButtons() {
     const undoBtn = document.getElementById("undo-btn");
     const redoBtn = document.getElementById("redo-btn");
-    
+
     if (undoBtn) {
-        undoBtn.hidden = false; // Show the button
+        undoBtn.hidden = true; // ✅ Start hidden until there's undo history
         undoBtn.disabled = true; // Initially disabled
     }
     if (redoBtn) {
-        redoBtn.hidden = false; // Show the button  
+        redoBtn.hidden = true; // ✅ Start hidden until there's redo history
         redoBtn.disabled = true; // Initially disabled
     }
-    
-    console.log('🔘 Undo/redo buttons initialized');
+
+    console.log('🔘 Undo/redo buttons initialized (hidden by default)');
 }
 
 // ✅ Add this function
@@ -958,8 +997,25 @@ function setupStateBasedUndoRedo() {
     }
 }
 
+/**
+ * Enable undo system on first user interaction
+ * Call this when user performs their first action (task completion, add task, etc.)
+ */
+function enableUndoSystemOnFirstInteraction() {
+    if (window.AppGlobalState.isInitializing) {
+        console.log('✅ First user interaction detected - enabling undo system');
+        window.AppGlobalState.isInitializing = false;
+    }
+}
+
 // ✅ Capture complete state snapshots instead of manual extraction
 function captureStateSnapshot(state) {
+    // ✅ Don't capture snapshots during initial app load
+    if (window.AppGlobalState.isInitializing) {
+        console.log('⏭️ Skipping snapshot during initialization');
+        return;
+    }
+
     if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
         console.warn('⚠️ Invalid state for snapshot');
         return;
@@ -1069,14 +1125,21 @@ async function performStateBasedUndo() {
     };
 
     let snap = null;
+    let skippedDuplicates = 0;
     while (window.AppGlobalState.undoStack.length) {
       const candidate = window.AppGlobalState.undoStack.pop();
       if (!snapshotsEqual(candidate, currentSnapshot)) {
         snap = candidate;
         break;
       }
+      skippedDuplicates++;
     }
-    if (!snap) { updateUndoRedoButtons(); return; }
+    console.log(`🔍 Undo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
+    if (!snap) {
+      console.warn('⚠️ No valid undo snapshot found');
+      updateUndoRedoButtons();
+      return;
+    }
 
     window.AppGlobalState.redoStack.push(currentSnapshot);
 
@@ -1095,6 +1158,10 @@ async function performStateBasedUndo() {
 
     await Promise.resolve();
     refreshUIFromState(window.AppState.get());
+
+    // ✅ Wait for next tick to ensure all rendering state updates complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     updateUndoRedoButtons();
   } catch (e) {
     console.error('❌ Undo failed:', e);
@@ -1127,14 +1194,21 @@ async function performStateBasedRedo() {
     };
 
     let snap = null;
+    let skippedDuplicates = 0;
     while (window.AppGlobalState.redoStack.length) {
       const candidate = window.AppGlobalState.redoStack.pop();
       if (!snapshotsEqual(candidate, currentSnapshot)) {
         snap = candidate;
         break;
       }
+      skippedDuplicates++;
     }
-    if (!snap) { updateUndoRedoButtons(); return; }
+    console.log(`🔍 Redo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
+    if (!snap) {
+      console.warn('⚠️ No valid redo snapshot found');
+      updateUndoRedoButtons();
+      return;
+    }
 
     window.AppGlobalState.undoStack.push(currentSnapshot);
 
@@ -1153,6 +1227,10 @@ async function performStateBasedRedo() {
 
     await Promise.resolve();
     refreshUIFromState(window.AppState.get());
+
+    // ✅ Wait for next tick to ensure all rendering state updates complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     updateUndoRedoButtons();
   } catch (e) {
     console.error('❌ Redo failed:', e);
@@ -1216,18 +1294,17 @@ function updateUndoRedoButtons() {
 
   if (undoBtn) {
     undoBtn.disabled = undoCount === 0;
-    undoBtn.hidden = (undoCount === 0 && redoCount === 0);
+    undoBtn.hidden = undoCount === 0; // ✅ Hide when no undo history
     undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
   }
   if (redoBtn) {
     redoBtn.disabled = redoCount === 0;
-    redoBtn.hidden = (redoCount === 0);
+    redoBtn.hidden = redoCount === 0; // ✅ Hide when no redo history
     redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
   }
-      console.log('🔘 Button states updated:', {
-        undoCount: window.AppGlobalState.undoStack.length,
-        redoCount: window.AppGlobalState.redoStack.length
-    });
+  const undoCountValue = window.AppGlobalState.undoStack.length;
+  const redoCountValue = window.AppGlobalState.redoStack.length;
+  console.log(`🔘 Button states: undo=${undoCountValue} (hidden=${undoBtn?.hidden}), redo=${redoCountValue} (hidden=${redoBtn?.hidden})`);
 }
     
 
@@ -1402,11 +1479,12 @@ function getModeName(mode) {
     return result;
 }
 
-function initializeModeSelector() {
-      if (!window.AppInit?.isReady?.()) {
-    // Defer this whole initializer until data-ready (safety net)
-    return AppInit.onReady(() => initializeModeSelector());
-  }
+async function initializeModeSelector() {
+    // ✅ Wait for core systems to be ready
+    if (window.appInit && !window.appInit.isCoreReady()) {
+        await window.appInit.waitForCore();
+    }
+
     console.log('⏰ Initializing mode selector with 200ms delay...');
     setTimeout(() => {
         console.log('⏰ Delay complete, calling setupModeSelector...');
@@ -1709,9 +1787,17 @@ function showCycleCreationModal() {
                 fullSchemaData.metadata.totalCyclesCreated++;
                 
                 localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                
+
+                // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
+                if (window.AppState && typeof window.AppState.init === 'function') {
+                    window.AppState.data = fullSchemaData;
+                    window.AppState.isInitialized = true;
+                    window.AppState.isDirty = false; // Mark as clean since we just saved
+                    console.log('✅ AppState synchronized with new cycle data');
+                }
+
                 console.log('💾 New cycle saved to Schema 2.5');
-                
+
                 // ✅ Complete the setup after user interaction
                 completeInitialSetup(cycleId, fullSchemaData);
             }
@@ -1765,10 +1851,18 @@ async function preloadGettingStartedCycle() {
         fullSchemaData.metadata.totalCyclesCreated++;
         
         localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
+
+        // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
+        if (window.AppState && typeof window.AppState.init === 'function') {
+            window.AppState.data = fullSchemaData;
+            window.AppState.isInitialized = true;
+            window.AppState.isDirty = false; // Mark as clean since we just saved
+            console.log('✅ AppState synchronized with new cycle data');
+        }
+
         console.log('💾 Sample cycle saved to Schema 2.5');
         console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
-        
+
         // ✅ CLOSE ANY OPEN MODALS
         const existingModals = document.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
         existingModals.forEach(modal => modal.remove());
@@ -1828,7 +1922,15 @@ function createBasicFallbackCycle() {
     fullSchemaData.metadata.totalCyclesCreated++;
     
     localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
+
+    // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
+    if (window.AppState && typeof window.AppState.init === 'function') {
+        window.AppState.data = fullSchemaData;
+        window.AppState.isInitialized = true;
+        window.AppState.isDirty = false; // Mark as clean since we just saved
+        console.log('✅ AppState synchronized with new cycle data');
+    }
+
     console.log('✅ Basic fallback cycle created');
     completeInitialSetup(cycleId, fullSchemaData);
 }
@@ -2305,8 +2407,7 @@ function setupMiniCycleTitleListener() {
 
                 // 🔄 Refresh UI
                 updateMainMenuHeader();
-                document.getElementById("undo-btn").hidden = false;
-                document.getElementById("redo-btn").hidden = true;
+                updateUndoRedoButtons(); // ✅ Use centralized button management
             }
         });
 
@@ -2787,7 +2888,63 @@ function loadMiniCycleData() {
 // Make loadMiniCycleData globally accessible for the notification module
 window.loadMiniCycleData = loadMiniCycleData;
 
+/**
+ * Safely update cycle data - handles AppState or falls back to localStorage
+ * Prevents race conditions with debounced saves by using AppState when available
+ *
+ * @param {string} cycleId - The cycle ID to update
+ * @param {function} updateFn - Function that receives the cycle and modifies it
+ * @param {boolean} immediate - Force immediate save (default: true for safety)
+ * @returns {boolean} - True if update succeeded, false otherwise
+ */
+function updateCycleData(cycleId, updateFn, immediate = true) {
+    console.log(`🔄 Updating cycle data for: ${cycleId} (immediate: ${immediate})`);
 
+    if (!cycleId) {
+        console.error('❌ cycleId is required for updateCycleData');
+        return false;
+    }
+
+    if (typeof updateFn !== 'function') {
+        console.error('❌ updateFn must be a function');
+        return false;
+    }
+
+    try {
+        // ✅ Use AppState if available (prevents race conditions)
+        if (window.AppState?.isReady?.()) {
+            window.AppState.update(state => {
+                const cycle = state.data.cycles[cycleId];
+                if (cycle) {
+                    updateFn(cycle);
+                    console.log('✅ Cycle updated via AppState');
+                } else {
+                    console.warn(`⚠️ Cycle not found: ${cycleId}`);
+                }
+            }, immediate);
+            return true;
+        } else {
+            // ✅ Fallback to direct localStorage if AppState not ready
+            console.warn('⚠️ AppState not ready, using localStorage fallback');
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+
+            if (!fullSchemaData?.data?.cycles?.[cycleId]) {
+                console.error(`❌ Cycle not found in localStorage: ${cycleId}`);
+                return false;
+            }
+
+            const cycle = fullSchemaData.data.cycles[cycleId];
+            updateFn(cycle);
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            console.log('✅ Cycle updated via localStorage (fallback)');
+            return true;
+        }
+    } catch (error) {
+        console.error('❌ updateCycleData failed:', error);
+        return false;
+    }
+}
 
 
 
@@ -4862,16 +5019,18 @@ function clearAllTasks() {
     console.log('📊 Clearing tasks for cycle:', activeCycle);
 
     // ✅ Create undo snapshot before making changes
-    
 
-    // ✅ Uncheck all tasks (DO NOT DELETE)
-    currentCycle.tasks.forEach(task => task.completed = false);
 
-    // ✅ Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+    // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
+    const updateSuccess = updateCycleData(activeCycle, cycle => {
+        cycle.tasks.forEach(task => task.completed = false);
+    }, true);
+
+    if (!updateSuccess) {
+        console.error('❌ Failed to update cycle data');
+        showNotification("❌ Failed to clear tasks. Please try again.", "error");
+        return;
+    }
 
     console.log('💾 Tasks unchecked and saved to Schema 2.5');
 
@@ -4892,9 +5051,8 @@ function clearAllTasks() {
     updateRecurringPanelButtonVisibility();
     hideMainMenu();
 
-    // ✅ Show undo/hide redo buttons
-    document.getElementById("undo-btn").hidden = false;
-    document.getElementById("redo-btn").hidden = true;
+    // ✅ Update undo/redo button states
+    updateUndoRedoButtons();
 
     console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
     showNotification(`✅ All tasks unchecked for "${currentCycle.title}"`, "success", 2000);
@@ -4941,21 +5099,22 @@ function deleteAllTasks() {
             console.log('🔄 Proceeding with task deletion...');
 
             // ✅ Push undo snapshot before deletion
-            
 
-            // ✅ Clear tasks completely
-            currentCycle.tasks = [];
 
-            // ✅ Clear recurring templates too
-            if (currentCycle.recurringTemplates) {
-                currentCycle.recurringTemplates = {};
+            // ✅ Clear tasks completely - Use helper to prevent race conditions
+            const updateSuccess = updateCycleData(activeCycle, cycle => {
+                cycle.tasks = [];
+                // ✅ Clear recurring templates too
+                if (cycle.recurringTemplates) {
+                    cycle.recurringTemplates = {};
+                }
+            }, true);
+
+            if (!updateSuccess) {
+                console.error('❌ Failed to delete tasks');
+                showNotification("❌ Failed to delete tasks. Please try again.", "error");
+                return;
             }
-
-            // ✅ Update the full schema data
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
 
             console.log('💾 All tasks deleted and saved to Schema 2.5');
 
@@ -4970,9 +5129,8 @@ function deleteAllTasks() {
             checkCompleteAllButton();
             updateRecurringPanelButtonVisibility();
 
-            // ✅ Show undo/hide redo buttons
-            document.getElementById("undo-btn").hidden = false;
-            document.getElementById("redo-btn").hidden = true;
+            // ✅ Update undo/redo button states
+            updateUndoRedoButtons();
 
             console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
             showNotification(`✅ All tasks deleted from "${currentCycle.title}"`, "success", 3000);
@@ -6181,6 +6339,25 @@ if (threeDotsToggle) {
           const runFactoryReset = async () => {
               console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
 
+              // 0) CRITICAL: Stop AppState from auto-saving over our deletion
+              if (window.AppState) {
+                  console.log('🛑 Stopping AppState auto-save...');
+                  try {
+                      // Clear the debounced save timeout
+                      if (window.AppState.saveTimeout) {
+                          clearTimeout(window.AppState.saveTimeout);
+                          window.AppState.saveTimeout = null;
+                      }
+                      // Clear in-memory data so it won't be saved
+                      window.AppState.data = null;
+                      window.AppState.isDirty = false;
+                      window.AppState.isInitialized = false;
+                      console.log('✅ AppState neutralized');
+                  } catch (e) {
+                      console.warn('⚠️ AppState cleanup warning:', e);
+                  }
+              }
+
               // 1) Local storage cleanup (primary + legacy + dynamic)
               try {
                   // Schema 2.5 - Single key cleanup
@@ -6525,6 +6702,14 @@ function setupUploadMiniCycle() {
           fullSchemaData.metadata.lastModified = Date.now();
           fullSchemaData.metadata.totalCyclesCreated++;
           localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+
+          // ✅ SYNC AppState with imported cycle data (prevents overwriting with stale data)
+          if (window.AppState && typeof window.AppState.init === 'function') {
+              window.AppState.data = fullSchemaData;
+              window.AppState.isInitialized = true;
+              window.AppState.isDirty = false; // Mark as clean since we just saved
+              console.log('✅ AppState synchronized with imported cycle data');
+          }
 
           console.log("💾 Import completed successfully to Schema 2.5");
           showNotification(`✅ miniCycle "${importedData.name}" imported and converted to Schema 2.5!`, "success");
@@ -7206,473 +7391,14 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
 }
 
     /***********************
- * 
- * 
- * Rearrange Management Logic
- * 
- * 
+ *
+ *
+ * Rearrange Management Logic - MOVED TO MODULE
+ * See: utilities/task/dragDropManager.js
+ *
+ *
  ************************/
 
-
-/**
- * Draganddrop function.
- *
- * @param {any} taskElement - Description. * @returns {void}
- */
-
-function DragAndDrop(taskElement) {
-    // Prevent text selection on mobile
-    taskElement.style.userSelect = "none";
-    taskElement.style.webkitUserSelect = "none";
-    taskElement.style.msUserSelect = "none";
-    let readyToDrag = false; 
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let holdTimeout = null;
-    let isDragging = false;
-    let isLongPress = false;
-    let isTap = false;
-    let preventClick = false;
-    const moveThreshold = 15; // 🚀 Movement threshold for long press
-
-    // 📱 **Touch-based Drag for Mobile**
-    taskElement.addEventListener("touchstart", (event) => {
-        if (event.target.closest(".task-options")) return;
-        isLongPress = false;
-        isDragging = false;
-        isTap = true; 
-        readyToDrag = false; 
-        touchStartX = event.touches[0].clientX;
-        touchStartY = event.touches[0].clientY;
-        preventClick = false;
-
-        // ✅ NEW FIX: Remove `.long-pressed` from all other tasks before long press starts
-        document.querySelectorAll(".task").forEach(task => {
-            if (task !== taskElement) {
-                task.classList.remove("long-pressed");
-                hideTaskButtons(task);
-            }
-        });
-
-        holdTimeout = setTimeout(() => {
-            isLongPress = true;
-            isTap = false;
-            window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
-            isDragging = true;
-            taskElement.classList.add("dragging", "long-pressed");
-
-            event.preventDefault();
-
-            console.log("📱 Long Press Detected - Showing Task Options", taskElement);
-
-            // ✅ Ensure task options remain visible
-            revealTaskButtons(taskElement);
-
-        }, 500); // Long-press delay (500ms)
-    });
-
-    taskElement.addEventListener("touchmove", (event) => {
-        const touchMoveX = event.touches[0].clientX;
-        const touchMoveY = event.touches[0].clientY;
-        const deltaX = Math.abs(touchMoveX - touchStartX);
-        const deltaY = Math.abs(touchMoveY - touchStartY);
-
-        // ✅ Cancel long press if moving too much
-        if (deltaX > moveThreshold || deltaY > moveThreshold) {
-            clearTimeout(holdTimeout);
-            isLongPress = false;
-            isTap = false; // ✅ Prevent accidental taps after dragging
-            return;
-        }
-
-        // ✅ Allow normal scrolling if moving vertically
-        if (deltaY > deltaX) {
-            clearTimeout(holdTimeout);
-            isTap = false;
-            return;
-        }
-
-        if (isLongPress && readyToDrag && !isDragging) {
-            taskElement.setAttribute("draggable", "true");
-            isDragging = true;
-
-            if (event.cancelable) {
-                event.preventDefault();
-            }
-        }
-
-        if (isDragging && draggedTask) {
-            if (event.cancelable) {
-                event.preventDefault();
-            }
-            const movingTask = document.elementFromPoint(event.touches[0].clientX, event.touches[0].clientY);
-            if (movingTask) {
-              handleRearrange(movingTask, event);
-          }
-      
-        }
-    });
-
-    taskElement.addEventListener("touchend", () => {
-        clearTimeout(holdTimeout);
-
-        if (isTap) {
-            preventClick = true;
-            setTimeout(() => { 
-                preventClick = false; 
-            }, 100);
-        }
-
-        if (window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-            window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging"); // ✅ Use centralized state
-            window.AppGlobalState.draggedTask = null; // ✅ Use centralized state
-        }
-
-        isDragging = false;
-
-        // ✅ Ensure task options remain open only when a long press is detected
-        if (isLongPress) {
-            console.log("✅ Long Press Completed - Keeping Task Options Open", taskElement);
-            return;
-        }
-    
-        taskElement.classList.remove("long-pressed");
-    });
-
-    // 🖱️ **Mouse-based Drag for Desktop**
-    taskElement.addEventListener("dragstart", (event) => {
-        if (event.target.closest(".task-options")) return;
-        window.AppGlobalState.draggedTask = taskElement; // ✅ Use centralized state
-        event.dataTransfer.setData("text/plain", "");
-
-        // ✅ NEW: Add dragging class for desktop as well
-        taskElement.classList.add("dragging");
-
-        // ✅ Hide ghost image on desktop
-        if (!isTouchDevice()) {
-            const transparentPixel = new Image();
-            transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-            event.dataTransfer.setDragImage(transparentPixel, 0, 0);
-        }
-    });
-}
-
-
-let rearrangeTimeout; // Prevents excessive reordering calls
-
-/**
- * Handles the rearrangement of tasks when dragged.
- *
- * @param {HTMLElement} target - The task element being moved.
- * @param {DragEvent | TouchEvent} event - The event triggering the rearrangement.
- */
-
-const REARRANGE_DELAY = 75; // ms delay to smooth reordering
-const REORDER_SNAPSHOT_INTERVAL = 500;
-
-// ✅ Update the handleRearrange function
-function handleRearrange(target, event) {
-  if (!target || !window.AppGlobalState.draggedTask || target === window.AppGlobalState.draggedTask) return; // ✅ Use centralized state
-
-  clearTimeout(rearrangeTimeout);
-
-  rearrangeTimeout = setTimeout(() => {
-    if (!document.contains(target) || !document.contains(window.AppGlobalState.draggedTask)) return; // ✅ Use centralized state
-
-    const parent = window.AppGlobalState.draggedTask.parentNode; // ✅ Use centralized state
-    if (!parent || !target.parentNode) return;
-
-    const bounding = target.getBoundingClientRect();
-    const offset = event.clientY - bounding.top;
-
-    // 🧠 Snapshot only if enough time has passed
-    const now = Date.now();
-    if (now - window.AppGlobalState.lastReorderTime > REORDER_SNAPSHOT_INTERVAL) { // ✅ Use centralized state
-      
-      window.AppGlobalState.lastReorderTime = now; // ✅ Use centralized state
-      window.AppGlobalState.didDragReorderOccur = true; // ✅ Use centralized state
-    }
-
-    const isLastTask = !target.nextElementSibling;
-    const isFirstTask = !target.previousElementSibling;
-
-    document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-
-    if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-      parent.appendChild(window.AppGlobalState.draggedTask); // ✅ Use centralized state
-      window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-      return;
-    }
-
-    if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-      parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild); // ✅ Use centralized state
-      window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-      return;
-    }
-
-    if (offset > bounding.height / 3) {
-      if (target.nextSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling); // ✅ Use centralized state
-      }
-    } else {
-      if (target.previousSibling !== window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-        parent.insertBefore(window.AppGlobalState.draggedTask, target); // ✅ Use centralized state
-      }
-    }
-
-    window.AppGlobalState.draggedTask.classList.add("drop-target"); // ✅ Use centralized state
-  }, REARRANGE_DELAY);
-}
-
-
-/**
- * Setuprearrange function.
- *
- * @returns {void}
- */
-// ✅ Update the setupRearrange function to use centralized state
-function setupRearrange() {
-  if (window.AppGlobalState.rearrangeInitialized) return;
-  window.AppGlobalState.rearrangeInitialized = true; // ✅ Use centralized state
-
-  // ✅ Add event delegation for arrow clicks (survives DOM re-renders)
-  const taskList = document.getElementById("taskList");
-  if (taskList) {
-    taskList.addEventListener("click", (event) => {
-      if (event.target.matches('.move-up, .move-down')) {
-        event.preventDefault();
-        event.stopPropagation();
-        handleArrowClick(event.target);
-      }
-    });
-  }
-
-  document.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    requestAnimationFrame(() => {
-      const movingTask = event.target.closest(".task");
-      if (movingTask) {
-        handleRearrange(movingTask, event);
-        // ❌ Don't save yet — just rearrange visually
-      }
-    });
-  });
-
-  document.addEventListener("drop", (event) => {
-    event.preventDefault();
-    if (!window.AppGlobalState.draggedTask) return; // ✅ Use centralized state
-
-    if (window.AppGlobalState.didDragReorderOccur) { // ✅ Use centralized state
-      saveCurrentTaskOrder();
-      autoSave();
-      updateProgressBar();
-      updateStatsPanel();
-      checkCompleteAllButton();
-
-      document.getElementById("undo-btn").hidden = false;
-      document.getElementById("redo-btn").hidden = true;
-
-      console.log("🔁 Drag reorder completed and saved with undo snapshot.");
-    }
-
-    cleanupDragState();
-    window.AppGlobalState.lastReorderTime = 0; // ✅ Use centralized state
-    window.AppGlobalState.didDragReorderOccur = false; // ✅ Use centralized state
-  });
-}
-
-// ✅ Add arrow click handler
-function handleArrowClick(button) {
-    const taskItem = button.closest('.task');
-    if (!taskItem) return;
-
-    const taskList = document.getElementById('taskList');
-    const allTasks = Array.from(taskList.children);
-    const currentIndex = allTasks.indexOf(taskItem);
-    
-    let newIndex;
-    if (button.classList.contains('move-up')) {
-        newIndex = Math.max(0, currentIndex - 1);
-    } else {
-        newIndex = Math.min(allTasks.length - 1, currentIndex + 1);
-    }
-    
-    if (newIndex === currentIndex) return; // No movement needed
-    
-    // ✅ Reorder via state system (splice in array)
-    if (window.AppState?.isReady?.()) {
-        // ✅ Capture undo snapshot BEFORE reordering
-        const currentState = window.AppState.get();
-        if (currentState) captureStateSnapshot(currentState);
-        
-        window.AppState.update(state => {
-            const activeCycleId = state.appState.activeCycleId;
-            if (activeCycleId && state.data.cycles[activeCycleId]) {
-                const tasks = state.data.cycles[activeCycleId].tasks;
-                if (tasks && currentIndex >= 0 && currentIndex < tasks.length) {
-                    // Remove task from current position and insert at new position
-                    const [movedTask] = tasks.splice(currentIndex, 1);
-                    tasks.splice(newIndex, 0, movedTask);
-                    state.metadata.lastModified = Date.now();
-                }
-            }
-        }, true); // immediate save
-        
-        // ✅ Re-render from state to reflect changes
-        refreshUIFromState();
-        
-        // ✅ Update undo/redo buttons
-        updateUndoRedoButtons();
-        
-        console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
-    } else {
-        console.warn('⚠️ AppState not ready for arrow reordering');
-    }
-}
-
-
-/**
- * Cleanupdragstate function.
- *
- * @returns {void}
- */
-// ✅ Update the cleanupDragState function
-function cleanupDragState() {
-    if (window.AppGlobalState.draggedTask) { // ✅ Use centralized state
-        window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
-        window.AppGlobalState.draggedTask = null; // ✅ Use centralized state
-    }
-
-    window.AppGlobalState.lastRearrangeTarget = null; // ✅ Use centralized state
-    document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-}
-
-
-/**
- * Dragendcleanup function.
- *
- * @returns {void}
- */
-
-function dragEndCleanup () {
-    document.addEventListener("drop", cleanupDragState);
-    document.addEventListener("dragover", () => {
-        document.querySelectorAll(".rearranging").forEach(task => task.classList.remove("rearranging"));
-    });
-    
-    
-    }
-/**
- * Updatemovearrowsvisibility function.
- *
- * @returns {void}
- */
-function updateMoveArrowsVisibility() {
-    console.log('🔄 Updating move arrows visibility (state-based)...');
-    
-    // ✅ Use state-based system
-    let showArrows = false;
-    
-    if (window.AppState?.isReady?.()) {
-        const currentState = window.AppState.get();
-        showArrows = currentState?.ui?.moveArrowsVisible || false;
-        console.log('📊 Arrow visibility from AppState:', showArrows);
-    } else {
-        // ✅ Silent fallback when state isn't ready (during initialization)
-        const storedValue = localStorage.getItem("miniCycleMoveArrows");
-        if (storedValue !== null) {
-            showArrows = storedValue === "true";
-            console.log('📊 Arrow visibility from localStorage fallback:', showArrows);
-        } else {
-            // Default to false if no setting exists
-            showArrows = false;
-            console.log('📊 Arrow visibility using default:', showArrows);
-        }
-    }
-
-    // ✅ Update DOM to reflect current state
-    updateArrowsInDOM(showArrows);
-
-    console.log(`✅ Move arrows visibility updated: ${showArrows ? "visible" : "hidden"}`);
-}
-
-/**
- * Togglearrowvisibility function.
- *
- * @returns {void}
- */
-function toggleArrowVisibility() {
-    console.log('🔄 Toggling arrow visibility (state-based)...');
-    
-    // ✅ Use state-based system
-    if (!window.AppState?.isReady?.()) {
-        console.log('⚠️ AppState not ready yet, deferring toggle until ready');
-        // Defer the toggle until AppState is ready
-        setTimeout(() => {
-            if (window.AppState?.isReady?.()) {
-                toggleArrowVisibility();
-            } else {
-                console.warn('❌ AppState still not ready after timeout');
-            }
-        }, 100);
-        return;
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for toggleArrowVisibility');
-        return;
-    }
-
-    const currentlyVisible = currentState.ui?.moveArrowsVisible || false;
-    const newVisibility = !currentlyVisible;
-
-    // ✅ Update through state system
-    window.AppState.update(state => {
-        if (!state.ui) state.ui = {};
-        state.ui.moveArrowsVisible = newVisibility;
-        state.metadata.lastModified = Date.now();
-    }, true); // immediate save
-
-    // ✅ Update DOM to reflect new state
-    updateArrowsInDOM(newVisibility);
-
-    console.log(`✅ Move arrows toggled to ${newVisibility ? "visible" : "hidden"} via state system`);
-}
-
-// ✅ Extracted DOM update logic
-function updateArrowsInDOM(showArrows) {
-    const allTasks = document.querySelectorAll(".task");
-
-    allTasks.forEach((task, index) => {
-        const upButton = task.querySelector('.move-up');
-        const downButton = task.querySelector('.move-down');
-        const taskOptions = task.querySelector('.task-options');
-        const taskButtons = task.querySelectorAll('.task-btn');
-
-        if (upButton) {
-            upButton.style.visibility = (showArrows && index !== 0) ? "visible" : "hidden";
-            upButton.style.opacity = (showArrows && index !== 0) ? "1" : "0";
-            upButton.style.pointerEvents = showArrows ? "auto" : "none"; 
-        }
-        if (downButton) {
-            downButton.style.visibility = (showArrows && index !== allTasks.length - 1) ? "visible" : "hidden";
-            downButton.style.opacity = (showArrows && index !== allTasks.length - 1) ? "1" : "0";
-            downButton.style.pointerEvents = showArrows ? "auto" : "none"; 
-        }
-
-        // ✅ Ensure task options remain interactive
-        if (taskOptions) {
-            taskOptions.style.pointerEvents = "auto";  
-        }
-
-        // ✅ Ensure individual buttons remain interactive
-        taskButtons.forEach(button => {
-            button.style.pointerEvents = "auto";
-        });
-    });
-}
-    
     /***********************
  * 
  * 
@@ -8255,10 +7981,8 @@ function setupReminderButtonHandler(button, taskContext) {
         autoSaveReminders();
         startReminders();
 
-        const undoBtn = document.getElementById("undo-btn");
-        const redoBtn = document.getElementById("redo-btn");
-        if (undoBtn) undoBtn.hidden = false;
-        if (redoBtn) redoBtn.hidden = true;
+        // ✅ Update undo/redo button states
+        updateUndoRedoButtons();
 
         showNotification(`Reminders ${isActive ? "enabled" : "disabled"} for task.`, "info", 1500);
     });
@@ -8295,16 +8019,16 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
     checkbox.setAttribute("aria-checked", checkbox.checked);
     
     safeAddEventListener(checkbox, "change", () => {
-        
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         handleTaskCompletionChange(checkbox);
         checkMiniCycle();
         autoSave();
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
 
-        const undoBtn = document.getElementById("undo-btn");
-        const redoBtn = document.getElementById("redo-btn");
-        if (undoBtn) undoBtn.hidden = false;
-        if (redoBtn) redoBtn.hidden = true;
+        // ✅ Update undo/redo button states
+        updateUndoRedoButtons();
 
         console.log("✅ Task completion toggled — undo snapshot pushed.");
     });
@@ -8403,11 +8127,14 @@ function setupTaskInteractions(taskElements, taskContext) {
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
     taskItem.addEventListener("click", (event) => {
         if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
-        
+
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event("change"));
         checkbox.setAttribute("aria-checked", checkbox.checked);
-    
+
         checkMiniCycle();
         autoSave();
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
@@ -9033,6 +8760,9 @@ function handleTaskButtonClick(event) {
                     return;
                 }
 
+                // ✅ Enable undo system on first user interaction
+                enableUndoSystemOnFirstInteraction();
+
                 // ✅ ADD: Capture snapshot BEFORE deletion
                 if (window.AppState?.isReady?.()) {
                     const currentState = window.AppState.get();
@@ -9080,6 +8810,9 @@ function handleTaskButtonClick(event) {
 
         shouldSave = false;
     } else if (button.classList.contains("priority-btn")) {
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         const taskId = taskItem.dataset.taskId;
 
         // ✅ Read fresh state from AppState to determine current priority
@@ -9900,13 +9633,16 @@ safeAddEventListener(completeAllButton, "click", handleCompleteAllTasks);
  ************************/
 // 🟢 Add Task Button (Click)
 safeAddEventListener(addTaskButton, "click", () => {
+    // ✅ Enable undo system on first user interaction
+    enableUndoSystemOnFirstInteraction();
+
     const taskText = taskInput.value ? taskInput.value.trim() : "";
     if (!taskText) {
         console.warn("⚠ Cannot add an empty task.");
         return;
     }
 
-     
+
     addTask(taskText);
     taskInput.value = "";
 });
@@ -9914,6 +9650,9 @@ safeAddEventListener(addTaskButton, "click", () => {
 // 🟢 Task Input (Enter Key)
 safeAddEventListener(taskInput, "keypress", function (event) {
     if (event.key === "Enter") {
+        // ✅ Enable undo system on first user interaction
+        enableUndoSystemOnFirstInteraction();
+
         event.preventDefault();
         const taskText = taskInput.value ? taskInput.value.trim() : "";
         if (!taskText) {
@@ -9921,7 +9660,7 @@ safeAddEventListener(taskInput, "keypress", function (event) {
             return;
         }
 
-     
+
         addTask(taskText);
         taskInput.value = "";
     }
@@ -10839,16 +10578,7 @@ function updateCycleModeDescription() {
 
 /*****SPEACIAL EVENT LISTENERS *****/
 
-document.addEventListener("dragover", (event) => {
-  event.preventDefault();
-  requestAnimationFrame(() => {
-      const movingTask = event.target.closest(".task");
-      if (movingTask) {
-          handleRearrange(movingTask, event);
-      }
-      autoSave();
-  });
-});
+// ✅ REMOVED: dragover event listener - now handled by dragDropManager module via setupRearrange()
 document.addEventListener("touchstart", () => {
     hasInteracted = true;
 }, { once: true });
@@ -10977,8 +10707,7 @@ updateCycleModeDescription();
       setupMiniCycleTitleListener();
       setupDownloadMiniCycle();
       setupUploadMiniCycle();
-      setupRearrange();
-      dragEndCleanup();
+      // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
       // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
       checkDueDates();
       loadAlwaysShowRecurringSetting();

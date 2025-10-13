@@ -216,6 +216,75 @@ export async function initializeRecurringModules() {
 }
 ```
 
+### **Step 7: Example - dragDropManager Integration** ✅ COMPLETED
+
+**File:** `utilities/task/dragDropManager.js`
+
+**What we learned:**
+
+**1. Module waits for core internally:**
+```javascript
+export class DragDropManager {
+    constructor(dependencies = {}) {
+        // Store dependencies with optional chaining wrappers
+        this.deps = {
+            captureStateSnapshot: dependencies.captureStateSnapshot,
+            refreshUIFromState: dependencies.refreshUIFromState,
+            // ... other dependencies
+        };
+    }
+
+    async init() {
+        // ✅ CRITICAL: Wait for core before setup
+        await appInit.waitForCore();
+        this.setupRearrange();
+    }
+}
+```
+
+**2. Use optional chaining for dependency wrappers:**
+```javascript
+// In main script Phase 2 - dependencies can be defined later
+await initDragDropManager({
+    captureStateSnapshot: (state) => captureStateSnapshot?.(state),  // ✅ Optional chaining
+    refreshUIFromState: () => refreshUIFromState?.(),
+    autoSave: () => autoSave?.(),
+    updateProgressBar: () => updateProgressBar?.(),
+    // All dependencies use optional chaining
+});
+```
+
+**3. Main script Phase 2/3 structure:**
+```javascript
+// ============ PHASE 1: CORE ============
+await AppState.init();
+await loadCycleData();
+
+// ✅ CRITICAL: Mark core systems ready
+await appInit.markCoreSystemsReady();
+
+// ============ PHASE 2: MODULES ============
+const { initDragDropManager } = await import('./utilities/task/dragDropManager.js');
+
+await initDragDropManager({
+    // Dependencies using optional chaining
+    captureStateSnapshot: (state) => captureStateSnapshot?.(state),
+    refreshUIFromState: () => refreshUIFromState?.()
+});
+
+// ============ PHASE 3: DATA LOADING ============
+// Now safe - dragDropManager ready
+initializeAppWithAutoMigration();
+```
+
+**Key insight:** Optional chaining (`?.()`) defers function resolution to **call-time** rather than **initialization-time**. This prevents race conditions with functions that are defined later in the main script.
+
+**Why this matters:**
+- `initDragDropManager()` runs at line 679
+- `captureStateSnapshot` defined at line 1012
+- Without optional chaining: ❌ Checks at line 679, function doesn't exist yet
+- With optional chaining: ✅ Checks when actually called (during user interaction), function exists by then
+
 ---
 
 ## 🧹 Cleanup Checklist
