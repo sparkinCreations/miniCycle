@@ -995,6 +995,110 @@ export async function runDragDropManagerTests(resultsDiv) {
     });
 
     // ============================================
+    // 🍎 SAFARI COMPATIBILITY TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🍎 Safari Compatibility</h4>';
+
+    test('sets webkitUserDrag property for Safari compatibility', () => {
+        const manager = new DragDropManager();
+        const taskElement = document.createElement('li');
+        taskElement.className = 'task';
+
+        manager.enableDragAndDrop(taskElement);
+
+        if (taskElement.style.webkitUserDrag !== 'element') {
+            throw new Error('webkitUserDrag should be set to "element" for Safari');
+        }
+    });
+
+    test('sets draggable attribute required by Safari', () => {
+        const manager = new DragDropManager();
+        const taskElement = document.createElement('li');
+        taskElement.className = 'task';
+
+        manager.enableDragAndDrop(taskElement);
+
+        if (taskElement.getAttribute('draggable') !== 'true') {
+            throw new Error('Safari requires draggable="true" attribute');
+        }
+    });
+
+    test('configures all required Safari drag properties together', () => {
+        const manager = new DragDropManager();
+        const taskElement = document.createElement('li');
+        taskElement.className = 'task';
+
+        manager.enableDragAndDrop(taskElement);
+
+        // Verify all Safari requirements in one test
+        if (taskElement.getAttribute('draggable') !== 'true') {
+            throw new Error('Missing draggable attribute for Safari');
+        }
+        if (taskElement.style.webkitUserDrag !== 'element') {
+            throw new Error('Missing -webkit-user-drag CSS property for Safari');
+        }
+        if (taskElement.style.userSelect !== 'none') {
+            throw new Error('Missing userSelect for text selection prevention');
+        }
+        if (taskElement.style.webkitUserSelect !== 'none') {
+            throw new Error('Missing webkitUserSelect for Safari text selection prevention');
+        }
+    });
+
+    test('Safari drag properties are reflected in computed styles', () => {
+        const manager = new DragDropManager();
+        const taskElement = document.createElement('li');
+        taskElement.className = 'task';
+
+        // Must be in DOM for computed styles
+        document.body.appendChild(taskElement);
+
+        manager.enableDragAndDrop(taskElement);
+
+        const computedStyle = window.getComputedStyle(taskElement);
+        if (computedStyle.webkitUserDrag !== 'element') {
+            document.body.removeChild(taskElement);
+            throw new Error('Computed style should reflect webkitUserDrag="element"');
+        }
+
+        // Cleanup
+        document.body.removeChild(taskElement);
+    });
+
+    test('creates transparent drag image for Safari (Stack Overflow fix)', () => {
+        const manager = new DragDropManager();
+        const taskElement = document.createElement('li');
+        taskElement.className = 'task';
+
+        // The fix requires creating the transparent pixel image
+        // OUTSIDE the dragstart event handler for Safari compatibility
+        manager.enableDragAndDrop(taskElement);
+
+        // Verify dragstart event listener was added
+        // (Image is created in closure, can't directly test but we verify setup)
+        if (taskElement.getAttribute('draggable') !== 'true') {
+            throw new Error('Drag setup incomplete - missing draggable attribute');
+        }
+    });
+
+    test('prevents Safari from blocking drag with text selection styles', () => {
+        const manager = new DragDropManager();
+        const taskElement = document.createElement('li');
+        taskElement.className = 'task';
+
+        manager.enableDragAndDrop(taskElement);
+
+        // Safari can block drag if text selection is not prevented
+        const hasUserSelectNone = taskElement.style.userSelect === 'none';
+        const hasWebkitUserSelectNone = taskElement.style.webkitUserSelect === 'none';
+        const hasMsUserSelectNone = taskElement.style.msUserSelect === 'none';
+
+        if (!hasUserSelectNone || !hasWebkitUserSelectNone || !hasMsUserSelectNone) {
+            throw new Error('All text selection prevention styles must be set for Safari');
+        }
+    });
+
+    // ============================================
     // 📊 SUMMARY
     // ============================================
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

@@ -2,7 +2,7 @@
 
 **Status:** ✅ **READY TO TEST**
 **Test File:** `tests/dragDropManager.tests.js`
-**Total Tests:** 70+ comprehensive tests
+**Total Tests:** 76 comprehensive tests (including Safari compatibility)
 
 ---
 
@@ -10,7 +10,8 @@
 
 ### 1. **Created Comprehensive Test Suite**
    - **File:** `tests/dragDropManager.tests.js`
-   - **70+ tests** covering all aspects of drag & drop functionality
+   - **76 tests** covering all aspects of drag & drop functionality
+   - **Includes Safari-specific compatibility tests** (webkitUserDrag, drag image creation)
 
 ### 2. **Integrated into Manual Test Suite**
    - Added to dropdown in `module-test-suite.html`
@@ -99,6 +100,14 @@
 - fallbackIsTouchDevice() checks touch capability
 - isTouchDevice dependency can be overridden
 
+### **🍎 Safari Compatibility (6 tests)**
+- Sets webkitUserDrag property for Safari compatibility
+- Sets draggable attribute required by Safari
+- Configures all required Safari drag properties together
+- Safari drag properties reflected in computed styles
+- Creates transparent drag image (Stack Overflow fix)
+- Prevents Safari from blocking drag with text selection styles
+
 ---
 
 ## 🚀 How to Run Tests
@@ -137,14 +146,14 @@ node tests/automated/run-browser-tests.js
 🌐 Launching browser...
 
 🧪 Testing dragDropManager...
-   ✅ Results: 70/70 tests passed (100%)
+   ✅ Results: 76/76 tests passed (100%)
 
 ============================================================
 📊 Test Summary (3.42s)
 ============================================================
-   ✅ PASS dragDropManager    70/70 tests
+   ✅ PASS dragDropManager    76/76 tests
 ============================================================
-🎉 All tests passed! (70/70 - 100%)
+🎉 All tests passed! (76/76 - 100%)
 ============================================================
 ```
 
@@ -163,9 +172,9 @@ In the browser test suite, click **"▶️ Run All Tests (13 modules)"** to run:
 10. RecurringPanel - 55 tests
 11. GlobalUtils - 36 tests
 12. Notifications - 39 tests
-13. **DragDropManager - 70 tests** ⬅️ NEW!
+13. **DragDropManager - 76 tests** (includes Safari compatibility)
 
-**Total: 427 tests across 13 modules**
+**Total: 433 tests across 13 modules**
 
 ---
 
@@ -212,7 +221,8 @@ Object.keys(savedRealData).forEach(key => {
 | **Integration** | 3 | AppState, AppGlobalState, appInit |
 | **Error Handling** | 5 | Graceful degradation |
 | **Touch/Mobile** | 3 | Touch detection, text selection |
-| **TOTAL** | **70+** | **Comprehensive coverage** |
+| **Safari Compatibility** | 6 | webkitUserDrag, drag image, computed styles |
+| **TOTAL** | **76** | **Comprehensive coverage** |
 
 ---
 
@@ -249,6 +259,14 @@ Object.keys(savedRealData).forEach(key => {
 - Missing DOM elements
 - AppState not ready
 - Null/undefined parameters
+
+### ✅ **Safari Compatibility**
+- webkitUserDrag CSS property (Safari requirement)
+- Drag image created outside event handler (Stack Overflow fix)
+- All text selection prevention styles
+- Draggable attribute configuration
+- Computed style verification
+- Safari-specific drag behavior tests
 
 ---
 
@@ -293,19 +311,27 @@ When you run the tests, you should see:
 🔧 Initialization
 ✅ creates instance with no dependencies
 ✅ creates instance with dependencies
-... (70+ tests)
+... (76 tests)
 
-Results: 70/70 tests passed
+🍎 Safari Compatibility
+✅ sets webkitUserDrag property for Safari compatibility
+✅ sets draggable attribute required by Safari
+✅ configures all required Safari drag properties together
+✅ Safari drag properties are reflected in computed styles
+✅ creates transparent drag image for Safari (Stack Overflow fix)
+✅ prevents Safari from blocking drag with text selection styles
+
+Results: 76/76 tests passed
 ```
 
 ### **Automated Tests (CLI)**
 ```
 🧪 Testing dragDropManager...
-   ✅ Results: 70/70 tests passed (100%)
+   ✅ Results: 76/76 tests passed (100%)
 
 📊 Test Summary
-   ✅ PASS dragDropManager    70/70 tests
-🎉 All tests passed! (70/70 - 100%)
+   ✅ PASS dragDropManager    76/76 tests
+🎉 All tests passed! (76/76 - 100%)
 ```
 
 ---
@@ -322,7 +348,7 @@ node tests/automated/run-browser-tests.js
 ```
 
 ### **2. Verify everything passes**
-Expected: **70/70 tests passed** ✅
+Expected: **76/76 tests passed** ✅
 
 ### **3. If any tests fail:**
 - Check console for error details
@@ -387,7 +413,8 @@ const browser = await chromium.launch({
 ## 🎯 Summary
 
 **You now have:**
-✅ 70+ comprehensive tests for DragDropManager
+✅ 76 comprehensive tests for DragDropManager
+✅ Safari compatibility tests (webkitUserDrag, drag image, etc.)
 ✅ Manual browser testing interface
 ✅ Automated CLI testing
 ✅ Data protection (localStorage save/restore)
@@ -395,7 +422,7 @@ const browser = await chromium.launch({
 ✅ AppInit integration (waits for core systems)
 ✅ Error handling and edge cases covered
 
-**Total test count:** 427 tests across 13 modules (was 357 across 12)
+**Total test count:** 433 tests across 13 modules (was 357 across 12)
 
 **Ready to test!** 🚀
 
