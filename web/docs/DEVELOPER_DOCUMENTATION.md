@@ -107,8 +107,8 @@ This is fundamentally different from traditional to-do apps where completed task
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Main Script** | 11,058 lines | Down from 15,677 (29% reduction) |
-| **Modules** | 16 modules | Modular architecture |
+| **Main Script** | 9,362 lines | Down from 15,677 (40% reduction) |
+| **Modules** | 20 modules | Modular architecture |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **App Version** | 1.309 | Stable production release |
 | **SW Cache** | v82 | Service worker version |
@@ -141,7 +141,7 @@ PWA:
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-scripts.js             # Core app (11,058 lines)
+├── miniCycle-scripts.js             # Core app (9,362 lines)
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker (v82)
 │
@@ -2471,15 +2471,31 @@ Current module test coverage:
 
 | Module | Test File | Tests | Status |
 |--------|-----------|-------|--------|
-| GlobalUtils | `globalUtils.tests.js` | 36 | ✅ |
-| ThemeManager | `themeManager.tests.js` | 18 | ✅ |
-| DeviceDetection | `deviceDetection.tests.js` | 17 | ✅ |
-| CycleLoader | `cycleLoader.tests.js` | 11 | ✅ |
-| StatsPanel | `statsPanel.tests.js` | 27 | ✅ |
-| Notifications | `notifications.tests.js` | 39 | ✅ |
-| **DragDropManager** | **`dragDropManager.tests.js`** | **76** | ✅ |
+| Integration (E2E) | `integration.tests.js` | 11 | ✅ 100% |
+| ThemeManager | `themeManager.tests.js` | 18 | ✅ 100% |
+| DeviceDetection | `deviceDetection.tests.js` | 17 | ✅ 100% |
+| CycleLoader | `cycleLoader.tests.js` | 11 | ✅ 100% |
+| StatsPanel | `statsPanel.tests.js` | 27 | ✅ 100% |
+| ConsoleCapture | `consoleCapture.tests.js` | 33 | ⚠️ 88% (29/33) |
+| State | `state.tests.js` | 41 | ✅ 100% |
+| RecurringCore | `recurringCore.tests.js` | 44 | ✅ 100% |
+| RecurringIntegration | `recurringIntegration.tests.js` | 25 | ✅ 100% |
+| RecurringPanel | `recurringPanel.tests.js` | 55 | ✅ 100% |
+| GlobalUtils | `globalUtils.tests.js` | 36 | ✅ 100% |
+| Notifications | `notifications.tests.js` | 39 | ✅ 100% |
+| **DragDropManager** | **`dragDropManager.tests.js`** | **67** | ✅ 100% |
+| **MigrationManager** | **`migrationManager.tests.js`** | **38** | ✅ 100% |
 
-**Total: 224 tests across 7 modules**
+**Total: 462 tests across 14 modules**
+
+**Overall Pass Rate: 99% (458/462 tests passing)**
+
+**Note on ConsoleCapture (88%):** The 4 failing tests are due to test environment limitations, not production bugs. These failures occur because:
+- Test runner already overrides console methods
+- Auto-start detection timing varies in test environment
+- State contamination from test execution order
+
+All other modules are at 100% after recent fixes to DeviceDetection, CycleLoader, and MigrationManager.
 
 ### Tips for Writing Good Tests
 

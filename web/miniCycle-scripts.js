@@ -530,7 +530,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     mod.setCycleLoaderDependencies({
       loadMiniCycleData: () => window.loadMiniCycleData?.(),
       createInitialSchema25Data: () => window.createInitialSchema25Data?.(),
-      addTask: (text) => window.addTask?.(text),
+      addTask: (...args) => window.addTask?.(...args),  // ✅ Forward ALL parameters
       updateThemeColor: () => window.updateThemeColor?.(),
       startReminders: () => window.startReminders?.(),
       updateProgressBar: () => window.updateProgressBar?.(),
@@ -2562,13 +2562,23 @@ function loadMiniCycleData() {
             };
         } catch (error) {
             console.error('❌ Error parsing Schema 2.5 data:', error);
+            console.error('❌ This likely means data is corrupted. NOT creating fresh data to preserve existing localStorage.');
+            return null; // ✅ FIX: Return null instead of falling through to create fresh data
         }
     }
-    
+
     // ✅ CREATE INITIAL DATA IF NONE EXISTS
-    console.log('🆕 Creating initial Schema 2.5 structure...');
+    // ✅ SAFETY CHECK: Verify localStorage truly has no data before creating fresh data
+    const existingData = localStorage.getItem("miniCycleData");
+    if (existingData) {
+        console.error('❌ Data exists in localStorage but failed to parse. NOT creating fresh data to prevent data loss.');
+        console.error('❌ Existing data:', existingData.substring(0, 200) + '...');
+        return null;
+    }
+
+    console.log('🆕 No data found in localStorage - Creating initial Schema 2.5 structure...');
     createInitialSchema25Data();
-    
+
     // Try again after creating
     const newData = localStorage.getItem("miniCycleData");
     if (newData) {
@@ -2580,7 +2590,7 @@ function loadMiniCycleData() {
             settings: parsed.settings
         };
     }
-    
+
     return null;
 }
 
@@ -5574,7 +5584,8 @@ function checkMiniCycle() {
     console.log("ran check MiniCyle function");
     updateProgressBar();
     updateStatsPanel();
-    autoSave();
+    // ✅ REMOVED: autoSave() here - task completion now saves directly via AppState.update()
+    // This prevents duplicate saves and potential race conditions
     console.log("ran check MiniCyle function2");
 }
 
@@ -5999,25 +6010,25 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     // Input validation and sanitization
     const validatedInput = validateAndSanitizeTaskInput(taskText);
     if (!validatedInput) return;
-    
+
     // Load and validate data context
     const taskContext = loadTaskContext(validatedInput, taskId, {
         completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
-    });
+    }, isLoading);  // ✅ Pass isLoading flag
     if (!taskContext) return;
-    
+
     // Create or update task data
     const taskData = createOrUpdateTaskData(taskContext);
-    
+
     // Create DOM elements
     const taskElements = createTaskDOMElements(taskContext, taskData);
-    
+
     // Setup task interactions and events
     setupTaskInteractions(taskElements, taskContext);
-    
+
     // Finalize task creation
     finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
-    
+
     console.log('✅ Task creation completed (Schema 2.5)');
 }
 
@@ -6043,9 +6054,9 @@ function validateAndSanitizeTaskInput(taskText) {
 }
 
 // ✅ 2. Data Context Loading and Validation
-function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
+function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     console.log('📝 Adding task (Schema 2.5 only)...');
-    
+
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for addTask');
@@ -6054,7 +6065,7 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
 
     const { cycles, activeCycle, settings, reminders } = schemaData;
     const currentCycle = cycles[activeCycle];
-    
+
     if (!activeCycle || !currentCycle) {
         console.error("❌ No active cycle found in Schema 2.5 for addTask");
         throw new Error('No active cycle found');
@@ -6078,23 +6089,24 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
         autoResetEnabled: currentCycle.autoReset || false,
         remindersEnabledGlobal: reminders?.enabled === true,
         deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false,
+        isLoading,  // ✅ Pass through isLoading flag
         ...taskOptions
     };
 }
 
 // ✅ 3. Task Data Creation and Storage
 function createOrUpdateTaskData(taskContext) {
-    const { 
-        cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate, 
+    const {
+        cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
         highPriority, remindersEnabled, recurring, recurringSettings,
-        currentCycle, cycles, activeCycle
+        currentCycle, cycles, activeCycle, isLoading
     } = taskContext;
 
     let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
-    
+
     if (!existingTask) {
         console.log('📋 Creating new task in Schema 2.5');
-        
+
         existingTask = {
             id: assignedTaskId,
             text: taskTextTrimmed,
@@ -6106,8 +6118,13 @@ function createOrUpdateTaskData(taskContext) {
             recurringSettings,
             schemaVersion: 2
         };
-        
-        currentCycle.tasks.push(existingTask);
+
+        // ✅ FIX: Only push to cycle data if NOT loading (prevents duplicate tasks with new IDs)
+        if (!isLoading) {
+            currentCycle.tasks.push(existingTask);
+        } else {
+            console.log('⏭️ Skipping push to currentCycle.tasks during load (task already in AppState)');
+        }
 
         // Handle recurring template creation
         if (recurring && recurringSettings) {
@@ -6130,11 +6147,16 @@ function createOrUpdateTaskData(taskContext) {
             };
         }
 
-        // Save to Schema 2.5
-        saveTaskToSchema25(activeCycle, currentCycle);
-        console.log('💾 Task saved to Schema 2.5');
+        // ✅ FIX: Only save to AppState if NOT loading from saved data
+        if (!isLoading) {
+            // Save to Schema 2.5
+            saveTaskToSchema25(activeCycle, currentCycle);
+            console.log('💾 Task saved to Schema 2.5');
+        } else {
+            console.log('⏭️ Skipping save during load (isLoading=true)');
+        }
     }
-    
+
     return existingTask;
 }
 
@@ -6599,7 +6621,7 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
 
         handleTaskCompletionChange(checkbox);
         checkMiniCycle();
-        autoSave();
+        autoSave(null, true);  // ✅ FIX: Force immediate save on task completion
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
 
         // ✅ Update undo/redo button states
@@ -6706,12 +6728,13 @@ function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateI
         // ✅ Enable undo system on first user interaction
         enableUndoSystemOnFirstInteraction();
 
+        // ✅ RESTORED: Use the simple working approach from old backup
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event("change"));
         checkbox.setAttribute("aria-checked", checkbox.checked);
 
         checkMiniCycle();
-        autoSave();
+        autoSave();  // ✅ This extracts from DOM and saves correctly
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
     });
 }

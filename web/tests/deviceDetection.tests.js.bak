@@ -97,14 +97,14 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔧 Initialization Tests</h4>';
     
-    await test('creates instance successfully', () => {
+    test('creates instance successfully', () => {
         const manager = new DeviceDetectionManager();
         if (!manager || typeof manager.runDeviceDetection !== 'function') {
             throw new Error('DeviceDetectionManager not properly initialized');
         }
     });
     
-    await test('accepts dependency injection', () => {
+    test('accepts dependency injection', () => {
         const mockLoadData = () => ({ metadata: { version: '2.5' }, settings: {} });
         const mockNotification = () => {};
         
@@ -119,7 +119,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
     
-    await test('has safe global function access', () => {
+    test('has safe global function access', () => {
         const manager = new DeviceDetectionManager();
         const fn = manager.getGlobalFunction('nonExistentFunction');
         
@@ -131,7 +131,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === DEVICE DETECTION LOGIC TESTS ===
     resultsDiv.innerHTML += '<h4>🔍 Device Detection Logic</h4>';
 
-    await test('shouldRedirectToLite returns boolean', () => {
+    test('shouldRedirectToLite returns boolean', () => {
         const manager = new DeviceDetectionManager();
         const result = manager.shouldRedirectToLite();
 
@@ -140,7 +140,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('device detection logic exists and is callable', () => {
+    test('device detection logic exists and is callable', () => {
         const manager = new DeviceDetectionManager();
 
         // Verify the method exists and doesn't throw
@@ -157,7 +157,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('checkManualOverride is async and returns boolean', async () => {
+    test('checkManualOverride is async and returns boolean', async () => {
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
         });
@@ -172,7 +172,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === MANUAL OVERRIDE TESTS ===
     resultsDiv.innerHTML += '<h4>🚀 Manual Override Tests</h4>';
     
-    await test('respects manual override preference', () => {
+    test('respects manual override preference', () => {
         localStorage.setItem('miniCycleForceFullVersion', 'true');
         
         const manager = new DeviceDetectionManager({
@@ -188,7 +188,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     });
     
     // ⚠️ ENVIRONMENT-SPECIFIC: May fail in test environment due to async timing
-    await test('saves manual override to Schema 2.5', async () => {
+    test('saves manual override to Schema 2.5', async () => {
         // ✅ Set up localStorage with valid Schema 2.5 data
         const mockData = { metadata: { version: '2.5' }, settings: {} };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -215,7 +215,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     resultsDiv.innerHTML += '<h4>💾 Schema 2.5 Storage Tests</h4>';
     
     // ⚠️ ENVIRONMENT-SPECIFIC: May fail due to mock data structure differences
-    await test('saves compatibility data to Schema 2.5', async () => {
+    test('saves compatibility data to Schema 2.5', async () => {
         // ✅ Set up localStorage with valid Schema 2.5 data
         const mockData = { metadata: { version: '2.5' }, settings: {} };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
@@ -247,7 +247,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     });
     
     // ⚠️ ENVIRONMENT-SPECIFIC: Timing-sensitive test - may fail due to clock precision
-    await test('updates Schema 2.5 metadata timestamp', async () => {
+    test('updates Schema 2.5 metadata timestamp', async () => {
         const originalData = JSON.parse(localStorage.getItem('miniCycleData'));
         const originalTimestamp = originalData.metadata.lastModified;
 
@@ -278,7 +278,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === VERSION CHANGE DETECTION ===
     resultsDiv.innerHTML += '<h4>🔄 Version Change Detection</h4>';
     
-    await test('detects version changes', () => {
+    test('detects version changes', () => {
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
             currentVersion: '1.999'
@@ -313,7 +313,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     resultsDiv.innerHTML += '<h4>📊 Compatibility Reporting</h4>';
     
     // ⚠️ ENVIRONMENT-SPECIFIC: Report generation depends on browser capabilities
-    await test('generates compatibility report', async () => {
+    test('generates compatibility report', async () => {
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
             showNotification: () => {},
@@ -333,7 +333,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('handles missing Schema 2.5 data gracefully', async () => {
+    test('handles missing Schema 2.5 data gracefully', async () => {
         localStorage.clear();
 
         const manager = new DeviceDetectionManager({
@@ -351,7 +351,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === UTILITY FUNCTIONS ===
     resultsDiv.innerHTML += '<h4>🧹 Utility Functions</h4>';
     
-    await test('clears detection data properly', () => {
+    test('clears detection data properly', () => {
         const manager = new DeviceDetectionManager();
         
         // Save some data first
@@ -374,7 +374,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
 
     // ⚠️ ENVIRONMENT-SPECIFIC: Error handling behavior may vary by browser
-    await test('handles corrupted localStorage gracefully', async () => {
+    test('handles corrupted localStorage gracefully', async () => {
         localStorage.setItem('miniCycleData', 'invalid-json');
 
         const manager = new DeviceDetectionManager({
@@ -390,7 +390,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     });
 
     // ⚠️ ENVIRONMENT-SPECIFIC: Dependency injection behavior varies by environment
-    await test('handles missing dependencies gracefully', async () => {
+    test('handles missing dependencies gracefully', async () => {
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
         });
@@ -406,7 +406,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     // === GLOBAL FUNCTIONS ===
     resultsDiv.innerHTML += '<h4>🌐 Global Functions</h4>';
     
-    await test('exposes global compatibility functions', () => {
+    test('exposes global compatibility functions', () => {
         // Import should have set up globals
         if (typeof window.runDeviceDetection !== 'function' ||
             typeof window.reportDeviceCompatibility !== 'function' ||

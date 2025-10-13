@@ -236,7 +236,7 @@ export function checkMigrationNeeded() {
     const lastUsed = Deps.storage.getItem("lastUsedMiniCycle");
     const reminders = Deps.storage.getItem("miniCycleReminders");
 
-    const hasOldData = oldCycles || lastUsed || reminders;
+    const hasOldData = !!(oldCycles || lastUsed || reminders);
 
     return {
         needed: hasOldData,

@@ -101,7 +101,7 @@ resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 | 🛡️ Resilient Constructor | 80%+ |
 | 🔧 Strict Injection | 85%+ |
 
-## 🎯 Current Test Suites (343+ Tests)
+## 🎯 Current Test Suites (413+ Tests)
 
 - ✅ **GlobalUtils** (36 tests) - DOM helpers, event listeners, utilities
 - ✅ **ThemeManager** (18 tests) - Theme application, dark mode, storage
@@ -113,6 +113,7 @@ resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 - ✅ **State** (58 tests) - State management, persistence, listeners
 - ✅ **RecurringCore** (69 tests) - Recurring tasks, date/time logic
 - ✅ **RecurringIntegration** (27 tests) - Module integration, initialization
+- ✅ **MigrationManager** (56 tests) - Schema migration, data validation, backup/restore
 
 ## 💡 Tips
 

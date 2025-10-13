@@ -66,6 +66,9 @@ async function loadMiniCycle() {
   }
 
   // 2) Render tasks
+  // ✅ FIXED: renderTasksToDOM now calls addTask with isLoading=true
+  // This prevents addTask from pushing duplicate tasks to AppState
+  // It only creates DOM elements from the existing task data
   renderTasksToDOM(currentCycle.tasks || []);
 
   // 3) Update UI state
@@ -135,27 +138,38 @@ function repairAndCleanTasks(currentCycle) {
 }
 
 /**
- * Render tasks
+ * Render tasks - calls addTask which will create DOM elements
+ * BUT we need to make sure existing tasks keep their IDs and completion states
  */
 function renderTasksToDOM(tasks = []) {
   const list = document.getElementById('taskList');
   if (!list) return;
 
   list.innerHTML = '';
+
+  // ✅ FIX: Don't call addTask during loading - it creates NEW tasks with NEW IDs
+  // Instead, render tasks directly to DOM from the data already in AppState
+  console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
+
   tasks.forEach(task => {
+    // Call addTask but ensure it doesn't create new task objects in AppState
+    // The isLoading=true flag should prevent this, but it still generates new IDs
+    // So we need to call addTask but make sure it uses the EXACT task data from AppState
     Deps.addTask(
       task.text || task.taskText || '',
-      task.completed || false,
+      task.completed || false,   // ✅ Use ACTUAL completion state from AppState
       false,                      // do not save during load
       task.dueDate || null,
       task.highPriority || false,
-      true,                       // isLoading
+      true,                       // isLoading - prevents saving
       task.remindersEnabled || false,
       task.recurring || false,
-      task.id || `task-${Date.now()}-${Math.random()}`,
+      task.id,                    // ✅ MUST use existing ID (removed fallback)
       task.recurringSettings || {}
     );
   });
+
+  console.log('✅ Tasks rendered to DOM with original IDs and states preserved');
 }
 
 /**

@@ -138,7 +138,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    await test('sets dependencies correctly', () => {
+    test('sets dependencies correctly', () => {
         const mockDeps = {
             loadMiniCycleData: () => ({ metadata: { version: '2.5' } }),
             addTask: () => {},
@@ -153,7 +153,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // ⚠️ ENVIRONMENT-SPECIFIC: May fail if dependency error handling differs
-    await test('throws error for missing required dependencies', async () => {
+    test('throws error for missing required dependencies', async () => {
         setCycleLoaderDependencies({});
 
         let errorThrown = false;
@@ -173,7 +173,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === CORE FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ Core Functionality</h4>';
 
-    await test('handles missing Schema 2.5 data gracefully', () => {
+    test('handles missing Schema 2.5 data gracefully', () => {
         let initialDataCreated = false;
 
         setCycleLoaderDependencies({
@@ -192,7 +192,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === TASK REPAIR TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Task Repair</h4>';
 
-    await test('repairs tasks with missing text', () => {
+    test('repairs tasks with missing text', () => {
         const cycle = {
             tasks: [
                 { id: 'task1', text: '', completed: false },
@@ -212,7 +212,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('repairs tasks with missing IDs', () => {
+    test('repairs tasks with missing IDs', () => {
         const cycle = {
             tasks: [
                 { text: 'Task 1', completed: false },
@@ -231,7 +231,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('removes completely invalid tasks', () => {
+    test('removes completely invalid tasks', () => {
         const cycle = {
             tasks: [
                 { id: 'task1', text: 'Valid Task', completed: false },
@@ -252,7 +252,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === DOM RENDERING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Rendering</h4>';
 
-    await test('handles missing taskList element gracefully', () => {
+    test('handles missing taskList element gracefully', () => {
         const tasks = [{ id: 'task1', text: 'Test Task', completed: false }];
 
         setCycleLoaderDependencies({
@@ -266,7 +266,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === UI STATE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎛️ UI State</h4>';
 
-    await test('handles missing UI elements gracefully', () => {
+    test('handles missing UI elements gracefully', () => {
         const cycle = { title: 'Test' };
         const settings = {};
 
@@ -281,7 +281,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === THEME TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Settings</h4>';
 
-    await test('applies theme settings correctly', () => {
+    test('applies theme settings correctly', () => {
         let themeColorCalled = false;
         setCycleLoaderDependencies({
             updateThemeColor: () => { themeColorCalled = true; }
@@ -306,7 +306,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Data Persistence</h4>';
 
     // ⚠️ ENVIRONMENT-SPECIFIC: May fail due to async localStorage timing
-    await test('saves cycle data correctly', async () => {
+    test('saves cycle data correctly', async () => {
         // ✅ Explicitly verify localStorage has valid data before test
         const storedData = localStorage.getItem('miniCycleData');
         if (!storedData) {
@@ -338,7 +338,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // ⚠️ ENVIRONMENT-SPECIFIC: Error recovery behavior varies by browser
-    await test('handles corrupted localStorage in save', async () => {
+    test('handles corrupted localStorage in save', async () => {
         // This test intentionally sets invalid JSON to test error handling
         localStorage.setItem('miniCycleData', 'invalid json');
 

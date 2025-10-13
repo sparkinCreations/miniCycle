@@ -165,8 +165,19 @@
             border-left: 4px solid #dc3545;
         }
 
-        .test-element {
-            display: none;
+        .test-element,
+        #test-element,
+        #test-element-2,
+        .selector-test {
+            display: none !important;
+            visibility: hidden !important;
+            position: absolute !important;
+            left: -9999px !important;
+            top: -9999px !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
 
         /* Responsive */
@@ -207,9 +218,10 @@
             <option value="globalUtils">GlobalUtils</option>
             <option value="notifications">Notifications</option>
             <option value="dragDropManager">DragDropManager</option>
+            <option value="migrationManager">MigrationManager</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (13 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (14 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -240,6 +252,7 @@
         const { runGlobalUtilsTests } = await import(`./globalUtils.tests.js?v=${cacheBuster}`);
         const { runNotificationsTests } = await import(`./notifications.tests.js?v=${cacheBuster}`);
         const { runDragDropManagerTests } = await import(`./dragDropManager.tests.js?v=${cacheBuster}`);
+        const { runMigrationManagerTests } = await import(`./migrationManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -310,6 +323,10 @@
                     await import(`../utilities/task/dragDropManager.js?v=${cacheBuster}`);
                     currentModule = 'dragDropManager';
                     resultsDiv.innerHTML = '<p>✅ DragDropManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'migrationManager') {
+                    await import(`../utilities/cycle/migrationManager.js?v=${cacheBuster}`);
+                    currentModule = 'migrationManager';
+                    resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -349,6 +366,8 @@
                 await runNotificationsTests(resultsDiv);
             } else if (currentModule === 'dragDropManager') {
                 await runDragDropManagerTests(resultsDiv);
+            } else if (currentModule === 'migrationManager') {
+                await runMigrationManagerTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -405,7 +424,8 @@
                 { name: 'RecurringPanel', key: 'recurringPanel', runFn: runRecurringPanelTests, importPath: '../utilities/recurringPanel.js' },
                 { name: 'GlobalUtils', key: 'globalUtils', runFn: runGlobalUtilsTests, importPath: '../utilities/globalUtils.js' },
                 { name: 'Notifications', key: 'notifications', runFn: runNotificationsTests, importPath: '../utilities/notifications.js' },
-                { name: 'DragDropManager', key: 'dragDropManager', runFn: runDragDropManagerTests, importPath: '../utilities/task/dragDropManager.js' }
+                { name: 'DragDropManager', key: 'dragDropManager', runFn: runDragDropManagerTests, importPath: '../utilities/task/dragDropManager.js' },
+                { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../utilities/cycle/migrationManager.js' }
             ];
 
             let allResults = [];
@@ -432,6 +452,8 @@
                     } else if (module.key === 'cycleLoader') {
                         result = await module.runFn(tempDiv, true); // isPartOfSuite = true
                     } else if (module.key === 'deviceDetection') {
+                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
+                    } else if (module.key === 'migrationManager') {
                         result = await module.runFn(tempDiv, true); // isPartOfSuite = true
                     } else {
                         result = await module.runFn(tempDiv);
