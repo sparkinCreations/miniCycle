@@ -1748,9 +1748,17 @@ function showCycleCreationModal() {
                 fullSchemaData.metadata.totalCyclesCreated++;
                 
                 localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                
+
+                // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
+                if (window.AppState && typeof window.AppState.init === 'function') {
+                    window.AppState.data = fullSchemaData;
+                    window.AppState.isInitialized = true;
+                    window.AppState.isDirty = false; // Mark as clean since we just saved
+                    console.log('✅ AppState synchronized with new cycle data');
+                }
+
                 console.log('💾 New cycle saved to Schema 2.5');
-                
+
                 // ✅ Complete the setup after user interaction
                 completeInitialSetup(cycleId, fullSchemaData);
             }
@@ -1804,10 +1812,18 @@ async function preloadGettingStartedCycle() {
         fullSchemaData.metadata.totalCyclesCreated++;
         
         localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
+
+        // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
+        if (window.AppState && typeof window.AppState.init === 'function') {
+            window.AppState.data = fullSchemaData;
+            window.AppState.isInitialized = true;
+            window.AppState.isDirty = false; // Mark as clean since we just saved
+            console.log('✅ AppState synchronized with new cycle data');
+        }
+
         console.log('💾 Sample cycle saved to Schema 2.5');
         console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
-        
+
         // ✅ CLOSE ANY OPEN MODALS
         const existingModals = document.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
         existingModals.forEach(modal => modal.remove());
@@ -1867,7 +1883,15 @@ function createBasicFallbackCycle() {
     fullSchemaData.metadata.totalCyclesCreated++;
     
     localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
+
+    // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
+    if (window.AppState && typeof window.AppState.init === 'function') {
+        window.AppState.data = fullSchemaData;
+        window.AppState.isInitialized = true;
+        window.AppState.isDirty = false; // Mark as clean since we just saved
+        console.log('✅ AppState synchronized with new cycle data');
+    }
+
     console.log('✅ Basic fallback cycle created');
     completeInitialSetup(cycleId, fullSchemaData);
 }
@@ -6639,6 +6663,14 @@ function setupUploadMiniCycle() {
           fullSchemaData.metadata.lastModified = Date.now();
           fullSchemaData.metadata.totalCyclesCreated++;
           localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+
+          // ✅ SYNC AppState with imported cycle data (prevents overwriting with stale data)
+          if (window.AppState && typeof window.AppState.init === 'function') {
+              window.AppState.data = fullSchemaData;
+              window.AppState.isInitialized = true;
+              window.AppState.isDirty = false; // Mark as clean since we just saved
+              console.log('✅ AppState synchronized with imported cycle data');
+          }
 
           console.log("💾 Import completed successfully to Schema 2.5");
           showNotification(`✅ miniCycle "${importedData.name}" imported and converted to Schema 2.5!`, "success");

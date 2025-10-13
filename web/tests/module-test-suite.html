@@ -194,6 +194,7 @@
         <label for="module-select">Choose a module to test:</label>
         <select id="module-select">
             <option value="">-- Select Module --</option>
+            <option value="integration">🔗 Integration Tests (E2E)</option>
             <option value="themeManager">ThemeManager</option>
             <option value="deviceDetection">DeviceDetection</option>
             <option value="cycleLoader">CycleLoader</option>
@@ -207,7 +208,7 @@
             <option value="notifications">Notifications</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (12 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -225,6 +226,7 @@
         const cacheBuster = Date.now();
 
         // Import test modules with cache busting
+        const { runIntegrationTests } = await import(`./integration.tests.js?v=${cacheBuster}`);
         const { runThemeManagerTests } = await import(`./themeManager.tests.js?v=${cacheBuster}`);
         const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
         const { runCycleLoaderTests } = await import(`./cycleLoader.tests.js?v=${cacheBuster}`);
@@ -254,7 +256,11 @@
 
             try {
                 // Use cache buster for module imports to force fresh loads
-                if (moduleName === 'themeManager') {
+                if (moduleName === 'integration') {
+                    // Integration tests don't need to import any modules - they test the whole app
+                    currentModule = 'integration';
+                    resultsDiv.innerHTML = '<p>✅ Integration Tests (E2E) ready. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'themeManager') {
                     await import(`../utilities/themeManager.js?v=${cacheBuster}`);
                     currentModule = 'themeManager';
                     resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
@@ -311,7 +317,9 @@
                 return;
             }
 
-            if (currentModule === 'themeManager') {
+            if (currentModule === 'integration') {
+                await runIntegrationTests(resultsDiv);
+            } else if (currentModule === 'themeManager') {
                 await runThemeManagerTests(resultsDiv);
             } else if (currentModule === 'deviceDetection') {
                 await runDeviceDetectionTests(resultsDiv);
@@ -377,6 +385,7 @@
 
             // Define all modules and their test functions
             const allModules = [
+                { name: '🔗 Integration (E2E)', key: 'integration', runFn: runIntegrationTests, importPath: null },
                 { name: 'ThemeManager', key: 'themeManager', runFn: runThemeManagerTests, importPath: '../utilities/themeManager.js' },
                 { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../utilities/deviceDetection.js' },
                 { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../utilities/cycleLoader.js' },
@@ -397,15 +406,19 @@
             // Run each module's tests
             for (const module of allModules) {
                 try {
-                    // Load the module
-                    await import(`${module.importPath}?v=${cacheBuster}`);
+                    // Load the module (skip for integration tests which don't need imports)
+                    if (module.importPath) {
+                        await import(`${module.importPath}?v=${cacheBuster}`);
+                    }
 
                     // Create a temporary div for results
                     const tempDiv = document.createElement('div');
 
                     // Run the tests (pass isPartOfSuite=true for tests that manage localStorage)
                     let result;
-                    if (module.key === 'state') {
+                    if (module.key === 'integration') {
+                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
+                    } else if (module.key === 'state') {
                         result = await module.runFn(tempDiv, true); // isPartOfSuite = true
                     } else if (module.key === 'cycleLoader') {
                         result = await module.runFn(tempDiv, true); // isPartOfSuite = true
