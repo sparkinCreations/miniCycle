@@ -571,6 +571,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     initializeThemesPanel();
     setupThemesPanel();
 
+    // ✅ UI Modal Setup (was missing after appInit refactoring)
+    setupMainMenu();
+    setupSettingsMenu();
+    setupAbout();
+    setupUserManual();
+    setupFeedbackModal();
+
+    // ✅ Expose functions needed by cycleLoader
+    window.updateMainMenuHeader = updateMainMenuHeader;
+
 
 
 // ...existing code...
