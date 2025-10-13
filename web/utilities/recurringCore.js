@@ -205,10 +205,15 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
                 const minute = settings.time.minute;
                 return now.getHours() === hour && now.getMinutes() === minute;
             }
-            return now.getHours() === 0 && now.getMinutes() === 0;
+            // ✅ FIX: Without specific time, recur once per day (tracked by lastTriggeredTimestamp)
+            // The watcher checks every 30 seconds, so this will trigger on first check of the day
+            return true;
 
         case "weekly":
-            if (!settings.weekly?.days?.includes(weekday)) return false;
+            // ✅ FIX: If no specific days selected, recur every day of the week
+            if (settings.weekly?.days?.length > 0 && !settings.weekly.days.includes(weekday)) {
+                return false;
+            }
 
             if (settings.time) {
                 const hour = settings.time.military
@@ -221,7 +226,10 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
             return true; // if no time set, recur any time today
 
         case "biweekly":
-            if (!settings.biweekly?.days?.includes(weekday)) return false;
+            // ✅ FIX: If no specific days selected, recur every day of the week
+            if (settings.biweekly?.days?.length > 0 && !settings.biweekly.days.includes(weekday)) {
+                return false;
+            }
 
             // ✅ Calculate which week we're in relative to reference date
             // The reference date is set when the recurring task is created.
@@ -245,7 +253,10 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
             return true; // if no time set, recur any time today
 
         case "monthly":
-            if (!settings.monthly?.days?.includes(day)) return false;
+            // ✅ FIX: If no specific days selected, recur every day of the month
+            if (settings.monthly?.days?.length > 0 && !settings.monthly.days.includes(day)) {
+                return false;
+            }
 
             if (settings.time) {
                 const hour = settings.time.military
@@ -258,7 +269,10 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
             return true; // If no time is set, trigger any time during the day
 
         case "yearly":
-            if (!settings.yearly?.months?.includes(month)) return false;
+            // ✅ FIX: If no specific months selected, recur every month of the year
+            if (settings.yearly?.months?.length > 0 && !settings.yearly.months.includes(month)) {
+                return false;
+            }
 
             if (settings.yearly.useSpecificDays) {
                 const daysByMonth = settings.yearly.daysByMonth || {};
@@ -266,7 +280,10 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
                     ? daysByMonth.all || []
                     : daysByMonth[month] || [];
 
-                if (!days.includes(day)) return false;
+                // ✅ FIX: If no specific days selected, recur every day of the month
+                if (days.length > 0 && !days.includes(day)) {
+                    return false;
+                }
             }
 
             if (settings.time) {
