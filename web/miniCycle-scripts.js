@@ -1371,7 +1371,7 @@ function renderTasks(tasksArray = []) {
     const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
     updateArrowsInDOM(arrowsVisible);
   }
-  
+
   console.log('✅ Task rendering completed and UI state restored');
 }
 
@@ -8192,19 +8192,19 @@ function finalizeTaskCreation(taskElements, taskContext, options) {
 
     // Append to DOM
     taskList.appendChild(taskItem);
-    
+
     // Clear input
     if (taskInput) taskInput.value = "";
 
     // Scroll to new task
     scrollToNewTask(taskList);
-    
+
     // Handle overdue styling
     handleOverdueStyling(taskItem, completed);
-    
+
     // Update UI components
     updateUIAfterTaskCreation(shouldSave);
-    
+
     // Setup final interactions
     setupFinalTaskInteractions(taskItem, isLoading);
 }
@@ -8247,7 +8247,13 @@ function updateUIAfterTaskCreation(shouldSave) {
 function setupFinalTaskInteractions(taskItem, isLoading) {
     if (!isLoading) setTimeout(() => { remindOverdueTasks(); }, 1000);
 
-    DragAndDrop(taskItem);
+    if (typeof DragAndDrop === 'function') {
+        DragAndDrop(taskItem);
+    } else if (typeof window.DragAndDrop === 'function') {
+        window.DragAndDrop(taskItem);
+    } else {
+        console.error('❌ DragAndDrop function not available!');
+    }
     updateMoveArrowsVisibility();
 }
 

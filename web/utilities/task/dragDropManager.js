@@ -139,10 +139,21 @@ export class DragDropManager {
         }
 
         try {
+            // ✅ Safari desktop REQUIRES draggable="true" before dragstart fires
+            taskElement.setAttribute("draggable", "true");
+
+            // ✅ Safari/WebKit REQUIRES -webkit-user-drag CSS property
+            taskElement.style.webkitUserDrag = "element";
+
             // Prevent text selection on mobile
             taskElement.style.userSelect = "none";
             taskElement.style.webkitUserSelect = "none";
             taskElement.style.msUserSelect = "none";
+
+            // ✅ SAFARI FIX: Create transparent drag image OUTSIDE event handler
+            // Safari requires the image to exist before dragstart fires
+            const transparentPixel = new Image();
+            transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
             let readyToDrag = false;
             let touchStartX = 0;
@@ -213,7 +224,7 @@ export class DragDropManager {
                 }
 
                 if (isLongPress && readyToDrag && !isDragging) {
-                    taskElement.setAttribute("draggable", "true");
+                    // draggable already set in enableDragAndDrop()
                     isDragging = true;
 
                     if (event.cancelable) {
@@ -273,10 +284,8 @@ export class DragDropManager {
                 // Add dragging class for desktop as well
                 taskElement.classList.add("dragging");
 
-                // Hide ghost image on desktop
+                // Hide ghost image on desktop (use pre-created image for Safari compatibility)
                 if (!this.deps.isTouchDevice()) {
-                    const transparentPixel = new Image();
-                    transparentPixel.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
                     event.dataTransfer.setDragImage(transparentPixel, 0, 0);
                 }
             });
