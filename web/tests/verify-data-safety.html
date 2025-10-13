@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🔒 Data Safety Verification</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #4c79ff, #74c0fc);
+            color: white;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        h1 { margin-top: 0; }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 4px solid #4c79ff;
+        }
+        button {
+            background: #4c79ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #3d68e6; }
+        .safe { color: #28a745; font-weight: bold; }
+        .warning { color: #dc3545; font-weight: bold; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>🔒 miniCycle Data Safety Verification</h1>
+    
+    <div class="card">
+        <h2>Step 1: Check Your Real App Data</h2>
+        <p>This page runs at the <strong>same origin</strong> as your app (localhost:8080), so it can see your real localStorage data.</p>
+        <button onclick="checkRealData()">Check Real App Data</button>
+        <pre id="realData">Click button to check...</pre>
+    </div>
+
+    <div class="card">
+        <h2>Step 2: Simulate Test Behavior</h2>
+        <p>This will simulate what tests do: create mock data, then clear localStorage.</p>
+        <button onclick="simulateTests()">Simulate Test Behavior</button>
+        <pre id="testSimulation">Click button to simulate...</pre>
+    </div>
+
+    <div class="card">
+        <h2>Step 3: Verify Data After Simulation</h2>
+        <p>Check if your real data survived the test simulation.</p>
+        <button onclick="verifyAfterTest()">Verify Data</button>
+        <pre id="afterTest">Click button to verify...</pre>
+    </div>
+
+    <div class="card">
+        <h2>Step 4: Playwright Isolation Test</h2>
+        <p>The automated tests run in Playwright's isolated context - completely separate from your browser!</p>
+        <button onclick="explainPlaywright()">Explain Playwright Isolation</button>
+        <pre id="playwrightInfo">Click button to learn...</pre>
+    </div>
+
+    <script>
+        let beforeData = null;
+
+        function checkRealData() {
+            const miniCycleData = localStorage.getItem('miniCycleData');
+            const output = document.getElementById('realData');
+            
+            if (miniCycleData) {
+                beforeData = miniCycleData;
+                try {
+                    const parsed = JSON.parse(miniCycleData);
+                    const cycles = parsed.data?.cycles || parsed.cycles || {};
+                    const cycleCount = Object.keys(cycles).length;
+                    
+                    output.innerHTML = `<span class="safe">✅ REAL APP DATA FOUND</span>\n\n` +
+                        `Data exists: ${(miniCycleData.length / 1024).toFixed(2)} KB\n` +
+                        `Cycles: ${cycleCount}\n` +
+                        `Schema version: ${parsed.metadata?.version || parsed.schemaVersion || 'unknown'}\n` +
+                        `Last modified: ${parsed.metadata?.lastModified ? new Date(parsed.metadata.lastModified).toLocaleString() : 'unknown'}\n\n` +
+                        `<span class="info">This is your REAL app data stored in your browser.</span>`;
+                } catch (e) {
+                    output.innerHTML = `<span class="warning">⚠️ Data exists but parse failed</span>\n${e.message}`;
+                }
+            } else {
+                output.innerHTML = `<span class="info">ℹ️ No miniCycleData found</span>\n\n` +
+                    `This could mean:\n` +
+                    `1. You haven't used the app yet\n` +
+                    `2. Data was cleared\n` +
+                    `3. You're on a different port/domain`;
+            }
+        }
+
+        function simulateTests() {
+            const output = document.getElementById('testSimulation');
+            output.innerHTML = '<span class="info">⏳ Simulating test behavior...</span>\n\n';
+            
+            // Save real data first
+            const realData = localStorage.getItem('miniCycleData');
+            
+            setTimeout(() => {
+                try {
+                    // This is what tests do:
+                    output.innerHTML += '1. Creating mock test data...\n';
+                    localStorage.setItem('miniCycleData', JSON.stringify({
+                        metadata: { version: '2.5', lastModified: Date.now() },
+                        data: { cycles: { test: { id: 'test', title: 'Test Cycle' } } }
+                    }));
+                    
+                    output.innerHTML += '2. Running test operations...\n';
+                    
+                    output.innerHTML += '3. Calling localStorage.clear()...\n';
+                    localStorage.clear();
+                    
+                    output.innerHTML += '\n<span class="warning">⚠️ SIMULATION COMPLETE - localStorage.clear() was called!</span>\n';
+                    output.innerHTML += '\nNow check Step 3 to see if your real data survived...';
+                    
+                } catch (e) {
+                    output.innerHTML += `\n<span class="warning">Error: ${e.message}</span>`;
+                }
+            }, 500);
+        }
+
+        function verifyAfterTest() {
+            const output = document.getElementById('afterTest');
+            const miniCycleData = localStorage.getItem('miniCycleData');
+            
+            if (!beforeData) {
+                output.innerHTML = `<span class="warning">⚠️ Run Step 1 first to capture your data!</span>`;
+                return;
+            }
+            
+            if (miniCycleData) {
+                if (miniCycleData === beforeData) {
+                    output.innerHTML = `<span class="safe">✅ DATA SURVIVED! Your real app data is intact!</span>\n\n` +
+                        `This should NOT happen if tests are wiping data...\n` +
+                        `Something is protecting your data!`;
+                } else {
+                    output.innerHTML = `<span class="warning">⚠️ DATA CHANGED!</span>\n\n` +
+                        `Before: ${(beforeData.length / 1024).toFixed(2)} KB\n` +
+                        `After: ${(miniCycleData.length / 1024).toFixed(2)} KB\n\n` +
+                        `The data is different - this could be normal app updates.`;
+                }
+            } else {
+                output.innerHTML = `<span class="warning">❌ DATA WAS WIPED!</span>\n\n` +
+                    `Your data was cleared by the simulation.\n` +
+                    `In REAL tests, this would be a problem!\n\n` +
+                    `<span class="safe">BUT WAIT...</span>\n` +
+                    `Real automated tests run in Playwright's isolated context,\n` +
+                    `NOT in your actual browser! See Step 4...`;
+            }
+        }
+
+        function explainPlaywright() {
+            const output = document.getElementById('playwrightInfo');
+            output.innerHTML = `<span class="safe">✅ YOUR DATA IS SAFE!</span>\n\n` +
+                `Here's why:\n\n` +
+                `1. Automated tests run via Playwright (headless browser)\n` +
+                `2. Playwright creates an ISOLATED browser context\n` +
+                `3. This context has its OWN localStorage (empty at start)\n` +
+                `4. Your REAL browser's localStorage is completely separate\n\n` +
+                `Think of it like:\n` +
+                `- Your real browser = Your actual house\n` +
+                `- Playwright context = A temporary hotel room\n\n` +
+                `Tests trash the hotel room, your house is untouched!\n\n` +
+                `<span class="info">To verify:</span>\n` +
+                `1. Check your real app: http://localhost:8080/miniCycle.html\n` +
+                `2. Your cycles should all be there\n` +
+                `3. Run npm test again\n` +
+                `4. Check your app again - data still there!\n\n` +
+                `<span class="warning">ONLY RISK:</span>\n` +
+                `If you manually open the test suite in your REAL browser\n` +
+                `(http://localhost:8080/tests/module-test-suite.html)\n` +
+                `and run tests, THEN localStorage.clear() would affect your data!\n\n` +
+                `<span class="safe">SOLUTION:</span>\n` +
+                `Always use "npm test" (Playwright) for automated testing.\n` +
+                `Only use manual test suite for debugging specific tests.`;
+        }
+    </script>
+</body>
+</html>

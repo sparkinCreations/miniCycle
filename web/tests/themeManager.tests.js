@@ -9,17 +9,36 @@ export function runThemeManagerTests(resultsDiv) {
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
-        try {
-            // Reset DOM
-            document.body.className = '';
 
-            testFn();
+        // 🔒 SAVE REAL APP DATA before test runs
+        const savedRealData = {};
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+
+        try {
+            const result = testFn();
+            // Handle async test functions
+            if (result instanceof Promise) {
+                await result;
+            }
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+            console.error(`Test failed: ${name}`, error);
+        } finally {
+            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
         }
     }
 
@@ -275,4 +294,6 @@ export function runThemeManagerTests(resultsDiv) {
     if (passed.count === total.count) {
         resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
     }
+
+    return { passed: passed.count, total: total.count };
 }

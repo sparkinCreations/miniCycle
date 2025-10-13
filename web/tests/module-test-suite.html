@@ -207,6 +207,7 @@
             <option value="notifications">Notifications</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -220,22 +221,27 @@
     <div class="selector-test test-element">Selector 3</div>
 
     <script type="module">
-        import { runThemeManagerTests } from './themeManager.tests.js';
-        import { runDeviceDetectionTests } from './deviceDetection.tests.js';
-        import { runCycleLoaderTests } from './cycleLoader.tests.js';
-        import { runStatsPanelTests } from './statsPanel.tests.js';
-        import { runConsoleCaptureTests } from './consoleCapture.tests.js';
-        import { runStateTests } from './state.tests.js';
-        import { runRecurringCoreTests } from './recurringCore.tests.js';
-        import { runRecurringIntegrationTests } from './recurringIntegration.tests.js';
-        import { runRecurringPanelTests } from './recurringPanel.tests.js';
-        import { runGlobalUtilsTests } from './globalUtils.tests.js';
-        import { runNotificationsTests } from './notifications.tests.js';
+        // Cache-busting timestamp to force fresh module loads during development
+        const cacheBuster = Date.now();
+
+        // Import test modules with cache busting
+        const { runThemeManagerTests } = await import(`./themeManager.tests.js?v=${cacheBuster}`);
+        const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
+        const { runCycleLoaderTests } = await import(`./cycleLoader.tests.js?v=${cacheBuster}`);
+        const { runStatsPanelTests } = await import(`./statsPanel.tests.js?v=${cacheBuster}`);
+        const { runConsoleCaptureTests } = await import(`./consoleCapture.tests.js?v=${cacheBuster}`);
+        const { runStateTests } = await import(`./state.tests.js?v=${cacheBuster}`);
+        const { runRecurringCoreTests } = await import(`./recurringCore.tests.js?v=${cacheBuster}`);
+        const { runRecurringIntegrationTests } = await import(`./recurringIntegration.tests.js?v=${cacheBuster}`);
+        const { runRecurringPanelTests } = await import(`./recurringPanel.tests.js?v=${cacheBuster}`);
+        const { runGlobalUtilsTests } = await import(`./globalUtils.tests.js?v=${cacheBuster}`);
+        const { runNotificationsTests } = await import(`./notifications.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
         const moduleSelect = document.getElementById('module-select');
         const runTestsBtn = document.getElementById('run-tests-btn');
+        const runAllTestsBtn = document.getElementById('run-all-tests-btn');
         const copyResultsBtn = document.getElementById('copy-results-btn');
         const resultsDiv = document.getElementById('results');
 
@@ -247,48 +253,49 @@
             resultsDiv.innerHTML = '<p>Loading module...</p>';
 
             try {
+                // Use cache buster for module imports to force fresh loads
                 if (moduleName === 'themeManager') {
-                    await import('../utilities/themeManager.js');
+                    await import(`../utilities/themeManager.js?v=${cacheBuster}`);
                     currentModule = 'themeManager';
                     resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'deviceDetection') {
-                    await import('../utilities/deviceDetection.js');
+                    await import(`../utilities/deviceDetection.js?v=${cacheBuster}`);
                     currentModule = 'deviceDetection';
                     resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleLoader') {
-                    await import('../utilities/cycleLoader.js');
+                    await import(`../utilities/cycleLoader.js?v=${cacheBuster}`);
                     currentModule = 'cycleLoader';
                     resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'statsPanel') {
-                    await import('../utilities/statsPanel.js');
+                    await import(`../utilities/statsPanel.js?v=${cacheBuster}`);
                     currentModule = 'statsPanel';
                     resultsDiv.innerHTML = '<p>✅ StatsPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'consoleCapture') {
-                    await import('../utilities/consoleCapture.js');
+                    await import(`../utilities/consoleCapture.js?v=${cacheBuster}`);
                     currentModule = 'consoleCapture';
                     resultsDiv.innerHTML = '<p>✅ ConsoleCapture loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'state') {
-                    await import('../utilities/state.js');
+                    await import(`../utilities/state.js?v=${cacheBuster}`);
                     currentModule = 'state';
                     resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringCore') {
-                    await import('../utilities/recurringCore.js');
+                    await import(`../utilities/recurringCore.js?v=${cacheBuster}`);
                     currentModule = 'recurringCore';
                     resultsDiv.innerHTML = '<p>✅ RecurringCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringIntegration') {
-                    await import('../utilities/recurringIntegration.js');
+                    await import(`../utilities/recurringIntegration.js?v=${cacheBuster}`);
                     currentModule = 'recurringIntegration';
                     resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringPanel') {
-                    await import('../utilities/recurringPanel.js');
+                    await import(`../utilities/recurringPanel.js?v=${cacheBuster}`);
                     currentModule = 'recurringPanel';
                     resultsDiv.innerHTML = '<p>✅ RecurringPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
-                    await import('../utilities/globalUtils.js');
+                    await import(`../utilities/globalUtils.js?v=${cacheBuster}`);
                     currentModule = 'globalUtils';
                     resultsDiv.innerHTML = '<p>✅ GlobalUtils loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'notifications') {
-                    await import('../utilities/notifications.js');
+                    await import(`../utilities/notifications.js?v=${cacheBuster}`);
                     currentModule = 'notifications';
                     resultsDiv.innerHTML = '<p>✅ Notifications loaded. Click "Run Tests" to begin.</p>';
                 }
@@ -297,35 +304,35 @@
             }
         });
 
-        // Run tests
-        runTestsBtn.addEventListener('click', () => {
+        // Run tests (async to handle async test functions)
+        runTestsBtn.addEventListener('click', async () => {
             if (!currentModule) {
                 resultsDiv.innerHTML = '<div class="result fail">❌ Please select a module first</div>';
                 return;
             }
 
             if (currentModule === 'themeManager') {
-                runThemeManagerTests(resultsDiv);
+                await runThemeManagerTests(resultsDiv);
             } else if (currentModule === 'deviceDetection') {
-                runDeviceDetectionTests(resultsDiv);
+                await runDeviceDetectionTests(resultsDiv);
             } else if (currentModule === 'cycleLoader') {
-                runCycleLoaderTests(resultsDiv);
+                await runCycleLoaderTests(resultsDiv);
             } else if (currentModule === 'statsPanel') {
-                runStatsPanelTests(resultsDiv);
+                await runStatsPanelTests(resultsDiv);
             } else if (currentModule === 'consoleCapture') {
-                runConsoleCaptureTests(resultsDiv);
+                await runConsoleCaptureTests(resultsDiv);
             } else if (currentModule === 'state') {
-                runStateTests(resultsDiv);
+                await runStateTests(resultsDiv);
             } else if (currentModule === 'recurringCore') {
-                runRecurringCoreTests(resultsDiv);
+                await runRecurringCoreTests(resultsDiv);
             } else if (currentModule === 'recurringIntegration') {
-                runRecurringIntegrationTests(resultsDiv);
+                await runRecurringIntegrationTests(resultsDiv);
             } else if (currentModule === 'recurringPanel') {
-                runRecurringPanelTests(resultsDiv);
+                await runRecurringPanelTests(resultsDiv);
             } else if (currentModule === 'globalUtils') {
-                runGlobalUtilsTests(resultsDiv);
+                await runGlobalUtilsTests(resultsDiv);
             } else if (currentModule === 'notifications') {
-                runNotificationsTests(resultsDiv);
+                await runNotificationsTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -350,43 +357,248 @@
             }
         });
 
+        // Run all tests
+        runAllTestsBtn.addEventListener('click', async () => {
+            const startTime = performance.now();
+
+            resultsDiv.innerHTML = '<h2>🧪 Running All Tests...</h2><p>This may take a few moments...</p>';
+            copyResultsBtn.style.display = 'none';
+
+            // 🔒 SAVE REAL APP DATA ONCE before all tests run
+            const savedRealData = {};
+            const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+            protectedKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value !== null) {
+                    savedRealData[key] = value;
+                }
+            });
+            console.log('🔒 Saved original localStorage before running all tests');
+
+            // Define all modules and their test functions
+            const allModules = [
+                { name: 'ThemeManager', key: 'themeManager', runFn: runThemeManagerTests, importPath: '../utilities/themeManager.js' },
+                { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../utilities/deviceDetection.js' },
+                { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../utilities/cycleLoader.js' },
+                { name: 'StatsPanel', key: 'statsPanel', runFn: runStatsPanelTests, importPath: '../utilities/statsPanel.js' },
+                { name: 'ConsoleCapture', key: 'consoleCapture', runFn: runConsoleCaptureTests, importPath: '../utilities/consoleCapture.js' },
+                { name: 'State', key: 'state', runFn: runStateTests, importPath: '../utilities/state.js' },
+                { name: 'RecurringCore', key: 'recurringCore', runFn: runRecurringCoreTests, importPath: '../utilities/recurringCore.js' },
+                { name: 'RecurringIntegration', key: 'recurringIntegration', runFn: runRecurringIntegrationTests, importPath: '../utilities/recurringIntegration.js' },
+                { name: 'RecurringPanel', key: 'recurringPanel', runFn: runRecurringPanelTests, importPath: '../utilities/recurringPanel.js' },
+                { name: 'GlobalUtils', key: 'globalUtils', runFn: runGlobalUtilsTests, importPath: '../utilities/globalUtils.js' },
+                { name: 'Notifications', key: 'notifications', runFn: runNotificationsTests, importPath: '../utilities/notifications.js' }
+            ];
+
+            let allResults = [];
+            let totalPassed = 0;
+            let totalTests = 0;
+
+            // Run each module's tests
+            for (const module of allModules) {
+                try {
+                    // Load the module
+                    await import(`${module.importPath}?v=${cacheBuster}`);
+
+                    // Create a temporary div for results
+                    const tempDiv = document.createElement('div');
+
+                    // Run the tests (pass isPartOfSuite=true for tests that manage localStorage)
+                    let result;
+                    if (module.key === 'state') {
+                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
+                    } else if (module.key === 'cycleLoader') {
+                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
+                    } else if (module.key === 'deviceDetection') {
+                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
+                    } else {
+                        result = await module.runFn(tempDiv);
+                    }
+
+                    // Store results
+                    allResults.push({
+                        name: module.name,
+                        passed: result?.passed || 0,
+                        total: result?.total || 0,
+                        html: tempDiv.innerHTML
+                    });
+
+                    totalPassed += (result?.passed || 0);
+                    totalTests += (result?.total || 0);
+
+                } catch (error) {
+                    allResults.push({
+                        name: module.name,
+                        passed: 0,
+                        total: 0,
+                        error: error.message,
+                        html: `<div class="result fail">❌ Failed to run tests: ${error.message}</div>`
+                    });
+                }
+            }
+
+            const endTime = performance.now();
+            const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+            // Display aggregated results
+            let output = '<h2>🧪 All Module Test Results</h2>';
+            output += `<h3>Completed in ${duration}s</h3>`;
+
+            // Summary table
+            output += '<div style="background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 8px; margin: 20px 0; color: #333;">';
+            output += '<h3 style="color: #333; margin-top: 0;">📊 Summary</h3>';
+            output += '<table style="width: 100%; border-collapse: collapse;">';
+            output += '<thead><tr style="border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 8px;">Module</th><th style="text-align: right; padding: 8px;">Passed</th><th style="text-align: right; padding: 8px;">Total</th><th style="text-align: right; padding: 8px;">Status</th></tr></thead>';
+            output += '<tbody>';
+
+            for (const result of allResults) {
+                const passRate = result.total > 0 ? (result.passed / result.total * 100).toFixed(0) : 0;
+                const statusEmoji = result.passed === result.total ? '✅' : '❌';
+                const rowColor = result.passed === result.total ? '#d4edda' : '#f8d7da';
+
+                output += `<tr style="border-bottom: 1px solid #eee; background: ${rowColor};">`;
+                output += `<td style="padding: 8px; font-weight: 600;">${result.name}</td>`;
+                output += `<td style="text-align: right; padding: 8px;">${result.passed}</td>`;
+                output += `<td style="text-align: right; padding: 8px;">${result.total}</td>`;
+                output += `<td style="text-align: right; padding: 8px;">${statusEmoji} ${passRate}%</td>`;
+                output += '</tr>';
+            }
+
+            output += '</tbody>';
+            output += '<tfoot><tr style="border-top: 2px solid #333; font-weight: bold; background: #e9ecef;"><td style="padding: 8px;">TOTAL</td><td style="text-align: right; padding: 8px;">' + totalPassed + '</td><td style="text-align: right; padding: 8px;">' + totalTests + '</td><td style="text-align: right; padding: 8px;">' + (totalPassed === totalTests ? '✅' : '❌') + ' ' + (totalTests > 0 ? (totalPassed / totalTests * 100).toFixed(0) : 0) + '%</td></tr></tfoot>';
+            output += '</table>';
+            output += '</div>';
+
+            // Detailed results for each module
+            output += '<h3 style="margin-top: 30px;">📋 Detailed Results</h3>';
+            for (const result of allResults) {
+                output += '<div style="margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">';
+                output += `<h4 style="margin-top: 0;">${result.name} (${result.passed}/${result.total})</h4>`;
+                output += result.html;
+                output += '</div>';
+            }
+
+            resultsDiv.innerHTML = output;
+            copyResultsBtn.style.display = 'inline-block';
+
+            // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
+            await new Promise(resolve => setTimeout(resolve, 700));
+
+            // 🔒 RESTORE REAL APP DATA after all tests complete (GUARANTEED)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ All tests completed - original localStorage restored');
+        });
+
         // Convert HTML results to plain text format
         function convertResultsToText() {
             const h2 = resultsDiv.querySelector('h2');
             const h3 = resultsDiv.querySelector('h3');
-            const sections = resultsDiv.querySelectorAll('.test-section');
-            const results = resultsDiv.querySelectorAll('.result');
-            const summary = resultsDiv.querySelector('h3:last-of-type');
 
-            let text = '='.repeat(60) + '\n';
+            let text = '='.repeat(80) + '\n';
             text += h2 ? h2.textContent + '\n' : 'Test Results\n';
-            text += '='.repeat(60) + '\n\n';
+            text += '='.repeat(80) + '\n\n';
 
-            if (h3 && h3.textContent.includes('Running')) {
-                // Skip the "Running tests..." message
-            }
+            // Check if this is "Run All Tests" results (has a table)
+            const summaryTable = resultsDiv.querySelector('table');
 
-            let currentSection = '';
-            results.forEach(result => {
-                // Check if there's a section header before this result
-                const prevSibling = result.previousElementSibling;
-                if (prevSibling && prevSibling.classList.contains('test-section')) {
-                    currentSection = prevSibling.textContent;
-                    text += '\n' + currentSection + '\n';
-                    text += '-'.repeat(currentSection.length) + '\n';
+            if (summaryTable) {
+                // This is "Run All Tests" format
+                if (h3) {
+                    text += h3.textContent + '\n\n';
                 }
 
-                // Add the test result
-                const isPassing = result.classList.contains('pass');
-                const symbol = isPassing ? '✅' : '❌';
-                text += symbol + ' ' + result.textContent + '\n';
-            });
+                // Extract table data
+                text += '📊 SUMMARY\n';
+                text += '-'.repeat(80) + '\n';
+                text += String('Module').padEnd(25) + String('Passed').padStart(10) + String('Total').padStart(10) + String('Status').padStart(15) + '\n';
+                text += '-'.repeat(80) + '\n';
 
-            text += '\n' + '='.repeat(60) + '\n';
-            if (summary) {
-                text += summary.textContent + '\n';
+                const rows = summaryTable.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 4) {
+                        const module = cells[0].textContent.padEnd(25);
+                        const passed = cells[1].textContent.padStart(10);
+                        const total = cells[2].textContent.padStart(10);
+                        const status = cells[3].textContent.padStart(15);
+                        text += module + passed + total + status + '\n';
+                    }
+                });
+
+                // Add footer total
+                const footer = summaryTable.querySelector('tfoot tr');
+                if (footer) {
+                    const cells = footer.querySelectorAll('td');
+                    if (cells.length >= 4) {
+                        text += '-'.repeat(80) + '\n';
+                        const module = cells[0].textContent.padEnd(25);
+                        const passed = cells[1].textContent.padStart(10);
+                        const total = cells[2].textContent.padStart(10);
+                        const status = cells[3].textContent.padStart(15);
+                        text += module + passed + total + status + '\n';
+                    }
+                }
+                text += '='.repeat(80) + '\n\n';
+
+                // Add detailed results
+                const detailedHeading = Array.from(resultsDiv.querySelectorAll('h3')).find(h => h.textContent.includes('Detailed Results'));
+                if (detailedHeading) {
+                    text += detailedHeading.textContent + '\n';
+                    text += '='.repeat(80) + '\n\n';
+
+                    const moduleBlocks = resultsDiv.querySelectorAll('div[style*="margin: 20px 0"]');
+                    moduleBlocks.forEach(block => {
+                        const h4 = block.querySelector('h4');
+                        if (h4) {
+                            text += '\n' + h4.textContent + '\n';
+                            text += '-'.repeat(h4.textContent.length) + '\n';
+                        }
+
+                        const results = block.querySelectorAll('.result');
+                        results.forEach(result => {
+                            const isPassing = result.classList.contains('pass');
+                            const symbol = isPassing ? '✅' : '❌';
+                            text += symbol + ' ' + result.textContent + '\n';
+                        });
+                    });
+                }
+
+            } else {
+                // This is single module format
+                const sections = resultsDiv.querySelectorAll('.test-section');
+                const results = resultsDiv.querySelectorAll('.result');
+                const summary = resultsDiv.querySelector('h3:last-of-type');
+
+                if (h3 && h3.textContent.includes('Running')) {
+                    // Skip the "Running tests..." message
+                }
+
+                let currentSection = '';
+                results.forEach(result => {
+                    // Check if there's a section header before this result
+                    const prevSibling = result.previousElementSibling;
+                    if (prevSibling && prevSibling.classList.contains('test-section')) {
+                        currentSection = prevSibling.textContent;
+                        text += '\n' + currentSection + '\n';
+                        text += '-'.repeat(currentSection.length) + '\n';
+                    }
+
+                    // Add the test result
+                    const isPassing = result.classList.contains('pass');
+                    const symbol = isPassing ? '✅' : '❌';
+                    text += symbol + ' ' + result.textContent + '\n';
+                });
+
+                text += '\n' + '='.repeat(80) + '\n';
+                if (summary) {
+                    text += summary.textContent + '\n';
+                }
             }
-            text += '='.repeat(60) + '\n';
+
+            text += '='.repeat(80) + '\n';
 
             return text;
         }

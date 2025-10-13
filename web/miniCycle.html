@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.311">
+<meta name="app-version" content="1.314">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.311">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.314">
 <link rel="manifest" href="manifest.json">
 
 
@@ -1151,6 +1151,7 @@ window.installApp = () => {
                 <button class="testing-tab" data-tab="migration">🔄 Migration</button>
                 <button class="testing-tab" data-tab="data">💾 Data Tools</button>
                 <button class="testing-tab" data-tab="debug">🐛 Debug Info</button>
+                <button class="testing-tab" data-tab="automated-tests">🧪 Automated Tests</button>
             </div>
 
             <!-- Diagnostics Tab -->
@@ -1238,6 +1239,71 @@ window.installApp = () => {
                     <button id="show-migration-errors" class="test-btn">🚨 Show Migration Issues</button>
                     <button id="clear-all-console-logs" class="test-btn">🧹 Clear All Captured Logs</button>
                     <button id="stop-console-capture" class="test-btn">⏹️ Stop Auto Capture</button>
+                </div>
+            </div>
+
+            <!-- Automated Tests Tab -->
+            <div id="automated-tests-tab" class="testing-tab-content">
+                <div class="testing-section">
+                    <h3>🚀 Quick Actions</h3>
+                    <button id="run-all-automated-tests" class="test-btn test-primary">
+                        🏁 Run All Tests (253 tests)
+                    </button>
+                    <button id="clear-automated-results" class="test-btn test-clear">
+                        🧹 Clear Results
+                    </button>
+                    <button id="export-automated-results" class="test-btn test-export">
+                        📄 Export Results
+                    </button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>🎨 Theme & UI Tests</h3>
+                    <button id="test-thememanager" class="test-btn test-info">
+                        🎨 ThemeManager (18 tests)
+                    </button>
+                    <button id="test-globalutils" class="test-btn test-info">
+                        🛠️ Global Utils (11 tests)
+                    </button>
+                    <button id="test-notifications" class="test-btn test-info">
+                        🔔 Notifications (10 tests)
+                    </button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>📱 Core System Tests</h3>
+                    <button id="test-devicedetection" class="test-btn test-secondary">
+                        📱 DeviceDetection (17 tests)
+                    </button>
+                    <button id="test-cycleloader" class="test-btn test-secondary">
+                        🔄 CycleLoader (11 tests)
+                    </button>
+                    <button id="test-state" class="test-btn test-secondary">
+                        💾 State Management (41 tests)
+                    </button>
+                    <button id="test-consolecapture" class="test-btn test-secondary">
+                        � Console Capture (17 tests)
+                    </button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>� Recurring Features</h3>
+                    <button id="test-recurringcore" class="test-btn test-warning">
+                        🔁 Recurring Core (37 tests)
+                    </button>
+                    <button id="test-recurringintegration" class="test-btn test-warning">
+                        � Recurring Integration (35 tests)
+                    </button>
+                    <button id="test-recurringpanel" class="test-btn test-warning">
+                        🎛️ Recurring Panel (31 tests)
+                    </button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>� Analytics & Stats</h3>
+                    <button id="test-statspanel" class="test-btn test-success">
+                        � Stats Panel (25 tests)
+                    </button>
                 </div>
             </div>
         </div>
@@ -1520,7 +1586,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.311"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.314"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1560,6 +1626,8 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
    <script type="module" src="utilities/notifications.js"></script>
    <script type="module" src="utilities/testing-modal.js"></script>
+   <script type="module" src="utilities/testing-modal-integration.js"></script>
+   <script src="utilities/automated-tests-fix.js"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

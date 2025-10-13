@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Testing Integration Verification</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #4c79ff, #74c0fc);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .test-group {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        #results {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .success { background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; }
+        .error { background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; }
+        .warning { background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Testing Integration Verification</h1>
+        
+        <div class="test-group">
+            <h3>📋 Integration Status</h3>
+            <button onclick="checkIntegration()">🔍 Check Integration Status</button>
+            <button onclick="testModuleLoading()">📦 Test Module Loading</button>
+            <button onclick="simulateTestRun()">🧪 Simulate Test Run</button>
+            <button onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+
+        <div class="test-group">
+            <h3>🎯 Quick Tests</h3>
+            <button onclick="testSingleModule()">🎨 Test ThemeManager</button>
+            <button onclick="testAllModules()">🏁 Test All Modules</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="results">Ready to test integration...</div>
+    </div>
+
+    <script type="module">
+        // Import the integration module
+        import './utilities/testing-modal-integration.js';
+
+        let testOutput = '';
+
+        function log(message) {
+            testOutput += message + '\n';
+            document.getElementById('results').textContent = testOutput;
+            console.log(message);
+        }
+
+        function setStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        window.clearResults = function() {
+            testOutput = '';
+            document.getElementById('results').textContent = 'Results cleared...';
+            document.getElementById('status').innerHTML = '';
+        };
+
+        window.checkIntegration = async function() {
+            log('🔍 Checking Integration Status...');
+            log('=====================================');
+            
+            // Check if functions are available
+            const functions = [
+                'setupAutomatedTestingFunctions',
+                'runIndividualModuleTest',
+                'runAllAutomatedTests',
+                'loadTestModules'
+            ];
+            
+            let allFound = true;
+            functions.forEach(func => {
+                if (typeof window[func] === 'function') {
+                    log(`✅ ${func} is available`);
+                } else {
+                    log(`❌ ${func} is missing`);
+                    allFound = false;
+                }
+            });
+            
+            if (allFound) {
+                setStatus('✅ All integration functions are available', 'success');
+                log('\n✅ Integration Status: READY');
+            } else {
+                setStatus('❌ Some integration functions are missing', 'error');
+                log('\n❌ Integration Status: INCOMPLETE');
+            }
+            
+            log('\n');
+        };
+
+        window.testModuleLoading = async function() {
+            log('📦 Testing Module Loading...');
+            log('=====================================');
+            
+            try {
+                if (typeof window.loadTestModules !== 'function') {
+                    throw new Error('loadTestModules function not available');
+                }
+                
+                const modules = await window.loadTestModules();
+                
+                if (modules && Object.keys(modules).length > 0) {
+                    log(`✅ Successfully loaded ${Object.keys(modules).length} test modules:`);
+                    Object.keys(modules).forEach(key => {
+                        log(`   • ${key}`);
+                    });
+                    setStatus(`✅ Successfully loaded ${Object.keys(modules).length} test modules`, 'success');
+                } else {
+                    log('❌ No test modules loaded');
+                    setStatus('❌ Failed to load test modules', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error loading modules: ${error.message}`);
+                setStatus('❌ Module loading failed', 'error');
+            }
+            
+            log('\n');
+        };
+
+        window.simulateTestRun = async function() {
+            log('🧪 Simulating Test Run...');
+            log('=====================================');
+            
+            try {
+                // Create a mock results div
+                const mockDiv = document.createElement('div');
+                mockDiv.innerHTML = `
+                    <div class="test-result">✅ Mock Test 1: PASSED</div>
+                    <div class="test-result">✅ Mock Test 2: PASSED</div>
+                    <div class="test-result">❌ Mock Test 3: FAILED</div>
+                    <div class="test-result">✅ Mock Test 4: PASSED</div>
+                `;
+                
+                // Simulate result parsing
+                const results = mockDiv.innerHTML;
+                const passCount = (results.match(/✅/g) || []).length;
+                const failCount = (results.match(/❌/g) || []).length;
+                const total = passCount + failCount;
+                const successRate = ((passCount / total) * 100).toFixed(1);
+                
+                log(`📊 Mock Test Results:`);
+                log(`   • Passed: ${passCount}/${total} tests`);
+                log(`   • Success Rate: ${successRate}%`);
+                log(`   • Status: ${failCount === 0 ? '✅ ALL PASSED' : '⚠️ SOME FAILED'}`);
+                
+                setStatus(`🧪 Simulation complete: ${successRate}% pass rate`, 
+                         successRate >= 90 ? 'success' : 'warning');
+                
+            } catch (error) {
+                log(`❌ Simulation error: ${error.message}`);
+                setStatus('❌ Simulation failed', 'error');
+            }
+            
+            log('\n');
+        };
+
+        window.testSingleModule = async function() {
+            log('🎨 Testing Single Module (ThemeManager)...');
+            log('=====================================');
+            
+            try {
+                if (typeof window.runIndividualModuleTest !== 'function') {
+                    throw new Error('runIndividualModuleTest function not available');
+                }
+                
+                // This would be the actual test call
+                log('🔄 Would run: runIndividualModuleTest("thememanager")');
+                log('📝 Expected: 18 ThemeManager tests');
+                log('✅ Function is available and ready to run');
+                
+                setStatus('✅ Single module test function ready', 'success');
+                
+            } catch (error) {
+                log(`❌ Single module test error: ${error.message}`);
+                setStatus('❌ Single module test not available', 'error');
+            }
+            
+            log('\n');
+        };
+
+        window.testAllModules = async function() {
+            log('🏁 Testing All Modules...');
+            log('=====================================');
+            
+            try {
+                if (typeof window.runAllAutomatedTests !== 'function') {
+                    throw new Error('runAllAutomatedTests function not available');
+                }
+                
+                // This would be the actual test call
+                log('🔄 Would run: runAllAutomatedTests()');
+                log('📝 Expected: 253 tests across 11 modules');
+                log('✅ Function is available and ready to run');
+                
+                setStatus('✅ All modules test function ready', 'success');
+                
+            } catch (error) {
+                log(`❌ All modules test error: ${error.message}`);
+                setStatus('❌ All modules test not available', 'error');
+            }
+            
+            log('\n');
+        };
+
+        // Auto-run integration check on load
+        setTimeout(() => {
+            checkIntegration();
+        }, 1000);
+    </script>
+</body>
+</html>

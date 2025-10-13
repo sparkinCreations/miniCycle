@@ -395,6 +395,17 @@ export function createStateManager(dependencies = {}) {
     return AppState;
 }
 
+// ✅ TEST ONLY: Reset singleton for isolated testing
+export function resetStateManager() {
+    if (AppState) {
+        // Clean up listeners
+        if (AppState.listeners) {
+            AppState.listeners.clear();
+        }
+    }
+    AppState = null;
+}
+
 // ✅ For backward compatibility, but this should be initialized
 export default function getStateManager() {
     if (!AppState) {

@@ -11,12 +11,30 @@ export function runGlobalUtilsTests(resultsDiv) {
 
     function test(name, testFn) {
         total.count++;
+
+        // 🔒 SAVE REAL APP DATA before test runs
+        const savedRealData = {};
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+
         try {
             testFn();
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
+            console.error(`Test failed: ${name}`, error);
+        } finally {
+            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
         }
     }
 
@@ -431,4 +449,6 @@ export function runGlobalUtilsTests(resultsDiv) {
     if (passed.count === total.count) {
         resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
     }
+
+    return { passed: passed.count, total: total.count };
 }

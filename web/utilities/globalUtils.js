@@ -281,6 +281,39 @@ export class GlobalUtils {
     }
 
     /**
+     * Generate a normalized notification ID from a message.
+     * Used for deduplication of notification messages.
+     *
+     * @param {string} message - The notification message (may contain HTML).
+     * @returns {string} Normalized text identifier.
+     */
+    static generateNotificationId(message) {
+        return message
+            .replace(/<br\s*\/?>/gi, '\n')   // Convert <br> to newline
+            .replace(/<[^>]*>/g, '')         // Remove all HTML tags
+            .replace(/\s+/g, ' ')            // Collapse whitespace
+            .trim()
+            .toLowerCase();                  // Normalize case
+    }
+
+    /**
+     * Generate a hash-based ID from a message for notification tracking.
+     * Creates a unique identifier based on message content.
+     *
+     * @param {string} message - The notification message.
+     * @returns {string} Hash-based identifier (e.g., "note-12345").
+     */
+    static generateHashId(message) {
+        const text = GlobalUtils.generateNotificationId(message);
+        let hash = 0;
+        for (let i = 0; i < text.length; i++) {
+            hash = (hash << 5) - hash + text.charCodeAt(i);
+            hash |= 0; // Force 32-bit int
+        }
+        return `note-${Math.abs(hash)}`;
+    }
+
+    /**
      * Get module version and statistics.
      *
      * @returns {Object} Module information.
@@ -318,6 +351,10 @@ window.debounce = GlobalUtils.debounce;
 window.throttle = GlobalUtils.throttle;
 window.isElementInViewport = GlobalUtils.isElementInViewport;
 window.generateId = GlobalUtils.generateId;
+
+// Make notification utility functions globally accessible
+window.generateNotificationId = GlobalUtils.generateNotificationId;
+window.generateHashId = GlobalUtils.generateHashId;
 
 // Make the class itself globally accessible
 window.GlobalUtils = GlobalUtils;

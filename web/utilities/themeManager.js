@@ -1,15 +1,15 @@
 /**
  * Theme Manager Module
- * 
+ *
  * 🎯 Pattern: Simple Instance
  * ✅ Self-contained theme and dark mode management
- * ✅ Works immediately with graceful degradation  
+ * ✅ Works immediately with graceful degradation
  * ✅ Handles theme unlocking, dark mode, and theme application
  * ✅ Manages theme color meta tags for PWA integration
- * 
+ *
  * Usage:
  *   import './utilities/themeManager.js';
- *   
+ *
  *   // Available globally:
  *   applyTheme('dark-ocean');
  *   setupDarkModeToggle('darkModeToggle');
@@ -17,11 +17,15 @@
  *   unlockDarkOceanTheme();
  *   unlockGoldenGlowTheme();
  *   updateThemeColor();
- * 
+ *
  * Dependencies: None (graceful fallbacks)
  * Storage: Uses localStorage for Schema 2.5 data
  * DOM: Handles missing elements gracefully
+ *
+ * @requires AppInit (for initialization coordination)
  */
+
+import { appInit } from './appInitialization.js';
 
 export class ThemeManager {
     constructor() {
@@ -295,16 +299,13 @@ export class ThemeManager {
     /**
      * Unlock Dark Ocean theme
      */
-    unlockDarkOceanTheme() {
+    async unlockDarkOceanTheme() {
         try {
             console.log("🌊 Unlocking Dark Ocean theme (state-based)...");
-            
-            if (!window.AppState?.isReady?.()) {
-                console.warn('⚠️ AppState not ready for unlockDarkOceanTheme - using fallback');
-                this.unlockThemeFallback('dark-ocean', 'Dark Ocean');
-                return;
-            }
-            
+
+            // ✅ Wait for core systems to be ready (AppState + data)
+            await appInit.waitForCore();
+
             const currentState = window.AppState.get();
             if (!currentState) {
                 console.warn('⚠️ No state data for unlockDarkOceanTheme - using fallback');
@@ -340,16 +341,13 @@ export class ThemeManager {
     /**
      * Unlock Golden Glow theme
      */
-    unlockGoldenGlowTheme() {
+    async unlockGoldenGlowTheme() {
         try {
             console.log("🌟 Unlocking Golden Glow theme (state-based)...");
-            
-            if (!window.AppState?.isReady?.()) {
-                console.warn('⚠️ AppState not ready for unlockGoldenGlowTheme - using fallback');
-                this.unlockThemeFallback('golden-glow', 'Golden Glow');
-                return;
-            }
-            
+
+            // ✅ Wait for core systems to be ready (AppState + data)
+            await appInit.waitForCore();
+
             const currentState = window.AppState.get();
             if (!currentState) {
                 console.warn('⚠️ No state data for unlockGoldenGlowTheme - using fallback');

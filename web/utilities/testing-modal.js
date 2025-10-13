@@ -116,6 +116,11 @@ function setupTestingModal() {
             
             // Setup results controls
             setupResultsControls();
+            
+            // Setup automated testing integration
+            if (typeof window.setupAutomatedTestingFunctions === 'function') {
+                window.setupAutomatedTestingFunctions();
+            }
         }, 150);
     });
     
