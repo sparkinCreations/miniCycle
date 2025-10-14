@@ -968,8 +968,13 @@ export async function catchUpMissedRecurringTasks() {
         // Skip if task already exists
         if (taskList.some(t => t.id === template.id)) return;
 
-        // Skip if nextScheduledOccurrence is null or in the future
+        // ✅ FAST PATH: Skip if nextScheduledOccurrence is null or in the future
         if (!template.nextScheduledOccurrence || template.nextScheduledOccurrence > now.getTime()) {
+            return;
+        }
+
+        // ✅ SLOW PATH: Validate with pattern matching to prevent false positives
+        if (!shouldRecreateRecurringTask(template, taskList, now)) {
             return;
         }
 
