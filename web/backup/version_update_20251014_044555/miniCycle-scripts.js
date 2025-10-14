@@ -67,36 +67,6 @@ window.AppGlobalState = {
 };
 
 
-// ✅ REMOVE ALL THESE DUPLICATE VARIABLES - DELETE THIS ENTIRE SECTION:
-/*
-let draggedTask = null;
-let logoTimeoutId = null;
-let touchStartTime = 0;
-let isLongPress = false;
-let touchStartY = 0;
-let touchEndY = 0;
-let holdTimeout = null;
-let moved = false;
-let isDragging = false;
-let rearrangeInitialized = false;
-let lastDraggedOver = null;
-let lastRearrangeTarget = null;
-let lastDragOverTime = 0;
-let hasInteracted = false;
-let reminderIntervalId = null;
-let timesReminded = 0;
-let lastReminderTime = null;
-let isResetting = false;
-let undoSnapshot = null;
-let redoSnapshot = null;
-let undoStack = [];
-let redoStack = [];
-let didDragReorderOccur = false;
-let lastReorderTime = 0;
-let advancedVisible = false;
-*/
-
-
 // ✅ Add these missing property getters after your existing ones
 Object.defineProperty(window, 'touchStartTime', {
   get: () => window.AppGlobalState.touchStartTime,
@@ -304,17 +274,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   console.log('🚀 appInit loaded (2-phase initialization system)');
 
 // ======================================================================
-// 🚀 MAIN APPLICATION INITIALIZATION SEQUENCE
+// 🚀 APPINIT-COMPLIANT INITIALIZATION SEQUENCE
 // ======================================================================
-// This is the entry point that orchestrates the entire miniCycle app startup.
-// Execution flow:
-// 1. Load and initialize all utility modules (notifications, device detection, etc.)
-// 2. Set up DOM element references and UI components
-// 3. Configure theme and dark mode settings
-// 4. Load cycle data and handle data migration if needed
-// 5. Initialize features that depend on active cycle data
-// 6. Complete setup and mark the app as ready
+// Following APPINIT_INTEGRATION_PLAN.md structure:
+// PHASE 1 (CORE): Basic utilities → Migration Manager → AppState → Mark core ready
+// PHASE 2 (MODULES): DragDrop, Stats, Recurring, DeviceDetection
+// PHASE 3 (UI/DATA): Load data, setup UI, wire event listeners
 // ======================================================================
+
+  // ============================================================
+  // PHASE 1: CORE SYSTEMS
+  // ============================================================
+  console.log('🔧 Phase 1: Initializing core systems...');
 
 
 
@@ -353,51 +324,39 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     const { MiniCycleNotifications } = await import('./utilities/notifications.js');
     const notifications = new MiniCycleNotifications();
-    
+
     window.notifications = notifications;
     window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
-    
-    console.log('📱 Initializing device detection module...');
-    const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
-    
-    const deviceDetectionManager = new DeviceDetectionManager({
-        loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
-        showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        currentVersion: '1.314'
-    });
-    
-    window.deviceDetectionManager = deviceDetectionManager;
-    
-    console.log('📊 Initializing stats panel module...');
-    const { StatsPanelManager } = await import('./utilities/statsPanel.js');
-    
-    const statsPanelManager = new StatsPanelManager({
-        showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-        loadMiniCycleData: () => {
-            // Defensive data loading with error handling
-            try {
-                const result = window.loadMiniCycleData ? window.loadMiniCycleData() : null;
-                if (!result) {
-                    console.log('� StatsPanelManager: Data not ready yet');
-                }
-                return result;
-            } catch (error) {
-                console.warn('⚠️ StatsPanelManager: Error loading data:', error);
-                return null;
-            }
-        },
-        isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false
-    });
-    
-    // Expose stats panel functions globally
-    window.statsPanelManager = statsPanelManager;
-    window.showStatsPanel = () => statsPanelManager.showStatsPanel();
-    window.showTaskView = () => statsPanelManager.showTaskView();
+    console.log('✅ Notifications loaded');
 
-    // ✅ NEW: updateStatsPanel is now async and waits for core
-    window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
-    console.log('📊 StatsPanelManager global functions updated');
-    
+    // ✅ Load Migration Manager FIRST (before anything tries to use it)
+    console.log('🔄 Loading migration manager (core system)...');
+    const migrationMod = await import('./utilities/cycle/migrationManager.js');
+
+    migrationMod.setMigrationManagerDependencies({
+      storage: localStorage,
+      sessionStorage: sessionStorage,
+      showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
+      initialSetup: () => initialSetup?.(),
+      now: () => Date.now(),
+      document: document
+    });
+
+    // Expose migration functions globally (needed immediately)
+    window.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
+    window.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
+    window.simulateMigrationToSchema25 = migrationMod.simulateMigrationToSchema25;
+    window.performSchema25Migration = migrationMod.performSchema25Migration;
+    window.validateAllMiniCycleTasksLenient = migrationMod.validateAllMiniCycleTasksLenient;
+    window.fixTaskValidationIssues = migrationMod.fixTaskValidationIssues;
+    window.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
+    window.forceAppMigration = migrationMod.forceAppMigration;
+
+    console.log('✅ Migration Manager loaded (Phase 1)');
+
+    // ✅ NOW it's safe to set up UI components that may call loadMiniCycleData()
+    console.log('🎨 Setting up UI components (after migration manager)...');
+
     // Centralized overlay detection for UI state management
     window.isOverlayActive = function() {
         if (document.querySelector(".menu-container.visible")) return true;
@@ -530,17 +489,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     
 
-    // ✅ UI Component Setup
-    console.log('🎨 Setting up UI components...');
-    loadRemindersSettings();
-    setupReminderToggle();
-    setupMainMenu();
-    setupSettingsMenu();
-    setupAbout();
-    setupUserManual();
-    setupFeedbackModal();
-    setupTestingModal();
-    setupModalClickOutside();
+    // ✅ UI Component Setup - MOVED to async block after migration manager loads
+    console.log('🎨 UI Component Setup will run after migration manager loads...');
 
     // ✅ Stats and Navigation
     console.log('📊 Updating stats and navigation...');
@@ -578,15 +528,15 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
 
     mod.setCycleLoaderDependencies({
-      loadMiniCycleData,         // function defined in this file
-      createInitialSchema25Data, // function defined in this file
-      addTask,                   // function defined in this file
-      updateThemeColor,          // function defined in this file
-      startReminders,            // function defined in this file
-      updateProgressBar,         // function defined in this file
-      checkCompleteAllButton,    // function defined in this file
-      updateMainMenuHeader,      // function defined in this file
-      updateStatsPanel           // function defined in this file
+      loadMiniCycleData: () => window.loadMiniCycleData?.(),
+      createInitialSchema25Data: () => window.createInitialSchema25Data?.(),
+      addTask: (...args) => window.addTask?.(...args),  // ✅ Forward ALL parameters
+      updateThemeColor: () => window.updateThemeColor?.(),
+      startReminders: () => window.startReminders?.(),
+      updateProgressBar: () => window.updateProgressBar?.(),
+      checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+      updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
+      updateStatsPanel: () => window.updateStatsPanel?.()
     });
 
     // If completeInitialSetup ran earlier and queued a load, honor it.
@@ -621,6 +571,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     initializeThemesPanel();
     setupThemesPanel();
 
+    // ✅ UI Modal Setup (was missing after appInit refactoring)
+    setupMainMenu();
+    setupSettingsMenu();
+    setupAbout();
+    setupUserManual();
+    setupFeedbackModal();
+
+    // ✅ Expose functions needed by cycleLoader
+    window.updateMainMenuHeader = updateMainMenuHeader;
+
 
 
 // ...existing code...
@@ -642,9 +602,9 @@ function wireUndoRedoUI() {
 (async () => {
   console.log('🟢 Data-ready initializers running…');
 
-  // ✅ Initialize state module SYNCHRONOUSLY after data exists
+  // ✅ Continue Phase 1: Initialize state module
   try {
-    console.log('🗃️ Initializing state module after data setup...');
+    console.log('🗃️ Initializing state module...');
 
     const { createStateManager } = await import('./utilities/state.js');
     window.AppState = createStateManager({
@@ -686,6 +646,76 @@ function wireUndoRedoUI() {
         });
 
         console.log('✅ DragDropManager initialized and ready (Phase 2)');
+
+        // ✅ Initialize Device Detection (Phase 2 module)
+        console.log('📱 Initializing device detection module...');
+        const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
+
+        const deviceDetectionManager = new DeviceDetectionManager({
+            loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
+            showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+            currentVersion: '1.317'
+        });
+
+        window.deviceDetectionManager = deviceDetectionManager;
+        console.log('✅ DeviceDetectionManager initialized (Phase 2)');
+
+        // ✅ Initialize Stats Panel (Phase 2 module)
+        console.log('📊 Initializing stats panel module...');
+        const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+
+        const statsPanelManager = new StatsPanelManager({
+            showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+            loadMiniCycleData: () => {
+                // Defensive data loading with error handling
+                try {
+                    const result = window.loadMiniCycleData ? window.loadMiniCycleData() : null;
+                    if (!result) {
+                        console.log('📊 StatsPanelManager: Data not ready yet');
+                    }
+                    return result;
+                } catch (error) {
+                    console.warn('⚠️ StatsPanelManager: Error loading data:', error);
+                    return null;
+                }
+            },
+            isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false
+        });
+
+        // Expose stats panel functions globally
+        window.statsPanelManager = statsPanelManager;
+        window.showStatsPanel = () => statsPanelManager.showStatsPanel();
+        window.showTaskView = () => statsPanelManager.showTaskView();
+        window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
+        console.log('✅ StatsPanelManager initialized (Phase 2)');
+
+        // ✅ Initialize Recurring Modules (Phase 2 module)
+        console.log('🔄 Initializing recurring task modules...');
+        try {
+            const { initializeRecurringModules } = await import('./utilities/recurringIntegration.js');
+            const recurringModules = await initializeRecurringModules();
+            window._recurringModules = recurringModules;
+            console.log('✅ Recurring modules initialized (Phase 2)');
+
+            // Optional: Run integration test in development
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                console.log('🧪 Running recurring integration test...');
+                setTimeout(() => {
+                    const results = window.testRecurringIntegration();
+                    if (Object.values(results).every(r => r === true)) {
+                        console.log('✅ Recurring integration test PASSED:', results);
+                    } else {
+                        console.log('ℹ️ Recurring integration test results (run window.testRecurringIntegration() to retest):', results);
+                    }
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('❌ Failed to initialize recurring modules:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Recurring feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without recurring functionality');
+        }
 
         // ============ PHASE 3: DATA LOADING ============
         console.log('📊 Phase 3: Loading app data...');
@@ -786,6 +816,14 @@ function wireUndoRedoUI() {
 
   // ✅ Reminder System (with staggered timing)
   console.log('🔔 Setting up reminder system...');
+
+  // ✅ Setup reminder toggle event listener
+  try {
+    setupReminderToggle();
+  } catch (error) {
+    console.warn('⚠️ Reminder toggle setup failed:', error);
+  }
+
   setTimeout(() => {
     try {
       remindOverdueTasks();
@@ -852,53 +890,8 @@ function wireUndoRedoUI() {
 
 
 
-/**************
- * Integration Testing
- * 
- **********/
-
-
-console.log('🔄 Initializing recurring task modules...');
-
-try {
-    // Import integration helper
-    const { initializeRecurringModules } = await import('./utilities/recurringIntegration.js');
-
-    // Initialize both modules (handles all wiring automatically)
-    const recurringModules = await initializeRecurringModules();
-
-    console.log('✅ Recurring modules initialized successfully');
-
-    // Store references for debugging
-    window._recurringModules = recurringModules;
-
-    // Optional: Run integration test in development
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('🧪 Running integration test...');
-        setTimeout(() => {
-            const results = window.testRecurringIntegration();
-            if (Object.values(results).every(r => r === true)) {
-                console.log('✅ Recurring integration test PASSED:', results);
-            } else {
-                // ℹ️ On first load, modules may not be ready yet - this is normal
-                console.log('ℹ️ Recurring integration test results (run window.testRecurringIntegration() to retest):', results);
-            }
-        }, 2000); // ✅ Increased to 2 seconds to allow modules to fully initialize
-    }
-
-} catch (error) {
-    console.error('❌ Failed to initialize recurring modules:', error);
-
-    // Show user-facing error
-    if (typeof showNotification === 'function') {
-        showNotification('Recurring feature unavailable', 'warning', 3000);
-    }
-
-    // Don't throw - let app continue without recurring feature
-    console.warn('⚠️ App will continue without recurring functionality');
-}
-
-console.log('✅ Recurring modules integration complete');
+// ✅ REMOVED: Duplicate recurring modules initialization
+// Now handled in Phase 2 (see line ~712)
 
 
 
@@ -1371,7 +1364,7 @@ function renderTasks(tasksArray = []) {
     const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
     updateArrowsInDOM(arrowsVisible);
   }
-  
+
   console.log('✅ Task rendering completed and UI state restored');
 }
 
@@ -2059,66 +2052,6 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
   console.log('✅ Initial setup completed successfully');
 }
 
-function createInitialSchema25Data() {
-    const initialData = {
-        schemaVersion: "2.5",
-        metadata: {
-            createdAt: Date.now(),
-            lastModified: Date.now(),
-            migratedFrom: null,
-            migrationDate: null,
-            totalCyclesCreated: 0,
-            totalTasksCompleted: 0,
-            schemaVersion: "2.5"
-        },
-        settings: {
-            theme: 'default',
-            darkMode: false,
-            alwaysShowRecurring: false,
-            autoSave: true,
-            showThreeDots: false,
-            onboardingCompleted: false,
-            dismissedEducationalTips: {},
-            defaultRecurringSettings: {
-                frequency: "daily",
-                indefinitely: true,
-                time: null
-            },
-            unlockedThemes: [],
-            unlockedFeatures: [],
-            notificationPosition: { x: 0, y: 0 },
-            notificationPositionModified: false,
-            accessibility: {
-                reducedMotion: false,
-                highContrast: false,
-                screenReaderHints: false
-            }
-        },
-        data: {
-            cycles: {} // Empty - user will create their first cycle
-        },
-        appState: {
-            activeCycleId: null, // No active cycle yet
-            overdueTaskStates: {} // ✅ Add this for overdue task tracking
-        },
-        userProgress: {
-            cyclesCompleted: 0,
-            rewardMilestones: []
-        },
-        customReminders: {
-            enabled: false,
-            indefinite: false,
-            dueDatesReminders: false,
-            repeatCount: 0,
-            frequencyValue: 30,
-            frequencyUnit: "minutes"
-        }
-    };
-    
-    localStorage.setItem("miniCycleData", JSON.stringify(initialData));
-    console.log('✅ Initial Schema 2.5 data created');
-}
-
 
 
 
@@ -2628,224 +2561,8 @@ function checkOverdueTasks(taskToCheck = null) {
 // Add this after your existing migration functions, around line 1100
 
 // ==========================================
-// 🔄 SCHEMA 2.5 MIGRATION SYSTEM
+// 🔄 SCHEMA 2.5 MIGRATION SYSTEM. in migrationManager.js
 // ==========================================
-
-const SCHEMA_2_5_TARGET = {
-  schemaVersion: "2.5",
-  metadata: {
-    createdAt: null,
-    lastModified: null,
-    migratedFrom: null,
-    migrationDate: null,
-    totalCyclesCreated: 0,
-    totalTasksCompleted: 0,
-    schemaVersion: "2.5"
-  },
-  settings: {
-    theme: null,
-    darkMode: false,
-    alwaysShowRecurring: false,
-    autoSave: true,
-    defaultRecurringSettings: {
-      frequency: null,
-      indefinitely: true,
-      time: null
-    },
-    unlockedThemes: [],
-    unlockedFeatures: [],
-    notificationPosition: { x: 0, y: 0 },
-    notificationPositionModified: false,
-    accessibility: {
-      reducedMotion: false,
-      highContrast: false,
-      screenReaderHints: false
-    }
-  },
-  data: {
-    cycles: {}
-  },
-  appState: {
-    activeCycleId: null
-  },
-  userProgress: {
-    cyclesCompleted: 0,
-    rewardMilestones: []
-  },
-  customReminders: {
-    enabled: false,
-    indefinite: false,
-    dueDatesReminders: false,
-    repeatCount: 0,
-    frequencyValue: 30,
-    frequencyUnit: "minutes"
-  }
-};
-
-function checkMigrationNeeded() {
-  const currentData = localStorage.getItem("miniCycleData");
-  if (currentData) {
-    const parsed = JSON.parse(currentData);
-    if (parsed.schemaVersion === "2.5") {
-      return { needed: false, currentVersion: "2.5" };
-    }
-  }
-
-  // Check for old format data
-  const oldCycles = localStorage.getItem("miniCycleStorage");
-  const lastUsed = localStorage.getItem("lastUsedMiniCycle");
-  const reminders = localStorage.getItem("miniCycleReminders");
-  
-  const hasOldData = oldCycles || lastUsed || reminders;
-  
-  return {
-    needed: hasOldData,
-    currentVersion: currentData ? "unknown" : "legacy",
-    oldDataFound: {
-      cycles: !!oldCycles,
-      lastUsed: !!lastUsed,
-      reminders: !!reminders,
-      milestones: !!localStorage.getItem("milestoneUnlocks"),
-      darkMode: document.body.classList.contains('dark-mode')
-    }
-  };
-}
-
-function simulateMigrationToSchema25(dryRun = true) {
-  const results = {
-    success: false,
-    errors: [],
-    warnings: [],
-    changes: [],
-    dataPreview: null
-  };
-
-  try {
-    // 1. Gather existing data
-    const oldCycles = JSON.parse(localStorage.getItem("miniCycleStorage") || "{}");
-    const lastUsed = localStorage.getItem("lastUsedMiniCycle");
-    const reminders = JSON.parse(localStorage.getItem("miniCycleReminders") || "{}");
-    const milestones = JSON.parse(localStorage.getItem("milestoneUnlocks") || "{}");
-    const moveArrows = localStorage.getItem("miniCycleMoveArrows") === "true";
-    const threeDots = localStorage.getItem("miniCycleThreeDots") === "true";
-    const alwaysRecurring = JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) || false;
-    const darkModeEnabled = localStorage.getItem("darkModeEnabled") === "true";
-    const currentTheme = localStorage.getItem("currentTheme") || null;
-    const notifPosition = JSON.parse(localStorage.getItem("miniCycleNotificationPosition") || "{}");
-
-    // 2. Create new schema structure
-    const newData = JSON.parse(JSON.stringify(SCHEMA_2_5_TARGET));
-    
-    // 3. Populate metadata
-    newData.metadata.createdAt = Date.now();
-    newData.metadata.lastModified = Date.now();
-    newData.metadata.migratedFrom = "legacy";
-    newData.metadata.migrationDate = Date.now();
-    newData.metadata.totalCyclesCreated = Object.keys(oldCycles).length;
-    
-    // Calculate total completed tasks
-    let totalCompleted = 0;
-    Object.values(oldCycles).forEach(cycle => {
-      totalCompleted += cycle.cycleCount || 0;
-    });
-    newData.metadata.totalTasksCompleted = totalCompleted;
-
-    // 4. Populate settings
-    newData.settings.theme = currentTheme;
-    newData.settings.darkMode = darkModeEnabled;
-    newData.settings.alwaysShowRecurring = alwaysRecurring;
-    
-    // Unlocked themes from milestones
-    if (milestones.darkOcean) newData.settings.unlockedThemes.push("dark-ocean");
-    if (milestones.goldenGlow) newData.settings.unlockedThemes.push("golden-glow");
-    if (milestones.taskOrderGame) newData.settings.unlockedFeatures.push("task-order-game");
-
-    // Notification position
-    if (notifPosition.x || notifPosition.y) {
-      newData.settings.notificationPosition = notifPosition;
-      newData.settings.notificationPositionModified = true;
-    }
-
-    // 5. Migrate cycles
-    newData.data.cycles = oldCycles;
-    newData.appState.activeCycleId = lastUsed;
-
-    // 6. Migrate reminders
-    newData.customReminders = {
-      enabled: reminders.enabled || false,
-      indefinite: reminders.indefinite || false,
-      dueDatesReminders: reminders.dueDatesReminders || false,
-      repeatCount: reminders.repeatCount || 0,
-      frequencyValue: reminders.frequencyValue || 30,
-      frequencyUnit: reminders.frequencyUnit || "minutes"
-    };
-
-    // 7. User progress
-    newData.userProgress.cyclesCompleted = totalCompleted;
-    if (milestones.darkOcean) newData.userProgress.rewardMilestones.push("dark-ocean-5");
-    if (milestones.goldenGlow) newData.userProgress.rewardMilestones.push("golden-glow-50");
-
-    results.changes.push(`✅ Found ${Object.keys(oldCycles).length} cycles to migrate`);
-    results.changes.push(`✅ Active cycle: ${lastUsed || "none"}`);
-    results.changes.push(`✅ Total completed cycles: ${totalCompleted}`);
-    results.changes.push(`✅ Reminders enabled: ${reminders.enabled ? "yes" : "no"}`);
-    results.changes.push(`✅ Themes unlocked: ${newData.settings.unlockedThemes.length}`);
-    
-    if (!dryRun) {
-      // Actually perform migration
-      localStorage.setItem("miniCycleData", JSON.stringify(newData));
-      results.changes.push("🚀 Migration completed - data saved to miniCycleData");
-      
-      // Optionally backup old data
-      const backupKey = `migration_backup_${Date.now()}`;
-      const oldData = {
-        miniCycleStorage: oldCycles,
-        lastUsedMiniCycle: lastUsed,
-        miniCycleReminders: reminders,
-        milestoneUnlocks: milestones,
-        darkModeEnabled: darkModeEnabled,
-        currentTheme: currentTheme
-      };
-      localStorage.setItem(backupKey, JSON.stringify(oldData));
-      results.changes.push(`💾 Old data backed up to ${backupKey}`);
-    }
-
-    results.dataPreview = newData;
-    results.success = true;
-
-  } catch (error) {
-    results.errors.push(`Migration failed: ${error.message}`);
-  }
-
-  return results;
-}
-
-function performSchema25Migration() {
-  // Create backup first
-  const backupKey = `pre_migration_backup_${Date.now()}`;
-  const currentData = {};
-  
-  // Backup all current localStorage
-  ["miniCycleStorage", "lastUsedMiniCycle", "miniCycleReminders", 
-   "milestoneUnlocks", "darkModeEnabled", "currentTheme", 
-   "miniCycleNotificationPosition", "miniCycleAlwaysShowRecurring"].forEach(key => {
-    const value = localStorage.getItem(key);
-    if (value) currentData[key] = value;
-  });
-  
-  localStorage.setItem(backupKey, JSON.stringify(currentData));
-
-  // Perform actual migration
-  const results = simulateMigrationToSchema25(false);
-  
-  if (results.success) {
-    // Clean up old keys (optional - you might want to keep them temporarily)
-    // Object.keys(currentData).forEach(key => localStorage.removeItem(key));
-    results.changes.push(`🗂️ Backup created: ${backupKey}`);
-  }
-
-  return results;
-}
 
 
 
@@ -2863,13 +2580,23 @@ function loadMiniCycleData() {
             };
         } catch (error) {
             console.error('❌ Error parsing Schema 2.5 data:', error);
+            console.error('❌ This likely means data is corrupted. NOT creating fresh data to preserve existing localStorage.');
+            return null; // ✅ FIX: Return null instead of falling through to create fresh data
         }
     }
-    
+
     // ✅ CREATE INITIAL DATA IF NONE EXISTS
-    console.log('🆕 Creating initial Schema 2.5 structure...');
+    // ✅ SAFETY CHECK: Verify localStorage truly has no data before creating fresh data
+    const existingData = localStorage.getItem("miniCycleData");
+    if (existingData) {
+        console.error('❌ Data exists in localStorage but failed to parse. NOT creating fresh data to prevent data loss.');
+        console.error('❌ Existing data:', existingData.substring(0, 200) + '...');
+        return null;
+    }
+
+    console.log('🆕 No data found in localStorage - Creating initial Schema 2.5 structure...');
     createInitialSchema25Data();
-    
+
     // Try again after creating
     const newData = localStorage.getItem("miniCycleData");
     if (newData) {
@@ -2881,7 +2608,7 @@ function loadMiniCycleData() {
             settings: parsed.settings
         };
     }
-    
+
     return null;
 }
 
@@ -2948,1140 +2675,11 @@ function updateCycleData(cycleId, updateFn, immediate = true) {
 
 
 
-// ✅ Auto-Migration with Enhanced Data Fixing and Lenient Validation
-async function performAutoMigration(options = {}) {
-    const { 
-        forceMode = false, 
-        skipValidation = false, 
-        skipBackup = false 
-    } = options;
-    
-    try {
-        console.log('🔄 Starting auto-migration process…', {
-            forceMode,
-            skipValidation,
-            skipBackup
-        });
-        
-        // ✅ FORCE MODE: Skip all safety checks
-        if (forceMode) {
-            console.log('🚨 FORCE MODE ACTIVE - Bypassing all safety checks');
-            
-            if (!skipBackup) {
-                const backupResult = await createAutomaticMigrationBackup();
-                console.log('💾 Emergency backup created:', backupResult.backupKey);
-            }
-            
-            // ✅ Apply fixes without validation
-            const fixResult = fixTaskValidationIssues();
-            console.log('🔧 Applied fixes:', fixResult);
-            
-            // ✅ Force the migration
-            const migrationResult = performSchema25Migration();
-            
-            if (migrationResult.success || migrationResult.partialSuccess) {
-                showNotification('✅ Force migration completed! Some data may need manual review.', 'success', 6000);
-                return {
-                    success: true,
-                    forced: true,
-                    message: 'Force migration completed',
-                    warnings: migrationResult.warnings || []
-                };
-            } else {
-                // Even force mode failed - create minimal Schema 2.5 structure
-                return createMinimalSchema25();
-            }
-        }
-    console.log('📊 Current localStorage keys:', Object.keys(localStorage));
-    
-    // Step 1: Check if migration is needed
-    console.log('🔍 Checking if migration is needed...');
-    const migrationCheck = checkMigrationNeeded();
-    console.log('📋 Migration check result:', migrationCheck);
-    
-    if (!migrationCheck.needed) {
-        console.log('✅ No migration needed - user already on Schema 2.5');
-        console.log('📦 Current miniCycleData exists:', !!localStorage.getItem("miniCycleData"));
-        return { success: true, message: 'Already on latest schema' };
-    }
-    
-    console.log('🚨 Migration needed. Old data found:', migrationCheck.oldDataFound);
-    
-    // Step 2: Show user notification
-    console.log('📢 Showing migration notification to user...');
-    showNotification('🔄 Updating your data format... This will take a moment.', 'info', 200);
-    
-    // Step 3: Create automatic backup before migration
-    console.log('📥 Creating automatic backup before migration...');
-    console.log('💾 Available storage before backup:', {
-        used: JSON.stringify(localStorage).length,
-        limit: '~5-10MB (browser dependent)'
-    });
-    
-    const backupResult = await createAutomaticMigrationBackup();
-    console.log('💾 Backup result:', backupResult);
-    
-    if (!backupResult.success) {
-        console.error('❌ Backup creation failed:', backupResult.message);
-        console.error('🔧 Troubleshooting: Check storage space and localStorage accessibility');
-        return await handleMigrationFailure('Backup creation failed', null);
-    }
-    
-    console.log('✅ Backup created successfully:', {
-        backupKey: backupResult.backupKey,
-        size: backupResult.size,
-        sizeKB: Math.round(backupResult.size / 1024)
-    });
-
-    // Step 3.5: ✅ ENHANCED - Pre-fix data validation issues with detailed reporting
-    console.log('🔧 Pre-fixing known data validation issues...');
-    const fixResult = fixTaskValidationIssues();
-    console.log('🔧 Data fix result:', fixResult);
-    
-    if (fixResult.success && fixResult.fixedCount > 0) {
-        console.log(`✅ Successfully fixed ${fixResult.fixedCount} data issues:`);
-        fixResult.details?.forEach(detail => console.log(`   - ${detail}`));
-        showNotification(`🔧 Fixed ${fixResult.fixedCount} data compatibility issues`, 'info', 3000);
-    } else if (!fixResult.success) {
-        console.warn('⚠️ Data fixing encountered issues, but continuing with migration');
-        console.warn('🔧 Fix error:', fixResult.message);
-    } else {
-        console.log('✅ No data fixes needed - all data is already compatible');
-    }
-    
-    // Step 4: ✅ ENHANCED - Use lenient validation for auto-migration
-    console.log('🔍 Performing lenient validation for auto-migration...');
-    console.log('📋 Using lenient validation approach for better migration success...');
-    
-    // ✅ Use lenient validation instead of strict validation
-    const legacyValidationResults = validateAllMiniCycleTasksLenient();
-    console.log('📊 Lenient validation results:', legacyValidationResults);
-    
-    if (legacyValidationResults.length > 0) {
-        console.error('❌ Critical data issues found even after fixes:', legacyValidationResults);
-        console.error('🔧 These are fundamental problems that prevent migration:');
-        legacyValidationResults.forEach((error, index) => {
-            console.error(`   ${index + 1}. ${JSON.stringify(error, null, 2)}`);
-        });
-        
-        // ✅ Show user-friendly message about what went wrong
-        const errorSummary = legacyValidationResults.length === 1 
-            ? `1 critical issue: ${legacyValidationResults[0].errors?.[0] || 'Unknown error'}`
-            : `${legacyValidationResults.length} critical issues found`;
-            
-        return await handleMigrationFailure(`Data validation failed: ${errorSummary}`, backupResult.backupKey);
-    }
-    
-    console.log('✅ Lenient validation passed - data is ready for migration');
-    
-    // Step 5: Perform the actual migration using your existing function
-    console.log('🔄 Performing Schema 2.5 migration...');
-    console.log('📦 Calling performSchema25Migration()...');
-    
-    const migrationResult = performSchema25Migration();
-    console.log('🔄 Migration process result:', migrationResult);
-    
-    if (!migrationResult.success) {
-        console.error('❌ Migration failed:', migrationResult.errors || migrationResult);
-        console.error('🔧 Troubleshooting: Check performSchema25Migration() function');
-        if (migrationResult.errors) {
-            migrationResult.errors.forEach((error, index) => {
-                console.error(`   Error ${index + 1}:`, error);
-            });
-        }
-        return await handleMigrationFailure('Migration process failed', backupResult.backupKey);
-    }
-    
-    console.log('✅ Migration process completed successfully');
-    console.log('📋 Changes applied:', migrationResult.changes || 'No changes array provided');
-    
-    // Step 6: ✅ Simple post-migration validation
-    console.log('✅ Validating migrated data...');
-    const newSchemaData = localStorage.getItem("miniCycleData");
-    console.log('📦 New schema data exists:', !!newSchemaData);
-    console.log('📏 New schema data size:', newSchemaData ? newSchemaData.length : 0);
-    
-    if (!newSchemaData) {
-        console.error('❌ Post-migration validation failed: No Schema 2.5 data found');
-        console.error('🔧 Troubleshooting: Migration did not create miniCycleData key');
-        console.error('📊 Current localStorage keys after migration:', Object.keys(localStorage));
-        return await handleMigrationFailure('Migration validation failed - no new data found', backupResult.backupKey);
-    }
-    
-    try {
-        console.log('🔍 Parsing and validating new schema structure...');
-        const parsed = JSON.parse(newSchemaData);
-        console.log('📊 Parsed schema structure:', {
-            schemaVersion: parsed.schemaVersion,
-            hasMetadata: !!parsed.metadata,
-            hasData: !!parsed.data,
-            hasCycles: !!parsed.data?.cycles,
-            cycleCount: parsed.data?.cycles ? Object.keys(parsed.data.cycles).length : 0,
-            hasAppState: !!parsed.appState,
-            activeCycleId: parsed.appState?.activeCycleId
-        });
-        
-        if (!parsed.schemaVersion || parsed.schemaVersion !== '2.5') {
-            throw new Error(`Schema version missing or incorrect: ${parsed.schemaVersion}`);
-        }
-        if (!parsed.data || !parsed.data.cycles) {
-            throw new Error('Missing cycles data structure');
-        }
-        
-        console.log('✅ Post-migration validation passed');
-        console.log('🎯 Final data structure validated successfully');
-        
-    } catch (validationError) {
-        console.error('❌ Post-migration validation failed:', validationError.message);
-        console.error('🔧 Troubleshooting: Schema structure is invalid');
-        console.error('📋 Raw data snippet:', newSchemaData.substring(0, 500) + '...');
-        return await handleMigrationFailure('Migration validation failed', backupResult.backupKey);
-    }
-    
-    // Step 7: Success!
-    console.log('✅ Auto-migration completed successfully');
-    console.log('🎉 Migration summary:', {
-        backupKey: backupResult.backupKey,
-        migrationChanges: migrationResult.changes?.length || 0,
-        finalDataSize: newSchemaData.length,
-        dataFixesApplied: fixResult.fixedCount || 0,
-        timestamp: new Date().toISOString()
-    });
-
-    // ✅ Clean up old separate localStorage keys
-console.log('🧹 Cleaning up legacy localStorage keys...');
-localStorage.removeItem("overdueTaskStates"); // Clean up old separate key
-console.log('✅ Removed old overdueTaskStates key');
-    
-    // ✅ Enhanced success notification with fix details
-    const successMessage = fixResult.fixedCount > 0 
-        ? `✅ Data updated successfully! Fixed ${fixResult.fixedCount} compatibility issues.`
-        : '✅ Data format updated successfully!';
-    showNotification(successMessage, 'success', 4000);
-    
-    // Step 8: Store migration completion info
-    const legacyData = localStorage.getItem('miniCycleStorage') || '{}';
-    const migrationInfo = {
-        completed: Date.now(),
-        backupKey: backupResult.backupKey,
-        version: '2.5',
-        autoMigrated: true,
-        dataFixesApplied: fixResult.fixedCount || 0,
-        migrationSummary: {
-            originalDataSize: legacyData.length,
-            newDataSize: newSchemaData.length,
-            changesApplied: migrationResult.changes?.length || 0,
-            fixesApplied: fixResult.details || []
-        }
-    };
-    
-    console.log('💾 Storing migration completion info:', migrationInfo);
-    localStorage.setItem('miniCycleMigrationInfo', JSON.stringify(migrationInfo));
-    
-    return {
-        success: true,
-        message: 'Auto-migration completed successfully',
-        backupKey: backupResult.backupKey,
-        fixesApplied: fixResult.fixedCount || 0
-    };
-    
- } catch (error) {
-        if (forceMode) {
-            console.warn('⚠️ Force migration failed, creating minimal schema');
-            return createMinimalSchema25();
-        }
-        return await handleMigrationFailure(`Unexpected error: ${error.message}`, null);
-    }
-}
-
-// ✅ NEW: Create minimal working Schema 2.5 if everything else fails
-function createMinimalSchema25() {
-    console.log('🆘 Creating minimal Schema 2.5 structure as last resort');
-    
-    const minimalData = {
-        schemaVersion: "2.5",
-        metadata: {
-            createdAt: Date.now(),
-            lastModified: Date.now(),
-            migratedFrom: "force_migration",
-            migrationDate: Date.now(),
-            totalCyclesCreated: 1,
-            totalTasksCompleted: 0,
-            schemaVersion: "2.5"
-        },
-        settings: {
-            theme: null,
-            darkMode: false,
-            alwaysShowRecurring: false,
-            autoSave: true,
-            defaultRecurringSettings: { time: null },
-            unlockedThemes: [],
-            unlockedFeatures: [],
-            notificationPosition: { x: 0, y: 0 },
-            notificationPositionModified: false
-        },
-        data: {
-            cycles: {
-                "Default Cycle": {
-                    id: "default_cycle",
-                    title: "Default Cycle",
-                    tasks: [],
-                    autoReset: true,
-                    deleteCheckedTasks: false,
-                    cycleCount: 0,
-                    createdAt: Date.now(),
-                    recurringTemplates: {}
-                }
-            }
-        },
-        appState: {
-            activeCycleId: "Default Cycle"
-        },
-        userProgress: {
-            rewardMilestones: []
-        },
-        customReminders: {
-            enabled: false,
-            indefinite: false,
-            dueDatesReminders: false,
-            repeatCount: 0,
-            frequencyValue: 30,
-            frequencyUnit: "minutes"
-        }
-    };
-    
-    localStorage.setItem("miniCycleData", JSON.stringify(minimalData));
-    
-    showNotification('⚠️ Created fresh miniCycle. Previous data may have been incompatible.', 'warning', 8000);
-    
-    return {
-        success: true,
-        forced: true,
-        minimal: true,
-        message: 'Created minimal Schema 2.5 structure'
-    };
-}
-
-// ✅ ADD: Lenient validation function for auto-migration
-function validateAllMiniCycleTasksLenient() {
-  const storage = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
-  const results = [];
-
-  for (const [cycleName, cycleData] of Object.entries(storage)) {
-    if (!Array.isArray(cycleData.tasks)) continue;
-
-    cycleData.tasks.forEach(task => {
-      const criticalErrors = [];
-      
-      // ✅ Only check for critical errors that would break migration
-      if (!task.text && !task.taskText) {
-        criticalErrors.push("Task has no text content");
-      }
-      
-      if (!task.id) {
-        criticalErrors.push("Task missing unique ID");
-      }
-      
-      // ✅ Check for completely malformed recurring settings (not just missing properties)
-      if (task.recurring && task.recurringSettings && typeof task.recurringSettings !== 'object') {
-        criticalErrors.push("Recurring settings is not a valid object");
-      }
-      
-      // ✅ Only report tasks with critical issues
-      if (criticalErrors.length > 0) {
-        results.push({
-          cycle: cycleName,
-          taskText: task.text || task.taskText || "(no text)",
-          id: task.id || "(no id)",
-          errors: criticalErrors
-        });
-      }
-    });
-  }
-
-  return results;
-}
 
 
-// ✅ Handle Migration Failure with Legacy Data Fallback
-async function handleMigrationFailure(reason, backupKey) {
-try {
-console.log('🔄 Handling migration failure, attempting to maintain legacy data access…');
-console.log('❌ Failure reason:', reason);
-console.log('📦 Backup key available:', backupKey);
 
-    // Step 1: Try to restore from backup if available
-    if (backupKey) {
-        console.log('📥 Attempting to restore from backup:', backupKey);
-        console.log('🔍 Checking if backup exists in localStorage...');
-        const backupExists = !!localStorage.getItem(backupKey);
-        console.log('💾 Backup exists:', backupExists);
-        
-        try {
-            await restoreFromAutomaticBackup(backupKey);
-            console.log('✅ Successfully restored from backup');
-            console.log('📊 Post-restore localStorage keys:', Object.keys(localStorage));
-        } catch (restoreError) {
-            console.error('❌ Failed to restore from backup:', restoreError);
-            console.error('🔧 Restore error details:', restoreError.message);
-            console.error('📋 Continuing with fallback strategy...');
-            // Continue with fallback - don't fail here
-        }
-    } else {
-        console.log('⚠️ No backup key provided, skipping restore attempt');
-    }
-    
-    // Step 2: Ensure legacy data is accessible
-    console.log('🔍 Checking legacy data accessibility...');
-    const legacyDataExists = ensureLegacyDataAccess();
-    console.log('📦 Legacy data accessible:', legacyDataExists);
-    
-    if (legacyDataExists) {
-        console.log('✅ Legacy data found and accessible');
-        
-        // Step 3: Set session flag to use legacy mode until reload
-        console.log('🚩 Setting legacy fallback mode flags...');
-        sessionStorage.setItem('miniCycleLegacyModeActive', 'true');
-        sessionStorage.setItem('miniCycleMigrationFailureReason', reason);
-        
-        console.log('📊 Session storage flags set:', {
-            legacyMode: sessionStorage.getItem('miniCycleLegacyModeActive'),
-            failureReason: sessionStorage.getItem('miniCycleMigrationFailureReason')
-        });
-        
-        // Step 4: Show user-friendly notification
-        showNotification(
-            '⚠️ Unable to update data format. Using existing data until next app reload. Your data is safe!', 
-            'warning', 
-            8000
-        );
-        
-        console.log('✅ Fallback to legacy data successful');
-        
-        return {
-            success: false,
-            fallbackActive: true,
-            message: 'Migration failed but legacy data access maintained',
-            reason: reason
-        };
-    } else {
-        // Step 5: Last resort - critical error
-        console.error('❌ No legacy data available for fallback');
-        console.error('🚨 CRITICAL: Complete data loss scenario');
-        console.error('📊 Final localStorage state:', Object.keys(localStorage));
-        console.error('💾 Available data sources:', {
-            miniCycleStorage: !!localStorage.getItem('miniCycleStorage'),
-            miniCycleData: !!localStorage.getItem('miniCycleData'),
-            lastUsedMiniCycle: !!localStorage.getItem('lastUsedMiniCycle'),
-            anyBackups: Object.keys(localStorage).filter(key => key.includes('backup')),
-        });
-        
-        showCriticalError('Unable to access your data. Please contact support or try refreshing the page.');
-        
-        return {
-            success: false,
-            fallbackActive: false,
-            message: 'Migration failed and no legacy data available',
-            reason: reason
-        };
-    }
-    
-} catch (error) {
-    console.error('❌ Failed to handle migration failure:', error);
-    console.error('🔧 Handler error stack:', error.stack);
-    console.error('🚨 CRITICAL: Migration failure handler itself failed');
-    showCriticalError('Critical error occurred. Please refresh the page.');
-    
-    return {
-        success: false,
-        fallbackActive: false,
-        message: 'Failed to handle migration failure',
-        reason: `${reason} + ${error.message}`
-    };
-}
-}
 
-// ✅ Ensure Legacy Data is Accessible
-function ensureLegacyDataAccess() {
-try {
-console.log('🔍 Checking legacy data access...');
 
-// Check if legacy data exists
-const legacyStorage = localStorage.getItem('miniCycleStorage');
-console.log('📦 Legacy storage exists:', !!legacyStorage);
-console.log('📏 Legacy storage size:', legacyStorage ? legacyStorage.length : 0);
-
-    if (!legacyStorage) {
-        console.error('❌ No legacy data found in localStorage');
-        console.error('📋 Available localStorage keys:', Object.keys(localStorage));
-        return false;
-    }
-    
-    // Try to parse the legacy data to ensure it's valid
-    try {
-        console.log('🔍 Attempting to parse legacy data...');
-        const parsedData = JSON.parse(legacyStorage);
-        console.log('📊 Parsed legacy data structure:', {
-            type: typeof parsedData,
-            isObject: typeof parsedData === 'object',
-            isNull: parsedData === null,
-            keys: typeof parsedData === 'object' && parsedData !== null ? Object.keys(parsedData) : 'N/A',
-            cycleCount: typeof parsedData === 'object' && parsedData !== null ? Object.keys(parsedData).length : 0
-        });
-        
-        if (typeof parsedData === 'object' && parsedData !== null) {
-            console.log('✅ Legacy data is accessible and valid');
-            
-            // Additional validation
-            const cycleKeys = Object.keys(parsedData);
-            console.log('📋 Available legacy cycles:', cycleKeys);
-            
-            if (cycleKeys.length > 0) {
-                const firstCycle = parsedData[cycleKeys[0]];
-                console.log('📊 First cycle structure:', {
-                    hasTasks: !!firstCycle.tasks,
-                    taskCount: Array.isArray(firstCycle.tasks) ? firstCycle.tasks.length : 'Not array',
-                    hasTitle: !!firstCycle.title,
-                    hasAutoReset: 'autoReset' in firstCycle
-                });
-            }
-            
-            return true;
-        } else {
-            console.error('❌ Legacy data is not a valid object');
-            console.error('📋 Actual data type:', typeof parsedData);
-            console.error('📋 Data content preview:', JSON.stringify(parsedData).substring(0, 200));
-            return false;
-        }
-    } catch (parseError) {
-        console.error('❌ Legacy data is corrupted:', parseError);
-        console.error('🔧 Parse error details:', parseError.message);
-        console.error('📋 Raw data preview:', legacyStorage.substring(0, 200) + '...');
-        return false;
-    }
-    
-} catch (error) {
-    console.error('❌ Error checking legacy data access:', error);
-    console.error('🔧 Access check error:', error.message);
-    return false;
-}
-}
-
-// ✅ Check if App is Running in Legacy Fallback Mode
-function isLegacyFallbackModeActive() {
-const isActive = sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
-console.log('🚩 Legacy fallback mode check:', {
-    isActive: isActive,
-    sessionFlag: sessionStorage.getItem('miniCycleLegacyModeActive'),
-    failureReason: sessionStorage.getItem('miniCycleMigrationFailureReason')
-});
-return isActive;
-}
-// ✅ Fixed createAutomaticMigrationBackup function
-async function createAutomaticMigrationBackup() {
-try {
-console.log('📥 Starting automatic backup creation...');
-const timestamp = Date.now();
-const backupKey = `auto_migration_backup_${timestamp}`;
-console.log('🏷️ Generated backup key:', backupKey);
-
-    // Check if we have data to backup
-    console.log('🔍 Checking for legacy data to backup...');
-    const legacyData = localStorage.getItem('miniCycleStorage');
-    console.log('📦 Legacy data found:', !!legacyData);
-    console.log('📏 Legacy data size:', legacyData ? legacyData.length : 0);
-    
-    if (!legacyData) {
-        console.error('❌ No legacy data found to backup');
-        console.error('📋 Available localStorage keys:', Object.keys(localStorage));
-        throw new Error('No legacy data found to backup');
-    }
-    
-    // Gather all data to backup - FIXED STORAGE KEYS
-    console.log('📋 Gathering additional data for backup...');
-    const remindersData = localStorage.getItem('miniCycleReminders');
-    const lastUsed = localStorage.getItem('lastUsedMiniCycle');
-    const milestones = localStorage.getItem('milestoneUnlocks');
-    console.log('🔔 Reminders data:', !!remindersData);
-    console.log('📌 Last used cycle:', !!lastUsed);
-    console.log('🏆 Milestones:', !!milestones);
-    
-    const settingsData = {
-        threeDots: localStorage.getItem('miniCycleThreeDots'),
-        darkMode: localStorage.getItem('darkModeEnabled'), // ✅ FIXED
-        moveArrows: localStorage.getItem('miniCycleMoveArrows'),
-        alwaysShowRecurring: localStorage.getItem('miniCycleAlwaysShowRecurring'),
-        defaultRecurring: localStorage.getItem('miniCycleDefaultRecurring'),
-        theme: localStorage.getItem('currentTheme'), // ✅ FIXED
-        onboarding: localStorage.getItem('miniCycleOnboarding'),
-        notificationPosition: localStorage.getItem('miniCycleNotificationPosition')
-    };
-    
-    console.log('⚙️ Settings data collected:', Object.keys(settingsData).filter(key => settingsData[key] !== null));
-    
-    const backupData = {
-        version: 'legacy',
-        created: timestamp,
-        type: 'auto_migration_backup',
-        data: {
-            miniCycleStorage: legacyData,
-            lastUsedMiniCycle: lastUsed, // ✅ ADDED
-            miniCycleReminders: remindersData,
-            milestoneUnlocks: milestones, // ✅ ADDED
-            settings: settingsData
-        },
-        metadata: {
-            userAgent: navigator.userAgent,
-            url: window.location.href,
-            migrationReason: 'Automatic migration to Schema 2.5'
-        }
-    };
-    
-    const backupSize = JSON.stringify(backupData).length;
-    console.log('📊 Backup data prepared:', {
-        totalSize: backupSize,
-        totalSizeKB: Math.round(backupSize / 1024),
-        legacyDataSize: legacyData.length,
-        remindersSize: remindersData ? remindersData.length : 0,
-        lastUsedSize: lastUsed ? lastUsed.length : 0,
-        milestonesSize: milestones ? milestones.length : 0,
-        settingsCount: Object.keys(settingsData).filter(key => settingsData[key] !== null).length
-    });
-    
-    // Rest of the function remains the same...
-    try {
-        console.log('💾 Attempting to store backup in localStorage...');
-        localStorage.setItem(backupKey, JSON.stringify(backupData));
-        console.log('✅ Backup stored successfully');
-    } catch (storageError) {
-        console.error('❌ Storage error during backup:', storageError);
-        console.error('🔧 Storage error details:', storageError.message);
-        console.error('📊 Storage usage info:', {
-            backupSize: backupSize,
-            estimatedTotalStorage: JSON.stringify(localStorage).length,
-            availableKeys: Object.keys(localStorage).length
-        });
-        throw new Error('Insufficient storage space for backup');
-    }
-    
-    // Add to backup index for management
-    try {
-        console.log('📋 Updating backup index...');
-        const backupIndex = JSON.parse(localStorage.getItem('miniCycleBackupIndex') || '[]');
-        console.log('📊 Current backup index size:', backupIndex.length);
-        
-        backupIndex.push({
-            key: backupKey,
-            created: timestamp,
-            type: 'auto_migration',
-            size: JSON.stringify(backupData).length
-        });
-        
-        // Keep only last 5 automatic backups to prevent storage bloat
-        const autoBackups = backupIndex.filter(b => b.type === 'auto_migration');
-        console.log('🗂️ Auto backup count:', autoBackups.length);
-        
-        if (autoBackups.length > 5) {
-            console.log('🧹 Cleaning up old backups...');
-            const oldestAutoBackup = autoBackups.sort((a, b) => a.created - b.created)[0];
-            console.log('🗑️ Removing oldest backup:', oldestAutoBackup.key);
-            
-            try {
-                localStorage.removeItem(oldestAutoBackup.key);
-                const index = backupIndex.findIndex(b => b.key === oldestAutoBackup.key);
-                backupIndex.splice(index, 1);
-                console.log('✅ Old backup cleaned up successfully');
-            } catch (cleanupError) {
-                console.warn('⚠️ Failed to cleanup old backup:', cleanupError);
-                console.warn('🔧 Cleanup error details:', cleanupError.message);
-                // Continue anyway - this isn't critical
-            }
-        }
-        
-        localStorage.setItem('miniCycleBackupIndex', JSON.stringify(backupIndex));
-        console.log('✅ Backup index updated successfully');
-        
-    } catch (indexError) {
-        console.warn('⚠️ Failed to update backup index:', indexError);
-        console.warn('🔧 Index error details:', indexError.message);
-        // Continue anyway - backup was created successfully
-    }
-    
-    console.log('✅ Automatic backup created successfully:', backupKey);
-    return {
-        success: true,
-        backupKey: backupKey,
-        size: JSON.stringify(backupData).length
-    };
-    
-} catch (error) {
-    console.error('❌ Failed to create automatic backup:', error);
-    console.error('🔧 Backup creation error:', error.message);
-    console.error('📊 System state at backup failure:', {
-        localStorage: Object.keys(localStorage),
-        storageEstimate: JSON.stringify(localStorage).length
-    });
-    return {
-        success: false,
-        message: error.message
-    };
-}
-}
-
-// ✅ Also update the restore function
-async function restoreFromAutomaticBackup(backupKey) {
-try {
-console.log('🔄 Restoring from automatic backup:', backupKey);
-
-    console.log('🔍 Checking if backup exists...');
-    const backupData = localStorage.getItem(backupKey);
-    console.log('📦 Backup data found:', !!backupData);
-    console.log('📏 Backup data size:', backupData ? backupData.length : 0);
-    
-    if (!backupData) {
-        console.error('❌ Backup not found in localStorage');
-        console.error('📋 Available backup keys:', Object.keys(localStorage).filter(key => key.includes('backup')));
-        throw new Error('Backup not found');
-    }
-    
-    let backup;
-    try {
-        console.log('🔍 Parsing backup data...');
-        backup = JSON.parse(backupData);
-        console.log('📊 Backup structure:', {
-            version: backup.version,
-            type: backup.type,
-            created: new Date(backup.created).toISOString(),
-            hasData: !!backup.data,
-            hasMetadata: !!backup.metadata
-        });
-    } catch (parseError) {
-        console.error('❌ Backup data is corrupted:', parseError);
-        console.error('🔧 Parse error details:', parseError.message);
-        console.error('📋 Raw backup preview:', backupData.substring(0, 200) + '...');
-        throw new Error('Backup data is corrupted');
-    }
-    
-    // Restore legacy data
-    if (backup.data.miniCycleStorage) {
-        console.log('📦 Restoring miniCycleStorage...');
-        localStorage.setItem('miniCycleStorage', backup.data.miniCycleStorage);
-        console.log('✅ miniCycleStorage restored');
-    } else {
-        console.warn('⚠️ No miniCycleStorage found in backup');
-    }
-    
-    // ✅ RESTORE LAST USED CYCLE
-    if (backup.data.lastUsedMiniCycle) {
-        console.log('📌 Restoring lastUsedMiniCycle...');
-        localStorage.setItem('lastUsedMiniCycle', backup.data.lastUsedMiniCycle);
-        console.log('✅ lastUsedMiniCycle restored');
-    }
-    
-    if (backup.data.miniCycleReminders) {
-        console.log('🔔 Restoring miniCycleReminders...');
-        localStorage.setItem('miniCycleReminders', backup.data.miniCycleReminders);
-        console.log('✅ miniCycleReminders restored');
-    } else {
-        console.warn('⚠️ No miniCycleReminders found in backup');
-    }
-    
-    // ✅ RESTORE MILESTONES
-    if (backup.data.milestoneUnlocks) {
-        console.log('🏆 Restoring milestoneUnlocks...');
-        localStorage.setItem('milestoneUnlocks', backup.data.milestoneUnlocks);
-        console.log('✅ milestoneUnlocks restored');
-    }
-    
-    // Restore settings - FIXED KEYS
-    if (backup.data.settings) {
-        console.log('⚙️ Restoring settings...');
-        const settings = backup.data.settings;
-        const settingsRestored = [];
-        
-        Object.keys(settings).forEach(key => {
-            if (settings[key] !== null && settings[key] !== undefined) {
-                try {
-                    // ✅ FIXED: Use correct storage keys
-                    let storageKey;
-                    switch(key) {
-                        case 'darkMode':
-                            storageKey = 'darkModeEnabled';
-                            break;
-                        case 'theme':
-                            storageKey = 'currentTheme';
-                            break;
-                        default:
-                            storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
-                    }
-                    
-                    localStorage.setItem(storageKey, settings[key]);
-                    settingsRestored.push(key);
-                    console.log(`   ✅ Restored setting: ${key} -> ${storageKey}`);
-                } catch (settingError) {
-                    console.warn(`⚠️ Failed to restore setting ${key}:`, settingError);
-                    // Continue with other settings
-                }
-            }
-        });
-        
-        console.log('✅ Settings restoration complete:', settingsRestored);
-    } else {
-        console.warn('⚠️ No settings found in backup');
-    }
-    
-    // Remove any Schema 2.5 data that might have been created
-    try {
-        console.log('🧹 Cleaning up any Schema 2.5 data...');
-        const schema25Existed = !!localStorage.getItem('miniCycleData');
-        localStorage.removeItem('miniCycleData');
-        console.log('🧹 Schema 2.5 data cleanup:', schema25Existed ? 'removed' : 'none found');
-    } catch (removeError) {
-        console.warn('⚠️ Failed to remove Schema 2.5 data:', removeError);
-        // Continue anyway
-    }
-    
-    console.log('✅ Data restored from automatic backup successfully');
-    console.log('📊 Post-restore localStorage keys:', Object.keys(localStorage));
-    
-    return { success: true };
-    
-} catch (error) {
-    console.error('❌ Failed to restore from automatic backup:', error);
-    console.error('🔧 Restore error stack:', error.stack);
-    console.error('📊 System state at restore failure:', {
-        backupKey: backupKey,
-        backupExists: !!localStorage.getItem(backupKey),
-        currentKeys: Object.keys(localStorage)
-    });
-    throw error;
-}
-}
-
-// ✅ Initialize App with Auto-Migration and Fallback Support
-function initializeAppWithAutoMigration(options = {}) {
-console.log('🚀 Initializing app with auto-migration check…');
-console.log('📊 Initial system state:', {
-    localStorage: Object.keys(localStorage),
-    sessionStorage: Object.keys(sessionStorage),
-    userAgent: navigator.userAgent,
-    timestamp: new Date().toISOString()
-});
-
-// Check if we're already in legacy fallback mode
-console.log('🚩 Checking for existing legacy fallback mode...');
-if (isLegacyFallbackModeActive()) {
-    console.log('⚠️ App is running in legacy fallback mode');
-    const failureReason = sessionStorage.getItem('miniCycleMigrationFailureReason') || 'Unknown reason';
-    console.log('❌ Previous failure reason:', failureReason);
-    
-    showNotification(
-        `⚠️ Running in compatibility mode due to: ${failureReason}. Restart app to retry migration.`, 
-        'warning', 
-        5000
-    );
-    
-    // Load app with legacy data
-    console.log('📱 Loading app in legacy fallback mode...');
-    initialSetup();
-    return;
-}
-
-console.log('✅ No existing fallback mode detected');
-
-// ✅ FIXED: Use your existing function correctly
-console.log('🔍 Running migration check...');
-const migrationCheck = checkMigrationNeeded();
-console.log('📋 Migration check complete:', migrationCheck);
-
-if (migrationCheck.needed) { // ✅ Use .needed property
-    console.log('📋 Migration needed - starting auto-migration process...');
-    console.log('🔄 Auto-migration will be performed asynchronously...');
-    
-    // ✅ NEW: Pass through any options (like forceMode)
-    performAutoMigration(options).then(result => {
-        console.log('🏁 Auto-migration promise resolved:', result);
-        
-        if (result.success) {
-            console.log('✅ Auto-migration successful, loading app...');
-            console.log('📊 Migration success details:', {
-                backupKey: result.backupKey,
-                message: result.message,
-                forced: result.forced || false,
-                minimal: result.minimal || false
-            });
-            initialSetup();
-        } else if (result.fallbackActive) {
-            console.log('⚠️ Migration failed but fallback active, loading app with legacy data...');
-            console.log('📊 Fallback details:', {
-                reason: result.reason,
-                message: result.message
-            });
-            initialSetup();
-        } else {
-            console.error('❌ Auto-migration failed completely:', result.message);
-            console.error('🚨 Critical failure details:', result);
-            // Critical error is already shown by handleMigrationFailure
-        }
-    }).catch(error => {
-        console.error('❌ Unexpected error during auto-migration:', error);
-        console.error('🔧 Promise rejection stack:', error.stack);
-        console.error('📊 System state at promise failure:', {
-            localStorage: Object.keys(localStorage),
-            sessionStorage: Object.keys(sessionStorage)
-        });
-        showCriticalError('An unexpected error occurred. Please refresh the page.');
-    });
-} else {
-    console.log('✅ No migration needed, loading app normally...');
-    console.log('📦 Current schema status:', migrationCheck.currentVersion);
-    initialSetup();
-}
-}
-
-// ✅ NEW: Helper function to trigger force migration
-function forceAppMigration() {
-    console.log('🚨 Forcing app migration...');
-    return initializeAppWithAutoMigration({ 
-        forceMode: true, 
-        skipValidation: true 
-    });
-}
-
-// ✅ Show Critical Error (Enhanced for better UX)
-function showCriticalError(message) {
-console.log('🚨 Showing critical error to user:', message);
-console.log('📊 System state at critical error:', {
-    localStorage: Object.keys(localStorage),
-    sessionStorage: Object.keys(sessionStorage),
-    url: window.location.href,
-    timestamp: new Date().toISOString()
-});
-
-const errorContainer = document.createElement('div');
-errorContainer.style.cssText = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff4444; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 400px; text-align: center; font-family: Inter, sans-serif; line-height: 1.5;`;
-
-errorContainer.innerHTML = `
-    <h3 style="margin-top: 0;">⚠️ App Error</h3>
-    <p style="margin-bottom: 20px;">${message}</p>
-    <div style="display: flex; gap: 10px; justify-content: center;">
-        <button onclick="location.reload()" style="
-            background: white;
-            color: #ff4444;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        ">Reload App</button>
-        <button onclick="this.parentElement.parentElement.remove()" style="
-            background: transparent;
-            color: white;
-            border: 1px solid white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        ">Dismiss</button>
-    </div>
-`;
-
-document.body.appendChild(errorContainer);
-
-console.log('📢 Critical error dialog displayed to user');
-
-// Auto-remove after 15 seconds
-setTimeout(() => {
-    if (errorContainer.parentElement) {
-        errorContainer.remove();
-        console.log('⏰ Critical error dialog auto-removed after timeout');
-    }
-}, 15000);
-}
-
-// Add this function before your migration functions
-function fixTaskValidationIssues() {
-    console.log('🔧 Fixing task validation issues...');
-    
-    try {
-        const legacyData = localStorage.getItem('miniCycleStorage');
-        if (!legacyData) {
-            console.log('⚠️ No legacy data found');
-            return { success: false, message: 'No legacy data found' };
-        }
-        
-        const cycles = JSON.parse(legacyData);
-        let fixedTasks = 0;
-        let fixedDetails = [];
-        
-        Object.keys(cycles).forEach(cycleName => {
-            const cycle = cycles[cycleName];
-            if (!cycle.tasks || !Array.isArray(cycle.tasks)) return;
-            
-            cycle.tasks.forEach(task => {
-                const taskId = task.id || 'unknown';
-                console.log(`🔍 Checking task: "${task.taskText}" (${taskId})`);
-                
-                // ✅ NEW: Handle tasks that SHOULD have recurring but don't
-                if (!task.recurring && (task.taskText || task.id)) {
-                    // Skip tasks that are clearly not meant to be recurring
-                    // (This is the safest approach - only fix existing recurring objects)
-                    return;
-                }
-                
-                // ✅ Handle tasks with incomplete recurring objects
-                if (task.recurring && typeof task.recurring === 'object') {
-                    
-                    // Set sensible defaults based on existing data or fallbacks
-                    if (task.recurring.recurCount === undefined) {
-                        task.recurring.recurCount = 1;
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added recurCount`);
-                        console.log('  ✅ Fixed: Added recurCount = 1');
-                    }
-                    
-                    if (task.recurring.recurIndefinitely === undefined) {
-                        task.recurring.recurIndefinitely = true;
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added recurIndefinitely`);
-                        console.log('  ✅ Fixed: Added recurIndefinitely = true');
-                    }
-                    
-                    if (task.recurring.useSpecificTime === undefined) {
-                        task.recurring.useSpecificTime = false;
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added useSpecificTime`);
-                        console.log('  ✅ Fixed: Added useSpecificTime = false');
-                    }
-                    
-                    // ✅ Set frequency if missing
-                    if (!task.recurring.frequency) {
-                        task.recurring.frequency = 'daily'; // Most common default
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added default frequency`);
-                        console.log('  ✅ Fixed: Added frequency = daily');
-                    }
-                    
-                    // Fix missing frequency blocks based on actual frequency
-                    const freq = task.recurring.frequency;
-                    
-                    if (freq === 'hourly' && !task.recurring.hourly) {
-                        task.recurring.hourly = {
-                            useSpecificMinute: false,
-                            minute: 0
-                        };
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added hourly block`);
-                        console.log('  ✅ Fixed: Added hourly block');
-                    }
-                    
-                    if (freq === 'daily' && !task.recurring.daily) {
-                        task.recurring.daily = {
-                            useSpecificTime: false,
-                            hour: 12,
-                            minute: 0,
-                            meridiem: 'PM',
-                            militaryTime: false
-                        };
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added daily block`);
-                        console.log('  ✅ Fixed: Added daily block');
-                    }
-                    
-                    if (freq === 'weekly' && !task.recurring.weekly) {
-                        task.recurring.weekly = {
-                            useSpecificDays: false,
-                            days: [],
-                            useSpecificTime: false,
-                            hour: 12,
-                            minute: 0,
-                            meridiem: 'PM',
-                            militaryTime: false
-                        };
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added weekly block`);
-                        console.log('  ✅ Fixed: Added weekly block');
-                    }
-                    
-                    if (freq === 'biweekly' && !task.recurring.biweekly) {
-                        task.recurring.biweekly = {
-                            useSpecificDays: false,
-                            days: [],
-                            useSpecificTime: false,
-                            hour: 12,
-                            minute: 0,
-                            meridiem: 'PM',
-                            militaryTime: false
-                        };
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added biweekly block`);
-                        console.log('  ✅ Fixed: Added biweekly block');
-                    }
-                    
-                    if (freq === 'monthly' && !task.recurring.monthly) {
-                        task.recurring.monthly = {
-                            useSpecificDays: false,
-                            days: [],
-                            useSpecificTime: false,
-                            hour: 12,
-                            minute: 0,
-                            meridiem: 'PM',
-                            militaryTime: false
-                        };
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added monthly block`);
-                        console.log('  ✅ Fixed: Added monthly block');
-                    }
-                    
-                    if (freq === 'yearly' && !task.recurring.yearly) {
-                        task.recurring.yearly = {
-                            useSpecificMonths: false,
-                            months: [],
-                            useSpecificDays: false,
-                            days: [],
-                            useSpecificTime: false,
-                            hour: 12,
-                            minute: 0,
-                            meridiem: 'PM',
-                            militaryTime: false
-                        };
-                        fixedTasks++;
-                        fixedDetails.push(`${task.taskText}: Added yearly block`);
-                        console.log('  ✅ Fixed: Added yearly block');
-                    }
-                }
-            });
-        });
-        
-        if (fixedTasks > 0) {
-            localStorage.setItem('miniCycleStorage', JSON.stringify(cycles));
-            console.log(`✅ Fixed ${fixedTasks} task validation issues:`);
-            fixedDetails.forEach(detail => console.log(`   - ${detail}`));
-            
-            return { 
-                success: true, 
-                fixedCount: fixedTasks,
-                details: fixedDetails,
-                message: `Fixed ${fixedTasks} validation issues`
-            };
-        } else {
-            console.log('✅ No fixes needed');
-            return { 
-                success: true, 
-                fixedCount: 0,
-                message: 'No validation issues found' 
-            };
-        }
-        
-    } catch (error) {
-        console.error('❌ Error fixing task validation:', error);
-        return { 
-            success: false, 
-            error: error.message,
-            message: `Error during fix: ${error.message}`
-        };
-    }
-}
 
 
 
@@ -5048,7 +3646,9 @@ function clearAllTasks() {
     updateProgressBar();
     updateStatsPanel();
     checkCompleteAllButton();
-    updateRecurringPanelButtonVisibility();
+    if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
+        window.recurringPanel.updateRecurringPanelButtonVisibility();
+    }
     hideMainMenu();
 
     // ✅ Update undo/redo button states
@@ -5127,7 +3727,9 @@ function deleteAllTasks() {
             updateProgressBar();
             updateStatsPanel();
             checkCompleteAllButton();
-            updateRecurringPanelButtonVisibility();
+            if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
+                window.recurringPanel.updateRecurringPanelButtonVisibility();
+            }
 
             // ✅ Update undo/redo button states
             updateUndoRedoButtons();
@@ -5813,9 +4415,10 @@ function startReminders() {
     console.log('✅ Reminder system started successfully (Schema 2.5)');
 }
 
-
-
-  updateRecurringPanelButtonVisibility();
+  // ✅ Update recurring panel button visibility if module is loaded
+  if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
+      window.recurringPanel.updateRecurringPanelButtonVisibility();
+  }
 
 
 // ✅ REMOVED: setupRecurringPanel - now handled by recurringPanel module
@@ -6999,7 +5602,8 @@ function checkMiniCycle() {
     console.log("ran check MiniCyle function");
     updateProgressBar();
     updateStatsPanel();
-    autoSave();
+    // ✅ REMOVED: autoSave() here - task completion now saves directly via AppState.update()
+    // This prevents duplicate saves and potential race conditions
     console.log("ran check MiniCyle function2");
 }
 
@@ -7424,25 +6028,25 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     // Input validation and sanitization
     const validatedInput = validateAndSanitizeTaskInput(taskText);
     if (!validatedInput) return;
-    
+
     // Load and validate data context
     const taskContext = loadTaskContext(validatedInput, taskId, {
         completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
-    });
+    }, isLoading);  // ✅ Pass isLoading flag
     if (!taskContext) return;
-    
+
     // Create or update task data
     const taskData = createOrUpdateTaskData(taskContext);
-    
+
     // Create DOM elements
     const taskElements = createTaskDOMElements(taskContext, taskData);
-    
+
     // Setup task interactions and events
     setupTaskInteractions(taskElements, taskContext);
-    
+
     // Finalize task creation
     finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
-    
+
     console.log('✅ Task creation completed (Schema 2.5)');
 }
 
@@ -7468,9 +6072,9 @@ function validateAndSanitizeTaskInput(taskText) {
 }
 
 // ✅ 2. Data Context Loading and Validation
-function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
+function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     console.log('📝 Adding task (Schema 2.5 only)...');
-    
+
     const schemaData = loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for addTask');
@@ -7479,7 +6083,7 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
 
     const { cycles, activeCycle, settings, reminders } = schemaData;
     const currentCycle = cycles[activeCycle];
-    
+
     if (!activeCycle || !currentCycle) {
         console.error("❌ No active cycle found in Schema 2.5 for addTask");
         throw new Error('No active cycle found');
@@ -7503,23 +6107,24 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions) {
         autoResetEnabled: currentCycle.autoReset || false,
         remindersEnabledGlobal: reminders?.enabled === true,
         deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false,
+        isLoading,  // ✅ Pass through isLoading flag
         ...taskOptions
     };
 }
 
 // ✅ 3. Task Data Creation and Storage
 function createOrUpdateTaskData(taskContext) {
-    const { 
-        cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate, 
+    const {
+        cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
         highPriority, remindersEnabled, recurring, recurringSettings,
-        currentCycle, cycles, activeCycle
+        currentCycle, cycles, activeCycle, isLoading
     } = taskContext;
 
     let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
-    
+
     if (!existingTask) {
         console.log('📋 Creating new task in Schema 2.5');
-        
+
         existingTask = {
             id: assignedTaskId,
             text: taskTextTrimmed,
@@ -7531,8 +6136,13 @@ function createOrUpdateTaskData(taskContext) {
             recurringSettings,
             schemaVersion: 2
         };
-        
-        currentCycle.tasks.push(existingTask);
+
+        // ✅ FIX: Only push to cycle data if NOT loading (prevents duplicate tasks with new IDs)
+        if (!isLoading) {
+            currentCycle.tasks.push(existingTask);
+        } else {
+            console.log('⏭️ Skipping push to currentCycle.tasks during load (task already in AppState)');
+        }
 
         // Handle recurring template creation
         if (recurring && recurringSettings) {
@@ -7555,11 +6165,16 @@ function createOrUpdateTaskData(taskContext) {
             };
         }
 
-        // Save to Schema 2.5
-        saveTaskToSchema25(activeCycle, currentCycle);
-        console.log('💾 Task saved to Schema 2.5');
+        // ✅ FIX: Only save to AppState if NOT loading from saved data
+        if (!isLoading) {
+            // Save to Schema 2.5
+            saveTaskToSchema25(activeCycle, currentCycle);
+            console.log('💾 Task saved to Schema 2.5');
+        } else {
+            console.log('⏭️ Skipping save during load (isLoading=true)');
+        }
     }
-    
+
     return existingTask;
 }
 
@@ -8024,7 +6639,7 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
 
         handleTaskCompletionChange(checkbox);
         checkMiniCycle();
-        autoSave();
+        autoSave(null, true);  // ✅ FIX: Force immediate save on task completion
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
 
         // ✅ Update undo/redo button states
@@ -8131,12 +6746,13 @@ function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateI
         // ✅ Enable undo system on first user interaction
         enableUndoSystemOnFirstInteraction();
 
+        // ✅ RESTORED: Use the simple working approach from old backup
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event("change"));
         checkbox.setAttribute("aria-checked", checkbox.checked);
 
         checkMiniCycle();
-        autoSave();
+        autoSave();  // ✅ This extracts from DOM and saves correctly
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
     });
 }
@@ -8192,19 +6808,19 @@ function finalizeTaskCreation(taskElements, taskContext, options) {
 
     // Append to DOM
     taskList.appendChild(taskItem);
-    
+
     // Clear input
     if (taskInput) taskInput.value = "";
 
     // Scroll to new task
     scrollToNewTask(taskList);
-    
+
     // Handle overdue styling
     handleOverdueStyling(taskItem, completed);
-    
+
     // Update UI components
     updateUIAfterTaskCreation(shouldSave);
-    
+
     // Setup final interactions
     setupFinalTaskInteractions(taskItem, isLoading);
 }
@@ -8247,7 +6863,13 @@ function updateUIAfterTaskCreation(shouldSave) {
 function setupFinalTaskInteractions(taskItem, isLoading) {
     if (!isLoading) setTimeout(() => { remindOverdueTasks(); }, 1000);
 
-    DragAndDrop(taskItem);
+    if (typeof DragAndDrop === 'function') {
+        DragAndDrop(taskItem);
+    } else if (typeof window.DragAndDrop === 'function') {
+        window.DragAndDrop(taskItem);
+    } else {
+        console.error('❌ DragAndDrop function not available!');
+    }
     updateMoveArrowsVisibility();
 }
 

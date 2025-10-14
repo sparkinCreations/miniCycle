@@ -22,7 +22,7 @@ export class DeviceDetectionManager {
     if (dependencies && typeof dependencies === 'object' && dependencies.hasOwnProperty('currentVersion')) {
       this.currentVersion = dependencies.currentVersion;
     } else {
-      this.currentVersion = '1.317';
+      this.currentVersion = '1.318';
     }
     // Debug logging (can be removed after fix is confirmed)
     console.log('[DeviceDetection] Constructor: received version =', dependencies.currentVersion, 'set version =', this.currentVersion);
