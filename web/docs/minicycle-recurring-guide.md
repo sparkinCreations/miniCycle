@@ -1,6 +1,8 @@
 # miniCycle Recurring Tasks: Complete User Guide
 
-**Version 1.0 | For miniCycle Users & Developers**
+**Version 1.1 | For miniCycle Users & Developers**
+
+_Updated October 2025 to include: Next occurrence display, catch-up function, two-state notifications, and hybrid optimization pattern._
 
 ---
 
@@ -121,10 +123,11 @@ cycle.recurringTemplates["task-123"] = {
   text: "Take medication",
   recurring: true,
   recurringSettings: { /* same as above */ },
-  lastTriggeredTimestamp: "2025-01-15T09:00:00Z"
+  lastTriggeredTimestamp: "2025-01-15T09:00:00Z",
+  nextScheduledOccurrence: 1737019200000  // Unix timestamp for next occurrence
 }
 ```
-**Purpose:** The "master copy" used to recreate the task on schedule
+**Purpose:** The "master copy" used to recreate the task on schedule. Includes optimization field for fast checking.
 
 ### The Lifecycle of a Recurring Task
 
@@ -208,26 +211,48 @@ currentCycle.recurringTemplates[taskId] = {
 
 #### Step 2: Quick Actions Notification
 
-**Immediately after toggling, you see:**
+**Immediately after toggling, you see a clean confirmation:**
 
 ```
 ┌─────────────────────────────────────────┐
-│ 🔁 Recurring set to daily (indefinite)  │
+│ "Your task text here"                💡 │
+│                                          │
+│ 🔁 Recurring set to daily (Indefinitely) │
+│                                          │
+│           [Change Settings]              │
+└─────────────────────────────────────────┘
+
+💡 Tip: Recurring tasks are removed on cycle
+reset and reappear based on their schedule.
+```
+
+**Default state shows:**
+- The task text you just made recurring
+- Current frequency and pattern
+- "Change Settings" button
+- Tip toggle (💡) in top-right corner
+- Auto-dismisses after 10 seconds (pauses on hover/interaction)
+
+**Click "Change Settings" to expand quick options:**
+
+```
+┌─────────────────────────────────────────┐
+│ "Your task text here"                💡 │
+│                                          │
+│ 🔁 Recurring set to daily (Indefinitely) │
 │                                          │
 │ Quick options:                           │
 │ ○ Hourly   ● Daily   ○ Weekly  ○ Monthly│
 │                                          │
-│ [More Options]                      [✕]  │
+│ [Apply]                  [More Options]  │
 └─────────────────────────────────────────┘
-
-💡 Tip: Recurring tasks are removed on cycle 
-reset and reappear based on their schedule.
 ```
 
-**At this point, you can:**
+**Now you can:**
 - Click a different frequency (hourly, weekly, monthly)
-- Click "More Options" to open the Recurring Panel
-- Close the notification (settings are already applied)
+- Click "Apply" to save the quick change
+- Click "More Options" to open the full Recurring Panel
+- Close the notification (settings are already saved)
 
 #### Step 3: Adjusting Settings (Optional)
 
@@ -330,21 +355,34 @@ Morning Routine
 
 ### Phase 3: Task Reappears Automatically
 
-**The Watch Function runs every 30 seconds:**
+**The Watch Function runs every 30 seconds (and on tab visibility):**
 
 ```javascript
-// Simplified pseudocode
+// Simplified pseudocode with hybrid optimization
 setInterval(() => {
+  const now = Date.now();
+
   Object.values(recurringTemplates).forEach(template => {
-    
+
     // Is this task currently in the list?
     const exists = tasks.find(t => t.id === template.id);
     if (exists) return; // Already there, skip
-    
-    // Should it appear now?
-    const now = new Date();
+
+    // ========================================
+    // HYBRID OPTIMIZATION PATTERN
+    // ========================================
+
+    // FAST PATH: Check pre-calculated timestamp
+    if (template.nextScheduledOccurrence) {
+      if (now < template.nextScheduledOccurrence) {
+        return; // Not time yet, skip expensive pattern matching
+      }
+    }
+
+    // SLOW PATH: Validate with pattern matching
+    // (This ensures accuracy for complex patterns)
     if (shouldRecreateTask(template, now)) {
-      
+
       // Recreate from template
       const newTask = {
         id: template.id,
@@ -353,16 +391,35 @@ setInterval(() => {
         recurring: true,
         recurringSettings: template.recurringSettings
       };
-      
+
       tasks.push(newTask);
       renderTaskToDOM(newTask);
-      
-      // Update last triggered time
-      template.lastTriggeredTimestamp = now.toISOString();
+
+      // Update timestamps for next occurrence
+      template.lastTriggeredTimestamp = now;
+      template.nextScheduledOccurrence = calculateNextOccurrence(
+        template.recurringSettings,
+        now
+      );
+
+      saveToStorage();
     }
   });
 }, 30000); // Check every 30 seconds
+
+// Also runs on visibility change (catch-up function)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    catchUpMissedRecurringTasks();
+    watchRecurringTasks();
+  }
+});
 ```
+
+**Why Hybrid Approach?**
+- **Fast Path:** Skip pattern matching if `nextScheduledOccurrence` indicates it's not time yet (performance optimization)
+- **Slow Path:** Always validate with pattern matching to ensure accuracy (handles edge cases like DST, month boundaries)
+- **Best of Both:** Fast checking for most cases, accurate validation when needed
 
 **At 9:00 AM, your list updates:**
 ```
@@ -394,7 +451,8 @@ Recurring Tasks
 ☐ Take medication at 9am
    📅 Daily at 9:00 AM
    🔄 Occurs indefinitely
-   
+   Next: Tomorrow at 9:00 AM
+
    [Change Settings]  [Remove Recurring]
 
 ───────────────────────────────────
@@ -403,6 +461,15 @@ Recurring Tasks
 ```
 
 **This is your "backstage view"** - you can see and control recurring tasks even when they're not currently visible in your task list.
+
+**Next Occurrence Display:**
+miniCycle shows you when each recurring task will appear next using human-readable formatting:
+- "Appears in 30 minutes" (within 1 hour)
+- "Appears in 3 hours" (within 24 hours)
+- "Next: Tomorrow at 9:00 AM" (beyond 24 hours)
+- "Next: Wednesday at 2:30 PM" (specific days and times)
+
+This helps you understand your schedule at a glance without mental calculations.
 
 ---
 
@@ -447,7 +514,8 @@ Recurring Tasks
               "indefinitely": true,
               "time": { "hour": 9, "minute": 0, "meridiem": "AM" }
             },
-            "lastTriggeredTimestamp": "2025-01-15T09:00:00Z"
+            "lastTriggeredTimestamp": "2025-01-15T09:00:00Z",
+            "nextScheduledOccurrence": 1737019200000
           }
         }
       }
@@ -464,22 +532,24 @@ function handleRecurringTaskActivation(task, taskContext) {
   // 1. Mark task as recurring
   task.recurring = true;
   task.recurringSettings = getDefaultSettings(); // daily, indefinite
-  
-  // 2. Create template
+
+  // 2. Create template with next occurrence calculation
+  const nextOccurrence = calculateNextOccurrence(task.recurringSettings);
   currentCycle.recurringTemplates[task.id] = {
     id: task.id,
     text: task.text,
     recurring: true,
     recurringSettings: structuredClone(task.recurringSettings),
-    lastTriggeredTimestamp: null
+    lastTriggeredTimestamp: null,
+    nextScheduledOccurrence: nextOccurrence
   };
-  
+
   // 3. Save to storage
   saveToLocalStorage();
-  
+
   // 4. Show quick actions notification
   showQuickActionsNotification(task);
-  
+
   // 5. Update UI
   updateRecurringPanelButtonVisibility();
 }
@@ -507,42 +577,157 @@ function handleRecurringTaskDeactivation(task, taskId) {
 }
 ```
 
-#### Check if Task Should Recreate
+#### Calculate Next Occurrence
+```javascript
+function calculateNextOccurrence(settings, fromTime = Date.now()) {
+  const { frequency, time } = settings;
+
+  // Handle different frequencies
+  switch (frequency) {
+    case "hourly":
+      return calculateNextHourlyOccurrence(settings, fromTime);
+
+    case "daily":
+      return calculateNextDailyOccurrence(settings, fromTime);
+
+    case "weekly":
+      return calculateNextWeeklyOccurrence(settings, fromTime);
+
+    case "biweekly":
+      return calculateNextBiweeklyOccurrence(settings, fromTime);
+
+    case "monthly":
+      return calculateNextMonthlyOccurrence(settings, fromTime);
+
+    case "yearly":
+      return calculateNextYearlyOccurrence(settings, fromTime);
+  }
+
+  return null; // Invalid frequency
+}
+
+function formatNextOccurrence(nextOccurrence) {
+  if (!nextOccurrence) return null;
+
+  const now = Date.now();
+  const diff = nextOccurrence - now;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  // Within 1 hour
+  if (minutes < 60) {
+    return `Appears in ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  }
+
+  // Within 24 hours
+  if (hours < 24) {
+    return `Appears in ${hours} hour${hours !== 1 ? 's' : ''}`;
+  }
+
+  // Beyond 24 hours - show specific date/time
+  const date = new Date(nextOccurrence);
+  const dayName = ["Sunday", "Monday", "Tuesday", "Wednesday",
+                   "Thursday", "Friday", "Saturday"][date.getDay()];
+  const timeStr = formatTime(date); // e.g., "9:00 AM"
+
+  if (days === 1) {
+    return `Next: Tomorrow at ${timeStr}`;
+  } else if (days < 7) {
+    return `Next: ${dayName} at ${timeStr}`;
+  } else {
+    return `Next: ${date.toLocaleDateString()} at ${timeStr}`;
+  }
+}
+```
+
+#### Check if Task Should Recreate (Hybrid Approach)
 ```javascript
 function shouldRecreateRecurringTask(template, taskList, now) {
   // 1. Already exists? Skip
   if (taskList.find(t => t.id === template.id)) {
     return false;
   }
-  
-  // 2. Was it just triggered? (prevent duplicates)
+
+  // 2. Fast path: Check nextScheduledOccurrence
+  if (template.nextScheduledOccurrence) {
+    if (now < template.nextScheduledOccurrence) {
+      return false; // Not time yet
+    }
+  }
+
+  // 3. Was it just triggered? (prevent duplicates)
   if (template.lastTriggeredTimestamp) {
     const lastTriggered = new Date(template.lastTriggeredTimestamp);
     const sameMinute = isSameMinute(lastTriggered, now);
     if (sameMinute) return false;
   }
-  
-  // 3. Check schedule
+
+  // 4. Slow path: Validate with pattern matching
   return shouldTaskRecurNow(template.recurringSettings, now);
 }
 
 function shouldTaskRecurNow(settings, now) {
   const { frequency, time } = settings;
-  
+
   // Daily at specific time
   if (frequency === "daily" && time) {
-    return now.getHours() === time.hour && 
+    return now.getHours() === time.hour &&
            now.getMinutes() === time.minute;
   }
-  
+
   // Weekly on specific days
   if (frequency === "weekly" && settings.weekly?.days) {
     const dayNames = ["Sunday", "Monday", "Tuesday", ...];
     const today = dayNames[now.getDay()];
     return settings.weekly.days.includes(today);
   }
-  
+
   // ... other frequencies
+}
+```
+
+#### Catch Up Missed Tasks
+```javascript
+async function catchUpMissedRecurringTasks() {
+  const state = getAppState();
+  const currentCycle = state.cycles[state.appState.activeCycleId];
+  if (!currentCycle?.recurringTemplates) return;
+
+  const now = Date.now();
+  const tasksToAdd = [];
+
+  // Check each template for missed occurrences
+  Object.values(currentCycle.recurringTemplates).forEach(template => {
+    // Skip if already in task list
+    if (currentCycle.tasks.find(t => t.id === template.id)) return;
+
+    // Check if it should have appeared by now
+    if (shouldTaskRecurNow(template.recurringSettings, now)) {
+      tasksToAdd.push({
+        id: template.id,
+        text: template.text,
+        completed: false,
+        recurring: true,
+        recurringSettings: template.recurringSettings
+      });
+
+      // Update template for next occurrence
+      template.lastTriggeredTimestamp = now;
+      template.nextScheduledOccurrence = calculateNextOccurrence(
+        template.recurringSettings,
+        now
+      );
+    }
+  });
+
+  // Add all missed tasks in batch
+  if (tasksToAdd.length > 0) {
+    updateAppState(draft => {
+      const cycle = draft.cycles[draft.appState.activeCycleId];
+      cycle.tasks.push(...tasksToAdd);
+    });
+  }
 }
 ```
 
@@ -898,22 +1083,34 @@ Do you just need a reminder?
    - Check if the task appears in the list
    - If not there, the task isn't set to recur
 
-2. **Has enough time passed?**
+2. **Check the next occurrence time:**
+   - Open "Manage Recurring Tasks"
+   - Look for "Next: [time]" under the task
+   - This shows exactly when it will appear
+   - Example: "Next: Tomorrow at 9:00 AM" means it's scheduled for tomorrow
+
+3. **Has enough time passed?**
    - Watch function checks every 30 seconds
    - Wait up to 30 seconds after scheduled time
    - Example: 9:00am task may appear between 9:00:00 and 9:00:30
 
-3. **Did the task already appear?**
+4. **Did the task already appear?**
    - Check if it's already in your task list
    - Recurring tasks won't duplicate
 
-4. **Is the schedule correct?**
+5. **Is the schedule correct?**
    - Open Recurring Panel
    - Click task → "Change Settings"
    - Verify frequency and time
    - Check "Current Settings" summary
 
-5. **Was it triggered recently?**
+6. **Try the catch-up trigger:**
+   - Switch to another tab or minimize the window
+   - Return to miniCycle
+   - The catch-up function will check for missed tasks
+   - This forces an immediate check instead of waiting for the 30-second interval
+
+7. **Was it triggered recently?**
    - Tasks won't appear twice in the same minute
    - If you complete cycle at 9:00am and task is scheduled for 9:00am, it may not reappear until 9:01am
 
@@ -978,11 +1175,21 @@ Recurring tasks are **deleted on cycle reset** and reappear based on their sched
 - You set any task to recur
 - You import a cycle with recurring tasks
 
-### Q: "Can I see when a recurring task last appeared?"
+### Q: "Can I see when a recurring task will appear next?"
 
-**Technical answer:** Yes, the `lastTriggeredTimestamp` is stored in the template.
+**Yes!** The Recurring Panel shows the next occurrence time for every scheduled task.
 
-**User interface:** Not currently displayed in the UI (feature request noted).
+**How to view:**
+1. Open menu → "Manage Recurring Tasks"
+2. Look under each task for "Next: [time]"
+
+**Format examples:**
+- "Appears in 30 minutes" - less than 1 hour away
+- "Appears in 3 hours" - within 24 hours
+- "Next: Tomorrow at 9:00 AM" - specific date and time
+- "Next: Wednesday at 2:30 PM" - for weekly tasks
+
+**Technical details:** miniCycle calculates `nextScheduledOccurrence` when you set recurring settings, and updates it each time the task appears. This uses a hybrid optimization approach for performance.
 
 ### Q: "What happens if I'm offline when a task should appear?"
 
@@ -990,7 +1197,27 @@ Recurring tasks are **deleted on cycle reset** and reappear based on their sched
 
 - No internet needed
 - Tasks recreate as long as the app is open
-- If app is closed, tasks will appear when you next open it (if past due time)
+- If app is closed or tab is inactive, miniCycle catches up when you return
+
+**Catch-Up Function:**
+When you return to miniCycle after being away, it automatically checks for any missed recurring tasks:
+
+1. **Trigger:** Runs when browser tab becomes visible again
+2. **Check:** Scans all templates for missed occurrences
+3. **Add Once:** Each missed task appears only once (not duplicated)
+4. **Update:** Calculates next occurrence for future
+
+**Example:**
+```
+You have "Take medication" set to appear at 9am and 2pm daily.
+You close the tab at 8am and return at 5pm.
+
+When you return:
+✓ Both 9am and 2pm tasks are added (once each)
+✓ Next occurrence set to 9am tomorrow
+```
+
+**Note:** Tasks are only added once even if they should have appeared multiple times. This keeps your task list manageable.
 
 ### Q: "Can recurring tasks have different settings per cycle?"
 
@@ -1137,4 +1364,8 @@ miniCycle is open source and actively developed. Your input helps improve the re
 
 ---
 
-*miniCycle v1.275 | sparkinCreations | 2025*
+*miniCycle v1.315+ | sparkinCreations | 2025*
+
+**Guide Changelog:**
+- v1.1 (Oct 2025): Added next occurrence display, catch-up function, two-state notifications, hybrid optimization
+- v1.0 (Initial release): Core recurring functionality documentation
