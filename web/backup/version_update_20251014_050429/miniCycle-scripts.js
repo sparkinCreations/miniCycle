@@ -571,6 +571,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     initializeThemesPanel();
     setupThemesPanel();
 
+    // ✅ UI Modal Setup (was missing after appInit refactoring)
+    setupMainMenu();
+    setupSettingsMenu();
+    setupAbout();
+    setupUserManual();
+    setupFeedbackModal();
+
+    // ✅ Expose functions needed by cycleLoader
+    window.updateMainMenuHeader = updateMainMenuHeader;
+
 
 
 // ...existing code...
@@ -644,7 +654,7 @@ function wireUndoRedoUI() {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.315'
+            currentVersion: '1.318'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -806,6 +816,14 @@ function wireUndoRedoUI() {
 
   // ✅ Reminder System (with staggered timing)
   console.log('🔔 Setting up reminder system...');
+
+  // ✅ Setup reminder toggle event listener
+  try {
+    setupReminderToggle();
+  } catch (error) {
+    console.warn('⚠️ Reminder toggle setup failed:', error);
+  }
+
   setTimeout(() => {
     try {
       remindOverdueTasks();
