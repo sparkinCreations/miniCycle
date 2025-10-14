@@ -556,7 +556,7 @@ async setDefaultPosition(notificationContainer) {
     const interactiveSelectors = [
       '.tip-close', '.tip-toggle',
       '.quick-option', '.radio-circle', '.option-label',
-      '.apply-quick-recurring', '.open-recurring-settings',
+      '.apply-quick-recurring', '.open-recurring-settings', '.show-quick-actions',
       'button', 'input', 'select', 'textarea', 'a[href]'
     ];
 
@@ -705,9 +705,9 @@ async setDefaultPosition(notificationContainer) {
   }
 
   /**
-   * 🔁 Create recurring notification with educational tip
+   * 🔁 Create recurring notification with educational tip (two-state: collapsed/expanded)
    */
-  createRecurringNotificationWithTip(assignedTaskId, frequency, pattern) {
+  createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, taskText = '') {
     const tipId = 'recurring-cycle-explanation';
     const tipText = 'Recurring tasks are deleted on cycle reset and reappear based on their schedule';
 
@@ -721,52 +721,71 @@ async setDefaultPosition(notificationContainer) {
       </div>
     `;
 
+    // Escape HTML in task text to prevent XSS
+    const escapedTaskText = taskText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
     return `
-      <div class="main-notification-content" 
-           style="position: relative; display: block; padding: 12px 16px; border-radius: 6px;">
-        
-        <button class="close-btn" 
-                title="Close" 
+      <div class="main-notification-content"
+           style="position: relative; display: block; padding: 12px 42px 12px 16px; border-radius: 6px;">
+
+        <button class="close-btn"
+                title="Close"
                 aria-label="Close notification"
-                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0;">✖</button>
+                style="position: absolute; top: -7px; right: -7px; background: transparent; border: none; font-size: 16px; cursor: pointer; color: #fff; line-height: 1; padding: 0; z-index: 10;">✖</button>
+
+        <button class="tip-toggle-btn"
+                data-tip-id="${tipId}"
+                aria-label="Show educational tip"
+                style="position: absolute; bottom: 8px; right: 8px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; z-index: 5;">💡</button>
 
         ${educationalTipHTML}
+
+        ${taskText ? `<div style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.9;">"${escapedTaskText}"</div>` : ''}
 
         <span id="current-settings-${assignedTaskId}">
           🔁 Recurring set to <strong>${frequency}</strong> (${pattern})
         </span><br>
 
-        <div class="quick-recurring-options" data-task-id="${assignedTaskId}">
-          <div class="quick-option">
-            <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly"></span>
-            <span class="option-label">Hourly</span>
+        <button class="show-quick-actions"
+                data-task-id="${assignedTaskId}"
+                style="margin-top: 8px; padding: 6px 12px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 4px; color: #fff; cursor: pointer; font-size: 0.9em;">
+          Change Settings
+        </button>
+
+        <div class="quick-recurring-container"
+             data-task-id="${assignedTaskId}"
+             style="display: none; margin-top: 12px; opacity: 0; transform: translateY(-10px); transition: opacity 0.3s ease, transform 0.3s ease;">
+
+          <div class="quick-recurring-options" data-task-id="${assignedTaskId}">
+            <div class="quick-option">
+              <span class="radio-circle ${frequency === 'hourly' ? 'selected' : ''}" data-freq="hourly"></span>
+              <span class="option-label">Hourly</span>
+            </div>
+            <div class="quick-option">
+              <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily"></span>
+              <span class="option-label">Daily</span>
+            </div>
+            <div class="quick-option">
+              <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly"></span>
+              <span class="option-label">Weekly</span>
+            </div>
+            <div class="quick-option">
+              <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly"></span>
+              <span class="option-label">Monthly</span>
+            </div>
           </div>
-          <div class="quick-option">
-            <span class="radio-circle ${frequency === 'daily' ? 'selected' : ''}" data-freq="daily"></span>
-            <span class="option-label">Daily</span>
-          </div>
-          <div class="quick-option">
-            <span class="radio-circle ${frequency === 'weekly' ? 'selected' : ''}" data-freq="weekly"></span>
-            <span class="option-label">Weekly</span>
-          </div>
-          <div class="quick-option">
-            <span class="radio-circle ${frequency === 'monthly' ? 'selected' : ''}" data-freq="monthly"></span>
-            <span class="option-label">Monthly</span>
+
+          <div class="quick-actions">
+            <button class="apply-quick-recurring" data-task-id="${assignedTaskId}" style="display: none;">Apply</button>
+            <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ More Options</button>
           </div>
         </div>
-
-        <div class="quick-actions">
-          <button class="apply-quick-recurring" data-task-id="${assignedTaskId}" style="display: none;">Apply</button>
-          <button class="open-recurring-settings" data-task-id="${assignedTaskId}">⚙ More Options</button>
-        </div>
-
-        <button class="tip-toggle-btn" data-tip-id="${tipId}" aria-label="Show educational tip">💡</button>
       </div>
     `;
   }
 
   /**
-   * 🎛️ Initialize recurring notification listeners
+   * 🎛️ Initialize recurring notification listeners (with expand/collapse support)
    */
   initializeRecurringNotificationListeners(notification) {
     // Close button handler
@@ -783,8 +802,29 @@ async setDefaultPosition(notificationContainer) {
     notification.addEventListener("click", async (e) => {
       e.stopPropagation();
 
-      const taskId = e.target.dataset.taskId || 
+      const taskId = e.target.dataset.taskId ||
                      e.target.closest("[data-task-id]")?.dataset.taskId;
+
+      // Handle "Change Settings" button - expand quick actions
+      if (e.target.classList.contains("show-quick-actions")) {
+        const changeSettingsBtn = e.target;
+        const quickContainer = notification.querySelector(".quick-recurring-container");
+
+        if (quickContainer) {
+          // Hide "Change Settings" button
+          changeSettingsBtn.style.display = "none";
+
+          // Show and animate quick actions container
+          quickContainer.style.display = "block";
+
+          // Force reflow for animation
+          quickContainer.offsetHeight;
+
+          // Trigger animation
+          quickContainer.style.opacity = "1";
+          quickContainer.style.transform = "translateY(0)";
+        }
+      }
 
       // Handle quick option clicks
       if (e.target.closest(".quick-option")) {
@@ -814,7 +854,7 @@ async setDefaultPosition(notificationContainer) {
 
         const state = window.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
-        
+
         // Note: applyRecurringToTaskSchema25 must be available in global scope
         window.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
 

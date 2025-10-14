@@ -215,6 +215,7 @@ export async function initializeRecurringModules() {
             removeTasksFromCycle: recurringCore.removeRecurringTasksFromCycle,
             handleAfterReset: recurringCore.handleRecurringTasksAfterReset,
             watchTasks: recurringCore.watchRecurringTasks,
+            catchUpMissedTasks: recurringCore.catchUpMissedRecurringTasks,
             // Backward compatibility - redirect button visibility to panel
             updateRecurringButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
         };
@@ -239,6 +240,7 @@ export async function initializeRecurringModules() {
         window.removeRecurringTasksFromCycle = recurringCore.removeRecurringTasksFromCycle;
         window.handleRecurringTasksAfterReset = recurringCore.handleRecurringTasksAfterReset;
         window.watchRecurringTasks = recurringCore.watchRecurringTasks;
+        window.catchUpMissedRecurringTasks = recurringCore.catchUpMissedRecurringTasks;
         window.setupRecurringWatcher = recurringCore.setupRecurringWatcher;
 
         window.updateRecurringPanel = () => recurringPanel.updateRecurringPanel();

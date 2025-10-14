@@ -915,6 +915,134 @@ export function shouldRecreateRecurringTask(template, taskList, now) {
 // ============================================
 
 /**
+ * Catch up on missed recurring tasks
+ * Adds tasks that should have appeared while tab was inactive
+ * Each template only creates ONE task, even if multiple occurrences were missed
+ *
+ * @returns {Promise<Object>} Stats { added: number, updated: number }
+ */
+export async function catchUpMissedRecurringTasks() {
+    console.log('⏰ Catching up on missed recurring tasks...');
+
+    // ✅ Check feature flag
+    assertInjected('isEnabled', Deps.isEnabled);
+    if (!Deps.isEnabled()) {
+        console.log('🚫 Recurring feature disabled via FeatureFlags');
+        return { added: 0, updated: 0 };
+    }
+
+    // ✅ Wait for core systems to be ready (AppState + data)
+    await appInit.waitForCore();
+
+    // ✅ Read from AppState
+    assertInjected('getAppState', Deps.getAppState);
+    const state = Deps.getAppState();
+    const activeCycleId = state.appState?.activeCycleId;
+
+    if (!activeCycleId) {
+        console.warn('⚠️ No active cycle ID found for catch-up');
+        return { added: 0, updated: 0 };
+    }
+
+    const cycleData = state.data?.cycles?.[activeCycleId];
+    if (!cycleData) {
+        console.warn('⚠️ No active cycle found for catch-up');
+        return { added: 0, updated: 0 };
+    }
+
+    const templates = cycleData.recurringTemplates || {};
+    const taskList = cycleData.tasks || [];
+
+    if (!Object.keys(templates).length) {
+        console.log('📋 No recurring templates for catch-up');
+        return { added: 0, updated: 0 };
+    }
+
+    assertInjected('now', Deps.now);
+    const now = new Date(Deps.now());
+    const tasksToAdd = [];
+    const templateUpdates = {};
+
+    // ✅ Check each template for missed occurrences
+    Object.values(templates).forEach(template => {
+        // Skip if task already exists
+        if (taskList.some(t => t.id === template.id)) return;
+
+        // Skip if nextScheduledOccurrence is null or in the future
+        if (!template.nextScheduledOccurrence || template.nextScheduledOccurrence > now.getTime()) {
+            return;
+        }
+
+        // ✅ MISSED OCCURRENCE - Add task once
+        console.log(`⏰ Catching up missed task: ${template.text}`);
+
+        tasksToAdd.push({
+            text: template.text,
+            completed: false,
+            dueDate: template.dueDate,
+            highPriority: template.highPriority,
+            remindersEnabled: template.remindersEnabled,
+            recurring: true,
+            id: template.id,
+            recurringSettings: template.recurringSettings
+        });
+
+        // Calculate NEXT future occurrence
+        const nextFuture = calculateNextOccurrence(template.recurringSettings, now);
+
+        templateUpdates[template.id] = {
+            ...template,
+            lastTriggeredTimestamp: now.getTime(),
+            nextScheduledOccurrence: nextFuture
+        };
+    });
+
+    // ✅ Batch all changes in one AppState update
+    if (tasksToAdd.length > 0) {
+        assertInjected('updateAppState', Deps.updateAppState);
+
+        Deps.updateAppState(draft => {
+            const cycle = draft.data.cycles[activeCycleId];
+
+            // Add missed recurring tasks
+            tasksToAdd.forEach(taskData => {
+                cycle.tasks.push({
+                    ...taskData,
+                    dateCreated: now.toISOString()
+                });
+            });
+
+            // Update template timestamps and next occurrences
+            Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
+                cycle.recurringTemplates[templateId] = updatedTemplate;
+            });
+        }, true); // Immediate save
+
+        console.log(`✅ Caught up ${tasksToAdd.length} missed recurring task${tasksToAdd.length > 1 ? 's' : ''}`);
+
+        // ✅ Refresh DOM to show caught-up tasks
+        setTimeout(() => {
+            if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
+                Deps.refreshUIFromState();
+                console.log('🔄 DOM refreshed after catching up tasks');
+            }
+        }, 0);
+
+        // ✅ Show notification
+        assertInjected('showNotification', Deps.showNotification);
+        Deps.showNotification(
+            `⏰ Added ${tasksToAdd.length} missed recurring task${tasksToAdd.length > 1 ? 's' : ''}`,
+            'info',
+            3000
+        );
+    } else {
+        console.log('✅ No missed recurring tasks to catch up');
+    }
+
+    return { added: tasksToAdd.length, updated: Object.keys(templateUpdates).length };
+}
+
+/**
  * Watch recurring tasks and recreate them when due
  * Runs as part of the 30-second interval check
  */
@@ -1078,7 +1206,8 @@ export async function setupRecurringWatcher() {
 
     console.log('🔄 Setting up recurring task watcher with', Object.keys(recurringTemplates).length, 'templates');
 
-    // Initial check
+    // Initial check - catch up on missed tasks first, then check for current tasks
+    await catchUpMissedRecurringTasks();
     await watchRecurringTasks();
 
     // Setup 30-second interval
@@ -1088,7 +1217,10 @@ export async function setupRecurringWatcher() {
     // Re-check when tab becomes visible (user might have been away)
     document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === "visible") {
-            console.log('👁️ Tab visible again, checking recurring tasks...');
+            console.log('👁️ Tab visible again, checking for missed tasks...');
+            // First, catch up on any missed recurring tasks
+            await catchUpMissedRecurringTasks();
+            // Then check for tasks that are due now
             await watchRecurringTasks();
         }
     });
@@ -1181,13 +1313,13 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
     // Use notifications module if available
     if (window.notifications?.createRecurringNotificationWithTip) {
         console.log('📝 Creating notification content...');
-        const notificationContent = window.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern);
+        const notificationContent = window.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, task.text);
         console.log('📝 Notification content created:', notificationContent.substring(0, 100) + '...');
 
         // Use showNotificationWithTip if available
         if (window.showNotificationWithTip) {
             console.log('📤 Showing notification with tip...');
-            const notification = window.showNotificationWithTip(notificationContent, "recurring", 20000, 'recurring-cycle-explanation');
+            const notification = window.showNotificationWithTip(notificationContent, "recurring", 10000, 'recurring-cycle-explanation');
             console.log('📤 Notification result:', notification);
 
             // Initialize listeners if notification was created
@@ -1199,7 +1331,7 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             console.log('📤 Falling back to regular showNotification...');
             // Fallback to regular showNotification
             assertInjected('showNotification', Deps.showNotification);
-            const notification = Deps.showNotification(notificationContent, "recurring", 20000);
+            const notification = Deps.showNotification(notificationContent, "recurring", 10000);
 
             if (notification && window.notifications.initializeRecurringNotificationListeners) {
                 window.notifications.initializeRecurringNotificationListeners(notification);
