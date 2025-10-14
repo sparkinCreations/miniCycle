@@ -5592,6 +5592,18 @@ select.hidden {
   animation: fadeIn 0.25s ease;
 }
 
+/* Next Occurrence Display */
+.next-occurrence-text {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 4px;
+  color: #2e7d32;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
 .summary-box {
   display: flex;
   flex-direction: column;
@@ -6139,6 +6151,12 @@ body.dark-mode .selected {
 body.dark-mode .summary-label {
   font-weight: bold;
   color: #ffffff;
+}
+
+/* Next Occurrence in Dark Mode */
+body.dark-mode .next-occurrence-text {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #81c784;
 }
 
 

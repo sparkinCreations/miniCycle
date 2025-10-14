@@ -18,6 +18,7 @@
  */
 
 import { appInit } from './appInitialization.js';
+import { formatNextOccurrence, calculateNextOccurrence } from './recurringCore.js';
 
 // ============================================
 // RECURRING PANEL MANAGER CLASS
@@ -954,6 +955,7 @@ export class RecurringPanelManager {
                             remindersEnabled: task.remindersEnabled || false,
                             recurring: true,
                             recurringSettings: structuredClone(settings),
+                            nextScheduledOccurrence: calculateNextOccurrence(settings, Date.now()),
                             schemaVersion: 2
                         };
                     });
@@ -1598,6 +1600,9 @@ export class RecurringPanelManager {
             const recurringSettings = task.recurringSettings ||
                 currentCycle?.recurringTemplates?.[task.id]?.recurringSettings;
 
+            // ✅ Get the template to access nextScheduledOccurrence
+            const template = currentCycle?.recurringTemplates?.[task.id];
+
             // ✅ Update the preview text element instead of replacing entire innerHTML
             const previewText = this.deps.getElementById("recurring-preview-text");
             if (!previewText) {
@@ -1623,9 +1628,15 @@ export class RecurringPanelManager {
 
             const summaryText = this.deps.buildRecurringSummary(recurringSettings);
 
+            // ✅ Get next occurrence text
+            const nextOccurrenceText = template?.nextScheduledOccurrence
+                ? formatNextOccurrence(template.nextScheduledOccurrence)
+                : null;
+
             previewText.innerHTML = `
                 <strong>${task.text}</strong><br>
                 <span class="recurring-summary-text">${summaryText}</span>
+                ${nextOccurrenceText ? `<br><span class="next-occurrence-text">${nextOccurrenceText}</span>` : ''}
             `;
 
             // ✅ Ensure the button is visible after updating preview

@@ -160,6 +160,571 @@ export function normalizeRecurringSettings(settings = {}) {
 }
 
 // ============================================
+// NEXT OCCURRENCE CALCULATION
+// ============================================
+
+/**
+ * Get the number of days in a month
+ * @param {number} month - Month (0-11, JavaScript style)
+ * @param {number} year - Year
+ * @returns {number} Number of days in month
+ */
+function getDaysInMonth(month, year) {
+    return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * Check if a date is valid
+ * @param {number} year - Year
+ * @param {number} month - Month (0-11)
+ * @param {number} day - Day (1-31)
+ * @returns {boolean} True if date is valid
+ */
+function isValidDate(year, month, day) {
+    const daysInMonth = getDaysInMonth(month, year);
+    return day >= 1 && day <= daysInMonth;
+}
+
+/**
+ * Apply time settings to a date
+ * @param {Date} date - Date to modify (modifies in place)
+ * @param {Object} timeSettings - Time settings object
+ * @returns {Date} Modified date (same reference)
+ */
+function applyTimeToDate(date, timeSettings) {
+    if (!timeSettings) {
+        // No specific time - set to start of day
+        date.setHours(0, 0, 0, 0);
+        return date;
+    }
+
+    const { hour, minute, meridiem, military } = timeSettings;
+
+    if (military) {
+        date.setHours(hour, minute, 0, 0);
+    } else {
+        const hour24 = convert12To24(hour, meridiem);
+        date.setHours(hour24, minute, 0, 0);
+    }
+
+    return date;
+}
+
+/**
+ * Clone a date object
+ * @param {Date} date - Date to clone
+ * @returns {Date} Cloned date
+ */
+function cloneDate(date) {
+    return new Date(date.getTime());
+}
+
+/**
+ * Calculate next hourly occurrence
+ * @param {Object} hourlySettings - Hourly settings { useSpecificMinute, minute }
+ * @param {Date} from - Calculate from this time
+ * @returns {number} Unix timestamp of next occurrence
+ */
+function calculateNextHourly(hourlySettings, from) {
+    const next = cloneDate(from);
+
+    if (hourlySettings?.useSpecificMinute) {
+        const targetMinute = hourlySettings.minute || 0;
+
+        // Set to target minute
+        next.setMinutes(targetMinute, 0, 0);
+
+        // If this minute already passed this hour, move to next hour
+        if (next <= from) {
+            next.setHours(next.getHours() + 1);
+        }
+    } else {
+        // Default: top of next hour
+        next.setHours(next.getHours() + 1, 0, 0, 0);
+    }
+
+    return next.getTime();
+}
+
+/**
+ * Calculate next daily occurrence
+ * @param {Object} timeSettings - Time settings { hour, minute, meridiem, military }
+ * @param {Date} from - Calculate from this time
+ * @returns {number} Unix timestamp of next occurrence
+ */
+function calculateNextDaily(timeSettings, from) {
+    const next = cloneDate(from);
+
+    if (timeSettings) {
+        applyTimeToDate(next, timeSettings);
+
+        // If time already passed today, move to tomorrow
+        if (next <= from) {
+            next.setDate(next.getDate() + 1);
+        }
+    } else {
+        // No specific time - next occurrence is start of tomorrow
+        next.setDate(next.getDate() + 1);
+        next.setHours(0, 0, 0, 0);
+    }
+
+    return next.getTime();
+}
+
+/**
+ * Calculate next weekly occurrence
+ * @param {Object} weeklySettings - Weekly settings { days: ["Mon", "Wed", "Fri"] }
+ * @param {Object} timeSettings - Time settings
+ * @param {Date} from - Calculate from this time
+ * @returns {number} Unix timestamp of next occurrence
+ */
+function calculateNextWeekly(weeklySettings, timeSettings, from) {
+    const targetDays = weeklySettings?.days || [];
+
+    // If no days specified, recur every day (fall back to daily)
+    if (targetDays.length === 0) {
+        return calculateNextDaily(timeSettings, from);
+    }
+
+    // Try each day in the next 8 days (covers a full week + today)
+    for (let i = 0; i <= 7; i++) {
+        const testDate = cloneDate(from);
+        testDate.setDate(from.getDate() + i);
+
+        const weekday = testDate.toLocaleDateString("en-US", { weekday: "short" });
+
+        if (targetDays.includes(weekday)) {
+            applyTimeToDate(testDate, timeSettings);
+
+            // Only return if this occurrence is in the future
+            if (testDate > from) {
+                return testDate.getTime();
+            }
+        }
+    }
+
+    // Fallback: next week, same day
+    const fallback = cloneDate(from);
+    fallback.setDate(from.getDate() + 7);
+    applyTimeToDate(fallback, timeSettings);
+    return fallback.getTime();
+}
+
+/**
+ * Calculate next biweekly occurrence
+ * @param {Object} biweeklySettings - Biweekly settings { days: ["Mon", "Wed"], referenceDate }
+ * @param {Object} timeSettings - Time settings
+ * @param {Date} from - Calculate from this time
+ * @returns {number} Unix timestamp of next occurrence
+ */
+function calculateNextBiweekly(biweeklySettings, timeSettings, from) {
+    const targetDays = biweeklySettings?.days || [];
+    const referenceDate = biweeklySettings?.referenceDate
+        ? new Date(biweeklySettings.referenceDate)
+        : from;
+
+    // If no days specified, recur every day in even weeks
+    if (targetDays.length === 0) {
+        // Calculate if we're in an even week
+        const daysSinceReference = Math.floor((from - referenceDate) / (1000 * 60 * 60 * 24));
+        const weeksSinceReference = Math.floor(daysSinceReference / 7);
+
+        if (weeksSinceReference % 2 === 0) {
+            // We're in an even week - next occurrence is tomorrow
+            return calculateNextDaily(timeSettings, from);
+        } else {
+            // We're in an odd week - next occurrence is start of next even week
+            const next = cloneDate(from);
+            const daysUntilNextEvenWeek = 7 - (daysSinceReference % 7);
+            next.setDate(from.getDate() + daysUntilNextEvenWeek);
+            applyTimeToDate(next, timeSettings);
+            return next.getTime();
+        }
+    }
+
+    // Try each day in the next 15 days (covers 2+ weeks)
+    for (let i = 0; i <= 14; i++) {
+        const testDate = cloneDate(from);
+        testDate.setDate(from.getDate() + i);
+
+        // Check if we're in an even week relative to reference
+        const daysSinceReference = Math.floor((testDate - referenceDate) / (1000 * 60 * 60 * 24));
+        const weeksSinceReference = Math.floor(daysSinceReference / 7);
+
+        if (weeksSinceReference % 2 === 0) {
+            const weekday = testDate.toLocaleDateString("en-US", { weekday: "short" });
+
+            if (targetDays.includes(weekday)) {
+                applyTimeToDate(testDate, timeSettings);
+
+                if (testDate > from) {
+                    return testDate.getTime();
+                }
+            }
+        }
+    }
+
+    // Fallback: 2 weeks from now
+    const fallback = cloneDate(from);
+    fallback.setDate(from.getDate() + 14);
+    applyTimeToDate(fallback, timeSettings);
+    return fallback.getTime();
+}
+
+/**
+ * Calculate next monthly occurrence
+ * @param {Object} monthlySettings - Monthly settings { days: [1, 15, 30] }
+ * @param {Object} timeSettings - Time settings
+ * @param {Date} from - Calculate from this time
+ * @returns {number} Unix timestamp of next occurrence
+ */
+function calculateNextMonthly(monthlySettings, timeSettings, from) {
+    const targetDays = monthlySettings?.days || [];
+
+    // If no days specified, recur every day
+    if (targetDays.length === 0) {
+        return calculateNextDaily(timeSettings, from);
+    }
+
+    const currentDay = from.getDate();
+    const currentMonth = from.getMonth();
+    const currentYear = from.getFullYear();
+
+    // Sort target days ascending
+    const sortedDays = [...targetDays].sort((a, b) => a - b);
+
+    // Try to find a day later this month
+    for (const day of sortedDays) {
+        if (isValidDate(currentYear, currentMonth, day)) {
+            const testDate = new Date(currentYear, currentMonth, day);
+            applyTimeToDate(testDate, timeSettings);
+
+            if (testDate > from) {
+                return testDate.getTime();
+            }
+        }
+    }
+
+    // No valid day found this month - try next month
+    let nextMonth = currentMonth + 1;
+    let nextYear = currentYear;
+
+    if (nextMonth > 11) {
+        nextMonth = 0;
+        nextYear++;
+    }
+
+    // Try each target day in next month
+    for (const day of sortedDays) {
+        if (isValidDate(nextYear, nextMonth, day)) {
+            const testDate = new Date(nextYear, nextMonth, day);
+            applyTimeToDate(testDate, timeSettings);
+            return testDate.getTime();
+        }
+    }
+
+    // Fallback: first day of next month
+    const fallback = new Date(nextYear, nextMonth, 1);
+    applyTimeToDate(fallback, timeSettings);
+    return fallback.getTime();
+}
+
+/**
+ * Calculate next yearly occurrence
+ * @param {Object} yearlySettings - Yearly settings { months: [1, 6, 12], daysByMonth, applyDaysToAll, useSpecificDays }
+ * @param {Object} timeSettings - Time settings
+ * @param {Date} from - Calculate from this time
+ * @returns {number} Unix timestamp of next occurrence
+ */
+function calculateNextYearly(yearlySettings, timeSettings, from) {
+    const targetMonths = yearlySettings?.months || [];
+    const daysByMonth = yearlySettings?.daysByMonth || {};
+    const applyDaysToAll = yearlySettings?.applyDaysToAll !== false;
+    const useSpecificDays = yearlySettings?.useSpecificDays !== false;
+
+    const currentMonth = from.getMonth() + 1; // Convert to 1-12
+    const currentYear = from.getFullYear();
+
+    // If no months specified, recur every month (fall back to monthly)
+    if (targetMonths.length === 0) {
+        const monthlyDays = applyDaysToAll ? (daysByMonth.all || []) : [];
+        return calculateNextMonthly({ days: monthlyDays }, timeSettings, from);
+    }
+
+    // Sort months ascending
+    const sortedMonths = [...targetMonths].sort((a, b) => a - b);
+
+    // Get days for a specific month
+    const getDaysForMonth = (month) => {
+        if (!useSpecificDays) return []; // No specific days - any day of month
+        if (applyDaysToAll) return daysByMonth.all || [];
+        return daysByMonth[month] || [];
+    };
+
+    // Try to find next occurrence this year
+    for (const month of sortedMonths) {
+        if (month < currentMonth) continue; // Skip past months
+
+        const days = getDaysForMonth(month);
+
+        if (days.length === 0) {
+            // No specific days - first day of month
+            const testDate = new Date(currentYear, month - 1, 1);
+            applyTimeToDate(testDate, timeSettings);
+
+            if (testDate > from) {
+                return testDate.getTime();
+            }
+        } else {
+            // Check each target day in this month
+            const sortedDays = [...days].sort((a, b) => a - b);
+
+            for (const day of sortedDays) {
+                if (isValidDate(currentYear, month - 1, day)) {
+                    const testDate = new Date(currentYear, month - 1, day);
+                    applyTimeToDate(testDate, timeSettings);
+
+                    if (testDate > from) {
+                        return testDate.getTime();
+                    }
+                }
+            }
+        }
+    }
+
+    // No occurrence found this year - try next year
+    const nextYear = currentYear + 1;
+    const firstMonth = sortedMonths[0];
+    const days = getDaysForMonth(firstMonth);
+
+    if (days.length === 0) {
+        // First day of first month next year
+        const nextDate = new Date(nextYear, firstMonth - 1, 1);
+        applyTimeToDate(nextDate, timeSettings);
+        return nextDate.getTime();
+    } else {
+        // First valid day in first month next year
+        const sortedDays = [...days].sort((a, b) => a - b);
+
+        for (const day of sortedDays) {
+            if (isValidDate(nextYear, firstMonth - 1, day)) {
+                const nextDate = new Date(nextYear, firstMonth - 1, day);
+                applyTimeToDate(nextDate, timeSettings);
+                return nextDate.getTime();
+            }
+        }
+    }
+
+    // Fallback: 1 year from now
+    const fallback = cloneDate(from);
+    fallback.setFullYear(nextYear);
+    applyTimeToDate(fallback, timeSettings);
+    return fallback.getTime();
+}
+
+/**
+ * Calculate next occurrence from specific dates
+ * @param {Array<string>} dates - Array of date strings ["2025-10-15", "2025-10-22"]
+ * @param {Date} from - Calculate from this time
+ * @param {Object} timeSettings - Time settings
+ * @returns {number|null} Unix timestamp of next occurrence, or null if no future dates
+ */
+function calculateNextSpecificDate(dates, from, timeSettings) {
+    if (!dates || dates.length === 0) {
+        return null;
+    }
+
+    // Parse all dates and filter to future ones
+    const futureDates = dates
+        .map(dateStr => {
+            const date = parseDateAsLocal(dateStr);
+            applyTimeToDate(date, timeSettings);
+            return date;
+        })
+        .filter(date => date > from)
+        .sort((a, b) => a - b); // Sort ascending
+
+    if (futureDates.length === 0) {
+        return null; // No future dates
+    }
+
+    return futureDates[0].getTime(); // Return earliest future date
+}
+
+/**
+ * Calculate the next occurrence timestamp for a recurring task
+ *
+ * This is the main entry point for calculating when a recurring task
+ * should next appear. It handles all frequency types and edge cases.
+ *
+ * @param {Object} settings - Recurring settings object
+ * @param {Date|number} fromTime - Calculate from this time (default: now)
+ * @returns {number|null} Unix timestamp of next occurrence, or null if cannot calculate
+ */
+export function calculateNextOccurrence(settings, fromTime = Date.now()) {
+    if (!settings) {
+        console.error('calculateNextOccurrence: No settings provided');
+        return null;
+    }
+
+    const from = new Date(fromTime);
+
+    // Validate from date
+    if (isNaN(from.getTime())) {
+        console.error('calculateNextOccurrence: Invalid fromTime:', fromTime);
+        return null;
+    }
+
+    try {
+        // ✅ SPECIFIC DATES OVERRIDE ALL OTHER SETTINGS
+        if (settings.specificDates?.enabled && settings.specificDates?.dates?.length > 0) {
+            const next = calculateNextSpecificDate(
+                settings.specificDates.dates,
+                from,
+                settings.time
+            );
+
+            if (next === null) {
+                console.log('calculateNextOccurrence: No future specific dates found');
+            }
+
+            return next;
+        }
+
+        // ✅ FREQUENCY-BASED CALCULATION
+        const frequency = settings.frequency || 'daily';
+        const timeSettings = settings.time || null;
+
+        switch (frequency) {
+            case 'hourly':
+                return calculateNextHourly(settings.hourly, from);
+
+            case 'daily':
+                return calculateNextDaily(timeSettings, from);
+
+            case 'weekly':
+                return calculateNextWeekly(settings.weekly, timeSettings, from);
+
+            case 'biweekly':
+                return calculateNextBiweekly(settings.biweekly, timeSettings, from);
+
+            case 'monthly':
+                return calculateNextMonthly(settings.monthly, timeSettings, from);
+
+            case 'yearly':
+                return calculateNextYearly(settings.yearly, timeSettings, from);
+
+            default:
+                console.warn('calculateNextOccurrence: Unknown frequency:', frequency);
+                // Fallback: tomorrow
+                return calculateNextDaily(null, from);
+        }
+
+    } catch (error) {
+        console.error('calculateNextOccurrence: Calculation failed:', error);
+        // Fallback: 24 hours from now
+        return from.getTime() + (24 * 60 * 60 * 1000);
+    }
+}
+
+/**
+ * Calculate multiple future occurrences for a recurring task
+ * Useful for calendar view or showing upcoming schedule
+ *
+ * @param {Object} settings - Recurring settings object
+ * @param {number} count - Number of occurrences to calculate
+ * @param {Date|number} fromTime - Calculate from this time (default: now)
+ * @returns {Array<number>} Array of timestamps for next occurrences
+ */
+export function calculateNextOccurrences(settings, count = 5, fromTime = Date.now()) {
+    const occurrences = [];
+    let currentTime = fromTime;
+
+    for (let i = 0; i < count; i++) {
+        const next = calculateNextOccurrence(settings, currentTime);
+
+        if (next === null) {
+            break; // No more occurrences (e.g., specific dates exhausted)
+        }
+
+        occurrences.push(next);
+        currentTime = next + 1000; // Move 1 second past this occurrence
+    }
+
+    return occurrences;
+}
+
+/**
+ * Get human-readable description of next occurrence
+ *
+ * @param {number|null} nextOccurrence - Unix timestamp of next occurrence
+ * @returns {string} Human-readable string like "Tomorrow at 9:00 AM"
+ */
+export function formatNextOccurrence(nextOccurrence) {
+    if (!nextOccurrence) {
+        return "No upcoming occurrences";
+    }
+
+    const next = new Date(nextOccurrence);
+    const now = new Date();
+    const msUntil = next - now;
+
+    // Overdue
+    if (msUntil < 0) {
+        return "Overdue";
+    }
+
+    // Less than 1 minute
+    if (msUntil < 60000) {
+        return "Appears in less than 1 minute";
+    }
+
+    // Less than 1 hour
+    if (msUntil < 3600000) {
+        const minutes = Math.floor(msUntil / 60000);
+        return `Appears in ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    }
+
+    // Less than 24 hours
+    if (msUntil < 86400000) {
+        const hours = Math.floor(msUntil / 3600000);
+        return `Appears in ${hours} hour${hours !== 1 ? 's' : ''}`;
+    }
+
+    // ✅ Beyond 24 hours - show specific date/time
+    const timeStr = next.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    // Check if it's tomorrow
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+
+    if (next.getDate() === tomorrow.getDate() &&
+        next.getMonth() === tomorrow.getMonth() &&
+        next.getFullYear() === tomorrow.getFullYear()) {
+        return `Next: Tomorrow at ${timeStr}`;
+    }
+
+    // Check if it's within this week (next 7 days)
+    if (msUntil < 604800000) {
+        const weekday = next.toLocaleDateString(undefined, { weekday: 'long' });
+        return `Next: ${weekday} at ${timeStr}`;
+    }
+
+    // Further out - show full date
+    const dateStr = next.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    });
+
+    return `Next: ${dateStr} at ${timeStr}`;
+}
+
+// ============================================
 // PATTERN MATCHING LOGIC
 // ============================================
 
@@ -402,6 +967,13 @@ export async function watchRecurringTasks() {
     Object.values(templates).forEach(template => {
         // ⛔ Prevent re-adding if task already exists by ID
         if (taskList.some(task => task.id === template.id)) return;
+
+        // ✅ FAST PATH: Skip if not due yet (performance optimization)
+        if (template.nextScheduledOccurrence && now.getTime() < template.nextScheduledOccurrence) {
+            return; // Not due yet, skip expensive pattern matching
+        }
+
+        // ✅ SLOW PATH: Pattern matching validation (catches calculation bugs)
         if (!shouldRecreateRecurringTask(template, taskList, now)) return;
 
         console.log("⏱ Auto‑recreating recurring task:", template.text);
@@ -417,9 +989,13 @@ export async function watchRecurringTasks() {
             recurringSettings: template.recurringSettings
         });
 
+        // ✅ Recalculate next occurrence after triggering
+        const nextOccurrence = calculateNextOccurrence(template.recurringSettings, now);
+
         templateUpdates[template.id] = {
             ...template,
-            lastTriggeredTimestamp: now.getTime()
+            lastTriggeredTimestamp: now.getTime(),
+            nextScheduledOccurrence: nextOccurrence
         };
     });
 
@@ -585,6 +1161,7 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             dueDate: task.dueDate || null,
             remindersEnabled: task.remindersEnabled || false,
             lastTriggeredTimestamp: null,
+            nextScheduledOccurrence: calculateNextOccurrence(task.recurringSettings, Date.now()),
             schemaVersion: 2
         };
     }, true); // ✅ Immediate save to prevent data loss on quick refresh
@@ -782,7 +1359,8 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
                 text: targetTask.text,
                 recurring: true,
                 schemaVersion: 2,
-                recurringSettings: { ...targetTask.recurringSettings }
+                recurringSettings: { ...targetTask.recurringSettings },
+                nextScheduledOccurrence: calculateNextOccurrence(targetTask.recurringSettings, Date.now())
             };
         }
     }, true); // ✅ Immediate save for recurring settings changes

@@ -6,7 +6,10 @@
 import {
     setRecurringCoreDependencies,
     normalizeRecurringSettings,
-    shouldTaskRecurNow
+    shouldTaskRecurNow,
+    calculateNextOccurrence,
+    calculateNextOccurrences,
+    formatNextOccurrence
 } from '../utilities/recurringCore.js';
 
 export function runRecurringCoreTests(resultsDiv) {
@@ -744,6 +747,473 @@ export function runRecurringCoreTests(resultsDiv) {
 
         if (result) {
             throw new Error('Should not trigger with no specific dates');
+        }
+    });
+
+    // === NEXT OCCURRENCE CALCULATION TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔮 Next Occurrence Calculation</h4>';
+
+    test('calculates next daily occurrence (no time)', () => {
+        const settings = normalizeRecurringSettings({ frequency: 'daily' });
+        const from = new Date(2025, 0, 15, 10, 30); // Jan 15, 10:30 AM
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be tomorrow at midnight
+        if (nextDate.getDate() !== 16) {
+            throw new Error(`Expected Jan 16, got ${nextDate.getDate()}`);
+        }
+        if (nextDate.getHours() !== 0 || nextDate.getMinutes() !== 0) {
+            throw new Error('Should be at midnight');
+        }
+    });
+
+    test('calculates next daily occurrence (with time)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 9, minute: 0, military: true }
+        });
+        const from = new Date(2025, 0, 15, 10, 30); // Jan 15, 10:30 AM (after 9 AM)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be tomorrow at 9 AM
+        if (nextDate.getDate() !== 16) {
+            throw new Error(`Expected Jan 16, got ${nextDate.getDate()}`);
+        }
+        if (nextDate.getHours() !== 9 || nextDate.getMinutes() !== 0) {
+            throw new Error(`Expected 9:00, got ${nextDate.getHours()}:${nextDate.getMinutes()}`);
+        }
+    });
+
+    test('calculates next daily occurrence (before time today)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 14, minute: 30, military: true }
+        });
+        const from = new Date(2025, 0, 15, 10, 0); // Jan 15, 10:00 AM (before 2:30 PM)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be today at 2:30 PM
+        if (nextDate.getDate() !== 15) {
+            throw new Error('Should be today');
+        }
+        if (nextDate.getHours() !== 14 || nextDate.getMinutes() !== 30) {
+            throw new Error('Should be at 14:30');
+        }
+    });
+
+    test('calculates next weekly occurrence', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'weekly',
+            weekly: { days: ['Mon', 'Wed', 'Fri'] },
+            time: { hour: 9, minute: 0, military: true }
+        });
+        const from = new Date(2025, 0, 13, 10, 0); // Monday Jan 13, 10:00 AM (after 9 AM)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Wednesday Jan 15 at 9 AM
+        const weekday = nextDate.toLocaleDateString('en-US', { weekday: 'short' });
+        if (weekday !== 'Wed') {
+            throw new Error(`Expected Wed, got ${weekday}`);
+        }
+        if (nextDate.getDate() !== 15) {
+            throw new Error(`Expected 15, got ${nextDate.getDate()}`);
+        }
+    });
+
+    test('calculates next monthly occurrence', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: { days: [1, 15, 30] },
+            time: { hour: 10, minute: 0, military: true }
+        });
+        const from = new Date(2025, 0, 10, 12, 0); // Jan 10, noon
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Jan 15 at 10 AM
+        if (nextDate.getDate() !== 15) {
+            throw new Error(`Expected 15, got ${nextDate.getDate()}`);
+        }
+        if (nextDate.getMonth() !== 0) {
+            throw new Error('Should be in January');
+        }
+    });
+
+    test('calculates next monthly occurrence (next month)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: { days: [1, 15] }
+        });
+        const from = new Date(2025, 0, 20); // Jan 20 (after 15th)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Feb 1
+        if (nextDate.getMonth() !== 1) {
+            throw new Error('Should be in February');
+        }
+        if (nextDate.getDate() !== 1) {
+            throw new Error(`Expected 1, got ${nextDate.getDate()}`);
+        }
+    });
+
+    test('calculates next yearly occurrence', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'yearly',
+            yearly: {
+                months: [1, 6, 12],
+                useSpecificDays: true,
+                applyDaysToAll: true,
+                daysByMonth: { all: [1, 15] }
+            }
+        });
+        const from = new Date(2025, 0, 10); // Jan 10
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Jan 15
+        if (nextDate.getMonth() !== 0) {
+            throw new Error('Should be in January');
+        }
+        if (nextDate.getDate() !== 15) {
+            throw new Error(`Expected 15, got ${nextDate.getDate()}`);
+        }
+    });
+
+    test('calculates next yearly occurrence (next year)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'yearly',
+            yearly: {
+                months: [1],
+                useSpecificDays: true,
+                applyDaysToAll: true,
+                daysByMonth: { all: [1] }
+            }
+        });
+        const from = new Date(2025, 6, 15); // Jul 15 (after Jan 1)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Jan 1, 2026
+        if (nextDate.getFullYear() !== 2026) {
+            throw new Error('Should be in 2026');
+        }
+        if (nextDate.getMonth() !== 0 || nextDate.getDate() !== 1) {
+            throw new Error('Should be Jan 1');
+        }
+    });
+
+    test('calculates next hourly occurrence (top of hour)', () => {
+        const settings = normalizeRecurringSettings({ frequency: 'hourly' });
+        const from = new Date(2025, 0, 15, 10, 30); // 10:30
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be 11:00
+        if (nextDate.getHours() !== 11 || nextDate.getMinutes() !== 0) {
+            throw new Error('Should be at 11:00');
+        }
+    });
+
+    test('calculates next hourly occurrence (specific minute)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'hourly',
+            hourly: { useSpecificMinute: true, minute: 30 }
+        });
+        const from = new Date(2025, 0, 15, 10, 45); // 10:45
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be 11:30
+        if (nextDate.getHours() !== 11 || nextDate.getMinutes() !== 30) {
+            throw new Error(`Expected 11:30, got ${nextDate.getHours()}:${nextDate.getMinutes()}`);
+        }
+    });
+
+    test('calculates next biweekly occurrence', () => {
+        const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
+        const settings = normalizeRecurringSettings({
+            frequency: 'biweekly',
+            biweekly: {
+                days: ['Mon', 'Wed'],
+                referenceDate: referenceDate.toISOString()
+            }
+        });
+        const from = new Date(2025, 0, 8); // Wed, Jan 8 (week 0)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Mon, Jan 20 (week 2)
+        const weekday = nextDate.toLocaleDateString('en-US', { weekday: 'short' });
+        if (weekday !== 'Mon') {
+            throw new Error(`Expected Mon, got ${weekday}`);
+        }
+        if (nextDate.getDate() !== 20) {
+            throw new Error(`Expected 20, got ${nextDate.getDate()}`);
+        }
+    });
+
+    test('calculates next specific date occurrence', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            specificDates: {
+                enabled: true,
+                dates: ['2025-01-20', '2025-02-01', '2025-02-15']
+            },
+            time: { hour: 9, minute: 0, military: true }
+        });
+        const from = new Date(2025, 0, 15); // Jan 15
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Jan 20
+        if (nextDate.getDate() !== 20 || nextDate.getMonth() !== 0) {
+            throw new Error('Should be Jan 20');
+        }
+        if (nextDate.getHours() !== 9) {
+            throw new Error('Should be at 9 AM');
+        }
+    });
+
+    test('returns null for specific dates with no future dates', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            specificDates: {
+                enabled: true,
+                dates: ['2025-01-01', '2025-01-05']
+            }
+        });
+        const from = new Date(2025, 0, 20); // Jan 20 (after all dates)
+
+        const next = calculateNextOccurrence(settings, from);
+
+        if (next !== null) {
+            throw new Error('Should return null when no future dates');
+        }
+    });
+
+    test('handles month boundary correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 23, minute: 59, military: true }
+        });
+        const from = new Date(2025, 0, 31, 23, 59); // Jan 31, 23:59 (last minute)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Feb 1, 23:59
+        if (nextDate.getMonth() !== 1) {
+            throw new Error('Should be in February');
+        }
+        if (nextDate.getDate() !== 1) {
+            throw new Error('Should be Feb 1');
+        }
+    });
+
+    test('handles year boundary correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily'
+        });
+        const from = new Date(2025, 11, 31, 23, 59); // Dec 31, 2025, 23:59
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be Jan 1, 2026
+        if (nextDate.getFullYear() !== 2026) {
+            throw new Error('Should be in 2026');
+        }
+        if (nextDate.getMonth() !== 0 || nextDate.getDate() !== 1) {
+            throw new Error('Should be Jan 1');
+        }
+    });
+
+    test('handles 12-hour time format (AM)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 9, minute: 30, meridiem: 'AM', military: false }
+        });
+        const from = new Date(2025, 0, 15, 10, 0); // After 9:30 AM
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be tomorrow at 9:30 AM
+        if (nextDate.getDate() !== 16) {
+            throw new Error('Should be tomorrow');
+        }
+        if (nextDate.getHours() !== 9 || nextDate.getMinutes() !== 30) {
+            throw new Error('Should be at 9:30 AM');
+        }
+    });
+
+    test('handles 12-hour time format (PM)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 2, minute: 30, meridiem: 'PM', military: false }
+        });
+        const from = new Date(2025, 0, 15, 10, 0); // Before 2:30 PM
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be today at 2:30 PM (14:30)
+        if (nextDate.getDate() !== 15) {
+            throw new Error('Should be today');
+        }
+        if (nextDate.getHours() !== 14 || nextDate.getMinutes() !== 30) {
+            throw new Error('Should be at 14:30 (2:30 PM)');
+        }
+    });
+
+    test('handles 12 AM (midnight)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 12, minute: 0, meridiem: 'AM', military: false }
+        });
+        const from = new Date(2025, 0, 15, 10, 0); // After midnight
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be tomorrow at midnight (00:00)
+        if (nextDate.getDate() !== 16) {
+            throw new Error('Should be tomorrow');
+        }
+        if (nextDate.getHours() !== 0) {
+            throw new Error('12 AM should be hour 0');
+        }
+    });
+
+    test('handles 12 PM (noon)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            time: { hour: 12, minute: 0, meridiem: 'PM', military: false }
+        });
+        const from = new Date(2025, 0, 15, 10, 0); // Before noon
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be today at noon (12:00)
+        if (nextDate.getDate() !== 15) {
+            throw new Error('Should be today');
+        }
+        if (nextDate.getHours() !== 12) {
+            throw new Error('12 PM should be hour 12');
+        }
+    });
+
+    test('calculates multiple future occurrences', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'weekly',
+            weekly: { days: ['Mon'] },
+            time: { hour: 9, minute: 0, military: true }
+        });
+        const from = new Date(2025, 0, 13, 10, 0); // Monday Jan 13, after 9 AM
+
+        const occurrences = calculateNextOccurrences(settings, 3, from);
+
+        if (occurrences.length !== 3) {
+            throw new Error(`Expected 3 occurrences, got ${occurrences.length}`);
+        }
+
+        // Should be next 3 Mondays
+        const dates = occurrences.map(ts => new Date(ts));
+
+        // First: Jan 20
+        if (dates[0].getDate() !== 20) {
+            throw new Error(`Expected Jan 20, got ${dates[0].getDate()}`);
+        }
+
+        // Second: Jan 27
+        if (dates[1].getDate() !== 27) {
+            throw new Error(`Expected Jan 27, got ${dates[1].getDate()}`);
+        }
+
+        // Third: Feb 3
+        if (dates[2].getMonth() !== 1 || dates[2].getDate() !== 3) {
+            throw new Error('Expected Feb 3');
+        }
+    });
+
+    test('formats next occurrence (minutes)', () => {
+        const now = Date.now();
+        const next = now + (45 * 60 * 1000); // 45 minutes from now
+
+        const formatted = formatNextOccurrence(next);
+
+        if (!formatted.includes('45 minute')) {
+            throw new Error(`Expected "45 minutes", got "${formatted}"`);
+        }
+    });
+
+    test('formats next occurrence (hours)', () => {
+        const now = Date.now();
+        const next = now + (3 * 60 * 60 * 1000); // 3 hours from now
+
+        const formatted = formatNextOccurrence(next);
+
+        if (!formatted.includes('3 hour')) {
+            throw new Error(`Expected "3 hours", got "${formatted}"`);
+        }
+    });
+
+    test('formats next occurrence (days)', () => {
+        const now = Date.now();
+        const next = now + (2 * 24 * 60 * 60 * 1000); // 2 days from now
+
+        const formatted = formatNextOccurrence(next);
+
+        if (!formatted.includes('2 day')) {
+            throw new Error(`Expected "2 days", got "${formatted}"`);
+        }
+    });
+
+    test('formats next occurrence (far future)', () => {
+        const now = Date.now();
+        const next = now + (10 * 24 * 60 * 60 * 1000); // 10 days from now
+
+        const formatted = formatNextOccurrence(next);
+
+        if (!formatted.includes('Next:')) {
+            throw new Error(`Expected date format with "Next:", got "${formatted}"`);
+        }
+    });
+
+    test('formats null occurrence', () => {
+        const formatted = formatNextOccurrence(null);
+
+        if (formatted !== 'No upcoming occurrences') {
+            throw new Error('Should show "No upcoming occurrences"');
+        }
+    });
+
+    test('formats overdue occurrence', () => {
+        const now = Date.now();
+        const past = now - (60 * 60 * 1000); // 1 hour ago
+
+        const formatted = formatNextOccurrence(past);
+
+        if (formatted !== 'Overdue') {
+            throw new Error('Should show "Overdue"');
         }
     });
 
