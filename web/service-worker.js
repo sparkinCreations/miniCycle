@@ -1,6 +1,6 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-var APP_VERSION = '1.319';
-var CACHE_VERSION = 'v95';
+var APP_VERSION = '1.321';
+var CACHE_VERSION = 'v97';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -31,11 +31,30 @@ var LITE_SHELL = [
   './miniCycle-lite-scripts.js'
 ];
 
+var UTILITIES = [
+  './utilities/appInitialization.js',
+  './utilities/state.js',
+  './utilities/themeManager.js',
+  './utilities/recurringPanel.js',
+  './utilities/recurringIntegration.js',
+  './utilities/recurringCore.js',
+  './utilities/globalUtils.js',
+  './utilities/deviceDetection.js',
+  './utilities/notifications.js',
+  './utilities/statsPanel.js',
+  './utilities/cycleLoader.js',
+  './utilities/consoleCapture.js',
+  './utilities/basicPluginSystem.js',
+  './utilities/testing-modal.js',
+  './utilities/cycle/migrationManager.js',
+  './utilities/task/dragDropManager.js'
+];
+
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
 
   // Build the full pre-cache list once
-  var precacheList = CORE.concat(FULL_SHELL, LITE_SHELL);
+  var precacheList = CORE.concat(FULL_SHELL, LITE_SHELL, UTILITIES);
 
   function addAllSafe(cache, urls) {
     // 1) Fast path: one shot addAll
@@ -67,7 +86,8 @@ self.addEventListener('install', function (event) {
       console.log('💾 Caching assets…',
         '\n  📦 CORE:', CORE.length,
         '\n  💻 FULL shell:', FULL_SHELL.length,
-        '\n  📱 LITE shell:', LITE_SHELL.length
+        '\n  📱 LITE shell:', LITE_SHELL.length,
+        '\n  🔧 UTILITIES:', UTILITIES.length
       );
       return addAllSafe(cache, precacheList);
     }).then(function (result) {

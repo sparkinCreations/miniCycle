@@ -1,11 +1,15 @@
-
+/**
+ * 🔬 miniCycle Testing Modal Module
+ *
+ * Provides a comprehensive testing interface for debugging and validating
+ * miniCycle functionality, including storage, migration, and state management.
+ *
+ * @module testing-modal
+ * @version 1.321
+ */
 
 // ==========================================
-// � DEPENDENCY HELPERS (Safe Global Access)
-// ==========================================
-
-// ==========================================
-// 📦 MODULE IMPORTS  
+// 📦 MODULE IMPORTS
 // ==========================================
 
 import { MiniCycleNotifications } from './notifications.js';

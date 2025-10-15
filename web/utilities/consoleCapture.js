@@ -2,9 +2,12 @@
  * ==========================================
  * 🎯 CONSOLE CAPTURE MODULE FOR MIGRATIONS
  * ==========================================
- * 
+ *
  * Provides enhanced console logging and capture functionality
  * specifically designed for debugging migration processes.
+ *
+ * @module consoleCapture
+ * @version 1.321
  */
 
 export class MiniCycleConsoleCapture {

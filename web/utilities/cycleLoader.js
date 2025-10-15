@@ -2,6 +2,9 @@
  * miniCycle Cycle Loader Module (Schema 2.5)
  * - Pure module with explicit dependency injection
  * - No window probing, no stubs, no retry loops
+ *
+ * @module cycleLoader
+ * @version 1.321
  */
 
 import { appInit } from './appInitialization.js';

@@ -1,9 +1,12 @@
-/* Welcome to to miniCycle's state module. Here is state.js 
-
-This module manages the application state, including loading, updating, and saving state to localStorage.
-It also provides a way to subscribe to state changes.
-
-*/
+/**
+ * Welcome to to miniCycle's state module. Here is state.js
+ *
+ * This module manages the application state, including loading, updating, and saving state to localStorage.
+ * It also provides a way to subscribe to state changes.
+ *
+ * @module state
+ * @version 1.321
+ */
 
 // MiniCycleState class definition
 class MiniCycleState {
@@ -22,7 +25,7 @@ class MiniCycleState {
         this.saveTimeout = null;
         this.listeners = new Map();
         this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
-        this.version = '1.0.0';
+        this.version = '1.321';
         this.isInitialized = false; // ✅ Add this flag
     }
 

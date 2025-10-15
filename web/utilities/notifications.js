@@ -13,6 +13,8 @@
  *   const notifications = new MiniCycleNotifications();
  *   notifications.show("Hello World!", "success", 3000);
  *
+ * @module notifications
+ * @version 1.321
  * @requires AppInit (for initialization coordination)
  */
 

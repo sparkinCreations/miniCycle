@@ -2,6 +2,9 @@
  * 🔄 miniCycle Drag & Drop Manager
  * Handles task rearrangement via drag-and-drop and arrow buttons
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
+ *
+ * @module utilities/task/dragDropManager
+ * @version 1.321
  */
 
 import { appInit } from '../appInitialization.js';

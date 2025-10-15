@@ -22,6 +22,8 @@
  * Storage: Uses localStorage for Schema 2.5 data
  * DOM: Handles missing elements gracefully
  *
+ * @module themeManager
+ * @version 1.321
  * @requires AppInit (for initialization coordination)
  */
 
