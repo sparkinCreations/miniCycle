@@ -1,8 +1,14 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 2.0 - Multi-mode support (All, One-by-one, Custom)
+# Version: 3.0 - Auto-discovery + Multi-mode support
+#
+# Features:
+#  - Auto-discovers utility modules with version numbers
+#  - Multi-mode: Update all, one-by-one, or custom selection
+#  - Automatic backup with restore scripts
+#  - macOS and Linux compatible
 
-echo "🎯 miniCycle Version Updater v2.0"
+echo "🎯 miniCycle Version Updater v3.0"
 echo "=============================="
 echo ""
 
@@ -27,24 +33,40 @@ MANIFEST_FILES=(
     "manifest-lite.json"
 )
 
-UTILITY_FILES=(
-    "utilities/appInitialization.js"
-    "utilities/state.js"
-    "utilities/themeManager.js"
-    "utilities/recurringPanel.js"
-    "utilities/recurringIntegration.js"
-    "utilities/recurringCore.js"
-    "utilities/globalUtils.js"
-    "utilities/deviceDetection.js"
-    "utilities/notifications.js"
-    "utilities/statsPanel.js"
-    "utilities/cycleLoader.js"
-    "utilities/consoleCapture.js"
-    "utilities/basicPluginSystem.js"
-    "utilities/testing-modal.js"
-    "utilities/cycle/migrationManager.js"
-    "utilities/task/dragDropManager.js"
-)
+# ============================================
+# AUTO-DISCOVERY: Utility files with versions
+# ============================================
+
+echo "🔍 Auto-discovering utility modules with version numbers..."
+
+UTILITY_FILES=()
+UTILITY_FILES_SKIPPED=0
+
+# Find all .js files in utilities/ and subdirectories
+while IFS= read -r file; do
+    # Check if file contains version patterns
+    # Looks for: @version X.XXX, version: 'X.XXX', this.version = 'X.XXX', currentVersion: 'X.XXX'
+    if grep -qE '@version [0-9.]+|version: ['\''"][0-9.]+|this\.version = ['\''"][0-9.]+|currentVersion: ['\''"][0-9.]+'\'']' "$file" 2>/dev/null; then
+        UTILITY_FILES+=("$file")
+    else
+        UTILITY_FILES_SKIPPED=$((UTILITY_FILES_SKIPPED + 1))
+    fi
+done < <(find utilities -name "*.js" -type f 2>/dev/null | sort)
+
+echo "✅ Found ${#UTILITY_FILES[@]} utility modules with version numbers"
+if [ $UTILITY_FILES_SKIPPED -gt 0 ]; then
+    echo "⏭️  Skipped $UTILITY_FILES_SKIPPED utilities without version numbers"
+fi
+echo ""
+
+# Show discovered files in compact format
+if [ ${#UTILITY_FILES[@]} -gt 0 ]; then
+    echo "📦 Discovered modules:"
+    for file in "${UTILITY_FILES[@]}"; do
+        echo "   • $file"
+    done
+    echo ""
+fi
 
 # ============================================
 # SETUP & CONFIGURATION
@@ -88,9 +110,13 @@ cleanup_old_backups
 # ✅ Create timestamped backup subfolder for this update
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FOLDER="$BACKUP_DIR/version_update_$TIMESTAMP"
-mkdir -p "$BACKUP_FOLDER/utilities"
-mkdir -p "$BACKUP_FOLDER/utilities/cycle"
-mkdir -p "$BACKUP_FOLDER/utilities/task"
+mkdir -p "$BACKUP_FOLDER"
+
+# Create all necessary subdirectories based on discovered utility files
+for file in "${UTILITY_FILES[@]}"; do
+    mkdir -p "$BACKUP_FOLDER/$(dirname "$file")" 2>/dev/null
+done
+
 echo "📂 New backup folder: $BACKUP_FOLDER"
 echo ""
 
@@ -434,145 +460,30 @@ if should_update "manifest-lite.json"; then
 fi
 
 # ============================================
-# UPDATE: UTILITY MODULES
+# UPDATE: UTILITY MODULES (AUTO-DISCOVERED)
 # ============================================
 
-# utilities/appInitialization.js
-if should_update "utilities/appInitialization.js"; then
-    if backup_file "utilities/appInitialization.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/appInitialization.js
-        echo "✅ Updated utilities/appInitialization.js"
-    fi
-fi
+# Generic update function for utility modules
+update_utility_file() {
+    local file=$1
 
-# utilities/state.js
-if should_update "utilities/state.js"; then
-    if backup_file "utilities/state.js"; then
-        "${SED_INPLACE[@]}" "s/this\.version = '[0-9.]*'/this.version = '$NEW_VERSION'/g" utilities/state.js
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/state.js
-        echo "✅ Updated utilities/state.js"
+    if should_update "$file"; then
+        if backup_file "$file"; then
+            # Apply all common version patterns
+            "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" "$file"
+            "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" "$file"
+            "${SED_INPLACE[@]}" "s/this\.version = '[0-9.]*'/this.version = '$NEW_VERSION'/g" "$file"
+            "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" "$file"
+            "${SED_INPLACE[@]}" "s/currentVersion = '[0-9.]*'/currentVersion = '$NEW_VERSION'/g" "$file"
+            echo "✅ Updated $file"
+        fi
     fi
-fi
+}
 
-# utilities/themeManager.js
-if should_update "utilities/themeManager.js"; then
-    if backup_file "utilities/themeManager.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/themeManager.js
-        echo "✅ Updated utilities/themeManager.js"
-    fi
-fi
-
-# utilities/recurringPanel.js
-if should_update "utilities/recurringPanel.js"; then
-    if backup_file "utilities/recurringPanel.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/recurringPanel.js
-        echo "✅ Updated utilities/recurringPanel.js"
-    fi
-fi
-
-# utilities/recurringIntegration.js
-if should_update "utilities/recurringIntegration.js"; then
-    if backup_file "utilities/recurringIntegration.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/recurringIntegration.js
-        echo "✅ Updated utilities/recurringIntegration.js"
-    fi
-fi
-
-# utilities/recurringCore.js
-if should_update "utilities/recurringCore.js"; then
-    if backup_file "utilities/recurringCore.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/recurringCore.js
-        echo "✅ Updated utilities/recurringCore.js"
-    fi
-fi
-
-# utilities/globalUtils.js
-if should_update "utilities/globalUtils.js"; then
-    if backup_file "utilities/globalUtils.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/globalUtils.js
-        "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/globalUtils.js
-        echo "✅ Updated utilities/globalUtils.js"
-    fi
-fi
-
-# utilities/deviceDetection.js
-if should_update "utilities/deviceDetection.js"; then
-    if backup_file "utilities/deviceDetection.js"; then
-        "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" utilities/deviceDetection.js
-        "${SED_INPLACE[@]}" "s/currentVersion = '[0-9.]*'/currentVersion = '$NEW_VERSION'/g" utilities/deviceDetection.js
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/deviceDetection.js
-        echo "✅ Updated utilities/deviceDetection.js"
-    fi
-fi
-
-# utilities/notifications.js
-if should_update "utilities/notifications.js"; then
-    if backup_file "utilities/notifications.js"; then
-        "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/notifications.js
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/notifications.js
-        echo "✅ Updated utilities/notifications.js"
-    fi
-fi
-
-# utilities/statsPanel.js
-if should_update "utilities/statsPanel.js"; then
-    if backup_file "utilities/statsPanel.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/statsPanel.js
-        "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/statsPanel.js
-        echo "✅ Updated utilities/statsPanel.js"
-    fi
-fi
-
-# utilities/cycleLoader.js
-if should_update "utilities/cycleLoader.js"; then
-    if backup_file "utilities/cycleLoader.js"; then
-        "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/cycleLoader.js
-        "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" utilities/cycleLoader.js
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/cycleLoader.js
-        echo "✅ Updated utilities/cycleLoader.js"
-    fi
-fi
-
-# utilities/consoleCapture.js
-if should_update "utilities/consoleCapture.js"; then
-    if backup_file "utilities/consoleCapture.js"; then
-        "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" utilities/consoleCapture.js
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/consoleCapture.js
-        echo "✅ Updated utilities/consoleCapture.js"
-    fi
-fi
-
-# utilities/basicPluginSystem.js
-if should_update "utilities/basicPluginSystem.js"; then
-    if backup_file "utilities/basicPluginSystem.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/basicPluginSystem.js
-        echo "✅ Updated utilities/basicPluginSystem.js"
-    fi
-fi
-
-# utilities/testing-modal.js
-if should_update "utilities/testing-modal.js"; then
-    if backup_file "utilities/testing-modal.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/testing-modal.js
-        echo "✅ Updated utilities/testing-modal.js"
-    fi
-fi
-
-# utilities/cycle/migrationManager.js
-if should_update "utilities/cycle/migrationManager.js"; then
-    if backup_file "utilities/cycle/migrationManager.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/cycle/migrationManager.js
-        echo "✅ Updated utilities/cycle/migrationManager.js"
-    fi
-fi
-
-# utilities/task/dragDropManager.js
-if should_update "utilities/task/dragDropManager.js"; then
-    if backup_file "utilities/task/dragDropManager.js"; then
-        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/task/dragDropManager.js
-        echo "✅ Updated utilities/task/dragDropManager.js"
-    fi
-fi
+# Update all discovered utility files
+for utility_file in "${UTILITY_FILES[@]}"; do
+    update_utility_file "$utility_file"
+done
 
 # ============================================
 # RESTORE SCRIPT GENERATION
@@ -581,6 +492,7 @@ fi
 echo ""
 echo "📝 Generating restore script..."
 
+# Start creating restore script
 cat > "$BACKUP_FOLDER/restore.sh" << 'EOF'
 #!/bin/bash
 # Auto-generated restore script
@@ -594,6 +506,8 @@ FAILED=0
 restore_file() {
     local file=$1
     if [ -f "$file" ]; then
+        # Create parent directory if needed
+        mkdir -p "../$(dirname "$file")" 2>/dev/null
         cp "$file" "../$file" 2>/dev/null
         if [ $? -eq 0 ]; then
             echo "✅ Restored $file"
@@ -606,32 +520,32 @@ restore_file() {
 }
 
 # Restore core files
-restore_file "miniCycle.html"
-restore_file "miniCycle-lite.html"
-restore_file "miniCycle-scripts.js"
-restore_file "miniCycle-lite-scripts.js"
-restore_file "service-worker.js"
-restore_file "manifest.json"
-restore_file "manifest-lite.json"
-restore_file "product.html"
+EOF
 
-# Restore utilities
-restore_file "utilities/appInitialization.js"
-restore_file "utilities/state.js"
-restore_file "utilities/themeManager.js"
-restore_file "utilities/recurringPanel.js"
-restore_file "utilities/recurringIntegration.js"
-restore_file "utilities/recurringCore.js"
-restore_file "utilities/globalUtils.js"
-restore_file "utilities/deviceDetection.js"
-restore_file "utilities/notifications.js"
-restore_file "utilities/statsPanel.js"
-restore_file "utilities/cycleLoader.js"
-restore_file "utilities/consoleCapture.js"
-restore_file "utilities/basicPluginSystem.js"
-restore_file "utilities/testing-modal.js"
-restore_file "utilities/cycle/migrationManager.js"
-restore_file "utilities/task/dragDropManager.js"
+# Add core HTML files
+for file in "${CORE_HTML_FILES[@]}"; do
+    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+done
+
+# Add core JS files
+for file in "${CORE_JS_FILES[@]}"; do
+    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+done
+
+# Add manifest files
+for file in "${MANIFEST_FILES[@]}"; do
+    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+done
+
+# Add utility files (auto-discovered)
+echo "" >> "$BACKUP_FOLDER/restore.sh"
+echo "# Restore utility modules (auto-discovered)" >> "$BACKUP_FOLDER/restore.sh"
+for file in "${UTILITY_FILES[@]}"; do
+    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+done
+
+# Add final summary
+cat >> "$BACKUP_FOLDER/restore.sh" << 'EOF'
 
 echo ""
 echo "📊 Restore Summary:"

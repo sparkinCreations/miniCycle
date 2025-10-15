@@ -824,6 +824,119 @@ window.showNotification = (msg, type, dur) => {
 
 ---
 
+## 📌 **Version Tracking Requirements**
+
+**Every module MUST include version information for the update-version.sh script:**
+
+### **Required: @version JSDoc Tag**
+
+All modules must include `@version` in their JSDoc header:
+
+```javascript
+/**
+ * 🔧 miniCycle Task Utilities
+ * Pure utility functions for task operations
+ *
+ * @module taskUtils
+ * @version 1.321
+ */
+```
+
+**Why This Matters:**
+- The `update-version.sh` script updates all module versions simultaneously
+- Keeps version numbers synchronized across 23+ files
+- Enables proper PWA cache invalidation
+- Maintains version consistency in documentation
+
+### **Version Patterns by Module Type**
+
+**Static Utility Pattern ⚡**
+```javascript
+/**
+ * @module domHelpers
+ * @version 1.321
+ */
+export class DOMHelpers {
+    // No instance version needed (static methods only)
+}
+```
+
+**Simple Instance Pattern 🎯**
+```javascript
+/**
+ * @module notifications
+ * @version 1.321
+ */
+export class NotificationManager {
+    constructor() {
+        // Optional: Add instance version for debugging
+        this.version = '1.321';
+    }
+}
+```
+
+**Resilient Constructor Pattern 🛡️**
+```javascript
+/**
+ * @module statsPanel
+ * @version 1.321
+ */
+export class StatsPanelManager {
+    constructor(dependencies = {}) {
+        // Optional: Add instance version
+        this.version = '1.321';
+    }
+}
+```
+
+**Strict Injection Pattern 🔧**
+```javascript
+/**
+ * @module cycleLoader
+ * @version 1.321
+ */
+
+// Version in module-level comment (required)
+// Optional: Add to exported constants for runtime checks
+export const MODULE_VERSION = '1.321';
+```
+
+### **Automated Version Updates**
+
+When running `./update-version.sh`:
+- Updates `@version 1.320` → `@version 1.321` in all modules
+- Updates `this.version = '1.320'` → `this.version = '1.321'` where present
+- Updates `version: '1.320'` → `version: '1.321'` in config objects
+
+**See full documentation:** `docs/UPDATE-VERSION-GUIDE.md`
+
+### **Adding New Modules to Version Script**
+
+When creating a new module, add it to `update-version.sh`:
+
+```bash
+# Around line 30 in update-version.sh
+UTILITY_FILES=(
+    "utilities/appInitialization.js"
+    "utilities/state.js"
+    # ... existing files ...
+    "utilities/reminders.js"  # ← Add your new module
+)
+```
+
+Then add update logic around line 576:
+```bash
+# utilities/reminders.js
+if should_update "utilities/reminders.js"; then
+    if backup_file "utilities/reminders.js"; then
+        "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" utilities/reminders.js
+        echo "✅ Updated utilities/reminders.js"
+    fi
+fi
+```
+
+---
+
 ## 📋 **Naming Conventions for Dependency Injection**
 
 **Setup Functions:** Always `set<ModuleName>Dependencies(overrides)`
@@ -919,10 +1032,12 @@ class ComplexUIComponent {
 - [ ] Choose the appropriate pattern
 
 ### **For Every Pattern:**
+- [ ] **Add @version JSDoc tag in module header** (required for update-version.sh)
 - [ ] Create clean, minimal exports
 - [ ] Add console.log for successful loading
 - [ ] Create global wrapper functions for backward compatibility
 - [ ] Test with missing dependencies to verify error handling
+- [ ] **Add module to update-version.sh** (UTILITY_FILES array + update logic)
 
 ### **Pattern-Specific Tasks:**
 
@@ -1284,6 +1399,9 @@ Mission-critical functionality:
 /**
  * 🔧 miniCycle Task Utilities
  * Pure utility functions for task operations
+ *
+ * @module taskUtils
+ * @version 1.321
  */
 
 export class TaskUtils {
@@ -1337,10 +1455,14 @@ console.log('🔧 Task Utilities loaded');
 /**
  * 🎨 miniCycle Theme Manager
  * Handles theme switching with graceful fallbacks
+ *
+ * @module themeManager
+ * @version 1.321
  */
 
 export class ThemeManager {
     constructor() {
+        this.version = '1.321';  // Optional: for debugging
         this.currentTheme = 'default';
         this.darkModeEnabled = false;
         this.init();
@@ -1434,6 +1556,9 @@ console.log('🎨 Theme Manager loaded and ready');
 /**
  * 🔄 miniCycle Migration Manager
  * Handles schema version migrations with strict dependencies
+ *
+ * @module migrationManager
+ * @version 1.321
  */
 
 const Deps = {

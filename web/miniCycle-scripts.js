@@ -654,7 +654,7 @@ function wireUndoRedoUI() {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.321'
+            currentVersion: '1.322'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;

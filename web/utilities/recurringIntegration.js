@@ -8,7 +8,7 @@
  * Copy this code into miniCycle-scripts.js DOMContentLoaded handler.
  *
  * @module recurringIntegration
- * @version 1.321
+ * @version 1.322
  * @requires AppInit (for initialization coordination)
  */
 

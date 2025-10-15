@@ -1,6 +1,6 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-var APP_VERSION = '1.319';
-var CACHE_VERSION = 'v95';
+var APP_VERSION = '1.321';
+var CACHE_VERSION = 'v97';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -45,6 +45,7 @@ var UTILITIES = [
   './utilities/cycleLoader.js',
   './utilities/consoleCapture.js',
   './utilities/basicPluginSystem.js',
+  './utilities/testing-modal.js',
   './utilities/cycle/migrationManager.js',
   './utilities/task/dragDropManager.js'
 ];
