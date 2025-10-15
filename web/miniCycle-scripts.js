@@ -741,6 +741,32 @@ function wireUndoRedoUI() {
             console.warn('⚠️ App will continue without reminders functionality');
         }
 
+        // ✅ Initialize Due Dates Module (Phase 2 module)
+        console.log('📅 Initializing due dates module...');
+        try {
+            const { initDueDatesManager } = await import('./utilities/dueDates.js');
+
+            await initDueDatesManager({
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                saveTaskToSchema25: (cycleId, cycleData) => window.saveTaskToSchema25?.(cycleId, cycleData),
+                getElementById: (id) => document.getElementById(id),
+                querySelectorAll: (selector) => document.querySelectorAll(selector),
+                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler)
+            });
+
+            console.log('✅ Due dates module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize due dates module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Due dates feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without due dates functionality');
+        }
+
         // ============ PHASE 3: DATA LOADING ============
         console.log('📊 Phase 3: Loading app data...');
 
@@ -841,12 +867,7 @@ function wireUndoRedoUI() {
   // ✅ Reminder System (with staggered timing)
   console.log('🔔 Setting up reminder system...');
 
-  // ✅ Setup reminder toggle event listener
-  try {
-    setupReminderToggle();
-  } catch (error) {
-    console.warn('⚠️ Reminder toggle setup failed:', error);
-  }
+  // ✅ setupReminderToggle() now handled by reminderManager.init() in Phase 2
 
   setTimeout(() => {
     try {
@@ -855,7 +876,7 @@ function wireUndoRedoUI() {
       console.warn('⚠️ Overdue task reminder failed:', error);
     }
   }, 2000);
-  checkDueDates();
+  // ✅ checkDueDates now handled by dueDatesManager.init() in Phase 2
 
   setTimeout(() => {
     try {
@@ -1983,6 +2004,23 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
   console.log('🎯 Loading miniCycle...');
   if (typeof window.loadMiniCycle === 'function') {
     await window.loadMiniCycle();
+
+    // ✅ Now that tasks are rendered, update reminder buttons, due date visibility, and check overdue tasks
+    console.log('📋 Tasks rendered, updating reminder buttons, due date visibility, and checking overdue tasks...');
+    if (typeof window.updateReminderButtons === 'function') {
+      await window.updateReminderButtons();
+      console.log('✅ Reminder buttons updated after task rendering');
+    }
+    if (typeof window.updateDueDateVisibility === 'function') {
+      const toggleAutoReset = document.getElementById('toggleAutoReset');
+      const autoReset = toggleAutoReset?.checked || false;
+      await window.updateDueDateVisibility(autoReset);
+      console.log('✅ Due date visibility updated after task rendering');
+    }
+    if (typeof window.checkOverdueTasks === 'function') {
+      await window.checkOverdueTasks();
+      console.log('✅ Overdue tasks checked after task rendering');
+    }
   } else {
     console.log('⏳ Loader not ready yet, flagging pending load');
     window.__pendingCycleLoad = true;
@@ -2503,69 +2541,6 @@ function extractTaskDataFromDOM() {
  * @param {HTMLElement|null} taskToCheck - The specific task to check, or null to check all tasks.
  */
 
-function checkOverdueTasks(taskToCheck = null) {
-    const tasks = taskToCheck ? [taskToCheck] : document.querySelectorAll(".task");
-    let autoReset = toggleAutoReset.checked;
-
-    // ✅ Get overdue states from Schema 2.5 instead of separate localStorage key
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for checkOverdueTasks');
-        return;
-    }
-
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    let overdueTaskStates = fullSchemaData.appState.overdueTaskStates || {};
-
-    // ✅ Track tasks that just became overdue
-    let newlyOverdueTasks = [];
-
-    tasks.forEach(task => {
-        const taskText = task.querySelector(".task-text").textContent;
-        const dueDateInput = task.querySelector(".due-date");
-        if (!dueDateInput) return;
-
-        const dueDateValue = dueDateInput.value;
-        if (!dueDateValue) {
-            // ✅ Date was cleared — remove overdue class
-            task.classList.remove("overdue-task");
-            delete overdueTaskStates[taskText];
-            return;
-        }
-
-        const dueDate = new Date(dueDateValue);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        dueDate.setHours(0, 0, 0, 0);
-
-        if (dueDate < today) {
-            if (!autoReset) {
-                if (!overdueTaskStates[taskText]) {
-                    newlyOverdueTasks.push(taskText); // ✅ Only notify if it just became overdue
-                }
-                task.classList.add("overdue-task");
-                overdueTaskStates[taskText] = true;
-            } else if (overdueTaskStates[taskText]) {
-                task.classList.add("overdue-task");
-            } else {
-                task.classList.remove("overdue-task");
-            }
-        } else {
-            task.classList.remove("overdue-task");
-            delete overdueTaskStates[taskText];
-        }
-    });
-
-    // ✅ Save overdue states back to Schema 2.5
-    fullSchemaData.appState.overdueTaskStates = overdueTaskStates;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-    // ✅ Show notification ONLY if there are newly overdue tasks
-    if (newlyOverdueTasks.length > 0) {
-        showNotification(`⚠️ Overdue Tasks:<br>- ${newlyOverdueTasks.join("<br>- ")}`, "error");
-    }
-}
 
 
 
@@ -2840,49 +2815,6 @@ function updateMainMenuHeader() {
  * @param {string|null} dueDate - The due date to assign, or null to remove the due date.
  */
 
-function saveTaskDueDate(taskId, newDueDate) {
-    console.log('📅 Saving task due date (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveTaskDueDate');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    
-    if (!activeCycle || !cycles[activeCycle]) {
-        console.error("❌ Error: Active cycle not found in Schema 2.5.");
-        return;
-    }
-    
-    console.log('🔍 Finding task:', taskId);
-    
-    const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
-    
-    if (!task) {
-        console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
-        return;
-    }
-    
-    console.log('📊 Updating due date:', {
-        taskId,
-        taskText: task.text,
-        oldDueDate: task.dueDate,
-        newDueDate
-    });
-    
-    // Update task due date
-    task.dueDate = newDueDate;
-    
-    // Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log(`✅ Due date updated for task "${task.text}": ${newDueDate || 'cleared'}`);
-}
   /***********************
  * 
  * 
@@ -6249,42 +6181,6 @@ function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
 }
 
 // ✅ 20. Due Date Input Creation
-function createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle) {
-    const dueDateInput = document.createElement("input");
-    dueDateInput.type = "date";
-    dueDateInput.classList.add("due-date");
-    dueDateInput.setAttribute("aria-describedby", `task-desc-${assignedTaskId}`);
-
-    if (dueDate) {
-        dueDateInput.value = dueDate;
-        if (!autoResetEnabled) {
-            dueDateInput.classList.remove("hidden");
-        } else {
-            dueDateInput.classList.add("hidden");
-        }
-    } else {
-        dueDateInput.classList.add("hidden");
-    }
-    
-    dueDateInput.addEventListener("change", () => {
-        
-
-        // Update task in Schema 2.5
-        const taskToUpdate = currentCycle.tasks.find(t => t.id === assignedTaskId);
-        if (taskToUpdate) {
-            taskToUpdate.dueDate = dueDateInput.value;
-            saveTaskToSchema25(activeCycle, currentCycle);
-        }
-
-        updateStatsPanel();
-        updateProgressBar();
-        checkCompleteAllButton();
-
-        showNotification("📅 Due date updated", "info", 1500);
-    });
-
-    return dueDateInput;
-}
 
 // ✅ 21. Task Interactions Setup
 function setupTaskInteractions(taskElements, taskContext) {
@@ -6359,15 +6255,6 @@ function setupTaskFocusInteractions(taskItem) {
 }
 
 // ✅ 26. Due Date Button Interaction Setup
-function setupDueDateButtonInteraction(buttonContainer, dueDateInput) {
-    const dueDateButton = buttonContainer.querySelector(".set-due-date");
-    if (dueDateButton) {
-        dueDateButton.addEventListener("click", () => {
-            dueDateInput.classList.toggle("hidden");
-            dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
-        });
-    }
-}
 
 // ✅ 27. Task Creation Finalization
 function finalizeTaskCreation(taskElements, taskContext, options) {
@@ -7362,192 +7249,10 @@ function saveToggleAutoReset() {
  *
  * @returns {void}
  */
-function checkDueDates() {
-    console.log('📅 Setting up due date checks (Schema 2.5 only)...');
-    
-    // Make sure we only attach the listener once
-    if (!toggleAutoReset.dataset.listenerAdded) {
-        toggleAutoReset.dataset.listenerAdded = true;
-
-        toggleAutoReset.addEventListener("change", function () {
-            console.log('🔄 Auto reset toggle changed for due dates:', this.checked);
-            
-            let autoReset = this.checked;
-            updateDueDateVisibility(autoReset);
-            
-            const schemaData = loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for checkDueDates');
-                throw new Error('Schema 2.5 data not found');
-            }
-
-            const { cycles, activeCycle } = schemaData;
-            
-            if (activeCycle && cycles[activeCycle]) {
-                console.log('💾 Updating auto reset setting in Schema 2.5');
-                
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.data.cycles[activeCycle].autoReset = autoReset;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                
-                console.log('✅ Auto reset setting saved to Schema 2.5');
-            } else {
-                console.warn('⚠️ No active cycle found for due date settings');
-            }
-        });
-    }
-
-    // ✅ Prevent duplicate event listeners before adding a new one
-    document.removeEventListener("change", handleDueDateChange);
-    document.addEventListener("change", handleDueDateChange);
-    
-    console.log('✅ Due date check setup completed');
-}
-    
-    // ✅ Function to handle due date changes (placed outside to avoid re-declaration)
-    function handleDueDateChange(event) {
-        if (!event.target.classList.contains("due-date")) return;
-    
-        let taskItem = event.target.closest(".task");
-        let taskId = taskItem.dataset.taskId;
-        let dueDateValue = event.target.value;
-    
-        console.log('📅 Handling due date change (Schema 2.5 only)...');
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for handleDueDateChange');
-            throw new Error('Schema 2.5 data not found');
-        }
-    
-        const { cycles, activeCycle, reminders } = schemaData;
-        
-        if (!activeCycle || !cycles[activeCycle]) {
-            console.error("❌ Error: Active cycle not found in Schema 2.5.");
-            return;
-        }
-        
-        console.log('🔍 Finding task for due date update:', taskId);
-        
-        const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
-        
-        if (!task) {
-            console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
-            return;
-        }
-        
-        console.log('� Updating due date:', {
-            taskId,
-            taskText: task.text,
-            oldDueDate: task.dueDate,
-            newDueDate: dueDateValue
-        });
-        
-        // Update task due date
-        task.dueDate = dueDateValue;
-        
-        // Update the full schema data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log(`✅ Due date updated (Schema 2.5): "${task.text}" → ${dueDateValue || 'cleared'}`);
-    
-        checkOverdueTasks(taskItem);
-    
-        // ✅ Load Due Date Notification Setting from Schema 2.5
-        const remindersSettings = reminders || {};
-        const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
-        
-        console.log('📢 Due date reminders enabled:', dueDatesRemindersEnabled);
-    
-        if (!dueDatesRemindersEnabled) {
-            console.log('⏭️ Skipping due date notification - reminders disabled');
-            return;
-        }
-    
-        if (dueDateValue) {
-            const today = new Date().setHours(0, 0, 0, 0);
-            const selectedDate = new Date(dueDateValue).setHours(0, 0, 0, 0);
-    
-            if (selectedDate > today) {
-                const taskText = task.text;
-                showNotification(`📅 Task "${taskText}" is due soon!`, "default");
-                console.log('📢 Due date notification shown for:', taskText);
-            }
-        }
-    }
-    
-    
-    // ✅ Apply initial visibility state on load
-    let autoReset = toggleAutoReset.checked;
-    updateDueDateVisibility(autoReset);
     
     
 
-/**
- * Updates the visibility of due date fields and related UI elements based on Auto Reset settings.
- *
- * @param {boolean} autoReset - Whether Auto Reset is enabled.
- */
-    function updateDueDateVisibility(autoReset) {
-        const dueDatesRemindersOption = document.getElementById("dueDatesReminders").parentNode; // Get the label container
-        if (dueDatesRemindersOption) {
-            dueDatesRemindersOption.style.display = autoReset ? "none" : "block";
-            }
-        
-
-        // Toggle visibility of "Set Due Date" buttons
-        document.querySelectorAll(".set-due-date").forEach(button => {
-            button.classList.toggle("hidden", autoReset);
-        });
-    
-        if (autoReset) {
-            
-            // Auto Reset ON = hide all due dates
-            document.querySelectorAll(".due-date").forEach(input => {
-                input.classList.add("hidden");
-            });
-    
-            // Remove overdue visual styling
-            document.querySelectorAll(".overdue-task").forEach(task => {
-                task.classList.remove("overdue-task");
-            });
-    
-        } else {
-            // Auto Reset OFF = show due dates ONLY if they have a value
-            document.querySelectorAll(".due-date").forEach(input => {
-                if (input.value) {
-                    input.classList.remove("hidden");
-                } else {
-                    input.classList.add("hidden");
-                }
-            });
-    
-            // ✅ Dynamically add the "Set Due Date" button to tasks that don’t have it
-            document.querySelectorAll(".task").forEach(taskItem => {
-                let buttonContainer = taskItem.querySelector(".task-options");
-                let existingDueDateButton = buttonContainer.querySelector(".set-due-date");
-    
-                if (!existingDueDateButton) {
-                    const dueDateButton = document.createElement("button");
-                    dueDateButton.classList.add("task-btn", "set-due-date");
-                    dueDateButton.innerHTML = "<i class='fas fa-calendar-alt'></i>";
-                    dueDateButton.addEventListener("click", () => {
-                        const dueDateInput = taskItem.querySelector(".due-date");
-                        dueDateInput.classList.toggle("hidden");
-                    });
-    
-                    buttonContainer.insertBefore(dueDateButton, buttonContainer.children[2]); // Insert in correct position
-                }
-            });
-    
-            // Recheck and reapply overdue classes as needed
-            checkOverdueTasks();
-        }
-    }
+// ✅ updateDueDateVisibility moved to utilities/dueDates.js
     
     
     
@@ -8816,14 +8521,15 @@ updateCycleModeDescription();
       setupUploadMiniCycle();
       // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
       // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
-      checkDueDates();
+
       loadAlwaysShowRecurringSetting();
       updateCycleModeDescription();
          setupThemesPanel(); 
 
       // --- timers / async kickoffs ---
       setTimeout(remindOverdueTasks, 2000);
-      setTimeout(function(){ updateReminderButtons(); startReminders(); }, 200);
+      // ✅ updateReminderButtons() and startReminders() now handled by reminderManager.init() via afterApp hook
+      // ✅ checkOverdueTasks() now handled by dueDatesManager.init() via afterApp hook
 
       // only on modern browsers
       if (supportsModern()) setTimeout(autoRedetectOnVersionChange, 10000);

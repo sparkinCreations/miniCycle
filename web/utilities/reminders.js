@@ -57,6 +57,36 @@ export class MiniCycleReminders {
         try {
             this.setupReminderToggle();
             this.setupReminderInputListeners();
+
+            // ✅ Add hook to update reminder buttons after app is fully ready
+            appInit.addHook('afterApp', async () => {
+                console.log('🔄 Updating reminder buttons after app ready (hook)...');
+
+                // Check if tasks exist in DOM before proceeding
+                const tasks = this.deps.querySelectorAll(".task");
+                if (tasks.length === 0) {
+                    console.log('⏭️ No tasks in DOM yet, skipping (will run after loadMiniCycle)');
+                    return;
+                }
+
+                // Load settings to check if reminders are enabled
+                const schemaData = this.deps.loadMiniCycleData();
+                if (schemaData) {
+                    const reminderSettings = schemaData.reminders || {};
+
+                    // Update reminder buttons now that tasks are rendered
+                    await this.updateReminderButtons();
+
+                    // Start reminders if they were enabled
+                    if (reminderSettings.enabled) {
+                        console.log('🔔 Reminders enabled, starting system...');
+                        await this.startReminders();
+                    }
+                }
+
+                console.log('✅ Reminder buttons updated on page load (hook)');
+            });
+
             console.log('✅ Reminder system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Reminder system initialization failed:', error);
@@ -158,6 +188,7 @@ export class MiniCycleReminders {
 
         console.log('📊 Loading reminder settings from Schema 2.5:', reminderSettings);
 
+        // Apply settings to UI elements
         enableReminders.checked = reminderSettings.enabled === true;
 
         const frequencySection = this.deps.getElementById('frequency-section');
@@ -165,16 +196,9 @@ export class MiniCycleReminders {
             frequencySection.classList.toggle("hidden", !reminderSettings.enabled);
         }
 
-        // Reminder system will re-run if already enabled
-        if (reminderSettings.enabled) {
-            console.log('🔄 Reminders were enabled, starting system...');
-            this.updateReminderButtons();
-            this.startReminders();
-        } else {
-            console.log('🔕 Reminders disabled in settings');
-        }
-
-        console.log('✅ Reminder toggle setup completed');
+        // ✅ NOTE: updateReminderButtons() and startReminders() are now called via afterApp hook
+        // This ensures tasks are rendered before we try to update their reminder buttons
+        console.log('✅ Reminder toggle setup completed (buttons will update via afterApp hook)');
     }
 
     /**
@@ -477,16 +501,16 @@ export class MiniCycleReminders {
         button.addEventListener("click", async () => {
             await appInit.waitForCore();
 
-            // Read fresh state from AppState to avoid stale closure data
-            const currentState = window.AppState?.get();
-            if (!currentState) {
-                console.error('❌ AppState not available for reminder toggle');
+            // ✅ Read fresh state from localStorage (source of truth)
+            const schemaData = this.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Cannot toggle reminder - no data available');
                 return;
             }
 
-            const activeCycleId = currentState.appState?.activeCycleId;
-            const freshCycle = currentState.data?.cycles?.[activeCycleId];
-            const task = freshCycle?.tasks?.find(t => t.id === assignedTaskId);
+            const { cycles, activeCycle } = schemaData;
+            const currentCycle = cycles[activeCycle];
+            const task = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
 
             if (!task) {
                 console.warn('⚠️ Task not found for reminder toggle:', assignedTaskId);
@@ -561,17 +585,51 @@ export class MiniCycleReminders {
 
           if (remindersGloballyEnabled) {
             if (!reminderButton) {
+              console.log(`   ⚠️ Creating NEW reminder button for task ${taskId} (shouldn't happen on page load)`);
               // Create Reminder Button
               reminderButton = document.createElement("button");
               reminderButton.classList.add("task-btn", "enable-task-reminders");
               reminderButton.innerHTML = "<i class='fas fa-bell'></i>";
 
-              // Add click event
+              // Add click event - read from AppState, not DOM
               reminderButton.addEventListener("click", async () => {
-                const nowActive = reminderButton.classList.toggle("reminder-active");
+                await appInit.waitForCore();
+
+                // ✅ Read fresh state from localStorage/AppState (source of truth)
+                const schemaData = this.deps.loadMiniCycleData();
+                if (!schemaData) {
+                  console.error('❌ Cannot toggle reminder - no data available');
+                  return;
+                }
+
+                const { cycles, activeCycle } = schemaData;
+                const currentCycle = cycles[activeCycle];
+                const taskData = currentCycle?.tasks?.find(t => t.id === taskId);
+
+                if (!taskData) {
+                  console.warn('⚠️ Task not found for reminder toggle:', taskId);
+                  return;
+                }
+
+                // ✅ Toggle based on actual state, not DOM class
+                const isCurrentlyEnabled = taskData.remindersEnabled === true;
+                const nowActive = !isCurrentlyEnabled;
+
+                console.log('🔔 Toggling reminder:', {
+                  taskId,
+                  wasEnabled: isCurrentlyEnabled,
+                  willBeEnabled: nowActive
+                });
+
+                // Update DOM to match new state
+                reminderButton.classList.toggle("reminder-active", nowActive);
                 reminderButton.setAttribute("aria-pressed", nowActive.toString());
+
+                // Save new state
                 await this.saveTaskReminderState(taskId, nowActive);
                 this.autoSaveReminders();
+
+                this.deps.showNotification(`Reminders ${nowActive ? "enabled" : "disabled"} for task.`, "info", 1500);
               });
 
               buttonContainer?.insertBefore(reminderButton, buttonContainer.children[2]);
@@ -579,11 +637,12 @@ export class MiniCycleReminders {
             }
 
             // Ensure correct state and make it visible
+            console.log(`   🔄 Updating EXISTING reminder button for task ${taskId} - setting active: ${isActive}`);
             reminderButton.classList.toggle("reminder-active", isActive);
             reminderButton.setAttribute("aria-pressed", isActive.toString());
             reminderButton.classList.remove("hidden");
 
-            console.log(`   🔄 Reminder Button Visible - Active: ${isActive}`);
+            console.log(`   ✅ Reminder Button Updated - Active: ${isActive}`);
           } else {
             // Hide button if reminders are disabled globally
             if (reminderButton) {
