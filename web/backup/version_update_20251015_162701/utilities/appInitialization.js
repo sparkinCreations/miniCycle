@@ -7,7 +7,7 @@
  *
  * Also provides plugin support with lifecycle hooks for extensibility.
  *
- * @version 1.320
+ * @version 1.322
  */
 
 class AppInit {
