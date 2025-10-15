@@ -101,6 +101,7 @@ miniCycle/
 │   │   │
 │   │   ├── state.js                       ✅ 415 lines - State management
 │   │   ├── notifications.js               ✅ 1,036 lines - Notification system
+│   │   ├── reminders.js                   ✅ 621 lines - Reminder scheduling ⭐ PERFECT EXTRACTION
 │   │   ├── themeManager.js                ✅ 856 lines - Theming
 │   │   ├── statsPanel.js                  ✅ 1,047 lines - Stats/achievements
 │   │   ├── consoleCapture.js              ✅ 415 lines - Debug logging

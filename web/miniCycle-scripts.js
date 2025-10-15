@@ -717,6 +717,30 @@ function wireUndoRedoUI() {
             console.warn('⚠️ App will continue without recurring functionality');
         }
 
+        // ✅ Initialize Reminders Module (Phase 2 module)
+        console.log('🔔 Initializing reminders module...');
+        try {
+            const { initReminderManager } = await import('./utilities/reminders.js');
+
+            await initReminderManager({
+                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                getElementById: (id) => document.getElementById(id),
+                querySelectorAll: (selector) => document.querySelectorAll(selector),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
+                autoSave: () => window.autoSave?.()
+            });
+
+            console.log('✅ Reminders module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize reminders module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Reminders feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without reminders functionality');
+        }
+
         // ============ PHASE 3: DATA LOADING ============
         console.log('📊 Phase 3: Loading app data...');
 
@@ -3879,326 +3903,30 @@ indefiniteCheckbox.addEventListener("change", () => {
 });
 
 
-
-function handleReminderToggle() {
-    console.log('🔔 Handling reminder toggle (Schema 2.5 only)...');
-    
-    const isEnabled = enableReminders.checked;
-  
-    // ✅ Get previous state from Schema 2.5
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleReminderToggle');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const previousSettings = schemaData.reminders || {};
-    const wasEnabled = previousSettings.enabled === true;
-    
-    console.log('📊 Reminder toggle state:', {
-        wasEnabled,
-        nowEnabled: isEnabled,
-        changed: wasEnabled !== isEnabled
-    });
-  
-    // ✅ Update the visibility of the frequency section
-    frequencySection.classList.toggle("hidden", !isEnabled);
-  
-    // ✅ Save updated settings and get the current global state
-    const globalReminderState = autoSaveReminders();
-  
-    // ✅ Update the 🔔 task buttons
-    updateReminderButtons();
-  
-    // ✅ Start or stop reminders
-    if (globalReminderState) {
-        console.log("🔔 Global Reminders Enabled — Starting reminders...");
-        if (!wasEnabled) {
-            showNotification("🔔 Task reminders enabled!", "success", 2500);
-        }
-        setTimeout(() => startReminders(), 200);
-    } else {
-        console.log("🔕 Global Reminders Disabled — Stopping reminders...");
-        if (wasEnabled) {
-            showNotification("🔕 Task reminders disabled.", "error", 2500);
-        }
-        stopReminders();
-    }
-    
-    console.log('✅ Reminder toggle handled successfully');
-}
-  
-  function setupReminderToggle() {
-      console.log('⚙️ Setting up reminder toggle (Schema 2.5 only)...');
-      
-      safeAddEventListener(enableReminders, "change", handleReminderToggle);
-  
-      // ✅ Load reminder settings from Schema 2.5
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-          console.error('❌ Schema 2.5 data required for setupReminderToggle');
-          throw new Error('Schema 2.5 data not found');
-      }
-  
-      const reminderSettings = schemaData.reminders || {
-          enabled: false,
-          indefinite: true,
-          dueDatesReminders: false,
-          repeatCount: 0,
-          frequencyValue: 0,
-          frequencyUnit: "hours"
-      };
-  
-      console.log('📊 Loading reminder settings from Schema 2.5:', reminderSettings);
-  
-      enableReminders.checked = reminderSettings.enabled === true;
-      frequencySection.classList.toggle("hidden", !reminderSettings.enabled);
-  
-      // ✅ 🧠 Reminder system will re-run if already enabled
-      if (reminderSettings.enabled) {
-          console.log('🔄 Reminders were enabled, starting system...');
-          updateReminderButtons();
-          startReminders();
-      } else {
-          console.log('🔕 Reminders disabled in settings');
-      }
-      
-      console.log('✅ Reminder toggle setup completed');
-  }
-
-  function stopReminders() {
-      console.log('🛑 Stopping reminder system (Schema 2.5 only)...');
-      
-      if (reminderIntervalId) {
-          clearInterval(reminderIntervalId);
-          reminderIntervalId = null;
-          console.log("🛑 Reminder interval cleared");
-      } else {
-          console.log("ℹ️ No active reminder interval to stop");
-      }
-      
-      console.log("✅ Reminder system stopped successfully");
-  }
-
-
-
-
-
-
-/**
- * Auto-save reminders function (Schema 2.5 only).
- *
- * @returns {boolean} - Returns the enabled state
- */
-function autoSaveReminders() {
-    console.log('💾 Auto-saving reminders (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for autoSaveReminders');
-        throw new Error('Schema 2.5 data not found');
-    }
-    
-    const enabled = document.getElementById("enableReminders").checked;
-    
-    const remindersToSave = {
-        enabled,
-        indefinite: document.getElementById("indefiniteCheckbox").checked,
-        dueDatesReminders: document.getElementById("dueDatesReminders").checked,
-        repeatCount: parseInt(document.getElementById("repeatCount").value) || 0,
-        frequencyValue: parseInt(document.getElementById("frequencyValue").value) || 0,
-        frequencyUnit: document.getElementById("frequencyUnit").value
-    };
-    
-    // ⏱️ Save reminder start time only when enabling reminders
-    if (enabled) {
-        remindersToSave.reminderStartTime = Date.now();
-    }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.customReminders = remindersToSave;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log("✅ Reminders settings saved automatically (Schema 2.5):", remindersToSave);
-    return enabled;
-}
-
-/**
- * Load reminders settings function (Schema 2.5 only).
- *
- * @returns {void}
- */
-function loadRemindersSettings() {
-    console.log('📥 Loading reminders settings (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for loadRemindersSettings');
-        throw new Error('Schema 2.5 data not found');
-    }
-    
-    const reminders = schemaData.reminders || {
-        enabled: false,
-        indefinite: true,
-        dueDatesReminders: false,
-        repeatCount: 0,
-        frequencyValue: 0,
-        frequencyUnit: "hours"
-    };
-
-    console.log('📊 Loading reminder settings from Schema 2.5:', reminders);
-
-    // ✅ Apply settings to UI
-    document.getElementById("enableReminders").checked = reminders.enabled;
-    document.getElementById("indefiniteCheckbox").checked = reminders.indefinite;
-    document.getElementById("dueDatesReminders").checked = reminders.dueDatesReminders;
-    document.getElementById("repeatCount").value = reminders.repeatCount;
-    document.getElementById("frequencyValue").value = reminders.frequencyValue;
-    document.getElementById("frequencyUnit").value = reminders.frequencyUnit;
-
-    // ✅ Show/hide frequency settings dynamically
-    const frequencySection = document.getElementById("frequency-section");
-    if (frequencySection) {
-        frequencySection.classList.toggle("hidden", !reminders.enabled);
-    }
-    
-    const repeatCountRow = document.getElementById("repeat-count-row");
-    if (repeatCountRow) {
-        repeatCountRow.style.display = reminders.indefinite ? "none" : "block";
-    }
-
-    // ✅ 🔔 Show/hide reminder buttons on load
-    updateReminderButtons();
-    
-    console.log("✅ Reminder settings loaded from Schema 2.5");
-}
-
-// ✅ Attach auto-save & restart reminders to all reminder settings inputs safely
-
-
-// ✅ Updated indefinite checkbox listener
-safeAddEventListenerById("indefiniteCheckbox", "change", () => {
-    console.log('🔄 Indefinite checkbox changed (Schema 2.5 only)');
-    
-    const repeatCountRow = document.getElementById("repeat-count-row");
-    if (repeatCountRow) {
-        repeatCountRow.style.display = document.getElementById("indefiniteCheckbox").checked ? "none" : "block";
-    }
-    
-    autoSaveReminders();
-    startReminders();
-});
-
-// ✅ Updated due dates reminders listener
-safeAddEventListenerById("dueDatesReminders", "change", () => {
-    console.log('📅 Due dates reminders changed (Schema 2.5 only)');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for dueDatesReminders change');
-        return;
-    }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    
-    // ✅ Update only the due dates reminders setting in Schema 2.5
-    if (!fullSchemaData.customReminders) {
-        fullSchemaData.customReminders = {};
-    }
-    
-    fullSchemaData.customReminders.dueDatesReminders = document.getElementById("dueDatesReminders").checked;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-    console.log(`💾 Saved Due Dates Reminders setting (Schema 2.5): ${fullSchemaData.customReminders.dueDatesReminders}`);
-});
-
-// ✅ Updated reminder input listeners
-["repeatCount", "frequencyValue", "frequencyUnit"].forEach(id => {
-    safeAddEventListenerById(id, "input", () => {
-        console.log(`🔄 Reminder input changed: ${id} (Schema 2.5 only)`);
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for reminder input change');
-            return;
-        }
-        
-        const settings = schemaData.reminders || {};
-        if (settings.enabled) {
-            autoSaveReminders();
-            startReminders();
-        }
-    });
-});
-
-/**
- * Save the reminder state for a specific task inside the active miniCycle (Schema 2.5 only).
- * @param {string} taskId - The ID of the task to update.
- * @param {boolean} isEnabled - Whether reminders are enabled for this task.
- * @returns {void}
- */
-function saveTaskReminderState(taskId, isEnabled) {
-    console.log('🔔 Saving task reminder state (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveTaskReminderState');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    
-    if (!activeCycle || !cycles[activeCycle]) {
-        console.error('❌ No active cycle found for task reminder state');
-        return;
-    }
-    
-    console.log('🔍 Finding task for reminder state update:', taskId);
-    
-    const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
-    
-    if (!task) {
-        console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
-        return;
-    }
-    
-    console.log('📊 Updating reminder state:', {
-        taskId,
-        taskText: task.text,
-        oldState: task.remindersEnabled,
-        newState: isEnabled
-    });
-    
-    // Update task reminder state
-    task.remindersEnabled = isEnabled;
-    
-    // Update the full schema data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log(`✅ Task reminder state saved (Schema 2.5): ${taskId} = ${isEnabled}`);
-}
-/**
- * 📌 Handle click event for saving reminders settings.
- * - Saves the settings.
- * - Starts the reminders.
- * - Shows a confirmation alert.
- */
-
-/**
- * 📌 Close the reminders settings modal when the close button is clicked.
- */
+// ============================================
+// ✅ REMINDER SYSTEM - ALL FUNCTIONS MOVED TO utilities/reminders.js
+// ============================================
+// The following functions are now handled by the reminders module:
+// - handleReminderToggle()
+// - setupReminderToggle()
+// - stopReminders()
+// - autoSaveReminders()
+// - loadRemindersSettings()
+// - saveTaskReminderState()
+// - sendReminderNotificationIfNeeded()
+// - startReminders()
+// - setupReminderButtonHandler()
+// - updateReminderButtons()
+//
+// All functions are globally accessible via:
+// - window.reminderManager (the module instance)
+// - window.startReminders(), window.stopReminders(), etc. (individual functions)
+//
+// Modal event listeners remain here for backward compatibility:
 closeRemindersBtn.addEventListener("click", () => {
     remindersModal.style.display = "none";
 });
 
-/**
- * 📌 Close the reminders modal when clicking outside of it.
- */
 window.addEventListener("click", (event) => {
     if (event.target === remindersModal) {
         remindersModal.style.display = "none";
@@ -4295,125 +4023,8 @@ function showPromptModal(options) {
 }
 
   
-  /**
- * Startreminders function.
- *
- * @returns {void}
- */
-
-
-  function sendReminderNotificationIfNeeded() {
-      console.log('🔔 Sending reminder notification if needed (Schema 2.5 only)...');
-      
-      // ✅ Schema 2.5 only
-      const schemaData = loadMiniCycleData();
-      if (!schemaData) {
-          console.error('❌ Schema 2.5 data required for sendReminderNotificationIfNeeded');
-          throw new Error('Schema 2.5 data not found');
-      }
-  
-      const { reminders } = schemaData;
-      const remindersSettings = reminders || {};
-      
-      console.log('📊 Reminder settings:', remindersSettings);
-  
-      let tasksWithReminders = [...document.querySelectorAll(".task")]
-          .filter(task => task.querySelector(".enable-task-reminders.reminder-active"));
-  
-      console.log("🔍 Tasks With Active Reminders:", tasksWithReminders.length);
-  
-      let incompleteTasks = tasksWithReminders
-          .filter(task => !task.querySelector("input[type='checkbox']").checked)
-          .map(task => task.querySelector(".task-text").textContent);
-  
-      if (incompleteTasks.length === 0) {
-          console.log("✅ All tasks complete. Stopping reminders.");
-          clearInterval(reminderIntervalId);
-          return;
-      }
-  
-      if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
-          console.log("✅ Max reminders sent. Stopping reminders.");
-          clearInterval(reminderIntervalId);
-          return;
-      }
-  
-      console.log('📢 Showing reminder notification for tasks:', incompleteTasks);
-      showNotification(`🔔 You have tasks to complete:<br>- ${incompleteTasks.join("<br>- ")}`, "default");
-      timesReminded++;
-      
-      console.log('✅ Reminder notification sent (Schema 2.5)');
-  }
-
-function startReminders() {
-    console.log("🔄 Starting Reminder System (Schema 2.5 only)...");
-
-    if (reminderIntervalId) {
-        clearInterval(reminderIntervalId);
-        console.log('🛑 Cleared existing reminder interval');
-    }
-
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for startReminders');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { reminders } = schemaData;
-    const remindersSettings = reminders || {};
-    
-    console.log('📊 Loading reminder settings from Schema 2.5:', remindersSettings);
-    
-    if (!remindersSettings.enabled) {
-        console.log('🔕 Reminders disabled in settings');
-        return;
-    }
-
-    let multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
-                     remindersSettings.frequencyUnit === "days" ? 86400000 : 60000;
-    const intervalMs = remindersSettings.frequencyValue * multiplier;
-
-    console.log('⏰ Reminder interval:', {
-        value: remindersSettings.frequencyValue,
-        unit: remindersSettings.frequencyUnit,
-        intervalMs: intervalMs
-    });
-
-    // ⏱️ Use stored start time or now if missing
-    const now = Date.now();
-    const startTime = remindersSettings.reminderStartTime || now;
-    const elapsedTime = now - startTime;
-    const intervalsPassed = Math.floor(elapsedTime / intervalMs);
-
-    timesReminded = intervalsPassed;
-    lastReminderTime = startTime + (intervalsPassed * intervalMs);
-
-    console.log(`⏱️ ${intervalsPassed} interval(s) have passed since reminderStartTime`);
-
-    // If max reminders already sent, exit early
-    if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
-        console.log("✅ Max reminders already reached. Skipping further reminders.");
-        return;
-    }
-
-    // Only send if enough time has passed since last reminder
-    if ((Date.now() - lastReminderTime) >= intervalMs) {
-        console.log("⏰ Sending catch-up reminder on startup.");
-        sendReminderNotificationIfNeeded();
-    } else {
-        const timeUntilNext = intervalMs - (Date.now() - lastReminderTime);
-        console.log(`⏳ Next reminder in ${Math.round(timeUntilNext / 1000 / 60)} minutes`);
-    }
-
-    // 🔁 Set up recurring reminders on interval
-    reminderIntervalId = setInterval(() => {
-        console.log('🔔 Reminder interval triggered');
-        sendReminderNotificationIfNeeded();
-    }, intervalMs);
-    
-    console.log('✅ Reminder system started successfully (Schema 2.5)');
-}
+  // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in utilities/reminders.js
+  // Use window.sendReminderNotificationIfNeeded() and window.startReminders() which are globally exported
 
   // ✅ Update recurring panel button visibility if module is loaded
   if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
@@ -6558,50 +6169,8 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
 // ✅ 15. Recurring Task Deactivation Handler
 // ✅ REMOVED: handleRecurringTaskDeactivation - now handled by recurringCore/recurringPanel modules
 
-// ✅ 16. Reminder Button Handler (extracted)
-function setupReminderButtonHandler(button, taskContext) {
-    const { assignedTaskId } = taskContext;
-
-    button.addEventListener("click", () => {
-        // ✅ Read fresh state from AppState to avoid stale closure data
-        const currentState = window.AppState?.get();
-        if (!currentState) {
-            console.error('❌ AppState not available for reminder toggle');
-            return;
-        }
-
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
-        const task = freshCycle?.tasks?.find(t => t.id === assignedTaskId);
-
-        if (!task) {
-            console.warn('⚠️ Task not found for reminder toggle:', assignedTaskId);
-            return;
-        }
-
-        // ✅ Toggle based on AppState, not DOM
-        const isCurrentlyEnabled = task.remindersEnabled === true;
-        const isActive = !isCurrentlyEnabled;
-
-        console.log('🔔 Toggling reminder state:', {
-            taskId: assignedTaskId,
-            wasEnabled: isCurrentlyEnabled,
-            willBeEnabled: isActive
-        });
-
-        button.classList.toggle("reminder-active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
-
-        saveTaskReminderState(assignedTaskId, isActive);
-        autoSaveReminders();
-        startReminders();
-
-        // ✅ Update undo/redo button states
-        updateUndoRedoButtons();
-
-        showNotification(`Reminders ${isActive ? "enabled" : "disabled"} for task.`, "info", 1500);
-    });
-}
+// ✅ REMOVED: setupReminderButtonHandler - Now in utilities/reminders.js
+// Use window.setupReminderButtonHandler() which is globally exported from the module
 
 // ✅ 17. Task Content Elements Creation
 function createTaskContentElements(taskContext) {
@@ -7029,95 +6598,11 @@ function sanitizeInput(input) {
 
 
 
-    /**
- * Updatereminderbuttons function.
- *
- * @returns {void}
- */
+    // ✅ REMOVED: updateReminderButtons() - Now in utilities/reminders.js
+    // Use window.updateReminderButtons() which is globally exported from the module
 
-  
 
-    
-    function updateReminderButtons() {
-        console.log("🔍 Running updateReminderButtons() (Schema 2.5 only)...");
-      
-        // ✅ Schema 2.5 only
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for updateReminderButtons');
-            return;
-        }
-    
-        const { cycles, activeCycle, reminders } = schemaData;
-        const currentCycle = cycles[activeCycle];
-        const reminderSettings = reminders || {};
-        const remindersGloballyEnabled = reminderSettings.enabled === true;
-        
-        console.log('📊 Reminder settings from Schema 2.5:', {
-            globallyEnabled: remindersGloballyEnabled,
-            activeCycle,
-            hasCycle: !!currentCycle
-        });
-      
-        document.querySelectorAll(".task").forEach(taskItem => {
-          const buttonContainer = taskItem.querySelector(".task-options");
-          let reminderButton = buttonContainer.querySelector(".enable-task-reminders");
-      
-          const taskId = taskItem.dataset.taskId;
-          if (!taskId) {
-            console.warn("⚠ Skipping task with missing ID:", taskItem);
-            return;
-          }
-      
-          // ✅ Get task data from Schema 2.5
-          const taskData = currentCycle?.tasks?.find(t => t.id === taskId);
-          const isActive = taskData?.remindersEnabled === true;
-          
-          console.log(`🔍 Task ${taskId}: reminders enabled = ${isActive}`);
-      
-          if (remindersGloballyEnabled) {
-            if (!reminderButton) {
-              // ✅ Create Reminder Button
-              reminderButton = document.createElement("button");
-              reminderButton.classList.add("task-btn", "enable-task-reminders");
-              reminderButton.innerHTML = "<i class='fas fa-bell'></i>";
-      
-              // Add click event
-              reminderButton.addEventListener("click", () => {
-                const nowActive = reminderButton.classList.toggle("reminder-active");
-                reminderButton.setAttribute("aria-pressed", nowActive.toString());
-                saveTaskReminderState(taskId, nowActive);
-                autoSaveReminders();
-              });
-      
-              buttonContainer.insertBefore(reminderButton, buttonContainer.children[2]);
-              console.log("   ✅ Reminder Button Created & Inserted");
-            }
-      
-            // ✅ Ensure correct state and make it visible
-            reminderButton.classList.toggle("reminder-active", isActive);
-            reminderButton.setAttribute("aria-pressed", isActive.toString());
-            reminderButton.classList.remove("hidden");
-      
-            console.log(`   🔄 Reminder Button Visible - Active: ${isActive}`);
-          } else {
-            // ❌ Hide button if reminders are disabled globally
-            if (reminderButton) {
-              reminderButton.classList.add("hidden"); // Don't remove it; just hide for layout consistency
-              reminderButton.classList.remove("reminder-active");
-              reminderButton.setAttribute("aria-pressed", "false");
-      
-              console.log("   🔕 Reminder Button Hidden (Global toggle OFF)");
-            }
-          }
-        });
-      
-        console.log("✅ Finished updateReminderButtons() (Schema 2.5).");
-    }
-    
 
-    
-    
 
     /**
  * Showtaskoptions function.
