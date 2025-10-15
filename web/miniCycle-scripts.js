@@ -8083,6 +8083,18 @@ function refreshTaskButtonsForModeChange() {
         // Replace old container with new one
         oldButtonContainer.replaceWith(newButtonContainer);
 
+        // ✅ CRITICAL: Attach due date button listener to newly created buttons
+        const dueDateInput = task.querySelector('.due-date');
+        if (dueDateInput && typeof window.setupDueDateButtonInteraction === 'function') {
+            // Remove the guard flag first to allow re-attaching
+            const dueDateButton = newButtonContainer.querySelector('.set-due-date');
+            if (dueDateButton) {
+                delete dueDateButton.dataset.listenerAttached;
+            }
+            window.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
+            console.log('✅ Attached due date listener for task:', taskId);
+        }
+
         console.log('✅ Refreshed buttons for task:', taskId);
     });
 

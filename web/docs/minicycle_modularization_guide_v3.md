@@ -1338,6 +1338,393 @@ This validates the **multi-pattern approach** in this guide - different modules 
 
 ---
 
+## 🔔 **Lessons from Reminders & Due Dates Extraction**
+
+*These lessons come from extracting reminders.js (621 lines) and dueDates.js (516 lines) in January 2025*
+
+### **Critical Lessons for Event Listener Management**
+
+These lessons emerged from debugging event listener issues where buttons worked after page refresh but not on initial load. The root causes revealed fundamental patterns for managing event listeners in modular architectures.
+
+#### **Lesson 1: Multiple Event Handlers Fighting**
+
+**Problem:** Two systems (refreshTaskButtonsForModeChange and updateDueDateVisibility) both listening to the same `toggleAutoReset` element and working against each other.
+
+**Symptom:** Due date buttons appeared but didn't respond to clicks on initial load.
+
+**Root Cause:** When switching to manual mode:
+1. `refreshTaskButtonsForModeChange()` completely replaced button containers
+2. `updateDueDateVisibility()` tried to attach listeners
+3. Container replacement happened FIRST, destroying any listeners we tried to attach
+
+**Solution:** Coordinate the systems so only ONE handles both button creation AND listener attachment.
+
+```javascript
+// ❌ BAD - Two handlers fighting each other
+toggleAutoReset.addEventListener('change', () => {
+    refreshTaskButtonsForModeChange();  // Replaces DOM
+});
+
+toggleAutoReset.addEventListener('change', () => {
+    updateDueDateVisibility();          // Tries to attach listeners
+});
+
+// ✅ GOOD - One coordinated system
+toggleAutoReset.addEventListener('change', () => {
+    refreshTaskButtonsForModeChange();  // Replaces DOM AND attaches listeners
+});
+```
+
+**Pattern Impact:** Critical for **Resilient Constructor** 🛡️ modules that interact with DOM elements modified by other systems.
+
+---
+
+#### **Lesson 2: DOM Replacement Destroying Listeners**
+
+**Problem:** `refreshTaskButtonsForModeChange()` completely replaced button containers, destroying any event listeners attached to the old buttons.
+
+**Symptom:** User reported "literally getting the same issue" multiple times as we tried different fixes that didn't address the root cause.
+
+**Root Cause:** Event listeners are attached to specific DOM element instances. When you replace the element with `replaceWith()`, the old element and its listeners are destroyed.
+
+```javascript
+// This is what was happening:
+oldButtonContainer.replaceWith(newButtonContainer);
+// At this point, ALL listeners on oldButtonContainer are GONE
+```
+
+**Solution:** Attach event listeners AFTER the DOM replacement operation, in the same function that does the replacement.
+
+```javascript
+// ✅ CRITICAL FIX - Attach listeners AFTER button creation
+// In refreshTaskButtonsForModeChange() at line 8086-8096
+oldButtonContainer.replaceWith(newButtonContainer);
+
+// Now attach listeners to the NEW buttons
+const dueDateInput = task.querySelector('.due-date');
+if (dueDateInput && typeof window.setupDueDateButtonInteraction === 'function') {
+    const dueDateButton = newButtonContainer.querySelector('.set-due-date');
+    if (dueDateButton) {
+        delete dueDateButton.dataset.listenerAttached; // Remove guard flag
+    }
+    window.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
+    console.log('✅ Attached due date listener for task:', taskId);
+}
+```
+
+**Key Insight:** When a function REPLACES DOM elements, that SAME function must also REATTACH listeners.
+
+**Pattern Impact:** Essential for **any module** that dynamically updates the DOM.
+
+---
+
+#### **Lesson 3: Closure Variables Going Stale**
+
+**Problem:** Due date input's change listener used closure variables (`currentCycle`, `activeCycle`) captured at event listener creation time.
+
+**Symptom:** During onboarding, these variables were captured BEFORE the actual cycle data was loaded, causing updates to fail silently.
+
+**Root Cause:** Event listeners capture variables from their creation scope (closure). If those variables are set early during initialization, they become "frozen" at those old values.
+
+```javascript
+// ❌ BAD - Closure variables captured at listener creation time
+function createDueDateInput(assignedTaskId, currentCycle, activeCycle) {
+    const dueDateInput = document.createElement("input");
+
+    dueDateInput.addEventListener("change", async () => {
+        // These variables are from LISTENER CREATION TIME, not EXECUTION TIME
+        const taskToUpdate = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
+        // During onboarding, currentCycle was probably empty or undefined
+    });
+}
+
+// ✅ GOOD - Read fresh data at execution time
+function createDueDateInput(assignedTaskId) {
+    const dueDateInput = document.createElement("input");
+
+    dueDateInput.addEventListener("change", async () => {
+        await appInit.waitForCore();
+
+        // Read fresh state from localStorage (source of truth)
+        const schemaData = this.deps.loadMiniCycleData();
+        if (!schemaData) return;
+
+        const { cycles, activeCycle: currentActiveCycle } = schemaData;
+        const currentCycle = cycles[currentActiveCycle];
+        const taskToUpdate = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
+        // Now we have CURRENT data, not stale closure data
+    });
+}
+```
+
+**Key Principle:** In event listeners, always read data FRESH at execution time, never rely on closure variables captured at creation time.
+
+**Pattern Impact:** Critical for **Resilient Constructor** 🛡️ and **Strict Injection** 🔧 patterns where data changes over time.
+
+---
+
+#### **Lesson 4: Source of Truth Consistency**
+
+**Problem:** Different parts of the codebase used different data sources:
+- Some read from `window.AppState?.get()`
+- Some read from DOM classes
+- Some used closure variables
+- Some used `loadMiniCycleData()`
+
+**Symptom:** Reminder toggles could enable but not disable. Due dates didn't work unless page was refreshed.
+
+**Root Cause:** Data synchronization issues between multiple sources of truth caused inconsistent behavior.
+
+**Solution:** Standardize on ONE source of truth: `loadMiniCycleData()` (localStorage).
+
+```javascript
+// ❌ BAD - Reading from DOM state
+const isCurrentlyEnabled = button.classList.contains("reminder-active");
+
+// ❌ BAD - Reading from AppState (might not be synced yet)
+const state = window.AppState?.get();
+const task = state.cycles[activeCycle].tasks.find(t => t.id === taskId);
+
+// ❌ BAD - Using closure variables (stale data)
+const task = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
+
+// ✅ GOOD - Always read from single source of truth
+const schemaData = this.deps.loadMiniCycleData();
+const { cycles, activeCycle } = schemaData;
+const currentCycle = cycles[activeCycle];
+const task = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
+const isCurrentlyEnabled = task.remindersEnabled === true;
+```
+
+**Architecture Principle:** Choose ONE authoritative data source and always read from it. In miniCycle, that's `loadMiniCycleData()` reading from localStorage.
+
+**Pattern Impact:** Affects ALL patterns, especially **Resilient Constructor** 🛡️ where data consistency is critical.
+
+---
+
+#### **Lesson 5: Event Listener Timing**
+
+**Problem:** Attempted to attach event listeners BEFORE the DOM replacement operation completed.
+
+**Symptom:** Multiple attempts to "fix" the listeners didn't work because timing was wrong.
+
+**What We Tried (That Didn't Work):**
+1. Cloning buttons to remove old listeners
+2. Event delegation at document level
+3. Getting fresh references to button and input
+
+**Why They Failed:** All these approaches tried to attach listeners to elements that were about to be REPLACED by `refreshTaskButtonsForModeChange()`.
+
+**Solution:** Attach listeners AFTER DOM replacement, in the SAME function that does the replacement.
+
+```javascript
+// ❌ BAD - Listener attached separately from DOM replacement
+function updateDueDateVisibility(autoReset) {
+    // DOM gets replaced elsewhere by refreshTaskButtonsForModeChange()
+    // Then we try to attach listeners here
+    // But by the time this runs, buttons might have been replaced
+    const buttons = document.querySelectorAll('.set-due-date');
+    buttons.forEach(button => attachListener(button));
+}
+
+// ✅ GOOD - Listener attached in same function as DOM replacement
+function refreshTaskButtonsForModeChange(task, taskId, autoReset) {
+    // Create new buttons
+    const newButtonContainer = createButtonContainer();
+
+    // Replace old buttons
+    oldButtonContainer.replaceWith(newButtonContainer);
+
+    // IMMEDIATELY attach listeners to the NEW buttons
+    const dueDateInput = task.querySelector('.due-date');
+    if (dueDateInput) {
+        window.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
+    }
+}
+```
+
+**Timing Principle:** Event listeners must be attached IN THE SAME EXECUTION CONTEXT as the DOM creation/replacement operation.
+
+**Pattern Impact:** Essential for **Simple Instance** 🎯 and **Resilient Constructor** 🛡️ patterns with dynamic DOM.
+
+---
+
+#### **Lesson 6: appInit Hook System Usage**
+
+**Problem:** Module initialization needed to happen after tasks were rendered, but timing varied between initial load and subsequent refreshes.
+
+**Solution:** Dual approach using appInit hooks + direct calls:
+
+```javascript
+// In module init()
+appInit.addHook('afterApp', async () => {
+    console.log('🔄 Checking overdue tasks after app ready (hook)...');
+
+    // ✅ Check if tasks exist BEFORE proceeding
+    const tasks = this.deps.querySelectorAll(".task");
+    if (tasks.length === 0) {
+        console.log('⏭️ No tasks in DOM yet, skipping (will run after loadMiniCycle)');
+        return;
+    }
+
+    setTimeout(() => {
+        this.checkOverdueTasks();
+        console.log('✅ Overdue tasks checked on page load (hook)');
+    }, 300);
+});
+
+// In completeInitialSetup() after loadMiniCycle()
+if (typeof window.checkOverdueTasks === 'function') {
+    await window.checkOverdueTasks();
+    console.log('✅ Overdue tasks checked after task rendering');
+}
+```
+
+**Key Pattern:** Hooks handle general cases, direct calls handle initial load. DOM existence checks prevent wasted executions.
+
+**Pattern Impact:** Critical for **Resilient Constructor** 🛡️ modules that depend on DOM elements.
+
+---
+
+#### **Lesson 7: Data vs UI Separation**
+
+**Problem:** Updating data in one place didn't automatically reflect in UI.
+
+**Root Cause:** The app has separate data layer (localStorage/AppState) and UI layer (DOM). Changes to one don't automatically propagate to the other.
+
+**Solution:** Every data change that affects visible UI must be followed by explicit UI refresh.
+
+```javascript
+// ❌ BAD - Data updated but UI doesn't reflect it
+taskToUpdate.dueDate = dueDateInput.value;
+this.deps.saveTaskToSchema25(currentActiveCycle, currentCycle);
+// User sees old date because DOM wasn't refreshed
+
+// ✅ GOOD - Explicit UI refresh after data change
+taskToUpdate.dueDate = dueDateInput.value;
+this.deps.saveTaskToSchema25(currentActiveCycle, currentCycle);
+
+// Refresh dependent UI components
+this.deps.updateStatsPanel();
+this.deps.updateProgressBar();
+this.deps.checkCompleteAllButton();
+```
+
+**Architecture Principle:** Treat data layer and UI layer as separate concerns requiring explicit synchronization.
+
+**Pattern Impact:** Affects ALL patterns, especially **Strict Injection** 🔧 where business logic updates must trigger UI refreshes.
+
+---
+
+#### **Lesson 8: Dual Approach for Initial Load**
+
+**Problem:** Buttons worked after refresh but not on initial load (especially during onboarding when cycle is being created).
+
+**Root Cause:** Different code paths for initial load vs. subsequent refreshes caused timing differences.
+
+**Solution:** Combination of appInit hooks + direct calls in `completeInitialSetup()`:
+
+```javascript
+async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
+    console.log('✅ Completing initial setup for cycle:', activeCycle);
+
+    if (typeof window.loadMiniCycle === 'function') {
+        await window.loadMiniCycle();
+
+        // ✅ Direct calls after task rendering (for initial load)
+        if (typeof window.updateReminderButtons === 'function') {
+            await window.updateReminderButtons();
+            console.log('✅ Reminder buttons updated after task rendering');
+        }
+
+        if (typeof window.checkOverdueTasks === 'function') {
+            await window.checkOverdueTasks();
+            console.log('✅ Overdue tasks checked after task rendering');
+        }
+    }
+}
+```
+
+**Plus** appInit hooks in module for general cases:
+
+```javascript
+// In module init()
+appInit.addHook('afterApp', async () => {
+    // Handles regular page loads and refreshes
+    const tasks = this.deps.querySelectorAll(".task");
+    if (tasks.length === 0) return;
+
+    await this.updateReminderButtons();
+});
+```
+
+**Key Pattern:** Direct calls handle special cases (initial load, onboarding), hooks handle regular cases (page refresh, navigation).
+
+**Pattern Impact:** Essential for **all modules** that need to work both on first load and subsequent refreshes.
+
+---
+
+#### **Lesson 9: Bottom-to-Top Code Removal**
+
+**Problem:** When removing old code from main script, removing from top to bottom causes line numbers to shift, making sed commands fail.
+
+**Solution:** Always remove code from highest line numbers to lowest.
+
+```bash
+# ✅ GOOD - Remove from bottom to top (line numbers stay valid)
+sed -i '' '7391,7512d' miniCycle-scripts.js  # Remove lines 7391-7512
+sed -i '' '6388,6396d' miniCycle-scripts.js  # Remove lines 6388-6396
+sed -i '' '6278,6313d' miniCycle-scripts.js  # Remove lines 6278-6313
+sed -i '' '2869,2911d' miniCycle-scripts.js  # Remove lines 2869-2911
+
+# ❌ BAD - Remove from top to bottom (line numbers shift after first removal)
+sed -i '' '2869,2911d' miniCycle-scripts.js  # After this, all line numbers below shift up
+sed -i '' '6278,6313d' miniCycle-scripts.js  # This will remove WRONG lines!
+```
+
+**Principle:** When batch-removing code, work backwards from end of file to beginning to preserve line number accuracy.
+
+**Pattern Impact:** Critical for **extraction process** itself, regardless of pattern used.
+
+---
+
+### **Summary: Event Listener Golden Rules**
+
+From these lessons, we can extract these golden rules for event listener management in modular architectures:
+
+1. **Single Responsibility:** Only ONE system should own DOM replacement + listener attachment for a given element
+2. **Timing:** Attach listeners AFTER DOM replacement, in the SAME function that does the replacement
+3. **Source of Truth:** Always read data fresh from authoritative source, never rely on closure variables
+4. **Dual Approach:** Use hooks for general cases + direct calls for special cases (initial load, onboarding)
+5. **DOM Checks:** Always verify DOM elements exist before trying to work with them
+6. **Coordination:** When multiple systems interact with same elements, coordinate explicitly (don't assume)
+7. **Data-UI Separation:** Always refresh UI explicitly after data changes
+8. **Bottom-Up Removal:** Remove old code from highest line numbers to lowest
+
+**User Feedback Validation:** The final fix resulted in user confirmation: "yes that finally worked thank you"
+
+---
+
+### **When to Reference These Lessons**
+
+**Before extracting a module that:**
+- Attaches event listeners to buttons or inputs
+- Works with DOM elements that can be dynamically replaced
+- Needs to work both on initial load and after page refresh
+- Depends on data that changes during app initialization
+- Coordinates with other systems that modify the same DOM elements
+
+**Recommended Reading Order:**
+1. Read this lessons section FIRST
+2. Then read the pattern documentation (Resilient Constructor, etc.)
+3. Then implement your extraction following both guides
+
+**Related Documentation:**
+- See `APPINIT_INTEGRATION_PLAN.md` for Phase 2 integration details
+- See `utilities/reminders.js` and `utilities/dueDates.js` as reference implementations
+
+---
+
 ## 🚀 **Migration Strategy**
 
 ### **Phase 1: Start With Static Utilities**

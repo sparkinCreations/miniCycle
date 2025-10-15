@@ -456,31 +456,10 @@ export class MiniCycleDueDates {
                 }
             });
 
-            // ✅ Setup buttons for all tasks (create if missing, attach listeners to all)
-            this.deps.querySelectorAll(".task").forEach(taskItem => {
-                let buttonContainer = taskItem.querySelector(".task-options");
-                let existingDueDateButton = buttonContainer?.querySelector(".set-due-date");
-                const dueDateInput = taskItem.querySelector(".due-date");
-
-                if (!existingDueDateButton && buttonContainer) {
-                    // Create button if it doesn't exist
-                    const dueDateButton = document.createElement("button");
-                    dueDateButton.classList.add("task-btn", "set-due-date");
-                    dueDateButton.innerHTML = "<i class='fas fa-calendar-alt'></i>";
-                    dueDateButton.setAttribute("aria-label", "Set due date");
-                    dueDateButton.setAttribute("type", "button");
-
-                    buttonContainer.insertBefore(dueDateButton, buttonContainer.children[2]); // Insert in correct position
-
-                    console.log('✅ Dynamically created due date button for task:', taskItem.dataset.taskId);
-                }
-
-                // ✅ Attach event listener to button (both existing and newly created)
-                // The function checks if listener is already attached before adding
-                if (buttonContainer && dueDateInput) {
-                    this.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
-                }
-            });
+            // ✅ NOTE: Button re-creation and listener attachment is now handled by
+            // refreshTaskButtonsForModeChange() in miniCycle-scripts.js (line 8086-8096)
+            // This runs automatically when the toggleAutoReset changes
+            console.log('✅ Due date visibility updated (button listeners handled by refreshTaskButtonsForModeChange)');
 
             // Recheck and reapply overdue classes as needed
             this.checkOverdueTasks();
