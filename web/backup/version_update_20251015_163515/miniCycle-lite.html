@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- ✅ Cache prevention for development -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<title>miniCycle Lite - Turn Your Routine Into Progress</title>
+
+<!-- ✅ Preload critical fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!-- ✅ Icons with fallback -->
+<link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" onerror="this.disabled=true;">
+
+<!-- ✅ Main stylesheet -->
+<link rel="stylesheet" href="miniCycle-lite-styles.css?v=1.323">
+
+<!-- ✅ ADD: Web App Manifest and Theme -->
+<link rel="manifest" href="manifest-lite.json">
+<link rel="apple-touch-icon" href="assets/images/logo/minicycle_logo_icon.png">
+<meta name="theme-color" content="black" id="theme-color-meta">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default" id="status-bar-style-meta">
+
+<script>
+
+
+// ES5-only SW & PWA helpers for Lite
+if ('serviceWorker' in navigator) {
+  var refreshing = false;
+  var deferredPrompt = null;
+
+  // Install prompt
+  window.addEventListener('beforeinstallprompt', function (e) {
+    try { e.preventDefault(); } catch (err) {}
+    deferredPrompt = e;
+    setTimeout(function () {
+      if (typeof showNotification === 'function') {
+        showNotification('📱 Install miniCycle Lite for offline access and faster loading!', 'info', 6000);
+      }
+    }, 30000);
+  });
+
+  // Handle deep links from shortcuts
+  window.addEventListener('DOMContentLoaded', function () {
+    var fragment = window.location.hash;
+    if (fragment === '#add-task') {
+      setTimeout(function () {
+        var taskInput = document.getElementById('taskInput');
+        if (taskInput) {
+          try { taskInput.focus(); } catch (e) {}
+          if (taskInput.scrollIntoView) taskInput.scrollIntoView(true);
+        }
+      }, 500);
+      try { history.replaceState(null, '', './miniCycle-lite.html'); } catch (e) {}
+    } else if (fragment === '#stats') {
+      setTimeout(function () {
+        if (typeof showStatsPanel === 'function') { showStatsPanel(); }
+      }, 500);
+      try { history.replaceState(null, '', './miniCycle-lite.html'); } catch (e) {}
+    }
+  });
+
+  // Register SW
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(function (registration) {
+        console.log('✅ [LITE] SW registered:', registration.scope);
+
+        registration.addEventListener('updatefound', function () {
+          var newWorker = registration.installing;
+          if (!newWorker) return;
+          console.log('🔄 [LITE] New SW installing...');
+          newWorker.addEventListener('statechange', function () {
+            if (newWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                console.log('🆕 [LITE] New app version available!');
+                showUpdateAvailableLite(registration);
+              } else {
+                console.log('📱 [LITE] App cached for offline use');
+                showAppCachedNotificationLite();
+              }
+            }
+          });
+        });
+
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (refreshing) return;
+          refreshing = true;
+          console.log('🔄 [LITE] Reloading for new version...');
+          window.location.reload();
+        });
+
+        // Query SW version (requires GET_VERSION handler in SW)
+        setTimeout(function () { checkServiceWorkerStatus(registration); }, 3000);
+      })
+      .catch(function (error) {
+        console.error('❌ [LITE] SW registration failed:', error);
+        if (typeof showNotification === 'function') {
+          showNotification('⚠️ Offline features may not work properly', 'warning', 4000);
+        }
+      });
+  });
+
+function showUpdateAvailableLite(registration) {
+    if (typeof showNotification === 'function') {
+      showNotification('🆕 New app version available!', 'info', 5000);
+    }
+
+    setTimeout(function () {
+      if (typeof window.showUpdatePromptLite === 'function') {
+        window.showUpdatePromptLite({
+          onConfirm: function () { updateServiceWorkerLite(registration); },
+          onCancel: function () {
+            setTimeout(function () {
+              if (typeof showNotification === 'function') {
+                showNotification('💡 Reminder: App update still available', 'info', 3000);
+              }
+            }, 300000);
+          }
+        });
+      } else {
+        // Fallback for very old devices
+        if (window.confirm('🆕 New miniCycle Lite version available!\n\nUpdate now to get the latest features and improvements?')) {
+          updateServiceWorkerLite(registration);
+        } else {
+          setTimeout(function () {
+            if (typeof showNotification === 'function') {
+              showNotification('💡 Reminder: App update still available', 'info', 3000);
+            }
+          }, 300000);
+        }
+      }
+    }, 1000);
+  }
+
+  function showAppCachedNotificationLite() {
+    if (typeof showNotification === 'function') {
+      showNotification('📱 miniCycle Lite is now available offline!', 'success', 4000);
+    }
+    setTimeout(function () { checkCacheStatus(); }, 1000);
+  }
+
+  function updateServiceWorkerLite(registration) {
+    if (!registration.waiting) {
+      console.log('⚠️ [LITE] No waiting service worker found');
+      return;
+    }
+    if (typeof showNotification === 'function') {
+      showNotification('🔄 Updating app...', 'info', 2000);
+    }
+    try { registration.waiting.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
+  }
+
+function checkServiceWorkerStatus(registration) {
+  if (registration.active) {
+    if (typeof MessageChannel !== 'undefined') {
+      var channel = new MessageChannel();
+      channel.port1.onmessage = function (event) {
+        var data = event.data || {};
+        if (data.version && data.appVersion) {
+          console.log('[LITE] App Version: ' + data.appVersion + ', Cache Version: ' + data.version);
+        }
+      };
+      try { registration.active.postMessage({ type: 'GET_VERSION' }, [channel.port2]); } catch (e) {}
+    } else {
+      // Fallback: simple ping without a reply port
+      try { registration.active.postMessage({ type: 'GET_VERSION' }); } catch (e) {}
+    }
+  } else {
+    console.log('⚠️ [LITE] Service Worker not yet active');
+  }
+}
+
+  function checkCacheStatus() {
+    if (!('caches' in window)) return;
+    caches.keys().then(function (cacheNames) {
+      var names = [];
+      for (var i = 0; i < cacheNames.length; i++) {
+        if (cacheNames[i].indexOf('miniCycle') !== -1) names.push(cacheNames[i]);
+      }
+      console.log('💾 [LITE] Available caches:', names);
+      if (names.length > 0) {
+        caches.open(names[0]).then(function (cache) {
+          cache.keys().then(function (keys) {
+            console.log('📦 [LITE] Cache contains ' + keys.length + ' assets');
+          });
+        });
+      }
+    });
+  }
+
+  // Try Full Version button → force full via URL param (SW honors offline)
+  document.addEventListener('DOMContentLoaded', function () {
+    var tryFullVersionBtn = document.getElementById('try-full-version');
+    if (tryFullVersionBtn) {
+      tryFullVersionBtn.addEventListener('click', function () {
+        var ok = window.confirm(
+          '🚀 Switch to Full Version?\n\n' +
+          'The full version has more features but may be slower on older devices.\n\n' +
+          'Your tasks will be preserved. Continue?'
+        );
+        if (!ok) return;
+        try {
+          localStorage.setItem('miniCycleForceFullVersion', 'true');
+        } catch (e) {}
+        var cacheBuster = '?mode=full&from=lite&v=' + new Date().getTime();
+        if (typeof showNotification === 'function') {
+          showNotification('🚀 Switching to full version...', 'info', 2000);
+        }
+        setTimeout(function () {
+          window.location.href = 'miniCycle.html' + cacheBuster;
+        }, 1000);
+      });
+    }
+  });
+
+  // Foreground check → optional message to SW (only if you implement it)
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && navigator.serviceWorker && navigator.serviceWorker.controller) {
+      // Optional: implement a CHECK_FOR_UPDATES handler in SW if you keep this
+      // navigator.serviceWorker.controller.postMessage({ type: 'CHECK_FOR_UPDATES' });
+    }
+  });
+
+} else {
+  // No SW support
+  setTimeout(function () {
+    if (typeof showNotification === 'function') {
+      showNotification('⚠️ Offline features unavailable in this browser', 'warning', 5000);
+    }
+  }, 2000);
+}
+
+// Global error hooks (OK on legacy)
+window.addEventListener('error', function (event) {
+  try { console.error('🚨 [LITE] Uncaught error:', event.error || event.message); } catch (e) {}
+});
+window.addEventListener('unhandledrejection', function (event) {
+  try { console.error('🚨 [LITE] Unhandled promise rejection:', event.reason); } catch (e) {}
+  event.preventDefault();
+});
+// ✅ ADD: Global install function (optional)
+window.installApp = function() {
+  if (deferredPrompt) {
+    try {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(result) {
+        if (result.outcome === 'accepted' && typeof showNotification === 'function') {
+          showNotification('🎉 miniCycle Lite installed successfully!', 'success', 4000);
+        }
+        deferredPrompt = null;
+      });
+    } catch (e) {
+      console.log('Install prompt failed');
+    }
+  }
+};
+// ✅ ADD: Check if running as PWA
+window.checkIfInstalled = function() {
+  try {
+    return window.matchMedia('(display-mode: standalone)').matches;
+  } catch (e) {
+    return false;
+  }
+};
+
+window.addEventListener('appinstalled', function () {
+  deferredPrompt = null;
+  if (typeof showNotification === 'function') {
+    showNotification('🎉 Installed! Open from your home screen anytime.', 'success', 3000);
+  }
+});
+
+</script>
+
+
+</head>
+<body>
+<!-- ✅ Header with tooltips -->
+<header class="mini-cycle-header-row">
+  <div class="mode-selector-container">
+    <select id="mode-selector" class="mode-selector" data-tooltip="Choose how tasks behave when completed">
+      <option value="auto-cycle">Auto Cycle ↻</option>
+      <option value="manual-cycle">Manual Cycle ✔︎↻</option>
+      <option value="todo-mode">To-Do Mode ✓</option>
+    </select>
+  </div>
+  <div class="header-branding">
+    <img src="assets/images/logo/logo.png" alt="miniCycle Logo" class="header-logo" onerror="this.style.display='none';">
+    <img src="assets/images/logo/app_name.png" alt="miniCycle" class="app-name" onerror="this.alt='miniCycle Lite'; this.style.display='none';">
+  </div>
+  <button id="menu-button" class="menu-button" aria-label="Open menu" tabindex="0" data-tooltip="Open main menu">Menu</button>
+</header>
+
+<!-- ✅ Mobile Mode Selector with tooltip -->
+<div class="mobile-mode-selector-wrapper">
+  <select id="mobile-mode-selector" class="mode-selector" data-tooltip="Choose your task completion mode">
+    <option value="auto-cycle">Auto Cycle ↻</option>
+    <option value="manual-cycle">Manual Cycle ✔︎↻</option>
+    <option value="todo-mode">To-Do Mode ✓</option>
+  </select>
+</div>
+
+
+<!-- ✅ Menu with tooltips and full version option -->
+<nav class="menu-container" data-modal data-menu role="navigation">
+  <div id="main-menu-header-row" class="main-menu-header-row">
+    <div class="main-menu-header-logo">
+      <img src="assets/images/logo/logo.png" alt="miniCycle Logo" width="22" height="22" onerror="this.style.display='none';">
+    </div>
+    <div class="main-menu-header">miniCycle Lite</div>
+    <div id="current-date" class="current-date"></div>
+    <button id="close-main-menu" class="close-btn menu-close-btn" aria-label="Close menu" tabindex="0" data-tooltip="Close this menu">✕</button>
+  </div>
+  
+  <div class="main-menu-row">
+    <ul role="list">
+      <li>
+        <button id="clear-mini-cycle-tasks" tabindex="0" data-tooltip="Uncheck all tasks without deleting them">
+          <i class="fas fa-broom" aria-hidden="true"></i>
+          <span class="fallback-icon" style="display: none;">🧹</span>
+          <span>Clear Tasks</span>
+        </button>
+      </li>
+      <li>
+        <button id="delete-all-mini-cycle-tasks" tabindex="0" data-tooltip="Permanently delete all tasks">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+          <span class="fallback-icon" style="display: none;">🗑️</span>
+          <span>Delete All</span>
+        </button>
+      </li>
+      <li>
+        <button id="open-feedback-modal" tabindex="0" data-tooltip="Send feedback to improve miniCycle">
+          <i class="fas fa-comment" aria-hidden="true"></i>
+          <span class="fallback-icon" style="display: none;">💬</span>
+          <span>Feedback</span>
+        </button>
+      </li>
+      <!-- ✅ NEW: Try Full Version button -->
+      <li>
+        <button id="try-full-version" tabindex="0" data-tooltip="Switch to the full-featured miniCycle version (may be slower on older devices)">
+          <i class="fas fa-rocket" aria-hidden="true"></i>
+          <span class="fallback-icon" style="display: none;">🚀</span>
+          <span>Try Full Version</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+  
+  <button id="exit-mini-cycle" tabindex="0" data-tooltip="Exit to the main TaskCycle website">
+    <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+    <span class="fallback-icon" style="display: none;">🚪</span>
+    <span>Exit miniCycle</span>
+  </button>
+</nav>
+<!-- ✅ Task management section with tooltips -->
+<main id="app-container" role="main">
+  <div id="task-view" role="region" aria-label="Task management">
+    <div class="task-input" role="form">
+      <label for="taskInput" class="sr-only">Enter a new task</label>
+      <input type="text" 
+             id="taskInput" 
+             placeholder="Enter a task..." 
+             maxlength="100"
+             autocomplete="off"
+             spellcheck="true"
+             aria-describedby="task-input-help"
+             data-tooltip="Type your task here and press Enter or click Add">
+      <button id="addTask" type="button" aria-label="Add new task" tabindex="0" data-tooltip="Add the task to your list">Add</button>
+      <div id="task-input-help" class="sr-only">Enter a task description and press Add or Enter</div>
+    </div>
+    
+    <div id="mini-cycle-title" 
+         class="mini-cycle-title" 
+         contenteditable="true"
+         role="textbox"
+         aria-label="Task list title"
+         spellcheck="true"
+         data-tooltip="Click to edit the title of your task list">My Tasks</div>
+    
+    <div class="task-list-container" role="region" aria-label="Task list">
+      <ul id="taskList" class="task-list" role="list" aria-live="polite"></ul>
+    </div>
+    
+    <div class="progress-container" role="progressbar" aria-label="Task completion progress" data-tooltip="Shows your progress completing all tasks">
+      <div id="progressBar" class="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    </div>
+    
+    <div class="complete-all-and-help-window-container">
+      <button id="completeAll" 
+              class="complete-all-btn" 
+              style="display: none;"
+              aria-label="Complete all tasks"
+              tabindex="0"
+              data-tooltip="Complete all tasks and start a new cycle">Complete All</button>
+      
+      <div id="help-window" class="help-window" role="complementary" aria-label="Help information">
+        <h4>📱 miniCycle Lite</h4>
+        <p>Optimized for maximum compatibility with older devices.</p>
+        <p><strong>Auto mode:</strong> Tasks reset automatically when all complete</p>
+        <p><strong>Manual mode:</strong> Task reset by complete button</p>
+        <p><strong>To-Do mode:</strong> Checked tasks removed by complete button</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Quick action buttons with tooltips -->
+  <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" tabindex="0" data-tooltip="Switch between light and dark themes">🌓</button>
+  <button id="quick-help-toggle" aria-label="Toggle help window" title="Toggle help window" tabindex="0" data-tooltip="Show or hide help information">❓</button>
+
+  <!-- ✅ Stats panel with tooltips -->
+  <section id="stats-panel" class="stats-panel" role="region" aria-label="Statistics">
+    <h2>📊 Stats</h2>
+    <div class="stats-grid" role="list">
+      <p role="listitem" data-tooltip="Total number of tasks you've created"><strong>Total Tasks:</strong> <span id="total-tasks" aria-live="polite">0</span></p>
+      <p role="listitem" data-tooltip="Number of tasks you've completed"><strong>Completed Tasks:</strong> <span id="completed-tasks" aria-live="polite">0</span></p>
+      <p role="listitem" data-tooltip="Percentage of tasks completed"><strong>Completion Rate:</strong> <span id="completion-rate" aria-live="polite">0%</span></p>
+    </div>
+    
+    <div class="badge-container" role="region" aria-label="Achievement badges">
+      <h3>🏅 Cycle Progress</h3>
+      <div class="badges" role="list">
+        <div class="badge" data-milestone="5" role="listitem" aria-label="5 cycles milestone" data-tooltip="Complete 5 cycles to earn this badge">5</div>
+        <div class="badge" data-milestone="10" role="listitem" aria-label="10 cycles milestone" data-tooltip="Complete 10 cycles to earn this badge">10</div>
+        <div class="badge" data-milestone="25" role="listitem" aria-label="25 cycles milestone" data-tooltip="Complete 25 cycles to earn this badge">25</div>
+        <div class="badge" data-milestone="50" role="listitem" aria-label="50 cycles milestone" data-tooltip="Complete 50 cycles to earn this badge">50</div>
+      </div>
+    </div>
+    
+    <p data-tooltip="Number of complete cycles you've finished"><strong>Cycles Completed:</strong> <span id="mini-cycle-count" aria-live="polite">0</span></p>
+  </section>
+
+  <!-- ✅ Navigation arrows with tooltips -->
+  <button class="slide-arrow" id="slide-right" aria-label="View statistics" title="Swipe or click to view stats" tabindex="0" data-tooltip="Swipe right to view your statistics">→</button>
+  <button class="slide-arrow" id="slide-left" aria-label="View tasks" title="Swipe or click to view tasks" tabindex="0" data-tooltip="Swipe left to view your tasks">←</button>
+</main>
+
+
+
+<!-- ✅ Undo/Redo buttons with tooltips -->
+<footer id="footer-container" role="contentinfo">
+  <div id="undo-redo-buttons" class="undo-container" role="toolbar" aria-label="Undo and redo actions">
+    <button id="undo-btn" class="undo-redo-btn" style="display: none;" aria-label="Undo last action" tabindex="0" data-tooltip="Undo your last action">Undo</button>
+    <button id="redo-btn" class="undo-redo-btn" style="display: none;" aria-label="Redo last action" tabindex="0" data-tooltip="Redo your last undone action">Redo</button>
+  </div>
+    <!-- ✅ Navigation dots with tooltips -->
+<div class="navigation-dots" role="tablist" aria-label="View navigation">
+  <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
+  <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
+</div>
+  <ul class="footer-links">
+    <li>&copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener">sparkinCreations</a></li>
+    <li>• miniCycle Lite v1.0 •</li>
+  </ul>
+</footer>
+
+<!-- ✅ Screen reader only styles -->
+<style>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
+
+<!-- ✅ Load JavaScript last -->
+<script src="miniCycle-lite-scripts.js?v=1.323"></script>
+
+<style>
+/* --- ES5-friendly toast --- */
+.mc-toast-wrap{position:fixed;z-index:9999;left:50%;transform:translateX(-50%);bottom:16px;max-width:92vw;width:520px;pointer-events:none}
+.mc-toast{display:flex;align-items:flex-start;margin:8px 0;background:#111;color:#fff;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:12px 14px;pointer-events:auto;border:1px solid rgba(255,255,255,.08);font:14px/1.35 Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+.mc-toast .mc-toast-icon{margin-right:10px;font-size:18px;line-height:1}
+.mc-toast .mc-toast-body{flex:1}
+.mc-toast .mc-toast-close{margin-left:10px;background:transparent;border:0;color:#fff;font-size:18px;cursor:pointer}
+.mc-toast.info{border-left:6px solid #4ea1ff}
+.mc-toast.success{border-left:6px solid #2ecc71}
+.mc-toast.warning{border-left:6px solid #f1c40f}
+.mc-toast.error{border-left:6px solid #e74c3c}
+</style>
+<script>
+// ES5 toast implementation
+(function () {
+  var wrapId = 'mc-toast-wrap';
+  function ensureWrap() {
+    var el = document.getElementById(wrapId);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = wrapId;
+      el.className = 'mc-toast-wrap';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function iconFor(type) {
+    if (type === 'success') return '✅';
+    if (type === 'warning') return '⚠️';
+    if (type === 'error')   return '❌';
+    return 'ℹ️';
+  }
+  // global: showNotification(messageHTML, type='info', durationMs=3000)
+  window.showNotification = function (message, type, duration) {
+    try {
+      type = type || 'info';
+      duration = typeof duration === 'number' ? duration : 3000;
+      var wrap = ensureWrap();
+      var toast = document.createElement('div');
+      toast.className = 'mc-toast ' + type;
+
+      var icon = document.createElement('div');
+      icon.className = 'mc-toast-icon';
+      icon.innerHTML = iconFor(type);
+
+      var body = document.createElement('div');
+      body.className = 'mc-toast-body';
+      // allow simple HTML (you already pass small markup)
+      body.innerHTML = message;
+
+      var close = document.createElement('button');
+      close.className = 'mc-toast-close';
+      close.setAttribute('aria-label', 'Close notification');
+      close.innerHTML = '×';
+      close.onclick = function () {
+        if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+      };
+
+      toast.appendChild(icon);
+      toast.appendChild(body);
+      toast.appendChild(close);
+      wrap.appendChild(toast);
+
+      if (duration > 0) {
+        setTimeout(function () {
+          try { close.click(); } catch (e) {
+            if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+          }
+        }, duration);
+      }
+    } catch (e) { /* no-op on legacy */ }
+  };
+})();
+</script>
+
+<style>
+/* --- ES5-friendly modal --- */
+.mc-modal-veil{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998}
+.mc-modal{position:fixed;z-index:9999;left:50%;top:50%;transform:translate(-50%,-50%);width:92vw;max-width:520px;background:#111;color:#fff;border-radius:14px;border:1px solid rgba(255,255,255,.08);box-shadow:0 30px 60px rgba(0,0,0,.45);overflow:hidden}
+.mc-modal-hd{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:600}
+.mc-modal-bd{padding:14px 16px;font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+.mc-modal-ft{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid rgba(255,255,255,.08)}
+.mc-btn{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}
+.mc-btn.primary{background:#4ea1ff;color:#001226}
+.mc-btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2)}
+.mc-modal .mc-pill{display:inline-block;margin:0 0 8px;padding:4px 8px;border-radius:999px;background:rgba(78,161,255,.15);border:1px solid rgba(78,161,255,.35);font-size:12px}
+</style>
+<script>
+// ES5 modal helper for update prompts
+(function(){
+  function el(tag, cls, html){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function kill(node){ if(node && node.parentNode){ node.parentNode.removeChild(node); } }
+
+  // global: showUpdatePromptLite({ onConfirm, onCancel })
+  window.showUpdatePromptLite = function (opts) {
+    opts = opts || {};
+    var veil = el('div','mc-modal-veil');
+    var modal = el('div','mc-modal');
+
+    var hd = el('div','mc-modal-hd','🚀 App Update Available');
+    var bd = el('div','mc-modal-bd');
+    bd.innerHTML =
+      '<div class="mc-pill">miniCycle Lite</div>' +
+      '<p>A new version is ready to install.</p>' +
+      '<ul style="margin:8px 0 0 18px;line-height:1.4;">' +
+        '<li>New features & improvements</li>' +
+        '<li>Bug fixes & performance</li>' +
+        '<li>Latest offline cache</li>' +
+      '</ul>' +
+      '<p style="margin-top:10px;">Apply the update now? The app will refresh automatically.</p>';
+
+    var ft = el('div','mc-modal-ft');
+    var later = el('button','mc-btn ghost','Later');
+    var upd   = el('button','mc-btn primary','Update Now');
+
+    function close(doCancel){
+      kill(veil); kill(modal);
+      if (doCancel && typeof opts.onCancel === 'function') { try{ opts.onCancel(); }catch(e){} }
+    }
+    later.onclick = function(){ close(true); };
+    upd.onclick = function(){
+      kill(veil); kill(modal);
+      if (typeof opts.onConfirm === 'function') { try{ opts.onConfirm(); }catch(e){} }
+    };
+
+    ft.appendChild(later);
+    ft.appendChild(upd);
+    modal.appendChild(hd);
+    modal.appendChild(bd);
+    modal.appendChild(ft);
+    document.body.appendChild(veil);
+    document.body.appendChild(modal);
+
+    // basic focus
+    try { upd.focus(); } catch(e){}
+  };
+})();
+</script>
+
+<!-- ✅ Fallback for FontAwesome not loading -->
+<script>
+// ✅ Show fallback icons if FontAwesome fails to load
+setTimeout(function() {
+  var testIcon = document.createElement('i');
+  testIcon.className = 'fas fa-test';
+  testIcon.style.display = 'none';
+  document.body.appendChild(testIcon);
+  
+  var computedStyle = window.getComputedStyle(testIcon, ':before');
+  if (!computedStyle.content || computedStyle.content === 'none') {
+    // FontAwesome didn't load, show fallback icons
+    console.log('⚠️ FontAwesome not loaded, using emoji fallbacks');
+    var faIcons = document.querySelectorAll('i.fas, i.far, i.fab');
+    for (var i = 0; i < faIcons.length; i++) {
+      faIcons[i].style.display = 'none';
+      var fallback = faIcons[i].nextElementSibling;
+      if (fallback && fallback.classList.contains('fallback-icon')) {
+        fallback.style.display = 'inline-block';
+      }
+    }
+  }
+  
+  document.body.removeChild(testIcon);
+}, 2000); // Check after 2 seconds
+</script>
+
+<!-- ✅ Enhanced fallback for very old browsers -->
+<noscript>
+  <div style="position: fixed; top: 0; left: 0; right: 0; background: #ff4444; color: white; padding: 15px; text-align: center; z-index: 9999; font-family: Arial, sans-serif;">
+    <strong>JavaScript Required</strong><br>
+    miniCycle requires JavaScript to function. Please enable JavaScript in your browser settings and refresh this page.
+  </div>
+</noscript>
+
+</body>
+</html>

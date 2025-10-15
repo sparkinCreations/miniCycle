@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.323">
+<meta name="app-version" content="1.325">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.323">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.325">
 <link rel="manifest" href="manifest.json">
 
 
@@ -144,8 +144,11 @@ if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (refreshing) return;
         refreshing = true;
-        console.log('🔄 Page will reload to get new version...');
-        window.location.reload();
+        console.log('🔄 New service worker is now controlling the page');
+
+        // ✅ Show confirmation BEFORE reloading
+        // Give user choice to reload now or later
+        showReloadConfirmation();
       });
       
     } catch (error) {
@@ -169,15 +172,15 @@ if ('serviceWorker' in navigator) {
                    ✨ New features and improvements<br>
                    🐛 Bug fixes and performance enhancements<br>
                    🔒 Latest security updates<br><br>
-                   You can choose to update now or continue using the current version. Updates are optional and you can install them whenever you're ready.`,
-          confirmText: "🔄 Update Now",
-          cancelText: "Later",
+                   <strong>Don't worry:</strong> After clicking "Prepare Update", you'll be asked again before the page reloads. Your work is safe!`,
+          confirmText: "✅ Prepare Update",
+          cancelText: "Maybe Later",
           callback: (confirmed) => {
             if (confirmed) {
               updateServiceWorker(registration);
-              showNotification('🔄 Updating app...', 'info', 3000);
+              showNotification('⏳ Preparing update in background...', 'info', 3000);
             } else {
-              showNotification('ℹ️ Update available - check Settings menu or refresh to install', 'info', 6000);
+              showNotification('ℹ️ Update postponed - you can install it anytime from Settings', 'info', 6000);
             }
           }
         });
@@ -200,9 +203,58 @@ if ('serviceWorker' in navigator) {
   // ✅ Function to update service worker
   function updateServiceWorker(registration) {
     if (!registration.waiting) return;
-    
+
     // Tell the waiting service worker to take control
     registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+
+  // ✅ Function to ask user if they want to reload NOW or LATER
+  function showReloadConfirmation() {
+    console.log('📢 Asking user if they want to reload now...');
+
+    // Show notification first
+    if (typeof showNotification === 'function') {
+      showNotification('✅ Update installed! Ready to reload?', 'success', 5000);
+    }
+
+    // Then show confirmation modal
+    setTimeout(() => {
+      if (typeof showConfirmationModal === 'function') {
+        showConfirmationModal({
+          title: "✅ Update Installed Successfully!",
+          message: `The app has been updated in the background.<br><br>
+                   🔄 <strong>Reload now</strong> to start using the new version<br>
+                   ⏰ <strong>Or reload later</strong> when you're ready<br><br>
+                   Your tasks and data are safe - nothing will be lost. The update will apply on your next visit if you choose to wait.`,
+          confirmText: "🔄 Reload Now",
+          cancelText: "⏰ Reload Later",
+          callback: (confirmed) => {
+            if (confirmed) {
+              console.log('User confirmed reload - reloading now...');
+              if (typeof showNotification === 'function') {
+                showNotification('🔄 Reloading to apply update...', 'info', 2000);
+              }
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            } else {
+              console.log('User postponed reload - will apply on next page load');
+              if (typeof showNotification === 'function') {
+                showNotification('✅ Update will apply on your next visit', 'info', 4000);
+              }
+            }
+          }
+        });
+      } else {
+        // Fallback to browser confirm if modal isn't available yet
+        const reloadNow = confirm('✅ Update installed!\n\nReload now to apply the update?\n\n(You can also reload later - the update is ready and waiting)');
+        if (reloadNow) {
+          window.location.reload();
+        } else {
+          console.log('User chose to reload later');
+        }
+      }
+    }, 1000);
   }
   
 } else {
@@ -1586,7 +1638,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.323"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.325"></script>
 
 <script>
 // Sync About modal version with meta app-version
