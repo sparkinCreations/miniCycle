@@ -119,8 +119,70 @@ if ('serviceWorker' in navigator) {
   const SW_VERSION = '1327';
   const CURRENT_CACHE_VERSION = 'v104'; // Must match service-worker.js
 
+  // ✅ Function to register service worker with all event listeners
+  async function registerServiceWorker() {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=${SW_VERSION}`, {
+      updateViaCache: 'none'
+    });
+    console.log('✅ Service Worker registered successfully:', registration.scope);
+
+    // Handle service worker updates
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      console.log('🔄 New service worker installing...');
+
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed') {
+          if (navigator.serviceWorker.controller) {
+            console.log('🆕 New app version available!');
+            showUpdateAvailable(registration);
+          } else {
+            console.log('📱 App cached for offline use');
+            showAppCachedNotification();
+          }
+        }
+      });
+    });
+
+    // Handle controlled page refresh
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      console.log('🔄 New service worker is now controlling the page');
+      showReloadConfirmation();
+    });
+
+    // Force check for updates when page becomes visible
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && registration) {
+        console.log('👁️ Page visible again - checking for updates...');
+        registration.update().catch(err => {
+          console.warn('Update check failed:', err);
+        });
+      }
+    });
+
+    // Check for updates every 60 seconds
+    setInterval(() => {
+      if (!document.hidden && registration) {
+        console.log('⏰ Periodic update check...');
+        registration.update().catch(err => {
+          console.warn('Periodic update check failed:', err);
+        });
+      }
+    }, 60000);
+  }
+
   window.addEventListener('load', async () => {
     try {
+      // ✅ CHECK FLAG FIRST - Skip migration if already done
+      if (localStorage.getItem('sw-migration-v1327-done') === 'true') {
+        console.log('✅ Migration already completed - skipping old SW checks');
+        // Jump straight to registration
+        await registerServiceWorker();
+        return;
+      }
+
       // ✅ STEP 0: NUCLEAR OPTION - Clear old caches BEFORE checking SW
       // This ensures old cached files don't persist
       const allCaches = await caches.keys();
@@ -158,100 +220,43 @@ if ('serviceWorker' in navigator) {
       if (needsReload) {
         console.log('🔄 Old service worker removed - prompting user to reload');
 
-        // Use a flag in sessionStorage to prevent repeated prompts
-        if (!sessionStorage.getItem('sw-migration-reload-done')) {
-          sessionStorage.setItem('sw-migration-reload-done', 'true');
+        // Set flag IMMEDIATELY (use localStorage for persistence across sessions)
+        localStorage.setItem('sw-migration-v1327-done', 'true');
 
-          // Show user-friendly notification
-          setTimeout(() => {
-            if (typeof showNotification === 'function') {
-              showNotification('🔄 App update ready - reload recommended', 'info', 8000);
-            }
+        // Show user-friendly notification
+        setTimeout(() => {
+          if (typeof showNotification === 'function') {
+            showNotification('🔄 App update ready - reload recommended', 'info', 8000);
+          }
 
-            if (typeof showConfirmationModal === 'function') {
-              showConfirmationModal({
-                title: "🔄 Important App Update",
-                message: `We've updated miniCycle's core system!<br><br>
-                         ✅ Old version has been safely removed<br>
-                         🆕 New version is ready to install<br>
-                         🔄 Please reload the page to complete the update<br><br>
-                         This is a one-time update to improve future update reliability.`,
-                confirmText: "🔄 Reload Now",
-                cancelText: "Later",
-                callback: (confirmed) => {
-                  if (confirmed) {
-                    window.location.reload();
-                  }
+          if (typeof showConfirmationModal === 'function') {
+            showConfirmationModal({
+              title: "🔄 Important App Update",
+              message: `We've updated miniCycle's core system!<br><br>
+                       ✅ Old version has been safely removed<br>
+                       🆕 New version is ready to install<br>
+                       🔄 Please reload the page to complete the update<br><br>
+                       This is a one-time update to improve future update reliability.`,
+              confirmText: "🔄 Reload Now",
+              cancelText: "Later",
+              callback: (confirmed) => {
+                if (confirmed) {
+                  window.location.reload();
                 }
-              });
-            } else {
-              // Fallback
-              if (confirm('🔄 App update ready!\n\nReload now to complete the update?\n(One-time update to improve future updates)')) {
-                window.location.reload();
               }
-            }
-          }, 1500);
-        }
-      }
-
-      // ✅ STEP 2: Register new service worker with version parameter
-      // CRITICAL: updateViaCache: 'none' prevents browser from caching the SW file
-      // Version parameter forces browser to fetch new SW file (bypasses old cache)
-      const registration = await navigator.serviceWorker.register(`./service-worker.js?v=${SW_VERSION}`, {
-        updateViaCache: 'none'
-      });
-      console.log('✅ Service Worker registered successfully:', registration.scope);
-      
-      // ✅ Handle service worker updates
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        console.log('🔄 New service worker installing...');
-        
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed') {
-            if (navigator.serviceWorker.controller) {
-              // New update available
-              console.log('🆕 New app version available!');
-              showUpdateAvailable(registration);
-            } else {
-              // First install
-              console.log('📱 App cached for offline use');
-              showAppCachedNotification();
+            });
+          } else {
+            // Fallback
+            if (confirm('🔄 App update ready!\n\nReload now to complete the update?\n(One-time update to improve future updates)')) {
+              window.location.reload();
             }
           }
-        });
-      });
-      
-      // ✅ Handle controlled page refresh
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        console.log('🔄 New service worker is now controlling the page');
+        }, 1500);
+        return; // Don't register SW yet - wait for reload
+      }
 
-        // ✅ Show confirmation BEFORE reloading
-        // Give user choice to reload now or later
-        showReloadConfirmation();
-      });
-
-      // ✅ Force check for updates when page becomes visible (tab switch, window focus)
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && registration) {
-          console.log('👁️ Page visible again - checking for updates...');
-          registration.update().catch(err => {
-            console.warn('Update check failed:', err);
-          });
-        }
-      });
-
-      // ✅ Also check for updates every 60 seconds while page is active
-      setInterval(() => {
-        if (!document.hidden && registration) {
-          console.log('⏰ Periodic update check...');
-          registration.update().catch(err => {
-            console.warn('Periodic update check failed:', err);
-          });
-        }
-      }, 60000); // Every 60 seconds
+      // ✅ STEP 2: Register new service worker (no old SW found, or migration complete)
+      await registerServiceWorker();
 
     } catch (error) {
       console.error('❌ Service Worker registration failed:', error);
