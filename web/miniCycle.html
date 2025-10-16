@@ -116,10 +116,27 @@ if ('serviceWorker' in navigator) {
   let refreshing;
 
   // ✅ SW version - increment this when you update the service worker
-  const SW_VERSION = '1326';
+  const SW_VERSION = '1327';
+  const CURRENT_CACHE_VERSION = 'v104'; // Must match service-worker.js
 
   window.addEventListener('load', async () => {
     try {
+      // ✅ STEP 0: NUCLEAR OPTION - Clear old caches BEFORE checking SW
+      // This ensures old cached files don't persist
+      const allCaches = await caches.keys();
+      const oldCaches = allCaches.filter(name =>
+        name.includes('miniCycle-') &&
+        !name.includes(CURRENT_CACHE_VERSION) // Keep only current version caches
+      );
+
+      if (oldCaches.length > 0) {
+        console.log(`🧹 Found ${oldCaches.length} old cache(s), deleting...`);
+        for (const cacheName of oldCaches) {
+          await caches.delete(cacheName);
+          console.log(`✅ Deleted old cache: ${cacheName}`);
+        }
+      }
+
       // ✅ STEP 1: Check for old service worker registrations and clean them up
       const existingRegistrations = await navigator.serviceWorker.getRegistrations();
       console.log(`🔍 Found ${existingRegistrations.length} existing service worker(s)`);
