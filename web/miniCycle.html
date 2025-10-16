@@ -114,11 +114,73 @@
 // ✅ Enhanced Service Worker Registration with Update Management
 if ('serviceWorker' in navigator) {
   let refreshing;
-  
+
+  // ✅ SW version - increment this when you update the service worker
+  const SW_VERSION = '1326';
+
   window.addEventListener('load', async () => {
     try {
-      // ✅ CRITICAL: updateViaCache: 'none' prevents browser from caching the SW file
-      const registration = await navigator.serviceWorker.register('./service-worker.js', {
+      // ✅ STEP 1: Check for old service worker registrations and clean them up
+      const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+      console.log(`🔍 Found ${existingRegistrations.length} existing service worker(s)`);
+
+      let needsReload = false;
+
+      // Check if we have an old SW without version parameter
+      for (const reg of existingRegistrations) {
+        const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=')) {
+          console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
+          await reg.unregister();
+          console.log('✅ Old service worker unregistered successfully');
+          needsReload = true;
+        }
+      }
+
+      // ✅ If we unregistered an old SW, prompt user to reload once
+      if (needsReload) {
+        console.log('🔄 Old service worker removed - prompting user to reload');
+
+        // Use a flag in sessionStorage to prevent repeated prompts
+        if (!sessionStorage.getItem('sw-migration-reload-done')) {
+          sessionStorage.setItem('sw-migration-reload-done', 'true');
+
+          // Show user-friendly notification
+          setTimeout(() => {
+            if (typeof showNotification === 'function') {
+              showNotification('🔄 App update ready - reload recommended', 'info', 8000);
+            }
+
+            if (typeof showConfirmationModal === 'function') {
+              showConfirmationModal({
+                title: "🔄 Important App Update",
+                message: `We've updated miniCycle's core system!<br><br>
+                         ✅ Old version has been safely removed<br>
+                         🆕 New version is ready to install<br>
+                         🔄 Please reload the page to complete the update<br><br>
+                         This is a one-time update to improve future update reliability.`,
+                confirmText: "🔄 Reload Now",
+                cancelText: "Later",
+                callback: (confirmed) => {
+                  if (confirmed) {
+                    window.location.reload();
+                  }
+                }
+              });
+            } else {
+              // Fallback
+              if (confirm('🔄 App update ready!\n\nReload now to complete the update?\n(One-time update to improve future updates)')) {
+                window.location.reload();
+              }
+            }
+          }, 1500);
+        }
+      }
+
+      // ✅ STEP 2: Register new service worker with version parameter
+      // CRITICAL: updateViaCache: 'none' prevents browser from caching the SW file
+      // Version parameter forces browser to fetch new SW file (bypasses old cache)
+      const registration = await navigator.serviceWorker.register(`./service-worker.js?v=${SW_VERSION}`, {
         updateViaCache: 'none'
       });
       console.log('✅ Service Worker registered successfully:', registration.scope);
