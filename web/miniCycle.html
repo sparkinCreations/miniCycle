@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.325">
+<meta name="app-version" content="1.326">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.325">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.326">
 <link rel="manifest" href="manifest.json">
 
 
@@ -117,7 +117,10 @@ if ('serviceWorker' in navigator) {
   
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./service-worker.js');
+      // ✅ CRITICAL: updateViaCache: 'none' prevents browser from caching the SW file
+      const registration = await navigator.serviceWorker.register('./service-worker.js', {
+        updateViaCache: 'none'
+      });
       console.log('✅ Service Worker registered successfully:', registration.scope);
       
       // ✅ Handle service worker updates
@@ -150,7 +153,27 @@ if ('serviceWorker' in navigator) {
         // Give user choice to reload now or later
         showReloadConfirmation();
       });
-      
+
+      // ✅ Force check for updates when page becomes visible (tab switch, window focus)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && registration) {
+          console.log('👁️ Page visible again - checking for updates...');
+          registration.update().catch(err => {
+            console.warn('Update check failed:', err);
+          });
+        }
+      });
+
+      // ✅ Also check for updates every 60 seconds while page is active
+      setInterval(() => {
+        if (!document.hidden && registration) {
+          console.log('⏰ Periodic update check...');
+          registration.update().catch(err => {
+            console.warn('Periodic update check failed:', err);
+          });
+        }
+      }, 60000); // Every 60 seconds
+
     } catch (error) {
       console.error('❌ Service Worker registration failed:', error);
     }
@@ -1638,7 +1661,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.325"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.326"></script>
 
 <script>
 // Sync About modal version with meta app-version
