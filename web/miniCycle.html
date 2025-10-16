@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.326">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.327">
 <link rel="manifest" href="manifest.json">
 
 
@@ -144,12 +144,12 @@ if ('serviceWorker' in navigator) {
       });
     });
 
-    // Handle controlled page refresh
+    // Handle controlled page refresh - AUTO-RELOAD when new SW takes control
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
       refreshing = true;
-      console.log('🔄 New service worker is now controlling the page');
-      showReloadConfirmation();
+      console.log('🔄 New service worker is now controlling the page - reloading...');
+      window.location.reload();
     });
 
     // Force check for updates when page becomes visible
@@ -1745,7 +1745,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.326"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.327"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1783,10 +1783,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 </script>
-   <script type="module" src="utilities/notifications.js"></script>
-   <script type="module" src="utilities/testing-modal.js"></script>
-   <script type="module" src="utilities/testing-modal-integration.js"></script>
-   <script src="utilities/automated-tests-fix.js"></script>
+   <script type="module" src="utilities/notifications.js?v=1.327"></script>
+   <script type="module" src="utilities/testing-modal.js?v=1.327"></script>
+   <script type="module" src="utilities/testing-modal-integration.js?v=1.327"></script>
+   <script src="utilities/automated-tests-fix.js?v=1.327"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
