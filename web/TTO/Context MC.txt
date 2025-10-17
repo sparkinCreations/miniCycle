@@ -1,0 +1,539 @@
+# Developer Context: sparkinCreations Projects & Architecture
+
+**Last Updated:** January 2025  
+**Purpose:** Context document for future technical discussions about architecture, refactoring, and development approach
+
+-----
+
+## Who I Am
+
+**Current Role:** Quality inspector (aerospace background)  
+**Goal:** Transitioning to full-time indie software development  
+**Timeline:** 3-year business plan with realistic revenue targets  
+**Focus:** Building workflow productivity tools, especially for professionals like quality inspectors
+
+**Key Point:** I’m building these apps while learning to code. Each project teaches skills for the next one.
+
+-----
+
+## My Projects Overview
+
+### 1. miniCycle (10 months development)
+
+**Website:** minicycle.app  
+**Status:** Production, actively maintained  
+**Purpose:** Free tier for user acquisition in business model  
+**Tech Stack:** Pure vanilla JavaScript (ES6+), no build tools, no frameworks
+
+**Key Architecture Decisions:**
+
+- **No build tools** - Edit and refresh workflow
+- **Modular architecture** - 20+ extracted modules (~11,000 lines main + modules)
+- **Schema 2.5** - Comprehensive data structure with migration system
+- **State management** - Centralized AppState with undo/redo
+- **Device detection** - Automatic routing to appropriate version
+- **PWA** - Service Worker v82, offline-first
+
+**Dual Version System:**
+
+- **Full version** (miniCycle.html): Modern ES6+, all features
+- **Lite version** (miniCycle-lite.html): ES5-compatible fallback
+  - Hand-optimized, NOT transpiled
+  - **FROZEN** - not updated with regular releases
+  - Only critical security/bug fixes
+  - Enables 2B+ users on old/budget devices
+
+**Core Features:**
+
+- Task cycling system (tasks reset, don’t delete)
+- Three modes: Auto Cycle, Manual Cycle, To-Do Mode
+- Multiple cycle lists
+- Recurring tasks with templates
+- Due dates and reminders
+- Stats panel with gamification
+- Drag and drop
+- Undo/redo system
+- Export/Import (.mcyc format)
+
+**Current State:**
+
+- Main script: 9,362 lines (down from 15,677 - 40% reduction)
+- 20 extracted modules in `utilities/` folder
+- Ongoing refactoring: extracting Task System, Cycle System, UI modules
+- Version: 1.325
+
+**Key Files to Know:**
+
+- `miniCycle-scripts.js` - Main orchestrator
+- `utilities/state.js` - Centralized state (379 lines)
+- `utilities/cycleLoader.js` - Data loading (273 lines)
+- `utilities/deviceDetection.js` - Device routing (293 lines)
+- `utilities/reminders.js` - Reminder system (621 lines)
+- `utilities/dueDates.js` - Due date management
+
+**Refactoring Patterns Used:**
+
+- Static Utilities ⚡ - Pure functions, no dependencies
+- Simple Instances 🎯 - Self-contained, graceful degradation
+- Resilient Constructors 🛡 - Complex UI with fallbacks
+- Strict Injection 🔧 - Critical business logic, fail-fast
+
+### 2. Task Cycle (1.5 years development)
+
+**Website:** taskcycle.app  
+**Status:** Complete but needs modernization  
+**Purpose:** Paid tier ($25) for workflow professionals in business model  
+**Tech Stack:** Vanilla JavaScript, single file, Chart.js integration
+
+**Why It Took Longer:**
+
+- First major project (learning while building)
+- Everything in one file (not modular)
+- Feature-rich but harder to maintain
+
+**Key Features:**
+
+- **Hierarchical tasks** - Subtasks with weighted completion
+- **Activity timeline** - Full action logging with timestamps
+- **Built-in stopwatch/timer** - Time tracking
+- **Charts & statistics** - Pie charts, bar charts for visualization
+- **File management** - Save/Load/Rename/Delete cycles
+- **Priority marking** - Both tasks AND subtasks
+- **Task details/notes** - Extensive note-taking
+- **Manual vs Auto completion** - Dual completion tracking
+- **Drag and drop** - Task reordering
+- **Progress bars** - Visual completion tracking
+
+**Current Challenge:**
+
+- One giant file makes it hard to add team features for Pro tier
+- Considering rebuilding in React for better architecture
+- Would take ~2-3 weeks with current skills (vs original 1.5 years)
+
+**Tech File:** `TaskCycle-scripts.txt` in project knowledge
+
+### 3. MasterMath (2 days development)
+
+**Website:** mastermath.app  
+**Status:** Production  
+**Purpose:** Educational tool, learning AI-assisted development  
+**Tech Stack:** React 18.3.1 + Vite, shadcn/ui, Tailwind CSS
+
+**Speed Multiplier:**
+
+- AI assistance (Claude)
+- Modern React component model
+- Pre-built UI libraries (shadcn/ui)
+- Accumulated experience from previous projects
+
+**Key Features:**
+
+- Step-by-step math solutions (derivatives, integrals, limits, algebra, trig)
+- Educational tips and common mistakes
+- Graph visualization (Recharts)
+- Progress tracking
+- Export functionality (PDF, CSV, JSON, Markdown)
+- Dark/light mode
+- 100% client-side (privacy-first, no accounts)
+
+**Libraries Used:**
+
+- Math solving: Algebrite, MathJS, mathsteps
+- NO AI-based solving (rejected for deterministic accuracy)
+- Charts: Recharts
+- Animation: Framer Motion
+
+**Key Decision:**
+Rejected AI-based math solving even though AI was assisting with code - wanted deterministic, verifiable results for educational integrity.
+
+-----
+
+## Development Timeline & Velocity
+
+**Task Cycle:** 1.5 years (first major project, learning curve)  
+**miniCycle:** 10 months (better architecture, modular from start)  
+**MasterMath:** 2 days (AI-assisted, modern stack, accumulated experience)
+
+**Velocity Improvement:**
+
+- Project 1 → Project 2: 40% faster with better architecture
+- Project 2 → Project 3: 150x faster with modern tools + AI
+- Each project teaches skills for the next
+
+-----
+
+## Technical Philosophy & Patterns
+
+### Core Values (Never Compromise)
+
+- ✅ **Privacy-first** - No data collection, no accounts, client-side only
+- ✅ **Offline-first** - Works without internet (factory floors, emerging markets)
+- ✅ **Accessibility** - Works on old devices (ES5 Lite version)
+- ✅ **Complete features** - Not MVP, full experiences
+- ✅ **Polish where it matters** - UX, export, documentation
+- ✅ **Educational over convenience** - Teach, don’t just solve
+
+### Tool Selection Strategy
+
+**Pragmatic, Not Dogmatic:**
+
+- miniCycle: Vanilla JS (right for long-term solo maintenance, offline-first)
+- MasterMath: React (right for rapid development with AI assistance)
+- Task Cycle: Considering React rebuild (right for team features in Pro tier)
+
+**Decision Criteria:**
+
+- Project scope and complexity
+- Maintenance requirements
+- Development velocity needs
+- Target user constraints
+
+### Architecture Patterns
+
+**miniCycle’s Modular Approach:**
+
+```
+utilities/
+├── Static Utilities ⚡ (globalUtils.js)
+│   - Pure functions, no dependencies
+│   - Input → Output, no side effects
+│
+├── Simple Instances 🎯 (notifications.js)
+│   - Self-contained, works immediately
+│   - Graceful degradation with fallbacks
+│
+├── Resilient Constructors 🛡 (statsPanel.js)
+│   - Complex UI with dependency injection
+│   - Handles missing dependencies elegantly
+│
+└── Strict Injection 🔧 (cycleLoader.js)
+    - Critical business logic
+    - Fails fast if dependencies missing
+```
+
+**Data Management:**
+
+- localStorage for persistence
+- Schema 2.5 with migration system
+- `loadMiniCycleData()` transforms storage → runtime format
+- Example: `customReminders` (storage) → `reminders` (runtime)
+
+### Development Speed
+
+**“Two Speeds”:**
+
+1. **Build It Right Mode** (miniCycle, 10 months)
+- Deep architecture planning
+- Comprehensive documentation
+- Multiple fallback strategies
+- Built for longevity
+1. **Ship It Fast Mode** (MasterMath, 2 days)
+- Modern toolkit + AI assistance
+- Core features prioritized
+- Iterate based on feedback
+
+**Can consciously choose which mode fits the project.**
+
+-----
+
+## Key Insights About How I Work
+
+### 1. Progressive Feature Builder
+
+- Don’t ship “MVP” - ship **complete first versions**
+- MasterMath has 4 export formats on day 1
+- Task Cycle has charts, timeline, stopwatch
+- Features are complete, not placeholder
+
+### 2. “Hide Complexity” Design
+
+- Make complex functionality look simple
+- Task Cycle UI looks clean → hides hierarchical subtasks, weighted calculations, timeline
+- Clean interfaces don’t mean simple implementations
+
+### 3. Privacy & Accessibility Non-Negotiable
+
+- Even in “fast mode” (MasterMath), privacy-first architecture
+- ES5 Lite version for 2B+ users on old devices
+- Offline-first by default
+- No compromises on user data control
+
+### 4. Build Safety Nets
+
+- Device detection → fallback to Lite
+- Manual override → escape hatches
+- Testing modal → debugging safety
+- Undo/redo → mistake recovery
+- Graceful degradation everywhere
+
+### 5. Domain-Driven Development
+
+- Building tools for quality inspectors (my day job)
+- Understand workflow professional needs deeply
+- Not guessing features - solving my own pain points
+- Video-to-text project = inspection documentation workflow
+
+### 6. Documentation as Infrastructure
+
+- Extensive docs for all projects
+- DEVELOPER_DOCUMENTATION.md
+- FINAL-MODULE-STRUCTURE.md
+- CLAUDE.md (for AI assistance)
+- Schema docs, migration guides
+- **But:** Sometimes forget my own solutions (transformation layers, stats in Lite)
+
+### 7. Learning Trajectory
+
+- Each project teaches skills for next
+- Task Cycle → vanilla JS patterns
+- miniCycle → modular architecture, state management
+- MasterMath → React, AI assistance, modern tooling
+- Future: Video processing, ML models, offline AI
+
+-----
+
+## Current State & Goals
+
+### Immediate Technical Goals
+
+- **miniCycle refactoring:** Continue extracting modules
+  - Task System (7 modules, ~3,000 lines)
+  - Cycle System (5 modules, ~2,500 lines)
+  - UI Coordination (6 modules, ~2,500 lines)
+- **Task Cycle modernization:** Rebuild in React
+  - Take 1.5 years of features
+  - Rebuild in 2-3 weeks with modern stack
+  - Prepare for Pro tier (team features)
+
+### Learning Goals
+
+- Master React component patterns
+- AI-assisted development workflows
+- Video processing (offline video-to-text converter)
+- More complex projects using accumulated skills
+
+### Business Context (Not Main Focus, But Context)
+
+- Building 3-tier product ecosystem
+- miniCycle (free) → Task Cycle ($25) → Task Cycle Pro ($10-15/mo)
+- Target: workflow professionals (inspectors, healthcare, compliance)
+- 3-year plan to transition from quality inspector to full-time dev
+- **But focus is on architecture & technical skills, not business execution yet**
+
+-----
+
+## Important Technical Decisions Explained
+
+### Why No React for miniCycle?
+
+- Built for longevity and stability
+- No dependencies = no breaking changes
+- ES5 fallback wouldn’t work with React
+- Direct DOM control = smaller bundle, better performance
+- The modularity I built IS my framework
+- 10 months invested in vanilla patterns
+- **Would NOT rebuild miniCycle in React**
+
+### Why Consider React for Task Cycle?
+
+- Task Cycle is simpler (less scope than miniCycle)
+- Would benefit from component model (hierarchical tasks)
+- Need clean architecture for Pro tier features
+- Can rebuild 50x faster with current skills
+- Modern tooling = faster feature velocity
+
+### Why miniCycle Lite is NOT Over-Engineering
+
+- Serves 2B+ users on budget devices globally
+- Follows industry patterns (Facebook Lite, YouTube Go)
+- Hand-optimized ES5 is smaller/faster than transpiled
+- **FROZEN** - not updated with regular releases
+- Only critical security/bug fixes
+- Zero parallel maintenance burden
+- Enables universal accessibility
+- See `MINICYCLE_LITE.md` for full documentation
+
+### Data Transformation Layer
+
+```javascript
+// localStorage stores: customReminders
+// Runtime uses: reminders
+
+function loadMiniCycleData() {
+  const parsed = JSON.parse(localStorage.getItem("miniCycleData"));
+  return {
+    cycles: parsed.data.cycles,
+    activeCycle: parsed.appState.activeCycleId,
+    reminders: parsed.customReminders,  // ← Transformation
+    settings: parsed.settings
+  };
+}
+```
+
+This creates cleaner runtime API while keeping verbose storage names.
+
+### Device Detection Strategy
+
+```javascript
+// Automatic redirect to Lite when:
+- Android 1.x - 4.x
+- Chrome < 50, Firefox < 50, Safari < 8
+- CPU cores ≤ 2
+- 2G or 3G connection
+
+// Manual override available:
+localStorage.setItem('miniCycleForceFullVersion', 'true');
+```
+
+-----
+
+## Common Misconceptions to Avoid
+
+### “You’re slow/careful”
+
+**Reality:** Built miniCycle in 10 months with dual versions and comprehensive architecture. That’s fast AND thorough.
+
+### “miniCycle took years”
+
+**Reality:** 10 months. Task Cycle took 1.5 years (first project, learning curve).
+
+### “Task Cycle is simpler than miniCycle”
+
+**Reality:** Task Cycle has features miniCycle doesn’t - subtasks, timeline, stopwatch, weighted completion. Just looks simpler because of clean UI.
+
+### “Lite version is over-engineering”
+
+**Reality:** Industry best practice for global accessibility, zero ongoing maintenance, serves 2B+ users. Frozen stable fallback.
+
+### “You undersell your work”
+
+**Accurate:** Phrases like “not bad for a free app” undersell professional-quality work. Likely internalized criticism about “over-engineering.”
+
+-----
+
+## Technical Preferences & Patterns
+
+### What I Like
+
+- Vanilla JS for stable, long-term projects
+- React for rapid development and modern features
+- AI assistance for velocity (but not for core algorithms)
+- Modular architecture with clear boundaries
+- Comprehensive documentation
+- Privacy-first, offline-first design
+- Progressive enhancement
+- Build tools when they help, skip when they don’t
+
+### What I Avoid
+
+- Dependencies that break
+- Cloud requirements for core functionality
+- Forced user accounts
+- Data collection
+- “MVP” mentality - prefer complete features
+- Transpilation when hand-written ES5 is better
+- Over-abstraction before it’s needed
+
+### Decision-Making Pattern
+
+1. Identify user problem clearly
+1. Choose tools that fit project scope
+1. Build complete version of feature
+1. Document thoroughly
+1. Create safety nets and fallbacks
+1. Ship when truly ready
+1. Iterate based on real usage
+
+-----
+
+## Files & Resources in Project Knowledge
+
+**miniCycle Documentation:**
+
+- `web/docs/DEVELOPER_DOCUMENTATION.md` - Comprehensive dev guide
+- `web/docs/FINAL-MODULE-STRUCTURE.md` - Module extraction plan
+- `web/docs/CLAUDE.md` - Architecture overview for AI
+- `web/docs/MINICYCLE_LITE.md` - Lite version documentation
+- `web/docs/minicycle_modularization_guide_v3.md` - Refactoring patterns
+
+**Code Files:**
+
+- `web/miniCycle-scripts.js` - Main application (9,362 lines)
+- `web/miniCycle-lite-scripts.js` - ES5 version
+- `web/utilities/` - 20+ extracted modules
+
+**Task Cycle:**
+
+- `TaskCycle-scripts.txt` - Complete source code
+
+**MasterMath:**
+
+- `README.md` - Project overview
+- `CHANGELOG.md` - Version history
+- `CLAUDE.md` - Architecture for AI assistance
+- React component structure in `src/`
+
+**Business:**
+
+- `web/TTO/Business-plan-updated.txt` - 3-tier ecosystem strategy
+
+-----
+
+## How to Use This Document in Future Conversations
+
+**Starting a new conversation:**
+
+1. Paste this entire artifact
+1. Say “Context loaded from previous conversation”
+1. Immediately jump into technical discussion
+1. No need to re-explain projects, architecture, or goals
+
+**What to update in future versions:**
+
+- Current module extraction progress (miniCycle refactoring status)
+- Task Cycle React rebuild status
+- New projects or learning milestones
+- Changed technical decisions or philosophy
+- New insights about development approach
+
+-----
+
+## Questions I’m Interested in Discussing
+
+**Architecture & Design:**
+
+- Module extraction strategies for miniCycle
+- React patterns for Task Cycle rebuild
+- State management approaches
+- Testing strategies
+- Error handling patterns
+
+**Technical Skills:**
+
+- Modern JavaScript patterns
+- React best practices
+- Build tool configurations
+- Performance optimization
+- Offline-first architecture
+
+**Future Projects:**
+
+- Video-to-text converter architecture
+- Offline ML/AI processing
+- Complex data processing
+- File handling and manipulation
+
+**NOT Interested in Right Now:**
+
+- Business strategy discussions
+- Marketing or go-to-market
+- Monetization specifics
+- Customer development
+
+**Focus:** Technical architecture, code quality, learning new skills, building better software.
+
+-----
+
+**End of Context Document**
+
+*This document should provide complete context for future technical discussions without needing to rehash background information.*
