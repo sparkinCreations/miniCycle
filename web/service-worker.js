@@ -1,6 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-var APP_VERSION = '1.327';
-var CACHE_VERSION = 'v104';
+// ✅ Import version from centralized version.js file
+importScripts('./version.js');
+var APP_VERSION = self.APP_VERSION; // Use version from version.js
+var CACHE_VERSION = 'v105';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 

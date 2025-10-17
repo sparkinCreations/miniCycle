@@ -1,6 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-var APP_VERSION = '1.322';
-var CACHE_VERSION = 'v99';
+// ✅ Import version from centralized version.js file
+importScripts('./version.js');
+var APP_VERSION = self.APP_VERSION; // Use version from version.js
+var CACHE_VERSION = 'v104';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -226,39 +228,75 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // ✅ Static assets: cache-first
-  event.respondWith(
-    caches.match(request).then(function (cached) {
-      if (cached) {
-        // console.log('💾 Cache hit:', request.url);
-        return cached;
-      }
-      
-      return fetch(request).then(function (res) {
-        if (res && res.status === 200 && res.type === 'basic') {
-          return caches.open(DYNAMIC_CACHE).then(function (cache) {
-            // ✅ ADDED: Safe cache.put with error handling
-            return cache.put(request, res.clone()).then(function() {
-              console.log('📦 Cached new asset:', request.url);
-              return res;
-            }).catch(function(cacheError) {
-              console.warn('⚠️ Cache put failed for:', request.url, cacheError);
-              return res; // Return response even if caching fails
+  // ✅ Detect if this is a JS/CSS file
+  var isScriptOrStyle = url.pathname.endsWith('.js') ||
+                        url.pathname.endsWith('.css') ||
+                        url.pathname.endsWith('.mjs');
+
+  if (isScriptOrStyle) {
+    // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
+    event.respondWith(
+      fetch(request)
+        .then(function (res) {
+          if (res && res.status === 200) {
+            return caches.open(DYNAMIC_CACHE).then(function (cache) {
+              return cache.put(request, res.clone()).then(function() {
+                console.log('📦 Cached fresh JS/CSS:', request.url);
+                return res;
+              }).catch(function(cacheError) {
+                console.warn('⚠️ Cache put failed for:', request.url, cacheError);
+                return res;
+              });
+            });
+          }
+          return res;
+        })
+        .catch(function (error) {
+          // ✅ Offline fallback: use cache
+          console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
+          return caches.match(request).then(function (cached) {
+            return cached || new Response('// Offline - file not cached', {
+              status: 504,
+              statusText: 'Gateway Timeout',
+              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
             });
           });
+        })
+    );
+  } else {
+    // ✅ CACHE-FIRST for images and other static assets
+    event.respondWith(
+      caches.match(request).then(function (cached) {
+        if (cached) {
+          // console.log('💾 Cache hit:', request.url);
+          return cached;
         }
-        return res;
-      }).catch(function (error) {
-        console.warn('❌ Fetch failed for:', request.url, error);
-        return caches.match(request).then(function (c) {
-          return c || new Response('', { 
-            status: 504, 
-            statusText: 'Gateway Timeout' 
+
+        return fetch(request).then(function (res) {
+          if (res && res.status === 200 && res.type === 'basic') {
+            return caches.open(DYNAMIC_CACHE).then(function (cache) {
+              return cache.put(request, res.clone()).then(function() {
+                console.log('📦 Cached new asset:', request.url);
+                return res;
+              }).catch(function(cacheError) {
+                console.warn('⚠️ Cache put failed for:', request.url, cacheError);
+                return res;
+              });
+            });
+          }
+          return res;
+        }).catch(function (error) {
+          console.warn('❌ Fetch failed for:', request.url, error);
+          return caches.match(request).then(function (c) {
+            return c || new Response('', {
+              status: 504,
+              statusText: 'Gateway Timeout'
+            });
           });
         });
-      });
-    })
-  );
+      })
+    );
+  }
 });
 
 // ✅ Message handler

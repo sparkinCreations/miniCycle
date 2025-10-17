@@ -24,6 +24,7 @@ restore_file() {
 }
 
 # Restore core files
+restore_file "version.js"
 restore_file "miniCycle.html"
 restore_file "miniCycle-lite.html"
 restore_file "product.html"

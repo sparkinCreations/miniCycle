@@ -265,8 +265,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 
+  // ✅ Version helper for dynamic imports - ensures all modules load with version parameter
+  const withV = (path) => `${path}?v=${window.APP_VERSION}`;
+
   // ✅ Load appInit for 2-phase initialization coordination
-  const { appInit } = await import('./utilities/appInitialization.js');
+  const { appInit } = await import(withV('./utilities/appInitialization.js'));
 
   // ✅ Set backward compatibility alias
   window.AppInit = appInit;
@@ -316,13 +319,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-    await import('./utilities/globalUtils.js');
+    await import(withV('./utilities/globalUtils.js'));
     console.log('🛠️ Global utilities loaded');
 
-    const { default: consoleCapture } = await import('./utilities/consoleCapture.js');
+    const { default: consoleCapture } = await import(withV('./utilities/consoleCapture.js'));
     window.consoleCapture = consoleCapture;
 
-    const { MiniCycleNotifications } = await import('./utilities/notifications.js');
+    const { MiniCycleNotifications } = await import(withV('./utilities/notifications.js'));
     const notifications = new MiniCycleNotifications();
 
     window.notifications = notifications;
@@ -331,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
-    const migrationMod = await import('./utilities/cycle/migrationManager.js');
+    const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
 
     migrationMod.setMigrationManagerDependencies({
       storage: localStorage,
@@ -520,7 +523,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Inside DOMContentLoaded, replace the current try { await window.cycleLoaderModulePromise; ... } with:
 // ✅ Load cycleLoader EARLY so window.loadMiniCycle exists before any initialSetup runs
   try {
-    const mod = await import('./utilities/cycleLoader.js');
+    const mod = await import(withV('./utilities/cycleLoader.js'));
 
         // ✅ Ensure loadMiniCycle is available globally for refreshUIFromState()
     if (!window.loadMiniCycle) {
@@ -606,7 +609,7 @@ function wireUndoRedoUI() {
   try {
     console.log('🗃️ Initializing state module...');
 
-    const { createStateManager } = await import('./utilities/state.js');
+    const { createStateManager } = await import(withV('./utilities/state.js'));
     window.AppState = createStateManager({
       showNotification: window.showNotification || console.log.bind(console),
       storage: localStorage,
@@ -627,7 +630,7 @@ function wireUndoRedoUI() {
 
         // ✅ Initialize Drag & Drop Manager (Phase 2 module - waits for core internally)
         console.log('🔄 Initializing drag & drop manager...');
-        const { initDragDropManager } = await import('./utilities/task/dragDropManager.js');
+        const { initDragDropManager } = await import(withV('./utilities/task/dragDropManager.js'));
 
         await initDragDropManager({
           saveCurrentTaskOrder: () => saveCurrentTaskOrder?.(),
@@ -649,12 +652,12 @@ function wireUndoRedoUI() {
 
         // ✅ Initialize Device Detection (Phase 2 module)
         console.log('📱 Initializing device detection module...');
-        const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
+        const { DeviceDetectionManager } = await import(withV('./utilities/deviceDetection.js'));
 
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.322'
+            currentVersion: '1.325'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -662,7 +665,7 @@ function wireUndoRedoUI() {
 
         // ✅ Initialize Stats Panel (Phase 2 module)
         console.log('📊 Initializing stats panel module...');
-        const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+        const { StatsPanelManager } = await import(withV('./utilities/statsPanel.js'));
 
         const statsPanelManager = new StatsPanelManager({
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
@@ -692,7 +695,7 @@ function wireUndoRedoUI() {
         // ✅ Initialize Recurring Modules (Phase 2 module)
         console.log('🔄 Initializing recurring task modules...');
         try {
-            const { initializeRecurringModules } = await import('./utilities/recurringIntegration.js');
+            const { initializeRecurringModules } = await import(withV('./utilities/recurringIntegration.js'));
             const recurringModules = await initializeRecurringModules();
             window._recurringModules = recurringModules;
             console.log('✅ Recurring modules initialized (Phase 2)');
@@ -720,7 +723,7 @@ function wireUndoRedoUI() {
         // ✅ Initialize Reminders Module (Phase 2 module)
         console.log('🔔 Initializing reminders module...');
         try {
-            const { initReminderManager } = await import('./utilities/reminders.js');
+            const { initReminderManager } = await import(withV('./utilities/reminders.js'));
 
             await initReminderManager({
                 showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
@@ -744,7 +747,7 @@ function wireUndoRedoUI() {
         // ✅ Initialize Due Dates Module (Phase 2 module)
         console.log('📅 Initializing due dates module...');
         try {
-            const { initDueDatesManager } = await import('./utilities/dueDates.js');
+            const { initDueDatesManager } = await import(withV('./utilities/dueDates.js'));
 
             await initDueDatesManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
