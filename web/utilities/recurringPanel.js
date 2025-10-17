@@ -12,7 +12,7 @@
  * - Button visibility management
  *
  * @module recurringPanel
- * @version 1.328
+ * @version 1.330
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */

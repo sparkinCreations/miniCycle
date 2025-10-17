@@ -1,0 +1,61 @@
+{
+  "id": "/miniCycle-lite",
+  "name": "miniCycle Lite",
+  "short_name": "miniCycle Lite",
+  "description": "Lightweight task cycling app optimized for older devices – Turn Your Routine Into Progress",
+  "start_url": "./miniCycle-lite.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay"],
+  "orientation": "portrait-primary",
+  "lang": "en-US",
+  "dir": "ltr",
+  "theme_color": "#black",
+  "background_color": "#4c79ff",
+  "version": "1.328",
+  "categories": ["productivity", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "assets/images/logo/minicycle_logo_icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/logo/minicycle_logo_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Add Task",
+      "short_name": "Add Task",
+      "description": "Quickly add a new task",
+      "url": "./miniCycle-lite.html#add-task",
+      "icons": [{ "src": "assets/images/logo/minicycle_logo_icon.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "View Stats",
+      "short_name": "Stats",
+      "description": "View your task completion statistics",
+      "url": "./miniCycle-lite.html#stats",
+      "icons": [{ "src": "assets/images/logo/minicycle_logo_icon.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/images/screenshots/lite-mobile-1080x1920.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "assets/images/screenshots/lite-desktop-1920x1080.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}

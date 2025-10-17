@@ -265,11 +265,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 
-  // ✅ Version helper for dynamic imports - ensures all modules load with version parameter
-  const withV = (path) => `${path}?v=${window.APP_VERSION}`;
+  // ✅ Load appInit FIRST without version (so all static imports in modules share this singleton)
+  // This is critical: utility modules use static imports like `import { appInit } from './appInitialization.js'`
+  // If we version this import, we create separate instances and break the shared state
+  const { appInit } = await import('./utilities/appInitialization.js');
 
-  // ✅ Load appInit for 2-phase initialization coordination
-  const { appInit } = await import(withV('./utilities/appInitialization.js'));
+  // ✅ NOW create version helper for all OTHER dynamic imports (not appInit)
+  const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
   // ✅ Set backward compatibility alias
   window.AppInit = appInit;
@@ -657,7 +659,7 @@ function wireUndoRedoUI() {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.328'
+            currentVersion: '1.330'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -770,6 +772,10 @@ function wireUndoRedoUI() {
             console.warn('⚠️ App will continue without due dates functionality');
         }
 
+        // ✅ Mark Phase 2 complete - all modules are now loaded and ready
+        console.log('✅ Phase 2 complete - all modules initialized');
+        await appInit.markAppReady();
+
         // ============ PHASE 3: DATA LOADING ============
         console.log('📊 Phase 3: Loading app data...');
 
@@ -779,8 +785,9 @@ function wireUndoRedoUI() {
           fixTaskValidationIssues();
 
           console.log('🚀 Running initializeAppWithAutoMigration...');
-          initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup()
-          console.log('✅ Data initialization sequence completed');
+          // ✅ IMPORTANT: initializeAppWithAutoMigration calls initialSetup() after Phase 2 modules are ready
+          initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup() async
+          console.log('✅ Data initialization sequence started');
         } catch (error) {
           console.error('❌ Critical initialization error:', error);
           console.error('❌ Error stack:', error.stack);
@@ -902,8 +909,7 @@ function wireUndoRedoUI() {
   // ✅ Now that AppState is ready, setup arrow visibility
   updateMoveArrowsVisibility();
 
-  // ✅ CRITICAL: Mark app as fully ready (Phase 2: All modules loaded)
-  await appInit.markAppReady();
+  // ✅ App already marked as ready at line 777 after Phase 2 modules loaded
   console.log('✅ miniCycle initialization complete - app is ready');
 
   // ✅ Keep isInitializing true - will be disabled on first user interaction
@@ -1642,9 +1648,17 @@ if (menu) { menu.classList.remove("visible");}
  * Ensures a valid miniCycle is always available in localStorage.
  */
 // ✅ UPDATED: Check onboarding first, then handle cycle creation
-function initialSetup() {
+// ✅ IMPORTANT: async to wait for Phase 2 modules before creating tasks
+async function initialSetup() {
     console.log('🚀 Initializing app (Schema 2.5 only)...');
-    
+
+    // ✅ Wait for all Phase 2 modules to be ready before creating tasks
+    if (window.appInit && !window.appInit.isAppReady()) {
+        console.log('⏳ Waiting for Phase 2 modules to finish loading...');
+        await window.appInit.waitForApp();
+        console.log('✅ Phase 2 modules ready, proceeding with initialSetup');
+    }
+
     let schemaData = loadMiniCycleData();
     
     // ✅ CREATE SCHEMA 2.5 DATA IF IT DOESN'T EXIST
@@ -5950,7 +5964,13 @@ function setupButtonEventHandlers(button, btnClass, taskContext) {
         // ✅ Setup recurring button handler
         setupRecurringButtonHandler(button, taskContext);
     } else if (btnClass === "enable-task-reminders") {
-        setupReminderButtonHandler(button, taskContext);
+        // ✅ Use window.setupReminderButtonHandler from reminders module
+        // Safe to call directly - Phase 2 guarantees module is loaded before task creation
+        if (typeof window.setupReminderButtonHandler === 'function') {
+            window.setupReminderButtonHandler(button, taskContext);
+        } else {
+            console.error('❌ setupReminderButtonHandler not available - reminders module failed to load');
+        }
     } else if (btnClass === "move-up" || btnClass === "move-down") {
         // ✅ Skip attaching old handlers to move buttons - using event delegation
         console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);

@@ -14,7 +14,7 @@
  *   notifications.show("Hello World!", "success", 3000);
  *
  * @module notifications
- * @version 1.328
+ * @version 1.330
  * @requires AppInit (for initialization coordination)
  */
 
@@ -703,7 +703,7 @@ async setDefaultPosition(notificationContainer) {
 
       document.addEventListener("touchmove", onTouchMove, { passive: false });
       document.addEventListener("touchend", onTouchEnd);
-    });
+    }, { passive: true });
   }
 
   /**
