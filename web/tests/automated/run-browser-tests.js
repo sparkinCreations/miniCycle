@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager'];
+const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
@@ -113,6 +113,19 @@ async function runAllTests() {
     // Create context with cache disabled to ensure fresh module loads
     const context = await browser.newContext({
         bypassCSP: true
+    });
+
+    // Grant notification permissions for reminder tests
+    await context.grantPermissions(['notifications'], { origin: 'http://localhost:8080' });
+
+    // Add init script to mock Notification API
+    await context.addInitScript(() => {
+        window.__MINICYCLE_TEST__ = true;
+        if (typeof Notification === 'undefined') {
+            window.Notification = function (title, opts) { return { close() {} }; };
+        }
+        Notification.permission = 'granted';
+        Notification.requestPermission = () => Promise.resolve('granted');
     });
 
     const results = [];

@@ -759,6 +759,9 @@ export class MiniCycleReminders {
 // MODULE INITIALIZATION & GLOBAL EXPORTS
 // ============================================
 
+// Expose class globally for testing
+window.MiniCycleReminders = MiniCycleReminders;
+
 let reminderManager = null;
 
 /**

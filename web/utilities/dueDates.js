@@ -497,6 +497,9 @@ export class MiniCycleDueDates {
 // MODULE INITIALIZATION & GLOBAL EXPORTS
 // ============================================
 
+// Expose class globally for testing
+window.MiniCycleDueDates = MiniCycleDueDates;
+
 let dueDatesManager = null;
 
 /**

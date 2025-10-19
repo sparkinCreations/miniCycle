@@ -219,9 +219,11 @@
             <option value="notifications">Notifications</option>
             <option value="dragDropManager">DragDropManager</option>
             <option value="migrationManager">MigrationManager</option>
+            <option value="dueDates">Due Dates</option>
+            <option value="reminders">Reminders</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (14 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (16 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -253,6 +255,8 @@
         const { runNotificationsTests } = await import(`./notifications.tests.js?v=${cacheBuster}`);
         const { runDragDropManagerTests } = await import(`./dragDropManager.tests.js?v=${cacheBuster}`);
         const { runMigrationManagerTests } = await import(`./migrationManager.tests.js?v=${cacheBuster}`);
+        const { runDueDatesTests } = await import(`./dueDates.tests.js?v=${cacheBuster}`);
+        const { runRemindersTests } = await import(`./reminders.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -327,6 +331,14 @@
                     await import(`../utilities/cycle/migrationManager.js?v=${cacheBuster}`);
                     currentModule = 'migrationManager';
                     resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'dueDates') {
+                    await import(`../utilities/dueDates.js?v=${cacheBuster}`);
+                    currentModule = 'dueDates';
+                    resultsDiv.innerHTML = '<p>✅ Due Dates loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'reminders') {
+                    await import(`../utilities/reminders.js?v=${cacheBuster}`);
+                    currentModule = 'reminders';
+                    resultsDiv.innerHTML = '<p>✅ Reminders loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -368,6 +380,10 @@
                 await runDragDropManagerTests(resultsDiv);
             } else if (currentModule === 'migrationManager') {
                 await runMigrationManagerTests(resultsDiv);
+            } else if (currentModule === 'dueDates') {
+                await runDueDatesTests(resultsDiv);
+            } else if (currentModule === 'reminders') {
+                await runRemindersTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -425,7 +441,9 @@
                 { name: 'GlobalUtils', key: 'globalUtils', runFn: runGlobalUtilsTests, importPath: '../utilities/globalUtils.js' },
                 { name: 'Notifications', key: 'notifications', runFn: runNotificationsTests, importPath: '../utilities/notifications.js' },
                 { name: 'DragDropManager', key: 'dragDropManager', runFn: runDragDropManagerTests, importPath: '../utilities/task/dragDropManager.js' },
-                { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../utilities/cycle/migrationManager.js' }
+                { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../utilities/cycle/migrationManager.js' },
+                { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../utilities/dueDates.js' },
+                { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../utilities/reminders.js' }
             ];
 
             let allResults = [];
