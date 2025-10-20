@@ -70,7 +70,10 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 - **statsPanel.js**: Statistics panel with swipe navigation and achievement system
 - **deviceDetection.js**: Platform-specific feature detection and optimization
 - **themeManager.js**: Dynamic theming system with unlockable themes
-- **cycleLoader.js**: Data loading, migration, and file import/export (.mcyc format)
+- **cycle/cycleLoader.js**: Data loading, migration, and file import/export (.mcyc format)
+- **cycle/cycleManager.js**: Cycle creation, onboarding, and management
+- **cycle/cycleSwitcher.js**: Cycle switching with modal UI
+- **cycle/modeManager.js**: Auto/Manual/Todo mode management
 
 #### Global State Management
 ```javascript
@@ -173,7 +176,7 @@ const statsPanel = new StatsPanelManager({
 ### Data Migration Strategy
 Always preserve backward compatibility when modifying data schema:
 - Increment schema version
-- Add migration logic in `cycleLoader.js`
+- Add migration logic in `cycle/cycleLoader.js`
 - Test with legacy data files
 - Create backup before migration
 

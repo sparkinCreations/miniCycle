@@ -677,7 +677,7 @@ window.statsPanel = statsPanel;
 **Example: cycleLoader.js**
 
 ```javascript
-// utilities/cycleLoader.js (actual code)
+// utilities/cycle/cycleLoader.js (actual code)
 
 const Deps = {
     loadMiniCycleData: null,
@@ -758,7 +758,7 @@ export { loadMiniCycle, setCycleLoaderDependencies };
 ```javascript
 // miniCycle-scripts.js
 
-const cycleLoader = await import('./utilities/cycleLoader.js');
+const cycleLoader = await import('./utilities/cycle/cycleLoader.js');
 
 cycleLoader.setCycleLoaderDependencies({
     loadMiniCycleData: window.loadMiniCycleData,

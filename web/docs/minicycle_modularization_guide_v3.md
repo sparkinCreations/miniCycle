@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await import('./utilities/notifications.js');
 
     // 3) Strict DI modules (configure BEFORE first use)
-    const cycleLoader = await import('./utilities/cycleLoader.js');
+    const cycleLoader = await import('./utilities/cycle/cycleLoader.js');
     cycleLoader.setCycleLoaderDependencies({
         loadMiniCycleData: loadMiniCycleData,
         saveData: saveMiniCycleData,
@@ -711,11 +711,12 @@ try {
 - ✅ `utilities/statsPanel.js` - Stats panel with swipe detection and achievement system
 - ✅ `utilities/recurringPanel.js` - Complex recurring task UI with form management
 - ✅ `utilities/task/dragDropManager.js` - Drag & drop with Safari compatibility and resilient fallbacks
-- ✅ `utilities/cycleSwitcher.js` - Cycle switching with modal management (677 lines, 22 tests)
+- ✅ `utilities/cycle/cycleSwitcher.js` - Cycle switching with modal management (677 lines, 22 tests)
+- ✅ `utilities/cycle/cycleManager.js` - Cycle creation and management (431 lines, onboarding integration)
 - 🎯 **Recommended Next:** `utilities/undoManager.js` - Undo/redo with state snapshots
 
 ### **Strict Injection Pattern** 🔧
-- ✅ `utilities/cycleLoader.js` - Cycle loading with explicit dependencies
+- ✅ `utilities/cycle/cycleLoader.js` - Cycle loading with explicit dependencies
 - ✅ `utilities/recurringCore.js` - Recurring task business logic and scheduling
 - ✅ `utilities/recurringIntegration.js` - Recurring system coordination layer
 - ✅ `utilities/state.js` - Centralized state management with persistence
@@ -725,10 +726,10 @@ try {
 
 ## 🗺️ **Extraction Roadmap for miniCycle**
 
-**Current Status (January 2025):**
-- Main script: **7,236 lines** (down from 15,677)
-- **54% reduction achieved** (toward 68% goal)
-- **21 modules extracted** (including cycleSwitcher.js - 677 lines, 22 tests)
+**Current Status (October 2025):**
+- Main script: **6,959 lines** (down from 15,677)
+- **55.6% reduction achieved** (toward 68% goal)
+- **22 modules extracted** (including cycleSwitcher.js - 677 lines, 22 tests)
 
 ### **Phase 1: Low-Risk Utilities** (1-2 weeks) - Target: ~9,500 lines remaining
 
@@ -950,7 +951,7 @@ When creating a new module:
 ### **Real Example: CycleSwitcher**
 
 ```javascript
-// utilities/cycleSwitcher.js
+// utilities/cycle/cycleSwitcher.js
 
 export class CycleSwitcher {
     constructor(dependencies = {}) {
@@ -2296,7 +2297,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 ## 📈 **Progress & Next Steps**
 
 **Where You Are (January 2025):**
-- ✅ **21 modules extracted** - 54% reduction (15,677 → 7,236 lines)
+- ✅ **22 modules extracted** - 54% reduction (15,677 → 7,236 lines)
 - ✅ **All 4 patterns proven** in production
 - ✅ **Comprehensive guide** with real examples and critical lessons
 - ✅ **cycleSwitcher.js** - 677 lines with 22 tests (100% pass rate)
