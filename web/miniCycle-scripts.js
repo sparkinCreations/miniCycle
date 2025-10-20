@@ -587,8 +587,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     setupUserManual();
     setupFeedbackModal();
 
-    // ✅ Expose functions needed by cycleLoader
+    // ✅ Expose functions needed by cycleLoader and cycleManager
     window.updateMainMenuHeader = updateMainMenuHeader;
+    window.completeInitialSetup = completeInitialSetup;
 
 
 
@@ -834,6 +835,36 @@ function wireUndoRedoUI() {
                 showNotification('Cycle switcher feature unavailable', 'warning', 3000);
             }
             console.warn('⚠️ App will continue without cycle switcher functionality');
+        }
+
+        // ✅ Initialize Cycle Manager (Phase 2 module)
+        console.log('🔄 Initializing cycle manager module...');
+        try {
+            const { initializeCycleManager } = await import(withV('./utilities/cycleManager.js'));
+
+            await initializeCycleManager({
+                AppState: window.AppState,
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                showPromptModal: (opts) => window.showPromptModal?.(opts),
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                sanitizeInput: (input) => window.sanitizeInput?.(input),
+                completeInitialSetup: (id, data) => window.completeInitialSetup?.(id, data),
+                hideMainMenu: () => window.hideMainMenu?.(),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                autoSave: () => window.autoSave?.(),
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel)
+            });
+
+            console.log('✅ Cycle manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize cycle manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Cycle creation feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without cycle manager functionality');
         }
 
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
@@ -1594,7 +1625,7 @@ function setupMainMenu() {
     safeAddEventListener(document.getElementById("open-mini-cycle"), "click", () => window.switchMiniCycle?.());
     safeAddEventListener(document.getElementById("clear-mini-cycle-tasks"), "click", clearAllTasks);
     safeAddEventListener(document.getElementById("delete-all-mini-cycle-tasks"), "click", deleteAllTasks);
-    safeAddEventListener(document.getElementById("new-mini-cycle"), "click", createNewMiniCycle);
+    safeAddEventListener(document.getElementById("new-mini-cycle"), "click", () => window.createNewMiniCycle?.());
     safeAddEventListener(document.getElementById("close-main-menu"), "click", closeMainMenu);
     checkGamesUnlock();
     safeAddEventListener(exitMiniCycle, "click", () => {
@@ -1841,195 +1872,10 @@ function showOnboardingThenCycleCreation(cycles, activeCycle) {
     renderStep(currentStep);
 }
 
-// ✅ NEW: Extracted cycle creation modal logic
-function showCycleCreationModal() {
-    console.log('🆕 Showing cycle creation modal...');
-    
-    setTimeout(() => {
-        showPromptModal({
-            title: "Create a miniCycle",
-            message: "Enter a name to get started:",
-            placeholder: "e.g., Morning Routine",
-            confirmText: "Create",
-            cancelText: "Load Sample",
-            callback: async (input) => {
-                if (!input || input.trim() === "") {
-                    console.log('📥 User chose sample cycle');
-                    await preloadGettingStartedCycle();
-                    return;
-                }
-                
-                const newCycleName = sanitizeInput(input.trim());
-                const cycleId = `cycle_${Date.now()}`;
-                
-                console.log('🔄 Creating new cycle:', newCycleName);
-                
-                // Create new cycle in Schema 2.5 format
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                
-                fullSchemaData.data.cycles[cycleId] = {
-                    id: cycleId,
-                    title: newCycleName,
-                    tasks: [],
-                    autoReset: true,
-                    deleteCheckedTasks: false,
-                    cycleCount: 0,
-                    createdAt: Date.now(),
-                    recurringTemplates: {}
-                };
-                
-                fullSchemaData.appState.activeCycleId = cycleId;
-                fullSchemaData.metadata.lastModified = Date.now();
-                fullSchemaData.metadata.totalCyclesCreated++;
-                
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-                // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-                if (window.AppState && typeof window.AppState.init === 'function') {
-                    window.AppState.data = fullSchemaData;
-                    window.AppState.isInitialized = true;
-                    window.AppState.isDirty = false; // Mark as clean since we just saved
-                    console.log('✅ AppState synchronized with new cycle data');
-                }
-
-                console.log('💾 New cycle saved to Schema 2.5');
-
-                // ✅ Complete the setup after user interaction
-                completeInitialSetup(cycleId, fullSchemaData);
-            }
-        });
-    }, 500);
-}
 
 // ✅ UPDATED: Close modal and complete setup after loading sample
-async function preloadGettingStartedCycle() {
-    console.log('📥 Preloading getting started cycle (Schema 2.5 only)...');
-    
-    try {
-        const response = await fetch("data/sample-getting-started.mcyc");
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const sample = await response.json();
-        
-        console.log('📄 Sample data loaded:', {
-            title: sample.title || sample.name,
-            taskCount: sample.tasks?.length || 0
-        });
-
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for preloadGettingStartedCycle');
-            throw new Error('Schema 2.5 data not found');
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        const cycleId = `cycle_${Date.now()}`;
-        
-        console.log('🔄 Creating sample cycle with ID:', cycleId);
-        
-        // Create sample cycle in Schema 2.5 format
-        fullSchemaData.data.cycles[cycleId] = {
-            id: cycleId,
-            title: sample.title || sample.name || "Getting Started",
-            tasks: sample.tasks || [],
-            autoReset: sample.autoReset !== false, // Default to true if not specified
-            cycleCount: sample.cycleCount || 0,
-            deleteCheckedTasks: sample.deleteCheckedTasks || false,
-            createdAt: Date.now(),
-            recurringTemplates: {}
-        };
-        
-        fullSchemaData.appState.activeCycleId = cycleId;
-        fullSchemaData.metadata.lastModified = Date.now();
-        fullSchemaData.metadata.totalCyclesCreated++;
-        
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-        // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-        if (window.AppState && typeof window.AppState.init === 'function') {
-            window.AppState.data = fullSchemaData;
-            window.AppState.isInitialized = true;
-            window.AppState.isDirty = false; // Mark as clean since we just saved
-            console.log('✅ AppState synchronized with new cycle data');
-        }
-
-        console.log('💾 Sample cycle saved to Schema 2.5');
-        console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
-
-        // ✅ CLOSE ANY OPEN MODALS
-        const existingModals = document.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
-        existingModals.forEach(modal => modal.remove());
-        
-        showNotification("✨ A sample miniCycle has been preloaded to help you get started!", "success", 5000);
-        
-        // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
-        completeInitialSetup(cycleId, fullSchemaData);
-        
-    } catch (err) {
-        console.error('❌ Failed to load sample miniCycle:', err);
-        
-        // ✅ CLOSE MODAL ON ERROR TOO
-        const existingModals = document.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
-        existingModals.forEach(modal => modal.remove());
-        
-        showNotification("❌ Failed to load sample miniCycle. Creating a basic cycle instead.", "error");
-        
-        // ✅ CREATE A BASIC FALLBACK CYCLE
-        createBasicFallbackCycle();
-    }
-}
 
 // ✅ NEW: Create a basic cycle if sample loading fails
-function createBasicFallbackCycle() {
-    console.log('🆘 Creating basic fallback cycle...');
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    const cycleId = `cycle_${Date.now()}`;
-    
-    fullSchemaData.data.cycles[cycleId] = {
-        id: cycleId,
-        title: "Getting Started",
-        tasks: [
-            {
-                id: "task-welcome",
-                text: "Welcome to miniCycle! 🎉",
-                completed: false,
-                schemaVersion: 2
-            },
-            {
-                id: "task-guide",
-                text: "Add your first task using the input box above ✏️",
-                completed: false,
-                schemaVersion: 2
-            }
-        ],
-        autoReset: true,
-        deleteCheckedTasks: false,
-        cycleCount: 0,
-        createdAt: Date.now(),
-        recurringTemplates: {}
-    };
-    
-    fullSchemaData.appState.activeCycleId = cycleId;
-    fullSchemaData.metadata.lastModified = Date.now();
-    fullSchemaData.metadata.totalCyclesCreated++;
-    
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-    // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-    if (window.AppState && typeof window.AppState.init === 'function') {
-        window.AppState.data = fullSchemaData;
-        window.AppState.isInitialized = true;
-        window.AppState.isDirty = false; // Mark as clean since we just saved
-        console.log('✅ AppState synchronized with new cycle data');
-    }
-
-    console.log('✅ Basic fallback cycle created');
-    completeInitialSetup(cycleId, fullSchemaData);
-}
 
 // ✅ UPDATED: Simplified showOnboarding for existing users or edge cases
 function showOnboarding() {
@@ -2948,135 +2794,6 @@ function deleteAllTasks() {
 }
 
 
-/**
- * Create new miniCycle function.
- *
- * @returns {void}
- */
-function createNewMiniCycle() {
-    console.log('🆕 Creating new miniCycle (state-based)...');
-    
-    // ✅ Use state-based data access
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for createNewMiniCycle');
-        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
-        return;
-    }
-
-    showPromptModal({
-        title: "Create New miniCycle",
-        message: "What would you like to name it?",
-        placeholder: "e.g., Daily Routine",
-        defaultValue: "",
-        confirmText: "Create",
-        cancelText: "Cancel",
-        required: true,
-        callback: (result) => {
-            if (!result) {
-                console.log('❌ User cancelled creation');
-                showNotification("❌ Creation canceled.");
-                return;
-            }
-            
-            const newCycleName = sanitizeInput(result.trim());
-            console.log('🔍 Processing new cycle name:', newCycleName);
-            
-            // ✅ Create unique ID first
-            const cycleId = `cycle_${Date.now()}`;
-            console.log('🆔 Generated cycle ID:', cycleId);
-            
-            // ✅ Update through state system
-            window.AppState.update(state => {
-                // ✅ Determine the storage key (title-first approach with ID fallback)
-                let storageKey = newCycleName;
-                let finalTitle = newCycleName;
-                
-                // ✅ Handle duplicate titles by checking existing keys
-                if (state.data.cycles[storageKey]) {
-                    console.log('⚠️ Duplicate title detected, finding unique variation');
-                    
-                    // Try numbered variations first: "Title (2)", "Title (3)", etc.
-                    let counter = 2;
-                    let numberedTitle = `${newCycleName} (${counter})`;
-                    
-                    while (state.data.cycles[numberedTitle] && counter < 10) {
-                        counter++;
-                        numberedTitle = `${newCycleName} (${counter})`;
-                    }
-                    
-                    // If we found a unique numbered title, use it
-                    if (!state.data.cycles[numberedTitle]) {
-                        storageKey = numberedTitle;
-                        finalTitle = numberedTitle;
-                        console.log('🔄 Using numbered variation:', finalTitle);
-                        showNotification(`⚠ Title already exists. Using "${finalTitle}" instead.`, "warning", 3000);
-                    } else {
-                        // Fallback to ID if too many duplicates
-                        storageKey = cycleId;
-                        finalTitle = newCycleName; // Keep original title inside object
-                        console.log('🔄 Using unique ID for storage:', storageKey);
-                        showNotification(`⚠ Multiple cycles with this name exist. Using unique ID for storage.`, "warning", 3000);
-                    }
-                }
-
-                console.log('🔄 Creating new cycle with storage key:', storageKey);
-
-                // ✅ Create new cycle in Schema 2.5 format
-                state.data.cycles[storageKey] = {
-                    title: finalTitle,
-                    id: cycleId,
-                    tasks: [],
-                    autoReset: true,
-                    deleteCheckedTasks: false,
-                    cycleCount: 0,
-                    createdAt: Date.now(),
-                    recurringTemplates: {}
-                };
-
-                // ✅ Set as active cycle using the storage key
-                state.appState.activeCycleId = storageKey;
-                state.metadata.lastModified = Date.now();
-                state.metadata.totalCyclesCreated++;
-
-                console.log('💾 Saving through state system...');
-                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
-                
-                // Store final title for UI updates
-                window._tempNewCycleData = { storageKey, finalTitle };
-                
-            }, true); // immediate save
-
-            // ✅ Get the final data for UI updates
-            const { storageKey, finalTitle } = window._tempNewCycleData || {};
-            delete window._tempNewCycleData; // cleanup
-
-            console.log('🔄 Updating UI elements...');
-
-            // ✅ Clear UI & Load new miniCycle
-            const taskList = document.getElementById("taskList");
-            const toggleAutoReset = document.getElementById("toggleAutoReset");
-            const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
-            
-            if (taskList) taskList.innerHTML = "";
-            
-            const titleElement = document.getElementById("mini-cycle-title");
-            if (titleElement) titleElement.textContent = finalTitle;
-            
-            if (toggleAutoReset) toggleAutoReset.checked = true;
-            if (deleteCheckedTasks) deleteCheckedTasks.checked = false;
-
-            // ✅ Ensure UI updates
-            hideMainMenu();
-            updateProgressBar();
-            checkCompleteAllButton();
-            autoSave();
-
-            console.log(`✅ Created and switched to new miniCycle (state-based): "${finalTitle}" (key: ${storageKey})`);
-            
-            showNotification(`✅ Created new miniCycle "${finalTitle}"`, "success", 3000);
-        }
-    });
-}
 
 
 
