@@ -159,9 +159,9 @@ export class StatsPanelManager {
      * Setup touch event listeners for mobile devices
      */
     setupTouchEvents() {
-        document.addEventListener("touchstart", this.boundHandlers.handleTouchStart);
-        document.addEventListener("touchmove", this.boundHandlers.handleTouchMove);
-        document.addEventListener("touchend", this.boundHandlers.handleTouchEnd);
+        document.addEventListener("touchstart", this.boundHandlers.handleTouchStart, { passive: true });
+        document.addEventListener("touchmove", this.boundHandlers.handleTouchMove, { passive: true });
+        document.addEventListener("touchend", this.boundHandlers.handleTouchEnd, { passive: true });
     }
 
     /**

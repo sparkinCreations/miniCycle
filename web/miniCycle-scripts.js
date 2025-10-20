@@ -334,6 +334,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     console.log('✅ Notifications loaded');
 
+    // ✅ Load Theme Manager (core visual system)
+    await import(withV('./utilities/themeManager.js'));
+    console.log('✅ Theme Manager loaded');
+
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
@@ -2140,215 +2144,15 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
 
 
 // Update your existing setupDarkModeToggle function to include quick toggle
-function setupDarkModeToggle(toggleId, allToggleIds = []) {
-    const thisToggle = document.getElementById(toggleId);
-    if (!thisToggle) return;
-
-    console.log('🌙 Setting up dark mode toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for setupDarkModeToggle');
-        return;
-    }
-    
-    const isDark = schemaData.settings.darkMode || false;
-    
-    console.log('📊 Loading dark mode state from Schema 2.5:', isDark);
-
-    // Set initial checked state
-    thisToggle.checked = isDark;
-    document.body.classList.toggle("dark-mode", isDark);
-
-    // ✅ Update theme color on initial load
-    if (typeof updateThemeColor === 'function') {
-        updateThemeColor();
-    }
-
-    // ✅ Handle quick toggle button initial state
-    const quickToggle = document.getElementById("quick-dark-toggle");
-    if (quickToggle) {
-        quickToggle.textContent = isDark ? "☀️" : "🌙";
-    }
-
-    // Event handler
-    thisToggle.addEventListener("change", (e) => {
-        const enabled = e.target.checked;
-        document.body.classList.toggle("dark-mode", enabled);
-        
-        console.log('🌙 Dark mode toggle changed:', enabled);
-        
-        // ✅ Save to Schema 2.5 only
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.darkMode = enabled;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log("✅ Dark mode saved to Schema 2.5:", enabled);
-
-        // ✅ Sync all other toggles
-        allToggleIds.forEach(id => {
-            const otherToggle = document.getElementById(id);
-            if (otherToggle && otherToggle !== thisToggle) {
-                otherToggle.checked = enabled;
-            }
-        });
-
-        // ✅ Update quick toggle icon - GET FRESH REFERENCE
-        const currentQuickToggle = document.getElementById("quick-dark-toggle");
-        if (currentQuickToggle) {
-            currentQuickToggle.textContent = enabled ? "☀️" : "🌙";
-        }
-
-        // ✅ Update theme color after dark mode change
-        if (typeof updateThemeColor === 'function') {
-            updateThemeColor();
-        }
-    });
-    
-    console.log('✅ Dark mode toggle setup completed');
-}
 
 
 // setupQuickDarkToggle function
-function setupQuickDarkToggle() {
-    const quickToggle = document.getElementById("quick-dark-toggle");
-    if (!quickToggle) {
-        console.warn('⚠️ Quick dark toggle element not found');
-        return;
-    }
-    
-    console.log('🌙 Setting up quick dark toggle...');
-    
-    // ✅ Get current dark mode state BEFORE replacing element
-    const schemaData = loadMiniCycleData();
-    const isDark = schemaData ? (schemaData.settings.darkMode || false) : false;
-    
-    // ✅ Remove any existing listeners to prevent duplicates
-    const newQuickToggle = quickToggle.cloneNode(true);
-    quickToggle.parentNode.replaceChild(newQuickToggle, quickToggle);
-    
-    // ✅ Set the correct initial icon state on the NEW element
-    newQuickToggle.textContent = isDark ? "☀️" : "🌙";
-    
-    newQuickToggle.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('🌙 Quick dark toggle clicked');
-        
-        // Find the primary dark mode toggle and simulate its change
-        const primaryToggle = document.getElementById("darkModeToggle");
-        if (primaryToggle) {
-            console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
-            primaryToggle.checked = !primaryToggle.checked;
-            
-            // Create and dispatch a proper change event
-            const changeEvent = new Event("change", { bubbles: true, cancelable: true });
-            primaryToggle.dispatchEvent(changeEvent);
-            
-            console.log('🔄 Primary toggle new state:', primaryToggle.checked);
-        } else {
-            console.error('❌ Primary dark mode toggle not found');
-        }
-    });
-    
-    console.log('✅ Quick dark toggle setup completed');
-}
 
 
 // ✅ Dynamic Theme Color System with Gradient-Matching Solid Colors
-function updateThemeColor() {
-    const body = document.body;
-    const themeColorMeta = document.getElementById('theme-color-meta');
-    const statusBarMeta = document.getElementById('status-bar-style-meta');
-    
-    let themeColor = '#5680ff'; // Default (matches gradient start)
-    let statusBarStyle = 'default';
-    
-    // ✅ Check for Dark Mode + Themes
-    if (body.classList.contains('dark-mode')) {
-        if (body.classList.contains('theme-dark-ocean')) {
-            themeColor = '#0e1d2f'; // Matches dark ocean gradient
-            statusBarStyle = 'black-translucent';
-        } else if (body.classList.contains('theme-golden-glow')) {
-            themeColor = '#4a3d00'; // Matches dark golden gradient
-            statusBarStyle = 'black-translucent';
-        } else {
-            themeColor = '#1c1c1c'; // Regular dark mode
-            statusBarStyle = 'black-translucent';
-        }
-    } else {
-        // ✅ Light Mode Themes
-        if (body.classList.contains('theme-dark-ocean')) {
-            themeColor = '#0e1d2f'; // Matches light ocean gradient start
-            statusBarStyle = 'default';
-        } else if (body.classList.contains('theme-golden-glow')) {
-            themeColor = '#ffe066'; // Matches light golden gradient start
-            statusBarStyle = 'default';
-        } else {
-            themeColor = '#5680ff'; // Matches default gradient start (#5680ff to #74c0fc)
-            statusBarStyle = 'default';
-        }
-    }
-    
-    // ✅ Update meta tags
-    if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', themeColor);
-    }
-    
-    if (statusBarMeta) {
-        statusBarMeta.setAttribute('content', statusBarStyle);
-    }
-    
-    console.log(`Theme color updated to: ${themeColor}, Status bar: ${statusBarStyle}`);
-}
 
-function applyTheme(themeName) {
-    console.log('🎨 Applying theme (Schema 2.5 only)...', themeName);
-    
-    // Step 1: Remove all theme classes
-    const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
-    allThemes.forEach(theme => document.body.classList.remove(theme));
-  
-    // Step 2: Add selected theme class if it's not 'default'
-    if (themeName && themeName !== 'default') {
-        document.body.classList.add(`theme-${themeName}`);
-    }
-
-    // Step 3: Update theme color after applying theme
-    if (typeof updateThemeColor === 'function') {
-        updateThemeColor();
-    }
-  
-    // Step 4: Save to Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for applyTheme');
-        return;
-    }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.settings.theme = themeName || 'default';
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log("✅ Theme saved to Schema 2.5:", themeName);
-  
-    // Step 5: Update UI checkboxes
-    document.querySelectorAll('.theme-toggle').forEach(cb => {
-        cb.checked = cb.id === `toggle${capitalize(themeName)}Theme`;
-    });
-    
-    console.log('✅ Theme application completed');
-}
   
   // Optional helper to format checkbox IDs
-  function capitalize(str) {
-    return str
-      ? str.charAt(0).toUpperCase() + str.slice(1).replace(/-./g, s => s.charAt(1).toUpperCase())
-      : '';
-  }
 /**
  * Enables editing of the miniCycle title and saves changes to localStorage.
  * Prevents empty titles and restores the previous title if an invalid entry is made.
@@ -5290,211 +5094,14 @@ function unlockMiniGame() {
     checkGamesUnlock();
 }
 
-function unlockDarkOceanTheme() {
-    console.log("🌊 Unlocking Dark Ocean theme (state-based)...");
-    
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for unlockDarkOceanTheme');
-        return;
-    }
-    
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data for unlockDarkOceanTheme');
-        return;
-    }
-    
-    if (!currentState.settings.unlockedThemes.includes("dark-ocean")) {
-        window.AppState.update(state => {
-            state.settings.unlockedThemes.push("dark-ocean");
-            state.userProgress.rewardMilestones.push("dark-ocean-5");
-        }, true);
-        
-        console.log("🎨 Dark Ocean theme unlocked (state-based)!");
-        refreshThemeToggles();
-        
-        // Show the theme option in menu
-        const themeContainer = document.querySelector('.theme-container');
-        if (themeContainer) {
-            themeContainer.classList.remove('hidden');
-        }
-
-        // ✅ Show the Themes Button Immediately
-        const themeButton = document.getElementById("open-themes-panel");
-        if (themeButton) {
-            themeButton.style.display = "block";
-        }
-        
-        showNotification('🎉 New theme unlocked: Dark Ocean! Check the menu to activate it.', 'success', 5000);
-    } else {
-        console.log('ℹ️ Dark Ocean theme already unlocked');
-    }
-    
-    refreshThemeToggles();
-}
-
-function unlockGoldenGlowTheme() {
-    console.log("🌟 Unlocking Golden Glow theme (state-based)...");
-    
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for unlockGoldenGlowTheme');
-        return;
-    }
-    
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data for unlockGoldenGlowTheme');
-        return;
-    }
-    
-    if (!currentState.settings.unlockedThemes.includes("golden-glow")) {
-        window.AppState.update(state => {
-            state.settings.unlockedThemes.push("golden-glow");
-            state.userProgress.rewardMilestones.push("golden-glow-50");
-        }, true);
-        
-        console.log("🎨 Golden Glow theme unlocked (state-based)!");
-        refreshThemeToggles();
-
-        // Show the theme container (if hidden)
-        const themeContainer = document.querySelector('.theme-container');
-        if (themeContainer) {
-            themeContainer.classList.remove('hidden');
-        }
-
-        // Show the theme toggle if it exists
-        const themeButton = document.getElementById("open-themes-panel");
-        if (themeButton) {
-            themeButton.style.display = "block";
-        }
-
-        showNotification("🌟 New theme unlocked: Golden Glow! Check the themes menu to activate it.", "success", 5000);
-    } else {
-        console.log('ℹ️ Golden Glow theme already unlocked');
-    }
-    
-    refreshThemeToggles();
-}
 
 
 
-function initializeThemesPanel() {
-    console.log("🌈 Initializing Theme Panel");
 
-    const existingContainer = document.querySelector('.theme-container');
-    if (existingContainer) return; // Prevent duplicates
-
-    const themeContainer = document.createElement('div');
-    themeContainer.className = 'theme-container';
-    themeContainer.id = 'theme-container';
-
-    const themeOptionContainer = document.createElement('div');
-    themeOptionContainer.className = 'theme-option-container';
-    themeOptionContainer.id = 'theme-option-container'; // 👈 We'll update this later
-
-    themeContainer.appendChild(themeOptionContainer);
-
-    // Inject into modal
-    const themeSection = document.getElementById("theme-options-section");
-    themeSection.appendChild(themeContainer);
-
-    // Setup toggle logic
-    refreshThemeToggles(); // ⬅ Run this on load
-}
 
 // ✅ Rebuild toggles based on unlocked themes (Schema 2.5 only)
-function refreshThemeToggles() {
-    console.log('🎨 Refreshing theme toggles (Schema 2.5 only)...');
-    
-    const container = document.getElementById("theme-option-container");
-    if (!container) {
-        console.warn('⚠️ Theme option container not found');
-        return;
-    }
-    
-    container.innerHTML = ""; // 🧹 Clear current options
-
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for refreshThemeToggles');
-        return;
-    }
-
-    const unlockedThemes = schemaData.settings.unlockedThemes || [];
-    const currentTheme = schemaData.settings.theme || 'default';
-    
-    console.log('📊 Theme data from Schema 2.5:', {
-        unlockedThemes,
-        currentTheme,
-        unlockedCount: unlockedThemes.length
-    });
-
-    const themeList = [
-        {
-          id: "DarkOcean",
-          class: "dark-ocean",
-          label: "Dark Ocean Theme 🌊",
-          unlockKey: "dark-ocean"
-        },
-        {
-          id: "GoldenGlow",
-          class: "golden-glow",
-          label: "Golden Glow Theme 🌟",
-          unlockKey: "golden-glow"
-        }
-    ];
-
-    themeList.forEach(theme => {
-        if (!unlockedThemes.includes(theme.unlockKey)) {
-            console.log(`🔒 Theme ${theme.unlockKey} not unlocked, skipping`);
-            return;
-        }
-
-        console.log(`🎨 Adding theme toggle for: ${theme.label}`);
-
-        const label = document.createElement("label");
-        label.className = "custom-checkbox";
-        label.innerHTML = `
-            <input type="checkbox" id="toggle${theme.id}Theme" class="theme-toggle">
-            <span class="checkmark"></span>
-            ${theme.label}
-        `;
-
-        container.appendChild(label);
-
-        const checkbox = label.querySelector("input");
-        checkbox.checked = currentTheme === theme.class;
-        
-        console.log(`🔘 Theme ${theme.class} checked:`, checkbox.checked);
-
-        checkbox.addEventListener("change", function () {
-            if (this.checked) {
-                console.log(`🎨 Applying theme: ${theme.class}`);
-                
-                document.querySelectorAll(".theme-toggle").forEach(cb => {
-                    if (cb !== this) cb.checked = false;
-                });
-                applyTheme(theme.class);
-            } else {
-                console.log('🎨 Applying default theme');
-                applyTheme("default");
-            }
-        });
-    });
-    
-    console.log('✅ Theme toggles refreshed successfully');
-}
 
 // ✅ Close Themes Modal when clicking outside of the modal content
-window.addEventListener("click", (event) => {
-    const themesModal = document.getElementById("themes-modal");
-    
-
-    // Only close if you click on the background (not inside modal)
-    if (event.target === themesModal) {
-        themesModal.style.display = "none";
-    }
-});
 
 /**
  * Showcompletionanimation function.
@@ -8428,7 +8035,7 @@ function updateCycleModeDescription() {
 // ✅ REMOVED: dragover event listener - now handled by dragDropManager module via setupRearrange()
 document.addEventListener("touchstart", () => {
     hasInteracted = true;
-}, { once: true });
+}, { once: true, passive: true });
 
 
 
@@ -8456,63 +8063,7 @@ document.addEventListener("touchstart", () => {}, { passive: true });
 
 // ✅ Theme-related functions that were accidentally removed during stats panel extraction
 
-function setupThemesPanel() {
-    // ✅ Schema 2.5 only
-    console.log('🎨 Setting up themes panel (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.warn('⚠️ Schema 2.5 data not yet available for setupThemesPanel - deferring setup');
-        // Defer setup until data is available
-        setTimeout(() => {
-            const retryData = loadMiniCycleData();
-            if (retryData) {
-                console.log('🎨 Retrying setupThemesPanel with loaded data...');
-                setupThemesPanelWithData(retryData);
-            } else {
-                console.warn('⚠️ Schema 2.5 data still not available for setupThemesPanel');
-            }
-        }, 1000);
-        return;
-    }
 
-    setupThemesPanelWithData(schemaData);
-}
-
-function setupThemesPanelWithData(schemaData) {
-    const { settings } = schemaData;
-    const unlockedThemes = settings.unlockedThemes || [];
-    const hasUnlockedThemes = unlockedThemes.length > 0;
-    
-    const themeButton = document.getElementById("open-themes-panel");
-    const themesModal = document.getElementById("themes-modal");
-    const closeThemesBtn = document.getElementById("close-themes-btn");
-  
-    // ✅ Show the button if ANY theme is unlocked
-    if (hasUnlockedThemes && themeButton) {
-      themeButton.style.display = "block";
-    }
-  
-    // ✅ Open modal
-    if (themeButton) {
-        themeButton.addEventListener("click", () => {
-          themesModal.style.display = "flex";
-          hideMainMenu(); // Hide the main menu when opening
-        });
-    }
-  
-    // ✅ Close modal
-    if (closeThemesBtn) {
-        closeThemesBtn.addEventListener("click", () => {
-          themesModal.style.display = "none";
-        });
-    }
-  
-    // ✅ Setup dark mode toggle inside themes modal
-    setupDarkModeToggle("darkModeToggleThemes", ["darkModeToggle", "darkModeToggleThemes"]);
-    
-    console.log('✅ Themes panel setup completed (Schema 2.5)');
-}
 
 
 

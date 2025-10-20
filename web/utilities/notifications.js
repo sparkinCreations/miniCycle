@@ -702,7 +702,7 @@ async setDefaultPosition(notificationContainer) {
       };
 
       document.addEventListener("touchmove", onTouchMove, { passive: false });
-      document.addEventListener("touchend", onTouchEnd);
+      document.addEventListener("touchend", onTouchEnd, { passive: false });
     }, { passive: true });
   }
 

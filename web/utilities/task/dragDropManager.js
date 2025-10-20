@@ -203,7 +203,7 @@ export class DragDropManager {
                     // Ensure task options remain visible
                     this.deps.revealTaskButtons(taskElement);
                 }, 500); // Long-press delay (500ms)
-            });
+            }, { passive: false }); // Must be non-passive - calls preventDefault() on line 199
 
             taskElement.addEventListener("touchmove", (event) => {
                 const touchMoveX = event.touches[0].clientX;
@@ -244,7 +244,7 @@ export class DragDropManager {
                         this.handleRearrange(movingTask, event);
                     }
                 }
-            });
+            }, { passive: false }); // Must be non-passive - calls preventDefault() on lines 234, 240
 
             taskElement.addEventListener("touchend", () => {
                 clearTimeout(holdTimeout);
@@ -270,7 +270,7 @@ export class DragDropManager {
                 }
 
                 taskElement.classList.remove("long-pressed");
-            });
+            }, { passive: true });
 
             // 🖱️ **Mouse-based Drag for Desktop**
             taskElement.addEventListener("dragstart", (event) => {
