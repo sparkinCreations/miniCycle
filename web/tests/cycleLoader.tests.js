@@ -25,7 +25,7 @@ import {
     updateDependentComponents,
     saveCycleData,
     setCycleLoaderDependencies
-} from '../utilities/cycleLoader.js';
+} from '../utilities/cycle/cycleLoader.js';
 
 export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 CycleLoader Tests</h2><h3>Running tests...</h3>';
