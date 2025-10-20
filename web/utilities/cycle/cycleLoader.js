@@ -7,7 +7,7 @@
  * @version 1.330
  */
 
-import { appInit } from './appInitialization.js';
+import { appInit } from '../appInitialization.js';
 
 const Deps = {
   loadMiniCycleData: null,

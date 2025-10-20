@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Inside DOMContentLoaded, replace the current try { await window.cycleLoaderModulePromise; ... } with:
 // ✅ Load cycleLoader EARLY so window.loadMiniCycle exists before any initialSetup runs
   try {
-    const mod = await import(withV('./utilities/cycleLoader.js'));
+    const mod = await import(withV('./utilities/cycle/cycleLoader.js'));
 
         // ✅ Ensure loadMiniCycle is available globally for refreshUIFromState()
     if (!window.loadMiniCycle) {
@@ -806,7 +806,7 @@ function wireUndoRedoUI() {
         // ✅ Initialize Cycle Switcher (Phase 2 module)
         console.log('🔄 Initializing cycle switcher module...');
         try {
-            const { initializeCycleSwitcher } = await import(withV('./utilities/cycleSwitcher.js'));
+            const { initializeCycleSwitcher } = await import(withV('./utilities/cycle/cycleSwitcher.js'));
 
             await initializeCycleSwitcher({
                 AppState: window.AppState,
@@ -840,7 +840,7 @@ function wireUndoRedoUI() {
         // ✅ Initialize Cycle Manager (Phase 2 module)
         console.log('🔄 Initializing cycle manager module...');
         try {
-            const { initializeCycleManager } = await import(withV('./utilities/cycleManager.js'));
+            const { initializeCycleManager } = await import(withV('./utilities/cycle/cycleManager.js'));
 
             await initializeCycleManager({
                 AppState: window.AppState,

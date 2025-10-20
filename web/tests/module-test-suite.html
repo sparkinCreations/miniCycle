@@ -292,7 +292,7 @@
                     currentModule = 'deviceDetection';
                     resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleLoader') {
-                    await import(`../utilities/cycleLoader.js?v=${cacheBuster}`);
+                    await import(`../utilities/cycle/cycleLoader.js?v=${cacheBuster}`);
                     currentModule = 'cycleLoader';
                     resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'statsPanel') {
@@ -348,7 +348,7 @@
                     currentModule = 'modeManager';
                     resultsDiv.innerHTML = '<p>✅ ModeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleSwitcher') {
-                    await import(`../utilities/cycleSwitcher.js?v=${cacheBuster}`);
+                    await import(`../utilities/cycle/cycleSwitcher.js?v=${cacheBuster}`);
                     currentModule = 'cycleSwitcher';
                     resultsDiv.innerHTML = '<p>✅ CycleSwitcher loaded. Click "Run Tests" to begin.</p>';
                 }
@@ -447,7 +447,7 @@
                 { name: '🔗 Integration (E2E)', key: 'integration', runFn: runIntegrationTests, importPath: null },
                 { name: 'ThemeManager', key: 'themeManager', runFn: runThemeManagerTests, importPath: '../utilities/themeManager.js' },
                 { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../utilities/deviceDetection.js' },
-                { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../utilities/cycleLoader.js' },
+                { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../utilities/cycle/cycleLoader.js' },
                 { name: 'StatsPanel', key: 'statsPanel', runFn: runStatsPanelTests, importPath: '../utilities/statsPanel.js' },
                 { name: 'ConsoleCapture', key: 'consoleCapture', runFn: runConsoleCaptureTests, importPath: '../utilities/consoleCapture.js' },
                 { name: 'State', key: 'state', runFn: runStateTests, importPath: '../utilities/state.js' },
@@ -461,7 +461,7 @@
                 { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../utilities/dueDates.js' },
                 { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../utilities/reminders.js' },
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' },
-                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycleSwitcher.js' }
+                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycle/cycleSwitcher.js' }
             ];
 
             let allResults = [];
