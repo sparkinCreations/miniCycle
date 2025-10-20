@@ -2662,7 +2662,13 @@ function updateMainMenuHeader() {
     } else {
         console.warn('⚠️ Date element not found');
     }
-    
+
+    // ✅ Update mode description
+    if (typeof window.updateCycleModeDescription === 'function') {
+        window.updateCycleModeDescription();
+        console.log('🎯 Mode description updated');
+    }
+
     console.log('✅ Main menu header update completed');
 }
 

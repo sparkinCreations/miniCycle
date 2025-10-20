@@ -472,6 +472,7 @@ export class ModeManager {
         modeSelector.addEventListener('change', (e) => {
             console.log('🎯 ModeManager: Desktop mode selector changed:', e.target.value);
             syncTogglesFromMode(e.target.value);
+            this.updateCycleModeDescription();
             if (this.deps.showNotification) {
                 this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'info', 2000);
             }
@@ -480,6 +481,7 @@ export class ModeManager {
         mobileModeSelector.addEventListener('change', (e) => {
             console.log('📱 ModeManager: Mobile mode selector changed:', e.target.value);
             syncTogglesFromMode(e.target.value);
+            this.updateCycleModeDescription();
             if (this.deps.showNotification) {
                 this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'info', 2000);
             }
@@ -488,6 +490,7 @@ export class ModeManager {
         toggleAutoReset.addEventListener('change', (e) => {
             console.log('🔘 ModeManager: Auto Reset toggle changed:', e.target.checked);
             this.syncModeFromToggles();
+            this.updateCycleModeDescription();
 
             if (this.deps.checkCompleteAllButton) {
                 this.deps.checkCompleteAllButton();
@@ -500,6 +503,7 @@ export class ModeManager {
         deleteCheckedTasks.addEventListener('change', (e) => {
             console.log('🗑️ ModeManager: Delete Checked Tasks toggle changed:', e.target.checked);
             this.syncModeFromToggles();
+            this.updateCycleModeDescription();
 
             if (this.deps.checkCompleteAllButton) {
                 this.deps.checkCompleteAllButton();
