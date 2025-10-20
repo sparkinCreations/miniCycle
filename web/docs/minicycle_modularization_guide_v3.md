@@ -2189,4 +2189,230 @@ When extracting your next module, reference `utilities/reminders.js` as the temp
 
 ---
 
+### **ModeManager Module: Critical Lessons in Dependency Verification**
+
+**Date:** January 20, 2025
+**Pattern Used:** Resilient Constructor 🛡️
+**Result:** 3 runtime issues discovered, requiring systematic fixes
+
+#### **The Reality Check**
+
+The modeManager extraction revealed gaps in our pre-flight verification process. Despite following the established patterns, we encountered **runtime issues that should have been caught during extraction**:
+
+1. **Missing window exports** - createTaskButtonContainer wasn't exported
+2. **Orphaned function calls** - Top-level calls executed before module loaded
+3. **Syntax errors** - Initial code removal broke file structure
+
+These weren't pattern failures - they were **process failures**. The extraction worked eventually, but revealed we need more rigorous pre-extraction verification.
+
+#### **Key Metrics**
+- **Lines Extracted:** 538 lines (new module)
+- **Lines Removed:** ~380 lines (from main script, -4.6%)
+- **Functions Migrated:** 7 functions
+- **Issues During Extraction:** 3 major issues
+- **Follow-up Fixes Required:** 3 fixes
+- **Time to Complete:** ~4 hours (including debugging and fixes)
+
+#### **What Went Wrong (And How to Prevent It)**
+
+**Issue 1: Missing Dependency Export**
+
+**Problem:** Module called `window.createTaskButtonContainer?.()` but function was never exported to window.
+
+**Symptom:** All button containers returned `undefined`, causing console spam and non-functional mode switching.
+
+**Root Cause:** We verified the function existed, but didn't verify it was accessible via `window.*`
+
+**Fix:**
+```javascript
+// Added at miniCycle-scripts.js:5480
+window.createTaskButtonContainer = createTaskButtonContainer;
+```
+
+**Prevention:** Before Phase 2 integration, grep for ALL dependencies and verify exports:
+```bash
+# For each dependency in your module, verify it's exported
+grep "window.createTaskButtonContainer\s*=" miniCycle-scripts.js
+```
+
+---
+
+**Issue 2: Orphaned Function Calls**
+
+**Problem:** Top-level calls to `updateCycleModeDescription()` executed immediately when script loaded, before module initialized.
+
+**Symptom:** `ReferenceError: updateCycleModeDescription is not defined`
+
+**Root Cause:** We removed function definitions but didn't search for ALL call sites, especially top-level ones.
+
+**Fix:**
+```javascript
+// Removed orphaned calls at lines 7697-7699
+// BEFORE:
+updateCycleModeDescription();
+setTimeout(updateCycleModeDescription, 10000);
+
+// AFTER:
+// ✅ REMOVED: updateCycleModeDescription() calls - now handled by modeManager module
+```
+
+**Prevention:** Before removing function definitions, find ALL call sites:
+```bash
+# Search for all calls to functions being extracted
+grep -n "updateCycleModeDescription\|setupModeSelector\|syncModeFromToggles" miniCycle-scripts.js
+
+# Look specifically for top-level calls (not inside functions)
+# These are the dangerous ones that execute immediately
+```
+
+---
+
+**Issue 3: Syntax Errors During Code Removal**
+
+**Problem:** First code removal attempt created unbalanced braces/parentheses.
+
+**Symptom:** `SyntaxError: missing ) after argument list`
+
+**Root Cause:** Removed functions in wrong order (top-to-bottom instead of bottom-to-top), causing line number shifts.
+
+**Fix:**
+1. Restored from git: `git restore miniCycle-scripts.js`
+2. Re-added Phase 2 integration
+3. Removed functions in reverse order (highest line numbers first)
+4. Verified syntax after each removal
+
+**Prevention:** Always remove code bottom-to-top:
+```python
+# Remove in this order (highest line first):
+# 1. updateCycleModeDescription (lines 8000-8052)
+# 2. setupModeSelector (lines 7761-7996)
+# 3. refreshTaskButtonsForModeChange (lines 7671-7758)
+# 4. Lower line functions last
+```
+
+---
+
+#### **The Missing Pre-Flight Checklist**
+
+Based on these issues, here's what we should verify BEFORE starting extraction:
+
+**1. Dependency Export Verification**
+```bash
+# For EACH dependency your module will use:
+# ✅ Check function exists
+grep -n "function createTaskButtonContainer" miniCycle-scripts.js
+
+# ✅ Check it's exported to window
+grep -n "window.createTaskButtonContainer\s*=" miniCycle-scripts.js
+
+# ❌ If second grep returns nothing, ADD THE EXPORT FIRST
+```
+
+**2. Call Site Analysis**
+```bash
+# Find ALL places where extracted functions are called
+grep -n "functionName\(" miniCycle-scripts.js
+
+# Look for patterns indicating top-level calls:
+# - Calls outside any function definition
+# - Calls in setTimeout at file scope
+# - Event listeners at file scope
+```
+
+**3. Code Removal Planning**
+```bash
+# List functions with line numbers (HIGH TO LOW)
+grep -n "^function functionName" miniCycle-scripts.js | sort -rn
+
+# Plan removal order: HIGHEST LINE FIRST
+# This prevents line number shifts
+```
+
+---
+
+#### **Updated Extraction Workflow**
+
+**PHASE 1: PRE-EXTRACTION VERIFICATION** (NEW - Critical Step!)
+```bash
+# 1. Identify all dependencies
+grep "this.deps\." utilities/cycle/modeManager.js
+
+# 2. For each dependency, verify window export exists
+for dep in createTaskButtonContainer loadMiniCycleData setupDueDateButtonInteraction; do
+  echo "Checking $dep..."
+  grep "window.$dep\s*=" miniCycle-scripts.js || echo "❌ MISSING: $dep"
+done
+
+# 3. Find all call sites for functions being extracted
+for fn in updateCycleModeDescription setupModeSelector syncModeFromToggles; do
+  echo "=== Call sites for $fn ==="
+  grep -n "$fn\(" miniCycle-scripts.js
+done
+
+# 4. Add missing exports BEFORE proceeding
+```
+
+**PHASE 2: INTEGRATION** (Existing Process)
+- Create module with @version tag
+- Add Phase 2 integration with dependency injection
+- Test that module loads without errors
+
+**PHASE 3: CODE REMOVAL** (Enhanced Process)
+```bash
+# 1. Remove orphaned calls FIRST (before function definitions)
+# 2. Remove function definitions in REVERSE LINE ORDER
+# 3. Verify syntax after EACH removal: node --check miniCycle-scripts.js
+```
+
+---
+
+#### **Comparison: Reminders vs ModeManager**
+
+| Aspect | Reminders (Perfect) | ModeManager (Issues) |
+|--------|-------------------|---------------------|
+| **Pre-verification** | All deps verified before extraction | Assumed deps existed |
+| **Call site analysis** | Found all call sites upfront | Missed top-level calls |
+| **Code removal** | Bottom-to-top, syntax checked | Top-down first attempt failed |
+| **Runtime issues** | 0 | 3 (all preventable) |
+| **Time to complete** | 2 hours | 4 hours |
+
+**Key Insight:** The **reminders extraction** worked because we did thorough pre-verification. The **modeManager extraction** had issues because we skipped verification steps, assuming things would work.
+
+---
+
+#### **Critical Lessons for Future Extractions**
+
+1. **Never assume dependencies are exported** - Verify with grep before integration
+2. **Find ALL call sites before removal** - Including top-level, setTimeout, event listeners
+3. **Remove code bottom-to-top** - Always work from highest line numbers to lowest
+4. **Syntax check after each change** - Don't batch multiple removals without checking
+5. **Git is your safety net** - Restore and redo if removal goes wrong
+
+**The Formula That Actually Works:**
+```
+1. Pre-verify dependencies are exported (NEW)
+2. Find ALL call sites (NEW)
+3. Plan removal order bottom-to-top (NEW)
+4. Create module with @version tag
+5. Integrate in Phase 2
+6. Remove orphaned calls FIRST
+7. Remove functions bottom-to-top
+8. Syntax check after EACH step
+```
+
+#### **Use Both reminders.js AND modeManager.js**
+
+- **reminders.js** shows the process when everything goes right
+- **modeManager.js** shows what happens when you skip verification steps
+
+**Together, they provide the complete picture:**
+- Reminders: Follow this smooth path
+- ModeManager: These are the landmines to avoid
+
+**File Locations:**
+- `/utilities/reminders.js` (621 lines) - Perfect extraction
+- `/utilities/cycle/modeManager.js` (538 lines) - Extraction with lessons learned
+
+---
+
 **The methodology works. Follow the guides, and your extractions will succeed.** ✅

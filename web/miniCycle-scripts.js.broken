@@ -5476,9 +5476,6 @@ function createTaskButtonContainer(taskContext) {
     return buttonContainer;
 }
 
-// ✅ Export for modules that need to recreate button containers (e.g., modeManager)
-window.createTaskButtonContainer = createTaskButtonContainer;
-
 // ✅ 9. Individual Task Button Creation
 function createTaskButton(buttonConfig, taskContext, buttonContainer) {
     const { class: btnClass, icon, toggle = false, show } = buttonConfig;
@@ -7669,81 +7666,6 @@ document.addEventListener("touchstart", () => {
 document.addEventListener("touchstart", () => {}, { passive: true });
 
 
-
-
-
-/***********************
- * 
- * 
- * STATS PANEL - MOVED TO MODULE
- * 
- * Stats panel functionality including swipe detection, view switching,
- * event handlers, and all related code has been moved to:
- * utilities/statsPanel.js (StatsPanelManager class)
- * 
- * Global functions are available through module initialization:
- * - window.showStatsPanel()
- * - window.showTaskView() 
- * - window.updateStatsPanel()
- * 
- ************************/
-
-// ✅ Theme-related functions that were accidentally removed during stats panel extraction
-
-
-
-
-
-// ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
-// ✅ REMOVED: updateCycleModeDescription() calls - now handled by modeManager module
-
-
-
-
-
-
-
-
-/*
-
-(function boot() {
-  function start() {
-    try {
-      // --- sync init ---
-      fixTaskValidationIssues();
-      setupMainMenu();
-      setupSettingsMenu();
-      setupAbout();
-      setupUserManual();
-      setupFeedbackModal();
-      // Add themes panel setup after other modal setups
-      // setupTestingModal(); // Removed duplicate - already called in main boot function
-      initializeThemesPanel();
-      initializeModeSelector();
-      // ✅ Recurring setup now handled by recurringIntegration module
-      // Old setupRecurringPanel() and attachRecurringSummaryListeners() calls removed
-      updateNavDots();
-      loadMiniCycle();
-      // ✅ initializeDefaultRecurringSettings() removed - now handled by recurringIntegration module
-      setupMiniCycleTitleListener();
-      setupDownloadMiniCycle();
-      setupUploadMiniCycle();
-      // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
-      // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
-
-      loadAlwaysShowRecurringSetting();
-      updateCycleModeDescription();
-         setupThemesPanel(); 
-
-      // --- timers / async kickoffs ---
-      setTimeout(remindOverdueTasks, 2000);
-      // ✅ updateReminderButtons() and startReminders() now handled by reminderManager.init() via afterApp hook
-      // ✅ checkOverdueTasks() now handled by dueDatesManager.init() via afterApp hook
-
-      // only on modern browsers
-      if (supportsModern()) setTimeout(autoRedetectOnVersionChange, 10000);
-
-      // focus once window is loaded
       window.addEventListener('load', function () {
         var el = document.getElementById('taskInput');
         if (el) { try { el.focus(); } catch(_){} }
@@ -7795,8 +7717,3 @@ document.addEventListener("touchstart", () => {}, { passive: true });
 */
 
 });
-
-  function supportsModern() {
-    try { new Function('()=>{}'); } catch(_) { return false; }
-    return !!(window.Promise && window.fetch);
-  }
