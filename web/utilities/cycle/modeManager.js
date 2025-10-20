@@ -526,6 +526,9 @@ export class ModeManager {
     }
 }
 
+// Export class to window for testing
+window.ModeManager = ModeManager;
+
 /**
  * Initialize and configure the mode manager
  * @param {Object} dependencies - Dependency injection object
