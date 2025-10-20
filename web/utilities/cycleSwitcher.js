@@ -503,7 +503,7 @@ export class CycleSwitcher {
             throw new Error('Schema 2.5 data not found');
         }
 
-        const { cycles } = schemaData;
+        const cycles = schemaData.data?.cycles || {};
         const cycleData = cycles[cycleName];
 
         console.log('🔍 Preview for cycle:', cycleName);
@@ -657,6 +657,9 @@ export class CycleSwitcher {
 
 // Create global instance
 let cycleSwitcher = null;
+
+// Expose class for testing
+window.CycleSwitcher = CycleSwitcher;
 
 // Global wrappers for backward compatibility
 window.switchMiniCycle = () => cycleSwitcher?.switchMiniCycle();

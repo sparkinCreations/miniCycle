@@ -317,7 +317,13 @@ function test(name, testFn) {
 | CycleLoader | 11 | ✅ |
 | StatsPanel | 27 | ✅ |
 | Notifications | 39 | ✅ |
-| **Total** | **148** | **✅** |
+| DragDropManager | 67 | ✅ |
+| MigrationManager | 38 | ✅ |
+| DueDates | 17 | ✅ |
+| Reminders | 20 | ✅ |
+| ModeManager | 28 | ✅ |
+| CycleSwitcher | 22 | ✅ |
+| **Total** | **340** | **✅** |
 
 ---
 
@@ -599,9 +605,81 @@ test('rolls back on update error', async () => {
 
 **Result:**
 - Started: 148 tests (some bugs)
-- Current: 343+ tests (reliable)
-- **132% increase** in coverage
+- Current: 340+ tests (reliable)
+- **130% increase** in coverage
 - **0 known bugs** in test infrastructure
+
+---
+
+### Schema 2.5 Testing Pattern 🗄️
+
+**Critical lesson from CycleSwitcher tests: Always test data access paths**
+
+```javascript
+// ❌ WRONG - This test would pass with incorrect code!
+test('updatePreview works', async () => {
+    const instance = new CycleSwitcher({
+        loadMiniCycleData: () => ({ cycles: {} })  // Wrong structure!
+    });
+
+    // Test might not catch the bug if it doesn't actually use the data
+    instance.updatePreview('Morning Routine');
+    // No assertion - passes even though implementation is broken
+});
+
+// ✅ CORRECT - Complete test with real Schema 2.5 structure
+test('updatePreview generates task preview', async () => {
+    // Use COMPLETE Schema 2.5 mock
+    const schemaData = {
+        metadata: { version: "2.5", lastModified: Date.now() },
+        data: {  // ← Critical: data wrapper
+            cycles: {  // ← Cycles nested under data
+                'Morning Routine': {
+                    title: 'Morning Routine',
+                    tasks: [
+                        { id: 'task-1', text: 'Wake up', completed: false }
+                    ]
+                }
+            }
+        },
+        appState: { activeCycleId: 'Morning Routine' }
+    };
+
+    localStorage.setItem('miniCycleData', JSON.stringify(schemaData));
+
+    const previewWindow = document.createElement('div');
+    previewWindow.id = 'switch-preview-window';
+    document.body.appendChild(previewWindow);
+
+    const instance = new CycleSwitcher({
+        loadMiniCycleData: () => schemaData,
+        getElementById: (id) => document.getElementById(id)
+    });
+
+    instance.updatePreview('Morning Routine');
+
+    // ✅ Actually verify the output
+    if (!previewWindow.innerHTML.includes('Tasks:')) {
+        throw new Error('Preview should contain task list');
+    }
+    if (!previewWindow.innerHTML.includes('Wake up')) {
+        throw new Error('Preview should show task text');
+    }
+});
+```
+
+**Key Testing Principles:**
+1. **Use complete Schema 2.5 structures** - Don't mock partial data
+2. **Test actual data paths** - Verify `schemaData.data.cycles`, not shortcuts
+3. **Assert meaningful output** - Don't just check that code runs
+4. **Test with real DOM** - Create actual elements, not mocks
+5. **Verify all branches** - Test success AND error paths
+
+**Real Impact:**
+- CycleSwitcher tests found Schema 2.5 bug in first run (4/22 tests failed)
+- Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.cycles`
+- Single fix: `const cycles = schemaData.data?.cycles || {};`
+- All 22 tests passed after fix - **100% success rate**
 
 ---
 

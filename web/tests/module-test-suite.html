@@ -222,9 +222,10 @@
             <option value="dueDates">Due Dates</option>
             <option value="reminders">Reminders</option>
             <option value="modeManager">ModeManager</option>
+            <option value="cycleSwitcher">CycleSwitcher</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (17 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (18 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -259,6 +260,7 @@
         const { runDueDatesTests } = await import(`./dueDates.tests.js?v=${cacheBuster}`);
         const { runRemindersTests } = await import(`./reminders.tests.js?v=${cacheBuster}`);
         const { runModeManagerTests } = await import(`./modeManager.tests.js?v=${cacheBuster}`);
+        const { runCycleSwitcherTests } = await import(`./cycleSwitcher.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -345,6 +347,10 @@
                     await import(`../utilities/cycle/modeManager.js?v=${cacheBuster}`);
                     currentModule = 'modeManager';
                     resultsDiv.innerHTML = '<p>✅ ModeManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'cycleSwitcher') {
+                    await import(`../utilities/cycleSwitcher.js?v=${cacheBuster}`);
+                    currentModule = 'cycleSwitcher';
+                    resultsDiv.innerHTML = '<p>✅ CycleSwitcher loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -392,6 +398,8 @@
                 await runRemindersTests(resultsDiv);
             } else if (currentModule === 'modeManager') {
                 await runModeManagerTests(resultsDiv);
+            } else if (currentModule === 'cycleSwitcher') {
+                await runCycleSwitcherTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -452,7 +460,8 @@
                 { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../utilities/cycle/migrationManager.js' },
                 { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../utilities/dueDates.js' },
                 { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../utilities/reminders.js' },
-                { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' }
+                { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' },
+                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycleSwitcher.js' }
             ];
 
             let allResults = [];

@@ -711,6 +711,7 @@ try {
 - ✅ `utilities/statsPanel.js` - Stats panel with swipe detection and achievement system
 - ✅ `utilities/recurringPanel.js` - Complex recurring task UI with form management
 - ✅ `utilities/task/dragDropManager.js` - Drag & drop with Safari compatibility and resilient fallbacks
+- ✅ `utilities/cycleSwitcher.js` - Cycle switching with modal management (677 lines, 22 tests)
 - 🎯 **Recommended Next:** `utilities/undoManager.js` - Undo/redo with state snapshots
 
 ### **Strict Injection Pattern** 🔧
@@ -724,10 +725,10 @@ try {
 
 ## 🗺️ **Extraction Roadmap for miniCycle**
 
-**Current Status (October 2025):**
-- Main script: **11,214 lines** (down from 15,677)
-- **32% reduction achieved**
-- **20 modules extracted** (including dragDropManager.js - 695 lines)
+**Current Status (January 2025):**
+- Main script: **7,236 lines** (down from 15,677)
+- **54% reduction achieved** (toward 68% goal)
+- **21 modules extracted** (including cycleSwitcher.js - 677 lines, 22 tests)
 
 ### **Phase 1: Low-Risk Utilities** (1-2 weeks) - Target: ~9,500 lines remaining
 
@@ -781,11 +782,204 @@ try {
 
 | Phase | Target Lines | % Reduction | Est. Modules | Timeline |
 |-------|-------------|-------------|--------------|----------|
-| ✅ Completed | 11,214 | 32% | 20 modules | Oct 2025 |
-| Phase 1 | 9,500 | 39% | +3 modules | +1-2 weeks |
-| Phase 2 | 7,000 | 55% | +3 modules | +2-3 weeks |
+| ✅ Completed | 7,236 | 54% | 21 modules | Jan 2025 |
+| Phase 1 | 6,500 | 59% | +2 modules | +1-2 weeks |
+| Phase 2 | 5,500 | 65% | +2 modules | +2-3 weeks |
 | Phase 3 | 5,000 | 68% | +1 module | +3-4 weeks |
-| **Final Goal** | **<5,000** | **68%+** | **27+ modules** | **6-9 weeks total** |
+| **Final Goal** | **<5,000** | **68%+** | **26+ modules** | **6-8 weeks total** |
+
+---
+
+## 🗄️ **Schema 2.5 Data Access Patterns**
+
+**CRITICAL: Always access cycle data through the correct Schema 2.5 path**
+
+### **The Problem: Direct Access**
+
+```javascript
+// ❌ WRONG - Common mistake from cycleSwitcher.js extraction
+const schemaData = loadMiniCycleData();
+const { cycles } = schemaData;  // ❌ cycles is undefined!
+const cycleData = cycles[cycleName];  // ❌ Error: Cannot read property
+```
+
+**Why it fails:** Schema 2.5 nests cycles under `data.cycles`, not at the top level.
+
+### **The Solution: Nested Access**
+
+```javascript
+// ✅ CORRECT - Proper Schema 2.5 data access
+const schemaData = loadMiniCycleData();
+const cycles = schemaData.data?.cycles || {};  // ✅ Correct path
+const cycleData = cycles[cycleName];  // ✅ Works!
+```
+
+### **Schema 2.5 Structure Reference**
+
+```javascript
+{
+  metadata: {
+    version: "2.5",
+    lastModified: number,
+    schemaVersion: "2.5"
+  },
+  data: {              // ← Note: data wrapper
+    cycles: {          // ← cycles is nested under data
+      [cycleId]: {
+        title: string,
+        tasks: Task[]
+      }
+    }
+  },
+  appState: {
+    activeCycleId: string
+  }
+}
+```
+
+### **Common Access Patterns**
+
+```javascript
+// ✅ Access cycles
+const cycles = schemaData.data?.cycles || {};
+
+// ✅ Access specific cycle
+const activeCycleId = schemaData.appState?.activeCycleId;
+const activeCycle = schemaData.data?.cycles?.[activeCycleId];
+
+// ✅ Access tasks
+const tasks = schemaData.data?.cycles?.[cycleId]?.tasks || [];
+
+// ✅ Access metadata
+const version = schemaData.metadata?.version;
+const lastModified = schemaData.metadata?.lastModified;
+```
+
+### **Testing Tip**
+
+This bug was discovered by comprehensive tests! The cycleSwitcher tests caught this Schema 2.5 access error immediately:
+
+```javascript
+test('updatePreview generates task preview', async () => {
+    const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+    instance.updatePreview('Morning Routine');
+    // Test failed with "Cannot read properties of undefined"
+    // Led to discovering incorrect Schema 2.5 access pattern
+});
+```
+
+**Lesson:** Write tests for new modules immediately - they catch data structure bugs that are hard to spot in code review.
+
+---
+
+## 🧪 **Exposing Classes for Testing**
+
+**CRITICAL: Modules must expose their classes to window for test access**
+
+### **The Problem**
+
+```javascript
+// utilities/myModule.js
+export class MyModule {
+    constructor(dependencies = {}) {
+        // ...
+    }
+}
+
+// Global wrappers for backward compatibility
+window.doSomething = () => instance?.doSomething();
+
+// ❌ MISSING: Class not exposed!
+```
+
+**Result:** Tests fail with "MyModule is not defined"
+
+### **The Solution**
+
+```javascript
+// utilities/myModule.js
+export class MyModule {
+    constructor(dependencies = {}) {
+        // ...
+    }
+}
+
+// ✅ Expose class for testing
+window.MyModule = MyModule;
+
+// Global wrappers for backward compatibility
+window.doSomething = () => instance?.doSomething();
+
+console.log('✅ MyModule loaded');
+```
+
+### **Why This Matters**
+
+Tests need direct access to the class for dependency injection:
+
+```javascript
+// In tests:
+test('creates instance successfully', async () => {
+    // ✅ Can access class directly
+    const instance = new CycleSwitcher();
+    if (!instance) throw new Error('Failed to create instance');
+});
+
+test('accepts dependency injection', async () => {
+    // ✅ Can pass mock dependencies
+    const mockDeps = {
+        AppState: { isReady: () => true },
+        showNotification: () => {}
+    };
+    const instance = new CycleSwitcher(mockDeps);
+    if (!instance) throw new Error('DI failed');
+});
+```
+
+### **Pattern Checklist**
+
+When creating a new module:
+
+- [ ] Export the class: `export class MyModule {`
+- [ ] Expose to window: `window.MyModule = MyModule;`
+- [ ] Create instance: `let instance = null;`
+- [ ] Export init function: `export function initializeMyModule(deps) {`
+- [ ] Add global wrappers: `window.myFunction = () => instance?.myFunction();`
+
+### **Real Example: CycleSwitcher**
+
+```javascript
+// utilities/cycleSwitcher.js
+
+export class CycleSwitcher {
+    constructor(dependencies = {}) {
+        this.deps = { /* ... */ };
+    }
+
+    switchMiniCycle() { /* ... */ }
+    // ... 8 more methods
+}
+
+// Create global instance
+let cycleSwitcher = null;
+
+// ✅ Expose class for testing
+window.CycleSwitcher = CycleSwitcher;
+
+// Global wrappers for backward compatibility
+window.switchMiniCycle = () => cycleSwitcher?.switchMiniCycle();
+window.renameMiniCycle = () => cycleSwitcher?.renameMiniCycle();
+// ... etc
+
+// Export initialization function
+export function initializeCycleSwitcher(dependencies) {
+    cycleSwitcher = new CycleSwitcher(dependencies);
+    return cycleSwitcher;
+}
+```
+
+**Test Success:** After adding `window.CycleSwitcher = CycleSwitcher`, all 22 tests passed (100%).
 
 ---
 
@@ -2101,11 +2295,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 ## 📈 **Progress & Next Steps**
 
-**Where You Are (October 2025):**
-- ✅ **20 modules extracted** - 32% reduction (15,677 → 11,214 lines)
+**Where You Are (January 2025):**
+- ✅ **21 modules extracted** - 54% reduction (15,677 → 7,236 lines)
 - ✅ **All 4 patterns proven** in production
-- ✅ **Comprehensive guide** with real examples
-- ✅ **dragDropManager.js** - 695 lines with Safari compatibility and comprehensive tests (76 tests)
+- ✅ **Comprehensive guide** with real examples and critical lessons
+- ✅ **cycleSwitcher.js** - 677 lines with 22 tests (100% pass rate)
+- ✅ **Schema 2.5 patterns** - Documented data access best practices
+- ✅ **Testing patterns** - Class exposure for complete test coverage
+
+**Recent Success:**
+- CycleSwitcher extraction: 566 lines removed (7.3% reduction)
+- Tests caught Schema 2.5 data access bug immediately
+- All 22 tests passing after single bug fix
+- Smooth extraction using proven patterns
 
 **Next Recommended Extractions:**
 1. 🎯 **Start this week:** Task Utilities (⚡ Static) + Date Utilities (⚡ Static) - 500 lines total
@@ -2113,10 +2315,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 3. 🎯 **Following weeks:** Modal Manager → Migration Manager → Undo/Redo Manager
 
 **Target Goal:**
-- **Phase 1 (1-2 weeks):** Remove 1,500 lines → Target: ~9,500 lines
-- **Phase 2 (2-3 weeks):** Remove 2,500 lines → Target: ~7,000 lines
-- **Phase 3 (3-4 weeks):** Remove 2,000 lines → Target: ~5,000 lines
-- **Final:** **68% reduction** from original monolith
+- **Current:** 7,236 lines (54% reduction)
+- **Phase 1 (1-2 weeks):** Remove 700 lines → Target: ~6,500 lines (59%)
+- **Phase 2 (2-3 weeks):** Remove 1,000 lines → Target: ~5,500 lines (65%)
+- **Phase 3 (3-4 weeks):** Remove 500 lines → Target: ~5,000 lines (68%)
+- **Final:** **68% reduction** from original monolith ✨
 
 ---
 
