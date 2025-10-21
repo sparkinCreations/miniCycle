@@ -5,26 +5,36 @@
  * miniCycle functionality, including storage, migration, and state management.
  *
  * @module testing-modal
- * @version 1.330
+ * @version 1.332
  */
 
 // ==========================================
 // 📦 MODULE IMPORTS
 // ==========================================
 
-import { MiniCycleNotifications } from './notifications.js';
+// ✅ REMOVED: Static import creates duplicate without version parameter
+// import { MiniCycleNotifications } from './notifications.js';
+// Instead, use window.notifications (loaded with version in miniCycle-scripts.js)
 
 // ==========================================
 // � DEPENDENCY HELPERS (Safe Global Access)
 // ==========================================
 
-// Initialize notifications module
-const notifications = new MiniCycleNotifications();
+// ✅ Use globally available notifications instance
+const getNotifications = () => window.notifications || null;
 
-// Safe access to notification functions (now using imported module)
+// Safe access to notification functions (uses global instance)
 function safeShowNotification(message, type = "info", duration = 2000) {
     try {
-        return notifications.show(message, type, duration);
+        const notifications = getNotifications();
+        if (notifications && typeof notifications.show === 'function') {
+            return notifications.show(message, type, duration);
+        }
+        // Fallback to window.showNotification if available
+        if (typeof window.showNotification === 'function') {
+            return window.showNotification(message, type, duration);
+        }
+        console.log(`[Notification Fallback] ${message}`);
     } catch (error) {
         console.log(`[Notification Fallback] ${message}`);
         console.warn('Notification system error:', error);

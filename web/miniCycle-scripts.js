@@ -664,7 +664,7 @@ function wireUndoRedoUI() {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.330'
+            currentVersion: '1.332'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -944,6 +944,20 @@ function wireUndoRedoUI() {
         } catch (uiErr) {
           console.warn('⚠️ Undo/redo UI init failed:', uiErr);
         }
+
+        // ✅ Initialize Testing Modal modules (Phase 3)
+        console.log('🔬 Loading testing modal modules...');
+        try {
+            await import(withV('./utilities/testing-modal.js'));
+            console.log('✅ Testing modal loaded');
+
+            await import(withV('./utilities/testing-modal-integration.js'));
+            console.log('✅ Testing modal integration loaded');
+        } catch (error) {
+            console.error('❌ Failed to load testing modal modules:', error);
+            console.warn('⚠️ App will continue without testing modal functionality');
+        }
+
         // Optional debug subscribe
         window.AppState.subscribe('debug', (newState, oldState) => {
           console.log('🔄 State changed:', {

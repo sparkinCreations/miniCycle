@@ -8,7 +8,7 @@
  * Copy this code into miniCycle-scripts.js DOMContentLoaded handler.
  *
  * @module recurringIntegration
- * @version 1.330
+ * @version 1.332
  * @requires AppInit (for initialization coordination)
  */
 
@@ -29,11 +29,12 @@ export async function initializeRecurringModules() {
 
     try {
         // ============================================
-        // STEP 1: Import both modules
+        // STEP 1: Import both modules (with version for cache-busting)
         // ============================================
 
-        const recurringCore = await import('./recurringCore.js');
-        const { RecurringPanelManager, buildRecurringSummaryFromSettings } = await import('./recurringPanel.js');
+        const version = window.APP_VERSION || '1.331';
+        const recurringCore = await import(`./recurringCore.js?v=${version}`);
+        const { RecurringPanelManager, buildRecurringSummaryFromSettings } = await import(`./recurringPanel.js?v=${version}`);
 
         console.log('✅ Recurring modules imported');
 
@@ -116,6 +117,8 @@ export async function initializeRecurringModules() {
             deleteTemplate: recurringCore.deleteRecurringTemplate,
             buildRecurringSummary: buildRecurringSummaryFromSettings,
             normalizeRecurringSettings: recurringCore.normalizeRecurringSettings,
+            formatNextOccurrence: recurringCore.formatNextOccurrence,
+            calculateNextOccurrence: recurringCore.calculateNextOccurrence,
 
             // State management
             getAppState: () => window.AppState?.get(),

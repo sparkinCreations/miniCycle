@@ -12,13 +12,15 @@
  * - Button visibility management
  *
  * @module recurringPanel
- * @version 1.330
+ * @version 1.332
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
 
 import { appInit } from './appInitialization.js';
-import { formatNextOccurrence, calculateNextOccurrence } from './recurringCore.js';
+// ✅ REMOVED: Static import creates duplicate without version parameter
+// import { formatNextOccurrence, calculateNextOccurrence } from './recurringCore.js';
+// These will be passed as dependencies instead
 
 // ============================================
 // RECURRING PANEL MANAGER CLASS
@@ -39,6 +41,8 @@ export class RecurringPanelManager {
             deleteTemplate: dependencies.deleteTemplate || this.fallbackDeleteTemplate.bind(this),
             buildRecurringSummary: dependencies.buildRecurringSummary || this.fallbackBuildSummary.bind(this),
             normalizeRecurringSettings: dependencies.normalizeRecurringSettings || this.fallbackNormalize.bind(this),
+            formatNextOccurrence: dependencies.formatNextOccurrence || this.fallbackFormatNext.bind(this),
+            calculateNextOccurrence: dependencies.calculateNextOccurrence || this.fallbackCalculateNext.bind(this),
 
             // State management
             getAppState: dependencies.getAppState || (() => window.AppState?.get()),
@@ -90,6 +94,16 @@ export class RecurringPanelManager {
     fallbackNormalize(settings) {
         console.warn('⚠️ normalizeRecurringSettings not available - using fallback');
         return settings;
+    }
+
+    fallbackFormatNext(timestamp) {
+        console.warn('⚠️ formatNextOccurrence not available - using fallback');
+        return timestamp ? new Date(timestamp).toLocaleDateString() : 'Not scheduled';
+    }
+
+    fallbackCalculateNext(settings, fromTime) {
+        console.warn('⚠️ calculateNextOccurrence not available - using fallback');
+        return null;
     }
 
     fallbackNotification(message, type) {
@@ -955,7 +969,7 @@ export class RecurringPanelManager {
                             remindersEnabled: task.remindersEnabled || false,
                             recurring: true,
                             recurringSettings: structuredClone(settings),
-                            nextScheduledOccurrence: calculateNextOccurrence(settings, Date.now()),
+                            nextScheduledOccurrence: this.deps.calculateNextOccurrence(settings, Date.now()),
                             schemaVersion: 2
                         };
                     });
@@ -1630,7 +1644,7 @@ export class RecurringPanelManager {
 
             // ✅ Get next occurrence text
             const nextOccurrenceText = template?.nextScheduledOccurrence
-                ? formatNextOccurrence(template.nextScheduledOccurrence)
+                ? this.deps.formatNextOccurrence(template.nextScheduledOccurrence)
                 : null;
 
             previewText.innerHTML = `
