@@ -595,17 +595,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 // ...existing code...
 
-
-function wireUndoRedoUI() {
-  if (window.__undoRedoWired) return; // idempotent guard
-  window.__undoRedoWired = true;
-
-  initializeUndoRedoButtons();
-  const undoBtn = document.getElementById("undo-btn");
-  const redoBtn = document.getElementById("redo-btn");
-  if (undoBtn) safeAddEventListener(undoBtn, "click", () => performStateBasedUndo());
-  if (redoBtn) safeAddEventListener(redoBtn, "click", () => performStateBasedRedo());
-}
+// ✅ wireUndoRedoUI moved to utilities/ui/undoRedoManager.js
 
 // ✅ Data-ready initialization - runs immediately (no more deferral needed)
 // The code below will execute after data is loaded in the main sequence
@@ -867,6 +857,45 @@ function wireUndoRedoUI() {
             console.warn('⚠️ App will continue without cycle manager functionality');
         }
 
+        // ✅ Initialize Undo/Redo Manager (Phase 2 module)
+        console.log('🔄 Initializing undo/redo manager module...');
+        try {
+            const undoRedoModule = await import(withV('./utilities/ui/undoRedoManager.js'));
+
+            undoRedoModule.setUndoRedoManagerDependencies({
+                AppState: window.AppState,
+                refreshUIFromState: refreshUIFromState,
+                AppGlobalState: window.AppGlobalState,
+                getElementById: (id) => document.getElementById(id),
+                safeAddEventListener: window.safeAddEventListener
+            });
+
+            // Wire up UI and initialize
+            undoRedoModule.wireUndoRedoUI();
+            undoRedoModule.setupStateBasedUndoRedo();
+
+            // Expose functions globally for backward compatibility
+            window.wireUndoRedoUI = undoRedoModule.wireUndoRedoUI;
+            window.initializeUndoRedoButtons = undoRedoModule.initializeUndoRedoButtons;
+            window.captureInitialSnapshot = undoRedoModule.captureInitialSnapshot;
+            window.setupStateBasedUndoRedo = undoRedoModule.setupStateBasedUndoRedo;
+            window.enableUndoSystemOnFirstInteraction = undoRedoModule.enableUndoSystemOnFirstInteraction;
+            window.captureStateSnapshot = undoRedoModule.captureStateSnapshot;
+            window.buildSnapshotSignature = undoRedoModule.buildSnapshotSignature;
+            window.snapshotsEqual = undoRedoModule.snapshotsEqual;
+            window.performStateBasedUndo = undoRedoModule.performStateBasedUndo;
+            window.performStateBasedRedo = undoRedoModule.performStateBasedRedo;
+            window.updateUndoRedoButtons = undoRedoModule.updateUndoRedoButtons;
+
+            console.log('✅ Undo/redo manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize undo/redo manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Undo/redo feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without undo/redo functionality');
+        }
+
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();
@@ -888,9 +917,7 @@ function wireUndoRedoUI() {
           console.error('❌ Error stack:', error.stack);
         }
 
-        // ✅ Idempotent wiring for Undo/Redo buttons
-        wireUndoRedoUI();
-
+        // ✅ Undo/Redo buttons already wired in Phase 2 (undoRedoManager module)
 
         // 🧰 Centralize undo snapshots on AppState.update (wrap once)
         try {
@@ -922,11 +949,9 @@ function wireUndoRedoUI() {
           console.warn('⚠️ Failed to wrap AppState.update:', e);
         }
 
+        // ✅ State-based undo/redo subscription already set up in Phase 2 (undoRedoManager module)
 
-        // ✅ Subscribe for state-based undo snapshots
-        setupStateBasedUndoRedo();
-
-             // 🔘 Update button states and capture an initial snapshot
+        // 🔘 Update button states and capture an initial snapshot
         try {
           updateUndoRedoButtons();
 
@@ -1085,315 +1110,15 @@ function wireUndoRedoUI() {
 
 
  // ✅ Add this new function
-function initializeUndoRedoButtons() {
-    const undoBtn = document.getElementById("undo-btn");
-    const redoBtn = document.getElementById("redo-btn");
-
-    if (undoBtn) {
-        undoBtn.hidden = true; // ✅ Start hidden until there's undo history
-        undoBtn.disabled = true; // Initially disabled
-    }
-    if (redoBtn) {
-        redoBtn.hidden = true; // ✅ Start hidden until there's redo history
-        redoBtn.disabled = true; // Initially disabled
-    }
-
-    console.log('🔘 Undo/redo buttons initialized (hidden by default)');
-}
-
-// ✅ Add this function
-function captureInitialSnapshot() {
-    const currentState = window.AppState.get();
-    if (currentState) {
-        console.log('📸 Capturing initial snapshot...');
-        captureStateSnapshot(currentState);
-    }
-}
-
-
-// ✅ FIXED: Update the setupStateBasedUndoRedo function around line 835
-function setupStateBasedUndoRedo() {
-    if (!window.AppState?.isReady?.()) {
-        console.warn('⚠️ State module not ready for undo/redo setup');
-        return;
-    }
-
-    // Skip installing when wrapper is active
-    if (window.__useUpdateWrapper) {
-        console.log('ℹ️ Undo subscriber skipped (wrapper handles snapshots)');
-        return;
-    }
-
-    try {
-        window.AppState.subscribe('undo-system', (newState, oldState) => {
-            // ✅ Runtime guard if wrapper activates later
-            if (window.__useUpdateWrapper) return;
-
-            if (!window.AppGlobalState.isPerformingUndoRedo &&
-                oldState?.data?.cycles && newState?.data?.cycles) {
-                const activeCycle = newState.appState.activeCycleId;
-                if (activeCycle && oldState.data.cycles[activeCycle] && newState.data.cycles[activeCycle]) {
-                    const oldCycle = oldState.data.cycles[activeCycle];
-                    const newCycle = newState.data.cycles[activeCycle];
-
-                    const tasksChanged = JSON.stringify(oldCycle.tasks) !== JSON.stringify(newCycle.tasks);
-                    const titleChanged = oldCycle.title !== newCycle.title;
-                    const settingsChanged = oldCycle.autoReset !== newCycle.autoReset ||
-                                            oldCycle.deleteCheckedTasks !== newCycle.deleteCheckedTasks;
-
-                    if (tasksChanged || titleChanged || settingsChanged) {
-                        captureStateSnapshot(oldState);
-                    }
-                }
-            }
-        });
-        console.log('✅ State-based undo/redo system initialized');
-    } catch (subscriptionError) {
-        console.warn('⚠️ Failed to subscribe to state changes:', subscriptionError);
-    }
-}
-
-/**
- * Enable undo system on first user interaction
- * Call this when user performs their first action (task completion, add task, etc.)
- */
-function enableUndoSystemOnFirstInteraction() {
-    if (window.AppGlobalState.isInitializing) {
-        console.log('✅ First user interaction detected - enabling undo system');
-        window.AppGlobalState.isInitializing = false;
-    }
-}
-
-// ✅ Capture complete state snapshots instead of manual extraction
-function captureStateSnapshot(state) {
-    // ✅ Don't capture snapshots during initial app load
-    if (window.AppGlobalState.isInitializing) {
-        console.log('⏭️ Skipping snapshot during initialization');
-        return;
-    }
-
-    if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
-        console.warn('⚠️ Invalid state for snapshot');
-        return;
-    }
-
-    const activeCycle = state.appState.activeCycleId;
-    const currentCycle = state.data.cycles[activeCycle];
-    if (!currentCycle) return;
-
-    const snapshot = {
-        activeCycleId: activeCycle,
-        tasks: structuredClone(currentCycle.tasks || []),
-        recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
-        title: currentCycle.title || "Untitled miniCycle",
-        autoReset: currentCycle.autoReset,
-        deleteCheckedTasks: currentCycle.deleteCheckedTasks,
-        timestamp: Date.now()
-    };
-
-    // Build minimal signature to detect duplicates
-    const sig = JSON.stringify({
-        c: snapshot.activeCycleId,
-        t: snapshot.tasks.map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
-        ti: snapshot.title,
-        ar: !!snapshot.autoReset,
-        dc: !!snapshot.deleteCheckedTasks
-    });
-
-    const now = Date.now();
-
-    // Throttle identical snapshots
-    if (sig === window.AppGlobalState.lastSnapshotSignature &&
-        now - window.AppGlobalState.lastSnapshotTs < UNDO_MIN_INTERVAL_MS) {
-        return;
-    }
-
-    // Skip if last on stack is identical
-    const last = window.AppGlobalState.undoStack.at(-1);
-    if (last) {
-        const lastSig = JSON.stringify({
-            c: last.activeCycleId,
-            t: (last.tasks || []).map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
-            ti: last.title,
-            ar: !!last.autoReset,
-            dc: !!last.deleteCheckedTasks
-        });
-        if (lastSig === sig) return;
-    }
-
-    console.log('📸 Capturing snapshot:', {
-        taskCount: snapshot.tasks.length,
-        title: snapshot.title,
-        stackSize: window.AppGlobalState.undoStack.length
-    });
-
-    window.AppGlobalState.undoStack.push(snapshot);
-    if (window.AppGlobalState.undoStack.length > UNDO_LIMIT) {
-        window.AppGlobalState.undoStack.shift();
-    }
-
-    // Update dedupe trackers
-    window.AppGlobalState.lastSnapshotSignature = sig;
-    window.AppGlobalState.lastSnapshotTs = now;
-
-    window.AppGlobalState.redoStack = [];
-    updateUndoRedoButtons();
-}
-
-function buildSnapshotSignature(s) {
-  if (!s) return '';
-  return JSON.stringify({
-    c: s.activeCycleId,
-    t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null
-    })),
-    ti: s.title || '',
-    ar: !!s.autoReset,
-    dc: !!s.deleteCheckedTasks
-  });
-}
-
-function snapshotsEqual(a, b) {
-  return buildSnapshotSignature(a) === buildSnapshotSignature(b);
-}
-
-
-
-// ✅ State-based undo operation
-async function performStateBasedUndo() {
-  if (window.AppGlobalState.undoStack.length === 0) return;
-  if (!window.AppState?.isReady?.()) return;
-
-  window.AppGlobalState.isPerformingUndoRedo = true;
-  try {
-    const currentState = window.AppState.get();
-    const currentActive = currentState.appState.activeCycleId;
-    const currentCycle = currentState.data.cycles[currentActive];
-
-    const currentSnapshot = {
-      activeCycleId: currentActive,
-      tasks: structuredClone(currentCycle?.tasks || []),
-      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
-      title: currentCycle?.title,
-      autoReset: currentCycle?.autoReset,
-      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
-      timestamp: Date.now()
-    };
-
-    let snap = null;
-    let skippedDuplicates = 0;
-    while (window.AppGlobalState.undoStack.length) {
-      const candidate = window.AppGlobalState.undoStack.pop();
-      if (!snapshotsEqual(candidate, currentSnapshot)) {
-        snap = candidate;
-        break;
-      }
-      skippedDuplicates++;
-    }
-    console.log(`🔍 Undo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
-    if (!snap) {
-      console.warn('⚠️ No valid undo snapshot found');
-      updateUndoRedoButtons();
-      return;
-    }
-
-    window.AppGlobalState.redoStack.push(currentSnapshot);
-
-    await window.AppState.update(state => {
-      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
-        state.appState.activeCycleId = snap.activeCycleId;
-      }
-      const cid = state.appState.activeCycleId;
-      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
-      cycle.tasks = structuredClone(snap.tasks || []);
-      cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
-      if (snap.title) cycle.title = snap.title;
-      if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
-      if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
-    }, true);
-
-    await Promise.resolve();
-    refreshUIFromState(window.AppState.get());
-
-    // ✅ Wait for next tick to ensure all rendering state updates complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    updateUndoRedoButtons();
-  } catch (e) {
-    console.error('❌ Undo failed:', e);
-  } finally {
-    window.AppGlobalState.isPerformingUndoRedo = false;
-  }
-}
-
-
-
-// ✅ State-based redo operation
-async function performStateBasedRedo() {
-  if (window.AppGlobalState.redoStack.length === 0) return;
-  if (!window.AppState?.isReady?.()) return;
-
-  window.AppGlobalState.isPerformingUndoRedo = true;
-  try {
-    const currentState = window.AppState.get();
-    const currentActive = currentState.appState.activeCycleId;
-    const currentCycle = currentState.data.cycles[currentActive];
-
-    const currentSnapshot = {
-      activeCycleId: currentActive,
-      tasks: structuredClone(currentCycle?.tasks || []),
-      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
-      title: currentCycle?.title,
-      autoReset: currentCycle?.autoReset,
-      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
-      timestamp: Date.now()
-    };
-
-    let snap = null;
-    let skippedDuplicates = 0;
-    while (window.AppGlobalState.redoStack.length) {
-      const candidate = window.AppGlobalState.redoStack.pop();
-      if (!snapshotsEqual(candidate, currentSnapshot)) {
-        snap = candidate;
-        break;
-      }
-      skippedDuplicates++;
-    }
-    console.log(`🔍 Redo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
-    if (!snap) {
-      console.warn('⚠️ No valid redo snapshot found');
-      updateUndoRedoButtons();
-      return;
-    }
-
-    window.AppGlobalState.undoStack.push(currentSnapshot);
-
-    await window.AppState.update(state => {
-      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
-        state.appState.activeCycleId = snap.activeCycleId;
-      }
-      const cid = state.appState.activeCycleId;
-      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
-      cycle.tasks = structuredClone(snap.tasks || []);
-      cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
-      if (snap.title) cycle.title = snap.title;
-      if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
-      if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
-    }, true);
-
-    await Promise.resolve();
-    refreshUIFromState(window.AppState.get());
-
-    // ✅ Wait for next tick to ensure all rendering state updates complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    updateUndoRedoButtons();
-  } catch (e) {
-    console.error('❌ Redo failed:', e);
-  } finally {
-    window.AppGlobalState.isPerformingUndoRedo = false;
-  }
-}
+// ✅ All undo/redo functions moved to utilities/ui/undoRedoManager.js:
+// - initializeUndoRedoButtons
+// - captureInitialSnapshot
+// - setupStateBasedUndoRedo
+// - enableUndoSystemOnFirstInteraction
+// ✅ captureStateSnapshot moved to utilities/ui/undoRedoManager.js
+// ✅ buildSnapshotSignature & snapshotsEqual moved to utilities/ui/undoRedoManager.js
+// ✅ performStateBasedUndo moved to utilities/ui/undoRedoManager.js
+// ✅ performStateBasedRedo moved to utilities/ui/undoRedoManager.js
 
 // ✅ Helper: prefer AppState for UI refresh; fall back to loader
 function refreshUIFromState(providedState = null) {
@@ -1441,29 +1166,8 @@ function refreshUIFromState(providedState = null) {
 // ✅ Make refreshUIFromState globally available for recurring modules
 window.refreshUIFromState = refreshUIFromState;
 
-// ✅ Update button states
-function updateUndoRedoButtons() {
-  const undoBtn = document.getElementById("undo-btn");
-  const redoBtn = document.getElementById("redo-btn");
-  const undoCount = window.AppGlobalState.undoStack.length;
-  const redoCount = window.AppGlobalState.redoStack.length;
-
-  if (undoBtn) {
-    undoBtn.disabled = undoCount === 0;
-    undoBtn.hidden = undoCount === 0; // ✅ Hide when no undo history
-    undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
-  }
-  if (redoBtn) {
-    redoBtn.disabled = redoCount === 0;
-    redoBtn.hidden = redoCount === 0; // ✅ Hide when no redo history
-    redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
-  }
-  const undoCountValue = window.AppGlobalState.undoStack.length;
-  const redoCountValue = window.AppGlobalState.redoStack.length;
-  console.log(`🔘 Button states: undo=${undoCountValue} (hidden=${undoBtn?.hidden}), redo=${redoCountValue} (hidden=${redoBtn?.hidden})`);
-}
-// ✅ Expose for cycleSwitcher module
-window.updateUndoRedoButtons = updateUndoRedoButtons;
+// ✅ updateUndoRedoButtons moved to utilities/ui/undoRedoManager.js
+// Globally exposed via Phase 2 integration
 
 
 
