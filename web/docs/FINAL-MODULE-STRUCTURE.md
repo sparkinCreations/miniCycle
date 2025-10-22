@@ -1,7 +1,7 @@
 # miniCycle - Final Modular Architecture (Revised)
 
-**Last Updated:** October 20, 2025
-**Status:** In Progress - 22 modules complete (55.6% reduction achieved)
+**Last Updated:** October 22, 2025
+**Status:** In Progress - 23 modules complete (57.4% reduction achieved)
 **Target Completion:** 3-4 weeks remaining
 
 ---
@@ -12,11 +12,11 @@
 ```
 Main Script Size:
 Before:  15,677 lines (monolithic)
-Current:  6,959 lines (55.6% reduction)
+Current:  6,677 lines (57.4% reduction)
 Target:  5,000 lines (68% reduction)
 
-Extracted Modules: 22 completed
-Remaining Work:    ~1,959 lines to extract
+Extracted Modules: 23 completed
+Remaining Work:    ~1,677 lines to extract
 ```
 
 ### **Completed Modules** ✅
@@ -33,6 +33,7 @@ Remaining Work:    ~1,959 lines to extract
 | **cycle/cycleManager.js** | **431** | **Business Logic** | ✅ **Complete** |
 | testing-modal-integration.js | 541 | Integration | ✅ Complete |
 | globalUtils.js | 490 | Utilities | ✅ Complete |
+| **ui/undoRedoManager.js** | **463** | **UI Component** | ✅ **Complete** |
 | consoleCapture.js | 415 | Service | ✅ Complete |
 | state.js | 415 | Business Logic | ✅ Complete |
 | recurringIntegration.js | 361 | Integration | ✅ Complete |
@@ -45,7 +46,7 @@ Remaining Work:    ~1,959 lines to extract
 | automated-tests-fix.js | 94 | Testing | ✅ Complete |
 | testing-modal-modifications.js | 72 | Testing | ✅ Complete |
 
-**Total Extracted:** 14,737 lines across 22 modules
+**Total Extracted:** 15,200 lines across 23 modules
 
 ---
 
@@ -95,9 +96,9 @@ miniCycle/
 │   │   │   ├── modalManager.js            🎯 ~600 lines - All modal logic
 │   │   │   ├── menuManager.js             🎯 ~400 lines - Main menu
 │   │   │   ├── settingsManager.js         🎯 ~500 lines - Settings panels
+│   │   │   ├── undoRedoManager.js         ✅ 463 lines - Undo/redo system (COMPLETE)
 │   │   │   ├── onboardingManager.js       🎯 ~400 lines - First-time setup
-│   │   │   ├── gamesManager.js            🎯 ~300 lines - Mini-games
-│   │   │   └── undoManager.js             🎯 ~500 lines - Undo/redo system
+│   │   │   └── gamesManager.js            🎯 ~300 lines - Mini-games
 │   │   │
 │   │   ├── 🛠️ SUPPORT SERVICES (Already Complete)
 │   │   │
@@ -256,14 +257,14 @@ miniCycle/
 ### **Phase 3: UI Coordination** (Week 4)
 **Goal:** Extract UI coordination code (~2,500 lines)
 
-| Module | Lines | Priority | Dependencies |
-|--------|-------|----------|--------------|
-| **ui/modalManager.js** | ~600 | 🔴 Critical | globalUtils |
-| **ui/undoManager.js** | ~500 | 🔴 Critical | state, notifications |
-| **ui/menuManager.js** | ~400 | 🟡 High | globalUtils |
-| **ui/settingsManager.js** | ~500 | 🟡 High | state, themeManager |
-| **ui/onboardingManager.js** | ~400 | 🟢 Medium | cycleManager |
-| **ui/gamesManager.js** | ~300 | 🟢 Low | statsPanel |
+| Module | Lines | Priority | Dependencies | Status |
+|--------|-------|----------|--------------|--------|
+| **ui/undoRedoManager.js** | 463 | 🔴 Critical | state, refreshUIFromState, AppGlobalState | ✅ Complete |
+| **ui/modalManager.js** | ~600 | 🔴 Critical | globalUtils | 🎯 To Do |
+| **ui/menuManager.js** | ~400 | 🟡 High | globalUtils | 🎯 To Do |
+| **ui/settingsManager.js** | ~500 | 🟡 High | state, themeManager | 🎯 To Do |
+| **ui/onboardingManager.js** | ~400 | 🟢 Medium | cycleManager | 🎯 To Do |
+| **ui/gamesManager.js** | ~300 | 🟢 Low | statsPanel | 🎯 To Do |
 
 **Functions to Extract:**
 ```javascript
@@ -275,14 +276,12 @@ miniCycle/
 - setupFeedbackModal()
 - openFeedbackModal()
 
-// Undo/Redo (undoManager.js)
-- wireUndoRedoUI()
-- initializeUndoRedoButtons()
-- captureStateSnapshot()
-- performStateBasedUndo()
-- performStateBasedRedo()
-- updateUndoRedoButtons()
-- setupStateBasedUndoRedo()
+// ✅ Undo/Redo (undoRedoManager.js) - COMPLETE
+// See utilities/ui/undoRedoManager.js (463 lines)
+// Includes: wireUndoRedoUI(), initializeUndoRedoButtons(), captureStateSnapshot(),
+//           performStateBasedUndo(), performStateBasedRedo(), updateUndoRedoButtons(),
+//           setupStateBasedUndoRedo(), enableUndoSystemOnFirstInteraction(),
+//           captureInitialSnapshot(), buildSnapshotSignature(), snapshotsEqual()
 
 // Menu (menuManager.js)
 - setupMainMenu()

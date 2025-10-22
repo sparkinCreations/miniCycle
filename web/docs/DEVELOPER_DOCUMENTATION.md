@@ -1,8 +1,8 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.309
+**Version**: 1.330
 **Service Worker**: v82
-**Last Updated**: October 7, 2025
+**Last Updated**: October 22, 2025
 **Target Audience**: Developers, Contributors, Technical Partners
 
 ---
@@ -107,10 +107,10 @@ This is fundamentally different from traditional to-do apps where completed task
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Main Script** | 9,362 lines | Down from 15,677 (40% reduction) |
-| **Modules** | 20 modules | Modular architecture |
+| **Main Script** | 6,677 lines | Down from 15,677 (57.4% reduction) |
+| **Modules** | 23 modules | Modular architecture |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.309 | Stable production release |
+| **App Version** | 1.330 | Stable production release |
 | **SW Cache** | v82 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
 
@@ -141,25 +141,30 @@ PWA:
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-scripts.js             # Core app (9,362 lines)
+├── miniCycle-scripts.js             # Core app (6,677 lines)
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker (v82)
 │
-├── utilities/                        # 17 modular components
-│   ├── state.js                     # ✅ Centralized state (379 lines)
-│   ├── notifications.js             # ✅ Notifications (946 lines)
-│   ├── statsPanel.js                # ✅ Stats panel (1,089 lines)
-│   ├── recurringCore.js             # ✅ Recurring logic (980 lines)
-│   ├── recurringPanel.js            # ✅ Recurring UI (2,460 lines)
-│   ├── recurringIntegration.js      # ✅ Recurring coordination (391 lines)
-│   ├── cycleLoader.js               # ✅ Data loading (200 lines)
-│   ├── globalUtils.js               # ✅ Utilities (442 lines)
-│   ├── deviceDetection.js           # ✅ Device detection (293 lines)
-│   ├── consoleCapture.js            # ✅ Debug logging (505 lines)
-│   ├── testing-modal.js             # ✅ Testing UI (2,669 lines)
+├── utilities/                        # 23 modular components
+│   ├── state.js                     # ✅ Centralized state (415 lines)
+│   ├── notifications.js             # ✅ Notifications (1,036 lines)
+│   ├── statsPanel.js                # ✅ Stats panel (1,047 lines)
+│   ├── recurringCore.js             # ✅ Recurring logic (927 lines)
+│   ├── recurringPanel.js            # ✅ Recurring UI (2,219 lines)
+│   ├── recurringIntegration.js      # ✅ Recurring coordination (361 lines)
+│   ├── globalUtils.js               # ✅ Utilities (490 lines)
+│   ├── deviceDetection.js           # ✅ Device detection (353 lines)
+│   ├── consoleCapture.js            # ✅ Debug logging (415 lines)
+│   ├── testing-modal.js             # ✅ Testing UI (2,852 lines)
 │   ├── task/
 │   │   └── dragDropManager.js       # ✅ Drag & drop (695 lines)
-│   └── ... (5 more modules)
+│   ├── cycle/
+│   │   ├── cycleLoader.js           # ✅ Data loading (273 lines)
+│   │   ├── cycleManager.js          # ✅ Cycle CRUD (431 lines)
+│   │   └── cycleSwitcher.js         # ✅ Cycle switching (677 lines)
+│   ├── ui/
+│   │   └── undoRedoManager.js       # ✅ Undo/redo system (463 lines)
+│   └── ... (8 more modules)
 │
 └── docs/                             # Documentation
     ├── DEVELOPER_DOCUMENTATION.md    # This file!

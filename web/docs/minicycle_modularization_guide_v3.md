@@ -727,9 +727,9 @@ try {
 ## 🗺️ **Extraction Roadmap for miniCycle**
 
 **Current Status (October 2025):**
-- Main script: **6,959 lines** (down from 15,677)
-- **55.6% reduction achieved** (toward 68% goal)
-- **22 modules extracted** (including cycleSwitcher.js - 677 lines, 22 tests)
+- Main script: **6,677 lines** (down from 15,677)
+- **57.4% reduction achieved** (toward 68% goal)
+- **23 modules extracted** (including undoRedoManager.js - 463 lines)
 
 ### **Phase 1: Low-Risk Utilities** (1-2 weeks) - Target: ~9,500 lines remaining
 
@@ -2296,8 +2296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 ## 📈 **Progress & Next Steps**
 
-**Where You Are (January 2025):**
-- ✅ **22 modules extracted** - 54% reduction (15,677 → 7,236 lines)
+**Where You Are (October 2025):**
+- ✅ **23 modules extracted** - 57.4% reduction (15,677 → 6,677 lines)
 - ✅ **All 4 patterns proven** in production
 - ✅ **Comprehensive guide** with real examples and critical lessons
 - ✅ **cycleSwitcher.js** - 677 lines with 22 tests (100% pass rate)
