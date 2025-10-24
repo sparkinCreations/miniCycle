@@ -223,9 +223,10 @@
             <option value="reminders">Reminders</option>
             <option value="modeManager">ModeManager</option>
             <option value="cycleSwitcher">CycleSwitcher</option>
+            <option value="undoRedoManager">UndoRedoManager</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (18 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (19 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -261,6 +262,7 @@
         const { runRemindersTests } = await import(`./reminders.tests.js?v=${cacheBuster}`);
         const { runModeManagerTests } = await import(`./modeManager.tests.js?v=${cacheBuster}`);
         const { runCycleSwitcherTests } = await import(`./cycleSwitcher.tests.js?v=${cacheBuster}`);
+        const { runUndoRedoManagerTests } = await import(`./undoRedoManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -351,6 +353,10 @@
                     await import(`../utilities/cycle/cycleSwitcher.js?v=${cacheBuster}`);
                     currentModule = 'cycleSwitcher';
                     resultsDiv.innerHTML = '<p>✅ CycleSwitcher loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'undoRedoManager') {
+                    await import(`../utilities/ui/undoRedoManager.js?v=${cacheBuster}`);
+                    currentModule = 'undoRedoManager';
+                    resultsDiv.innerHTML = '<p>✅ UndoRedoManager loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -400,6 +406,8 @@
                 await runModeManagerTests(resultsDiv);
             } else if (currentModule === 'cycleSwitcher') {
                 await runCycleSwitcherTests(resultsDiv);
+            } else if (currentModule === 'undoRedoManager') {
+                await runUndoRedoManagerTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -461,7 +469,8 @@
                 { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../utilities/dueDates.js' },
                 { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../utilities/reminders.js' },
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' },
-                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycle/cycleSwitcher.js' }
+                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycle/cycleSwitcher.js' },
+                { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../utilities/ui/undoRedoManager.js' }
             ];
 
             let allResults = [];
