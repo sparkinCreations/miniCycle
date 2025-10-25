@@ -1,6 +1,6 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: October 8, 2025
+**Last Updated**: October 25, 2025
 
 ---
 
@@ -311,19 +311,32 @@ function test(name, testFn) {
 
 | Module | Tests | Status |
 |--------|-------|--------|
-| GlobalUtils | 36 | ✅ |
+| Integration (E2E) | 11 | ✅ |
 | ThemeManager | 18 | ✅ |
 | DeviceDetection | 17 | ✅ |
 | CycleLoader | 11 | ✅ |
 | StatsPanel | 27 | ✅ |
+| State | 41 | ✅ |
+| RecurringCore | 44 | ✅ |
+| RecurringIntegration | 25 | ✅ |
+| RecurringPanel | 55 | ✅ |
+| GlobalUtils | 36 | ✅ |
 | Notifications | 39 | ✅ |
 | DragDropManager | 67 | ✅ |
 | MigrationManager | 38 | ✅ |
-| DueDates | 17 | ✅ |
-| Reminders | 20 | ✅ |
-| ModeManager | 28 | ✅ |
-| CycleSwitcher | 22 | ✅ |
-| **Total** | **340** | **✅** |
+| DueDates | 23 | ✅ |
+| Reminders | 28 | ✅ |
+| ModeManager | 26 | ✅ |
+| CycleSwitcher | 38 | ✅ |
+| GamesManager | 23 | ✅ |
+| OnboardingManager | 38 | ✅ |
+| **ModalManager** | **50** | **✅** |
+| **Total** | **724/734** | **99%** |
+
+**Recent Additions (October 2025):**
+- ✅ **ModalManager** - 50 tests (100% pass rate)
+- ✅ **OnboardingManager** - 38 tests (100% pass rate)
+- ✅ **GamesManager** - 23 tests (100% pass rate)
 
 ---
 
@@ -751,6 +764,6 @@ jobs:
 
 ---
 
-**Version**: 2.0 (Updated with Advanced Patterns & Lessons Learned)
-**Last Updated**: October 9, 2025
+**Version**: 2.1 (Updated with ModalManager, OnboardingManager, GamesManager tests)
+**Last Updated**: October 25, 2025
 **Maintained By**: sparkinCreations

@@ -1,7 +1,7 @@
 # miniCycle Developer - Quick Reference
 
-**Version**: 1.309 | **Service Worker**: v82 | **Schema**: 2.5
-**Last Updated**: October 8, 2025
+**Version**: 1.330 | **Service Worker**: v82 | **Schema**: 2.5
+**Last Updated**: October 25, 2025
 
 ---
 
@@ -55,10 +55,10 @@ const morningRoutine = {
 
 | Metric | Value |
 |--------|-------|
-| Main Script | 11,058 lines (down 29%) |
-| Modules | 16 modules |
+| Main Script | 6,228 lines (down 60.3%) |
+| Modules | 26 modules |
 | Schema Version | 2.5 |
-| App Version | 1.309 |
+| App Version | 1.330 |
 | Browser Support | Modern + ES5 |
 
 ### Tech Stack
@@ -74,16 +74,26 @@ PWA: Service Worker v82, Cache-first, Offline
 ```
 web/
 ├── miniCycle.html              # Main entry
-├── miniCycle-scripts.js        # Core app (11K lines)
+├── miniCycle-scripts.js        # Core app (6.2K lines)
 ├── miniCycle-styles.css        # Styles
 ├── service-worker.js           # PWA (v82)
-├── utilities/                  # 16 modules
+├── utilities/                  # 26 modules
 │   ├── state.js               # Centralized state
 │   ├── notifications.js       # Notification system
 │   ├── statsPanel.js          # Stats & achievements
 │   ├── recurringCore.js       # Recurring logic
 │   ├── cycleLoader.js         # Data loading
 │   ├── globalUtils.js         # Utilities
+│   ├── ui/                    # UI modules
+│   │   ├── modalManager.js    # Modal management
+│   │   ├── onboardingManager.js # First-time setup
+│   │   ├── gamesManager.js    # Mini-games
+│   │   ├── undoRedoManager.js # Undo/redo system
+│   │   └── themeManager.js    # Theme management
+│   ├── cycle/                 # Cycle modules
+│   │   ├── modeManager.js     # Mode management
+│   │   ├── cycleSwitcher.js   # Cycle switching
+│   │   └── migrationManager.js # Data migration
 │   └── ...
 └── docs/
     ├── DEVELOPER_DOCUMENTATION.md
@@ -664,13 +674,25 @@ export function runMyModuleTests(resultsDiv) {
 
 | Module | Tests | Status |
 |--------|-------|--------|
-| GlobalUtils | 28 | ✅ |
-| ThemeManager | 25 | ✅ |
-| DeviceDetection | 15 | ✅ |
+| ThemeManager | 18 | ✅ |
+| DeviceDetection | 17 | ✅ |
 | CycleLoader | 11 | ✅ |
-| StatsPanel | 28 | ✅ |
-| Notifications | 18 | ✅ |
-| **Total** | **125** | **✅** |
+| StatsPanel | 27 | ✅ |
+| State | 41 | ✅ |
+| RecurringCore | 44 | ✅ |
+| RecurringPanel | 55 | ✅ |
+| GlobalUtils | 36 | ✅ |
+| Notifications | 39 | ✅ |
+| DragDropManager | 67 | ✅ |
+| MigrationManager | 38 | ✅ |
+| DueDates | 23 | ✅ |
+| Reminders | 28 | ✅ |
+| ModeManager | 26 | ✅ |
+| CycleSwitcher | 38 | ✅ |
+| GamesManager | 23 | ✅ |
+| OnboardingManager | 38 | ✅ |
+| **ModalManager** | **50** | **✅** |
+| **Total** | **724/734** | **99%** |
 
 ---
 
@@ -726,10 +748,11 @@ window.exportDebugData()                 // Debug package
 - **user-manual.html** - End-user documentation
 
 ### Code Entry Points
-- **miniCycle-scripts.js** - Start here for main app logic (line 11,058)
-- **utilities/state.js** - AppState implementation (line 379)
-- **utilities/cycleLoader.js** - Data loading (line 200)
-- **utilities/recurringCore.js** - Recurring logic (line 980)
+- **miniCycle-scripts.js** - Start here for main app logic (~6,228 lines)
+- **utilities/state.js** - AppState implementation (415 lines)
+- **utilities/ui/modalManager.js** - Modal management (383 lines)
+- **utilities/cycle/cycleLoader.js** - Data loading (273 lines)
+- **utilities/recurringCore.js** - Recurring logic (927 lines)
 
 ### URLs
 - **Main App**: http://localhost:8080/miniCycle.html
@@ -753,6 +776,6 @@ window.exportDebugData()                 // Debug package
 
 ---
 
-**Version**: 1.309 | **Last Updated**: October 8, 2025
+**Version**: 1.330 | **Last Updated**: October 25, 2025
 **Maintained By**: sparkinCreations
 **Questions?** Check console, use testing modal, review code comments!

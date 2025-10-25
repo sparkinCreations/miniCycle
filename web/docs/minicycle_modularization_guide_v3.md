@@ -727,9 +727,9 @@ try {
 ## 🗺️ **Extraction Roadmap for miniCycle**
 
 **Current Status (October 2025):**
-- Main script: **6,677 lines** (down from 15,677)
-- **57.4% reduction achieved** (toward 68% goal)
-- **23 modules extracted** (including undoRedoManager.js - 463 lines)
+- Main script: **6,228 lines** (down from 15,677)
+- **60.3% reduction achieved** (toward 68% goal)
+- **26 modules extracted** (including undoRedoManager.js, modalManager.js, onboardingManager.js, gamesManager.js)
 
 ### **Phase 1: Low-Risk Utilities** (1-2 weeks) - Target: ~9,500 lines remaining
 
@@ -753,23 +753,25 @@ try {
 
 ### **Phase 2: Medium-Risk Systems** (2-3 weeks) - Target: ~7,000 lines remaining
 
-**Priority 2A: Modal Manager** (🎯 Simple Instance)
-- **Functions:** `setupMainMenu()`, `closeMainMenu()`, `showCycleCreationModal()`, `setupGamesModalOutsideClick()`
-- **Lines:** ~400
+**✅ Priority 2A: Modal Manager** (🎯 Simple Instance) - **COMPLETED**
+- **Functions:** `closeAllModals()`, `setupFeedbackModal()`, `setupAboutModal()`, `setupRemindersModalHandlers()`, `setupGlobalKeyHandlers()`
+- **Lines:** 383 lines extracted
+- **Tests:** 50 tests (100% pass rate)
 - **Risk:** Low (basic UI)
-- **Effort:** 2 days
+- **Status:** ✅ Complete
 
-**Priority 2B: Migration Manager** (🔧 Strict Injection)
+**✅ Priority 2B: Migration Manager** (🔧 Strict Injection) - **COMPLETED**
 - **Functions:** `checkMigrationNeeded()`, `simulateMigrationToSchema25()`, `performSchema25Migration()`, `validateAllMiniCycleTasksLenient()`, `fixTaskValidationIssues()`
-- **Lines:** ~700
+- **Lines:** 850 lines extracted
+- **Tests:** 38 tests (100% pass rate)
 - **Risk:** Medium (critical data operations)
-- **Effort:** 3 days
+- **Status:** ✅ Complete
 
-**Priority 2C: Undo/Redo Manager** (🛡️ Resilient Constructor)
+**✅ Priority 2C: Undo/Redo Manager** (🛡️ Resilient Constructor) - **COMPLETED**
 - **Functions:** `wireUndoRedoUI()`, `initializeUndoRedoButtons()`, `captureStateSnapshot()`, `setupStateBasedUndoRedo()`, `updateUndoRedoButtons()`, `buildSnapshotSignature()`, `snapshotsEqual()`
-- **Lines:** ~500
+- **Lines:** 463 lines extracted
 - **Risk:** Medium (state management)
-- **Effort:** 2 days
+- **Status:** ✅ Complete
 
 ### **Phase 3: High-Risk Core** (3-4 weeks) - Target: ~5,000 lines remaining
 
@@ -781,13 +783,11 @@ try {
 
 ### **Success Metrics**
 
-| Phase | Target Lines | % Reduction | Est. Modules | Timeline |
-|-------|-------------|-------------|--------------|----------|
-| ✅ Completed | 7,236 | 54% | 21 modules | Jan 2025 |
-| Phase 1 | 6,500 | 59% | +2 modules | +1-2 weeks |
-| Phase 2 | 5,500 | 65% | +2 modules | +2-3 weeks |
-| Phase 3 | 5,000 | 68% | +1 module | +3-4 weeks |
-| **Final Goal** | **<5,000** | **68%+** | **26+ modules** | **6-8 weeks total** |
+| Phase | Target Lines | % Reduction | Est. Modules | Timeline | Status |
+|-------|-------------|-------------|--------------|----------|---------|
+| ✅ Phase 1 & 2 | 6,228 | 60.3% | 26 modules | Oct 2025 | ✅ Complete |
+| Phase 3 | 5,000 | 68% | +2 modules | +3-4 weeks | 🎯 In Progress |
+| **Final Goal** | **<5,000** | **68%+** | **28+ modules** | **Q4 2025** | 🎯 Target |
 
 ---
 
@@ -2297,29 +2297,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 ## 📈 **Progress & Next Steps**
 
 **Where You Are (October 2025):**
-- ✅ **23 modules extracted** - 57.4% reduction (15,677 → 6,677 lines)
+- ✅ **26 modules extracted** - 60.3% reduction (15,677 → 6,228 lines)
 - ✅ **All 4 patterns proven** in production
 - ✅ **Comprehensive guide** with real examples and critical lessons
-- ✅ **cycleSwitcher.js** - 677 lines with 22 tests (100% pass rate)
+- ✅ **Phase 1 & 2 complete** - Modal Manager, Migration Manager, Undo/Redo Manager all extracted
 - ✅ **Schema 2.5 patterns** - Documented data access best practices
 - ✅ **Testing patterns** - Class exposure for complete test coverage
 
-**Recent Success:**
-- CycleSwitcher extraction: 566 lines removed (7.3% reduction)
-- Tests caught Schema 2.5 data access bug immediately
-- All 22 tests passing after single bug fix
-- Smooth extraction using proven patterns
+**Recent Success (October 2025):**
+- ✅ **modalManager.js** - 383 lines extracted, 50 tests (100% pass rate)
+- ✅ **onboardingManager.js** - 291 lines extracted, 38 tests (100% pass rate)
+- ✅ **gamesManager.js** - 195 lines extracted, 23 tests (100% pass rate)
+- ✅ **migrationManager.js** - 850 lines extracted, 38 tests (100% pass rate)
+- ✅ **modeManager.js** - 380 lines extracted, 26 tests (100% pass rate)
+- ✅ Total: ~2,100 lines extracted in Phase 2
 
-**Next Recommended Extractions:**
-1. 🎯 **Start this week:** Task Utilities (⚡ Static) + Date Utilities (⚡ Static) - 500 lines total
-2. 🎯 **Next week:** Theme Manager (🎯 Simple Instance) - 800 lines
-3. 🎯 **Following weeks:** Modal Manager → Migration Manager → Undo/Redo Manager
+**Next Recommended Extractions (Phase 3):**
+1. 🎯 **Task Manager Core** (🔧 Strict Injection) - ~2,000 lines
+2. 🎯 **Menu Manager** (🎯 Simple Instance) - ~400 lines
+3. 🎯 **Settings Manager** (🛡️ Resilient Constructor) - ~500 lines
 
 **Target Goal:**
-- **Current:** 7,236 lines (54% reduction)
-- **Phase 1 (1-2 weeks):** Remove 700 lines → Target: ~6,500 lines (59%)
-- **Phase 2 (2-3 weeks):** Remove 1,000 lines → Target: ~5,500 lines (65%)
-- **Phase 3 (3-4 weeks):** Remove 500 lines → Target: ~5,000 lines (68%)
+- **Current:** 6,228 lines (60.3% reduction) ✅
+- **Phase 3 (3-4 weeks):** Remove ~1,200 lines → Target: ~5,000 lines (68%)
 - **Final:** **68% reduction** from original monolith ✨
 
 ---

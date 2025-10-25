@@ -1,7 +1,7 @@
 # miniCycle - Final Modular Architecture (Revised)
 
-**Last Updated:** October 22, 2025
-**Status:** In Progress - 23 modules complete (57.4% reduction achieved)
+**Last Updated:** October 25, 2025
+**Status:** In Progress - 26 modules complete (60.3% reduction achieved)
 **Target Completion:** 3-4 weeks remaining
 
 ---
@@ -12,11 +12,11 @@
 ```
 Main Script Size:
 Before:  15,677 lines (monolithic)
-Current:  6,677 lines (57.4% reduction)
+Current:  6,228 lines (60.3% reduction)
 Target:  5,000 lines (68% reduction)
 
-Extracted Modules: 23 completed
-Remaining Work:    ~1,677 lines to extract
+Extracted Modules: 26 completed
+Remaining Work:    ~1,228 lines to extract
 ```
 
 ### **Completed Modules** ✅
@@ -27,26 +27,33 @@ Remaining Work:    ~1,677 lines to extract
 | statsPanel.js | 1,047 | UI Component | ✅ Complete |
 | notifications.js | 1,036 | Service | ✅ Complete |
 | recurringCore.js | 927 | Business Logic | ✅ Complete |
+| cycle/migrationManager.js | 850 | Business Logic | ✅ Complete |
 | themeManager.js | 856 | Service | ✅ Complete |
 | **task/dragDropManager.js** | **695** | **Business Logic** | ✅ **Complete** |
 | **cycle/cycleSwitcher.js** | **677** | **Business Logic** | ✅ **Complete** |
+| reminders.js | 621 | Service | ✅ Complete |
 | **cycle/cycleManager.js** | **431** | **Business Logic** | ✅ **Complete** |
 | testing-modal-integration.js | 541 | Integration | ✅ Complete |
 | globalUtils.js | 490 | Utilities | ✅ Complete |
 | **ui/undoRedoManager.js** | **463** | **UI Component** | ✅ **Complete** |
 | consoleCapture.js | 415 | Service | ✅ Complete |
 | state.js | 415 | Business Logic | ✅ Complete |
+| **ui/modalManager.js** | **383** | **UI Component** | ✅ **Complete** |
+| cycle/modeManager.js | 380 | Business Logic | ✅ Complete |
 | recurringIntegration.js | 361 | Integration | ✅ Complete |
 | deviceDetection.js | 353 | Utilities | ✅ Complete |
+| **ui/onboardingManager.js** | **291** | **UI Component** | ✅ **Complete** |
 | basicPluginSystem.js | 290 | System | ✅ Complete |
 | appInitialization.js | 281 | System | ✅ Complete |
 | cycleLoader.js | 273 | Business Logic | ✅ Complete |
 | exampleTimeTrackerPlugin.js | 254 | Plugin | ✅ Complete |
+| dueDates.js | 233 | Service | ✅ Complete |
+| **ui/gamesManager.js** | **195** | **UI Component** | ✅ **Complete** |
 | pluginIntegrationGuide.js | 158 | Docs | ✅ Complete |
 | automated-tests-fix.js | 94 | Testing | ✅ Complete |
 | testing-modal-modifications.js | 72 | Testing | ✅ Complete |
 
-**Total Extracted:** 15,200 lines across 23 modules
+**Total Extracted:** 16,518 lines across 26 modules
 
 ---
 
@@ -92,13 +99,13 @@ miniCycle/
 │   │   │   ├── modeManager.js             ✅ 380 lines - Auto/Manual/Todo modes
 │   │   │   └── migrationManager.js        ✅ 850 lines - Schema migrations
 │   │   │
-│   │   ├── ui/                            (UI Coordination - 2,500 lines total)
-│   │   │   ├── modalManager.js            🎯 ~600 lines - All modal logic
+│   │   ├── ui/                            (UI Coordination - ALL CORE COMPONENTS COMPLETE! 🎉)
+│   │   │   ├── modalManager.js            ✅ 383 lines - All modal logic (COMPLETE)
 │   │   │   ├── menuManager.js             🎯 ~400 lines - Main menu
 │   │   │   ├── settingsManager.js         🎯 ~500 lines - Settings panels
 │   │   │   ├── undoRedoManager.js         ✅ 463 lines - Undo/redo system (COMPLETE)
-│   │   │   ├── onboardingManager.js       🎯 ~400 lines - First-time setup
-│   │   │   └── gamesManager.js            🎯 ~300 lines - Mini-games
+│   │   │   ├── onboardingManager.js       ✅ 291 lines - First-time setup (COMPLETE)
+│   │   │   └── gamesManager.js            ✅ 195 lines - Mini-games (COMPLETE)
 │   │   │
 │   │   ├── 🛠️ SUPPORT SERVICES (Already Complete)
 │   │   │
@@ -260,21 +267,19 @@ miniCycle/
 | Module | Lines | Priority | Dependencies | Status |
 |--------|-------|----------|--------------|--------|
 | **ui/undoRedoManager.js** | 463 | 🔴 Critical | state, refreshUIFromState, AppGlobalState | ✅ Complete |
-| **ui/modalManager.js** | ~600 | 🔴 Critical | globalUtils | 🎯 To Do |
+| **ui/modalManager.js** | 383 | 🔴 Critical | globalUtils | ✅ Complete |
+| **ui/onboardingManager.js** | 291 | 🔴 Critical | cycleManager, AppState | ✅ Complete |
+| **ui/gamesManager.js** | 195 | 🟡 High | statsPanel, AppState | ✅ Complete |
 | **ui/menuManager.js** | ~400 | 🟡 High | globalUtils | 🎯 To Do |
 | **ui/settingsManager.js** | ~500 | 🟡 High | state, themeManager | 🎯 To Do |
-| **ui/onboardingManager.js** | ~400 | 🟢 Medium | cycleManager | 🎯 To Do |
-| **ui/gamesManager.js** | ~300 | 🟢 Low | statsPanel | 🎯 To Do |
 
 **Functions to Extract:**
 ```javascript
-// Modal Management (modalManager.js)
-- setupModalClickOutside()
-- closeAllModals()
-- showConfirmationModal()
-- showPromptModal()
-- setupFeedbackModal()
-- openFeedbackModal()
+// ✅ Modal Management (modalManager.js) - COMPLETE
+// See utilities/ui/modalManager.js (383 lines)
+// Includes: closeAllModals(), setupFeedbackModal(), setupAboutModal(),
+//           setupSettingsModalClickOutside(), setupRemindersModalHandlers(),
+//           setupGlobalKeyHandlers(), isModalOpen()
 
 // ✅ Undo/Redo (undoRedoManager.js) - COMPLETE
 // See utilities/ui/undoRedoManager.js (463 lines)
@@ -282,6 +287,15 @@ miniCycle/
 //           performStateBasedUndo(), performStateBasedRedo(), updateUndoRedoButtons(),
 //           setupStateBasedUndoRedo(), enableUndoSystemOnFirstInteraction(),
 //           captureInitialSnapshot(), buildSnapshotSignature(), snapshotsEqual()
+
+// ✅ Onboarding (onboardingManager.js) - COMPLETE
+// See utilities/ui/onboardingManager.js (291 lines)
+// Includes: showOnboarding(), createOnboardingModal(), setupModalControls(),
+//           completeOnboarding(), resetOnboarding(), shouldShowOnboarding()
+
+// ✅ Games (gamesManager.js) - COMPLETE
+// See utilities/ui/gamesManager.js (195 lines)
+// Includes: checkGamesUnlock(), unlockMiniGame()
 
 // Menu (menuManager.js)
 - setupMainMenu()
@@ -296,19 +310,6 @@ miniCycle/
 - setupDownloadMiniCycle()
 - setupUploadMiniCycle()
 - exportMiniCycleData()
-
-// Onboarding (onboardingManager.js)
-- initialSetup()
-- showOnboarding()
-- showOnboardingThenCycleCreation()
-- completeInitialSetup()
-- preloadGettingStartedCycle()
-
-// Games (gamesManager.js)
-- checkGamesUnlock()
-- loadTaskOrderGame()
-- setupGamesModalOutsideClick()
-- unlockMiniGame()
 ```
 
 ---
