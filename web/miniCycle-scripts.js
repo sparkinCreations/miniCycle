@@ -342,6 +342,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./utilities/ui/gamesManager.js'));
     console.log('✅ Games Manager loaded');
 
+    // ✅ Load Onboarding Manager (simple UI component)
+    await import(withV('./utilities/ui/onboardingManager.js'));
+    console.log('✅ Onboarding Manager loaded');
+
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
@@ -1397,11 +1401,9 @@ async function initialSetup() {
     });
     
     // ✅ CHECK ONBOARDING FIRST - before checking for cycles
-    const hasSeenOnboarding = settings.onboardingCompleted || false;
-    
-    if (!hasSeenOnboarding) {
+    if (window.onboardingManager?.shouldShowOnboarding()) {
         console.log('👋 First time user - showing onboarding first...');
-        showOnboardingThenCycleCreation(cycles, activeCycle);
+        window.onboardingManager.showOnboarding(cycles, activeCycle);
         return;
     }
     
@@ -1414,137 +1416,6 @@ async function initialSetup() {
     
     // ✅ Complete setup for existing cycles
     completeInitialSetup(activeCycle, null, schemaData);
-}
-
-// ✅ NEW: Show onboarding, then cycle creation
-function showOnboardingThenCycleCreation(cycles, activeCycle) {
-    console.log('🎯 Starting onboarding flow first...');
-    
-    const schemaData = loadMiniCycleData();
-    const currentTheme = schemaData.settings.theme || 'default';
-    
-    const steps = [
-        `<h2>Welcome to miniCycle! 🎉</h2>
-         <p>miniCycle helps you manage tasks with a powerful task cycling system!</p>`,
-        `<ul>
-           <li>✅ Add tasks using the input box to create your cycle list.</li>
-           <li>🔄 When all tasks are completed, they reset automatically (if Auto-Cycle is enabled)</li>
-           <li>📊 Track your progress and unlock themes</li>
-         </ul>`,
-        `<ul>
-           <li>📱 On mobile, long press a task to open the menu</li>
-           <li>📱 Long press and move to rearrange tasks</li>
-           <li>📱 Swipe Left to access Stats Panel</li>
-           <li>📵 Use Settings to show task buttons on older phones</li>
-         </ul>`
-    ];
-
-    let currentStep = 0;
-
-    const modal = document.createElement("div");
-    modal.id = "onboarding-modal";
-    modal.className = "onboarding-modal";
-    modal.innerHTML = `
-        <div class="onboarding-content theme-${currentTheme}">
-            <button id="onboarding-skip" class="onboarding-skip">Skip ✖</button>
-            <div id="onboarding-step-content"></div>
-            <div class="onboarding-controls">
-                <button id="onboarding-prev" class="hidden">⬅ Back</button>
-                <button id="onboarding-next">Next ➡</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    const stepContent = document.getElementById("onboarding-step-content");
-    const nextBtn = document.getElementById("onboarding-next");
-    const prevBtn = document.getElementById("onboarding-prev");
-    const skipBtn = document.getElementById("onboarding-skip");
-
-    function renderStep(index) {
-        stepContent.innerHTML = steps[index];
-        prevBtn.classList.toggle("hidden", index === 0);
-        nextBtn.textContent = index === steps.length - 1 ? "Start 🚀" : "Next ➡";
-    }
-
-    function completeOnboardingAndShowCycleCreation() {
-        console.log('✅ Onboarding completed, now showing cycle creation...');
-        
-        // Mark onboarding as complete
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.onboardingCompleted = true;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        modal.remove();
-        
-        // ✅ Now check if they need to create a cycle
-        if (!activeCycle || !cycles[activeCycle]) {
-            setTimeout(() => {
-                showCycleCreationModal();
-            }, 300); // Small delay for smooth transition
-        } else {
-            // They already have a cycle, just load it
-            const updatedSchemaData = loadMiniCycleData();
-            completeInitialSetup(activeCycle, null, updatedSchemaData);
-        }
-    }
-
-    nextBtn.addEventListener("click", () => {
-        if (currentStep < steps.length - 1) {
-            currentStep++;
-            renderStep(currentStep);
-        } else {
-            completeOnboardingAndShowCycleCreation();
-        }
-    });
-
-    prevBtn.addEventListener("click", () => {
-        if (currentStep > 0) {
-            currentStep--;
-            renderStep(currentStep);
-        }
-    });
-
-    skipBtn.addEventListener("click", () => {
-        completeOnboardingAndShowCycleCreation();
-    });
-
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            completeOnboardingAndShowCycleCreation();
-        }
-    });
-
-    renderStep(currentStep);
-}
-
-
-// ✅ UPDATED: Close modal and complete setup after loading sample
-
-// ✅ NEW: Create a basic cycle if sample loading fails
-
-// ✅ UPDATED: Simplified showOnboarding for existing users or edge cases
-function showOnboarding() {
-    console.log('👋 Checking onboarding status (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for showOnboarding');
-        return;
-    }
-
-    const hasSeenOnboarding = schemaData.settings.onboardingCompleted || false;
-    
-    if (hasSeenOnboarding) {
-        console.log('✅ User has already completed onboarding');
-        return;
-    }
-    
-    // ✅ This function is now only called for edge cases
-    // Main onboarding flow is handled in initialSetup
-    console.log('🎯 Showing standalone onboarding...');
-    showOnboardingThenCycleCreation({}, null);
 }
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
@@ -5975,32 +5846,6 @@ document.getElementById("open-reminders-modal")?.addEventListener("click", () =>
     
     console.log('✅ Reminders modal opened');
 });
-
-// ✅ Updated reset onboarding with Schema 2.5 only
-safeAddEventListenerById("reset-onboarding", "click", () => {
-    console.log('🎯 Resetting onboarding (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for reset onboarding');
-        showNotification("❌ Schema 2.5 data required.", "error", 2000);
-        return;
-    }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    
-    // Clear onboarding flag in Schema 2.5
-    fullSchemaData.settings.onboardingCompleted = false;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('✅ Onboarding flag reset in Schema 2.5');
-    
-    showNotification("✅ Onboarding will show again next time you open the app (Schema 2.5).", "success", 3000);
-});
- 
-
-
 
 // 🟢 Safe Global Click for Hiding Task Buttons
 safeAddEventListener(document, "click", (event) => {

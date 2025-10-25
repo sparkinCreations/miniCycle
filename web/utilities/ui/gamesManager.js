@@ -28,22 +28,45 @@ export class GamesManager {
         await appInit.waitForCore();
 
         this.setupEventListeners();
-        this.checkGamesUnlock();
+
+        // Defer checkGamesUnlock until AppState is ready
+        this.deferredCheckGamesUnlock();
 
         this.initialized = true;
         console.log('🎮 Games Manager initialized');
     }
 
     /**
+     * Check games unlock after AppState is ready (deferred)
+     */
+    async deferredCheckGamesUnlock() {
+        // Wait for AppState to be ready
+        const maxAttempts = 50;
+        let attempts = 0;
+
+        const checkInterval = setInterval(() => {
+            attempts++;
+
+            if (window.AppState?.isReady?.()) {
+                clearInterval(checkInterval);
+                this.checkGamesUnlock();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn('⚠️ AppState never became ready for checkGamesUnlock');
+            }
+        }, 100); // Check every 100ms
+    }
+
+    /**
      * Check if games are unlocked and show/hide menu accordingly
      */
     checkGamesUnlock() {
-        console.log('🎮 Checking games unlock (Schema 2.5 only)...');
-
+        // Silently return if AppState isn't ready yet (deferred check will retry)
         if (!window.AppState?.isReady?.()) {
-            console.warn('⚠️ AppState not ready for checkGamesUnlock');
             return;
         }
+
+        console.log('🎮 Checking games unlock (Schema 2.5 only)...');
 
         const currentState = window.AppState.get();
         if (!currentState) {
