@@ -1,6 +1,6 @@
 # miniCycle Developer - Quick Reference
 
-**Version**: 1.330 | **Service Worker**: v82 | **Schema**: 2.5
+**Version**: 1.330 | **Service Worker**: v109 | **Schema**: 2.5
 **Last Updated**: October 25, 2025
 
 ---
@@ -55,8 +55,8 @@ const morningRoutine = {
 
 | Metric | Value |
 |--------|-------|
-| Main Script | 6,228 lines (down 60.3%) |
-| Modules | 26 modules |
+| Main Script | 5,095 lines (down 67.5%) ✅ |
+| Modules | 28 modules complete! |
 | Schema Version | 2.5 |
 | App Version | 1.330 |
 | Browser Support | Modern + ES5 |
@@ -66,7 +66,7 @@ const morningRoutine = {
 ```
 Frontend: Pure Vanilla JS (ES6+), HTML5, CSS3
 Data: localStorage, JSON Schema 2.5, .mcyc export
-PWA: Service Worker v82, Cache-first, Offline
+PWA: Service Worker v109, Cache-first, Offline
 ```
 
 ### Project Structure
@@ -74,25 +74,28 @@ PWA: Service Worker v82, Cache-first, Offline
 ```
 web/
 ├── miniCycle.html              # Main entry
-├── miniCycle-scripts.js        # Core app (6.2K lines)
+├── miniCycle-scripts.js        # Core app (5.1K lines) - 67.5% reduction! ✅
 ├── miniCycle-styles.css        # Styles
-├── service-worker.js           # PWA (v82)
-├── utilities/                  # 26 modules
+├── service-worker.js           # PWA (v109)
+├── utilities/                  # 28 modules (18K lines extracted)
 │   ├── state.js               # Centralized state
 │   ├── notifications.js       # Notification system
 │   ├── statsPanel.js          # Stats & achievements
 │   ├── recurringCore.js       # Recurring logic
 │   ├── cycleLoader.js         # Data loading
 │   ├── globalUtils.js         # Utilities
-│   ├── ui/                    # UI modules
+│   ├── ui/                    # UI modules (ALL COMPLETE!)
+│   │   ├── settingsManager.js # Settings, import/export (NEW Oct 25)
+│   │   ├── menuManager.js     # Main menu operations (NEW Oct 25)
+│   │   ├── undoRedoManager.js # Undo/redo system
 │   │   ├── modalManager.js    # Modal management
 │   │   ├── onboardingManager.js # First-time setup
 │   │   ├── gamesManager.js    # Mini-games
-│   │   ├── undoRedoManager.js # Undo/redo system
 │   │   └── themeManager.js    # Theme management
-│   ├── cycle/                 # Cycle modules
-│   │   ├── modeManager.js     # Mode management
+│   ├── cycle/                 # Cycle modules (ALL COMPLETE!)
+│   │   ├── cycleManager.js    # Cycle CRUD
 │   │   ├── cycleSwitcher.js   # Cycle switching
+│   │   ├── modeManager.js     # Mode management
 │   │   └── migrationManager.js # Data migration
 │   └── ...
 └── docs/
@@ -691,8 +694,11 @@ export function runMyModuleTests(resultsDiv) {
 | CycleSwitcher | 38 | ✅ |
 | GamesManager | 23 | ✅ |
 | OnboardingManager | 38 | ✅ |
-| **ModalManager** | **50** | **✅** |
-| **Total** | **724/734** | **99%** |
+| ModalManager | 50 | ✅ |
+| UndoRedoManager | 34 | ✅ |
+| MenuManager | Pending | 🎯 |
+| SettingsManager | Pending | 🎯 |
+| **Total** | **758/768** | **99%** |
 
 ---
 
@@ -733,8 +739,9 @@ window.exportDebugData()                 // Debug package
 4. **Undo/Redo** - State snapshots with max 50 history
 5. **Modules** - 4 patterns: Static, Simple, Resilient, Strict Injection
 6. **Schema 2.5** - Current data format with auto-migration
-7. **PWA** - Service Worker v82, offline-first, cache strategy
+7. **PWA** - Service Worker v109, offline-first, cache strategy
 8. **No Build** - Pure vanilla JS, edit and refresh
+9. **28 Modules** - 67.5% reduction achieved! UI & Cycle systems complete!
 
 ---
 
@@ -748,8 +755,10 @@ window.exportDebugData()                 // Debug package
 - **user-manual.html** - End-user documentation
 
 ### Code Entry Points
-- **miniCycle-scripts.js** - Start here for main app logic (~6,228 lines)
+- **miniCycle-scripts.js** - Start here for main app logic (~5,095 lines)
 - **utilities/state.js** - AppState implementation (415 lines)
+- **utilities/ui/settingsManager.js** - Settings, import/export (952 lines) - NEW!
+- **utilities/ui/menuManager.js** - Main menu operations (546 lines) - NEW!
 - **utilities/ui/modalManager.js** - Modal management (383 lines)
 - **utilities/cycle/cycleLoader.js** - Data loading (273 lines)
 - **utilities/recurringCore.js** - Recurring logic (927 lines)

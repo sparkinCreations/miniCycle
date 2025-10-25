@@ -107,11 +107,11 @@ This is fundamentally different from traditional to-do apps where completed task
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Main Script** | 6,228 lines | Down from 15,677 (60.3% reduction) |
-| **Modules** | 26 modules | Modular architecture |
+| **Main Script** | 5,095 lines | Down from 15,677 (67.5% reduction) ✅ |
+| **Modules** | 28 modules | Modular architecture complete! |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **App Version** | 1.330 | Stable production release |
-| **SW Cache** | v82 | Service worker version |
+| **SW Cache** | v109 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
 
 ### Technology Stack
@@ -141,11 +141,11 @@ PWA:
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-scripts.js             # Core app (6,228 lines)
+├── miniCycle-scripts.js             # Core app (5,095 lines) - 67.5% reduction! ✅
 ├── miniCycle-styles.css             # Styles
-├── service-worker.js                # PWA service worker (v82)
+├── service-worker.js                # PWA service worker (v109)
 │
-├── utilities/                        # 26 modular components
+├── utilities/                        # 28 modular components (18,016 lines extracted)
 │   ├── state.js                     # ✅ Centralized state (415 lines)
 │   ├── notifications.js             # ✅ Notifications (1,036 lines)
 │   ├── statsPanel.js                # ✅ Stats panel (1,047 lines)
@@ -165,11 +165,13 @@ web/
 │   │   ├── modeManager.js           # ✅ Mode management (380 lines)
 │   │   └── migrationManager.js      # ✅ Data migration (850 lines)
 │   ├── ui/
+│   │   ├── settingsManager.js       # ✅ Settings, import/export (952 lines) - NEW Oct 25
+│   │   ├── menuManager.js           # ✅ Main menu operations (546 lines) - NEW Oct 25
 │   │   ├── undoRedoManager.js       # ✅ Undo/redo system (463 lines)
 │   │   ├── modalManager.js          # ✅ Modal management (383 lines)
 │   │   ├── onboardingManager.js     # ✅ First-time setup (291 lines)
-│   │   ├── gamesManager.js          # ✅ Mini-games (195 lines)
-│   │   └── themeManager.js          # ✅ Theme management (562 lines)
+│   │   └── gamesManager.js          # ✅ Mini-games (195 lines)
+│   ├── themeManager.js              # ✅ Theme management (856 lines)
 │   ├── dueDates.js                  # ✅ Due date management (233 lines)
 │   └── reminders.js                 # ✅ Reminder system (621 lines)
 │
@@ -2772,11 +2774,12 @@ Current module test coverage:
 | CycleSwitcher | `cycleSwitcher.tests.js` | 38 | ✅ 100% |
 | GamesManager | `gamesManager.tests.js` | 23 | ✅ 100% |
 | OnboardingManager | `onboardingManager.tests.js` | 38 | ✅ 100% |
-| **ModalManager** | **`modalManager.tests.js`** | **50** | ✅ 100% |
+| ModalManager | `modalManager.tests.js` | 50 | ✅ 100% |
+| UndoRedoManager | `undoRedoManager.tests.js` | 34 | ✅ 100% |
 
-**Total: 734 tests across 20 modules**
+**Total: 768 tests across 21 modules**
 
-**Overall Pass Rate: 99% (724/734 tests passing)**
+**Overall Pass Rate: 99% (758/768 tests passing)**
 
 **Note on ConsoleCapture (88%):** The 4 failing tests are due to test environment limitations, not production bugs. These failures occur because:
 - Test runner already overrides console methods
@@ -2784,9 +2787,12 @@ Current module test coverage:
 - State contamination from test execution order
 
 **Recent Additions (October 2025):**
+- ✅ UndoRedoManager (34 tests) - Undo/redo system with state snapshots
 - ✅ ModalManager (50 tests) - Complete modal management system
 - ✅ OnboardingManager (38 tests) - First-time user experience
 - ✅ GamesManager (23 tests) - Achievement unlocks and mini-games
+- 🎯 MenuManager (tests pending) - Main menu operations (Oct 25)
+- 🎯 SettingsManager (tests pending) - Settings panel, import/export (Oct 25)
 
 All modules except ConsoleCapture are at 100% test pass rate.
 
@@ -2841,8 +2847,13 @@ web/
 
 ---
 
-**Version**: 1.309
-**Last Updated**: October 7, 2025
+**Version**: 1.330
+**Last Updated**: October 25, 2025
 **Maintained By**: sparkinCreations
+
+**Recent Major Updates:**
+- ✅ UI Coordination System COMPLETE (6 modules, 2,830 lines)
+- ✅ Cycle System COMPLETE (5 modules, 2,611 lines)
+- ✅ Main script reduced to 5,095 lines (67.5% reduction achieved!)
 
 **Questions?** Check console for debug info, use built-in testing modal, or review code comments!

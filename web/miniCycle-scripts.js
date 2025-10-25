@@ -585,20 +585,20 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Feature Setup
     console.log('⚙️ Setting up features...');
     setupMiniCycleTitleListener();
-    setupDownloadMiniCycle();
-    setupUploadMiniCycle();
+    // ✅ MOVED TO PHASE 2: setupDownloadMiniCycle() - now handled by settingsManager module
+    // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
     // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
     // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
 
     // ✅ UI Setup (Modal Manager handles modal setup automatically)
-    setupMainMenu();
-    setupSettingsMenu();
+    // ✅ MOVED TO PHASE 2: setupMainMenu() - now handled by menuManager module
+    // ✅ MOVED TO PHASE 2: setupSettingsMenu() - now handled by settingsManager module
     setupUserManual();
 
     // ✅ Expose functions needed by cycleLoader and cycleManager
-    window.updateMainMenuHeader = updateMainMenuHeader;
+    // Note: updateMainMenuHeader now exported by menuManager module
     window.completeInitialSetup = completeInitialSetup;
 
 
@@ -904,6 +904,75 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 showNotification('Undo/redo feature unavailable', 'warning', 3000);
             }
             console.warn('⚠️ App will continue without undo/redo functionality');
+        }
+
+        // ✅ Initialize Menu Manager (Phase 2 module)
+        console.log('🎛️ Initializing menu manager module...');
+        try {
+            const { initMenuManager } = await import(withV('./utilities/ui/menuManager.js'));
+
+            await initMenuManager({
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                AppState: () => window.AppState,
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showPromptModal: (opts) => window.showPromptModal?.(opts),
+                showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, ev, handler) => window.safeAddEventListener?.(el, ev, handler),
+                switchMiniCycle: () => window.switchMiniCycle?.(),
+                createNewMiniCycle: () => window.createNewMiniCycle?.(),
+                loadMiniCycle: () => window.loadMiniCycle?.(),
+                updateCycleModeDescription: () => window.updateCycleModeDescription?.(),
+                checkGamesUnlock: () => window.checkGamesUnlock?.(),
+                sanitizeInput: (input) => window.sanitizeInput?.(input),
+                updateCycleData: (cycleId, producer, immediate) => window.updateCycleData?.(cycleId, producer, immediate),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.()
+            });
+
+            console.log('✅ Menu manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize menu manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Menu manager feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without menu manager functionality');
+        }
+
+        // ✅ Initialize Settings Manager (Phase 2 module)
+        console.log('⚙️ Initializing settings manager module...');
+        try {
+            const { initSettingsManager } = await import(withV('./utilities/ui/settingsManager.js'));
+
+            await initSettingsManager({
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                AppState: () => window.AppState,
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
+                hideMainMenu: () => window.hideMainMenu?.(),
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, ev, handler) => window.safeAddEventListener?.(el, ev, handler),
+                setupDarkModeToggle: (id, syncIds) => window.setupDarkModeToggle?.(id, syncIds),
+                setupQuickDarkToggle: () => window.setupQuickDarkToggle?.(),
+                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+                toggleHoverTaskOptions: (enabled) => window.toggleHoverTaskOptions?.(enabled),
+                refreshTaskListUI: () => window.refreshTaskListUI?.(),
+                performSchema25Migration: () => window.performSchema25Migration?.()
+            });
+
+            console.log('✅ Settings manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize settings manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Settings manager feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without settings manager functionality');
         }
 
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
@@ -1289,26 +1358,26 @@ if (!window.deviceDetectionManager) {
 
         function refreshTaskListUI() {
           console.log('🔄 Refreshing task list UI (Schema 2.5 only)...');
-          
+
           const schemaData = loadMiniCycleData();
           if (!schemaData) {
               console.error('❌ Schema 2.5 data required for refreshTaskListUI');
               throw new Error('Schema 2.5 data not found');
           }
-      
+
           const { cycles, activeCycle } = schemaData;
           const cycleData = cycles[activeCycle];
-          
+
           if (!cycleData) {
               console.warn("⚠️ No active cycle found for UI refresh");
               return;
           }
-          
+
           // Clear current list
           const taskListContainer = document.getElementById("taskList");
           if (!taskListContainer) return;
           taskListContainer.innerHTML = "";
-          
+
           // Re-render each task from Schema 2.5
           (cycleData.tasks || []).forEach(task => {
               addTask(
@@ -1324,10 +1393,13 @@ if (!window.deviceDetectionManager) {
                   task.recurringSettings
               );
           });
-          
+
           if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
           console.log("✅ Task list UI refreshed from Schema 2.5");
       }
+
+// Export for module use
+window.refreshTaskListUI = refreshTaskListUI;
 
 
 // ✅ REMOVED: initializeDefaultRecurringSettings - now handled by recurringCore module
@@ -1341,32 +1413,6 @@ if (!window.deviceDetectionManager) {
 
 // ...existing code...
 /**
- * Initializes the main menu by attaching event listeners to menu buttons.
- * Ensures the function runs only once to prevent duplicate event bindings.
- */
-
-function setupMainMenu() {
-    if (setupMainMenu.hasRun) return; // Prevents running more than once
-    setupMainMenu.hasRun = true;
-
-    safeAddEventListener(document.getElementById("save-as-mini-cycle"), "click", saveMiniCycleAsNew);
-    safeAddEventListener(document.getElementById("open-mini-cycle"), "click", () => window.switchMiniCycle?.());
-    safeAddEventListener(document.getElementById("clear-mini-cycle-tasks"), "click", clearAllTasks);
-    safeAddEventListener(document.getElementById("delete-all-mini-cycle-tasks"), "click", deleteAllTasks);
-    safeAddEventListener(document.getElementById("new-mini-cycle"), "click", () => window.createNewMiniCycle?.());
-    safeAddEventListener(document.getElementById("close-main-menu"), "click", closeMainMenu);
-    checkGamesUnlock();
-    safeAddEventListener(exitMiniCycle, "click", () => {
-        window.location.href = "../index.html";
-    });
-    
-}
-
-function closeMainMenu() {
-if (menu) { menu.classList.remove("visible");}
-}
-
-
 
 /**
  * Initializes the miniCycle app by loading or creating a saved miniCycle.
@@ -1973,346 +2019,6 @@ function remindOverdueTasks() {
 
 
 
-/**
- * Updates the main menu header with the active miniCycle title and current date.
- * Ensures proper display of selected miniCycle.
- */
-
-function updateMainMenuHeader() {
-    console.log('📰 Updating main menu header (Schema 2.5 only)...');
-    
-    const menuHeaderTitle = document.getElementById("main-menu-mini-cycle-title");
-    const dateElement = document.getElementById("current-date");
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateMainMenuHeader');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    let activeCycleTitle = "No miniCycle Selected";
-    
-    console.log('📊 Looking up active cycle:', activeCycle);
-    
-    if (activeCycle && cycles[activeCycle]) {
-        const currentCycle = cycles[activeCycle];
-        activeCycleTitle = currentCycle.title || activeCycle;
-        console.log('✅ Found active cycle title:', activeCycleTitle);
-    } else {
-        console.warn('⚠️ No active cycle found for header update');
-    }
-
-    // ✅ Get Current Date
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString(undefined, {
-        weekday: 'short', // "Mon"
-        month: 'short', // "Jan"
-        day: '2-digit', // "08"
-        year: 'numeric' // "2025"
-    });
-
-    console.log('📅 Formatted date:', formattedDate);
-
-    // ✅ Update Title & Date
-    if (menuHeaderTitle) {
-        menuHeaderTitle.textContent = activeCycleTitle;
-        console.log('🏷️ Updated menu header title');
-    } else {
-        console.warn('⚠️ Menu header title element not found');
-    }
-    
-    if (dateElement) {
-        dateElement.textContent = formattedDate;
-        console.log('📅 Updated date element');
-    } else {
-        console.warn('⚠️ Date element not found');
-    }
-
-    // ✅ Update mode description
-    if (typeof window.updateCycleModeDescription === 'function') {
-        window.updateCycleModeDescription();
-        console.log('🎯 Mode description updated');
-    }
-
-    console.log('✅ Main menu header update completed');
-}
-
-/**
- * Saves the due date for a specific task in the active miniCycle.
- *
- * @param {string} taskText - The text of the task to update.
- * @param {string|null} dueDate - The due date to assign, or null to remove the due date.
- */
-
-  /***********************
- * 
- * 
- * Menu Management Logic
- * 
- * 
- ************************/
-
-/**
- * Saves the current miniCycle under a new name, creating a separate copy.
- * Ensures that the new name is unique before saving.
- */
-
-function saveMiniCycleAsNew() {
-    console.log('💾 Saving miniCycle as new (state-based)...');
-    
-    // ✅ Use state-based data access
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for saveMiniCycleAsNew');
-        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
-        return;
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for saveMiniCycleAsNew');
-        showNotification("⚠️ No data available. Please try again.", "error", 3000);
-        return;
-    }
-
-    const { data, appState } = currentState;
-    const activeCycle = appState.activeCycleId;
-    const currentCycle = data.cycles[activeCycle];
-    
-    console.log('📊 Checking active cycle:', activeCycle);
-    
-    if (!activeCycle || !currentCycle) {
-        console.warn('⚠️ No active miniCycle found to save');
-        showNotification("⚠ No miniCycle found to save.");
-        return;
-    }
-
-    console.log('📝 Prompting user for new cycle name');
-
-    showPromptModal({
-        title: "Duplicate Cycle List",
-        message: `Enter a new name for your copy of "${currentCycle.title}":`,
-        placeholder: "e.g., My Custom Routine",
-        confirmText: "Save Copy",
-        cancelText: "Cancel",
-        required: true,
-        callback: (input) => {
-            if (!input) {
-                console.log('❌ User cancelled save operation');
-                showNotification("❌ Save cancelled.");
-                return;
-            }
-
-            const newCycleName = sanitizeInput(input.trim());
-            console.log('🔍 Processing new cycle name:', newCycleName);
-
-            if (!newCycleName) {
-                console.warn('⚠️ Invalid cycle name provided');
-                showNotification("⚠ Please enter a valid name.");
-                return;
-            }
-
-            // ✅ Update through state system
-            window.AppState.update(state => {
-                // ✅ Check for existing cycles by key
-                if (state.data.cycles[newCycleName]) {
-                    console.warn('⚠️ Cycle name already exists:', newCycleName);
-                    showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
-                    return; // Don't save if duplicate exists
-                }
-
-                console.log('🔄 Creating new cycle copy...');
-
-                // ✅ Create new cycle with title as key for Schema 2.5
-                const newCycleId = `copy_${Date.now()}`;
-                
-                console.log('📊 Deep copying current cycle data');
-                
-                // ✅ Deep copy the current cycle with new title as storage key
-                state.data.cycles[newCycleName] = {
-                    ...JSON.parse(JSON.stringify(currentCycle)),
-                    id: newCycleId,
-                    title: newCycleName,
-                    createdAt: Date.now()
-                };
-
-                console.log('🎯 Setting new cycle as active:', newCycleName);
-
-                // ✅ Set as active cycle using the title as key
-                state.appState.activeCycleId = newCycleName;
-                state.metadata.lastModified = Date.now();
-                state.metadata.totalCyclesCreated++;
-
-                console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
-                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
-
-            }, true); // immediate save
-
-            showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${newCycleName}"!`);
-            hideMainMenu();
-            
-            // ✅ Use proper cycle loader if available
-            if (typeof window.loadMiniCycle === 'function') {
-                window.loadMiniCycle();
-            } else {
-                // Fallback to manual refresh
-                setTimeout(() => window.location.reload(), 1000);
-            }
-        }
-    });
-}
-
-
-
-/**
- * Clearalltasks function.
- *
- * @returns {void}
- */
-function clearAllTasks() {
-    console.log('🧹 Clearing all tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for clearAllTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    
-    if (!activeCycle || !currentCycle) {
-        console.warn('⚠️ No active miniCycle to clear tasks');
-        showNotification("⚠ No active miniCycle to clear tasks.");
-        return;
-    }
-
-    console.log('📊 Clearing tasks for cycle:', activeCycle);
-
-    // ✅ Create undo snapshot before making changes
-
-
-    // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
-    const updateSuccess = updateCycleData(activeCycle, cycle => {
-        cycle.tasks.forEach(task => task.completed = false);
-    }, true);
-
-    if (!updateSuccess) {
-        console.error('❌ Failed to update cycle data');
-        showNotification("❌ Failed to clear tasks. Please try again.", "error");
-        return;
-    }
-
-    console.log('💾 Tasks unchecked and saved to Schema 2.5');
-
-    // ✅ Uncheck tasks in the UI and remove overdue styling
-    document.querySelectorAll("#taskList .task").forEach(taskElement => {
-        const checkbox = taskElement.querySelector("input[type='checkbox']");
-        if (checkbox) {
-            checkbox.checked = false;
-        }
-        // ✅ Remove overdue styling
-        taskElement.classList.remove("overdue-task");
-    });
-
-    // ✅ Update UI elements
-    updateProgressBar();
-    updateStatsPanel();
-    checkCompleteAllButton();
-    if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-        window.recurringPanel.updateRecurringPanelButtonVisibility();
-    }
-    hideMainMenu();
-
-    // ✅ Update undo/redo button states
-    updateUndoRedoButtons();
-
-    console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
-    showNotification(`✅ All tasks unchecked for "${currentCycle.title}"`, "success", 2000);
-}
-
-/**
- * Deletealltasks function.
- *
- * @returns {void}
- */
-function deleteAllTasks() {
-    console.log('🗑️ Deleting all tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for deleteAllTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    
-    if (!activeCycle || !currentCycle) {
-        console.warn('⚠️ No active miniCycle to delete tasks from');
-        showNotification("⚠ No active miniCycle to delete tasks from.");
-        return;
-    }
-
-    console.log('📊 Preparing to delete tasks for cycle:', activeCycle);
-
-    // ✅ Use callback pattern with showConfirmationModal
-    showConfirmationModal({
-        title: "Delete All Tasks",
-        message: `⚠ Are you sure you want to permanently delete all tasks in "${currentCycle.title}"? This action cannot be undone.`,
-        confirmText: "Delete All",
-        cancelText: "Cancel",
-        callback: (confirmed) => {
-            if (!confirmed) {
-                console.log('❌ User cancelled deletion');
-                showNotification("❌ Deletion cancelled.");
-                return;
-            }
-
-            console.log('🔄 Proceeding with task deletion...');
-
-            // ✅ Push undo snapshot before deletion
-
-
-            // ✅ Clear tasks completely - Use helper to prevent race conditions
-            const updateSuccess = updateCycleData(activeCycle, cycle => {
-                cycle.tasks = [];
-                // ✅ Clear recurring templates too
-                if (cycle.recurringTemplates) {
-                    cycle.recurringTemplates = {};
-                }
-            }, true);
-
-            if (!updateSuccess) {
-                console.error('❌ Failed to delete tasks');
-                showNotification("❌ Failed to delete tasks. Please try again.", "error");
-                return;
-            }
-
-            console.log('💾 All tasks deleted and saved to Schema 2.5');
-
-            // ✅ Clear UI & update progress
-            const taskList = document.getElementById("taskList");
-            if (taskList) {
-                taskList.innerHTML = "";
-            }
-            
-            updateProgressBar();
-            updateStatsPanel();
-            checkCompleteAllButton();
-            if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-                window.recurringPanel.updateRecurringPanelButtonVisibility();
-            }
-
-            // ✅ Update undo/redo button states
-            updateUndoRedoButtons();
-
-            console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
-            showNotification(`✅ All tasks deleted from "${currentCycle.title}"`, "success", 3000);
-        }
-    });
-}
-
 
 
 
@@ -2616,781 +2322,6 @@ function buildTaskContext(taskItem, taskId) {
  *
  * @returns {void}
  */
-function setupSettingsMenu() {
-    const settingsModal = document.querySelector(".settings-modal");
-    const settingsModalContent = document.querySelector(".settings-modal-content");
-    const openSettingsBtn = document.getElementById("open-settings");
-    const closeSettingsBtn = document.getElementById("close-settings");
-
-    /**
-     * Opens the settings menu.
-     *
-     * @param {Event} event - The click event.
-     */
-    function openSettings(event) {
-        event.stopPropagation();
-        settingsModal.style.display = "flex";
-        hideMainMenu();
-    }
-
-    /**
-     * Closes the settings menu.
-     */
-    function closeSettings() {
-        settingsModal.style.display = "none";
-    }
-
-    function closeOnClickOutside(event) {
-        if (settingsModal.style.display === "flex" && 
-            !settingsModalContent.contains(event.target) && 
-            event.target !== openSettingsBtn) {
-            settingsModal.style.display = "none";
-        }
-    }
-
-    // ✅ Remove previous listeners before adding new ones
-    openSettingsBtn.removeEventListener("click", openSettings);
-    closeSettingsBtn.removeEventListener("click", closeSettings);
-    document.removeEventListener("click", closeOnClickOutside);
-
-    // ✅ Add event listeners (only once)
-    openSettingsBtn.addEventListener("click", openSettings);
-    closeSettingsBtn.addEventListener("click", closeSettings);
-    document.addEventListener("click", closeOnClickOutside);
-
-    // ✅ Dark Mode Toggle (Check if the element exists first)
-    setupDarkModeToggle("darkModeToggle", ["darkModeToggle", "darkModeToggleThemes"]);
-    
-    // ✅ Setup Quick Dark Toggle right after primary toggle
-    setupQuickDarkToggle();
-
-
-// ✅ Toggle Move Arrows Setting (Schema 2.5 only)
-const moveArrowsToggle = document.getElementById("toggle-move-arrows");
-if (moveArrowsToggle) {
-    console.log('🔄 Setting up move arrows toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for move arrows toggle');
-        return;
-    }
-    
-    // ✅ Use state-based approach for move arrows setting
-    let moveArrowsEnabled = false;
-    
-    if (window.AppState?.isReady?.()) {
-        const currentState = window.AppState.get();
-        moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
-    } else {
-        // Fallback for legacy or when state isn't ready
-        const schemaData = loadMiniCycleData();
-        moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
-    }
-    
-    console.log('📊 Loading move arrows setting from state:', moveArrowsEnabled);
-    
-    moveArrowsToggle.checked = moveArrowsEnabled;
-    
-    moveArrowsToggle.addEventListener("change", () => {
-        const enabled = moveArrowsToggle.checked;
-        
-        console.log('🔄 Move arrows toggle changed:', enabled);
-        
-        // ✅ Use state system if available
-        if (window.AppState?.isReady?.()) {
-            window.AppState.update(state => {
-                if (!state.ui) state.ui = {};
-                state.ui.moveArrowsVisible = enabled;
-                state.metadata.lastModified = Date.now();
-            }, true); // immediate save
-            
-            console.log('✅ Move arrows setting saved to state:', enabled);
-        } else {
-            // ✅ Fallback to localStorage if state not ready
-            console.warn('⚠️ AppState not ready, using localStorage fallback');
-            const schemaData = loadMiniCycleData();
-            if (schemaData) {
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.settings.showMoveArrows = enabled;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            }
-        }
-        
-        updateMoveArrowsVisibility();
-    });
-    
-    console.log('✅ Move arrows toggle setup completed');
-}
-
-// ✅ Toggle Three-Dot Menu Setting (Schema 2.5 only)
-const threeDotsToggle = document.getElementById("toggle-three-dots");
-if (threeDotsToggle) {
-    console.log('🔄 Setting up three dots toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for three dots toggle');
-        return;
-    }
-    
-    const threeDotsEnabled = schemaData.settings.showThreeDots || false;
-    
-    console.log('📊 Loading three dots setting from Schema 2.5:', threeDotsEnabled);
-    
-    threeDotsToggle.checked = threeDotsEnabled;
-    document.body.classList.toggle("show-three-dots-enabled", threeDotsEnabled);
-
-    threeDotsToggle.addEventListener("change", () => {
-        const enabled = threeDotsToggle.checked;
-        
-        console.log('🔄 Three dots toggle changed:', enabled);
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for saving three dots setting');
-            return;
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.showThreeDots = enabled;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Three dots setting saved to Schema 2.5:', enabled);
-        
-        document.body.classList.toggle("show-three-dots-enabled", enabled);
-
-        // ✅ Disable/enable hover behavior for current tasks
-        toggleHoverTaskOptions(!enabled);
-
-        // ✅ Update task list UI
-        refreshTaskListUI(); 
-    });
-    
-    console.log('✅ Three dots toggle setup completed');
-}
-
-             // ✅ Update backup function to be Schema 2.5 only
-      document.getElementById("backup-mini-cycles").addEventListener("click", () => {
-          console.log('📤 Creating backup (Schema 2.5 only)...');
-          
-          const schemaData = localStorage.getItem("miniCycleData");
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for backup');
-              showNotification("❌ No Schema 2.5 data found. Cannot create backup.", "error");
-              return;
-          }
-      
-          // Schema 2.5 backup - everything is in one key
-          const backupData = {
-              schemaVersion: "2.5",
-              miniCycleData: schemaData,
-              backupMetadata: {
-                  createdAt: Date.now(),
-                  version: "2.5",
-                  source: "miniCycle App"
-              }
-          };
-          
-          const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-          const backupUrl = URL.createObjectURL(backupBlob);
-          const a = document.createElement("a");
-          a.href = backupUrl;
-          a.download = `mini-cycle-backup-schema25-${Date.now()}.json`;
-          a.click();
-          URL.revokeObjectURL(backupUrl);
-          
-          showNotification("✅ Schema 2.5 backup created successfully!", "success", 3000);
-      });
-      
-        
-        // ✅ Update restore function to convert legacy backups to Schema 2.5 (idempotent + cancel-safe)
-        (() => {
-          const restoreBtn = document.getElementById("restore-mini-cycles");
-          if (!restoreBtn) return;
-        
-          let fileInput = null;
-          let isPickerOpen = false;
-        
-          const resetPicker = () => { isPickerOpen = false; };
-        
-          const handleRestore = () => {
-            if (isPickerOpen) return;
-            isPickerOpen = true;
-        
-            // Clean previous input
-            if (fileInput) {
-              fileInput.remove();
-              fileInput = null;
-            }
-        
-            // Fresh input
-            fileInput = document.createElement("input");
-            fileInput.type = "file";
-            fileInput.accept = "application/json,.json";
-            fileInput.style.display = "none";
-            document.body.appendChild(fileInput);
-        
-            // When picker closes (even on cancel), window regains focus
-            const onFocusAfterPicker = () => {
-              resetPicker();
-              window.removeEventListener("focus", onFocusAfterPicker);
-              // Cleanup dangling input on cancel
-              if (fileInput && !fileInput.files?.length) {
-                fileInput.remove();
-                fileInput = null;
-              }
-            };
-            window.addEventListener("focus", onFocusAfterPicker, { once: true });
-        
-            fileInput.addEventListener("change", (event) => {
-              const file = event.target.files[0];
-              if (!file) {
-                if (fileInput) {
-                  fileInput.remove();
-                  fileInput = null;
-                }
-                resetPicker();
-                return;
-              }
-        
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                try {
-                  const backupData = JSON.parse(e.target.result);
-        
-                  // ✅ Check if user is currently on Schema 2.5 (should always be true now)
-                  const currentSchemaData = localStorage.getItem("miniCycleData");
-                  if (!currentSchemaData) {
-                    showNotification("❌ Cannot restore - Schema 2.5 data structure required.", "error");
-                    return;
-                  }
-        
-                  // ✅ Handle Schema 2.5 backup
-                  if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
-                    localStorage.setItem("miniCycleData", backupData.miniCycleData);
-                    showNotification("✅ Schema 2.5 backup restored successfully!", "success", 4000);
-        
-                    showNotification("🔄 Reloading app to apply changes...", "info", 2000);
-                    setTimeout(() => location.reload(), 2500);
-                    return;
-                  }
-        
-                  // ✅ Handle legacy backup - convert to Schema 2.5
-                  if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
-                    showNotification("🔄 Auto-converting legacy backup to Schema 2.5...", "info", 3000);
-        
-                    if (!backupData.miniCycleStorage) {
-                      showNotification("❌ Invalid legacy backup file format.", "error", 3000);
-                      return;
-                    }
-        
-                    // Temporarily restore legacy keys
-                    localStorage.setItem("miniCycleStorage", backupData.miniCycleStorage);
-                    localStorage.setItem("lastUsedMiniCycle", backupData.lastUsedMiniCycle || "");
-        
-                    if (backupData.miniCycleReminders) {
-                      localStorage.setItem("miniCycleReminders", backupData.miniCycleReminders);
-                    }
-                    if (backupData.milestoneUnlocks) {
-                      localStorage.setItem("milestoneUnlocks", backupData.milestoneUnlocks);
-                    }
-                    if (backupData.darkModeEnabled !== undefined) {
-                      localStorage.setItem("darkModeEnabled", backupData.darkModeEnabled);
-                    }
-                    if (backupData.currentTheme) {
-                      localStorage.setItem("currentTheme", backupData.currentTheme);
-                    }
-        
-                    // Migrate to 2.5
-                    setTimeout(() => {
-                      const migrationResults = performSchema25Migration();
-        
-                      if (migrationResults.success) {
-                        showNotification("✅ Legacy backup restored and converted to Schema 2.5!", "success", 4000);
-                      } else {
-                        showNotification("❌ Migration failed during restore", "error", 4000);
-                      }
-        
-                      setTimeout(() => location.reload(), 1000);
-                    }, 500);
-        
-                    return; // prevent double reload path
-                  }
-        
-                  showNotification("❌ Invalid backup file format.", "error", 3000);
-                } catch (error) {
-                  console.error("Backup restore error:", error);
-                  showNotification("❌ Error restoring backup - file may be corrupted.", "error", 4000);
-                } finally {
-                  if (fileInput) {
-                    fileInput.remove();
-                    fileInput = null;
-                  }
-                  resetPicker();
-                  window.removeEventListener("focus", onFocusAfterPicker);
-                }
-              };
-        
-              reader.readAsText(file);
-            }, { once: true });
-        
-            fileInput.click();
-          };
-        
-          // Idempotent listener attachment
-          if (restoreBtn._restoreHandler) {
-            restoreBtn.removeEventListener("click", restoreBtn._restoreHandler);
-          }
-          restoreBtn._restoreHandler = handleRestore;
-          restoreBtn.addEventListener("click", restoreBtn._restoreHandler);
-        })();
-        
-      
-    document.getElementById("reset-recurring-default")?.addEventListener("click", resetDefaultRecurringSettings);
-      // ✅ Update reset recurring default for Schema 2.5 only
-      function resetDefaultRecurringSettings() {
-          console.log('🔁 Resetting recurring defaults (Schema 2.5 only)...');
-          
-          const schemaData = localStorage.getItem("miniCycleData");
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for reset');
-              showNotification("❌ No Schema 2.5 data found. Cannot reset defaults.", "error");
-              return;
-          }
-      
-          const parsed = JSON.parse(schemaData);
-          
-          const defaultSettings = {
-              frequency: "daily",
-              indefinitely: true,
-              time: null
-          };
-          
-          // Reset defaults in Schema 2.5
-          parsed.settings.defaultRecurringSettings = defaultSettings;
-          parsed.metadata.lastModified = Date.now();
-          localStorage.setItem("miniCycleData", JSON.stringify(parsed));
-          
-          showNotification("🔁 Recurring default reset to Daily Indefinitely.", "success");
-      }
-      
-      // ✅ Update Factory Reset for Schema 2.5 only (awaits all cleanup; no IndexedDB used)
-      (function setupFactoryReset() {
-          const resetBtn = document.getElementById("factory-reset");
-          if (!resetBtn) return;
-
-          const runFactoryReset = async () => {
-              console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
-
-              // 0) CRITICAL: Stop AppState from auto-saving over our deletion
-              if (window.AppState) {
-                  console.log('🛑 Stopping AppState auto-save...');
-                  try {
-                      // Clear the debounced save timeout
-                      if (window.AppState.saveTimeout) {
-                          clearTimeout(window.AppState.saveTimeout);
-                          window.AppState.saveTimeout = null;
-                      }
-                      // Clear in-memory data so it won't be saved
-                      window.AppState.data = null;
-                      window.AppState.isDirty = false;
-                      window.AppState.isInitialized = false;
-                      console.log('✅ AppState neutralized');
-                  } catch (e) {
-                      console.warn('⚠️ AppState cleanup warning:', e);
-                  }
-              }
-
-              // 1) Local storage cleanup (primary + legacy + dynamic)
-              try {
-                  // Schema 2.5 - Single key cleanup
-                  localStorage.removeItem("miniCycleData");
-
-                  // Also clean up any remaining legacy keys for thorough cleanup
-                  const legacyKeysToRemove = [
-                      "miniCycleStorage",
-                      "lastUsedMiniCycle",
-                      "miniCycleReminders",
-                      "miniCycleDefaultRecurring",
-                      "milestoneUnlocks",
-                      "darkModeEnabled",
-                      "currentTheme",
-                      "miniCycleNotificationPosition",
-                      "miniCycleThreeDots",
-                      "miniCycleMoveArrows",
-                      "miniCycleOnboarding",
-                      "overdueTaskStates",
-                      "bestRound",
-                      "bestTime",
-                      "miniCycleAlwaysShowRecurring",
-                      "miniCycle_console_logs",
-                      "miniCycle_console_capture_start",
-                      "miniCycle_console_capture_enabled"
-                  ];
-                  legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
-
-                  // Clean up any backup files and dynamic keys
-                  const allKeys = Object.keys(localStorage);
-                  let dynamicKeysRemoved = 0;
-                  allKeys.forEach(key => {
-                      // Backup files
-                      if (key.startsWith('miniCycle_backup_') || key.startsWith('pre_migration_backup_')) {
-                          localStorage.removeItem(key);
-                          dynamicKeysRemoved++;
-                          return;
-                      }
-                      // Any key containing miniCycle, minicycle, or TaskCycle (case-insensitive)
-                      const keyLower = key.toLowerCase();
-                      if (keyLower.includes('minicycle') || keyLower.includes('taskcycle')) {
-                          console.log('🧹 Removing additional key:', key);
-                          localStorage.removeItem(key);
-                          dynamicKeysRemoved++;
-                      }
-                  });
-                  console.log(`🧹 Removed ${dynamicKeysRemoved} additional dynamic keys`);
-              } catch (e) {
-                  console.warn('⚠️ Local storage cleanup encountered an issue:', e);
-              }
-
-              // 2) Session storage cleanup
-              try {
-                  if (typeof sessionStorage !== 'undefined') {
-                      sessionStorage.clear();
-                      console.log('🧹 sessionStorage cleared');
-                  }
-              } catch (e) {
-                  console.warn('⚠️ sessionStorage cleanup failed:', e);
-              }
-
-              // 3) Service Worker: unsubscribe push (if any) and unregister
-              try {
-                  if ('serviceWorker' in navigator) {
-                      const registrations = await navigator.serviceWorker.getRegistrations();
-                      await Promise.allSettled(registrations.map(async (registration) => {
-                          try {
-                              // Try to unsubscribe from Push
-                              if (registration.pushManager && typeof registration.pushManager.getSubscription === 'function') {
-                                  const sub = await registration.pushManager.getSubscription();
-                                  if (sub) {
-                                      console.log('🧹 Unsubscribing push subscription');
-                                      await sub.unsubscribe();
-                                  }
-                              }
-                          } catch (e) {
-                              console.warn('⚠️ Push unsubscribe failed:', e);
-                          }
-                          try {
-                              console.log('🧹 Unregistering service worker:', registration.scope);
-                              await registration.unregister();
-                          } catch (e) {
-                              console.warn('⚠️ Service worker unregister failed:', e);
-                          }
-                      }));
-                  }
-              } catch (e) {
-                  console.warn('⚠️ Service worker cleanup failed:', e);
-              }
-
-              // 4) Cache Storage cleanup (filtered)
-              try {
-                  if (typeof window.caches !== 'undefined') {
-                      const cacheNames = await caches.keys();
-                      await Promise.allSettled(
-                          cacheNames.map((cacheName) => {
-                              if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
-                                  console.log('🧹 Clearing cache:', cacheName);
-                                  return caches.delete(cacheName);
-                              }
-                              return Promise.resolve(false);
-                          })
-                      );
-                  }
-              } catch (e) {
-                  console.warn('⚠️ Cache cleanup failed:', e);
-              }
-
-              // 5) Finalize
-              showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
-              setTimeout(() => location.reload(), 800);
-          };
-
-          // Attach click with confirmation, guard against double-activation
-          resetBtn.addEventListener("click", () => {
-              showConfirmationModal({
-                  title: "Factory Reset",
-                  message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
-                  confirmText: "Delete Everything",
-                  cancelText: "Cancel",
-                  callback: async (confirmed) => {
-                      if (!confirmed) {
-                          showNotification("❌ Factory reset cancelled.", "info", 2000);
-                          return;
-                      }
-
-                      // prevent double triggers during reset
-                      const prevDisabled = resetBtn.disabled;
-                      resetBtn.disabled = true;
-                      try {
-                          await runFactoryReset();
-                      } finally {
-                          // If reload fails for some reason, re-enable button
-                          resetBtn.disabled = prevDisabled;
-                      }
-                  }
-              });
-          });
-      })();
-
-    }
-
-
-/**
- * Setupdownloadminicycle function - Schema 2.5 ONLY
- *
- * @returns {void}
- */
-function setupDownloadMiniCycle() {
-  document.getElementById("export-mini-cycle").addEventListener("click", () => {
-    console.log('📤 Exporting miniCycle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for export');
-      showNotification("❌ No Schema 2.5 data found. Cannot export.", "error");
-      return;
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycle = cycles[activeCycle];
-    
-    if (!activeCycle || !cycle) {
-      showNotification("⚠ No active miniCycle to export.");
-      return;
-    }
-
-    console.log('📊 Exporting cycle:', activeCycle);
-
-    const miniCycleData = {
-      name: activeCycle,
-      title: cycle.title || "New miniCycle",
-      tasks: cycle.tasks.map(task => {
-        const settings = task.recurringSettings || {};
-        
-        // Add fallback time if task is recurring and doesn't use specificTime
-        if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-          settings.defaultRecurTime = new Date().toISOString();
-        }
-
-        return {
-          id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          text: task.text || "",
-          completed: task.completed || false,
-          dueDate: task.dueDate || null,
-          highPriority: task.highPriority || false,
-          remindersEnabled: task.remindersEnabled || false,
-          recurring: task.recurring || false,
-          recurringSettings: settings,
-          schemaVersion: task.schemaVersion || 2
-        };
-      }),
-      autoReset: cycle.autoReset || false,
-      cycleCount: cycle.cycleCount || 0,
-      deleteCheckedTasks: cycle.deleteCheckedTasks || false
-    };
-
-    console.log('✅ Export data prepared');
-    exportMiniCycleData(miniCycleData, cycle.title || activeCycle);
-  });
-}
-
-function exportMiniCycleData(miniCycleData, cycleName) {
-    console.log('📤 Exporting miniCycle data (Schema 2.5 only)...');
-    
-    try {
-        const dataStr = JSON.stringify(miniCycleData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: "application/json" });
-        
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc`;
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(link.href);
-        
-        console.log('✅ Export completed successfully');
-        showNotification(`✅ "${cycleName}" exported successfully!`, "success", 3000);
-        
-    } catch (error) {
-        console.error('❌ Export failed:', error);
-        showNotification("❌ Export failed. Please try again.", "error", 3000);
-    }
-}
-
-
-function setupUploadMiniCycle() {
-  const importButtons = ["import-mini-cycle", "miniCycleUpload"];
-
-  // Shared state
-  let fileInput = null;
-  let isPickerOpen = false;
-
-  const resetPickerState = () => {
-    isPickerOpen = false;
-  };
-
-  const handleImport = () => {
-    if (isPickerOpen) return;
-    isPickerOpen = true;
-
-    // Clean previous input
-    if (fileInput) {
-      fileInput.remove();
-      fileInput = null;
-    }
-
-    // Fresh input
-    fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = ".mcyc";
-    fileInput.style.display = "none";
-    document.body.appendChild(fileInput);
-
-    // When the OS file dialog closes (even on cancel), window regains focus
-    const onFocusAfterPicker = () => {
-      // If change didn't fire (cancel), release the lock
-      resetPickerState();
-      window.removeEventListener("focus", onFocusAfterPicker);
-      // Cleanup dangling input on cancel
-      if (fileInput && !fileInput.files?.length) {
-        fileInput.remove();
-        fileInput = null;
-      }
-    };
-    window.addEventListener("focus", onFocusAfterPicker, { once: true });
-
-    fileInput.addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) {
-        fileInput.remove();
-        fileInput = null;
-        resetPickerState();
-        return;
-      }
-
-      if (file.name.endsWith(".tcyc")) {
-        showNotification("❌ miniCycle does not support .tcyc files.\nPlease save your Task Cycle as .MCYC to import into miniCycle.");
-        fileInput.remove();
-        fileInput = null;
-        resetPickerState();
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedData = JSON.parse(e.target.result);
-
-          if (!importedData.name || !Array.isArray(importedData.tasks)) {
-            showNotification("❌ Invalid miniCycle file format.");
-            return;
-          }
-
-          console.log("📥 Importing miniCycle with auto-conversion to Schema 2.5...");
-
-          // Ensure Schema 2.5 data exists
-          const schemaData = loadMiniCycleData();
-          if (!schemaData) {
-            console.error("❌ Schema 2.5 data required for import");
-            showNotification("❌ Cannot import - Schema 2.5 data structure required.", "error");
-            return;
-          }
-
-          const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-          const cycleId = `imported_${Date.now()}`;
-
-          console.log("🔄 Creating imported cycle with ID:", cycleId);
-
-          fullSchemaData.data.cycles[cycleId] = {
-            id: cycleId,
-            title: importedData.title || importedData.name,
-            tasks: importedData.tasks.map((task) => {
-              const safeSettings = task.recurringSettings || {};
-              if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
-                safeSettings.defaultRecurTime = new Date().toISOString();
-              }
-              return {
-                id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                text: task.text || "",
-                completed: false,
-                dueDate: task.dueDate || null,
-                highPriority: task.highPriority || false,
-                remindersEnabled: task.remindersEnabled || false,
-                recurring: task.recurring || false,
-                recurringSettings: safeSettings,
-                schemaVersion: task.schemaVersion || 2
-              };
-            }),
-            autoReset: importedData.autoReset !== false,
-            cycleCount: importedData.cycleCount || 0,
-            deleteCheckedTasks: importedData.deleteCheckedTasks || false,
-            createdAt: Date.now(),
-            recurringTemplates: {}
-          };
-
-          // Set as active cycle and persist
-          fullSchemaData.appState.activeCycleId = cycleId;
-          fullSchemaData.metadata.lastModified = Date.now();
-          fullSchemaData.metadata.totalCyclesCreated++;
-          localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-          // ✅ SYNC AppState with imported cycle data (prevents overwriting with stale data)
-          if (window.AppState && typeof window.AppState.init === 'function') {
-              window.AppState.data = fullSchemaData;
-              window.AppState.isInitialized = true;
-              window.AppState.isDirty = false; // Mark as clean since we just saved
-              console.log('✅ AppState synchronized with imported cycle data');
-          }
-
-          console.log("💾 Import completed successfully to Schema 2.5");
-          showNotification(`✅ miniCycle "${importedData.name}" imported and converted to Schema 2.5!`, "success");
-          location.reload();
-        } catch (error) {
-          showNotification("❌ Error importing miniCycle.");
-          console.error("Import error:", error);
-        } finally {
-          if (fileInput) {
-            fileInput.remove();
-            fileInput = null;
-          }
-          resetPickerState();
-          window.removeEventListener("focus", onFocusAfterPicker);
-        }
-      };
-
-      reader.readAsText(file);
-    }, { once: true });
-
-    fileInput.click();
-  };
-
-  // Attach listeners idempotently
-  importButtons.forEach((buttonId) => {
-    const button = document.getElementById(buttonId);
-    if (!button) return;
-
-    if (button._importHandler) {
-      button.removeEventListener("click", button._importHandler);
-    }
-    button._importHandler = handleImport;
-    button.addEventListener("click", button._importHandler);
-  });
-}
 // ✅ REMOVED: setupFeedbackModal() - Now handled by modalManager module
 // ✅ REMOVED: Duplicate feedback form sanitization listener - Now handled by modalManager module
 // ✅ REMOVED: openFeedbackModal() - Now handled by modalManager module
@@ -4569,6 +3500,9 @@ function toggleHoverTaskOptions(enableHover) {
   });
 }
 
+// Export for module use
+window.toggleHoverTaskOptions = toggleHoverTaskOptions;
+
 
 
 document.addEventListener("click", (e) => {
@@ -5462,35 +4396,6 @@ function saveToggleAutoReset() {
     deleteCheckedTasks.dataset.listenerAdded = true; 
 }
 
-/**
- * Closes the menu when clicking outside of it.
- * Ensures the menu only closes when clicking outside both the menu and menu button.
- *
- * @param {MouseEvent} event - The click event that triggers the check.
- */
-
-function closeMenuOnClickOutside(event) {
-    if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
-        menu.classList.remove("visible"); // Hide the menu
-        document.removeEventListener("click", closeMenuOnClickOutside); // ✅ Remove listener after closing
-    }
-}
-
-
-
-/**
- * Hidemainmenu function.
- *
- * @returns {void}
- */
-
-function hideMainMenu() {
-    const menu = document.querySelector(".menu-container");
-    menu.classList.remove("visible");
-}
-// ✅ Expose for cycleSwitcher module
-window.hideMainMenu = hideMainMenu;
-
 
 
 // ✅ Function to complete all tasks and handle reset
@@ -5645,44 +4550,6 @@ safeAddEventListener(taskInput, "keypress", function (event) {
     }
 });
 
-function syncCurrentSettingsToStorage() {
-    console.log('⚙️ Syncing current settings to storage (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for syncCurrentSettingsToStorage');
-        return;
-    }
-    
-    const { cycles, activeCycle } = schemaData;
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
-    
-    if (!activeCycle || !cycles[activeCycle]) {
-        console.warn('⚠️ No active cycle found for settings sync');
-        return;
-    }
-    
-    if (!toggleAutoReset || !deleteCheckedTasks) {
-        console.warn('⚠️ Settings toggles not found');
-        return;
-    }
-    
-    console.log('📊 Syncing settings:', {
-        activeCycle,
-        autoReset: toggleAutoReset.checked,
-        deleteCheckedTasks: deleteCheckedTasks.checked
-    });
-    
-    // Update Schema 2.5 data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle].autoReset = toggleAutoReset.checked;
-    fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = deleteCheckedTasks.checked;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('✅ Settings synced to Schema 2.5 successfully');
-}
 
 
 // 🟢 Menu Button (Click) - ✅ FIXED: ES5 compatible function expression
@@ -6137,8 +5004,8 @@ document.addEventListener("touchstart", () => {}, { passive: true });
     try {
       // --- sync init ---
       fixTaskValidationIssues();
-      setupMainMenu();
-      setupSettingsMenu();
+      // ✅ MOVED TO PHASE 2: setupMainMenu() - now handled by menuManager module
+      // ✅ MOVED TO PHASE 2: setupSettingsMenu() - now handled by settingsManager module
       // ✅ REMOVED: setupAbout() - Now handled by modalManager module
       setupUserManual();
       // ✅ REMOVED: setupFeedbackModal() - Now handled by modalManager module
@@ -6152,8 +5019,8 @@ document.addEventListener("touchstart", () => {}, { passive: true });
       loadMiniCycle();
       // ✅ initializeDefaultRecurringSettings() removed - now handled by recurringIntegration module
       setupMiniCycleTitleListener();
-      setupDownloadMiniCycle();
-      setupUploadMiniCycle();
+      // ✅ MOVED TO PHASE 2: setupDownloadMiniCycle() - now handled by settingsManager module
+      // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
       // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
       // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
 
