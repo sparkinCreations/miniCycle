@@ -338,6 +338,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./utilities/themeManager.js'));
     console.log('✅ Theme Manager loaded');
 
+    // ✅ Load Games Manager (simple UI component)
+    await import(withV('./utilities/ui/gamesManager.js'));
+    console.log('✅ Games Manager loaded');
+
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
@@ -1351,81 +1355,6 @@ function setupMainMenu() {
     });
     
 }
-
-function checkGamesUnlock() {
-    console.log('🎮 Checking games unlock (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for checkGamesUnlock');
-        return;
-    }
-    
-    // Ensure unlockedFeatures exists and is an array
-    const unlockedFeatures = schemaData.settings?.unlockedFeatures || [];
-    const hasGameUnlock = unlockedFeatures.includes("task-order-game");
-    
-    console.log('🔍 Game unlock status:', hasGameUnlock);
-    
-    if (hasGameUnlock) {
-        document.getElementById("games-menu-option").style.display = "block";
-        console.log('✅ Games menu option displayed');
-    } else {
-        console.log('🔒 Games still locked');
-    }
-}
-
-
-document.getElementById("open-games-panel").addEventListener("click", () => {
-    document.getElementById("games-panel").style.display = "flex";
-    setupGamesModalOutsideClick();
-
-});
-
-document.getElementById("close-games-panel").addEventListener("click", () => {
-    document.getElementById("games-panel").style.display = "none";
-});
-
-document.getElementById("open-task-order-game").addEventListener("click", () => {
-    // Load game into container or open in new modal
-
-        window.location.href = "miniCycleGames/miniCycle-taskOrder.html";
-   
-});
-/*
-function loadTaskOrderGame() {
-    const container = document.getElementById("taskOrderGameContainer");
-    if (!container) return;
-
-    fetch("/miniCycleGames/miniCycle-taskOrder.html")
-        .then(res => res.text())
-        .then(html => {
-            container.innerHTML = html;
-            container.style.display = "block";
-        });
-}
-*/
-
-
-function setupGamesModalOutsideClick() {
-    const gamesPanel = document.getElementById("games-panel");
-    const gamesContent = document.querySelector(".games-modal-content");
-    const openButton = document.getElementById("open-games-panel");
-  
-    if (!gamesPanel || !gamesContent || !openButton) return;
-  
-    console.log("✅ Games outside click ready");
-  
-    safeAddEventListener(document, "click", function (event) {
-      const isOpen = gamesPanel.style.display === "flex";
-      const clickedOutside =
-        !gamesContent.contains(event.target) && event.target !== openButton;
-  
-      if (isOpen && clickedOutside) {
-        gamesPanel.style.display = "none";
-      }
-    });
-  }
 
 function closeMainMenu() {
 if (menu) { menu.classList.remove("visible");}
@@ -3935,37 +3864,6 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
     
     console.log('✅ Milestone unlocks processed (state-based)');
 }
-
-function unlockMiniGame() {
-    console.log('🎮 Unlocking mini game (state-based)...');
-    
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for unlockMiniGame');
-        return;
-    }
-    
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data for unlockMiniGame');
-        return;
-    }
-    
-    const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
-    if (!unlockedFeatures.includes("task-order-game")) {
-        window.AppState.update(state => {
-            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
-            state.settings.unlockedFeatures.push("task-order-game");
-            state.userProgress.rewardMilestones.push("task-order-game-100");
-        }, true);
-        
-        console.log("🎮 Task Order Game unlocked (state-based)!");
-    }
-    
-    checkGamesUnlock();
-}
-
-
-
 
 
 

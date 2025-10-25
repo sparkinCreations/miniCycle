@@ -1,0 +1,88 @@
+{
+  "name": "cycle_1704067200000",
+  "title": "☀️ Productive Morning Routine",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "🌅 Wake up at 6:30 AM",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "💧 Drink a glass of water",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "🛏️ Make the bed",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t4",
+      "text": "🧘 Meditate for 10 minutes",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t5",
+      "text": "📝 Write in gratitude journal",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t6",
+      "text": "🏃 Light exercise or stretching",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t7",
+      "text": "🚿 Take a shower",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t8",
+      "text": "🥣 Eat a healthy breakfast",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t9",
+      "text": "☕ Enjoy morning coffee/tea",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t10",
+      "text": "📚 Read for 15 minutes",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t11",
+      "text": "🎯 Review daily goals",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t12",
+      "text": "📧 Check priority emails only",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t13",
+      "text": "💼 Start most important task",
+      "completed": false,
+      "schemaVersion": 2,
+      "highPriority": true
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 98,
+  "deleteCheckedTasks": false
+}
