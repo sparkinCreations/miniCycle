@@ -373,6 +373,9 @@ const modalManager = new ModalManager();
 window.ModalManager = ModalManager;
 window.modalManager = modalManager;
 
+// Global wrapper for backward compatibility
+window.closeAllModals = () => modalManager?.closeAllModals();
+
 // Initialize automatically after import
 modalManager.init();
 
