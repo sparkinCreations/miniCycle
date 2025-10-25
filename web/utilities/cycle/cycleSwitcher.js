@@ -495,20 +495,31 @@ export class CycleSwitcher {
      * Update preview window with cycle tasks
      */
     updatePreview(cycleName) {
-        console.log('👁️ Updating preview (Schema 2.5 only)...');
+        console.log('👁️ Updating preview (state-based)...');
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for updatePreview');
-            throw new Error('Schema 2.5 data not found');
+        // ✅ Use AppState instead of loadMiniCycleData()
+        if (!this.deps.AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for updatePreview');
+            return;
         }
 
-        const cycles = schemaData.data?.cycles || {};
+        const currentState = this.deps.AppState.get();
+        if (!currentState) {
+            console.error('❌ No state data available for updatePreview');
+            return;
+        }
+
+        const cycles = currentState.data?.cycles || {};
         const cycleData = cycles[cycleName];
 
         console.log('🔍 Preview for cycle:', cycleName);
 
         const previewWindow = this.deps.getElementById("switch-preview-window");
+
+        if (!previewWindow) {
+            console.error('❌ Preview window element not found');
+            return;
+        }
 
         function escapeHTML(str) {
             const temp = document.createElement("div");
