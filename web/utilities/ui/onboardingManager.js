@@ -61,6 +61,11 @@ export class OnboardingManager {
             return false;
         }
 
+        if (typeof window.AppState.get !== 'function') {
+            console.warn('⚠️ AppState.get not available');
+            return false;
+        }
+
         const currentState = window.AppState.get();
         if (!currentState) {
             console.warn('⚠️ No state data for shouldShowOnboarding');

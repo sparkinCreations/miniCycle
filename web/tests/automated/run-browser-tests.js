@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'gamesManager'];
+const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'gamesManager', 'onboardingManager'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);

@@ -225,9 +225,10 @@
             <option value="cycleSwitcher">CycleSwitcher</option>
             <option value="undoRedoManager">UndoRedoManager</option>
             <option value="gamesManager">GamesManager</option>
+            <option value="onboardingManager">OnboardingManager</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (20 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (21 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -265,6 +266,7 @@
         const { runCycleSwitcherTests } = await import(`./cycleSwitcher.tests.js?v=${cacheBuster}`);
         const { runUndoRedoManagerTests } = await import(`./undoRedoManager.tests.js?v=${cacheBuster}`);
         const { runGamesManagerTests } = await import(`./gamesManager.tests.js?v=${cacheBuster}`);
+        const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -363,6 +365,10 @@
                     await import(`../utilities/ui/gamesManager.js?v=${cacheBuster}`);
                     currentModule = 'gamesManager';
                     resultsDiv.innerHTML = '<p>✅ GamesManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'onboardingManager') {
+                    await import(`../utilities/ui/onboardingManager.js?v=${cacheBuster}`);
+                    currentModule = 'onboardingManager';
+                    resultsDiv.innerHTML = '<p>✅ OnboardingManager loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -416,6 +422,8 @@
                 await runUndoRedoManagerTests(resultsDiv);
             } else if (currentModule === 'gamesManager') {
                 await runGamesManagerTests(resultsDiv);
+            } else if (currentModule === 'onboardingManager') {
+                await runOnboardingManagerTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -479,7 +487,8 @@
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' },
                 { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycle/cycleSwitcher.js' },
                 { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../utilities/ui/undoRedoManager.js' },
-                { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../utilities/ui/gamesManager.js' }
+                { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../utilities/ui/gamesManager.js' },
+                { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../utilities/ui/onboardingManager.js' }
             ];
 
             let allResults = [];
