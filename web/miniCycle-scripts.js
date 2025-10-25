@@ -346,6 +346,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./utilities/ui/onboardingManager.js'));
     console.log('✅ Onboarding Manager loaded');
 
+    // ✅ Load Modal Manager (UI coordination)
+    await import(withV('./utilities/ui/modalManager.js'));
+    console.log('✅ Modal Manager loaded');
+
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
@@ -588,12 +592,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     initializeThemesPanel();
     setupThemesPanel();
 
-    // ✅ UI Modal Setup (was missing after appInit refactoring)
+    // ✅ UI Setup (Modal Manager handles modal setup automatically)
     setupMainMenu();
     setupSettingsMenu();
-    setupAbout();
     setupUserManual();
-    setupFeedbackModal();
 
     // ✅ Expose functions needed by cycleLoader and cycleManager
     window.updateMainMenuHeader = updateMainMenuHeader;
@@ -2439,9 +2441,18 @@ function showConfirmationModal(options) {
 function showPromptModal(options) {
   return notifications.showPromptModal(options);
 }
-// ✅ Expose for cycleSwitcher module
+
+/**
+ * Close all modals - delegated to modalManager
+ */
+function closeAllModals() {
+  return window.modalManager?.closeAllModals();
+}
+
+// ✅ Expose globally for backward compatibility
 window.showConfirmationModal = showConfirmationModal;
 window.showPromptModal = showPromptModal;
+window.closeAllModals = closeAllModals;
 
 
   // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in utilities/reminders.js
@@ -3380,104 +3391,10 @@ function setupUploadMiniCycle() {
     button.addEventListener("click", button._importHandler);
   });
 }
-
-
-
-/**
- * Setupfeedbackmodal function.
- *
- * @returns {void}
- */
-
-function setupFeedbackModal() {
-    const feedbackModal = document.getElementById("feedback-modal");
-    const openFeedbackBtn = document.getElementById("open-feedback-modal");
-    const closeFeedbackBtn = document.querySelector(".close-feedback-modal");
-    const feedbackForm = document.getElementById("feedback-form");
-    const feedbackText = document.getElementById("feedback-text");
-    const submitButton = document.getElementById("submit-feedback");
-    const thankYouMessage = document.getElementById("thank-you-message");
-
-    // Open Modal
-    openFeedbackBtn.addEventListener("click", () => {
-        feedbackModal.style.display = "flex";
-        hideMainMenu();
-        thankYouMessage.style.display = "none"; // Hide thank you message if shown before
-    });
-
-    // Close Modal
-    closeFeedbackBtn.addEventListener("click", () => {
-        feedbackModal.style.display = "none";
-    });
-
-    // Close Modal on Outside Click
-    window.addEventListener("click", (event) => {
-        if (event.target === feedbackModal) {
-            feedbackModal.style.display = "none";
-        }
-    });
-
-    // Handle Form Submission via AJAX (Prevent Page Refresh)
-    feedbackForm.addEventListener("submit", function (event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Disable button while sending
-        submitButton.disabled = true;
-        submitButton.textContent = "Sending...";
-
-        // Prepare Form Data
-        const formData = new FormData(feedbackForm);
-
-        // Send request to Web3Forms API
-        fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show Thank You Message
-                thankYouMessage.style.display = "block";
-
-                // Clear Textarea
-                feedbackText.value = "";
-
-                // Hide Form After Submission
-                setTimeout(() => {
-                    thankYouMessage.style.display = "none";
-                    feedbackModal.style.display = "none"; // Close modal after a short delay
-                }, 2000);
-            } else {
-                showNotification("❌ Error sending feedback. Please try again.");
-            }
-        })
-        .catch(error => {
-            showNotification("❌ Network error. Please try again later.");
-        })
-        .finally(() => {
-            submitButton.disabled = false;
-            submitButton.textContent = "Submit";
-        });
-    });
-}
-
-
-document.getElementById("feedback-form").addEventListener("submit", (e) => {
-    const textarea = document.getElementById("feedback-text");
-    textarea.value = sanitizeInput(textarea.value);
-});
-
-
-function openFeedbackModal() {
-    const openFeedbackFooter = document.getElementById("open-feedback-modal-footer");
-        openFeedbackFooter.addEventListener("click", () => {
-              setupFeedbackModal();
-        feedbackModal.style.display = "flex";
-        thankYouMessage.style.display = "none"; // Hide thank you message if shown before
-    });
-}
-
-openFeedbackModal();
+// ✅ REMOVED: setupFeedbackModal() - Now handled by modalManager module
+// ✅ REMOVED: Duplicate feedback form sanitization listener - Now handled by modalManager module
+// ✅ REMOVED: openFeedbackModal() - Now handled by modalManager module
+// ✅ REMOVED: openFeedbackModal() call - Now handled automatically by modalManager module
 
 /**
  * Setupusermanual function.
@@ -3504,35 +3421,7 @@ function setupUserManual() {
 
 
 
-/**
- * Setupabout function.
- *
- * @returns {void}
- */
-
-function setupAbout() {
-    const aboutModal = document.getElementById("about-modal");
-    const openAboutBtn = document.getElementById("open-about-modal");
-    const closeAboutBtn = aboutModal.querySelector(".close-modal");
-
-    // Open Modal
-    openAboutBtn.addEventListener("click", () => {
-        aboutModal.style.display = "flex";
-    });
-
-    // Close Modal
-    closeAboutBtn.addEventListener("click", () => {
-        aboutModal.style.display = "none";
-    });
-
-    // Close Modal on Outside Click
-    window.addEventListener("click", (event) => {
-        if (event.target === aboutModal) {
-            aboutModal.style.display = "none";
-        }
-    });
-}
-
+// ✅ REMOVED: setupAbout() - Now handled by modalManager module
 
 /**
  * Assigncyclevariables function.
@@ -5904,89 +5793,8 @@ safeAddEventListener(document, "click", (event) => {
 
 
 
-// ✅ Modal Utility Functions
-function closeAllModals() {
-    // Close Schema 2.5 and legacy modals
-    const modalSelectors = [
-        "[data-modal]",
-        ".settings-modal",
-        ".mini-cycle-switch-modal",
-        "#feedback-modal",
-        "#about-modal", 
-        "#themes-modal",
-        "#games-panel",
-        "#reminders-modal",
-        "#testing-modal",
-        "#recurring-panel-overlay",
-        "#storage-viewer-overlay",
-        ".mini-modal-overlay",
-        ".miniCycle-overlay",
-        ".onboarding-modal"
-    ];
-    
-    modalSelectors.forEach(selector => {
-        document.querySelectorAll(selector).forEach(modal => {
-            // Special handling for different modal types
-            if (modal.dataset.modal !== undefined || modal.classList.contains("menu-container")) {
-                modal.classList.remove("visible");
-            } else if (modal.id === "recurring-panel-overlay" || modal.id === "storage-viewer-overlay") {
-                modal.classList.add("hidden");
-            } else {
-                modal.style.display = "none";
-            }
-        });
-    });
-
-    // Close task options
-    document.querySelectorAll(".task-options").forEach(action => {
-        action.style.opacity = "0";
-        action.style.visibility = "hidden";
-        action.style.pointerEvents = "none";
-    });
-
-    // Reset task states
-    document.querySelectorAll(".task").forEach(task => {
-        task.classList.remove("long-pressed", "draggable", "dragging", "selected");
-    });
-    
-    // Clear any active selections in recurring panels
-    document.querySelectorAll(".recurring-task-item.selected").forEach(item => {
-        item.classList.remove("selected");
-    });
-    
-    // Hide recurring settings panel if open
-    const recurringSettingsPanel = document.getElementById("recurring-settings-panel");
-    if (recurringSettingsPanel) {
-        recurringSettingsPanel.classList.add("hidden");
-    }
-}
-
-
-// ✅ ESC key listener to close modals and reset task UI
-safeAddEventListener(document, "keydown", (e) => {
-    if (e.key === "Escape") {
-        e.preventDefault();
-        closeAllModals();
-        
-        // Also clear any notification focus
-        const notifications = document.querySelectorAll(".notification");
-        notifications.forEach(notification => {
-            if (notification.querySelector(".close-btn")) {
-                notification.querySelector(".close-btn").click();
-            }
-        });
-        
-        // Return focus to task input
-        setTimeout(() => {
-            const taskInput = document.getElementById("taskInput");
-            if (taskInput && document.activeElement !== taskInput) {
-                taskInput.focus();
-            }
-        }, 100);
-    }
-});
-
-
+// ✅ REMOVED: closeAllModals() - Now handled by modalManager module
+// ✅ REMOVED: ESC key listener - Now handled by modalManager module
 
 // Update your existing HelpWindowManager class to show mode descriptions:
 class HelpWindowManager {
@@ -6331,9 +6139,9 @@ document.addEventListener("touchstart", () => {}, { passive: true });
       fixTaskValidationIssues();
       setupMainMenu();
       setupSettingsMenu();
-      setupAbout();
+      // ✅ REMOVED: setupAbout() - Now handled by modalManager module
       setupUserManual();
-      setupFeedbackModal();
+      // ✅ REMOVED: setupFeedbackModal() - Now handled by modalManager module
       // Add themes panel setup after other modal setups
       // setupTestingModal(); // Removed duplicate - already called in main boot function
       initializeThemesPanel();
