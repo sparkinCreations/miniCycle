@@ -975,6 +975,60 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without settings manager functionality');
         }
 
+        // ✅ Initialize Task Core (Phase 2 module)
+        console.log('🎯 Initializing task core module...');
+        try {
+            const { initTaskCore } = await import(withV('./utilities/task/taskCore.js'));
+
+            await initTaskCore({
+                // State management
+                AppState: window.AppState,
+
+                // Data operations
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                sanitizeInput: (text) => window.sanitizeInput?.(text),
+
+                // UI updates
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                refreshUIFromState: () => window.refreshUIFromState?.(),
+
+                // Undo system
+                captureStateSnapshot: (state) => window.captureStateSnapshot?.(state),
+                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+
+                // Modal system
+                showPromptModal: (config) => window.showPromptModal?.(config),
+                showConfirmationModal: (config) => window.showConfirmationModal?.(config),
+
+                // DOM helpers
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+
+                // Task DOM creation (temporary - these will be extracted to taskDOM.js later)
+                validateAndSanitizeTaskInput: (text) => window.validateAndSanitizeTaskInput?.(text),
+                loadTaskContext: (...args) => window.loadTaskContext?.(...args),
+                createOrUpdateTaskData: (ctx) => window.createOrUpdateTaskData?.(ctx),
+                createTaskDOMElements: (ctx, data) => window.createTaskDOMElements?.(ctx, data),
+                setupTaskInteractions: (els, ctx) => window.setupTaskInteractions?.(els, ctx),
+                finalizeTaskCreation: (els, ctx, opts) => window.finalizeTaskCreation?.(els, ctx, opts),
+
+                // Auto-save
+                autoSave: () => window.autoSave?.()
+            });
+
+            console.log('✅ Task core module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task core module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Task core feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without task core functionality');
+        }
+
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();
@@ -2697,6 +2751,9 @@ function validateAndSanitizeTaskInput(taskText) {
     return taskTextTrimmed;
 }
 
+// ✅ Export for taskCore module
+window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
+
 // ✅ 2. Data Context Loading and Validation
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     console.log('📝 Adding task (Schema 2.5 only)...');
@@ -2737,6 +2794,9 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false
         ...taskOptions
     };
 }
+
+// ✅ Export for taskCore module
+window.loadTaskContext = loadTaskContext;
 
 // ✅ 3. Task Data Creation and Storage
 function createOrUpdateTaskData(taskContext) {
@@ -2804,6 +2864,9 @@ function createOrUpdateTaskData(taskContext) {
     return existingTask;
 }
 
+// ✅ Export for taskCore module
+window.createOrUpdateTaskData = createOrUpdateTaskData;
+
 // ✅ 4. Recurring Template Creation (extracted from task data creation)
 // ✅ REMOVED: createRecurringTemplate - now handled by recurringCore/recurringPanel modules
 
@@ -2852,6 +2915,9 @@ function createTaskDOMElements(taskContext, taskData) {
         threeDotsButton
     };
 }
+
+// ✅ Export for taskCore module
+window.createTaskDOMElements = createTaskDOMElements;
 
 // ✅ 6. Main Task Element Creation
 function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
@@ -3295,6 +3361,9 @@ function setupTaskInteractions(taskElements, taskContext) {
     setupDueDateButtonInteraction(buttonContainer, dueDateInput);
 }
 
+// ✅ Export for taskCore module
+window.setupTaskInteractions = setupTaskInteractions;
+
 // ✅ 22. Task Click Interaction Setup
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
     taskItem.addEventListener("click", (event) => {
@@ -3372,6 +3441,9 @@ function finalizeTaskCreation(taskElements, taskContext, options) {
     // Setup final interactions
     setupFinalTaskInteractions(taskItem, isLoading);
 }
+
+// ✅ Export for taskCore module
+window.finalizeTaskCreation = finalizeTaskCreation;
 
 // ✅ 28. Scroll to New Task
 function scrollToNewTask(taskList) {
@@ -3780,204 +3852,32 @@ function handleTaskButtonClick(event) {
         console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
         return; // Let the new event delegation handle this
     } else if (button.classList.contains("edit-btn")) {
-        const taskLabel = taskItem.querySelector("span");
-        const oldText = taskLabel.textContent.trim();
-
-        showPromptModal({
-            title: "Edit Task Name",
-            message: "Rename this task:",
-            placeholder: "Enter new task name",
-            defaultValue: oldText,
-            confirmText: "Save",
-            cancelText: "Cancel",
-            required: true,
-            callback: async (newText) => {
-                if (newText && newText.trim() !== oldText) {
-                    const cleanText = sanitizeInput(newText.trim());
-                    
-                    // ✅ ADD: Capture snapshot BEFORE changing text
-                    if (window.AppState?.isReady?.()) {
-                        const currentState = window.AppState.get();
-                        if (currentState) captureStateSnapshot(currentState);
-                    }
-                    
-                    taskLabel.textContent = cleanText;
-
-                    const taskId = taskItem.dataset.taskId;
-
-                    // ✅ Use AppState.update so undo sees the change
-                    if (window.AppState?.isReady?.()) {
-                        await window.AppState.update(state => {
-                            const cid = state.appState.activeCycleId;
-                            const cycle = state.data.cycles[cid];
-                            const t = cycle?.tasks?.find(t => t.id === taskId);
-                            if (t) t.text = cleanText;
-                        }, true);
-                    } else {
-                        // ...existing localStorage fallback...
-                        const schemaData = loadMiniCycleData();
-                        if (!schemaData) return;
-                        const { cycles, activeCycle } = schemaData;
-                        const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                        if (task) {
-                            task.text = cleanText;
-                            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                            fullSchemaData.metadata.lastModified = Date.now();
-                            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                        }
-                    }
-
-                    showNotification(`Task renamed to "${cleanText}"`, "info", 1500);
-                    updateStatsPanel();
-                    updateProgressBar();
-                    checkCompleteAllButton();
-                    shouldSave = false;
-                }
-            }
-        });
+        // ✅ Use taskCore module for editing
+        if (window.taskCore) {
+            window.taskCore.editTask(taskItem);
+        } else {
+            console.warn('⚠️ TaskCore not available, edit operation skipped');
+            showNotification?.('Edit feature temporarily unavailable', 'warning');
+        }
+        shouldSave = false;
     } else if (button.classList.contains("delete-btn")) {
-        const taskId = taskItem.dataset.taskId;
-        const taskName = taskItem.querySelector(".task-text")?.textContent || "Task";
-
-        showConfirmationModal({
-            title: "Delete Task",
-            message: `Are you sure you want to delete "${taskName}"?`,
-            confirmText: "Delete",
-            cancelText: "Cancel",
-            callback: async (confirmDelete) => {
-                if (!confirmDelete) {
-                    showNotification(`"${taskName}" has not been deleted.`, "show", 2500);
-                    return;
-                }
-
-                // ✅ Enable undo system on first user interaction
-                enableUndoSystemOnFirstInteraction();
-
-                // ✅ ADD: Capture snapshot BEFORE deletion
-                if (window.AppState?.isReady?.()) {
-                    const currentState = window.AppState.get();
-                    if (currentState) captureStateSnapshot(currentState);
-                }
-
-                // ✅ Use AppState.update so undo sees the change
-                if (window.AppState?.isReady?.()) {
-                    await window.AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
-                        if (!cycle) return;
-                        cycle.tasks = (cycle.tasks || []).filter(t => t.id !== taskId);
-                        if (cycle.recurringTemplates?.[taskId]) {
-                            delete cycle.recurringTemplates[taskId];
-                        }
-                    }, true);
-                } else {
-                    // ...existing localStorage fallback...
-                    const schemaData = loadMiniCycleData();
-                    if (!schemaData) return;
-                    const { cycles, activeCycle } = schemaData;
-                    const currentCycle = cycles[activeCycle];
-                    if (currentCycle) {
-                        currentCycle.tasks = currentCycle.tasks.filter(task => task.id !== taskId);
-                        if (currentCycle.recurringTemplates?.[taskId]) {
-                            delete currentCycle.recurringTemplates[taskId];
-                        }
-                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                        fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                    }
-                }
-
-                taskItem.remove();
-                updateProgressBar();
-                updateStatsPanel();
-                checkCompleteAllButton();
-                toggleArrowVisibility();
-
-                showNotification(`"${taskName}" has been deleted.`, "info", 2000);
-            }
-        });
-
+        // ✅ Use taskCore module for deletion
+        if (window.taskCore) {
+            window.taskCore.deleteTask(taskItem);
+            // Note: deleteTask handles arrow visibility internally via updateProgressBar callback
+        } else {
+            console.warn('⚠️ TaskCore not available, delete operation skipped');
+            showNotification?.('Delete feature temporarily unavailable', 'warning');
+        }
         shouldSave = false;
     } else if (button.classList.contains("priority-btn")) {
-        // ✅ Enable undo system on first user interaction
-        enableUndoSystemOnFirstInteraction();
-
-        const taskId = taskItem.dataset.taskId;
-
-        // ✅ Read fresh state from AppState to determine current priority
-        const currentState = window.AppState?.get();
-        if (!currentState) {
-            console.error('❌ AppState not available for priority toggle');
-            return;
-        }
-
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
-        const task = freshCycle?.tasks?.find(t => t.id === taskId);
-
-        if (!task) {
-            console.warn('⚠️ Task not found for priority toggle:', taskId);
-            return;
-        }
-
-        // ✅ Toggle based on AppState, not DOM
-        const isCurrentlyHighPriority = task.highPriority === true;
-        const newHighPriority = !isCurrentlyHighPriority;
-
-        console.log('⭐ Toggling priority state:', {
-            taskId: taskId,
-            wasHighPriority: isCurrentlyHighPriority,
-            willBeHighPriority: newHighPriority
-        });
-
-        // ✅ Capture snapshot BEFORE changing priority
-        if (window.AppState?.isReady?.()) {
-            captureStateSnapshot(currentState);
-        }
-
-        // Update DOM based on calculated state
-        taskItem.classList.toggle("high-priority", newHighPriority);
-        button.classList.toggle("active", newHighPriority);
-        button.classList.toggle("priority-active", newHighPriority);
-        button.setAttribute("aria-pressed", newHighPriority.toString());
-
-        // ✅ Use AppState.update so undo sees the change
-        if (window.AppState?.isReady?.()) {
-            window.AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
-                const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) t.highPriority = newHighPriority;
-            }, true);
-
-            // ✅ Show notification after updating state
-            showNotification(
-                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
-                newHighPriority ? "error" : "info",
-                1500
-            );
+        // ✅ Use taskCore module for priority toggle
+        if (window.taskCore) {
+            window.taskCore.toggleTaskPriority(taskItem);
         } else {
-            // ...existing localStorage fallback...
-            const schemaData = loadMiniCycleData();
-            if (!schemaData) return;
-            const { cycles, activeCycle } = schemaData;
-            const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-            if (task) {
-                task.highPriority = taskItem.classList.contains("high-priority");
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                showNotification(
-                    `Priority ${task.highPriority ? "enabled" : "removed"}.`,
-                    task.highPriority ? "error" : "info",
-                    1500
-                );
-            }
+            console.warn('⚠️ TaskCore not available, priority toggle skipped');
+            showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
         }
-
         shouldSave = false;
     }
 
