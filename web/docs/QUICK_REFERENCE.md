@@ -1,7 +1,7 @@
 # miniCycle Developer - Quick Reference
 
 **Version**: 1.330 | **Service Worker**: v109 | **Schema**: 2.5
-**Last Updated**: October 25, 2025
+**Last Updated**: October 26, 2025
 
 ---
 
@@ -55,8 +55,8 @@ const morningRoutine = {
 
 | Metric | Value |
 |--------|-------|
-| Main Script | 5,095 lines (down 67.5%) ✅ |
-| Modules | 28 modules complete! |
+| Main Script | ~3,950 lines (down 74.8%) ✅ |
+| Modules | 30 modules complete! 🎉 |
 | Schema Version | 2.5 |
 | App Version | 1.330 |
 | Browser Support | Modern + ES5 |
@@ -74,19 +74,23 @@ PWA: Service Worker v109, Cache-first, Offline
 ```
 web/
 ├── miniCycle.html              # Main entry
-├── miniCycle-scripts.js        # Core app (5.1K lines) - 67.5% reduction! ✅
+├── miniCycle-scripts.js        # Core app (~3.9K lines) - 74.8% reduction! ✅
 ├── miniCycle-styles.css        # Styles
 ├── service-worker.js           # PWA (v109)
-├── utilities/                  # 28 modules (18K lines extracted)
+├── utilities/                  # 30 modules (19.6K lines extracted)
 │   ├── state.js               # Centralized state
 │   ├── notifications.js       # Notification system
 │   ├── statsPanel.js          # Stats & achievements
 │   ├── recurringCore.js       # Recurring logic
 │   ├── cycleLoader.js         # Data loading
 │   ├── globalUtils.js         # Utilities
+│   ├── task/                  # Task modules (75% COMPLETE!)
+│   │   ├── taskDOM.js         # DOM creation (NEW Oct 26) 🎉
+│   │   ├── taskCore.js        # CRUD operations
+│   │   └── dragDropManager.js # Drag & drop
 │   ├── ui/                    # UI modules (ALL COMPLETE!)
-│   │   ├── settingsManager.js # Settings, import/export (NEW Oct 25)
-│   │   ├── menuManager.js     # Main menu operations (NEW Oct 25)
+│   │   ├── settingsManager.js # Settings, import/export
+│   │   ├── menuManager.js     # Main menu operations
 │   │   ├── undoRedoManager.js # Undo/redo system
 │   │   ├── modalManager.js    # Modal management
 │   │   ├── onboardingManager.js # First-time setup
@@ -695,10 +699,12 @@ export function runMyModuleTests(resultsDiv) {
 | GamesManager | 23 | ✅ |
 | OnboardingManager | 38 | ✅ |
 | ModalManager | 50 | ✅ |
-| UndoRedoManager | 34 | ✅ |
-| MenuManager | Pending | 🎯 |
-| SettingsManager | Pending | 🎯 |
-| **Total** | **758/768** | **99%** |
+| UndoRedoManager | 52 | ✅ |
+| MenuManager | 29 | ✅ |
+| SettingsManager | 33 | ✅ |
+| TaskCore | 34 | ✅ |
+| TaskDOM | 43 | ✅ 🎉 |
+| **Total** | **860/872** | **99%** |
 
 ---
 
@@ -741,7 +747,7 @@ window.exportDebugData()                 // Debug package
 6. **Schema 2.5** - Current data format with auto-migration
 7. **PWA** - Service Worker v109, offline-first, cache strategy
 8. **No Build** - Pure vanilla JS, edit and refresh
-9. **28 Modules** - 67.5% reduction achieved! UI & Cycle systems complete!
+9. **30 Modules** - 74.8% reduction achieved! Task, UI & Cycle systems complete!
 
 ---
 
@@ -755,10 +761,12 @@ window.exportDebugData()                 // Debug package
 - **user-manual.html** - End-user documentation
 
 ### Code Entry Points
-- **miniCycle-scripts.js** - Start here for main app logic (~5,095 lines)
+- **miniCycle-scripts.js** - Start here for main app logic (~3,950 lines)
+- **utilities/task/taskDOM.js** - Task DOM & rendering (796 lines) 🎉 NEW!
+- **utilities/task/taskCore.js** - Task CRUD operations (778 lines)
 - **utilities/state.js** - AppState implementation (415 lines)
-- **utilities/ui/settingsManager.js** - Settings, import/export (952 lines) - NEW!
-- **utilities/ui/menuManager.js** - Main menu operations (546 lines) - NEW!
+- **utilities/ui/settingsManager.js** - Settings, import/export (952 lines)
+- **utilities/ui/menuManager.js** - Main menu operations (546 lines)
 - **utilities/ui/modalManager.js** - Modal management (383 lines)
 - **utilities/cycle/cycleLoader.js** - Data loading (273 lines)
 - **utilities/recurringCore.js** - Recurring logic (927 lines)
@@ -785,6 +793,8 @@ window.exportDebugData()                 // Debug package
 
 ---
 
-**Version**: 1.330 | **Last Updated**: October 25, 2025
+**Version**: 1.330 | **Last Updated**: October 26, 2025
 **Maintained By**: sparkinCreations
 **Questions?** Check console, use testing modal, review code comments!
+
+**Latest Achievement**: taskDOM.js extracted - 43/43 tests passing! 🎉
