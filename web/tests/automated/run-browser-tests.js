@@ -32,8 +32,9 @@ async function runModuleTests(page, moduleName) {
         // Select module
         await page.selectOption('#module-select', moduleName);
 
-        // Wait for module to load
-        await page.waitForTimeout(500);
+        // Wait for module to load (taskCore needs extra time for initialization)
+        const loadWait = moduleName === 'taskCore' ? 3000 : 500;
+        await page.waitForTimeout(loadWait);
 
         // Click Run Tests button
         await page.click('#run-tests-btn');

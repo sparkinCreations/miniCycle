@@ -17,7 +17,7 @@ export async function runTaskCoreTests(resultsDiv) {
     // Check if class is available
     if (!TaskCore) {
         resultsDiv.innerHTML += '<div class="result fail">❌ TaskCore class not found. Make sure the module is properly loaded.</div>';
-        resultsDiv.innerHTML += '<h3>Summary: Results: 0/1 tests passed</h3>';
+        resultsDiv.innerHTML += '<h3>Results: 0/1 tests passed (0%)</h3>';
         return { passed: 0, total: 1 };
     }
 
