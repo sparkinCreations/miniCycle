@@ -18,52 +18,6 @@
  */
 
 
-// ⚠️ VS Code Preview Detection
-// Check if running in VS Code's "Show Preview" which doesn't support ES6 modules
-(function checkVSCodePreview() {
-  const isFileProtocol = window.location.protocol === 'file:';
-  const isNotLocalServer = !window.location.href.includes('localhost') &&
-                           !window.location.href.includes('127.0.0.1');
-
-  if (isFileProtocol && isNotLocalServer) {
-    // Running from file:// protocol (likely VS Code Show Preview)
-    const appRoot = document.getElementById('app-root');
-    if (appRoot) {
-      appRoot.innerHTML = `
-        <div style="max-width: 600px; margin: 50px auto; padding: 30px;
-                    font-family: 'Inter', Arial, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-                    color: white;">
-          <h1 style="margin: 0 0 20px 0; font-size: 28px;">⚠️ VS Code Preview Not Supported</h1>
-          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-            miniCycle uses <strong>ES6 modules</strong> which require a web server to function properly.
-            VS Code's basic "Show Preview" feature doesn't support module loading from the <code>file://</code> protocol.
-          </p>
-          <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 15px 0; font-size: 20px;">✅ To use miniCycle:</h2>
-            <ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
-              <li>Install the <strong>"Live Server"</strong> extension in VS Code</li>
-              <li>Right-click <code>miniCycle.html</code></li>
-              <li>Select <strong>"Open with Live Server"</strong></li>
-            </ol>
-          </div>
-          <p style="font-size: 14px; margin: 0; opacity: 0.9;">
-            <strong>Alternative:</strong> Run <code>python3 -m http.server 8000</code> in the terminal,
-            then open <a href="http://localhost:8000/miniCycle.html"
-                         style="color: #fff; text-decoration: underline;">
-              http://localhost:8000/miniCycle.html
-            </a>
-          </p>
-        </div>
-      `;
-    }
-    // Stop script execution
-    throw new Error('VS Code Show Preview not supported - ES6 modules require a web server');
-  }
-})();
-
-
 
 
 
@@ -2626,6 +2580,9 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
     updateStatsPanel();
 }
 
+// Export to window for taskCore module
+window.incrementCycleCount = incrementCycleCount;
+
 function handleMilestoneUnlocks(miniCycleName, cycleCount) {
     console.log('🏆 Handling milestone unlocks (state-based)...');
     
@@ -2680,8 +2637,8 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
 function showCompletionAnimation() {
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-complete-animation");
-  //  animation.innerHTML = "✅ miniCycle Completed!"; 
-  animation.innerHTML = "✔"; 
+  //  animation.innerHTML = "✅ miniCycle Completed!";
+  animation.innerHTML = "✔";
 
     document.body.appendChild(animation);
 
@@ -2690,6 +2647,9 @@ function showCompletionAnimation() {
         animation.remove();
     }, 1500);
 }
+
+// Export to window for taskCore module
+window.showCompletionAnimation = showCompletionAnimation;
 
 /**
  * Checkformilestone function.
@@ -4618,11 +4578,12 @@ getCurrentStatusMessage() {
     }
 }
 
-// Initialize help window manager (keep this part the same)
+// Initialize help window manager and export to window for taskCore module
 let helpWindowManager;
 
 setTimeout(() => {
     helpWindowManager = new HelpWindowManager();
+    window.helpWindowManager = helpWindowManager; // Export to window
 }, 500);
 
 /**

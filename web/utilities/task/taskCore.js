@@ -104,6 +104,36 @@ export class TaskCore {
         }
     }
 
+    /**
+     * Wait for specific global functions to be available
+     * Used by resetTasks to ensure UI functions exist before calling them
+     */
+    async waitForUIFunctions(maxWaitMs = 2000) {
+        const startTime = Date.now();
+        const checkInterval = 50; // Check every 50ms
+
+        while (Date.now() - startTime < maxWaitMs) {
+            const hasIncrementCycleCount = typeof window.incrementCycleCount === 'function';
+            const hasHelpWindowManager = window.helpWindowManager && typeof window.helpWindowManager.showCycleCompleteMessage === 'function';
+            const hasShowCompletionAnimation = typeof window.showCompletionAnimation === 'function';
+
+            if (hasIncrementCycleCount && hasHelpWindowManager && hasShowCompletionAnimation) {
+                console.log('✅ All UI functions available for resetTasks');
+                return true;
+            }
+
+            // Wait before checking again
+            await new Promise(resolve => setTimeout(resolve, checkInterval));
+        }
+
+        console.warn('⚠️ Timeout waiting for UI functions:', {
+            incrementCycleCount: typeof window.incrementCycleCount === 'function',
+            helpWindowManager: window.helpWindowManager && typeof window.helpWindowManager.showCycleCompleteMessage === 'function',
+            showCompletionAnimation: typeof window.showCompletionAnimation === 'function'
+        });
+        return false;
+    }
+
     fallbackNotification(message, type = 'info') {
         console.log(`[TaskCore] ${message}`);
     }
@@ -542,19 +572,40 @@ export class TaskCore {
 
             console.log('🔄 Resetting tasks (Schema 2.5 only)...');
 
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for resetTasks');
+            // Wait for critical UI functions to be available
+            console.log('⏳ Waiting for UI functions (helpWindowManager, incrementCycleCount, etc.)...');
+            await this.waitForUIFunctions();
+
+            let cycles, activeCycle, cycleData;
+            const taskList = this.deps.querySelector("#taskList");
+            const taskElements = taskList ? [...taskList.querySelectorAll(".task")] : [];
+            const progressBar = this.deps.querySelector("#progressBar");
+
+            // Validate DOM elements
+            if (!taskList) {
+                console.error('❌ Task list element not found');
                 window.AppGlobalState.isResetting = false;
-                throw new Error('Schema 2.5 data not found');
+                return;
             }
 
-            const cycles = schemaData.data?.cycles || {};
-            const activeCycle = schemaData.appState?.activeCycleId;
-            const cycleData = cycles[activeCycle];
-            const taskList = this.deps.querySelector("#taskList");
-            const taskElements = [...taskList.querySelectorAll(".task")];
-            const progressBar = this.deps.querySelector("#progress");
+            // Try AppState first, fall back to localStorage
+            if (this.deps.AppState?.isReady?.()) {
+                const state = this.deps.AppState.get();
+                cycles = state?.data?.cycles || {};
+                activeCycle = state?.appState?.activeCycleId;
+                cycleData = cycles[activeCycle];
+            } else {
+                // Fallback to localStorage
+                const schemaData = this.deps.loadMiniCycleData();
+                if (!schemaData) {
+                    console.error('❌ Schema 2.5 data required for resetTasks');
+                    window.AppGlobalState.isResetting = false;
+                    throw new Error('Schema 2.5 data not found');
+                }
+                cycles = schemaData.data?.cycles || {};
+                activeCycle = schemaData.appState?.activeCycleId;
+                cycleData = cycles[activeCycle];
+            }
 
             if (!activeCycle || !cycleData) {
                 console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
@@ -565,8 +616,10 @@ export class TaskCore {
             console.log('📊 Resetting tasks for cycle:', activeCycle);
 
             // Animation: Show progress bar becoming full first
-            progressBar.style.width = "100%";
-            progressBar.style.transition = "width 0.2s ease-out";
+            if (progressBar) {
+                progressBar.style.width = "100%";
+                progressBar.style.transition = "width 0.2s ease-out";
+            }
 
             // Wait for animation, then reset tasks
             setTimeout(() => {
@@ -594,27 +647,25 @@ export class TaskCore {
                     }
                 });
 
-                // Increment cycle count
-                if (typeof window.incrementCycleCount === 'function') {
-                    window.incrementCycleCount(activeCycle, cycles);
-                }
+                // Increment cycle count (this calls showCompletionAnimation internally)
+                window.incrementCycleCount(activeCycle, cycles);
 
                 // Animate progress bar reset
-                progressBar.style.transition = "width 0.3s ease-in";
-                progressBar.style.width = "0%";
+                if (progressBar) {
+                    progressBar.style.transition = "width 0.3s ease-in";
+                    progressBar.style.width = "0%";
 
-                setTimeout(() => {
-                    progressBar.style.transition = "";
-                }, 50);
+                    setTimeout(() => {
+                        progressBar.style.transition = "";
+                    }, 50);
+                }
+
+                // Show cycle completion message
+                window.helpWindowManager.showCycleCompleteMessage();
 
                 console.log('✅ Task reset animation completed');
 
             }, 100);
-
-            // Show cycle completion message
-            if (window.helpWindowManager) {
-                window.helpWindowManager.showCycleCompleteMessage();
-            }
 
             // Release reset lock
             setTimeout(() => {
@@ -647,16 +698,26 @@ export class TaskCore {
         try {
             console.log('✔️ Handling complete all tasks (Schema 2.5 only)...');
 
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
-                throw new Error('Schema 2.5 data not found');
-            }
-
-            const cycles = schemaData.data?.cycles || {};
-            const activeCycle = schemaData.appState?.activeCycleId;
-            const cycleData = cycles[activeCycle];
+            let cycles, activeCycle, cycleData;
             const taskList = this.deps.querySelector("#taskList");
+
+            // Try AppState first, fall back to localStorage
+            if (this.deps.AppState?.isReady?.()) {
+                const state = this.deps.AppState.get();
+                cycles = state?.data?.cycles || {};
+                activeCycle = state?.appState?.activeCycleId;
+                cycleData = cycles[activeCycle];
+            } else {
+                // Fallback to localStorage
+                const schemaData = this.deps.loadMiniCycleData();
+                if (!schemaData) {
+                    console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
+                    throw new Error('Schema 2.5 data not found');
+                }
+                cycles = schemaData.data?.cycles || {};
+                activeCycle = schemaData.appState?.activeCycleId;
+                cycleData = cycles[activeCycle];
+            }
 
             if (!activeCycle || !cycleData) {
                 console.warn('⚠️ No active cycle found for complete all tasks');
@@ -720,17 +781,29 @@ export class TaskCore {
 
                 console.log('🗑️ Deleting checked tasks from Schema 2.5');
 
-                checkedTasks.forEach(checkbox => {
+                const taskIdsToDelete = Array.from(checkedTasks).map(checkbox => {
                     const taskId = checkbox.closest(".task").dataset.taskId;
-                    cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
                     checkbox.closest(".task").remove();
+                    return taskId;
                 });
 
-                // Update Schema 2.5 data
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.data.cycles[activeCycle] = cycleData;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                // Update data (AppState or localStorage)
+                if (this.deps.AppState?.isReady?.()) {
+                    await this.deps.AppState.update(state => {
+                        const cid = state.appState.activeCycleId;
+                        const cycle = state.data.cycles[cid];
+                        if (cycle?.tasks) {
+                            cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
+                        }
+                    }, true);
+                } else {
+                    // Fallback to localStorage
+                    cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
+                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    fullSchemaData.data.cycles[activeCycle] = cycleData;
+                    fullSchemaData.metadata.lastModified = Date.now();
+                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                }
 
             } else {
                 console.log('✔️ Marking all tasks as complete');
