@@ -1,8 +1,8 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.330
+**Version**: 1.333
 **Service Worker**: v82
-**Last Updated**: October 25, 2025
+**Last Updated**: October 26, 2025
 **Target Audience**: Developers, Contributors, Technical Partners
 
 ---
@@ -107,10 +107,10 @@ This is fundamentally different from traditional to-do apps where completed task
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Main Script** | 5,095 lines | Down from 15,677 (67.5% reduction) ✅ |
-| **Modules** | 28 modules | Modular architecture complete! |
+| **Main Script** | 4,730 lines | Down from 15,677 (69.8% reduction) ✅ |
+| **Modules** | 29 modules | TaskCore extracted! |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.330 | Stable production release |
+| **App Version** | 1.333 | Stable production release |
 | **SW Cache** | v109 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
 
@@ -141,11 +141,11 @@ PWA:
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-scripts.js             # Core app (5,095 lines) - 67.5% reduction! ✅
+├── miniCycle-scripts.js             # Core app (4,730 lines) - 69.8% reduction! ✅
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker (v109)
 │
-├── utilities/                        # 28 modular components (18,016 lines extracted)
+├── utilities/                        # 29 modular components (18,794 lines extracted)
 │   ├── state.js                     # ✅ Centralized state (415 lines)
 │   ├── notifications.js             # ✅ Notifications (1,036 lines)
 │   ├── statsPanel.js                # ✅ Stats panel (1,047 lines)
@@ -157,6 +157,7 @@ web/
 │   ├── consoleCapture.js            # ✅ Debug logging (415 lines)
 │   ├── testing-modal.js             # ✅ Testing UI (2,852 lines)
 │   ├── task/
+│   │   ├── taskCore.js              # ✅ Task CRUD & batch ops (778 lines) - NEW Oct 26
 │   │   └── dragDropManager.js       # ✅ Drag & drop (695 lines)
 │   ├── cycle/
 │   │   ├── cycleLoader.js           # ✅ Data loading (273 lines)
@@ -165,8 +166,8 @@ web/
 │   │   ├── modeManager.js           # ✅ Mode management (380 lines)
 │   │   └── migrationManager.js      # ✅ Data migration (850 lines)
 │   ├── ui/
-│   │   ├── settingsManager.js       # ✅ Settings, import/export (952 lines) - NEW Oct 25
-│   │   ├── menuManager.js           # ✅ Main menu operations (546 lines) - NEW Oct 25
+│   │   ├── settingsManager.js       # ✅ Settings, import/export (952 lines) - Oct 25
+│   │   ├── menuManager.js           # ✅ Main menu operations (546 lines) - Oct 25
 │   │   ├── undoRedoManager.js       # ✅ Undo/redo system (463 lines)
 │   │   ├── modalManager.js          # ✅ Modal management (383 lines)
 │   │   ├── onboardingManager.js     # ✅ First-time setup (291 lines)
@@ -2776,10 +2777,11 @@ Current module test coverage:
 | OnboardingManager | `onboardingManager.tests.js` | 38 | ✅ 100% |
 | ModalManager | `modalManager.tests.js` | 50 | ✅ 100% |
 | UndoRedoManager | `undoRedoManager.tests.js` | 34 | ✅ 100% |
+| TaskCore | `taskCore.tests.js` | 34 | ✅ 100% |
 
-**Total: 768 tests across 21 modules**
+**Total: 802 tests across 22 modules**
 
-**Overall Pass Rate: 99% (758/768 tests passing)**
+**Overall Pass Rate: 99% (792/802 tests passing)**
 
 **Note on ConsoleCapture (88%):** The 4 failing tests are due to test environment limitations, not production bugs. These failures occur because:
 - Test runner already overrides console methods
@@ -2787,6 +2789,7 @@ Current module test coverage:
 - State contamination from test execution order
 
 **Recent Additions (October 2025):**
+- ✅ TaskCore (34 tests) - Task CRUD and batch operations (Oct 26)
 - ✅ UndoRedoManager (34 tests) - Undo/redo system with state snapshots
 - ✅ ModalManager (50 tests) - Complete modal management system
 - ✅ OnboardingManager (38 tests) - First-time user experience
@@ -2847,13 +2850,14 @@ web/
 
 ---
 
-**Version**: 1.330
-**Last Updated**: October 25, 2025
+**Version**: 1.333
+**Last Updated**: October 26, 2025
 **Maintained By**: sparkinCreations
 
 **Recent Major Updates:**
+- ✅ TaskCore Module COMPLETE (778 lines, 34/34 tests passing) - Oct 26
 - ✅ UI Coordination System COMPLETE (6 modules, 2,830 lines)
 - ✅ Cycle System COMPLETE (5 modules, 2,611 lines)
-- ✅ Main script reduced to 5,095 lines (67.5% reduction achieved!)
+- ✅ Main script reduced to 4,730 lines (69.8% reduction achieved!)
 
 **Questions?** Check console for debug info, use built-in testing modal, or review code comments!
