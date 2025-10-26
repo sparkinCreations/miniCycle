@@ -230,9 +230,10 @@
             <option value="menuManager">MenuManager</option>
             <option value="settingsManager">SettingsManager</option>
             <option value="taskCore">TaskCore</option>
+            <option value="taskDOM">TaskDOM</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (25 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (26 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -275,6 +276,7 @@
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
         const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
         const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
+        const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -406,6 +408,10 @@
                     });
                     currentModule = 'taskCore';
                     resultsDiv.innerHTML = '<p>✅ TaskCore loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskDOM') {
+                    await import(`../utilities/task/taskDOM.js?v=${cacheBuster}`);
+                    currentModule = 'taskDOM';
+                    resultsDiv.innerHTML = '<p>✅ TaskDOM loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -469,6 +475,8 @@
                 await runSettingsManagerTests(resultsDiv);
             } else if (currentModule === 'taskCore') {
                 await runTaskCoreTests(resultsDiv);
+            } else if (currentModule === 'taskDOM') {
+                await runTaskDOMTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -537,7 +545,8 @@
                 { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../utilities/ui/gamesManager.js' },
                 { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../utilities/ui/onboardingManager.js' },
                 { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../utilities/ui/modalManager.js' },
-                { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../utilities/task/taskCore.js' }
+                { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../utilities/task/taskCore.js' },
+                { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../utilities/task/taskDOM.js' }
             ];
 
             let allResults = [];
