@@ -431,14 +431,312 @@ export class TaskCore {
     }
 
     // ============================================================================
-    // PLACEHOLDER METHODS (to be extracted next)
+    // TASK COMPLETION & STATE MANAGEMENT
     // ============================================================================
 
-    // These will be extracted from main script in next steps:
-    // - saveCurrentTaskOrder()
-    // - resetTasks()
-    // - handleCompleteAllTasks()
-    // - toggleTaskCompletion()
+    /**
+     * Handle task completion checkbox change
+     * @param {HTMLInputElement} checkbox - The checkbox element
+     */
+    async handleTaskCompletionChange(checkbox) {
+        try {
+            const taskItem = checkbox.closest(".task");
+
+            if (checkbox.checked) {
+                taskItem.classList.remove("overdue-task");
+            } else {
+                // Check if task is overdue
+                if (typeof window.checkOverdueTasks === 'function') {
+                    window.checkOverdueTasks(taskItem);
+                }
+            }
+
+            // Update help window if available
+            if (window.helpWindowManager && typeof window.helpWindowManager.updateConstantMessage === 'function') {
+                setTimeout(() => {
+                    window.helpWindowManager.updateConstantMessage();
+                }, 100);
+            }
+        } catch (error) {
+            console.warn('⚠️ Task completion change failed:', error);
+        }
+    }
+
+    /**
+     * Save current task order after drag & drop
+     */
+    async saveCurrentTaskOrder() {
+        try {
+            await appInit.waitForCore();
+
+            const taskElements = this.deps.querySelectorAll("#taskList .task");
+            const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
+
+            // Use AppState to trigger undo snapshots
+            if (this.deps.AppState?.isReady?.()) {
+                await this.deps.AppState.update(state => {
+                    const cid = state.appState.activeCycleId;
+                    const cycle = state.data.cycles[cid];
+                    if (!cycle?.tasks) return;
+
+                    // Reorder tasks based on DOM order
+                    const reorderedTasks = newOrderIds.map(id =>
+                        cycle.tasks.find(task => task.id === id)
+                    ).filter(Boolean);
+
+                    cycle.tasks = reorderedTasks;
+                }, true);
+                return;
+            }
+
+            // Fallback to localStorage
+            const schemaData = this.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Schema 2.5 data required for saveCurrentTaskOrder');
+                return;
+            }
+            const cycles = schemaData.data?.cycles || {};
+            const activeCycle = schemaData.appState?.activeCycleId;
+            const currentCycle = cycles[activeCycle];
+            if (!currentCycle || !Array.isArray(currentCycle.tasks)) return;
+
+            const reorderedTasks = newOrderIds.map(id =>
+                currentCycle.tasks.find(task => task.id === id)
+            ).filter(Boolean);
+
+            currentCycle.tasks = reorderedTasks;
+
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            fullSchemaData.data.cycles[activeCycle] = currentCycle;
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+
+        } catch (error) {
+            console.warn('⚠️ Save task order failed:', error);
+        }
+    }
+
+    /**
+     * Reset all tasks (cycle completion)
+     */
+    async resetTasks() {
+        try {
+            if (window.AppGlobalState?.isResetting) return;
+            window.AppGlobalState.isResetting = true;
+
+            console.log('🔄 Resetting tasks (Schema 2.5 only)...');
+
+            const schemaData = this.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Schema 2.5 data required for resetTasks');
+                window.AppGlobalState.isResetting = false;
+                throw new Error('Schema 2.5 data not found');
+            }
+
+            const cycles = schemaData.data?.cycles || {};
+            const activeCycle = schemaData.appState?.activeCycleId;
+            const cycleData = cycles[activeCycle];
+            const taskList = this.deps.querySelector("#taskList");
+            const taskElements = [...taskList.querySelectorAll(".task")];
+            const progressBar = this.deps.querySelector("#progress");
+
+            if (!activeCycle || !cycleData) {
+                console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
+                window.AppGlobalState.isResetting = false;
+                return;
+            }
+
+            console.log('📊 Resetting tasks for cycle:', activeCycle);
+
+            // Animation: Show progress bar becoming full first
+            progressBar.style.width = "100%";
+            progressBar.style.transition = "width 0.2s ease-out";
+
+            // Wait for animation, then reset tasks
+            setTimeout(() => {
+                console.log('🧹 Removing recurring tasks and resetting non-recurring tasks');
+
+                // Remove recurring tasks
+                if (typeof window.removeRecurringTasksFromCycle === 'function') {
+                    window.removeRecurringTasksFromCycle(taskElements, cycleData);
+                }
+
+                // Reset non-recurring tasks
+                taskElements.forEach(taskEl => {
+                    const isRecurring = taskEl.classList.contains("recurring");
+                    if (isRecurring) return;
+
+                    const checkbox = taskEl.querySelector("input[type='checkbox']");
+                    const dueDateInput = taskEl.querySelector(".due-date");
+
+                    if (checkbox) checkbox.checked = false;
+                    taskEl.classList.remove("overdue-task");
+
+                    if (dueDateInput) {
+                        dueDateInput.value = "";
+                        dueDateInput.classList.add("hidden");
+                    }
+                });
+
+                // Increment cycle count
+                if (typeof window.incrementCycleCount === 'function') {
+                    window.incrementCycleCount(activeCycle, cycles);
+                }
+
+                // Animate progress bar reset
+                progressBar.style.transition = "width 0.3s ease-in";
+                progressBar.style.width = "0%";
+
+                setTimeout(() => {
+                    progressBar.style.transition = "";
+                }, 50);
+
+                console.log('✅ Task reset animation completed');
+
+            }, 100);
+
+            // Show cycle completion message
+            if (window.helpWindowManager) {
+                window.helpWindowManager.showCycleCompleteMessage();
+            }
+
+            // Release reset lock
+            setTimeout(() => {
+                window.AppGlobalState.isResetting = false;
+                console.log('🔓 Reset lock released');
+            }, 2000);
+
+            // Post-reset cleanup
+            setTimeout(() => {
+                console.log('🔄 Running post-reset cleanup tasks');
+                if (window.recurringCore?.watchRecurringTasks) {
+                    window.recurringCore.watchRecurringTasks();
+                }
+                this.deps.autoSave();
+                this.deps.updateStatsPanel();
+                console.log('✅ Reset tasks completed successfully');
+            }, 1000);
+
+        } catch (error) {
+            console.warn('⚠️ Reset tasks failed:', error);
+            window.AppGlobalState.isResetting = false;
+            this.deps.showNotification('Could not reset tasks', 'warning');
+        }
+    }
+
+    /**
+     * Complete all tasks at once
+     */
+    async handleCompleteAllTasks() {
+        try {
+            console.log('✔️ Handling complete all tasks (Schema 2.5 only)...');
+
+            const schemaData = this.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
+                throw new Error('Schema 2.5 data not found');
+            }
+
+            const cycles = schemaData.data?.cycles || {};
+            const activeCycle = schemaData.appState?.activeCycleId;
+            const cycleData = cycles[activeCycle];
+            const taskList = this.deps.querySelector("#taskList");
+
+            if (!activeCycle || !cycleData) {
+                console.warn('⚠️ No active cycle found for complete all tasks');
+                return;
+            }
+
+            console.log('📊 Processing complete all tasks for cycle:', activeCycle);
+
+            // Only show alert if tasks will be reset (not deleted)
+            if (!cycleData.deleteCheckedTasks) {
+                const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
+                    dueDateInput => dueDateInput.value
+                );
+
+                if (hasDueDates) {
+                    this.deps.showConfirmationModal({
+                        title: "Reset Tasks with Due Dates",
+                        message: "⚠️ This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
+                        confirmText: "Reset Tasks",
+                        cancelText: "Cancel",
+                        callback: (confirmed) => {
+                            if (!confirmed) return;
+
+                            if (cycleData.deleteCheckedTasks) {
+                                const checkedTasks = document.querySelectorAll(".task input:checked");
+                                if (checkedTasks.length === 0) {
+                                    this.deps.showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
+                                    return;
+                                }
+
+                                checkedTasks.forEach(checkbox => {
+                                    const taskId = checkbox.closest(".task").dataset.taskId;
+                                    cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
+                                    checkbox.closest(".task").remove();
+                                });
+
+                                this.deps.autoSave();
+
+                            } else {
+                                taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+                                if (typeof window.checkMiniCycle === 'function') {
+                                    window.checkMiniCycle();
+                                }
+
+                                if (!cycleData.autoReset) {
+                                    setTimeout(() => this.resetTasks(), 1000);
+                                }
+                            }
+                        }
+                    });
+                    return;
+                }
+            }
+
+            if (cycleData.deleteCheckedTasks) {
+                const checkedTasks = document.querySelectorAll(".task input:checked");
+                if (checkedTasks.length === 0) {
+                    this.deps.showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
+                    return;
+                }
+
+                console.log('🗑️ Deleting checked tasks from Schema 2.5');
+
+                checkedTasks.forEach(checkbox => {
+                    const taskId = checkbox.closest(".task").dataset.taskId;
+                    cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
+                    checkbox.closest(".task").remove();
+                });
+
+                // Update Schema 2.5 data
+                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                fullSchemaData.data.cycles[activeCycle] = cycleData;
+                fullSchemaData.metadata.lastModified = Date.now();
+                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+
+            } else {
+                console.log('✔️ Marking all tasks as complete');
+
+                taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+                if (typeof window.checkMiniCycle === 'function') {
+                    window.checkMiniCycle();
+                }
+
+                // Only call resetTasks() if autoReset is OFF
+                if (!cycleData.autoReset) {
+                    setTimeout(() => this.resetTasks(), 1000);
+                }
+            }
+
+            console.log('✅ Complete all tasks handled (Schema 2.5)');
+
+        } catch (error) {
+            console.warn('⚠️ Complete all tasks failed:', error);
+            this.deps.showNotification('Could not complete all tasks', 'warning');
+        }
+    }
 }
 
 // ============================================================================
@@ -465,6 +763,12 @@ export async function initTaskCore(dependencies = {}) {
         window.editTaskFromCore = (taskItem) => taskCoreInstance.editTask(taskItem);
         window.deleteTaskFromCore = (taskItem) => taskCoreInstance.deleteTask(taskItem);
         window.toggleTaskPriorityFromCore = (taskItem) => taskCoreInstance.toggleTaskPriority(taskItem);
+
+        // Export new batch operations
+        window.handleTaskCompletionChange = (checkbox) => taskCoreInstance.handleTaskCompletionChange(checkbox);
+        window.saveCurrentTaskOrder = () => taskCoreInstance.saveCurrentTaskOrder();
+        window.resetTasks = () => taskCoreInstance.resetTasks();
+        window.handleCompleteAllTasks = () => taskCoreInstance.handleCompleteAllTasks();
 
         console.log('✅ TaskCore initialized and globally available');
     }

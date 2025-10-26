@@ -1050,6 +1050,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
           console.error('❌ Error stack:', error.stack);
         }
 
+        // ✅ Setup taskCore event listeners (after taskCore loaded in Phase 2)
+        try {
+          const completeAllButton = document.getElementById("completeAll");
+          if (completeAllButton && typeof window.handleCompleteAllTasks === 'function') {
+            safeAddEventListener(completeAllButton, "click", window.handleCompleteAllTasks);
+            console.log('✅ Complete All button listener attached');
+          }
+        } catch (eventErr) {
+          console.warn('⚠️ Failed to setup Complete All listener:', eventErr);
+        }
+
         // ✅ Undo/Redo buttons already wired in Phase 2 (undoRedoManager module)
 
         // 🧰 Centralize undo snapshots on AppState.update (wrap once)
@@ -3784,29 +3795,7 @@ function revealTaskButtons(taskItem) {
     }
     
     
-/**
- * Handles the change event when a task's completion status is toggled.
- *
- * @param {HTMLInputElement} checkbox - The checkbox element of the task.
- */
-function handleTaskCompletionChange(checkbox) {
-    const taskItem = checkbox.closest(".task");
-
-     if (checkbox.checked) {
-        taskItem.classList.remove("overdue-task");
-    } else {
-        checkOverdueTasks(taskItem);
-    }
-    
-    // ✅ ADD THIS: Force help window update
-    if (window.helpWindowManager && typeof window.helpWindowManager.updateConstantMessage === 'function') {
-        setTimeout(() => {
-            window.helpWindowManager.updateConstantMessage();
-        }, 100);
-    }
-}
-    
-
+// ✅ REMOVED: handleTaskCompletionChange - now in utilities/task/taskCore.js
 
     /**
  * Istouchdevice function.
@@ -3884,49 +3873,8 @@ function handleTaskButtonClick(event) {
     if (shouldSave) autoSave();
     console.log("✅ Task button clicked:", button.className);
 }
-async function saveCurrentTaskOrder() {
-    const taskElements = document.querySelectorAll("#taskList .task");
-    const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
 
-    // ✅ Prefer AppState to trigger undo snapshots via subscriber
-    if (window.AppState?.isReady?.()) {
-        await window.AppState.update(state => {
-            const cid = state.appState.activeCycleId;
-            const cycle = state.data.cycles[cid];
-            if (!cycle?.tasks) return;
-
-            // ✅ Use the same pattern as your example
-            const reorderedTasks = newOrderIds.map(id =>
-                cycle.tasks.find(task => task.id === id)
-            ).filter(Boolean); // filters out any nulls
-
-            cycle.tasks = reorderedTasks;
-        }, true);
-        return;
-    }
-
-    // Fallback: direct localStorage (same pattern as your example)
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveCurrentTaskOrder');
-        return;
-    }
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    if (!currentCycle || !Array.isArray(currentCycle.tasks)) return;
-
-    // Reorder task array based on current DOM order
-    const reorderedTasks = newOrderIds.map(id =>
-        currentCycle.tasks.find(task => task.id === id)
-    ).filter(Boolean);
-
-    currentCycle.tasks = reorderedTasks;
-
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-}
+// ✅ REMOVED: saveCurrentTaskOrder - now in utilities/task/taskCore.js
 
 
 
@@ -3959,105 +3907,7 @@ async function saveCurrentTaskOrder() {
 
 
 
-/**
- * Resettasks function.
- *
- * @returns {void}
- */
-
-function resetTasks() {
-    if (isResetting) return;
-    isResetting = true;
-
-    // ✅ Schema 2.5 only
-    console.log('🔄 Resetting tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for resetTasks');
-        isResetting = false;
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-    const taskElements = [...taskList.querySelectorAll(".task")];
-
-    if (!activeCycle || !cycleData) {
-        console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
-        isResetting = false;
-        return;
-    }
-
-    console.log('📊 Resetting tasks for cycle:', activeCycle);
-
-    // ✅ ANIMATION: Show progress bar becoming full first
-    progressBar.style.width = "100%";
-    progressBar.style.transition = "width 0.2s ease-out";
-    
-    // ✅ Wait for animation, then reset tasks
-    setTimeout(() => {
-        console.log('🧹 Removing recurring tasks and resetting non-recurring tasks');
-        
-        // 🧹 Remove recurring tasks
-        removeRecurringTasksFromCycle(taskElements, cycleData);
-
-        // ♻️ Reset non-recurring tasks
-        taskElements.forEach(taskEl => {
-            const isRecurring = taskEl.classList.contains("recurring");
-            if (isRecurring) return;
-
-            const checkbox = taskEl.querySelector("input[type='checkbox']");
-            const dueDateInput = taskEl.querySelector(".due-date");
-
-            if (checkbox) checkbox.checked = false;
-            taskEl.classList.remove("overdue-task");
-
-            if (dueDateInput) {
-                dueDateInput.value = "";
-                dueDateInput.classList.add("hidden");
-            }
-        });
-
-        // ✅ Increment cycle count in Schema 2.5
-        incrementCycleCount(activeCycle, cycles);
-
-        // ✅ Animate progress bar reset with different timing
-        progressBar.style.transition = "width 0.3s ease-in";
-        progressBar.style.width = "0%";
-        
-        // ✅ Reset transition after animation completes
-        setTimeout(() => {
-            progressBar.style.transition = "";
-        }, 50);
-        
-        console.log('✅ Task reset animation completed');
-        
-    }, 100); // Wait for fill animation to complete
-
-    // ✅ Show cycle completion message in help window instead of separate element
-    if (helpWindowManager) {
-        helpWindowManager.showCycleCompleteMessage();
-    }
-
-    // ✅ Set isResetting to false after help window message duration
-    setTimeout(() => {
-        isResetting = false;
-        console.log('🔓 Reset lock released');
-    }, 2000);
-
-    // ✅ Handle recurring tasks and cleanup (keep existing timing)
-    setTimeout(() => {
-        console.log('🔄 Running post-reset cleanup tasks');
-        // ✅ Watch recurring tasks via module
-        if (window.recurringCore?.watchRecurringTasks) window.recurringCore.watchRecurringTasks();
-        autoSave();
-        updateStatsPanel();
-        console.log('✅ Reset tasks completed successfully');
-    }, 1000);
-}
-
-// ...existing code...
+// ✅ REMOVED: resetTasks - now in utilities/task/taskCore.js
 
 
           // ✅ Remove the old cycle message display logic
@@ -4299,113 +4149,8 @@ function saveToggleAutoReset() {
 
 
 // ✅ Function to complete all tasks and handle reset
-function handleCompleteAllTasks() {
-    // ✅ Schema 2.5 only
-    console.log('✔️ Handling complete all tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-
-    // ✅ Ensure there's an active miniCycle
-    if (!activeCycle || !cycleData) {
-        console.warn('⚠️ No active cycle found for complete all tasks');
-        return;
-    }
-
-    console.log('📊 Processing complete all tasks for cycle:', activeCycle);
-
-    // ✅ Only show alert if tasks will be reset (not deleted)
-    if (!cycleData.deleteCheckedTasks) {
-        const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
-            dueDateInput => dueDateInput.value
-        );
-
-        if (hasDueDates) {
-            showConfirmationModal({
-                title: "Reset Tasks with Due Dates",
-                message: "⚠️ This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
-                confirmText: "Reset Tasks",
-                cancelText: "Cancel",
-                callback: (confirmed) => {
-                    if (!confirmed) return;
-                    
-                    if (cycleData.deleteCheckedTasks) {
-                        const checkedTasks = document.querySelectorAll(".task input:checked");
-                        if (checkedTasks.length === 0) {
-                            showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
-                            return;
-                        }
-            
-                        checkedTasks.forEach(checkbox => {
-                            const taskId = checkbox.closest(".task").dataset.taskId;
-                            // Remove from Schema 2.5
-                            cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
-                            checkbox.closest(".task").remove();
-                        });
-                        
-                        // ✅ Use autoSave() instead of direct save
-                        autoSave();
-                        
-                    } else {
-                        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-                        checkMiniCycle();
-            
-                        if (!cycleData.autoReset) {
-                            setTimeout(resetTasks, 1000);
-                        }
-                    }
-                }
-            });
-            return;
-        }
-    }
-
-    if (cycleData.deleteCheckedTasks) {
-        const checkedTasks = document.querySelectorAll(".task input:checked");
-        if (checkedTasks.length === 0) {
-            showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
-            return;
-        }
-
-        console.log('🗑️ Deleting checked tasks from Schema 2.5');
-
-        checkedTasks.forEach(checkbox => {
-            const taskId = checkbox.closest(".task").dataset.taskId;
-            // Remove from Schema 2.5
-            cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
-            checkbox.closest(".task").remove();
-        });
-        
-        // ✅ Update Schema 2.5 data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycleData;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-    } else {
-        // ✅ If "Delete Checked Tasks" is OFF, just mark all as complete
-        console.log('✔️ Marking all tasks as complete');
-        
-        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-        checkMiniCycle();
-
-        // ✅ Only call resetTasks() if autoReset is OFF
-        if (!cycleData.autoReset) {
-            setTimeout(resetTasks, 1000);
-        }
-    }
-    
-    console.log('✅ Complete all tasks handled (Schema 2.5)');
-}
-
-// ✅ Use the new function with safe listener
-safeAddEventListener(completeAllButton, "click", handleCompleteAllTasks);
+// ✅ REMOVED: handleCompleteAllTasks - now in utilities/task/taskCore.js
+// ✅ Event listener moved to Phase 3 (after taskCore loads)
 
 
 /***********************
