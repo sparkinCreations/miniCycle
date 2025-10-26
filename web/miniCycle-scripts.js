@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const { initDragDropManager } = await import(withV('./utilities/task/dragDropManager.js'));
 
         await initDragDropManager({
-          saveCurrentTaskOrder: () => saveCurrentTaskOrder?.(),
+          saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
           autoSave: () => autoSave?.(),
           updateProgressBar: () => updateProgressBar?.(),
           updateStatsPanel: () => updateStatsPanel?.(),
@@ -1027,6 +1027,84 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task core functionality');
         }
 
+        // ✅ Initialize Task DOM Manager (Phase 2 module)
+        console.log('🎨 Initializing task DOM module...');
+        try {
+            const { initTaskDOMManager } = await import(withV('./utilities/task/taskDOM.js'));
+
+            await initTaskDOMManager({
+                // State management
+                AppState: window.AppState,
+
+                // Data operations
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                sanitizeInput: (text) => window.sanitizeInput?.(text),
+                generateId: () => window.generateId?.(),
+                autoSave: () => window.autoSave?.(),
+
+                // UI notification and updates
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                refreshUIFromState: () => window.refreshUIFromState?.(),
+                updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
+                updateRecurringPanelButtonVisibility: () => window.updateRecurringPanelButtonVisibility?.(),
+                triggerLogoBackground: (type, dur) => window.triggerLogoBackground?.(type, dur),
+
+                // DOM helpers
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, evt, handler) => window.safeAddEventListener?.(el, evt, handler),
+
+                // Task operations (from taskCore module)
+                handleTaskCompletionChange: (taskItem, shouldSave) => window.handleTaskCompletionChange?.(taskItem, shouldSave),
+                addTask: (...args) => window.addTask?.(...args),
+
+                // Due dates module
+                createDueDateInput: (taskContext, taskData) => window.createDueDateInput?.(taskContext, taskData),
+                setupDueDateButtonInteraction: (input, taskContext) => window.setupDueDateButtonInteraction?.(input, taskContext),
+                checkOverdueTasks: () => window.checkOverdueTasks?.(),
+                remindOverdueTasks: () => window.remindOverdueTasks?.(),
+
+                // Recurring module
+                recurringPanel: window.recurringPanel,
+                setupRecurringButtonHandler: (btn, ctx) => window.setupRecurringButtonHandler?.(btn, ctx),
+                handleRecurringTaskActivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskActivation?.(taskItem, task, recurringBtn),
+                handleRecurringTaskDeactivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskDeactivation?.(taskItem, task, recurringBtn),
+
+                // Reminders module
+                setupReminderButtonHandler: (btn, ctx) => window.setupReminderButtonHandler?.(btn, ctx),
+
+                // Undo system
+                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+
+                // Task options UI
+                showTaskOptions: (taskItem) => window.showTaskOptions?.(taskItem),
+                hideTaskOptions: (taskItem) => window.hideTaskOptions?.(taskItem),
+                attachKeyboardTaskOptionToggle: (taskItem, threeDotsBtn) => window.attachKeyboardTaskOptionToggle?.(taskItem, threeDotsBtn),
+
+                // Drag and drop / arrows
+                DragAndDrop: window.DragAndDrop,
+                updateArrowsInDOM: (taskItem) => window.updateArrowsInDOM?.(taskItem),
+                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+
+                // Cycle operations
+                checkMiniCycle: () => window.checkMiniCycle?.(),
+                loadMiniCycle: () => window.loadMiniCycle?.()
+            });
+
+            console.log('✅ Task DOM module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task DOM module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Task DOM feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without task DOM functionality');
+        }
+
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();
@@ -1306,7 +1384,8 @@ function refreshUIFromState(providedState = null) {
 }
 
 // ✅ Make refreshUIFromState globally available for recurring modules
-window.refreshUIFromState = refreshUIFromState;
+// ❌ DISABLED: Old export - now provided by taskDOM module
+// window.refreshUIFromState = refreshUIFromState;
 
 // ✅ updateUndoRedoButtons moved to utilities/ui/undoRedoManager.js
 // Globally exposed via Phase 2 integration
@@ -2524,6 +2603,9 @@ function checkMiniCycle() {
     console.log("ran check MiniCyle function2");
 }
 
+// ✅ Export checkMiniCycle globally for taskDOM module
+window.checkMiniCycle = checkMiniCycle;
+
 /**
  * Incrementcyclecount function.
  *
@@ -2720,27 +2802,31 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
     
 // ✅ Main addTask function - now acts as orchestrator
 function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
+    // ✅ Use NEW taskDOM module functions via window.* (not old inline functions)
+
     // Input validation and sanitization
-    const validatedInput = validateAndSanitizeTaskInput(taskText);
+    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || validateAndSanitizeTaskInput(taskText);
     if (!validatedInput) return;
 
     // Load and validate data context
-    const taskContext = loadTaskContext(validatedInput, taskId, {
+    const taskContext = window.loadTaskContext?.(validatedInput, taskId, {
         completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
-    }, isLoading);  // ✅ Pass isLoading flag
+    }, isLoading) || loadTaskContext(validatedInput, taskId, {
+        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
+    }, isLoading);
     if (!taskContext) return;
 
     // Create or update task data
-    const taskData = createOrUpdateTaskData(taskContext);
+    const taskData = window.createOrUpdateTaskData?.(taskContext) || createOrUpdateTaskData(taskContext);
 
     // Create DOM elements
-    const taskElements = createTaskDOMElements(taskContext, taskData);
+    const taskElements = window.createTaskDOMElements?.(taskContext, taskData) || createTaskDOMElements(taskContext, taskData);
 
     // Setup task interactions and events
-    setupTaskInteractions(taskElements, taskContext);
+    window.setupTaskInteractions?.(taskElements, taskContext) || setupTaskInteractions(taskElements, taskContext);
 
     // Finalize task creation
-    finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
+    window.finalizeTaskCreation?.(taskElements, taskContext, { shouldSave, isLoading }) || finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
 
     console.log('✅ Task creation completed (Schema 2.5)');
 }
@@ -2767,7 +2853,8 @@ function validateAndSanitizeTaskInput(taskText) {
 }
 
 // ✅ Export for taskCore module
-window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
+// ❌ DISABLED: Old export - now provided by taskDOM module
+// window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
 
 // ✅ 2. Data Context Loading and Validation
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
@@ -2811,7 +2898,8 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false
 }
 
 // ✅ Export for taskCore module
-window.loadTaskContext = loadTaskContext;
+// ❌ DISABLED: Old export - now provided by taskDOM module
+// window.loadTaskContext = loadTaskContext;
 
 // ✅ 3. Task Data Creation and Storage
 function createOrUpdateTaskData(taskContext) {
@@ -2932,7 +3020,8 @@ function createTaskDOMElements(taskContext, taskData) {
 }
 
 // ✅ Export for taskCore module
-window.createTaskDOMElements = createTaskDOMElements;
+// ❌ DISABLED: Old export - now provided by taskDOM module
+// window.createTaskDOMElements = createTaskDOMElements;
 
 // ✅ 6. Main Task Element Creation
 function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
@@ -3279,18 +3368,19 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
 
 // ✅ 17. Task Content Elements Creation
 function createTaskContentElements(taskContext) {
-    const { 
-        assignedTaskId, taskTextTrimmed, completed, dueDate, 
-        autoResetEnabled, recurring, currentCycle, activeCycle 
+    const {
+        assignedTaskId, taskTextTrimmed, completed, dueDate,
+        autoResetEnabled, recurring, currentCycle, activeCycle
     } = taskContext;
 
-    // Create checkbox
-    const checkbox = createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
-    
-    // Create task label
-    const taskLabel = createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
-    
-    // Create due date input
+    // ✅ Use NEW taskDOM module functions via window.* (with fallbacks)
+    const checkbox = window.createTaskCheckbox?.(assignedTaskId, taskTextTrimmed, completed)
+        || createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
+
+    const taskLabel = window.createTaskLabel?.(taskTextTrimmed, assignedTaskId, recurring)
+        || createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
+
+    // Create due date input (from dueDates.js/taskCore, not taskDOM)
     const dueDateInput = createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
 
     return { checkbox, taskLabel, dueDateInput };
@@ -3657,7 +3747,7 @@ window.sanitizeInput = sanitizeInput;
        */
       safeAddEventListener(taskItem, "focusout", (e) => {
         if (taskItem.contains(e.relatedTarget)) return;
-    
+
         const options = taskItem.querySelector(".task-options");
         if (options) {
           options.style.opacity = "0";
@@ -3667,6 +3757,8 @@ window.sanitizeInput = sanitizeInput;
       });
     }
 
+    // ✅ Export for taskDOM module
+    window.attachKeyboardTaskOptionToggle = attachKeyboardTaskOptionToggle;
 
 
     // ✅ REMOVED: updateReminderButtons() - Now in utilities/reminders.js
@@ -3681,6 +3773,11 @@ window.sanitizeInput = sanitizeInput;
  * @param {any} event - Description. * @returns {void}
  */
 
+// ✅ REMOVED: revealTaskButtons - now provided by taskDOM module
+// Old function disabled - NEW version in utilities/task/taskDOM.js
+// window.revealTaskButtons is exported from taskDOM module
+
+/* OLD CODE - DISABLED
 function revealTaskButtons(taskItem) {
   const taskOptions = taskItem.querySelector(".task-options");
   if (!taskOptions) return;
@@ -3720,8 +3817,8 @@ function revealTaskButtons(taskItem) {
   const cycleData = savedMiniCycles?.[lastUsedMiniCycle] ?? {};
   const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
 
-  const alwaysShow = AppState.isReady() ? 
-    AppState.get()?.settings?.alwaysShowRecurring === true : 
+  const alwaysShow = AppState.isReady() ?
+    AppState.get()?.settings?.alwaysShowRecurring === true :
     JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
   const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
 
@@ -3746,6 +3843,7 @@ function revealTaskButtons(taskItem) {
 
   updateMoveArrowsVisibility();
 }
+*/
 
     function hideTaskButtons(taskItem) {
 
@@ -3775,28 +3873,36 @@ function revealTaskButtons(taskItem) {
 
     function showTaskOptions(event) {
         const taskElement = event.currentTarget;
-    
+
         // ✅ Only allow on desktop or if long-pressed on mobile
         const isMobile = isTouchDevice();
         const allowShow = !isMobile || taskElement.classList.contains("long-pressed");
-    
+
         if (allowShow) {
-            revealTaskButtons(taskElement);
+            // ✅ Use NEW taskDOM module function if available
+            if (typeof window.revealTaskButtons === 'function') {
+                window.revealTaskButtons(taskElement);
+            }
         }
     }
-    
+
+    // ✅ Export for taskDOM module
+    window.showTaskOptions = showTaskOptions;
 
     function hideTaskOptions(event) {
         const taskElement = event.currentTarget;
-    
+
         // ✅ Only hide if not long-pressed on mobile (so buttons stay open during drag)
         const isMobile = isTouchDevice();
         const allowHide = !isMobile || !taskElement.classList.contains("long-pressed");
-    
+
         if (allowHide) {
             hideTaskButtons(taskElement);
         }
     }
+
+    // ✅ Export for taskDOM module
+    window.hideTaskOptions = hideTaskOptions;
     
     
 // ✅ REMOVED: handleTaskCompletionChange - now in utilities/task/taskCore.js
@@ -3816,12 +3922,13 @@ function isTouchDevice() {
 
         if (isFinePointer) return false;
 
-       
+
         return hasTouchEvents || touchPoints > 0;
     }
-    
- 
-    
+
+    // ✅ Export for taskDOM module and device detection
+    window.isTouchDevice = isTouchDevice;
+
 
 /**
  * Handles button clicks for task-related actions, such as moving, editing, deleting, or changing priority.
@@ -3979,6 +4086,10 @@ function triggerLogoBackground(color = 'green', duration = 300) {
         console.error('❌ Logo element not found!');
     }
 }
+
+// ✅ Export triggerLogoBackground globally for taskDOM module
+window.triggerLogoBackground = triggerLogoBackground;
+
 /**
  * Savetoggleautoreset function.
  *
