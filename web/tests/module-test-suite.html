@@ -227,9 +227,11 @@
             <option value="gamesManager">GamesManager</option>
             <option value="onboardingManager">OnboardingManager</option>
             <option value="modalManager">ModalManager</option>
+            <option value="menuManager">MenuManager</option>
+            <option value="settingsManager">SettingsManager</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (22 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (24 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -269,6 +271,8 @@
         const { runGamesManagerTests } = await import(`./gamesManager.tests.js?v=${cacheBuster}`);
         const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
+        const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
+        const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -375,6 +379,14 @@
                     await import(`../utilities/ui/modalManager.js?v=${cacheBuster}`);
                     currentModule = 'modalManager';
                     resultsDiv.innerHTML = '<p>✅ ModalManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'menuManager') {
+                    await import(`../utilities/ui/menuManager.js?v=${cacheBuster}`);
+                    currentModule = 'menuManager';
+                    resultsDiv.innerHTML = '<p>✅ MenuManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'settingsManager') {
+                    await import(`../utilities/ui/settingsManager.js?v=${cacheBuster}`);
+                    currentModule = 'settingsManager';
+                    resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -432,6 +444,10 @@
                 await runOnboardingManagerTests(resultsDiv);
             } else if (currentModule === 'modalManager') {
                 await runModalManagerTests(resultsDiv);
+            } else if (currentModule === 'menuManager') {
+                await runMenuManagerTests(resultsDiv);
+            } else if (currentModule === 'settingsManager') {
+                await runSettingsManagerTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -492,6 +508,8 @@
                 { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../utilities/cycle/migrationManager.js' },
                 { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../utilities/dueDates.js' },
                 { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../utilities/reminders.js' },
+                { name: 'MenuManager', key: 'menuManager', runFn: runMenuManagerTests, importPath: '../utilities/ui/menuManager.js' },
+                { name: 'SettingsManager', key: 'settingsManager', runFn: runSettingsManagerTests, importPath: '../utilities/ui/settingsManager.js' },
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' },
                 { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycle/cycleSwitcher.js' },
                 { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../utilities/ui/undoRedoManager.js' },
