@@ -756,6 +756,7 @@ export async function initTaskCore(dependencies = {}) {
         await taskCoreInstance.init();
 
         // Make available globally for backward compatibility
+        window.TaskCore = TaskCore; // Export class for testing
         window.taskCore = taskCoreInstance;
 
         // Export individual methods globally

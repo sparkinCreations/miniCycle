@@ -229,9 +229,10 @@
             <option value="modalManager">ModalManager</option>
             <option value="menuManager">MenuManager</option>
             <option value="settingsManager">SettingsManager</option>
+            <option value="taskCore">TaskCore</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (24 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (25 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -273,6 +274,7 @@
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
         const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
+        const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -387,6 +389,23 @@
                     await import(`../utilities/ui/settingsManager.js?v=${cacheBuster}`);
                     currentModule = 'settingsManager';
                     resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskCore') {
+                    const { initTaskCore } = await import(`../utilities/task/taskCore.js?v=${cacheBuster}`);
+                    // Initialize with test-friendly mocks to avoid prompts
+                    await initTaskCore({
+                        showPromptModal: (options) => {
+                            console.log('[TEST] Mock prompt:', options.message);
+                            // Auto-provide a test value to avoid blocking tests
+                            if (options.callback) options.callback('Test Task');
+                        },
+                        showConfirmationModal: (options) => {
+                            console.log('[TEST] Mock confirmation:', options.message);
+                            // Auto-confirm to avoid blocking tests
+                            if (options.confirmCallback) options.confirmCallback();
+                        }
+                    });
+                    currentModule = 'taskCore';
+                    resultsDiv.innerHTML = '<p>✅ TaskCore loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -448,6 +467,8 @@
                 await runMenuManagerTests(resultsDiv);
             } else if (currentModule === 'settingsManager') {
                 await runSettingsManagerTests(resultsDiv);
+            } else if (currentModule === 'taskCore') {
+                await runTaskCoreTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -515,7 +536,8 @@
                 { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../utilities/ui/undoRedoManager.js' },
                 { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../utilities/ui/gamesManager.js' },
                 { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../utilities/ui/onboardingManager.js' },
-                { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../utilities/ui/modalManager.js' }
+                { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../utilities/ui/modalManager.js' },
+                { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../utilities/task/taskCore.js' }
             ];
 
             let allResults = [];
@@ -527,7 +549,22 @@
                 try {
                     // Load the module (skip for integration tests which don't need imports)
                     if (module.importPath) {
-                        await import(`${module.importPath}?v=${cacheBuster}`);
+                        if (module.key === 'taskCore') {
+                            // TaskCore needs special initialization with test-friendly mocks
+                            const { initTaskCore } = await import(`${module.importPath}?v=${cacheBuster}`);
+                            await initTaskCore({
+                                showPromptModal: (options) => {
+                                    console.log('[TEST] Mock prompt:', options.message);
+                                    if (options.callback) options.callback('Test Task');
+                                },
+                                showConfirmationModal: (options) => {
+                                    console.log('[TEST] Mock confirmation:', options.message);
+                                    if (options.confirmCallback) options.confirmCallback();
+                                }
+                            });
+                        } else {
+                            await import(`${module.importPath}?v=${cacheBuster}`);
+                        }
                     }
 
                     // Create a temporary div for results

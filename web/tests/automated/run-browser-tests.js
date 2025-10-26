@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager'];
+const modules = ['themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'taskCore'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
@@ -41,8 +41,9 @@ async function runModuleTests(page, moduleName) {
         // Wait a bit for tests to start
         await page.waitForTimeout(500);
 
-        // Wait for results (increased timeout for statsPanel with 27 tests)
-        await page.waitForSelector('h3:has-text("Results:")', { timeout: 45000 });
+        // Wait for results (increased timeout for statsPanel with 27 tests, taskCore with 34 tests)
+        const timeout = moduleName === 'taskCore' ? 60000 : 45000;
+        await page.waitForSelector('h3:has-text("Results:")', { timeout });
 
         // Extract summary (h3 with "Results:" text)
         const summary = await page.textContent('h3:has-text("Results:")');
