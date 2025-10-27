@@ -1794,41 +1794,6 @@ async function directSave(overrideTaskList = null) {
 }
 
 
-
-// ✅ EXTRACTED: Common recurring templates update logic
-// ✅ REMOVED: updateRecurringTemplates - now handled by recurringCore module
-
-// ✅ REMOVE the legacyAutoSave function since it's now integrated into autoSave
-/**
- * Loads the last used miniCycle from localStorage and updates the UI.
- * Ensures tasks, title, settings, and overdue statuses are properly restored.
- */
-
-/**
- * Checks for overdue tasks and visually marks them as overdue.
- * Notifies the user if newly overdue tasks are detected.
- *
- * @param {HTMLElement|null} taskToCheck - The specific task to check, or null to check all tasks.
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Add this after your existing migration functions, around line 1100
-
 // ==========================================
 // 🔄 SCHEMA 2.5 MIGRATION SYSTEM. in migrationManager.js
 // ==========================================
@@ -1948,18 +1913,6 @@ function updateCycleData(cycleId, updateFn, immediate = true) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Remindoverduetasks function.
  *
@@ -2029,21 +1982,7 @@ indefiniteCheckbox.addEventListener("change", () => {
 });
 
 
-// ============================================
-// ✅ REMINDER SYSTEM - ALL FUNCTIONS MOVED TO utilities/reminders.js
-// ============================================
-// The following functions are now handled by the reminders module:
-// - handleReminderToggle()
-// - setupReminderToggle()
-// - stopReminders()
-// - autoSaveReminders()
-// - loadRemindersSettings()
-// - saveTaskReminderState()
-// - sendReminderNotificationIfNeeded()
-// - startReminders()
-// - setupReminderButtonHandler()
-// - updateReminderButtons()
-//
+
 // All functions are globally accessible via:
 // - window.reminderManager (the module instance)
 // - window.startReminders(), window.stopReminders(), etc. (individual functions)
@@ -2170,29 +2109,6 @@ window.closeAllModals = closeAllModals;
   }
 
 
-// ✅ REMOVED: setupRecurringPanel - now handled by recurringPanel module
-// ✅ REMOVED: setAdvancedVisibility - now handled by recurringPanel module
-// ✅ REMOVED: updateRecurringPanel - now handled by recurringPanel module
-
-// ✅ REMOVED: Old window.updateRecurringPanel assignment - now handled by recurringIntegration module
-// ✅ REMOVED: Old window.openRecurringSettingsPanelForTask assignment - now handled by recurringIntegration module
-  
-// ✅ REMOVED: openRecurringSettingsPanelForTask - now handled by recurringPanel module
-
-
-
-// ✅ REMOVED: updateRecurringSettingsVisibility - now handled by recurringPanel module
-// ✅ REMOVED: toggle-check-all event listener - now handled by recurringPanel module
-// ✅ REMOVED: loadRecurringSettingsForTask - now handled by recurringPanel module
-// ✅ REMOVED: specific-date-specific-time event listener - now handled by recurringPanel module
-// ✅ REMOVED: saveRecurringTemplate - unused function, template saving handled in handleApplySettings
-// ✅ REMOVED: deleteRecurringTemplate - now handled by recurringCore module
-
-// ✅ REMOVED: saveAlwaysShowRecurringSetting - now handled by recurringPanel module
-
-// ✅ REMOVED: loadAlwaysShowRecurringSetting - now handled by recurringPanel module
-
-// ✅ REMOVED: Old event listener for saveAlwaysShowRecurringSetting - now handled by recurringPanel module
 document.getElementById("always-show-recurring")?.addEventListener("change", () => {
     if (window.recurringPanel?.saveAlwaysShowRecurringSetting) {
         window.recurringPanel.saveAlwaysShowRecurringSetting();
@@ -2200,17 +2116,6 @@ document.getElementById("always-show-recurring")?.addEventListener("change", () 
 });
 
 
-
-
-/**
- * Setupsettingsmenu function.
- *
- * @returns {void}
- */
-// ✅ REMOVED: setupFeedbackModal() - Now handled by modalManager module
-// ✅ REMOVED: Duplicate feedback form sanitization listener - Now handled by modalManager module
-// ✅ REMOVED: openFeedbackModal() - Now handled by modalManager module
-// ✅ REMOVED: openFeedbackModal() call - Now handled automatically by modalManager module
 
 /**
  * Setupusermanual function.
@@ -3072,23 +2977,6 @@ function isTouchDevice() {
 
 
 
-
-
-
-
-
-// ✅ REMOVED: resetTasks - now in utilities/task/taskCore.js
-
-
-          // ✅ Remove the old cycle message display logic
-          // cycleMessage.style.visibility = "visible";
-          // cycleMessage.style.opacity = "1";
-          // setTimeout(() => {
-          //     cycleMessage.style.opacity = "0";
-          //     cycleMessage.style.visibility = "hidden";
-          //     isResetting = false;
-          // }, 2000);
-
 /**
  * Checkcompleteallbutton function.
  *
@@ -3278,11 +3166,6 @@ function saveToggleAutoReset() {
 // ✅ updateDueDateVisibility moved to utilities/dueDates.js
     
     
-    
-    
-
-
-
     
 
 
