@@ -1,515 +1,480 @@
-# Remaining Extractions Analysis
+# Remaining Functions in miniCycle-scripts.js
 
-**Date:** October 26, 2025
-**Last Updated:** October 26, 2025 (Fallback Analysis Complete)
-**Current Main Script Size:** 4,739 lines (actual count)
-**Target Size:** ~2,500-3,000 lines (orchestration only)
-**Remaining Potential:** ~1,700-2,200 lines can be safely deleted
+**Date:** October 27, 2025
+**Current Main Script Size:** 3,674 lines
+**Total Functions:** 33 functions
+**Modularization Potential:** 19 functions (~1,167 lines = 31.8% reduction)
+**Target Size:** ~2,500 lines (pure orchestration)
 
 ---
 
-## 🔍 Discovery
+## 📊 Executive Summary
 
-**What We Found:** The main script (`miniCycle-scripts.js`) is **4,856 lines**, significantly larger than the 3,950 reported in documentation. This is because it contains:
+### Current State
+- ✅ **Module system working:** 30+ modules successfully extracted
+- ✅ **Recent fixes applied:** resetTasks persistence, removed duplicates
+- ✅ **Test coverage:** 99% maintained
+- ⚠️ **Remaining opportunity:** ~1,167 lines can still be extracted
 
-1. ✅ **Module imports** (correctly using extracted modules)
-2. ⚠️ **Complete fallback implementations** (duplicate code kept as safety net)
-3. ⚠️ **Functions that should be extracted but aren't**
+### What Remains
+**33 functions in main script:**
+- **14 functions** = Core orchestration (MUST STAY)
+- **19 functions** = Can be modularized (THIS GUIDE)
 
-**Example Pattern Found:**
+---
+
+## 🎯 Modularization Opportunities (19 Functions, ~1,167 Lines)
+
+### **Priority 0: Extract Initial Setup Functions** 🔥 HIGH IMPACT
+**Target Module:** `utilities/appInitialization.js` (already exists!)
+**Effort:** Medium | **Lines Saved:** ~187 | **Functions:** 2
+
 ```javascript
-// Line 2808 in miniCycle-scripts.js
-const validatedInput = window.validateAndSanitizeTaskInput?.(taskText)
-                    || validateAndSanitizeTaskInput(taskText);  // ← Fallback kept in main script
+// Lines 1463-1650 (187 lines total)
 
-// Later in file (line 2835)
-function validateAndSanitizeTaskInput(taskText) {
-    // ❌ DISABLED: Old export - now provided by taskDOM module
-    // BUT: Function still exists in main script as fallback!
-    if (typeof taskText !== "string") {
-        // ... 20 lines of implementation ...
-    }
+⚡ initialSetup() - Line 1463 (~45 lines)
+   - Waits for Phase 2 modules to load
+   - Creates Schema 2.5 data if missing
+   - Checks if onboarding needed
+   - Delegates to completeInitialSetup()
+
+⚡ completeInitialSetup() - Line 1510 (~140 lines)
+   - Loads miniCycle data
+   - Renders initial tasks
+   - Updates reminder buttons, due dates, overdue check
+   - Applies dark mode and theme settings
+   - Initializes all UI components
+```
+
+**Why Priority 0:**
+- ✅ Perfect logical home: appInitialization.js already coordinates phases
+- ✅ Clean separation: setup logic vs. runtime logic
+- ✅ Sets pattern for other extractions
+- ✅ Immediate 5% file size reduction
+
+**Implementation Plan:**
+1. Move both functions to appInitialization.js as class methods
+2. Export: `appInit.initialSetup()` and `appInit.completeInitialSetup()`
+3. Update DOMContentLoaded handler: `await window.appInit.initialSetup()`
+4. Test: Verify app loads, onboarding works, settings apply
+
+**Dependencies to inject:**
+- `loadMiniCycleData`, `createInitialSchema25Data`, `showCycleCreationModal`
+- `onboardingManager`, `loadMiniCycle`, `updateReminderButtons`
+- `updateDueDateVisibility`, `checkOverdueTasks`, `startReminders`
+- `updateThemeColor`
+
+---
+
+### **Priority 1: Delete Notification/Modal Wrappers** ⚡ QUICK WIN
+**Target:** Delete from main script (modules already exist!)
+**Effort:** Easy | **Lines Saved:** ~100 | **Functions:** 9
+
+```javascript
+// These are 1-3 line wrappers that just delegate to modules
+
+❌ DELETE showNotification() - Line 2022 (3 lines)
+   Why: window.showNotification already points to module (line 332)
+
+❌ DELETE setupNotificationDragging() - Line 2029 (2 lines)
+   Why: Just calls notifications.setupNotificationDragging()
+
+❌ DELETE resetNotificationPosition() - Line 2034 (2 lines)
+   Why: Just calls notifications.resetPosition()
+
+❌ DELETE showApplyConfirmation() - Line 2057 (2 lines)
+   Why: Just calls notifications.showApplyConfirmation()
+
+❌ DELETE showNotificationWithTip() - Line 2069 (5 lines)
+   Why: window.showNotificationWithTip exported at line 2077
+
+❌ DELETE showConfirmationModal() - Line 2082 (2 lines)
+   Why: Just calls notifications.showConfirmationModal()
+
+❌ DELETE showPromptModal() - Line 2086 (2 lines)
+   Why: Just calls notifications.showPromptModal()
+
+❌ DELETE closeAllModals() - Line 2093 (2 lines)
+   Why: Just calls window.modalManager.closeAllModals()
+
+❌ DELETE remindOverdueTasks() - Line 1922 (100 lines)
+   Why: Could be in notifications or taskUtils module
+```
+
+**Why Priority 1:**
+- ✅ Easiest wins - just delete, modules already work
+- ✅ No extraction needed - modules initialized at line 328-332
+- ✅ Zero risk - just removing redundant wrappers
+- ✅ Fast - can complete in 30 minutes
+
+**Implementation Plan:**
+1. Verify modules are initialized: Check lines 328-332, 332 exports to window
+2. Find all usages: `grep -rn "showNotification(" --include="*.js"`
+3. Update calls to use `window.showNotification` directly if needed
+4. Delete wrapper functions from lines 2022-2100
+5. Test: Notifications, modals, reminders all work
+
+**Evidence modules work:**
+```javascript
+// Line 328-332: Modules already initialized!
+const { MiniCycleNotifications } = await import(withV('./utilities/notifications.js'));
+const notifications = new MiniCycleNotifications();
+window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+```
+
+---
+
+### **Priority 2: Extract Progress/Milestones System** 🎯 HIGH VALUE
+**Target Module:** `utilities/progress/progressManager.js` (NEW)
+**Effort:** Medium | **Lines Saved:** ~250 | **Functions:** 7
+
+```javascript
+// Lines 2187-2450 (scattered, ~250 lines total)
+
+⚡ updateProgressBar() - Line 2187 (~30 lines)
+   - Calculates completion percentage
+   - Updates visual progress indicator
+   - Shows/hides progress bar
+
+⚡ checkMiniCycle() - Line 2213 (~50 lines)
+   - Checks if all tasks complete
+   - Triggers auto-reset if enabled
+   - Calls resetTasks()
+
+⚡ incrementCycleCount() - Line 2264 (~50 lines)
+   - Increments cycle completion counter
+   - Saves to AppState/localStorage
+   - Triggers milestone checks
+   - Shows completion animation
+
+⚡ handleMilestoneUnlocks() - Line 2316 (~50 lines)
+   - Unlocks achievements at milestones
+   - Unlocks themes (5, 10, 25, 50, 100 cycles)
+   - Updates stats panel
+   - Shows notifications
+
+⚡ showCompletionAnimation() - Line 2367 (~25 lines)
+   - Creates checkmark animation
+   - Displays on cycle completion
+   - Auto-removes after 1.5s
+
+⚡ checkForMilestone() - Line 2391 (~15 lines)
+   - Returns milestone tier if reached
+   - Checks against [5, 10, 25, 50, 100]
+
+⚡ showMilestoneMessage() - Line 2406 (~45 lines)
+   - Displays milestone achievement message
+   - Shows tier-specific congratulations
+   - Animates message display
+```
+
+**Why Priority 2:**
+- ✅ Cohesive feature set - all related to progress/achievements
+- ✅ Can be tested independently
+- ✅ Reduces main script by ~7%
+- ✅ Improves code organization
+
+**Implementation Plan:**
+1. Create `utilities/progress/progressManager.js`
+2. Use Simple Instance pattern (like StatsPanelManager)
+3. Constructor takes dependencies: AppState, notifications, taskCore
+4. Export singleton to window for backward compatibility
+5. Test: Complete tasks, check progress bar, complete cycle, check milestones
+
+**Module Structure:**
+```javascript
+export class ProgressManager {
+  constructor(dependencies = {}) {
+    this.deps = {
+      AppState: dependencies.AppState,
+      showNotification: dependencies.showNotification,
+      resetTasks: dependencies.resetTasks,
+      updateStatsPanel: dependencies.updateStatsPanel,
+      querySelector: dependencies.querySelector
+    };
+  }
+
+  updateProgressBar() { /* ... */ }
+  checkMiniCycle() { /* ... */ }
+  incrementCycleCount(cycleId, cycles) { /* ... */ }
+  // ... rest of methods
 }
-```
 
-This pattern creates **technical debt** - every extracted function has a duplicate implementation in the main script.
-
----
-
-## 📊 Current State Breakdown
-
-### **Analysis by Function Count:**
-
-```bash
-Total standalone functions in main script: 66 functions
-Already extracted to modules:         ~30 functions (but duplicates remain!)
-Functions marked as "should extract":  ~25 functions
-Core orchestration functions:         ~11 functions
+// Export singleton
+const progressManager = new ProgressManager({ /* deps */ });
+window.progressManager = progressManager;
+window.updateProgressBar = () => progressManager.updateProgressBar();
+// ... export other methods
 ```
 
 ---
 
-## 🎯 Categories of Remaining Code
-
-### **Category 1A: Active Fallbacks (KEEP - Required for Safety)** ✅ VERIFIED
-
-**Why They Exist:** Actually used as fallbacks in `addTask()` function.
-
-**Status:** These MUST stay until modules are proven 100% reliable in production.
+### **Priority 3: Extract Massive Settings Function** 💥 BIGGEST WIN
+**Target Module:** `utilities/ui/settingsManager.js` (already exists!)
+**Effort:** High | **Lines Saved:** ~630 | **Functions:** 1
 
 ```javascript
-// Functions with Active Fallback Usage or Not Yet Modularized (DO NOT DELETE)
-⚠️ validateAndSanitizeTaskInput()      // Line 2843 - KEEP (fallback at line 2808)
-⚠️ loadTaskContext()                   // Line 2868 - KEEP (fallback at line 2814)
-⚠️ createOrUpdateTaskData()            // Line 2913 - KEEP (fallback at line 2820)
-⚠️ createTaskDOMElements()             // Line 2985 - KEEP (fallback at line 2823)
-⚠️ sanitizeInput()                     // Line 3198 - KEEP (NOT in any module yet, used by many modules)
-⚠️ createTaskCheckbox()                // Line 3398 - KEEP (used by createTaskContentElements)
-⚠️ createTaskLabel()                   // Line 3435 - KEEP (used by createTaskContentElements)
+// Lines 3045-3674 (630 lines = 17% of main script!)
 
-**Total Lines to Keep:** ~650 lines (active safety nets + unmodularized)
+⚡ saveToggleAutoReset() - Line 3045 (~630 lines)
+   What it does:
+   - Handles auto-reset toggle
+   - Handles delete-checked-tasks toggle
+   - Updates UI state from AppState
+   - Manages event listeners
+   - Saves settings to AppState
+   - Updates recurring button visibility
+   - Coordinates with multiple systems
+
+   Why it's so large:
+   - Two nested event handler functions (~200 lines each)
+   - Extensive logging and error handling
+   - Multiple UI updates and state synchronization
+   - Backward compatibility code
 ```
+
+**Why Priority 3:**
+- ✅ Massive impact - 17% of entire main script!
+- ✅ Logical home exists - settingsManager.js already handles settings
+- ✅ Single concern - all about toggle settings
+- ⚠️ High effort - many dependencies, nested functions
+
+**Implementation Plan:**
+1. Review settingsManager.js structure (already has methods for settings)
+2. Add `initializeToggleAutoReset()` method to SettingsManager class
+3. Move event handler functions as private methods
+4. Inject dependencies: AppState, querySelector, recurringCore
+5. Export to window: `window.saveToggleAutoReset = () => settingsManager.initializeToggleAutoReset()`
+6. Test: Toggle auto-reset, toggle delete checked tasks, verify saves
+
+**Challenges:**
+- Function has deeply nested event handlers
+- Many direct DOM queries (need to inject)
+- Calls multiple global functions (need dependencies)
+- Large amount of logging to preserve
 
 ---
 
-### **Category 1B: Safe to Delete (VERIFIED - No Fallback Usage)** ✅ READY FOR CLEANUP
+## 📊 Extraction Impact Summary
 
-**Verification Method:** Scanned codebase for `|| functionName(` pattern - none found for these functions.
+| Priority | Target | Functions | Lines | Effort | Impact |
+|----------|--------|-----------|-------|--------|--------|
+| **Priority 0** | Initial Setup | 2 | ~187 | Medium | 5% reduction |
+| **Priority 1** | Notification Wrappers | 9 | ~100 | Easy | Quick win |
+| **Priority 2** | Progress System | 7 | ~250 | Medium | Better organization |
+| **Priority 3** | Settings Function | 1 | ~630 | High | 17% reduction |
+| **TOTAL** | | **19** | **~1,167** | | **31.8% reduction** |
 
-**Status:** 100% safe to delete. Only module versions (window.functionName?.()) are called.
+**Results:**
+- **Before:** 3,674 lines, 33 functions
+- **After:** ~2,507 lines, 14 core functions
+- **Status:** Lean orchestration script ✨
 
+---
+
+## ✅ Functions That MUST Stay (14 Core Functions)
+
+These are **essential orchestration** functions that coordinate between modules:
+
+### **Core Task Orchestration (7 functions)**
 ```javascript
-// Task System Duplicates - SAFE TO DELETE (~1,000 lines)
-✅ addTask()                           // Line 2804 - KEEP as orchestrator (NOT a duplicate)
-✅ SAFE createMainTaskElement()Done        // Line 3035 - DELETE (in taskDOM.js)
-✅ SAFE createThreeDotsButton() Done        // Line 3065 - DELETE (in taskDOM.js)
-✅ SAFE createTaskButtonContainer() Done // Line 3084 - DELETE (in taskDOM.js)
-✅ SAFE createTaskButton()Done             // Line 3119 - DELETE (in taskDOM.js)
-✅ SAFE setupButtonAccessibility() Done   // Line 3142 - DELETE (in taskDOM.js)
-✅ SAFE setupButtonAriaStates() Done       // Line 3178 - DELETE (in taskDOM.js)
-✅ SAFE setupButtonEventHandlers() Done    // Line 3209 - DELETE (in taskEvents.js)
-✅ SAFE setupRecurringButtonHandler() Done  // Line 3230 - DELETE (in taskEvents.js)
-✅ SAFE createTaskContentElements() Done    // Line 3378 - DELETE (in taskDOM.js)
-✅ SAFE setupTaskInteractions()        // ~Line 3449 - DELETE (in taskEvents.js)
-✅ SAFE setupTaskClickInteraction()    // ~Line 3473 - DELETE (in taskEvents.js)
-✅ SAFE setupPriorityButtonState()     // ~Line 3492 - DELETE (in taskEvents.js)
-✅ SAFE setupTaskHoverInteractions()   // ~Line 3501 - DELETE (in taskEvents.js)
-✅ SAFE setupTaskFocusInteractions()   // ~Line 3510 - DELETE (in taskEvents.js)
-✅ SAFE finalizeTaskCreation()         // ~Line 3526 - DELETE (in taskEvents.js)
-✅ SAFE scrollToNewTask()              // ~Line 3554 - DELETE (in taskUtils.js)
-✅ SAFE handleOverdueStyling()         // ~Line 3565 - DELETE (in taskUtils.js)
-✅ SAFE updateUIAfterTaskCreation()    // ~Line 3574 - DELETE (in taskEvents.js)
-✅ SAFE setupFinalTaskInteractions()   // ~Line 3588 - DELETE (in taskUtils.js)
-✅ DONE saveTaskToSchema25()           // ADDED to taskCore.js (was missing, now at line 572)
-✅ DONE sanitizeInput()                // REMOVED (was line 3175, module version in globalUtils.js now used)
-✅ DONE toggleHoverTaskOptions()       // REMOVED (was line 3159, module version in taskDOM.js now used)
-✅ SAFE revealTaskButtons()            // ~Line 3781 - DELETE (in taskEvents.js)
-✅ SAFE handleTaskButtonClick()        // ~Line 3939 - DELETE (in taskEvents.js)
+✅ addTask() - Line 2452
+   Main orchestrator, coordinates task creation across multiple modules
+   MUST STAY: Core coordination logic
 
-// Rendering Duplicates - SAFE TO DELETE (~150 lines)
-✅ DONE refreshUIFromState()           // REMOVED (was line 1344, module version in taskRenderer.js now used)
-✅ SAFE renderTasks()                  // Line 1403 - DELETE (in taskDOM.js)
-⚠️ KEEP detectDeviceType()             // Line 1381 - KEEP (NOT in deviceDetection.js module, still needed)
+✅ validateAndSanitizeTaskInput() - Line 2491
+   Active fallback for addTask (line 2808 uses || pattern)
+   MUST STAY: Safety fallback
 
-// Notification Duplicates - SAFE TO DELETE (~80 lines)
-✅ SAFE showNotification()             // Line 2225 - DELETE (in notifications.js)
-✅ SAFE setupNotificationDragging()    // Line 2232 - DELETE (in notifications.js)
-✅ SAFE resetNotificationPosition()    // Line 2237 - DELETE (in notifications.js)
-✅ SAFE showApplyConfirmation()        // Line 2260 - DELETE (in notifications.js)
-✅ SAFE showNotificationWithTip()      // Line 2272 - DELETE (in notifications.js)
-✅ SAFE showConfirmationModal()        // Line 2285 - DELETE (in modalManager.js)
-✅ SAFE showPromptModal()              // Line 2289 - DELETE (in modalManager.js)
-✅ SAFE closeAllModals()               // Line 2296 - DELETE (in modalManager.js)
+✅ loadTaskContext() - Line 2516
+   Active fallback for addTask (line 2814 uses || pattern)
+   MUST STAY: Safety fallback
 
-// DOM Utils Duplicates - SAFE TO DELETE (~100 lines)
-✅ SAFE extractTaskDataFromDOM()       // Line 1899 - DELETE (in taskUtils.js)
-✅ SAFE buildTaskContext()             // Line 2368 - DELETE (in taskUtils.js)
-⚠️ KEEP isTouchDevice()                // Line 3056 - KEEP (NOT in deviceDetection.js, actively used in main script + dragDropManager)
+✅ createOrUpdateTaskData() - Line 2561
+   Active fallback for addTask (line 2820 uses || pattern)
+   MUST STAY: Safety fallback
 
-**Verified Safe to Delete:** ~35 functions, ~1,700 lines of duplicate code
-**Deletion Method:** Manual, one at a time, testing after each
-**Deletion Order:** Bottom-up (highest line number first) to preserve line numbers
+✅ createTaskDOMElements() - Line 2633
+   Active fallback for addTask (line 2823 uses || pattern)
+   MUST STAY: Safety fallback
+
+✅ createTaskCheckbox() - Line 2712
+   Used by createTaskDOMElements (not a module fallback, actual implementation)
+   MUST STAY: Required by fallback chain
+
+✅ createTaskLabel() - Line 2749
+   Used by createTaskDOMElements (not a module fallback, actual implementation)
+   MUST STAY: Required by fallback chain
 ```
 
----
-
-### **Category 2: Not Yet Extracted (Should Extract)** 🎯 NEW MODULES
-
-**These are original implementations, not duplicates.**
-
-#### **2A. Progress & Milestones System** (~250 lines)
-
-**Candidate Module:** `utilities/ui/progressManager.js` or `utilities/achievements/milestoneManager.js`
-
+### **Core Data & Setup (3 functions)**
 ```javascript
-// Lines 2539-2758
-✅ updateProgressBar()                 // Line 2539 - Visual progress updates
-✅ checkMiniCycle()                    // Line 2565 - Cycle completion logic
-✅ incrementCycleCount()               // Line 2616 - Count management
-✅ handleMilestoneUnlocks()            // Line 2668 - Achievement system
-✅ showCompletionAnimation()           // Line 2719 - Visual feedback
-✅ checkForMilestone()                 // Line 2743 - Milestone checking
-✅ showMilestoneMessage()              // Line 2758 - Milestone notifications
-✅ triggerLogoBackground()             // Line 4058 - Visual effects
+✅ loadMiniCycleData() - Line 1804
+   Core data loading from localStorage
+   MUST STAY: Used everywhere, fundamental operation
+
+✅ updateCycleData() - Line 1861
+   Updates specific cycle data with AppState
+   MUST STAY: Core data operation
+
+✅ setupMiniCycleTitleListener() - Line 1650
+   Handles cycle title editing with blur events
+   MUST STAY: Specific to main app, not module worthy
 ```
 
-**Dependencies:**
-- AppState (for cycle count)
-- ThemeManager (for theme unlocks)
-- Notifications (for messages)
-- GamesManager (for feature unlocks)
-
-**Pattern:** Simple Instance ✨ (state-dependent UI updates)
-
-**Estimated Size:** ~250 lines
-
----
-
-#### **2B. Data Persistence System** (~300 lines)
-
-**Candidate Module:** `utilities/data/persistenceManager.js`
-
+### **Simple Utilities (4 functions)**
 ```javascript
-// Lines 1835-2038
-✅ autoSave()                          // Line 1835 - Debounced auto-save
-✅ autoSaveWithStateModule()           // Line 1854 - AppState-aware save
-✅ directSave()                        // Line 1873 - Immediate save
-✅ extractTaskDataFromDOM()            // Line 1899 - DOM → data extraction
-✅ loadMiniCycleData()                 // Line 1981 - Load from storage
-✅ updateCycleData()                   // Line 2038 - Cycle data updates
+✅ detectDeviceType() - Line 1381
+   Adds touch-device/non-touch-device CSS classes to body
+   KEEP: Simple 13-line utility, not worth extracting
+
+✅ isTouchDevice() - Line 2961
+   Returns boolean for touch detection
+   KEEP: Simple 10-line utility, actively used
+
+✅ setupUserManual() - Line 2126
+   Initializes help documentation system
+   KEEP: Small setup function
+
+✅ assignCycleVariables() - Line 2154
+   Sets up cycle-related variables
+   KEEP: Small setup function
+
+✅ checkCompleteAllButton() - Line 2986
+   Shows/hides "complete all" button based on task states
+   KEEP: Simple UI helper
+
+✅ triggerLogoBackground() - Line 3005
+   Animates logo background color
+   KEEP: Simple animation utility
 ```
 
-**Dependencies:**
-- AppState (for data access)
-- taskUtils (for DOM extraction)
-- localStorage (for persistence)
-
-**Pattern:** Static Utilities 🔧 (pure data operations)
-
-**Estimated Size:** ~300 lines
+**Total to Keep:** 14 functions (~1,000 lines)
 
 ---
 
-#### **2C. Initial Setup System** (~300 lines)
+## 📋 Recommended Implementation Order
 
-**Candidate Module:** `utilities/setup/initialSetupManager.js`
+### **Phase 1: Easy Wins (2-3 hours)**
+1. ✅ **Priority 1:** Delete 9 notification wrappers → Save ~100 lines
+2. ✅ Validate: Test notifications, modals, reminders work
 
-```javascript
-// Lines 1565-1752
-✅ initialSetup()                      // Line 1565 - First-time setup flow
-✅ completeInitialSetup()              // Line 1612 - Finalize setup
-✅ setupMiniCycleTitleListener()       // Line 1752 - Cycle rename handling
-```
-
-**Dependencies:**
-- CycleManager (for creating first cycle)
-- OnboardingManager (for first-time UX)
-- AppState (for initial data)
-
-**Pattern:** Simple Instance ✨ (one-time setup orchestration)
-
-**Estimated Size:** ~300 lines
+**Result:** 3,674 → ~3,574 lines
 
 ---
 
-#### **2D. Reminder System** (~100 lines)
+### **Phase 2: Initial Setup (4-5 hours)**
+1. ✅ **Priority 0:** Extract initialSetup functions → Save ~187 lines
+2. ✅ Move to appInitialization.js as methods
+3. ✅ Update DOMContentLoaded handler
+4. ✅ Validate: App loads, onboarding works, themes apply
 
-**Candidate Module:** `utilities/reminders/reminderScheduler.js` (or integrate into existing `reminders.js`)
-
-```javascript
-// Line 2111
-✅ remindOverdueTasks()                // Line 2111 - Overdue task notifications
-```
-
-**Dependencies:**
-- Notifications (for displaying reminders)
-- DueDates (for overdue detection)
-- AppState (for task data)
-
-**Pattern:** Simple Instance ✨ (scheduled notifications)
-
-**Estimated Size:** ~100 lines
-
-**Note:** The existing `reminders.js` module (621 lines) may already handle this. Need to verify if `remindOverdueTasks()` is a duplicate or unique functionality.
+**Result:** ~3,574 → ~3,387 lines
 
 ---
 
-#### **2E. User Manual System** (~50 lines)
+### **Phase 3: Progress System (6-8 hours)**
+1. ✅ **Priority 2:** Create progressManager.js → Save ~250 lines
+2. ✅ Extract 7 progress/milestone functions
+3. ✅ Set up dependency injection
+4. ✅ Export to window for compatibility
+5. ✅ Validate: Progress bar, cycle completion, milestones work
 
-**Candidate Module:** `utilities/ui/userManualManager.js` (or integrate into `modalManager.js`)
-
-```javascript
-// Line 2478
-✅ setupUserManual()                   // Line 2478 - Help system initialization
-```
-
-**Dependencies:**
-- ModalManager (for displaying help)
-- DOM elements (for user manual)
-
-**Pattern:** Static Utilities 🔧 (simple UI setup)
-
-**Estimated Size:** ~50 lines
+**Result:** ~3,387 → ~3,137 lines
 
 ---
 
-#### **2F. Cycle Management Helpers** (~100 lines)
+### **Phase 4: Settings Monster (8-10 hours)**
+1. ✅ **Priority 3:** Move saveToggleAutoReset → Save ~630 lines
+2. ✅ Refactor as SettingsManager method
+3. ✅ Extract nested event handlers as private methods
+4. ✅ Update dependencies and exports
+5. ✅ Validate: Auto-reset toggle, delete checked tasks toggle work
 
-**Candidate Module:** Integrate into existing `cycle/cycleManager.js` (currently 431 lines)
-
-```javascript
-// Line 2506
-✅ assignCycleVariables()              // Line 2506 - Cycle variable assignment
-✅ saveToggleAutoReset()               // Line 4098 - Auto-reset toggle
-✅ checkCompleteAllButton()            // Line 4039 - "Complete All" button state
-```
-
-**Dependencies:**
-- AppState (for cycle data)
-- CycleManager (for cycle operations)
-
-**Pattern:** Extend existing module
-
-**Estimated Size:** ~100 lines (additions to existing module)
+**Result:** ~3,137 → ~2,507 lines
 
 ---
 
-### **Category 3: Core Orchestration (Keep in Main Script)** ✅ CORRECT PLACEMENT
+## 🎯 Final Target State
 
-**These functions should STAY in miniCycle-scripts.js as orchestrators:**
+**After all extractions:**
+```
+Main Script: ~2,507 lines
+- 14 core orchestration functions
+- Module imports and initialization
+- Event listener setup
+- Pure coordination logic
 
-```javascript
-✅ addTask()                           // Line 2804 - Orchestrates task creation
-   - Calls: validateInput → loadContext → createData → createDOM → setupInteractions → finalize
-   - This is the "conductor" that uses all task modules
-
-✅ Module initialization code            // Lines 260-1300 - Phase 1/2/3 initialization
-✅ DOMContentLoaded handler              // Main app bootstrap
-✅ Event listener setup                  // Cross-system event wiring
-✅ Global state management               // AppGlobalState coordination
+Modules: 35+ specialized modules
+- appInitialization.js (setup)
+- notifications.js (notifications/modals)
+- progressManager.js (progress/milestones)
+- settingsManager.js (all settings)
+- taskCore.js, taskDOM.js, etc.
 ```
 
-**Why Keep These:**
-- They coordinate ACROSS multiple modules
-- They represent app-level workflows, not module functionality
-- Moving them would create circular dependencies
-
-**Estimated Lines:** ~1,000-1,500 lines (orchestration + glue code)
+**Benefits:**
+- ✅ 31.8% smaller main script
+- ✅ Better separation of concerns
+- ✅ Easier testing (modules are isolated)
+- ✅ Clearer code organization
+- ✅ Follows modularization guide v4 patterns
 
 ---
 
-## 📈 Extraction Potential Summary
+## 🛠️ Implementation Guidelines
 
-### **Total Lines in Main Script:** 4,856 lines
+### **Follow Modularization Guide v4 Patterns**
 
-### **Breakdown:**
+1. **Use Appropriate Pattern:**
+   - Progress System → Simple Instance pattern
+   - Initial Setup → Add methods to existing Resilient Constructor
+   - Notification wrappers → Just delete (modules exist)
 
-| Category | Lines | Action | Priority |
-|----------|-------|--------|----------|
-| **Category 1: Duplicate Implementations** | ~1,530 lines | ❌ DELETE after module split | 🔴 High |
-| **Category 2: Not Yet Extracted** | ~1,100 lines | 🎯 EXTRACT to new modules | 🟡 Medium |
-| **Category 3: Core Orchestration** | ~1,500 lines | ✅ KEEP in main script | ✅ Correct |
-| **Initialization & Imports** | ~726 lines | ✅ KEEP in main script | ✅ Correct |
+2. **Dependency Injection:**
+   - Use deferred pattern: `() => window.functionName?.()`
+   - Inject at initialization, not at call time
+   - Document all dependencies
 
-### **After All Extractions:**
+3. **Window Exports:**
+   - Always export for backward compatibility
+   - Use descriptive export names
+   - Example: `window.progressManager = progressManager`
 
-```
-Current:  4,856 lines
-Delete:  -1,530 lines (duplicates removed after verification)
-Extract: -1,100 lines (new modules created)
-─────────────────────
-Target:   2,226 lines ✅ (orchestration + initialization only)
-```
+4. **Testing After Each Extraction:**
+   - Test the specific feature extracted
+   - Test integration with other systems
+   - Check console for errors
+   - Verify state persistence (AppState saves)
 
-**Note:** This is actually BETTER than the 75% reduction goal! We'd go from 15,677 → 2,226 lines = **85.8% reduction**!
-
----
-
-## 🗺️ Recommended Extraction Order
-
-### **Phase 1: Complete Task System Split** (Tomorrow)
-Priority: 🔴 Critical (already planned)
-
-```
-1. Split taskDOM.js into 5 modules (taskValidation, taskUtils, taskDOM, taskEvents, taskRenderer)
-2. Timeline: 1 day
-3. Result: Proper 7-module task system
-```
-
-### **Phase 2: Delete Duplicate Fallbacks** (After Phase 1 verified working)
-Priority: 🔴 High (cleanup technical debt)
-
-```
-1. Remove all duplicate task system functions from main script (~1,200 lines)
-2. Remove duplicate rendering functions (~150 lines)
-3. Remove duplicate notification/modal functions (~80 lines)
-4. Remove duplicate DOM utils (~100 lines)
-5. Timeline: 2-3 hours (careful testing required)
-6. Result: Main script down to ~3,326 lines
-```
-
-### **Phase 3: Extract Remaining Systems** (Optional - for perfectionism)
-Priority: 🟡 Medium (architectural completeness)
-
-```
-Module 1: progressManager.js          (~250 lines) - 3 hours
-Module 2: persistenceManager.js       (~300 lines) - 4 hours
-Module 3: initialSetupManager.js      (~300 lines) - 4 hours
-Module 4: reminderScheduler.js        (~100 lines) - 2 hours
-Module 5: userManualManager.js        (~50 lines)  - 1 hour
-Module 6: Extend cycleManager.js      (~100 lines) - 2 hours
-
-Timeline: 2-3 days total
-Result: Main script down to ~2,226 lines (85.8% reduction!)
-```
+5. **Commit Strategy:**
+   - One extraction = one commit
+   - Descriptive commit message with line count
+   - Test before committing
 
 ---
 
-## 🎯 Recommended Approach
+## 📝 Notes
 
-### **Option A: Aggressive (Complete Modularization)**
-- Do all 3 phases
-- Timeline: 1 week total
-- Result: 85.8% reduction, perfect architecture
-- Risk: Higher (more moving parts)
-
-### **Option B: Conservative (Focus on Task System)**
-- Do Phase 1 only (task system split)
-- Do Phase 2 only (delete duplicates after verification)
-- Timeline: 2-3 days
-- Result: 79% reduction (15,677 → ~3,326 lines)
-- Risk: Lower (focused scope)
-
-### **Option C: Pragmatic (Middle Ground)** ⭐ RECOMMENDED
-- Do Phase 1 (task system split) - Tomorrow
-- Do Phase 2 (delete duplicates) - Day 2
-- Extract only HIGH-VALUE systems from Phase 3:
-  - progressManager.js (milestones/achievements)
-  - persistenceManager.js (data saving)
-- Timeline: 3-4 days
-- Result: 83% reduction (15,677 → ~2,660 lines)
-- Risk: Balanced (high-value extractions only)
+- Line numbers are approximate and shift as code changes
+- Always verify function exists before extraction
+- Test thoroughly after each change
+- Keep fallback patterns for critical functions
+- Document any breaking changes
+- Update version number after major extractions
 
 ---
 
-## 💡 Key Insights
+## ✅ Recent Fixes Applied (October 27, 2025)
 
-### **1. The "Fallback Pattern" Creates Technical Debt**
-
-**Current Pattern:**
-```javascript
-// Main script tries module, falls back to local implementation
-const result = window.moduleFunction?.() || localFallbackFunction();
-
-function localFallbackFunction() {
-    // ❌ DISABLED comment, but function still exists!
-    // ... full implementation ...
-}
-```
-
-**Why It Exists:**
-- Safety net during development
-- Ensures app works even if module fails to load
-
-**Problem:**
-- Every function exists in 2 places
-- Changes must be synchronized
-- Main script stays large despite modularization
-
-**Solution:**
-- Once modules proven stable (100% test passing), delete fallbacks
-- Trust the module system
-- If module fails to load, app should fail gracefully (not hide the error)
+1. **Fixed resetTasks persistence bug** - Task data now saved to AppState/localStorage
+2. **Removed duplicate functions** - sanitizeInput, toggleHoverTaskOptions, refreshUIFromState
+3. **Added missing function** - saveTaskToSchema25 to taskCore.js
+4. **Updated documentation** - detectDeviceType and isTouchDevice correctly marked as KEEP
+5. **Applied modularization patterns** - Using deferred dependency injection throughout
+6. **Created accurate function inventory** - This document reflects actual codebase state
 
 ---
 
-### **2. Some Extractions Provide More Value Than Others**
-
-**High-Value Extractions:**
-- ✅ Task system (already done)
-- ✅ Cycle system (already done)
-- ✅ UI coordination (already done)
-- 🎯 Progress/Milestones (user-facing features)
-- 🎯 Persistence (data integrity)
-
-**Lower-Value Extractions:**
-- Initial setup (~300 lines, but only runs once)
-- User manual (~50 lines, simple functionality)
-- Reminder scheduler (~100 lines, may already be in reminders.js)
-
-**Recommendation:** Focus on high-value extractions that improve maintainability of frequently-changed code.
-
----
-
-### **3. Main Script Size vs. Architecture Quality**
-
-**Current:** 4,856 lines (with duplicates)
-**After Phase 1+2:** ~3,326 lines (79% reduction)
-**After Phase 1+2+3:** ~2,226 lines (85.8% reduction)
-
-**Diminishing Returns:** Going from 3,326 → 2,226 (1,100 lines) takes 2-3 days of work for ~6% additional reduction.
-
-**Question:** Is perfect modularization worth the time investment?
-
-**Answer:** Depends on your goals:
-- If goal is **maintainability:** Phase 1+2 sufficient (task system properly split, duplicates removed)
-- If goal is **architectural purity:** Do all phases
-- If goal is **shipping features:** Stop after Phase 1, move on to new features
-
----
-
-## 📋 Action Items
-
-### **Immediate (READY NOW - Oct 26, 2025):**
-1. ✅ Fallback analysis complete - 35 functions verified safe to delete
-2. ✅ Documentation updated with Category 1A (KEEP) vs 1B (DELETE)
-3. 🎯 **START CLEANUP:** Delete functions from Category 1B one by one
-4. 🎯 Test after each deletion (add task, complete, drag, stats)
-
-### **Cleanup Order (Bottom-Up to Preserve Line Numbers):**
-```
-Start here → handleTaskButtonClick()        // Line 3939 (highest, safest)
-          → isTouchDevice()                 // Line 3799
-          → revealTaskButtons()             // Line 3781
-          → sanitizeInput()                 // Line 3701
-          → toggleHoverTaskOptions()        // Line 3662
-          ... continue up through the list ...
-End here  → refreshUIFromState()           // Line 1344 (lowest)
-```
-
-### **After Each Deletion:**
-1. Save file
-2. Refresh browser
-3. Test: Add task → Complete → Drag → Check stats → Undo
-4. If OK → commit and move to next function
-5. If broken → undo (Cmd+Z) and investigate
-
-### **Long-Term (Optional):**
-1. 💭 Consider extracting progress/milestones system
-2. 💭 Consider extracting persistence system
-3. 💭 Evaluate if additional modularization provides value
-
----
-
-## 🎓 Lessons Learned
-
-1. **Fallback Pattern Is Technical Debt** - Safe during development, but should be removed once modules stable
-2. **Documentation Can Drift** - Main script reported as 3,950 lines, actually 4,739 lines
-3. **Extractions Create Duplicates** - Must plan for cleanup phase after extraction phase
-4. **Not All Code Needs Extraction** - Orchestration functions belong in main script
-5. **Diminishing Returns Apply** - First 75% reduction is easier than next 10%
-6. **Verify Before Deleting** - Only 6 functions actually used as fallbacks out of 41 candidates (Oct 26, 2025)
-7. **Manual Is Safer** - Automated bulk deletion caused syntax errors; manual one-by-one is foolproof
-
----
-
-**Created:** October 26, 2025
-**Last Updated:** October 26, 2025 (Fallback verification complete)
-**Main Script Current:** 4,739 lines (actual verified count)
-**After Cleanup Target:** ~3,039 lines (1,700 lines of verified safe duplicates removed)
-**Reduction Achievement:** 80.6% from original 15,677 lines
-**Status:** ✅ Ready for manual cleanup - Category 1B functions verified safe to delete
-
----
-
-*"Perfect is the enemy of good. Ship the task system split, delete the duplicates, then decide if more extraction provides value." - October 26, 2025*
+**Last Updated:** October 27, 2025
+**Version:** 2.0 (Complete rewrite based on actual codebase analysis)
