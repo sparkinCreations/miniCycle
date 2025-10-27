@@ -654,6 +654,15 @@ export class TaskCore {
 
             console.log('📊 Resetting tasks for cycle:', activeCycle);
 
+            // ✅ CAPTURE UNDO SNAPSHOT BEFORE ANY MODIFICATIONS
+            if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+                const currentState = this.deps.AppState?.get?.();
+                if (currentState) {
+                    window.captureStateSnapshot(currentState);
+                    console.log('📸 Undo snapshot captured BEFORE task reset (includes current cycle count and task states)');
+                }
+            }
+
             // Animation: Show progress bar becoming full first
             if (progressBar) {
                 progressBar.style.width = "100%";
@@ -698,15 +707,6 @@ export class TaskCore {
                     }
                 });
 
-                // ✅ CAPTURE UNDO SNAPSHOT before resetting tasks
-                if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
-                    const currentState = this.deps.AppState?.get?.();
-                    if (currentState) {
-                        window.captureStateSnapshot(currentState);
-                        console.log('📸 Undo snapshot captured before task reset');
-                    }
-                }
-
                 // ✅ FIX: Save the updated task data to AppState (will auto-save to localStorage after 600ms debounce)
                 if (this.deps.AppState?.isReady?.()) {
                     this.deps.AppState.update(state => {
@@ -741,6 +741,12 @@ export class TaskCore {
 
                 // Show cycle completion message
                 window.helpWindowManager.showCycleCompleteMessage();
+
+                // ✅ Update undo/redo buttons to reflect the new snapshot
+                if (typeof window.updateUndoRedoButtons === 'function') {
+                    window.updateUndoRedoButtons();
+                    console.log('✅ Undo/redo buttons updated after cycle completion');
+                }
 
                 console.log('✅ Task reset animation completed');
 

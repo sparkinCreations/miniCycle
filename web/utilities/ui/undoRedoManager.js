@@ -190,6 +190,7 @@ export function captureStateSnapshot(state) {
     title: currentCycle.title || "Untitled miniCycle",
     autoReset: currentCycle.autoReset,
     deleteCheckedTasks: currentCycle.deleteCheckedTasks,
+    cycleCount: currentCycle.cycleCount || 0,  // ✅ Include cycle count in snapshot
     timestamp: Date.now()
   };
 
@@ -298,6 +299,7 @@ export async function performStateBasedUndo() {
       title: currentCycle?.title,
       autoReset: currentCycle?.autoReset,
       deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
+      cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
       timestamp: Date.now()
     };
 
@@ -331,6 +333,7 @@ export async function performStateBasedUndo() {
       if (snap.title) cycle.title = snap.title;
       if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
+      if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
     }, true);
 
     await Promise.resolve();
@@ -380,6 +383,7 @@ export async function performStateBasedRedo() {
       title: currentCycle?.title,
       autoReset: currentCycle?.autoReset,
       deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
+      cycleCount: currentCycle?.cycleCount || 0,  // ✅ Include cycle count
       timestamp: Date.now()
     };
 
@@ -413,6 +417,7 @@ export async function performStateBasedRedo() {
       if (snap.title) cycle.title = snap.title;
       if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
+      if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
     }, true);
 
     await Promise.resolve();

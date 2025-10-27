@@ -2287,11 +2287,8 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
 
     console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
 
-    // ✅ CAPTURE UNDO SNAPSHOT before incrementing cycle count
-    if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
-        window.captureStateSnapshot(currentState);
-        console.log('📸 Undo snapshot captured before cycle increment');
-    }
+    // ✅ NOTE: Undo snapshot is captured by resetTasks() before the entire cycle completion flow
+    // We don't capture it here to avoid duplicate snapshots
 
     // ✅ Update through state module and get the actual new count
     let actualNewCount;
