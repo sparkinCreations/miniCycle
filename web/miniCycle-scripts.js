@@ -872,7 +872,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             undoRedoModule.setUndoRedoManagerDependencies({
                 AppState: window.AppState,
-                refreshUIFromState: refreshUIFromState,
+                refreshUIFromState: (state) => window.refreshUIFromState?.(state),
                 AppGlobalState: window.AppGlobalState,
                 getElementById: (id) => document.getElementById(id),
                 safeAddEventListener: window.safeAddEventListener
@@ -1153,7 +1153,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 // ✅ Use new appInit API
                 if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
-                  if (prev) captureStateSnapshot(prev);
+                  if (prev && typeof window.captureStateSnapshot === 'function') {
+                    window.captureStateSnapshot(prev);
+                  }
                 }
               } catch (e) {
                 console.warn('⚠️ Undo snapshot wrapper error:', e);
@@ -1173,14 +1175,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // 🔘 Update button states and capture an initial snapshot
         try {
-          updateUndoRedoButtons();
+          if (typeof window.updateUndoRedoButtons === 'function') {
+            window.updateUndoRedoButtons();
+          }
 
           // Only capture initial snapshot if not using the update wrapper
           if (!window.__useUpdateWrapper) {
             setTimeout(() => {
               try {
                 const st = window.AppState.get?.();
-                if (st) captureStateSnapshot(st);
+                if (st && typeof window.captureStateSnapshot === 'function') {
+                  window.captureStateSnapshot(st);
+                }
               } catch (e) {
                 console.warn('⚠️ Initial snapshot failed:', e);
               }
@@ -1335,60 +1341,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 // - captureInitialSnapshot
 // - setupStateBasedUndoRedo
 // - enableUndoSystemOnFirstInteraction
-// ✅ captureStateSnapshot moved to utilities/ui/undoRedoManager.js
-// ✅ buildSnapshotSignature & snapshotsEqual moved to utilities/ui/undoRedoManager.js
-// ✅ performStateBasedUndo moved to utilities/ui/undoRedoManager.js
-// ✅ performStateBasedRedo moved to utilities/ui/undoRedoManager.js
-
-// ✅ Helper: prefer AppState for UI refresh; fall back to loader
-function refreshUIFromState(providedState = null) {
-  const state =
-    providedState ||
-    (window.AppState?.isReady?.() ? window.AppState.get() : null);
-
-  if (state?.data?.cycles && state?.appState?.activeCycleId) {
-    const cid = state.appState.activeCycleId;
-    const cycle = state.data.cycles[cid];
-    if (cycle) {
-      // Render directly from current in‑memory state
-      renderTasks(cycle.tasks || []);
-      
-      // ✅ Restore UI state after rendering
-      const arrowsVisible = state.ui?.moveArrowsVisible || false;
-      updateArrowsInDOM(arrowsVisible);
-      
-      // Update other UI bits that don't depend on reloading storage
-      // ✅ Recurring panel updates now handled by recurringPanel module via window.recurringPanel
-      if (window.recurringPanel?.updateRecurringPanel) window.recurringPanel.updateRecurringPanel();
-      if (window.recurringPanel?.updateRecurringPanelButtonVisibility) window.recurringPanel.updateRecurringPanelButtonVisibility();
-      if (typeof updateMainMenuHeader === 'function') updateMainMenuHeader();
-      if (typeof updateProgressBar === 'function') updateProgressBar();
-      if (typeof checkCompleteAllButton === 'function') checkCompleteAllButton();
-      return;
-    }
-  }
-
-  // Fallback: loader (reads from localStorage)
-  if (typeof window.loadMiniCycle === 'function') {
-    window.loadMiniCycle();
-    
-    // ✅ Also restore arrow visibility after fallback load
-    setTimeout(() => {
-      if (window.AppState?.isReady?.()) {
-        const currentState = window.AppState.get();
-        const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-        updateArrowsInDOM(arrowsVisible);
-      }
-    }, 50);
-  }
-}
-
-// ✅ Make refreshUIFromState globally available for recurring modules
-// ❌ DISABLED: Old export - now provided by taskDOM module
-// window.refreshUIFromState = refreshUIFromState;
-
-// ✅ updateUndoRedoButtons moved to utilities/ui/undoRedoManager.js
-// Globally exposed via Phase 2 integration
+// ✅ refreshUIFromState, captureStateSnapshot, updateUndoRedoButtons moved to modules
+// Using deferred dependency injection pattern: () => window.functionName?.()
+// This allows modules to be injected before they're fully loaded (follows modularization guide v4)
 
 
 
@@ -1400,63 +1355,6 @@ function refreshUIFromState(providedState = null) {
 
 
 
-function renderTasks(tasksArray = []) {
-  console.log('🔄 Rendering tasks (Schema 2.5 only)...');
-  
-  const taskList = document.getElementById("taskList");
-  if (!taskList) {
-    console.error('❌ Task list container not found');
-    return;
-  }
-  
-  taskList.innerHTML = ""; // Clear existing tasks from DOM
-
-  if (!Array.isArray(tasksArray)) {
-    console.warn('⚠️ Invalid tasks array provided to renderTasks');
-    return;
-  }
-
-  console.log(`📋 Rendering ${tasksArray.length} tasks`);
-
-  tasksArray.forEach(task => {
-    if (!task || !task.id) {
-      console.warn('⚠️ Skipping invalid task:', task);
-      return;
-    }
-
-    addTask(
-      task.text,
-      task.completed,
-      false,                     // shouldSave: false (don't save during render)
-      task.dueDate,
-      task.highPriority,
-      true,                      // isLoading: true (avoid overdue reminder popups)
-      task.remindersEnabled,
-      task.recurring,
-      task.id,
-      task.recurringSettings
-    );
-  });
-
-  // Re-run UI state updates
-  updateProgressBar();
-  checkCompleteAllButton();
-  updateStatsPanel();
-  
-  // ✅ Update recurring panel button visibility
-  if (typeof updateRecurringPanelButtonVisibility === 'function') {
-    updateRecurringPanelButtonVisibility();
-  }
-  
-  // ✅ Restore arrow visibility from state after rendering
-  if (window.AppState?.isReady?.()) {
-    const currentState = window.AppState.get();
-    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-    updateArrowsInDOM(arrowsVisible);
-  }
-
-  console.log('✅ Task rendering completed and UI state restored');
-}
 
 
 
@@ -1895,47 +1793,7 @@ async function directSave(overrideTaskList = null) {
   return { success: true, taskCount: taskData.length };
 }
 
-// ✅ EXTRACTED: Common task data extraction logic
-function extractTaskDataFromDOM() {
-  const taskListElement = document.getElementById("taskList");
-  if (!taskListElement) {
-    console.warn('⚠️ Task list element not found');
-    return [];
-  }
 
-  return [...taskListElement.children].map(taskElement => {
-    const taskTextElement = taskElement.querySelector(".task-text");
-    const taskId = taskElement.dataset.taskId;
-
-    if (!taskTextElement || !taskId) {
-      console.warn("⚠️ Skipping invalid task element");
-      return null;
-    }
-
-    // Extract recurring settings safely
-    let recurringSettings = {};
-    try {
-      const settingsAttr = taskElement.getAttribute("data-recurring-settings");
-      if (settingsAttr) {
-        recurringSettings = JSON.parse(settingsAttr);
-      }
-    } catch (err) {
-      console.warn("⚠️ Invalid recurring settings, using empty object");
-    }
-
-    return {
-      id: taskId,
-      text: taskTextElement.textContent,
-      completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-      dueDate: taskElement.querySelector(".due-date")?.value || null,
-      highPriority: taskElement.classList.contains("high-priority"),
-      remindersEnabled: taskElement.querySelector(".enable-task-reminders")?.classList.contains("reminder-active") || false,
-      recurring: taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
-      recurringSettings,
-      schemaVersion: 2
-    };
-  }).filter(Boolean);
-}
 
 // ✅ EXTRACTED: Common recurring templates update logic
 // ✅ REMOVED: updateRecurringTemplates - now handled by recurringCore module
@@ -2340,121 +2198,6 @@ document.getElementById("always-show-recurring")?.addEventListener("change", () 
         window.recurringPanel.saveAlwaysShowRecurringSetting();
     }
 });
-
-// ✅ REMOVED: apply-recurring-settings event listener - now handled by recurringPanel module
-// ✅ REMOVED: normalizeRecurringSettings - now handled by recurringCore module
-// ✅ REMOVED: buildRecurringSettingsFromPanel - now handled by recurringPanel module
-// ✅ REMOVED: clearNonRelevantRecurringFields - now handled by recurringCore module
-// ✅ REMOVED: syncRecurringStateToDOM - now handled by recurringCore module
-// ✅ REMOVED: cancel-recurring-settings event listener - now handled by recurringPanel module
-// ✅ REMOVED: recur-indefinitely event listener - now handled by recurringPanel module
-// ✅ REMOVED: setupBiweeklyDayToggle - now handled by recurringPanel module
-// ✅ REMOVED: document click event listener for hiding preview - now handled by recurringPanel module
-
-// ✅ REMOVED: setupMilitaryTimeToggle - now handled by recurringPanel module
-// ✅ REMOVED: setupTimeConversion - now handled by recurringPanel module
-// ✅ REMOVED: generateMonthlyDayGrid - now handled by recurringPanel module
-// ✅ REMOVED: setupWeeklyDayToggle - now handled by recurringPanel module
-// ✅ REMOVED: generateYearlyMonthGrid - now handled by recurringPanel module
-// ✅ REMOVED: generateYearlyDayGrid - now handled by recurringPanel module
-// ✅ REMOVED: handleYearlyApplyToAllChange - now handled by recurringPanel module
-// ✅ REMOVED: getSelectedYearlyMonths - now handled by recurringPanel module
-// ✅ REMOVED: getSelectedMonthlyDays - now handled by recurringPanel module
-// ✅ REMOVED: setupSpecificDatesPanel - now handled by recurringPanel module
-// ✅ REMOVED: getTomorrow - now handled by recurringPanel module
-// ✅ REMOVED: updateRecurCountVisibility - now handled by recurringPanel module
-
-// ✅ Helper function to build task context for existing tasks (AppState-based)
-function buildTaskContext(taskItem, taskId) {
-    try {
-        // ✅ Use AppState instead of loadMiniCycleData
-        if (!AppState.isReady()) {
-            console.warn('⚠️ AppState not ready for buildTaskContext');
-            return null;
-        }
-
-        const state = AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        
-        if (!activeCycleId) return null;
-
-        const currentCycle = state.data?.cycles?.[activeCycleId];
-        if (!currentCycle) return null;
-
-        const taskText = taskItem.querySelector('.task-text')?.textContent?.trim() || '';
-        
-        return {
-            taskTextTrimmed: taskText,
-            assignedTaskId: taskId,
-            schemaData: state, // Pass the full state for backward compatibility
-            cycles: state.data.cycles,
-            activeCycle: activeCycleId,
-            currentCycle,
-            settings: state.settings || {},
-            autoResetEnabled: currentCycle.autoReset || false,
-            deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false
-        };
-    } catch (error) {
-        console.warn('⚠️ Failed to build task context:', error);
-        return null;
-    }
-}
-
-
-
-// ✅ REMOVED: updateRecurringButtonVisibility - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: isAlwaysShowRecurringEnabled - now handled by recurringCore/recurringPanel modules
-  
-// ✅ REMOVED: updateRecurringPanelButtonVisibility - now handled by recurringCore/recurringPanel modules
-  
-// ✅ REMOVED: updateRecurringSummary - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: parseDateAsLocal - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: attachRecurringSummaryListeners - now handled by recurringPanel module
-
-// ✅ REMOVED: showTaskSummaryPreview - now handled by recurringCore/recurringPanel modules
-
-// ✅ New function to populate form with existing settings
-// ✅ REMOVED: populateRecurringFormWithSettings - now handled by recurringCore/recurringPanel modules
-
-// ✅ New function to clear/reset the recurring form
-// ✅ REMOVED: clearRecurringForm - now handled by recurringCore/recurringPanel modules
-// ✅ REMOVED: createTaskSummaryPreview - now handled by recurringPanel module
-
-// Before:
-// ✅ REMOVED: getRecurringSummaryText - now handled by recurringCore/recurringPanel modules
-
-
-
-
-// ✅ Shared utility: Build a recurring summary string from a settings object
-// ✅ REMOVED: buildRecurringSummaryFromSettings - now handled by recurringPanel module
-
-// ✅ REMOVED: removeRecurringTasksFromCycle - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: handleRecurringTasksAfterReset - now handled by recurringCore/recurringPanel modules
-
-
-// ✅ REMOVED: convert12To24 - now handled by recurringCore/recurringPanel modules
-
-
-// ✅ Main logic to determine if a task should recur today
-// ✅ REMOVED: shouldTaskRecurNow - now handled by recurringCore/recurringPanel modules
-
-
-
-
-
-
-
-// ✅ Helper: Check if a recurring task should be recreated
-// ✅ REMOVED: shouldRecreateRecurringTask - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: watchRecurringTasks - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: setupRecurringWatcher - now handled by recurringCore/recurringPanel modules
 
 
 
@@ -3027,318 +2770,11 @@ function createTaskDOMElements(taskContext, taskData) {
     };
 }
 
-// ✅ Export for taskCore module
-// ❌ DISABLED: Old export - now provided by taskDOM module
-// window.createTaskDOMElements = createTaskDOMElements;
 
-// ✅ 6. Main Task Element Creation
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
-    const taskItem = document.createElement("li");
-    taskItem.classList.add("task");
-    taskItem.setAttribute("draggable", "true");
-    taskItem.dataset.taskId = assignedTaskId;
 
-    if (highPriority) {
-        taskItem.classList.add("high-priority");
-    }
 
-    // ✅ Check if task has a recurring template (source of truth for recurring state)
-    const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
-    const hasValidRecurringSettings = recurringSettings && Object.keys(recurringSettings).length > 0;
 
-    // Task is recurring if: has template OR (recurring flag is true AND has settings)
-    const isRecurring = hasRecurringTemplate || (recurring && hasValidRecurringSettings);
 
-    if (isRecurring) {
-        taskItem.classList.add("recurring");
-        // Use settings from template if available, otherwise use task's settings
-        const settingsToUse = hasRecurringTemplate
-            ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
-            : recurringSettings;
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(settingsToUse));
-    }
-
-    return taskItem;
-}
-
-// ✅ 7. Three Dots Button Creation
-function createThreeDotsButton(taskItem, settings) {
-    const showThreeDots = settings.showThreeDots || false;
-    
-    if (showThreeDots) {
-        const threeDotsButton = document.createElement("button");
-        threeDotsButton.classList.add("three-dots-btn");
-        threeDotsButton.innerHTML = "⋮";
-        threeDotsButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            revealTaskButtons(taskItem);
-        });
-        taskItem.appendChild(threeDotsButton);
-        return threeDotsButton;
-    }
-    
-    return null;
-}
-
-// ✅ 8. Task Button Container Creation
-function createTaskButtonContainer(taskContext) {
-    const { 
-        autoResetEnabled, deleteCheckedEnabled, settings, 
-        remindersEnabled, remindersEnabledGlobal, assignedTaskId, 
-        currentCycle, recurring, highPriority
-    } = taskContext;
-
-    const buttonContainer = document.createElement("div");
-    buttonContainer.classList.add("task-options");
-
-    const showRecurring = !autoResetEnabled && deleteCheckedEnabled;
-
-    const buttons = [
-        { class: "move-up", icon: "▲", show: true },
-        { class: "move-down", icon: "▼", show: true },
-        { class: "recurring-btn", icon: "<i class='fas fa-repeat'></i>", show: showRecurring || (settings.alwaysShowRecurring || false) },
-        { class: "set-due-date", icon: "<i class='fas fa-calendar-alt'></i>", show: !autoResetEnabled },
-        { class: "enable-task-reminders", icon: "<i class='fas fa-bell'></i>", show: remindersEnabled || remindersEnabledGlobal, toggle: true },
-        { class: "priority-btn", icon: "<i class='fas fa-exclamation-triangle'></i>", show: true },
-        { class: "edit-btn", icon: "<i class='fas fa-edit'></i>", show: true },
-        { class: "delete-btn", icon: "<i class='fas fa-trash'></i>", show: true }
-    ];
-
-    buttons.forEach(buttonConfig => {
-        const button = createTaskButton(buttonConfig, taskContext, buttonContainer);
-        buttonContainer.appendChild(button);
-    });
-
-    return buttonContainer;
-}
-
-// ✅ Export for modules that need to recreate button containers (e.g., modeManager)
-window.createTaskButtonContainer = createTaskButtonContainer;
-
-// ✅ 9. Individual Task Button Creation
-function createTaskButton(buttonConfig, taskContext, buttonContainer) {
-    const { class: btnClass, icon, toggle = false, show } = buttonConfig;
-    const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority } = taskContext;
-
-    const button = document.createElement("button");
-    button.classList.add("task-btn", btnClass);
-    button.innerHTML = icon;
-    button.setAttribute("type", "button");
-    if (!show) button.classList.add("hidden");
-
-    // Setup accessibility attributes
-    setupButtonAccessibility(button, btnClass, buttonContainer);
-
-    // Setup ARIA states
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle);
-    
-    // Setup button event handlers
-    setupButtonEventHandlers(button, btnClass, taskContext);
-
-    return button;
-}
-
-// ✅ 10. Button Accessibility Setup
-function setupButtonAccessibility(button, btnClass, buttonContainer) {
-    button.setAttribute("tabindex", "0");
-    
-    // Keyboard navigation
-    button.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            button.click();
-        }
-
-        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-            const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));
-            const currentIndex = focusable.indexOf(e.target);
-            const nextIndex = e.key === "ArrowRight"
-                ? (currentIndex + 1) % focusable.length
-                : (currentIndex - 1 + focusable.length) % focusable.length;
-            focusable[nextIndex].focus();
-            e.preventDefault();
-        }
-    });
-
-    // ARIA labels
-    const ariaLabels = {
-        "move-up": "Move task up",
-        "move-down": "Move task down",
-        "recurring-btn": "Toggle recurring task",
-        "set-due-date": "Set due date",
-        "enable-task-reminders": "Toggle reminders for this task",
-        "priority-btn": "Mark task as high priority",
-        "edit-btn": "Edit task",
-        "delete-btn": "Delete task"
-    };
-    button.setAttribute("aria-label", ariaLabels[btnClass] || "Task action");
-}
-
-// ✅ 11. Button ARIA States Setup
-function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle) {
-    if (btnClass === "enable-task-reminders") {
-        const isActive = remindersEnabled === true;
-        button.classList.toggle("reminder-active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
-    } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-        let isActive;
-
-        if (btnClass === "recurring-btn") {
-            // ✅ Check if task has a recurring template (source of truth)
-            const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
-            isActive = hasRecurringTemplate || !!recurring;
-
-            // ✅ Debug log for recurring button
-            console.log('🔘 Setting up recurring button:', {
-                taskId: assignedTaskId,
-                recurring,
-                hasRecurringTemplate: !!hasRecurringTemplate,
-                isActive,
-                hasActiveClass: button.classList.contains('active')
-            });
-        } else {
-            isActive = !!highPriority;
-        }
-
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
-    }
-}
-
-// ✅ 12. Button Event Handlers Setup
-function setupButtonEventHandlers(button, btnClass, taskContext) {
-    if (btnClass === "recurring-btn") {
-        // ✅ Setup recurring button handler
-        setupRecurringButtonHandler(button, taskContext);
-    } else if (btnClass === "enable-task-reminders") {
-        // ✅ Use window.setupReminderButtonHandler from reminders module
-        // Safe to call directly - Phase 2 guarantees module is loaded before task creation
-        if (typeof window.setupReminderButtonHandler === 'function') {
-            window.setupReminderButtonHandler(button, taskContext);
-        } else {
-            console.error('❌ setupReminderButtonHandler not available - reminders module failed to load');
-        }
-    } else if (btnClass === "move-up" || btnClass === "move-down") {
-        // ✅ Skip attaching old handlers to move buttons - using event delegation
-        console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
-    } else {
-        button.addEventListener("click", handleTaskButtonClick);
-    }
-}
-
-// ✅ Recurring button handler (uses module functions)
-function setupRecurringButtonHandler(button, taskContext) {
-    const { assignedTaskId, currentCycle, activeCycle } = taskContext;
-
-    // ✅ Mark that handler is attached to prevent double-attachment
-    button.dataset.handlerAttached = 'true';
-
-    button.addEventListener("click", () => {
-        // ✅ Read fresh state from AppState to avoid stale closure data
-        const currentState = window.AppState?.get();
-        if (!currentState) {
-            console.error('❌ AppState not available for recurring toggle');
-            return;
-        }
-
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
-
-        if (!freshCycle) {
-            console.error('❌ Active cycle not found in AppState');
-            return;
-        }
-
-        const task = freshCycle.tasks.find(t => t.id === assignedTaskId);
-        if (!task) {
-            console.warn('⚠️ Task not found:', assignedTaskId);
-            return;
-        }
-
-        const alwaysShowRecurring = currentState?.settings?.alwaysShowRecurring || false;
-
-        const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
-        if (!(showRecurring || alwaysShowRecurring)) {
-            console.log('🚫 Recurring button click ignored - not in correct mode and always-show not enabled');
-            return;
-        }
-
-        // ✅ Check template existence as source of truth (not task.recurring flag)
-        const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
-        const isCurrentlyRecurring = !!hasRecurringTemplate;
-        const isNowRecurring = !isCurrentlyRecurring;
-
-        console.log('🔄 Toggling recurring state:', {
-            taskId: assignedTaskId,
-            wasRecurring: isCurrentlyRecurring,
-            willBeRecurring: isNowRecurring,
-            hadTemplate: !!hasRecurringTemplate
-        });
-
-        task.recurring = isNowRecurring;
-
-        button.classList.toggle("active", isNowRecurring);
-        button.setAttribute("aria-pressed", isNowRecurring.toString());
-
-        // ✅ Add or remove recurring icon from task label
-        const taskItem = button.closest('.task');
-        if (taskItem) {
-            const taskLabel = taskItem.querySelector('.task-text'); // ✅ Fixed: use .task-text not .task-label
-            if (taskLabel) {
-                let existingIcon = taskLabel.querySelector('.recurring-indicator');
-
-                if (isNowRecurring && !existingIcon) {
-                    // Add icon
-                    const icon = document.createElement("span");
-                    icon.className = "recurring-indicator";
-                    icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
-                    taskLabel.appendChild(icon);
-                    console.log('✅ Added recurring icon to task:', assignedTaskId);
-                } else if (!isNowRecurring && existingIcon) {
-                    // Remove icon
-                    existingIcon.remove();
-                    console.log('✅ Removed recurring icon from task:', assignedTaskId);
-                }
-            }
-        }
-
-        // ✅ Create fresh taskContext with current settings from AppState
-        const freshTaskContext = {
-            ...taskContext,
-            settings: currentState?.settings || {}
-        };
-
-        if (isNowRecurring) {
-            // ✅ Use global function from module with fresh context
-            if (window.handleRecurringTaskActivation) {
-                window.handleRecurringTaskActivation(task, freshTaskContext, button);
-            }
-        } else {
-            // ✅ Use global function from module with fresh context
-            if (window.handleRecurringTaskDeactivation) {
-                window.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
-            }
-        }
-
-        // ✅ Don't call saveTaskToSchema25 here - recurring modules handle AppState directly
-        // This was causing the issue where multiple recurring tasks only showed one in the panel
-
-        // ✅ Update panel visibility (use correct method names)
-        if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-            window.recurringPanel.updateRecurringPanelButtonVisibility();
-        }
-
-        // ✅ Update recurring panel (use correct method name)
-        if (window.recurringPanel?.updateRecurringPanel) {
-            window.recurringPanel.updateRecurringPanel();
-        }
-    });
-}
-
-// ✅ 13. Recurring Button Handler (extracted from main function)
-// ✅ REMOVED: setupRecurringButtonHandler - now handled by recurringCore/recurringPanel modules
-
-// ✅ 13b. Recurring Helper Functions (global utilities)
 /**
  * Sync recurring state to DOM elements
  * Called by recurring modules to update task UI
@@ -3365,34 +2801,7 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
     }
 };
 
-// ✅ 14. Recurring Task Activation Handler
-// ✅ REMOVED: handleRecurringTaskActivation - now handled by recurringCore/recurringPanel modules
 
-// ✅ 15. Recurring Task Deactivation Handler
-// ✅ REMOVED: handleRecurringTaskDeactivation - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: setupReminderButtonHandler - Now in utilities/reminders.js
-// Use window.setupReminderButtonHandler() which is globally exported from the module
-
-// ✅ 17. Task Content Elements Creation
-function createTaskContentElements(taskContext) {
-    const {
-        assignedTaskId, taskTextTrimmed, completed, dueDate,
-        autoResetEnabled, recurring, currentCycle, activeCycle
-    } = taskContext;
-
-    // ✅ Use NEW taskDOM module functions via window.* (with fallbacks)
-    const checkbox = window.createTaskCheckbox?.(assignedTaskId, taskTextTrimmed, completed)
-        || createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
-
-    const taskLabel = window.createTaskLabel?.(taskTextTrimmed, assignedTaskId, recurring)
-        || createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
-
-    // Create due date input (from dueDates.js/taskCore, not taskDOM)
-    const dueDateInput = createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
-
-    return { checkbox, taskLabel, dueDateInput };
-}
 
 // ✅ 18. Task Checkbox Creation
 function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
@@ -3451,59 +2860,7 @@ function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
     return taskLabel;
 }
 
-// ✅ 20. Due Date Input Creation
 
-// ✅ 21. Task Interactions Setup
-// ❌ REMOVED: setupTaskInteractions - now in utilities/task/taskEvents.js
-// ❌ REMOVED: setupTaskClickInteraction - now in utilities/task/taskEvents.js
-// ❌ REMOVED: setupPriorityButtonState - now in utilities/task/taskEvents.js
-// ❌ REMOVED: setupTaskHoverInteractions - now in utilities/task/taskEvents.js
-//
-// These functions were extracted during taskDOM modularization.
-// They are now provided by taskDOM.js which delegates to taskEvents.js.
-// Access them via:
-//   window.setupTaskInteractions() - exported by taskDOM.js
-//   window.setupTaskClickInteraction() - exported by taskDOM.js
-//   etc.
-
-// ❌ REMOVED: setupTaskFocusInteractions - now in utilities/task/taskEvents.js
-
-// ✅ 26. Due Date Button Interaction Setup
-
-// ❌ REMOVED: finalizeTaskCreation - now in utilities/task/taskDOM.js
-// ❌ REMOVED: scrollToNewTask - now in utilities/task/taskUtils.js
-// ❌ REMOVED: handleOverdueStyling - now in utilities/task/taskUtils.js
-// ❌ REMOVED: updateUIAfterTaskCreation - now in utilities/task/taskDOM.js
-//
-// These functions were extracted during taskDOM modularization.
-// Access them via window.* exports from the respective modules.
-
-// ✅ 28-31. Task Finalization and UI Updates (moved to modules)
-// ❌ REMOVED: setupFinalTaskInteractions - now in utilities/task/taskUtils.js
-
-// ✅ 32. Schema 2.5 Save Helper
-function saveTaskToSchema25(activeCycle, currentCycle) {
-    // Use AppState if available, otherwise fallback to localStorage
-    if (window.AppState && window.AppState.isReady()) {
-        try {
-            window.AppState.update(state => {
-                if (state && state.data && state.data.cycles) {
-                    state.data.cycles[activeCycle] = currentCycle;
-                    state.metadata.lastModified = Date.now();
-                }
-            });
-            return;
-        } catch (error) {
-            // Fall through to localStorage fallback
-        }
-    }
-    
-    // Fallback to localStorage if AppState not ready or failed
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-}
 
 // Ensure the real function is exposed via alias and flush queued calls
 (function finalizeAddTaskBootstrap() {
@@ -3540,30 +2897,7 @@ if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
   }, 200);
 }
 
-
-
-function toggleHoverTaskOptions(enableHover) {
-  document.querySelectorAll(".task").forEach(taskItem => {
-    if (enableHover) {
-      if (!taskItem.classList.contains("hover-enabled")) {
-        taskItem.addEventListener("mouseenter", showTaskOptions);
-        taskItem.addEventListener("mouseleave", hideTaskOptions);
-        taskItem.classList.add("hover-enabled");
-      }
-    } else {
-      if (taskItem.classList.contains("hover-enabled")) {
-        taskItem.removeEventListener("mouseenter", showTaskOptions);
-        taskItem.removeEventListener("mouseleave", hideTaskOptions);
-        taskItem.classList.remove("hover-enabled");
-      }
-    }
-  });
-}
-
-// Export for module use
-window.toggleHoverTaskOptions = toggleHoverTaskOptions;
-
-
+// ✅ toggleHoverTaskOptions removed - now using module version from taskDOM.js
 
 document.addEventListener("click", (e) => {
   const target = e.target.closest(".open-recurring-settings");
@@ -3581,14 +2915,7 @@ document.addEventListener("click", (e) => {
  * @param {string} input - The user input to be sanitized.
  * @returns {string} - Cleaned and safe string, trimmed and limited in length.
  */
-function sanitizeInput(input) {
-    if (typeof input !== "string") return "";
-    const temp = document.createElement("div");
-    temp.textContent = input; // Set as raw text (sanitized)
-    return temp.textContent.trim().substring(0, TASK_LIMIT); // <-- use textContent here too
-  }
-// ✅ Expose for cycleSwitcher module
-window.sanitizeInput = sanitizeInput;
+// ✅ sanitizeInput removed - now using module version from globalUtils.js
 
     /**
  * ⌨️ Accessibility Helper: Toggles visibility of task buttons when task item is focused or blurred.
@@ -3656,77 +2983,7 @@ window.sanitizeInput = sanitizeInput;
  * @param {any} event - Description. * @returns {void}
  */
 
-// ✅ REMOVED: revealTaskButtons - now provided by taskDOM module
-// Old function disabled - NEW version in utilities/task/taskDOM.js
-// window.revealTaskButtons is exported from taskDOM module
 
-/* OLD CODE - DISABLED
-function revealTaskButtons(taskItem) {
-  const taskOptions = taskItem.querySelector(".task-options");
-  if (!taskOptions) return;
-
-  // 🧹 Hide all other task option menus
-  document.querySelectorAll(".task-options").forEach(opts => {
-    if (opts !== taskOptions) {
-      opts.style.visibility = "hidden";
-      opts.style.opacity = "0";
-      opts.style.pointerEvents = "none";
-
-      // Optional: hide all child buttons too
-      opts.querySelectorAll(".task-btn").forEach(btn => {
-        btn.style.visibility = "hidden";
-        btn.style.opacity = "0";
-        btn.style.pointerEvents = "none";
-      });
-    }
-  });
-
-  // ✅ Show this task's options
-  taskOptions.style.visibility = "visible";
-  taskOptions.style.opacity = "1";
-  taskOptions.style.pointerEvents = "auto";
-
-  const reminderSettings = JSON.parse(localStorage.getItem("miniCycleReminders")) || {};
-  const remindersEnabledGlobal = reminderSettings.enabled === true;
-  const autoResetEnabled = toggleAutoReset.checked;
-
-  // ✅ Early return if AppState not ready to prevent initialization race conditions
-  if (!window.AppState?.isReady?.()) {
-    console.log('⏳ revealTaskButtons deferred - AppState not ready');
-    return;
-  }
-
-  const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
-  const cycleData = savedMiniCycles?.[lastUsedMiniCycle] ?? {};
-  const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
-
-  const alwaysShow = AppState.isReady() ?
-    AppState.get()?.settings?.alwaysShowRecurring === true :
-    JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
-  const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
-
-  taskOptions.querySelectorAll(".task-btn").forEach(btn => {
-    const isReminderBtn = btn.classList.contains("enable-task-reminders");
-    const isRecurringBtn = btn.classList.contains("recurring-btn");
-    const isDueDateBtn = btn.classList.contains("set-due-date");
-
-    const shouldShow =
-      !btn.classList.contains("hidden") ||
-      (isReminderBtn && remindersEnabledGlobal) ||
-      (isRecurringBtn && showRecurring) ||
-      (isDueDateBtn && !autoResetEnabled);
-
-    if (shouldShow) {
-      btn.classList.remove("hidden");
-      btn.style.visibility = "visible";
-      btn.style.opacity = "1";
-      btn.style.pointerEvents = "auto";
-    }
-  });
-
-  updateMoveArrowsVisibility();
-}
-*/
 
     function hideTaskButtons(taskItem) {
 
@@ -3800,8 +3057,8 @@ function isTouchDevice() {
         let hasTouchEvents = "ontouchstart" in window;
         let touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
         let isFinePointer = window.matchMedia("(pointer: fine)").matches;
-
         console.log(`touch detected: hasTouchEvents=${hasTouchEvents}, maxTouchPoints=${touchPoints}, isFinePointer=${isFinePointer}`);
+
 
         if (isFinePointer) return false;
 
@@ -3811,87 +3068,6 @@ function isTouchDevice() {
 
     // ✅ Export for taskDOM module and device detection
     window.isTouchDevice = isTouchDevice;
-
-
-/**
- * Handles button clicks for task-related actions, such as moving, editing, deleting, or changing priority.
- *
- * @param {Event} event - The event triggered by clicking a task button.
- */
-
-function handleTaskButtonClick(event) {
-    event.stopPropagation();
-    const button = event.currentTarget;
-    const taskItem = button.closest(".task");
-    if (!taskItem) return;
-
-    const taskOptions = taskItem.querySelector(".task-options");
-    if (taskOptions) taskOptions.style.pointerEvents = "auto";
-
-    let shouldSave = false;
-
-    // ✅ DISABLED: Old arrow handling logic - now using event delegation
-    if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
-        console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
-        return; // Let the new event delegation handle this
-    } else if (button.classList.contains("edit-btn")) {
-        // ✅ Use taskCore module for editing
-        if (window.taskCore) {
-            window.taskCore.editTask(taskItem);
-        } else {
-            console.warn('⚠️ TaskCore not available, edit operation skipped');
-            showNotification?.('Edit feature temporarily unavailable', 'warning');
-        }
-        shouldSave = false;
-    } else if (button.classList.contains("delete-btn")) {
-        // ✅ Use taskCore module for deletion
-        if (window.taskCore) {
-            window.taskCore.deleteTask(taskItem);
-            // Note: deleteTask handles arrow visibility internally via updateProgressBar callback
-        } else {
-            console.warn('⚠️ TaskCore not available, delete operation skipped');
-            showNotification?.('Delete feature temporarily unavailable', 'warning');
-        }
-        shouldSave = false;
-    } else if (button.classList.contains("priority-btn")) {
-        // ✅ Use taskCore module for priority toggle
-        if (window.taskCore) {
-            window.taskCore.toggleTaskPriority(taskItem);
-        } else {
-            console.warn('⚠️ TaskCore not available, priority toggle skipped');
-            showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
-        }
-        shouldSave = false;
-    }
-
-    if (shouldSave) autoSave();
-    console.log("✅ Task button clicked:", button.className);
-}
-
-// ✅ REMOVED: saveCurrentTaskOrder - now in utilities/task/taskCore.js
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4606,130 +3782,6 @@ document.addEventListener("touchstart", () => {
 document.addEventListener("touchstart", () => {}, { passive: true });
 
 
-
-
-
-/***********************
- * 
- * 
- * STATS PANEL - MOVED TO MODULE
- * 
- * Stats panel functionality including swipe detection, view switching,
- * event handlers, and all related code has been moved to:
- * utilities/statsPanel.js (StatsPanelManager class)
- * 
- * Global functions are available through module initialization:
- * - window.showStatsPanel()
- * - window.showTaskView() 
- * - window.updateStatsPanel()
- * 
- ************************/
-
-// ✅ Theme-related functions that were accidentally removed during stats panel extraction
-
-
-
-
-
-// ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
-// ✅ REMOVED: updateCycleModeDescription() calls - now handled by modeManager module
-
-
-
-
-
-
-
-
-/*
-
-(function boot() {
-  function start() {
-    try {
-      // --- sync init ---
-      fixTaskValidationIssues();
-      // ✅ MOVED TO PHASE 2: setupMainMenu() - now handled by menuManager module
-      // ✅ MOVED TO PHASE 2: setupSettingsMenu() - now handled by settingsManager module
-      // ✅ REMOVED: setupAbout() - Now handled by modalManager module
-      setupUserManual();
-      // ✅ REMOVED: setupFeedbackModal() - Now handled by modalManager module
-      // Add themes panel setup after other modal setups
-      // setupTestingModal(); // Removed duplicate - already called in main boot function
-      initializeThemesPanel();
-      initializeModeSelector();
-      // ✅ Recurring setup now handled by recurringIntegration module
-      // Old setupRecurringPanel() and attachRecurringSummaryListeners() calls removed
-      updateNavDots();
-      loadMiniCycle();
-      // ✅ initializeDefaultRecurringSettings() removed - now handled by recurringIntegration module
-      setupMiniCycleTitleListener();
-      // ✅ MOVED TO PHASE 2: setupDownloadMiniCycle() - now handled by settingsManager module
-      // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
-      // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
-      // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
-
-      loadAlwaysShowRecurringSetting();
-      updateCycleModeDescription();
-         setupThemesPanel(); 
-
-      // --- timers / async kickoffs ---
-      setTimeout(remindOverdueTasks, 2000);
-      // ✅ updateReminderButtons() and startReminders() now handled by reminderManager.init() via afterApp hook
-      // ✅ checkOverdueTasks() now handled by dueDatesManager.init() via afterApp hook
-
-      // only on modern browsers
-      if (supportsModern()) setTimeout(autoRedetectOnVersionChange, 10000);
-
-      // focus once window is loaded
-      window.addEventListener('load', function () {
-        var el = document.getElementById('taskInput');
-        if (el) { try { el.focus(); } catch(_){} }
-      });
-
-      // Initialize stats panel manager
-      if (window.statsPanelManager) {
-        console.log('📊 Initializing stats panel event handlers...');
-        window.statsPanelManager.init();
-        // Update stats panel now that it's ready
-        window.updateStatsPanel();
-      }
-
-      // ✅ Setup navigation dot click handlers
-      document.querySelectorAll(".dot").forEach((dot, index) => {
-        dot.addEventListener("click", () => {
-          if (index === 0) {
-            if (window.showTaskView) window.showTaskView();
-          } else {
-            if (window.showStatsPanel) window.showStatsPanel();
-          }
-        });
-      });
-
-      // ready signal
-      window.AppReady = true;
-      document.dispatchEvent(new Event('app:ready'));
-      console.log('✅ miniCycle app is fully initialized and ready.');
-    } catch (err) {
-      console.error('🚨 Boot error:', err);
-      if (typeof showNotification === 'function') {
-        showNotification('⚠️ App failed to finish booting. Some features may be unavailable.', 'warning', 6000);
-      }
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
-
-  function supportsModern() {
-    try { new Function('()=>{}'); } catch(_) { return false; }
-    return !!(window.Promise && window.fetch);
-  }
-})();
-
-*/
 
 });
 

@@ -58,15 +58,16 @@ Core orchestration functions:         ~11 functions
 **Status:** These MUST stay until modules are proven 100% reliable in production.
 
 ```javascript
-// Functions with Active Fallback Usage (DO NOT DELETE)
+// Functions with Active Fallback Usage or Not Yet Modularized (DO NOT DELETE)
 ⚠️ validateAndSanitizeTaskInput()      // Line 2843 - KEEP (fallback at line 2808)
 ⚠️ loadTaskContext()                   // Line 2868 - KEEP (fallback at line 2814)
 ⚠️ createOrUpdateTaskData()            // Line 2913 - KEEP (fallback at line 2820)
 ⚠️ createTaskDOMElements()             // Line 2985 - KEEP (fallback at line 2823)
+⚠️ sanitizeInput()                     // Line 3198 - KEEP (NOT in any module yet, used by many modules)
 ⚠️ createTaskCheckbox()                // Line 3398 - KEEP (used by createTaskContentElements)
 ⚠️ createTaskLabel()                   // Line 3435 - KEEP (used by createTaskContentElements)
 
-**Total Lines to Keep:** ~600 lines (active safety nets)
+**Total Lines to Keep:** ~650 lines (active safety nets + unmodularized)
 ```
 
 ---
@@ -80,15 +81,15 @@ Core orchestration functions:         ~11 functions
 ```javascript
 // Task System Duplicates - SAFE TO DELETE (~1,000 lines)
 ✅ addTask()                           // Line 2804 - KEEP as orchestrator (NOT a duplicate)
-✅ SAFE createMainTaskElement()        // Line 3035 - DELETE (in taskDOM.js)
-✅ SAFE createThreeDotsButton()        // Line 3065 - DELETE (in taskDOM.js)
-✅ SAFE createTaskButtonContainer()    // Line 3084 - DELETE (in taskDOM.js)
-✅ SAFE createTaskButton()             // Line 3119 - DELETE (in taskDOM.js)
-✅ SAFE setupButtonAccessibility()     // Line 3142 - DELETE (in taskDOM.js)
-✅ SAFE setupButtonAriaStates()        // Line 3178 - DELETE (in taskDOM.js)
-✅ SAFE setupButtonEventHandlers()     // Line 3209 - DELETE (in taskEvents.js)
-✅ SAFE setupRecurringButtonHandler()  // Line 3230 - DELETE (in taskEvents.js)
-✅ SAFE createTaskContentElements()    // Line 3378 - DELETE (in taskDOM.js)
+✅ SAFE createMainTaskElement()Done        // Line 3035 - DELETE (in taskDOM.js)
+✅ SAFE createThreeDotsButton() Done        // Line 3065 - DELETE (in taskDOM.js)
+✅ SAFE createTaskButtonContainer() Done // Line 3084 - DELETE (in taskDOM.js)
+✅ SAFE createTaskButton()Done             // Line 3119 - DELETE (in taskDOM.js)
+✅ SAFE setupButtonAccessibility() Done   // Line 3142 - DELETE (in taskDOM.js)
+✅ SAFE setupButtonAriaStates() Done       // Line 3178 - DELETE (in taskDOM.js)
+✅ SAFE setupButtonEventHandlers() Done    // Line 3209 - DELETE (in taskEvents.js)
+✅ SAFE setupRecurringButtonHandler() Done  // Line 3230 - DELETE (in taskEvents.js)
+✅ SAFE createTaskContentElements() Done    // Line 3378 - DELETE (in taskDOM.js)
 ✅ SAFE setupTaskInteractions()        // ~Line 3449 - DELETE (in taskEvents.js)
 ✅ SAFE setupTaskClickInteraction()    // ~Line 3473 - DELETE (in taskEvents.js)
 ✅ SAFE setupPriorityButtonState()     // ~Line 3492 - DELETE (in taskEvents.js)
@@ -99,16 +100,16 @@ Core orchestration functions:         ~11 functions
 ✅ SAFE handleOverdueStyling()         // ~Line 3565 - DELETE (in taskUtils.js)
 ✅ SAFE updateUIAfterTaskCreation()    // ~Line 3574 - DELETE (in taskEvents.js)
 ✅ SAFE setupFinalTaskInteractions()   // ~Line 3588 - DELETE (in taskUtils.js)
-✅ SAFE saveTaskToSchema25()           // ~Line 3602 - DELETE (in taskCore.js)
-✅ SAFE toggleHoverTaskOptions()       // ~Line 3662 - DELETE (in taskEvents.js)
-✅ SAFE sanitizeInput()                // ~Line 3701 - DELETE (in globalUtils.js)
+✅ DONE saveTaskToSchema25()           // ADDED to taskCore.js (was missing, now at line 572)
+✅ DONE sanitizeInput()                // REMOVED (was line 3175, module version in globalUtils.js now used)
+✅ DONE toggleHoverTaskOptions()       // REMOVED (was line 3159, module version in taskDOM.js now used)
 ✅ SAFE revealTaskButtons()            // ~Line 3781 - DELETE (in taskEvents.js)
 ✅ SAFE handleTaskButtonClick()        // ~Line 3939 - DELETE (in taskEvents.js)
 
 // Rendering Duplicates - SAFE TO DELETE (~150 lines)
-✅ SAFE refreshUIFromState()           // Line 1344 - DELETE (in taskDOM.js)
+✅ DONE refreshUIFromState()           // REMOVED (was line 1344, module version in taskRenderer.js now used)
 ✅ SAFE renderTasks()                  // Line 1403 - DELETE (in taskDOM.js)
-✅ SAFE detectDeviceType()             // Line 1483 - DELETE (in deviceDetection.js)
+⚠️ KEEP detectDeviceType()             // Line 1381 - KEEP (NOT in deviceDetection.js module, still needed)
 
 // Notification Duplicates - SAFE TO DELETE (~80 lines)
 ✅ SAFE showNotification()             // Line 2225 - DELETE (in notifications.js)
@@ -123,7 +124,7 @@ Core orchestration functions:         ~11 functions
 // DOM Utils Duplicates - SAFE TO DELETE (~100 lines)
 ✅ SAFE extractTaskDataFromDOM()       // Line 1899 - DELETE (in taskUtils.js)
 ✅ SAFE buildTaskContext()             // Line 2368 - DELETE (in taskUtils.js)
-✅ SAFE isTouchDevice()                // ~Line 3799 - DELETE (in deviceDetection.js)
+⚠️ KEEP isTouchDevice()                // Line 3056 - KEEP (NOT in deviceDetection.js, actively used in main script + dragDropManager)
 
 **Verified Safe to Delete:** ~35 functions, ~1,700 lines of duplicate code
 **Deletion Method:** Manual, one at a time, testing after each

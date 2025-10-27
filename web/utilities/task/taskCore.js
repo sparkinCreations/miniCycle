@@ -563,6 +563,45 @@ export class TaskCore {
     }
 
     /**
+     * Save task data to Schema 2.5 storage
+     * Prioritizes AppState, falls back to localStorage
+     *
+     * @param {string} activeCycle - The cycle ID to save
+     * @param {object} currentCycle - The cycle data to save
+     */
+    saveTaskToSchema25(activeCycle, currentCycle) {
+        // Use AppState if available, otherwise fallback to localStorage
+        if (window.AppState && window.AppState.isReady()) {
+            try {
+                window.AppState.update(state => {
+                    if (state && state.data && state.data.cycles) {
+                        state.data.cycles[activeCycle] = currentCycle;
+                        state.metadata.lastModified = Date.now();
+                    }
+                });
+                return;
+            } catch (error) {
+                console.warn('⚠️ AppState save failed, falling back to localStorage:', error);
+                // Fall through to localStorage fallback
+            }
+        }
+
+        // Fallback to localStorage if AppState not ready or failed
+        try {
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            if (fullSchemaData && fullSchemaData.data && fullSchemaData.data.cycles) {
+                fullSchemaData.data.cycles[activeCycle] = currentCycle;
+                fullSchemaData.metadata.lastModified = Date.now();
+                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            } else {
+                console.error('❌ Invalid schema data structure in localStorage');
+            }
+        } catch (error) {
+            console.error('❌ Failed to save to localStorage:', error);
+        }
+    }
+
+    /**
      * Reset all tasks (cycle completion)
      */
     async resetTasks() {
@@ -630,14 +669,16 @@ export class TaskCore {
                     window.removeRecurringTasksFromCycle(taskElements, cycleData);
                 }
 
-                // Reset non-recurring tasks
+                // ✅ Update task data AND DOM for non-recurring tasks
                 taskElements.forEach(taskEl => {
                     const isRecurring = taskEl.classList.contains("recurring");
                     if (isRecurring) return;
 
+                    const taskId = taskEl.dataset.taskId;
                     const checkbox = taskEl.querySelector("input[type='checkbox']");
                     const dueDateInput = taskEl.querySelector(".due-date");
 
+                    // Update DOM
                     if (checkbox) checkbox.checked = false;
                     taskEl.classList.remove("overdue-task");
 
@@ -645,7 +686,36 @@ export class TaskCore {
                         dueDateInput.value = "";
                         dueDateInput.classList.add("hidden");
                     }
+
+                    // ✅ FIX: Update the actual task data in memory
+                    if (taskId && cycleData?.tasks) {
+                        const task = cycleData.tasks.find(t => t.id === taskId);
+                        if (task) {
+                            task.completed = false;
+                            task.dueDate = null;
+                            console.log(`✅ Reset task data for: ${task.text}`);
+                        }
+                    }
                 });
+
+                // ✅ FIX: Save the updated task data to AppState (will auto-save to localStorage after 600ms debounce)
+                if (this.deps.AppState?.isReady?.()) {
+                    this.deps.AppState.update(state => {
+                        if (state?.data?.cycles?.[activeCycle]) {
+                            state.data.cycles[activeCycle] = cycleData;
+                        }
+                    });
+                    console.log('✅ Reset task data saved to AppState (will persist to localStorage)');
+                } else {
+                    // Fallback: Save directly to localStorage if AppState not available
+                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    if (fullSchemaData?.data?.cycles?.[activeCycle]) {
+                        fullSchemaData.data.cycles[activeCycle] = cycleData;
+                        fullSchemaData.metadata.lastModified = Date.now();
+                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                        console.log('✅ Reset task data saved to localStorage (AppState fallback)');
+                    }
+                }
 
                 // Increment cycle count (this calls showCompletionAnimation internally)
                 window.incrementCycleCount(activeCycle, cycles);
@@ -857,6 +927,7 @@ export async function initTaskCore(dependencies = {}) {
         // Export new batch operations
         window.handleTaskCompletionChange = (checkbox) => taskCoreInstance.handleTaskCompletionChange(checkbox);
         window.saveCurrentTaskOrder = () => taskCoreInstance.saveCurrentTaskOrder();
+        window.saveTaskToSchema25 = (cycleId, cycleData) => taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
         window.resetTasks = () => taskCoreInstance.resetTasks();
         window.handleCompleteAllTasks = () => taskCoreInstance.handleCompleteAllTasks();
 
