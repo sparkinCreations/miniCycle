@@ -2263,30 +2263,36 @@ window.checkMiniCycle = checkMiniCycle;
 
 function incrementCycleCount(miniCycleName, savedMiniCycles) {
     console.log('🔢 Incrementing cycle count (Schema 2.5 state-based)...');
-    
+
     // ✅ Use state module instead of legacy direct data access
     if (!window.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for incrementCycleCount');
         return;
     }
-    
+
     const currentState = window.AppState.get();
     if (!currentState) {
         console.error('❌ No state data available for incrementCycleCount');
         return;
     }
-    
+
     const { data, appState } = currentState;
     const activeCycle = appState.activeCycleId;
     const cycleData = data.cycles[activeCycle];
-    
+
     if (!activeCycle || !cycleData) {
         console.error('❌ No active cycle found for incrementCycleCount');
         return;
     }
-    
+
     console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
-    
+
+    // ✅ CAPTURE UNDO SNAPSHOT before incrementing cycle count
+    if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+        window.captureStateSnapshot(currentState);
+        console.log('📸 Undo snapshot captured before cycle increment');
+    }
+
     // ✅ Update through state module and get the actual new count
     let actualNewCount;
     window.AppState.update(state => {

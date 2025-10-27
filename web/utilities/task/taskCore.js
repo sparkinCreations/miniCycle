@@ -698,6 +698,15 @@ export class TaskCore {
                     }
                 });
 
+                // ✅ CAPTURE UNDO SNAPSHOT before resetting tasks
+                if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+                    const currentState = this.deps.AppState?.get?.();
+                    if (currentState) {
+                        window.captureStateSnapshot(currentState);
+                        console.log('📸 Undo snapshot captured before task reset');
+                    }
+                }
+
                 // ✅ FIX: Save the updated task data to AppState (will auto-save to localStorage after 600ms debounce)
                 if (this.deps.AppState?.isReady?.()) {
                     this.deps.AppState.update(state => {
