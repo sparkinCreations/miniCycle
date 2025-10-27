@@ -4,7 +4,7 @@
  * - No window probing, no stubs, no retry loops
  *
  * @module cycleLoader
- * @version 1.336
+ * @version 1.337
  */
 
 import { appInit } from '../appInitialization.js';
