@@ -235,7 +235,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             getElementById: () => null
         });
 
+        // Call the function
         await manager.refreshTaskButtonsForModeChange();
+
+        // Wait for the debounce timeout (150ms + buffer)
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Restore
         window.appInit.waitForCore = originalWaitForCore;
