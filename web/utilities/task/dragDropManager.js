@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module utilities/task/dragDropManager
- * @version 1.333
+ * @version 1.336
  */
 
 import { appInit } from '../appInitialization.js';
@@ -318,12 +318,14 @@ export class DragDropManager {
             const bounding = target.getBoundingClientRect();
             const offset = event.clientY - bounding.top;
 
-            // Snapshot only if enough time has passed
+            // ✅ ALWAYS mark that a reorder occurred (for save on drop)
+            window.AppGlobalState.didDragReorderOccur = true;
+
+            // Snapshot only if enough time has passed (for undo system)
             const now = Date.now();
             if (window.AppGlobalState.lastReorderTime &&
                 now - window.AppGlobalState.lastReorderTime > this.REORDER_SNAPSHOT_INTERVAL) {
                 window.AppGlobalState.lastReorderTime = now;
-                window.AppGlobalState.didDragReorderOccur = true;
             } else if (!window.AppGlobalState.lastReorderTime) {
                 window.AppGlobalState.lastReorderTime = now;
             }

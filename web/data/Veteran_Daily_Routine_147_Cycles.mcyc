@@ -1,0 +1,141 @@
+{
+  "name": "cycle_1704067200000",
+  "title": "⭐ Veteran's Daily Success Routine",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "🌅 Wake up at 6:00 AM",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "💧 Drink 16oz water",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "🛏️ Make bed (Navy SEAL style)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t4",
+      "text": "🧘 Morning meditation - 10 min",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t5",
+      "text": "📝 Journal - Gratitude & Goals",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t6",
+      "text": "🏃 Morning run - 30 minutes",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t7",
+      "text": "🚿 Cold shower (2 min cold finish)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t8",
+      "text": "🥣 Healthy breakfast + vitamins",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t9",
+      "text": "📧 Check emails - Inbox Zero",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t10",
+      "text": "🎯 Review top 3 priorities for today",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t11",
+      "text": "📚 Read 20 pages (non-fiction)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t12",
+      "text": "💼 Deep work session - 90 min",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t13",
+      "text": "🥗 Healthy lunch - no screens",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t14",
+      "text": "🚶 Walk outside - 15 minutes",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t15",
+      "text": "💪 Afternoon workout / stretching",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t16",
+      "text": "🤝 Connect with 1 person (call/text)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t17",
+      "text": "📊 Review progress on weekly goals",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t18",
+      "text": "🍽️ Prepare healthy dinner",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t19",
+      "text": "👨‍👩‍👧 Quality time with family (no phone)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t20",
+      "text": "📖 Evening reading - 30 minutes",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t21",
+      "text": "🌙 Evening reflection & tomorrow prep",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t22",
+      "text": "😴 Lights out by 10:30 PM",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 147,
+  "deleteCheckedTasks": false
+}

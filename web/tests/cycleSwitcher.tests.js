@@ -12,9 +12,33 @@
  * - Preview generation
  */
 
-export async function runCycleSwitcherTests(resultsDiv) {
+export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 CycleSwitcher Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
+
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual cycleSwitcher test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual cycleSwitcher test completed - original localStorage restored');
+        }
+    }
 
     // Import the module class
     const CycleSwitcher = window.CycleSwitcher;
@@ -141,11 +165,9 @@ export async function runCycleSwitcherTests(resultsDiv) {
 
     await test('has version property', async () => {
         const instance = new CycleSwitcher();
-        if (!instance.version) {
-            throw new Error('Version property missing');
-        }
-        if (instance.version !== '1.330') {
-            throw new Error(`Expected version 1.330, got ${instance.version}`);
+        // Check version exists and is in semver format (X.Y or X.Y.Z)
+        if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
+            throw new Error(`Expected valid semver version, got ${instance.version}`);
         }
     });
 
@@ -265,7 +287,10 @@ export async function runCycleSwitcherTests(resultsDiv) {
         document.body.appendChild(previewWindow);
 
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData
+            },
             getElementById: (id) => document.getElementById(id)
         };
 
@@ -288,7 +313,10 @@ export async function runCycleSwitcherTests(resultsDiv) {
         document.body.appendChild(previewWindow);
 
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData
+            },
             getElementById: (id) => document.getElementById(id)
         };
 
@@ -486,23 +514,27 @@ export async function runCycleSwitcherTests(resultsDiv) {
 
         delete window.AppState;
 
+        // ✅ Updated: updatePreview now requires AppState, so provide it in mockDeps
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData
+            },
             showNotification: () => {}
         };
 
         const instance = new CycleSwitcher(mockDeps);
 
-        // Should work with localStorage fallback
+        // Should work with provided AppState
         const previewWindow = document.createElement('div');
         previewWindow.id = 'switch-preview-window';
         document.body.appendChild(previewWindow);
 
         instance.updatePreview('Morning Routine');
 
-        // Should still render preview
+        // Should render preview
         if (!previewWindow.innerHTML) {
-            throw new Error('Should work without AppState using localStorage');
+            throw new Error('Should work with provided AppState mock');
         }
     });
 
@@ -646,6 +678,9 @@ export async function runCycleSwitcherTests(resultsDiv) {
     } else {
         resultsDiv.innerHTML += '<div class="result fail">⚠️ Some tests failed</div>';
     }
+
+    // 🔓 RESTORE original localStorage data (only when running individually)
+    restoreOriginalData();
 
     return { passed: passed.count, total: total.count };
 }

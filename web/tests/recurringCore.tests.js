@@ -1182,8 +1182,10 @@ export function runRecurringCoreTests(resultsDiv) {
 
         const formatted = formatNextOccurrence(next);
 
-        if (!formatted.includes('2 day')) {
-            throw new Error(`Expected "2 days", got "${formatted}"`);
+        // ✅ Updated: Now shows specific day name and time (better UX)
+        // Should show "Next: [Weekday] at [time]" format for dates beyond 24 hours
+        if (!formatted.includes('Next:') || !formatted.includes('at')) {
+            throw new Error(`Expected "Next: [Weekday] at [time]", got "${formatted}"`);
         }
     });
 

@@ -328,8 +328,13 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
 
         const report = await manager.reportDeviceCompatibility();
 
-        if (!report || report.schema !== '2.5' || report.version !== '1.305') {
+        // Check report structure and version format
+        if (!report || report.schema !== '2.5') {
             throw new Error('Compatibility report not properly generated');
+        }
+        // Validate version is in semver format (X.Y or X.Y.Z)
+        if (!report.version || !/^\d+\.\d+(\.\d+)?$/.test(report.version)) {
+            throw new Error(`Expected valid semver version in report, got ${report.version}`);
         }
     });
 

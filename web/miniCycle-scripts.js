@@ -21,8 +21,6 @@
 
 
 
-
-
 // 🌍 Global State: Because sometimes you need variables that survive the apocalypse of module imports
 // This houses all the app's critical state that needs to be accessible everywhere.
 // Think of it as the app's memory bank, storing everything from drag states to undo history.
@@ -338,6 +336,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./utilities/themeManager.js'));
     console.log('✅ Theme Manager loaded');
 
+    // ✅ Load Games Manager (simple UI component)
+    await import(withV('./utilities/ui/gamesManager.js'));
+    console.log('✅ Games Manager loaded');
+
+    // ✅ Load Onboarding Manager (simple UI component)
+    await import(withV('./utilities/ui/onboardingManager.js'));
+    console.log('✅ Onboarding Manager loaded');
+
+    // ✅ Load Modal Manager (UI coordination)
+    await import(withV('./utilities/ui/modalManager.js'));
+    console.log('✅ Modal Manager loaded');
+
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
@@ -573,39 +583,27 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Feature Setup
     console.log('⚙️ Setting up features...');
     setupMiniCycleTitleListener();
-    setupDownloadMiniCycle();
-    setupUploadMiniCycle();
+    // ✅ MOVED TO PHASE 2: setupDownloadMiniCycle() - now handled by settingsManager module
+    // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
     // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
     // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
     initializeThemesPanel();
     setupThemesPanel();
 
-    // ✅ UI Modal Setup (was missing after appInit refactoring)
-    setupMainMenu();
-    setupSettingsMenu();
-    setupAbout();
+    // ✅ UI Setup (Modal Manager handles modal setup automatically)
+    // ✅ MOVED TO PHASE 2: setupMainMenu() - now handled by menuManager module
+    // ✅ MOVED TO PHASE 2: setupSettingsMenu() - now handled by settingsManager module
     setupUserManual();
-    setupFeedbackModal();
 
     // ✅ Expose functions needed by cycleLoader and cycleManager
-    window.updateMainMenuHeader = updateMainMenuHeader;
+    // Note: updateMainMenuHeader now exported by menuManager module
     window.completeInitialSetup = completeInitialSetup;
 
 
 
 // ...existing code...
 
-
-function wireUndoRedoUI() {
-  if (window.__undoRedoWired) return; // idempotent guard
-  window.__undoRedoWired = true;
-
-  initializeUndoRedoButtons();
-  const undoBtn = document.getElementById("undo-btn");
-  const redoBtn = document.getElementById("redo-btn");
-  if (undoBtn) safeAddEventListener(undoBtn, "click", () => performStateBasedUndo());
-  if (redoBtn) safeAddEventListener(redoBtn, "click", () => performStateBasedRedo());
-}
+// ✅ wireUndoRedoUI moved to utilities/ui/undoRedoManager.js
 
 // ✅ Data-ready initialization - runs immediately (no more deferral needed)
 // The code below will execute after data is loaded in the main sequence
@@ -640,7 +638,7 @@ function wireUndoRedoUI() {
         const { initDragDropManager } = await import(withV('./utilities/task/dragDropManager.js'));
 
         await initDragDropManager({
-          saveCurrentTaskOrder: () => saveCurrentTaskOrder?.(),
+          saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
           autoSave: () => autoSave?.(),
           updateProgressBar: () => updateProgressBar?.(),
           updateStatsPanel: () => updateStatsPanel?.(),
@@ -664,7 +662,7 @@ function wireUndoRedoUI() {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.333'
+            currentVersion: '1.336'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -867,6 +865,246 @@ function wireUndoRedoUI() {
             console.warn('⚠️ App will continue without cycle manager functionality');
         }
 
+        // ✅ Initialize Undo/Redo Manager (Phase 2 module)
+        console.log('🔄 Initializing undo/redo manager module...');
+        try {
+            const undoRedoModule = await import(withV('./utilities/ui/undoRedoManager.js'));
+
+            undoRedoModule.setUndoRedoManagerDependencies({
+                AppState: window.AppState,
+                refreshUIFromState: (state) => window.refreshUIFromState?.(state),
+                AppGlobalState: window.AppGlobalState,
+                getElementById: (id) => document.getElementById(id),
+                safeAddEventListener: window.safeAddEventListener
+            });
+
+            // Wire up UI and initialize
+            undoRedoModule.wireUndoRedoUI();
+            undoRedoModule.setupStateBasedUndoRedo();
+
+            // Expose functions globally for backward compatibility
+            window.wireUndoRedoUI = undoRedoModule.wireUndoRedoUI;
+            window.initializeUndoRedoButtons = undoRedoModule.initializeUndoRedoButtons;
+            window.captureInitialSnapshot = undoRedoModule.captureInitialSnapshot;
+            window.setupStateBasedUndoRedo = undoRedoModule.setupStateBasedUndoRedo;
+            window.enableUndoSystemOnFirstInteraction = undoRedoModule.enableUndoSystemOnFirstInteraction;
+            window.captureStateSnapshot = undoRedoModule.captureStateSnapshot;
+            window.buildSnapshotSignature = undoRedoModule.buildSnapshotSignature;
+            window.snapshotsEqual = undoRedoModule.snapshotsEqual;
+            window.performStateBasedUndo = undoRedoModule.performStateBasedUndo;
+            window.performStateBasedRedo = undoRedoModule.performStateBasedRedo;
+            window.updateUndoRedoButtons = undoRedoModule.updateUndoRedoButtons;
+
+            console.log('✅ Undo/redo manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize undo/redo manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Undo/redo feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without undo/redo functionality');
+        }
+
+        // ✅ Initialize Menu Manager (Phase 2 module)
+        console.log('🎛️ Initializing menu manager module...');
+        try {
+            const { initMenuManager } = await import(withV('./utilities/ui/menuManager.js'));
+
+            await initMenuManager({
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                AppState: () => window.AppState,
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showPromptModal: (opts) => window.showPromptModal?.(opts),
+                showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, ev, handler) => window.safeAddEventListener?.(el, ev, handler),
+                switchMiniCycle: () => window.switchMiniCycle?.(),
+                createNewMiniCycle: () => window.createNewMiniCycle?.(),
+                loadMiniCycle: () => window.loadMiniCycle?.(),
+                updateCycleModeDescription: () => window.updateCycleModeDescription?.(),
+                checkGamesUnlock: () => window.checkGamesUnlock?.(),
+                sanitizeInput: (input) => window.sanitizeInput?.(input),
+                updateCycleData: (cycleId, producer, immediate) => window.updateCycleData?.(cycleId, producer, immediate),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.()
+            });
+
+            console.log('✅ Menu manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize menu manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Menu manager feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without menu manager functionality');
+        }
+
+        // ✅ Initialize Settings Manager (Phase 2 module)
+        console.log('⚙️ Initializing settings manager module...');
+        try {
+            const { initSettingsManager } = await import(withV('./utilities/ui/settingsManager.js'));
+
+            await initSettingsManager({
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                AppState: () => window.AppState,
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
+                hideMainMenu: () => window.hideMainMenu?.(),
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, ev, handler) => window.safeAddEventListener?.(el, ev, handler),
+                setupDarkModeToggle: (id, syncIds) => window.setupDarkModeToggle?.(id, syncIds),
+                setupQuickDarkToggle: () => window.setupQuickDarkToggle?.(),
+                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+                toggleHoverTaskOptions: (enabled) => window.toggleHoverTaskOptions?.(enabled),
+                refreshTaskListUI: () => window.refreshTaskListUI?.(),
+                performSchema25Migration: () => window.performSchema25Migration?.()
+            });
+
+            console.log('✅ Settings manager module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize settings manager module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Settings manager feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without settings manager functionality');
+        }
+
+        // ✅ Initialize Task Core (Phase 2 module)
+        console.log('🎯 Initializing task core module...');
+        try {
+            const { initTaskCore } = await import(withV('./utilities/task/taskCore.js'));
+
+            await initTaskCore({
+                // State management
+                AppState: window.AppState,
+
+                // Data operations
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                sanitizeInput: (text) => window.sanitizeInput?.(text),
+
+                // UI updates
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                refreshUIFromState: () => window.refreshUIFromState?.(),
+
+                // Undo system
+                captureStateSnapshot: (state) => window.captureStateSnapshot?.(state),
+                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+
+                // Modal system
+                showPromptModal: (config) => window.showPromptModal?.(config),
+                showConfirmationModal: (config) => window.showConfirmationModal?.(config),
+
+                // DOM helpers
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+
+                // Task DOM creation (temporary - these will be extracted to taskDOM.js later)
+                validateAndSanitizeTaskInput: (text) => window.validateAndSanitizeTaskInput?.(text),
+                loadTaskContext: (...args) => window.loadTaskContext?.(...args),
+                createOrUpdateTaskData: (ctx) => window.createOrUpdateTaskData?.(ctx),
+                createTaskDOMElements: (ctx, data) => window.createTaskDOMElements?.(ctx, data),
+                setupTaskInteractions: (els, ctx) => window.setupTaskInteractions?.(els, ctx),
+                finalizeTaskCreation: (els, ctx, opts) => window.finalizeTaskCreation?.(els, ctx, opts),
+
+                // Auto-save
+                autoSave: () => window.autoSave?.()
+            });
+
+            console.log('✅ Task core module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task core module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Task core feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without task core functionality');
+        }
+
+        // ✅ Initialize Task DOM Manager (Phase 2 module)
+        console.log('🎨 Initializing task DOM module...');
+        try {
+            const { initTaskDOMManager } = await import(withV('./utilities/task/taskDOM.js'));
+
+            await initTaskDOMManager({
+                // State management
+                AppState: window.AppState,
+
+                // Data operations
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                sanitizeInput: (text) => window.sanitizeInput?.(text),
+                generateId: () => window.generateId?.(),
+                autoSave: () => window.autoSave?.(),
+
+                // UI notification and updates
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                refreshUIFromState: () => window.refreshUIFromState?.(),
+                updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
+                updateRecurringPanelButtonVisibility: () => window.updateRecurringPanelButtonVisibility?.(),
+                triggerLogoBackground: (type, dur) => window.triggerLogoBackground?.(type, dur),
+
+                // DOM helpers
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, evt, handler) => window.safeAddEventListener?.(el, evt, handler),
+
+                // Task operations (from taskCore module)
+                handleTaskCompletionChange: (taskItem, shouldSave) => window.handleTaskCompletionChange?.(taskItem, shouldSave),
+                addTask: (...args) => window.addTask?.(...args),
+
+                // Due dates module
+                createDueDateInput: (taskContext, taskData) => window.createDueDateInput?.(taskContext, taskData),
+                setupDueDateButtonInteraction: (input, taskContext) => window.setupDueDateButtonInteraction?.(input, taskContext),
+                checkOverdueTasks: () => window.checkOverdueTasks?.(),
+                remindOverdueTasks: () => window.remindOverdueTasks?.(),
+
+                // Recurring module
+                recurringPanel: window.recurringPanel,
+                setupRecurringButtonHandler: (btn, ctx) => window.setupRecurringButtonHandler?.(btn, ctx),
+                handleRecurringTaskActivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskActivation?.(taskItem, task, recurringBtn),
+                handleRecurringTaskDeactivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskDeactivation?.(taskItem, task, recurringBtn),
+
+                // Reminders module
+                setupReminderButtonHandler: (btn, ctx) => window.setupReminderButtonHandler?.(btn, ctx),
+
+                // Undo system
+                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+
+                // Task options UI
+                showTaskOptions: (taskItem) => window.showTaskOptions?.(taskItem),
+                hideTaskOptions: (taskItem) => window.hideTaskOptions?.(taskItem),
+                attachKeyboardTaskOptionToggle: (taskItem, threeDotsBtn) => window.attachKeyboardTaskOptionToggle?.(taskItem, threeDotsBtn),
+
+                // Drag and drop / arrows
+                DragAndDrop: window.DragAndDrop,
+                updateArrowsInDOM: (taskItem) => window.updateArrowsInDOM?.(taskItem),
+                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+
+                // Cycle operations
+                checkMiniCycle: () => window.checkMiniCycle?.(),
+                loadMiniCycle: () => window.loadMiniCycle?.()
+            });
+
+            console.log('✅ Task DOM module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task DOM module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Task DOM feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without task DOM functionality');
+        }
+
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();
@@ -888,9 +1126,18 @@ function wireUndoRedoUI() {
           console.error('❌ Error stack:', error.stack);
         }
 
-        // ✅ Idempotent wiring for Undo/Redo buttons
-        wireUndoRedoUI();
+        // ✅ Setup taskCore event listeners (after taskCore loaded in Phase 2)
+        try {
+          const completeAllButton = document.getElementById("completeAll");
+          if (completeAllButton && typeof window.handleCompleteAllTasks === 'function') {
+            safeAddEventListener(completeAllButton, "click", window.handleCompleteAllTasks);
+            console.log('✅ Complete All button listener attached');
+          }
+        } catch (eventErr) {
+          console.warn('⚠️ Failed to setup Complete All listener:', eventErr);
+        }
 
+        // ✅ Undo/Redo buttons already wired in Phase 2 (undoRedoManager module)
 
         // 🧰 Centralize undo snapshots on AppState.update (wrap once)
         try {
@@ -906,7 +1153,9 @@ function wireUndoRedoUI() {
                 // ✅ Use new appInit API
                 if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
-                  if (prev) captureStateSnapshot(prev);
+                  if (prev && typeof window.captureStateSnapshot === 'function') {
+                    window.captureStateSnapshot(prev);
+                  }
                 }
               } catch (e) {
                 console.warn('⚠️ Undo snapshot wrapper error:', e);
@@ -922,20 +1171,22 @@ function wireUndoRedoUI() {
           console.warn('⚠️ Failed to wrap AppState.update:', e);
         }
 
+        // ✅ State-based undo/redo subscription already set up in Phase 2 (undoRedoManager module)
 
-        // ✅ Subscribe for state-based undo snapshots
-        setupStateBasedUndoRedo();
-
-             // 🔘 Update button states and capture an initial snapshot
+        // 🔘 Update button states and capture an initial snapshot
         try {
-          updateUndoRedoButtons();
+          if (typeof window.updateUndoRedoButtons === 'function') {
+            window.updateUndoRedoButtons();
+          }
 
           // Only capture initial snapshot if not using the update wrapper
           if (!window.__useUpdateWrapper) {
             setTimeout(() => {
               try {
                 const st = window.AppState.get?.();
-                if (st) captureStateSnapshot(st);
+                if (st && typeof window.captureStateSnapshot === 'function') {
+                  window.captureStateSnapshot(st);
+                }
               } catch (e) {
                 console.warn('⚠️ Initial snapshot failed:', e);
               }
@@ -1085,453 +1336,25 @@ function wireUndoRedoUI() {
 
 
  // ✅ Add this new function
-function initializeUndoRedoButtons() {
-    const undoBtn = document.getElementById("undo-btn");
-    const redoBtn = document.getElementById("redo-btn");
+// ✅ All undo/redo functions moved to utilities/ui/undoRedoManager.js:
+// - initializeUndoRedoButtons
+// - captureInitialSnapshot
+// - setupStateBasedUndoRedo
+// - enableUndoSystemOnFirstInteraction
+// ✅ refreshUIFromState, captureStateSnapshot, updateUndoRedoButtons moved to modules
+// Using deferred dependency injection pattern: () => window.functionName?.()
+// This allows modules to be injected before they're fully loaded (follows modularization guide v4)
 
-    if (undoBtn) {
-        undoBtn.hidden = true; // ✅ Start hidden until there's undo history
-        undoBtn.disabled = true; // Initially disabled
-    }
-    if (redoBtn) {
-        redoBtn.hidden = true; // ✅ Start hidden until there's redo history
-        redoBtn.disabled = true; // Initially disabled
-    }
 
-    console.log('🔘 Undo/redo buttons initialized (hidden by default)');
-}
 
-// ✅ Add this function
-function captureInitialSnapshot() {
-    const currentState = window.AppState.get();
-    if (currentState) {
-        console.log('📸 Capturing initial snapshot...');
-        captureStateSnapshot(currentState);
-    }
-}
 
 
-// ✅ FIXED: Update the setupStateBasedUndoRedo function around line 835
-function setupStateBasedUndoRedo() {
-    if (!window.AppState?.isReady?.()) {
-        console.warn('⚠️ State module not ready for undo/redo setup');
-        return;
-    }
 
-    // Skip installing when wrapper is active
-    if (window.__useUpdateWrapper) {
-        console.log('ℹ️ Undo subscriber skipped (wrapper handles snapshots)');
-        return;
-    }
 
-    try {
-        window.AppState.subscribe('undo-system', (newState, oldState) => {
-            // ✅ Runtime guard if wrapper activates later
-            if (window.__useUpdateWrapper) return;
 
-            if (!window.AppGlobalState.isPerformingUndoRedo &&
-                oldState?.data?.cycles && newState?.data?.cycles) {
-                const activeCycle = newState.appState.activeCycleId;
-                if (activeCycle && oldState.data.cycles[activeCycle] && newState.data.cycles[activeCycle]) {
-                    const oldCycle = oldState.data.cycles[activeCycle];
-                    const newCycle = newState.data.cycles[activeCycle];
 
-                    const tasksChanged = JSON.stringify(oldCycle.tasks) !== JSON.stringify(newCycle.tasks);
-                    const titleChanged = oldCycle.title !== newCycle.title;
-                    const settingsChanged = oldCycle.autoReset !== newCycle.autoReset ||
-                                            oldCycle.deleteCheckedTasks !== newCycle.deleteCheckedTasks;
 
-                    if (tasksChanged || titleChanged || settingsChanged) {
-                        captureStateSnapshot(oldState);
-                    }
-                }
-            }
-        });
-        console.log('✅ State-based undo/redo system initialized');
-    } catch (subscriptionError) {
-        console.warn('⚠️ Failed to subscribe to state changes:', subscriptionError);
-    }
-}
 
-/**
- * Enable undo system on first user interaction
- * Call this when user performs their first action (task completion, add task, etc.)
- */
-function enableUndoSystemOnFirstInteraction() {
-    if (window.AppGlobalState.isInitializing) {
-        console.log('✅ First user interaction detected - enabling undo system');
-        window.AppGlobalState.isInitializing = false;
-    }
-}
-
-// ✅ Capture complete state snapshots instead of manual extraction
-function captureStateSnapshot(state) {
-    // ✅ Don't capture snapshots during initial app load
-    if (window.AppGlobalState.isInitializing) {
-        console.log('⏭️ Skipping snapshot during initialization');
-        return;
-    }
-
-    if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
-        console.warn('⚠️ Invalid state for snapshot');
-        return;
-    }
-
-    const activeCycle = state.appState.activeCycleId;
-    const currentCycle = state.data.cycles[activeCycle];
-    if (!currentCycle) return;
-
-    const snapshot = {
-        activeCycleId: activeCycle,
-        tasks: structuredClone(currentCycle.tasks || []),
-        recurringTemplates: structuredClone(currentCycle.recurringTemplates || {}),
-        title: currentCycle.title || "Untitled miniCycle",
-        autoReset: currentCycle.autoReset,
-        deleteCheckedTasks: currentCycle.deleteCheckedTasks,
-        timestamp: Date.now()
-    };
-
-    // Build minimal signature to detect duplicates
-    const sig = JSON.stringify({
-        c: snapshot.activeCycleId,
-        t: snapshot.tasks.map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
-        ti: snapshot.title,
-        ar: !!snapshot.autoReset,
-        dc: !!snapshot.deleteCheckedTasks
-    });
-
-    const now = Date.now();
-
-    // Throttle identical snapshots
-    if (sig === window.AppGlobalState.lastSnapshotSignature &&
-        now - window.AppGlobalState.lastSnapshotTs < UNDO_MIN_INTERVAL_MS) {
-        return;
-    }
-
-    // Skip if last on stack is identical
-    const last = window.AppGlobalState.undoStack.at(-1);
-    if (last) {
-        const lastSig = JSON.stringify({
-            c: last.activeCycleId,
-            t: (last.tasks || []).map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
-            ti: last.title,
-            ar: !!last.autoReset,
-            dc: !!last.deleteCheckedTasks
-        });
-        if (lastSig === sig) return;
-    }
-
-    console.log('📸 Capturing snapshot:', {
-        taskCount: snapshot.tasks.length,
-        title: snapshot.title,
-        stackSize: window.AppGlobalState.undoStack.length
-    });
-
-    window.AppGlobalState.undoStack.push(snapshot);
-    if (window.AppGlobalState.undoStack.length > UNDO_LIMIT) {
-        window.AppGlobalState.undoStack.shift();
-    }
-
-    // Update dedupe trackers
-    window.AppGlobalState.lastSnapshotSignature = sig;
-    window.AppGlobalState.lastSnapshotTs = now;
-
-    window.AppGlobalState.redoStack = [];
-    updateUndoRedoButtons();
-}
-
-function buildSnapshotSignature(s) {
-  if (!s) return '';
-  return JSON.stringify({
-    c: s.activeCycleId,
-    t: (s.tasks || []).map(t => ({
-      id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null
-    })),
-    ti: s.title || '',
-    ar: !!s.autoReset,
-    dc: !!s.deleteCheckedTasks
-  });
-}
-
-function snapshotsEqual(a, b) {
-  return buildSnapshotSignature(a) === buildSnapshotSignature(b);
-}
-
-
-
-// ✅ State-based undo operation
-async function performStateBasedUndo() {
-  if (window.AppGlobalState.undoStack.length === 0) return;
-  if (!window.AppState?.isReady?.()) return;
-
-  window.AppGlobalState.isPerformingUndoRedo = true;
-  try {
-    const currentState = window.AppState.get();
-    const currentActive = currentState.appState.activeCycleId;
-    const currentCycle = currentState.data.cycles[currentActive];
-
-    const currentSnapshot = {
-      activeCycleId: currentActive,
-      tasks: structuredClone(currentCycle?.tasks || []),
-      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
-      title: currentCycle?.title,
-      autoReset: currentCycle?.autoReset,
-      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
-      timestamp: Date.now()
-    };
-
-    let snap = null;
-    let skippedDuplicates = 0;
-    while (window.AppGlobalState.undoStack.length) {
-      const candidate = window.AppGlobalState.undoStack.pop();
-      if (!snapshotsEqual(candidate, currentSnapshot)) {
-        snap = candidate;
-        break;
-      }
-      skippedDuplicates++;
-    }
-    console.log(`🔍 Undo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
-    if (!snap) {
-      console.warn('⚠️ No valid undo snapshot found');
-      updateUndoRedoButtons();
-      return;
-    }
-
-    window.AppGlobalState.redoStack.push(currentSnapshot);
-
-    await window.AppState.update(state => {
-      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
-        state.appState.activeCycleId = snap.activeCycleId;
-      }
-      const cid = state.appState.activeCycleId;
-      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
-      cycle.tasks = structuredClone(snap.tasks || []);
-      cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
-      if (snap.title) cycle.title = snap.title;
-      if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
-      if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
-    }, true);
-
-    await Promise.resolve();
-    refreshUIFromState(window.AppState.get());
-
-    // ✅ Wait for next tick to ensure all rendering state updates complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    updateUndoRedoButtons();
-  } catch (e) {
-    console.error('❌ Undo failed:', e);
-  } finally {
-    window.AppGlobalState.isPerformingUndoRedo = false;
-  }
-}
-
-
-
-// ✅ State-based redo operation
-async function performStateBasedRedo() {
-  if (window.AppGlobalState.redoStack.length === 0) return;
-  if (!window.AppState?.isReady?.()) return;
-
-  window.AppGlobalState.isPerformingUndoRedo = true;
-  try {
-    const currentState = window.AppState.get();
-    const currentActive = currentState.appState.activeCycleId;
-    const currentCycle = currentState.data.cycles[currentActive];
-
-    const currentSnapshot = {
-      activeCycleId: currentActive,
-      tasks: structuredClone(currentCycle?.tasks || []),
-      recurringTemplates: structuredClone(currentCycle?.recurringTemplates || {}),
-      title: currentCycle?.title,
-      autoReset: currentCycle?.autoReset,
-      deleteCheckedTasks: currentCycle?.deleteCheckedTasks,
-      timestamp: Date.now()
-    };
-
-    let snap = null;
-    let skippedDuplicates = 0;
-    while (window.AppGlobalState.redoStack.length) {
-      const candidate = window.AppGlobalState.redoStack.pop();
-      if (!snapshotsEqual(candidate, currentSnapshot)) {
-        snap = candidate;
-        break;
-      }
-      skippedDuplicates++;
-    }
-    console.log(`🔍 Redo: skipped ${skippedDuplicates} duplicates, found snapshot:`, !!snap);
-    if (!snap) {
-      console.warn('⚠️ No valid redo snapshot found');
-      updateUndoRedoButtons();
-      return;
-    }
-
-    window.AppGlobalState.undoStack.push(currentSnapshot);
-
-    await window.AppState.update(state => {
-      if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
-        state.appState.activeCycleId = snap.activeCycleId;
-      }
-      const cid = state.appState.activeCycleId;
-      const cycle = state.data.cycles[cid] || (state.data.cycles[cid] = {});
-      cycle.tasks = structuredClone(snap.tasks || []);
-      cycle.recurringTemplates = structuredClone(snap.recurringTemplates || {});
-      if (snap.title) cycle.title = snap.title;
-      if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
-      if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
-    }, true);
-
-    await Promise.resolve();
-    refreshUIFromState(window.AppState.get());
-
-    // ✅ Wait for next tick to ensure all rendering state updates complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    updateUndoRedoButtons();
-  } catch (e) {
-    console.error('❌ Redo failed:', e);
-  } finally {
-    window.AppGlobalState.isPerformingUndoRedo = false;
-  }
-}
-
-// ✅ Helper: prefer AppState for UI refresh; fall back to loader
-function refreshUIFromState(providedState = null) {
-  const state =
-    providedState ||
-    (window.AppState?.isReady?.() ? window.AppState.get() : null);
-
-  if (state?.data?.cycles && state?.appState?.activeCycleId) {
-    const cid = state.appState.activeCycleId;
-    const cycle = state.data.cycles[cid];
-    if (cycle) {
-      // Render directly from current in‑memory state
-      renderTasks(cycle.tasks || []);
-      
-      // ✅ Restore UI state after rendering
-      const arrowsVisible = state.ui?.moveArrowsVisible || false;
-      updateArrowsInDOM(arrowsVisible);
-      
-      // Update other UI bits that don't depend on reloading storage
-      // ✅ Recurring panel updates now handled by recurringPanel module via window.recurringPanel
-      if (window.recurringPanel?.updateRecurringPanel) window.recurringPanel.updateRecurringPanel();
-      if (window.recurringPanel?.updateRecurringPanelButtonVisibility) window.recurringPanel.updateRecurringPanelButtonVisibility();
-      if (typeof updateMainMenuHeader === 'function') updateMainMenuHeader();
-      if (typeof updateProgressBar === 'function') updateProgressBar();
-      if (typeof checkCompleteAllButton === 'function') checkCompleteAllButton();
-      return;
-    }
-  }
-
-  // Fallback: loader (reads from localStorage)
-  if (typeof window.loadMiniCycle === 'function') {
-    window.loadMiniCycle();
-    
-    // ✅ Also restore arrow visibility after fallback load
-    setTimeout(() => {
-      if (window.AppState?.isReady?.()) {
-        const currentState = window.AppState.get();
-        const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-        updateArrowsInDOM(arrowsVisible);
-      }
-    }, 50);
-  }
-}
-
-// ✅ Make refreshUIFromState globally available for recurring modules
-window.refreshUIFromState = refreshUIFromState;
-
-// ✅ Update button states
-function updateUndoRedoButtons() {
-  const undoBtn = document.getElementById("undo-btn");
-  const redoBtn = document.getElementById("redo-btn");
-  const undoCount = window.AppGlobalState.undoStack.length;
-  const redoCount = window.AppGlobalState.redoStack.length;
-
-  if (undoBtn) {
-    undoBtn.disabled = undoCount === 0;
-    undoBtn.hidden = undoCount === 0; // ✅ Hide when no undo history
-    undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
-  }
-  if (redoBtn) {
-    redoBtn.disabled = redoCount === 0;
-    redoBtn.hidden = redoCount === 0; // ✅ Hide when no redo history
-    redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
-  }
-  const undoCountValue = window.AppGlobalState.undoStack.length;
-  const redoCountValue = window.AppGlobalState.redoStack.length;
-  console.log(`🔘 Button states: undo=${undoCountValue} (hidden=${undoBtn?.hidden}), redo=${redoCountValue} (hidden=${redoBtn?.hidden})`);
-}
-// ✅ Expose for cycleSwitcher module
-window.updateUndoRedoButtons = updateUndoRedoButtons;
-
-
-
-
-
-
-
-
-
-
-
-function renderTasks(tasksArray = []) {
-  console.log('🔄 Rendering tasks (Schema 2.5 only)...');
-  
-  const taskList = document.getElementById("taskList");
-  if (!taskList) {
-    console.error('❌ Task list container not found');
-    return;
-  }
-  
-  taskList.innerHTML = ""; // Clear existing tasks from DOM
-
-  if (!Array.isArray(tasksArray)) {
-    console.warn('⚠️ Invalid tasks array provided to renderTasks');
-    return;
-  }
-
-  console.log(`📋 Rendering ${tasksArray.length} tasks`);
-
-  tasksArray.forEach(task => {
-    if (!task || !task.id) {
-      console.warn('⚠️ Skipping invalid task:', task);
-      return;
-    }
-
-    addTask(
-      task.text,
-      task.completed,
-      false,                     // shouldSave: false (don't save during render)
-      task.dueDate,
-      task.highPriority,
-      true,                      // isLoading: true (avoid overdue reminder popups)
-      task.remindersEnabled,
-      task.recurring,
-      task.id,
-      task.recurringSettings
-    );
-  });
-
-  // Re-run UI state updates
-  updateProgressBar();
-  checkCompleteAllButton();
-  updateStatsPanel();
-  
-  // ✅ Update recurring panel button visibility
-  if (typeof updateRecurringPanelButtonVisibility === 'function') {
-    updateRecurringPanelButtonVisibility();
-  }
-  
-  // ✅ Restore arrow visibility from state after rendering
-  if (window.AppState?.isReady?.()) {
-    const currentState = window.AppState.get();
-    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-    updateArrowsInDOM(arrowsVisible);
-  }
-
-  console.log('✅ Task rendering completed and UI state restored');
-}
 
 
 
@@ -1575,26 +1398,26 @@ if (!window.deviceDetectionManager) {
 
         function refreshTaskListUI() {
           console.log('🔄 Refreshing task list UI (Schema 2.5 only)...');
-          
+
           const schemaData = loadMiniCycleData();
           if (!schemaData) {
               console.error('❌ Schema 2.5 data required for refreshTaskListUI');
               throw new Error('Schema 2.5 data not found');
           }
-      
+
           const { cycles, activeCycle } = schemaData;
           const cycleData = cycles[activeCycle];
-          
+
           if (!cycleData) {
               console.warn("⚠️ No active cycle found for UI refresh");
               return;
           }
-          
+
           // Clear current list
           const taskListContainer = document.getElementById("taskList");
           if (!taskListContainer) return;
           taskListContainer.innerHTML = "";
-          
+
           // Re-render each task from Schema 2.5
           (cycleData.tasks || []).forEach(task => {
               addTask(
@@ -1610,10 +1433,13 @@ if (!window.deviceDetectionManager) {
                   task.recurringSettings
               );
           });
-          
+
           if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
           console.log("✅ Task list UI refreshed from Schema 2.5");
       }
+
+// Export for module use
+window.refreshTaskListUI = refreshTaskListUI;
 
 
 // ✅ REMOVED: initializeDefaultRecurringSettings - now handled by recurringCore module
@@ -1627,107 +1453,6 @@ if (!window.deviceDetectionManager) {
 
 // ...existing code...
 /**
- * Initializes the main menu by attaching event listeners to menu buttons.
- * Ensures the function runs only once to prevent duplicate event bindings.
- */
-
-function setupMainMenu() {
-    if (setupMainMenu.hasRun) return; // Prevents running more than once
-    setupMainMenu.hasRun = true;
-
-    safeAddEventListener(document.getElementById("save-as-mini-cycle"), "click", saveMiniCycleAsNew);
-    safeAddEventListener(document.getElementById("open-mini-cycle"), "click", () => window.switchMiniCycle?.());
-    safeAddEventListener(document.getElementById("clear-mini-cycle-tasks"), "click", clearAllTasks);
-    safeAddEventListener(document.getElementById("delete-all-mini-cycle-tasks"), "click", deleteAllTasks);
-    safeAddEventListener(document.getElementById("new-mini-cycle"), "click", () => window.createNewMiniCycle?.());
-    safeAddEventListener(document.getElementById("close-main-menu"), "click", closeMainMenu);
-    checkGamesUnlock();
-    safeAddEventListener(exitMiniCycle, "click", () => {
-        window.location.href = "../index.html";
-    });
-    
-}
-
-function checkGamesUnlock() {
-    console.log('🎮 Checking games unlock (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for checkGamesUnlock');
-        return;
-    }
-    
-    // Ensure unlockedFeatures exists and is an array
-    const unlockedFeatures = schemaData.settings?.unlockedFeatures || [];
-    const hasGameUnlock = unlockedFeatures.includes("task-order-game");
-    
-    console.log('🔍 Game unlock status:', hasGameUnlock);
-    
-    if (hasGameUnlock) {
-        document.getElementById("games-menu-option").style.display = "block";
-        console.log('✅ Games menu option displayed');
-    } else {
-        console.log('🔒 Games still locked');
-    }
-}
-
-
-document.getElementById("open-games-panel").addEventListener("click", () => {
-    document.getElementById("games-panel").style.display = "flex";
-    setupGamesModalOutsideClick();
-
-});
-
-document.getElementById("close-games-panel").addEventListener("click", () => {
-    document.getElementById("games-panel").style.display = "none";
-});
-
-document.getElementById("open-task-order-game").addEventListener("click", () => {
-    // Load game into container or open in new modal
-
-        window.location.href = "miniCycleGames/miniCycle-taskOrder.html";
-   
-});
-/*
-function loadTaskOrderGame() {
-    const container = document.getElementById("taskOrderGameContainer");
-    if (!container) return;
-
-    fetch("/miniCycleGames/miniCycle-taskOrder.html")
-        .then(res => res.text())
-        .then(html => {
-            container.innerHTML = html;
-            container.style.display = "block";
-        });
-}
-*/
-
-
-function setupGamesModalOutsideClick() {
-    const gamesPanel = document.getElementById("games-panel");
-    const gamesContent = document.querySelector(".games-modal-content");
-    const openButton = document.getElementById("open-games-panel");
-  
-    if (!gamesPanel || !gamesContent || !openButton) return;
-  
-    console.log("✅ Games outside click ready");
-  
-    safeAddEventListener(document, "click", function (event) {
-      const isOpen = gamesPanel.style.display === "flex";
-      const clickedOutside =
-        !gamesContent.contains(event.target) && event.target !== openButton;
-  
-      if (isOpen && clickedOutside) {
-        gamesPanel.style.display = "none";
-      }
-    });
-  }
-
-function closeMainMenu() {
-if (menu) { menu.classList.remove("visible");}
-}
-
-
 
 /**
  * Initializes the miniCycle app by loading or creating a saved miniCycle.
@@ -1764,11 +1489,9 @@ async function initialSetup() {
     });
     
     // ✅ CHECK ONBOARDING FIRST - before checking for cycles
-    const hasSeenOnboarding = settings.onboardingCompleted || false;
-    
-    if (!hasSeenOnboarding) {
+    if (window.onboardingManager?.shouldShowOnboarding()) {
         console.log('👋 First time user - showing onboarding first...');
-        showOnboardingThenCycleCreation(cycles, activeCycle);
+        window.onboardingManager.showOnboarding(cycles, activeCycle);
         return;
     }
     
@@ -1781,137 +1504,6 @@ async function initialSetup() {
     
     // ✅ Complete setup for existing cycles
     completeInitialSetup(activeCycle, null, schemaData);
-}
-
-// ✅ NEW: Show onboarding, then cycle creation
-function showOnboardingThenCycleCreation(cycles, activeCycle) {
-    console.log('🎯 Starting onboarding flow first...');
-    
-    const schemaData = loadMiniCycleData();
-    const currentTheme = schemaData.settings.theme || 'default';
-    
-    const steps = [
-        `<h2>Welcome to miniCycle! 🎉</h2>
-         <p>miniCycle helps you manage tasks with a powerful task cycling system!</p>`,
-        `<ul>
-           <li>✅ Add tasks using the input box to create your cycle list.</li>
-           <li>🔄 When all tasks are completed, they reset automatically (if Auto-Cycle is enabled)</li>
-           <li>📊 Track your progress and unlock themes</li>
-         </ul>`,
-        `<ul>
-           <li>📱 On mobile, long press a task to open the menu</li>
-           <li>📱 Long press and move to rearrange tasks</li>
-           <li>📱 Swipe Left to access Stats Panel</li>
-           <li>📵 Use Settings to show task buttons on older phones</li>
-         </ul>`
-    ];
-
-    let currentStep = 0;
-
-    const modal = document.createElement("div");
-    modal.id = "onboarding-modal";
-    modal.className = "onboarding-modal";
-    modal.innerHTML = `
-        <div class="onboarding-content theme-${currentTheme}">
-            <button id="onboarding-skip" class="onboarding-skip">Skip ✖</button>
-            <div id="onboarding-step-content"></div>
-            <div class="onboarding-controls">
-                <button id="onboarding-prev" class="hidden">⬅ Back</button>
-                <button id="onboarding-next">Next ➡</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    const stepContent = document.getElementById("onboarding-step-content");
-    const nextBtn = document.getElementById("onboarding-next");
-    const prevBtn = document.getElementById("onboarding-prev");
-    const skipBtn = document.getElementById("onboarding-skip");
-
-    function renderStep(index) {
-        stepContent.innerHTML = steps[index];
-        prevBtn.classList.toggle("hidden", index === 0);
-        nextBtn.textContent = index === steps.length - 1 ? "Start 🚀" : "Next ➡";
-    }
-
-    function completeOnboardingAndShowCycleCreation() {
-        console.log('✅ Onboarding completed, now showing cycle creation...');
-        
-        // Mark onboarding as complete
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.onboardingCompleted = true;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        modal.remove();
-        
-        // ✅ Now check if they need to create a cycle
-        if (!activeCycle || !cycles[activeCycle]) {
-            setTimeout(() => {
-                showCycleCreationModal();
-            }, 300); // Small delay for smooth transition
-        } else {
-            // They already have a cycle, just load it
-            const updatedSchemaData = loadMiniCycleData();
-            completeInitialSetup(activeCycle, null, updatedSchemaData);
-        }
-    }
-
-    nextBtn.addEventListener("click", () => {
-        if (currentStep < steps.length - 1) {
-            currentStep++;
-            renderStep(currentStep);
-        } else {
-            completeOnboardingAndShowCycleCreation();
-        }
-    });
-
-    prevBtn.addEventListener("click", () => {
-        if (currentStep > 0) {
-            currentStep--;
-            renderStep(currentStep);
-        }
-    });
-
-    skipBtn.addEventListener("click", () => {
-        completeOnboardingAndShowCycleCreation();
-    });
-
-    modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-            completeOnboardingAndShowCycleCreation();
-        }
-    });
-
-    renderStep(currentStep);
-}
-
-
-// ✅ UPDATED: Close modal and complete setup after loading sample
-
-// ✅ NEW: Create a basic cycle if sample loading fails
-
-// ✅ UPDATED: Simplified showOnboarding for existing users or edge cases
-function showOnboarding() {
-    console.log('👋 Checking onboarding status (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for showOnboarding');
-        return;
-    }
-
-    const hasSeenOnboarding = schemaData.settings.onboardingCompleted || false;
-    
-    if (hasSeenOnboarding) {
-        console.log('✅ User has already completed onboarding');
-        return;
-    }
-    
-    // ✅ This function is now only called for edge cases
-    // Main onboarding flow is handled in initialSetup
-    console.log('🎯 Showing standalone onboarding...');
-    showOnboardingThenCycleCreation({}, null);
 }
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
@@ -2201,81 +1793,6 @@ async function directSave(overrideTaskList = null) {
   return { success: true, taskCount: taskData.length };
 }
 
-// ✅ EXTRACTED: Common task data extraction logic
-function extractTaskDataFromDOM() {
-  const taskListElement = document.getElementById("taskList");
-  if (!taskListElement) {
-    console.warn('⚠️ Task list element not found');
-    return [];
-  }
-
-  return [...taskListElement.children].map(taskElement => {
-    const taskTextElement = taskElement.querySelector(".task-text");
-    const taskId = taskElement.dataset.taskId;
-
-    if (!taskTextElement || !taskId) {
-      console.warn("⚠️ Skipping invalid task element");
-      return null;
-    }
-
-    // Extract recurring settings safely
-    let recurringSettings = {};
-    try {
-      const settingsAttr = taskElement.getAttribute("data-recurring-settings");
-      if (settingsAttr) {
-        recurringSettings = JSON.parse(settingsAttr);
-      }
-    } catch (err) {
-      console.warn("⚠️ Invalid recurring settings, using empty object");
-    }
-
-    return {
-      id: taskId,
-      text: taskTextElement.textContent,
-      completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-      dueDate: taskElement.querySelector(".due-date")?.value || null,
-      highPriority: taskElement.classList.contains("high-priority"),
-      remindersEnabled: taskElement.querySelector(".enable-task-reminders")?.classList.contains("reminder-active") || false,
-      recurring: taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
-      recurringSettings,
-      schemaVersion: 2
-    };
-  }).filter(Boolean);
-}
-
-// ✅ EXTRACTED: Common recurring templates update logic
-// ✅ REMOVED: updateRecurringTemplates - now handled by recurringCore module
-
-// ✅ REMOVE the legacyAutoSave function since it's now integrated into autoSave
-/**
- * Loads the last used miniCycle from localStorage and updates the UI.
- * Ensures tasks, title, settings, and overdue statuses are properly restored.
- */
-
-/**
- * Checks for overdue tasks and visually marks them as overdue.
- * Notifies the user if newly overdue tasks are detected.
- *
- * @param {HTMLElement|null} taskToCheck - The specific task to check, or null to check all tasks.
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Add this after your existing migration functions, around line 1100
 
 // ==========================================
 // 🔄 SCHEMA 2.5 MIGRATION SYSTEM. in migrationManager.js
@@ -2396,18 +1913,6 @@ function updateCycleData(cycleId, updateFn, immediate = true) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Remindoverduetasks function.
  *
@@ -2467,346 +1972,6 @@ function remindOverdueTasks() {
 
 
 
-/**
- * Updates the main menu header with the active miniCycle title and current date.
- * Ensures proper display of selected miniCycle.
- */
-
-function updateMainMenuHeader() {
-    console.log('📰 Updating main menu header (Schema 2.5 only)...');
-    
-    const menuHeaderTitle = document.getElementById("main-menu-mini-cycle-title");
-    const dateElement = document.getElementById("current-date");
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for updateMainMenuHeader');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    let activeCycleTitle = "No miniCycle Selected";
-    
-    console.log('📊 Looking up active cycle:', activeCycle);
-    
-    if (activeCycle && cycles[activeCycle]) {
-        const currentCycle = cycles[activeCycle];
-        activeCycleTitle = currentCycle.title || activeCycle;
-        console.log('✅ Found active cycle title:', activeCycleTitle);
-    } else {
-        console.warn('⚠️ No active cycle found for header update');
-    }
-
-    // ✅ Get Current Date
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString(undefined, {
-        weekday: 'short', // "Mon"
-        month: 'short', // "Jan"
-        day: '2-digit', // "08"
-        year: 'numeric' // "2025"
-    });
-
-    console.log('📅 Formatted date:', formattedDate);
-
-    // ✅ Update Title & Date
-    if (menuHeaderTitle) {
-        menuHeaderTitle.textContent = activeCycleTitle;
-        console.log('🏷️ Updated menu header title');
-    } else {
-        console.warn('⚠️ Menu header title element not found');
-    }
-    
-    if (dateElement) {
-        dateElement.textContent = formattedDate;
-        console.log('📅 Updated date element');
-    } else {
-        console.warn('⚠️ Date element not found');
-    }
-
-    // ✅ Update mode description
-    if (typeof window.updateCycleModeDescription === 'function') {
-        window.updateCycleModeDescription();
-        console.log('🎯 Mode description updated');
-    }
-
-    console.log('✅ Main menu header update completed');
-}
-
-/**
- * Saves the due date for a specific task in the active miniCycle.
- *
- * @param {string} taskText - The text of the task to update.
- * @param {string|null} dueDate - The due date to assign, or null to remove the due date.
- */
-
-  /***********************
- * 
- * 
- * Menu Management Logic
- * 
- * 
- ************************/
-
-/**
- * Saves the current miniCycle under a new name, creating a separate copy.
- * Ensures that the new name is unique before saving.
- */
-
-function saveMiniCycleAsNew() {
-    console.log('💾 Saving miniCycle as new (state-based)...');
-    
-    // ✅ Use state-based data access
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for saveMiniCycleAsNew');
-        showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
-        return;
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for saveMiniCycleAsNew');
-        showNotification("⚠️ No data available. Please try again.", "error", 3000);
-        return;
-    }
-
-    const { data, appState } = currentState;
-    const activeCycle = appState.activeCycleId;
-    const currentCycle = data.cycles[activeCycle];
-    
-    console.log('📊 Checking active cycle:', activeCycle);
-    
-    if (!activeCycle || !currentCycle) {
-        console.warn('⚠️ No active miniCycle found to save');
-        showNotification("⚠ No miniCycle found to save.");
-        return;
-    }
-
-    console.log('📝 Prompting user for new cycle name');
-
-    showPromptModal({
-        title: "Duplicate Cycle List",
-        message: `Enter a new name for your copy of "${currentCycle.title}":`,
-        placeholder: "e.g., My Custom Routine",
-        confirmText: "Save Copy",
-        cancelText: "Cancel",
-        required: true,
-        callback: (input) => {
-            if (!input) {
-                console.log('❌ User cancelled save operation');
-                showNotification("❌ Save cancelled.");
-                return;
-            }
-
-            const newCycleName = sanitizeInput(input.trim());
-            console.log('🔍 Processing new cycle name:', newCycleName);
-
-            if (!newCycleName) {
-                console.warn('⚠️ Invalid cycle name provided');
-                showNotification("⚠ Please enter a valid name.");
-                return;
-            }
-
-            // ✅ Update through state system
-            window.AppState.update(state => {
-                // ✅ Check for existing cycles by key
-                if (state.data.cycles[newCycleName]) {
-                    console.warn('⚠️ Cycle name already exists:', newCycleName);
-                    showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
-                    return; // Don't save if duplicate exists
-                }
-
-                console.log('🔄 Creating new cycle copy...');
-
-                // ✅ Create new cycle with title as key for Schema 2.5
-                const newCycleId = `copy_${Date.now()}`;
-                
-                console.log('📊 Deep copying current cycle data');
-                
-                // ✅ Deep copy the current cycle with new title as storage key
-                state.data.cycles[newCycleName] = {
-                    ...JSON.parse(JSON.stringify(currentCycle)),
-                    id: newCycleId,
-                    title: newCycleName,
-                    createdAt: Date.now()
-                };
-
-                console.log('🎯 Setting new cycle as active:', newCycleName);
-
-                // ✅ Set as active cycle using the title as key
-                state.appState.activeCycleId = newCycleName;
-                state.metadata.lastModified = Date.now();
-                state.metadata.totalCyclesCreated++;
-
-                console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
-                console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
-
-            }, true); // immediate save
-
-            showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${newCycleName}"!`);
-            hideMainMenu();
-            
-            // ✅ Use proper cycle loader if available
-            if (typeof window.loadMiniCycle === 'function') {
-                window.loadMiniCycle();
-            } else {
-                // Fallback to manual refresh
-                setTimeout(() => window.location.reload(), 1000);
-            }
-        }
-    });
-}
-
-
-
-/**
- * Clearalltasks function.
- *
- * @returns {void}
- */
-function clearAllTasks() {
-    console.log('🧹 Clearing all tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for clearAllTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    
-    if (!activeCycle || !currentCycle) {
-        console.warn('⚠️ No active miniCycle to clear tasks');
-        showNotification("⚠ No active miniCycle to clear tasks.");
-        return;
-    }
-
-    console.log('📊 Clearing tasks for cycle:', activeCycle);
-
-    // ✅ Create undo snapshot before making changes
-
-
-    // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
-    const updateSuccess = updateCycleData(activeCycle, cycle => {
-        cycle.tasks.forEach(task => task.completed = false);
-    }, true);
-
-    if (!updateSuccess) {
-        console.error('❌ Failed to update cycle data');
-        showNotification("❌ Failed to clear tasks. Please try again.", "error");
-        return;
-    }
-
-    console.log('💾 Tasks unchecked and saved to Schema 2.5');
-
-    // ✅ Uncheck tasks in the UI and remove overdue styling
-    document.querySelectorAll("#taskList .task").forEach(taskElement => {
-        const checkbox = taskElement.querySelector("input[type='checkbox']");
-        if (checkbox) {
-            checkbox.checked = false;
-        }
-        // ✅ Remove overdue styling
-        taskElement.classList.remove("overdue-task");
-    });
-
-    // ✅ Update UI elements
-    updateProgressBar();
-    updateStatsPanel();
-    checkCompleteAllButton();
-    if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-        window.recurringPanel.updateRecurringPanelButtonVisibility();
-    }
-    hideMainMenu();
-
-    // ✅ Update undo/redo button states
-    updateUndoRedoButtons();
-
-    console.log(`✅ All tasks unchecked for miniCycle: "${currentCycle.title}"`);
-    showNotification(`✅ All tasks unchecked for "${currentCycle.title}"`, "success", 2000);
-}
-
-/**
- * Deletealltasks function.
- *
- * @returns {void}
- */
-function deleteAllTasks() {
-    console.log('🗑️ Deleting all tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for deleteAllTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    
-    if (!activeCycle || !currentCycle) {
-        console.warn('⚠️ No active miniCycle to delete tasks from');
-        showNotification("⚠ No active miniCycle to delete tasks from.");
-        return;
-    }
-
-    console.log('📊 Preparing to delete tasks for cycle:', activeCycle);
-
-    // ✅ Use callback pattern with showConfirmationModal
-    showConfirmationModal({
-        title: "Delete All Tasks",
-        message: `⚠ Are you sure you want to permanently delete all tasks in "${currentCycle.title}"? This action cannot be undone.`,
-        confirmText: "Delete All",
-        cancelText: "Cancel",
-        callback: (confirmed) => {
-            if (!confirmed) {
-                console.log('❌ User cancelled deletion');
-                showNotification("❌ Deletion cancelled.");
-                return;
-            }
-
-            console.log('🔄 Proceeding with task deletion...');
-
-            // ✅ Push undo snapshot before deletion
-
-
-            // ✅ Clear tasks completely - Use helper to prevent race conditions
-            const updateSuccess = updateCycleData(activeCycle, cycle => {
-                cycle.tasks = [];
-                // ✅ Clear recurring templates too
-                if (cycle.recurringTemplates) {
-                    cycle.recurringTemplates = {};
-                }
-            }, true);
-
-            if (!updateSuccess) {
-                console.error('❌ Failed to delete tasks');
-                showNotification("❌ Failed to delete tasks. Please try again.", "error");
-                return;
-            }
-
-            console.log('💾 All tasks deleted and saved to Schema 2.5');
-
-            // ✅ Clear UI & update progress
-            const taskList = document.getElementById("taskList");
-            if (taskList) {
-                taskList.innerHTML = "";
-            }
-            
-            updateProgressBar();
-            updateStatsPanel();
-            checkCompleteAllButton();
-            if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-                window.recurringPanel.updateRecurringPanelButtonVisibility();
-            }
-
-            // ✅ Update undo/redo button states
-            updateUndoRedoButtons();
-
-            console.log(`✅ All tasks deleted for miniCycle: "${currentCycle.title}"`);
-            showNotification(`✅ All tasks deleted from "${currentCycle.title}"`, "success", 3000);
-        }
-    });
-}
-
 
 
 
@@ -2817,21 +1982,7 @@ indefiniteCheckbox.addEventListener("change", () => {
 });
 
 
-// ============================================
-// ✅ REMINDER SYSTEM - ALL FUNCTIONS MOVED TO utilities/reminders.js
-// ============================================
-// The following functions are now handled by the reminders module:
-// - handleReminderToggle()
-// - setupReminderToggle()
-// - stopReminders()
-// - autoSaveReminders()
-// - loadRemindersSettings()
-// - saveTaskReminderState()
-// - sendReminderNotificationIfNeeded()
-// - startReminders()
-// - setupReminderButtonHandler()
-// - updateReminderButtons()
-//
+
 // All functions are globally accessible via:
 // - window.reminderManager (the module instance)
 // - window.startReminders(), window.stopReminders(), etc. (individual functions)
@@ -2935,9 +2086,18 @@ function showConfirmationModal(options) {
 function showPromptModal(options) {
   return notifications.showPromptModal(options);
 }
-// ✅ Expose for cycleSwitcher module
+
+/**
+ * Close all modals - delegated to modalManager
+ */
+function closeAllModals() {
+  return window.modalManager?.closeAllModals();
+}
+
+// ✅ Expose globally for backward compatibility
 window.showConfirmationModal = showConfirmationModal;
 window.showPromptModal = showPromptModal;
+window.closeAllModals = closeAllModals;
 
 
   // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in utilities/reminders.js
@@ -2949,1031 +2109,13 @@ window.showPromptModal = showPromptModal;
   }
 
 
-// ✅ REMOVED: setupRecurringPanel - now handled by recurringPanel module
-// ✅ REMOVED: setAdvancedVisibility - now handled by recurringPanel module
-// ✅ REMOVED: updateRecurringPanel - now handled by recurringPanel module
-
-// ✅ REMOVED: Old window.updateRecurringPanel assignment - now handled by recurringIntegration module
-// ✅ REMOVED: Old window.openRecurringSettingsPanelForTask assignment - now handled by recurringIntegration module
-  
-// ✅ REMOVED: openRecurringSettingsPanelForTask - now handled by recurringPanel module
-
-
-
-// ✅ REMOVED: updateRecurringSettingsVisibility - now handled by recurringPanel module
-// ✅ REMOVED: toggle-check-all event listener - now handled by recurringPanel module
-// ✅ REMOVED: loadRecurringSettingsForTask - now handled by recurringPanel module
-// ✅ REMOVED: specific-date-specific-time event listener - now handled by recurringPanel module
-// ✅ REMOVED: saveRecurringTemplate - unused function, template saving handled in handleApplySettings
-// ✅ REMOVED: deleteRecurringTemplate - now handled by recurringCore module
-
-// ✅ REMOVED: saveAlwaysShowRecurringSetting - now handled by recurringPanel module
-
-// ✅ REMOVED: loadAlwaysShowRecurringSetting - now handled by recurringPanel module
-
-// ✅ REMOVED: Old event listener for saveAlwaysShowRecurringSetting - now handled by recurringPanel module
 document.getElementById("always-show-recurring")?.addEventListener("change", () => {
     if (window.recurringPanel?.saveAlwaysShowRecurringSetting) {
         window.recurringPanel.saveAlwaysShowRecurringSetting();
     }
 });
 
-// ✅ REMOVED: apply-recurring-settings event listener - now handled by recurringPanel module
-// ✅ REMOVED: normalizeRecurringSettings - now handled by recurringCore module
-// ✅ REMOVED: buildRecurringSettingsFromPanel - now handled by recurringPanel module
-// ✅ REMOVED: clearNonRelevantRecurringFields - now handled by recurringCore module
-// ✅ REMOVED: syncRecurringStateToDOM - now handled by recurringCore module
-// ✅ REMOVED: cancel-recurring-settings event listener - now handled by recurringPanel module
-// ✅ REMOVED: recur-indefinitely event listener - now handled by recurringPanel module
-// ✅ REMOVED: setupBiweeklyDayToggle - now handled by recurringPanel module
-// ✅ REMOVED: document click event listener for hiding preview - now handled by recurringPanel module
 
-// ✅ REMOVED: setupMilitaryTimeToggle - now handled by recurringPanel module
-// ✅ REMOVED: setupTimeConversion - now handled by recurringPanel module
-// ✅ REMOVED: generateMonthlyDayGrid - now handled by recurringPanel module
-// ✅ REMOVED: setupWeeklyDayToggle - now handled by recurringPanel module
-// ✅ REMOVED: generateYearlyMonthGrid - now handled by recurringPanel module
-// ✅ REMOVED: generateYearlyDayGrid - now handled by recurringPanel module
-// ✅ REMOVED: handleYearlyApplyToAllChange - now handled by recurringPanel module
-// ✅ REMOVED: getSelectedYearlyMonths - now handled by recurringPanel module
-// ✅ REMOVED: getSelectedMonthlyDays - now handled by recurringPanel module
-// ✅ REMOVED: setupSpecificDatesPanel - now handled by recurringPanel module
-// ✅ REMOVED: getTomorrow - now handled by recurringPanel module
-// ✅ REMOVED: updateRecurCountVisibility - now handled by recurringPanel module
-
-// ✅ Helper function to build task context for existing tasks (AppState-based)
-function buildTaskContext(taskItem, taskId) {
-    try {
-        // ✅ Use AppState instead of loadMiniCycleData
-        if (!AppState.isReady()) {
-            console.warn('⚠️ AppState not ready for buildTaskContext');
-            return null;
-        }
-
-        const state = AppState.get();
-        const activeCycleId = state.appState?.activeCycleId;
-        
-        if (!activeCycleId) return null;
-
-        const currentCycle = state.data?.cycles?.[activeCycleId];
-        if (!currentCycle) return null;
-
-        const taskText = taskItem.querySelector('.task-text')?.textContent?.trim() || '';
-        
-        return {
-            taskTextTrimmed: taskText,
-            assignedTaskId: taskId,
-            schemaData: state, // Pass the full state for backward compatibility
-            cycles: state.data.cycles,
-            activeCycle: activeCycleId,
-            currentCycle,
-            settings: state.settings || {},
-            autoResetEnabled: currentCycle.autoReset || false,
-            deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false
-        };
-    } catch (error) {
-        console.warn('⚠️ Failed to build task context:', error);
-        return null;
-    }
-}
-
-
-
-// ✅ REMOVED: updateRecurringButtonVisibility - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: isAlwaysShowRecurringEnabled - now handled by recurringCore/recurringPanel modules
-  
-// ✅ REMOVED: updateRecurringPanelButtonVisibility - now handled by recurringCore/recurringPanel modules
-  
-// ✅ REMOVED: updateRecurringSummary - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: parseDateAsLocal - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: attachRecurringSummaryListeners - now handled by recurringPanel module
-
-// ✅ REMOVED: showTaskSummaryPreview - now handled by recurringCore/recurringPanel modules
-
-// ✅ New function to populate form with existing settings
-// ✅ REMOVED: populateRecurringFormWithSettings - now handled by recurringCore/recurringPanel modules
-
-// ✅ New function to clear/reset the recurring form
-// ✅ REMOVED: clearRecurringForm - now handled by recurringCore/recurringPanel modules
-// ✅ REMOVED: createTaskSummaryPreview - now handled by recurringPanel module
-
-// Before:
-// ✅ REMOVED: getRecurringSummaryText - now handled by recurringCore/recurringPanel modules
-
-
-
-
-// ✅ Shared utility: Build a recurring summary string from a settings object
-// ✅ REMOVED: buildRecurringSummaryFromSettings - now handled by recurringPanel module
-
-// ✅ REMOVED: removeRecurringTasksFromCycle - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: handleRecurringTasksAfterReset - now handled by recurringCore/recurringPanel modules
-
-
-// ✅ REMOVED: convert12To24 - now handled by recurringCore/recurringPanel modules
-
-
-// ✅ Main logic to determine if a task should recur today
-// ✅ REMOVED: shouldTaskRecurNow - now handled by recurringCore/recurringPanel modules
-
-
-
-
-
-
-
-// ✅ Helper: Check if a recurring task should be recreated
-// ✅ REMOVED: shouldRecreateRecurringTask - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: watchRecurringTasks - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: setupRecurringWatcher - now handled by recurringCore/recurringPanel modules
-
-
-
-
-/**
- * Setupsettingsmenu function.
- *
- * @returns {void}
- */
-function setupSettingsMenu() {
-    const settingsModal = document.querySelector(".settings-modal");
-    const settingsModalContent = document.querySelector(".settings-modal-content");
-    const openSettingsBtn = document.getElementById("open-settings");
-    const closeSettingsBtn = document.getElementById("close-settings");
-
-    /**
-     * Opens the settings menu.
-     *
-     * @param {Event} event - The click event.
-     */
-    function openSettings(event) {
-        event.stopPropagation();
-        settingsModal.style.display = "flex";
-        hideMainMenu();
-    }
-
-    /**
-     * Closes the settings menu.
-     */
-    function closeSettings() {
-        settingsModal.style.display = "none";
-    }
-
-    function closeOnClickOutside(event) {
-        if (settingsModal.style.display === "flex" && 
-            !settingsModalContent.contains(event.target) && 
-            event.target !== openSettingsBtn) {
-            settingsModal.style.display = "none";
-        }
-    }
-
-    // ✅ Remove previous listeners before adding new ones
-    openSettingsBtn.removeEventListener("click", openSettings);
-    closeSettingsBtn.removeEventListener("click", closeSettings);
-    document.removeEventListener("click", closeOnClickOutside);
-
-    // ✅ Add event listeners (only once)
-    openSettingsBtn.addEventListener("click", openSettings);
-    closeSettingsBtn.addEventListener("click", closeSettings);
-    document.addEventListener("click", closeOnClickOutside);
-
-    // ✅ Dark Mode Toggle (Check if the element exists first)
-    setupDarkModeToggle("darkModeToggle", ["darkModeToggle", "darkModeToggleThemes"]);
-    
-    // ✅ Setup Quick Dark Toggle right after primary toggle
-    setupQuickDarkToggle();
-
-
-// ✅ Toggle Move Arrows Setting (Schema 2.5 only)
-const moveArrowsToggle = document.getElementById("toggle-move-arrows");
-if (moveArrowsToggle) {
-    console.log('🔄 Setting up move arrows toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for move arrows toggle');
-        return;
-    }
-    
-    // ✅ Use state-based approach for move arrows setting
-    let moveArrowsEnabled = false;
-    
-    if (window.AppState?.isReady?.()) {
-        const currentState = window.AppState.get();
-        moveArrowsEnabled = currentState?.ui?.moveArrowsVisible || false;
-    } else {
-        // Fallback for legacy or when state isn't ready
-        const schemaData = loadMiniCycleData();
-        moveArrowsEnabled = schemaData?.settings?.showMoveArrows || false;
-    }
-    
-    console.log('📊 Loading move arrows setting from state:', moveArrowsEnabled);
-    
-    moveArrowsToggle.checked = moveArrowsEnabled;
-    
-    moveArrowsToggle.addEventListener("change", () => {
-        const enabled = moveArrowsToggle.checked;
-        
-        console.log('🔄 Move arrows toggle changed:', enabled);
-        
-        // ✅ Use state system if available
-        if (window.AppState?.isReady?.()) {
-            window.AppState.update(state => {
-                if (!state.ui) state.ui = {};
-                state.ui.moveArrowsVisible = enabled;
-                state.metadata.lastModified = Date.now();
-            }, true); // immediate save
-            
-            console.log('✅ Move arrows setting saved to state:', enabled);
-        } else {
-            // ✅ Fallback to localStorage if state not ready
-            console.warn('⚠️ AppState not ready, using localStorage fallback');
-            const schemaData = loadMiniCycleData();
-            if (schemaData) {
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.settings.showMoveArrows = enabled;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            }
-        }
-        
-        updateMoveArrowsVisibility();
-    });
-    
-    console.log('✅ Move arrows toggle setup completed');
-}
-
-// ✅ Toggle Three-Dot Menu Setting (Schema 2.5 only)
-const threeDotsToggle = document.getElementById("toggle-three-dots");
-if (threeDotsToggle) {
-    console.log('🔄 Setting up three dots toggle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for three dots toggle');
-        return;
-    }
-    
-    const threeDotsEnabled = schemaData.settings.showThreeDots || false;
-    
-    console.log('📊 Loading three dots setting from Schema 2.5:', threeDotsEnabled);
-    
-    threeDotsToggle.checked = threeDotsEnabled;
-    document.body.classList.toggle("show-three-dots-enabled", threeDotsEnabled);
-
-    threeDotsToggle.addEventListener("change", () => {
-        const enabled = threeDotsToggle.checked;
-        
-        console.log('🔄 Three dots toggle changed:', enabled);
-        
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for saving three dots setting');
-            return;
-        }
-        
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.showThreeDots = enabled;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        
-        console.log('✅ Three dots setting saved to Schema 2.5:', enabled);
-        
-        document.body.classList.toggle("show-three-dots-enabled", enabled);
-
-        // ✅ Disable/enable hover behavior for current tasks
-        toggleHoverTaskOptions(!enabled);
-
-        // ✅ Update task list UI
-        refreshTaskListUI(); 
-    });
-    
-    console.log('✅ Three dots toggle setup completed');
-}
-
-             // ✅ Update backup function to be Schema 2.5 only
-      document.getElementById("backup-mini-cycles").addEventListener("click", () => {
-          console.log('📤 Creating backup (Schema 2.5 only)...');
-          
-          const schemaData = localStorage.getItem("miniCycleData");
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for backup');
-              showNotification("❌ No Schema 2.5 data found. Cannot create backup.", "error");
-              return;
-          }
-      
-          // Schema 2.5 backup - everything is in one key
-          const backupData = {
-              schemaVersion: "2.5",
-              miniCycleData: schemaData,
-              backupMetadata: {
-                  createdAt: Date.now(),
-                  version: "2.5",
-                  source: "miniCycle App"
-              }
-          };
-          
-          const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-          const backupUrl = URL.createObjectURL(backupBlob);
-          const a = document.createElement("a");
-          a.href = backupUrl;
-          a.download = `mini-cycle-backup-schema25-${Date.now()}.json`;
-          a.click();
-          URL.revokeObjectURL(backupUrl);
-          
-          showNotification("✅ Schema 2.5 backup created successfully!", "success", 3000);
-      });
-      
-        
-        // ✅ Update restore function to convert legacy backups to Schema 2.5 (idempotent + cancel-safe)
-        (() => {
-          const restoreBtn = document.getElementById("restore-mini-cycles");
-          if (!restoreBtn) return;
-        
-          let fileInput = null;
-          let isPickerOpen = false;
-        
-          const resetPicker = () => { isPickerOpen = false; };
-        
-          const handleRestore = () => {
-            if (isPickerOpen) return;
-            isPickerOpen = true;
-        
-            // Clean previous input
-            if (fileInput) {
-              fileInput.remove();
-              fileInput = null;
-            }
-        
-            // Fresh input
-            fileInput = document.createElement("input");
-            fileInput.type = "file";
-            fileInput.accept = "application/json,.json";
-            fileInput.style.display = "none";
-            document.body.appendChild(fileInput);
-        
-            // When picker closes (even on cancel), window regains focus
-            const onFocusAfterPicker = () => {
-              resetPicker();
-              window.removeEventListener("focus", onFocusAfterPicker);
-              // Cleanup dangling input on cancel
-              if (fileInput && !fileInput.files?.length) {
-                fileInput.remove();
-                fileInput = null;
-              }
-            };
-            window.addEventListener("focus", onFocusAfterPicker, { once: true });
-        
-            fileInput.addEventListener("change", (event) => {
-              const file = event.target.files[0];
-              if (!file) {
-                if (fileInput) {
-                  fileInput.remove();
-                  fileInput = null;
-                }
-                resetPicker();
-                return;
-              }
-        
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                try {
-                  const backupData = JSON.parse(e.target.result);
-        
-                  // ✅ Check if user is currently on Schema 2.5 (should always be true now)
-                  const currentSchemaData = localStorage.getItem("miniCycleData");
-                  if (!currentSchemaData) {
-                    showNotification("❌ Cannot restore - Schema 2.5 data structure required.", "error");
-                    return;
-                  }
-        
-                  // ✅ Handle Schema 2.5 backup
-                  if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
-                    localStorage.setItem("miniCycleData", backupData.miniCycleData);
-                    showNotification("✅ Schema 2.5 backup restored successfully!", "success", 4000);
-        
-                    showNotification("🔄 Reloading app to apply changes...", "info", 2000);
-                    setTimeout(() => location.reload(), 2500);
-                    return;
-                  }
-        
-                  // ✅ Handle legacy backup - convert to Schema 2.5
-                  if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
-                    showNotification("🔄 Auto-converting legacy backup to Schema 2.5...", "info", 3000);
-        
-                    if (!backupData.miniCycleStorage) {
-                      showNotification("❌ Invalid legacy backup file format.", "error", 3000);
-                      return;
-                    }
-        
-                    // Temporarily restore legacy keys
-                    localStorage.setItem("miniCycleStorage", backupData.miniCycleStorage);
-                    localStorage.setItem("lastUsedMiniCycle", backupData.lastUsedMiniCycle || "");
-        
-                    if (backupData.miniCycleReminders) {
-                      localStorage.setItem("miniCycleReminders", backupData.miniCycleReminders);
-                    }
-                    if (backupData.milestoneUnlocks) {
-                      localStorage.setItem("milestoneUnlocks", backupData.milestoneUnlocks);
-                    }
-                    if (backupData.darkModeEnabled !== undefined) {
-                      localStorage.setItem("darkModeEnabled", backupData.darkModeEnabled);
-                    }
-                    if (backupData.currentTheme) {
-                      localStorage.setItem("currentTheme", backupData.currentTheme);
-                    }
-        
-                    // Migrate to 2.5
-                    setTimeout(() => {
-                      const migrationResults = performSchema25Migration();
-        
-                      if (migrationResults.success) {
-                        showNotification("✅ Legacy backup restored and converted to Schema 2.5!", "success", 4000);
-                      } else {
-                        showNotification("❌ Migration failed during restore", "error", 4000);
-                      }
-        
-                      setTimeout(() => location.reload(), 1000);
-                    }, 500);
-        
-                    return; // prevent double reload path
-                  }
-        
-                  showNotification("❌ Invalid backup file format.", "error", 3000);
-                } catch (error) {
-                  console.error("Backup restore error:", error);
-                  showNotification("❌ Error restoring backup - file may be corrupted.", "error", 4000);
-                } finally {
-                  if (fileInput) {
-                    fileInput.remove();
-                    fileInput = null;
-                  }
-                  resetPicker();
-                  window.removeEventListener("focus", onFocusAfterPicker);
-                }
-              };
-        
-              reader.readAsText(file);
-            }, { once: true });
-        
-            fileInput.click();
-          };
-        
-          // Idempotent listener attachment
-          if (restoreBtn._restoreHandler) {
-            restoreBtn.removeEventListener("click", restoreBtn._restoreHandler);
-          }
-          restoreBtn._restoreHandler = handleRestore;
-          restoreBtn.addEventListener("click", restoreBtn._restoreHandler);
-        })();
-        
-      
-    document.getElementById("reset-recurring-default")?.addEventListener("click", resetDefaultRecurringSettings);
-      // ✅ Update reset recurring default for Schema 2.5 only
-      function resetDefaultRecurringSettings() {
-          console.log('🔁 Resetting recurring defaults (Schema 2.5 only)...');
-          
-          const schemaData = localStorage.getItem("miniCycleData");
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for reset');
-              showNotification("❌ No Schema 2.5 data found. Cannot reset defaults.", "error");
-              return;
-          }
-      
-          const parsed = JSON.parse(schemaData);
-          
-          const defaultSettings = {
-              frequency: "daily",
-              indefinitely: true,
-              time: null
-          };
-          
-          // Reset defaults in Schema 2.5
-          parsed.settings.defaultRecurringSettings = defaultSettings;
-          parsed.metadata.lastModified = Date.now();
-          localStorage.setItem("miniCycleData", JSON.stringify(parsed));
-          
-          showNotification("🔁 Recurring default reset to Daily Indefinitely.", "success");
-      }
-      
-      // ✅ Update Factory Reset for Schema 2.5 only (awaits all cleanup; no IndexedDB used)
-      (function setupFactoryReset() {
-          const resetBtn = document.getElementById("factory-reset");
-          if (!resetBtn) return;
-
-          const runFactoryReset = async () => {
-              console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
-
-              // 0) CRITICAL: Stop AppState from auto-saving over our deletion
-              if (window.AppState) {
-                  console.log('🛑 Stopping AppState auto-save...');
-                  try {
-                      // Clear the debounced save timeout
-                      if (window.AppState.saveTimeout) {
-                          clearTimeout(window.AppState.saveTimeout);
-                          window.AppState.saveTimeout = null;
-                      }
-                      // Clear in-memory data so it won't be saved
-                      window.AppState.data = null;
-                      window.AppState.isDirty = false;
-                      window.AppState.isInitialized = false;
-                      console.log('✅ AppState neutralized');
-                  } catch (e) {
-                      console.warn('⚠️ AppState cleanup warning:', e);
-                  }
-              }
-
-              // 1) Local storage cleanup (primary + legacy + dynamic)
-              try {
-                  // Schema 2.5 - Single key cleanup
-                  localStorage.removeItem("miniCycleData");
-
-                  // Also clean up any remaining legacy keys for thorough cleanup
-                  const legacyKeysToRemove = [
-                      "miniCycleStorage",
-                      "lastUsedMiniCycle",
-                      "miniCycleReminders",
-                      "miniCycleDefaultRecurring",
-                      "milestoneUnlocks",
-                      "darkModeEnabled",
-                      "currentTheme",
-                      "miniCycleNotificationPosition",
-                      "miniCycleThreeDots",
-                      "miniCycleMoveArrows",
-                      "miniCycleOnboarding",
-                      "overdueTaskStates",
-                      "bestRound",
-                      "bestTime",
-                      "miniCycleAlwaysShowRecurring",
-                      "miniCycle_console_logs",
-                      "miniCycle_console_capture_start",
-                      "miniCycle_console_capture_enabled"
-                  ];
-                  legacyKeysToRemove.forEach(key => localStorage.removeItem(key));
-
-                  // Clean up any backup files and dynamic keys
-                  const allKeys = Object.keys(localStorage);
-                  let dynamicKeysRemoved = 0;
-                  allKeys.forEach(key => {
-                      // Backup files
-                      if (key.startsWith('miniCycle_backup_') || key.startsWith('pre_migration_backup_')) {
-                          localStorage.removeItem(key);
-                          dynamicKeysRemoved++;
-                          return;
-                      }
-                      // Any key containing miniCycle, minicycle, or TaskCycle (case-insensitive)
-                      const keyLower = key.toLowerCase();
-                      if (keyLower.includes('minicycle') || keyLower.includes('taskcycle')) {
-                          console.log('🧹 Removing additional key:', key);
-                          localStorage.removeItem(key);
-                          dynamicKeysRemoved++;
-                      }
-                  });
-                  console.log(`🧹 Removed ${dynamicKeysRemoved} additional dynamic keys`);
-              } catch (e) {
-                  console.warn('⚠️ Local storage cleanup encountered an issue:', e);
-              }
-
-              // 2) Session storage cleanup
-              try {
-                  if (typeof sessionStorage !== 'undefined') {
-                      sessionStorage.clear();
-                      console.log('🧹 sessionStorage cleared');
-                  }
-              } catch (e) {
-                  console.warn('⚠️ sessionStorage cleanup failed:', e);
-              }
-
-              // 3) Service Worker: unsubscribe push (if any) and unregister
-              try {
-                  if ('serviceWorker' in navigator) {
-                      const registrations = await navigator.serviceWorker.getRegistrations();
-                      await Promise.allSettled(registrations.map(async (registration) => {
-                          try {
-                              // Try to unsubscribe from Push
-                              if (registration.pushManager && typeof registration.pushManager.getSubscription === 'function') {
-                                  const sub = await registration.pushManager.getSubscription();
-                                  if (sub) {
-                                      console.log('🧹 Unsubscribing push subscription');
-                                      await sub.unsubscribe();
-                                  }
-                              }
-                          } catch (e) {
-                              console.warn('⚠️ Push unsubscribe failed:', e);
-                          }
-                          try {
-                              console.log('🧹 Unregistering service worker:', registration.scope);
-                              await registration.unregister();
-                          } catch (e) {
-                              console.warn('⚠️ Service worker unregister failed:', e);
-                          }
-                      }));
-                  }
-              } catch (e) {
-                  console.warn('⚠️ Service worker cleanup failed:', e);
-              }
-
-              // 4) Cache Storage cleanup (filtered)
-              try {
-                  if (typeof window.caches !== 'undefined') {
-                      const cacheNames = await caches.keys();
-                      await Promise.allSettled(
-                          cacheNames.map((cacheName) => {
-                              if (cacheName.includes('miniCycle') || cacheName.includes('taskCycle')) {
-                                  console.log('🧹 Clearing cache:', cacheName);
-                                  return caches.delete(cacheName);
-                              }
-                              return Promise.resolve(false);
-                          })
-                      );
-                  }
-              } catch (e) {
-                  console.warn('⚠️ Cache cleanup failed:', e);
-              }
-
-              // 5) Finalize
-              showNotification("✅ Factory Reset Complete. Reloading...", "success", 2000);
-              setTimeout(() => location.reload(), 800);
-          };
-
-          // Attach click with confirmation, guard against double-activation
-          resetBtn.addEventListener("click", () => {
-              showConfirmationModal({
-                  title: "Factory Reset",
-                  message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
-                  confirmText: "Delete Everything",
-                  cancelText: "Cancel",
-                  callback: async (confirmed) => {
-                      if (!confirmed) {
-                          showNotification("❌ Factory reset cancelled.", "info", 2000);
-                          return;
-                      }
-
-                      // prevent double triggers during reset
-                      const prevDisabled = resetBtn.disabled;
-                      resetBtn.disabled = true;
-                      try {
-                          await runFactoryReset();
-                      } finally {
-                          // If reload fails for some reason, re-enable button
-                          resetBtn.disabled = prevDisabled;
-                      }
-                  }
-              });
-          });
-      })();
-
-    }
-
-
-/**
- * Setupdownloadminicycle function - Schema 2.5 ONLY
- *
- * @returns {void}
- */
-function setupDownloadMiniCycle() {
-  document.getElementById("export-mini-cycle").addEventListener("click", () => {
-    console.log('📤 Exporting miniCycle (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for export');
-      showNotification("❌ No Schema 2.5 data found. Cannot export.", "error");
-      return;
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycle = cycles[activeCycle];
-    
-    if (!activeCycle || !cycle) {
-      showNotification("⚠ No active miniCycle to export.");
-      return;
-    }
-
-    console.log('📊 Exporting cycle:', activeCycle);
-
-    const miniCycleData = {
-      name: activeCycle,
-      title: cycle.title || "New miniCycle",
-      tasks: cycle.tasks.map(task => {
-        const settings = task.recurringSettings || {};
-        
-        // Add fallback time if task is recurring and doesn't use specificTime
-        if (task.recurring && !settings.specificTime && !settings.defaultRecurTime) {
-          settings.defaultRecurTime = new Date().toISOString();
-        }
-
-        return {
-          id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          text: task.text || "",
-          completed: task.completed || false,
-          dueDate: task.dueDate || null,
-          highPriority: task.highPriority || false,
-          remindersEnabled: task.remindersEnabled || false,
-          recurring: task.recurring || false,
-          recurringSettings: settings,
-          schemaVersion: task.schemaVersion || 2
-        };
-      }),
-      autoReset: cycle.autoReset || false,
-      cycleCount: cycle.cycleCount || 0,
-      deleteCheckedTasks: cycle.deleteCheckedTasks || false
-    };
-
-    console.log('✅ Export data prepared');
-    exportMiniCycleData(miniCycleData, cycle.title || activeCycle);
-  });
-}
-
-function exportMiniCycleData(miniCycleData, cycleName) {
-    console.log('📤 Exporting miniCycle data (Schema 2.5 only)...');
-    
-    try {
-        const dataStr = JSON.stringify(miniCycleData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: "application/json" });
-        
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = `${cycleName.replace(/[^a-z0-9]/gi, '_')}.mcyc`;
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(link.href);
-        
-        console.log('✅ Export completed successfully');
-        showNotification(`✅ "${cycleName}" exported successfully!`, "success", 3000);
-        
-    } catch (error) {
-        console.error('❌ Export failed:', error);
-        showNotification("❌ Export failed. Please try again.", "error", 3000);
-    }
-}
-
-
-function setupUploadMiniCycle() {
-  const importButtons = ["import-mini-cycle", "miniCycleUpload"];
-
-  // Shared state
-  let fileInput = null;
-  let isPickerOpen = false;
-
-  const resetPickerState = () => {
-    isPickerOpen = false;
-  };
-
-  const handleImport = () => {
-    if (isPickerOpen) return;
-    isPickerOpen = true;
-
-    // Clean previous input
-    if (fileInput) {
-      fileInput.remove();
-      fileInput = null;
-    }
-
-    // Fresh input
-    fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = ".mcyc";
-    fileInput.style.display = "none";
-    document.body.appendChild(fileInput);
-
-    // When the OS file dialog closes (even on cancel), window regains focus
-    const onFocusAfterPicker = () => {
-      // If change didn't fire (cancel), release the lock
-      resetPickerState();
-      window.removeEventListener("focus", onFocusAfterPicker);
-      // Cleanup dangling input on cancel
-      if (fileInput && !fileInput.files?.length) {
-        fileInput.remove();
-        fileInput = null;
-      }
-    };
-    window.addEventListener("focus", onFocusAfterPicker, { once: true });
-
-    fileInput.addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) {
-        fileInput.remove();
-        fileInput = null;
-        resetPickerState();
-        return;
-      }
-
-      if (file.name.endsWith(".tcyc")) {
-        showNotification("❌ miniCycle does not support .tcyc files.\nPlease save your Task Cycle as .MCYC to import into miniCycle.");
-        fileInput.remove();
-        fileInput = null;
-        resetPickerState();
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const importedData = JSON.parse(e.target.result);
-
-          if (!importedData.name || !Array.isArray(importedData.tasks)) {
-            showNotification("❌ Invalid miniCycle file format.");
-            return;
-          }
-
-          console.log("📥 Importing miniCycle with auto-conversion to Schema 2.5...");
-
-          // Ensure Schema 2.5 data exists
-          const schemaData = loadMiniCycleData();
-          if (!schemaData) {
-            console.error("❌ Schema 2.5 data required for import");
-            showNotification("❌ Cannot import - Schema 2.5 data structure required.", "error");
-            return;
-          }
-
-          const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-          const cycleId = `imported_${Date.now()}`;
-
-          console.log("🔄 Creating imported cycle with ID:", cycleId);
-
-          fullSchemaData.data.cycles[cycleId] = {
-            id: cycleId,
-            title: importedData.title || importedData.name,
-            tasks: importedData.tasks.map((task) => {
-              const safeSettings = task.recurringSettings || {};
-              if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
-                safeSettings.defaultRecurTime = new Date().toISOString();
-              }
-              return {
-                id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                text: task.text || "",
-                completed: false,
-                dueDate: task.dueDate || null,
-                highPriority: task.highPriority || false,
-                remindersEnabled: task.remindersEnabled || false,
-                recurring: task.recurring || false,
-                recurringSettings: safeSettings,
-                schemaVersion: task.schemaVersion || 2
-              };
-            }),
-            autoReset: importedData.autoReset !== false,
-            cycleCount: importedData.cycleCount || 0,
-            deleteCheckedTasks: importedData.deleteCheckedTasks || false,
-            createdAt: Date.now(),
-            recurringTemplates: {}
-          };
-
-          // Set as active cycle and persist
-          fullSchemaData.appState.activeCycleId = cycleId;
-          fullSchemaData.metadata.lastModified = Date.now();
-          fullSchemaData.metadata.totalCyclesCreated++;
-          localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-          // ✅ SYNC AppState with imported cycle data (prevents overwriting with stale data)
-          if (window.AppState && typeof window.AppState.init === 'function') {
-              window.AppState.data = fullSchemaData;
-              window.AppState.isInitialized = true;
-              window.AppState.isDirty = false; // Mark as clean since we just saved
-              console.log('✅ AppState synchronized with imported cycle data');
-          }
-
-          console.log("💾 Import completed successfully to Schema 2.5");
-          showNotification(`✅ miniCycle "${importedData.name}" imported and converted to Schema 2.5!`, "success");
-          location.reload();
-        } catch (error) {
-          showNotification("❌ Error importing miniCycle.");
-          console.error("Import error:", error);
-        } finally {
-          if (fileInput) {
-            fileInput.remove();
-            fileInput = null;
-          }
-          resetPickerState();
-          window.removeEventListener("focus", onFocusAfterPicker);
-        }
-      };
-
-      reader.readAsText(file);
-    }, { once: true });
-
-    fileInput.click();
-  };
-
-  // Attach listeners idempotently
-  importButtons.forEach((buttonId) => {
-    const button = document.getElementById(buttonId);
-    if (!button) return;
-
-    if (button._importHandler) {
-      button.removeEventListener("click", button._importHandler);
-    }
-    button._importHandler = handleImport;
-    button.addEventListener("click", button._importHandler);
-  });
-}
-
-
-
-/**
- * Setupfeedbackmodal function.
- *
- * @returns {void}
- */
-
-function setupFeedbackModal() {
-    const feedbackModal = document.getElementById("feedback-modal");
-    const openFeedbackBtn = document.getElementById("open-feedback-modal");
-    const closeFeedbackBtn = document.querySelector(".close-feedback-modal");
-    const feedbackForm = document.getElementById("feedback-form");
-    const feedbackText = document.getElementById("feedback-text");
-    const submitButton = document.getElementById("submit-feedback");
-    const thankYouMessage = document.getElementById("thank-you-message");
-
-    // Open Modal
-    openFeedbackBtn.addEventListener("click", () => {
-        feedbackModal.style.display = "flex";
-        hideMainMenu();
-        thankYouMessage.style.display = "none"; // Hide thank you message if shown before
-    });
-
-    // Close Modal
-    closeFeedbackBtn.addEventListener("click", () => {
-        feedbackModal.style.display = "none";
-    });
-
-    // Close Modal on Outside Click
-    window.addEventListener("click", (event) => {
-        if (event.target === feedbackModal) {
-            feedbackModal.style.display = "none";
-        }
-    });
-
-    // Handle Form Submission via AJAX (Prevent Page Refresh)
-    feedbackForm.addEventListener("submit", function (event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Disable button while sending
-        submitButton.disabled = true;
-        submitButton.textContent = "Sending...";
-
-        // Prepare Form Data
-        const formData = new FormData(feedbackForm);
-
-        // Send request to Web3Forms API
-        fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show Thank You Message
-                thankYouMessage.style.display = "block";
-
-                // Clear Textarea
-                feedbackText.value = "";
-
-                // Hide Form After Submission
-                setTimeout(() => {
-                    thankYouMessage.style.display = "none";
-                    feedbackModal.style.display = "none"; // Close modal after a short delay
-                }, 2000);
-            } else {
-                showNotification("❌ Error sending feedback. Please try again.");
-            }
-        })
-        .catch(error => {
-            showNotification("❌ Network error. Please try again later.");
-        })
-        .finally(() => {
-            submitButton.disabled = false;
-            submitButton.textContent = "Submit";
-        });
-    });
-}
-
-
-document.getElementById("feedback-form").addEventListener("submit", (e) => {
-    const textarea = document.getElementById("feedback-text");
-    textarea.value = sanitizeInput(textarea.value);
-});
-
-
-function openFeedbackModal() {
-    const openFeedbackFooter = document.getElementById("open-feedback-modal-footer");
-        openFeedbackFooter.addEventListener("click", () => {
-              setupFeedbackModal();
-        feedbackModal.style.display = "flex";
-        thankYouMessage.style.display = "none"; // Hide thank you message if shown before
-    });
-}
-
-openFeedbackModal();
 
 /**
  * Setupusermanual function.
@@ -4000,35 +2142,7 @@ function setupUserManual() {
 
 
 
-/**
- * Setupabout function.
- *
- * @returns {void}
- */
-
-function setupAbout() {
-    const aboutModal = document.getElementById("about-modal");
-    const openAboutBtn = document.getElementById("open-about-modal");
-    const closeAboutBtn = aboutModal.querySelector(".close-modal");
-
-    // Open Modal
-    openAboutBtn.addEventListener("click", () => {
-        aboutModal.style.display = "flex";
-    });
-
-    // Close Modal
-    closeAboutBtn.addEventListener("click", () => {
-        aboutModal.style.display = "none";
-    });
-
-    // Close Modal on Outside Click
-    window.addEventListener("click", (event) => {
-        if (event.target === aboutModal) {
-            aboutModal.style.display = "none";
-        }
-    });
-}
-
+// ✅ REMOVED: setupAbout() - Now handled by modalManager module
 
 /**
  * Assigncyclevariables function.
@@ -4137,6 +2251,9 @@ function checkMiniCycle() {
     console.log("ran check MiniCyle function2");
 }
 
+// ✅ Export checkMiniCycle globally for taskDOM module
+window.checkMiniCycle = checkMiniCycle;
+
 /**
  * Incrementcyclecount function.
  *
@@ -4146,30 +2263,33 @@ function checkMiniCycle() {
 
 function incrementCycleCount(miniCycleName, savedMiniCycles) {
     console.log('🔢 Incrementing cycle count (Schema 2.5 state-based)...');
-    
+
     // ✅ Use state module instead of legacy direct data access
     if (!window.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for incrementCycleCount');
         return;
     }
-    
+
     const currentState = window.AppState.get();
     if (!currentState) {
         console.error('❌ No state data available for incrementCycleCount');
         return;
     }
-    
+
     const { data, appState } = currentState;
     const activeCycle = appState.activeCycleId;
     const cycleData = data.cycles[activeCycle];
-    
+
     if (!activeCycle || !cycleData) {
         console.error('❌ No active cycle found for incrementCycleCount');
         return;
     }
-    
+
     console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
-    
+
+    // ✅ NOTE: Undo snapshot is captured by resetTasks() before the entire cycle completion flow
+    // We don't capture it here to avoid duplicate snapshots
+
     // ✅ Update through state module and get the actual new count
     let actualNewCount;
     window.AppState.update(state => {
@@ -4192,6 +2312,9 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
     showCompletionAnimation();
     updateStatsPanel();
 }
+
+// Export to window for taskCore module
+window.incrementCycleCount = incrementCycleCount;
 
 function handleMilestoneUnlocks(miniCycleName, cycleCount) {
     console.log('🏆 Handling milestone unlocks (state-based)...');
@@ -4232,37 +2355,6 @@ function handleMilestoneUnlocks(miniCycleName, cycleCount) {
     console.log('✅ Milestone unlocks processed (state-based)');
 }
 
-function unlockMiniGame() {
-    console.log('🎮 Unlocking mini game (state-based)...');
-    
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for unlockMiniGame');
-        return;
-    }
-    
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data for unlockMiniGame');
-        return;
-    }
-    
-    const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
-    if (!unlockedFeatures.includes("task-order-game")) {
-        window.AppState.update(state => {
-            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
-            state.settings.unlockedFeatures.push("task-order-game");
-            state.userProgress.rewardMilestones.push("task-order-game-100");
-        }, true);
-        
-        console.log("🎮 Task Order Game unlocked (state-based)!");
-    }
-    
-    checkGamesUnlock();
-}
-
-
-
-
 
 
 // ✅ Rebuild toggles based on unlocked themes (Schema 2.5 only)
@@ -4278,8 +2370,8 @@ function unlockMiniGame() {
 function showCompletionAnimation() {
     const animation = document.createElement("div");
     animation.classList.add("mini-cycle-complete-animation");
-  //  animation.innerHTML = "✅ miniCycle Completed!"; 
-  animation.innerHTML = "✔"; 
+  //  animation.innerHTML = "✅ miniCycle Completed!";
+  animation.innerHTML = "✔";
 
     document.body.appendChild(animation);
 
@@ -4288,6 +2380,9 @@ function showCompletionAnimation() {
         animation.remove();
     }, 1500);
 }
+
+// Export to window for taskCore module
+window.showCompletionAnimation = showCompletionAnimation;
 
 /**
  * Checkformilestone function.
@@ -4358,27 +2453,39 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
     
 // ✅ Main addTask function - now acts as orchestrator
 function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
+    // ✅ Use NEW taskDOM module functions via window.* (not old inline functions)
+
     // Input validation and sanitization
-    const validatedInput = validateAndSanitizeTaskInput(taskText);
+    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || validateAndSanitizeTaskInput(taskText);
     if (!validatedInput) return;
 
     // Load and validate data context
-    const taskContext = loadTaskContext(validatedInput, taskId, {
+    const taskContext = window.loadTaskContext?.(validatedInput, taskId, {
         completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
-    }, isLoading);  // ✅ Pass isLoading flag
+    }, isLoading) || loadTaskContext(validatedInput, taskId, {
+        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
+    }, isLoading);
     if (!taskContext) return;
 
     // Create or update task data
-    const taskData = createOrUpdateTaskData(taskContext);
+    const taskData = window.createOrUpdateTaskData?.(taskContext) || createOrUpdateTaskData(taskContext);
 
     // Create DOM elements
-    const taskElements = createTaskDOMElements(taskContext, taskData);
+    const taskElements = window.createTaskDOMElements?.(taskContext, taskData) || createTaskDOMElements(taskContext, taskData);
 
-    // Setup task interactions and events
-    setupTaskInteractions(taskElements, taskContext);
+    // Setup task interactions and events (from taskEvents.js via taskDOM.js)
+    if (window.setupTaskInteractions) {
+        window.setupTaskInteractions(taskElements, taskContext);
+    } else {
+        console.warn('⚠️ setupTaskInteractions not available - event handlers may not work!');
+    }
 
-    // Finalize task creation
-    finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
+    // Finalize task creation (from taskDOM.js)
+    if (window.finalizeTaskCreation) {
+        window.finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
+    } else {
+        console.warn('⚠️ finalizeTaskCreation not available - task may not be added properly!');
+    }
 
     console.log('✅ Task creation completed (Schema 2.5)');
 }
@@ -4403,6 +2510,10 @@ function validateAndSanitizeTaskInput(taskText) {
     
     return taskTextTrimmed;
 }
+
+// ✅ Export for taskCore module
+// ❌ DISABLED: Old export - now provided by taskDOM module
+// window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
 
 // ✅ 2. Data Context Loading and Validation
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
@@ -4444,6 +2555,10 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false
         ...taskOptions
     };
 }
+
+// ✅ Export for taskCore module
+// ❌ DISABLED: Old export - now provided by taskDOM module
+// window.loadTaskContext = loadTaskContext;
 
 // ✅ 3. Task Data Creation and Storage
 function createOrUpdateTaskData(taskContext) {
@@ -4511,6 +2626,9 @@ function createOrUpdateTaskData(taskContext) {
     return existingTask;
 }
 
+// ✅ Export for taskCore module
+window.createOrUpdateTaskData = createOrUpdateTaskData;
+
 // ✅ 4. Recurring Template Creation (extracted from task data creation)
 // ✅ REMOVED: createRecurringTemplate - now handled by recurringCore/recurringPanel modules
 
@@ -4560,314 +2678,11 @@ function createTaskDOMElements(taskContext, taskData) {
     };
 }
 
-// ✅ 6. Main Task Element Creation
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
-    const taskItem = document.createElement("li");
-    taskItem.classList.add("task");
-    taskItem.setAttribute("draggable", "true");
-    taskItem.dataset.taskId = assignedTaskId;
 
-    if (highPriority) {
-        taskItem.classList.add("high-priority");
-    }
 
-    // ✅ Check if task has a recurring template (source of truth for recurring state)
-    const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
-    const hasValidRecurringSettings = recurringSettings && Object.keys(recurringSettings).length > 0;
 
-    // Task is recurring if: has template OR (recurring flag is true AND has settings)
-    const isRecurring = hasRecurringTemplate || (recurring && hasValidRecurringSettings);
 
-    if (isRecurring) {
-        taskItem.classList.add("recurring");
-        // Use settings from template if available, otherwise use task's settings
-        const settingsToUse = hasRecurringTemplate
-            ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
-            : recurringSettings;
-        taskItem.setAttribute("data-recurring-settings", JSON.stringify(settingsToUse));
-    }
 
-    return taskItem;
-}
-
-// ✅ 7. Three Dots Button Creation
-function createThreeDotsButton(taskItem, settings) {
-    const showThreeDots = settings.showThreeDots || false;
-    
-    if (showThreeDots) {
-        const threeDotsButton = document.createElement("button");
-        threeDotsButton.classList.add("three-dots-btn");
-        threeDotsButton.innerHTML = "⋮";
-        threeDotsButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            revealTaskButtons(taskItem);
-        });
-        taskItem.appendChild(threeDotsButton);
-        return threeDotsButton;
-    }
-    
-    return null;
-}
-
-// ✅ 8. Task Button Container Creation
-function createTaskButtonContainer(taskContext) {
-    const { 
-        autoResetEnabled, deleteCheckedEnabled, settings, 
-        remindersEnabled, remindersEnabledGlobal, assignedTaskId, 
-        currentCycle, recurring, highPriority
-    } = taskContext;
-
-    const buttonContainer = document.createElement("div");
-    buttonContainer.classList.add("task-options");
-
-    const showRecurring = !autoResetEnabled && deleteCheckedEnabled;
-
-    const buttons = [
-        { class: "move-up", icon: "▲", show: true },
-        { class: "move-down", icon: "▼", show: true },
-        { class: "recurring-btn", icon: "<i class='fas fa-repeat'></i>", show: showRecurring || (settings.alwaysShowRecurring || false) },
-        { class: "set-due-date", icon: "<i class='fas fa-calendar-alt'></i>", show: !autoResetEnabled },
-        { class: "enable-task-reminders", icon: "<i class='fas fa-bell'></i>", show: remindersEnabled || remindersEnabledGlobal, toggle: true },
-        { class: "priority-btn", icon: "<i class='fas fa-exclamation-triangle'></i>", show: true },
-        { class: "edit-btn", icon: "<i class='fas fa-edit'></i>", show: true },
-        { class: "delete-btn", icon: "<i class='fas fa-trash'></i>", show: true }
-    ];
-
-    buttons.forEach(buttonConfig => {
-        const button = createTaskButton(buttonConfig, taskContext, buttonContainer);
-        buttonContainer.appendChild(button);
-    });
-
-    return buttonContainer;
-}
-
-// ✅ Export for modules that need to recreate button containers (e.g., modeManager)
-window.createTaskButtonContainer = createTaskButtonContainer;
-
-// ✅ 9. Individual Task Button Creation
-function createTaskButton(buttonConfig, taskContext, buttonContainer) {
-    const { class: btnClass, icon, toggle = false, show } = buttonConfig;
-    const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority } = taskContext;
-
-    const button = document.createElement("button");
-    button.classList.add("task-btn", btnClass);
-    button.innerHTML = icon;
-    button.setAttribute("type", "button");
-    if (!show) button.classList.add("hidden");
-
-    // Setup accessibility attributes
-    setupButtonAccessibility(button, btnClass, buttonContainer);
-
-    // Setup ARIA states
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle);
-    
-    // Setup button event handlers
-    setupButtonEventHandlers(button, btnClass, taskContext);
-
-    return button;
-}
-
-// ✅ 10. Button Accessibility Setup
-function setupButtonAccessibility(button, btnClass, buttonContainer) {
-    button.setAttribute("tabindex", "0");
-    
-    // Keyboard navigation
-    button.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            button.click();
-        }
-
-        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-            const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));
-            const currentIndex = focusable.indexOf(e.target);
-            const nextIndex = e.key === "ArrowRight"
-                ? (currentIndex + 1) % focusable.length
-                : (currentIndex - 1 + focusable.length) % focusable.length;
-            focusable[nextIndex].focus();
-            e.preventDefault();
-        }
-    });
-
-    // ARIA labels
-    const ariaLabels = {
-        "move-up": "Move task up",
-        "move-down": "Move task down",
-        "recurring-btn": "Toggle recurring task",
-        "set-due-date": "Set due date",
-        "enable-task-reminders": "Toggle reminders for this task",
-        "priority-btn": "Mark task as high priority",
-        "edit-btn": "Edit task",
-        "delete-btn": "Delete task"
-    };
-    button.setAttribute("aria-label", ariaLabels[btnClass] || "Task action");
-}
-
-// ✅ 11. Button ARIA States Setup
-function setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle) {
-    if (btnClass === "enable-task-reminders") {
-        const isActive = remindersEnabled === true;
-        button.classList.toggle("reminder-active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
-    } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-        let isActive;
-
-        if (btnClass === "recurring-btn") {
-            // ✅ Check if task has a recurring template (source of truth)
-            const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
-            isActive = hasRecurringTemplate || !!recurring;
-
-            // ✅ Debug log for recurring button
-            console.log('🔘 Setting up recurring button:', {
-                taskId: assignedTaskId,
-                recurring,
-                hasRecurringTemplate: !!hasRecurringTemplate,
-                isActive,
-                hasActiveClass: button.classList.contains('active')
-            });
-        } else {
-            isActive = !!highPriority;
-        }
-
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", isActive.toString());
-    }
-}
-
-// ✅ 12. Button Event Handlers Setup
-function setupButtonEventHandlers(button, btnClass, taskContext) {
-    if (btnClass === "recurring-btn") {
-        // ✅ Setup recurring button handler
-        setupRecurringButtonHandler(button, taskContext);
-    } else if (btnClass === "enable-task-reminders") {
-        // ✅ Use window.setupReminderButtonHandler from reminders module
-        // Safe to call directly - Phase 2 guarantees module is loaded before task creation
-        if (typeof window.setupReminderButtonHandler === 'function') {
-            window.setupReminderButtonHandler(button, taskContext);
-        } else {
-            console.error('❌ setupReminderButtonHandler not available - reminders module failed to load');
-        }
-    } else if (btnClass === "move-up" || btnClass === "move-down") {
-        // ✅ Skip attaching old handlers to move buttons - using event delegation
-        console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
-    } else {
-        button.addEventListener("click", handleTaskButtonClick);
-    }
-}
-
-// ✅ Recurring button handler (uses module functions)
-function setupRecurringButtonHandler(button, taskContext) {
-    const { assignedTaskId, currentCycle, activeCycle } = taskContext;
-
-    // ✅ Mark that handler is attached to prevent double-attachment
-    button.dataset.handlerAttached = 'true';
-
-    button.addEventListener("click", () => {
-        // ✅ Read fresh state from AppState to avoid stale closure data
-        const currentState = window.AppState?.get();
-        if (!currentState) {
-            console.error('❌ AppState not available for recurring toggle');
-            return;
-        }
-
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
-
-        if (!freshCycle) {
-            console.error('❌ Active cycle not found in AppState');
-            return;
-        }
-
-        const task = freshCycle.tasks.find(t => t.id === assignedTaskId);
-        if (!task) {
-            console.warn('⚠️ Task not found:', assignedTaskId);
-            return;
-        }
-
-        const alwaysShowRecurring = currentState?.settings?.alwaysShowRecurring || false;
-
-        const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
-        if (!(showRecurring || alwaysShowRecurring)) {
-            console.log('🚫 Recurring button click ignored - not in correct mode and always-show not enabled');
-            return;
-        }
-
-        // ✅ Check template existence as source of truth (not task.recurring flag)
-        const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
-        const isCurrentlyRecurring = !!hasRecurringTemplate;
-        const isNowRecurring = !isCurrentlyRecurring;
-
-        console.log('🔄 Toggling recurring state:', {
-            taskId: assignedTaskId,
-            wasRecurring: isCurrentlyRecurring,
-            willBeRecurring: isNowRecurring,
-            hadTemplate: !!hasRecurringTemplate
-        });
-
-        task.recurring = isNowRecurring;
-
-        button.classList.toggle("active", isNowRecurring);
-        button.setAttribute("aria-pressed", isNowRecurring.toString());
-
-        // ✅ Add or remove recurring icon from task label
-        const taskItem = button.closest('.task');
-        if (taskItem) {
-            const taskLabel = taskItem.querySelector('.task-text'); // ✅ Fixed: use .task-text not .task-label
-            if (taskLabel) {
-                let existingIcon = taskLabel.querySelector('.recurring-indicator');
-
-                if (isNowRecurring && !existingIcon) {
-                    // Add icon
-                    const icon = document.createElement("span");
-                    icon.className = "recurring-indicator";
-                    icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
-                    taskLabel.appendChild(icon);
-                    console.log('✅ Added recurring icon to task:', assignedTaskId);
-                } else if (!isNowRecurring && existingIcon) {
-                    // Remove icon
-                    existingIcon.remove();
-                    console.log('✅ Removed recurring icon from task:', assignedTaskId);
-                }
-            }
-        }
-
-        // ✅ Create fresh taskContext with current settings from AppState
-        const freshTaskContext = {
-            ...taskContext,
-            settings: currentState?.settings || {}
-        };
-
-        if (isNowRecurring) {
-            // ✅ Use global function from module with fresh context
-            if (window.handleRecurringTaskActivation) {
-                window.handleRecurringTaskActivation(task, freshTaskContext, button);
-            }
-        } else {
-            // ✅ Use global function from module with fresh context
-            if (window.handleRecurringTaskDeactivation) {
-                window.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
-            }
-        }
-
-        // ✅ Don't call saveTaskToSchema25 here - recurring modules handle AppState directly
-        // This was causing the issue where multiple recurring tasks only showed one in the panel
-
-        // ✅ Update panel visibility (use correct method names)
-        if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-            window.recurringPanel.updateRecurringPanelButtonVisibility();
-        }
-
-        // ✅ Update recurring panel (use correct method name)
-        if (window.recurringPanel?.updateRecurringPanel) {
-            window.recurringPanel.updateRecurringPanel();
-        }
-    });
-}
-
-// ✅ 13. Recurring Button Handler (extracted from main function)
-// ✅ REMOVED: setupRecurringButtonHandler - now handled by recurringCore/recurringPanel modules
-
-// ✅ 13b. Recurring Helper Functions (global utilities)
 /**
  * Sync recurring state to DOM elements
  * Called by recurring modules to update task UI
@@ -4894,33 +2709,7 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
     }
 };
 
-// ✅ 14. Recurring Task Activation Handler
-// ✅ REMOVED: handleRecurringTaskActivation - now handled by recurringCore/recurringPanel modules
 
-// ✅ 15. Recurring Task Deactivation Handler
-// ✅ REMOVED: handleRecurringTaskDeactivation - now handled by recurringCore/recurringPanel modules
-
-// ✅ REMOVED: setupReminderButtonHandler - Now in utilities/reminders.js
-// Use window.setupReminderButtonHandler() which is globally exported from the module
-
-// ✅ 17. Task Content Elements Creation
-function createTaskContentElements(taskContext) {
-    const { 
-        assignedTaskId, taskTextTrimmed, completed, dueDate, 
-        autoResetEnabled, recurring, currentCycle, activeCycle 
-    } = taskContext;
-
-    // Create checkbox
-    const checkbox = createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
-    
-    // Create task label
-    const taskLabel = createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
-    
-    // Create due date input
-    const dueDateInput = createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
-
-    return { checkbox, taskLabel, dueDateInput };
-}
 
 // ✅ 18. Task Checkbox Creation
 function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
@@ -4979,178 +2768,7 @@ function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
     return taskLabel;
 }
 
-// ✅ 20. Due Date Input Creation
 
-// ✅ 21. Task Interactions Setup
-function setupTaskInteractions(taskElements, taskContext) {
-    const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
-    const { settings } = taskContext;
-
-    // Setup task click interaction
-    setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
-    
-    // Setup priority button state
-    setupPriorityButtonState(buttonContainer, taskContext.highPriority);
-    
-    // Setup hover interactions based on three dots setting
-    setupTaskHoverInteractions(taskItem, settings);
-    
-    // Setup focus interactions
-    setupTaskFocusInteractions(taskItem);
-    
-    // Setup due date button interaction
-    setupDueDateButtonInteraction(buttonContainer, dueDateInput);
-}
-
-// ✅ 22. Task Click Interaction Setup
-function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    taskItem.addEventListener("click", (event) => {
-        if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
-
-        // ✅ Enable undo system on first user interaction
-        enableUndoSystemOnFirstInteraction();
-
-        // ✅ RESTORED: Use the simple working approach from old backup
-        checkbox.checked = !checkbox.checked;
-        checkbox.dispatchEvent(new Event("change"));
-        checkbox.setAttribute("aria-checked", checkbox.checked);
-
-        checkMiniCycle();
-        autoSave();  // ✅ This extracts from DOM and saves correctly
-        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
-    });
-}
-
-// ✅ 23. Priority Button State Setup
-function setupPriorityButtonState(buttonContainer, highPriority) {
-    const priorityButton = buttonContainer.querySelector(".priority-btn");
-    if (highPriority && priorityButton) {
-        priorityButton.classList.add("priority-active");
-        priorityButton.setAttribute("aria-pressed", "true");
-    }
-}
-
-// ✅ 24. Task Hover Interactions Setup
-function setupTaskHoverInteractions(taskItem, settings) {
-    const threeDotsEnabled = settings.showThreeDots || false;
-    if (!threeDotsEnabled) {
-        taskItem.addEventListener("mouseenter", showTaskOptions);
-        taskItem.addEventListener("mouseleave", hideTaskOptions);
-    }
-}
-
-// ✅ 25. Task Focus Interactions Setup
-function setupTaskFocusInteractions(taskItem) {
-    safeAddEventListener(taskItem, "focus", () => {
-        const options = taskItem.querySelector(".task-options");
-        if (options) {
-            options.style.opacity = "1";
-            options.style.visibility = "visible";
-            options.style.pointerEvents = "auto";
-        }
-    });
-    
-    attachKeyboardTaskOptionToggle(taskItem);
-}
-
-// ✅ 26. Due Date Button Interaction Setup
-
-// ✅ 27. Task Creation Finalization
-function finalizeTaskCreation(taskElements, taskContext, options) {
-    const { taskItem, taskList, taskInput } = taskElements;
-    const { completed } = taskContext;
-    const { shouldSave, isLoading } = options;
-
-    // Append to DOM
-    taskList.appendChild(taskItem);
-
-    // Clear input
-    if (taskInput) taskInput.value = "";
-
-    // Scroll to new task
-    scrollToNewTask(taskList);
-
-    // Handle overdue styling
-    handleOverdueStyling(taskItem, completed);
-
-    // Update UI components
-    updateUIAfterTaskCreation(shouldSave);
-
-    // Setup final interactions
-    setupFinalTaskInteractions(taskItem, isLoading);
-}
-
-// ✅ 28. Scroll to New Task
-function scrollToNewTask(taskList) {
-    const taskListContainer = document.querySelector(".task-list-container");
-    if (taskListContainer && taskList) {
-        taskListContainer.scrollTo({
-            top: taskList.scrollHeight,
-            behavior: "smooth"
-        });
-    }
-}
-
-// ✅ 29. Handle Overdue Styling
-function handleOverdueStyling(taskItem, completed) {
-    setTimeout(() => { 
-        if (completed) {
-            taskItem.classList.remove("overdue-task");
-        }
-    }, 300);
-}
-
-// ✅ 30. Update UI After Task Creation
-function updateUIAfterTaskCreation(shouldSave) {
-    checkCompleteAllButton();
-    updateProgressBar();
-    updateStatsPanel();
-    
-    // ✅ Update recurring panel button visibility when tasks are added
-    if (typeof updateRecurringPanelButtonVisibility === 'function') {
-        updateRecurringPanelButtonVisibility();
-    }
-    
-    if (shouldSave) autoSave();
-}
-
-// ✅ 31. Setup Final Task Interactions
-function setupFinalTaskInteractions(taskItem, isLoading) {
-    if (!isLoading) setTimeout(() => { remindOverdueTasks(); }, 1000);
-
-    if (typeof DragAndDrop === 'function') {
-        DragAndDrop(taskItem);
-    } else if (typeof window.DragAndDrop === 'function') {
-        window.DragAndDrop(taskItem);
-    } else {
-        console.error('❌ DragAndDrop function not available!');
-    }
-    updateMoveArrowsVisibility();
-}
-
-// ✅ 32. Schema 2.5 Save Helper
-function saveTaskToSchema25(activeCycle, currentCycle) {
-    // Use AppState if available, otherwise fallback to localStorage
-    if (window.AppState && window.AppState.isReady()) {
-        try {
-            window.AppState.update(state => {
-                if (state && state.data && state.data.cycles) {
-                    state.data.cycles[activeCycle] = currentCycle;
-                    state.metadata.lastModified = Date.now();
-                }
-            });
-            return;
-        } catch (error) {
-            // Fall through to localStorage fallback
-        }
-    }
-    
-    // Fallback to localStorage if AppState not ready or failed
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-}
 
 // Ensure the real function is exposed via alias and flush queued calls
 (function finalizeAddTaskBootstrap() {
@@ -5187,27 +2805,7 @@ if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
   }, 200);
 }
 
-
-
-function toggleHoverTaskOptions(enableHover) {
-  document.querySelectorAll(".task").forEach(taskItem => {
-    if (enableHover) {
-      if (!taskItem.classList.contains("hover-enabled")) {
-        taskItem.addEventListener("mouseenter", showTaskOptions);
-        taskItem.addEventListener("mouseleave", hideTaskOptions);
-        taskItem.classList.add("hover-enabled");
-      }
-    } else {
-      if (taskItem.classList.contains("hover-enabled")) {
-        taskItem.removeEventListener("mouseenter", showTaskOptions);
-        taskItem.removeEventListener("mouseleave", hideTaskOptions);
-        taskItem.classList.remove("hover-enabled");
-      }
-    }
-  });
-}
-
-
+// ✅ toggleHoverTaskOptions removed - now using module version from taskDOM.js
 
 document.addEventListener("click", (e) => {
   const target = e.target.closest(".open-recurring-settings");
@@ -5225,14 +2823,7 @@ document.addEventListener("click", (e) => {
  * @param {string} input - The user input to be sanitized.
  * @returns {string} - Cleaned and safe string, trimmed and limited in length.
  */
-function sanitizeInput(input) {
-    if (typeof input !== "string") return "";
-    const temp = document.createElement("div");
-    temp.textContent = input; // Set as raw text (sanitized)
-    return temp.textContent.trim().substring(0, TASK_LIMIT); // <-- use textContent here too
-  }
-// ✅ Expose for cycleSwitcher module
-window.sanitizeInput = sanitizeInput;
+// ✅ sanitizeInput removed - now using module version from globalUtils.js
 
     /**
  * ⌨️ Accessibility Helper: Toggles visibility of task buttons when task item is focused or blurred.
@@ -5274,7 +2865,7 @@ window.sanitizeInput = sanitizeInput;
        */
       safeAddEventListener(taskItem, "focusout", (e) => {
         if (taskItem.contains(e.relatedTarget)) return;
-    
+
         const options = taskItem.querySelector(".task-options");
         if (options) {
           options.style.opacity = "0";
@@ -5284,6 +2875,8 @@ window.sanitizeInput = sanitizeInput;
       });
     }
 
+    // ✅ Export for taskDOM module
+    window.attachKeyboardTaskOptionToggle = attachKeyboardTaskOptionToggle;
 
 
     // ✅ REMOVED: updateReminderButtons() - Now in utilities/reminders.js
@@ -5298,71 +2891,7 @@ window.sanitizeInput = sanitizeInput;
  * @param {any} event - Description. * @returns {void}
  */
 
-function revealTaskButtons(taskItem) {
-  const taskOptions = taskItem.querySelector(".task-options");
-  if (!taskOptions) return;
 
-  // 🧹 Hide all other task option menus
-  document.querySelectorAll(".task-options").forEach(opts => {
-    if (opts !== taskOptions) {
-      opts.style.visibility = "hidden";
-      opts.style.opacity = "0";
-      opts.style.pointerEvents = "none";
-
-      // Optional: hide all child buttons too
-      opts.querySelectorAll(".task-btn").forEach(btn => {
-        btn.style.visibility = "hidden";
-        btn.style.opacity = "0";
-        btn.style.pointerEvents = "none";
-      });
-    }
-  });
-
-  // ✅ Show this task's options
-  taskOptions.style.visibility = "visible";
-  taskOptions.style.opacity = "1";
-  taskOptions.style.pointerEvents = "auto";
-
-  const reminderSettings = JSON.parse(localStorage.getItem("miniCycleReminders")) || {};
-  const remindersEnabledGlobal = reminderSettings.enabled === true;
-  const autoResetEnabled = toggleAutoReset.checked;
-
-  // ✅ Early return if AppState not ready to prevent initialization race conditions
-  if (!window.AppState?.isReady?.()) {
-    console.log('⏳ revealTaskButtons deferred - AppState not ready');
-    return;
-  }
-
-  const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
-  const cycleData = savedMiniCycles?.[lastUsedMiniCycle] ?? {};
-  const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
-
-  const alwaysShow = AppState.isReady() ? 
-    AppState.get()?.settings?.alwaysShowRecurring === true : 
-    JSON.parse(localStorage.getItem("miniCycleAlwaysShowRecurring")) === true;
-  const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
-
-  taskOptions.querySelectorAll(".task-btn").forEach(btn => {
-    const isReminderBtn = btn.classList.contains("enable-task-reminders");
-    const isRecurringBtn = btn.classList.contains("recurring-btn");
-    const isDueDateBtn = btn.classList.contains("set-due-date");
-
-    const shouldShow =
-      !btn.classList.contains("hidden") ||
-      (isReminderBtn && remindersEnabledGlobal) ||
-      (isRecurringBtn && showRecurring) ||
-      (isDueDateBtn && !autoResetEnabled);
-
-    if (shouldShow) {
-      btn.classList.remove("hidden");
-      btn.style.visibility = "visible";
-      btn.style.opacity = "1";
-      btn.style.pointerEvents = "auto";
-    }
-  });
-
-  updateMoveArrowsVisibility();
-}
 
     function hideTaskButtons(taskItem) {
 
@@ -5392,53 +2921,39 @@ function revealTaskButtons(taskItem) {
 
     function showTaskOptions(event) {
         const taskElement = event.currentTarget;
-    
+
         // ✅ Only allow on desktop or if long-pressed on mobile
         const isMobile = isTouchDevice();
         const allowShow = !isMobile || taskElement.classList.contains("long-pressed");
-    
+
         if (allowShow) {
-            revealTaskButtons(taskElement);
+            // ✅ Use NEW taskDOM module function if available
+            if (typeof window.revealTaskButtons === 'function') {
+                window.revealTaskButtons(taskElement);
+            }
         }
     }
-    
+
+    // ✅ Export for taskDOM module
+    window.showTaskOptions = showTaskOptions;
 
     function hideTaskOptions(event) {
         const taskElement = event.currentTarget;
-    
+
         // ✅ Only hide if not long-pressed on mobile (so buttons stay open during drag)
         const isMobile = isTouchDevice();
         const allowHide = !isMobile || !taskElement.classList.contains("long-pressed");
-    
+
         if (allowHide) {
             hideTaskButtons(taskElement);
         }
     }
-    
-    
-/**
- * Handles the change event when a task's completion status is toggled.
- *
- * @param {HTMLInputElement} checkbox - The checkbox element of the task.
- */
-function handleTaskCompletionChange(checkbox) {
-    const taskItem = checkbox.closest(".task");
 
-     if (checkbox.checked) {
-        taskItem.classList.remove("overdue-task");
-    } else {
-        checkOverdueTasks(taskItem);
-    }
+    // ✅ Export for taskDOM module
+    window.hideTaskOptions = hideTaskOptions;
     
-    // ✅ ADD THIS: Force help window update
-    if (window.helpWindowManager && typeof window.helpWindowManager.updateConstantMessage === 'function') {
-        setTimeout(() => {
-            window.helpWindowManager.updateConstantMessage();
-        }, 100);
-    }
-}
     
-
+// ✅ REMOVED: handleTaskCompletionChange - now in utilities/task/taskCore.js
 
     /**
  * Istouchdevice function.
@@ -5450,428 +2965,20 @@ function isTouchDevice() {
         let hasTouchEvents = "ontouchstart" in window;
         let touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
         let isFinePointer = window.matchMedia("(pointer: fine)").matches;
-
         console.log(`touch detected: hasTouchEvents=${hasTouchEvents}, maxTouchPoints=${touchPoints}, isFinePointer=${isFinePointer}`);
+
 
         if (isFinePointer) return false;
 
-       
+
         return hasTouchEvents || touchPoints > 0;
     }
-    
- 
-    
 
-/**
- * Handles button clicks for task-related actions, such as moving, editing, deleting, or changing priority.
- *
- * @param {Event} event - The event triggered by clicking a task button.
- */
+    // ✅ Export for taskDOM module and device detection
+    window.isTouchDevice = isTouchDevice;
 
-function handleTaskButtonClick(event) {
-    event.stopPropagation();
-    const button = event.currentTarget;
-    const taskItem = button.closest(".task");
-    if (!taskItem) return;
 
-    const taskOptions = taskItem.querySelector(".task-options");
-    if (taskOptions) taskOptions.style.pointerEvents = "auto";
 
-    let shouldSave = false;
-
-    // ✅ DISABLED: Old arrow handling logic - now using event delegation
-    if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
-        console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
-        return; // Let the new event delegation handle this
-    } else if (button.classList.contains("edit-btn")) {
-        const taskLabel = taskItem.querySelector("span");
-        const oldText = taskLabel.textContent.trim();
-
-        showPromptModal({
-            title: "Edit Task Name",
-            message: "Rename this task:",
-            placeholder: "Enter new task name",
-            defaultValue: oldText,
-            confirmText: "Save",
-            cancelText: "Cancel",
-            required: true,
-            callback: async (newText) => {
-                if (newText && newText.trim() !== oldText) {
-                    const cleanText = sanitizeInput(newText.trim());
-                    
-                    // ✅ ADD: Capture snapshot BEFORE changing text
-                    if (window.AppState?.isReady?.()) {
-                        const currentState = window.AppState.get();
-                        if (currentState) captureStateSnapshot(currentState);
-                    }
-                    
-                    taskLabel.textContent = cleanText;
-
-                    const taskId = taskItem.dataset.taskId;
-
-                    // ✅ Use AppState.update so undo sees the change
-                    if (window.AppState?.isReady?.()) {
-                        await window.AppState.update(state => {
-                            const cid = state.appState.activeCycleId;
-                            const cycle = state.data.cycles[cid];
-                            const t = cycle?.tasks?.find(t => t.id === taskId);
-                            if (t) t.text = cleanText;
-                        }, true);
-                    } else {
-                        // ...existing localStorage fallback...
-                        const schemaData = loadMiniCycleData();
-                        if (!schemaData) return;
-                        const { cycles, activeCycle } = schemaData;
-                        const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                        if (task) {
-                            task.text = cleanText;
-                            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                            fullSchemaData.metadata.lastModified = Date.now();
-                            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                        }
-                    }
-
-                    showNotification(`Task renamed to "${cleanText}"`, "info", 1500);
-                    updateStatsPanel();
-                    updateProgressBar();
-                    checkCompleteAllButton();
-                    shouldSave = false;
-                }
-            }
-        });
-    } else if (button.classList.contains("delete-btn")) {
-        const taskId = taskItem.dataset.taskId;
-        const taskName = taskItem.querySelector(".task-text")?.textContent || "Task";
-
-        showConfirmationModal({
-            title: "Delete Task",
-            message: `Are you sure you want to delete "${taskName}"?`,
-            confirmText: "Delete",
-            cancelText: "Cancel",
-            callback: async (confirmDelete) => {
-                if (!confirmDelete) {
-                    showNotification(`"${taskName}" has not been deleted.`, "show", 2500);
-                    return;
-                }
-
-                // ✅ Enable undo system on first user interaction
-                enableUndoSystemOnFirstInteraction();
-
-                // ✅ ADD: Capture snapshot BEFORE deletion
-                if (window.AppState?.isReady?.()) {
-                    const currentState = window.AppState.get();
-                    if (currentState) captureStateSnapshot(currentState);
-                }
-
-                // ✅ Use AppState.update so undo sees the change
-                if (window.AppState?.isReady?.()) {
-                    await window.AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
-                        if (!cycle) return;
-                        cycle.tasks = (cycle.tasks || []).filter(t => t.id !== taskId);
-                        if (cycle.recurringTemplates?.[taskId]) {
-                            delete cycle.recurringTemplates[taskId];
-                        }
-                    }, true);
-                } else {
-                    // ...existing localStorage fallback...
-                    const schemaData = loadMiniCycleData();
-                    if (!schemaData) return;
-                    const { cycles, activeCycle } = schemaData;
-                    const currentCycle = cycles[activeCycle];
-                    if (currentCycle) {
-                        currentCycle.tasks = currentCycle.tasks.filter(task => task.id !== taskId);
-                        if (currentCycle.recurringTemplates?.[taskId]) {
-                            delete currentCycle.recurringTemplates[taskId];
-                        }
-                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                        fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                    }
-                }
-
-                taskItem.remove();
-                updateProgressBar();
-                updateStatsPanel();
-                checkCompleteAllButton();
-                toggleArrowVisibility();
-
-                showNotification(`"${taskName}" has been deleted.`, "info", 2000);
-            }
-        });
-
-        shouldSave = false;
-    } else if (button.classList.contains("priority-btn")) {
-        // ✅ Enable undo system on first user interaction
-        enableUndoSystemOnFirstInteraction();
-
-        const taskId = taskItem.dataset.taskId;
-
-        // ✅ Read fresh state from AppState to determine current priority
-        const currentState = window.AppState?.get();
-        if (!currentState) {
-            console.error('❌ AppState not available for priority toggle');
-            return;
-        }
-
-        const activeCycleId = currentState.appState?.activeCycleId;
-        const freshCycle = currentState.data?.cycles?.[activeCycleId];
-        const task = freshCycle?.tasks?.find(t => t.id === taskId);
-
-        if (!task) {
-            console.warn('⚠️ Task not found for priority toggle:', taskId);
-            return;
-        }
-
-        // ✅ Toggle based on AppState, not DOM
-        const isCurrentlyHighPriority = task.highPriority === true;
-        const newHighPriority = !isCurrentlyHighPriority;
-
-        console.log('⭐ Toggling priority state:', {
-            taskId: taskId,
-            wasHighPriority: isCurrentlyHighPriority,
-            willBeHighPriority: newHighPriority
-        });
-
-        // ✅ Capture snapshot BEFORE changing priority
-        if (window.AppState?.isReady?.()) {
-            captureStateSnapshot(currentState);
-        }
-
-        // Update DOM based on calculated state
-        taskItem.classList.toggle("high-priority", newHighPriority);
-        button.classList.toggle("active", newHighPriority);
-        button.classList.toggle("priority-active", newHighPriority);
-        button.setAttribute("aria-pressed", newHighPriority.toString());
-
-        // ✅ Use AppState.update so undo sees the change
-        if (window.AppState?.isReady?.()) {
-            window.AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
-                const t = cycle?.tasks?.find(t => t.id === taskId);
-                if (t) t.highPriority = newHighPriority;
-            }, true);
-
-            // ✅ Show notification after updating state
-            showNotification(
-                `Priority ${newHighPriority ? "enabled" : "removed"}.`,
-                newHighPriority ? "error" : "info",
-                1500
-            );
-        } else {
-            // ...existing localStorage fallback...
-            const schemaData = loadMiniCycleData();
-            if (!schemaData) return;
-            const { cycles, activeCycle } = schemaData;
-            const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-            if (task) {
-                task.highPriority = taskItem.classList.contains("high-priority");
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                showNotification(
-                    `Priority ${task.highPriority ? "enabled" : "removed"}.`,
-                    task.highPriority ? "error" : "info",
-                    1500
-                );
-            }
-        }
-
-        shouldSave = false;
-    }
-
-    if (shouldSave) autoSave();
-    console.log("✅ Task button clicked:", button.className);
-}
-async function saveCurrentTaskOrder() {
-    const taskElements = document.querySelectorAll("#taskList .task");
-    const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
-
-    // ✅ Prefer AppState to trigger undo snapshots via subscriber
-    if (window.AppState?.isReady?.()) {
-        await window.AppState.update(state => {
-            const cid = state.appState.activeCycleId;
-            const cycle = state.data.cycles[cid];
-            if (!cycle?.tasks) return;
-
-            // ✅ Use the same pattern as your example
-            const reorderedTasks = newOrderIds.map(id =>
-                cycle.tasks.find(task => task.id === id)
-            ).filter(Boolean); // filters out any nulls
-
-            cycle.tasks = reorderedTasks;
-        }, true);
-        return;
-    }
-
-    // Fallback: direct localStorage (same pattern as your example)
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveCurrentTaskOrder');
-        return;
-    }
-    const { cycles, activeCycle } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    if (!currentCycle || !Array.isArray(currentCycle.tasks)) return;
-
-    // Reorder task array based on current DOM order
-    const reorderedTasks = newOrderIds.map(id =>
-        currentCycle.tasks.find(task => task.id === id)
-    ).filter(Boolean);
-
-    currentCycle.tasks = reorderedTasks;
-
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle] = currentCycle;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Resettasks function.
- *
- * @returns {void}
- */
-
-function resetTasks() {
-    if (isResetting) return;
-    isResetting = true;
-
-    // ✅ Schema 2.5 only
-    console.log('🔄 Resetting tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for resetTasks');
-        isResetting = false;
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-    const taskElements = [...taskList.querySelectorAll(".task")];
-
-    if (!activeCycle || !cycleData) {
-        console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
-        isResetting = false;
-        return;
-    }
-
-    console.log('📊 Resetting tasks for cycle:', activeCycle);
-
-    // ✅ ANIMATION: Show progress bar becoming full first
-    progressBar.style.width = "100%";
-    progressBar.style.transition = "width 0.2s ease-out";
-    
-    // ✅ Wait for animation, then reset tasks
-    setTimeout(() => {
-        console.log('🧹 Removing recurring tasks and resetting non-recurring tasks');
-        
-        // 🧹 Remove recurring tasks
-        removeRecurringTasksFromCycle(taskElements, cycleData);
-
-        // ♻️ Reset non-recurring tasks
-        taskElements.forEach(taskEl => {
-            const isRecurring = taskEl.classList.contains("recurring");
-            if (isRecurring) return;
-
-            const checkbox = taskEl.querySelector("input[type='checkbox']");
-            const dueDateInput = taskEl.querySelector(".due-date");
-
-            if (checkbox) checkbox.checked = false;
-            taskEl.classList.remove("overdue-task");
-
-            if (dueDateInput) {
-                dueDateInput.value = "";
-                dueDateInput.classList.add("hidden");
-            }
-        });
-
-        // ✅ Increment cycle count in Schema 2.5
-        incrementCycleCount(activeCycle, cycles);
-
-        // ✅ Animate progress bar reset with different timing
-        progressBar.style.transition = "width 0.3s ease-in";
-        progressBar.style.width = "0%";
-        
-        // ✅ Reset transition after animation completes
-        setTimeout(() => {
-            progressBar.style.transition = "";
-        }, 50);
-        
-        console.log('✅ Task reset animation completed');
-        
-    }, 100); // Wait for fill animation to complete
-
-    // ✅ Show cycle completion message in help window instead of separate element
-    if (helpWindowManager) {
-        helpWindowManager.showCycleCompleteMessage();
-    }
-
-    // ✅ Set isResetting to false after help window message duration
-    setTimeout(() => {
-        isResetting = false;
-        console.log('🔓 Reset lock released');
-    }, 2000);
-
-    // ✅ Handle recurring tasks and cleanup (keep existing timing)
-    setTimeout(() => {
-        console.log('🔄 Running post-reset cleanup tasks');
-        // ✅ Watch recurring tasks via module
-        if (window.recurringCore?.watchRecurringTasks) window.recurringCore.watchRecurringTasks();
-        autoSave();
-        updateStatsPanel();
-        console.log('✅ Reset tasks completed successfully');
-    }, 1000);
-}
-
-// ...existing code...
-
-
-          // ✅ Remove the old cycle message display logic
-          // cycleMessage.style.visibility = "visible";
-          // cycleMessage.style.opacity = "1";
-          // setTimeout(() => {
-          //     cycleMessage.style.opacity = "0";
-          //     cycleMessage.style.visibility = "hidden";
-          //     isResetting = false;
-          // }, 2000);
 
 /**
  * Checkcompleteallbutton function.
@@ -5929,6 +3036,10 @@ function triggerLogoBackground(color = 'green', duration = 300) {
         console.error('❌ Logo element not found!');
     }
 }
+
+// ✅ Export triggerLogoBackground globally for taskDOM module
+window.triggerLogoBackground = triggerLogoBackground;
+
 /**
  * Savetoggleautoreset function.
  *
@@ -6059,11 +3170,6 @@ function saveToggleAutoReset() {
     
     
     
-    
-
-
-
-    
 
 
  if (!deleteCheckedTasks.dataset.listenerAdded) {
@@ -6100,145 +3206,11 @@ function saveToggleAutoReset() {
     deleteCheckedTasks.dataset.listenerAdded = true; 
 }
 
-/**
- * Closes the menu when clicking outside of it.
- * Ensures the menu only closes when clicking outside both the menu and menu button.
- *
- * @param {MouseEvent} event - The click event that triggers the check.
- */
-
-function closeMenuOnClickOutside(event) {
-    if (!menu.contains(event.target) && !menuButton.contains(event.target)) {
-        menu.classList.remove("visible"); // Hide the menu
-        document.removeEventListener("click", closeMenuOnClickOutside); // ✅ Remove listener after closing
-    }
-}
-
-
-
-/**
- * Hidemainmenu function.
- *
- * @returns {void}
- */
-
-function hideMainMenu() {
-    const menu = document.querySelector(".menu-container");
-    menu.classList.remove("visible");
-}
-// ✅ Expose for cycleSwitcher module
-window.hideMainMenu = hideMainMenu;
-
 
 
 // ✅ Function to complete all tasks and handle reset
-function handleCompleteAllTasks() {
-    // ✅ Schema 2.5 only
-    console.log('✔️ Handling complete all tasks (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycleData = cycles[activeCycle];
-
-    // ✅ Ensure there's an active miniCycle
-    if (!activeCycle || !cycleData) {
-        console.warn('⚠️ No active cycle found for complete all tasks');
-        return;
-    }
-
-    console.log('📊 Processing complete all tasks for cycle:', activeCycle);
-
-    // ✅ Only show alert if tasks will be reset (not deleted)
-    if (!cycleData.deleteCheckedTasks) {
-        const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
-            dueDateInput => dueDateInput.value
-        );
-
-        if (hasDueDates) {
-            showConfirmationModal({
-                title: "Reset Tasks with Due Dates",
-                message: "⚠️ This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
-                confirmText: "Reset Tasks",
-                cancelText: "Cancel",
-                callback: (confirmed) => {
-                    if (!confirmed) return;
-                    
-                    if (cycleData.deleteCheckedTasks) {
-                        const checkedTasks = document.querySelectorAll(".task input:checked");
-                        if (checkedTasks.length === 0) {
-                            showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
-                            return;
-                        }
-            
-                        checkedTasks.forEach(checkbox => {
-                            const taskId = checkbox.closest(".task").dataset.taskId;
-                            // Remove from Schema 2.5
-                            cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
-                            checkbox.closest(".task").remove();
-                        });
-                        
-                        // ✅ Use autoSave() instead of direct save
-                        autoSave();
-                        
-                    } else {
-                        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-                        checkMiniCycle();
-            
-                        if (!cycleData.autoReset) {
-                            setTimeout(resetTasks, 1000);
-                        }
-                    }
-                }
-            });
-            return;
-        }
-    }
-
-    if (cycleData.deleteCheckedTasks) {
-        const checkedTasks = document.querySelectorAll(".task input:checked");
-        if (checkedTasks.length === 0) {
-            showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
-            return;
-        }
-
-        console.log('🗑️ Deleting checked tasks from Schema 2.5');
-
-        checkedTasks.forEach(checkbox => {
-            const taskId = checkbox.closest(".task").dataset.taskId;
-            // Remove from Schema 2.5
-            cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
-            checkbox.closest(".task").remove();
-        });
-        
-        // ✅ Update Schema 2.5 data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycleData;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-    } else {
-        // ✅ If "Delete Checked Tasks" is OFF, just mark all as complete
-        console.log('✔️ Marking all tasks as complete');
-        
-        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-        checkMiniCycle();
-
-        // ✅ Only call resetTasks() if autoReset is OFF
-        if (!cycleData.autoReset) {
-            setTimeout(resetTasks, 1000);
-        }
-    }
-    
-    console.log('✅ Complete all tasks handled (Schema 2.5)');
-}
-
-// ✅ Use the new function with safe listener
-safeAddEventListener(completeAllButton, "click", handleCompleteAllTasks);
+// ✅ REMOVED: handleCompleteAllTasks - now in utilities/task/taskCore.js
+// ✅ Event listener moved to Phase 3 (after taskCore loads)
 
 
 /***********************
@@ -6283,44 +3255,6 @@ safeAddEventListener(taskInput, "keypress", function (event) {
     }
 });
 
-function syncCurrentSettingsToStorage() {
-    console.log('⚙️ Syncing current settings to storage (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for syncCurrentSettingsToStorage');
-        return;
-    }
-    
-    const { cycles, activeCycle } = schemaData;
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
-    
-    if (!activeCycle || !cycles[activeCycle]) {
-        console.warn('⚠️ No active cycle found for settings sync');
-        return;
-    }
-    
-    if (!toggleAutoReset || !deleteCheckedTasks) {
-        console.warn('⚠️ Settings toggles not found');
-        return;
-    }
-    
-    console.log('📊 Syncing settings:', {
-        activeCycle,
-        autoReset: toggleAutoReset.checked,
-        deleteCheckedTasks: deleteCheckedTasks.checked
-    });
-    
-    // Update Schema 2.5 data
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    fullSchemaData.data.cycles[activeCycle].autoReset = toggleAutoReset.checked;
-    fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = deleteCheckedTasks.checked;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('✅ Settings synced to Schema 2.5 successfully');
-}
 
 
 // 🟢 Menu Button (Click) - ✅ FIXED: ES5 compatible function expression
@@ -6373,32 +3307,6 @@ document.getElementById("open-reminders-modal")?.addEventListener("click", () =>
     
     console.log('✅ Reminders modal opened');
 });
-
-// ✅ Updated reset onboarding with Schema 2.5 only
-safeAddEventListenerById("reset-onboarding", "click", () => {
-    console.log('🎯 Resetting onboarding (Schema 2.5 only)...');
-    
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for reset onboarding');
-        showNotification("❌ Schema 2.5 data required.", "error", 2000);
-        return;
-    }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    
-    // Clear onboarding flag in Schema 2.5
-    fullSchemaData.settings.onboardingCompleted = false;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('✅ Onboarding flag reset in Schema 2.5');
-    
-    showNotification("✅ Onboarding will show again next time you open the app (Schema 2.5).", "success", 3000);
-});
- 
-
-
 
 // 🟢 Safe Global Click for Hiding Task Buttons
 safeAddEventListener(document, "click", (event) => {
@@ -6457,89 +3365,8 @@ safeAddEventListener(document, "click", (event) => {
 
 
 
-// ✅ Modal Utility Functions
-function closeAllModals() {
-    // Close Schema 2.5 and legacy modals
-    const modalSelectors = [
-        "[data-modal]",
-        ".settings-modal",
-        ".mini-cycle-switch-modal",
-        "#feedback-modal",
-        "#about-modal", 
-        "#themes-modal",
-        "#games-panel",
-        "#reminders-modal",
-        "#testing-modal",
-        "#recurring-panel-overlay",
-        "#storage-viewer-overlay",
-        ".mini-modal-overlay",
-        ".miniCycle-overlay",
-        ".onboarding-modal"
-    ];
-    
-    modalSelectors.forEach(selector => {
-        document.querySelectorAll(selector).forEach(modal => {
-            // Special handling for different modal types
-            if (modal.dataset.modal !== undefined || modal.classList.contains("menu-container")) {
-                modal.classList.remove("visible");
-            } else if (modal.id === "recurring-panel-overlay" || modal.id === "storage-viewer-overlay") {
-                modal.classList.add("hidden");
-            } else {
-                modal.style.display = "none";
-            }
-        });
-    });
-
-    // Close task options
-    document.querySelectorAll(".task-options").forEach(action => {
-        action.style.opacity = "0";
-        action.style.visibility = "hidden";
-        action.style.pointerEvents = "none";
-    });
-
-    // Reset task states
-    document.querySelectorAll(".task").forEach(task => {
-        task.classList.remove("long-pressed", "draggable", "dragging", "selected");
-    });
-    
-    // Clear any active selections in recurring panels
-    document.querySelectorAll(".recurring-task-item.selected").forEach(item => {
-        item.classList.remove("selected");
-    });
-    
-    // Hide recurring settings panel if open
-    const recurringSettingsPanel = document.getElementById("recurring-settings-panel");
-    if (recurringSettingsPanel) {
-        recurringSettingsPanel.classList.add("hidden");
-    }
-}
-
-
-// ✅ ESC key listener to close modals and reset task UI
-safeAddEventListener(document, "keydown", (e) => {
-    if (e.key === "Escape") {
-        e.preventDefault();
-        closeAllModals();
-        
-        // Also clear any notification focus
-        const notifications = document.querySelectorAll(".notification");
-        notifications.forEach(notification => {
-            if (notification.querySelector(".close-btn")) {
-                notification.querySelector(".close-btn").click();
-            }
-        });
-        
-        // Return focus to task input
-        setTimeout(() => {
-            const taskInput = document.getElementById("taskInput");
-            if (taskInput && document.activeElement !== taskInput) {
-                taskInput.focus();
-            }
-        }, 100);
-    }
-});
-
-
+// ✅ REMOVED: closeAllModals() - Now handled by modalManager module
+// ✅ REMOVED: ESC key listener - Now handled by modalManager module
 
 // Update your existing HelpWindowManager class to show mode descriptions:
 class HelpWindowManager {
@@ -6807,11 +3634,12 @@ getCurrentStatusMessage() {
     }
 }
 
-// Initialize help window manager (keep this part the same)
+// Initialize help window manager and export to window for taskCore module
 let helpWindowManager;
 
 setTimeout(() => {
     helpWindowManager = new HelpWindowManager();
+    window.helpWindowManager = helpWindowManager; // Export to window
 }, 500);
 
 /**
@@ -6840,130 +3668,6 @@ document.addEventListener("touchstart", () => {
 document.addEventListener("touchstart", () => {}, { passive: true });
 
 
-
-
-
-/***********************
- * 
- * 
- * STATS PANEL - MOVED TO MODULE
- * 
- * Stats panel functionality including swipe detection, view switching,
- * event handlers, and all related code has been moved to:
- * utilities/statsPanel.js (StatsPanelManager class)
- * 
- * Global functions are available through module initialization:
- * - window.showStatsPanel()
- * - window.showTaskView() 
- * - window.updateStatsPanel()
- * 
- ************************/
-
-// ✅ Theme-related functions that were accidentally removed during stats panel extraction
-
-
-
-
-
-// ✅ Initialize themes panel (moved to DOMContentLoaded for proper timing)
-// ✅ REMOVED: updateCycleModeDescription() calls - now handled by modeManager module
-
-
-
-
-
-
-
-
-/*
-
-(function boot() {
-  function start() {
-    try {
-      // --- sync init ---
-      fixTaskValidationIssues();
-      setupMainMenu();
-      setupSettingsMenu();
-      setupAbout();
-      setupUserManual();
-      setupFeedbackModal();
-      // Add themes panel setup after other modal setups
-      // setupTestingModal(); // Removed duplicate - already called in main boot function
-      initializeThemesPanel();
-      initializeModeSelector();
-      // ✅ Recurring setup now handled by recurringIntegration module
-      // Old setupRecurringPanel() and attachRecurringSummaryListeners() calls removed
-      updateNavDots();
-      loadMiniCycle();
-      // ✅ initializeDefaultRecurringSettings() removed - now handled by recurringIntegration module
-      setupMiniCycleTitleListener();
-      setupDownloadMiniCycle();
-      setupUploadMiniCycle();
-      // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
-      // ✅ MOVED: updateMoveArrowsVisibility() moved to proper initialization phase
-
-      loadAlwaysShowRecurringSetting();
-      updateCycleModeDescription();
-         setupThemesPanel(); 
-
-      // --- timers / async kickoffs ---
-      setTimeout(remindOverdueTasks, 2000);
-      // ✅ updateReminderButtons() and startReminders() now handled by reminderManager.init() via afterApp hook
-      // ✅ checkOverdueTasks() now handled by dueDatesManager.init() via afterApp hook
-
-      // only on modern browsers
-      if (supportsModern()) setTimeout(autoRedetectOnVersionChange, 10000);
-
-      // focus once window is loaded
-      window.addEventListener('load', function () {
-        var el = document.getElementById('taskInput');
-        if (el) { try { el.focus(); } catch(_){} }
-      });
-
-      // Initialize stats panel manager
-      if (window.statsPanelManager) {
-        console.log('📊 Initializing stats panel event handlers...');
-        window.statsPanelManager.init();
-        // Update stats panel now that it's ready
-        window.updateStatsPanel();
-      }
-
-      // ✅ Setup navigation dot click handlers
-      document.querySelectorAll(".dot").forEach((dot, index) => {
-        dot.addEventListener("click", () => {
-          if (index === 0) {
-            if (window.showTaskView) window.showTaskView();
-          } else {
-            if (window.showStatsPanel) window.showStatsPanel();
-          }
-        });
-      });
-
-      // ready signal
-      window.AppReady = true;
-      document.dispatchEvent(new Event('app:ready'));
-      console.log('✅ miniCycle app is fully initialized and ready.');
-    } catch (err) {
-      console.error('🚨 Boot error:', err);
-      if (typeof showNotification === 'function') {
-        showNotification('⚠️ App failed to finish booting. Some features may be unavailable.', 'warning', 6000);
-      }
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
-  } else {
-    start();
-  }
-
-  function supportsModern() {
-    try { new Function('()=>{}'); } catch(_) { return false; }
-    return !!(window.Promise && window.fetch);
-  }
-})();
-
-*/
 
 });
 

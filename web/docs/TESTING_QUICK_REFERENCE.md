@@ -1,6 +1,6 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: October 8, 2025
+**Last Updated**: October 25, 2025
 
 ---
 
@@ -56,10 +56,31 @@ cp tests/MODULE_TEMPLATE.tests.js tests/myModule.tests.js
 
 ### 2. Write Tests
 
+**IMPORTANT:** Use `MODULE_TEMPLATE.tests.js` as your starting point - it includes localStorage protection!
+
 ```javascript
-export function runMyModuleTests(resultsDiv) {
+export function runMyModuleTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🎯 MyModule Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
+
+    // 🔒 localStorage Protection (automatically included in template)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) savedRealData[key] = value;
+        });
+    }
+
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+        }
+    }
 
     function test(name, testFn) {
         total.count++;
@@ -81,6 +102,11 @@ export function runMyModuleTests(resultsDiv) {
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
+
+    // 🔓 CRITICAL: Restore data before return!
+    restoreOriginalData();
+
+    return { passed: passed.count, total: total.count };
 }
 ```
 
@@ -311,19 +337,32 @@ function test(name, testFn) {
 
 | Module | Tests | Status |
 |--------|-------|--------|
-| GlobalUtils | 36 | ✅ |
+| Integration (E2E) | 11 | ✅ |
 | ThemeManager | 18 | ✅ |
 | DeviceDetection | 17 | ✅ |
 | CycleLoader | 11 | ✅ |
 | StatsPanel | 27 | ✅ |
+| State | 41 | ✅ |
+| RecurringCore | 44 | ✅ |
+| RecurringIntegration | 25 | ✅ |
+| RecurringPanel | 55 | ✅ |
+| GlobalUtils | 36 | ✅ |
 | Notifications | 39 | ✅ |
 | DragDropManager | 67 | ✅ |
 | MigrationManager | 38 | ✅ |
-| DueDates | 17 | ✅ |
-| Reminders | 20 | ✅ |
-| ModeManager | 28 | ✅ |
-| CycleSwitcher | 22 | ✅ |
-| **Total** | **340** | **✅** |
+| DueDates | 23 | ✅ |
+| Reminders | 28 | ✅ |
+| ModeManager | 26 | ✅ |
+| CycleSwitcher | 38 | ✅ |
+| GamesManager | 23 | ✅ |
+| OnboardingManager | 38 | ✅ |
+| **ModalManager** | **50** | **✅** |
+| **Total** | **724/734** | **99%** |
+
+**Recent Additions (October 2025):**
+- ✅ **ModalManager** - 50 tests (100% pass rate)
+- ✅ **OnboardingManager** - 38 tests (100% pass rate)
+- ✅ **GamesManager** - 23 tests (100% pass rate)
 
 ---
 
@@ -375,64 +414,88 @@ function createTestDOM() {
 
 ---
 
-### Advanced Cleanup Pattern
+### 🔒 localStorage Protection Pattern (CRITICAL!)
 
-**Always use `finally` blocks for complete state restoration:**
+**All test files MUST protect user data when running individually!**
+
+#### The Problem
+
+Tests use `localStorage.clear()` to reset state. If you run tests while using the app, your data gets wiped out! 😱
+
+#### The Solution: `isPartOfSuite` Pattern
+
+**Every test file should include this pattern:**
 
 ```javascript
-function test(name, testFn) {
-    total.count++;
+export async function runYourModuleTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>YourModule Tests</h2>';
+    let passed = { count: 0 }, total = { count: 0 };
 
-    // ✅ Save ALL state before test
-    const savedLocalStorage = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('miniCycle')) {
-            savedLocalStorage[key] = localStorage.getItem(key);
+    // 🔒 SAVE REAL APP DATA (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual test');
+    }
+
+    // Helper to restore original data
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Original localStorage restored');
         }
     }
 
-    const savedGlobals = {
-        AppState: window.AppState,
-        showNotification: window.showNotification
-        // ... save all globals your test might touch
-    };
+    // ... your tests here ...
 
-    try {
-        // Clear state before test
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('miniCycle')) {
-                localStorage.removeItem(key);
-            }
-        });
+    // 🔓 RESTORE before return (CRITICAL!)
+    restoreOriginalData();
 
-        testFn();
-
-        resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-        passed.count++;
-    } catch (error) {
-        resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-    } finally {
-        // ✅ ALWAYS restore (even if test throws)
-        Object.keys(savedLocalStorage).forEach(key => {
-            localStorage.setItem(key, savedLocalStorage[key]);
-        });
-
-        Object.keys(savedGlobals).forEach(key => {
-            if (savedGlobals[key] === undefined) {
-                delete window[key];
-            } else {
-                window[key] = savedGlobals[key];
-            }
-        });
-    }
+    return { passed: passed.count, total: total.count };
 }
 ```
 
+**How it works:**
+
+1. **When running individually** (`isPartOfSuite = false`):
+   - Backs up real user data before tests
+   - Restores it after tests complete
+   - User data is safe! ✅
+
+2. **When running as part of suite** (`isPartOfSuite = true`):
+   - Skips backup/restore (suite handles it globally)
+   - Faster execution
+   - No redundant saves
+
 **Benefits:**
-- Tests never interfere with each other
-- State always restored (even on error)
-- Clean slate for every test
+
+- ✅ User data never gets lost
+- ✅ Tests can run individually without risk
+- ✅ Automated test suite passes `isPartOfSuite = true` for efficiency
+- ✅ Clean, simple pattern used across all 30+ test files
+
+#### Automated Script for Adding Protection
+
+We created a script to automatically add this pattern to test files:
+
+```bash
+node tests/automated/add-localStorage-backup.js
+```
+
+This script:
+- Adds `isPartOfSuite` parameter to test function
+- Inserts backup/restore code at correct locations
+- Updates all test files in one run
+- Safe to run multiple times (detects existing protection)
 
 ---
 
@@ -751,6 +814,6 @@ jobs:
 
 ---
 
-**Version**: 2.0 (Updated with Advanced Patterns & Lessons Learned)
-**Last Updated**: October 9, 2025
+**Version**: 2.1 (Updated with ModalManager, OnboardingManager, GamesManager tests)
+**Last Updated**: October 25, 2025
 **Maintained By**: sparkinCreations

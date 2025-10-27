@@ -121,6 +121,24 @@ resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 - **Visual feedback** - green/red results
 - **Instant testing** - reload page to retest
 - **Real environment** - tests actual browser behavior
+- **🔒 Data protected** - All tests include localStorage backup/restore (safe to run while app is open!)
+
+## 🔒 localStorage Protection
+
+**All test files now protect your real app data!**
+
+When you run tests individually (not as part of automated suite):
+- ✅ Your `miniCycleData` is backed up before tests
+- ✅ Tests run with mock data in localStorage
+- ✅ Your real data is restored after tests complete
+- ✅ **You can safely run tests while using the app!**
+
+This means you can:
+- Run individual module tests without losing work
+- Debug tests in browser DevTools safely
+- Develop new tests without risk
+
+**Pattern used:** `isPartOfSuite` parameter with automatic backup/restore
 
 ## 🐛 Debugging
 

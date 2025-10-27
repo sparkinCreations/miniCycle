@@ -7,7 +7,7 @@
  * These are foundational utilities that need to be available globally
  * without import overhead for frequently called functions.
  * 
- * @version 1.333
+ * @version 1.336
  * @author miniCycle Development Team
  */
 
@@ -314,13 +314,28 @@ export class GlobalUtils {
     }
 
     /**
+     * Sanitize user input to prevent XSS attacks and limit length.
+     * Removes HTML tags and trims whitespace, then enforces character limit.
+     *
+     * @param {string} input - The user input to sanitize.
+     * @param {number} maxLength - Maximum allowed length (default: 100 characters).
+     * @returns {string} Sanitized and trimmed text.
+     */
+    static sanitizeInput(input, maxLength = 100) {
+        if (typeof input !== "string") return "";
+        const temp = document.createElement("div");
+        temp.textContent = input; // Set as raw text (sanitized)
+        return temp.textContent.trim().substring(0, maxLength);
+    }
+
+    /**
      * Get module version and statistics.
      *
      * @returns {Object} Module information.
      */
     static getModuleInfo() {
         return {
-            version: '1.333',
+            version: '1.336',
             name: 'GlobalUtils',
             functionsCount: Object.getOwnPropertyNames(GlobalUtils).filter(prop => typeof GlobalUtils[prop] === 'function').length - 1, // -1 for constructor
             loadedAt: new Date().toISOString()
@@ -351,6 +366,7 @@ window.debounce = GlobalUtils.debounce;
 window.throttle = GlobalUtils.throttle;
 window.isElementInViewport = GlobalUtils.isElementInViewport;
 window.generateId = GlobalUtils.generateId;
+window.sanitizeInput = GlobalUtils.sanitizeInput;
 
 // Make notification utility functions globally accessible
 window.generateNotificationId = GlobalUtils.generateNotificationId;
@@ -429,9 +445,13 @@ UTILITY FUNCTIONS:
     const uniqueId = generateId(); // id-1234567890-abc123def
     const prefixedId = generateId('task'); // task-1234567890-abc123def
 
+15. Sanitize User Input:
+    const cleanText = sanitizeInput(userInput); // max 100 chars
+    const cleanText = sanitizeInput(userInput, 200); // custom max length
+
 MODULE INFORMATION:
 
-15. Get Module Info:
+16. Get Module Info:
     const info = GlobalUtils.getModuleInfo();
     console.log(info); // { version, name, functionsCount, loadedAt }
 

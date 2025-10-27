@@ -1,0 +1,153 @@
+{
+  "name": "cycle_1704153600000",
+  "title": "💻 Daily Programming Workflow",
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "☕ Coffee & standup notes review",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "📋 Review sprint board & priorities",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "🔄 Pull latest changes from main",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t4",
+      "text": "🧪 Run test suite locally",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t5",
+      "text": "🎯 Pick top priority ticket",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t6",
+      "text": "🌿 Create feature branch",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t7",
+      "text": "💡 Write failing test first (TDD)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t8",
+      "text": "⌨️ Implement feature/fix",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t9",
+      "text": "✅ Make tests pass",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t10",
+      "text": "♻️ Refactor for clean code",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t11",
+      "text": "📝 Update documentation",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t12",
+      "text": "🎨 Run linter & formatter",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t13",
+      "text": "🔍 Code review self-check",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t14",
+      "text": "💾 Commit with meaningful message",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t15",
+      "text": "🚀 Push to remote branch",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t16",
+      "text": "🔗 Create pull request",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t17",
+      "text": "📸 Add screenshots/demo if needed",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t18",
+      "text": "👀 Request code review from team",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t19",
+      "text": "💬 Respond to review comments",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t20",
+      "text": "✨ Address feedback & update PR",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t21",
+      "text": "🎉 Merge when approved",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t22",
+      "text": "🗑️ Delete feature branch",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t23",
+      "text": "🔔 Update ticket status → Done",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t24",
+      "text": "🎊 Celebrate small win!",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ],
+  "autoReset": true,
+  "cycleCount": 215,
+  "deleteCheckedTasks": false
+}

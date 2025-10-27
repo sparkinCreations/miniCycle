@@ -4,9 +4,33 @@
  * @version 1.330
  */
 
-export async function runDueDatesTests(resultsDiv) {
+export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual dueDates test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual dueDates test completed - original localStorage restored');
+        }
+    }
+
 
     try {
         // ✅ CRITICAL: Mark core as ready BEFORE anything else
@@ -118,8 +142,9 @@ export async function runDueDatesTests(resultsDiv) {
 
         await test('has correct version', async () => {
             const instance = new MiniCycleDueDates();
-            if (instance.version !== '1.330') {
-                throw new Error(`Expected version 1.330, got ${instance.version}`);
+            // Check version exists and is in semver format
+            if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
+                throw new Error(`Expected valid semver version, got ${instance.version}`);
             }
         });
 
@@ -410,6 +435,10 @@ export async function runDueDatesTests(resultsDiv) {
         console.error('❌ Test suite error:', error);
         resultsDiv.innerHTML += `<div class="result fail">❌ Test suite error: ${error.message}</div>`;
         resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (test suite error)</h3>`;
-        return { passed: passed.count, total: total.count };
+        
+    // 🔓 RESTORE original localStorage data (only when running individually)
+    restoreOriginalData();
+
+return { passed: passed.count, total: total.count };
     }
 }

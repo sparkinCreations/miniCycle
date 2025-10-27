@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v110';
+var CACHE_VERSION = 'v113';
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -44,14 +44,26 @@ var UTILITIES = [
   './utilities/deviceDetection.js',
   './utilities/notifications.js',
   './utilities/statsPanel.js',
-  './utilities/cycleLoader.js',
   './utilities/consoleCapture.js',
   './utilities/basicPluginSystem.js',
   './utilities/testing-modal.js',
   './utilities/reminders.js',
   './utilities/dueDates.js',
+  // Cycle modules
+  './utilities/cycle/cycleLoader.js',
+  './utilities/cycle/cycleManager.js',
+  './utilities/cycle/cycleSwitcher.js',
   './utilities/cycle/migrationManager.js',
-  './utilities/task/dragDropManager.js'
+  './utilities/cycle/modeManager.js',
+  // Task modules
+  './utilities/task/dragDropManager.js',
+  // UI modules
+  './utilities/ui/gamesManager.js',
+  './utilities/ui/menuManager.js',
+  './utilities/ui/modalManager.js',
+  './utilities/ui/onboardingManager.js',
+  './utilities/ui/settingsManager.js',
+  './utilities/ui/undoRedoManager.js'
 ];
 
 self.addEventListener('install', function (event) {
