@@ -29,6 +29,9 @@ export class ModeManager {
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
+        // Debounce timer for refresh operations
+        this.refreshDebounceTimer = null;
+
         this.isInitialized = false;
     }
 
@@ -72,18 +75,26 @@ export class ModeManager {
     /**
      * Refresh task buttons when mode changes
      * Updates button visibility based on current mode settings
+     * Debounced to prevent performance issues during rapid mode changes
      */
     async refreshTaskButtonsForModeChange() {
-        console.log('🔄 ModeManager: Refreshing task buttons for mode change...');
-
-        // Wait for core if needed
-        await appInit.waitForCore();
-
-        const tasks = this.deps.querySelectorAll('.task');
-        if (tasks.length === 0) {
-            console.log('⚠️ ModeManager: No tasks found to refresh');
-            return;
+        // Clear any pending refresh
+        if (this.refreshDebounceTimer) {
+            clearTimeout(this.refreshDebounceTimer);
         }
+
+        // Debounce the refresh to prevent forced reflows
+        this.refreshDebounceTimer = setTimeout(async () => {
+            console.log('🔄 ModeManager: Refreshing task buttons for mode change...');
+
+            // Wait for core if needed
+            await appInit.waitForCore();
+
+            const tasks = this.deps.querySelectorAll('.task');
+            if (tasks.length === 0) {
+                console.log('⚠️ ModeManager: No tasks found to refresh');
+                return;
+            }
 
         // Track failures for summary logging
         let failureCount = 0;
@@ -179,12 +190,13 @@ export class ModeManager {
             successCount++;
         });
 
-        // Summary logging instead of per-task spam
-        if (failureCount > 0) {
-            console.warn(`⚠️ ModeManager: Failed to refresh ${failureCount} task button(s), succeeded: ${successCount}`);
-        } else {
-            console.log(`✅ ModeManager: Task button refresh complete (${successCount} tasks)`);
-        }
+            // Summary logging instead of per-task spam
+            if (failureCount > 0) {
+                console.warn(`⚠️ ModeManager: Failed to refresh ${failureCount} task button(s), succeeded: ${successCount}`);
+            } else {
+                console.log(`✅ ModeManager: Task button refresh complete (${successCount} tasks)`);
+            }
+        }, 150); // 150ms debounce delay - prevents multiple rapid reflows
     }
 
     /**
