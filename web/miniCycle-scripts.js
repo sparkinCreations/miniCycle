@@ -662,7 +662,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.333'
+            currentVersion: '1.335'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -2822,11 +2822,19 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     // Create DOM elements
     const taskElements = window.createTaskDOMElements?.(taskContext, taskData) || createTaskDOMElements(taskContext, taskData);
 
-    // Setup task interactions and events
-    window.setupTaskInteractions?.(taskElements, taskContext) || setupTaskInteractions(taskElements, taskContext);
+    // Setup task interactions and events (from taskEvents.js via taskDOM.js)
+    if (window.setupTaskInteractions) {
+        window.setupTaskInteractions(taskElements, taskContext);
+    } else {
+        console.warn('⚠️ setupTaskInteractions not available - event handlers may not work!');
+    }
 
-    // Finalize task creation
-    window.finalizeTaskCreation?.(taskElements, taskContext, { shouldSave, isLoading }) || finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
+    // Finalize task creation (from taskDOM.js)
+    if (window.finalizeTaskCreation) {
+        window.finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
+    } else {
+        console.warn('⚠️ finalizeTaskCreation not available - task may not be added properly!');
+    }
 
     console.log('✅ Task creation completed (Schema 2.5)');
 }
@@ -3446,157 +3454,32 @@ function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
 // ✅ 20. Due Date Input Creation
 
 // ✅ 21. Task Interactions Setup
-function setupTaskInteractions(taskElements, taskContext) {
-    const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
-    const { settings } = taskContext;
+// ❌ REMOVED: setupTaskInteractions - now in utilities/task/taskEvents.js
+// ❌ REMOVED: setupTaskClickInteraction - now in utilities/task/taskEvents.js
+// ❌ REMOVED: setupPriorityButtonState - now in utilities/task/taskEvents.js
+// ❌ REMOVED: setupTaskHoverInteractions - now in utilities/task/taskEvents.js
+//
+// These functions were extracted during taskDOM modularization.
+// They are now provided by taskDOM.js which delegates to taskEvents.js.
+// Access them via:
+//   window.setupTaskInteractions() - exported by taskDOM.js
+//   window.setupTaskClickInteraction() - exported by taskDOM.js
+//   etc.
 
-    // Setup task click interaction
-    setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
-    
-    // Setup priority button state
-    setupPriorityButtonState(buttonContainer, taskContext.highPriority);
-    
-    // Setup hover interactions based on three dots setting
-    setupTaskHoverInteractions(taskItem, settings);
-    
-    // Setup focus interactions
-    setupTaskFocusInteractions(taskItem);
-    
-    // Setup due date button interaction
-    setupDueDateButtonInteraction(buttonContainer, dueDateInput);
-}
-
-// ✅ Export for taskCore module
-window.setupTaskInteractions = setupTaskInteractions;
-
-// ✅ 22. Task Click Interaction Setup
-function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    taskItem.addEventListener("click", (event) => {
-        if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
-
-        // ✅ Enable undo system on first user interaction
-        enableUndoSystemOnFirstInteraction();
-
-        // ✅ RESTORED: Use the simple working approach from old backup
-        checkbox.checked = !checkbox.checked;
-        checkbox.dispatchEvent(new Event("change"));
-        checkbox.setAttribute("aria-checked", checkbox.checked);
-
-        checkMiniCycle();
-        autoSave();  // ✅ This extracts from DOM and saves correctly
-        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
-    });
-}
-
-// ✅ 23. Priority Button State Setup
-function setupPriorityButtonState(buttonContainer, highPriority) {
-    const priorityButton = buttonContainer.querySelector(".priority-btn");
-    if (highPriority && priorityButton) {
-        priorityButton.classList.add("priority-active");
-        priorityButton.setAttribute("aria-pressed", "true");
-    }
-}
-
-// ✅ 24. Task Hover Interactions Setup
-function setupTaskHoverInteractions(taskItem, settings) {
-    const threeDotsEnabled = settings.showThreeDots || false;
-    if (!threeDotsEnabled) {
-        taskItem.addEventListener("mouseenter", showTaskOptions);
-        taskItem.addEventListener("mouseleave", hideTaskOptions);
-    }
-}
-
-// ✅ 25. Task Focus Interactions Setup
-function setupTaskFocusInteractions(taskItem) {
-    safeAddEventListener(taskItem, "focus", () => {
-        const options = taskItem.querySelector(".task-options");
-        if (options) {
-            options.style.opacity = "1";
-            options.style.visibility = "visible";
-            options.style.pointerEvents = "auto";
-        }
-    });
-    
-    attachKeyboardTaskOptionToggle(taskItem);
-}
+// ❌ REMOVED: setupTaskFocusInteractions - now in utilities/task/taskEvents.js
 
 // ✅ 26. Due Date Button Interaction Setup
 
-// ✅ 27. Task Creation Finalization
-function finalizeTaskCreation(taskElements, taskContext, options) {
-    const { taskItem, taskList, taskInput } = taskElements;
-    const { completed } = taskContext;
-    const { shouldSave, isLoading } = options;
+// ❌ REMOVED: finalizeTaskCreation - now in utilities/task/taskDOM.js
+// ❌ REMOVED: scrollToNewTask - now in utilities/task/taskUtils.js
+// ❌ REMOVED: handleOverdueStyling - now in utilities/task/taskUtils.js
+// ❌ REMOVED: updateUIAfterTaskCreation - now in utilities/task/taskDOM.js
+//
+// These functions were extracted during taskDOM modularization.
+// Access them via window.* exports from the respective modules.
 
-    // Append to DOM
-    taskList.appendChild(taskItem);
-
-    // Clear input
-    if (taskInput) taskInput.value = "";
-
-    // Scroll to new task
-    scrollToNewTask(taskList);
-
-    // Handle overdue styling
-    handleOverdueStyling(taskItem, completed);
-
-    // Update UI components
-    updateUIAfterTaskCreation(shouldSave);
-
-    // Setup final interactions
-    setupFinalTaskInteractions(taskItem, isLoading);
-}
-
-// ✅ Export for taskCore module
-window.finalizeTaskCreation = finalizeTaskCreation;
-
-// ✅ 28. Scroll to New Task
-function scrollToNewTask(taskList) {
-    const taskListContainer = document.querySelector(".task-list-container");
-    if (taskListContainer && taskList) {
-        taskListContainer.scrollTo({
-            top: taskList.scrollHeight,
-            behavior: "smooth"
-        });
-    }
-}
-
-// ✅ 29. Handle Overdue Styling
-function handleOverdueStyling(taskItem, completed) {
-    setTimeout(() => { 
-        if (completed) {
-            taskItem.classList.remove("overdue-task");
-        }
-    }, 300);
-}
-
-// ✅ 30. Update UI After Task Creation
-function updateUIAfterTaskCreation(shouldSave) {
-    checkCompleteAllButton();
-    updateProgressBar();
-    updateStatsPanel();
-    
-    // ✅ Update recurring panel button visibility when tasks are added
-    if (typeof updateRecurringPanelButtonVisibility === 'function') {
-        updateRecurringPanelButtonVisibility();
-    }
-    
-    if (shouldSave) autoSave();
-}
-
-// ✅ 31. Setup Final Task Interactions
-function setupFinalTaskInteractions(taskItem, isLoading) {
-    if (!isLoading) setTimeout(() => { remindOverdueTasks(); }, 1000);
-
-    if (typeof DragAndDrop === 'function') {
-        DragAndDrop(taskItem);
-    } else if (typeof window.DragAndDrop === 'function') {
-        window.DragAndDrop(taskItem);
-    } else {
-        console.error('❌ DragAndDrop function not available!');
-    }
-    updateMoveArrowsVisibility();
-}
+// ✅ 28-31. Task Finalization and UI Updates (moved to modules)
+// ❌ REMOVED: setupFinalTaskInteractions - now in utilities/task/taskUtils.js
 
 // ✅ 32. Schema 2.5 Save Helper
 function saveTaskToSchema25(activeCycle, currentCycle) {

@@ -12,9 +12,33 @@
  * And call with: await test('test name', async () => { ... });
  */
 
-export function runMODULE_NAMETests(resultsDiv) {
+export function runMODULE_NAMETests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>MODULE_NAME Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual MODULE_TEMPLATE test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual MODULE_TEMPLATE test completed - original localStorage restored');
+        }
+    }
+
 
     // Import the module class (replace CLASS_NAME with your actual class)
     const CLASS_NAME = window.CLASS_NAME;
@@ -321,7 +345,11 @@ export function runMODULE_NAMETests(resultsDiv) {
         resultsDiv.innerHTML += '<div class="result fail">WARNING: Some tests failed</div>';
     }
 
-    return { passed: passed.count, total: total.count };
+    
+    // 🔓 RESTORE original localStorage data (only when running individually)
+    restoreOriginalData();
+
+return { passed: passed.count, total: total.count };
 }
 
 // Helper function for exception testing

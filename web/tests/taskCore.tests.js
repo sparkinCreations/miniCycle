@@ -7,9 +7,33 @@
  * @module tests/taskCore
  */
 
-export async function runTaskCoreTests(resultsDiv) {
+export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🎯 TaskCore Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual taskCore test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual taskCore test completed - original localStorage restored');
+        }
+    }
+
 
     // Import the module class
     const TaskCore = window.TaskCore;
@@ -555,5 +579,9 @@ export async function runTaskCoreTests(resultsDiv) {
         resultsDiv.innerHTML += `<div class="result fail">❌ ${total.count - passed.count} test(s) failed</div>`;
     }
 
-    return { passed: passed.count, total: total.count };
+    
+    // 🔓 RESTORE original localStorage data (only when running individually)
+    restoreOriginalData();
+
+return { passed: passed.count, total: total.count };
 }

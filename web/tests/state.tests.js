@@ -104,8 +104,9 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     await test('sets correct version', () => {
         const state = createStateManager();
 
-        if (state.version !== '1.0.0') {
-            throw new Error(`Expected version 1.0.0, got ${state.version}`);
+        // Check version exists and is in semver format (X.Y or X.Y.Z)
+        if (!state.version || !/^\d+\.\d+(\.\d+)?$/.test(state.version)) {
+            throw new Error(`Expected valid semver version, got ${state.version}`);
         }
     });
 

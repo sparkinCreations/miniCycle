@@ -230,10 +230,14 @@
             <option value="menuManager">MenuManager</option>
             <option value="settingsManager">SettingsManager</option>
             <option value="taskCore">TaskCore</option>
+            <option value="taskValidation">TaskValidation</option>
+            <option value="taskUtils">TaskUtils</option>
+            <option value="taskRenderer">TaskRenderer</option>
+            <option value="taskEvents">TaskEvents</option>
             <option value="taskDOM">TaskDOM</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (26 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (30 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -276,6 +280,10 @@
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
         const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
         const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
+        const { runTaskValidationTests } = await import(`./taskValidation.tests.js?v=${cacheBuster}`);
+        const { runTaskUtilsTests } = await import(`./taskUtils.tests.js?v=${cacheBuster}`);
+        const { runTaskRendererTests } = await import(`./taskRenderer.tests.js?v=${cacheBuster}`);
+        const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
         const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
@@ -408,6 +416,22 @@
                     });
                     currentModule = 'taskCore';
                     resultsDiv.innerHTML = '<p>✅ TaskCore loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskValidation') {
+                    await import(`../utilities/task/taskValidation.js?v=${cacheBuster}`);
+                    currentModule = 'taskValidation';
+                    resultsDiv.innerHTML = '<p>✅ TaskValidation loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskUtils') {
+                    await import(`../utilities/task/taskUtils.js?v=${cacheBuster}`);
+                    currentModule = 'taskUtils';
+                    resultsDiv.innerHTML = '<p>✅ TaskUtils loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskRenderer') {
+                    await import(`../utilities/task/taskRenderer.js?v=${cacheBuster}`);
+                    currentModule = 'taskRenderer';
+                    resultsDiv.innerHTML = '<p>✅ TaskRenderer loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskEvents') {
+                    await import(`../utilities/task/taskEvents.js?v=${cacheBuster}`);
+                    currentModule = 'taskEvents';
+                    resultsDiv.innerHTML = '<p>✅ TaskEvents loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskDOM') {
                     await import(`../utilities/task/taskDOM.js?v=${cacheBuster}`);
                     currentModule = 'taskDOM';
@@ -475,6 +499,14 @@
                 await runSettingsManagerTests(resultsDiv);
             } else if (currentModule === 'taskCore') {
                 await runTaskCoreTests(resultsDiv);
+            } else if (currentModule === 'taskValidation') {
+                await runTaskValidationTests(resultsDiv);
+            } else if (currentModule === 'taskUtils') {
+                await runTaskUtilsTests(resultsDiv);
+            } else if (currentModule === 'taskRenderer') {
+                await runTaskRendererTests(resultsDiv);
+            } else if (currentModule === 'taskEvents') {
+                await runTaskEventsTests(resultsDiv);
             } else if (currentModule === 'taskDOM') {
                 await runTaskDOMTests(resultsDiv);
             }
@@ -546,6 +578,10 @@
                 { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../utilities/ui/onboardingManager.js' },
                 { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../utilities/ui/modalManager.js' },
                 { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../utilities/task/taskCore.js' },
+                { name: 'TaskValidation', key: 'taskValidation', runFn: runTaskValidationTests, importPath: '../utilities/task/taskValidation.js' },
+                { name: 'TaskUtils', key: 'taskUtils', runFn: runTaskUtilsTests, importPath: '../utilities/task/taskUtils.js' },
+                { name: 'TaskRenderer', key: 'taskRenderer', runFn: runTaskRendererTests, importPath: '../utilities/task/taskRenderer.js' },
+                { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../utilities/task/taskEvents.js' },
                 { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../utilities/task/taskDOM.js' }
             ];
 

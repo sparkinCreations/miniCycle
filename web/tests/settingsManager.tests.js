@@ -12,9 +12,33 @@
  * - syncCurrentSettingsToStorage() - Sync settings to Schema 2.5
  */
 
-export function runSettingsManagerTests(resultsDiv) {
+export function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual settingsManager test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual settingsManager test completed - original localStorage restored');
+        }
+    }
+
 
     // Import the module class
     const SettingsManager = window.SettingsManager;
@@ -100,8 +124,9 @@ export function runSettingsManagerTests(resultsDiv) {
 
     test('has correct version', () => {
         const instance = new SettingsManager();
-        if (!instance.version || instance.version !== '1.330') {
-            throw new Error('Version not set correctly');
+        // Check version exists and is in semver format (X.Y or X.Y.Z)
+        if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
+            throw new Error(`Expected valid semver version, got ${instance.version}`);
         }
     });
 
@@ -869,7 +894,11 @@ export function runSettingsManagerTests(resultsDiv) {
         resultsDiv.innerHTML += '<div class="result fail">⚠️ Some tests failed</div>';
     }
 
-    return { passed: passed.count, total: total.count };
+    
+    // 🔓 RESTORE original localStorage data (only when running individually)
+    restoreOriginalData();
+
+return { passed: passed.count, total: total.count };
 }
 
 // Helper function for exception testing

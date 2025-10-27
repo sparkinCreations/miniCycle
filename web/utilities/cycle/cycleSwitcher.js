@@ -3,7 +3,7 @@
  * Manages cycle switching UI and operations
  *
  * @module cycleSwitcher
- * @version 1.333
+ * @version 1.335
  */
 
 export class CycleSwitcher {
@@ -30,7 +30,7 @@ export class CycleSwitcher {
         };
 
         this.loadMiniCycleListTimeout = null;
-        this.version = '1.333';
+        this.version = '1.335';
 
         console.log('🔄 CycleSwitcher initialized');
     }

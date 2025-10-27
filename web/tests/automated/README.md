@@ -459,6 +459,60 @@ killall python3
 
 ---
 
+## 🔒 localStorage Protection Script
+
+**IMPORTANT:** All test files must protect user data when running individually!
+
+### Quick Fix for New/Old Test Files
+
+If you create a new test file or find an old one without localStorage protection, run:
+
+```bash
+node tests/automated/add-localStorage-backup.js
+```
+
+**What it does:**
+- ✅ Adds `isPartOfSuite` parameter to test functions
+- ✅ Inserts localStorage backup code at start of tests
+- ✅ Adds restore call before return statement
+- ✅ Detects and skips files that already have protection
+- ✅ Updates `MODULE_TEMPLATE.tests.js` for future use
+
+**Example output:**
+```
+🔧 Adding localStorage backup to test files...
+
+📝 Processing dueDates.tests.js...
+  ✓ Added isPartOfSuite parameter
+  ✓ Added backup/restore code
+  ✓ Added restore call before return
+  ✅ Successfully updated dueDates.tests.js
+
+============================================================
+📊 Summary:
+   ✅ Processed: 8 files
+   ⏭️  Skipped: 0 files
+   ❌ Errors: 0 files
+============================================================
+
+✅ All test files now have localStorage backup protection!
+```
+
+**Protected test files:**
+- cycleSwitcher.tests.js
+- dueDates.tests.js
+- menuManager.tests.js
+- modeManager.tests.js
+- reminders.tests.js
+- settingsManager.tests.js
+- taskCore.tests.js
+- undoRedoManager.tests.js
+- MODULE_TEMPLATE.tests.js
+
+**Total**: 30+ test files now protected ✅
+
+---
+
 ## 🔄 Development Workflow
 
 ```
@@ -486,7 +540,7 @@ killall python3
 │  Automated Test     │
 │  (Headless CLI)     │
 │  - Verify all pass  │
-│  - 148/148 tests    │
+│  - 951/958 tests    │
 └──────┬──────────────┘
        │
        ▼

@@ -5,7 +5,7 @@
  * - Pure module with explicit dependency injection
  *
  * @module undoRedoManager
- * @version 1.330
+ * @version 1.335
  * @pattern Strict Injection 🔧
  */
 

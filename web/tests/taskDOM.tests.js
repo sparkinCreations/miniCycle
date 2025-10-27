@@ -201,7 +201,7 @@ export async function runTaskDOMTests(resultsDiv) {
             sanitizeInput: (input) => input
         });
 
-        const result = manager.validateAndSanitizeTaskInput(123);
+        const result = manager.validator.validateAndSanitizeTaskInput(123);
 
         if (result !== null) {
             throw new Error('Should return null for non-string input');
@@ -213,7 +213,7 @@ export async function runTaskDOMTests(resultsDiv) {
             sanitizeInput: (input) => input
         });
 
-        const result = manager.validateAndSanitizeTaskInput('  test task  ');
+        const result = manager.validator.validateAndSanitizeTaskInput('  test task  ');
 
         if (result !== 'test task') {
             throw new Error('Should trim whitespace');
@@ -225,7 +225,7 @@ export async function runTaskDOMTests(resultsDiv) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const result = manager.validateAndSanitizeTaskInput('   ');
+        const result = manager.validator.validateAndSanitizeTaskInput('   ');
 
         if (result !== null) {
             throw new Error('Should return null for empty/whitespace string');
@@ -239,7 +239,7 @@ export async function runTaskDOMTests(resultsDiv) {
         });
 
         const longText = 'a'.repeat(150); // Over 100 char limit
-        const result = manager.validateAndSanitizeTaskInput(longText);
+        const result = manager.validator.validateAndSanitizeTaskInput(longText);
 
         if (result !== null) {
             throw new Error('Should reject text over 100 characters');
@@ -256,7 +256,7 @@ export async function runTaskDOMTests(resultsDiv) {
             }
         });
 
-        const result = manager.validateAndSanitizeTaskInput('test<script>alert(1)</script>');
+        const result = manager.validator.validateAndSanitizeTaskInput('test<script>alert(1)</script>');
 
         if (!sanitizeCalled) {
             throw new Error('Sanitize function should be called');
@@ -428,7 +428,7 @@ export async function runTaskDOMTests(resultsDiv) {
         });
 
         // Should not throw, just return early
-        await manager.renderTasks([]);
+        await manager.renderer.renderTasks([]);
 
         // If we get here, it handled missing taskList gracefully
     });
@@ -444,7 +444,7 @@ export async function runTaskDOMTests(resultsDiv) {
             updateStatsPanel: () => {}
         });
 
-        await manager.renderTasks([]);
+        await manager.renderer.renderTasks([]);
 
         if (taskList.innerHTML !== '') {
             throw new Error('Should clear taskList for empty array');
@@ -457,9 +457,9 @@ export async function runTaskDOMTests(resultsDiv) {
         });
 
         // Should not throw for non-array
-        await manager.renderTasks(null);
-        await manager.renderTasks(undefined);
-        await manager.renderTasks('not an array');
+        await manager.renderer.renderTasks(null);
+        await manager.renderer.renderTasks(undefined);
+        await manager.renderer.renderTasks('not an array');
     });
 
     // ============================================
@@ -468,14 +468,12 @@ export async function runTaskDOMTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Utility Methods</h4>';
 
     await test('buildTaskContext requires AppState to be ready', () => {
-        const manager = new TaskDOMManager({
-            AppState: {
-                isReady: () => false
-            }
-        });
+        const mockAppState = {
+            isReady: () => false
+        };
 
         const taskItem = document.createElement('li');
-        const result = manager.buildTaskContext(taskItem, 'test-id');
+        const result = TaskUtils.buildTaskContext(taskItem, 'test-id', mockAppState);
 
         if (result !== null) {
             throw new Error('Should return null when AppState not ready');
@@ -489,25 +487,24 @@ export async function runTaskDOMTests(resultsDiv) {
         taskText.textContent = 'Test task';
         taskItem.appendChild(taskText);
 
-        const manager = new TaskDOMManager({
-            AppState: {
-                isReady: () => true,
-                get: () => ({
-                    data: {
-                        cycles: {
-                            'cycle-1': {
-                                tasks: []
-                            }
+        const mockAppState = {
+            isReady: () => true,
+            get: () => ({
+                data: {
+                    cycles: {
+                        'cycle-1': {
+                            tasks: []
                         }
-                    },
-                    appState: {
-                        activeCycleId: 'cycle-1'
                     }
-                })
-            }
-        });
+                },
+                appState: {
+                    activeCycleId: 'cycle-1'
+                },
+                settings: {}
+            })
+        };
 
-        const context = manager.buildTaskContext(taskItem, 'test-id');
+        const context = TaskUtils.buildTaskContext(taskItem, 'test-id', mockAppState);
 
         if (!context) {
             throw new Error('Should return context object');
@@ -523,11 +520,9 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('extractTaskDataFromDOM returns empty array when no taskList', () => {
-        const manager = new TaskDOMManager({
-            getElementById: (id) => null
-        });
+        const mockGetById = (id) => null;
 
-        const result = manager.extractTaskDataFromDOM();
+        const result = TaskUtils.extractTaskDataFromDOM(mockGetById);
 
         if (!Array.isArray(result) || result.length !== 0) {
             throw new Error('Should return empty array when taskList not found');
@@ -553,11 +548,9 @@ export async function runTaskDOMTests(resultsDiv) {
 
         taskList.appendChild(taskItem);
 
-        const manager = new TaskDOMManager({
-            getElementById: (id) => id === 'taskList' ? taskList : null
-        });
+        const mockGetById = (id) => id === 'taskList' ? taskList : null;
 
-        const result = manager.extractTaskDataFromDOM();
+        const result = TaskUtils.extractTaskDataFromDOM(mockGetById);
 
         if (result.length !== 1) {
             throw new Error('Should extract one task');
@@ -586,7 +579,7 @@ export async function runTaskDOMTests(resultsDiv) {
             sanitizeInput: undefined
         });
 
-        const result = manager.validateAndSanitizeTaskInput('test');
+        const result = manager.validator.validateAndSanitizeTaskInput('test');
 
         if (result !== null) {
             throw new Error('Should return null when sanitizeInput unavailable');
@@ -638,7 +631,7 @@ export async function runTaskDOMTests(resultsDiv) {
         });
 
         // Should not throw
-        await manager.refreshUIFromState(null);
+        await manager.renderer.refreshUIFromState(null);
     });
 
     await test('refreshUIFromState uses AppState when ready', async () => {
@@ -669,7 +662,7 @@ export async function runTaskDOMTests(resultsDiv) {
             checkCompleteAllButton: () => {}
         });
 
-        await manager.refreshUIFromState();
+        await manager.renderer.refreshUIFromState();
 
         if (!appStateCalled) {
             throw new Error('Should call AppState.get() when ready');
@@ -722,7 +715,7 @@ export async function runTaskDOMTests(resultsDiv) {
             updateStatsPanel: () => {}
         });
 
-        await manager.renderTasks([
+        await manager.renderer.renderTasks([
             { id: 'task-1', text: 'Test', completed: false }
         ]);
 
@@ -768,7 +761,7 @@ export async function runTaskDOMTests(resultsDiv) {
             getElementById: () => document.createElement('div')
         });
 
-        manager.revealTaskButtons(taskItem);
+        manager.events.revealTaskButtons(taskItem);
 
         if (upBtn.style.visibility !== 'hidden') {
             throw new Error('Up arrow should be hidden when setting is false');

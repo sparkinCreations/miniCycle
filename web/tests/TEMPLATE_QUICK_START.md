@@ -88,11 +88,24 @@ MODULE_INSTANCE_GLOBAL → taskManager
 ## 📊 Template Provides
 
 - **25+ test categories** covering all common scenarios
-- **Schema 2.5 integration** with proper data structure  
+- **localStorage Protection** 🔒 - Automatically backs up and restores user data
+- **Schema 2.5 integration** with proper data structure
 - **Error handling tests** for graceful degradation
 - **Performance tests** with timing checks
 - **Global function tests** for backward compatibility
 - **Integration tests** for AppState and DOM
 - **Automation compatibility** with proper Summary format
+- **`isPartOfSuite` parameter** - Works with both individual and automated test runs
 
 **Total setup time: ~5 minutes per module** 🚀
+
+## 🔒 Built-in Data Protection
+
+The template now includes localStorage backup/restore:
+
+- ✅ **Safe to run individually** - Your real app data is protected
+- ✅ **Automated suite compatible** - Passes `isPartOfSuite = true` for efficiency
+- ✅ **No configuration needed** - Protection is automatic
+- ✅ **Used by 30+ modules** - Battle-tested pattern
+
+You don't need to add this manually - it's already in the template!

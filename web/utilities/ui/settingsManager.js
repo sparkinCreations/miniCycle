@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.330
+ * @version 1.335
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../appInitialization.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.330';
+        this.version = '1.335';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks

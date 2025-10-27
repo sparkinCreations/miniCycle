@@ -12,14 +12,44 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module utilities/task/taskDOM
- * @version 1.330
- * @requires appInit, AppState, taskCore, globalUtils
+ * @version 1.335
+ * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
 import { appInit } from '../appInitialization.js';
+import { TaskValidator } from './taskValidation.js';
+import { TaskUtils } from './taskUtils.js';
+import { TaskRenderer } from './taskRenderer.js';
+import { TaskEvents } from './taskEvents.js';
 
 export class TaskDOMManager {
     constructor(dependencies = {}) {
+        // Initialize validator module
+        this.validator = dependencies.validator || new TaskValidator({
+            sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
+            showNotification: dependencies.showNotification || this.fallbackNotification
+        });
+
+        // Initialize renderer module
+        this.renderer = dependencies.renderer || new TaskRenderer({
+            AppState: dependencies.AppState || window.AppState,
+            updateProgressBar: dependencies.updateProgressBar || this.fallbackUpdate,
+            checkCompleteAllButton: dependencies.checkCompleteAllButton || this.fallbackUpdate,
+            updateStatsPanel: dependencies.updateStatsPanel || this.fallbackUpdate,
+            updateMainMenuHeader: dependencies.updateMainMenuHeader || this.fallbackUpdate,
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id))
+        });
+
+        // Initialize events module
+        this.events = dependencies.events || new TaskEvents({
+            AppState: dependencies.AppState || window.AppState,
+            showNotification: dependencies.showNotification || this.fallbackNotification,
+            autoSave: dependencies.autoSave || this.fallbackAutoSave,
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener
+        });
+
         // Store dependencies with intelligent fallbacks
         this.deps = {
             // Core data access (critical - will verify in methods)
@@ -75,7 +105,7 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.330';
+        this.version = '1.335';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
@@ -208,229 +238,12 @@ export class TaskDOMManager {
     // ============================================
 
     // GROUP 1: VALIDATION
-    /**
-     * Validate and sanitize task input text
-     * @param {string} taskText - Raw task input
-     * @returns {string|null} - Sanitized text or null if invalid
-     */
-    validateAndSanitizeTaskInput(taskText) {
-        const TASK_LIMIT = 100; // Character limit for tasks
-
-        if (typeof taskText !== "string") {
-            console.warn("⚠️ taskText is not a string", taskText);
-            return null;
-        }
-
-        // Use sanitizeInput from global utils (via window or dependencies)
-        const sanitizeFn = this.deps.sanitizeInput || window.sanitizeInput;
-        if (!sanitizeFn) {
-            console.warn("⚠️ sanitizeInput function not available");
-            return null;
-        }
-
-        const taskTextTrimmed = sanitizeFn(taskText.trim());
-        if (!taskTextTrimmed) {
-            console.warn("⚠️ Skipping empty or unsafe task.");
-            return null;
-        }
-
-        if (taskTextTrimmed.length > TASK_LIMIT) {
-            this.deps.showNotification?.(`Task must be ${TASK_LIMIT} characters or less.`, 'warning');
-            return null;
-        }
-
-        return taskTextTrimmed;
-    }
+    // ✅ MOVED TO: utilities/task/taskValidation.js
+    // Use this.validator.validateAndSanitizeTaskInput(taskText)
 
     // GROUP 2: UTILITIES
-    /**
-     * Build task context from DOM element
-     * @param {HTMLElement} taskItem - Task DOM element
-     * @param {string} taskId - Task ID
-     * @returns {Object|null} - Task context object
-     */
-    buildTaskContext(taskItem, taskId) {
-        try {
-            // ✅ Use AppState instead of loadMiniCycleData
-            if (!this.deps.AppState?.isReady?.()) {
-                console.warn('⚠️ AppState not ready for buildTaskContext');
-                return null;
-            }
-
-            const state = this.deps.AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
-
-            if (!activeCycleId) return null;
-
-            const currentCycle = state.data?.cycles?.[activeCycleId];
-            if (!currentCycle) return null;
-
-            const taskText = taskItem.querySelector('.task-text')?.textContent?.trim() || '';
-
-            return {
-                taskTextTrimmed: taskText,
-                assignedTaskId: taskId,
-                schemaData: state, // Pass the full state for backward compatibility
-                cycles: state.data.cycles,
-                activeCycle: activeCycleId,
-                currentCycle,
-                settings: state.settings || {},
-                autoResetEnabled: currentCycle.autoReset || false,
-                deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false
-            };
-        } catch (error) {
-            console.warn('⚠️ Failed to build task context:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Extract task data from DOM
-     * @returns {Array} - Array of task objects
-     */
-    extractTaskDataFromDOM() {
-        const taskListElement = this.deps.getElementById('taskList');
-        if (!taskListElement) {
-            console.warn('⚠️ Task list element not found');
-            return [];
-        }
-
-        return [...taskListElement.children].map(taskElement => {
-            const taskTextElement = taskElement.querySelector(".task-text");
-            const taskId = taskElement.dataset.taskId;
-
-            if (!taskTextElement || !taskId) {
-                console.warn("⚠️ Skipping invalid task element");
-                return null;
-            }
-
-            // Extract recurring settings safely
-            let recurringSettings = {};
-            try {
-                const settingsAttr = taskElement.getAttribute("data-recurring-settings");
-                if (settingsAttr) {
-                    recurringSettings = JSON.parse(settingsAttr);
-                }
-            } catch (err) {
-                console.warn("⚠️ Invalid recurring settings, using empty object");
-            }
-
-            return {
-                id: taskId,
-                text: taskTextElement.textContent,
-                completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-                dueDate: taskElement.querySelector(".due-date")?.value || null,
-                highPriority: taskElement.classList.contains("high-priority"),
-                remindersEnabled: taskElement.querySelector(".enable-task-reminders")?.classList.contains("reminder-active") || false,
-                recurring: taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
-                recurringSettings,
-                schemaVersion: 2
-            };
-        }).filter(Boolean);
-    }
-
-    /**
-     * Load task context from schema data
-     * @param {string} taskTextTrimmed - Sanitized task text
-     * @param {string} taskId - Task ID (optional, will generate if not provided)
-     * @param {Object} taskOptions - Additional task options
-     * @param {boolean} isLoading - Whether task is being loaded (vs created)
-     * @returns {Object} - Task context object
-     */
-    loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
-        console.log('📝 Loading task context (Schema 2.5 only)...');
-
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
-            console.warn('⚠️ Schema 2.5 data required for loadTaskContext');
-            throw new Error('Schema 2.5 data not found');
-        }
-
-        const { cycles, activeCycle, settings, reminders } = schemaData;
-        const currentCycle = cycles[activeCycle];
-
-        if (!activeCycle || !currentCycle) {
-            console.warn("⚠️ No active cycle found in Schema 2.5 for loadTaskContext");
-            throw new Error('No active cycle found');
-        }
-
-        console.log('📊 Active cycle found:', activeCycle);
-
-        const assignedTaskId = taskId || this.deps.generateId?.() || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        console.log('🆔 Assigned task ID:', assignedTaskId);
-
-        return {
-            taskTextTrimmed,
-            assignedTaskId,
-            schemaData,
-            cycles,
-            activeCycle,
-            currentCycle,
-            settings,
-            reminders,
-            cycleTasks: currentCycle.tasks || [],
-            autoResetEnabled: currentCycle.autoReset || false,
-            remindersEnabledGlobal: reminders?.enabled === true,
-            deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false,
-            isLoading,  // ✅ Pass through isLoading flag
-            ...taskOptions
-        };
-    }
-
-    /**
-     * Scroll to newly created task
-     * @param {HTMLElement} taskList - Task list element
-     */
-    scrollToNewTask(taskList) {
-        const taskListContainer = this.deps.querySelector(".task-list-container");
-        if (taskListContainer && taskList) {
-            taskListContainer.scrollTo({
-                top: taskList.scrollHeight,
-                behavior: "smooth"
-            });
-        }
-    }
-
-    /**
-     * Handle overdue task styling
-     * @param {HTMLElement} taskItem - Task DOM element
-     * @param {boolean} completed - Whether task is completed
-     */
-    handleOverdueStyling(taskItem, completed) {
-        setTimeout(() => {
-            if (completed) {
-                taskItem.classList.remove("overdue-task");
-            }
-        }, 300);
-    }
-
-    /**
-     * Setup final task interactions (drag/drop, arrows)
-     * @param {HTMLElement} taskItem - Task DOM element
-     * @param {boolean} isLoading - Whether task is being loaded
-     */
-    setupFinalTaskInteractions(taskItem, isLoading) {
-        // Remind overdue tasks after a delay (only if not loading)
-        if (!isLoading) {
-            setTimeout(() => {
-                if (typeof window.remindOverdueTasks === 'function') {
-                    window.remindOverdueTasks();
-                }
-            }, 1000);
-        }
-
-        // Enable drag and drop
-        if (typeof window.DragAndDrop === 'function') {
-            window.DragAndDrop(taskItem);
-        } else {
-            console.warn('⚠️ DragAndDrop function not available');
-        }
-
-        // Update move arrows visibility
-        if (typeof window.updateMoveArrowsVisibility === 'function') {
-            window.updateMoveArrowsVisibility();
-        }
-    }
+    // ✅ MOVED TO: utilities/task/taskUtils.js
+    // Use TaskUtils.buildTaskContext(), TaskUtils.extractTaskDataFromDOM(), etc.
 
     // GROUP 3: DOM CREATION
     /**
@@ -909,279 +722,9 @@ export class TaskDOMManager {
     /**
      * Handle task button clicks (edit, delete, priority)
      */
-    handleTaskButtonClick(event) {
-        event.stopPropagation();
-        const button = event.currentTarget;
-        const taskItem = button.closest(".task");
-        if (!taskItem) return;
-
-        const taskOptions = taskItem.querySelector(".task-options");
-        if (taskOptions) taskOptions.style.pointerEvents = "auto";
-
-        let shouldSave = false;
-
-        // ✅ DISABLED: Old arrow handling logic - now using event delegation
-        if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
-            console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
-            return;
-        } else if (button.classList.contains("edit-btn")) {
-            if (window.taskCore) {
-                window.taskCore.editTask(taskItem);
-            } else {
-                console.warn('⚠️ TaskCore not available, edit operation skipped');
-                this.deps.showNotification?.('Edit feature temporarily unavailable', 'warning');
-            }
-            shouldSave = false;
-        } else if (button.classList.contains("delete-btn")) {
-            if (window.taskCore) {
-                window.taskCore.deleteTask(taskItem);
-            } else {
-                console.warn('⚠️ TaskCore not available, delete operation skipped');
-                this.deps.showNotification?.('Delete feature temporarily unavailable', 'warning');
-            }
-            shouldSave = false;
-        } else if (button.classList.contains("priority-btn")) {
-            if (window.taskCore) {
-                window.taskCore.toggleTaskPriority(taskItem);
-            } else {
-                console.warn('⚠️ TaskCore not available, priority toggle skipped');
-                this.deps.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
-            }
-            shouldSave = false;
-        }
-
-        if (shouldSave) this.deps.autoSave?.();
-        console.log("✅ Task button clicked:", button.className);
-    }
-
-    /**
-     * Toggle hover task options
-     */
-    toggleHoverTaskOptions(enableHover) {
-        this.deps.querySelectorAll(".task").forEach(taskItem => {
-            if (enableHover) {
-                if (!taskItem.classList.contains("hover-enabled")) {
-                    taskItem.addEventListener("mouseenter", window.showTaskOptions);
-                    taskItem.addEventListener("mouseleave", window.hideTaskOptions);
-                    taskItem.classList.add("hover-enabled");
-                }
-            } else {
-                if (taskItem.classList.contains("hover-enabled")) {
-                    taskItem.removeEventListener("mouseenter", window.showTaskOptions);
-                    taskItem.removeEventListener("mouseleave", window.hideTaskOptions);
-                    taskItem.classList.remove("hover-enabled");
-                }
-            }
-        });
-    }
-
-    /**
-     * Reveal task buttons (three dots menu)
-     */
-    revealTaskButtons(taskItem) {
-        const taskOptions = taskItem.querySelector(".task-options");
-        if (!taskOptions) return;
-
-        // 🧹 Hide all other task option menus
-        document.querySelectorAll(".task-options").forEach(opts => {
-            if (opts !== taskOptions) {
-                opts.style.visibility = "hidden";
-                opts.style.opacity = "0";
-                opts.style.pointerEvents = "none";
-
-                opts.querySelectorAll(".task-btn").forEach(btn => {
-                    btn.style.visibility = "hidden";
-                    btn.style.opacity = "0";
-                    btn.style.pointerEvents = "none";
-                });
-            }
-        });
-
-        // ✅ Show this task's options
-        taskOptions.style.visibility = "visible";
-        taskOptions.style.opacity = "1";
-        taskOptions.style.pointerEvents = "auto";
-
-        // Get settings
-        const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
-        const autoResetEnabled = toggleAutoReset?.checked;
-
-        // ✅ Early return if AppState not ready
-        if (!this.deps.AppState?.isReady?.()) {
-            console.log('⏳ revealTaskButtons deferred - AppState not ready');
-            return;
-        }
-
-        const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const cycleData = state?.data?.cycles?.[activeCycleId] || {};
-        const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
-        const alwaysShow = state?.settings?.alwaysShowRecurring === true;
-        const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
-
-        // ✅ Check arrow visibility settings
-        const arrowsEnabled = state?.ui?.moveArrowsVisible || false;
-
-        // ✅ Get task position for arrow logic
-        const allTasks = document.querySelectorAll(".task");
-        const taskIndex = Array.from(allTasks).indexOf(taskItem);
-        const isFirstTask = taskIndex === 0;
-        const isLastTask = taskIndex === allTasks.length - 1;
-
-        taskOptions.querySelectorAll(".task-btn").forEach(btn => {
-            const isReminderBtn = btn.classList.contains("enable-task-reminders");
-            const isRecurringBtn = btn.classList.contains("recurring-btn");
-            const isDueDateBtn = btn.classList.contains("set-due-date");
-            const isUpArrow = btn.classList.contains("move-up");
-            const isDownArrow = btn.classList.contains("move-down");
-
-            let shouldShow;
-
-            // ✅ Special handling for arrows
-            if (isUpArrow || isDownArrow) {
-                shouldShow = arrowsEnabled && (
-                    (isUpArrow && !isFirstTask) ||
-                    (isDownArrow && !isLastTask)
-                );
-            } else {
-                // Regular button logic
-                shouldShow =
-                    (!isReminderBtn && !isRecurringBtn && !isDueDateBtn) ||
-                    (isRecurringBtn && showRecurring) ||
-                    (isDueDateBtn && !autoResetEnabled) ||
-                    (isReminderBtn);
-            }
-
-            btn.style.visibility = shouldShow ? "visible" : "hidden";
-            btn.style.opacity = shouldShow ? "1" : "0";
-            btn.style.pointerEvents = shouldShow ? "auto" : "none";
-        });
-    }
-
-    /**
-     * Sync recurring state to DOM elements
-     */
-    syncRecurringStateToDOM(taskEl, recurringSettings) {
-        taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
-        const recurringBtn = taskEl.querySelector(".recurring-btn");
-        if (recurringBtn) {
-            recurringBtn.classList.add("active");
-            recurringBtn.setAttribute("aria-pressed", "true");
-        }
-
-        // ✅ Add recurring icon to task label if not already present
-        const taskLabel = taskEl.querySelector(".task-text");
-        if (taskLabel) {
-            let existingIcon = taskLabel.querySelector('.recurring-indicator');
-            if (!existingIcon) {
-                const icon = document.createElement("span");
-                icon.className = "recurring-indicator";
-                icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
-                taskLabel.appendChild(icon);
-                console.log('✅ Added recurring icon via syncRecurringStateToDOM');
-            }
-        }
-    }
-
-    // GROUP 5: TASK INTERACTIONS
-    /**
-     * Setup all task interactions (click, hover, focus)
-     */
-    setupTaskInteractions(taskElements, taskContext) {
-        const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
-        const { settings } = taskContext;
-
-        // Setup task click interaction
-        this.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
-
-        // Setup priority button state
-        this.setupPriorityButtonState(buttonContainer, taskContext.highPriority);
-
-        // Setup hover interactions based on three dots setting
-        this.setupTaskHoverInteractions(taskItem, settings);
-
-        // Setup focus interactions
-        this.setupTaskFocusInteractions(taskItem);
-
-        // Setup due date button interaction (from dueDates module)
-        if (typeof window.setupDueDateButtonInteraction === 'function') {
-            window.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
-        }
-    }
-
-    /**
-     * Setup task click interaction (click to toggle completion)
-     */
-    setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-        taskItem.addEventListener("click", (event) => {
-            if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
-
-            // ✅ Enable undo system on first user interaction
-            if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
-                window.enableUndoSystemOnFirstInteraction();
-            }
-
-            // ✅ RESTORED: Use the simple working approach
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change"));
-            checkbox.setAttribute("aria-checked", checkbox.checked);
-
-            if (typeof window.checkMiniCycle === 'function') {
-                window.checkMiniCycle();
-            }
-
-            this.deps.autoSave?.();
-
-            if (typeof window.triggerLogoBackground === 'function') {
-                window.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
-            }
-        });
-    }
-
-    /**
-     * Setup priority button state
-     */
-    setupPriorityButtonState(buttonContainer, highPriority) {
-        const priorityButton = buttonContainer.querySelector(".priority-btn");
-        if (highPriority && priorityButton) {
-            priorityButton.classList.add("priority-active");
-            priorityButton.setAttribute("aria-pressed", "true");
-        }
-    }
-
-    /**
-     * Setup task hover interactions
-     */
-    setupTaskHoverInteractions(taskItem, settings) {
-        const threeDotsEnabled = settings.showThreeDots || false;
-        if (!threeDotsEnabled) {
-            if (typeof window.showTaskOptions === 'function' && typeof window.hideTaskOptions === 'function') {
-                taskItem.addEventListener("mouseenter", window.showTaskOptions);
-                taskItem.addEventListener("mouseleave", window.hideTaskOptions);
-            }
-        }
-    }
-
-    /**
-     * Setup task focus interactions
-     */
-    setupTaskFocusInteractions(taskItem) {
-        const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
-
-        addListener(taskItem, "focus", () => {
-            const options = taskItem.querySelector(".task-options");
-            if (options) {
-                options.style.opacity = "1";
-                options.style.visibility = "visible";
-                options.style.pointerEvents = "auto";
-            }
-        });
-
-        // Keyboard task option toggle
-        if (typeof window.attachKeyboardTaskOptionToggle === 'function') {
-            window.attachKeyboardTaskOptionToggle(taskItem);
-        }
-    }
+    // GROUP 5: TASK INTERACTIONS & EVENT HANDLING
+    // ✅ MOVED TO: utilities/task/taskEvents.js
+    // Use this.events.handleTaskButtonClick(), this.events.setupTaskInteractions(), etc.
 
     /**
      * Finalize task creation (append to DOM, scroll, etc.)
@@ -1197,17 +740,17 @@ export class TaskDOMManager {
         // Clear input
         if (taskInput) taskInput.value = "";
 
-        // Scroll to new task
-        this.scrollToNewTask(taskList);
+        // Scroll to new task (delegated to TaskUtils)
+        TaskUtils.scrollToNewTask(taskList);
 
-        // Handle overdue styling
-        this.handleOverdueStyling(taskItem, completed);
+        // Handle overdue styling (delegated to TaskUtils)
+        TaskUtils.handleOverdueStyling(taskItem, completed);
 
         // Update UI components
         this.updateUIAfterTaskCreation(shouldSave);
 
-        // Setup final interactions
-        this.setupFinalTaskInteractions(taskItem, isLoading);
+        // Setup final interactions (delegated to TaskUtils)
+        TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
     }
 
     /**
@@ -1227,136 +770,8 @@ export class TaskDOMManager {
     }
 
     // GROUP 6: RENDERING
-    /**
-     * Render tasks from array
-     * @param {Array} tasksArray - Array of task objects to render
-     */
-    async renderTasks(tasksArray = []) {
-        console.log('🔄 Rendering tasks (Schema 2.5 only)...');
-
-        const taskList = this.deps.getElementById('taskList');
-        if (!taskList) {
-            console.warn('⚠️ Task list container not found');
-            return;
-        }
-
-        taskList.innerHTML = ""; // Clear existing tasks from DOM
-
-        if (!Array.isArray(tasksArray)) {
-            console.warn('⚠️ Invalid tasks array provided to renderTasks');
-            return;
-        }
-
-        console.log(`📋 Rendering ${tasksArray.length} tasks`);
-
-        tasksArray.forEach(task => {
-            if (!task || !task.id) {
-                console.warn('⚠️ Skipping invalid task:', task);
-                return;
-            }
-
-            // Use window.addTask (from taskCore) to render each task
-            if (typeof window.addTask === 'function') {
-                window.addTask(
-                    task.text,
-                    task.completed,
-                    false,                     // shouldSave: false (don't save during render)
-                    task.dueDate,
-                    task.highPriority,
-                    true,                      // isLoading: true (avoid overdue reminder popups)
-                    task.remindersEnabled,
-                    task.recurring,
-                    task.id,
-                    task.recurringSettings
-                );
-            } else {
-                console.warn('⚠️ addTask function not available');
-            }
-        });
-
-        // Re-run UI state updates
-        this.deps.updateProgressBar?.();
-        this.deps.checkCompleteAllButton?.();
-        this.deps.updateStatsPanel?.();
-
-        // Update recurring panel
-        if (typeof window.updateRecurringPanelButtonVisibility === 'function') {
-            window.updateRecurringPanelButtonVisibility();
-        }
-
-        // Check overdue tasks after rendering
-        if (typeof window.checkOverdueTasks === 'function') {
-            setTimeout(() => {
-                window.checkOverdueTasks();
-            }, 500);
-        }
-
-        console.log('✅ Tasks rendered successfully');
-    }
-
-    /**
-     * Refresh UI from state (re-render tasks from AppState or localStorage)
-     * @param {Object} providedState - Optional state object (uses AppState if not provided)
-     */
-    async refreshUIFromState(providedState = null) {
-        const state =
-            providedState ||
-            (this.deps.AppState?.isReady?.() ? this.deps.AppState.get() : null);
-
-        if (state?.data?.cycles && state?.appState?.activeCycleId) {
-            const cid = state.appState.activeCycleId;
-            const cycle = state.data.cycles[cid];
-            if (cycle) {
-                // Render directly from current in-memory state
-                await this.renderTasks(cycle.tasks || []);
-
-                // ✅ Restore UI state after rendering
-                const arrowsVisible = state.ui?.moveArrowsVisible || false;
-                if (typeof window.updateArrowsInDOM === 'function') {
-                    window.updateArrowsInDOM(arrowsVisible);
-                }
-
-                // Update other UI bits that don't depend on reloading storage
-                if (window.recurringPanel?.updateRecurringPanel) {
-                    window.recurringPanel.updateRecurringPanel();
-                }
-                if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-                    window.recurringPanel.updateRecurringPanelButtonVisibility();
-                }
-                if (typeof window.updateMainMenuHeader === 'function') {
-                    window.updateMainMenuHeader();
-                }
-
-                this.deps.updateProgressBar?.();
-                this.deps.checkCompleteAllButton?.();
-                return;
-            }
-        }
-
-        // Fallback: load from localStorage
-        if (typeof window.loadMiniCycle === 'function') {
-            window.loadMiniCycle();
-
-            // ✅ Also restore arrow visibility after fallback load
-            setTimeout(() => {
-                if (this.deps.AppState?.isReady?.()) {
-                    const currentState = this.deps.AppState.get();
-                    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-                    if (typeof window.updateArrowsInDOM === 'function') {
-                        window.updateArrowsInDOM(arrowsVisible);
-                    }
-                }
-            }, 50);
-        }
-    }
-
-    /**
-     * Refresh task list UI (lightweight refresh for quick updates)
-     */
-    async refreshTaskListUI() {
-        // Quick refresh - just re-render from current state
-        await this.refreshUIFromState();
-    }
+    // ✅ MOVED TO: utilities/task/taskRenderer.js
+    // Use this.renderer.renderTasks(), this.renderer.refreshUIFromState(), etc.
 }
 
 // ============================================
@@ -1390,6 +805,7 @@ async function initTaskDOMManager(dependencies = {}) {
 
 /**
  * Validate and sanitize task input
+ * ✅ DELEGATES TO: taskValidation.js module
  */
 function validateAndSanitizeTaskInput(taskText) {
     if (!taskDOMManager) {
@@ -1398,50 +814,44 @@ function validateAndSanitizeTaskInput(taskText) {
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
         return taskText.trim();
     }
-    return taskDOMManager.validateAndSanitizeTaskInput(taskText);
+    // Delegate to validator module
+    return taskDOMManager.validator.validateAndSanitizeTaskInput(taskText);
 }
 
 // ============================================
 // GROUP 2: Utility Wrappers
 // ============================================
+// ✅ DELEGATES TO: taskUtils.js
 
 function buildTaskContext(taskItem, taskId) {
-    if (!taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager not initialized');
-        return null;
-    }
-    return taskDOMManager.buildTaskContext(taskItem, taskId);
+    return TaskUtils.buildTaskContext(taskItem, taskId, window.AppState);
 }
 
 function extractTaskDataFromDOM() {
-    if (!taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager not initialized');
-        return [];
-    }
-    return taskDOMManager.extractTaskDataFromDOM();
+    return TaskUtils.extractTaskDataFromDOM();
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
-    if (!taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager not initialized');
-        throw new Error('TaskDOMManager not initialized');
-    }
-    return taskDOMManager.loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading);
+    return TaskUtils.loadTaskContext(
+        taskTextTrimmed,
+        taskId,
+        taskOptions,
+        isLoading,
+        window.loadMiniCycleData,
+        window.generateId
+    );
 }
 
 function scrollToNewTask(taskList) {
-    if (!taskDOMManager) return;
-    taskDOMManager.scrollToNewTask(taskList);
+    TaskUtils.scrollToNewTask(taskList);
 }
 
 function handleOverdueStyling(taskItem, completed) {
-    if (!taskDOMManager) return;
-    taskDOMManager.handleOverdueStyling(taskItem, completed);
+    TaskUtils.handleOverdueStyling(taskItem, completed);
 }
 
 function setupFinalTaskInteractions(taskItem, isLoading) {
-    if (!taskDOMManager) return;
-    taskDOMManager.setupFinalTaskInteractions(taskItem, isLoading);
+    TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
 }
 
 // ============================================
@@ -1513,48 +923,54 @@ function setupRecurringButtonHandler(button, taskContext) {
     taskDOMManager.setupRecurringButtonHandler(button, taskContext);
 }
 
+// ✅ DELEGATES TO: taskEvents.js
 function handleTaskButtonClick(event) {
-    if (!taskDOMManager) return;
-    taskDOMManager.handleTaskButtonClick(event);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.handleTaskButtonClick(event);
 }
 
 function toggleHoverTaskOptions(enableHover) {
-    if (!taskDOMManager) return;
-    taskDOMManager.toggleHoverTaskOptions(enableHover);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.toggleHoverTaskOptions(enableHover);
 }
 
 function revealTaskButtons(taskItem) {
-    if (!taskDOMManager) return;
-    taskDOMManager.revealTaskButtons(taskItem);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.revealTaskButtons(taskItem);
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {
-    if (!taskDOMManager) return;
-    taskDOMManager.syncRecurringStateToDOM(taskEl, recurringSettings);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.syncRecurringStateToDOM(taskEl, recurringSettings);
 }
 
 // ============================================
 // GROUP 5: Task Interaction Wrappers
 // ============================================
+// ✅ DELEGATES TO: taskEvents.js
 
 function setupTaskInteractions(taskElements, taskContext) {
-    if (!taskDOMManager) return;
-    taskDOMManager.setupTaskInteractions(taskElements, taskContext);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskInteractions(taskElements, taskContext);
 }
 
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    if (!taskDOMManager) return;
-    taskDOMManager.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
 }
 
 function setupTaskHoverInteractions(taskItem, settings) {
-    if (!taskDOMManager) return;
-    taskDOMManager.setupTaskHoverInteractions(taskItem, settings);
+    // This method was removed from TaskEvents as it's integrated into setupTaskInteractions
+    // Kept for backward compatibility
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskHoverInteractions?.(taskItem, settings);
 }
 
 function setupTaskFocusInteractions(taskItem) {
-    if (!taskDOMManager) return;
-    taskDOMManager.setupTaskFocusInteractions(taskItem);
+    // This method was removed from TaskEvents as it's integrated into setupTaskInteractions
+    // Kept for backward compatibility
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskFocusInteractions?.(taskItem);
 }
 
 function finalizeTaskCreation(taskElements, taskContext, options) {
@@ -1571,25 +987,26 @@ function updateUIAfterTaskCreation(shouldSave) {
 // GROUP 6: Rendering Wrappers
 // ============================================
 
+// ✅ DELEGATES TO: taskRenderer.js
 async function renderTasks(tasksArray) {
-    if (!taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager not initialized');
+    if (!taskDOMManager?.renderer) {
+        console.warn('⚠️ TaskRenderer not initialized');
         return;
     }
-    return await taskDOMManager.renderTasks(tasksArray);
+    return await taskDOMManager.renderer.renderTasks(tasksArray);
 }
 
 async function refreshUIFromState(providedState) {
-    if (!taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager not initialized');
+    if (!taskDOMManager?.renderer) {
+        console.warn('⚠️ TaskRenderer not initialized');
         return;
     }
-    return await taskDOMManager.refreshUIFromState(providedState);
+    return await taskDOMManager.renderer.refreshUIFromState(providedState);
 }
 
 async function refreshTaskListUI() {
-    if (!taskDOMManager) return;
-    return await taskDOMManager.refreshTaskListUI();
+    if (!taskDOMManager?.renderer) return;
+    return await taskDOMManager.renderer.refreshTaskListUI();
 }
 
 // ============================================

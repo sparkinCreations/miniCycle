@@ -12,9 +12,33 @@
  * - Error handling and graceful degradation
  */
 
-export async function runUndoRedoManagerTests(resultsDiv) {
+export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 UndoRedoManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
+    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
+    let savedRealData = {};
+    if (!isPartOfSuite) {
+        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
+        protectedKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedRealData[key] = value;
+            }
+        });
+        console.log('🔒 Saved original localStorage for individual undoRedoManager test');
+    }
+
+    // Helper to restore original data after all tests (only when running individually)
+    function restoreOriginalData() {
+        if (!isPartOfSuite) {
+            localStorage.clear();
+            Object.keys(savedRealData).forEach(key => {
+                localStorage.setItem(key, savedRealData[key]);
+            });
+            console.log('✅ Individual undoRedoManager test completed - original localStorage restored');
+        }
+    }
+
 
     // Import the module functions
     const {
@@ -1335,5 +1359,9 @@ export async function runUndoRedoManagerTests(resultsDiv) {
         resultsDiv.innerHTML += '<div class="result fail">⚠️ Needs work. Review failing tests.</div>';
     }
 
-    return { passed: passed.count, total: total.count };
+    
+    // 🔓 RESTORE original localStorage data (only when running individually)
+    restoreOriginalData();
+
+return { passed: passed.count, total: total.count };
 }
