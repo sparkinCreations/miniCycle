@@ -287,7 +287,10 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
         document.body.appendChild(previewWindow);
 
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData
+            },
             getElementById: (id) => document.getElementById(id)
         };
 
@@ -310,7 +313,10 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
         document.body.appendChild(previewWindow);
 
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData
+            },
             getElementById: (id) => document.getElementById(id)
         };
 
@@ -508,23 +514,27 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
 
         delete window.AppState;
 
+        // ✅ Updated: updatePreview now requires AppState, so provide it in mockDeps
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
+            AppState: {
+                isReady: () => true,
+                get: () => schemaData
+            },
             showNotification: () => {}
         };
 
         const instance = new CycleSwitcher(mockDeps);
 
-        // Should work with localStorage fallback
+        // Should work with provided AppState
         const previewWindow = document.createElement('div');
         previewWindow.id = 'switch-preview-window';
         document.body.appendChild(previewWindow);
 
         instance.updatePreview('Morning Routine');
 
-        // Should still render preview
+        // Should render preview
         if (!previewWindow.innerHTML) {
-            throw new Error('Should work without AppState using localStorage');
+            throw new Error('Should work with provided AppState mock');
         }
     });
 

@@ -575,14 +575,25 @@ export async function runTaskDOMTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 
     await test('handles missing sanitizeInput gracefully', () => {
-        const manager = new TaskDOMManager({
-            sanitizeInput: undefined
-        });
+        // Save and clear window.sanitizeInput to ensure no fallback available
+        const savedSanitize = window.sanitizeInput;
+        delete window.sanitizeInput;
 
-        const result = manager.validator.validateAndSanitizeTaskInput('test');
+        try {
+            const manager = new TaskDOMManager({
+                sanitizeInput: undefined
+            });
 
-        if (result !== null) {
-            throw new Error('Should return null when sanitizeInput unavailable');
+            const result = manager.validator.validateAndSanitizeTaskInput('test');
+
+            if (result !== null) {
+                throw new Error('Should return null when sanitizeInput unavailable');
+            }
+        } finally {
+            // Restore window.sanitizeInput
+            if (savedSanitize) {
+                window.sanitizeInput = savedSanitize;
+            }
         }
     });
 
