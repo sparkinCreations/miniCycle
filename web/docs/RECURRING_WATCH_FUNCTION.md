@@ -45,7 +45,7 @@ setInterval(() => {
 function scheduleNextOccurrence(task) {
     const nextTime = calculateNextOccurrence(task.schedule);
     const delay = nextTime - Date.now();
-    
+
     setTimeout(() => {
         addRecurringTask(task);
         scheduleNextOccurrence(task);
@@ -58,17 +58,17 @@ function scheduleNextOccurrence(task) {
 #### Browser Environment Limitations
 
 1. **Maximum Timeout Limitation**
-- `setTimeout` becomes unreliable for delays > ~24 days
-- Recurring tasks often need to schedule weeks or months ahead
-1. **Tab Backgrounding Issues**
-- Browsers throttle or cancel timeouts in background tabs
-- Tasks would fail to execute when app isn’t actively viewed
-1. **Sleep/Hibernate Recovery**
-- Device sleep states can cause timeouts to never fire
-- Polling approach checks and recovers on next app activation
-1. **Browser Tab Management**
-- Users frequently close/reopen tabs
-- Timeouts are lost on tab closure; polling persists via localStorage
+   - `setTimeout` becomes unreliable for delays > ~24 days
+   - Recurring tasks often need to schedule weeks or months ahead
+2. **Tab Backgrounding Issues**
+   - Browsers throttle or cancel timeouts in background tabs
+   - Tasks would fail to execute when app isn't actively viewed
+3. **Sleep/Hibernate Recovery**
+   - Device sleep states can cause timeouts to never fire
+   - Polling approach checks and recovers on next app activation
+4. **Browser Tab Management**
+   - Users frequently close/reopen tabs
+   - Timeouts are lost on tab closure; polling persists via localStorage
 
 #### Reliability Advantages
 
@@ -83,17 +83,17 @@ function scheduleNextOccurrence(task) {
 #### Implementation Benefits
 
 1. **Simplified State Management**
-- No timeout IDs to track and manage
-- No complex cleanup on task deletion/modification
-- Single check function handles all recurring tasks
-1. **Graceful Degradation**
-- Functions correctly even with extended offline periods
-- Handles multiple missed executions intelligently
-- No race conditions between multiple timeouts
-1. **Debugging and Maintenance**
-- Predictable execution pattern
-- Easy to verify system state
-- Clear audit trail of when checks occur
+   - No timeout IDs to track and manage
+   - No complex cleanup on task deletion/modification
+   - Single check function handles all recurring tasks
+2. **Graceful Degradation**
+   - Functions correctly even with extended offline periods
+   - Handles multiple missed executions intelligently
+   - No race conditions between multiple timeouts
+3. **Debugging and Maintenance**
+   - Predictable execution pattern
+   - Easy to verify system state
+   - Clear audit trail of when checks occur
 
 ## Performance Considerations
 

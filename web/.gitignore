@@ -1,6 +1,6 @@
-# Dependencies
+# Dependencies (anywhere in repo)
+**/node_modules/
 node_modules/
-package-lock.json
 
 # Test artifacts
 tests/automated/*.log
@@ -27,3 +27,6 @@ npm-debug.log*
 # Temporary files
 .tmp/
 temp/
+
+# Documentation archives
+docs/archive/

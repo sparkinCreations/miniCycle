@@ -118,7 +118,7 @@ taskElement.addEventListener('dragstart', (e) => {
 
 #### 3. Rearrange Mode Integration
 
-- **Activation**: Three-dot menu → “Rearrange” option
+- **Activation**: Three-dot menu → "Rearrange" option
 - **Visual State**: Tasks show move arrows and drag handles
 - **Completion**: Click outside or explicit exit
 
@@ -175,12 +175,12 @@ if (userSettings.disableSwipe) {
 
 ### Progressive Enhancement Strategy
 
-The system degrades gracefully when advanced features aren’t supported:
+The system degrades gracefully when advanced features aren't supported:
 
 1. **Touch Detection Failure**: Falls back to always-visible controls
-1. **Drag and Drop Unavailable**: Shows arrow navigation by default
-1. **Gesture API Missing**: Uses click-based navigation
-1. **Older Browsers**: Provides simplified interaction model
+2. **Drag and Drop Unavailable**: Shows arrow navigation by default
+3. **Gesture API Missing**: Uses click-based navigation
+4. **Older Browsers**: Provides simplified interaction model
 
 ## Cross-Platform Event Handling
 
