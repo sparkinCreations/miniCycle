@@ -33,6 +33,10 @@ MANIFEST_FILES=(
     "manifest-lite.json"
 )
 
+PACKAGE_FILES=(
+    "package.json"
+)
+
 # ============================================
 # AUTO-DISCOVERY: Utility files with versions
 # ============================================
@@ -188,6 +192,9 @@ if [ "$UPDATE_MODE" == "1" ]; then
     for file in "${MANIFEST_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
+    for file in "${PACKAGE_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
     for file in "${UTILITY_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
@@ -237,6 +244,22 @@ elif [ "$UPDATE_MODE" == "2" ]; then
     # Manifest files
     echo "--- Manifest Files ---"
     for file in "${MANIFEST_FILES[@]}"; do
+        if [ -f "$file" ]; then
+            read -p "Update $file? (Y/n): " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+                echo "✅ Will update $file"
+            else
+                echo "⏭️  Skipping $file"
+            fi
+        fi
+    done
+    echo ""
+
+    # Package files
+    echo "--- Package Files ---"
+    for file in "${PACKAGE_FILES[@]}"; do
         if [ -f "$file" ]; then
             read -p "Update $file? (Y/n): " -n 1 -r
             echo ""
@@ -487,6 +510,17 @@ if should_update "manifest-lite.json"; then
 fi
 
 # ============================================
+# UPDATE: package.json
+# ============================================
+
+if should_update "package.json"; then
+    if backup_file "package.json"; then
+        "${SED_INPLACE[@]}" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g" package.json
+        echo "✅ Updated package.json"
+    fi
+fi
+
+# ============================================
 # UPDATE: UTILITY MODULES (AUTO-DISCOVERED)
 # ============================================
 
@@ -564,6 +598,11 @@ done
 
 # Add manifest files
 for file in "${MANIFEST_FILES[@]}"; do
+    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+done
+
+# Add package files
+for file in "${PACKAGE_FILES[@]}"; do
     echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
 done
 
@@ -647,6 +686,14 @@ fi
 if should_update "manifest-lite.json" && [ -f "manifest-lite.json" ]; then
     if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest-lite.json; then
         echo "⚠️  Warning: manifest-lite.json may not have updated correctly"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+fi
+
+# Validate package.json
+if should_update "package.json" && [ -f "package.json" ]; then
+    if ! grep -q "\"version\": \"$NEW_VERSION\"" package.json; then
+        echo "⚠️  Warning: package.json may not have updated correctly"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
 fi

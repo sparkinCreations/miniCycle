@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module dueDates
- * @version 1.335
+ * @version 1.336
  */
 
 import { appInit } from './appInitialization.js';
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        this.version = '1.335';
+        this.version = '1.336';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
