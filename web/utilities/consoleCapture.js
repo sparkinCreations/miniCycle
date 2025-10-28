@@ -11,16 +11,33 @@
  */
 
 export class MiniCycleConsoleCapture {
-    constructor() {
+    constructor(dependencies = {}) {
         this.consoleLogBuffer = [];
         this.originalConsole = {};
         this.consoleCapturing = false;
         this.autoStarted = false;
         this.captureInterval = null;
-        
+
+        // Dependency injection with fallbacks
+        this.deps = {
+            showNotification: dependencies.showNotification || this.fallbackNotification
+        };
+
         // Auto-start if conditions are met
         if (this.shouldAutoStartConsoleCapture()) {
             this.startAutoConsoleCapture();
+        }
+    }
+
+    /**
+     * Fallback notification (console only)
+     */
+    fallbackNotification(message, type = 'info', duration = 3000) {
+        // Use original console to avoid recursion
+        if (this.originalConsole.log) {
+            this.originalConsole.log(`[ConsoleCapture] ${type.toUpperCase()}: ${message}`);
+        } else {
+            console.log(`[ConsoleCapture] ${type.toUpperCase()}: ${message}`);
         }
     }
 
@@ -260,10 +277,8 @@ export class MiniCycleConsoleCapture {
         
         this.appendToTestResults("\n==========================================\n");
         this.appendToTestResults(`📊 Console capture complete - ${allLogs.length} messages displayed\n\n`);
-        
-        if (window.showNotification) {
-            window.showNotification(`📊 Displayed ${allLogs.length} console messages with enhanced migration logging`, "success", 4000);
-        }
+
+        this.deps.showNotification(`📊 Displayed ${allLogs.length} console messages with enhanced migration logging`, "success", 4000);
     }
 
     clearAllConsoleLogs() {
@@ -271,10 +286,8 @@ export class MiniCycleConsoleCapture {
         localStorage.removeItem("miniCycle_capturedConsoleBuffer");
         this.appendToTestResults("🧹 All console logs cleared (including stored buffer)\n");
         this.appendToTestResults("✨ Ready to capture new migration activity\n\n");
-        
-        if (window.showNotification) {
-            window.showNotification("🧹 Console logs cleared - ready for new capture", "info", 2000);
-        }
+
+        this.deps.showNotification("🧹 Console logs cleared - ready for new capture", "info", 2000);
     }
 
     // Enhanced error filtering with more sophisticated detection
@@ -360,19 +373,13 @@ export class MiniCycleConsoleCapture {
         
         if (categories['Critical Errors'].length > 0) {
             this.appendToTestResults("🚨 ATTENTION: Critical errors detected! Review the error messages above.\n\n");
-            if (window.showNotification) {
-                window.showNotification(`🚨 Found ${errorMessages.length} migration messages including ${categories['Critical Errors'].length} critical errors`, "error", 6000);
-            }
+            this.deps.showNotification(`🚨 Found ${errorMessages.length} migration messages including ${categories['Critical Errors'].length} critical errors`, "error", 6000);
         } else if (categories['Warnings'].length > 0) {
             this.appendToTestResults("⚠️ Warnings found but no critical errors detected.\n\n");
-            if (window.showNotification) {
-                window.showNotification(`⚠️ Found ${errorMessages.length} migration messages with ${categories['Warnings'].length} warnings`, "warning", 4000);
-            }
+            this.deps.showNotification(`⚠️ Found ${errorMessages.length} migration messages with ${categories['Warnings'].length} warnings`, "warning", 4000);
         } else {
             this.appendToTestResults("✅ No critical errors found in migration messages.\n\n");
-            if (window.showNotification) {
-                window.showNotification(`📊 Found ${errorMessages.length} migration messages - no critical errors`, "success", 4000);
-            }
+            this.deps.showNotification(`📊 Found ${errorMessages.length} migration messages - no critical errors`, "success", 4000);
         }
     }
 

@@ -23,9 +23,24 @@
 import { appInit } from '../appInitialization.js';
 
 export class ModalManager {
-    constructor() {
+    constructor(dependencies = {}) {
         this.version = '1.338';
         this.initialized = false;
+
+        // Dependency injection with fallbacks
+        this.deps = {
+            showNotification: dependencies.showNotification || this.fallbackNotification,
+            hideMainMenu: dependencies.hideMainMenu || window.hideMainMenu,
+            sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
+            safeAddEventListener: dependencies.safeAddEventListener || window.safeAddEventListener
+        };
+    }
+
+    /**
+     * Fallback notification (console only)
+     */
+    fallbackNotification(message, type = 'info', duration = 3000) {
+        console.log(`[ModalManager] ${type.toUpperCase()}: ${message}`);
     }
 
     async init() {
@@ -129,8 +144,8 @@ export class ModalManager {
         // Open Modal
         openFeedbackBtn.addEventListener("click", () => {
             feedbackModal.style.display = "flex";
-            if (window.hideMainMenu) {
-                window.hideMainMenu();
+            if (this.deps.hideMainMenu) {
+                this.deps.hideMainMenu();
             }
             if (thankYouMessage) {
                 thankYouMessage.style.display = "none";
@@ -189,15 +204,11 @@ export class ModalManager {
                             feedbackModal.style.display = "none";
                         }, 2000);
                     } else {
-                        if (window.showNotification) {
-                            window.showNotification("❌ Error sending feedback. Please try again.");
-                        }
+                        this.deps.showNotification("❌ Error sending feedback. Please try again.", "error");
                     }
                 })
                 .catch(error => {
-                    if (window.showNotification) {
-                        window.showNotification("❌ Network error. Please try again later.");
-                    }
+                    this.deps.showNotification("❌ Network error. Please try again later.", "error");
                 })
                 .finally(() => {
                     if (submitButton) {
@@ -312,8 +323,8 @@ export class ModalManager {
      * Set up global keyboard handlers (ESC key)
      */
     setupGlobalKeyHandlers() {
-        if (window.safeAddEventListener) {
-            window.safeAddEventListener(document, "keydown", (e) => {
+        if (this.deps.safeAddEventListener) {
+            this.deps.safeAddEventListener(document, "keydown", (e) => {
                 if (e.key === "Escape") {
                     e.preventDefault();
                     this.closeAllModals();

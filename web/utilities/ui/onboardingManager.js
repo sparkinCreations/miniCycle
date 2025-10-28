@@ -23,9 +23,25 @@
 import { appInit } from '../appInitialization.js';
 
 export class OnboardingManager {
-    constructor() {
+    constructor(dependencies = {}) {
         this.version = '1.338';
         this.initialized = false;
+
+        // Dependency injection with fallbacks
+        this.deps = {
+            showNotification: dependencies.showNotification || this.fallbackNotification,
+            AppState: dependencies.AppState || window.AppState,
+            showCycleCreationModal: dependencies.showCycleCreationModal || window.showCycleCreationModal,
+            completeInitialSetup: dependencies.completeInitialSetup || window.completeInitialSetup,
+            safeAddEventListenerById: dependencies.safeAddEventListenerById || window.safeAddEventListenerById
+        };
+    }
+
+    /**
+     * Fallback notification (console only)
+     */
+    fallbackNotification(message, type = 'info', duration = 3000) {
+        console.log(`[OnboardingManager] ${type.toUpperCase()}: ${message}`);
     }
 
     async init() {
@@ -41,8 +57,8 @@ export class OnboardingManager {
      * Set up event listeners for reset onboarding button
      */
     setupEventListeners() {
-        if (window.safeAddEventListenerById) {
-            window.safeAddEventListenerById("reset-onboarding", "click", () => {
+        if (this.deps.safeAddEventListenerById) {
+            this.deps.safeAddEventListenerById("reset-onboarding", "click", () => {
                 this.resetOnboarding();
             });
             console.log('✅ Onboarding event listeners attached');
@@ -249,28 +265,24 @@ export class OnboardingManager {
     resetOnboarding() {
         console.log('🎯 Resetting onboarding (Schema 2.5 only)...');
 
-        if (!window.AppState?.isReady?.()) {
+        if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for reset onboarding');
-            if (window.showNotification) {
-                window.showNotification("❌ AppState not ready.", "error", 2000);
-            }
+            this.deps.showNotification("❌ AppState not ready.", "error", 2000);
             return;
         }
 
         // Clear onboarding flag using AppState
-        window.AppState.update(state => {
+        this.deps.AppState.update(state => {
             state.settings.onboardingCompleted = false;
         }, true);
 
         console.log('✅ Onboarding flag reset in AppState');
 
-        if (window.showNotification) {
-            window.showNotification(
-                "✅ Onboarding will show again next time you open the app (Schema 2.5).",
-                "success",
-                3000
-            );
-        }
+        this.deps.showNotification(
+            "✅ Onboarding will show again next time you open the app (Schema 2.5).",
+            "success",
+            3000
+        );
     }
 }
 
