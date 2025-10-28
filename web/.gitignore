@@ -32,5 +32,8 @@ npm-debug.log*
 .tmp/
 temp/
 
+# Backup folders
+backup/
+
 # Documentation archives
 docs/archive/
