@@ -156,6 +156,19 @@ export class TaskDOMManager {
                     getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id))
                 });
 
+                // ✅ CRITICAL: Also initialize the global taskRenderer instance for window.renderTasks()
+                if (typeof window.initTaskRenderer === 'function') {
+                    window.initTaskRenderer({
+                        AppState: this.dependencies.AppState || window.AppState,
+                        updateProgressBar: this.dependencies.updateProgressBar || this.fallbackUpdate,
+                        checkCompleteAllButton: this.dependencies.checkCompleteAllButton || this.fallbackUpdate,
+                        updateStatsPanel: this.dependencies.updateStatsPanel || this.fallbackUpdate,
+                        updateMainMenuHeader: this.dependencies.updateMainMenuHeader || this.fallbackUpdate,
+                        getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id))
+                    });
+                    console.log('✅ Global TaskRenderer instance initialized');
+                }
+
                 // Initialize events module
                 this.events = this.dependencies.events || new TaskEvents({
                     AppState: this.dependencies.AppState || window.AppState,
