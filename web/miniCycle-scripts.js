@@ -1202,6 +1202,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await import(withV('./utilities/testing-modal.js'));
             console.log('✅ Testing modal loaded');
 
+            // ✅ Setup testing modal button handlers
+            if (typeof window.setupTestingModal === 'function') {
+                window.setupTestingModal();
+                console.log('✅ Testing modal initialized');
+            } else {
+                console.warn('⚠️ setupTestingModal function not found');
+            }
+
             await import(withV('./utilities/testing-modal-integration.js'));
             console.log('✅ Testing modal integration loaded');
         } catch (error) {
@@ -1503,12 +1511,17 @@ async function initialSetup() {
     }
     
     // ✅ Complete setup for existing cycles
-    completeInitialSetup(activeCycle, null, schemaData);
+    await completeInitialSetup(activeCycle, null, schemaData);
 }
 
 // ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
 async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
   console.log('✅ Completing initial setup for cycle:', activeCycle);
+
+  // ✅ CRITICAL: Wait for TaskDOM to be fully initialized before loading tasks
+  console.log('⏳ Waiting for TaskDOM to be ready...');
+  await appInit.waitForApp(); // Ensures all Phase 2 modules (including TaskDOM) are initialized
+  console.log('✅ TaskDOM ready, proceeding with task loading');
 
   // Call the loader only via the global (attached by cycleLoader import)
   console.log('🎯 Loading miniCycle...');

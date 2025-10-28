@@ -137,6 +137,15 @@ export class TaskDOMManager {
                     showNotification: this.dependencies.showNotification || this.fallbackNotification
                 });
 
+                // ✅ CRITICAL: Also initialize the global taskValidator instance for window.validateAndSanitizeTaskInput()
+                if (typeof window.initTaskValidator === 'function') {
+                    window.initTaskValidator({
+                        sanitizeInput: this.dependencies.sanitizeInput || window.sanitizeInput,
+                        showNotification: this.dependencies.showNotification || this.fallbackNotification
+                    });
+                    console.log('✅ Global TaskValidator instance initialized');
+                }
+
                 // Initialize renderer module
                 this.renderer = this.dependencies.renderer || new TaskRenderer({
                     AppState: this.dependencies.AppState || window.AppState,
@@ -156,6 +165,19 @@ export class TaskDOMManager {
                     querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
                     safeAddEventListener: this.dependencies.safeAddEventListener || this.fallbackAddListener
                 });
+
+                // ✅ CRITICAL: Also initialize the global taskEvents instance for window.setupTaskInteractions()
+                if (typeof window.initTaskEvents === 'function') {
+                    window.initTaskEvents({
+                        AppState: this.dependencies.AppState || window.AppState,
+                        showNotification: this.dependencies.showNotification || this.fallbackNotification,
+                        autoSave: this.dependencies.autoSave || this.fallbackAutoSave,
+                        getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
+                        querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+                        safeAddEventListener: this.dependencies.safeAddEventListener || this.fallbackAddListener
+                    });
+                    console.log('✅ Global TaskEvents instance initialized');
+                }
 
                 this.modulesLoaded = true;
                 console.log('✅ Task sub-modules loaded successfully (versioned)');
