@@ -17,38 +17,20 @@
  */
 
 import { appInit } from '../appInitialization.js';
-import { TaskValidator } from './taskValidation.js';
-import { TaskUtils } from './taskUtils.js';
-import { TaskRenderer } from './taskRenderer.js';
-import { TaskEvents } from './taskEvents.js';
+
+// ✅ Module classes will be loaded dynamically with versioning
+let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;
 
 export class TaskDOMManager {
     constructor(dependencies = {}) {
-        // Initialize validator module
-        this.validator = dependencies.validator || new TaskValidator({
-            sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
-            showNotification: dependencies.showNotification || this.fallbackNotification
-        });
+        // Store dependencies first
+        this.dependencies = dependencies;
 
-        // Initialize renderer module
-        this.renderer = dependencies.renderer || new TaskRenderer({
-            AppState: dependencies.AppState || window.AppState,
-            updateProgressBar: dependencies.updateProgressBar || this.fallbackUpdate,
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || this.fallbackUpdate,
-            updateStatsPanel: dependencies.updateStatsPanel || this.fallbackUpdate,
-            updateMainMenuHeader: dependencies.updateMainMenuHeader || this.fallbackUpdate,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id))
-        });
-
-        // Initialize events module
-        this.events = dependencies.events || new TaskEvents({
-            AppState: dependencies.AppState || window.AppState,
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            autoSave: dependencies.autoSave || this.fallbackAutoSave,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener
-        });
+        // Modules will be initialized in init() after dynamic import
+        this.validator = null;
+        this.renderer = null;
+        this.events = null;
+        this.modulesLoaded = false;
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
@@ -121,7 +103,65 @@ export class TaskDOMManager {
                 return;
             }
 
-            // ✅ Wait for core systems (AppState + data) to be ready
+            // ✅ STEP 1: Load sub-modules dynamically with versioning
+            if (!this.modulesLoaded) {
+                console.log('📦 Loading task sub-modules with versioning...');
+
+                // Get version for cache busting
+                const version = typeof self !== 'undefined' && self.APP_VERSION
+                    ? self.APP_VERSION
+                    : window.APP_VERSION || '1.337';
+
+                // Load all 4 sub-modules with versioned imports
+                const [
+                    { TaskValidator: ValidatorClass },
+                    { TaskUtils: UtilsClass },
+                    { TaskRenderer: RendererClass },
+                    { TaskEvents: EventsClass }
+                ] = await Promise.all([
+                    import(`./taskValidation.js?v=${version}`),
+                    import(`./taskUtils.js?v=${version}`),
+                    import(`./taskRenderer.js?v=${version}`),
+                    import(`./taskEvents.js?v=${version}`)
+                ]);
+
+                // Store classes for module-level access
+                TaskValidator = ValidatorClass;
+                TaskUtils = UtilsClass;
+                TaskRenderer = RendererClass;
+                TaskEvents = EventsClass;
+
+                // Initialize validator module
+                this.validator = this.dependencies.validator || new TaskValidator({
+                    sanitizeInput: this.dependencies.sanitizeInput || window.sanitizeInput,
+                    showNotification: this.dependencies.showNotification || this.fallbackNotification
+                });
+
+                // Initialize renderer module
+                this.renderer = this.dependencies.renderer || new TaskRenderer({
+                    AppState: this.dependencies.AppState || window.AppState,
+                    updateProgressBar: this.dependencies.updateProgressBar || this.fallbackUpdate,
+                    checkCompleteAllButton: this.dependencies.checkCompleteAllButton || this.fallbackUpdate,
+                    updateStatsPanel: this.dependencies.updateStatsPanel || this.fallbackUpdate,
+                    updateMainMenuHeader: this.dependencies.updateMainMenuHeader || this.fallbackUpdate,
+                    getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id))
+                });
+
+                // Initialize events module
+                this.events = this.dependencies.events || new TaskEvents({
+                    AppState: this.dependencies.AppState || window.AppState,
+                    showNotification: this.dependencies.showNotification || this.fallbackNotification,
+                    autoSave: this.dependencies.autoSave || this.fallbackAutoSave,
+                    getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
+                    querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+                    safeAddEventListener: this.dependencies.safeAddEventListener || this.fallbackAddListener
+                });
+
+                this.modulesLoaded = true;
+                console.log('✅ Task sub-modules loaded successfully (versioned)');
+            }
+
+            // ✅ STEP 2: Wait for core systems (AppState + data) to be ready
             console.log('⏳ TaskDOMManager waiting for core systems...');
             await appInit.waitForCore();
             console.log('✅ Core systems ready, TaskDOM ready for rendering');
