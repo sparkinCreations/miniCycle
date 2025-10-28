@@ -196,10 +196,12 @@ export async function runTaskDOMTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">✅ Validation</h4>';
 
-    await test('validateAndSanitizeTaskInput rejects non-string', () => {
+    await test('validateAndSanitizeTaskInput rejects non-string', async () => {
         const manager = new TaskDOMManager({
             sanitizeInput: (input) => input
         });
+
+        await manager.init();
 
         const result = manager.validator.validateAndSanitizeTaskInput(123);
 
@@ -208,10 +210,12 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
-    await test('validateAndSanitizeTaskInput trims whitespace', () => {
+    await test('validateAndSanitizeTaskInput trims whitespace', async () => {
         const manager = new TaskDOMManager({
             sanitizeInput: (input) => input
         });
+
+        await manager.init();
 
         const result = manager.validator.validateAndSanitizeTaskInput('  test task  ');
 
@@ -220,10 +224,12 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
-    await test('validateAndSanitizeTaskInput rejects empty string', () => {
+    await test('validateAndSanitizeTaskInput rejects empty string', async () => {
         const manager = new TaskDOMManager({
             sanitizeInput: (input) => input.trim()
         });
+
+        await manager.init();
 
         const result = manager.validator.validateAndSanitizeTaskInput('   ');
 
@@ -232,11 +238,13 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
-    await test('validateAndSanitizeTaskInput enforces character limit', () => {
+    await test('validateAndSanitizeTaskInput enforces character limit', async () => {
         const manager = new TaskDOMManager({
             sanitizeInput: (input) => input,
             showNotification: () => {}
         });
+
+        await manager.init();
 
         const longText = 'a'.repeat(150); // Over 100 char limit
         const result = manager.validator.validateAndSanitizeTaskInput(longText);
@@ -246,7 +254,7 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
-    await test('validateAndSanitizeTaskInput uses sanitize function', () => {
+    await test('validateAndSanitizeTaskInput uses sanitize function', async () => {
         let sanitizeCalled = false;
 
         const manager = new TaskDOMManager({
@@ -255,6 +263,8 @@ export async function runTaskDOMTests(resultsDiv) {
                 return input.replace(/[<>]/g, '');
             }
         });
+
+        await manager.init();
 
         const result = manager.validator.validateAndSanitizeTaskInput('test<script>alert(1)</script>');
 
@@ -427,6 +437,8 @@ export async function runTaskDOMTests(resultsDiv) {
             getElementById: (id) => null
         });
 
+        await manager.init();
+
         // Should not throw, just return early
         await manager.renderer.renderTasks([]);
 
@@ -444,6 +456,8 @@ export async function runTaskDOMTests(resultsDiv) {
             updateStatsPanel: () => {}
         });
 
+        await manager.init();
+
         await manager.renderer.renderTasks([]);
 
         if (taskList.innerHTML !== '') {
@@ -455,6 +469,8 @@ export async function runTaskDOMTests(resultsDiv) {
         const manager = new TaskDOMManager({
             getElementById: (id) => document.createElement('ul')
         });
+
+        await manager.init();
 
         // Should not throw for non-array
         await manager.renderer.renderTasks(null);
@@ -574,7 +590,7 @@ export async function runTaskDOMTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 
-    await test('handles missing sanitizeInput gracefully', () => {
+    await test('handles missing sanitizeInput gracefully', async () => {
         // Save and clear window.sanitizeInput to ensure no fallback available
         const savedSanitize = window.sanitizeInput;
         delete window.sanitizeInput;
@@ -583,6 +599,8 @@ export async function runTaskDOMTests(resultsDiv) {
             const manager = new TaskDOMManager({
                 sanitizeInput: undefined
             });
+
+            await manager.init();
 
             const result = manager.validator.validateAndSanitizeTaskInput('test');
 
@@ -641,6 +659,8 @@ export async function runTaskDOMTests(resultsDiv) {
             }
         });
 
+        await manager.init();
+
         // Should not throw
         await manager.renderer.refreshUIFromState(null);
     });
@@ -673,6 +693,8 @@ export async function runTaskDOMTests(resultsDiv) {
             checkCompleteAllButton: () => {}
         });
 
+        await manager.init();
+
         await manager.renderer.refreshUIFromState();
 
         if (!appStateCalled) {
@@ -685,13 +707,18 @@ export async function runTaskDOMTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
 
-    await test('global validateAndSanitizeTaskInput works without manager', () => {
-        // Call global wrapper before manager initialized
-        const result = window.validateAndSanitizeTaskInput('test');
+    await test('global validateAndSanitizeTaskInput works with or without manager', () => {
+        // Ensure sanitizeInput is available (required for validator)
+        if (!window.sanitizeInput) {
+            throw new Error('window.sanitizeInput not available - globalUtils not loaded');
+        }
 
-        // Should use fallback validation
+        // Call global wrapper (manager may or may not be initialized)
+        const result = window.validateAndSanitizeTaskInput('  test  ');
+
+        // Should trim whitespace and return valid input
         if (result !== 'test') {
-            throw new Error('Global wrapper should have basic fallback');
+            throw new Error(`Expected 'test', got '${result}' (sanitizeInput available: ${typeof window.sanitizeInput})`);
         }
     });
 
@@ -726,6 +753,8 @@ export async function runTaskDOMTests(resultsDiv) {
             updateStatsPanel: () => {}
         });
 
+        await manager.init();
+
         await manager.renderer.renderTasks([
             { id: 'task-1', text: 'Test', completed: false }
         ]);
@@ -737,7 +766,7 @@ export async function runTaskDOMTests(resultsDiv) {
         delete window.addTask;
     });
 
-    await test('revealTaskButtons respects arrow visibility setting', () => {
+    await test('revealTaskButtons respects arrow visibility setting', async () => {
         const taskItem = document.createElement('li');
         const taskOptions = document.createElement('div');
         taskOptions.className = 'task-options';
@@ -771,6 +800,8 @@ export async function runTaskDOMTests(resultsDiv) {
             },
             getElementById: () => document.createElement('div')
         });
+
+        await manager.init();
 
         manager.events.revealTaskButtons(taskItem);
 

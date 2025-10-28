@@ -18,10 +18,16 @@ export class MiniCycleConsoleCapture {
         this.autoStarted = false;
         this.captureInterval = null;
 
-        // Dependency injection with fallbacks
-        this.deps = {
-            showNotification: dependencies.showNotification || this.fallbackNotification
-        };
+        // Store injected dependencies
+        this._injectedDeps = dependencies;
+
+        // Dependency injection with runtime fallbacks for testability
+        // Using getters so tests can mock window functions after construction
+        Object.defineProperty(this, 'deps', {
+            get: () => ({
+                showNotification: this._injectedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this)
+            })
+        });
 
         // Auto-start if conditions are met
         if (this.shouldAutoStartConsoleCapture()) {

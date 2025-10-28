@@ -27,14 +27,20 @@ export class OnboardingManager {
         this.version = '1.338';
         this.initialized = false;
 
-        // Dependency injection with fallbacks
-        this.deps = {
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            AppState: dependencies.AppState || window.AppState,
-            showCycleCreationModal: dependencies.showCycleCreationModal || window.showCycleCreationModal,
-            completeInitialSetup: dependencies.completeInitialSetup || window.completeInitialSetup,
-            safeAddEventListenerById: dependencies.safeAddEventListenerById || window.safeAddEventListenerById
-        };
+        // Store injected dependencies
+        this._injectedDeps = dependencies;
+
+        // Dependency injection with runtime fallbacks for testability
+        // Using getters so tests can mock window.AppState after construction
+        Object.defineProperty(this, 'deps', {
+            get: () => ({
+                showNotification: this._injectedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
+                AppState: this._injectedDeps.AppState || window.AppState,
+                showCycleCreationModal: this._injectedDeps.showCycleCreationModal || window.showCycleCreationModal,
+                completeInitialSetup: this._injectedDeps.completeInitialSetup || window.completeInitialSetup,
+                safeAddEventListenerById: this._injectedDeps.safeAddEventListenerById || window.safeAddEventListenerById
+            })
+        });
     }
 
     /**

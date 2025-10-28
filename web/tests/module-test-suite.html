@@ -433,9 +433,11 @@
                     currentModule = 'taskEvents';
                     resultsDiv.innerHTML = '<p>✅ TaskEvents loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskDOM') {
+                    // Load globalUtils first (provides window.sanitizeInput needed by validator)
+                    await import(`../utilities/globalUtils.js?v=${cacheBuster}`);
                     await import(`../utilities/task/taskDOM.js?v=${cacheBuster}`);
                     currentModule = 'taskDOM';
-                    resultsDiv.innerHTML = '<p>✅ TaskDOM loaded. Click "Run Tests" to begin.</p>';
+                    resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils). Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;

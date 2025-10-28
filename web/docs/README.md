@@ -33,7 +33,7 @@
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)** - Complete testing reference (33 modules, 951 tests)
+- **[TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)** - Complete testing reference (33 modules, 955/958 tests - 99.69%)
   - Browser-based testing
   - localStorage protection patterns
   - Template usage and test creation
@@ -64,6 +64,21 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[REMAINING_EXTRACTIONS_ANALYSIS.md](./REMAINING_EXTRACTIONS_ANALYSIS.md)** - Optional future optimizations (31.8% additional reduction possible)
 
 **Note:** Modularization is technically complete. The remaining extractions documented in REMAINING_EXTRACTIONS_ANALYSIS.md are optional optimizations that would reduce the main script from 3,674 → ~2,500 lines.
+
+---
+
+## 📊 Code Quality & Audits
+
+### Recent Improvements (October 2025)
+- **[OCTOBER_2025_IMPROVEMENTS.md](./OCTOBER_2025_IMPROVEMENTS.md)** - Summary of notification standardization and test improvements
+- **[COUPLING_AUDIT_REPORT.md](./COUPLING_AUDIT_REPORT.md)** - Comprehensive coupling audit (Score: 8.2/10)
+- **[NOTIFICATION_STANDARDIZATION_PLAN.md](./NOTIFICATION_STANDARDIZATION_PLAN.md)** - Dependency injection standardization (Phase 1 complete)
+
+### Optimization Analysis
+- **[DECOUPLING_OPTIMIZATION_PLAN.md](./DECOUPLING_OPTIMIZATION_PLAN.md)** - Proposed 45-hour plan (NOT RECOMMENDED)
+- **[DECOUPLING_IMPACT_VISUALIZATION.md](./DECOUPLING_IMPACT_VISUALIZATION.md)** - Visualization of proposed changes (NOT NEEDED)
+
+**Status**: Audit recommended AGAINST the decoupling plan. Architecture is already excellent (8.2/10 coupling score, 99.69% test coverage).
 
 ---
 

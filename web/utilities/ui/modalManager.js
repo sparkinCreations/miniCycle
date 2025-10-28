@@ -27,13 +27,19 @@ export class ModalManager {
         this.version = '1.338';
         this.initialized = false;
 
-        // Dependency injection with fallbacks
-        this.deps = {
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            hideMainMenu: dependencies.hideMainMenu || window.hideMainMenu,
-            sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
-            safeAddEventListener: dependencies.safeAddEventListener || window.safeAddEventListener
-        };
+        // Store injected dependencies
+        this._injectedDeps = dependencies;
+
+        // Dependency injection with runtime fallbacks for testability
+        // Using getters so tests can mock window functions after construction
+        Object.defineProperty(this, 'deps', {
+            get: () => ({
+                showNotification: this._injectedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
+                hideMainMenu: this._injectedDeps.hideMainMenu || window.hideMainMenu,
+                sanitizeInput: this._injectedDeps.sanitizeInput || window.sanitizeInput,
+                safeAddEventListener: this._injectedDeps.safeAddEventListener || window.safeAddEventListener
+            })
+        });
     }
 
     /**
