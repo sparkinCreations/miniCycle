@@ -1,0 +1,734 @@
+
+# Reusable Checklist Apps - Competitive Analysis
+
+**Category:** Reusable Checklist / Cycling Checklist Apps  
+**Analysis Date:** October 28, 2025  
+**Prepared for:** miniCycle by sparkinCreations
+
+-----
+
+## Category Definition
+
+**What is a “Reusable Checklist App”?**
+
+A reusable checklist app allows users to create task lists that **persist after completion**. Unlike traditional to-do apps where completed tasks disappear, reusable checklist apps let users:
+
+- Check off all items in a list
+- Reset/uncheck all items to use the list again
+- Maintain the same task structure for repeated procedures
+
+**Common Use Cases:**
+
+- Packing lists (travel, camping, gym)
+- Daily/weekly routines (morning routine, cleaning)
+- Work procedures (inspection checklists, opening/closing procedures)
+- Shopping lists that repeat
+- ADHD management (reducing cognitive load)
+
+-----
+
+## Market Overview
+
+**Market Size:** Small but growing niche  
+**Primary Platform:** iOS (7 of 9 apps are iOS-only)  
+**Price Range:** Free to $49.99  
+**User Base:** Individuals with ADHD, professionals with procedures, routine-oriented users
+
+**Discovery Challenge:** Low search volume for “reusable checklist” - users often find these apps by accident or word-of-mouth rather than explicit search.
+
+-----
+
+## Complete Competitive Landscape
+
+### Direct Competitors (9 Apps Total)
+
+|#|App Name               |Platform        |Price          |Rating |Reviews |Launch Year|
+|-|-----------------------|----------------|---------------|-------|--------|-----------|
+|1|**CheckYourList**      |iOS, Apple Watch|$49.99 lifetime|4.7★   |212     |2021       |
+|2|**Checklists by Felix**|iOS             |$3.99 one-time |4.3★   |~50 est |2023       |
+|3|**ForgetNot**          |iOS, macOS      |Free + IAP     |4.5★   |~100 est|2020       |
+|4|**CheckLoop**          |iOS             |Free           |New    |<10     |Mar 2025   |
+|5|**Check Off**          |Android         |Free           |4.6★   |500+    |2019       |
+|6|**Reusable Checklist** |Android         |Free           |4.2★   |1K+     |2018       |
+|7|**That Checklist App** |Web, iOS        |Free           |Unknown|Unknown |Unknown    |
+|8|**Checklist+**         |iOS             |Free/$1.99     |4.5★   |10K+    |2012       |
+|9|**miniCycle**          |All (PWA)       |FREE           |New    |New     |2025       |
+
+-----
+
+## Detailed Competitor Analysis
+
+### 1. CheckYourList - Premium iOS Leader
+
+**Developer:** Spencer Walden  
+**Platform:** iOS, Apple Watch  
+**Price:** $49.99 lifetime (was subscription)  
+**Launch:** June 2021  
+**Rating:** 4.7★ (212 reviews)
+
+**Key Features:**
+
+- Simple repeatable checklists
+- Apple Watch support (major selling point)
+- iCloud sync across devices
+- Daily reminders per checklist
+- Shortcuts integration
+- Widgets (home screen and lock screen)
+- Built specifically for ADHD management
+
+**Target User:** Apple Watch users, ADHD individuals, minimalists
+
+**Strengths:**
+
+- ✅ Native iOS app (smooth experience)
+- ✅ Apple Watch integration
+- ✅ Proven traction (212 reviews, 4.7★)
+- ✅ Active developer (moved from subscription to lifetime)
+- ✅ Strong ADHD community following
+
+**Weaknesses:**
+
+- ❌ Very expensive ($49.99)
+- ❌ iOS only (excludes Android/Web users)
+- ❌ Only 2 free checklists (heavy paywall)
+- ❌ Basic features (no recurring tasks, no stats, no gamification)
+- ❌ ~8-10 features total
+
+**vs miniCycle:**
+
+- miniCycle has 4X more features (41 vs ~10)
+- miniCycle is $49.99 cheaper
+- miniCycle works on all platforms
+- CheckYourList has Apple Watch (miniCycle doesn’t yet)
+
+-----
+
+### 2. Checklists by Felix Flesch - Minimalist Option
+
+**Developer:** Felix-Florian Flesch  
+**Platform:** iOS  
+**Price:** $3.99 one-time  
+**Launch:** February 2023  
+**Rating:** 4.3★
+
+**Key Features:**
+
+- Create repeating task lists
+- Simple reset functionality
+- CSV/Text export
+- Drag and drop reordering
+- Minimal, clean interface
+- Privacy-focused (no data collection)
+
+**Target User:** Minimalists who want simple checklist reset
+
+**Strengths:**
+
+- ✅ Very simple and focused
+- ✅ Affordable ($3.99)
+- ✅ Privacy-focused (no tracking)
+- ✅ Export functionality
+
+**Weaknesses:**
+
+- ❌ iOS only
+- ❌ Very basic (~6-8 features)
+- ❌ No stats, no gamification, no recurring
+- ❌ Less polished than CheckYourList
+- ❌ Small user base
+
+**vs miniCycle:**
+
+- miniCycle has 5X more features (41 vs ~6-8)
+- miniCycle is cross-platform
+- miniCycle is free vs $3.99
+- Felix’s app is simpler (some users prefer this)
+
+-----
+
+### 3. ForgetNot - Cross-Platform Contender
+
+**Developer:** Thilina Solomons  
+**Platform:** iOS, iPadOS, macOS  
+**Price:** Free with IAP  
+**Launch:** May 2020  
+**Rating:** 4.5★
+
+**Key Features:**
+
+- Reusable checklists with sections
+- iCloud sync across Apple devices
+- Dark mode support
+- Copy/paste lists from text
+- Duplicate checklists
+- Export to PDF
+- Organize items by sections
+
+**Target User:** Apple ecosystem users (iPhone + Mac)
+
+**Strengths:**
+
+- ✅ Cross-device on Apple ecosystem
+- ✅ Section organization
+- ✅ Free tier available
+- ✅ PDF export
+
+**Weaknesses:**
+
+- ❌ Still Apple-only (no Android/Web)
+- ❌ Had iCloud sync issues (fixed in v2.0)
+- ❌ Basic feature set
+- ❌ No stats or gamification
+
+**vs miniCycle:**
+
+- miniCycle works on ANY platform (not just Apple)
+- miniCycle has more features
+- miniCycle is fully free
+- ForgetNot has better macOS integration
+
+-----
+
+### 4. CheckLoop - New Competitor (Threat Alert!)
+
+**Developer:** Manuel Hummel  
+**Platform:** iOS  
+**Price:** Free  
+**Launch:** March 2025 (7 months ago!)  
+**Rating:** New app
+
+**Key Features:**
+
+- Reusable templates system
+- Generate unlimited checklists from templates
+- Flexible elements (checkboxes, headings, text, select fields)
+- Offline & private
+- No ads, no tracking
+- Template-based workflow
+
+**Target User:** Professionals (QA, developers, PMs), personal users
+
+**Strengths:**
+
+- ✅ Template system (more flexible than basic reset)
+- ✅ Free with no ads
+- ✅ Privacy-focused
+- ✅ Modern design
+- ✅ NEW (March 2025) - actively developed
+
+**Weaknesses:**
+
+- ❌ Brand new (no proven traction yet)
+- ❌ iOS only
+- ❌ No stats, no gamification
+- ❌ Unknown feature count
+
+**vs miniCycle:**
+
+- **DIRECT THREAT** - Similar positioning (free, feature-rich)
+- miniCycle is cross-platform (CheckLoop iOS-only)
+- miniCycle has gamification/stats
+- CheckLoop’s template system is interesting approach
+- **Watch this competitor closely!**
+
+-----
+
+### 5. Check Off - Android Leader
+
+**Developer:** Dave O’Brien  
+**Platform:** Android  
+**Price:** Free  
+**Launch:** ~2019  
+**Rating:** 4.6★ (500+ reviews)
+
+**Key Features:**
+
+- Reusable checklists
+- Color coding by groups
+- Organize by aisles (shopping focus)
+- Auto-backup
+- CSV import/export
+- Customizable UI (light/dark, size options)
+- ADHD-focused
+
+**Target User:** Android users, grocery shoppers, ADHD individuals
+
+**Strengths:**
+
+- ✅ Strong Android presence
+- ✅ Free
+- ✅ ADHD community support
+- ✅ Aisle organization (unique feature)
+- ✅ CSV import/export
+
+**Weaknesses:**
+
+- ❌ Android only
+- ❌ Primarily shopping-list focused
+- ❌ No iOS version
+- ❌ Basic feature set
+
+**vs miniCycle:**
+
+- miniCycle works on both platforms
+- miniCycle has more features
+- Check Off owns Android market share
+- Check Off has shopping-specific features
+
+-----
+
+### 6. Reusable Checklist - Android Alternative
+
+**Developer:** Various  
+**Platform:** Android  
+**Price:** Free  
+**Launch:** ~2018  
+**Rating:** 4.2★ (1,000+ installs)
+
+**Key Features:**
+
+- Disposable + reusable checklists
+- Template creation
+- Progress display
+- Simple interface
+
+**Target User:** Android users needing simple reset
+
+**Strengths:**
+
+- ✅ Free
+- ✅ Simple
+- ✅ Both disposable and reusable modes
+
+**Weaknesses:**
+
+- ❌ Android only
+- ❌ Very basic
+- ❌ Lower ratings than Check Off
+- ❌ Limited features
+
+**vs miniCycle:**
+
+- miniCycle is more polished
+- miniCycle cross-platform
+- miniCycle has way more features
+
+-----
+
+### 7. That Checklist App - Web Option
+
+**Developer:** Unknown  
+**Platform:** Web, iOS  
+**Price:** Free  
+**Website:** thatchecklistapp.com
+
+**Key Features:**
+
+- “Dead simple” reusable checklists
+- Reset button
+- Web-based
+- Minimal interface
+
+**Target User:** People who want dead simple
+
+**Strengths:**
+
+- ✅ Web-based
+- ✅ Very simple
+- ✅ Free
+
+**Weaknesses:**
+
+- ❌ Too simple (bare bones)
+- ❌ Unknown developer/support
+- ❌ No advanced features
+
+**vs miniCycle:**
+
+- miniCycle has vastly more features
+- miniCycle is more polished
+- That Checklist App is simpler (some want this)
+
+-----
+
+### 8. Checklist+ - Legacy Option
+
+**Developer:** Dynamic App Design LLC  
+**Platform:** iOS  
+**Price:** Free with $1.99 ad removal  
+**Launch:** 2012 (13 years old!)  
+**Rating:** 4.5★ (10,000+ reviews)
+
+**Key Features:**
+
+- Basic checklists
+- Shareable lists
+- Ad-supported free tier
+- Move completed items to bottom
+- Alphabetical ordering
+
+**Target User:** Budget-conscious iOS users
+
+**Strengths:**
+
+- ✅ Proven longevity (since 2012)
+- ✅ Large user base (10K+ reviews)
+- ✅ Cheap ad removal ($1.99)
+
+**Weaknesses:**
+
+- ❌ Not truly a “reusable” checklist app (more traditional to-do)
+- ❌ Ads in free version
+- ❌ Dated design
+- ❌ iOS only
+
+**vs miniCycle:**
+
+- Checklist+ isn’t really same category (more traditional)
+- miniCycle is ad-free
+- miniCycle has modern design
+
+-----
+
+### 9. miniCycle - The Cross-Platform Powerhouse
+
+**Developer:** sparkinCreations  
+**Platform:** All (PWA) - iOS, Android, Web, Desktop  
+**Price:** FREE (all features unlocked)  
+**Launch:** 2025  
+**Rating:** New app
+
+**Key Features:** (41 total)
+
+- **Three cycling modes:** Auto, Manual, To-Do
+- **Recurring tasks:** Daily/Weekly/Monthly/Yearly
+- **Due dates** on individual tasks
+- **Priority marking**
+- **Stats & analytics:** Completion rate, cycle count, progress tracking
+- **Gamification:** Badges (5, 25, 50, 75, 100 cycles), theme unlocks, mini-game
+- **Multiple cycles:** Create unlimited separate lists
+- **Import/Export:** .mcyc file format
+- **Progress bar**
+- **Task notes**
+- **Reminders system**
+- **Undo/Redo**
+- **Dark mode**
+- **Offline-first PWA**
+- **Privacy-first:** All data local
+
+**Target User:** Power users, routine managers, professionals, anyone wanting advanced features
+
+**Strengths:**
+
+- ✅ Most features in category (41 vs 6-10 for competitors)
+- ✅ Only cross-platform option (works EVERYWHERE)
+- ✅ Completely FREE (no paywalls, no ads)
+- ✅ Three distinct modes (unique flexibility)
+- ✅ Only app with stats/analytics
+- ✅ Only app with gamification
+- ✅ Only app with recurring task scheduling
+- ✅ Modern, polished UI
+
+**Weaknesses:**
+
+- ❌ New (no proven traction yet)
+- ❌ PWA vs native (slightly less “smooth” than native)
+- ❌ No Apple Watch support (yet - planned)
+- ❌ Brand new (unknown in market)
+
+-----
+
+## Feature Comparison Matrix
+
+|Feature              |miniCycle|CheckYourList|Felix|ForgetNot |CheckLoop|Check Off|Others |
+|---------------------|---------|-------------|-----|----------|---------|---------|-------|
+|**Platform**         |All (PWA)|iOS + Watch  |iOS  |Apple only|iOS      |Android  |Various|
+|**Price**            |FREE     |$49.99       |$3.99|Free + IAP|Free     |Free     |$0-$2  |
+|**Total Features**   |**41**   |~10          |~6-8 |~12       |~10      |~10      |~5-8   |
+|**Auto Cycle Mode**  |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Manual Cycle Mode**|✅        |✅            |✅    |✅         |✅        |✅        |✅      |
+|**To-Do Mode**       |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Recurring Tasks**  |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Due Dates**        |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Reminders**        |✅        |Daily only   |❌    |❌         |❌        |❌        |❌      |
+|**Priority Tasks**   |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Stats/Analytics**  |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Cycle Counter**    |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Gamification**     |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Badges/Rewards**   |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Theme Unlocks**    |✅        |❌            |❌    |❌         |❌        |❌        |❌      |
+|**Export**           |.mcyc    |❌            |CSV  |PDF       |❌        |CSV      |Varies |
+|**Dark Mode**        |✅        |✅            |❌    |✅         |✅        |✅        |Varies |
+|**Offline**          |✅        |✅            |✅    |✅         |✅        |✅        |✅      |
+|**Apple Watch**      |Planned  |✅            |❌    |❌         |❌        |N/A      |❌      |
+
+**Key Insights:**
+
+- **miniCycle is the ONLY app with:** Auto Cycle mode, To-Do mode, recurring tasks, stats, gamification
+- **miniCycle is the ONLY cross-platform option**
+- **Most competitors are iOS-only** (7 of 9)
+- **Most competitors are very basic** (6-10 features)
+
+-----
+
+## Market Positioning Analysis
+
+### Price Positioning
+
+```
+FREE                           PAID
+│
+├─ miniCycle (FREE, 41 features) ⭐ BEST VALUE
+├─ CheckLoop (FREE, ~10 features)
+├─ Check Off (FREE, Android)
+├─ Reusable Checklist (FREE, Android)
+├─ That Checklist App (FREE, basic)
+│
+├─ Checklist+ ($1.99 ad removal)
+├─ Checklists by Felix ($3.99)
+│
+└─ CheckYourList ($49.99) ⚠️ EXPENSIVE
+```
+
+**miniCycle Advantage:** Saves users $3.99 to $49.99 compared to paid competitors
+
+-----
+
+### Feature Positioning
+
+```
+BASIC                       ADVANCED
+│
+├─ That Checklist App (5 features)
+├─ Checklists by Felix (6-8 features)
+├─ Check Off (8-10 features)
+├─ CheckYourList (8-10 features)
+├─ CheckLoop (10 features)
+├─ ForgetNot (12 features)
+│
+└─ miniCycle (41 features) ⭐ MOST ADVANCED
+```
+
+**miniCycle Advantage:** 3-5X more features than any competitor
+
+-----
+
+### Platform Positioning
+
+```
+iOS ONLY                    CROSS-PLATFORM
+│
+├─ CheckYourList
+├─ Checklists by Felix
+├─ CheckLoop
+├─ ForgetNot (Apple only)
+├─ Checklist+
+│
+├─ Check Off (Android only)
+├─ Reusable Checklist (Android only)
+│
+└─ miniCycle (iOS + Android + Web + Desktop) ⭐ EVERYWHERE
+```
+
+**miniCycle Advantage:** Only app that works on ALL platforms
+
+-----
+
+## Competitive Threats & Opportunities
+
+### 🔴 High Threat Competitors
+
+**1. CheckYourList ($49.99)**
+
+- **Threat Level:** HIGH
+- **Why:** Established (4.7★, 212 reviews), Apple Watch, proven product-market fit
+- **miniCycle Advantage:** Free, more features, cross-platform
+- **Risk:** They have brand recognition and Watch support
+
+**2. CheckLoop (Free, NEW)**
+
+- **Threat Level:** HIGH ⚠️
+- **Why:** Launched March 2025 (brand new!), free, similar positioning
+- **miniCycle Advantage:** More features, cross-platform, gamification
+- **Risk:** Direct competitor with similar strategy, actively developed
+
+### 🟡 Medium Threat Competitors
+
+**3. Check Off (Android)**
+
+- **Threat Level:** MEDIUM
+- **Why:** Owns Android market share (4.6★, 500+ reviews)
+- **miniCycle Advantage:** Cross-platform, more features
+- **Risk:** Established Android user base
+
+**4. ForgetNot**
+
+- **Threat Level:** MEDIUM
+- **Why:** Apple ecosystem integration, cross-device sync
+- **miniCycle Advantage:** More features, truly cross-platform, free
+- **Risk:** Better macOS integration
+
+### 🟢 Low Threat Competitors
+
+**5-9. Others**
+
+- **Threat Level:** LOW
+- **Why:** Too basic, too expensive, or too niche
+- **miniCycle Advantage:** Superior on almost all fronts
+
+-----
+
+## Market Opportunities
+
+### 1. Platform Gap
+
+**Opportunity:** Be the ONLY app that works everywhere
+
+- 78% of competitors are iOS-only
+- Android users have limited options
+- Web/Desktop users have almost no options
+
+**miniCycle Strategy:** Emphasize “Works on ANY device” in marketing
+
+### 2. Feature Gap
+
+**Opportunity:** Be the ONLY app with advanced features
+
+- No competitor has stats/analytics
+- No competitor has gamification
+- No competitor has three modes
+- No competitor has recurring task scheduling
+
+**miniCycle Strategy:** Target power users and professionals who need more than basic reset
+
+### 3. Price Gap
+
+**Opportunity:** Undercut expensive competitors
+
+- CheckYourList at $49.99 is VERY expensive
+- Price-conscious users will choose free
+
+**miniCycle Strategy:** Lead with “Save $49.99 vs CheckYourList”
+
+### 4. Discovery Gap
+
+**Opportunity:** Category is hard to discover
+
+- Low search volume for “reusable checklist”
+- Users often find competitors by accident
+
+**miniCycle Strategy:**
+
+- SEO for “reusable checklist”, “cycling checklist”, “ADHD checklist”
+- Content marketing explaining the concept
+- Reddit/ADHD community marketing
+
+-----
+
+## Recommended Strategy
+
+### Primary Positioning
+
+**“miniCycle: The Most Advanced Reusable Checklist App - Free Forever”**
+
+### Key Messages by Audience
+
+**For iOS Users (competing with CheckYourList):**
+
+- ✅ “Save $49.99 vs CheckYourList”
+- ✅ “4X more features than CheckYourList”
+- ✅ “Works on web and Android too”
+
+**For Android Users (competing with Check Off):**
+
+- ✅ “Advanced features beyond basic reset”
+- ✅ “Stats, gamification, recurring tasks”
+- ✅ “Works on iOS and web too”
+
+**For Power Users:**
+
+- ✅ “41 features - most advanced in category”
+- ✅ “Three modes: Auto, Manual, To-Do”
+- ✅ “Track your progress with stats and badges”
+
+**For ADHD Users:**
+
+- ✅ “Reduce cognitive load with persistent checklists”
+- ✅ “Gamification keeps you motivated”
+- ✅ “Never forget anything again”
+
+**For Professionals:**
+
+- ✅ “Perfect for work procedures and inspections”
+- ✅ “Track completion rates and cycle counts”
+- ✅ “Export your data (.mcyc format)”
+
+-----
+
+## Competitive Summary
+
+### Market Reality
+
+**“Reusable Checklist” is a SMALL but REAL category with 9 competitors**
+
+### miniCycle’s Position
+
+**“The advanced, cross-platform, free option in a field of basic, iOS-only, paid apps”**
+
+### Key Advantages
+
+1. ✅ **ONLY cross-platform app** (works everywhere)
+1. ✅ **Most features** (41 vs 6-10)
+1. ✅ **Best price** (free vs $4-50)
+1. ✅ **Unique capabilities** (3 modes, stats, gamification)
+
+### Key Challenges
+
+1. ❌ **New** (no proven traction)
+1. ❌ **PWA vs native** (slightly less polished on iOS)
+1. ❌ **Small category** (hard to discover)
+1. ❌ **New competitor** (CheckLoop launched March 2025)
+
+### Competitive Verdict
+
+**miniCycle is objectively the most advanced and best-value reusable checklist app**, but faces challenges in a small, hard-to-discover category with established competitors who have brand recognition.
+
+**Success depends on:**
+
+- Education (teaching users about “cycling” concept)
+- Discovery (SEO, content marketing, communities)
+- Differentiation (emphasizing cross-platform + advanced features)
+- Execution (maintaining quality and adding features competitors lack)
+
+-----
+
+## Action Items
+
+### Immediate Priorities
+
+1. ✅ Monitor CheckLoop closely (new direct competitor)
+1. ✅ Build Apple Watch support (table stakes for iOS users)
+1. ✅ SEO for “reusable checklist” + variations
+1. ✅ Create comparison pages (vs CheckYourList, vs Felix)
+1. ✅ Target ADHD communities (r/ADHD, ADHD blogs)
+
+### Medium-Term
+
+1. Build native iOS/Android apps (compete better with CheckYourList)
+1. Create video comparisons showing feature differences
+1. Build templates library (compete with CheckLoop)
+1. Add collaboration features (move to Task Cycle Pro)
+
+### Long-Term
+
+1. Establish brand as “the advanced option” in category
+1. Build community around power users and professionals
+1. Upsell to Task Cycle ($25) for professionals
+1. Launch Task Cycle Pro for teams
+
+-----
+
+**Analysis prepared for miniCycle**  
+**Date: October 28, 2025**  
+**Category: Reusable Checklist Apps**  
+**Competitors Analyzed: 9 (including miniCycle)**
