@@ -2,7 +2,7 @@
  * @file cycleManager.js
  * @description Cycle creation and management functionality for miniCycle
  * @module utilities/cycleManager
- * @version 1.338
+ * @version 1.3
  * @pattern Resilient Constructor 🛡️
  *
  * Handles:
@@ -38,7 +38,7 @@ export class CycleManager {
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
-        this.version = '1.338';
+        this.version = '1.3';
         console.log('✅ CycleManager initialized');
     }
 

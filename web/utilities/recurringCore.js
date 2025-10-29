@@ -11,7 +11,7 @@
  * - Cycle reset integration
  *
  * @module recurringCore
- * @version 1.338
+ * @version 1.3
  * @requires AppState (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
@@ -978,6 +978,7 @@ export async function catchUpMissedRecurringTasks() {
             return;
         }
 
+
         // ✅ MISSED OCCURRENCE - Add task once
         console.log(`⏰ Catching up missed task: ${template.text}`);
 
@@ -1490,6 +1491,10 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
 
             // Keep recurringTemplates in sync
             if (!cycle.recurringTemplates) cycle.recurringTemplates = {};
+
+            // Check if this is a NEW recurring task (wasn't recurring before)
+            const isNewRecurring = !cycle.recurringTemplates[taskId] || !cycle.recurringTemplates[taskId].recurring;
+
             cycle.recurringTemplates[taskId] = {
                 ...(cycle.recurringTemplates[taskId] || {}),
                 id: taskId,
@@ -1497,7 +1502,10 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
                 recurring: true,
                 schemaVersion: 2,
                 recurringSettings: { ...targetTask.recurringSettings },
-                nextScheduledOccurrence: calculateNextOccurrence(targetTask.recurringSettings, Date.now())
+                // ✅ FIX: For newly-enabled recurring tasks, set nextScheduledOccurrence to 0
+                // This ensures the task appears immediately on the next catch-up/watch cycle
+                // For existing recurring tasks, calculate the next occurrence normally
+                nextScheduledOccurrence: isNewRecurring ? 0 : calculateNextOccurrence(targetTask.recurringSettings, Date.now())
             };
         }
     }, true); // ✅ Immediate save for recurring settings changes
@@ -1605,6 +1613,24 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
                 if (taskIndex !== -1) {
                     cycleData.tasks.splice(taskIndex, 1);
                 }
+            }
+
+            // ✅ FIX: Recalculate nextScheduledOccurrence when cycle resets
+            // This ensures recurring tasks can appear again based on current time
+            if (cycleData.recurringTemplates && cycleData.recurringTemplates[taskId]) {
+                const template = cycleData.recurringTemplates[taskId];
+
+                // Recalculate from current time
+                const nextOccurrence = calculateNextOccurrence(
+                    template.recurringSettings,
+                    Date.now()
+                );
+
+                template.nextScheduledOccurrence = nextOccurrence;
+                template.lastTriggeredTimestamp = null; // Reset since cycle completed
+
+                console.log(`✅ Recalculated nextScheduledOccurrence after reset for "${template.text}":`,
+                    new Date(nextOccurrence || 0).toLocaleString());
             }
 
             // ✅ Keep in recurringTemplates so they can be recreated
