@@ -13,14 +13,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module task/taskCore
- * @version 1.3
+ * @version 1.339
  */
 
 import { appInit } from '../appInitialization.js';
 
 export class TaskCore {
     constructor(dependencies = {}) {
-        this.version = '1.3';
+        this.version = '1.339';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
