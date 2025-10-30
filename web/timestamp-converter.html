@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timestamp Converter - miniCycle</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #5680ff 0%, #4a90e2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #5680ff;
+      font-size: 28px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+      font-family: 'Courier New', monospace;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #5680ff;
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-label {
+      color: #5680ff;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .result-value {
+      color: #333;
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 15px;
+    }
+
+    .result-value:last-child {
+      margin-bottom: 0;
+    }
+
+    .relative-time {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .error {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .info {
+      background: #fff3cd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #856404;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #999;
+      font-size: 12px;
+    }
+
+    .footer a {
+      color: #5680ff;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⏰ Timestamp Converter</h1>
+    <p class="subtitle">Convert Unix timestamps to readable dates</p>
+
+    <div>
+      <label for="timestamp">Enter Unix Timestamp (milliseconds)</label>
+      <input
+        type="text"
+        id="timestamp"
+        placeholder="e.g., 1761809580000"
+        autofocus
+      >
+      <div class="error" id="error">Please enter a valid timestamp (numbers only)</div>
+    </div>
+
+    <div class="result" id="result">
+      <div class="result-label">Full Date & Time</div>
+      <div class="result-value" id="fullDate"></div>
+
+      <div class="result-label">Date Only</div>
+      <div class="result-value" id="dateOnly"></div>
+
+      <div class="result-label">Time Only</div>
+      <div class="result-value" id="timeOnly"></div>
+
+      <div class="relative-time">
+        <div class="result-label">Relative Time</div>
+        <div class="result-value" id="relativeTime"></div>
+      </div>
+    </div>
+
+    <div class="info">
+      💡 <strong>Tip:</strong> miniCycle uses timestamps like <code>nextScheduledOccurrence</code> to track when recurring tasks should appear. Paste them here to see the actual date!
+    </div>
+
+    <div class="footer">
+      Part of <a href="./miniCycle.html">miniCycle</a> - Turn Your Routine Into Progress
+    </div>
+  </div>
+
+  <script>
+    const timestampInput = document.getElementById('timestamp');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+    const fullDateEl = document.getElementById('fullDate');
+    const dateOnlyEl = document.getElementById('dateOnly');
+    const timeOnlyEl = document.getElementById('timeOnly');
+    const relativeTimeEl = document.getElementById('relativeTime');
+
+    function convertTimestamp(timestamp) {
+      const num = parseInt(timestamp, 10);
+
+      // Validate
+      if (isNaN(num)) {
+        showError();
+        return;
+      }
+
+      // Hide error, show result
+      errorDiv.classList.remove('show');
+      resultDiv.classList.add('show');
+
+      // Convert
+      const date = new Date(num);
+
+      // Check if valid date
+      if (isNaN(date.getTime())) {
+        showError();
+        return;
+      }
+
+      // Format results
+      fullDateEl.textContent = date.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      dateOnlyEl.textContent = date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      timeOnlyEl.textContent = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      // Calculate relative time
+      const now = new Date();
+      const diff = date - now;
+      const absDiff = Math.abs(diff);
+
+      const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+      let relativeStr = '';
+      if (diff > 0) {
+        // Future
+        if (days > 0) {
+          relativeStr = `In ${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
+        } else if (hours > 0) {
+          relativeStr = `In ${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else {
+          relativeStr = `In ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
+      } else {
+        // Past
+        if (days > 0) {
+          relativeStr = `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+        } else if (hours > 0) {
+          relativeStr = `${hours} hour${hours !== 1 ? 's' : ''} and ${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+        } else if (minutes > 0) {
+          relativeStr = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+        } else {
+          relativeStr = 'Just now';
+        }
+      }
+
+      relativeTimeEl.textContent = relativeStr;
+    }
+
+    function showError() {
+      errorDiv.classList.add('show');
+      resultDiv.classList.remove('show');
+    }
+
+    // Auto-convert as user types
+    timestampInput.addEventListener('input', (e) => {
+      const value = e.target.value.trim();
+      if (value === '') {
+        resultDiv.classList.remove('show');
+        errorDiv.classList.remove('show');
+        return;
+      }
+      convertTimestamp(value);
+    });
+
+    // Auto-fill if timestamp in URL query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const tsParam = urlParams.get('ts');
+    if (tsParam) {
+      timestampInput.value = tsParam;
+      convertTimestamp(tsParam);
+    }
+  </script>
+</body>
+</html>

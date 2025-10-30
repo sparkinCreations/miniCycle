@@ -1,8 +1,8 @@
 # miniCycle Recurring Tasks: Complete User Guide
 
-**Version 1.1 | For miniCycle Users & Developers**
+**Version 1.2 | For miniCycle v1.338+ Users & Developers**
 
-_Updated October 2025 to include: Next occurrence display, catch-up function, two-state notifications, and hybrid optimization pattern._
+_Updated October 2025 to include: Next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
 
 ---
 
@@ -73,6 +73,7 @@ A **cycle** is a complete round of your task list. Think of it like:
 **For recurring tasks:**
 - ❌ Task is **deleted** from the list
 - ✅ Task **template** remains saved
+- ✅ Template's schedule is **recalculated** from current time (v1.338+)
 - ✅ Task **reappears** based on its schedule
 
 **Why delete recurring tasks?** Because they're scheduled to appear at specific times, not every cycle. Deleting them keeps your workflow clean.
@@ -534,14 +535,18 @@ function handleRecurringTaskActivation(task, taskContext) {
   task.recurringSettings = getDefaultSettings(); // daily, indefinite
 
   // 2. Create template with next occurrence calculation
-  const nextOccurrence = calculateNextOccurrence(task.recurringSettings);
+  // ✅ NEW (v1.338+): For newly-enabled recurring tasks, set nextScheduledOccurrence to 0
+  // This ensures the task appears immediately on the next watch cycle (within 30 seconds)
+  const isNewRecurring = !currentCycle.recurringTemplates[task.id] ||
+                         !currentCycle.recurringTemplates[task.id].recurring;
+
   currentCycle.recurringTemplates[task.id] = {
     id: task.id,
     text: task.text,
     recurring: true,
     recurringSettings: structuredClone(task.recurringSettings),
     lastTriggeredTimestamp: null,
-    nextScheduledOccurrence: nextOccurrence
+    nextScheduledOccurrence: isNewRecurring ? 0 : calculateNextOccurrence(task.recurringSettings)
   };
 
   // 3. Save to storage
@@ -735,22 +740,34 @@ async function catchUpMissedRecurringTasks() {
 ```javascript
 function completeMiniCycle() {
   const tasks = currentCycle.tasks;
-  
+
   // Separate recurring from non-recurring
   const recurringTasks = tasks.filter(t => t.recurring);
   const nonRecurringTasks = tasks.filter(t => !t.recurring);
-  
+
   // Reset non-recurring tasks
   nonRecurringTasks.forEach(task => {
     task.completed = false;
   });
-  
+
   // Delete recurring tasks (templates remain)
   currentCycle.tasks = nonRecurringTasks;
-  
+
+  // ✅ NEW (v1.338+): Recalculate nextScheduledOccurrence for recurring templates
+  // This ensures tasks can appear again based on the current time after reset
+  Object.values(currentCycle.recurringTemplates).forEach(template => {
+    if (template.recurring) {
+      template.nextScheduledOccurrence = calculateNextOccurrence(
+        template.recurringSettings,
+        Date.now()
+      );
+      template.lastTriggeredTimestamp = null; // Reset since cycle completed
+    }
+  });
+
   // Templates still exist in recurringTemplates
   // They will be recreated by watchRecurringTasks() when due
-  
+
   saveToLocalStorage();
   renderTasks(currentCycle.tasks);
 }
@@ -1083,36 +1100,46 @@ Do you just need a reminder?
    - Check if the task appears in the list
    - If not there, the task isn't set to recur
 
-2. **Check the next occurrence time:**
+2. **For newly-enabled recurring tasks (v1.338+):**
+   - After toggling recurring ON, the task should appear within 30 seconds
+   - The system sets `nextScheduledOccurrence = 0` for immediate appearance
+   - If it doesn't appear, try switching tabs or refreshing the page
+
+3. **Check the next occurrence time:**
    - Open "Manage Recurring Tasks"
    - Look for "Next: [time]" under the task
    - This shows exactly when it will appear
    - Example: "Next: Tomorrow at 9:00 AM" means it's scheduled for tomorrow
 
-3. **Has enough time passed?**
+4. **Has enough time passed?**
    - Watch function checks every 30 seconds
    - Wait up to 30 seconds after scheduled time
    - Example: 9:00am task may appear between 9:00:00 and 9:00:30
 
-4. **Did the task already appear?**
+5. **Did the task already appear?**
    - Check if it's already in your task list
    - Recurring tasks won't duplicate
 
-5. **Is the schedule correct?**
+6. **Is the schedule correct?**
    - Open Recurring Panel
    - Click task → "Change Settings"
    - Verify frequency and time
    - Check "Current Settings" summary
 
-6. **Try the catch-up trigger:**
+7. **Try the catch-up trigger:**
    - Switch to another tab or minimize the window
    - Return to miniCycle
    - The catch-up function will check for missed tasks
    - This forces an immediate check instead of waiting for the 30-second interval
 
-7. **Was it triggered recently?**
+8. **Was it triggered recently?**
    - Tasks won't appear twice in the same minute
    - If you complete cycle at 9:00am and task is scheduled for 9:00am, it may not reappear until 9:01am
+
+9. **After cycle reset (v1.338+):**
+   - The schedule is automatically recalculated from the current time
+   - This ensures tasks can appear again based on the schedule
+   - No manual intervention needed
 
 ### Q: "I can't see my recurring tasks after cycle reset!"
 
@@ -1364,8 +1391,9 @@ miniCycle is open source and actively developed. Your input helps improve the re
 
 ---
 
-*miniCycle v1.315+ | sparkinCreations | 2025*
+*miniCycle v1.338+ | sparkinCreations | 2025*
 
 **Guide Changelog:**
+- v1.2 (Oct 2025): Added immediate appearance for newly-enabled recurring tasks, schedule recalculation on cycle reset
 - v1.1 (Oct 2025): Added next occurrence display, catch-up function, two-state notifications, hybrid optimization
 - v1.0 (Initial release): Core recurring functionality documentation
