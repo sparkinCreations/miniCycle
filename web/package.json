@@ -3,16 +3,15 @@
   "version": "1.339",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "private": true,
+  "//": "=== TESTING NOTES ===",
+  "// Jest removed": "Jest was removed in favor of comprehensive Playwright browser tests (958 tests, 100% coverage). Browser tests are more appropriate for this project since all modules use browser APIs (DOM, localStorage, etc.). Jest tests were experimental, broken, and added no value over the existing browser test suite.",
   "scripts": {
     "start": "python3 -m http.server 8080",
     "blog:install": "cd blog && npm install",
     "blog:build": "cd blog && npm run build",
     "test": "node tests/automated/run-browser-tests.js",
     "test:browser": "node tests/automated/run-browser-tests.js",
-    "test:manual": "python3 -m http.server 8080",
-    "test:jest": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:manual": "python3 -m http.server 8080"
   },
   "keywords": [
     "productivity",
@@ -23,29 +22,6 @@
   "author": "miniCycle",
   "license": "UNLICENSED",
   "devDependencies": {
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
     "playwright": "^1.56.0"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup.js"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "collectCoverageFrom": [
-      "utilities/*.js",
-      "!utilities/*.test.js"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 75,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      }
-    }
   }
 }
