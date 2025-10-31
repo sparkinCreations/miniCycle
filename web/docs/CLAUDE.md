@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Reduction:** 74.8% achieved
 - **Modules:** 33 modules (12,003 lines extracted)
 - **Core functions:** 14 (orchestration only)
-- **Test coverage:** 99% (931/941 tests passing)
+- **Test coverage:** 100% (958/958 tests passing) ✅
 
 **Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
 
@@ -30,10 +30,25 @@ npm start                    # Starts Python HTTP server on port 8080
                             # Validates changes after completion
 ```
 
+### Testing
+```bash
+npm test                    # Run automated tests (958 tests)
+npm run test:watch          # Run Jest tests in watch mode
+npm run test:coverage       # Generate Jest coverage report
+```
+
 ### Blog System (Optional)
 ```bash
 npm run blog:install        # Install blog dependencies
 npm run blog:build          # Build static blog from markdown posts
+```
+
+### CI/CD
+```bash
+# GitHub Actions runs automatically on push/PR
+# Workflow: .github/workflows/test.yml
+# Tests on Node.js 18.x and 20.x
+# Manual trigger available in GitHub Actions UI
 ```
 
 ### File Access
@@ -245,6 +260,13 @@ When modifying core files, increment both app version and cache version to trigg
 
 ## Testing and Validation
 
+### Automated Testing (100% Pass Rate) ✅
+- **958 tests** across 30 modules
+- **GitHub Actions** CI/CD on every push/PR
+- **Node.js 18.x and 20.x** compatibility testing
+- **Browser-based tests** via Playwright
+- **Jest tests** with coverage reporting
+
 ### Built-in Testing Modal
 Access via Settings → App Diagnostics & Testing:
 - Health checks for data integrity
@@ -258,6 +280,13 @@ Access via Settings → App Diagnostics & Testing:
 4. Validate undo/redo functionality
 5. Check stats panel updates after data loading
 
+### GitHub Actions Workflow
+Location: `.github/workflows/test.yml`
+- Runs on push to `main` or `develop` branches
+- Runs on all pull requests
+- Manual trigger available via Actions tab
+- Results visible in commit status checks
+
 ## Important Notes for AI Assistants
 
 ### Modularization is Complete ✅
@@ -265,7 +294,7 @@ As of October 27, 2025, modularization is **technically complete**:
 - Main script reduced from 15,677 → 3,674 lines (74.8% reduction)
 - 33 modules extracted (12,003 lines)
 - 14 core orchestration functions remain
-- 99% test coverage maintained
+- 100% test coverage achieved (958/958 tests) ✅
 
 **Optional work:** `REMAINING_EXTRACTIONS_ANALYSIS.md` documents 19 optional functions (~1,167 lines) that could be extracted for additional optimization. This is NOT required.
 

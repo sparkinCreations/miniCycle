@@ -156,11 +156,22 @@ export function runConsoleCaptureTests(resultsDiv) {
     });
 
     test('does not auto-start without conditions', () => {
+        // Clear all auto-start triggers BEFORE creating instance
+        localStorage.removeItem('miniCycleStorage');
+        localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
+        localStorage.removeItem('miniCycle_capturedConsoleBuffer');
+        sessionStorage.removeItem('miniCycleLegacyModeActive');
+
         const capture = new MiniCycleConsoleCapture();
         const shouldStart = capture.shouldAutoStartConsoleCapture();
 
         if (shouldStart) {
             throw new Error('Should not auto-start without conditions');
+        }
+
+        // Verify it didn't auto-start in constructor
+        if (capture.consoleCapturing || capture.autoStarted) {
+            throw new Error('Should not have auto-started in constructor');
         }
     });
 
@@ -426,6 +437,12 @@ export function runConsoleCaptureTests(resultsDiv) {
     });
 
     test('restores original console methods', () => {
+        // Clear all auto-start triggers to prevent auto-start in constructor
+        localStorage.removeItem('miniCycleStorage');
+        localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
+        localStorage.removeItem('miniCycle_capturedConsoleBuffer');
+        sessionStorage.removeItem('miniCycleLegacyModeActive');
+
         const capture = new MiniCycleConsoleCapture();
         const originalLog = console.log;
 
@@ -489,6 +506,12 @@ export function runConsoleCaptureTests(resultsDiv) {
     });
 
     test('stats reflect active capture', () => {
+        // Clear all auto-start triggers to prevent auto-start in constructor
+        localStorage.removeItem('miniCycleStorage');
+        localStorage.removeItem('miniCycle_enableAutoConsoleCapture');
+        localStorage.removeItem('miniCycle_capturedConsoleBuffer');
+        sessionStorage.removeItem('miniCycleLegacyModeActive');
+
         const capture = new MiniCycleConsoleCapture();
 
         let stats = capture.getConsoleCaptureStats();

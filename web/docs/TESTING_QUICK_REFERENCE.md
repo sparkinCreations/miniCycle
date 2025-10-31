@@ -1,6 +1,7 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: October 25, 2025
+**Last Updated**: October 31, 2025
+**Test Coverage**: 100% (958/958 tests passing) ✅
 
 ---
 
@@ -17,15 +18,29 @@ python3 -m http.server 8080
 # http://localhost:8080/tests/module-test-suite.html
 ```
 
-### Run Tests Automatically
+### Run Tests Automatically (Local)
 
 ```bash
 # Install (one-time)
-npm install playwright
+npm install
 
-# Run tests
-python3 -m http.server 8080  # Terminal 1
-node tests/automated/run-browser-tests.js  # Terminal 2
+# Run all tests
+npm test
+
+# Run Jest tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Run Tests via GitHub Actions (CI/CD)
+
+```bash
+# Automatic: Tests run on every push to main/develop
+# Manual: Visit Actions tab → "Automated Tests" → Run workflow
+
+# View results: Check commit status or Actions tab
 ```
 
 ---
@@ -333,7 +348,7 @@ function test(name, testFn) {
 
 ---
 
-## 📊 Current Test Coverage
+## 📊 Current Test Coverage (100% ✅)
 
 | Module | Tests | Status |
 |--------|-------|--------|
@@ -342,27 +357,38 @@ function test(name, testFn) {
 | DeviceDetection | 17 | ✅ |
 | CycleLoader | 11 | ✅ |
 | StatsPanel | 27 | ✅ |
+| ConsoleCapture | 33 | ✅ |
 | State | 41 | ✅ |
-| RecurringCore | 44 | ✅ |
+| RecurringCore | 72 | ✅ |
 | RecurringIntegration | 25 | ✅ |
 | RecurringPanel | 55 | ✅ |
 | GlobalUtils | 36 | ✅ |
 | Notifications | 39 | ✅ |
 | DragDropManager | 67 | ✅ |
 | MigrationManager | 38 | ✅ |
-| DueDates | 23 | ✅ |
-| Reminders | 28 | ✅ |
-| ModeManager | 26 | ✅ |
-| CycleSwitcher | 38 | ✅ |
-| GamesManager | 23 | ✅ |
-| OnboardingManager | 38 | ✅ |
-| **ModalManager** | **50** | **✅** |
-| **Total** | **724/734** | **99%** |
+| DueDates | 17 | ✅ |
+| Reminders | 20 | ✅ |
+| ModeManager | 28 | ✅ |
+| CycleSwitcher | 22 | ✅ |
+| UndoRedoManager | 52 | ✅ |
+| GamesManager | 21 | ✅ |
+| OnboardingManager | 33 | ✅ |
+| ModalManager | 50 | ✅ |
+| MenuManager | 29 | ✅ |
+| SettingsManager | 33 | ✅ |
+| TaskCore | 34 | ✅ |
+| TaskValidation | 25 | ✅ |
+| TaskUtils | 23 | ✅ |
+| TaskRenderer | 16 | ✅ |
+| TaskEvents | 22 | ✅ |
+| TaskDOM | 43 | ✅ |
+| **Total** | **958/958** | **100%** ✅ |
 
-**Recent Additions (October 2025):**
-- ✅ **ModalManager** - 50 tests (100% pass rate)
-- ✅ **OnboardingManager** - 38 tests (100% pass rate)
-- ✅ **GamesManager** - 23 tests (100% pass rate)
+**Recent Improvements (October 2025):**
+- ✅ **100% Test Coverage Achieved** - All 958 tests passing
+- ✅ **ConsoleCapture** - Fixed 3 auto-start edge case tests
+- ✅ **GitHub Actions** - CI/CD integrated for automated testing
+- ✅ **Multi-version Testing** - Node.js 18.x and 20.x compatibility
 
 ---
 
@@ -772,36 +798,68 @@ test('updatePreview generates task preview', async () => {
 
 ---
 
-## 🎯 CI/CD Example
+## 🎯 GitHub Actions CI/CD (Active ✅)
+
+**Location**: `.github/workflows/test.yml`
+
+### Workflow Configuration
 
 ```yaml
-# .github/workflows/test.yml
-name: Run Tests
-on: [push, pull_request]
+# Automated Tests - Runs on every push/PR
+name: Automated Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: # Manual trigger
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
     steps:
-      - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18'
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
 
-      - name: Install Playwright
-        run: npm install playwright
+    - name: Install dependencies
+      working-directory: ./web
+      run: npm ci
 
-      - name: Start Server
-        run: |
-          cd web
-          python3 -m http.server 8080 &
-          sleep 3
+    - name: Run automated browser tests
+      working-directory: ./web
+      run: npm test
 
-      - name: Run Tests
-        run: node web/tests/automated/run-browser-tests.js
+    - name: Run Jest tests with coverage
+      working-directory: ./web
+      run: npm run test:coverage
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      if: matrix.node-version == '20.x'
+      with:
+        working-directory: ./web
+        files: ./coverage/lcov.info
 ```
+
+### Features:
+- ✅ Runs on every push to `main` or `develop`
+- ✅ Runs on all pull requests
+- ✅ Tests on Node.js 18.x and 20.x
+- ✅ Generates coverage reports
+- ✅ Manual trigger available in GitHub UI
+- ✅ Results visible in commit status checks
 
 ---
 
@@ -814,6 +872,20 @@ jobs:
 
 ---
 
-**Version**: 2.1 (Updated with ModalManager, OnboardingManager, GamesManager tests)
-**Last Updated**: October 25, 2025
+## 🎉 Changelog
+
+### October 31, 2025 - v2.2
+- **100% Test Coverage** - All 958 tests passing
+- **GitHub Actions** - CI/CD integration complete
+- **ConsoleCapture Fixes** - Resolved 3 auto-start edge case tests
+- **Multi-version Testing** - Node.js 18.x and 20.x support
+
+### October 25, 2025 - v2.1
+- ModalManager, OnboardingManager, GamesManager tests added
+- localStorage protection pattern documented
+
+---
+
+**Version**: 2.2 (100% Test Coverage Achieved + GitHub Actions CI/CD)
+**Last Updated**: October 31, 2025
 **Maintained By**: sparkinCreations
