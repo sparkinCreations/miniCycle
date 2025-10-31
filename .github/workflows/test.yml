@@ -30,6 +30,17 @@ jobs:
       working-directory: ./web
       run: npm ci
 
+    - name: Install Playwright browsers
+      working-directory: ./web
+      run: npx playwright install --with-deps chromium
+
+    - name: Start HTTP server in background
+      working-directory: ./web
+      run: |
+        python3 -m http.server 8080 &
+        sleep 3
+        echo "Server started on port 8080"
+
     - name: Run automated browser tests
       working-directory: ./web
       run: npm test
