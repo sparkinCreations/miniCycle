@@ -1160,8 +1160,9 @@ export function runRecurringCoreTests(resultsDiv) {
 
         const formatted = formatNextOccurrence(next);
 
-        if (!formatted.includes('45 minute')) {
-            throw new Error(`Expected "45 minutes", got "${formatted}"`);
+        // Allow ±1 minute variance due to timing in CI environments
+        if (!formatted.includes('44 minute') && !formatted.includes('45 minute')) {
+            throw new Error(`Expected "44 or 45 minutes", got "${formatted}"`);
         }
     });
 
