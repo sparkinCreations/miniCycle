@@ -28,7 +28,7 @@ _Updated October 2025 to include: Next occurrence display, catch-up function, tw
 
 Traditional task apps like Todoist, Things, and TickTick treat each task as an independent item. When you complete a task, it's done. If you want it again, you create a new one (or use recurring rules that duplicate tasks).
 
-**miniCycle is built around reusable checklists called "cycles."** When you complete all tasks in a cycle, the entire cycle resets—all your tasks become unchecked and ready to go again. This is perfect for:
+**miniCycle is built around reusable checklists called "cycles."** When you complete all tasks in a cycle, the entire cycle resets. All your tasks become unchecked and ready to go again. This is perfect for:
 
 - Morning routines
 - Quality inspection checklists
