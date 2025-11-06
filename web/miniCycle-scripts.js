@@ -697,6 +697,86 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
         console.log('✅ StatsPanelManager initialized (Phase 2)');
 
+        // ✅ Initialize Task DOM Manager (Phase 2 module)
+        console.log('🎨 Initializing task DOM module...');
+        try {
+            const { initTaskDOMManager } = await import(withV('./utilities/task/taskDOM.js'));
+
+            await initTaskDOMManager({
+                // State management
+                AppState: window.AppState,
+
+                // Data operations
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                sanitizeInput: (text) => window.sanitizeInput?.(text),
+                generateId: () => window.generateId?.(),
+                autoSave: () => window.autoSave?.(),
+
+                // UI notification and updates
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                refreshUIFromState: () => window.refreshUIFromState?.(),
+                updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
+                updateRecurringPanelButtonVisibility: () => window.updateRecurringPanelButtonVisibility?.(),
+                triggerLogoBackground: (type, dur) => window.triggerLogoBackground?.(type, dur),
+
+                // DOM helpers
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                safeAddEventListener: (el, evt, handler) => window.safeAddEventListener?.(el, evt, handler),
+
+                // Task operations (from taskCore module)
+                handleTaskCompletionChange: (taskItem, shouldSave) => window.handleTaskCompletionChange?.(taskItem, shouldSave),
+                addTask: (...args) => window.addTask?.(...args),
+
+                // Due dates module
+                createDueDateInput: (taskContext, taskData) => window.createDueDateInput?.(taskContext, taskData),
+                setupDueDateButtonInteraction: (input, taskContext) => window.setupDueDateButtonInteraction?.(input, taskContext),
+                checkOverdueTasks: () => window.checkOverdueTasks?.(),
+                remindOverdueTasks: () => window.remindOverdueTasks?.(),
+
+                // Recurring module
+                recurringPanel: window.recurringPanel,
+                setupRecurringButtonHandler: (btn, ctx) => window.setupRecurringButtonHandler?.(btn, ctx),
+                handleRecurringTaskActivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskActivation?.(taskItem, task, recurringBtn),
+                handleRecurringTaskDeactivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskDeactivation?.(taskItem, task, recurringBtn),
+
+                // Reminders module
+                setupReminderButtonHandler: (btn, ctx) => window.setupReminderButtonHandler?.(btn, ctx),
+
+                // Undo system
+                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+
+                // Task options UI
+                showTaskOptions: (taskItem) => window.showTaskOptions?.(taskItem),
+                hideTaskOptions: (taskItem) => window.hideTaskOptions?.(taskItem),
+                attachKeyboardTaskOptionToggle: (taskItem, threeDotsBtn) => window.attachKeyboardTaskOptionToggle?.(taskItem, threeDotsBtn),
+
+                // Drag and drop / arrows
+                DragAndDrop: window.DragAndDrop,
+                updateArrowsInDOM: (taskItem) => window.updateArrowsInDOM?.(taskItem),
+                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+
+                // Cycle operations
+                checkMiniCycle: () => window.checkMiniCycle?.(),
+                loadMiniCycle: () => window.loadMiniCycle?.()
+            });
+
+            console.log('✅ Task DOM module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task DOM module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Task DOM feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without task DOM functionality');
+        }
+
+
+
         // ✅ Initialize Recurring Modules (Phase 2 module)
         console.log('🔄 Initializing recurring task modules...');
         try {
@@ -1027,84 +1107,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task core functionality');
         }
 
-        // ✅ Initialize Task DOM Manager (Phase 2 module)
-        console.log('🎨 Initializing task DOM module...');
-        try {
-            const { initTaskDOMManager } = await import(withV('./utilities/task/taskDOM.js'));
-
-            await initTaskDOMManager({
-                // State management
-                AppState: window.AppState,
-
-                // Data operations
-                loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                sanitizeInput: (text) => window.sanitizeInput?.(text),
-                generateId: () => window.generateId?.(),
-                autoSave: () => window.autoSave?.(),
-
-                // UI notification and updates
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
-                updateProgressBar: () => window.updateProgressBar?.(),
-                updateStatsPanel: () => window.updateStatsPanel?.(),
-                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
-                refreshUIFromState: () => window.refreshUIFromState?.(),
-                updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
-                updateRecurringPanelButtonVisibility: () => window.updateRecurringPanelButtonVisibility?.(),
-                triggerLogoBackground: (type, dur) => window.triggerLogoBackground?.(type, dur),
-
-                // DOM helpers
-                getElementById: (id) => document.getElementById(id),
-                querySelector: (sel) => document.querySelector(sel),
-                querySelectorAll: (sel) => document.querySelectorAll(sel),
-                safeAddEventListener: (el, evt, handler) => window.safeAddEventListener?.(el, evt, handler),
-
-                // Task operations (from taskCore module)
-                handleTaskCompletionChange: (taskItem, shouldSave) => window.handleTaskCompletionChange?.(taskItem, shouldSave),
-                addTask: (...args) => window.addTask?.(...args),
-
-                // Due dates module
-                createDueDateInput: (taskContext, taskData) => window.createDueDateInput?.(taskContext, taskData),
-                setupDueDateButtonInteraction: (input, taskContext) => window.setupDueDateButtonInteraction?.(input, taskContext),
-                checkOverdueTasks: () => window.checkOverdueTasks?.(),
-                remindOverdueTasks: () => window.remindOverdueTasks?.(),
-
-                // Recurring module
-                recurringPanel: window.recurringPanel,
-                setupRecurringButtonHandler: (btn, ctx) => window.setupRecurringButtonHandler?.(btn, ctx),
-                handleRecurringTaskActivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskActivation?.(taskItem, task, recurringBtn),
-                handleRecurringTaskDeactivation: (taskItem, task, recurringBtn) => window.handleRecurringTaskDeactivation?.(taskItem, task, recurringBtn),
-
-                // Reminders module
-                setupReminderButtonHandler: (btn, ctx) => window.setupReminderButtonHandler?.(btn, ctx),
-
-                // Undo system
-                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
-                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
-
-                // Task options UI
-                showTaskOptions: (taskItem) => window.showTaskOptions?.(taskItem),
-                hideTaskOptions: (taskItem) => window.hideTaskOptions?.(taskItem),
-                attachKeyboardTaskOptionToggle: (taskItem, threeDotsBtn) => window.attachKeyboardTaskOptionToggle?.(taskItem, threeDotsBtn),
-
-                // Drag and drop / arrows
-                DragAndDrop: window.DragAndDrop,
-                updateArrowsInDOM: (taskItem) => window.updateArrowsInDOM?.(taskItem),
-                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
-
-                // Cycle operations
-                checkMiniCycle: () => window.checkMiniCycle?.(),
-                loadMiniCycle: () => window.loadMiniCycle?.()
-            });
-
-            console.log('✅ Task DOM module initialized (Phase 2)');
-        } catch (error) {
-            console.error('❌ Failed to initialize task DOM module:', error);
-            if (typeof showNotification === 'function') {
-                showNotification('Task DOM feature unavailable', 'warning', 3000);
-            }
-            console.warn('⚠️ App will continue without task DOM functionality');
-        }
-
+        
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();

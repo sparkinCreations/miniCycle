@@ -1,8 +1,8 @@
 # miniCycle Recurring Tasks: Complete User Guide
 
-**Version 1.2 | For miniCycle v1.338+ Users & Developers**
+**Version 1.3 | For miniCycle v1.338+ Users & Developers**
 
-_Updated October 2025 to include: Next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
+_Updated November 2025 to include: Clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
 
 ---
 
@@ -1090,11 +1090,14 @@ Result: Clean task list, predictable workflow
 - ✅ Cycle-based progress (not task-based)
 - ✅ Tasks appear exactly when needed
 - ✅ Perfect for repeatable workflows
+- ✅ Only one catch-up task per template (no "makeup work" guilt)
+- ✅ Encourages forward progress instead of dwelling on the past
 
-**Cons:**
+**Cons (or Trade-offs):**
 - ❌ Can't see completion history easily
 - ❌ Task "disappears" until next occurrence
 - ❌ Different mental model (learning curve)
+- ❌ Not suitable for project-based work where every instance matters
 
 ### Side-by-Side Example
 
@@ -1484,6 +1487,66 @@ Recurring tasks are **deleted on cycle reset** and reappear based on their sched
 
 **Technical details:** miniCycle calculates `nextScheduledOccurrence` when you set recurring settings, and updates it each time the task appears. This uses a hybrid optimization approach for performance.
 
+### Q: "What happens if I miss multiple days of a daily recurring task?"
+
+**miniCycle creates ONE task, not multiple catch-up tasks.**
+
+This is intentional and core to miniCycle's cycle-based philosophy.
+
+**Example:**
+```
+You have "Take medication" set to daily at 9am.
+Monday 9am: Task appeared ✅
+Tuesday: You didn't open the app ❌
+Wednesday: You didn't open the app ❌
+Thursday 2pm: You open miniCycle
+
+Result: ONE "Take medication" task appears
+(Not three tasks for Monday/Tuesday/Wednesday)
+```
+
+**Why only one task?**
+
+miniCycle is designed for **routines and habits**, not project tracking:
+
+1. **You can't retroactively do past routines**
+   - Can't do yesterday's morning routine
+   - Can't do 3 days of workouts at once
+   - Can't drink 3 days worth of coffee in one morning
+
+2. **Focus on today, not dwelling on the past**
+   - Habit formation research shows "just do it today" builds momentum
+   - "Make up for 3 missed days" creates guilt and avoidance
+   - miniCycle encourages **forward progress**
+
+3. **Prevents cycle clutter**
+   ```
+   ❌ Project-based approach (Todoist/Asana):
+   [ ] Take medication (Monday - overdue)
+   [ ] Take medication (Tuesday - overdue)
+   [ ] Take medication (Wednesday - overdue)
+   User feels overwhelmed, gives up
+
+   ✅ Cycle-based approach (miniCycle):
+   [ ] Take medication (due now)
+   User can take action immediately
+   ```
+
+**This is a feature, not a bug!**
+
+miniCycle is built for **cycle-based routine management**, not **project-based task tracking**. If you need to track every instance of a recurring task (like individual work deliverables), use a project management tool like Todoist or Asana instead.
+
+**When miniCycle is perfect:**
+- ✅ Daily habits (exercise, meditation, reading)
+- ✅ Routines (morning ritual, bedtime checklist)
+- ✅ Regular maintenance (medication, watering plants)
+- ✅ Cyclical workflows (weekly review, monthly budget)
+
+**When to use a different app:**
+- ❌ Project milestones that must all be completed
+- ❌ Work queues where every instance matters
+- ❌ Assignments where you need to catch up on ALL missed days
+
 ### Q: "What happens if I'm offline when a task should appear?"
 
 **Good news:** Everything is local!
@@ -1497,20 +1560,21 @@ When you return to miniCycle after being away, it automatically checks for any m
 
 1. **Trigger:** Runs when browser tab becomes visible again
 2. **Check:** Scans all templates for missed occurrences
-3. **Add Once:** Each missed task appears only once (not duplicated)
+3. **Add Once:** Each template creates ONE task (see "What happens if I miss multiple days" above)
 4. **Update:** Calculates next occurrence for future
 
 **Example:**
 ```
-You have "Take medication" set to appear at 9am and 2pm daily.
+You have two daily tasks: "Medication" (9am) and "Vitamins" (10am).
 You close the tab at 8am and return at 5pm.
 
 When you return:
-✓ Both 9am and 2pm tasks are added (once each)
-✓ Next occurrence set to 9am tomorrow
+✓ "Medication" task appears (once)
+✓ "Vitamins" task appears (once)
+✓ Next occurrence set to 9am/10am tomorrow
 ```
 
-**Note:** Tasks are only added once even if they should have appeared multiple times. This keeps your task list manageable.
+**Note:** Each template creates exactly one task, even if you missed multiple days. This keeps your task list clean and actionable while helping you get back on track with your routine.
 
 ### Q: "Can recurring tasks have different settings per cycle?"
 
@@ -1660,6 +1724,7 @@ miniCycle is open source and actively developed. Your input helps improve the re
 *miniCycle v1.338+ | sparkinCreations | 2025*
 
 **Guide Changelog:**
+- v1.3 (Nov 2025): Added comprehensive explanation of "one task only" catch-up behavior and cycle-based vs project-based philosophy
 - v1.2 (Oct 2025): Added immediate appearance for newly-enabled recurring tasks, schedule recalculation on cycle reset
 - v1.1 (Oct 2025): Added next occurrence display, catch-up function, two-state notifications, hybrid optimization
 - v1.0 (Initial release): Core recurring functionality documentation

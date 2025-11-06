@@ -2162,7 +2162,12 @@ window.exportDebugData()                 // Debug package
 
 ### Overview
 
-miniCycle uses a browser-based testing system that runs directly in the browser without external dependencies. Tests are written as ES6 modules and can be run manually via a web interface or automatically via Playwright.
+miniCycle has **100% test coverage** with **958 tests passing** across 30 modules. The testing system runs:
+- ✅ **Locally** - Browser-based manual testing via web interface
+- ✅ **Automated** - Playwright-based automated testing
+- ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
+
+Tests are written as ES6 modules and can be run manually via a web interface or automatically via Playwright. All tests validate the dependency injection architecture and module isolation.
 
 ### Test Structure
 
@@ -2236,33 +2241,78 @@ node tests/automated/run-browser-tests.js
 
 🌐 Launching browser...
 
-🧪 Testing themeManager...
-   ✅ Results: 25/25 tests passed
-
-🧪 Testing deviceDetection...
-   ✅ Results: 15/15 tests passed
-
-🧪 Testing cycleLoader...
-   ✅ Results: 12/12 tests passed
-
-🧪 Testing globalUtils...
-   ✅ Results: 28/28 tests passed
-
-🧪 Testing notifications...
-   ✅ Results: 18/18 tests passed
+Running 30 test modules across all systems...
 
 ============================================================
-📊 Test Summary (3.42s)
+📊 Test Summary
 ============================================================
-   ✅ PASS themeManager       25/25 tests
-   ✅ PASS deviceDetection    15/15 tests
-   ✅ PASS cycleLoader        12/12 tests
-   ✅ PASS globalUtils        28/28 tests
-   ✅ PASS notifications      18/18 tests
+   ✅ PASS themeManager           27/27 tests
+   ✅ PASS deviceDetection        31/31 tests
+   ✅ PASS cycleLoader            11/11 tests
+   ✅ PASS globalUtils            36/36 tests
+   ✅ PASS notifications          39/39 tests
+   ✅ PASS state                  41/41 tests
+   ✅ PASS recurringCore          44/44 tests
+   ✅ PASS taskCore               53/53 tests
+   ✅ PASS dragDropManager        67/67 tests
+   ... (30 modules total)
 ============================================================
-🎉 All tests passed! (98/98 - 100%)
+🎉 All tests passed! (958/958 - 100%) ✅
 ============================================================
+
+Automated via GitHub Actions on every push/PR
+Tests validated on Node.js 18.x and 20.x
 ```
+
+### GitHub Actions CI/CD
+
+miniCycle has **automated testing** that runs on every push and pull request via GitHub Actions.
+
+#### Workflow Configuration
+
+**Location:** `.github/workflows/test.yml`
+
+**Triggers:**
+- Push to `main` or `develop` branches
+- All pull requests
+- Manual trigger via GitHub Actions UI
+
+**Test Matrix:**
+- **Node.js 18.x** - LTS version
+- **Node.js 20.x** - Latest stable
+
+**Workflow Steps:**
+1. Checkout code
+2. Setup Node.js environment
+3. Install dependencies (Playwright)
+4. Start HTTP server on port 8080
+5. Run all 958 tests via Playwright
+6. Report results (pass/fail)
+
+#### Viewing Test Results
+
+**In GitHub:**
+1. Go to your repository
+2. Click **"Actions"** tab
+3. Select a workflow run
+4. View test results and logs
+
+**Test Status Badge:**
+The repository shows a badge indicating test status:
+- ✅ Green = All tests passing (958/958)
+- ❌ Red = Tests failing
+
+#### Manual CI Trigger
+
+You can manually trigger the test workflow:
+
+1. Go to **Actions** tab
+2. Select **"Tests"** workflow
+3. Click **"Run workflow"**
+4. Select branch
+5. Click **"Run workflow"** button
+
+**Current Status:** 958/958 tests passing (100%) ✅
 
 ### Creating New Tests
 
@@ -2816,7 +2866,7 @@ Current module test coverage:
 - ✅ MenuManager (29 tests) - Main menu operations (Oct 25)
 - ✅ SettingsManager (33 tests) - Settings panel, import/export (Oct 25)
 
-All modules except ConsoleCapture are at 100% test pass rate.
+**All 30 modules are at 100% test pass rate (958/958 tests passing).** ✅
 
 ### Tips for Writing Good Tests
 

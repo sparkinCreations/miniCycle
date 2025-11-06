@@ -963,45 +963,71 @@ export async function catchUpMissedRecurringTasks() {
     const tasksToAdd = [];
     const templateUpdates = {};
 
-    // ✅ Check each template for missed occurrences
-    Object.values(templates).forEach(template => {
-        // Skip if task already exists
-        if (taskList.some(t => t.id === template.id)) return;
+// ✅ Check each template for missed occurrences
+  Object.values(templates).forEach(template => {
+      console.log(`\n🔍 Checking template: "${template.text}" (ID: ${template.id})`);
 
-        // ✅ FAST PATH: Skip if nextScheduledOccurrence is null or in the future
-        if (!template.nextScheduledOccurrence || template.nextScheduledOccurrence > now.getTime()) {
-            return;
-        }
+      // Skip if task already exists
+      if (taskList.some(t => t.id === template.id)) {
+          console.log(`  ⏭️  SKIP: Task already exists in task list`);
+          return;
+      }
 
-        // ✅ SLOW PATH: Validate with pattern matching to prevent false positives
-        if (!shouldRecreateRecurringTask(template, taskList, now)) {
-            return;
-        }
+      // ✅ FAST PATH: Skip if nextScheduledOccurrence is null or in the future
+      if (!template.nextScheduledOccurrence) {
+          console.log(`  ⏭️  SKIP (Fast Path): nextScheduledOccurrence is null`);
+          return;
+      }
+
+      if (template.nextScheduledOccurrence > now.getTime()) {
+          const nextDate = new Date(template.nextScheduledOccurrence).toLocaleString();
+          const nowDate = new Date(now.getTime()).toLocaleString();
+          console.log(`  ⏭️  SKIP (Fast Path): Not due yet`);
+          console.log(`     Next scheduled: ${nextDate} (${template.nextScheduledOccurrence})`);
+          console.log(`     Current time:   ${nowDate} (${now.getTime()})`);
+          return;
+      }
+
+      console.log(`  ✅ Fast Path PASSED: Task is potentially due`);
+      console.log(`     Next scheduled: ${new Date(template.nextScheduledOccurrence).toLocaleString()}`);
+      console.log(`     Current time:   ${new Date(now.getTime()).toLocaleString()}`);
 
 
-        // ✅ MISSED OCCURRENCE - Add task once
-        console.log(`⏰ Catching up missed task: ${template.text}`);
+      // ✅ MISSED OCCURRENCE - Add task once
+      console.log(`  🎯 MISSED OCCURRENCE DETECTED!`);
+      console.log(`  ⏰ Catching up missed task: ${template.text}`);
 
-        tasksToAdd.push({
-            text: template.text,
-            completed: false,
-            dueDate: template.dueDate,
-            highPriority: template.highPriority,
-            remindersEnabled: template.remindersEnabled,
-            recurring: true,
-            id: template.id,
-            recurringSettings: template.recurringSettings
-        });
+      tasksToAdd.push({
+          text: template.text,
+          completed: false,
+          dueDate: template.dueDate,
+          highPriority: template.highPriority,
+          remindersEnabled: template.remindersEnabled,
+          recurring: true,
+          id: template.id,
+          recurringSettings: template.recurringSettings
+      });
 
-        // Calculate NEXT future occurrence
-        const nextFuture = calculateNextOccurrence(template.recurringSettings, now);
+      // Calculate NEXT future occurrence
+      const nextFuture = calculateNextOccurrence(template.recurringSettings, now);
 
-        templateUpdates[template.id] = {
-            ...template,
-            lastTriggeredTimestamp: now.getTime(),
-            nextScheduledOccurrence: nextFuture
-        };
-    });
+      console.log(`  📅 Updating template timestamps:`);
+      console.log(`     Previous next occurrence: ${new Date(template.nextScheduledOccurrence).toLocaleString()}`);
+      console.log(`     New next occurrence:      ${nextFuture ? new Date(nextFuture).toLocaleString() : 'null'}`);
+      console.log(`     Last triggered:           ${new Date(now.getTime()).toLocaleString()}`);
+
+      templateUpdates[template.id] = {
+          ...template,
+          lastTriggeredTimestamp: now.getTime(),
+          nextScheduledOccurrence: nextFuture
+      };
+  });
+
+  // Add summary log after the loop
+  console.log(`\n📊 Catch-up Summary:`);
+  console.log(`   Total templates checked: ${Object.keys(templates).length}`);
+  console.log(`   Tasks to add: ${tasksToAdd.length}`);
+  console.log(`   Templates to update: ${Object.keys(templateUpdates).length}`);
 
     // ✅ Batch all changes in one AppState update
     if (tasksToAdd.length > 0) {
