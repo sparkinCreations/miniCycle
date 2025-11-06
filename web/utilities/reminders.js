@@ -33,12 +33,8 @@ export class MiniCycleReminders {
 
         // Internal state (accessed via AppGlobalState)
         this.state = {
-            get reminderIntervalId() { return window.AppGlobalState?.reminderIntervalId || null; },
-            set reminderIntervalId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderIntervalId = value; },
-            get timesReminded() { return window.AppGlobalState?.timesReminded || 0; },
-            set timesReminded(value) { if (window.AppGlobalState) window.AppGlobalState.timesReminded = value; },
-            get lastReminderTime() { return window.AppGlobalState?.lastReminderTime || null; },
-            set lastReminderTime(value) { if (window.AppGlobalState) window.AppGlobalState.lastReminderTime = value; }
+            get reminderTimeoutId() { return window.AppGlobalState?.reminderTimeoutId || null; },
+            set reminderTimeoutId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderTimeoutId = value; }
         };
 
         console.log('🔔 MiniCycle Reminders module initialized');
@@ -207,12 +203,12 @@ export class MiniCycleReminders {
     stopReminders() {
         console.log('🛑 Stopping reminder system (Schema 2.5 only)...');
 
-        if (this.state.reminderIntervalId) {
-            clearInterval(this.state.reminderIntervalId);
-            this.state.reminderIntervalId = null;
-            console.log("🛑 Reminder interval cleared");
+        if (this.state.reminderTimeoutId) {
+            clearTimeout(this.state.reminderTimeoutId);
+            this.state.reminderTimeoutId = null;
+            console.log("🛑 Reminder timeout cleared");
         } else {
-            console.log("ℹ️ No active reminder interval to stop");
+            console.log("ℹ️ No active reminder timeout to stop");
         }
 
         console.log("✅ Reminder system stopped successfully");
@@ -232,6 +228,7 @@ export class MiniCycleReminders {
         }
 
         const enabled = this.deps.getElementById("enableReminders")?.checked || false;
+        const previousSettings = schemaData.reminders || {};
 
         const remindersToSave = {
             enabled,
@@ -242,9 +239,24 @@ export class MiniCycleReminders {
             frequencyUnit: this.deps.getElementById("frequencyUnit")?.value || "hours"
         };
 
-        // Save reminder start time only when enabling reminders
-        if (enabled) {
-            remindersToSave.reminderStartTime = Date.now();
+        // If enabling for first time or settings changed, reset timers
+        const settingsChanged =
+            previousSettings.frequencyValue !== remindersToSave.frequencyValue ||
+            previousSettings.frequencyUnit !== remindersToSave.frequencyUnit;
+
+        if (enabled && (!previousSettings.enabled || settingsChanged)) {
+            // First enable or settings changed - reset everything
+            const now = Date.now();
+            const multiplier = remindersToSave.frequencyUnit === "hours" ? 3600000 :
+                             remindersToSave.frequencyUnit === "days" ? 86400000 : 60000;
+            const intervalMs = remindersToSave.frequencyValue * multiplier;
+
+            remindersToSave.nextReminderTime = now + intervalMs;
+            remindersToSave.timesReminded = 0;
+        } else if (enabled) {
+            // Keep existing values when just toggling other settings
+            remindersToSave.nextReminderTime = previousSettings.nextReminderTime || Date.now();
+            remindersToSave.timesReminded = previousSettings.timesReminded || 0;
         }
 
         const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
@@ -365,7 +377,7 @@ export class MiniCycleReminders {
     }
 
     /**
-     * Send reminder notification if conditions are met
+     * Send reminder notification and schedule next one
      */
     async sendReminderNotificationIfNeeded() {
         console.log('🔔 Sending reminder notification if needed (Schema 2.5 only)...');
@@ -395,23 +407,41 @@ export class MiniCycleReminders {
 
         if (incompleteTasks.length === 0) {
             console.log("✅ All tasks complete. Stopping reminders.");
-            clearInterval(this.state.reminderIntervalId);
-            this.state.reminderIntervalId = null;
+            this.stopReminders();
             return;
         }
 
-        if (!remindersSettings.indefinite && this.state.timesReminded >= remindersSettings.repeatCount) {
+        // Check if max reminders reached
+        const timesReminded = remindersSettings.timesReminded || 0;
+        if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
             console.log("✅ Max reminders sent. Stopping reminders.");
-            clearInterval(this.state.reminderIntervalId);
-            this.state.reminderIntervalId = null;
+            this.stopReminders();
             return;
         }
 
+        // Send notification
         console.log('📢 Showing reminder notification for tasks:', incompleteTasks);
         this.deps.showNotification(`🔔 You have tasks to complete:<br>- ${incompleteTasks.join("<br>- ")}`, "default");
-        this.state.timesReminded++;
 
-        console.log('✅ Reminder notification sent (Schema 2.5)');
+        // Update counter and next reminder time
+        const multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
+                         remindersSettings.frequencyUnit === "days" ? 86400000 : 60000;
+        const intervalMs = remindersSettings.frequencyValue * multiplier;
+        const now = Date.now();
+
+        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+        fullSchemaData.customReminders.timesReminded = timesReminded + 1;
+        fullSchemaData.customReminders.nextReminderTime = now + intervalMs;
+        fullSchemaData.metadata.lastModified = Date.now();
+        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+
+        console.log('✅ Reminder notification sent (Schema 2.5)', {
+            timesReminded: timesReminded + 1,
+            nextReminderTime: new Date(now + intervalMs).toLocaleString()
+        });
+
+        // Schedule next reminder
+        this.scheduleNextReminder();
     }
 
     /**
@@ -422,10 +452,11 @@ export class MiniCycleReminders {
 
         await appInit.waitForCore();
 
-        if (this.state.reminderIntervalId) {
-            clearInterval(this.state.reminderIntervalId);
-            this.state.reminderIntervalId = null;
-            console.log('🛑 Cleared existing reminder interval');
+        // Clear any existing timeout
+        if (this.state.reminderTimeoutId) {
+            clearTimeout(this.state.reminderTimeoutId);
+            this.state.reminderTimeoutId = null;
+            console.log('🛑 Cleared existing reminder timeout');
         }
 
         // Schema 2.5 only
@@ -445,49 +476,78 @@ export class MiniCycleReminders {
             return;
         }
 
-        let multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
-                         remindersSettings.frequencyUnit === "days" ? 86400000 : 60000;
-        const intervalMs = remindersSettings.frequencyValue * multiplier;
+        const now = Date.now();
+        const nextReminderTime = remindersSettings.nextReminderTime || now;
+        const timesReminded = remindersSettings.timesReminded || 0;
 
-        console.log('⏰ Reminder interval:', {
-            value: remindersSettings.frequencyValue,
-            unit: remindersSettings.frequencyUnit,
-            intervalMs: intervalMs
+        console.log('⏰ Reminder state:', {
+            nextReminderTime: new Date(nextReminderTime).toLocaleString(),
+            timesReminded,
+            indefinite: remindersSettings.indefinite,
+            repeatCount: remindersSettings.repeatCount
         });
 
-        // Use stored start time or now if missing
-        const now = Date.now();
-        const startTime = remindersSettings.reminderStartTime || now;
-        const elapsedTime = now - startTime;
-        const intervalsPassed = Math.floor(elapsedTime / intervalMs);
-
-        this.state.timesReminded = intervalsPassed;
-        this.state.lastReminderTime = startTime + (intervalsPassed * intervalMs);
-
-        console.log(`⏱️ ${intervalsPassed} interval(s) have passed since reminderStartTime`);
-
-        // If max reminders already sent, exit early
-        if (!remindersSettings.indefinite && this.state.timesReminded >= remindersSettings.repeatCount) {
+        // Check if max reminders already sent
+        if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
             console.log("✅ Max reminders already reached. Skipping further reminders.");
             return;
         }
 
-        // Only send if enough time has passed since last reminder
-        if ((Date.now() - this.state.lastReminderTime) >= intervalMs) {
-            console.log("⏰ Sending catch-up reminder on startup.");
-            this.sendReminderNotificationIfNeeded();
+        // Check if we're overdue for a reminder (catch-up)
+        if (now >= nextReminderTime) {
+            console.log("⏰ Catch-up needed - sending reminder now.");
+            await this.sendReminderNotificationIfNeeded();
         } else {
-            const timeUntilNext = intervalMs - (Date.now() - this.state.lastReminderTime);
-            console.log(`⏳ Next reminder in ${Math.round(timeUntilNext / 1000 / 60)} minutes`);
+            // Schedule the next reminder
+            this.scheduleNextReminder();
         }
 
-        // Set up recurring reminders on interval
-        this.state.reminderIntervalId = setInterval(() => {
-            console.log('🔔 Reminder interval triggered');
-            this.sendReminderNotificationIfNeeded();
-        }, intervalMs);
-
         console.log('✅ Reminder system started successfully (Schema 2.5)');
+    }
+
+    /**
+     * Schedule the next reminder timeout
+     */
+    async scheduleNextReminder() {
+        await appInit.waitForCore();
+
+        const schemaData = this.deps.loadMiniCycleData();
+        if (!schemaData) {
+            console.error('❌ Schema 2.5 data required for scheduleNextReminder');
+            return;
+        }
+
+        const { reminders } = schemaData;
+        const remindersSettings = reminders || {};
+
+        if (!remindersSettings.enabled) {
+            console.log('🔕 Reminders disabled, not scheduling next reminder');
+            return;
+        }
+
+        const now = Date.now();
+        const nextReminderTime = remindersSettings.nextReminderTime || now;
+        const timeUntilNext = nextReminderTime - now;
+
+        if (timeUntilNext <= 0) {
+            // We're overdue, send immediately
+            console.log("⏰ Overdue reminder detected in schedule");
+            await this.sendReminderNotificationIfNeeded();
+            return;
+        }
+
+        // Clear any existing timeout
+        if (this.state.reminderTimeoutId) {
+            clearTimeout(this.state.reminderTimeoutId);
+        }
+
+        // Schedule the next reminder
+        console.log(`⏳ Next reminder scheduled in ${Math.round(timeUntilNext / 1000 / 60)} minutes at ${new Date(nextReminderTime).toLocaleString()}`);
+
+        this.state.reminderTimeoutId = setTimeout(async () => {
+            console.log('🔔 Reminder timeout triggered');
+            await this.sendReminderNotificationIfNeeded();
+        }, timeUntilNext);
     }
 
     /**
