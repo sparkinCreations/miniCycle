@@ -943,30 +943,32 @@ export class RecurringPanelManager {
                         const taskId = taskEl?.dataset.taskId;
                         if (!taskId || !taskEl) return;
 
+                        // Check if task exists in task list
                         let task = cycle.tasks.find(t => t.id === taskId);
-                        if (!task) {
-                            task = {
-                                id: taskId,
-                                text: taskEl.querySelector(".recurring-task-text")?.textContent || "Untitled Task",
-                                recurring: true,
-                                recurringSettings: structuredClone(settings),
-                                schemaVersion: 2
-                            };
-                            cycle.tasks.push(task);
+
+                        // ✅ ONLY update task if it exists in the task list
+                        // DON'T create new tasks - let the watch function handle that
+                        if (task) {
+                            // Apply recurring settings to existing task
+                            task.recurring = true;
+                            task.schemaVersion = 2;
+                            task.recurringSettings = structuredClone(settings);
                         }
 
-                        // Apply recurring settings to task
-                        task.recurring = true;
-                        task.schemaVersion = 2;
-                        task.recurringSettings = structuredClone(settings);
+                        // ✅ ALWAYS update the template (this is the important part)
+                        // Get template data (either from existing task or from template)
+                        const existingTemplate = cycle.recurringTemplates[taskId];
+                        const templateText = task?.text ||
+                                           existingTemplate?.text ||
+                                           taskEl.querySelector(".recurring-task-text")?.textContent ||
+                                           "Untitled Task";
 
-                        // Update recurringTemplates
-                        cycle.recurringTemplates[task.id] = {
-                            id: task.id,
-                            text: task.text,
-                            dueDate: task.dueDate || null,
-                            highPriority: task.highPriority || false,
-                            remindersEnabled: task.remindersEnabled || false,
+                        cycle.recurringTemplates[taskId] = {
+                            id: taskId,
+                            text: templateText,
+                            dueDate: task?.dueDate || existingTemplate?.dueDate || null,
+                            highPriority: task?.highPriority || existingTemplate?.highPriority || false,
+                            remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
                             recurring: true,
                             recurringSettings: structuredClone(settings),
                             nextScheduledOccurrence: this.deps.calculateNextOccurrence(settings, Date.now()),
