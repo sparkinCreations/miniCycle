@@ -5,7 +5,7 @@
  * It also provides a way to subscribe to state changes.
  *
  * @module state
- * @version 1.340
+ * @version 1.341
  */
 
 // MiniCycleState class definition
@@ -25,7 +25,7 @@ class MiniCycleState {
         this.saveTimeout = null;
         this.listeners = new Map();
         this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
-        this.version = '1.340';
+        this.version = '1.341';
         this.isInitialized = false; // ✅ Add this flag
     }
 
