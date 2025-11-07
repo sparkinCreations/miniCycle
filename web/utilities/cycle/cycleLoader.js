@@ -15,6 +15,7 @@ const Deps = {
   addTask: null,
   updateThemeColor: null,
   startReminders: null,
+  catchUpMissedRecurringTasks: null,
   updateProgressBar: null,
   checkCompleteAllButton: null,
   updateMainMenuHeader: null,
@@ -78,7 +79,7 @@ async function loadMiniCycle() {
   updateCycleUIState(currentCycle, schemaData.settings || {});
 
   // 4) Reminders
-  setupRemindersForCycle(schemaData.reminders || schemaData.customReminders || {});
+  await setupRemindersForCycle(schemaData.reminders || schemaData.customReminders || {});
 
   // 5) Dependent UI components
   updateDependentComponents();
@@ -221,7 +222,7 @@ function applyThemeSettings(settings) {
 /**
  * Reminders
  */
-function setupRemindersForCycle(reminders) {
+async function setupRemindersForCycle(reminders) {
   const enableReminders = document.getElementById('enableReminders');
   const frequencySection = document.getElementById('frequency-section');
   if (!enableReminders) return;
@@ -234,6 +235,12 @@ function setupRemindersForCycle(reminders) {
   }
   if (enabled) {
     Deps.startReminders?.();
+  }
+
+  // ✅ Catch up on missed recurring tasks when switching cycles
+  if (Deps.catchUpMissedRecurringTasks) {
+    console.log('🔄 Catching up on missed recurring tasks after cycle switch...');
+    await Deps.catchUpMissedRecurringTasks();
   }
 }
 

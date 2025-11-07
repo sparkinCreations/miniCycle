@@ -22,6 +22,7 @@ export class MiniCycleReminders {
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
+            AppState: dependencies.AppState || window.AppState,
             showNotification: dependencies.showNotification || this.fallbackNotification,
             loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
@@ -259,10 +260,19 @@ export class MiniCycleReminders {
             remindersToSave.timesReminded = previousSettings.timesReminded || 0;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.customReminders = remindersToSave;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Use AppState instead of direct localStorage
+        if (this.deps.AppState?.update) {
+            this.deps.AppState.update(state => {
+                state.customReminders = remindersToSave;
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save for reminders
+        } else {
+            console.warn('⚠️ AppState not available, falling back to localStorage');
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            fullSchemaData.customReminders = remindersToSave;
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        }
 
         console.log("✅ Reminders settings saved automatically (Schema 2.5):", remindersToSave);
         return enabled;
@@ -367,11 +377,19 @@ export class MiniCycleReminders {
         // Update task reminder state
         task.remindersEnabled = isEnabled;
 
-        // Update the full schema data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Use AppState instead of direct localStorage
+        if (this.deps.AppState?.update) {
+            this.deps.AppState.update(state => {
+                state.data.cycles[activeCycle] = cycles[activeCycle];
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save for task changes
+        } else {
+            console.warn('⚠️ AppState not available, falling back to localStorage');
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        }
 
         console.log(`✅ Task reminder state saved successfully (Schema 2.5) for task: ${taskId}`);
     }
@@ -429,11 +447,21 @@ export class MiniCycleReminders {
         const intervalMs = remindersSettings.frequencyValue * multiplier;
         const now = Date.now();
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.customReminders.timesReminded = timesReminded + 1;
-        fullSchemaData.customReminders.nextReminderTime = now + intervalMs;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Use AppState instead of direct localStorage
+        if (this.deps.AppState?.update) {
+            this.deps.AppState.update(state => {
+                state.customReminders.timesReminded = timesReminded + 1;
+                state.customReminders.nextReminderTime = now + intervalMs;
+                state.metadata.lastModified = Date.now();
+            }, true); // immediate save for reminders
+        } else {
+            console.warn('⚠️ AppState not available, falling back to localStorage');
+            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            fullSchemaData.customReminders.timesReminded = timesReminded + 1;
+            fullSchemaData.customReminders.nextReminderTime = now + intervalMs;
+            fullSchemaData.metadata.lastModified = Date.now();
+            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        }
 
         console.log('✅ Reminder notification sent (Schema 2.5)', {
             timesReminded: timesReminded + 1,
@@ -752,18 +780,27 @@ export class MiniCycleReminders {
                     return;
                 }
 
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-
-                // Update only the due dates reminders setting in Schema 2.5
-                if (!fullSchemaData.customReminders) {
-                    fullSchemaData.customReminders = {};
+                // ✅ Use AppState instead of direct localStorage
+                if (this.deps.AppState?.update) {
+                    this.deps.AppState.update(state => {
+                        if (!state.customReminders) {
+                            state.customReminders = {};
+                        }
+                        state.customReminders.dueDatesReminders = dueDatesReminders.checked;
+                        state.metadata.lastModified = Date.now();
+                    }, true); // immediate save
+                } else {
+                    console.warn('⚠️ AppState not available, falling back to localStorage');
+                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    if (!fullSchemaData.customReminders) {
+                        fullSchemaData.customReminders = {};
+                    }
+                    fullSchemaData.customReminders.dueDatesReminders = dueDatesReminders.checked;
+                    fullSchemaData.metadata.lastModified = Date.now();
+                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
                 }
 
-                fullSchemaData.customReminders.dueDatesReminders = dueDatesReminders.checked;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-                console.log(`💾 Saved Due Dates Reminders setting (Schema 2.5): ${fullSchemaData.customReminders.dueDatesReminders}`);
+                console.log(`💾 Saved Due Dates Reminders setting (Schema 2.5): ${dueDatesReminders.checked}`);
             });
         }
 

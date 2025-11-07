@@ -552,6 +552,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       addTask: (...args) => window.addTask?.(...args),  // ✅ Forward ALL parameters
       updateThemeColor: () => window.updateThemeColor?.(),
       startReminders: () => window.startReminders?.(),
+      catchUpMissedRecurringTasks: () => window.catchUpMissedRecurringTasks?.(),
       updateProgressBar: () => window.updateProgressBar?.(),
       checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
       updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
