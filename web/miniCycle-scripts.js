@@ -53,8 +53,10 @@ window.AppGlobalState = {
   isResetting: false,
   undoSnapshot: null,
   redoSnapshot: null,
-  undoStack: [],
-  redoStack: [],
+  activeUndoStack: [],  // ✅ Renamed from undoStack (per-cycle)
+  activeRedoStack: [],  // ✅ Renamed from redoStack (per-cycle)
+  activeCycleIdForUndo: null,  // ✅ Track which cycle's undo is loaded
+  isSwitchingCycles: false,  // ✅ Block snapshots during cycle switches
   didDragReorderOccur: false,
   lastReorderTime: 0,
   advancedVisible: false,
