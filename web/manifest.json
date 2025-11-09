@@ -16,13 +16,13 @@
   "categories": ["productivity", "lifestyle", "utilities"],
   "icons": [
     {
-      "src": "assets/images/logo/minicycle_logo_icon.png",
+      "src": "assets/images/logo/pwa-icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/images/logo/minicycle_logo_icon.png",
+      "src": "assets/images/logo/pwa-icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
