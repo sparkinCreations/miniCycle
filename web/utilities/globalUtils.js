@@ -7,7 +7,7 @@
  * These are foundational utilities that need to be available globally
  * without import overhead for frequently called functions.
  * 
- * @version 1.342
+ * @version 1.343
  * @author miniCycle Development Team
  */
 
@@ -335,7 +335,7 @@ export class GlobalUtils {
      */
     static getModuleInfo() {
         return {
-            version: '1.342',
+            version: '1.343',
             name: 'GlobalUtils',
             functionsCount: Object.getOwnPropertyNames(GlobalUtils).filter(prop => typeof GlobalUtils[prop] === 'function').length - 1, // -1 for constructor
             loadedAt: new Date().toISOString()

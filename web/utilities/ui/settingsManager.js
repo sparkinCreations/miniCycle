@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.342
+ * @version 1.343
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../appInitialization.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.342';
+        this.version = '1.343';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
@@ -339,6 +339,26 @@ export class SettingsManager {
                     if (!backupData.miniCycleStorage) {
                       this.deps.showNotification("❌ Invalid legacy backup file format.", "error", 3000);
                       return;
+                    }
+
+                    // ✅ CRITICAL: Stop AppState from auto-saving over our migration
+                    const AppState = this.deps.AppState();
+                    if (AppState) {
+                      console.log('🛑 Stopping AppState auto-save during restore...');
+                      try {
+                        // Clear the debounced save timeout
+                        if (AppState.saveTimeout) {
+                          clearTimeout(AppState.saveTimeout);
+                          AppState.saveTimeout = null;
+                        }
+                        // Clear in-memory data so it won't be saved
+                        AppState.data = null;
+                        AppState.isDirty = false;
+                        AppState.isInitialized = false;
+                        console.log('✅ AppState neutralized for restore');
+                      } catch (e) {
+                        console.warn('⚠️ AppState cleanup warning:', e);
+                      }
                     }
 
                     // Temporarily restore legacy keys

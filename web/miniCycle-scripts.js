@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.342'
+            currentVersion: '1.343'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -906,6 +906,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
+
+            // ✅ Setup click-outside handler for the switch modal
+            if (typeof window.setupModalClickOutside === 'function') {
+                window.setupModalClickOutside();
+                console.log('✅ Switch modal click-outside handler setup');
+            }
 
             console.log('✅ Cycle switcher module initialized (Phase 2)');
         } catch (error) {
