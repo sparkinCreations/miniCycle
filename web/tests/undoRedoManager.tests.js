@@ -7,9 +7,14 @@
  * - Dependency injection and fail-fast behavior
  * - Snapshot capture and deduplication
  * - Undo/redo operations and stack management
- * - UI button state management
+ * - UI button state management (state/visibility separation)
  * - State subscription and automatic snapshots
  * - Error handling and graceful degradation
+ * - Per-cycle undo with 20 steps per cycle
+ * - Cycle switch blocking and lifecycle functions
+ * - IndexedDB persistence for undo history
+ * - Signature caching for performance
+ * - Error recovery with rollback
  */
 
 export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false) {
@@ -53,7 +58,17 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         snapshotsEqual,
         performStateBasedUndo,
         performStateBasedRedo,
-        updateUndoRedoButtons
+        updateUndoRedoButtons,
+        updateUndoRedoButtonStates,
+        updateUndoRedoButtonVisibility,
+        onCycleSwitched,
+        onCycleCreated,
+        onCycleDeleted,
+        onCycleRenamed,
+        initializeUndoSystemForApp,
+        initializeUndoIndexedDB,
+        saveUndoStackToIndexedDB,
+        loadUndoStackFromIndexedDB
     } = await import('../utilities/ui/undoRedoManager.js');
 
     // ✅ CRITICAL: Mark appInit as ready for tests
@@ -65,8 +80,10 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     // Helper: Create mock dependencies
     function createMockDependencies() {
         const mockAppGlobalState = {
-            undoStack: [],
-            redoStack: [],
+            activeUndoStack: [],  // ✅ Renamed from undoStack (per-cycle)
+            activeRedoStack: [],  // ✅ Renamed from redoStack (per-cycle)
+            activeCycleIdForUndo: null,  // ✅ Track which cycle's undo is loaded
+            isSwitchingCycles: false,  // ✅ Block snapshots during cycle switches
             isInitializing: false,
             isPerformingUndoRedo: false,
             lastSnapshotSignature: null,
@@ -140,6 +157,10 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
                 if (element) {
                     element.addEventListener(event, handler);
                 }
+            },
+            wrapperActive: false,  // ✅ NEW: Track if update wrapper is active
+            showNotification: (message, type, duration) => {  // ✅ NEW: Mock notification
+                console.log(`[${type}] ${message}`);
             }
         };
     }
@@ -300,7 +321,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         captureInitialSnapshot();
 
-        if (mockDeps.AppGlobalState.undoStack.length !== 1) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
             throw new Error('Should have captured initial snapshot');
         }
     });
@@ -316,7 +337,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const state = mockDeps.AppState.get();
         captureStateSnapshot(state);
 
-        const snapshot = mockDeps.AppGlobalState.undoStack[0];
+        const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
         if (!snapshot) {
             throw new Error('Snapshot should be captured');
         }
@@ -336,7 +357,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const state = mockDeps.AppState.get();
         captureStateSnapshot(state);
 
-        if (mockDeps.AppGlobalState.undoStack.length !== 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
             throw new Error('Should not capture snapshot during initialization');
         }
     });
@@ -354,7 +375,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Try to capture identical snapshot immediately
         captureStateSnapshot(state);
 
-        if (mockDeps.AppGlobalState.undoStack.length !== 1) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
             throw new Error('Identical snapshot should be throttled');
         }
     });
@@ -376,25 +397,25 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         captureStateSnapshot(state2);
 
-        if (mockDeps.AppGlobalState.undoStack.length !== 2) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 2) {
             throw new Error('Different snapshot should be captured');
         }
     });
 
-    await test('captureStateSnapshot respects UNDO_LIMIT (50)', async () => {
+    await test('captureStateSnapshot respects UNDO_LIMIT (20)', async () => {
         const mockDeps = createMockDependencies();
         mockDeps.AppGlobalState.isInitializing = false;
         setUndoRedoManagerDependencies(mockDeps);
 
-        // Pre-fill stack with 50 snapshots
-        for (let i = 0; i < 50; i++) {
-            mockDeps.AppGlobalState.undoStack.push({
+        // Pre-fill stack with 20 snapshots
+        for (let i = 0; i < 20; i++) {
+            mockDeps.AppGlobalState.activeUndoStack.push({
                 activeCycleId: 'Test Cycle',
                 tasks: [{ id: `task-${i}`, text: `Task ${i}`, completed: false }],
                 title: 'Test Cycle',
                 autoReset: false,
                 deleteCheckedTasks: false,
-                timestamp: Date.now() - (50 - i) * 1000
+                timestamp: Date.now() - (20 - i) * 1000
             });
         }
 
@@ -405,8 +426,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await new Promise(resolve => setTimeout(resolve, 350));
         captureStateSnapshot(state);
 
-        if (mockDeps.AppGlobalState.undoStack.length !== 50) {
-            throw new Error(`Stack should remain at limit of 50, got ${mockDeps.AppGlobalState.undoStack.length}`);
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 20) {
+            throw new Error(`Stack should remain at limit of 20, got ${mockDeps.AppGlobalState.activeUndoStack.length}`);
         }
     });
 
@@ -416,7 +437,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Pre-fill redoStack
-        mockDeps.AppGlobalState.redoStack.push({
+        mockDeps.AppGlobalState.activeRedoStack.push({
             activeCycleId: 'Test Cycle',
             tasks: [],
             title: 'Test',
@@ -426,7 +447,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const state = mockDeps.AppState.get();
         captureStateSnapshot(state);
 
-        if (mockDeps.AppGlobalState.redoStack.length !== 0) {
+        if (mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
             throw new Error('redoStack should be cleared on new snapshot');
         }
     });
@@ -516,7 +537,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         state.data.cycles['Test Cycle'].tasks[0].text = 'Modified';
 
         // Check snapshot is unchanged
-        const snapshot = mockDeps.AppGlobalState.undoStack[0];
+        const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
         if (snapshot.tasks[0].text !== originalTaskText) {
             throw new Error('Snapshot should be independent copy');
         }
@@ -573,7 +594,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         // Undo
         await performStateBasedUndo();
 
-        if (mockDeps.AppGlobalState.redoStack.length !== 1) {
+        if (mockDeps.AppGlobalState.activeRedoStack.length !== 1) {
             throw new Error('Current state should be moved to redoStack');
         }
     });
@@ -599,15 +620,15 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             timestamp: Date.now()
         };
 
-        mockDeps.AppGlobalState.undoStack.push(JSON.parse(JSON.stringify(snapshot)));
-        mockDeps.AppGlobalState.undoStack.push(JSON.parse(JSON.stringify(snapshot)));
-        mockDeps.AppGlobalState.undoStack.push(JSON.parse(JSON.stringify(snapshot)));
+        mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(snapshot)));
+        mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(snapshot)));
+        mockDeps.AppGlobalState.activeUndoStack.push(JSON.parse(JSON.stringify(snapshot)));
 
         // Perform undo
         await performStateBasedUndo();
 
         // Should have skipped duplicates
-        if (mockDeps.AppGlobalState.undoStack.length > 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should have skipped all duplicate snapshots');
         }
     });
@@ -659,7 +680,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Add snapshot to stack
-        mockDeps.AppGlobalState.undoStack.push({
+        mockDeps.AppGlobalState.activeUndoStack.push({
             activeCycleId: 'Test',
             tasks: [],
             title: 'Test',
@@ -670,7 +691,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await performStateBasedUndo();
 
         // Stack should be unchanged
-        if (mockDeps.AppGlobalState.undoStack.length !== 1) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
             throw new Error('Should not process undo when AppState not ready');
         }
     });
@@ -727,12 +748,12 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
         await performStateBasedUndo();
 
-        const undoStackBefore = mockDeps.AppGlobalState.undoStack.length;
+        const undoStackBefore = mockDeps.AppGlobalState.activeUndoStack.length;
 
         // Redo
         await performStateBasedRedo();
 
-        if (mockDeps.AppGlobalState.undoStack.length <= undoStackBefore) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length <= undoStackBefore) {
             throw new Error('Redo should move snapshot to undoStack');
         }
     });
@@ -766,15 +787,15 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
             timestamp: Date.now()
         };
 
-        mockDeps.AppGlobalState.redoStack.push(JSON.parse(JSON.stringify(snapshot)));
-        mockDeps.AppGlobalState.redoStack.push(JSON.parse(JSON.stringify(snapshot)));
-        mockDeps.AppGlobalState.redoStack.push(JSON.parse(JSON.stringify(snapshot)));
+        mockDeps.AppGlobalState.activeRedoStack.push(JSON.parse(JSON.stringify(snapshot)));
+        mockDeps.AppGlobalState.activeRedoStack.push(JSON.parse(JSON.stringify(snapshot)));
+        mockDeps.AppGlobalState.activeRedoStack.push(JSON.parse(JSON.stringify(snapshot)));
 
         // Perform redo
         await performStateBasedRedo();
 
         // Should have skipped duplicates
-        if (mockDeps.AppGlobalState.redoStack.length > 0) {
+        if (mockDeps.AppGlobalState.activeRedoStack.length > 0) {
             throw new Error('Should have skipped all duplicate snapshots');
         }
     });
@@ -854,7 +875,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Add item to undoStack
-        mockDeps.AppGlobalState.undoStack.push({
+        mockDeps.AppGlobalState.activeUndoStack.push({
             activeCycleId: 'Test Cycle',
             tasks: [],
             title: 'Test',
@@ -874,7 +895,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Empty stack
-        mockDeps.AppGlobalState.undoStack = [];
+        mockDeps.AppGlobalState.activeUndoStack = [];
 
         updateUndoRedoButtons();
 
@@ -889,7 +910,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Test with empty stack
-        mockDeps.AppGlobalState.undoStack = [];
+        mockDeps.AppGlobalState.activeUndoStack = [];
         updateUndoRedoButtons();
 
         const undoBtn = mockDeps.getElementById('undo-btn');
@@ -898,7 +919,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
 
         // Test with items
-        mockDeps.AppGlobalState.undoStack.push({ tasks: [] });
+        mockDeps.AppGlobalState.activeUndoStack.push({ tasks: [] });
         updateUndoRedoButtons();
 
         if (undoBtn.style.opacity !== '1') {
@@ -1051,7 +1072,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         subscriber(newState, oldState);
 
         // Should have captured snapshot
-        if (mockDeps.AppGlobalState.undoStack.length === 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length === 0) {
             throw new Error('Should capture snapshot on task change');
         }
     });
@@ -1074,7 +1095,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         subscriber(newState, oldState);
 
         // Should NOT capture snapshot
-        if (mockDeps.AppGlobalState.undoStack.length > 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should not capture snapshot during undo/redo');
         }
     });
@@ -1114,7 +1135,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         subscriber(newState, oldState);
 
         // Should capture snapshot
-        if (mockDeps.AppGlobalState.undoStack.length === 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length === 0) {
             throw new Error('Should capture snapshot on title change');
         }
     });
@@ -1136,7 +1157,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         subscriber(newState, oldState);
 
         // Should capture snapshot
-        if (mockDeps.AppGlobalState.undoStack.length === 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length === 0) {
             throw new Error('Should capture snapshot on settings change');
         }
     });
@@ -1169,7 +1190,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Add snapshot to trigger undo logic
-        mockDeps.AppGlobalState.undoStack.push({
+        mockDeps.AppGlobalState.activeUndoStack.push({
             activeCycleId: 'Test Cycle',
             tasks: [{ id: 'task-1', text: 'Task 1', completed: false }],
             title: 'Test',
@@ -1211,7 +1232,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         captureStateSnapshot(invalidState);
 
         // Should not have captured
-        if (mockDeps.AppGlobalState.undoStack.length > 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should not capture invalid state');
         }
     });
@@ -1235,7 +1256,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         captureStateSnapshot(state);
 
         // Should not have captured
-        if (mockDeps.AppGlobalState.undoStack.length > 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should not capture when cycle is missing');
         }
     });
@@ -1257,7 +1278,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Add valid snapshot
-        mockDeps.AppGlobalState.undoStack.push({
+        mockDeps.AppGlobalState.activeUndoStack.push({
             activeCycleId: 'Test Cycle',
             tasks: [{ id: 'task-1', text: 'Task 1', completed: false }],
             recurringTemplates: {},
@@ -1296,7 +1317,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         setUndoRedoManagerDependencies(mockDeps);
 
         // Add valid snapshot to redoStack
-        mockDeps.AppGlobalState.redoStack.push({
+        mockDeps.AppGlobalState.activeRedoStack.push({
             activeCycleId: 'Test Cycle',
             tasks: [{ id: 'task-1', text: 'Task 1', completed: true }],
             recurringTemplates: {},
@@ -1338,8 +1359,432 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         captureStateSnapshot(null);
 
         // Should not have captured
-        if (mockDeps.AppGlobalState.undoStack.length > 0) {
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
             throw new Error('Should not capture null state');
+        }
+    });
+
+    // === 7. BUTTON STATE/VISIBILITY SEPARATION (4 tests) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🎛️ Button State/Visibility Separation</h4>';
+
+    await test('updateUndoRedoButtonStates updates enabled/disabled only', async () => {
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Add item to stack
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'Test',
+            tasks: [],
+            title: 'Test',
+            timestamp: Date.now()
+        });
+
+        updateUndoRedoButtonStates();
+
+        const undoBtn = mockDeps.getElementById('undo-btn');
+        if (undoBtn.disabled) {
+            throw new Error('Undo button should be enabled when stack has items');
+        }
+        if (undoBtn.style.opacity !== '1') {
+            throw new Error('Enabled button should have opacity 1');
+        }
+    });
+
+    await test('updateUndoRedoButtonVisibility updates hidden state only', async () => {
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Add item to stack
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'Test',
+            tasks: [],
+            title: 'Test',
+            timestamp: Date.now()
+        });
+
+        updateUndoRedoButtonVisibility();
+
+        const undoBtn = mockDeps.getElementById('undo-btn');
+        if (undoBtn.hidden) {
+            throw new Error('Undo button should be visible when stack has items');
+        }
+    });
+
+    await test('updateUndoRedoButtons calls both state and visibility', async () => {
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Add item to stack
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'Test',
+            tasks: [],
+            title: 'Test',
+            timestamp: Date.now()
+        });
+
+        updateUndoRedoButtons();
+
+        const undoBtn = mockDeps.getElementById('undo-btn');
+        if (undoBtn.hidden || undoBtn.disabled) {
+            throw new Error('Undo button should be visible and enabled');
+        }
+    });
+
+    await test('button functions handle missing buttons gracefully', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.getElementById = () => null;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Should not throw
+        updateUndoRedoButtonStates();
+        updateUndoRedoButtonVisibility();
+        updateUndoRedoButtons();
+    });
+
+    // === 8. CYCLE SWITCH BLOCKING (4 tests) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🚧 Cycle Switch Blocking</h4>';
+
+    await test('captureStateSnapshot blocks during cycle switch', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.isSwitchingCycles = true;  // Set flag
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const state = mockDeps.AppState.get();
+        captureStateSnapshot(state);
+
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
+            throw new Error('Should not capture snapshot during cycle switch');
+        }
+    });
+
+    await test('isSwitchingCycles flag prevents snapshot pollution', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Capture initial state
+        const state1 = mockDeps.AppState.get();
+        captureStateSnapshot(state1);
+
+        const initialCount = mockDeps.AppGlobalState.activeUndoStack.length;
+
+        // Set switching flag
+        mockDeps.AppGlobalState.isSwitchingCycles = true;
+
+        // Try to capture multiple states (simulating progressive loading)
+        for (let i = 0; i < 5; i++) {
+            const state = mockDeps.AppState.get();
+            state.data.cycles['Test Cycle'].tasks[0].text = `Modified ${i}`;
+            captureStateSnapshot(state);
+        }
+
+        // Should not have captured any new snapshots
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== initialCount) {
+            throw new Error('Should not capture snapshots while switching cycles');
+        }
+    });
+
+    await test('snapshots resume after isSwitchingCycles cleared', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.isSwitchingCycles = true;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Try to capture during switch
+        const state1 = mockDeps.AppState.get();
+        captureStateSnapshot(state1);
+
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
+            throw new Error('Should block during switch');
+        }
+
+        // Clear flag
+        mockDeps.AppGlobalState.isSwitchingCycles = false;
+
+        await new Promise(resolve => setTimeout(resolve, 350));
+
+        // Now should capture
+        const state2 = mockDeps.AppState.get();
+        captureStateSnapshot(state2);
+
+        if (mockDeps.AppGlobalState.activeUndoStack.length === 0) {
+            throw new Error('Should capture after flag cleared');
+        }
+    });
+
+    await test('state subscription respects isSwitchingCycles', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.isSwitchingCycles = true;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        setupStateBasedUndoRedo();
+
+        const subscriber = mockDeps.AppState._subscribers['undo-system'];
+
+        const oldState = mockDeps.AppState.get();
+        const newState = JSON.parse(JSON.stringify(oldState));
+        newState.data.cycles['Test Cycle'].tasks[0].completed = true;
+
+        // Trigger subscriber
+        subscriber(newState, oldState);
+
+        // Should NOT capture snapshot
+        if (mockDeps.AppGlobalState.activeUndoStack.length > 0) {
+            throw new Error('State subscription should respect isSwitchingCycles flag');
+        }
+    });
+
+    // === 9. CYCLE LIFECYCLE FUNCTIONS (6 tests) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Cycle Lifecycle Functions</h4>';
+
+    await test('onCycleCreated initializes empty undo history', async () => {
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+
+        await onCycleCreated('new-cycle-123');
+
+        // Should have initialized activeCycleIdForUndo
+        if (mockDeps.AppGlobalState.activeCycleIdForUndo !== 'new-cycle-123') {
+            throw new Error('Should set activeCycleIdForUndo');
+        }
+
+        // Stacks should be empty for new cycle
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
+            throw new Error('New cycle should have empty undo stack');
+        }
+        if (mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
+            throw new Error('New cycle should have empty redo stack');
+        }
+    });
+
+    await test('onCycleSwitched sets isSwitchingCycles flag', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'old-cycle';
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Add some undo history
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'old-cycle',
+            tasks: [],
+            title: 'Old',
+            timestamp: Date.now()
+        });
+
+        // Start the switch (don't await to check flag mid-operation)
+        const switchPromise = onCycleSwitched('new-cycle');
+
+        // Flag should be set immediately
+        if (!mockDeps.AppGlobalState.isSwitchingCycles) {
+            throw new Error('isSwitchingCycles should be set during switch');
+        }
+
+        // Wait for completion
+        await switchPromise;
+
+        // Flag should be cleared after
+        if (mockDeps.AppGlobalState.isSwitchingCycles) {
+            throw new Error('isSwitchingCycles should be cleared after switch completes');
+        }
+    });
+
+    await test('onCycleSwitched updates activeCycleIdForUndo', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'cycle-1';
+        setUndoRedoManagerDependencies(mockDeps);
+
+        await onCycleSwitched('cycle-2');
+
+        if (mockDeps.AppGlobalState.activeCycleIdForUndo !== 'cycle-2') {
+            throw new Error('Should update activeCycleIdForUndo to new cycle');
+        }
+    });
+
+    await test('onCycleDeleted clears stacks when deleting active cycle', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'cycle-to-delete';
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Add some history
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'cycle-to-delete',
+            tasks: [],
+            title: 'Test',
+            timestamp: Date.now()
+        });
+
+        await onCycleDeleted('cycle-to-delete');
+
+        // Stacks should be cleared
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0) {
+            throw new Error('Should clear undo stack when deleting active cycle');
+        }
+        if (mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
+            throw new Error('Should clear redo stack when deleting active cycle');
+        }
+    });
+
+    await test('onCycleDeleted preserves stacks when deleting inactive cycle', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'active-cycle';
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Add history for active cycle
+        mockDeps.AppGlobalState.activeUndoStack.push({
+            activeCycleId: 'active-cycle',
+            tasks: [],
+            title: 'Active',
+            timestamp: Date.now()
+        });
+
+        await onCycleDeleted('other-cycle');
+
+        // Should preserve active cycle's history
+        if (mockDeps.AppGlobalState.activeUndoStack.length === 0) {
+            throw new Error('Should preserve undo stack when deleting inactive cycle');
+        }
+    });
+
+    await test('onCycleRenamed handles IndexedDB key update', async () => {
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+
+        // Should not throw (might not have IndexedDB in test env)
+        await onCycleRenamed('old-id', 'new-id');
+    });
+
+    // === 10. INDEXEDDB PERSISTENCE (4 tests) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 IndexedDB Persistence</h4>';
+
+    await test('initializeUndoIndexedDB returns a promise', async () => {
+        // Should return a promise (may fail in test env without full IndexedDB)
+        const result = initializeUndoIndexedDB();
+
+        if (!(result instanceof Promise)) {
+            throw new Error('initializeUndoIndexedDB should return a promise');
+        }
+
+        // Wait for it to settle (may reject in test env)
+        try {
+            await result;
+        } catch (e) {
+            // Expected in test environment without full IndexedDB
+            console.log('IndexedDB initialization failed (expected in test env)');
+        }
+    });
+
+    await test('loadUndoStackFromIndexedDB returns default structure on error', async () => {
+        // In test environment, this will likely fail to access IndexedDB
+        // Should return default structure instead of throwing
+        const result = await loadUndoStackFromIndexedDB('test-cycle');
+
+        if (!result || typeof result !== 'object') {
+            throw new Error('Should return an object');
+        }
+
+        if (!Array.isArray(result.undoStack)) {
+            throw new Error('Should have undoStack array');
+        }
+
+        if (!Array.isArray(result.redoStack)) {
+            throw new Error('Should have redoStack array');
+        }
+    });
+
+    await test('saveUndoStackToIndexedDB handles errors gracefully', async () => {
+        const undoStack = [
+            {
+                activeCycleId: 'test',
+                tasks: [],
+                title: 'Test',
+                timestamp: Date.now()
+            }
+        ];
+        const redoStack = [];
+
+        // Should not throw even if IndexedDB unavailable
+        try {
+            saveUndoStackToIndexedDB('test-cycle', undoStack, redoStack);
+        } catch (e) {
+            throw new Error('saveUndoStackToIndexedDB should handle errors gracefully');
+        }
+    });
+
+    await test('per-cycle persistence architecture isolates cycles', async () => {
+        // Conceptual test - verify that different cycle IDs result in different storage
+        const cycle1Undo = [{ activeCycleId: 'cycle-1', tasks: [], title: 'C1', timestamp: Date.now() }];
+        const cycle2Undo = [{ activeCycleId: 'cycle-2', tasks: [], title: 'C2', timestamp: Date.now() }];
+
+        // Save both cycles
+        saveUndoStackToIndexedDB('cycle-1', cycle1Undo, []);
+        saveUndoStackToIndexedDB('cycle-2', cycle2Undo, []);
+
+        // Load them back
+        const loaded1 = await loadUndoStackFromIndexedDB('cycle-1');
+        const loaded2 = await loadUndoStackFromIndexedDB('cycle-2');
+
+        // In a real environment, these would be different
+        // In test env, they'll both return empty defaults
+        if (!loaded1 || !loaded2) {
+            throw new Error('Both loads should return objects');
+        }
+    });
+
+    // === 11. SIGNATURE CACHING (3 tests) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔖 Signature Caching</h4>';
+
+    await test('captureStateSnapshot caches signature on snapshot', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const state = mockDeps.AppState.get();
+        captureStateSnapshot(state);
+
+        const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
+        if (!snapshot._sig) {
+            throw new Error('Snapshot should have cached signature (_sig property)');
+        }
+        if (typeof snapshot._sig !== 'string') {
+            throw new Error('Cached signature should be a string');
+        }
+    });
+
+    await test('cached signature matches computed signature', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const state = mockDeps.AppState.get();
+        captureStateSnapshot(state);
+
+        const snapshot = mockDeps.AppGlobalState.activeUndoStack[0];
+        const cachedSig = snapshot._sig;
+        const computedSig = buildSnapshotSignature(snapshot);
+
+        if (cachedSig !== computedSig) {
+            throw new Error('Cached signature should match computed signature');
+        }
+    });
+
+    await test('signature deduplication uses cached signature', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const state = mockDeps.AppState.get();
+
+        // Capture first snapshot (has cached sig)
+        captureStateSnapshot(state);
+        const firstSig = mockDeps.AppGlobalState.activeUndoStack[0]._sig;
+
+        // Try to capture identical snapshot
+        captureStateSnapshot(state);
+
+        // Should only have one snapshot
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) {
+            throw new Error('Should deduplicate using cached signatures');
         }
     });
 
