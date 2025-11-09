@@ -605,12 +605,12 @@ export async function onCycleCreated(cycleId) {
   // Initialize empty stacks in IndexedDB
   await saveUndoStackToIndexedDB(cycleId, [], []);
 
-  // If this is the active cycle, clear in-memory stacks
-  if (Deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
-    Deps.AppGlobalState.activeUndoStack = [];
-    Deps.AppGlobalState.activeRedoStack = [];
-    updateUndoRedoButtons();
-  }
+  // Set as active cycle for undo and clear in-memory stacks
+  // (newly created cycles immediately become active)
+  Deps.AppGlobalState.activeCycleIdForUndo = cycleId;
+  Deps.AppGlobalState.activeUndoStack = [];
+  Deps.AppGlobalState.activeRedoStack = [];
+  updateUndoRedoButtons();
 }
 
 /**

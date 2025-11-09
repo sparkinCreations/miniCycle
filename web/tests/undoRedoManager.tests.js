@@ -1102,10 +1102,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('state subscription skips when wrapper active', async () => {
         const mockDeps = createMockDependencies();
+        mockDeps.wrapperActive = true;  // ✅ Set the correct dependency flag
         setUndoRedoManagerDependencies(mockDeps);
-
-        // Activate wrapper
-        window.__useUpdateWrapper = true;
 
         setupStateBasedUndoRedo();
 
@@ -1113,9 +1111,6 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (mockDeps.AppState._subscribers && mockDeps.AppState._subscribers['undo-system']) {
             throw new Error('Should not subscribe when wrapper is active');
         }
-
-        // Cleanup
-        delete window.__useUpdateWrapper;
     });
 
     await test('state subscription detects title changes', async () => {
