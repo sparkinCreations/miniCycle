@@ -364,6 +364,13 @@ export class CycleManager {
                 this.deps.checkCompleteAllButton();
                 this.deps.autoSave();
 
+                // ✅ Notify undo system of new cycle
+                if (finalResult && typeof window.onCycleCreated === 'function') {
+                    window.onCycleCreated(finalResult.storageKey).catch(err => {
+                        console.warn('⚠️ Undo system cycle creation notification failed:', err);
+                    });
+                }
+
                 if (finalResult) {
                     console.log(`✅ Created and switched to new miniCycle (state-based): "${finalResult.finalTitle}" (key: ${finalResult.storageKey})`);
                     this.deps.showNotification(`✅ Created new miniCycle "${finalResult.finalTitle}"`, "success", 3000);

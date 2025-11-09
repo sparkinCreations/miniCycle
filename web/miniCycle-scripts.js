@@ -956,12 +956,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 refreshUIFromState: (state) => window.refreshUIFromState?.(state),
                 AppGlobalState: window.AppGlobalState,
                 getElementById: (id) => document.getElementById(id),
-                safeAddEventListener: window.safeAddEventListener
+                safeAddEventListener: window.safeAddEventListener,
+                wrapperActive: false,
+                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur)
             });
 
             // Wire up UI and initialize
             undoRedoModule.wireUndoRedoUI();
             undoRedoModule.setupStateBasedUndoRedo();
+
+            // ✅ Initialize undo system with IndexedDB
+            await undoRedoModule.initializeUndoSystemForApp();
 
             // Expose functions globally for backward compatibility
             window.wireUndoRedoUI = undoRedoModule.wireUndoRedoUI;
@@ -975,6 +980,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.performStateBasedUndo = undoRedoModule.performStateBasedUndo;
             window.performStateBasedRedo = undoRedoModule.performStateBasedRedo;
             window.updateUndoRedoButtons = undoRedoModule.updateUndoRedoButtons;
+
+            // ✅ Expose new lifecycle functions
+            window.onCycleSwitched = undoRedoModule.onCycleSwitched;
+            window.onCycleCreated = undoRedoModule.onCycleCreated;
+            window.onCycleDeleted = undoRedoModule.onCycleDeleted;
+            window.onCycleRenamed = undoRedoModule.onCycleRenamed;
 
             console.log('✅ Undo/redo manager module initialized (Phase 2)');
         } catch (error) {
