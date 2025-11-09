@@ -57,6 +57,36 @@ export class SettingsManager {
     }
 
     /**
+     * Neutralize AppState to prevent auto-saving during critical operations
+     * Used during factory reset and restore operations to prevent data corruption
+     *
+     * @private
+     */
+    neutralizeAppState() {
+        const AppState = this.deps.AppState();
+        if (!AppState) {
+            console.log('ℹ️ No AppState to neutralize');
+            return;
+        }
+
+        console.log('🛑 Neutralizing AppState to prevent auto-save...');
+        try {
+            // Clear the debounced save timeout
+            if (AppState.saveTimeout) {
+                clearTimeout(AppState.saveTimeout);
+                AppState.saveTimeout = null;
+            }
+            // Clear in-memory data so it won't be saved
+            AppState.data = null;
+            AppState.isDirty = false;
+            AppState.isInitialized = false;
+            console.log('✅ AppState neutralized');
+        } catch (e) {
+            console.warn('⚠️ AppState neutralization warning:', e);
+        }
+    }
+
+    /**
      * Setup settings menu UI and event listeners
      */
     setupSettingsMenu() {
@@ -342,24 +372,7 @@ export class SettingsManager {
                     }
 
                     // ✅ CRITICAL: Stop AppState from auto-saving over our migration
-                    const AppState = this.deps.AppState();
-                    if (AppState) {
-                      console.log('🛑 Stopping AppState auto-save during restore...');
-                      try {
-                        // Clear the debounced save timeout
-                        if (AppState.saveTimeout) {
-                          clearTimeout(AppState.saveTimeout);
-                          AppState.saveTimeout = null;
-                        }
-                        // Clear in-memory data so it won't be saved
-                        AppState.data = null;
-                        AppState.isDirty = false;
-                        AppState.isInitialized = false;
-                        console.log('✅ AppState neutralized for restore');
-                      } catch (e) {
-                        console.warn('⚠️ AppState cleanup warning:', e);
-                      }
-                    }
+                    this.neutralizeAppState();
 
                     // Temporarily restore legacy keys
                     localStorage.setItem("miniCycleStorage", backupData.miniCycleStorage);
@@ -437,24 +450,7 @@ export class SettingsManager {
                 console.log('🧹 Performing bulletproof Schema 2.5 factory reset...');
 
                 // 0) CRITICAL: Stop AppState from auto-saving over our deletion
-                const AppState = this.deps.AppState();
-                if (AppState) {
-                    console.log('🛑 Stopping AppState auto-save...');
-                    try {
-                        // Clear the debounced save timeout
-                        if (AppState.saveTimeout) {
-                            clearTimeout(AppState.saveTimeout);
-                            AppState.saveTimeout = null;
-                        }
-                        // Clear in-memory data so it won't be saved
-                        AppState.data = null;
-                        AppState.isDirty = false;
-                        AppState.isInitialized = false;
-                        console.log('✅ AppState neutralized');
-                    } catch (e) {
-                        console.warn('⚠️ AppState cleanup warning:', e);
-                    }
-                }
+                this.neutralizeAppState();
 
                 // 1) Local storage cleanup (primary + legacy + dynamic)
                 try {

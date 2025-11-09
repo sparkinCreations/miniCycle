@@ -907,12 +907,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
 
-            // ✅ Setup click-outside handler for the switch modal
-            if (typeof window.setupModalClickOutside === 'function') {
-                window.setupModalClickOutside();
-                console.log('✅ Switch modal click-outside handler setup');
-            }
-
             console.log('✅ Cycle switcher module initialized (Phase 2)');
         } catch (error) {
             console.error('❌ Failed to initialize cycle switcher module:', error);

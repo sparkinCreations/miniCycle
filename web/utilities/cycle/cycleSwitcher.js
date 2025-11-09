@@ -32,6 +32,9 @@ export class CycleSwitcher {
         this.loadMiniCycleListTimeout = null;
         this.version = '1.343';
 
+        // ✅ Automatically setup click-outside handler
+        this.setupModalClickOutside();
+
         console.log('🔄 CycleSwitcher initialized');
     }
 
