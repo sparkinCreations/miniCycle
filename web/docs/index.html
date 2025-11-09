@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>miniCycle Documentation</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="miniCycle - Task Cycling & Routine Management PWA. Complete developer documentation, guides, and API reference.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+
+  <!-- Theme with Dark Mode -->
+  <link
+    rel="stylesheet"
+    href="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/style.min.css"
+    title="docsify-darklight-theme"
+    type="text/css"
+  />
+
+  <!-- Custom styles -->
+  <style>
+    :root {
+      --theme-color: #4c79ff;
+      --theme-color-dark: #74c0fc;
+
+      /* Light mode customization */
+      --docsifytabs-border-color: #ededed;
+      --docsifytabs-tab-highlight-color: #4c79ff;
+    }
+
+    /* Dark mode customization */
+    body.close .sidebar,
+    body.close .sidebar-toggle {
+      background-color: #1e1e1e;
+    }
+
+    /* Sidebar improvements */
+    .sidebar-nav > ul > li > a {
+      font-weight: 600;
+    }
+
+    .app-name {
+      font-size: 1.5rem !important;
+      font-weight: 700 !important;
+    }
+
+    /* Code block styling */
+    .markdown-section code {
+      border-radius: 4px;
+    }
+
+    .markdown-section pre > code {
+      border-radius: 8px;
+    }
+
+    /* Dark mode toggle button styling */
+    .docsify-darklight-theme .docsify-darklight-theme__button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+      background: var(--theme-color);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .docsify-darklight-theme .docsify-darklight-theme__button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">Loading miniCycle Documentation...</div>
+
+  <script>
+    window.$docsify = {
+      name: 'miniCycle',
+      repo: '', // Add your GitHub repo URL here if you want a GitHub corner link
+
+      // Base path for deployment
+      basePath: '/docs/',
+
+      // Load sidebar
+      loadSidebar: true,
+
+      // Auto header with sidebar
+      subMaxLevel: 3,
+
+      // Enable search
+      search: {
+        maxAge: 86400000, // 1 day
+        paths: 'auto',
+        placeholder: 'Search documentation...',
+        noData: 'No results found.',
+        depth: 3,
+        hideOtherSidebarContent: false
+      },
+
+      // Pagination
+      pagination: {
+        previousText: 'Previous',
+        nextText: 'Next',
+        crossChapter: true,
+        crossChapterText: true
+      },
+
+      // Copy code button
+      copyCode: {
+        buttonText: 'Copy',
+        errorText: 'Error',
+        successText: 'Copied!'
+      },
+
+      // Dark mode configuration
+      darklightTheme: {
+        siteFont: 'PT Sans',
+        defaultTheme: 'light', // or 'dark'
+        codeFontFamily: 'Roboto Mono, Monaco, courier, monospace',
+        bodyFontSize: '15px',
+        dark: {
+          accent: '#74c0fc',
+          toogleBackground: '#ffffff',
+          background: '#1e1e1e',
+          textColor: '#e0e0e0',
+          codeTextColor: '#ffffff',
+          codeBackgroundColor: '#2d2d2d',
+          borderColor: '#3d3d3d',
+          blockQuoteColor: '#858585',
+          highlightColor: '#4c79ff',
+          sidebarSublink: '#b4b4b4',
+          codeTypeColor: '#ffffff',
+          coverBackground: 'linear-gradient(to left bottom, #2d2d2d 0%, #1e1e1e 100%)',
+          toogleImage: 'url(https://cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/icons/sun.svg)'
+        },
+        light: {
+          accent: '#4c79ff',
+          toogleBackground: '#1e1e1e',
+          background: '#ffffff',
+          textColor: '#34495e',
+          codeTextColor: '#525252',
+          codeBackgroundColor: '#f8f8f8',
+          borderColor: '#e0e0e0',
+          blockQuoteColor: '#858585',
+          highlightColor: '#4c79ff',
+          sidebarSublink: '#505d6b',
+          codeTypeColor: '#091a28',
+          coverBackground: 'linear-gradient(to left bottom, #4c79ff 0%, #74c0fc 100%)',
+          toogleImage: 'url(https://cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/icons/moon.svg)'
+        }
+      },
+
+      // Custom footer
+      plugins: [
+        function(hook, vm) {
+          hook.beforeEach(function(html) {
+            return html + '\n\n---\n\n*Last updated: {docsify-updated}*';
+          });
+        }
+      ],
+
+      // Theme color
+      themeColor: '#4c79ff',
+
+      // Cover page disabled (using README as home)
+      coverpage: false,
+
+      // Execute script tags
+      executeScript: true,
+
+      // Fallback language for code blocks
+      fallbackLanguages: ['javascript', 'bash', 'json'],
+
+      // Emoji support
+      emoji: true
+    }
+  </script>
+
+  <!-- Docsify core -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+
+  <!-- Plugins -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-javascript.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+
+  <!-- Update time plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/docsify-updated.min.js"></script>
+
+  <!-- Emoji plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
+
+  <!-- Dark/Light theme toggle -->
+  <script
+    src="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/index.min.js"
+    type="text/javascript">
+  </script>
+</body>
+</html>

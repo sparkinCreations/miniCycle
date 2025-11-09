@@ -1,6 +1,10 @@
 # miniCycle Documentation
 
-**Comprehensive documentation for the miniCycle task cycling application.**
+> **Comprehensive documentation for the miniCycle task cycling application.**
+
+**Version**: 1.341 | **Test Coverage**: 958/958 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+
+Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
 ---
 
