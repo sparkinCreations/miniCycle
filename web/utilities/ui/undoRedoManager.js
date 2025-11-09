@@ -288,6 +288,12 @@ export async function performStateBasedUndo() {
   }
 
   Deps.AppGlobalState.isPerformingUndoRedo = true;
+
+  // ✅ Create rollback points
+  const rollbackState = structuredClone(Deps.AppState.get());
+  const rollbackUndoStack = [...Deps.AppGlobalState.activeUndoStack];
+  const rollbackRedoStack = [...Deps.AppGlobalState.activeRedoStack];
+
   try {
     const currentState = Deps.AppState.get();
     const currentActive = currentState.appState.activeCycleId;
@@ -346,7 +352,22 @@ export async function performStateBasedUndo() {
     updateUndoRedoButtons();
     console.log('✅ Undo completed');
   } catch (e) {
-    console.error('❌ Undo failed:', e);
+    console.error('❌ Undo failed, rolling back:', e);
+
+    // ✅ Rollback on failure
+    try {
+      await Deps.AppState.set(rollbackState);
+      Deps.AppGlobalState.activeUndoStack = rollbackUndoStack;
+      Deps.AppGlobalState.activeRedoStack = rollbackRedoStack;
+      updateUndoRedoButtons();
+
+      if (Deps.showNotification) {
+        Deps.showNotification('⚠️ Undo failed - state restored', 'error', 3000);
+      }
+    } catch (rollbackError) {
+      console.error('❌ Rollback also failed:', rollbackError);
+    }
+
     throw e; // Re-throw so caller knows it failed
   } finally {
     Deps.AppGlobalState.isPerformingUndoRedo = false;
@@ -372,6 +393,12 @@ export async function performStateBasedRedo() {
   }
 
   Deps.AppGlobalState.isPerformingUndoRedo = true;
+
+  // ✅ Create rollback points
+  const rollbackState = structuredClone(Deps.AppState.get());
+  const rollbackUndoStack = [...Deps.AppGlobalState.activeUndoStack];
+  const rollbackRedoStack = [...Deps.AppGlobalState.activeRedoStack];
+
   try {
     const currentState = Deps.AppState.get();
     const currentActive = currentState.appState.activeCycleId;
@@ -430,7 +457,22 @@ export async function performStateBasedRedo() {
     updateUndoRedoButtons();
     console.log('✅ Redo completed');
   } catch (e) {
-    console.error('❌ Redo failed:', e);
+    console.error('❌ Redo failed, rolling back:', e);
+
+    // ✅ Rollback on failure
+    try {
+      await Deps.AppState.set(rollbackState);
+      Deps.AppGlobalState.activeUndoStack = rollbackUndoStack;
+      Deps.AppGlobalState.activeRedoStack = rollbackRedoStack;
+      updateUndoRedoButtons();
+
+      if (Deps.showNotification) {
+        Deps.showNotification('⚠️ Redo failed - state restored', 'error', 3000);
+      }
+    } catch (rollbackError) {
+      console.error('❌ Rollback also failed:', rollbackError);
+    }
+
     throw e; // Re-throw so caller knows it failed
   } finally {
     Deps.AppGlobalState.isPerformingUndoRedo = false;
