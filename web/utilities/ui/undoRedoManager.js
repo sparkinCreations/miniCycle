@@ -12,8 +12,9 @@
 import { appInit } from '../appInitialization.js';
 
 // ============ CONSTANTS ============
-const UNDO_LIMIT = 50;
+const UNDO_LIMIT = 20;
 const UNDO_MIN_INTERVAL_MS = 300;
+const UNDO_DB_WRITE_DEBOUNCE_MS = 3000;  // Batch IndexedDB writes every 3s
 
 // ============ DEPENDENCY INJECTION ============
 const Deps = {
@@ -21,7 +22,9 @@ const Deps = {
   refreshUIFromState: null,
   AppGlobalState: null,
   getElementById: null,
-  safeAddEventListener: null
+  safeAddEventListener: null,
+  wrapperActive: false,
+  showNotification: null
 };
 
 export function setUndoRedoManagerDependencies(overrides = {}) {
@@ -113,7 +116,7 @@ export function setupStateBasedUndoRedo() {
   }
 
   // Skip installing when wrapper is active
-  if (window.__useUpdateWrapper) {
+  if (Deps.wrapperActive) {
     console.log('ℹ️ Undo subscriber skipped (wrapper handles snapshots)');
     return;
   }
@@ -121,7 +124,7 @@ export function setupStateBasedUndoRedo() {
   try {
     Deps.AppState.subscribe('undo-system', (newState, oldState) => {
       // Runtime guard if wrapper activates later
-      if (window.__useUpdateWrapper) return;
+      if (Deps.wrapperActive) return;
 
       if (!Deps.AppGlobalState.isPerformingUndoRedo &&
           oldState?.data?.cycles && newState?.data?.cycles) {
@@ -194,14 +197,9 @@ export function captureStateSnapshot(state) {
     timestamp: Date.now()
   };
 
-  // Build minimal signature to detect duplicates
-  const sig = JSON.stringify({
-    c: snapshot.activeCycleId,
-    t: snapshot.tasks.map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
-    ti: snapshot.title,
-    ar: !!snapshot.autoReset,
-    dc: !!snapshot.deleteCheckedTasks
-  });
+  // ✅ Build and cache signature once for reuse
+  const sig = buildSnapshotSignature(snapshot);
+  snapshot._sig = sig;  // Cache on object
 
   const now = Date.now();
 
@@ -211,16 +209,10 @@ export function captureStateSnapshot(state) {
     return;
   }
 
-  // Skip if last on stack is identical
+  // Skip if last on stack is identical (use cached signature if available)
   const last = Deps.AppGlobalState.undoStack.at(-1);
   if (last) {
-    const lastSig = JSON.stringify({
-      c: last.activeCycleId,
-      t: (last.tasks || []).map(t => ({ id: t.id, txt: t.text, c: !!t.completed, p: !!t.highPriority, d: t.dueDate || null })),
-      ti: last.title,
-      ar: !!last.autoReset,
-      dc: !!last.deleteCheckedTasks
-    });
+    const lastSig = last._sig || buildSnapshotSignature(last);
     if (lastSig === sig) return;
   }
 
@@ -261,8 +253,17 @@ export function buildSnapshotSignature(s) {
 
 /**
  * Compare two snapshots for equality
+ * Uses cached signatures if available for performance
  */
 export function snapshotsEqual(a, b) {
+  if (!a || !b) return false;
+
+  // ✅ Use cached signatures if available
+  if (a._sig && b._sig) {
+    return a._sig === b._sig;
+  }
+
+  // Fallback to building (shouldn't happen often)
   return buildSnapshotSignature(a) === buildSnapshotSignature(b);
 }
 
@@ -439,9 +440,9 @@ export async function performStateBasedRedo() {
 // ============ UI UPDATES ============
 
 /**
- * Update undo/redo button states
+ * Update undo/redo button enabled/disabled states
  */
-export function updateUndoRedoButtons() {
+export function updateUndoRedoButtonStates() {
   assertInjected('AppGlobalState', Deps.AppGlobalState);
 
   const undoBtn = Deps.getElementById('undo-btn');
@@ -451,16 +452,39 @@ export function updateUndoRedoButtons() {
 
   if (undoBtn) {
     undoBtn.disabled = undoCount === 0;
-    undoBtn.hidden = undoCount === 0;
     undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
   }
   if (redoBtn) {
     redoBtn.disabled = redoCount === 0;
-    redoBtn.hidden = redoCount === 0;
     redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
   }
 
-  console.log(`🔘 Button states: undo=${undoCount} (hidden=${undoBtn?.hidden}), redo=${redoCount} (hidden=${redoBtn?.hidden})`);
+  console.log(`🔘 Button states: undo=${undoCount} disabled=${undoBtn?.disabled}, redo=${redoCount} disabled=${redoBtn?.disabled}`);
+}
+
+/**
+ * Update undo/redo button visibility
+ */
+export function updateUndoRedoButtonVisibility() {
+  assertInjected('AppGlobalState', Deps.AppGlobalState);
+
+  const undoBtn = Deps.getElementById('undo-btn');
+  const redoBtn = Deps.getElementById('redo-btn');
+  const undoCount = Deps.AppGlobalState.undoStack.length;
+  const redoCount = Deps.AppGlobalState.redoStack.length;
+
+  if (undoBtn) undoBtn.hidden = undoCount === 0;
+  if (redoBtn) redoBtn.hidden = redoCount === 0;
+
+  console.log(`👁️ Button visibility: undo hidden=${undoBtn?.hidden}, redo hidden=${redoBtn?.hidden}`);
+}
+
+/**
+ * Update undo/redo button states and visibility (convenience wrapper)
+ */
+export function updateUndoRedoButtons() {
+  updateUndoRedoButtonStates();
+  updateUndoRedoButtonVisibility();
 }
 
 // ============ EXPORTS ============
