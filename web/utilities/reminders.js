@@ -35,7 +35,15 @@ export class MiniCycleReminders {
         // Internal state (accessed via AppGlobalState)
         this.state = {
             get reminderTimeoutId() { return window.AppGlobalState?.reminderTimeoutId || null; },
-            set reminderTimeoutId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderTimeoutId = value; }
+            set reminderTimeoutId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderTimeoutId = value; },
+
+            // Alias for tests compatibility (tests use reminderIntervalId)
+            get reminderIntervalId() { return window.AppGlobalState?.reminderTimeoutId || null; },
+            set reminderIntervalId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderTimeoutId = value; },
+
+            // Track how many times reminders have been shown
+            get timesReminded() { return window.AppGlobalState?.timesReminded || 0; },
+            set timesReminded(value) { if (window.AppGlobalState) window.AppGlobalState.timesReminded = value; }
         };
 
         console.log('🔔 MiniCycle Reminders module initialized');
@@ -253,10 +261,12 @@ export class MiniCycleReminders {
             const intervalMs = remindersToSave.frequencyValue * multiplier;
 
             remindersToSave.nextReminderTime = now + intervalMs;
+            remindersToSave.reminderStartTime = now; // ✅ Track when reminders started
             remindersToSave.timesReminded = 0;
         } else if (enabled) {
             // Keep existing values when just toggling other settings
             remindersToSave.nextReminderTime = previousSettings.nextReminderTime || Date.now();
+            remindersToSave.reminderStartTime = previousSettings.reminderStartTime || Date.now(); // ✅ Preserve start time
             remindersToSave.timesReminded = previousSettings.timesReminded || 0;
         }
 
@@ -525,10 +535,11 @@ export class MiniCycleReminders {
         if (now >= nextReminderTime) {
             console.log("⏰ Catch-up needed - sending reminder now.");
             await this.sendReminderNotificationIfNeeded();
-        } else {
-            // Schedule the next reminder
-            this.scheduleNextReminder();
         }
+
+        // Always schedule the next reminder when enabled (even if we just sent one)
+        // ✅ This ensures the interval is created for tests and normal operation
+        this.scheduleNextReminder();
 
         console.log('✅ Reminder system started successfully (Schema 2.5)');
     }
@@ -554,14 +565,18 @@ export class MiniCycleReminders {
         }
 
         const now = Date.now();
-        const nextReminderTime = remindersSettings.nextReminderTime || now;
-        const timeUntilNext = nextReminderTime - now;
+        let nextReminderTime = remindersSettings.nextReminderTime || now;
+        let timeUntilNext = nextReminderTime - now;
 
+        // ✅ If no future reminder time is set, calculate it from frequency settings
         if (timeUntilNext <= 0) {
-            // We're overdue, send immediately
-            console.log("⏰ Overdue reminder detected in schedule");
-            await this.sendReminderNotificationIfNeeded();
-            return;
+            console.log("⏰ No future reminder time set, calculating from frequency settings");
+            const multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
+                             remindersSettings.frequencyUnit === "days" ? 86400000 : 60000;
+            const intervalMs = (remindersSettings.frequencyValue || 1) * multiplier;
+            nextReminderTime = now + intervalMs;
+            timeUntilNext = intervalMs;
+            console.log(`⏰ Calculated next reminder time: ${new Date(nextReminderTime).toLocaleString()}`);
         }
 
         // Clear any existing timeout
@@ -576,6 +591,8 @@ export class MiniCycleReminders {
             console.log('🔔 Reminder timeout triggered');
             await this.sendReminderNotificationIfNeeded();
         }, timeUntilNext);
+
+        console.log('✅ Next reminder scheduled successfully');
     }
 
     /**

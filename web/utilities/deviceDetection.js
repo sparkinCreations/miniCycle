@@ -82,21 +82,22 @@ export class DeviceDetectionManager {
 
   shouldRedirectToLite() {
     const userAgent = navigator.userAgent.toLowerCase();
-    
+
     // Device capability checks
-    const isOldDevice = 
+    const isOldDevice =
       /android [1-4]\./i.test(userAgent) ||
       /chrome\/[1-4][0-9]\./i.test(userAgent) ||
       /firefox\/[1-4][0-9]\./i.test(userAgent) ||
       /safari\/[1-7]\./i.test(userAgent) ||
       /msie|trident/i.test(userAgent);
-    
-    const hasLowMemory = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
-    const hasSlowConnection = navigator.connection && 
-      (navigator.connection.effectiveType === 'slow-2g' || 
-       navigator.connection.effectiveType === '2g' || 
-       navigator.connection.effectiveType === '3g');
-    
+
+    // ✅ Ensure boolean return values (Safari doesn't support these APIs)
+    const hasLowMemory = Boolean(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+    const hasSlowConnection = Boolean(navigator.connection &&
+      (navigator.connection.effectiveType === 'slow-2g' ||
+       navigator.connection.effectiveType === '2g' ||
+       navigator.connection.effectiveType === '3g'));
+
     return isOldDevice || hasLowMemory || hasSlowConnection;
   }
 

@@ -45,6 +45,9 @@ export function runConsoleCaptureTests(resultsDiv) {
             }
         });
 
+        // ✅ Clear localStorage before running test (clean slate for each test)
+        localStorage.clear();
+
         try {
             // Run test
             testFn();
