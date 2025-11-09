@@ -211,6 +211,13 @@ export class CycleSwitcher {
                 const renameData = window._tempRenameData || {};
                 delete window._tempRenameData; // cleanup
 
+                // ✅ Notify undo system of cycle rename
+                if (typeof window.onCycleRenamed === 'function') {
+                    window.onCycleRenamed(cycleKey, cleanName).catch(err => {
+                        console.warn('⚠️ Undo system cycle rename notification failed:', err);
+                    });
+                }
+
                 // Update UI
                 selectedCycle.dataset.cycleKey = cleanName;
                 selectedCycle.dataset.cycleName = cleanName;
@@ -325,6 +332,14 @@ export class CycleSwitcher {
                 }, true); // immediate save
 
                 console.log('💾 Deletion saved through state system');
+
+                // ✅ Notify undo system of cycle deletion
+                if (typeof window.onCycleDeleted === 'function') {
+                    window.onCycleDeleted(cycleKey).catch(err => {
+                        console.warn('⚠️ Undo system cycle deletion notification failed:', err);
+                    });
+                }
+
                 console.log('🔄 Refreshing UI...');
 
                 // ✅ Check if any cycles remain
@@ -443,6 +458,13 @@ export class CycleSwitcher {
         }
 
         console.log(`✅ Switched to cycle (state-based): ${cycleKey}`);
+
+        // ✅ Notify undo system of cycle switch
+        if (typeof window.onCycleSwitched === 'function') {
+            window.onCycleSwitched(cycleKey).catch(err => {
+                console.warn('⚠️ Undo context switch failed:', err);
+            });
+        }
 
         // ✅ Close modal first to avoid UI conflicts
         this.hideSwitchMiniCycleModal();
