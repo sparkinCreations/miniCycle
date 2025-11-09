@@ -210,7 +210,7 @@ export function captureStateSnapshot(state) {
   }
 
   // Skip if last on stack is identical (use cached signature if available)
-  const last = Deps.AppGlobalState.undoStack.at(-1);
+  const last = Deps.AppGlobalState.activeUndoStack.at(-1);
   if (last) {
     const lastSig = last._sig || buildSnapshotSignature(last);
     if (lastSig === sig) return;
@@ -219,19 +219,19 @@ export function captureStateSnapshot(state) {
   console.log('📸 Capturing snapshot:', {
     taskCount: snapshot.tasks.length,
     title: snapshot.title,
-    stackSize: Deps.AppGlobalState.undoStack.length
+    stackSize: Deps.AppGlobalState.activeUndoStack.length
   });
 
-  Deps.AppGlobalState.undoStack.push(snapshot);
-  if (Deps.AppGlobalState.undoStack.length > UNDO_LIMIT) {
-    Deps.AppGlobalState.undoStack.shift();
+  Deps.AppGlobalState.activeUndoStack.push(snapshot);
+  if (Deps.AppGlobalState.activeUndoStack.length > UNDO_LIMIT) {
+    Deps.AppGlobalState.activeUndoStack.shift();
   }
 
   // Update dedupe trackers
   Deps.AppGlobalState.lastSnapshotSignature = sig;
   Deps.AppGlobalState.lastSnapshotTs = now;
 
-  Deps.AppGlobalState.redoStack = [];
+  Deps.AppGlobalState.activeRedoStack = [];
   updateUndoRedoButtons();
 }
 
@@ -277,7 +277,7 @@ export async function performStateBasedUndo() {
   assertInjected('AppGlobalState', Deps.AppGlobalState);
   assertInjected('refreshUIFromState', Deps.refreshUIFromState);
 
-  if (Deps.AppGlobalState.undoStack.length === 0) {
+  if (Deps.AppGlobalState.activeUndoStack.length === 0) {
     console.warn('⚠️ Nothing to undo');
     return;
   }
@@ -306,8 +306,8 @@ export async function performStateBasedUndo() {
 
     let snap = null;
     let skippedDuplicates = 0;
-    while (Deps.AppGlobalState.undoStack.length) {
-      const candidate = Deps.AppGlobalState.undoStack.pop();
+    while (Deps.AppGlobalState.activeUndoStack.length) {
+      const candidate = Deps.AppGlobalState.activeUndoStack.pop();
       if (!snapshotsEqual(candidate, currentSnapshot)) {
         snap = candidate;
         break;
@@ -321,7 +321,7 @@ export async function performStateBasedUndo() {
       return;
     }
 
-    Deps.AppGlobalState.redoStack.push(currentSnapshot);
+    Deps.AppGlobalState.activeRedoStack.push(currentSnapshot);
 
     await Deps.AppState.update(state => {
       if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
@@ -361,7 +361,7 @@ export async function performStateBasedRedo() {
   assertInjected('AppGlobalState', Deps.AppGlobalState);
   assertInjected('refreshUIFromState', Deps.refreshUIFromState);
 
-  if (Deps.AppGlobalState.redoStack.length === 0) {
+  if (Deps.AppGlobalState.activeRedoStack.length === 0) {
     console.warn('⚠️ Nothing to redo');
     return;
   }
@@ -390,8 +390,8 @@ export async function performStateBasedRedo() {
 
     let snap = null;
     let skippedDuplicates = 0;
-    while (Deps.AppGlobalState.redoStack.length) {
-      const candidate = Deps.AppGlobalState.redoStack.pop();
+    while (Deps.AppGlobalState.activeRedoStack.length) {
+      const candidate = Deps.AppGlobalState.activeRedoStack.pop();
       if (!snapshotsEqual(candidate, currentSnapshot)) {
         snap = candidate;
         break;
@@ -405,7 +405,7 @@ export async function performStateBasedRedo() {
       return;
     }
 
-    Deps.AppGlobalState.undoStack.push(currentSnapshot);
+    Deps.AppGlobalState.activeUndoStack.push(currentSnapshot);
 
     await Deps.AppState.update(state => {
       if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
@@ -447,8 +447,8 @@ export function updateUndoRedoButtonStates() {
 
   const undoBtn = Deps.getElementById('undo-btn');
   const redoBtn = Deps.getElementById('redo-btn');
-  const undoCount = Deps.AppGlobalState.undoStack.length;
-  const redoCount = Deps.AppGlobalState.redoStack.length;
+  const undoCount = Deps.AppGlobalState.activeUndoStack.length;
+  const redoCount = Deps.AppGlobalState.activeRedoStack.length;
 
   if (undoBtn) {
     undoBtn.disabled = undoCount === 0;
@@ -470,8 +470,8 @@ export function updateUndoRedoButtonVisibility() {
 
   const undoBtn = Deps.getElementById('undo-btn');
   const redoBtn = Deps.getElementById('redo-btn');
-  const undoCount = Deps.AppGlobalState.undoStack.length;
-  const redoCount = Deps.AppGlobalState.redoStack.length;
+  const undoCount = Deps.AppGlobalState.activeUndoStack.length;
+  const redoCount = Deps.AppGlobalState.activeRedoStack.length;
 
   if (undoBtn) undoBtn.hidden = undoCount === 0;
   if (redoBtn) redoBtn.hidden = redoCount === 0;
