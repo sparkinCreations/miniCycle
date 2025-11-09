@@ -46,7 +46,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '1.341'; 
+var currentVersion = '1.342'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -2449,7 +2449,7 @@ function setupTryFullVersionButton() {
 
 // ✅ UPDATED handleTryFullVersion function
 function handleTryFullVersion() {
-  var currentVersion = '1.341';
+  var currentVersion = '1.342';
   
   // Show confirmation
   showNotification(
@@ -3571,6 +3571,64 @@ function hideEmptyState() {
 }
 
 setTimeout(showEmptyState, 1000);
+
+// ============================================
+// LOADING SPINNER CONTROL
+// ============================================
+
+// Hide initial app loader when app is ready
+setTimeout(function() {
+  var appLoader = document.getElementById('app-loader');
+  if (appLoader) {
+    appLoader.classList.add('fade-out');
+    setTimeout(function() {
+      appLoader.style.display = 'none';
+    }, 500);
+  }
+}, 500);
+
+/**
+ * Shows the loading overlay with optional custom message (ES5 compatible)
+ * @param {string} message - Custom loading message (optional)
+ */
+window.showLoader = function(message) {
+  var msg = message || 'Processing...';
+  var overlay = document.getElementById('loading-overlay');
+  var textElement = overlay ? overlay.querySelector('.loading-spinner-text') : null;
+
+  if (overlay) {
+    if (textElement && msg) {
+      textElement.textContent = msg;
+    }
+    overlay.classList.add('active');
+  }
+};
+
+/**
+ * Hides the loading overlay (ES5 compatible)
+ */
+window.hideLoader = function() {
+  var overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+};
+
+/**
+ * Wraps an operation with loading indicator (ES5 compatible, no async/await)
+ * @param {Function} callback - Function to execute
+ * @param {string} message - Loading message to display
+ */
+window.withLoader = function(callback, message) {
+  var msg = message || 'Processing...';
+  try {
+    window.showLoader(msg);
+    var result = callback();
+    return result;
+  } finally {
+    window.hideLoader();
+  }
+};
 
 console.log('🎉 miniCycle Lite fully initialized with enhanced compatibility!');
 // End of miniCycle-lite-scripts.js

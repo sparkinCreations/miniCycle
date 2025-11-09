@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.341'
+            currentVersion: '1.342'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -3684,7 +3684,16 @@ document.addEventListener("touchstart", () => {
 
 document.addEventListener("touchstart", () => {}, { passive: true });
 
-
+  // Hide initial app loader when app is ready
+  setTimeout(() => {
+    const appLoader = document.getElementById('app-loader');
+    if (appLoader) {
+      appLoader.classList.add('fade-out');
+      setTimeout(() => {
+        appLoader.style.display = 'none';
+      }, 500);
+    }
+  }, 500);
 
 });
 
@@ -3692,3 +3701,49 @@ document.addEventListener("touchstart", () => {}, { passive: true });
     try { new Function('()=>{}'); } catch(_) { return false; }
     return !!(window.Promise && window.fetch);
   }
+
+// ============================================
+// LOADING SPINNER GLOBAL FUNCTIONS
+// ============================================
+
+/**
+ * Shows the loading overlay with optional custom message
+ * @param {string} message - Custom loading message (optional)
+ */
+window.showLoader = function(message = 'Processing...') {
+  const overlay = document.getElementById('loading-overlay');
+  const textElement = overlay?.querySelector('.loading-spinner-text');
+
+  if (overlay) {
+    if (textElement && message) {
+      textElement.textContent = message;
+    }
+    overlay.classList.add('active');
+  }
+};
+
+/**
+ * Hides the loading overlay
+ */
+window.hideLoader = function() {
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+};
+
+/**
+ * Wraps an async operation with loading indicator
+ * @param {Function} asyncFunction - Async function to execute
+ * @param {string} message - Loading message to display
+ * @returns {Promise} - Result of the async function
+ */
+window.withLoader = async function(asyncFunction, message = 'Processing...') {
+  try {
+    window.showLoader(message);
+    const result = await asyncFunction();
+    return result;
+  } finally {
+    window.hideLoader();
+  }
+};

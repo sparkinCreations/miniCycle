@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" onerror="this.disabled=true;">
 
 <!-- ✅ Main stylesheet -->
-<link rel="stylesheet" href="miniCycle-lite-styles.css?v=1.341">
+<link rel="stylesheet" href="miniCycle-lite-styles.css?v=1.342">
 
 <!-- ✅ ADD: Web App Manifest and Theme -->
 <link rel="manifest" href="manifest-lite.json">
@@ -285,6 +285,20 @@ window.addEventListener('appinstalled', function () {
 
 </head>
 <body>
+<!-- Initial App Loader -->
+<div id="app-loader">
+  <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo">
+  <div class="loader-text">Loading miniCycle Lite...</div>
+</div>
+
+<!-- Loading Overlay for Operations -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loading-spinner">
+    <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading...">
+    <div class="loading-spinner-text">Processing...</div>
+  </div>
+</div>
+
 <!-- ✅ Header with tooltips -->
 <header class="mini-cycle-header-row">
   <div class="mode-selector-container">
@@ -479,7 +493,7 @@ window.addEventListener('appinstalled', function () {
 </style>
 
 <!-- ✅ Load JavaScript last -->
-<script src="miniCycle-lite-scripts.js?v=1.341"></script>
+<script src="miniCycle-lite-scripts.js?v=1.342"></script>
 
 <style>
 /* --- ES5-friendly toast --- */

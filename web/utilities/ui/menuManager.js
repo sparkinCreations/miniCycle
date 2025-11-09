@@ -3,7 +3,7 @@
  * Handles main menu operations and interactions
  *
  * @module menuManager
- * @version 1.341
+ * @version 1.342
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../appInitialization.js';
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        this.version = '1.341';
+        this.version = '1.342';
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
