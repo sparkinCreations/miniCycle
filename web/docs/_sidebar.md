@@ -46,6 +46,10 @@
   * [October 2025 Improvements](OCTOBER_2025_IMPROVEMENTS.md)
   * [Notification Standardization Plan](NOTIFICATION_STANDARDIZATION_PLAN.md)
 
+* **CSS & Theming**
+  * [CSS Refactor Plan](CSS_REFACTOR_PLAN.md)
+  * [Theme Architecture](THEME_ARCHITECTURE.md)
+
 * **Additional Resources**
   * [📄 Ultimate Architecture Complete (PDF)](miniCycle_Ultimate_Architecture_Complete.pdf ':ignore')
   * [Multi-Platform Folder Structure](MULTI_PLATFORM_FOLDER_STRUCTURE.md)
