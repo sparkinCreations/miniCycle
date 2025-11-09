@@ -487,6 +487,138 @@ export function updateUndoRedoButtons() {
   updateUndoRedoButtonVisibility();
 }
 
+// ============ CYCLE LIFECYCLE INTEGRATION ============
+
+/**
+ * Handle cycle switch - save current, load new
+ * Called by cycleSwitcher when user switches cycles
+ */
+export async function onCycleSwitched(newCycleId) {
+  assertInjected('AppGlobalState', Deps.AppGlobalState);
+
+  const oldCycleId = Deps.AppGlobalState.activeCycleIdForUndo;
+
+  if (oldCycleId === newCycleId) {
+    console.log('ℹ️ Same cycle, no undo stack swap needed');
+    return;
+  }
+
+  console.log(`🔄 Switching undo context: "${oldCycleId}" → "${newCycleId}"`);
+
+  // 1. Save current cycle's stacks to IndexedDB
+  if (oldCycleId) {
+    await saveUndoStackToIndexedDB(
+      oldCycleId,
+      Deps.AppGlobalState.activeUndoStack,
+      Deps.AppGlobalState.activeRedoStack
+    );
+  }
+
+  // 2. Clear in-memory stacks
+  Deps.AppGlobalState.activeUndoStack = [];
+  Deps.AppGlobalState.activeRedoStack = [];
+
+  // 3. Load new cycle's stacks from IndexedDB
+  const loaded = await loadUndoStackFromIndexedDB(newCycleId);
+  Deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
+  Deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+
+  // 4. Update tracking
+  Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+
+  // 5. Update UI
+  updateUndoRedoButtons();
+
+  console.log(`✅ Loaded ${loaded.undoStack.length} undo, ${loaded.redoStack.length} redo steps`);
+}
+
+/**
+ * Handle cycle creation - initialize empty stacks
+ * Called by cycleManager when new cycle is created
+ */
+export async function onCycleCreated(cycleId) {
+  console.log(`🆕 New cycle created: "${cycleId}" - initializing empty undo stack`);
+
+  // Initialize empty stacks in IndexedDB
+  await saveUndoStackToIndexedDB(cycleId, [], []);
+
+  // If this is the active cycle, clear in-memory stacks
+  if (Deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+    updateUndoRedoButtons();
+  }
+}
+
+/**
+ * Handle cycle deletion - cleanup IndexedDB
+ * Called by cycleManager when cycle is deleted
+ */
+export async function onCycleDeleted(cycleId) {
+  console.log(`🗑️ Cycle deleted: "${cycleId}" - removing undo history`);
+
+  // Remove from IndexedDB
+  await deleteUndoStackFromIndexedDB(cycleId);
+
+  // If this was the active cycle, clear memory
+  if (Deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+    Deps.AppGlobalState.activeCycleIdForUndo = null;
+    updateUndoRedoButtons();
+  }
+}
+
+/**
+ * Handle cycle rename - migrate IndexedDB entry
+ * Called by cycleSwitcher when cycle is renamed
+ */
+export async function onCycleRenamed(oldCycleId, newCycleId) {
+  console.log(`📝 Cycle renamed: "${oldCycleId}" → "${newCycleId}"`);
+
+  // Migrate in IndexedDB
+  await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
+
+  // Update in-memory tracking
+  if (Deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
+    Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+  }
+}
+
+/**
+ * Initialize undo system for app startup
+ * Loads current cycle's undo history from IndexedDB
+ */
+export async function initializeUndoSystemForApp() {
+  assertInjected('AppState', Deps.AppState);
+  assertInjected('AppGlobalState', Deps.AppGlobalState);
+
+  console.log('🔄 Initializing undo system...');
+
+  // 1. Initialize IndexedDB
+  await initializeUndoIndexedDB();
+
+  // 2. Get current active cycle
+  const currentState = Deps.AppState.get();
+  const activeCycleId = currentState?.appState?.activeCycleId;
+
+  if (!activeCycleId) {
+    console.warn('⚠️ No active cycle for undo initialization');
+    return;
+  }
+
+  // 3. Load that cycle's undo history
+  const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
+  Deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
+  Deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+  Deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
+
+  // 4. Update UI
+  updateUndoRedoButtons();
+
+  console.log(`✅ Undo system initialized with ${loaded.undoStack.length} undo steps`);
+}
+
 // ============ INDEXEDDB PERSISTENCE ============
 
 let undoDB = null;  // Database connection
