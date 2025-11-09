@@ -242,6 +242,13 @@ export function captureStateSnapshot(state) {
 
   Deps.AppGlobalState.activeRedoStack = [];
   updateUndoRedoButtons();
+
+  // ✅ Save to IndexedDB (debounced to avoid excessive writes)
+  saveUndoStackToIndexedDB(
+    activeCycle,
+    Deps.AppGlobalState.activeUndoStack,
+    Deps.AppGlobalState.activeRedoStack
+  );
 }
 
 /**
@@ -359,6 +366,16 @@ export async function performStateBasedUndo() {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     updateUndoRedoButtons();
+
+    // ✅ Save updated stacks to IndexedDB
+    if (currentActive) {
+      saveUndoStackToIndexedDB(
+        currentActive,
+        Deps.AppGlobalState.activeUndoStack,
+        Deps.AppGlobalState.activeRedoStack
+      );
+    }
+
     console.log('✅ Undo completed');
   } catch (e) {
     console.error('❌ Undo failed, rolling back:', e);
@@ -464,6 +481,16 @@ export async function performStateBasedRedo() {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     updateUndoRedoButtons();
+
+    // ✅ Save updated stacks to IndexedDB
+    if (currentActive) {
+      saveUndoStackToIndexedDB(
+        currentActive,
+        Deps.AppGlobalState.activeUndoStack,
+        Deps.AppGlobalState.activeRedoStack
+      );
+    }
+
     console.log('✅ Redo completed');
   } catch (e) {
     console.error('❌ Redo failed, rolling back:', e);
@@ -678,6 +705,37 @@ export async function initializeUndoSystemForApp() {
 
   // 4. Update UI
   updateUndoRedoButtons();
+
+  // 5. Set up page unload handler to force immediate save
+  window.addEventListener('beforeunload', () => {
+    // Clear debounce timeout and save immediately
+    if (dbWriteTimeout) {
+      clearTimeout(dbWriteTimeout);
+      dbWriteTimeout = null;
+    }
+
+    const cycleId = Deps.AppGlobalState.activeCycleIdForUndo;
+    if (cycleId && undoDB) {
+      // Force immediate synchronous save (no await)
+      try {
+        const transaction = undoDB.transaction(["undoStacks"], "readwrite");
+        const objectStore = transaction.objectStore("undoStacks");
+
+        const data = {
+          cycleId,
+          undoStack: Deps.AppGlobalState.activeUndoStack || [],
+          redoStack: Deps.AppGlobalState.activeRedoStack || [],
+          lastUpdated: Date.now(),
+          version: "1.344"
+        };
+
+        objectStore.put(data);
+        console.log('💾 Force-saved undo history on page unload');
+      } catch (e) {
+        console.warn('⚠️ Failed to force-save undo history:', e);
+      }
+    }
+  });
 
   console.log(`✅ Undo system initialized with ${loaded.undoStack.length} undo steps`);
 }
