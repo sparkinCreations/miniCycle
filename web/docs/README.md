@@ -148,4 +148,4 @@ When adding new documentation:
 
 **miniCycle** - Turn Your Routine Into Progress
 
-Built with ❤️ by [MJ](https://sparkincreations.com) | Official Site: [minicycleapp.com](https://minicycleapp.com)
+Built with ❤️ by [sparkinCreations](https://sparkincreations.com) | Official Site: [minicycleapp.com](https://minicycleapp.com)
