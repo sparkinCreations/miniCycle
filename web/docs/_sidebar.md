@@ -47,10 +47,10 @@
   * [Notification Standardization Plan](NOTIFICATION_STANDARDIZATION_PLAN.md)
 
 * **Additional Resources**
-  * [📄 Ultimate Architecture Complete (PDF)](miniCycle_Ultimate_Architecture_Complete.pdf)
-  * [📝 Multi-Platform Folder Structure](miniCycle%20proposed%20multi-platform%20folder%20structure%20.txt)
-  * [📝 Quick Guide Multi-Platform Restructure](Quick%20guide%20multi-platform%20folder%20restructure%20.txt)
-  * [📝 Final Folder Organization Structure](Final%20proposed%20folder%20organization%20structure%20.txt)
+  * [📄 Ultimate Architecture Complete (PDF)](miniCycle_Ultimate_Architecture_Complete.pdf ':ignore')
+  * [Multi-Platform Folder Structure](MULTI_PLATFORM_FOLDER_STRUCTURE.md)
+  * [Quick Guide Multi-Platform](QUICK_GUIDE_MULTI_PLATFORM.md)
+  * [Final Folder Organization](FINAL_FOLDER_ORGANIZATION.md)
 
 * **Links**
   * [📱 Launch App](https://minicycle.app/miniCycle.html)
