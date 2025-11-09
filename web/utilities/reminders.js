@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module reminders
- * @version 1.343
+ * @version 1.344
  */
 
 import { appInit } from './appInitialization.js';
 
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
-        this.version = '1.343';
+        this.version = '1.344';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {

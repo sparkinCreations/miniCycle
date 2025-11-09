@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module utilities/task/dragDropManager
- * @version 1.343
+ * @version 1.344
  */
 
 import { appInit } from '../appInitialization.js';
