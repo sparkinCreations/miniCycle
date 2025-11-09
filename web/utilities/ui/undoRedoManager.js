@@ -126,6 +126,9 @@ export function setupStateBasedUndoRedo() {
       // Runtime guard if wrapper activates later
       if (Deps.wrapperActive) return;
 
+      // Skip during cycle switches
+      if (Deps.AppGlobalState.isSwitchingCycles) return;
+
       if (!Deps.AppGlobalState.isPerformingUndoRedo &&
           oldState?.data?.cycles && newState?.data?.cycles) {
         const activeCycle = newState.appState.activeCycleId;
@@ -174,6 +177,12 @@ export function captureStateSnapshot(state) {
   // Don't capture snapshots during initial app load
   if (Deps.AppGlobalState.isInitializing) {
     console.log('⏭️ Skipping snapshot during initialization');
+    return;
+  }
+
+  // Don't capture snapshots during cycle switches
+  if (Deps.AppGlobalState.isSwitchingCycles) {
+    console.log('⏭️ Skipping snapshot during cycle switch');
     return;
   }
 
@@ -547,31 +556,43 @@ export async function onCycleSwitched(newCycleId) {
 
   console.log(`🔄 Switching undo context: "${oldCycleId}" → "${newCycleId}"`);
 
-  // 1. Save current cycle's stacks to IndexedDB
-  if (oldCycleId) {
-    await saveUndoStackToIndexedDB(
-      oldCycleId,
-      Deps.AppGlobalState.activeUndoStack,
-      Deps.AppGlobalState.activeRedoStack
-    );
+  // ✅ Set flag to block snapshot capture during transition
+  Deps.AppGlobalState.isSwitchingCycles = true;
+
+  try {
+    // 1. Save current cycle's stacks to IndexedDB
+    if (oldCycleId) {
+      await saveUndoStackToIndexedDB(
+        oldCycleId,
+        Deps.AppGlobalState.activeUndoStack,
+        Deps.AppGlobalState.activeRedoStack
+      );
+    }
+
+    // 2. Clear in-memory stacks
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+
+    // 3. Load new cycle's stacks from IndexedDB
+    const loaded = await loadUndoStackFromIndexedDB(newCycleId);
+    Deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
+    Deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+
+    // 4. Update tracking
+    Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+
+    // 5. Update UI
+    updateUndoRedoButtons();
+
+    console.log(`✅ Loaded ${loaded.undoStack.length} undo, ${loaded.redoStack.length} redo steps`);
+
+    // ✅ Small delay to let cycle fully load before re-enabling snapshots
+    await new Promise(resolve => setTimeout(resolve, 300));
+  } finally {
+    // ✅ Always clear the flag, even on error
+    Deps.AppGlobalState.isSwitchingCycles = false;
+    console.log('🔓 Cycle switch complete, snapshots re-enabled');
   }
-
-  // 2. Clear in-memory stacks
-  Deps.AppGlobalState.activeUndoStack = [];
-  Deps.AppGlobalState.activeRedoStack = [];
-
-  // 3. Load new cycle's stacks from IndexedDB
-  const loaded = await loadUndoStackFromIndexedDB(newCycleId);
-  Deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
-  Deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
-
-  // 4. Update tracking
-  Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
-
-  // 5. Update UI
-  updateUndoRedoButtons();
-
-  console.log(`✅ Loaded ${loaded.undoStack.length} undo, ${loaded.redoStack.length} redo steps`);
 }
 
 /**
