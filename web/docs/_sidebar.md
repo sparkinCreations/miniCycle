@@ -30,6 +30,7 @@
   * [Testing Quick Reference](TESTING_QUICK_REFERENCE.md)
 
 * **Deployment & Updates**
+  * [Deployment Guide](DEPLOYMENT.md)
   * [Service Worker Update Strategy](SERVICE_WORKER_UPDATE_STRATEGY.md)
   * [Update Version Guide](UPDATE-VERSION-GUIDE.md)
 

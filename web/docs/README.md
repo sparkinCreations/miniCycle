@@ -110,6 +110,9 @@ Historical documents and outdated guides are preserved in:
 **...update the app version**
 → Follow [UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)
 
+**...deploy to production**
+→ See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 **...understand recurring tasks**
 → See [minicycle-recurring-guide.md](./minicycle-recurring-guide.md)
 
@@ -118,6 +121,18 @@ Historical documents and outdated guides are preserved in:
 
 **...fix browser compatibility issues**
 → Review [SAFARI_DRAGDROP_FIX.md](./SAFARI_DRAGDROP_FIX.md) and [DRAG_DROP_LONG_PRESS.md](./DRAG_DROP_LONG_PRESS.md)
+
+---
+
+## 🌐 Live Application
+
+**Official URL:** [minicycleapp.com](https://minicycleapp.com)
+- Redirects to: [minicycle.app/product.html](https://minicycle.app/product.html)
+- Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
+- Documentation: [minicycle.app/docs](https://minicycle.app/docs)
+- Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment information.
 
 ---
 
@@ -133,4 +148,4 @@ When adding new documentation:
 
 **miniCycle** - Turn Your Routine Into Progress
 
-Built with ❤️ by [MJ](https://sparkincreations.com) | [miniCycleApp.com](https://minicycleapp.com)
+Built with ❤️ by [MJ](https://sparkincreations.com) | Official Site: [minicycleapp.com](https://minicycleapp.com)

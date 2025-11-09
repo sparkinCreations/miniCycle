@@ -133,7 +133,7 @@ This is fundamentally different from traditional to-do apps where completed task
 | **Main Script** | 3,674 lines | Down from 15,677 (74.8% reduction) ✅ |
 | **Modules** | 33 modules | All major systems modularized! |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.336 | Stable production release |
+| **App Version** | 1.341 | Stable production release |
 | **SW Cache** | v82 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
 | **Test Coverage** | 100% ✅ | 958 tests across 30 modules |
@@ -1878,28 +1878,32 @@ console.log(cycle.recurringTemplates);
 
 ### Deploying Changes
 
-#### For Netlify:
+**See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide.**
+
+**Quick Deployment:**
 
 ```bash
 # 1. Update version
 ./update-version.sh
 
-# 2. Commit changes
+# 2. Run tests
+npm test  # Ensure all 958 tests pass
+
+# 3. Commit changes
 git add .
 git commit -m "feat: Add new feature"
-
-# 3. Push to main
 git push origin main
 
-# Netlify auto-deploys from main branch!
-```
-
-#### For other platforms:
-
-```bash
-# Just upload the /web directory
+# 4. Upload to minicycle.app
+# Upload entire /web directory to server root
 # No build step needed!
 ```
+
+**Live URLs:**
+- Official: [minicycleapp.com](https://minicycleapp.com) → redirects to minicycle.app/product.html
+- Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
+- Documentation: [minicycle.app/docs](https://minicycle.app/docs)
+- Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
 
 ---
 
