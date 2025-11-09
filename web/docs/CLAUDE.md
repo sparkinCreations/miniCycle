@@ -11,6 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Modules:** 33 modules (12,003 lines extracted)
 - **Core functions:** 14 (orchestration only)
 - **Test coverage:** 100% (958/958 tests passing) ✅
+- **Version:** 1.341 (November 9, 2025)
+- **Cross-platform:** All tests pass on Mac, iPad, iPhone
 
 **Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
 
@@ -54,6 +56,15 @@ npm run blog:build          # Build static blog from markdown posts
 ### File Access
 - **Main App**: http://localhost:8080/miniCycle.html (full version)
 - **Lite Version**: http://localhost:8080/miniCycle-lite.html (ES5 compatible)
+- **Test Suite**: http://localhost:8080/tests/module-test-suite.html (browser tests)
+
+### Mobile/Cross-Platform Testing
+miniCycle can be tested on iPad/iPhone over WiFi for cross-platform validation:
+```bash
+# Find Mac IP: ifconfig | grep "inet " | grep -v 127.0.0.1
+# On iPad/iPhone (same WiFi): http://YOUR_IP:8080/miniCycle.html
+# Tests: http://YOUR_IP:8080/tests/module-test-suite.html
+```
 
 ## Architecture Overview
 
@@ -316,3 +327,15 @@ miniCycle is NOT a traditional task manager. It's a routine management system wh
 - Preserve the modular architecture and async loading patterns
 - Maintain backward compatibility with existing .mcyc files
 - Optional extractions are documented but not required
+
+### Cross-Platform Considerations (November 2025 Fixes)
+When working with browser APIs, be aware of Safari/iOS differences:
+- **Always use Boolean()** for browser API checks (`Boolean(navigator.connection && ...)`)
+- **Safari lacks support** for `navigator.connection`, `navigator.hardwareConcurrency` may be undefined
+- **Test on actual devices** - iPad/iPhone testing over WiFi catches platform-specific bugs
+- **Test isolation** - Clear localStorage before each test to prevent environment pollution
+
+**Recent Fixes (v1.341):**
+- DeviceDetection: Fixed boolean type errors on Safari
+- Reminders: Added missing state properties and interval management
+- ConsoleCapture: Fixed test environment isolation

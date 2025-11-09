@@ -1,8 +1,9 @@
 # miniCycle Developer - Quick Reference
 
-**Version**: 1.336 | **Service Worker**: v82 | **Schema**: 2.5
-**Last Updated**: October 27, 2025
+**Version**: 1.341 | **Service Worker**: v82 | **Schema**: 2.5
+**Last Updated**: November 9, 2025
 **Modularization**: ✅ COMPLETE (74.8% reduction achieved!)
+**Tests**: ✅ 958/958 passing (100%) - All platforms
 
 ---
 

@@ -1,9 +1,10 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.336
+**Version**: 1.341
 **Service Worker**: v82
-**Last Updated**: October 27, 2025
+**Last Updated**: November 9, 2025
 **Modularization Status**: ✅ COMPLETE (74.8% reduction achieved!)
+**Test Status**: ✅ 958/958 tests passing (100%) - All platforms
 **Target Audience**: Developers, Contributors, Technical Partners
 
 ---
@@ -40,9 +41,30 @@ npx serve .                         # Node.js
 # 3. Open browser
 # Full version: http://localhost:8080/miniCycle.html
 # Lite version: http://localhost:8080/miniCycle-lite.html
+
+# 4. Run tests (optional)
+npm test                            # Automated tests (958/958 passing)
+open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 
 **That's it!** No build process, no npm install, no webpack config. Pure vanilla JavaScript.
+
+### Testing on Mobile Devices
+
+miniCycle can be tested on iPad/iPhone over local WiFi:
+
+```bash
+# 1. Find your Mac's IP address
+ifconfig | grep "inet " | grep -v 127.0.0.1
+
+# Example output: 192.168.4.87
+
+# 2. On your iPad/iPhone (same WiFi), open Safari and visit:
+http://192.168.4.87:8080/miniCycle.html
+http://192.168.4.87:8080/tests/module-test-suite.html
+```
+
+This is invaluable for testing touch interactions, Safari-specific behavior, and PWA installation on actual mobile hardware.
 
 ### Your First Code Change
 
@@ -2127,6 +2149,41 @@ navigator.serviceWorker.getRegistrations().then(registrations => {
     registrations.forEach(reg => reg.unregister());
     location.reload();
 });
+```
+
+#### Issue: Tests Failing on Safari/iPad
+
+**Symptoms:** Tests pass on Chrome but fail on Safari or iPad
+
+**Cause:** Browser API differences (November 2025 fixes)
+
+**Common Issues:**
+1. **Boolean type errors** - Safari APIs may return `undefined` instead of booleans
+2. **Missing APIs** - `navigator.connection`, `navigator.hardwareConcurrency` not supported
+3. **localStorage persistence** - Test environment pollution from real app data
+
+**Solutions:**
+```javascript
+// ✅ Always coerce browser APIs to boolean
+const check = Boolean(navigator.someAPI && navigator.someAPI.property);
+
+// ❌ Don't assume boolean return
+const check = navigator.someAPI && navigator.someAPI.property; // May be undefined!
+
+// ✅ Test isolation - clear localStorage before each test
+localStorage.clear();
+// Run test
+// Restore original data
+```
+
+**Fixed in v1.341:**
+- DeviceDetection: Boolean coercion for Safari compatibility
+- Reminders: Proper state property aliases and interval management
+- ConsoleCapture: Test environment isolation
+
+**Testing on Mobile:** Use WiFi testing to catch platform-specific bugs:
+```bash
+http://YOUR_IP:8080/tests/module-test-suite.html
 ```
 
 ### Debug Commands

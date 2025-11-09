@@ -1,7 +1,8 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: October 31, 2025
+**Last Updated**: November 9, 2025
 **Test Coverage**: 100% (958/958 tests passing) ✅
+**Platforms**: Mac ✅ | iPad ✅ | iPhone ✅
 
 ---
 
@@ -17,6 +18,27 @@ python3 -m http.server 8080
 # 2. Open in browser
 # http://localhost:8080/tests/module-test-suite.html
 ```
+
+### Run Tests on Mobile Devices (iPad/iPhone)
+
+```bash
+# 1. Find your Mac's IP address
+ifconfig | grep "inet " | grep -v 127.0.0.1
+# Example: 192.168.4.87
+
+# 2. On your iPad/iPhone (same WiFi network):
+# Open Safari and visit:
+# http://192.168.4.87:8080/tests/module-test-suite.html
+
+# 3. Run tests in browser
+# Tap "Run All Tests" or select individual modules
+```
+
+**Why test on mobile?**
+- Catches Safari-specific bugs (different browser APIs)
+- Validates touch interactions and long-press behavior
+- Tests PWA installation and offline functionality
+- Reveals cross-platform compatibility issues
 
 ### Run Tests Automatically (Local)
 
@@ -874,6 +896,14 @@ jobs:
 
 ## 🎉 Changelog
 
+### November 9, 2025 - v2.3 - Cross-Platform Fixes
+- **Cross-Platform Testing** - All tests now pass on Mac, iPad, and iPhone (100%)
+- **Safari Compatibility** - Fixed DeviceDetection boolean type errors
+- **Reminders Module** - Fixed state properties and interval management (6 bugs)
+- **Test Isolation** - Fixed ConsoleCapture localStorage pollution
+- **Mobile Testing Guide** - Added WiFi testing instructions for iPad/iPhone
+- **Bug Fixes**: DeviceDetection (2), Reminders (6), ConsoleCapture (1)
+
 ### October 31, 2025 - v2.2
 - **100% Test Coverage** - All 958 tests passing
 - **GitHub Actions** - CI/CD integration complete
@@ -886,6 +916,6 @@ jobs:
 
 ---
 
-**Version**: 2.2 (100% Test Coverage Achieved + GitHub Actions CI/CD)
-**Last Updated**: October 31, 2025
+**Version**: 2.3 (Cross-Platform 100% + Safari Fixes)
+**Last Updated**: November 9, 2025
 **Maintained By**: sparkinCreations
