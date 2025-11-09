@@ -46,6 +46,12 @@
   * [October 2025 Improvements](OCTOBER_2025_IMPROVEMENTS.md)
   * [Notification Standardization Plan](NOTIFICATION_STANDARDIZATION_PLAN.md)
 
+* **Additional Resources**
+  * [📄 Ultimate Architecture Complete (PDF)](miniCycle_Ultimate_Architecture_Complete.pdf)
+  * [📝 Multi-Platform Folder Structure](miniCycle%20proposed%20multi-platform%20folder%20structure%20.txt)
+  * [📝 Quick Guide Multi-Platform Restructure](Quick%20guide%20multi-platform%20folder%20restructure%20.txt)
+  * [📝 Final Folder Organization Structure](Final%20proposed%20folder%20organization%20structure%20.txt)
+
 * **Links**
   * [📱 Launch App](https://minicycle.app/miniCycle.html)
   * [🧪 Run Tests](https://minicycle.app/tests/module-test-suite.html)
