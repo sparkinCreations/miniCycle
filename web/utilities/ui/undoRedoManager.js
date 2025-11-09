@@ -487,6 +487,212 @@ export function updateUndoRedoButtons() {
   updateUndoRedoButtonVisibility();
 }
 
+// ============ INDEXEDDB PERSISTENCE ============
+
+let undoDB = null;  // Database connection
+let dbWriteTimeout = null;  // Debounce timer
+
+/**
+ * Initialize IndexedDB for undo history persistence
+ * Gracefully degrades if IndexedDB unavailable (private browsing)
+ */
+export async function initializeUndoIndexedDB() {
+  try {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open("miniCycleUndoHistory", 1);
+
+      request.onerror = () => {
+        console.warn('⚠️ IndexedDB unavailable - undo limited to session only');
+        undoDB = null;
+        resolve(false);
+      };
+
+      request.onsuccess = (event) => {
+        undoDB = event.target.result;
+        console.log('✅ IndexedDB undo persistence enabled');
+        resolve(true);
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+
+        // Create object store if it doesn't exist
+        if (!db.objectStoreNames.contains("undoStacks")) {
+          const objectStore = db.createObjectStore("undoStacks", { keyPath: "cycleId" });
+          console.log('🔧 Created undoStacks object store');
+        }
+      };
+    });
+  } catch (e) {
+    console.warn('⚠️ IndexedDB initialization failed:', e);
+    undoDB = null;
+    return false;
+  }
+}
+
+/**
+ * Save undo/redo stacks to IndexedDB (debounced)
+ */
+export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack) {
+  if (!undoDB) return;  // Graceful degradation
+  if (!cycleId) return;
+
+  // Debounce writes
+  if (dbWriteTimeout) {
+    clearTimeout(dbWriteTimeout);
+  }
+
+  dbWriteTimeout = setTimeout(async () => {
+    try {
+      const transaction = undoDB.transaction(["undoStacks"], "readwrite");
+      const objectStore = transaction.objectStore("undoStacks");
+
+      const data = {
+        cycleId,
+        undoStack: undoStack || [],
+        redoStack: redoStack || [],
+        lastUpdated: Date.now(),
+        version: "1.344"
+      };
+
+      const request = objectStore.put(data);
+
+      request.onsuccess = () => {
+        console.log(`💾 Saved undo history for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
+      };
+
+      request.onerror = () => {
+        console.warn(`⚠️ Failed to save undo history for "${cycleId}"`);
+      };
+    } catch (e) {
+      console.warn('⚠️ IndexedDB write error:', e);
+    }
+  }, UNDO_DB_WRITE_DEBOUNCE_MS);
+}
+
+/**
+ * Load undo/redo stacks from IndexedDB
+ */
+export async function loadUndoStackFromIndexedDB(cycleId) {
+  if (!undoDB) {
+    return { undoStack: [], redoStack: [] };  // Graceful degradation
+  }
+  if (!cycleId) {
+    return { undoStack: [], redoStack: [] };
+  }
+
+  try {
+    return new Promise((resolve) => {
+      const transaction = undoDB.transaction(["undoStacks"], "readonly");
+      const objectStore = transaction.objectStore("undoStacks");
+      const request = objectStore.get(cycleId);
+
+      request.onsuccess = (event) => {
+        const data = event.target.result;
+        if (data) {
+          console.log(`📂 Loaded undo history for "${cycleId}" (${data.undoStack?.length || 0} undo, ${data.redoStack?.length || 0} redo)`);
+          resolve({
+            undoStack: data.undoStack || [],
+            redoStack: data.redoStack || []
+          });
+        } else {
+          console.log(`📂 No undo history found for "${cycleId}" - starting fresh`);
+          resolve({ undoStack: [], redoStack: [] });
+        }
+      };
+
+      request.onerror = () => {
+        console.warn(`⚠️ Failed to load undo history for "${cycleId}"`);
+        resolve({ undoStack: [], redoStack: [] });
+      };
+    });
+  } catch (e) {
+    console.warn('⚠️ IndexedDB read error:', e);
+    return { undoStack: [], redoStack: [] };
+  }
+}
+
+/**
+ * Delete undo/redo stacks from IndexedDB
+ */
+export async function deleteUndoStackFromIndexedDB(cycleId) {
+  if (!undoDB) return;
+  if (!cycleId) return;
+
+  try {
+    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
+    const objectStore = transaction.objectStore("undoStacks");
+    const request = objectStore.delete(cycleId);
+
+    request.onsuccess = () => {
+      console.log(`🗑️ Deleted undo history for "${cycleId}"`);
+    };
+
+    request.onerror = () => {
+      console.warn(`⚠️ Failed to delete undo history for "${cycleId}"`);
+    };
+  } catch (e) {
+    console.warn('⚠️ IndexedDB delete error:', e);
+  }
+}
+
+/**
+ * Rename cycle's undo/redo stacks in IndexedDB
+ */
+export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
+  if (!undoDB) return;
+  if (!oldCycleId || !newCycleId) return;
+
+  try {
+    // Load old data
+    const oldData = await loadUndoStackFromIndexedDB(oldCycleId);
+
+    // Save under new key
+    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
+    const objectStore = transaction.objectStore("undoStacks");
+
+    const newData = {
+      cycleId: newCycleId,
+      undoStack: oldData.undoStack,
+      redoStack: oldData.redoStack,
+      lastUpdated: Date.now(),
+      version: "1.344"
+    };
+
+    await objectStore.put(newData);
+
+    // Delete old key
+    await objectStore.delete(oldCycleId);
+
+    console.log(`📝 Renamed undo history: "${oldCycleId}" → "${newCycleId}"`);
+  } catch (e) {
+    console.warn('⚠️ IndexedDB rename error:', e);
+  }
+}
+
+/**
+ * Clear all undo history from IndexedDB (factory reset)
+ */
+export async function clearAllUndoHistoryFromIndexedDB() {
+  if (!undoDB) return;
+
+  try {
+    const transaction = undoDB.transaction(["undoStacks"], "readwrite");
+    const objectStore = transaction.objectStore("undoStacks");
+    const request = objectStore.clear();
+
+    request.onsuccess = () => {
+      console.log('🧹 Cleared all undo history from IndexedDB');
+    };
+
+    request.onerror = () => {
+      console.warn('⚠️ Failed to clear undo history');
+    };
+  } catch (e) {
+    console.warn('⚠️ IndexedDB clear error:', e);
+  }
+}
+
 // ============ EXPORTS ============
 
 console.log('🔄 UndoRedoManager module loaded');
