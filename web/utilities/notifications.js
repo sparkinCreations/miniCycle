@@ -300,8 +300,12 @@ export class MiniCycleNotifications {
       this.restoreNotificationPosition(notificationContainer);
 
       // Auto-remove after duration (hover pause)
+      console.log(`🔍 Notification debug - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), Will auto-dismiss: ${!!duration}, Truthy check: ${Boolean(duration)}`);
       if (duration) {
+        console.log(`⏱️ Setting up auto-remove with duration: ${duration}ms`);
         this.setupAutoRemove(notification, duration);
+      } else {
+        console.log(`♾️ No duration set - notification requires manual dismissal (received: ${duration})`);
       }
 
       // Setup drag support
@@ -515,12 +519,14 @@ async setDefaultPosition(notificationContainer) {
    * ⏰ Setup auto-remove with hover pause functionality
    */
   setupAutoRemove(notification, duration) {
+    console.log(`🔧 setupAutoRemove called with duration: ${duration} (type: ${typeof duration})`);
     let hoverPaused = false;
     let remaining = duration;
     let removeTimeout;
     let startTime = Date.now();
 
     const clearNotification = () => {
+      console.log(`🗑️ Auto-removing notification after ${duration}ms`);
       notification.classList.remove("show");
       setTimeout(() => notification.remove(), 300);
     };

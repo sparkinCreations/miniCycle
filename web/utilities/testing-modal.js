@@ -24,7 +24,8 @@
 const getNotifications = () => window.notifications || null;
 
 // Safe access to notification functions (uses global instance)
-function safeShowNotification(message, type = "info", duration = 2000) {
+// ✅ FIXED: Removed duration = 2000 default to avoid overriding notification.show's duration = null default
+function safeShowNotification(message, type = "info", duration) {
     try {
         const notifications = getNotifications();
         if (notifications && typeof notifications.show === 'function') {

@@ -268,6 +268,84 @@ export function buildSnapshotSignature(s) {
 }
 
 /**
+ * Analyze what changed between two snapshots
+ * Returns a descriptive message like "Task added" or "Task reordered"
+ */
+function describeChange(fromSnapshot, toSnapshot) {
+  if (!fromSnapshot || !toSnapshot) return 'Change';
+
+  const fromTasks = fromSnapshot.tasks || [];
+  const toTasks = toSnapshot.tasks || [];
+
+  // Check for cycle changes
+  if (fromSnapshot.title !== toSnapshot.title) {
+    return 'Cycle renamed';
+  }
+  if (fromSnapshot.autoReset !== toSnapshot.autoReset) {
+    return 'Mode changed';
+  }
+  if (fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
+    return 'Mode changed';
+  }
+
+  // Check task count changes
+  const countDiff = toTasks.length - fromTasks.length;
+  if (countDiff > 0) {
+    return countDiff === 1 ? 'Task added' : `${countDiff} tasks added`;
+  }
+  if (countDiff < 0) {
+    const deleted = Math.abs(countDiff);
+    return deleted === 1 ? 'Task deleted' : `${deleted} tasks deleted`;
+  }
+
+  // Same count - check for modifications
+  const fromTaskMap = new Map(fromTasks.map(t => [t.id, t]));
+  const toTaskMap = new Map(toTasks.map(t => [t.id, t]));
+
+  // Check for text changes
+  for (const [id, toTask] of toTaskMap) {
+    const fromTask = fromTaskMap.get(id);
+    if (fromTask && fromTask.text !== toTask.text) {
+      return 'Task edited';
+    }
+  }
+
+  // Check for completion changes
+  let completedCount = 0;
+  let uncompletedCount = 0;
+  for (const [id, toTask] of toTaskMap) {
+    const fromTask = fromTaskMap.get(id);
+    if (fromTask) {
+      if (!fromTask.completed && toTask.completed) completedCount++;
+      if (fromTask.completed && !toTask.completed) uncompletedCount++;
+    }
+  }
+  if (completedCount > 0) {
+    return completedCount === 1 ? 'Task completed' : `${completedCount} tasks completed`;
+  }
+  if (uncompletedCount > 0) {
+    return uncompletedCount === 1 ? 'Task uncompleted' : `${uncompletedCount} tasks uncompleted`;
+  }
+
+  // Check for reordering
+  const fromOrder = fromTasks.map(t => t.id).join(',');
+  const toOrder = toTasks.map(t => t.id).join(',');
+  if (fromOrder !== toOrder) {
+    return 'Tasks reordered';
+  }
+
+  // Check for priority changes
+  for (const [id, toTask] of toTaskMap) {
+    const fromTask = fromTaskMap.get(id);
+    if (fromTask && fromTask.highPriority !== toTask.highPriority) {
+      return 'Priority changed';
+    }
+  }
+
+  return 'Change';
+}
+
+/**
  * Compare two snapshots for equality
  * Uses cached signatures if available for performance
  */
@@ -374,6 +452,16 @@ export async function performStateBasedUndo() {
         Deps.AppGlobalState.activeUndoStack,
         Deps.AppGlobalState.activeRedoStack
       );
+    }
+
+    // ✅ Show success notification
+    if (Deps.showNotification) {
+      const changeDesc = describeChange(currentSnapshot, snap);
+      const stepsLeft = Deps.AppGlobalState.activeUndoStack.length;
+      const stepsText = stepsLeft === 0 ? 'no steps left' :
+                        stepsLeft === 1 ? '1 step left' :
+                        `${stepsLeft} steps left`;
+      Deps.showNotification(`↩️ Undone: ${changeDesc} (${stepsText})`, 'success', 2000);
     }
 
     console.log('✅ Undo completed');
@@ -489,6 +577,16 @@ export async function performStateBasedRedo() {
         Deps.AppGlobalState.activeUndoStack,
         Deps.AppGlobalState.activeRedoStack
       );
+    }
+
+    // ✅ Show success notification
+    if (Deps.showNotification) {
+      const changeDesc = describeChange(currentSnapshot, snap);
+      const stepsLeft = Deps.AppGlobalState.activeRedoStack.length;
+      const stepsText = stepsLeft === 0 ? 'no steps left' :
+                        stepsLeft === 1 ? '1 step left' :
+                        `${stepsLeft} steps left`;
+      Deps.showNotification(`↪️ Redone: ${changeDesc} (${stepsText})`, 'success', 2000);
     }
 
     console.log('✅ Redo completed');

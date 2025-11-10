@@ -331,7 +331,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const notifications = new MiniCycleNotifications();
 
     window.notifications = notifications;
-    window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+    window.showNotification = (message, type, duration) => {
+        console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
+        return notifications.show(message, type, duration);
+    };
     console.log('✅ Notifications loaded');
 
     // ✅ Load Theme Manager (core visual system)
