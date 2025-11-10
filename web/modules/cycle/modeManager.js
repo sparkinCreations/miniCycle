@@ -10,7 +10,7 @@
  * - To-Do Mode ✓: Tasks are deleted instead of reset
  */
 
-import { appInit } from '../appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 export class ModeManager {
     constructor(dependencies = {}) {

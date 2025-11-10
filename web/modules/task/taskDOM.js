@@ -16,7 +16,7 @@
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
-import { appInit } from '../appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 // ✅ Module classes will be loaded dynamically with versioning
 let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;

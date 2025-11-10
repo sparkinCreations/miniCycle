@@ -7,7 +7,7 @@
  * @pattern Resilient Constructor 🛡️
  */
 
-import { appInit } from '../appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 export class MenuManager {
     constructor(dependencies = {}) {

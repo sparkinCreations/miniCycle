@@ -20,7 +20,7 @@
  * @version 1.347
  */
 
-import { appInit } from '../appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 export class OnboardingManager {
     constructor(dependencies = {}) {

@@ -9,7 +9,7 @@
  * @pattern Strict Injection 🔧
  */
 
-import { appInit } from '../appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 // ============ CONSTANTS ============
 const UNDO_LIMIT = 20;
