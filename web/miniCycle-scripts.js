@@ -1219,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Testing Modal modules (Phase 3)
         console.log('🔬 Loading testing modal modules...');
         try {
-            await import(withV('./modules/testing-modal.js'));
+            await import(withV('./modules/testing/testing-modal.js'));
             console.log('✅ Testing modal loaded');
 
             // ✅ Setup testing modal button handlers
@@ -1230,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 console.warn('⚠️ setupTestingModal function not found');
             }
 
-            await import(withV('./modules/testing-modal-integration.js'));
+            await import(withV('./modules/testing/testing-modal-integration.js'));
             console.log('✅ Testing modal integration loaded');
         } catch (error) {
             console.error('❌ Failed to load testing modal modules:', error);

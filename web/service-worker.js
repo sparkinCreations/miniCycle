@@ -45,8 +45,8 @@ var UTILITIES = [
   './modules/utils/notifications.js',
   './modules/features/statsPanel.js',
   './modules/utils/consoleCapture.js',
-  './modules/basicPluginSystem.js',
-  './modules/testing-modal.js',
+  './modules/other/basicPluginSystem.js',
+  './modules/testing/testing-modal.js',
   './modules/features/reminders.js',
   './modules/features/dueDates.js',
   // Cycle modules
