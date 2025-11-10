@@ -1,6 +1,6 @@
-# miniCycle - Finalized Multi-Platform Structure (v2)
+# miniCycle - Finalized Multi-Platform Structure (v2.1)
 
-**Version:** 2.0 - Minimal Change Approach
+**Version:** 2.1 - HTML Page Organization
 **Ready for: Web (current), Desktop (future), Mobile (future)**
 **Status: Optimized for current Netlify deployment + Future multi-platform**
 **Last Updated:** November 10, 2025
@@ -9,7 +9,18 @@
 
 ## 📋 Version History
 
-### v2.0 (November 10, 2025) - **CURRENT**
+### v2.1 (November 10, 2025) - **CURRENT**
+- **Approach:** Organize web root HTML pages into logical folders
+- **Philosophy:** Clean organization without breaking URLs
+- **Key Changes:**
+  - Create `lite/` folder for miniCycle-lite version files
+  - Create `legal/` folder for terms, privacy, user manual
+  - Create `pages/` folder for product, learn_more marketing pages
+  - Add 301 redirects in `_redirects` for SEO preservation
+  - Update all navigation paths (device detection, service worker, etc.)
+  - Maintain backward compatibility with legacy URLs
+
+### v2.0 (November 10, 2025)
 - **Approach:** Minimal changes that work with existing Netlify deployment
 - **Philosophy:** Don't break what works, prepare for future expansion
 - **Key Changes:**
@@ -59,18 +70,13 @@ miniCycle/
 │   │                                       # All public URLs map here directly
 │   │
 │   ├── 📄 index.html                       # 🆕 Landing/marketing page (optional)
-│   ├── 📄 product.html                     # Product page
-│   ├── 📄 privacy.html                     # Privacy policy
-│   ├── 📄 terms.html                       # Terms of service
-│   ├── 📄 user-manual.html                 # User manual
-│   ├── 📄 learn_more.html                  # Learn more page
+│   ├── 📄 blog.html                        # Blog homepage (external link)
 │   ├── 📄 sitemap.xml                      # SEO sitemap
 │   ├── 📄 robots.txt                       # SEO robots
+│   ├── 📄 _redirects                       # Netlify redirects (legacy URL support)
 │   │
 │   ├── 📄 miniCycle.html                   # 🎯 Main PWA entry point
-│   ├── 📄 miniCycle-lite.html              # ES5 legacy version
 │   ├── 📄 miniCycle-scripts.js             # Main app code (3,674 lines)
-│   ├── 📄 miniCycle-lite-scripts.js        # Lite version code
 │   ├── 📄 miniCycle-styles.css             # App styles
 │   ├── 📄 version.js                       # Version configuration
 │   ├── 📄 manifest.json                    # PWA manifest (full)
@@ -79,6 +85,28 @@ miniCycle/
 │   ├── 📄 package.json                     # Web app dependencies
 │   ├── 📄 package-lock.json
 │   ├── 📄 netlify.toml                     # Netlify configuration
+│   │
+│   ├── 📁 lite/                            # 🔄 LITE VERSION
+│   │   │                                   # ES5 legacy version for older devices
+│   │   │                                   # Auto-redirects from main app for low-end devices
+│   │   │
+│   │   ├── 📄 miniCycle-lite.html          # Lite version entry point
+│   │   ├── 📄 miniCycle-lite-scripts.js    # Lite version code (ES5)
+│   │   └── 📄 miniCycle-lite-styles.css    # Lite version styles
+│   │
+│   ├── 📁 legal/                           # ⚖️ LEGAL & DOCUMENTATION
+│   │   │                                   # Privacy, terms, user manual
+│   │   │
+│   │   ├── 📄 privacy.html                 # Privacy policy
+│   │   ├── 📄 terms.html                   # Terms of service
+│   │   ├── 📄 user-manual.html             # User manual
+│   │   └── 📄 user-manual-styles.css       # Manual styles
+│   │
+│   ├── 📁 pages/                           # 📄 MARKETING PAGES
+│   │   │                                   # Landing pages and product info
+│   │   │
+│   │   ├── 📄 product.html                 # Product page
+│   │   └── 📄 learn_more.html              # Learn more page
 │   │
 │   ├── 📁 modules/                         # 🔄 RENAMED from utilities/
 │   │   │                                   # Modular ES6 components
@@ -391,14 +419,33 @@ Netlify deploys: web/ → minicycle.app/
 URLs:
 ├── minicycle.app/
 │   ├── miniCycle.html              → web/miniCycle.html ✅
-│   ├── miniCycle-lite.html         → web/miniCycle-lite.html ✅
-│   ├── product.html                → web/product.html ✅
-│   ├── privacy.html                → web/privacy.html ✅
-│   ├── terms.html                  → web/terms.html ✅
+│   │
+│   ├── lite/
+│   │   └── miniCycle-lite.html     → web/lite/miniCycle-lite.html ✅
+│   │
+│   ├── legal/
+│   │   ├── privacy.html            → web/legal/privacy.html ✅
+│   │   ├── terms.html              → web/legal/terms.html ✅
+│   │   └── user-manual.html        → web/legal/user-manual.html ✅
+│   │
+│   ├── pages/
+│   │   ├── product.html            → web/pages/product.html ✅
+│   │   └── learn_more.html         → web/pages/learn_more.html ✅
+│   │
 │   ├── blog/                       → web/blog/ ✅
 │   ├── docs/                       → web/docs/ ✅
 │   ├── tests/                      → web/tests/ ✅
 │   └── modules/                    → web/modules/ ✅ (renamed from utilities/)
+```
+
+**Legacy URL Support (301 Redirects via _redirects):**
+```
+/privacy.html           → /legal/privacy.html           301
+/terms.html             → /legal/terms.html             301
+/user-manual.html       → /legal/user-manual.html       301
+/product.html           → /pages/product.html           301
+/learn_more.html        → /pages/learn_more.html        301
+/miniCycle-lite.html    → /lite/miniCycle-lite.html     301
 ```
 
 **All existing URLs continue working!** ✅
@@ -1105,7 +1152,8 @@ await import(withV('./modules/core/appState.js'));
 
 ## 📅 Version History
 
-- **v2.0** (November 10, 2025) - Minimal change approach, Netlify-friendly
+- **v2.1** (November 10, 2025) - HTML page organization into lite/, legal/, pages/ folders
+- **v2.0** (November 10, 2025) - Minimal change approach, Netlify-friendly, modules/ reorganization
 - **v1.0** (November 9, 2025) - Original multi-folder split approach
 
 ---

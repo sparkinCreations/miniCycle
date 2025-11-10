@@ -55,7 +55,7 @@ npm run blog:build          # Build static blog from markdown posts
 
 ### File Access
 - **Main App**: http://localhost:8080/miniCycle.html (full version)
-- **Lite Version**: http://localhost:8080/miniCycle-lite.html (ES5 compatible)
+- **Lite Version**: http://localhost:8080/lite/miniCycle-lite.html (ES5 compatible)
 - **Test Suite**: http://localhost:8080/tests/module-test-suite.html (browser tests)
 
 ### Mobile/Cross-Platform Testing
@@ -107,11 +107,22 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 
 ### Key Architectural Components
 
-#### State Management (`utilities/state.js`)
-- Centralized state with undo/redo capabilities
+#### State Management (`modules/core/appState.js`)
+- Centralized state management with event subscription
 - Event-driven architecture with `cycle:ready` events
 - Automatic localStorage persistence with migration system
 - Schema version 2.5 with backward compatibility
+
+#### Undo/Redo System (`modules/ui/undoRedoManager.js`)
+- **Per-cycle history:** Each cycle maintains independent undo/redo stacks
+- **IndexedDB persistence:** History survives page reloads
+- **20 snapshots per cycle:** Full state snapshots, not deltas
+- **Smart deduplication:** Prevents duplicate snapshots with signature caching
+- **Throttled capture:** 300ms minimum interval between snapshots
+- **Debounced writes:** Batches IndexedDB writes every 3 seconds
+- **Lifecycle integration:** Automatic cycle switching, creation, deletion, rename
+- **73/73 tests passing:** Comprehensive test coverage
+- **See:** [UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md) for complete architecture details
 
 #### Module System (`utilities/`)
 - **notifications.js**: Advanced notification system with drag support and educational tips
@@ -129,11 +140,20 @@ window.AppGlobalState = {
   // Drag and touch interaction state
   draggedTask: null,
   isDragging: false,
-  // Undo/redo system
-  undoStack: [],
-  redoStack: [],
+
+  // Undo/redo system (per-cycle, IndexedDB-backed)
+  activeUndoStack: [],           // Current cycle's undo snapshots
+  activeRedoStack: [],           // Current cycle's redo snapshots
+  activeCycleIdForUndo: null,    // Which cycle owns current stacks
+  isPerformingUndoRedo: false,   // Flag to prevent recursive snapshots
+  isSwitchingCycles: false,      // Flag to block snapshots during cycle switch
+  isInitializing: true,          // Flag to skip snapshots during app init
+  lastSnapshotSignature: null,   // For deduplication
+  lastSnapshotTs: 0,             // For throttling
+
   // UI state tracking
   advancedVisible: false,
+
   // Feature flags
   hasInteracted: false
 };
@@ -288,8 +308,9 @@ Access via Settings → App Diagnostics & Testing:
 1. Test both full and lite versions
 2. Verify PWA installation and offline functionality
 3. Test data migration with legacy files
-4. Validate undo/redo functionality
+4. Validate undo/redo functionality (per-cycle history, IndexedDB persistence)
 5. Check stats panel updates after data loading
+6. Test cycle switching preserves undo history
 
 ### GitHub Actions Workflow
 Location: `.github/workflows/test.yml`

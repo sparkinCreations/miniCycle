@@ -40,7 +40,7 @@ npx serve .                         # Node.js
 
 # 3. Open browser
 # Full version: http://localhost:8080/miniCycle.html
-# Lite version: http://localhost:8080/miniCycle-lite.html
+# Lite version: http://localhost:8080/lite/miniCycle-lite.html
 
 # 4. Run tests (optional)
 npm test                            # Automated tests (958/958 passing)
@@ -459,86 +459,82 @@ setInterval(() => {
 
 ### 4. Undo/Redo System
 
-**Time Travel for Your Data**
+**Per-Cycle Time Travel with IndexedDB Persistence**
+
+The undo/redo system is implemented in `modules/ui/undoRedoManager.js` and provides sophisticated state management with per-cycle history isolation.
+
+**Key Architecture:**
+- ✅ **Per-cycle isolation** - Each cycle maintains independent undo/redo history
+- ✅ **IndexedDB persistence** - History survives page reloads
+- ✅ **20 snapshots per cycle** - Full state snapshots, not deltas
+- ✅ **Smart deduplication** - Signature-based duplicate detection
+- ✅ **Throttled capture** - 300ms minimum interval between snapshots
+- ✅ **Debounced writes** - Batches IndexedDB writes every 3 seconds
+- ✅ **Lifecycle integration** - Handles cycle switching, creation, deletion, rename
+- ✅ **73/73 tests passing** - Comprehensive test coverage
+
+**What triggers snapshots:**
+- Task additions/deletions
+- Task completions/incompletions
+- Task reordering
+- Task text edits
+- Task priority changes
+- Cycle title changes
+- Mode changes (autoReset, deleteCheckedTasks)
+
+**What doesn't trigger snapshots:**
+- Initial app load
+- Cycle switches
+- Undo/redo operations themselves
+- Changes to other cycles (only active cycle tracked)
+
+**Example Usage:**
 
 ```javascript
-// From miniCycle-scripts.js (real code)
+// From modules/ui/undoRedoManager.js
 
-// Capture a snapshot before making changes
-function captureStateSnapshot(state) {
-    if (!window.AppState?.isReady()) return;
+// Perform undo
+await performStateBasedUndo();
+// → "↩️ Undone: Task added (3 steps left)"
 
-    const snapshot = {
-        data: structuredClone(state),
-        timestamp: Date.now(),
-        signature: buildSnapshotSignature(state)
-    };
+// Perform redo
+await performStateBasedRedo();
+// → "↪️ Redone: Task added (2 steps left)"
 
-    window.AppGlobalState.undoStack.push(snapshot);
+// Handle cycle switch (automatic)
+await onCycleSwitched(newCycleId);
+// → Saves old cycle's history, loads new cycle's history
+```
 
-    // Limit undo stack size
-    if (window.AppGlobalState.undoStack.length > 50) {
-        window.AppGlobalState.undoStack.shift();
-    }
+**IndexedDB Structure:**
 
-    // Clear redo stack (can't redo after new action)
-    window.AppGlobalState.redoStack = [];
+```javascript
+// Database: miniCycleUndoHistory
+// Store: undoStacks (keyPath: cycleId)
 
-    updateUndoRedoButtons();
-}
-
-// Undo last action
-function performUndo() {
-    if (window.AppGlobalState.undoStack.length === 0) {
-        showNotification('Nothing to undo', 'info', 2000);
-        return;
-    }
-
-    // Save current state to redo stack
-    const currentState = window.AppState.get();
-    window.AppGlobalState.redoStack.push({
-        data: structuredClone(currentState),
-        timestamp: Date.now()
-    });
-
-    // Restore previous state
-    const previousSnapshot = window.AppGlobalState.undoStack.pop();
-    window.AppState.update(() => {
-        Object.assign(window.AppState.data, previousSnapshot.data);
-    }, true);
-
-    refreshUIFromState();
-    updateUndoRedoButtons();
-    showNotification('↶ Undone', 'info', 1500);
-}
-
-// Redo last undone action
-function performRedo() {
-    if (window.AppGlobalState.redoStack.length === 0) {
-        showNotification('Nothing to redo', 'info', 2000);
-        return;
-    }
-
-    // Similar logic in reverse
-    const nextSnapshot = window.AppGlobalState.redoStack.pop();
-    captureStateSnapshot(window.AppState.get());  // Save for undo
-
-    window.AppState.update(() => {
-        Object.assign(window.AppState.data, nextSnapshot.data);
-    }, true);
-
-    refreshUIFromState();
-    showNotification('↷ Redone', 'info', 1500);
+{
+  cycleId: "My Morning Routine",
+  undoStack: [
+    {
+      activeCycleId: "My Morning Routine",
+      tasks: [...],          // Deep cloned task array
+      recurringTemplates: {},
+      title: "My Morning Routine",
+      autoReset: true,
+      cycleCount: 5,
+      timestamp: 1699644000000,
+      _sig: "compact_signature_hash"
+    },
+    // ... up to 20 snapshots
+  ],
+  redoStack: [ /* redo snapshots */ ],
+  lastUpdated: 1699644123456,
+  version: "1.344"
 }
 ```
 
-**What users can undo/redo:**
-- Adding/deleting tasks
-- Checking/unchecking tasks
-- Changing task order
-- Modifying recurring settings
-- Theme changes
-- Cycle operations
+**For complete architecture details, see:**
+→ **[UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md)** - Full architecture documentation
 
 ---
 
@@ -1900,8 +1896,9 @@ git push origin main
 ```
 
 **Live URLs:**
-- Official: [minicycleapp.com](https://minicycleapp.com) → redirects to minicycle.app/product.html
+- Official: [minicycleapp.com](https://minicycleapp.com) → redirects to minicycle.app/pages/product.html
 - Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
+- Lite Version: [minicycle.app/lite/miniCycle-lite.html](https://minicycle.app/lite/miniCycle-lite.html)
 - Documentation: [minicycle.app/docs](https://minicycle.app/docs)
 - Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
 
@@ -2953,7 +2950,7 @@ Current module test coverage:
 - **FINAL-MODULE-STRUCTURE.md** - Target modular architecture
 - **DRAG_DROP_ARCHITECTURE.md** - Complete drag & drop architecture and code deep dive
 - **SAFARI_DRAGDROP_FIX.md** - Safari desktop drag-and-drop compatibility fix
-- **user-manual.html** - End-user documentation
+- **legal/user-manual.html** - End-user documentation
 
 ### Code Organization
 

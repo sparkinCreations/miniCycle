@@ -32,6 +32,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 - **[RECURRING_WATCH_FUNCTION.md](./RECURRING_WATCH_FUNCTION.md)** - Polling-based task scheduling
 - **[DRAG_DROP_ARCHITECTURE.md](./DRAG_DROP_ARCHITECTURE.md)** - Drag & drop system architecture
 - **[DRAG_DROP_LONG_PRESS.md](./DRAG_DROP_LONG_PRESS.md)** - Cross-platform interaction patterns
+- **[UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md)** - Per-cycle undo/redo with IndexedDB persistence (73 tests ✅)
 
 ---
 
@@ -127,10 +128,14 @@ Historical documents and outdated guides are preserved in:
 ## 🌐 Live Application
 
 **Official URL:** [minicycleapp.com](https://minicycleapp.com)
-- Redirects to: [minicycle.app/product.html](https://minicycle.app/product.html)
+- Redirects to: [minicycle.app/pages/product.html](https://minicycle.app/pages/product.html)
 - Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
+- Lite Version: [minicycle.app/lite/miniCycle-lite.html](https://minicycle.app/lite/miniCycle-lite.html)
+- Legal: [minicycle.app/legal/privacy.html](https://minicycle.app/legal/privacy.html), [terms](https://minicycle.app/legal/terms.html), [user manual](https://minicycle.app/legal/user-manual.html)
 - Documentation: [minicycle.app/docs](https://minicycle.app/docs)
 - Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
+
+**Note:** Legacy URLs (e.g., `/product.html`, `/privacy.html`) redirect automatically via 301 redirects.
 
 See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for complete deployment information.
 

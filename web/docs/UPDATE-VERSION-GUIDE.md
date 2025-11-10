@@ -216,8 +216,8 @@ Choice [1-4]: 1
 
 💾 Backed up: miniCycle.html
 ✅ Updated miniCycle.html
-💾 Backed up: miniCycle-lite.html
-✅ Updated miniCycle-lite.html
+💾 Backed up: lite/miniCycle-lite.html
+✅ Updated lite/miniCycle-lite.html
 [... continues for all 23 files ...]
 
 📝 Generating restore script...
@@ -243,7 +243,7 @@ Choice [1-4]: 1
 ```
 
 **Updates 23 files:**
-- 3 HTML files (miniCycle.html, miniCycle-lite.html, product.html)
+- 3 HTML files (miniCycle.html, lite/miniCycle-lite.html, pages/product.html)
 - 3 Core JS files (miniCycle-scripts.js, miniCycle-lite-scripts.js, service-worker.js)
 - 2 Manifests (manifest.json, manifest-lite.json)
 - 15 Utility modules (state.js, notifications.js, etc.)
@@ -267,10 +267,10 @@ Choice [1-4]: 1
 --- Core HTML Files ---
 Update miniCycle.html? (Y/n): Y
 ✅ Will update miniCycle.html
-Update miniCycle-lite.html? (Y/n): n
-⏭️  Skipping miniCycle-lite.html
-Update product.html? (Y/n): Y
-✅ Will update product.html
+Update lite/miniCycle-lite.html? (Y/n): n
+⏭️  Skipping lite/miniCycle-lite.html
+Update pages/product.html? (Y/n): Y
+✅ Will update pages/product.html
 
 --- Core JavaScript Files ---
 Update miniCycle-scripts.js? (Y/n): Y
@@ -665,8 +665,8 @@ web/
 │   ├── version_update_20250115_143052/  ← Current backup
 │   │   ├── restore.sh                    ← Auto-generated restore script
 │   │   ├── miniCycle.html
-│   │   ├── miniCycle-lite.html
-│   │   ├── product.html
+│   │   ├── lite/miniCycle-lite.html
+│   │   ├── pages/product.html
 │   │   ├── miniCycle-scripts.js
 │   │   ├── miniCycle-lite-scripts.js
 │   │   ├── service-worker.js
@@ -730,13 +730,13 @@ cd backup/version_update_20250115_143052
 🔄 Restoring files from backup...
 
 ✅ Restored miniCycle.html
-✅ Restored miniCycle-lite.html
+✅ Restored lite/miniCycle-lite.html
 ✅ Restored miniCycle-scripts.js
 ✅ Restored miniCycle-lite-scripts.js
 ✅ Restored service-worker.js
 ✅ Restored manifest.json
 ✅ Restored manifest-lite.json
-✅ Restored product.html
+✅ Restored pages/product.html
 ✅ Restored utilities/appInitialization.js
 ✅ Restored utilities/state.js
 [... continues for all 23 files ...]
@@ -1153,8 +1153,8 @@ version.js
 
 # Core HTML (3 files)
 miniCycle.html
-miniCycle-lite.html
-product.html
+lite/miniCycle-lite.html
+pages/product.html
 
 # Core JavaScript (3 files)
 miniCycle-scripts.js
