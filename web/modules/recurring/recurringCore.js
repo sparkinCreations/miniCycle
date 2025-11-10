@@ -16,7 +16,7 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from './appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 // ============================================
 // DEPENDENCY INJECTION SETUP

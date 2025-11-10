@@ -17,7 +17,7 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from './appInitialization.js';
+import { appInit } from '../core/appInit.js';
 // ✅ REMOVED: Static import creates duplicate without version parameter
 // import { formatNextOccurrence, calculateNextOccurrence } from './recurringCore.js';
 // These will be passed as dependencies instead

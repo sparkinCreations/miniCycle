@@ -14,7 +14,7 @@
  * @author miniCycle Development Team
  */
 
-import { appInit } from './appInitialization.js';
+import { appInit } from '../core/appInit.js';
 
 export class StatsPanelManager {
     constructor(dependencies = {}) {
