@@ -17,7 +17,7 @@
  * Lines: ~1,420
  * Risk: Medium (critical data operations)
  *
- * @module utilities/cycle/migrationManager
+ * @module modules/cycle/migrationManager
  * @version 1.347
  */
 

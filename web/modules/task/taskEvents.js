@@ -7,7 +7,7 @@
  * - Coordinates user interactions
  * - Delegates to other modules (taskCore)
  *
- * @module utilities/task/taskEvents
+ * @module modules/task/taskEvents
  * @version 1.347
  */
 

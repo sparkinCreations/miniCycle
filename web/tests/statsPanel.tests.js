@@ -3,7 +3,7 @@
  * Tests for the stats panel manager and view switching functionality
  */
 
-import { StatsPanelManager } from '../utilities/statsPanel.js';
+import { StatsPanelManager } from '../modules/features/statsPanel.js';
 
 // Helper to create complete AppState mock (outside function scope)
 function createMockAppState(mockData) {

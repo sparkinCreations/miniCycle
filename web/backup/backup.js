@@ -298,20 +298,20 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-    await import('./utilities/globalUtils.js');
+    await import('./modules/utils/globalUtils.js');
     console.log('🛠️ Global utilities loaded');
 
-    const { default: consoleCapture } = await import('./utilities/consoleCapture.js');
+    const { default: consoleCapture } = await import('./modules/utils/consoleCapture.js');
     window.consoleCapture = consoleCapture;
 
-    const { MiniCycleNotifications } = await import('./utilities/notifications.js');
+    const { MiniCycleNotifications } = await import('./modules/utils/notifications.js');
     const notifications = new MiniCycleNotifications();
     
     window.notifications = notifications;
     window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     
     console.log('📱 Initializing device detection module...');
-    const { DeviceDetectionManager } = await import('./utilities/deviceDetection.js');
+    const { DeviceDetectionManager } = await import('./modules/utils/deviceDetection.js');
     
     const deviceDetectionManager = new DeviceDetectionManager({
         loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.deviceDetectionManager = deviceDetectionManager;
     
     console.log('📊 Initializing stats panel module...');
-    const { StatsPanelManager } = await import('./utilities/statsPanel.js');
+    const { StatsPanelManager } = await import('./modules/features/statsPanel.js');
     
     const statsPanelManager = new StatsPanelManager({
         showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
@@ -532,7 +532,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Inside DOMContentLoaded, replace the current try { await window.cycleLoaderModulePromise; ... } with:
 // ✅ Load cycleLoader EARLY so window.loadMiniCycle exists before any initialSetup runs
   try {
-    const mod = await import('./utilities/cycleLoader.js');
+    const mod = await import('./modules/cycleLoader.js');
 
         // ✅ Ensure loadMiniCycle is available globally for refreshUIFromState()
     if (!window.loadMiniCycle) {
@@ -616,7 +616,7 @@ AppInit.onReady(() => {
   try {
     console.log('🗃️ Initializing state module after data setup...');
 
-    import('./utilities/state.js')
+    import('./modules/core/appState.js')
       .then(({ createStateManager }) => {
         window.AppState = createStateManager({
           showNotification: window.showNotification || console.log.bind(console),
@@ -12193,7 +12193,7 @@ document.addEventListener("touchstart", () => {}, { passive: true });
  * 
  * Stats panel functionality including swipe detection, view switching,
  * event handlers, and all related code has been moved to:
- * utilities/statsPanel.js (StatsPanelManager class)
+ * modules/features/statsPanel.js (StatsPanelManager class)
  * 
  * Global functions are available through module initialization:
  * - window.showStatsPanel()

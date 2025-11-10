@@ -1,7 +1,7 @@
 /**
  * @file cycleManager.js
  * @description Cycle creation and management functionality for miniCycle
- * @module utilities/cycleManager
+ * @module modules/cycleManager
  * @version 1.347
  * @pattern Resilient Constructor 🛡️
  *

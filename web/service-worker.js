@@ -34,36 +34,36 @@ var LITE_SHELL = [
 ];
 
 var UTILITIES = [
-  './utilities/appInitialization.js',
-  './utilities/state.js',
-  './utilities/themeManager.js',
-  './utilities/recurringPanel.js',
-  './utilities/recurringIntegration.js',
-  './utilities/recurringCore.js',
-  './utilities/globalUtils.js',
-  './utilities/deviceDetection.js',
-  './utilities/notifications.js',
-  './utilities/statsPanel.js',
-  './utilities/consoleCapture.js',
-  './utilities/basicPluginSystem.js',
-  './utilities/testing-modal.js',
-  './utilities/reminders.js',
-  './utilities/dueDates.js',
+  './modules/core/appInit.js',
+  './modules/core/appState.js',
+  './modules/features/themeManager.js',
+  './modules/recurring/recurringPanel.js',
+  './modules/recurring/recurringIntegration.js',
+  './modules/recurring/recurringCore.js',
+  './modules/utils/globalUtils.js',
+  './modules/utils/deviceDetection.js',
+  './modules/utils/notifications.js',
+  './modules/features/statsPanel.js',
+  './modules/utils/consoleCapture.js',
+  './modules/basicPluginSystem.js',
+  './modules/testing-modal.js',
+  './modules/features/reminders.js',
+  './modules/features/dueDates.js',
   // Cycle modules
-  './utilities/cycle/cycleLoader.js',
-  './utilities/cycle/cycleManager.js',
-  './utilities/cycle/cycleSwitcher.js',
-  './utilities/cycle/migrationManager.js',
-  './utilities/cycle/modeManager.js',
+  './modules/cycle/cycleLoader.js',
+  './modules/cycle/cycleManager.js',
+  './modules/cycle/cycleSwitcher.js',
+  './modules/cycle/migrationManager.js',
+  './modules/cycle/modeManager.js',
   // Task modules
-  './utilities/task/dragDropManager.js',
+  './modules/task/dragDropManager.js',
   // UI modules
-  './utilities/ui/gamesManager.js',
-  './utilities/ui/menuManager.js',
-  './utilities/ui/modalManager.js',
-  './utilities/ui/onboardingManager.js',
-  './utilities/ui/settingsManager.js',
-  './utilities/ui/undoRedoManager.js'
+  './modules/ui/gamesManager.js',
+  './modules/ui/menuManager.js',
+  './modules/ui/modalManager.js',
+  './modules/ui/onboardingManager.js',
+  './modules/ui/settingsManager.js',
+  './modules/ui/undoRedoManager.js'
 ];
 
 self.addEventListener('install', function (event) {

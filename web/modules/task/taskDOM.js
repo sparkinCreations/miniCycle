@@ -11,7 +11,7 @@
  *
  * Based on dragDropManager.js + statsPanel.js patterns
  *
- * @module utilities/task/taskDOM
+ * @module modules/task/taskDOM
  * @version 1.347
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
@@ -313,11 +313,11 @@ export class TaskDOMManager {
     // ============================================
 
     // GROUP 1: VALIDATION
-    // ✅ MOVED TO: utilities/task/taskValidation.js
+    // ✅ MOVED TO: modules/task/taskValidation.js
     // Use this.validator.validateAndSanitizeTaskInput(taskText)
 
     // GROUP 2: UTILITIES
-    // ✅ MOVED TO: utilities/task/taskUtils.js
+    // ✅ MOVED TO: modules/task/taskUtils.js
     // Use TaskUtils.buildTaskContext(), TaskUtils.extractTaskDataFromDOM(), etc.
 
     // GROUP 3: DOM CREATION
@@ -798,7 +798,7 @@ export class TaskDOMManager {
      * Handle task button clicks (edit, delete, priority)
      */
     // GROUP 5: TASK INTERACTIONS & EVENT HANDLING
-    // ✅ MOVED TO: utilities/task/taskEvents.js
+    // ✅ MOVED TO: modules/task/taskEvents.js
     // Use this.events.handleTaskButtonClick(), this.events.setupTaskInteractions(), etc.
 
     /**
@@ -845,7 +845,7 @@ export class TaskDOMManager {
     }
 
     // GROUP 6: RENDERING
-    // ✅ MOVED TO: utilities/task/taskRenderer.js
+    // ✅ MOVED TO: modules/task/taskRenderer.js
     // Use this.renderer.renderTasks(), this.renderer.refreshUIFromState(), etc.
 }
 

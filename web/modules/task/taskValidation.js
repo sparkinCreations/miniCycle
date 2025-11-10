@@ -7,7 +7,7 @@
  * - Minimal dependencies (sanitizeInput, showNotification)
  * - Pure input validation logic
  *
- * @module utilities/task/taskValidation
+ * @module modules/task/taskValidation
  * @version 1.347
  */
 

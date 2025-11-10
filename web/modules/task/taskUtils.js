@@ -7,7 +7,7 @@
  * - No instance state
  * - Dependencies passed as parameters
  *
- * @module utilities/task/taskUtils
+ * @module modules/task/taskUtils
  * @version 1.347
  */
 

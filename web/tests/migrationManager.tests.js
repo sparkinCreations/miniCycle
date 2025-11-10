@@ -3,7 +3,7 @@
  * Tests for the Schema 2.5 migration system with strict dependency injection
  */
 
-import * as MigrationManager from '../utilities/cycle/migrationManager.js';
+import * as MigrationManager from '../modules/cycle/migrationManager.js';
 
 export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 Migration Manager Tests</h2><h3>Running tests...</h3>';

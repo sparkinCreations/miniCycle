@@ -413,7 +413,7 @@ TEMPLATE USAGE INSTRUCTIONS:
    
    - Add case to module loader:
      } else if (moduleName === 'yourModule') {
-         await import('../utilities/yourModule.js');
+         await import('../modules/yourModule.js');
          currentModule = 'yourModule';
          resultsDiv.innerHTML = '<p>✅ YourModule loaded. Click "Run Tests" to begin.</p>';
    

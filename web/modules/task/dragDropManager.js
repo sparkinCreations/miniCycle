@@ -3,7 +3,7 @@
  * Handles task rearrangement via drag-and-drop and arrow buttons
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
- * @module utilities/task/dragDropManager
+ * @module modules/task/dragDropManager
  * @version 1.347
  */
 

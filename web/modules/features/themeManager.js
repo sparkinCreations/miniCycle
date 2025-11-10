@@ -8,7 +8,7 @@
  * ✅ Manages theme color meta tags for PWA integration
  *
  * Usage:
- *   import './utilities/themeManager.js';
+ *   import './modules/features/themeManager.js';
  *
  *   // Available globally:
  *   applyTheme('dark-ocean');

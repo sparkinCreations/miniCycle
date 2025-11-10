@@ -10,7 +10,7 @@ import {
     calculateNextOccurrence,
     calculateNextOccurrences,
     formatNextOccurrence
-} from '../utilities/recurringCore.js';
+} from '../modules/recurring/recurringCore.js';
 
 export function runRecurringCoreTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔁 RecurringCore Tests</h2><h3>Running tests...</h3>';

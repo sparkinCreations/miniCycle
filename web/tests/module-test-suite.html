@@ -308,99 +308,99 @@
                     currentModule = 'integration';
                     resultsDiv.innerHTML = '<p>✅ Integration Tests (E2E) ready. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'themeManager') {
-                    await import(`../utilities/themeManager.js?v=${cacheBuster}`);
+                    await import(`../modules/themeManager.js?v=${cacheBuster}`);
                     currentModule = 'themeManager';
                     resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'deviceDetection') {
-                    await import(`../utilities/deviceDetection.js?v=${cacheBuster}`);
+                    await import(`../modules/deviceDetection.js?v=${cacheBuster}`);
                     currentModule = 'deviceDetection';
                     resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleLoader') {
-                    await import(`../utilities/cycle/cycleLoader.js?v=${cacheBuster}`);
+                    await import(`../modules/cycle/cycleLoader.js?v=${cacheBuster}`);
                     currentModule = 'cycleLoader';
                     resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'statsPanel') {
-                    await import(`../utilities/statsPanel.js?v=${cacheBuster}`);
+                    await import(`../modules/statsPanel.js?v=${cacheBuster}`);
                     currentModule = 'statsPanel';
                     resultsDiv.innerHTML = '<p>✅ StatsPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'consoleCapture') {
-                    await import(`../utilities/consoleCapture.js?v=${cacheBuster}`);
+                    await import(`../modules/consoleCapture.js?v=${cacheBuster}`);
                     currentModule = 'consoleCapture';
                     resultsDiv.innerHTML = '<p>✅ ConsoleCapture loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'state') {
-                    await import(`../utilities/state.js?v=${cacheBuster}`);
+                    await import(`../modules/core/appState.js?v=${cacheBuster}`);
                     currentModule = 'state';
                     resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringCore') {
-                    await import(`../utilities/recurringCore.js?v=${cacheBuster}`);
+                    await import(`../modules/recurringCore.js?v=${cacheBuster}`);
                     currentModule = 'recurringCore';
                     resultsDiv.innerHTML = '<p>✅ RecurringCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringIntegration') {
-                    await import(`../utilities/recurringIntegration.js?v=${cacheBuster}`);
+                    await import(`../modules/recurringIntegration.js?v=${cacheBuster}`);
                     currentModule = 'recurringIntegration';
                     resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringPanel') {
-                    await import(`../utilities/recurringPanel.js?v=${cacheBuster}`);
+                    await import(`../modules/recurringPanel.js?v=${cacheBuster}`);
                     currentModule = 'recurringPanel';
                     resultsDiv.innerHTML = '<p>✅ RecurringPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
-                    await import(`../utilities/globalUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/globalUtils.js?v=${cacheBuster}`);
                     currentModule = 'globalUtils';
                     resultsDiv.innerHTML = '<p>✅ GlobalUtils loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'notifications') {
-                    await import(`../utilities/notifications.js?v=${cacheBuster}`);
+                    await import(`../modules/notifications.js?v=${cacheBuster}`);
                     currentModule = 'notifications';
                     resultsDiv.innerHTML = '<p>✅ Notifications loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'dragDropManager') {
-                    await import(`../utilities/task/dragDropManager.js?v=${cacheBuster}`);
+                    await import(`../modules/task/dragDropManager.js?v=${cacheBuster}`);
                     currentModule = 'dragDropManager';
                     resultsDiv.innerHTML = '<p>✅ DragDropManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'migrationManager') {
-                    await import(`../utilities/cycle/migrationManager.js?v=${cacheBuster}`);
+                    await import(`../modules/cycle/migrationManager.js?v=${cacheBuster}`);
                     currentModule = 'migrationManager';
                     resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'dueDates') {
-                    await import(`../utilities/dueDates.js?v=${cacheBuster}`);
+                    await import(`../modules/dueDates.js?v=${cacheBuster}`);
                     currentModule = 'dueDates';
                     resultsDiv.innerHTML = '<p>✅ Due Dates loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'reminders') {
-                    await import(`../utilities/reminders.js?v=${cacheBuster}`);
+                    await import(`../modules/reminders.js?v=${cacheBuster}`);
                     currentModule = 'reminders';
                     resultsDiv.innerHTML = '<p>✅ Reminders loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'modeManager') {
-                    await import(`../utilities/cycle/modeManager.js?v=${cacheBuster}`);
+                    await import(`../modules/cycle/modeManager.js?v=${cacheBuster}`);
                     currentModule = 'modeManager';
                     resultsDiv.innerHTML = '<p>✅ ModeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleSwitcher') {
-                    await import(`../utilities/cycle/cycleSwitcher.js?v=${cacheBuster}`);
+                    await import(`../modules/cycle/cycleSwitcher.js?v=${cacheBuster}`);
                     currentModule = 'cycleSwitcher';
                     resultsDiv.innerHTML = '<p>✅ CycleSwitcher loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'undoRedoManager') {
-                    await import(`../utilities/ui/undoRedoManager.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
                     currentModule = 'undoRedoManager';
                     resultsDiv.innerHTML = '<p>✅ UndoRedoManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'gamesManager') {
-                    await import(`../utilities/ui/gamesManager.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/gamesManager.js?v=${cacheBuster}`);
                     currentModule = 'gamesManager';
                     resultsDiv.innerHTML = '<p>✅ GamesManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'onboardingManager') {
-                    await import(`../utilities/ui/onboardingManager.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/onboardingManager.js?v=${cacheBuster}`);
                     currentModule = 'onboardingManager';
                     resultsDiv.innerHTML = '<p>✅ OnboardingManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'modalManager') {
-                    await import(`../utilities/ui/modalManager.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/modalManager.js?v=${cacheBuster}`);
                     currentModule = 'modalManager';
                     resultsDiv.innerHTML = '<p>✅ ModalManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'menuManager') {
-                    await import(`../utilities/ui/menuManager.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
                     currentModule = 'menuManager';
                     resultsDiv.innerHTML = '<p>✅ MenuManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'settingsManager') {
-                    await import(`../utilities/ui/settingsManager.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/settingsManager.js?v=${cacheBuster}`);
                     currentModule = 'settingsManager';
                     resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskCore') {
-                    const { initTaskCore } = await import(`../utilities/task/taskCore.js?v=${cacheBuster}`);
+                    const { initTaskCore } = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
                     // Initialize with test-friendly mocks to avoid prompts
                     await initTaskCore({
                         showPromptModal: (options) => {
@@ -417,25 +417,25 @@
                     currentModule = 'taskCore';
                     resultsDiv.innerHTML = '<p>✅ TaskCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskValidation') {
-                    await import(`../utilities/task/taskValidation.js?v=${cacheBuster}`);
+                    await import(`../modules/task/taskValidation.js?v=${cacheBuster}`);
                     currentModule = 'taskValidation';
                     resultsDiv.innerHTML = '<p>✅ TaskValidation loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskUtils') {
-                    await import(`../utilities/task/taskUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/task/taskUtils.js?v=${cacheBuster}`);
                     currentModule = 'taskUtils';
                     resultsDiv.innerHTML = '<p>✅ TaskUtils loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskRenderer') {
-                    await import(`../utilities/task/taskRenderer.js?v=${cacheBuster}`);
+                    await import(`../modules/task/taskRenderer.js?v=${cacheBuster}`);
                     currentModule = 'taskRenderer';
                     resultsDiv.innerHTML = '<p>✅ TaskRenderer loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskEvents') {
-                    await import(`../utilities/task/taskEvents.js?v=${cacheBuster}`);
+                    await import(`../modules/task/taskEvents.js?v=${cacheBuster}`);
                     currentModule = 'taskEvents';
                     resultsDiv.innerHTML = '<p>✅ TaskEvents loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskDOM') {
                     // Load globalUtils first (provides window.sanitizeInput needed by validator)
-                    await import(`../utilities/globalUtils.js?v=${cacheBuster}`);
-                    await import(`../utilities/task/taskDOM.js?v=${cacheBuster}`);
+                    await import(`../modules/globalUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
                     currentModule = 'taskDOM';
                     resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils). Click "Run Tests" to begin.</p>';
                 }
@@ -598,35 +598,35 @@
             // Define all modules and their test functions
             const allModules = [
                 { name: '🔗 Integration (E2E)', key: 'integration', runFn: runIntegrationTests, importPath: null },
-                { name: 'ThemeManager', key: 'themeManager', runFn: runThemeManagerTests, importPath: '../utilities/themeManager.js' },
-                { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../utilities/deviceDetection.js' },
-                { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../utilities/cycle/cycleLoader.js' },
-                { name: 'StatsPanel', key: 'statsPanel', runFn: runStatsPanelTests, importPath: '../utilities/statsPanel.js' },
-                { name: 'ConsoleCapture', key: 'consoleCapture', runFn: runConsoleCaptureTests, importPath: '../utilities/consoleCapture.js' },
-                { name: 'State', key: 'state', runFn: runStateTests, importPath: '../utilities/state.js' },
-                { name: 'RecurringCore', key: 'recurringCore', runFn: runRecurringCoreTests, importPath: '../utilities/recurringCore.js' },
-                { name: 'RecurringIntegration', key: 'recurringIntegration', runFn: runRecurringIntegrationTests, importPath: '../utilities/recurringIntegration.js' },
-                { name: 'RecurringPanel', key: 'recurringPanel', runFn: runRecurringPanelTests, importPath: '../utilities/recurringPanel.js' },
-                { name: 'GlobalUtils', key: 'globalUtils', runFn: runGlobalUtilsTests, importPath: '../utilities/globalUtils.js' },
-                { name: 'Notifications', key: 'notifications', runFn: runNotificationsTests, importPath: '../utilities/notifications.js' },
-                { name: 'DragDropManager', key: 'dragDropManager', runFn: runDragDropManagerTests, importPath: '../utilities/task/dragDropManager.js' },
-                { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../utilities/cycle/migrationManager.js' },
-                { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../utilities/dueDates.js' },
-                { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../utilities/reminders.js' },
-                { name: 'MenuManager', key: 'menuManager', runFn: runMenuManagerTests, importPath: '../utilities/ui/menuManager.js' },
-                { name: 'SettingsManager', key: 'settingsManager', runFn: runSettingsManagerTests, importPath: '../utilities/ui/settingsManager.js' },
-                { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../utilities/cycle/modeManager.js' },
-                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../utilities/cycle/cycleSwitcher.js' },
-                { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../utilities/ui/undoRedoManager.js' },
-                { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../utilities/ui/gamesManager.js' },
-                { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../utilities/ui/onboardingManager.js' },
-                { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../utilities/ui/modalManager.js' },
-                { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../utilities/task/taskCore.js' },
-                { name: 'TaskValidation', key: 'taskValidation', runFn: runTaskValidationTests, importPath: '../utilities/task/taskValidation.js' },
-                { name: 'TaskUtils', key: 'taskUtils', runFn: runTaskUtilsTests, importPath: '../utilities/task/taskUtils.js' },
-                { name: 'TaskRenderer', key: 'taskRenderer', runFn: runTaskRendererTests, importPath: '../utilities/task/taskRenderer.js' },
-                { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../utilities/task/taskEvents.js' },
-                { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../utilities/task/taskDOM.js' }
+                { name: 'ThemeManager', key: 'themeManager', runFn: runThemeManagerTests, importPath: '../modules/themeManager.js' },
+                { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../modules/deviceDetection.js' },
+                { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../modules/cycle/cycleLoader.js' },
+                { name: 'StatsPanel', key: 'statsPanel', runFn: runStatsPanelTests, importPath: '../modules/statsPanel.js' },
+                { name: 'ConsoleCapture', key: 'consoleCapture', runFn: runConsoleCaptureTests, importPath: '../modules/consoleCapture.js' },
+                { name: 'State', key: 'state', runFn: runStateTests, importPath: '../modules/core/appState.js' },
+                { name: 'RecurringCore', key: 'recurringCore', runFn: runRecurringCoreTests, importPath: '../modules/recurringCore.js' },
+                { name: 'RecurringIntegration', key: 'recurringIntegration', runFn: runRecurringIntegrationTests, importPath: '../modules/recurringIntegration.js' },
+                { name: 'RecurringPanel', key: 'recurringPanel', runFn: runRecurringPanelTests, importPath: '../modules/recurringPanel.js' },
+                { name: 'GlobalUtils', key: 'globalUtils', runFn: runGlobalUtilsTests, importPath: '../modules/globalUtils.js' },
+                { name: 'Notifications', key: 'notifications', runFn: runNotificationsTests, importPath: '../modules/notifications.js' },
+                { name: 'DragDropManager', key: 'dragDropManager', runFn: runDragDropManagerTests, importPath: '../modules/task/dragDropManager.js' },
+                { name: 'MigrationManager', key: 'migrationManager', runFn: runMigrationManagerTests, importPath: '../modules/cycle/migrationManager.js' },
+                { name: 'DueDates', key: 'dueDates', runFn: runDueDatesTests, importPath: '../modules/dueDates.js' },
+                { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../modules/reminders.js' },
+                { name: 'MenuManager', key: 'menuManager', runFn: runMenuManagerTests, importPath: '../modules/ui/menuManager.js' },
+                { name: 'SettingsManager', key: 'settingsManager', runFn: runSettingsManagerTests, importPath: '../modules/ui/settingsManager.js' },
+                { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../modules/cycle/modeManager.js' },
+                { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../modules/cycle/cycleSwitcher.js' },
+                { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../modules/ui/undoRedoManager.js' },
+                { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../modules/ui/gamesManager.js' },
+                { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../modules/ui/onboardingManager.js' },
+                { name: 'ModalManager', key: 'modalManager', runFn: runModalManagerTests, importPath: '../modules/ui/modalManager.js' },
+                { name: 'TaskCore', key: 'taskCore', runFn: runTaskCoreTests, importPath: '../modules/task/taskCore.js' },
+                { name: 'TaskValidation', key: 'taskValidation', runFn: runTaskValidationTests, importPath: '../modules/task/taskValidation.js' },
+                { name: 'TaskUtils', key: 'taskUtils', runFn: runTaskUtilsTests, importPath: '../modules/task/taskUtils.js' },
+                { name: 'TaskRenderer', key: 'taskRenderer', runFn: runTaskRendererTests, importPath: '../modules/task/taskRenderer.js' },
+                { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../modules/task/taskEvents.js' },
+                { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' }
             ];
 
             let allResults = [];

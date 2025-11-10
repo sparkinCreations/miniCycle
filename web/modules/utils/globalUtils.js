@@ -468,7 +468,7 @@ function safeAddEventListener(element, event, handler) {
 
 NEW WAY:
 // Import the module in your main script:
-import './utilities/globalUtils.js';
+import './modules/utils/globalUtils.js';
 
 // Use exactly the same function calls - no changes needed!
 safeAddEventListener(element, 'click', handler);
@@ -496,7 +496,7 @@ TROUBLESHOOTING:
 ===========================================
 
 Problem: "Function not found"
-Solution: Make sure to import './utilities/globalUtils.js' in your main script
+Solution: Make sure to import './modules/utils/globalUtils.js' in your main script
 
 Problem: "Element not found" warnings
 Solution: This is expected - the functions warn you about missing elements

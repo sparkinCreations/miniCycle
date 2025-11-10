@@ -1,7 +1,7 @@
 /**
  * Menu Manager Tests
  *
- * Tests for utilities/ui/menuManager.js
+ * Tests for modules/ui/menuManager.js
  * Pattern: Resilient Constructor 🛡️
  *
  * Functions tested:

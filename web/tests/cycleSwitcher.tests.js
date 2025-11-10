@@ -1,6 +1,6 @@
 /**
  * 🧪 CycleSwitcher Tests
- * Tests for utilities/cycleSwitcher.js
+ * Tests for modules/cycleSwitcher.js
  * Pattern: Resilient Constructor 🛡️
  *
  * Tests cycle switching functionality:

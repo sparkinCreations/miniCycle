@@ -1,6 +1,6 @@
 /**
  * 🧪 ModeManager Tests
- * Tests for utilities/cycle/modeManager.js
+ * Tests for modules/cycle/modeManager.js
  * Pattern: Resilient Constructor 🛡️
  *
  * Tests the three cycling modes:
@@ -719,7 +719,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('exposes global compatibility functions after init', async () => {
         // Import the init function
         const cacheBuster = Date.now();
-        const { initModeManager } = await import(`../../utilities/cycle/modeManager.js?v=${cacheBuster}`);
+        const { initModeManager } = await import(`../../modules/cycle/modeManager.js?v=${cacheBuster}`);
 
         // Call init to create global exports
         await initModeManager();
@@ -741,7 +741,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('global modeManager instance exists after init', async () => {
         // Import the init function
         const cacheBuster = Date.now();
-        const { initModeManager } = await import(`../../utilities/cycle/modeManager.js?v=${cacheBuster}`);
+        const { initModeManager } = await import(`../../modules/cycle/modeManager.js?v=${cacheBuster}`);
 
         // Call init to create global instance
         const instance = await initModeManager();

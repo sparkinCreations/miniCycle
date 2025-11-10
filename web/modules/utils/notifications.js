@@ -9,7 +9,7 @@
  * - Schema 2.5 data integration
  *
  * Usage:
- *   import { MiniCycleNotifications } from './utilities/notifications.js';
+ *   import { MiniCycleNotifications } from './modules/utils/notifications.js';
  *   const notifications = new MiniCycleNotifications();
  *   notifications.show("Hello World!", "success", 3000);
  *

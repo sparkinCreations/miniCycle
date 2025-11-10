@@ -7,7 +7,7 @@
  * - Coordinates with other modules
  * - Updates UI components
  *
- * @module utilities/task/taskRenderer
+ * @module modules/task/taskRenderer
  * @version 1.347
  */
 

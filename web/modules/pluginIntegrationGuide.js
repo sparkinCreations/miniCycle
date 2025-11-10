@@ -9,10 +9,10 @@
 // STEP 1: Add to your main script imports (miniCycle-scripts.js)
 /*
 // Add this near your other imports
-import './utilities/basicPluginSystem.js';
+import './modules/basicPluginSystem.js';
 
 // Optional: Import example plugin
-import './utilities/exampleTimeTrackerPlugin.js';
+import './modules/exampleTimeTrackerPlugin.js';
 */
 
 // STEP 2: Add plugin hooks to your existing functions
