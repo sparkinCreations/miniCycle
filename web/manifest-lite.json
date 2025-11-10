@@ -3,7 +3,7 @@
   "name": "miniCycle Lite",
   "short_name": "miniCycle Lite",
   "description": "Lightweight task cycling app optimized for older devices – Turn Your Routine Into Progress",
-  "start_url": "./miniCycle-lite.html",
+  "start_url": "./lite/miniCycle-lite.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay"],
@@ -33,14 +33,14 @@
       "name": "Quick Add Task",
       "short_name": "Add Task",
       "description": "Quickly add a new task",
-      "url": "./miniCycle-lite.html#add-task",
+      "url": "./lite/miniCycle-lite.html#add-task",
       "icons": [{ "src": "assets/images/logo/minicycle_logo_icon.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
       "name": "View Stats",
       "short_name": "Stats",
       "description": "View your task completion statistics",
-      "url": "./miniCycle-lite.html#stats",
+      "url": "./lite/miniCycle-lite.html#stats",
       "icons": [{ "src": "assets/images/logo/minicycle_logo_icon.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],

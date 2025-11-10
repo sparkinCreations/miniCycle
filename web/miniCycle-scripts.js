@@ -2039,7 +2039,7 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
     cancelText: "Stay Here",
     callback: (confirmed) => {
       if (confirmed) {
-        window.location.href = 'miniCycle-lite.html';
+        window.location.href = 'lite/miniCycle-lite.html';
       }
     }
   });
@@ -2165,8 +2165,8 @@ function setupUserManual() {
 
         // Redirect to the User Manual page after a short delay
         setTimeout(() => {
-            window.location.href = "user-manual.html"; // ✅ Opens the manual page
-            
+            window.location.href = "legal/user-manual.html"; // ✅ Opens the manual page
+
             // Re-enable button after navigation (won't matter much since page changes)
             openUserManual.disabled = false;
         }, 200);

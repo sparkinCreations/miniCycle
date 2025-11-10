@@ -165,11 +165,11 @@ export class DeviceDetectionManager {
 
   redirectToLite() {
     const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
-    console.log('📱 Redirecting to lite version:', 'miniCycle-lite.html' + cacheBuster);
-    
+    console.log('📱 Redirecting to lite version:', 'lite/miniCycle-lite.html' + cacheBuster);
+
     this.showNotification('📱 Redirecting to optimized lite version...', 'info', 2000);
     setTimeout(() => {
-      window.location.href = 'miniCycle-lite.html' + cacheBuster;
+      window.location.href = 'lite/miniCycle-lite.html' + cacheBuster;
     }, 1000);
   }
 

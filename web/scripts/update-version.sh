@@ -18,13 +18,13 @@ echo ""
 
 CORE_HTML_FILES=(
     "miniCycle.html"
-    "miniCycle-lite.html"
-    "product.html"
+    "lite/miniCycle-lite.html"
+    "pages/product.html"
 )
 
 CORE_JS_FILES=(
     "miniCycle-scripts.js"
-    "miniCycle-lite-scripts.js"
+    "lite/miniCycle-lite-scripts.js"
     "service-worker.js"
 )
 
@@ -46,7 +46,7 @@ echo "🔍 Auto-discovering utility modules with version numbers..."
 UTILITY_FILES=()
 UTILITY_FILES_SKIPPED=0
 
-# Find all .js files in utilities/ and subdirectories
+# Find all .js files in modules/ and subdirectories
 while IFS= read -r file; do
     # Check if file contains version patterns
     # Looks for: @version X.XXX, version: 'X.XXX', this.version = 'X.XXX', currentVersion: 'X.XXX'
@@ -55,7 +55,7 @@ while IFS= read -r file; do
     else
         UTILITY_FILES_SKIPPED=$((UTILITY_FILES_SKIPPED + 1))
     fi
-done < <(find utilities -name "*.js" -type f 2>/dev/null | sort)
+done < <(find modules -name "*.js" -type f 2>/dev/null | sort)
 
 echo "✅ Found ${#UTILITY_FILES[@]} utility modules with version numbers"
 if [ $UTILITY_FILES_SKIPPED -gt 0 ]; then
@@ -83,10 +83,11 @@ if [ ! -d "$BACKUP_DIR" ]; then
     echo "📁 Created backup directory: $BACKUP_DIR"
 fi
 
-# ✅ Create utilities backup folder structure (including subdirectories)
-mkdir -p "$BACKUP_DIR/utilities" 2>/dev/null
-mkdir -p "$BACKUP_DIR/utilities/cycle" 2>/dev/null
-mkdir -p "$BACKUP_DIR/utilities/task" 2>/dev/null
+# ✅ Create modules backup folder structure (including subdirectories)
+mkdir -p "$BACKUP_DIR/modules" 2>/dev/null
+mkdir -p "$BACKUP_DIR/lite" 2>/dev/null
+mkdir -p "$BACKUP_DIR/legal" 2>/dev/null
+mkdir -p "$BACKUP_DIR/pages" 2>/dev/null
 
 # ✅ Clean up old backups (keep only last 3)
 cleanup_old_backups() {
@@ -297,7 +298,7 @@ elif [ "$UPDATE_MODE" == "3" ]; then
     echo ""
     echo "📝 Mode: Custom file selection"
     echo "   Enter file names separated by spaces or commas"
-    echo "   Example: miniCycle.html service-worker.js utilities/state.js"
+    echo "   Example: miniCycle.html service-worker.js modules/core/appState.js"
     echo ""
     read -p "Files: " CUSTOM_FILES
 
@@ -425,28 +426,28 @@ if should_update "miniCycle.html"; then
 fi
 
 # ============================================
-# UPDATE: miniCycle-lite.html
+# UPDATE: lite/miniCycle-lite.html
 # ============================================
 
-if should_update "miniCycle-lite.html"; then
-    if backup_file "miniCycle-lite.html"; then
-        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" miniCycle-lite.html
-        "${SED_INPLACE[@]}" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g" miniCycle-lite.html
-        "${SED_INPLACE[@]}" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g" miniCycle-lite.html
-        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" miniCycle-lite.html
-        echo "✅ Updated miniCycle-lite.html"
+if should_update "lite/miniCycle-lite.html"; then
+    if backup_file "lite/miniCycle-lite.html"; then
+        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" lite/miniCycle-lite.html
+        "${SED_INPLACE[@]}" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g" lite/miniCycle-lite.html
+        "${SED_INPLACE[@]}" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g" lite/miniCycle-lite.html
+        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" lite/miniCycle-lite.html
+        echo "✅ Updated lite/miniCycle-lite.html"
     fi
 fi
 
 # ============================================
-# UPDATE: product.html
+# UPDATE: pages/product.html
 # ============================================
 
-if should_update "product.html"; then
-    if backup_file "product.html"; then
-        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" product.html
-        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" product.html
-        echo "✅ Updated product.html"
+if should_update "pages/product.html"; then
+    if backup_file "pages/product.html"; then
+        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" pages/product.html
+        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" pages/product.html
+        echo "✅ Updated pages/product.html"
     fi
 fi
 
@@ -464,14 +465,14 @@ if should_update "miniCycle-scripts.js"; then
 fi
 
 # ============================================
-# UPDATE: miniCycle-lite-scripts.js
+# UPDATE: lite/miniCycle-lite-scripts.js
 # ============================================
 
-if should_update "miniCycle-lite-scripts.js"; then
-    if backup_file "miniCycle-lite-scripts.js"; then
-        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" miniCycle-lite-scripts.js
-        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" miniCycle-lite-scripts.js
-        echo "✅ Updated miniCycle-lite-scripts.js"
+if should_update "lite/miniCycle-lite-scripts.js"; then
+    if backup_file "lite/miniCycle-lite-scripts.js"; then
+        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" lite/miniCycle-lite-scripts.js
+        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" lite/miniCycle-lite-scripts.js
+        echo "✅ Updated lite/miniCycle-lite-scripts.js"
     fi
 fi
 
@@ -656,9 +657,9 @@ if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
     fi
 fi
 
-if should_update "miniCycle-lite.html" && [ -f "miniCycle-lite.html" ]; then
-    if ! grep -q "?v=$NEW_VERSION" miniCycle-lite.html; then
-        echo "⚠️  Warning: miniCycle-lite.html may not have updated correctly"
+if should_update "lite/miniCycle-lite.html" && [ -f "lite/miniCycle-lite.html" ]; then
+    if ! grep -q "?v=$NEW_VERSION" lite/miniCycle-lite.html; then
+        echo "⚠️  Warning: lite/miniCycle-lite.html may not have updated correctly"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
 fi

@@ -23,14 +23,14 @@ var FULL_SHELL = [
   './miniCycle-styles.css',
   './miniCycle-scripts.js',
   // ✅ ADDED: User manual files
-  './user-manual.html',
-  './user-manual-styles.css'
+  './legal/user-manual.html',
+  './legal/user-manual-styles.css'
 ];
 
 var LITE_SHELL = [
-  './miniCycle-lite.html',
-  './miniCycle-lite-styles.css',
-  './miniCycle-lite-scripts.js'
+  './lite/miniCycle-lite.html',
+  './lite/miniCycle-lite-styles.css',
+  './lite/miniCycle-lite-scripts.js'
 ];
 
 var UTILITIES = [
@@ -150,11 +150,11 @@ function pickShell(urlObj) {
 
   // Check pathname for specific version
   var p = urlObj.pathname || '';
-  if (p.indexOf('miniCycle-lite.html') !== -1 || p.indexOf('miniCycle-lite') !== -1) return 'lite';
+  if (p.indexOf('lite/miniCycle-lite.html') !== -1 || p.indexOf('/lite/') !== -1) return 'lite';
   if (p.indexOf('miniCycle.html') !== -1 || /\/$|\/index\.html$/.test(p)) return 'full';
-  
+
   // ✅ ADDED: User manual should use full shell
-  if (p.indexOf('user-manual.html') !== -1) return 'full';
+  if (p.indexOf('legal/user-manual.html') !== -1) return 'full';
   
   // Default to full
   return 'full';
@@ -200,21 +200,21 @@ self.addEventListener('fetch', function (event) {
           // ✅ Offline fallback with smart shell selection
           var shell = pickShell(url);
           return caches.open(STATIC_CACHE).then(function (cache) {
-            
+
             // ✅ Try the correct shell first
-            var shellPath = shell === 'lite' ? fromScope('miniCycle-lite.html') 
+            var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
                                             : fromScope('miniCycle.html');
             return cache.match(shellPath);
-            
+
           }).then(function (fallback) {
             if (fallback) {
               console.log('📱 Offline fallback: serving ' + shell + ' shell');
               return fallback;
             }
-            
+
             // ✅ Last resort: try any available shell
             return caches.open(STATIC_CACHE).then(function (cache) {
-              return cache.match(fromScope('miniCycle-lite.html'));
+              return cache.match(fromScope('lite/miniCycle-lite.html'));
             }).then(function (anyLite) {
               if (anyLite) {
                 console.log('📱 Emergency fallback: serving lite shell');

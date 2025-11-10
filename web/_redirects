@@ -1,6 +1,14 @@
 # Domain redirect for minicycleapp.com (with forced redirect)
-https://minicycleapp.com/*  https://minicycle.app/product.html  301!
-https://www.minicycleapp.com/*  https://minicycle.app/product.html  301!
+https://minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
+https://www.minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
+
+# Legacy URL redirects (preserve old links)
+/privacy.html           /legal/privacy.html           301
+/terms.html             /legal/terms.html             301
+/user-manual.html       /legal/user-manual.html       301
+/product.html           /pages/product.html           301
+/learn_more.html        /pages/learn_more.html        301
+/miniCycle-lite.html    /lite/miniCycle-lite.html     301
 
 # Redirect root to miniCycle.html
 /    /miniCycle.html    200

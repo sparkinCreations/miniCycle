@@ -107,7 +107,7 @@
   window.__FeatureGateReasons = reasons;
 
   if (needsLite && !forcedFull && location.pathname.indexOf('miniCycle-lite.html') === -1) {
-    location.replace('./miniCycle-lite.html?mode=lite&src=feature-gate&reasons=' + encodeURIComponent(reasons.join(',')));
+    location.replace('./lite/miniCycle-lite.html?mode=lite&src=feature-gate&reasons=' + encodeURIComponent(reasons.join(',')));
   }
 })();
 
@@ -759,7 +759,7 @@ window.installApp = () => {
                     <p><strong>Service Worker Cache:</strong> <span id="about-sw-version">—</span></p>
           <p>miniCycle is your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.</p>
           <p>Developed by <strong>sparkinCreations</strong>.</p>
-          <p><a href="product.html" target="_blank" rel="noopener noreferrer">Learn more about miniCycle</a></p>
+          <p><a href="pages/product.html" target="_blank" rel="noopener noreferrer">Learn more about miniCycle</a></p>
           <p>Visit <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">our website</a> for updates!</p>
           <p class="about-legal" style="font-size: 12px; opacity: 0.8; margin-top: 8px;">&copy; 2025 sparkinCreations &bull; miniCycle&trade;</p>
                 </div>
@@ -1764,10 +1764,10 @@ window.installApp = () => {
 <li id="copyright">
   &copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
   &bull;
-  <a href="product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
+  <a href="pages/product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
 </li>
-<li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
-<li class="footer-item"><a href="terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
+<li class="footer-item"><a href="legal/privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
+<li class="footer-item"><a href="legal/terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
 <li class="footer-item">
 <a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal" title="Send us feedback">
 Feedback
@@ -1823,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/automated-tests-fix.js?v=1.347"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.347"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
@@ -1831,7 +1831,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () {
     var needsLite = !!window.__FeatureGateNeedsLite; // default false if gate script didn't run
     if (needsLite) {
-      location.replace('./miniCycle-lite.html?mode=lite&src=fallback');
+      location.replace('./lite/miniCycle-lite.html?mode=lite&src=fallback');
       return;
     }
     // If full app has begun booting, don't redirect even if AppReady isn't set yet (e.g., onboarding).
@@ -1840,7 +1840,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     // Last resort: no boot detected at all.
-    location.replace('./miniCycle-lite.html?mode=lite&src=no-boot');
+    location.replace('./lite/miniCycle-lite.html?mode=lite&src=no-boot');
   }, 8000);
 })();
 </script>

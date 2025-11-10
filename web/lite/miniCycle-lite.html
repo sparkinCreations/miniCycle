@@ -17,15 +17,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <!-- ✅ Icons with fallback -->
-<link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+<link rel="icon" type="image/png" href="../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" onerror="this.disabled=true;">
 
 <!-- ✅ Main stylesheet -->
 <link rel="stylesheet" href="miniCycle-lite-styles.css?v=1.347">
 
 <!-- ✅ ADD: Web App Manifest and Theme -->
-<link rel="manifest" href="manifest-lite.json">
-<link rel="apple-touch-icon" href="assets/images/logo/minicycle_logo_icon.png">
+<link rel="manifest" href="../manifest-lite.json">
+<link rel="apple-touch-icon" href="../assets/images/logo/minicycle_logo_icon.png">
 <meta name="theme-color" content="black" id="theme-color-meta">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default" id="status-bar-style-meta">
@@ -71,7 +71,7 @@ if ('serviceWorker' in navigator) {
 
   // Register SW
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./service-worker.js')
+    navigator.serviceWorker.register('../service-worker.js')
       .then(function (registration) {
         console.log('✅ [LITE] SW registered:', registration.scope);
 
@@ -217,7 +217,7 @@ function checkServiceWorkerStatus(registration) {
           showNotification('🚀 Switching to full version...', 'info', 2000);
         }
         setTimeout(function () {
-          window.location.href = 'miniCycle.html' + cacheBuster;
+          window.location.href = '../miniCycle.html' + cacheBuster;
         }, 1000);
       });
     }
@@ -287,14 +287,14 @@ window.addEventListener('appinstalled', function () {
 <body>
 <!-- Initial App Loader -->
 <div id="app-loader">
-  <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo">
+  <img src="../assets/images/logo/minicycle_logo_icon.png" alt="Loading..." class="loader-logo">
   <div class="loader-text">Loading miniCycle Lite...</div>
 </div>
 
 <!-- Loading Overlay for Operations -->
 <div id="loading-overlay" class="loading-overlay">
   <div class="loading-spinner">
-    <img src="assets/images/logo/minicycle_logo_icon.png" alt="Loading...">
+    <img src="../assets/images/logo/minicycle_logo_icon.png" alt="Loading...">
     <div class="loading-spinner-text">Processing...</div>
   </div>
 </div>
@@ -309,8 +309,8 @@ window.addEventListener('appinstalled', function () {
     </select>
   </div>
   <div class="header-branding">
-    <img src="assets/images/logo/logo.png" alt="miniCycle Logo" class="header-logo" onerror="this.style.display='none';">
-    <img src="assets/images/logo/app_name.png" alt="miniCycle" class="app-name" onerror="this.alt='miniCycle Lite'; this.style.display='none';">
+    <img src="../assets/images/logo/logo.png" alt="miniCycle Logo" class="header-logo" onerror="this.style.display='none';">
+    <img src="../assets/images/logo/app_name.png" alt="miniCycle" class="app-name" onerror="this.alt='miniCycle Lite'; this.style.display='none';">
   </div>
   <button id="menu-button" class="menu-button" aria-label="Open menu" tabindex="0" data-tooltip="Open main menu">Menu</button>
 </header>
@@ -329,7 +329,7 @@ window.addEventListener('appinstalled', function () {
 <nav class="menu-container" data-modal data-menu role="navigation">
   <div id="main-menu-header-row" class="main-menu-header-row">
     <div class="main-menu-header-logo">
-      <img src="assets/images/logo/logo.png" alt="miniCycle Logo" width="22" height="22" onerror="this.style.display='none';">
+      <img src="../assets/images/logo/logo.png" alt="miniCycle Logo" width="22" height="22" onerror="this.style.display='none';">
     </div>
     <div class="main-menu-header">miniCycle Lite</div>
     <div id="current-date" class="current-date"></div>
