@@ -781,7 +781,30 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task DOM functionality');
         }
 
+        // ✅ Initialize Reminders Module (Phase 2 module)
+        // IMPORTANT: Load BEFORE recurring modules because recurring task rendering needs reminder button handlers
+        console.log('🔔 Initializing reminders module...');
+        try {
+            const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
 
+            await initReminderManager({
+                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                getElementById: (id) => document.getElementById(id),
+                querySelectorAll: (selector) => document.querySelectorAll(selector),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
+                autoSave: () => window.autoSave?.()
+            });
+
+            console.log('✅ Reminders module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize reminders module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Reminders feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without reminders functionality');
+        }
 
         // ✅ Initialize Recurring Modules (Phase 2 module)
         console.log('🔄 Initializing recurring task modules...');
@@ -809,30 +832,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 showNotification('Recurring feature unavailable', 'warning', 3000);
             }
             console.warn('⚠️ App will continue without recurring functionality');
-        }
-
-        // ✅ Initialize Reminders Module (Phase 2 module)
-        console.log('🔔 Initializing reminders module...');
-        try {
-            const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
-
-            await initReminderManager({
-                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
-                loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                getElementById: (id) => document.getElementById(id),
-                querySelectorAll: (selector) => document.querySelectorAll(selector),
-                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
-                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
-                autoSave: () => window.autoSave?.()
-            });
-
-            console.log('✅ Reminders module initialized (Phase 2)');
-        } catch (error) {
-            console.error('❌ Failed to initialize reminders module:', error);
-            if (typeof showNotification === 'function') {
-                showNotification('Reminders feature unavailable', 'warning', 3000);
-            }
-            console.warn('⚠️ App will continue without reminders functionality');
         }
 
         // ✅ Initialize Due Dates Module (Phase 2 module)
