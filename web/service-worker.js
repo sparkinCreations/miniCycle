@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v128'; // Bumped to fix safeShowNotification default duration bug
+var CACHE_VERSION = 'v129'; // Bumped to fix safeShowNotification default duration bug
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -23,47 +23,47 @@ var FULL_SHELL = [
   './miniCycle-styles.css',
   './miniCycle-scripts.js',
   // ✅ ADDED: User manual files
-  './user-manual.html',
-  './user-manual-styles.css'
+  './legal/user-manual.html',
+  './legal/user-manual-styles.css'
 ];
 
 var LITE_SHELL = [
-  './miniCycle-lite.html',
-  './miniCycle-lite-styles.css',
-  './miniCycle-lite-scripts.js'
+  './lite/miniCycle-lite.html',
+  './lite/miniCycle-lite-styles.css',
+  './lite/miniCycle-lite-scripts.js'
 ];
 
 var UTILITIES = [
-  './utilities/appInitialization.js',
-  './utilities/state.js',
-  './utilities/themeManager.js',
-  './utilities/recurringPanel.js',
-  './utilities/recurringIntegration.js',
-  './utilities/recurringCore.js',
-  './utilities/globalUtils.js',
-  './utilities/deviceDetection.js',
-  './utilities/notifications.js',
-  './utilities/statsPanel.js',
-  './utilities/consoleCapture.js',
-  './utilities/basicPluginSystem.js',
-  './utilities/testing-modal.js',
-  './utilities/reminders.js',
-  './utilities/dueDates.js',
+  './modules/core/appInit.js',
+  './modules/core/appState.js',
+  './modules/features/themeManager.js',
+  './modules/recurring/recurringPanel.js',
+  './modules/recurring/recurringIntegration.js',
+  './modules/recurring/recurringCore.js',
+  './modules/utils/globalUtils.js',
+  './modules/utils/deviceDetection.js',
+  './modules/utils/notifications.js',
+  './modules/features/statsPanel.js',
+  './modules/utils/consoleCapture.js',
+  './modules/other/basicPluginSystem.js',
+  './modules/testing/testing-modal.js',
+  './modules/features/reminders.js',
+  './modules/features/dueDates.js',
   // Cycle modules
-  './utilities/cycle/cycleLoader.js',
-  './utilities/cycle/cycleManager.js',
-  './utilities/cycle/cycleSwitcher.js',
-  './utilities/cycle/migrationManager.js',
-  './utilities/cycle/modeManager.js',
+  './modules/cycle/cycleLoader.js',
+  './modules/cycle/cycleManager.js',
+  './modules/cycle/cycleSwitcher.js',
+  './modules/cycle/migrationManager.js',
+  './modules/cycle/modeManager.js',
   // Task modules
-  './utilities/task/dragDropManager.js',
+  './modules/task/dragDropManager.js',
   // UI modules
-  './utilities/ui/gamesManager.js',
-  './utilities/ui/menuManager.js',
-  './utilities/ui/modalManager.js',
-  './utilities/ui/onboardingManager.js',
-  './utilities/ui/settingsManager.js',
-  './utilities/ui/undoRedoManager.js'
+  './modules/ui/gamesManager.js',
+  './modules/ui/menuManager.js',
+  './modules/ui/modalManager.js',
+  './modules/ui/onboardingManager.js',
+  './modules/ui/settingsManager.js',
+  './modules/ui/undoRedoManager.js'
 ];
 
 self.addEventListener('install', function (event) {
@@ -150,11 +150,11 @@ function pickShell(urlObj) {
 
   // Check pathname for specific version
   var p = urlObj.pathname || '';
-  if (p.indexOf('miniCycle-lite.html') !== -1 || p.indexOf('miniCycle-lite') !== -1) return 'lite';
+  if (p.indexOf('lite/miniCycle-lite.html') !== -1 || p.indexOf('/lite/') !== -1) return 'lite';
   if (p.indexOf('miniCycle.html') !== -1 || /\/$|\/index\.html$/.test(p)) return 'full';
-  
+
   // ✅ ADDED: User manual should use full shell
-  if (p.indexOf('user-manual.html') !== -1) return 'full';
+  if (p.indexOf('legal/user-manual.html') !== -1) return 'full';
   
   // Default to full
   return 'full';
@@ -200,21 +200,21 @@ self.addEventListener('fetch', function (event) {
           // ✅ Offline fallback with smart shell selection
           var shell = pickShell(url);
           return caches.open(STATIC_CACHE).then(function (cache) {
-            
+
             // ✅ Try the correct shell first
-            var shellPath = shell === 'lite' ? fromScope('miniCycle-lite.html') 
+            var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
                                             : fromScope('miniCycle.html');
             return cache.match(shellPath);
-            
+
           }).then(function (fallback) {
             if (fallback) {
               console.log('📱 Offline fallback: serving ' + shell + ' shell');
               return fallback;
             }
-            
+
             // ✅ Last resort: try any available shell
             return caches.open(STATIC_CACHE).then(function (cache) {
-              return cache.match(fromScope('miniCycle-lite.html'));
+              return cache.match(fromScope('lite/miniCycle-lite.html'));
             }).then(function (anyLite) {
               if (anyLite) {
                 console.log('📱 Emergency fallback: serving lite shell');

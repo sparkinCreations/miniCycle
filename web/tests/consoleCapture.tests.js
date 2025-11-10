@@ -14,7 +14,7 @@
  * ✅ Production Impact: NONE - This is a debugging/diagnostic tool only
  */
 
-import { MiniCycleConsoleCapture } from '../utilities/consoleCapture.js';
+import { MiniCycleConsoleCapture } from '../modules/utils/consoleCapture.js';
 
 export function runConsoleCaptureTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>📝 ConsoleCapture Tests</h2><h3>Running tests...</h3>';

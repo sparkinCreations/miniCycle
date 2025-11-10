@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // ✅ Load appInit FIRST without version (so all static imports in modules share this singleton)
   // This is critical: utility modules use static imports like `import { appInit } from './appInitialization.js'`
   // If we version this import, we create separate instances and break the shared state
-  const { appInit } = await import('./utilities/appInitialization.js');
+  const { appInit } = await import('./modules/core/appInit.js');
 
   // ✅ NOW create version helper for all OTHER dynamic imports (not appInit)
   const withV = (path) => `${path}?v=${window.APP_VERSION}`;
@@ -321,41 +321,41 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-    await import(withV('./utilities/globalUtils.js'));
+    await import(withV('./modules/utils/globalUtils.js'));
     console.log('🛠️ Global utilities loaded');
 
-    const { default: consoleCapture } = await import(withV('./utilities/consoleCapture.js'));
+    const { default: consoleCapture } = await import(withV('./modules/utils/consoleCapture.js'));
     window.consoleCapture = consoleCapture;
 
-    const { MiniCycleNotifications } = await import(withV('./utilities/notifications.js'));
+    const { MiniCycleNotifications } = await import(withV('./modules/utils/notifications.js'));
     const notifications = new MiniCycleNotifications();
 
     window.notifications = notifications;
-    window.showNotification = (message, type, duration) => {
+    window.showNotification = function(message, type, duration) {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
         return notifications.show(message, type, duration);
     };
     console.log('✅ Notifications loaded');
 
     // ✅ Load Theme Manager (core visual system)
-    await import(withV('./utilities/themeManager.js'));
+    await import(withV('./modules/features/themeManager.js'));
     console.log('✅ Theme Manager loaded');
 
     // ✅ Load Games Manager (simple UI component)
-    await import(withV('./utilities/ui/gamesManager.js'));
+    await import(withV('./modules/ui/gamesManager.js'));
     console.log('✅ Games Manager loaded');
 
     // ✅ Load Onboarding Manager (simple UI component)
-    await import(withV('./utilities/ui/onboardingManager.js'));
+    await import(withV('./modules/ui/onboardingManager.js'));
     console.log('✅ Onboarding Manager loaded');
 
     // ✅ Load Modal Manager (UI coordination)
-    await import(withV('./utilities/ui/modalManager.js'));
+    await import(withV('./modules/ui/modalManager.js'));
     console.log('✅ Modal Manager loaded');
 
     // ✅ Load Migration Manager FIRST (before anything tries to use it)
     console.log('🔄 Loading migration manager (core system)...');
-    const migrationMod = await import(withV('./utilities/cycle/migrationManager.js'));
+    const migrationMod = await import(withV('./modules/cycle/migrationManager.js'));
 
     migrationMod.setMigrationManagerDependencies({
       storage: localStorage,
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Inside DOMContentLoaded, replace the current try { await window.cycleLoaderModulePromise; ... } with:
 // ✅ Load cycleLoader EARLY so window.loadMiniCycle exists before any initialSetup runs
   try {
-    const mod = await import(withV('./utilities/cycle/cycleLoader.js'));
+    const mod = await import(withV('./modules/cycle/cycleLoader.js'));
 
         // ✅ Ensure loadMiniCycle is available globally for refreshUIFromState()
     if (!window.loadMiniCycle) {
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 // ...existing code...
 
-// ✅ wireUndoRedoUI moved to utilities/ui/undoRedoManager.js
+// ✅ wireUndoRedoUI moved to modules/ui/undoRedoManager.js
 
 // ✅ Data-ready initialization - runs immediately (no more deferral needed)
 // The code below will execute after data is loaded in the main sequence
@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   try {
     console.log('🗃️ Initializing state module...');
 
-    const { createStateManager } = await import(withV('./utilities/state.js'));
+    const { createStateManager } = await import(withV('./modules/core/appState.js'));
     window.AppState = createStateManager({
       showNotification: window.showNotification || console.log.bind(console),
       storage: localStorage,
@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Drag & Drop Manager (Phase 2 module - waits for core internally)
         console.log('🔄 Initializing drag & drop manager...');
-        const { initDragDropManager } = await import(withV('./utilities/task/dragDropManager.js'));
+        const { initDragDropManager } = await import(withV('./modules/task/dragDropManager.js'));
 
         await initDragDropManager({
           saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
@@ -663,12 +663,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Device Detection (Phase 2 module)
         console.log('📱 Initializing device detection module...');
-        const { DeviceDetectionManager } = await import(withV('./utilities/deviceDetection.js'));
+        const { DeviceDetectionManager } = await import(withV('./modules/utils/deviceDetection.js'));
 
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.347'
+            currentVersion: '1.348'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Stats Panel (Phase 2 module)
         console.log('📊 Initializing stats panel module...');
-        const { StatsPanelManager } = await import(withV('./utilities/statsPanel.js'));
+        const { StatsPanelManager } = await import(withV('./modules/features/statsPanel.js'));
 
         const statsPanelManager = new StatsPanelManager({
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
@@ -706,7 +706,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Task DOM Manager (Phase 2 module)
         console.log('🎨 Initializing task DOM module...');
         try {
-            const { initTaskDOMManager } = await import(withV('./utilities/task/taskDOM.js'));
+            const { initTaskDOMManager } = await import(withV('./modules/task/taskDOM.js'));
 
             await initTaskDOMManager({
                 // State management
@@ -781,12 +781,35 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task DOM functionality');
         }
 
+        // ✅ Initialize Reminders Module (Phase 2 module)
+        // IMPORTANT: Load BEFORE recurring modules because recurring task rendering needs reminder button handlers
+        console.log('🔔 Initializing reminders module...');
+        try {
+            const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
 
+            await initReminderManager({
+                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                getElementById: (id) => document.getElementById(id),
+                querySelectorAll: (selector) => document.querySelectorAll(selector),
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
+                autoSave: () => window.autoSave?.()
+            });
+
+            console.log('✅ Reminders module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize reminders module:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Reminders feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without reminders functionality');
+        }
 
         // ✅ Initialize Recurring Modules (Phase 2 module)
         console.log('🔄 Initializing recurring task modules...');
         try {
-            const { initializeRecurringModules } = await import(withV('./utilities/recurringIntegration.js'));
+            const { initializeRecurringModules } = await import(withV('./modules/recurring/recurringIntegration.js'));
             const recurringModules = await initializeRecurringModules();
             window._recurringModules = recurringModules;
             console.log('✅ Recurring modules initialized (Phase 2)');
@@ -811,34 +834,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without recurring functionality');
         }
 
-        // ✅ Initialize Reminders Module (Phase 2 module)
-        console.log('🔔 Initializing reminders module...');
-        try {
-            const { initReminderManager } = await import(withV('./utilities/reminders.js'));
-
-            await initReminderManager({
-                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
-                loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                getElementById: (id) => document.getElementById(id),
-                querySelectorAll: (selector) => document.querySelectorAll(selector),
-                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
-                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
-                autoSave: () => window.autoSave?.()
-            });
-
-            console.log('✅ Reminders module initialized (Phase 2)');
-        } catch (error) {
-            console.error('❌ Failed to initialize reminders module:', error);
-            if (typeof showNotification === 'function') {
-                showNotification('Reminders feature unavailable', 'warning', 3000);
-            }
-            console.warn('⚠️ App will continue without reminders functionality');
-        }
-
         // ✅ Initialize Due Dates Module (Phase 2 module)
         console.log('📅 Initializing due dates module...');
         try {
-            const { initDueDatesManager } = await import(withV('./utilities/dueDates.js'));
+            const { initDueDatesManager } = await import(withV('./modules/features/dueDates.js'));
 
             await initDueDatesManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
@@ -864,7 +863,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Mode Manager (Phase 2 module)
         console.log('🎯 Initializing mode manager module...');
         try {
-            const { initModeManager } = await import(withV('./utilities/cycle/modeManager.js'));
+            const { initModeManager } = await import(withV('./modules/cycle/modeManager.js'));
 
             await initModeManager({
                 getAppState: () => window.AppState,
@@ -890,7 +889,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Cycle Switcher (Phase 2 module)
         console.log('🔄 Initializing cycle switcher module...');
         try {
-            const { initializeCycleSwitcher } = await import(withV('./utilities/cycle/cycleSwitcher.js'));
+            const { initializeCycleSwitcher } = await import(withV('./modules/cycle/cycleSwitcher.js'));
 
             await initializeCycleSwitcher({
                 AppState: window.AppState,
@@ -924,7 +923,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Cycle Manager (Phase 2 module)
         console.log('🔄 Initializing cycle manager module...');
         try {
-            const { initializeCycleManager } = await import(withV('./utilities/cycle/cycleManager.js'));
+            const { initializeCycleManager } = await import(withV('./modules/cycle/cycleManager.js'));
 
             await initializeCycleManager({
                 AppState: window.AppState,
@@ -954,7 +953,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Undo/Redo Manager (Phase 2 module)
         console.log('🔄 Initializing undo/redo manager module...');
         try {
-            const undoRedoModule = await import(withV('./utilities/ui/undoRedoManager.js'));
+            const undoRedoModule = await import(withV('./modules/ui/undoRedoManager.js'));
 
             undoRedoModule.setUndoRedoManagerDependencies({
                 AppState: window.AppState,
@@ -1004,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Menu Manager (Phase 2 module)
         console.log('🎛️ Initializing menu manager module...');
         try {
-            const { initMenuManager } = await import(withV('./utilities/ui/menuManager.js'));
+            const { initMenuManager } = await import(withV('./modules/ui/menuManager.js'));
 
             await initMenuManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
@@ -1041,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Settings Manager (Phase 2 module)
         console.log('⚙️ Initializing settings manager module...');
         try {
-            const { initSettingsManager } = await import(withV('./utilities/ui/settingsManager.js'));
+            const { initSettingsManager } = await import(withV('./modules/ui/settingsManager.js'));
 
             await initSettingsManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
@@ -1073,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Task Core (Phase 2 module)
         console.log('🎯 Initializing task core module...');
         try {
-            const { initTaskCore } = await import(withV('./utilities/task/taskCore.js'));
+            const { initTaskCore } = await import(withV('./modules/task/taskCore.js'));
 
             await initTaskCore({
                 // State management
@@ -1219,7 +1218,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Testing Modal modules (Phase 3)
         console.log('🔬 Loading testing modal modules...');
         try {
-            await import(withV('./utilities/testing-modal.js'));
+            await import(withV('./modules/testing/testing-modal.js'));
             console.log('✅ Testing modal loaded');
 
             // ✅ Setup testing modal button handlers
@@ -1230,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 console.warn('⚠️ setupTestingModal function not found');
             }
 
-            await import(withV('./utilities/testing-modal-integration.js'));
+            await import(withV('./modules/testing/testing-modal-integration.js'));
             console.log('✅ Testing modal integration loaded');
         } catch (error) {
             console.error('❌ Failed to load testing modal modules:', error);
@@ -1255,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // ✅ REMOVED: No more deferred queue processing - modules wait for core via AppInit
 
   // ✅ Recurring Features - now handled by recurringIntegration module
-  // Old initialization code removed - see utilities/recurringIntegration.js
+  // Old initialization code removed - see modules/recurring/recurringIntegration.js
   console.log('🔁 Recurring features initialized via recurringIntegration module');
 
   // ✅ Mode Selector (with delay for DOM readiness)
@@ -1364,7 +1363,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
  // ✅ Add this new function
-// ✅ All undo/redo functions moved to utilities/ui/undoRedoManager.js:
+// ✅ All undo/redo functions moved to modules/ui/undoRedoManager.js:
 // - initializeUndoRedoButtons
 // - captureInitialSnapshot
 // - setupStateBasedUndoRedo
@@ -1398,7 +1397,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 
-// ✅ Note: generateNotificationId and generateHashId are now in utilities/globalUtils.js
+// ✅ Note: generateNotificationId and generateHashId are now in modules/utils/globalUtils.js
 // They are automatically available globally via window.generateNotificationId and window.generateHashId
 
 /**
@@ -2039,7 +2038,7 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
     cancelText: "Stay Here",
     callback: (confirmed) => {
       if (confirmed) {
-        window.location.href = 'miniCycle-lite.html';
+        window.location.href = 'lite/miniCycle-lite.html';
       }
     }
   });
@@ -2133,7 +2132,7 @@ window.showPromptModal = showPromptModal;
 window.closeAllModals = closeAllModals;
 
 
-  // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in utilities/reminders.js
+  // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in modules/features/reminders.js
   // Use window.sendReminderNotificationIfNeeded() and window.startReminders() which are globally exported
 
   // ✅ Update recurring panel button visibility if module is loaded
@@ -2165,8 +2164,8 @@ function setupUserManual() {
 
         // Redirect to the User Manual page after a short delay
         setTimeout(() => {
-            window.location.href = "user-manual.html"; // ✅ Opens the manual page
-            
+            window.location.href = "legal/user-manual.html"; // ✅ Opens the manual page
+
             // Re-enable button after navigation (won't matter much since page changes)
             openUserManual.disabled = false;
         }, 200);
@@ -2460,7 +2459,7 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
  *
  *
  * Rearrange Management Logic - MOVED TO MODULE
- * See: utilities/task/dragDropManager.js
+ * See: modules/task/dragDropManager.js
  *
  *
  ************************/
@@ -2913,7 +2912,7 @@ document.addEventListener("click", (e) => {
     window.attachKeyboardTaskOptionToggle = attachKeyboardTaskOptionToggle;
 
 
-    // ✅ REMOVED: updateReminderButtons() - Now in utilities/reminders.js
+    // ✅ REMOVED: updateReminderButtons() - Now in modules/features/reminders.js
     // Use window.updateReminderButtons() which is globally exported from the module
 
 
@@ -2987,7 +2986,7 @@ document.addEventListener("click", (e) => {
     window.hideTaskOptions = hideTaskOptions;
     
     
-// ✅ REMOVED: handleTaskCompletionChange - now in utilities/task/taskCore.js
+// ✅ REMOVED: handleTaskCompletionChange - now in modules/task/taskCore.js
 
     /**
  * Istouchdevice function.
@@ -3200,7 +3199,7 @@ function saveToggleAutoReset() {
     
     
 
-// ✅ updateDueDateVisibility moved to utilities/dueDates.js
+// ✅ updateDueDateVisibility moved to modules/features/dueDates.js
     
     
     
@@ -3243,7 +3242,7 @@ function saveToggleAutoReset() {
 
 
 // ✅ Function to complete all tasks and handle reset
-// ✅ REMOVED: handleCompleteAllTasks - now in utilities/task/taskCore.js
+// ✅ REMOVED: handleCompleteAllTasks - now in modules/task/taskCore.js
 // ✅ Event listener moved to Phase 3 (after taskCore loads)
 
 

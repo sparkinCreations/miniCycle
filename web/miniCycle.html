@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.347">
+<meta name="app-version" content="1.348">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.347">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.348">
 <link rel="manifest" href="manifest.json">
 
 
@@ -107,7 +107,7 @@
   window.__FeatureGateReasons = reasons;
 
   if (needsLite && !forcedFull && location.pathname.indexOf('miniCycle-lite.html') === -1) {
-    location.replace('./miniCycle-lite.html?mode=lite&src=feature-gate&reasons=' + encodeURIComponent(reasons.join(',')));
+    location.replace('./lite/miniCycle-lite.html?mode=lite&src=feature-gate&reasons=' + encodeURIComponent(reasons.join(',')));
   }
 })();
 
@@ -121,7 +121,7 @@ if ('serviceWorker' in navigator) {
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.347${SW_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.348${SW_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -208,7 +208,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.347')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.348')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -759,7 +759,7 @@ window.installApp = () => {
                     <p><strong>Service Worker Cache:</strong> <span id="about-sw-version">—</span></p>
           <p>miniCycle is your routine workflow companion — turn repeatable tasks into effortless cycles, stay focused, and build momentum.</p>
           <p>Developed by <strong>sparkinCreations</strong>.</p>
-          <p><a href="product.html" target="_blank" rel="noopener noreferrer">Learn more about miniCycle</a></p>
+          <p><a href="pages/product.html" target="_blank" rel="noopener noreferrer">Learn more about miniCycle</a></p>
           <p>Visit <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">our website</a> for updates!</p>
           <p class="about-legal" style="font-size: 12px; opacity: 0.8; margin-top: 8px;">&copy; 2025 sparkinCreations &bull; miniCycle&trade;</p>
                 </div>
@@ -1390,7 +1390,7 @@ window.installApp = () => {
                 <div class="testing-section">
                     <h3>🐛 Debug Information</h3>
                     <button id="generate-debug-report" class="test-btn test-primary">Generate Debug Report</button>
-                    <button id="test-notifications" class="test-btn test-info">Test Notifications</button>
+                    <button id="test-notifications-debug" class="test-btn test-info">Test Notifications</button>
                     <button id="test-recurring-logic" class="test-btn test-info">Test Recurring Logic</button>
                     <button id="view-local-storage-btn" class="test-btn test-secondary">View Local Storage</button>
                     <button id="show-service-worker-info" class="test-btn">📡 Service Worker Info</button>
@@ -1602,10 +1602,10 @@ window.installApp = () => {
             <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required></textarea>
 
             <!-- Email (Optional, if you want users to provide their email) -->
-            <input type="email" name="email" placeholder="Your Email (optional)" autocomplete="email">
+            <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
 
             <!-- Prevent Spam with Honeypot -->
-            <input type="text" name="honeypot" style="display: none;" autocomplete="off" tabindex="-1">
+            <input type="text" id="feedback-honeypot" name="honeypot" style="display: none;" autocomplete="off" tabindex="-1">
 
             <!-- Show a success message instead of redirecting -->
             <button type="submit" id="submit-feedback">Submit</button>
@@ -1764,10 +1764,10 @@ window.installApp = () => {
 <li id="copyright">
   &copy; 2025 <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit sparkinCreations website">sparkinCreations</a>
   &bull;
-  <a href="product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
+  <a href="pages/product.html" target="_blank" rel="noopener noreferrer" aria-label="miniCycle product page" title="Open the miniCycle product page">miniCycle<sup>™</sup></a>
 </li>
-<li class="footer-item"><a href="privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
-<li class="footer-item"><a href="terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
+<li class="footer-item"><a href="legal/privacy.html" target="_blank" rel="noopener noreferrer" title="Read the Privacy Policy">Privacy Policy</a></li>
+<li class="footer-item"><a href="legal/terms.html" target="_blank" rel="noopener noreferrer" title="Read the Terms of Service">Terms of Service</a></li>
 <li class="footer-item">
 <a href="#" id="open-feedback-modal-footer" class="open-feedback-modal-footer" role="button" aria-label="Open feedback modal" title="Send us feedback">
 Feedback
@@ -1784,7 +1784,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.347"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.348"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1823,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="utilities/automated-tests-fix.js?v=1.347"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.348"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
@@ -1831,7 +1831,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setTimeout(function () {
     var needsLite = !!window.__FeatureGateNeedsLite; // default false if gate script didn't run
     if (needsLite) {
-      location.replace('./miniCycle-lite.html?mode=lite&src=fallback');
+      location.replace('./lite/miniCycle-lite.html?mode=lite&src=fallback');
       return;
     }
     // If full app has begun booting, don't redirect even if AppReady isn't set yet (e.g., onboarding).
@@ -1840,7 +1840,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     // Last resort: no boot detected at all.
-    location.replace('./miniCycle-lite.html?mode=lite&src=no-boot');
+    location.replace('./lite/miniCycle-lite.html?mode=lite&src=no-boot');
   }, 8000);
 })();
 </script>

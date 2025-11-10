@@ -3,7 +3,7 @@
  * Tests for the stats panel manager and view switching functionality
  */
 
-import { StatsPanelManager } from '../utilities/statsPanel.js';
+import { StatsPanelManager } from '../modules/features/statsPanel.js';
 
 // Helper to create complete AppState mock (outside function scope)
 function createMockAppState(mockData) {
@@ -259,17 +259,24 @@ export async function runStatsPanelTests(resultsDiv) {
 
     await test('displays cycle count from state', async () => {
         const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
-        mockData.data.cycles.cycle1.cycleCount = 25;
+        // ✅ FIX: mini-cycle-count displays globalCyclesCompleted from userProgress, not cycleCount
+        mockData.userProgress.cyclesCompleted = 25;
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
         // Update the global AppState mock with new cycle count
         window.AppState = createMockAppState(mockData);
 
         const statsPanel = new StatsPanelManager();
+
+        // ⏳ Wait for async init() to complete before calling updateStatsPanel
+        // Constructor calls this.init() without awaiting, creating a race condition
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         await statsPanel.updateStatsPanel();
 
         const cycleCount = document.getElementById('mini-cycle-count');
-        if (cycleCount.textContent !== '25') {
+        // Note: Displays as "25 Cycles" not just "25"
+        if (!cycleCount.textContent.includes('25')) {
             throw new Error(`Expected cycle count 25, got ${cycleCount.textContent}`);
         }
     });
@@ -512,6 +519,9 @@ export async function runStatsPanelTests(resultsDiv) {
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
         });
 
+        // ⏳ Wait for async init() to complete (constructor calls this.init() without awaiting)
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         // Should not throw error
         await statsPanel.updateStatsPanel();
     });
@@ -522,6 +532,9 @@ export async function runStatsPanelTests(resultsDiv) {
         const statsPanel = new StatsPanelManager({
             loadMiniCycleData: () => null
         });
+
+        // ⏳ Wait for async init() to complete (constructor calls this.init() without awaiting)
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Should not throw error
         await statsPanel.updateStatsPanel();

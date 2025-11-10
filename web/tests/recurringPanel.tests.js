@@ -5,7 +5,7 @@
  * Pattern: Resilient Constructor 🛡️
  */
 
-import { RecurringPanelManager, buildRecurringSummaryFromSettings } from '../utilities/recurringPanel.js';
+import { RecurringPanelManager, buildRecurringSummaryFromSettings } from '../modules/recurring/recurringPanel.js';
 
 export function runRecurringPanelTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎛️ RecurringPanel Tests</h2><h3>Running tests...</h3>';

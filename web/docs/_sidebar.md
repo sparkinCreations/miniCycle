@@ -17,6 +17,7 @@
   * [Drag & Drop Architecture](DRAG_DROP_ARCHITECTURE.md)
   * [Drag & Drop Long Press](DRAG_DROP_LONG_PRESS.md)
   * [Safari Drag & Drop Fix](SAFARI_DRAGDROP_FIX.md)
+  * [Undo/Redo Architecture](UNDO_REDO_ARCHITECTURE.md)
 
 * **Data & Schema**
   * [Schema 2.5](SCHEMA_2_5.md)

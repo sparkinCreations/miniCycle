@@ -1,6 +1,6 @@
 /**
  * 🧪 UndoRedoManager Tests
- * Tests for utilities/ui/undoRedoManager.js
+ * Tests for modules/ui/undoRedoManager.js
  * Pattern: Strict Injection 🔧
  *
  * Tests undo/redo functionality:
@@ -69,7 +69,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         initializeUndoIndexedDB,
         saveUndoStackToIndexedDB,
         loadUndoStackFromIndexedDB
-    } = await import('../utilities/ui/undoRedoManager.js');
+    } = await import('../modules/ui/undoRedoManager.js');
 
     // ✅ CRITICAL: Mark appInit as ready for tests
     if (window.appInit && !window.appInit.isCoreReady()) {

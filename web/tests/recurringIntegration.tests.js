@@ -6,7 +6,7 @@
 import {
     initializeRecurringModules,
     testRecurringIntegration
-} from '../utilities/recurringIntegration.js';
+} from '../modules/recurring/recurringIntegration.js';
 
 export function runRecurringIntegrationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔗 RecurringIntegration Tests</h2><h3>Running tests...</h3>';

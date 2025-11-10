@@ -1,7 +1,7 @@
 /**
  * Settings Manager Tests
  *
- * Tests for utilities/ui/settingsManager.js
+ * Tests for modules/ui/settingsManager.js
  * Pattern: Resilient Constructor 🛡️
  *
  * Functions tested:

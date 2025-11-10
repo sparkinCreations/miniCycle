@@ -3,7 +3,7 @@
  * Tests for the centralized state management system
  */
 
-import { createStateManager, resetStateManager } from '../utilities/state.js';
+import { createStateManager, resetStateManager } from '../modules/core/appState.js';
 
 export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🗄️ State Tests</h2><h3>Running tests...</h3>';
