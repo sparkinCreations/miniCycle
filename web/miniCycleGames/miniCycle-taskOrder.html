@@ -40,6 +40,33 @@ h1 {
   margin-bottom: 12px;
 }
 
+/* 🎚️ Difficulty Selector */
+.difficulty-selector {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.difficulty-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+.difficulty-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+.difficulty-btn.active {
+  background: #4c79ff;
+  border-color: #4c79ff;
+  box-shadow: 0 4px 12px rgba(76, 121, 255, 0.4);
+}
+
 /* 📋 Instructions & Score */
 #instructions {
   margin-bottom: 10px;
@@ -77,18 +104,43 @@ h1 {
   font-weight: 500;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .task-btn:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(76, 121, 255, 0.4);
 }
 .task-btn.clicked {
   background: #28a745;
   cursor: default;
+  animation: successPulse 0.4s ease;
 }
 .task-btn:focus {
   outline: 3px solid yellow;
   outline-offset: 2px;
+}
+
+/* ✨ Animations */
+@keyframes successPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes particle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0);
+    opacity: 0;
+  }
 }
 
 /* 💬 Feedback Text */
@@ -98,12 +150,29 @@ h1 {
   color: #444;
   margin-top: 12px;
   min-height: 24px;
+  animation: fadeIn 0.4s ease;
+}
+.feedback.success {
+  color: #28a745;
+}
+.feedback.error {
+  color: #ff4d4d;
+}
+
+/* 🎉 Particle Effect */
+.particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particle 0.8s ease-out forwards;
 }
 
 /* 🔁 Restart Button */
 #restartBtn {
   display: none;
-  margin: 14px auto 0 auto; /* Top, Auto Left & Right */
+  margin: 14px auto 0 auto;
   padding: 10px 20px;
   font-size: 15px;
   border: none;
@@ -111,17 +180,25 @@ h1 {
   color: white;
   border-radius: 6px;
   cursor: pointer;
-  display: block; /* Force it to act like a block element */
+  transition: all 0.3s ease;
 }
 #restartBtn:hover {
   background: #e04343;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 77, 77, 0.4);
 }
 
 /* 🏆 Leaderboard */
 #leaderboard {
   margin-top: 20px;
   font-size: 14px;
-  color: #555;
+  color: #2a2e47;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+}
+#leaderboard div {
+  margin: 4px 0;
 }
 
 /* 🔙 Back Button */
@@ -134,9 +211,12 @@ h1 {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 #back-to-minicycle:hover {
   background: #222;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
   </style>
 </head>
@@ -144,6 +224,14 @@ h1 {
   <main role="main">
     <div class="game-container" aria-label="Whack-a-Order Mini Game">
     <h1>Task Whack-a-Order</h1>
+
+    <!-- Difficulty Selector -->
+    <div class="difficulty-selector">
+      <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
+      <button class="difficulty-btn" data-difficulty="normal">Normal</button>
+      <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+    </div>
+
     <div id="instructions">
       Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!
     </div>
@@ -154,6 +242,7 @@ h1 {
     <button id="restartBtn" aria-label="Restart Game">Restart Game</button>
     <!-- Leaderboard Display -->
     <div id="leaderboard">
+      <div><strong>Your Best (Easy):</strong></div>
       <div>Highest Round: <span id="bestRound">0</span></div>
       <div>Fastest Time: <span id="bestTime">--</span> seconds</div>
     </div>
@@ -161,23 +250,122 @@ h1 {
   </div>
 
   <script>
-    /***** Game Setup *****/
-    // Retrieve task names from localStorage (from your Task Cycle: Mini app)
-    function getTaskNames() {
-      let names = [];
-      const miniCycleName = localStorage.getItem("lastUsedMiniCycle");
-      if (miniCycleName) {
-        const storage = JSON.parse(localStorage.getItem("miniCycleStorage")) || {};
-        const currentCycle = storage[miniCycleName];
-        if (currentCycle && Array.isArray(currentCycle.tasks)) {
-          names = currentCycle.tasks
-            .map(task => task.text)
-            .filter(text => text && text.trim() !== "");
-        }
+    /***** Difficulty Settings *****/
+    const DIFFICULTY_SETTINGS = {
+      easy: {
+        baseSpeed: 80,        // Base velocity multiplier
+        speedIncrease: 10,    // Speed increase per round
+        maxRounds: 10,
+        label: 'Easy'
+      },
+      normal: {
+        baseSpeed: 120,
+        speedIncrease: 15,
+        maxRounds: 10,
+        label: 'Normal'
+      },
+      hard: {
+        baseSpeed: 160,
+        speedIncrease: 20,
+        maxRounds: 15,
+        label: 'Hard'
       }
+    };
+
+    let currentDifficulty = 'easy';
+
+    /***** Schema 2.5 Integration *****/
+    function getSchema25Data() {
+      try {
+        const schemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+        if (!schemaData || schemaData.schemaVersion !== 2.5) {
+          console.warn('⚠️ Schema 2.5 data not found or outdated');
+          return null;
+        }
+        return schemaData;
+      } catch (error) {
+        console.error('❌ Error reading Schema 2.5 data:', error);
+        return null;
+      }
+    }
+
+    function saveGameStatsToSchema25(difficulty, round, time) {
+      try {
+        const schemaData = getSchema25Data();
+        if (!schemaData) return false;
+
+        // Initialize game stats if not exists
+        if (!schemaData.settings.gameStats) {
+          schemaData.settings.gameStats = {
+            taskOrderGame: {
+              easy: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
+              normal: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
+              hard: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 }
+            }
+          };
+        }
+
+        const stats = schemaData.settings.gameStats.taskOrderGame[difficulty];
+
+        // Update stats
+        if (round > stats.bestRound) stats.bestRound = round;
+        if (time < stats.bestTime) stats.bestTime = time;
+        stats.gamesPlayed++;
+        stats.lastPlayed = Date.now();
+
+        // Save back to localStorage
+        localStorage.setItem("miniCycleData", JSON.stringify(schemaData));
+        console.log('✅ Game stats saved to Schema 2.5');
+        return true;
+      } catch (error) {
+        console.error('❌ Error saving game stats:', error);
+        return false;
+      }
+    }
+
+    function loadGameStatsFromSchema25(difficulty) {
+      try {
+        const schemaData = getSchema25Data();
+        if (!schemaData || !schemaData.settings.gameStats?.taskOrderGame) {
+          return { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
+        }
+        return schemaData.settings.gameStats.taskOrderGame[difficulty] ||
+               { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
+      } catch (error) {
+        console.error('❌ Error loading game stats:', error);
+        return { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
+      }
+    }
+
+    /***** Game Setup *****/
+    // Retrieve task names from Schema 2.5
+    function getTaskNames() {
+      const schemaData = getSchema25Data();
+      if (!schemaData) {
+        console.warn('⚠️ Using fallback tasks - Schema 2.5 data not available');
+        return [];
+      }
+
+      const activeCycleId = schemaData.appState?.activeCycleId;
+      if (!activeCycleId) {
+        console.warn('⚠️ No active cycle found');
+        return [];
+      }
+
+      const currentCycle = schemaData.cycles[activeCycleId];
+      if (!currentCycle || !Array.isArray(currentCycle.tasks)) {
+        console.warn('⚠️ No tasks found in active cycle');
+        return [];
+      }
+
+      const names = currentCycle.tasks
+        .map(task => task.text)
+        .filter(text => text && text.trim() !== "");
+
+      console.log(`✅ Loaded ${names.length} tasks from Schema 2.5`);
       return names;
     }
-    
+
     // Use fallback tasks if none are found
     let tasks = getTaskNames();
     if (tasks.length === 0) {
@@ -186,14 +374,14 @@ h1 {
         "Update Log", "Order Supplies", "Calibrate Tool", "Review Report",
         "Confirm Specs", "Test Output", "Schedule Meeting", "File Report"
       ];
+      console.log('ℹ️ Using fallback tasks');
     }
 
     let round = 1;
     let score = 0;
     let expectedOrder = 1;
-    let movingSpeed = 2000; // initial speed in ms (affects velocity scaling)
     let gameActive = true;
-    let gameStartTime = null; // to track elapsed time
+    let gameStartTime = null;
 
     const taskWindow = document.getElementById("taskWindow");
     const feedbackEl = document.getElementById("feedback");
@@ -202,27 +390,73 @@ h1 {
     const bestRoundEl = document.getElementById("bestRound");
     const bestTimeEl = document.getElementById("bestTime");
     const backToMiniCycle = document.getElementById("back-to-minicycle");
+    const difficultyButtons = document.querySelectorAll('.difficulty-btn');
 
-
-
-    let currentTasks = []; // Array of tasks for the current round
+    let currentTasks = [];
     let movementAnimationFrame = null;
-    let lastTimestamp = null; // For requestAnimationFrame delta
+    let lastTimestamp = null;
+
+    /***** Difficulty Selection *****/
+    difficultyButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (!gameActive && round > 1) {
+          // Don't allow difficulty change mid-game
+          return;
+        }
+
+        difficultyButtons.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentDifficulty = this.dataset.difficulty;
+
+        // Update leaderboard display
+        updateLeaderboardDisplay();
+
+        // Restart game with new difficulty
+        if (round > 1) {
+          restartGame();
+        }
+      });
+    });
+
+    /***** Particle Effects *****/
+    function createParticles(x, y, color) {
+      const particleCount = 12;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.background = color;
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const distance = 50 + Math.random() * 50;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+
+        particle.style.setProperty('--tx', tx + 'px');
+        particle.style.setProperty('--ty', ty + 'px');
+
+        taskWindow.appendChild(particle);
+
+        setTimeout(() => particle.remove(), 800);
+      }
+    }
 
     /***** Leaderboard Functions *****/
     function updateLeaderboard(currentRound, elapsedTime) {
-      let bestRound = parseInt(localStorage.getItem("bestRound")) || 0;
-      let bestTime = parseInt(localStorage.getItem("bestTime")) || Infinity;
-      if (currentRound > bestRound) {
-        bestRound = currentRound;
-        localStorage.setItem("bestRound", bestRound);
-      }
-      if (elapsedTime < bestTime) {
-        bestTime = elapsedTime;
-        localStorage.setItem("bestTime", bestTime);
-      }
-      bestRoundEl.textContent = bestRound;
-      bestTimeEl.textContent = bestTime === Infinity ? "--" : Math.floor(bestTime / 1000);
+      saveGameStatsToSchema25(currentDifficulty, currentRound, elapsedTime);
+      updateLeaderboardDisplay();
+    }
+
+    function updateLeaderboardDisplay() {
+      const stats = loadGameStatsFromSchema25(currentDifficulty);
+      const difficultyLabel = DIFFICULTY_SETTINGS[currentDifficulty].label;
+
+      document.querySelector('#leaderboard strong').textContent =
+        `Your Best (${difficultyLabel}):`;
+      bestRoundEl.textContent = stats.bestRound;
+      bestTimeEl.textContent = stats.bestTime === Infinity ? "--" :
+        Math.floor(stats.bestTime / 1000);
     }
 
     /***** Game Functions *****/
@@ -232,6 +466,7 @@ h1 {
       }
       clearTasks();
       feedbackEl.textContent = "";
+      feedbackEl.className = "feedback";
       expectedOrder = 1;
       scoreboardEl.textContent = `Round: ${round} | Score: ${score}`;
 
@@ -250,85 +485,105 @@ h1 {
         createMovingTaskButton(taskObj);
       });
 
-      // Start the animation loop for smooth movement
+      // Start the animation loop
       lastTimestamp = null;
       startMovement();
     }
 
-    // Create a task button with random velocity
+    // Create a task button with difficulty-based velocity
     function createMovingTaskButton(taskObj) {
       const btn = document.createElement("button");
       btn.className = "task-btn";
       btn.textContent = `${taskObj.order}. ${taskObj.text}`;
       btn.dataset.order = taskObj.order;
-      // Set initial random position within taskWindow
+
+      // Set initial random position
       const pos = getRandomPosition();
       btn.style.left = pos.x + "px";
       btn.style.top = pos.y + "px";
-      // Assign random velocity (pixels per second)
-      // Speed scales with movingSpeed factor; you can adjust these values as needed
-   // Define a speed multiplier, which can increase with rounds
-   
-let speedMultiplier = round; // Or any other formula based on your design
-btn.dataset.dx = ((Math.random() * 100 - 50) * speedMultiplier).toFixed(1.2);
-btn.dataset.dy = ((Math.random() * 100 - 50) * speedMultiplier).toFixed(1.);
 
-/*
-btn.dataset.dx = (Math.random() * 400 - 200).toFixed(2);
-btn.dataset.dy = (Math.random() * 400 - 200).toFixed(2);
-*/
+      // Calculate velocity based on difficulty and round
+      const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+      const speedMultiplier = settings.baseSpeed + (round - 1) * settings.speedIncrease;
 
-      btn.addEventListener("click", function() {
+      // Random velocity with consistent speed
+      const angle = Math.random() * Math.PI * 2;
+      const speed = speedMultiplier * (0.8 + Math.random() * 0.4); // ±20% variance
+
+      btn.dataset.dx = (Math.cos(angle) * speed).toFixed(2);
+      btn.dataset.dy = (Math.sin(angle) * speed).toFixed(2);
+
+      btn.addEventListener("click", function(e) {
         if (!gameActive) return;
         const clickedOrder = parseInt(this.dataset.order, 10);
+
         if (clickedOrder === expectedOrder) {
+          // Success!
           this.classList.add("clicked");
           this.disabled = true;
+
+          // Create success particles
+          const rect = this.getBoundingClientRect();
+          const windowRect = taskWindow.getBoundingClientRect();
+          const x = rect.left - windowRect.left + rect.width / 2;
+          const y = rect.top - windowRect.top + rect.height / 2;
+          createParticles(x, y, '#28a745');
+
           expectedOrder++;
+
           if (expectedOrder > currentTasks.length) {
-            // If round 10 is complete, game win
-            if (round >= 10) {
+            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+
+            // Check if game is won
+            if (round >= settings.maxRounds) {
               score++;
               stopMovement();
               const elapsedTime = Date.now() - gameStartTime;
-              feedbackEl.textContent = `Winner! 🎉 Time: ${Math.floor(elapsedTime / 1000)}s`;
+              feedbackEl.textContent = `🎉 Winner! Time: ${Math.floor(elapsedTime / 1000)}s`;
+              feedbackEl.className = "feedback success";
               updateLeaderboard(round, elapsedTime);
               gameActive = false;
-              restartBtn.style.display = "flex";
+              restartBtn.style.display = "block";
               return;
             }
+
+            // Continue to next round
             score++;
             feedbackEl.textContent = "Round complete! 🎉";
+            feedbackEl.className = "feedback success";
             stopMovement();
             round++;
-            movingSpeed = Math.max(500, movingSpeed - 200); // Increase difficulty
             setTimeout(startRound, 1500);
           }
         } else {
+          // Wrong order!
           feedbackEl.textContent = "Wrong order! Game Over! ❌";
+          feedbackEl.className = "feedback error";
           gameActive = false;
           stopMovement();
-          restartBtn.style.display = "flex";
+
+          const elapsedTime = Date.now() - gameStartTime;
+          updateLeaderboard(round, elapsedTime);
+
+          restartBtn.style.display = "block";
         }
       });
+
+      btn.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          this.click();
+        }
+      });
+
       taskWindow.appendChild(btn);
-
-
-
-        btn.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault(); // Prevent scrolling on spacebar
-      this.click(); // Simulate click
-    }
-  });
-
     }
 
     // Get a random position within taskWindow boundaries
     function getRandomPosition() {
       const rect = taskWindow.getBoundingClientRect();
-      const maxX = rect.width - 120; // Adjust based on button width
-      const maxY = rect.height - 60; // Adjust based on button height
+      const maxX = rect.width - 120;
+      const maxY = rect.height - 60;
       return {
         x: Math.floor(Math.random() * maxX),
         y: Math.floor(Math.random() * maxY)
@@ -349,32 +604,55 @@ btn.dataset.dy = (Math.random() * 400 - 200).toFixed(2);
     function clearTasks() {
       const buttons = document.querySelectorAll(".task-btn");
       buttons.forEach(btn => btn.remove());
+      const particles = document.querySelectorAll(".particle");
+      particles.forEach(p => p.remove());
     }
 
     /***** Smooth Movement using requestAnimationFrame *****/
     function animateButtons(timestamp) {
       if (!lastTimestamp) lastTimestamp = timestamp;
-      const dt = (timestamp - lastTimestamp) / 1000; // delta time in seconds
+      const dt = (timestamp - lastTimestamp) / 1000;
       lastTimestamp = timestamp;
+
       const rect = taskWindow.getBoundingClientRect();
-      const buttons = document.querySelectorAll(".task-btn");
+      const buttons = document.querySelectorAll(".task-btn:not(.clicked)");
+
       buttons.forEach(btn => {
         let x = parseFloat(btn.style.left);
         let y = parseFloat(btn.style.top);
         let dx = parseFloat(btn.dataset.dx);
         let dy = parseFloat(btn.dataset.dy);
-        // Update positions using velocity and dt
+
+        // Update positions
         x += dx * dt;
         y += dy * dt;
-        // Bounce off left/right boundaries
-        if (x < 0) { x = 0; btn.dataset.dx = -dx; }
-        if (x > rect.width - btn.offsetWidth) { x = rect.width - btn.offsetWidth; btn.dataset.dx = -dx; }
-        // Bounce off top/bottom boundaries
-        if (y < 0) { y = 0; btn.dataset.dy = -dy; }
-        if (y > rect.height - btn.offsetHeight) { y = rect.height - btn.offsetHeight; btn.dataset.dy = -dy; }
+
+        // Bounce off boundaries with slight speed randomization
+        if (x < 0) {
+          x = 0;
+          dx = -dx * (0.9 + Math.random() * 0.2);
+          btn.dataset.dx = dx;
+        }
+        if (x > rect.width - btn.offsetWidth) {
+          x = rect.width - btn.offsetWidth;
+          dx = -dx * (0.9 + Math.random() * 0.2);
+          btn.dataset.dx = dx;
+        }
+        if (y < 0) {
+          y = 0;
+          dy = -dy * (0.9 + Math.random() * 0.2);
+          btn.dataset.dy = dy;
+        }
+        if (y > rect.height - btn.offsetHeight) {
+          y = rect.height - btn.offsetHeight;
+          dy = -dy * (0.9 + Math.random() * 0.2);
+          btn.dataset.dy = dy;
+        }
+
         btn.style.left = x + "px";
         btn.style.top = y + "px";
       });
+
       movementAnimationFrame = requestAnimationFrame(animateButtons);
     }
 
@@ -391,24 +669,28 @@ btn.dataset.dy = (Math.random() * 400 - 200).toFixed(2);
     }
 
     /***** Restart Game Handler *****/
-    restartBtn.addEventListener("click", function() {
+    function restartGame() {
       gameActive = true;
       round = 1;
       score = 0;
-      movingSpeed = 2000;
       restartBtn.style.display = "none";
       feedbackEl.textContent = "";
+      feedbackEl.className = "feedback";
       startRound();
+    }
+
+    restartBtn.addEventListener("click", restartGame);
+
+    backToMiniCycle.addEventListener("click", function() {
+      window.location.href = "../miniCycle.html";
     });
 
-          backToMiniCycle.addEventListener( "click", function() {
-        window.location.href = "../miniCycle.html";
-    });
-
-    // Start game on page load
-    window.onload = startRound;
+    // Initialize leaderboard and start game
+    window.onload = function() {
+      updateLeaderboardDisplay();
+      startRound();
+    };
   </script>
   </main>
 </body>
-
 </html>
