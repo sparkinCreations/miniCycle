@@ -116,6 +116,11 @@ html, body {
     margin: 6px 0; /* or whatever spacing you want */
   }
 
+#stats-header {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+
 /* Slide into view */
 #stats-panel.show {
   transform: translateX(-50%) translateY(-50%); /* Centered */
@@ -1823,7 +1828,7 @@ input:checked + .slider:before {
     margin-left: -300px;
 }
 
-/* 📜 Scrollable Mini Cycle List */
+/* 📜 Scrollable Routine List */
 .mini-cycle-switch-list {
     max-height: 240px; /* ⬅️ Smaller max height */
     overflow-y: auto;
@@ -3600,8 +3605,10 @@ color: rgba(77, 77, 255, 0.771);
 
 .badge-container {
     text-align: center;
+    margin-top: 0px;
+    margin-bottom: 15px;
   }
-  
+
   .badges {
     display: flex;
     justify-content: center;
@@ -3610,6 +3617,10 @@ color: rgba(77, 77, 255, 0.771);
     user-select: none;
     cursor: default;
 
+  }
+
+  #all-routines-count {
+    margin-top: 15px;
   }
   
   .badge {
@@ -5862,6 +5873,32 @@ body.dark-mode {
   border-color: #2e7d32;
 }
 
+/* 🌙 Clickable Current Routine Panels */
+body.dark-mode .current-routine-status .clickable {
+  background-color: #3a3a3a;
+  color: #f0f0f0;
+  border: 1px solid #555;
+}
+
+body.dark-mode .current-routine-status .clickable:hover {
+  background-color: #4a4a4a;
+  transform: scale(1.02);
+  color: #90ee90;
+}
+
+body.dark-mode #current-cycle-progress-text,
+body.dark-mode #current-routine-cycle-count {
+  color: #dddddd;
+}
+
+body.dark-mode .doughnut-text {
+  fill: #f0f0f0;
+}
+
+body.dark-mode .doughnut-bg {
+  stroke: #444444;
+}
+
 /* 🌙 Clickable Theme Unlock Panels */
 body.dark-mode .theme-unlock-status .clickable {
   background-color: #3a3a3a;
@@ -6084,6 +6121,32 @@ body.dark-mode .high-priority {
 body.dark-mode .custom-checkbox input:checked + .checkmark {
   background-color: #4caf50;
   border-color: #2e7d32;
+}
+
+/* 🌙 Current Routine Panels */
+body.dark-mode .current-routine-status .clickable {
+  background-color: #303030;
+  color: #dddddd;
+  border: 1px solid #555;
+}
+
+body.dark-mode .current-routine-status .clickable:hover {
+  background-color: #3c3c3c;
+  transform: scale(1.02);
+  color: #aaffaa;
+}
+
+body.dark-mode #current-cycle-progress-text,
+body.dark-mode #current-routine-cycle-count {
+  color: #cccccc;
+}
+
+body.dark-mode .doughnut-text {
+  fill: #f0f0f0;
+}
+
+body.dark-mode .doughnut-bg {
+  stroke: #444444;
 }
 
 /* 🌙 Theme Unlock Panels */
@@ -6311,6 +6374,32 @@ body.theme-dark-ocean .summary-label {
 
 
 
+/* 🌊 Current Routine Panel - Ocean (non-dark mode) */
+body.theme-dark-ocean .current-routine-status .clickable {
+    background-color: #244d6a;
+    color: #f0faff;
+    border: 1px solid #497b96;
+  }
+
+  body.theme-dark-ocean .current-routine-status .clickable:hover {
+    background-color: #2e6c8e;
+    transform: scale(1.02);
+    color: #c0fff7;
+  }
+
+  body.theme-dark-ocean #current-cycle-progress-text,
+  body.theme-dark-ocean #current-routine-cycle-count {
+    color: #e1f7ff;
+  }
+
+  body.theme-dark-ocean .doughnut-text {
+    fill: #f0faff;
+  }
+
+  body.theme-dark-ocean .doughnut-bg {
+    stroke: #497b96;
+  }
+
 /* 🌊 Theme Unlock Panel - Ocean (non-dark mode) */
 body.theme-dark-ocean .theme-unlock-status .clickable {
     background-color: #244d6a;
@@ -6419,6 +6508,32 @@ body.dark-mode.theme-dark-ocean {
     color: #e0f7fa;
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
+/* 🌊 + 🌙 Current Routine Panels */
+body.dark-mode.theme-dark-ocean .current-routine-status .clickable {
+    background-color: #1b2f40;
+    color: #e0f7fa;
+    border: 1px solid #355f7a;
+  }
+
+  body.dark-mode.theme-dark-ocean .current-routine-status .clickable:hover {
+    background-color: #234b5c;
+    color: #9bfdd8;
+    transform: scale(1.02);
+  }
+
+  body.dark-mode.theme-dark-ocean #current-cycle-progress-text,
+  body.dark-mode.theme-dark-ocean #current-routine-cycle-count {
+    color: #cfeff4;
+  }
+
+  body.dark-mode.theme-dark-ocean .doughnut-text {
+    fill: #e0f7fa;
+  }
+
+  body.dark-mode.theme-dark-ocean .doughnut-bg {
+    stroke: #355f7a;
+  }
+
 /* 🌊 + 🌙 Theme Unlock Panels */
 body.dark-mode.theme-dark-ocean .theme-unlock-status .clickable {
     background-color: #1b2f40;
@@ -6545,6 +6660,32 @@ body.theme-golden-glow {
     border: 1px solid #f1d78a;
   }
   
+  /* 🌟 Golden Glow Current Routine Panel */
+  body.theme-golden-glow .current-routine-status .clickable {
+    background-color: #fff2b8;
+    color: #3a3000;
+    border: 1px solid #ffd54f;
+  }
+
+  body.theme-golden-glow .current-routine-status .clickable:hover {
+    background-color: #ffe477;
+    transform: scale(1.02);
+    color: #6f5400;
+  }
+
+  body.theme-golden-glow #current-cycle-progress-text,
+  body.theme-golden-glow #current-routine-cycle-count {
+    color: #5a4500;
+  }
+
+  body.theme-golden-glow .doughnut-text {
+    fill: #3a3000;
+  }
+
+  body.theme-golden-glow .doughnut-bg {
+    stroke: #ffd54f;
+  }
+
   /* 🌟 Golden Glow Theme Unlock Panel */
   body.theme-golden-glow .theme-unlock-status .clickable {
     background-color: #fff2b8;
@@ -6643,6 +6784,32 @@ body.dark-mode.theme-golden-glow {
     border: 1px solid #8a6c00;
   }
   
+  /* 🌙 Current Routine Panel */
+  body.dark-mode.theme-golden-glow .current-routine-status .clickable {
+    background-color: #4a3d00;
+    color: #fff7d6;
+    border: 1px solid #a88200;
+  }
+
+  body.dark-mode.theme-golden-glow .current-routine-status .clickable:hover {
+    background-color: #5e4800;
+    color: #fffecf;
+    transform: scale(1.02);
+  }
+
+  body.dark-mode.theme-golden-glow #current-cycle-progress-text,
+  body.dark-mode.theme-golden-glow #current-routine-cycle-count {
+    color: #ffeaa7;
+  }
+
+  body.dark-mode.theme-golden-glow .doughnut-text {
+    fill: #fff7d6;
+  }
+
+  body.dark-mode.theme-golden-glow .doughnut-bg {
+    stroke: #a88200;
+  }
+
   /* 🌙 Theme Unlock Panel */
   body.dark-mode.theme-golden-glow .theme-unlock-status .clickable {
     background-color: #4a3d00;
@@ -6687,8 +6854,104 @@ body.dark-mode.theme-golden-glow {
     font-style: italic;
   }
 
-  .theme-unlock-status {
+  /* Current Routine Collapsible Section */
+  .current-routine-status {
     margin-top: 10px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .current-routine-status h3 {
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+  }
+
+  .current-routine-status h3:hover {
+    color: #2e8b57;
+    transform: scale(1.05);
+  }
+
+  .current-routine-status .clickable {
+    cursor: pointer;
+    background-color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .current-routine-status .clickable:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.02);
+  }
+
+  /* Current Cycle Doughnut Chart - Collapsible */
+  .current-cycle-doughnut-container {
+    width: 90px;
+    height: 90px;
+    margin: 10px auto;
+    display: none;
+  }
+
+  .current-cycle-doughnut-container.visible {
+    display: block;
+  }
+
+  .current-cycle-doughnut {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .doughnut-bg {
+    stroke: #e0e0e0;
+  }
+
+  .doughnut-progress {
+    stroke-dasharray: 251.2; /* Circumference = 2 * π * r = 2 * π * 40 ≈ 251.2 */
+    stroke-dashoffset: 251.2; /* Start with 0% filled */
+    transition: stroke-dashoffset 0.6s ease;
+  }
+
+  .doughnut-text {
+    font-size: 16px;
+    font-weight: bold;
+    fill: #333;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  #current-cycle-progress-text {
+    text-align: center;
+    font-size: 1.05em;
+    font-weight: 500;
+    color: #555;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    display: none;
+  }
+
+  #current-cycle-progress-text.visible {
+    display: block;
+  }
+
+  #current-routine-cycle-count {
+    display: none;
+    font-weight: 500;
+    color: #444;
+    white-space: pre-wrap;
+    transition: opacity 0.3s ease;
+  }
+
+  #current-routine-cycle-count.visible {
+    display: block;
+  }
+
+  /* Milestone Rewards Collapsible Section */
+  .theme-unlock-status {
+    margin-top: 0px;
+    margin-bottom: -10px;
     font-size: 14px;
     text-align: center;
     cursor: pointer;

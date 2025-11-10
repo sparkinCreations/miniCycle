@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.346">
+<meta name="app-version" content="1.347">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
@@ -22,7 +22,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.346">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.347">
 <link rel="manifest" href="manifest.json">
 
 
@@ -121,7 +121,7 @@ if ('serviceWorker' in navigator) {
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.346${SW_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.347${SW_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -208,7 +208,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.346')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.347')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -770,16 +770,16 @@ window.installApp = () => {
         <div class="menu-buttons-together">
         <ul>
             <div class="main-menu-row">
-            <li><button id="new-mini-cycle" title="Create a new miniCycle"><i class="fas fa-plus"></i>New <br>Cycle List</button></li>
-            <li><button id="open-mini-cycle" title="Open an existing miniCycle"><i class="fas fa-folder-open"></i>Open Existing<br>Cycle List</button></li>
-            <li><button id="save-as-mini-cycle" title="Duplicate the current miniCycle"><i class="fas fa-copy"></i>Duplicate <br>Cycle List</button></li>
+            <li><button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-plus"></i>New <br>Routine</button></li>
+            <li><button id="open-mini-cycle" title="Open an existing routine"><i class="fas fa-folder-open"></i>Open Existing<br>Routine</button></li>
+            <li><button id="save-as-mini-cycle" title="Duplicate the current routine"><i class="fas fa-copy"></i>Duplicate <br>Routine</button></li>
             </div>
             <div class="main-menu-row">
-            <li><button id="export-mini-cycle" title="Download the current miniCycle as a file"><i class="fas fa-file-download"></i>Download <br> Cycle List</button></li>
-            <li><button id="import-mini-cycle" title="Import a miniCycle from a file"><i class="fas fa-file-upload"></i> Import <br> Cycle List</button></li>
+            <li><button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download <br>Routine</button></li>
+            <li><button id="import-mini-cycle" title="Import a routine from a file"><i class="fas fa-file-upload"></i> Import <br>Routine</button></li>
           <div class="divider-vertical"></div>
-            <li><button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this miniCycle"><i class="fas fa-eraser"></i> Uncheck All<br>Tasks</button></li>
-            <li><button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this miniCycle"><i class="fas fa-trash"></i> Delete All<br>Tasks</button></li>
+            <li><button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i> Uncheck All<br>Tasks</button></li>
+            <li><button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i> Delete All<br>Tasks</button></li>
             </div>
             <div class="main-menu-row">
                 <li><button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders &<br> Notifications</button></li>
@@ -1291,8 +1291,8 @@ window.installApp = () => {
                 <button id="reset-recurring-default"class="settings-btn">Reset Recurring Default</button>
 
                 <!-- Backup & Restore -->
-                <button id="backup-mini-cycles" class="settings-btn">📥 Backup All miniCycles</button>
-                <button id="restore-mini-cycles" class="settings-btn">📤 Restore All miniCycles</button>
+                <button id="backup-mini-cycles" class="settings-btn">📥 Backup All Routines</button>
+                <button id="restore-mini-cycles" class="settings-btn">📤 Restore All Routines</button>
 
                 <!-- Testing Button (for debugging) -->
               <button id="open-testing-modal" class="settings-btn">
@@ -1564,7 +1564,7 @@ window.installApp = () => {
 <div class="mini-cycle-switch-modal" data-modal>
     <div class="mini-cycle-switch-modal-content">
         <div class="mini-cycle-switch-title-logo"><img src="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" alt="Task Cycle Logo" /></div>
-        <div class="mini-cycle-switch-title">Open miniCycle</div>
+        <div class="mini-cycle-switch-title">Open Routine</div>
         <!-- ✅ Scrollable list instead of input -->
         <div class="mini-cycle-switch-list" id="miniCycleList"></div>
         <div id="switch-items-row" class="switch-items-row">
@@ -1684,20 +1684,32 @@ window.installApp = () => {
     <!-- Stats Panel (Initially Hidden) -->
     <section id="stats-panel" class="stats-panel" role="region" aria-labelledby="stats-header">
         <h2 id="stats-header">📊 Stats</h2>
-        <p><strong>Total Tasks:</strong> <span id="total-tasks">0</span></p>
-        <p><strong>Completed Tasks:</strong> <span id="completed-tasks">0</span></p>
-        <p><strong>Completion Rate:</strong> <span id="completion-rate">0%</span></p>
-        <div class="badge-container">
-            <h3>🏅 Badges</h3>
-            <div class="badges">
-                <div class="badge" data-milestone="5" title="Unlocks Dark Ocean Theme">5</div>
-              <div class="badge" data-milestone="25" title="Unlocked at 25 cycles">25</div>
-              <div class="badge" data-milestone="50" title="Unlocks Golden Glow Theme">50</div>
-              <div class="badge" data-milestone="75" title="Unlocked at 75 cycles">75</div>
-              <div class="badge" data-milestone="100" title="Unlocks Task Order Game!">💯</div>
+        <div class="current-routine-status" id="current-routine-status">
+            <h3 class="clickable">
+                📋 Current Routine <span class="toggle-icon">▼</span>
+            </h3>
+            <!-- Collapsible Details -->
+            <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
+                <svg class="current-cycle-doughnut" viewBox="0 0 100 100" role="img" aria-label="Current cycle task completion">
+                    <!-- Background circle (gray) -->
+                    <circle class="doughnut-bg" cx="50" cy="50" r="40" fill="none" stroke="#e0e0e0" stroke-width="12"/>
+                    <!-- Progress circle (green) -->
+                    <circle id="current-cycle-doughnut-progress" class="doughnut-progress" cx="50" cy="50" r="40" fill="none" stroke="url(#gradient)" stroke-width="12" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+                    <!-- Gradient definition -->
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#4caf50;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#66bb6a;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Center text (percentage) -->
+                    <text id="current-cycle-doughnut-text" x="50" y="55" text-anchor="middle" class="doughnut-text">0%</text>
+                </svg>
             </div>
-          </div>
-          <div class="theme-unlock-status" id="theme-unlock-status">
+            <p id="current-cycle-progress-text">0 of 0 Tasks Completed</p>
+            <p id="current-routine-cycle-count"><span id="per-cycle-count">0 Cycles Completed</span></p>
+        </div>
+                  <div class="theme-unlock-status" id="theme-unlock-status">
             <h3 class="clickable">
                 🎯 Milestone Rewards <span class="toggle-icon">▼</span>
               </h3>
@@ -1705,9 +1717,22 @@ window.installApp = () => {
             <p id="golden-unlock-message">Loading...</p>
             <p id="game-unlock-message">Loading game unlock info...</p>
           </div>
-        <p><strong>Cycles Completed:</strong> <span id="mini-cycle-count">0</span></p> <!-- ✅ New Line -->
+        <div class="badge-container">
+            <h3>🏅 Achievement Badges</h3>
+            <div class="badges">
+                <div class="badge" data-milestone="5" title="5 total cycles across all routines - Unlocks Dark Ocean Theme">5</div>
+              <div class="badge" data-milestone="25" title="25 total cycles across all routines">25</div>
+              <div class="badge" data-milestone="50" title="50 total cycles across all routines - Unlocks Golden Glow Theme">50</div>
+              <div class="badge" data-milestone="75" title="75 total cycles across all routines">75</div>
+              <div class="badge" data-milestone="100" title="100 total cycles across all routines - Unlocks Task Order Game!">💯</div>
+            </div>
+          </div>
+
+        <p id="all-routines-count"><strong>All Routines:</strong> <span id="mini-cycle-count">0 Cycles</span></p>
+        <p><strong>Progress to Next Milestone:</strong></p>
+        <p id="milestone-progress-text" style="font-size: 0.9em; color: #666; margin-top: -8px;">Loading...</p>
         <div class="progress-container">
-            <div id="stats-progress-bar" class="progress-bar"></div>
+            <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone"></div>
         </div>
     </section>
 
@@ -1759,7 +1784,7 @@ Feedback
 <!-- 🔊 ARIA Live Region for announcing view changes -->
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
- <script type="module" src="miniCycle-scripts.js?v=1.346"></script>
+ <script type="module" src="miniCycle-scripts.js?v=1.347"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1798,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="utilities/automated-tests-fix.js?v=1.346"></script>
+   <script src="utilities/automated-tests-fix.js?v=1.347"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

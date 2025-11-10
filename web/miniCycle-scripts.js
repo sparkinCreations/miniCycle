@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.346'
+            currentVersion: '1.347'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -2337,9 +2337,10 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
     }, true); // immediate save
     
     console.log(`✅ Cycle count updated (state-based) for "${activeCycle}": ${actualNewCount}`);
-    
-    // ✅ Handle milestone rewards with the actual updated count
-    handleMilestoneUnlocks(activeCycle, actualNewCount);
+
+    // ✅ Handle milestone rewards with the global cycle count
+    const globalCyclesCompleted = currentState.userProgress.cyclesCompleted;
+    handleMilestoneUnlocks(activeCycle, globalCyclesCompleted);
     
     // ✅ Show animation + update stats
     showCompletionAnimation();
@@ -2349,43 +2350,43 @@ function incrementCycleCount(miniCycleName, savedMiniCycles) {
 // Export to window for taskCore module
 window.incrementCycleCount = incrementCycleCount;
 
-function handleMilestoneUnlocks(miniCycleName, cycleCount) {
-    console.log('🏆 Handling milestone unlocks (state-based)...');
-    
+function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
+    console.log('🏆 Handling milestone unlocks (global cycles)...', globalCyclesCompleted);
+
     if (!window.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for milestone unlocks');
         return;
     }
-    
+
     const currentState = window.AppState.get();
     if (!currentState) {
         console.error('❌ No state data for milestone unlocks');
         return;
     }
-    
-    // ✅ Show milestone achievement message
-    checkForMilestone(miniCycleName, cycleCount);
 
-    // ✅ Theme unlocks with state-based tracking
-    if (cycleCount >= 5) {
+    // ✅ Show milestone achievement message based on global cycles
+    checkForMilestone(miniCycleName, globalCyclesCompleted);
+
+    // ✅ Theme unlocks based on GLOBAL cycle count across all cycles
+    if (globalCyclesCompleted >= 5) {
         unlockDarkOceanTheme();
     }
-    if (cycleCount >= 50) {
+    if (globalCyclesCompleted >= 50) {
         unlockGoldenGlowTheme();
     }
 
-    // ✅ Game unlock with state-based tracking
-    if (cycleCount >= 100) {
+    // ✅ Game unlock based on GLOBAL cycle count
+    if (globalCyclesCompleted >= 100) {
         const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
         const hasGameUnlock = unlockedFeatures.includes("task-order-game");
-        
+
         if (!hasGameUnlock) {
             showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
             unlockMiniGame();
         }
     }
-    
-    console.log('✅ Milestone unlocks processed (state-based)');
+
+    console.log('✅ Milestone unlocks processed (global cycles)');
 }
 
 

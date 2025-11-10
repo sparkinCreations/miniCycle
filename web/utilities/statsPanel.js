@@ -10,7 +10,7 @@
  * - Theme unlock status management
  * - Navigation dot updates
  *
- * @version 1.346
+ * @version 1.347
  * @author miniCycle Development Team
  */
 
@@ -81,6 +81,9 @@ export class StatsPanelManager {
         // ✅ FIX: Listen for data-ready events to update stats on session load
         this.setupDataReadyListener();
 
+        // ✅ Restore collapsible section preferences
+        this.restoreCollapsiblePreferences();
+
         console.log('✅ StatsPanelManager initialized successfully (core ready)');
     }
 
@@ -102,7 +105,16 @@ export class StatsPanelManager {
             completedTasks: document.getElementById("completed-tasks"),
             completionRate: document.getElementById("completion-rate"),
             miniCycleCount: document.getElementById("mini-cycle-count"),
+            perCycleCount: document.getElementById("per-cycle-count"),
+            milestoneProgressText: document.getElementById("milestone-progress-text"),
             statsProgressBar: document.getElementById("stats-progress-bar"),
+            // Current Routine collapsible elements
+            currentRoutineStatus: document.getElementById("current-routine-status"),
+            currentCycleDoughnutContainer: document.getElementById("current-cycle-doughnut-container"),
+            currentCycleDoughnutProgress: document.getElementById("current-cycle-doughnut-progress"),
+            currentCycleDoughnutText: document.getElementById("current-cycle-doughnut-text"),
+            currentCycleProgressText: document.getElementById("current-cycle-progress-text"),
+            currentRoutineCycleCount: document.getElementById("current-routine-cycle-count"),
             // Theme elements
             themeUnlockMessage: document.getElementById("theme-unlock-message"),
             goldenUnlockMessage: document.getElementById("golden-unlock-message"),
@@ -226,6 +238,11 @@ export class StatsPanelManager {
      * Setup theme-related event listeners
      */
     setupThemeEvents() {
+        // Current Routine status click
+        if (this.elements.currentRoutineStatus) {
+            this.elements.currentRoutineStatus.addEventListener("click", () => this.handleCurrentRoutineToggle());
+        }
+
         // Theme unlock status click
         if (this.elements.themeUnlockStatus) {
             this.elements.themeUnlockStatus.addEventListener("click", () => this.handleThemeToggleClick());
@@ -564,34 +581,104 @@ export class StatsPanelManager {
         // Calculate current stats
         const totalTasks = document.querySelectorAll(".task").length;
         const completedTasks = document.querySelectorAll(".task input:checked").length;
-        const completionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
+        const taskCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
 
-        let cycleCount = 0;
+        let perCycleCount = 0;
+        let globalCyclesCompleted = 0;
 
         // ✅ Safe to access AppState - core is guaranteed ready
         const currentState = window.AppState.get();
         if (currentState) {
-            const { data, appState } = currentState;
+            const { data, appState, userProgress } = currentState;
             const activeCycle = appState.activeCycleId;
             const cycleData = data.cycles[activeCycle];
 
             if (activeCycle && cycleData) {
-                cycleCount = cycleData.cycleCount || 0;
+                perCycleCount = cycleData.cycleCount || 0;
             }
+
+            // ✅ Get global cycles completed across all cycles
+            globalCyclesCompleted = userProgress?.cyclesCompleted || 0;
         }
+
+        // ✅ Calculate progress to next milestone badge (5, 25, 50, 100)
+        const milestones = [5, 25, 50, 100];
+        let nextMilestone = milestones.find(m => m > globalCyclesCompleted) || 100;
+        let previousMilestone = milestones.reverse().find(m => m <= globalCyclesCompleted) || 0;
+        milestones.reverse(); // Restore order
+
+        const milestoneProgress = previousMilestone === nextMilestone
+            ? 100
+            : ((globalCyclesCompleted - previousMilestone) / (nextMilestone - previousMilestone)) * 100;
+        const milestoneProgressPercent = milestoneProgress.toFixed(1) + "%";
 
         // Update display elements
         if (this.elements.totalTasks) this.elements.totalTasks.textContent = totalTasks;
         if (this.elements.completedTasks) this.elements.completedTasks.textContent = completedTasks;
-        if (this.elements.completionRate) this.elements.completionRate.textContent = completionRate;
-        if (this.elements.miniCycleCount) this.elements.miniCycleCount.textContent = cycleCount;
-        if (this.elements.statsProgressBar) this.elements.statsProgressBar.style.width = completionRate;
+        if (this.elements.completionRate) this.elements.completionRate.textContent = taskCompletionRate;
 
-        // Update badges and themes
-        this.updateBadges(cycleCount);
-        this.updateThemeUnlockStatus(cycleCount);
+        // ✅ Update current cycle doughnut chart (always visible)
+        const completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-        console.log('✅ Stats panel updated successfully');
+        if (this.elements.currentCycleDoughnutProgress) {
+            // SVG circle circumference = 2 * π * radius = 2 * π * 40 ≈ 251.2
+            const circumference = 251.2;
+            // Calculate offset: full circumference - (percentage * circumference)
+            const offset = circumference - (completionPercentage / 100) * circumference;
+            this.elements.currentCycleDoughnutProgress.style.strokeDashoffset = offset;
+        }
+
+        // ✅ Update doughnut center text (percentage)
+        if (this.elements.currentCycleDoughnutText) {
+            this.elements.currentCycleDoughnutText.textContent = `${Math.round(completionPercentage)}%`;
+        }
+
+        // ✅ Update current cycle progress text with proper singular/plural
+        if (this.elements.currentCycleProgressText) {
+            const taskText = totalTasks === 1 ? 'Task' : 'Tasks';
+            this.elements.currentCycleProgressText.textContent =
+                `${completedTasks} of ${totalTasks} ${taskText} Completed`;
+        }
+
+        // ✅ Show global cycles count (primary metric for rewards) with proper singular/plural
+        if (this.elements.miniCycleCount) {
+            const cycleText = globalCyclesCompleted === 1 ? 'Cycle' : 'Cycles';
+            this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText}`;
+        }
+
+        // ✅ Show per-cycle count (this specific routine) with proper singular/plural
+        if (this.elements.perCycleCount) {
+            const cycleText = perCycleCount === 1 ? 'Cycle Completed' : 'Cycles Completed';
+            this.elements.perCycleCount.textContent = `${perCycleCount} ${cycleText}`;
+        }
+
+        // ✅ Progress bar now shows progress to next milestone, not task completion
+        if (this.elements.statsProgressBar) {
+            this.elements.statsProgressBar.style.width = milestoneProgressPercent;
+            this.elements.statsProgressBar.setAttribute('aria-label',
+                `${globalCyclesCompleted} of ${nextMilestone} cycles to next milestone`);
+        }
+
+        // ✅ Update progress text label
+        if (this.elements.milestoneProgressText) {
+            if (globalCyclesCompleted >= 100) {
+                this.elements.milestoneProgressText.textContent = "🎉 All Milestones Unlocked! Amazing Work!";
+                this.elements.milestoneProgressText.style.color = "#4caf50";
+                this.elements.milestoneProgressText.style.fontWeight = "bold";
+            } else {
+                const remaining = nextMilestone - globalCyclesCompleted;
+                this.elements.milestoneProgressText.textContent =
+                    `${globalCyclesCompleted} of ${nextMilestone} cycles (${remaining} more to unlock next reward)`;
+                this.elements.milestoneProgressText.style.color = "#666";
+                this.elements.milestoneProgressText.style.fontWeight = "normal";
+            }
+        }
+
+        // Update badges and themes with global cycle count
+        this.updateBadges(globalCyclesCompleted);
+        this.updateThemeUnlockStatus(globalCyclesCompleted);
+
+        console.log(`✅ Stats updated - Global: ${globalCyclesCompleted}, Per-cycle: ${perCycleCount}, Next milestone: ${nextMilestone} (${milestoneProgressPercent})`);
     }
     /**
      * Announce view changes for screen readers
@@ -632,18 +719,19 @@ export class StatsPanelManager {
 
 
     /**
-     * Update achievement badges
+     * Update achievement badges based on GLOBAL cycles completed
+     * @param {number} globalCyclesCompleted - Total cycles across all routines
      */
-    updateBadges(cycleCount) {
+    updateBadges(globalCyclesCompleted) {
         document.querySelectorAll(".badge").forEach(badge => {
             const milestone = parseInt(badge.dataset.milestone);
-            const isUnlocked = cycleCount >= milestone;
-        
+            const isUnlocked = globalCyclesCompleted >= milestone;
+
             badge.classList.toggle("unlocked", isUnlocked);
-        
+
             // Reset theme badge classes
             badge.classList.remove("ocean-theme", "golden-theme", "game-unlocked");
-        
+
             // Assign custom theme class if applicable
             if (isUnlocked) {
                 if (milestone === 5) {
@@ -651,7 +739,7 @@ export class StatsPanelManager {
                 } else if (milestone === 50) {
                     badge.classList.add("golden-theme");
                 } else if (milestone === 100) {
-                    badge.classList.add("game-unlocked"); 
+                    badge.classList.add("game-unlocked");
                 }
             }
         });
@@ -677,14 +765,15 @@ export class StatsPanelManager {
     // ==========================================
 
     /**
-     * Update theme unlock status messages
+     * Update theme unlock status messages based on GLOBAL cycles completed
+     * @param {number} globalCyclesCompleted - Total cycles across all routines
      */
-    updateThemeUnlockStatus(cycleCount) {
-        console.log('🎨 Updating theme unlock status (state-based)...');
-        
+    updateThemeUnlockStatus(globalCyclesCompleted) {
+        console.log('🎨 Updating theme unlock status (global cycles)...', globalCyclesCompleted);
+
         let unlockedThemes = [];
         let unlockedFeatures = [];
-        
+
         // ✅ Use state-based data access
         if (window.AppState?.isReady?.()) {
             const currentState = window.AppState.get();
@@ -694,7 +783,7 @@ export class StatsPanelManager {
             }
         } else {
             console.warn('⚠️ AppState not ready - using fallback data access');
-            
+
             // Fallback to old method if state not ready
             const schemaData = this.dependencies.loadMiniCycleData();
             if (schemaData) {
@@ -703,7 +792,7 @@ export class StatsPanelManager {
                 unlockedFeatures = settings.unlockedFeatures || [];
             }
         }
-        
+
         // Convert to milestone format
         const milestoneUnlocks = {
             darkOcean: unlockedThemes.includes("dark-ocean"),
@@ -711,16 +800,18 @@ export class StatsPanelManager {
             taskOrderGame: unlockedFeatures.includes("task-order-game")
         };
 
-        this.updateThemeMessages(cycleCount, milestoneUnlocks);
-        this.unlockThemesIfEligible(cycleCount, milestoneUnlocks);
-        
-        console.log('✅ Theme unlock status updated (state-based)');
+        this.updateThemeMessages(globalCyclesCompleted, milestoneUnlocks);
+        this.unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks);
+
+        console.log('✅ Theme unlock status updated (global cycles)');
     }
 
     /**
-     * Update theme unlock messages
+     * Update theme unlock messages based on GLOBAL cycles completed
+     * @param {number} globalCyclesCompleted - Total cycles across all routines
+     * @param {Object} milestoneUnlocks - Current unlock status
      */
-    updateThemeMessages(cycleCount, milestoneUnlocks) {
+    updateThemeMessages(globalCyclesCompleted, milestoneUnlocks) {
         const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage } = this.elements;
 
         // Dark Ocean Theme
@@ -729,7 +820,7 @@ export class StatsPanelManager {
                 themeUnlockMessage.textContent = "🌊 Dark Ocean Theme unlocked! 🔓";
                 themeUnlockMessage.classList.add("unlocked-message");
             } else {
-                const needed = Math.max(0, 5 - cycleCount);
+                const needed = Math.max(0, 5 - globalCyclesCompleted);
                 themeUnlockMessage.textContent = `🔒 Only ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌊 Dark Ocean Theme!`;
                 themeUnlockMessage.classList.remove("unlocked-message");
             }
@@ -738,11 +829,11 @@ export class StatsPanelManager {
         // Golden Glow Theme (only show if Ocean is unlocked)
         if (goldenUnlockMessage) {
             if (milestoneUnlocks.darkOcean) {
-                if (cycleCount >= 50) {
+                if (globalCyclesCompleted >= 50) {
                     goldenUnlockMessage.textContent = "🌟 Golden Glow Theme unlocked! 🔓";
                     goldenUnlockMessage.classList.add("unlocked-message");
                 } else {
-                    const needed = 50 - cycleCount;
+                    const needed = 50 - globalCyclesCompleted;
                     goldenUnlockMessage.textContent = `🔒 ${needed} more cycle${needed !== 1 ? "s" : ""} to unlock 🌟 Golden Glow Theme!`;
                     goldenUnlockMessage.classList.remove("unlocked-message");
                 }
@@ -756,7 +847,7 @@ export class StatsPanelManager {
         if (gameUnlockMessage) {
             const showGameHint = milestoneUnlocks.goldenGlow;
             if (showGameHint) {
-                const cyclesLeft = Math.max(0, 100 - cycleCount);
+                const cyclesLeft = Math.max(0, 100 - globalCyclesCompleted);
                 
                 if (milestoneUnlocks.taskOrderGame) {
                     gameUnlockMessage.textContent = "🎮 Task Whack-a-Order Game unlocked! 🔓";
@@ -773,16 +864,18 @@ export class StatsPanelManager {
     }
 
     /**
-     * Unlock themes if user is eligible
+     * Unlock themes if user is eligible based on GLOBAL cycles completed
+     * @param {number} globalCyclesCompleted - Total cycles across all routines
+     * @param {Object} milestoneUnlocks - Current unlock status
      */
-    unlockThemesIfEligible(cycleCount, milestoneUnlocks) {
+    unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks) {
         // ✅ Use state-based updates instead of direct localStorage manipulation
         if (window.AppState?.isReady?.()) {
             let needsUpdate = false;
-            
+
             window.AppState.update(state => {
-                // Unlock Golden Glow at 50 cycles
-                if (cycleCount >= 50 && !milestoneUnlocks.goldenGlow) {
+                // Unlock Golden Glow at 50 GLOBAL cycles
+                if (globalCyclesCompleted >= 50 && !milestoneUnlocks.goldenGlow) {
                     if (!state.settings.unlockedThemes.includes("golden-glow")) {
                         state.settings.unlockedThemes.push("golden-glow");
                         state.userProgress.rewardMilestones.push("golden-glow-50");
@@ -790,8 +883,8 @@ export class StatsPanelManager {
                     }
                 }
 
-                // Unlock Task Order Game at 100 cycles
-                if (cycleCount >= 100 && !milestoneUnlocks.taskOrderGame) {
+                // Unlock Task Order Game at 100 GLOBAL cycles
+                if (globalCyclesCompleted >= 100 && !milestoneUnlocks.taskOrderGame) {
                     if (!state.settings.unlockedFeatures.includes("task-order-game")) {
                         state.settings.unlockedFeatures.push("task-order-game");
                         state.userProgress.rewardMilestones.push("task-order-game-100");
@@ -799,29 +892,29 @@ export class StatsPanelManager {
                     }
                 }
             }, true); // immediate save
-            
+
             if (needsUpdate) {
-                console.log('✅ Themes/features unlocked via state system');
+                console.log('✅ Themes/features unlocked via state system (global cycles)');
             }
         } else {
             console.warn('⚠️ AppState not ready - using fallback localStorage approach');
-            
+
             // Fallback to old method if state not ready
             const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
             if (!fullSchemaData) return;
 
             let updated = false;
 
-            // Unlock Golden Glow at 50 cycles
-            if (cycleCount >= 50 && !milestoneUnlocks.goldenGlow) {
+            // Unlock Golden Glow at 50 GLOBAL cycles
+            if (globalCyclesCompleted >= 50 && !milestoneUnlocks.goldenGlow) {
                 if (!fullSchemaData.settings.unlockedThemes.includes("golden-glow")) {
                     fullSchemaData.settings.unlockedThemes.push("golden-glow");
                     updated = true;
                 }
             }
 
-            // Unlock Task Order Game at 100 cycles
-            if (cycleCount >= 100 && !milestoneUnlocks.taskOrderGame) {
+            // Unlock Task Order Game at 100 GLOBAL cycles
+            if (globalCyclesCompleted >= 100 && !milestoneUnlocks.taskOrderGame) {
                 if (!fullSchemaData.settings.unlockedFeatures.includes("task-order-game")) {
                     fullSchemaData.settings.unlockedFeatures.push("task-order-game");
                     updated = true;
@@ -888,15 +981,108 @@ export class StatsPanelManager {
         // Update toggle arrow
         const toggleIcon = themeUnlockStatus?.querySelector(".toggle-icon");
         if (toggleIcon) {
-            const anyVisible = 
+            const anyVisible =
                 themeUnlockMessage.classList.contains("visible") ||
                 goldenUnlockMessage?.classList.contains("visible") ||
                 gameUnlockMessage?.classList.contains("visible");
 
             toggleIcon.textContent = anyVisible ? "▲" : "▼";
+
+            // ✅ Save preference to localStorage
+            this.saveCollapsiblePreference('milestonesExpanded', anyVisible);
         }
-        
+
         console.log('✅ Theme toggle handled (state-based)');
+    }
+
+    /**
+     * Handle Current Routine toggle click
+     */
+    handleCurrentRoutineToggle() {
+        const { currentCycleDoughnutContainer, currentCycleProgressText,
+                currentRoutineCycleCount, currentRoutineStatus } = this.elements;
+
+        if (!currentRoutineCycleCount) return;
+
+        console.log('📋 Handling Current Routine toggle...');
+
+        // Toggle doughnut chart, progress text, and cycle count
+        if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle("visible");
+        if (currentCycleProgressText) currentCycleProgressText.classList.toggle("visible");
+        currentRoutineCycleCount.classList.toggle("visible");
+
+        // Update toggle arrow
+        const toggleIcon = currentRoutineStatus?.querySelector(".toggle-icon");
+        if (toggleIcon) {
+            const anyVisible = currentRoutineCycleCount.classList.contains("visible");
+            toggleIcon.textContent = anyVisible ? "▲" : "▼";
+
+            // ✅ Save preference to localStorage
+            this.saveCollapsiblePreference('currentRoutineExpanded', anyVisible);
+        }
+
+        console.log('✅ Current Routine toggle handled');
+    }
+
+    /**
+     * Save collapsible section preference to localStorage
+     * @param {string} key - Preference key
+     * @param {boolean} value - Whether section is expanded
+     */
+    saveCollapsiblePreference(key, value) {
+        try {
+            const preferences = JSON.parse(localStorage.getItem('statsPanelPreferences')) || {};
+            preferences[key] = value;
+            localStorage.setItem('statsPanelPreferences', JSON.stringify(preferences));
+            console.log(`💾 Saved preference: ${key} = ${value}`);
+        } catch (error) {
+            console.warn('⚠️ Failed to save collapsible preference:', error);
+        }
+    }
+
+    /**
+     * Restore collapsible section preferences from localStorage
+     * Default: Current Routine starts expanded, Milestone Rewards starts collapsed
+     */
+    restoreCollapsiblePreferences() {
+        try {
+            const preferences = JSON.parse(localStorage.getItem('statsPanelPreferences')) || {};
+
+            // Current Routine: defaults to expanded, Milestone Rewards: defaults to collapsed
+            const currentRoutineExpanded = preferences.currentRoutineExpanded !== false;
+            const milestonesExpanded = preferences.milestonesExpanded === true;
+
+            console.log(`🔄 Restoring preferences - Current Routine: ${currentRoutineExpanded}, Milestones: ${milestonesExpanded}`);
+
+            // Restore Current Routine state
+            const { currentCycleDoughnutContainer, currentCycleProgressText,
+                    currentRoutineCycleCount, currentRoutineStatus } = this.elements;
+
+            if (currentRoutineExpanded && currentRoutineCycleCount) {
+                if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add("visible");
+                if (currentCycleProgressText) currentCycleProgressText.classList.add("visible");
+                currentRoutineCycleCount.classList.add("visible");
+
+                const toggleIcon = currentRoutineStatus?.querySelector(".toggle-icon");
+                if (toggleIcon) toggleIcon.textContent = "▲";
+            }
+
+            // Restore Milestone Rewards state
+            const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus } = this.elements;
+
+            if (milestonesExpanded && themeUnlockMessage) {
+                themeUnlockMessage.classList.add("visible");
+                if (goldenUnlockMessage) goldenUnlockMessage.classList.add("visible");
+                if (gameUnlockMessage) gameUnlockMessage.classList.add("visible");
+
+                const toggleIcon = themeUnlockStatus?.querySelector(".toggle-icon");
+                if (toggleIcon) toggleIcon.textContent = "▲";
+            }
+
+            console.log('✅ Collapsible preferences restored');
+        } catch (error) {
+            console.warn('⚠️ Failed to restore collapsible preferences:', error);
+        }
     }
 
     /**
@@ -1031,7 +1217,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.346',
+            version: '1.347',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config

@@ -3,7 +3,7 @@
  * Handles main menu operations and interactions
  *
  * @module menuManager
- * @version 1.346
+ * @version 1.347
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../appInitialization.js';
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        this.version = '1.346';
+        this.version = '1.347';
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
@@ -267,7 +267,7 @@ export class MenuManager {
         console.log('📝 Prompting user for new cycle name');
 
         this.deps.showPromptModal({
-            title: "Duplicate Cycle List",
+            title: "Duplicate Routine",
             message: `Enter a new name for your copy of "${currentCycle.title}":`,
             placeholder: "e.g., My Custom Routine",
             confirmText: "Save Copy",
