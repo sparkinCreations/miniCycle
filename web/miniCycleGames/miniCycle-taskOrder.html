@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="../assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
   <title>Task Whack-a-Order - Mini Game</title>
   <style>
     /* 🌐 Game Layout */
@@ -246,7 +247,7 @@ h1 {
       <div>Highest Round: <span id="bestRound">0</span></div>
       <div>Fastest Time: <span id="bestTime">--</span> seconds</div>
     </div>
-    <button id="back-to-minicycle" aria-label="Go back to Task Cycle Mini">Back to Task Cycle: Mini </button>
+    <button id="back-to-minicycle" aria-label="Go back to miniCycle">Back to miniCycle</button>
   </div>
 
   <script>
@@ -277,11 +278,33 @@ h1 {
     /***** Schema 2.5 Integration *****/
     function getSchema25Data() {
       try {
-        const schemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        if (!schemaData || schemaData.schemaVersion !== 2.5) {
-          console.warn('⚠️ Schema 2.5 data not found or outdated');
+        // Debug: Show current origin and localStorage contents
+        console.log('🔍 Current origin:', window.location.origin);
+        console.log('🔍 localStorage keys:', Object.keys(localStorage));
+
+        const rawData = localStorage.getItem("miniCycleData");
+        console.log('🔍 Raw miniCycleData:', rawData ? `${rawData.length} chars` : 'null');
+
+        if (!rawData) {
+          console.warn('⚠️ Schema 2.5 data not found - localStorage is empty or key missing');
+          console.warn('💡 Make sure you are running the game from the same origin as miniCycle');
+          console.warn('💡 Expected: same protocol, domain, and port (e.g., http://localhost:8080)');
           return null;
         }
+
+        const schemaData = JSON.parse(rawData);
+        if (!schemaData) {
+          console.warn('⚠️ Schema 2.5 data parsed as null/undefined');
+          return null;
+        }
+
+        // Schema version is stored as string "2.5" not number
+        console.log('🔍 Schema version found:', schemaData.schemaVersion, typeof schemaData.schemaVersion);
+        if (schemaData.schemaVersion !== "2.5") {
+          console.warn('⚠️ Schema outdated:', schemaData.schemaVersion, '(expected "2.5")');
+          return null;
+        }
+        console.log('✅ Schema 2.5 data loaded successfully');
         return schemaData;
       } catch (error) {
         console.error('❌ Error reading Schema 2.5 data:', error);
@@ -292,7 +315,15 @@ h1 {
     function saveGameStatsToSchema25(difficulty, round, time) {
       try {
         const schemaData = getSchema25Data();
-        if (!schemaData) return false;
+        if (!schemaData) {
+          console.warn('⚠️ Cannot save stats - no Schema 2.5 data');
+          return false;
+        }
+
+        // Ensure settings object exists
+        if (!schemaData.settings) {
+          schemaData.settings = {};
+        }
 
         // Initialize game stats if not exists
         if (!schemaData.settings.gameStats) {
@@ -305,17 +336,35 @@ h1 {
           };
         }
 
+        // Ensure taskOrderGame exists
+        if (!schemaData.settings.gameStats.taskOrderGame) {
+          schemaData.settings.gameStats.taskOrderGame = {
+            easy: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
+            normal: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 },
+            hard: { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 }
+          };
+        }
+
+        // Ensure this difficulty exists
+        if (!schemaData.settings.gameStats.taskOrderGame[difficulty]) {
+          schemaData.settings.gameStats.taskOrderGame[difficulty] = {
+            bestRound: 0,
+            bestTime: Infinity,
+            gamesPlayed: 0
+          };
+        }
+
         const stats = schemaData.settings.gameStats.taskOrderGame[difficulty];
 
         // Update stats
         if (round > stats.bestRound) stats.bestRound = round;
         if (time < stats.bestTime) stats.bestTime = time;
-        stats.gamesPlayed++;
+        stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
         stats.lastPlayed = Date.now();
 
         // Save back to localStorage
         localStorage.setItem("miniCycleData", JSON.stringify(schemaData));
-        console.log('✅ Game stats saved to Schema 2.5');
+        console.log('✅ Game stats saved to Schema 2.5:', { difficulty, round, time, gamesPlayed: stats.gamesPlayed });
         return true;
       } catch (error) {
         console.error('❌ Error saving game stats:', error);
@@ -352,9 +401,11 @@ h1 {
         return [];
       }
 
-      const currentCycle = schemaData.cycles[activeCycleId];
+      // Schema 2.5 structure: cycles is nested in data.cycles
+      const currentCycle = schemaData.data?.cycles?.[activeCycleId];
       if (!currentCycle || !Array.isArray(currentCycle.tasks)) {
-        console.warn('⚠️ No tasks found in active cycle');
+        console.warn('⚠️ No tasks found in active cycle:', activeCycleId);
+        console.warn('Available cycles:', Object.keys(schemaData.data?.cycles || {}));
         return [];
       }
 
@@ -362,7 +413,7 @@ h1 {
         .map(task => task.text)
         .filter(text => text && text.trim() !== "");
 
-      console.log(`✅ Loaded ${names.length} tasks from Schema 2.5`);
+      console.log(`✅ Loaded ${names.length} tasks from Schema 2.5 (cycle: ${activeCycleId})`);
       return names;
     }
 

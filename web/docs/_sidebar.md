@@ -8,6 +8,7 @@
 
 * **Developer Guides**
   * [Developer Documentation](DEVELOPER_DOCUMENTATION.md)
+  * [Folder Structure](FOLDER_STRUCTURE.md)
   * [Claude AI Guide](CLAUDE.md)
   * [Testing Quick Reference](TESTING_QUICK_REFERENCE.md)
 

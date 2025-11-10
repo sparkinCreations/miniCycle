@@ -2954,31 +2954,51 @@ Current module test coverage:
 
 ### Code Organization
 
+For a comprehensive understanding of miniCycle's folder structure, see **[FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md)** which documents the complete organization, philosophy, and reasoning behind the current structure.
+
+**Quick Overview:**
+
 ```
 web/
-├── miniCycle-scripts.js          # Start here for main app logic
-├── utilities/
-│   ├── state.js                  # AppState implementation
-│   ├── cycleLoader.js            # Data loading
-│   ├── recurringCore.js          # Recurring task logic
-│   └── (13 more modules)
-└── docs/
-    └── DEVELOPER_DOCUMENTATION.md  # This file!
+├── miniCycle-scripts.js          # Start here for main app logic (3,674 lines)
+├── modules/                      # ES6 modules organized by domain
+│   ├── core/                     # appState.js, appInit.js
+│   ├── task/                     # Task management (7 modules)
+│   ├── cycle/                    # Cycle management (5 modules)
+│   ├── recurring/                # Recurring tasks (3 modules)
+│   ├── ui/                       # UI coordination (6 modules)
+│   ├── features/                 # Optional features (4 modules)
+│   ├── utils/                    # Shared utilities (4 modules)
+│   ├── testing/                  # Test infrastructure (5 modules)
+│   └── other/                    # Plugin examples (3 modules)
+├── tests/                        # 979 tests, 100% passing ✅
+├── docs/                         # Developer documentation (you are here!)
+├── pages/                        # Marketing pages
+├── legal/                        # Privacy, terms, user manual
+├── lite/                         # ES5 legacy version
+└── miniCycleGames/               # Hidden mini-games
 ```
+
+**Organization Philosophy:**
+- **Domain-driven** - Modules grouped by business domain (task/, cycle/) not technical pattern
+- **Zero build complexity** - Deploy as-is from web/, no build step required
+- **Test-friendly** - Tests mirror module structure for easy discovery
+- **Future-ready** - Prepared for multi-platform expansion without restructuring
 
 ### Key Concepts Summary
 
 1. **Task Cycling** - Tasks reset, don't delete
 2. **AppState** - Centralized state with 600ms debounced saves
 3. **Recurring Tasks** - Template-based, checked every 30s
-4. **Undo/Redo** - State snapshots with max 50 history
+4. **Undo/Redo** - Per-cycle history with IndexedDB persistence
 5. **Modules** - 4 patterns: Static, Simple Instance, Resilient, Strict Injection
 6. **Schema 2.5** - Current data format with auto-migration
+7. **Domain Organization** - Code grouped by feature, not by technical layer
 
 ---
 
-**Version**: 1.336
-**Last Updated**: October 27, 2025
+**Version**: 1.348
+**Last Updated**: November 10, 2025
 **Maintained By**: sparkinCreations
 
 **✅ MODULARIZATION COMPLETE!**
@@ -2986,14 +3006,20 @@ web/
 - **74.8% reduction achieved**
 - **33 modules** extracted (12,003 lines)
 - **14 core orchestration functions** remain
-- **100% test coverage** ✅ (958/958 tests passing)
+- **100% test coverage** ✅ (979/979 tests passing)
 
-**Recent Major Updates (October 27, 2025):**
+**Recent Major Updates (November 10, 2025):**
+- ✅ Folder structure reorganization - modules/ organized into domain subfolders
+- ✅ Documentation archive - completed docs moved to docs/archive/
+- ✅ Root cleanup - marketing/legal pages organized into pages/legal/lite/ folders
+- ✅ Form validation fixes - 6 duplicate IDs and 38 missing attributes fixed
+- ✅ Game enhancements - Task Whack-a-Order game with Schema 2.5 integration
+
+**Previous Updates (October 27, 2025):**
 - ✅ Modularization technically complete - all major systems extracted
 - ✅ Fixed resetTasks persistence bug (tasks now save to AppState)
 - ✅ Moved sanitizeInput to globalUtils.js
 - ✅ Added saveTaskToSchema25 to taskCore.js
-- ✅ Updated all documentation to reflect current state
 - ✅ Documented optional extractions (see REMAINING_EXTRACTIONS_ANALYSIS.md)
 
 **Optional Future Work:**
