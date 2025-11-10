@@ -5,7 +5,7 @@
  * miniCycle functionality, including storage, migration, and state management.
  *
  * @module testing-modal
- * @version 1.347
+ * @version 1.348
  */
 
 // ==========================================
@@ -593,7 +593,7 @@ function setupTestButtons() {
         generateDebugReport();
     });
     
-    safeAddEventListenerById("test-notifications", "click", () => {
+    safeAddEventListenerById("test-notifications-debug", "click", () => {
         testNotifications();
     });
     

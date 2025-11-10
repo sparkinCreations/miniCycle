@@ -12,7 +12,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.347
+ * @version 1.348
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -87,7 +87,7 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.347';
+        this.version = '1.348';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
@@ -608,6 +608,8 @@ export class TaskDOMManager {
             // Fallback: create basic input
             dueDateInput = document.createElement("input");
             dueDateInput.type = "date";
+            dueDateInput.id = `due-date-${assignedTaskId}`;
+            dueDateInput.name = `dueDate-${assignedTaskId}`;
             dueDateInput.classList.add("due-date", "hidden");
         }
 
@@ -970,17 +972,29 @@ function createTaskButton(buttonConfig, taskContext, buttonContainer) {
 function createTaskContentElements(taskContext) {
     if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
+        const fallbackId = `fallback-${Date.now()}`;
+        const checkbox = document.createElement('input');
+        checkbox.id = `checkbox-${fallbackId}`;
+        checkbox.name = `task-${fallbackId}`;
+        const dueDateInput = document.createElement('input');
+        dueDateInput.id = `duedate-${fallbackId}`;
+        dueDateInput.name = `duedate-${fallbackId}`;
         return {
-            checkbox: document.createElement('input'),
+            checkbox: checkbox,
             taskLabel: document.createElement('span'),
-            dueDateInput: document.createElement('input')
+            dueDateInput: dueDateInput
         };
     }
     return taskDOMManager.createTaskContentElements(taskContext);
 }
 
 function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
-    if (!taskDOMManager) return document.createElement('input');
+    if (!taskDOMManager) {
+        const fallbackCheckbox = document.createElement('input');
+        fallbackCheckbox.id = `checkbox-fallback-${Date.now()}`;
+        fallbackCheckbox.name = `task-fallback-${Date.now()}`;
+        return fallbackCheckbox;
+    }
     return taskDOMManager.createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
 }
 

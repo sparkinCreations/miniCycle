@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.347
+ * @version 1.348
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../core/appInit.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.347';
+        this.version = '1.348';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
@@ -313,6 +313,8 @@ export class SettingsManager {
             // Fresh input
             fileInput = document.createElement("input");
             fileInput.type = "file";
+            fileInput.id = "import-cycle-file-input";
+            fileInput.name = "cycleImport";
             fileInput.accept = "application/json,.json";
             fileInput.style.display = "none";
             document.body.appendChild(fileInput);
@@ -742,6 +744,8 @@ export class SettingsManager {
         // Fresh input
         fileInput = document.createElement("input");
         fileInput.type = "file";
+        fileInput.id = "import-data-file-input";
+        fileInput.name = "dataImport";
         fileInput.accept = ".mcyc";
         fileInput.style.display = "none";
         document.body.appendChild(fileInput);

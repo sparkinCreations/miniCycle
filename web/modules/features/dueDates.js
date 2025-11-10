@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module dueDates
- * @version 1.347
+ * @version 1.348
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        this.version = '1.347';
+        this.version = '1.348';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
@@ -217,6 +217,8 @@ export class MiniCycleDueDates {
     createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle) {
         const dueDateInput = document.createElement("input");
         dueDateInput.type = "date";
+        dueDateInput.id = `due-date-input-${assignedTaskId}`;
+        dueDateInput.name = `taskDueDate-${assignedTaskId}`;
         dueDateInput.classList.add("due-date");
         dueDateInput.setAttribute("aria-describedby", `task-desc-${assignedTaskId}`);
 

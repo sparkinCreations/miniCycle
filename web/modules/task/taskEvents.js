@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.347
+ * @version 1.348
  */
 
 export class TaskEvents {
@@ -29,7 +29,7 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.347';
+        this.version = '1.348';
 
         console.log('🎮 TaskEvents created');
     }

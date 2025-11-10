@@ -46,7 +46,7 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '1.347'; 
+var currentVersion = '1.348'; 
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -2449,7 +2449,7 @@ function setupTryFullVersionButton() {
 
 // ✅ UPDATED handleTryFullVersion function
 function handleTryFullVersion() {
-  var currentVersion = '1.347';
+  var currentVersion = '1.348';
   
   // Show confirmation
   showNotification(

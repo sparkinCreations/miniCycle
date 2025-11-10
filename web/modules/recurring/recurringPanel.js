@@ -12,7 +12,7 @@
  * - Button visibility management
  *
  * @module recurringPanel
- * @version 1.347
+ * @version 1.348
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
@@ -712,6 +712,9 @@ export class RecurringPanelManager {
             const input = document.createElement("input");
             input.type = "date";
             const index = list.children.length;
+            const inputId = `specific-date-input-${Date.now()}-${index}`;
+            input.id = inputId;
+            input.name = `specificDate${index}`;
             input.setAttribute("aria-label", isFirst ? "First specific date" : `Specific date ${index + 1}`);
             input.required = true;
 

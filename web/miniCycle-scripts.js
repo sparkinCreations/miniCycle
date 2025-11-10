@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const notifications = new MiniCycleNotifications();
 
     window.notifications = notifications;
-    window.showNotification = (message, type, duration) => {
+    window.showNotification = function(message, type, duration) {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
         return notifications.show(message, type, duration);
     };
@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.347'
+            currentVersion: '1.348'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
