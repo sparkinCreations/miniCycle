@@ -6,7 +6,7 @@
  * A lightweight plugin architecture that works with your existing modular structure.
  * This provides the foundation for extending miniCycle functionality.
  * 
- * @version 1.345
+ * @version 1.346
  * @author miniCycle Development Team
  */
 
