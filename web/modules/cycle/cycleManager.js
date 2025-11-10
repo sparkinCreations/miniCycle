@@ -118,7 +118,7 @@ export class CycleManager {
         console.log('📥 Preloading getting started cycle (Schema 2.5 only)...');
 
         try {
-            const response = await fetch("data/sample-getting-started.mcyc");
+            const response = await fetch("examples/routines/sample-getting-started.mcyc");
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
