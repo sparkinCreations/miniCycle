@@ -111,6 +111,62 @@ function scheduleNextOccurrence(task) {
 - Appropriate granularity for task management workflows
 - Significantly better than 1-minute+ intervals for user experience
 
+## Date Calculation Reliability
+
+### DST-Safe Week Calculations (v1.348+)
+
+For bi-weekly recurring tasks, the system uses DST-safe date arithmetic to maintain accurate week-to-week scheduling:
+
+```javascript
+function getDaysBetween(startDate, endDate) {
+  // Normalize both dates to midnight UTC to eliminate DST effects
+  const start = new Date(Date.UTC(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  ));
+  const end = new Date(Date.UTC(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate()
+  ));
+
+  const millisecondsDiff = end - start;
+  return Math.floor(millisecondsDiff / (1000 * 60 * 60 * 24));
+}
+```
+
+**Why This Matters:**
+
+1. **Raw Millisecond Calculation Problem**
+   - Naive approach: `(endDate - startDate) / (1000 * 60 * 60 * 24)`
+   - Assumes every day is exactly 24 hours
+   - **Fails with DST:** Spring forward (23h) and fall back (25h) cause drift
+
+2. **UTC Normalization Solution**
+   - Extracts only year/month/day (ignores time)
+   - Converts to midnight UTC (no timezone offset)
+   - Eliminates DST hour variations from calculation
+   - Maintains accurate calendar date arithmetic
+
+3. **Long-Term Accuracy**
+   - Prevents week boundary shifts over multiple DST transitions
+   - Ensures bi-weekly tasks trigger on correct weeks indefinitely
+   - Critical for recurring tasks that span months/years
+
+**Example Impact:**
+```javascript
+// Without DST-safe calculation
+referenceDate = March 3, 2025 (before DST)
+testDate = March 17, 2025 (after DST spring forward)
+// Raw milliseconds might show 13.96 days (23h day on March 9)
+// Week calculation could be off by 1
+
+// With DST-safe calculation
+daysBetween = 14 days (accurate calendar days)
+weeks = 2 (correct)
+```
+
 ## Real-World Browser Behavior
 
 ### Cross-Platform Compatibility

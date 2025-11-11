@@ -255,31 +255,126 @@ Application-wide settings (Complete format only):
 
 ### Recurring Settings
 
-For tasks with `recurring: true`:
+For tasks with `recurring: true` (Schema 2.5+ structure):
 
 ```json
 {
   "frequency": "daily",
   "indefinitely": true,
-  "time": "09:00",
-  "specificTime": true,
-  "daysOfWeek": [1, 3, 5],
-  "dayOfMonth": null,
-  "endDate": null
+  "count": null,
+  "time": {
+    "hour": 9,
+    "minute": 0,
+    "meridiem": "AM",
+    "military": false
+  },
+  "specificDates": {
+    "enabled": false,
+    "dates": []
+  },
+  "hourly": {
+    "useSpecificMinute": false,
+    "minute": 0
+  },
+  "weekly": {
+    "days": ["Mon", "Wed", "Fri"]
+  },
+  "biweekly": {
+    "week1": ["Mon", "Wed"],
+    "week2": ["Tue", "Thu"],
+    "referenceDate": "2025-01-06T00:00:00.000Z"
+  },
+  "monthly": {
+    "days": [1, 15]
+  },
+  "yearly": {
+    "months": [1, 6, 12],
+    "useSpecificDays": true,
+    "daysByMonth": {
+      "1": [1, 15],
+      "6": [1],
+      "12": [25]
+    },
+    "applyDaysToAll": false
+  }
 }
 ```
 
-**Properties:**
+**Core Properties:**
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `frequency` | string | Yes | `"hourly"`, `"daily"`, `"weekly"`, `"biweekly"`, `"monthly"`, `"yearly"` |
+| `indefinitely` | boolean | Yes | `true` to recur forever, `false` to use count |
+| `count` | number\|null | No | Number of times to recur (if not indefinite) |
+| `time` | object\|null | No | Specific time of day (see Time Object below) |
+
+**Time Object (optional):**
 
 | Property | Type | Values | Description |
 |----------|------|--------|-------------|
-| `frequency` | string | `"daily"`, `"weekly"`, `"monthly"` | How often task recurs |
-| `indefinitely` | boolean | `true`/`false` | Recur forever or until end date |
-| `time` | string | `"HH:MM"` | Time of day (24-hour format) |
-| `specificTime` | boolean | `true`/`false` | Use specific time vs default |
-| `daysOfWeek` | array | `[0-6]` | Days for weekly (0=Sunday, 6=Saturday) |
-| `dayOfMonth` | number | `1-31` | Day for monthly recurrence |
-| `endDate` | string\|null | ISO 8601 | When to stop recurring |
+| `hour` | number | 1-12 | Hour in 12-hour format (or 0-23 if military) |
+| `minute` | number | 0-59 | Minute |
+| `meridiem` | string | `"AM"`/`"PM"` | AM/PM (ignored if military=true) |
+| `military` | boolean | `true`/`false` | Use 24-hour format |
+
+**Frequency-Specific Settings:**
+
+**Hourly:**
+```json
+"hourly": {
+  "useSpecificMinute": true,
+  "minute": 30
+}
+```
+
+**Weekly:**
+```json
+"weekly": {
+  "days": ["Mon", "Wed", "Fri"]
+}
+```
+- `days`: Array of day abbreviations (`"Sun"`, `"Mon"`, `"Tue"`, `"Wed"`, `"Thu"`, `"Fri"`, `"Sat"`)
+
+**Biweekly (v1.348+):**
+```json
+"biweekly": {
+  "week1": ["Mon", "Wed"],
+  "week2": ["Tue", "Thu"],
+  "referenceDate": "2025-01-06T00:00:00.000Z"
+}
+```
+- `week1`: Days for even weeks (0, 2, 4, ...)
+- `week2`: Days for odd weeks (1, 3, 5, ...)
+- `referenceDate`: ISO 8601 timestamp for week 0 starting point
+- **New in v1.348:** Separate day selections for each week in two-week cycle
+- Uses DST-safe date calculation
+
+**Monthly:**
+```json
+"monthly": {
+  "days": [1, 15, 30]
+}
+```
+- `days`: Array of day numbers (1-31)
+
+**Yearly:**
+```json
+"yearly": {
+  "months": [1, 6, 12],
+  "useSpecificDays": true,
+  "daysByMonth": {
+    "1": [1, 15],
+    "6": [1],
+    "12": [25]
+  },
+  "applyDaysToAll": false
+}
+```
+- `months`: Array of month numbers (1-12)
+- `useSpecificDays`: Whether to use specific days
+- `daysByMonth`: Object mapping month number to array of days
+- `applyDaysToAll`: If true, uses `daysByMonth.all` for all months
 
 ---
 
@@ -343,9 +438,16 @@ For tasks with `recurring: true`:
       "recurringSettings": {
         "frequency": "weekly",
         "indefinitely": true,
-        "daysOfWeek": [1, 3, 5],
-        "time": "07:00",
-        "specificTime": true
+        "count": null,
+        "time": {
+          "hour": 7,
+          "minute": 0,
+          "meridiem": "AM",
+          "military": false
+        },
+        "weekly": {
+          "days": ["Mon", "Wed", "Fri"]
+        }
       }
     },
     {
@@ -355,11 +457,20 @@ For tasks with `recurring: true`:
       "schemaVersion": 2,
       "recurring": true,
       "recurringSettings": {
-        "frequency": "weekly",
+        "frequency": "biweekly",
         "indefinitely": true,
-        "daysOfWeek": [2, 4, 6],
-        "time": "07:00",
-        "specificTime": true
+        "count": null,
+        "time": {
+          "hour": 7,
+          "minute": 0,
+          "meridiem": "AM",
+          "military": false
+        },
+        "biweekly": {
+          "week1": ["Mon", "Wed", "Fri"],
+          "week2": ["Tue", "Thu"],
+          "referenceDate": "2025-01-06T00:00:00.000Z"
+        }
       }
     },
     {

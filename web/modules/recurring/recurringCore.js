@@ -142,7 +142,8 @@ export function normalizeRecurringSettings(settings = {}) {
         },
 
         biweekly: {
-            days: Array.isArray(settings.biweekly?.days) ? settings.biweekly.days : [],
+            week1: Array.isArray(settings.biweekly?.week1) ? settings.biweekly.week1 : [],
+            week2: Array.isArray(settings.biweekly?.week2) ? settings.biweekly.week2 : [],
             // Reference date to calculate which week we're in (defaults to creation date)
             referenceDate: settings.biweekly?.referenceDate || new Date().toISOString()
         },
@@ -209,6 +210,31 @@ function applyTimeToDate(date, timeSettings) {
     }
 
     return date;
+}
+
+/**
+ * Calculate days between two dates in a DST-safe manner
+ * Uses calendar date arithmetic instead of raw milliseconds to avoid DST issues
+ * @param {Date} startDate - Earlier date
+ * @param {Date} endDate - Later date
+ * @returns {number} Number of calendar days between dates
+ */
+function getDaysBetween(startDate, endDate) {
+    // Normalize both dates to midnight UTC to eliminate DST effects
+    const start = new Date(Date.UTC(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+    ));
+    const end = new Date(Date.UTC(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate()
+    ));
+
+    // Now we can safely use millisecond arithmetic in UTC
+    const millisecondsDiff = end - start;
+    return Math.floor(millisecondsDiff / (1000 * 60 * 60 * 24));
 }
 
 /**
@@ -313,28 +339,29 @@ function calculateNextWeekly(weeklySettings, timeSettings, from) {
 
 /**
  * Calculate next biweekly occurrence
- * @param {Object} biweeklySettings - Biweekly settings { days: ["Mon", "Wed"], referenceDate }
+ * @param {Object} biweeklySettings - Biweekly settings { week1: ["Mon", "Wed"], week2: ["Tue", "Thu"], referenceDate }
  * @param {Object} timeSettings - Time settings
  * @param {Date} from - Calculate from this time
  * @returns {number} Unix timestamp of next occurrence
  */
 function calculateNextBiweekly(biweeklySettings, timeSettings, from) {
-    const targetDays = biweeklySettings?.days || [];
+    const week1Days = biweeklySettings?.week1 || [];
+    const week2Days = biweeklySettings?.week2 || [];
     const referenceDate = biweeklySettings?.referenceDate
         ? new Date(biweeklySettings.referenceDate)
         : from;
 
-    // If no days specified, recur every day in even weeks
-    if (targetDays.length === 0) {
-        // Calculate if we're in an even week
-        const daysSinceReference = Math.floor((from - referenceDate) / (1000 * 60 * 60 * 24));
+    // If no days specified in either week, recur every day in even weeks
+    if (week1Days.length === 0 && week2Days.length === 0) {
+        // Calculate if we're in an even week (DST-safe)
+        const daysSinceReference = getDaysBetween(referenceDate, from);
         const weeksSinceReference = Math.floor(daysSinceReference / 7);
 
         if (weeksSinceReference % 2 === 0) {
-            // We're in an even week - next occurrence is tomorrow
+            // We're in an even week (Week 1) - next occurrence is tomorrow
             return calculateNextDaily(timeSettings, from);
         } else {
-            // We're in an odd week - next occurrence is start of next even week
+            // We're in an odd week (Week 2) - next occurrence is start of next even week
             const next = cloneDate(from);
             const daysUntilNextEvenWeek = 7 - (daysSinceReference % 7);
             next.setDate(from.getDate() + daysUntilNextEvenWeek);
@@ -348,19 +375,21 @@ function calculateNextBiweekly(biweeklySettings, timeSettings, from) {
         const testDate = cloneDate(from);
         testDate.setDate(from.getDate() + i);
 
-        // Check if we're in an even week relative to reference
-        const daysSinceReference = Math.floor((testDate - referenceDate) / (1000 * 60 * 60 * 24));
+        // Check if we're in Week 1 (even weeks) or Week 2 (odd weeks) relative to reference (DST-safe)
+        const daysSinceReference = getDaysBetween(referenceDate, testDate);
         const weeksSinceReference = Math.floor(daysSinceReference / 7);
+        const isWeek1 = weeksSinceReference % 2 === 0;
 
-        if (weeksSinceReference % 2 === 0) {
-            const weekday = testDate.toLocaleDateString("en-US", { weekday: "short" });
+        const weekday = testDate.toLocaleDateString("en-US", { weekday: "short" });
 
-            if (targetDays.includes(weekday)) {
-                applyTimeToDate(testDate, timeSettings);
+        // Check appropriate week's days
+        const targetDays = isWeek1 ? week1Days : week2Days;
 
-                if (testDate > from) {
-                    return testDate.getTime();
-                }
+        if (targetDays.includes(weekday)) {
+            applyTimeToDate(testDate, timeSettings);
+
+            if (testDate > from) {
+                return testDate.getTime();
             }
         }
     }
@@ -792,21 +821,29 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
             return true; // if no time set, recur any time today
 
         case "biweekly":
-            // ✅ FIX: If no specific days selected, recur every day of the week
-            if (settings.biweekly?.days?.length > 0 && !settings.biweekly.days.includes(weekday)) {
+            // ✅ Calculate which week we're in relative to reference date (DST-safe)
+            // The reference date is set when the recurring task is created.
+            // Week 0, 2, 4, 6... = Week 1 (even weeks)
+            // Week 1, 3, 5, 7... = Week 2 (odd weeks)
+            const referenceDate = new Date(settings.biweekly.referenceDate);
+            const daysSinceReference = getDaysBetween(referenceDate, now);
+            const weeksSinceReference = Math.floor(daysSinceReference / 7);
+            const isWeek1 = weeksSinceReference % 2 === 0;
+
+            // Get the appropriate week's days
+            const week1Days = settings.biweekly?.week1 || [];
+            const week2Days = settings.biweekly?.week2 || [];
+            const currentWeekDays = isWeek1 ? week1Days : week2Days;
+
+            // If specific days are set for this week, check if today matches
+            if (currentWeekDays.length > 0 && !currentWeekDays.includes(weekday)) {
                 return false;
             }
 
-            // ✅ Calculate which week we're in relative to reference date
-            // The reference date is set when the recurring task is created.
-            // Week 0 = reference week, Week 1 = next week, Week 2 = week after that, etc.
-            // Biweekly tasks trigger on even weeks (0, 2, 4, 6...) = every other week
-            const referenceDate = new Date(settings.biweekly.referenceDate);
-            const daysSinceReference = Math.floor((now - referenceDate) / (1000 * 60 * 60 * 24));
-            const weeksSinceReference = Math.floor(daysSinceReference / 7);
-
-            // Only trigger on even weeks (0, 2, 4, 6...)
-            if (weeksSinceReference % 2 !== 0) return false;
+            // If no days set for this week, don't trigger
+            if (currentWeekDays.length === 0) {
+                return false;
+            }
 
             if (settings.time) {
                 const hour = settings.time.military

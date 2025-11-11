@@ -506,46 +506,48 @@ export function runRecurringCoreTests(resultsDiv) {
     // === BIWEEKLY TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📅 Biweekly Recurrence</h4>';
 
-    test('biweekly: triggers on correct week', () => {
+    test('biweekly: triggers on correct week (Week 1)', () => {
         const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6, 2025 (week 0)
         const settings = normalizeRecurringSettings({
             frequency: 'biweekly',
             biweekly: {
-                days: ['Mon'],
+                week1: ['Mon'],
+                week2: [],
                 referenceDate: referenceDate.toISOString()
             }
         });
 
-        // Week 0 (same week as reference)
+        // Week 0 (same week as reference = Week 1)
         const testDate1 = new Date(2025, 0, 6); // Monday, Jan 6
         if (!shouldTaskRecurNow(settings, testDate1)) {
-            throw new Error('Should trigger on week 0');
+            throw new Error('Should trigger on week 0 (Week 1)');
         }
 
-        // Week 2 (two weeks later)
+        // Week 2 (two weeks later = Week 1 again)
         const testDate2 = new Date(2025, 0, 20); // Monday, Jan 20
         if (!shouldTaskRecurNow(settings, testDate2)) {
-            throw new Error('Should trigger on week 2');
+            throw new Error('Should trigger on week 2 (Week 1)');
         }
     });
 
-    test('biweekly: does not trigger on odd weeks', () => {
+    test('biweekly: does not trigger on Week 2 when only Week 1 has days', () => {
         const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6, 2025 (week 0)
         const settings = normalizeRecurringSettings({
             frequency: 'biweekly',
             biweekly: {
-                days: ['Mon'],
+                week1: ['Mon'],
+                week2: [],
                 referenceDate: referenceDate.toISOString()
             }
         });
 
-        // Week 1 (odd week - should not trigger)
+        // Week 1 (odd week = Week 2 - should not trigger since Week 2 is empty)
         const testDate = new Date(2025, 0, 13); // Monday, Jan 13
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (result) {
-            throw new Error('Should not trigger on odd week');
+            throw new Error('Should not trigger on Week 2 when Week 2 is empty');
         }
     });
 
@@ -554,18 +556,123 @@ export function runRecurringCoreTests(resultsDiv) {
         const settings = normalizeRecurringSettings({
             frequency: 'biweekly',
             biweekly: {
-                days: ['Mon'],
+                week1: ['Mon'],
+                week2: [],
                 referenceDate: referenceDate.toISOString()
             }
         });
 
-        // Tuesday on week 0
+        // Tuesday on week 0 (Week 1)
         const testDate = new Date(2025, 0, 7); // Tuesday, Jan 7
 
         const result = shouldTaskRecurNow(settings, testDate);
 
         if (result) {
-            throw new Error('Should not trigger on Tuesday');
+            throw new Error('Should not trigger on Tuesday when only Monday is selected');
+        }
+    });
+
+    test('biweekly: two-week pattern - different days each week', () => {
+        const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
+        const settings = normalizeRecurringSettings({
+            frequency: 'biweekly',
+            biweekly: {
+                week1: ['Mon', 'Wed'],
+                week2: ['Tue', 'Thu'],
+                referenceDate: referenceDate.toISOString()
+            }
+        });
+
+        // Week 1 (week 0): Monday should trigger
+        const week1Mon = new Date(2025, 0, 6); // Mon, Jan 6
+        if (!shouldTaskRecurNow(settings, week1Mon)) {
+            throw new Error('Should trigger on Week 1 Monday');
+        }
+
+        // Week 1 (week 0): Wednesday should trigger
+        const week1Wed = new Date(2025, 0, 8); // Wed, Jan 8
+        if (!shouldTaskRecurNow(settings, week1Wed)) {
+            throw new Error('Should trigger on Week 1 Wednesday');
+        }
+
+        // Week 1 (week 0): Tuesday should NOT trigger
+        const week1Tue = new Date(2025, 0, 7); // Tue, Jan 7
+        if (shouldTaskRecurNow(settings, week1Tue)) {
+            throw new Error('Should NOT trigger on Week 1 Tuesday');
+        }
+
+        // Week 2 (week 1): Tuesday should trigger
+        const week2Tue = new Date(2025, 0, 14); // Tue, Jan 14
+        if (!shouldTaskRecurNow(settings, week2Tue)) {
+            throw new Error('Should trigger on Week 2 Tuesday');
+        }
+
+        // Week 2 (week 1): Thursday should trigger
+        const week2Thu = new Date(2025, 0, 16); // Thu, Jan 16
+        if (!shouldTaskRecurNow(settings, week2Thu)) {
+            throw new Error('Should trigger on Week 2 Thursday');
+        }
+
+        // Week 2 (week 1): Monday should NOT trigger
+        const week2Mon = new Date(2025, 0, 13); // Mon, Jan 13
+        if (shouldTaskRecurNow(settings, week2Mon)) {
+            throw new Error('Should NOT trigger on Week 2 Monday');
+        }
+    });
+
+    test('biweekly: DST transition does not affect week calculation', () => {
+        // DST 2025: Spring forward on March 9 (2 AM -> 3 AM)
+        const referenceDate = new Date(2025, 2, 3); // Monday, March 3 (week 0, before DST)
+        const settings = normalizeRecurringSettings({
+            frequency: 'biweekly',
+            biweekly: {
+                week1: ['Mon'],
+                week2: [],
+                referenceDate: referenceDate.toISOString()
+            }
+        });
+
+        // Week 0 (before DST): Monday should trigger
+        const beforeDST = new Date(2025, 2, 3); // Mon, March 3
+        if (!shouldTaskRecurNow(settings, beforeDST)) {
+            throw new Error('Should trigger before DST');
+        }
+
+        // Week 2 (after DST): Monday should still trigger (despite DST)
+        const afterDST = new Date(2025, 2, 17); // Mon, March 17 (after DST)
+        if (!shouldTaskRecurNow(settings, afterDST)) {
+            throw new Error('Should trigger after DST on same week pattern');
+        }
+
+        // Week 4 (well after DST): Monday should still trigger
+        const wellAfterDST = new Date(2025, 2, 31); // Mon, March 31
+        if (!shouldTaskRecurNow(settings, wellAfterDST)) {
+            throw new Error('Should trigger well after DST on same week pattern');
+        }
+    });
+
+    test('biweekly: calculates next occurrence with two-week pattern', () => {
+        const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
+        const settings = normalizeRecurringSettings({
+            frequency: 'biweekly',
+            biweekly: {
+                week1: ['Wed'],
+                week2: ['Tue'],
+                referenceDate: referenceDate.toISOString()
+            }
+        });
+
+        // From Week 1 Wednesday - next should be Week 2 Tuesday
+        const from = new Date(2025, 0, 8); // Wed, Jan 8 (week 0 = Week 1)
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        const weekday = nextDate.toLocaleDateString('en-US', { weekday: 'short' });
+        if (weekday !== 'Tue') {
+            throw new Error(`Expected Tue, got ${weekday}`);
+        }
+        if (nextDate.getDate() !== 14) {
+            throw new Error(`Expected 14, got ${nextDate.getDate()}`);
         }
     });
 
@@ -687,12 +794,13 @@ export function runRecurringCoreTests(resultsDiv) {
         }
     });
 
-    test('✅ FIX: empty biweekly days array allows all days', () => {
+    test('empty biweekly week1 and week2 arrays do not trigger', () => {
         const referenceDate = new Date(2025, 0, 6); // Monday, Jan 6 (week 0)
         const settings = normalizeRecurringSettings({
             frequency: 'biweekly',
             biweekly: {
-                days: [],
+                week1: [],
+                week2: [],
                 referenceDate: referenceDate.toISOString()
             }
         });
@@ -700,8 +808,8 @@ export function runRecurringCoreTests(resultsDiv) {
 
         const result = shouldTaskRecurNow(settings, testDate);
 
-        if (!result) {
-            throw new Error('✅ FIX: Should trigger on any day when no specific days selected');
+        if (result) {
+            throw new Error('Should not trigger when both week1 and week2 are empty');
         }
     });
 
@@ -949,16 +1057,17 @@ export function runRecurringCoreTests(resultsDiv) {
         const settings = normalizeRecurringSettings({
             frequency: 'biweekly',
             biweekly: {
-                days: ['Mon', 'Wed'],
+                week1: ['Mon', 'Wed'],
+                week2: [],
                 referenceDate: referenceDate.toISOString()
             }
         });
-        const from = new Date(2025, 0, 8); // Wed, Jan 8 (week 0)
+        const from = new Date(2025, 0, 8); // Wed, Jan 8 (week 0 = Week 1)
 
         const next = calculateNextOccurrence(settings, from);
         const nextDate = new Date(next);
 
-        // Should be Mon, Jan 20 (week 2)
+        // Should be Mon, Jan 20 (week 2 = Week 1 again)
         const weekday = nextDate.toLocaleDateString('en-US', { weekday: 'short' });
         if (weekday !== 'Mon') {
             throw new Error(`Expected Mon, got ${weekday}`);

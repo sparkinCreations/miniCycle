@@ -1,8 +1,8 @@
 # miniCycle Recurring Tasks: Complete User Guide
 
-**Version 1.3 | For miniCycle v1.338+ Users & Developers**
+**Version 1.4 | For miniCycle v1.348+ Users & Developers**
 
-_Updated November 2025 to include: Clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
+_Updated November 2025 to include: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
 
 ---
 
@@ -786,14 +786,100 @@ function handleRecurringTaskDeactivation(task, taskId) {
 }
 ```
 
+#### Frequency Options Reference
+
+miniCycle supports six frequency types, each with customizable options:
+
+**1. Hourly** - Every hour, with optional specific minute
+```javascript
+recurringSettings: {
+  frequency: "hourly",
+  hourly: {
+    useSpecificMinute: true,
+    minute: 30  // Trigger at :30 of every hour
+  }
+}
+```
+
+**2. Daily** - Every day, with optional specific time
+```javascript
+recurringSettings: {
+  frequency: "daily",
+  time: { hour: 9, minute: 0, meridiem: "AM", military: false }
+}
+```
+
+**3. Weekly** - Specific days of the week
+```javascript
+recurringSettings: {
+  frequency: "weekly",
+  weekly: {
+    days: ["Mon", "Wed", "Fri"]  // Array of day abbreviations
+  },
+  time: { hour: 9, minute: 0, meridiem: "AM", military: false }
+}
+```
+
+**4. Biweekly** - **Two-week pattern with different days per week** (v1.348+)
+```javascript
+recurringSettings: {
+  frequency: "biweekly",
+  biweekly: {
+    week1: ["Mon", "Wed"],        // Days for Week 1 (even weeks)
+    week2: ["Tue", "Thu"],        // Days for Week 2 (odd weeks)
+    referenceDate: "2025-01-06"   // Week 0 starting point
+  },
+  time: { hour: 9, minute: 0, meridiem: "AM", military: false }
+}
+```
+**New in v1.348:** Biweekly now supports **separate day selections for each week** in the two-week cycle:
+- **Week 1 (even weeks 0, 2, 4, ...):** Select which days the task appears
+- **Week 2 (odd weeks 1, 3, 5, ...):** Select different days for alternating weeks
+- **DST-Safe Calculation:** Week determination uses calendar date arithmetic (not raw milliseconds) to maintain accuracy across Daylight Saving Time transitions
+- **Example Use Cases:**
+  - Alternating workout schedule: Week 1 Mon/Wed/Fri, Week 2 Tue/Thu
+  - Biweekly meetings: Week 1 Tuesday, Week 2 Thursday
+  - Rotating chores: Different days each week in a 2-week cycle
+
+**5. Monthly** - Specific day(s) of the month
+```javascript
+recurringSettings: {
+  frequency: "monthly",
+  monthly: {
+    days: [1, 15]  // 1st and 15th of each month
+  },
+  time: { hour: 9, minute: 0, meridiem: "AM", military: false }
+}
+```
+
+**6. Yearly** - Specific months and days
+```javascript
+recurringSettings: {
+  frequency: "yearly",
+  yearly: {
+    months: [1, 6, 12],           // January, June, December
+    useSpecificDays: true,
+    daysByMonth: {
+      1: [1, 15],                 // Jan 1st and 15th
+      6: [1],                     // Jun 1st
+      12: [25]                    // Dec 25th
+    },
+    applyDaysToAll: false         // Different days per month
+  },
+  time: { hour: 9, minute: 0, meridiem: "AM", military: false }
+}
+```
+
 #### Calculate Next Occurrence
 **Location:** `/utilities/recurringCore.js` (lines 146-711)
 **Functions:**
 - `calculateNextOccurrence(settings, fromTime)` - Main dispatcher (line 146)
 - `calculateNextDailyOccurrence(settings, fromTime)` - Daily logic (line 222)
 - `calculateNextWeeklyOccurrence(settings, fromTime)` - Weekly logic (line 291)
+- `calculateNextBiweeklyOccurrence(settings, fromTime)` - Biweekly logic with DST-safe calculation (line 322)
 - `calculateNextMonthlyOccurrence(settings, fromTime)` - Monthly logic (line 404)
 - `formatNextOccurrence(nextOccurrence)` - Display formatting (line 667)
+- `getDaysBetween(startDate, endDate)` - DST-safe day calculation helper (line 215)
 ```javascript
 function calculateNextOccurrence(settings, fromTime = Date.now()) {
   const { frequency, time } = settings;
@@ -903,7 +989,43 @@ function shouldTaskRecurNow(settings, now) {
     return settings.weekly.days.includes(today);
   }
 
+  // Biweekly - two-week pattern (v1.348+ with DST-safe calculation)
+  if (frequency === "biweekly") {
+    const referenceDate = new Date(settings.biweekly.referenceDate);
+
+    // DST-safe day calculation using calendar dates
+    const daysSinceReference = getDaysBetween(referenceDate, now);
+    const weeksSinceReference = Math.floor(daysSinceReference / 7);
+    const isWeek1 = weeksSinceReference % 2 === 0;
+
+    // Check appropriate week's days
+    const currentWeekDays = isWeek1 ? settings.biweekly.week1 : settings.biweekly.week2;
+    if (currentWeekDays.length === 0) return false;
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = dayNames[now.getDay()];
+    return currentWeekDays.includes(today);
+  }
+
   // ... other frequencies
+}
+
+// DST-safe helper function
+function getDaysBetween(startDate, endDate) {
+  // Normalize to midnight UTC to eliminate DST effects
+  const start = new Date(Date.UTC(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  ));
+  const end = new Date(Date.UTC(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate()
+  ));
+
+  const millisecondsDiff = end - start;
+  return Math.floor(millisecondsDiff / (1000 * 60 * 60 * 24));
 }
 ```
 

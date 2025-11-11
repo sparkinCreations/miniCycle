@@ -1812,12 +1812,21 @@ export class RecurringPanelManager {
                     };
                 }
 
-                // ✅ Weekly & Biweekly
-                if (frequency === "weekly" || frequency === "biweekly") {
+                // ✅ Weekly
+                if (frequency === "weekly") {
                     const selector = `.${frequency}-day-box.selected`;
                     settings[frequency] = {
                         useSpecificDays: this.deps.getElementById(`${frequency}-specific-days`)?.checked,
                         days: Array.from(this.deps.querySelectorAll(selector)).map(el => el.dataset.day)
+                    };
+                }
+
+                // ✅ Biweekly (separate weeks)
+                if (frequency === "biweekly") {
+                    settings.biweekly = {
+                        useSpecificDays: this.deps.getElementById("biweekly-specific-days")?.checked,
+                        week1: Array.from(this.deps.querySelectorAll(".biweekly-day-box.selected[data-week='1']")).map(el => el.dataset.day),
+                        week2: Array.from(this.deps.querySelectorAll(".biweekly-day-box.selected[data-week='2']")).map(el => el.dataset.day)
                     };
                 }
 
@@ -2212,9 +2221,22 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
         summaryText += ` every hour at :${settings.hourly.minute.toString().padStart(2, "0")}`;
     }
 
-    // === WEEKLY & BIWEEKLY ===
-    if ((freq === "weekly" || freq === "biweekly") && settings[freq]?.days?.length) {
-        summaryText += ` on ${settings[freq].days.join(", ")}`;
+    // === WEEKLY ===
+    if (freq === "weekly" && settings.weekly?.days?.length) {
+        summaryText += ` on ${settings.weekly.days.join(", ")}`;
+    }
+
+    // === BIWEEKLY (two-week pattern) ===
+    if (freq === "biweekly") {
+        const week1Days = settings.biweekly?.week1 || [];
+        const week2Days = settings.biweekly?.week2 || [];
+
+        if (week1Days.length || week2Days.length) {
+            const parts = [];
+            if (week1Days.length) parts.push(`Week 1: ${week1Days.join(", ")}`);
+            if (week2Days.length) parts.push(`Week 2: ${week2Days.join(", ")}`);
+            summaryText += ` on ${parts.join(" | ")}`;
+        }
     }
 
     // === MONTHLY ===
