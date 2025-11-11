@@ -841,6 +841,11 @@ export class TaskCore {
 
                                 this.deps.autoSave();
 
+                                // ✅ Update progress bar after bulk deletion in confirmation modal
+                                this.deps.updateProgressBar();
+                                this.deps.updateStatsPanel();
+                                this.deps.checkCompleteAllButton();
+
                             } else {
                                 taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
                                 if (typeof window.checkMiniCycle === 'function') {
@@ -889,6 +894,11 @@ export class TaskCore {
                     fullSchemaData.metadata.lastModified = Date.now();
                     localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
                 }
+
+                // ✅ Update progress bar after bulk deletion
+                this.deps.updateProgressBar();
+                this.deps.updateStatsPanel();
+                this.deps.checkCompleteAllButton();
 
             } else {
                 console.log('✔️ Marking all tasks as complete');

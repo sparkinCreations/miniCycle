@@ -92,6 +92,12 @@ export async function initializeRecurringModules() {
                 }
                 console.warn('⚠️ refreshUIFromState not available');
             },
+            updateProgressBar: () => {
+                if (typeof window.updateProgressBar === 'function') {
+                    return window.updateProgressBar();
+                }
+                console.warn('⚠️ updateProgressBar not available');
+            },
 
             // Time/scheduling (required)
             now: () => Date.now(),

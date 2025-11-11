@@ -46,6 +46,7 @@ const Deps = {
     updateRecurringSummary: null,      // () => updateRecurringSummary()
     updatePanelButtonVisibility: null, // () => updateRecurringPanelButtonVisibility()
     refreshUIFromState: null,          // () => refreshUIFromState() - refresh DOM after data changes
+    updateProgressBar: null,           // () => updateProgressBar() - update progress bar
 
     // Time/scheduling
     now: null,                // () => Date.now()
@@ -1625,6 +1626,8 @@ export function deleteRecurringTemplate(taskId) {
  * @param {Object} cycleData - Current cycle data
  */
 export function removeRecurringTasksFromCycle(taskElements, cycleData) {
+    let removedCount = 0;
+
     taskElements.forEach(taskEl => {
         const taskId = taskEl.dataset.taskId;
         const isRecurring = taskEl.classList.contains("recurring");
@@ -1632,6 +1635,7 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
         if (isRecurring) {
             // Remove from DOM
             taskEl.remove();
+            removedCount++;
 
             // ✅ IMPORTANT: Only remove from tasks array, keep in recurringTemplates
             if (cycleData.tasks) {
@@ -1663,6 +1667,12 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
             // DON'T delete from recurringTemplates here
         }
     });
+
+    // ✅ Update progress bar after removing recurring tasks
+    if (removedCount > 0 && Deps.updateProgressBar) {
+        Deps.updateProgressBar();
+        console.log(`✅ Progress bar updated after removing ${removedCount} recurring task(s)`);
+    }
 }
 
 /**
