@@ -1,0 +1,27 @@
+{
+  "name": "cycle_1762824586721",
+  "title": "Morning Routine (Sample)",
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "Make the bed",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "Brush teeth",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "Prepare breakfast",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ]
+}

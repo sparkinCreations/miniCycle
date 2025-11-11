@@ -1,0 +1,119 @@
+{
+“name”: “imported_1731256000000”,
+“title”: “📚 Study Session Routine”,
+“tasks”: [
+{
+“id”: “task-1731256000000-101”,
+“text”: “📱 Silence phone & close distractions”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: true,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-102”,
+“text”: “🎯 Set specific learning goal”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: true,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-103”,
+“text”: “⏱️ Study block 1 (25 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-104”,
+“text”: “☕ Break 1 (5 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-105”,
+“text”: “⏱️ Study block 2 (25 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-106”,
+“text”: “☕ Break 2 (5 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-107”,
+“text”: “⏱️ Study block 3 (25 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-108”,
+“text”: “☕ Break 3 (5 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-109”,
+“text”: “⏱️ Study block 4 (25 minutes)”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “task-1731256000000-110”,
+“text”: “📝 Write 3 key takeaways”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: true,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+}
+],
+“autoReset”: true,
+“cycleCount”: 0,
+“deleteCheckedTasks”: false
+}

@@ -1,0 +1,210 @@
+{
+“name”: “cycle_1731283200000”,
+“title”: “👨‍💻 Developer Productivity Cycle”,
+“tasks”: [
+{
+“id”: “t1”,
+“text”: “☕ Morning standup & coffee”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “daily”,
+“indefinitely”: true,
+“time”: “09:00”,
+“specificTime”: true,
+“daysOfWeek”: [1, 2, 3, 4, 5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+},
+{
+“id”: “t2”,
+“text”: “🎯 Review sprint goals & priorities”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: true,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “t3”,
+“text”: “💻 Code review - check open PRs”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: true,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “daily”,
+“indefinitely”: true,
+“time”: “10:00”,
+“specificTime”: true,
+“daysOfWeek”: [1, 2, 3, 4, 5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+},
+{
+“id”: “t4”,
+“text”: “🚀 Work on main feature development”,
+“completed”: false,
+“dueDate”: “2025-11-15T17:00:00Z”,
+“highPriority”: true,
+“remindersEnabled”: true,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “t5”,
+“text”: “🧪 Write unit tests for new code”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: true,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “t6”,
+“text”: “🔍 Run linter & fix code style issues”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “t7”,
+“text”: “📧 Respond to team messages & emails”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “daily”,
+“indefinitely”: true,
+“time”: “14:00”,
+“specificTime”: true,
+“daysOfWeek”: [1, 2, 3, 4, 5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+},
+{
+“id”: “t8”,
+“text”: “📝 Update documentation”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “t9”,
+“text”: “🔄 Push commits & sync with main branch”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: false,
+“recurringSettings”: {},
+“schemaVersion”: 2
+},
+{
+“id”: “t10”,
+“text”: “🐛 Triage new bug reports”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “daily”,
+“indefinitely”: true,
+“time”: “16:00”,
+“specificTime”: true,
+“daysOfWeek”: [1, 2, 3, 4, 5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+},
+{
+“id”: “t11”,
+“text”: “📊 Update task board & sprint progress”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “weekly”,
+“indefinitely”: true,
+“time”: “16:30”,
+“specificTime”: true,
+“daysOfWeek”: [5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+},
+{
+“id”: “t12”,
+“text”: “🎓 Learning: Read 1 tech article or tutorial”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “daily”,
+“indefinitely”: true,
+“time”: “17:00”,
+“specificTime”: false,
+“daysOfWeek”: [1, 2, 3, 4, 5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+},
+{
+“id”: “t13”,
+“text”: “✅ End-of-day: Review completed tasks”,
+“completed”: false,
+“dueDate”: null,
+“highPriority”: false,
+“remindersEnabled”: false,
+“recurring”: true,
+“recurringSettings”: {
+“frequency”: “daily”,
+“indefinitely”: true,
+“time”: “17:30”,
+“specificTime”: true,
+“daysOfWeek”: [1, 2, 3, 4, 5],
+“dayOfMonth”: null,
+“endDate”: null
+},
+“schemaVersion”: 2
+}
+],
+“autoReset”: false,
+“cycleCount”: 0,
+“deleteCheckedTasks”: false,
+“createdDate”: “2024-11-10T12:00:00Z”,
+“lastCompleted”: null
+}

@@ -1,0 +1,41 @@
+{
+  "title": "Morning Routine",
+  "autoReset": true,
+  "deleteCheckedTasks": false,
+  "cycleCount": 0,
+  "tasks": [
+    {
+      "id": "task-1",
+      "text": "Make the bed",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-2",
+      "text": "Brush teeth",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    },
+    {
+      "id": "task-3",
+      "text": "Prepare breakfast",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
+    }
+  ]
+}

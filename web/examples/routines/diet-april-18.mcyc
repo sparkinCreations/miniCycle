@@ -1,0 +1,81 @@
+{
+  "name": "cycle_1762824777500",
+  "title": "Diet \u2014 April 18 (Unknown Author)",
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "tasks": [
+    {
+      "id": "t1",
+      "text": "Weigh in & record weight",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t2",
+      "text": "Set daily calories/macros target",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t3",
+      "text": "Breakfast (log meal)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t4",
+      "text": "Morning snack (log)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t5",
+      "text": "Lunch (log meal)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t6",
+      "text": "Afternoon snack (log)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t7",
+      "text": "Dinner (log meal)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t8",
+      "text": "Hydration: 8 cups water",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t9",
+      "text": "Take vitamins/supplements",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t10",
+      "text": "30-minute walk or light workout",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t11",
+      "text": "No food after 9:00 PM",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t12",
+      "text": "Plan tomorrow\u2019s meals",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ]
+}

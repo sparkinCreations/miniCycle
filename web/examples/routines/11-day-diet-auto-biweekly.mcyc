@@ -1,0 +1,713 @@
+{
+  "name": "cycle_1762825256276",
+  "title": "11\u2011Day Diet \u2013 Auto Cycle, Biweekly Recurrence",
+  "autoReset": true,
+  "cycleCount": 0,
+  "deleteCheckedTasks": false,
+  "tasks": [
+    {
+      "id": "t-e1329424ba",
+      "text": "Day 1 \u2013 Meal 1: Choose from: Bacon Strips / Low\u2011Fat Milk / Bowl of Oatmeal",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-f060b7762e",
+      "text": "Day 1 \u2013 Meal 2: Choose from: Turkey Slices / Cashews / Bowl of Green Vegetables",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-b3362f10c7",
+      "text": "Day 1 \u2013 Meal 3: Choose from: Peanuts / Sausage Links",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-9e505e8db8",
+      "text": "Day 1 \u2013 Meal 4: Choose from: Regular Cheese Slices / Tuna Salad Plate / Frozen Yogurt Dessert",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-a3023df871",
+      "text": "Day 2 \u2013 Meal 1: Deli\u2011meat sandwich (2 slices bread + any deli meat; lettuce/tomato/onion optional)",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-60b00da44d",
+      "text": "Day 2 \u2013 Meal 2: Fresh fruit only (choose any from: oranges, pears, apples, grapes, peaches, plums, strawberries, kiwis, grapefruit)",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-1eb4d4e1cf",
+      "text": "Day 2 \u2013 Meal 3: Fresh fruit only (same list as Meal 2)",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-92fe8f5983",
+      "text": "Day 2 \u2013 Meal 4: Fresh fruit only (same list as Meal 2)",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-f3ded45fed",
+      "text": "Day 3 \u2013 Meal 1: Choose from: Chicken / Scrambled Eggs",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-6c4efd3642",
+      "text": "Day 3 \u2013 Meal 2: Choose from: Ham Slices / Bacon Strips / Bowl of Baked Beans",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-d598049cb2",
+      "text": "Day 3 \u2013 Meal 3: Choose from: Low\u2011Fat Milk / Turkey Slices",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-e125198038",
+      "text": "Day 3 \u2013 Meal 4: Choose from: Cashews / Peanuts / Bowl of Mixed Vegetables",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-8691889583",
+      "text": "Day 4 \u2013 Meal 1: Choose from: Sausage Links / Regular Cheese Slices",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Thu"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-90fe2225d9",
+      "text": "Day 4 \u2013 Meal 2: Choose from: Fresh Apples / Banana Milk Shake",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Thu"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-dac3a09d16",
+      "text": "Day 4 \u2013 Meal 3: Choose from: Tuna Salad Plate / Chicken",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Thu"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-5dad6641a9",
+      "text": "Day 4 \u2013 Meal 4: Choose from: Scrambled Eggs / Ham Slices",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Thu"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-7869983fbf",
+      "text": "Day 5 \u2013 Meal 1: Choose from: Bacon Strips / Low\u2011Fat Milk",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-11dacb78d7",
+      "text": "Day 5 \u2013 Meal 2: Choose from: Turkey Slices / Cashews",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-6e758181f1",
+      "text": "Day 5 \u2013 Meal 3: Choose from: Bowl of Oatmeal / Bowl of Green Vegetables",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-05f63f6b82",
+      "text": "Day 5 \u2013 Meal 4: Choose from: Peanuts / Sausage Links",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-546741069a",
+      "text": "Day 6 \u2013 Meal 1: Choose from: Regular Cheese Slices / Tuna Salad Plate",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sat"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-263d3f4978",
+      "text": "Day 6 \u2013 Meal 2: Choose from: Frozen Yogurt Dessert / Bowl of Baked Beans",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sat"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-cbeed9f2b4",
+      "text": "Day 6 \u2013 Meal 3: Choose from: Chicken / Scrambled Eggs",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sat"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-fc1ff2e70e",
+      "text": "Day 6 \u2013 Meal 4: Choose from: Ham Slices / Bacon Strips",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sat"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-40dd99629c",
+      "text": "Day 7 \u2013 Meal 1: Choose from: Low\u2011Fat Milk / Turkey Slices",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sun"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-1bab480376",
+      "text": "Day 7 \u2013 Meal 2: Choose from: Cashews / Peanuts",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sun"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-61af687472",
+      "text": "Day 7 \u2013 Meal 3: Choose from: Sausage Links / Regular Cheese Slices / Bowl of Mixed Vegetables",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sun"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-3c7e62c1c9",
+      "text": "Day 7 \u2013 Meal 4: Choose from: Tuna Salad Plate / Chicken",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Sun"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-7680766dee",
+      "text": "Day 8 \u2013 Meal 1: Vegetables or salad only (see list); top with 1 oz grated cheese OR 3 tbsp low\u2011cal dressing",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-e2c7561948",
+      "text": "Day 8 \u2013 Meal 2: Vegetables or salad only (same rules as Meal 1).",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-ef925a81ac",
+      "text": "Day 8 \u2013 Meal 3: Vegetables or salad only (same rules as Meal 1).",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-85bfac7e02",
+      "text": "Day 8 \u2013 Meal 4: Vegetables or salad only (same rules as Meal 1).",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Mon"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-73791ae22d",
+      "text": "Day 9 \u2013 Meal 1: Choose from: Scrambled Eggs / Ham Slices",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-6816e8b585",
+      "text": "Day 9 \u2013 Meal 2: Choose from: Bacon Strips / Low\u2011Fat Milk",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-11f1ee60a4",
+      "text": "Day 9 \u2013 Meal 3: Choose from: Fresh Apples / Banana Milk Shake",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-530c7e2e79",
+      "text": "Day 9 \u2013 Meal 4: Choose from: Turkey Slices / Cashews",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Tue"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-416355e5fa",
+      "text": "Day 10 \u2013 Meal 1: Choose from: Peanuts / Sausage Links",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-003315dcf8",
+      "text": "Day 10 \u2013 Meal 2: Choose from: Bowl of Oatmeal / Bowl of Green Vegetables",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-66b58f4c65",
+      "text": "Day 10 \u2013 Meal 3: Choose from: Frozen Yogurt Dessert / Bowl of Baked Beans",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-2317b3eb22",
+      "text": "Day 10 \u2013 Meal 4: Choose from: Regular Cheese Slices / Tuna Salad Plate",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Wed"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-0e9adfaaad",
+      "text": "Day 11 \u2013 Meal 1: Choose from: Bowl of Mixed Vegetables / Fresh Apples",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-20aa78d7a9",
+      "text": "Day 11 \u2013 Meal 2: Choose from: Chicken / Scrambled Eggs",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-c72d36a622",
+      "text": "Day 11 \u2013 Meal 3: Choose from: Banana Milk Shake / Bowl of Oatmeal",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    },
+    {
+      "id": "t-ed3d452eed",
+      "text": "Day 11 \u2013 Meal 4: Choose from: Bowl of Green Vegetables / Frozen Yogurt Dessert",
+      "completed": false,
+      "schemaVersion": 2,
+      "recurring": true,
+      "recurringSettings": {
+        "frequency": "biweekly",
+        "biweekly": {
+          "days": [
+            "Fri"
+          ],
+          "referenceDate": "2025-11-11T00:00:00"
+        }
+      }
+    }
+  ]
+}

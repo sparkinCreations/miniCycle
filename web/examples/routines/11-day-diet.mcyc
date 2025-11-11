@@ -1,0 +1,273 @@
+{
+  "name": "cycle_1762824922117",
+  "title": "11\u2011Day Diet Menu",
+  "autoReset": false,
+  "cycleCount": 0,
+  "deleteCheckedTasks": true,
+  "tasks": [
+    {
+      "id": "t-75f283548e",
+      "text": "Day 1 \u2013 Meal 1: Choose from: Bacon Strips / Low\u2011Fat Milk / Bowl of Oatmeal",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-fcbeac055a",
+      "text": "Day 1 \u2013 Meal 2: Choose from: Turkey Slices / Cashews / Bowl of Green Vegetables",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-2dc1c12e6e",
+      "text": "Day 1 \u2013 Meal 3: Choose from: Peanuts / Sausage Links",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-5c3fbcaba5",
+      "text": "Day 1 \u2013 Meal 4: Choose from: Regular Cheese Slices / Tuna Salad Plate / Frozen Yogurt Dessert",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-aae549ec97",
+      "text": "Day 2 \u2013 Meal 1: Deli\u2011meat sandwich (2 slices bread + any deli meat; lettuce/tomato/onion optional)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-58d4c2c40d",
+      "text": "Day 2 \u2013 Meal 2: Fresh fruit only (choose any from: oranges, pears, apples, grapes, peaches, plums, strawberries, kiwis, grapefruit)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-ac3cd36267",
+      "text": "Day 2 \u2013 Meal 3: Fresh fruit only (same list as Meal 2)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-1a8aa510b4",
+      "text": "Day 2 \u2013 Meal 4: Fresh fruit only (same list as Meal 2)",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-93b427aedf",
+      "text": "Day 3 \u2013 Meal 1: Choose from: Chicken / Scrambled Eggs",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-dac9d48d07",
+      "text": "Day 3 \u2013 Meal 2: Choose from: Ham Slices / Bacon Strips / Bowl of Baked Beans",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-2a71557c03",
+      "text": "Day 3 \u2013 Meal 3: Choose from: Low\u2011Fat Milk / Turkey Slices",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-69e3a777fa",
+      "text": "Day 3 \u2013 Meal 4: Choose from: Cashews / Peanuts / Bowl of Mixed Vegetables",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-a8d0eef082",
+      "text": "Day 4 \u2013 Meal 1: Choose from: Sausage Links / Regular Cheese Slices",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-6e090857f8",
+      "text": "Day 4 \u2013 Meal 2: Choose from: Fresh Apples / Banana Milk Shake",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-1c1b4fdb5f",
+      "text": "Day 4 \u2013 Meal 3: Choose from: Tuna Salad Plate / Chicken",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-928ff292f8",
+      "text": "Day 4 \u2013 Meal 4: Choose from: Scrambled Eggs / Ham Slices",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-6360564412",
+      "text": "Day 5 \u2013 Meal 1: Choose from: Bacon Strips / Low\u2011Fat Milk",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-54ef45f253",
+      "text": "Day 5 \u2013 Meal 2: Choose from: Turkey Slices / Cashews",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-75d1736203",
+      "text": "Day 5 \u2013 Meal 3: Choose from: Bowl of Oatmeal / Bowl of Green Vegetables",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-fd17df751a",
+      "text": "Day 5 \u2013 Meal 4: Choose from: Peanuts / Sausage Links",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-74bc370364",
+      "text": "Day 6 \u2013 Meal 1: Choose from: Regular Cheese Slices / Tuna Salad Plate",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-c4a8db2c4a",
+      "text": "Day 6 \u2013 Meal 2: Choose from: Frozen Yogurt Dessert / Bowl of Baked Beans",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-2b05bcd67d",
+      "text": "Day 6 \u2013 Meal 3: Choose from: Chicken / Scrambled Eggs",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-1aa8df557c",
+      "text": "Day 6 \u2013 Meal 4: Choose from: Ham Slices / Bacon Strips",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-e8ccab3865",
+      "text": "Day 7 \u2013 Meal 1: Choose from: Low\u2011Fat Milk / Turkey Slices",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-8f086682a0",
+      "text": "Day 7 \u2013 Meal 2: Choose from: Cashews / Peanuts",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-c6caa1d286",
+      "text": "Day 7 \u2013 Meal 3: Choose from: Sausage Links / Regular Cheese Slices / Bowl of Mixed Vegetables",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-8e9f17dcf2",
+      "text": "Day 7 \u2013 Meal 4: Choose from: Tuna Salad Plate / Chicken",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-91397a58e6",
+      "text": "Day 8 \u2013 Meal 1: Vegetables or salad only (e.g., lettuce, tomatoes, cucumbers, green beans, onions, celery, carrots, beans, sprouts, spinach, broccoli, zucchini, squash, peppers). Top with either: 1 oz grated cheese OR 3 tbsp low\u2011cal dressing.",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-1f23eb27ad",
+      "text": "Day 8 \u2013 Meal 2: Vegetables or salad only (same rules as Meal 1).",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-6768c42251",
+      "text": "Day 8 \u2013 Meal 3: Vegetables or salad only (same rules as Meal 1).",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-8140afb68b",
+      "text": "Day 8 \u2013 Meal 4: Vegetables or salad only (same rules as Meal 1).",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-0c42371b55",
+      "text": "Day 9 \u2013 Meal 1: Choose from: Scrambled Eggs / Ham Slices",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-3c51c3d1e1",
+      "text": "Day 9 \u2013 Meal 2: Choose from: Bacon Strips / Low\u2011Fat Milk",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-0b7f98fe3e",
+      "text": "Day 9 \u2013 Meal 3: Choose from: Fresh Apples / Banana Milk Shake",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-6fa37bea5d",
+      "text": "Day 9 \u2013 Meal 4: Choose from: Turkey Slices / Cashews",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-ed040ac15d",
+      "text": "Day 10 \u2013 Meal 1: Choose from: Peanuts / Sausage Links",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-cab3230f1e",
+      "text": "Day 10 \u2013 Meal 2: Choose from: Bowl of Oatmeal / Bowl of Green Vegetables",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-1428e01e84",
+      "text": "Day 10 \u2013 Meal 3: Choose from: Frozen Yogurt Dessert / Bowl of Baked Beans",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-9393ad7f8a",
+      "text": "Day 10 \u2013 Meal 4: Choose from: Regular Cheese Slices / Tuna Salad Plate",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-1720f0f30e",
+      "text": "Day 11 \u2013 Meal 1: Choose from: Bowl of Mixed Vegetables / Fresh Apples",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-6c6515e740",
+      "text": "Day 11 \u2013 Meal 2: Choose from: Chicken / Scrambled Eggs",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-55b25bb0da",
+      "text": "Day 11 \u2013 Meal 3: Choose from: Banana Milk Shake / Bowl of Oatmeal",
+      "completed": false,
+      "schemaVersion": 2
+    },
+    {
+      "id": "t-edaaa27199",
+      "text": "Day 11 \u2013 Meal 4: Choose from: Bowl of Green Vegetables / Frozen Yogurt Dessert",
+      "completed": false,
+      "schemaVersion": 2
+    }
+  ]
+}

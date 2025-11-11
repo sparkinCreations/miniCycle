@@ -8,6 +8,7 @@
  */
 
 import { appInit } from '../core/appInit.js';
+import { calculateNextOccurrence } from '../recurring/recurringCore.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
@@ -805,31 +806,57 @@ export class SettingsManager {
 
               console.log("🔄 Creating imported cycle with ID:", cycleId);
 
+              // Map tasks with proper structure
+              const mappedTasks = importedData.tasks.map((task) => {
+                const safeSettings = task.recurringSettings || {};
+                if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
+                  safeSettings.defaultRecurTime = new Date().toISOString();
+                }
+                return {
+                  id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                  text: task.text || "",
+                  completed: false,
+                  dueDate: task.dueDate || null,
+                  highPriority: task.highPriority || false,
+                  remindersEnabled: task.remindersEnabled || false,
+                  recurring: task.recurring || false,
+                  recurringSettings: safeSettings,
+                  schemaVersion: task.schemaVersion || 2
+                };
+              });
+
+              // ✅ Create recurring templates for tasks with recurring: true
+              const recurringTemplates = {};
+              mappedTasks.forEach(task => {
+                if (task.recurring && task.recurringSettings) {
+                  try {
+                    recurringTemplates[task.id] = {
+                      id: task.id,
+                      text: task.text,
+                      dueDate: task.dueDate || null,
+                      highPriority: task.highPriority || false,
+                      remindersEnabled: task.remindersEnabled || false,
+                      recurring: true,
+                      recurringSettings: structuredClone(task.recurringSettings),
+                      nextScheduledOccurrence: calculateNextOccurrence(task.recurringSettings, Date.now()),
+                      schemaVersion: 2
+                    };
+                    console.log(`✅ Created recurring template for imported task: ${task.id}`);
+                  } catch (error) {
+                    console.warn(`⚠️ Failed to create template for task ${task.id}:`, error);
+                  }
+                }
+              });
+
               fullSchemaData.data.cycles[cycleId] = {
                 id: cycleId,
                 title: importedData.title || importedData.name,
-                tasks: importedData.tasks.map((task) => {
-                  const safeSettings = task.recurringSettings || {};
-                  if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
-                    safeSettings.defaultRecurTime = new Date().toISOString();
-                  }
-                  return {
-                    id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                    text: task.text || "",
-                    completed: false,
-                    dueDate: task.dueDate || null,
-                    highPriority: task.highPriority || false,
-                    remindersEnabled: task.remindersEnabled || false,
-                    recurring: task.recurring || false,
-                    recurringSettings: safeSettings,
-                    schemaVersion: task.schemaVersion || 2
-                  };
-                }),
+                tasks: mappedTasks,
                 autoReset: importedData.autoReset !== false,
                 cycleCount: importedData.cycleCount || 0,
                 deleteCheckedTasks: importedData.deleteCheckedTasks || false,
                 createdAt: Date.now(),
-                recurringTemplates: {}
+                recurringTemplates: recurringTemplates
               };
 
               // Set as active cycle and persist
@@ -847,8 +874,14 @@ export class SettingsManager {
                   console.log('✅ AppState synchronized with imported cycle data');
               }
 
-              console.log("💾 Import completed successfully to Schema 2.5");
-              this.deps.showNotification(`✅ miniCycle "${importedData.name}" imported and converted to Schema 2.5!`, "success");
+              const recurringCount = Object.keys(recurringTemplates).length;
+              console.log(`💾 Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
+
+              if (recurringCount > 0) {
+                this.deps.showNotification(`✅ miniCycle "${importedData.name}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
+              } else {
+                this.deps.showNotification(`✅ miniCycle "${importedData.name}" imported and converted to Schema 2.5!`, "success");
+              }
               location.reload();
             } catch (error) {
               this.deps.showNotification("❌ Error importing miniCycle.");
