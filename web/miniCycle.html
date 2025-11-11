@@ -907,14 +907,29 @@ window.installApp = () => {
           </div>
         </div>
       </div>
-      <label>
-        <input type="checkbox" id="recur-indefinitely" checked>
+      <label style="display: flex; align-items: center; margin: 10px 0;">
+        <input type="checkbox" id="recur-indefinitely" style="margin-right: 8px;" checked>
         Recur indefinitely
       </label>
 
-      <div id="recur-count-container" class="hidden">
-        <label for="recur-count-input">Number of times to recur:</label>
-        <input type="number" id="recur-count-input" min="1" value="1">
+      <div id="recur-limited-container" class="hidden" style="margin-left: 24px;">
+        <label style="display: block; margin: 6px 0;">
+          <input type="radio" name="recur-duration-type" id="recur-count-radio" value="count" checked>
+          Specific number of times
+        </label>
+        <div id="recur-count-container" class="hidden" style="margin-left: 24px;">
+          <label for="recur-count-input" style="display: block; margin: 8px 0;">Number of occurrences:</label>
+          <input type="number" id="recur-count-input" min="1" value="1" style="width: 80px; padding: 4px;">
+        </div>
+
+        <label style="display: block; margin: 6px 0;">
+          <input type="radio" name="recur-duration-type" id="recur-until-radio" value="until">
+          Until specific date
+        </label>
+        <div id="recur-until-container" class="hidden" style="margin-left: 24px;">
+          <label for="recur-until-date" style="display: block; margin: 8px 0;">End date:</label>
+          <input type="date" id="recur-until-date" style="padding: 4px;">
+        </div>
       </div>
 
       <div id="recur-frequency-container">
@@ -1081,7 +1096,34 @@ window.installApp = () => {
             <div class="monthly-days">
               <!-- Dynamically filled with JS (1 to 31) -->
             </div>
+            <label style="margin-top: 10px;">
+              <input type="checkbox" id="monthly-last-day"> Last day of month
+            </label>
           </div>
+
+          <label><input type="checkbox" id="monthly-week-of-month"> Use week of month pattern</label>
+          <div id="monthly-week-container" class="hidden">
+            <p class="section-label">Select pattern:</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
+              <select id="monthly-week-ordinal" style="flex: 1; min-width: 100px;">
+                <option value="1">1st</option>
+                <option value="2">2nd</option>
+                <option value="3">3rd</option>
+                <option value="4">4th</option>
+                <option value="last">Last</option>
+              </select>
+              <select id="monthly-week-day" style="flex: 1; min-width: 100px;">
+                <option value="Sun">Sunday</option>
+                <option value="Mon">Monday</option>
+                <option value="Tue">Tuesday</option>
+                <option value="Wed">Wednesday</option>
+                <option value="Thu">Thursday</option>
+                <option value="Fri">Friday</option>
+                <option value="Sat">Saturday</option>
+              </select>
+            </div>
+          </div>
+
           <label><input type="checkbox" id="monthly-specific-time"> Choose specific time</label>
           <div id="monthly-time-container" class="hidden">
             <div class="time-picker-wrapper">

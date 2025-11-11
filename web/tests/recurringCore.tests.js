@@ -1329,6 +1329,381 @@ export function runRecurringCoreTests(resultsDiv) {
         }
     });
 
+    // === MONTHLY WEEK-OF-MONTH PATTERN TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📅 Monthly Week-of-Month Pattern</h4>';
+
+    test('monthly week-of-month: 1st Monday triggers correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useWeekOfMonth: true,
+                weekOfMonth: { ordinal: '1', day: 'Mon' }
+            }
+        });
+        // January 2025: 1st Monday is Jan 6
+        const testDate = new Date(2025, 0, 6); // Jan 6, 2025 (Monday)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on 1st Monday (Jan 6)');
+        }
+    });
+
+    test('monthly week-of-month: 2nd Tuesday triggers correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useWeekOfMonth: true,
+                weekOfMonth: { ordinal: '2', day: 'Tue' }
+            }
+        });
+        // January 2025: 2nd Tuesday is Jan 14
+        const testDate = new Date(2025, 0, 14); // Jan 14, 2025 (Tuesday)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on 2nd Tuesday (Jan 14)');
+        }
+    });
+
+    test('monthly week-of-month: Last Friday triggers correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useWeekOfMonth: true,
+                weekOfMonth: { ordinal: 'last', day: 'Fri' }
+            }
+        });
+        // January 2025: Last Friday is Jan 31
+        const testDate = new Date(2025, 0, 31); // Jan 31, 2025 (Friday)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on Last Friday (Jan 31)');
+        }
+    });
+
+    test('monthly week-of-month: does not trigger on wrong day', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useWeekOfMonth: true,
+                weekOfMonth: { ordinal: '1', day: 'Mon' }
+            }
+        });
+        // January 2025: 1st Monday is Jan 6, testing Jan 13 (2nd Monday)
+        const testDate = new Date(2025, 0, 13); // Jan 13, 2025 (2nd Monday)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (result) {
+            throw new Error('Should NOT trigger on 2nd Monday when pattern is 1st Monday');
+        }
+    });
+
+    test('monthly week-of-month: calculates next occurrence correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useWeekOfMonth: true,
+                weekOfMonth: { ordinal: '2', day: 'Wed' }
+            },
+            time: { hour: 10, minute: 0, military: true }
+        });
+        // January 2025: 2nd Wednesday is Jan 8
+        const from = new Date(2025, 0, 9, 12, 0); // Jan 9, noon (day after 2nd Wed)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be February's 2nd Wednesday (Feb 12)
+        if (nextDate.getMonth() !== 1) {
+            throw new Error(`Expected February, got month ${nextDate.getMonth()}`);
+        }
+        if (nextDate.getDate() !== 12) {
+            throw new Error(`Expected 12th, got ${nextDate.getDate()}`);
+        }
+    });
+
+    test('monthly week-of-month: respects specific time', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useWeekOfMonth: true,
+                weekOfMonth: { ordinal: '1', day: 'Mon' }
+            },
+            time: { hour: 9, minute: 30, military: true }
+        });
+        const correctTime = new Date(2025, 0, 6, 9, 30); // Jan 6, 9:30 AM
+        const wrongTime = new Date(2025, 0, 6, 10, 0); // Jan 6, 10:00 AM
+
+        if (!shouldTaskRecurNow(settings, correctTime)) {
+            throw new Error('Should trigger at correct time (9:30 AM)');
+        }
+        if (shouldTaskRecurNow(settings, wrongTime)) {
+            throw new Error('Should NOT trigger at wrong time (10:00 AM)');
+        }
+    });
+
+    // === END DATE (UNTIL DATE) TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🗓️ End Date (Until Date) Validation</h4>';
+
+    test('end date: task triggers before end date', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            untilDate: '2025-01-31'
+        });
+        const testDate = new Date(2025, 0, 15); // Jan 15, before end date
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger before end date');
+        }
+    });
+
+    test('end date: task does NOT trigger after end date', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            untilDate: '2025-01-31'
+        });
+        const testDate = new Date(2025, 1, 1); // Feb 1, after end date
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (result) {
+            throw new Error('Should NOT trigger after end date');
+        }
+    });
+
+    test('end date: task triggers on the end date itself', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            untilDate: '2025-01-31'
+        });
+        const testDate = new Date(2025, 0, 31, 10, 0); // Jan 31, 10:00 AM (during end date)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on the end date itself');
+        }
+    });
+
+    test('end date: works with weekly frequency', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'weekly',
+            weekly: { days: ['Mon', 'Wed', 'Fri'] },
+            untilDate: '2025-01-31'
+        });
+        const beforeEnd = new Date(2025, 0, 27); // Jan 27 (Mon), before end
+        const afterEnd = new Date(2025, 1, 3); // Feb 3 (Mon), after end
+
+        if (!shouldTaskRecurNow(settings, beforeEnd)) {
+            throw new Error('Should trigger on Monday before end date');
+        }
+        if (shouldTaskRecurNow(settings, afterEnd)) {
+            throw new Error('Should NOT trigger on Monday after end date');
+        }
+    });
+
+    test('end date: works with monthly frequency', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                days: [15]
+            },
+            untilDate: '2025-06-30'
+        });
+        const beforeEnd = new Date(2025, 5, 15); // June 15, before/on end date
+        const afterEnd = new Date(2025, 6, 15); // July 15, after end date
+
+        if (!shouldTaskRecurNow(settings, beforeEnd)) {
+            throw new Error('Should trigger on 15th before end date');
+        }
+        if (shouldTaskRecurNow(settings, afterEnd)) {
+            throw new Error('Should NOT trigger on 15th after end date');
+        }
+    });
+
+    test('end date: null untilDate allows recurring indefinitely', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'daily',
+            untilDate: null
+        });
+        const farFuture = new Date(2030, 0, 1); // Jan 1, 2030
+
+        const result = shouldTaskRecurNow(settings, farFuture);
+
+        if (!result) {
+            throw new Error('Should trigger even in far future when no end date');
+        }
+    });
+
+    // === MONTHLY LAST DAY TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📆 Monthly Last Day Pattern</h4>';
+
+    test('monthly last day: triggers on last day of 31-day month', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            }
+        });
+        const testDate = new Date(2025, 0, 31); // Jan 31 (31-day month)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on last day of January (31st)');
+        }
+    });
+
+    test('monthly last day: triggers on last day of 30-day month', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            }
+        });
+        const testDate = new Date(2025, 3, 30); // April 30 (30-day month)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on last day of April (30th)');
+        }
+    });
+
+    test('monthly last day: triggers on last day of February (non-leap year)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            }
+        });
+        const testDate = new Date(2025, 1, 28); // Feb 28, 2025 (non-leap year)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on last day of February (28th in 2025)');
+        }
+    });
+
+    test('monthly last day: triggers on last day of February (leap year)', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            }
+        });
+        const testDate = new Date(2024, 1, 29); // Feb 29, 2024 (leap year)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (!result) {
+            throw new Error('Should trigger on last day of February (29th in 2024)');
+        }
+    });
+
+    test('monthly last day: does NOT trigger on non-last day', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            }
+        });
+        const testDate = new Date(2025, 0, 30); // Jan 30 (not last day)
+
+        const result = shouldTaskRecurNow(settings, testDate);
+
+        if (result) {
+            throw new Error('Should NOT trigger on Jan 30 when last day is Jan 31');
+        }
+    });
+
+    test('monthly last day: combines with specific days', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                days: [1, 15],
+                lastDay: true
+            }
+        });
+
+        const day1 = new Date(2025, 0, 1); // Jan 1
+        const day15 = new Date(2025, 0, 15); // Jan 15
+        const lastDay = new Date(2025, 0, 31); // Jan 31 (last day)
+        const otherDay = new Date(2025, 0, 10); // Jan 10 (not in list)
+
+        if (!shouldTaskRecurNow(settings, day1)) {
+            throw new Error('Should trigger on 1st');
+        }
+        if (!shouldTaskRecurNow(settings, day15)) {
+            throw new Error('Should trigger on 15th');
+        }
+        if (!shouldTaskRecurNow(settings, lastDay)) {
+            throw new Error('Should trigger on last day (31st)');
+        }
+        if (shouldTaskRecurNow(settings, otherDay)) {
+            throw new Error('Should NOT trigger on 10th');
+        }
+    });
+
+    test('monthly last day: calculates next occurrence correctly', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            },
+            time: { hour: 10, minute: 0, military: true }
+        });
+        const from = new Date(2025, 0, 31, 12, 0); // Jan 31, noon (after last day time)
+
+        const next = calculateNextOccurrence(settings, from);
+        const nextDate = new Date(next);
+
+        // Should be February's last day (Feb 28 in 2025)
+        if (nextDate.getMonth() !== 1) {
+            throw new Error(`Expected February, got month ${nextDate.getMonth()}`);
+        }
+        if (nextDate.getDate() !== 28) {
+            throw new Error(`Expected 28th (last day of Feb 2025), got ${nextDate.getDate()}`);
+        }
+    });
+
+    test('monthly last day: respects specific time', () => {
+        const settings = normalizeRecurringSettings({
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                lastDay: true
+            },
+            time: { hour: 9, minute: 0, military: true }
+        });
+        const correctTime = new Date(2025, 0, 31, 9, 0); // Jan 31, 9:00 AM
+        const wrongTime = new Date(2025, 0, 31, 10, 0); // Jan 31, 10:00 AM
+
+        if (!shouldTaskRecurNow(settings, correctTime)) {
+            throw new Error('Should trigger at correct time (9:00 AM)');
+        }
+        if (shouldTaskRecurNow(settings, wrongTime)) {
+            throw new Error('Should NOT trigger at wrong time (10:00 AM)');
+        }
+    });
+
     // === RESULTS SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

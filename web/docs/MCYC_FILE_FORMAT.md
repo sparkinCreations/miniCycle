@@ -255,13 +255,14 @@ Application-wide settings (Complete format only):
 
 ### Recurring Settings
 
-For tasks with `recurring: true` (Schema 2.5+ structure):
+For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 
 ```json
 {
   "frequency": "daily",
   "indefinitely": true,
   "count": null,
+  "untilDate": null,
   "time": {
     "hour": 9,
     "minute": 0,
@@ -285,7 +286,11 @@ For tasks with `recurring: true` (Schema 2.5+ structure):
     "referenceDate": "2025-01-06T00:00:00.000Z"
   },
   "monthly": {
-    "days": [1, 15]
+    "useSpecificDays": true,
+    "days": [1, 15],
+    "lastDay": false,
+    "useWeekOfMonth": false,
+    "weekOfMonth": null
   },
   "yearly": {
     "months": [1, 6, 12],
@@ -305,8 +310,9 @@ For tasks with `recurring: true` (Schema 2.5+ structure):
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `frequency` | string | Yes | `"hourly"`, `"daily"`, `"weekly"`, `"biweekly"`, `"monthly"`, `"yearly"` |
-| `indefinitely` | boolean | Yes | `true` to recur forever, `false` to use count |
+| `indefinitely` | boolean | Yes | `true` to recur forever, `false` to use count/untilDate |
 | `count` | number\|null | No | Number of times to recur (if not indefinite) |
+| `untilDate` | string\|null | No | End date in YYYY-MM-DD format (NEW v1.349+) |
 | `time` | object\|null | No | Specific time of day (see Time Object below) |
 
 **Time Object (optional):**
@@ -350,13 +356,31 @@ For tasks with `recurring: true` (Schema 2.5+ structure):
 - **New in v1.348:** Separate day selections for each week in two-week cycle
 - Uses DST-safe date calculation
 
-**Monthly:**
+**Monthly (v1.349+):**
 ```json
+// Option A: Specific days with optional last day
 "monthly": {
-  "days": [1, 15, 30]
+  "useSpecificDays": true,
+  "days": [1, 15, 30],
+  "lastDay": false
+}
+
+// Option B: Week-of-month pattern
+"monthly": {
+  "useWeekOfMonth": true,
+  "weekOfMonth": {
+    "ordinal": "2",    // "1", "2", "3", "4", or "last"
+    "day": "Tue"       // "Sun", "Mon", "Tue", ..., "Sat"
+  }
 }
 ```
+- `useSpecificDays`: Boolean, whether using specific day numbers
 - `days`: Array of day numbers (1-31)
+- `lastDay`: Boolean, include last day of month (NEW v1.349+)
+- `useWeekOfMonth`: Boolean, whether using week-of-month pattern (NEW v1.349+)
+- `weekOfMonth`: Object with ordinal and day for patterns like "2nd Tuesday" (NEW v1.349+)
+  - `ordinal`: String `"1"`, `"2"`, `"3"`, `"4"`, or `"last"`
+  - `day`: Day abbreviation (`"Sun"` through `"Sat"`)
 
 **Yearly:**
 ```json

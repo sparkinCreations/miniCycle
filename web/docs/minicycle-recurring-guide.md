@@ -1,8 +1,8 @@
 # miniCycle Recurring Tasks: Complete User Guide
 
-**Version 1.4 | For miniCycle v1.348+ Users & Developers**
+**Version 1.5 | For miniCycle v1.349+ Users & Developers**
 
-_Updated November 2025 to include: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
+_Updated November 2025 to include: **NEW v1.349 features** - Monthly week-of-month patterns (2nd Tuesday, Last Friday), End date (Until) option for all frequencies, Monthly last-day handling; Plus from v1.348: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
 
 ---
 
@@ -841,16 +841,52 @@ recurringSettings: {
   - Biweekly meetings: Week 1 Tuesday, Week 2 Thursday
   - Rotating chores: Different days each week in a 2-week cycle
 
-**5. Monthly** - Specific day(s) of the month
+**5. Monthly** - Specific day(s) of the month or week-of-month patterns (v1.349+)
 ```javascript
+// OPTION A: Specific days of month (with optional last day)
 recurringSettings: {
   frequency: "monthly",
   monthly: {
-    days: [1, 15]  // 1st and 15th of each month
+    useSpecificDays: true,
+    days: [1, 15],    // 1st and 15th of each month
+    lastDay: true     // Also include last day of month (NEW v1.349+)
+  },
+  time: { hour: 9, minute: 0, meridiem: "AM", military: false }
+}
+
+// OPTION B: Week-of-month pattern (NEW v1.349+)
+recurringSettings: {
+  frequency: "monthly",
+  monthly: {
+    useWeekOfMonth: true,
+    weekOfMonth: {
+      ordinal: "2",    // "1", "2", "3", "4", or "last"
+      day: "Tue"       // "Sun", "Mon", "Tue", ..., "Sat"
+    }
   },
   time: { hour: 9, minute: 0, meridiem: "AM", military: false }
 }
 ```
+**New in v1.349:** Monthly recurring now supports three patterns:
+
+1. **Specific Days Pattern** - Traditional day numbers (1-31)
+   - Select multiple days: `[1, 15, 30]`
+   - Invalid days (e.g., 31 in April) are automatically skipped
+
+2. **Last Day Option** - Include last day of every month (NEW)
+   - Automatically adapts to month length
+   - Works correctly for February (28/29 days), 30-day months, and 31-day months
+   - Can be combined with specific days
+   - Example: `days: [1, 15], lastDay: true` = 1st, 15th, and last day
+
+3. **Week-of-Month Pattern** - Nth occurrence of a weekday (NEW)
+   - **1st through 4th:** "1st Monday", "2nd Tuesday", "3rd Wednesday", "4th Thursday"
+   - **Last:** "Last Friday" (finds last occurrence regardless of week number)
+   - **Example Use Cases:**
+     - "2nd Tuesday of month" for recurring meetings
+     - "Last Friday of month" for monthly reports
+     - "1st Monday of month" for monthly reviews
+   - Note: If pattern doesn't exist (e.g., "5th Monday" in a 4-week month), task is skipped that month
 
 **6. Yearly** - Specific months and days
 ```javascript
@@ -869,6 +905,62 @@ recurringSettings: {
   time: { hour: 9, minute: 0, meridiem: "AM", military: false }
 }
 ```
+
+#### Duration Options (NEW v1.349+)
+
+All frequency types support three duration modes to control how long a task recurs:
+
+**1. Recur Indefinitely** (default)
+```javascript
+recurringSettings: {
+  frequency: "daily",
+  indefinitely: true,    // Task continues recurring forever
+  count: null,
+  untilDate: null
+}
+```
+- Task continues recurring without any end date
+- Default setting when first enabling recurring
+- Most common for ongoing routines and habits
+
+**2. Specific Number of Times**
+```javascript
+recurringSettings: {
+  frequency: "weekly",
+  weekly: { days: ["Mon", "Wed", "Fri"] },
+  indefinitely: false,
+  count: 12,            // Stop after 12 occurrences
+  untilDate: null
+}
+```
+- Task stops recurring after specified number of occurrences
+- Useful for limited-duration projects or trial periods
+- Example: "Take course for 8 weeks" → count: 8 for weekly task
+
+**3. Until Specific Date** (NEW v1.349+)
+```javascript
+recurringSettings: {
+  frequency: "daily",
+  indefinitely: false,
+  count: null,
+  untilDate: "2025-12-31"    // Stop recurring after this date (YYYY-MM-DD)
+}
+```
+- Task stops recurring after the specified end date
+- Date validation checks occur at end of day (23:59:59)
+- Task will still trigger ON the end date itself
+- **Example Use Cases:**
+  - Temporary medication: Daily until treatment ends
+  - Seasonal tasks: "Water lawn" until October 31
+  - Project deadlines: "Daily standup" until project completion date
+  - Countdown routines: "Exam prep" until exam date
+- **Works with all frequency types:** hourly, daily, weekly, biweekly, monthly, yearly
+
+**Duration Priority:**
+- If `indefinitely: true` → task recurs forever (count and untilDate ignored)
+- If `count` is set → task stops after N occurrences
+- If `untilDate` is set → task stops after specified date
+- Only one duration mode is active at a time
 
 #### Calculate Next Occurrence
 **Location:** `/utilities/recurringCore.js` (lines 146-711)

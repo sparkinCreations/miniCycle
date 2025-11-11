@@ -125,6 +125,7 @@ export function normalizeRecurringSettings(settings = {}) {
         frequency: settings.frequency || "daily",
         indefinitely: settings.indefinitely !== false,
         count: settings.count ?? null,
+        untilDate: settings.untilDate || null, // NEW: End date option (YYYY-MM-DD)
         time: settings.time || null,
 
         specificDates: {
@@ -149,7 +150,14 @@ export function normalizeRecurringSettings(settings = {}) {
         },
 
         monthly: {
-            days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : []
+            useSpecificDays: settings.monthly?.useSpecificDays || false, // NEW: UI control
+            days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : [],
+            lastDay: settings.monthly?.lastDay || false, // NEW: Last day of month
+            useWeekOfMonth: settings.monthly?.useWeekOfMonth || false, // NEW: Use week-of-month pattern
+            weekOfMonth: settings.monthly?.weekOfMonth ? {
+                ordinal: settings.monthly.weekOfMonth.ordinal || "1", // "1", "2", "3", "4", "last"
+                day: settings.monthly.weekOfMonth.day || "Mon" // "Sun", "Mon", ..., "Sat"
+            } : null
         },
 
         yearly: {
@@ -244,6 +252,67 @@ function getDaysBetween(startDate, endDate) {
  */
 function cloneDate(date) {
     return new Date(date.getTime());
+}
+
+/**
+ * Calculate the date of the nth occurrence of a weekday in a month
+ * @param {number} year - Year
+ * @param {number} month - Month (0-11, JavaScript style)
+ * @param {string} weekday - Weekday short name ("Sun", "Mon", ..., "Sat")
+ * @param {string|number} ordinal - Ordinal ("1", "2", "3", "4", "last")
+ * @returns {Date|null} Date of the nth weekday, or null if doesn't exist
+ */
+function calculateNthWeekdayOfMonth(year, month, weekday, ordinal) {
+    const weekdayMap = {
+        "Sun": 0, "Mon": 1, "Tue": 2, "Wed": 3,
+        "Thu": 4, "Fri": 5, "Sat": 6
+    };
+
+    const targetDay = weekdayMap[weekday];
+    if (targetDay === undefined) return null;
+
+    // Handle "last" occurrence
+    if (ordinal === "last") {
+        // Start from last day of month and work backwards
+        const lastDay = getDaysInMonth(month, year);
+        for (let day = lastDay; day >= 1; day--) {
+            const testDate = new Date(year, month, day);
+            if (testDate.getDay() === targetDay) {
+                return testDate;
+            }
+        }
+        return null;
+    }
+
+    // Handle numbered occurrence (1st, 2nd, 3rd, 4th)
+    const ordinalNum = parseInt(ordinal, 10);
+    if (isNaN(ordinalNum) || ordinalNum < 1 || ordinalNum > 4) return null;
+
+    let occurrenceCount = 0;
+    const daysInMonth = getDaysInMonth(month, year);
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const testDate = new Date(year, month, day);
+        if (testDate.getDay() === targetDay) {
+            occurrenceCount++;
+            if (occurrenceCount === ordinalNum) {
+                return testDate;
+            }
+        }
+    }
+
+    // Requested occurrence doesn't exist (e.g., 5th Monday when month only has 4)
+    return null;
+}
+
+/**
+ * Check if a date is the last day of its month
+ * @param {Date} date - Date to check
+ * @returns {boolean} True if date is last day of month
+ */
+function isLastDayOfMonth(date) {
+    const lastDay = getDaysInMonth(date.getMonth(), date.getFullYear());
+    return date.getDate() === lastDay;
 }
 
 /**
@@ -403,60 +472,130 @@ function calculateNextBiweekly(biweeklySettings, timeSettings, from) {
 
 /**
  * Calculate next monthly occurrence
- * @param {Object} monthlySettings - Monthly settings { days: [1, 15, 30] }
+ * @param {Object} monthlySettings - Monthly settings { useSpecificDays, days, lastDay, useWeekOfMonth, weekOfMonth }
  * @param {Object} timeSettings - Time settings
  * @param {Date} from - Calculate from this time
  * @returns {number} Unix timestamp of next occurrence
  */
 function calculateNextMonthly(monthlySettings, timeSettings, from) {
-    const targetDays = monthlySettings?.days || [];
-
-    // If no days specified, recur every day
-    if (targetDays.length === 0) {
-        return calculateNextDaily(timeSettings, from);
-    }
-
-    const currentDay = from.getDate();
     const currentMonth = from.getMonth();
     const currentYear = from.getFullYear();
 
-    // Sort target days ascending
-    const sortedDays = [...targetDays].sort((a, b) => a - b);
+    // ✅ PATTERN 1: Week-of-month pattern (e.g., "2nd Tuesday", "Last Friday")
+    if (monthlySettings?.useWeekOfMonth && monthlySettings?.weekOfMonth) {
+        const { ordinal, day } = monthlySettings.weekOfMonth;
 
-    // Try to find a day later this month
-    for (const day of sortedDays) {
-        if (isValidDate(currentYear, currentMonth, day)) {
-            const testDate = new Date(currentYear, currentMonth, day);
+        // Try current month first
+        const thisMonthDate = calculateNthWeekdayOfMonth(currentYear, currentMonth, day, ordinal);
+        if (thisMonthDate) {
+            applyTimeToDate(thisMonthDate, timeSettings);
+            if (thisMonthDate > from) {
+                return thisMonthDate.getTime();
+            }
+        }
+
+        // Try next month
+        let nextMonth = currentMonth + 1;
+        let nextYear = currentYear;
+        if (nextMonth > 11) {
+            nextMonth = 0;
+            nextYear++;
+        }
+
+        const nextMonthDate = calculateNthWeekdayOfMonth(nextYear, nextMonth, day, ordinal);
+        if (nextMonthDate) {
+            applyTimeToDate(nextMonthDate, timeSettings);
+            return nextMonthDate.getTime();
+        }
+
+        // Fallback if pattern doesn't exist
+        const fallback = new Date(nextYear, nextMonth, 1);
+        applyTimeToDate(fallback, timeSettings);
+        return fallback.getTime();
+    }
+
+    // ✅ PATTERN 2: Specific days with optional last day
+    if (monthlySettings?.useSpecificDays) {
+        const targetDays = monthlySettings?.days || [];
+        const includeLastDay = monthlySettings?.lastDay || false;
+
+        // Build list of target dates for this month
+        const thisMonthDates = [];
+
+        // Add specific days
+        for (const day of targetDays) {
+            if (isValidDate(currentYear, currentMonth, day)) {
+                const testDate = new Date(currentYear, currentMonth, day);
+                thisMonthDates.push(testDate);
+            }
+        }
+
+        // Add last day if enabled
+        if (includeLastDay) {
+            const lastDay = getDaysInMonth(currentMonth, currentYear);
+            const lastDayDate = new Date(currentYear, currentMonth, lastDay);
+            // Only add if not already in list
+            if (!thisMonthDates.some(d => d.getDate() === lastDay)) {
+                thisMonthDates.push(lastDayDate);
+            }
+        }
+
+        // Sort dates ascending
+        thisMonthDates.sort((a, b) => a - b);
+
+        // Try to find a date later this month
+        for (const testDate of thisMonthDates) {
             applyTimeToDate(testDate, timeSettings);
-
             if (testDate > from) {
                 return testDate.getTime();
             }
         }
-    }
 
-    // No valid day found this month - try next month
-    let nextMonth = currentMonth + 1;
-    let nextYear = currentYear;
+        // No valid date found this month - try next month
+        let nextMonth = currentMonth + 1;
+        let nextYear = currentYear;
 
-    if (nextMonth > 11) {
-        nextMonth = 0;
-        nextYear++;
-    }
-
-    // Try each target day in next month
-    for (const day of sortedDays) {
-        if (isValidDate(nextYear, nextMonth, day)) {
-            const testDate = new Date(nextYear, nextMonth, day);
-            applyTimeToDate(testDate, timeSettings);
-            return testDate.getTime();
+        if (nextMonth > 11) {
+            nextMonth = 0;
+            nextYear++;
         }
+
+        const nextMonthDates = [];
+
+        // Add specific days for next month
+        for (const day of targetDays) {
+            if (isValidDate(nextYear, nextMonth, day)) {
+                const testDate = new Date(nextYear, nextMonth, day);
+                nextMonthDates.push(testDate);
+            }
+        }
+
+        // Add last day for next month if enabled
+        if (includeLastDay) {
+            const lastDay = getDaysInMonth(nextMonth, nextYear);
+            const lastDayDate = new Date(nextYear, nextMonth, lastDay);
+            if (!nextMonthDates.some(d => d.getDate() === lastDay)) {
+                nextMonthDates.push(lastDayDate);
+            }
+        }
+
+        // Sort and return first date
+        nextMonthDates.sort((a, b) => a - b);
+
+        if (nextMonthDates.length > 0) {
+            const firstDate = nextMonthDates[0];
+            applyTimeToDate(firstDate, timeSettings);
+            return firstDate.getTime();
+        }
+
+        // Fallback: first day of next month
+        const fallback = new Date(nextYear, nextMonth, 1);
+        applyTimeToDate(fallback, timeSettings);
+        return fallback.getTime();
     }
 
-    // Fallback: first day of next month
-    const fallback = new Date(nextYear, nextMonth, 1);
-    applyTimeToDate(fallback, timeSettings);
-    return fallback.getTime();
+    // ✅ PATTERN 3: No specific pattern - recur every day
+    return calculateNextDaily(timeSettings, from);
 }
 
 /**
@@ -765,6 +904,18 @@ export function formatNextOccurrence(nextOccurrence) {
  * @returns {boolean} True if task should appear now
  */
 export function shouldTaskRecurNow(settings, now = new Date()) {
+    // ✅ END DATE VALIDATION: Check if we're past the end date
+    if (settings.untilDate) {
+        const endDate = parseDateAsLocal(settings.untilDate);
+        // Set end date to end of day (23:59:59) for comparison
+        endDate.setHours(23, 59, 59, 999);
+
+        if (now > endDate) {
+            console.log('⏸️ Recurring task past end date:', settings.untilDate);
+            return false; // Past the end date, don't recur
+        }
+    }
+
     // ✅ Specific Dates override all… but still honor specific‑time if set
     if (settings.specificDates?.enabled) {
         const todayMatch = settings.specificDates.dates?.some(dateStr => {
@@ -856,11 +1007,69 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
             return true; // if no time set, recur any time today
 
         case "monthly":
-            // ✅ FIX: If no specific days selected, recur every day of the month
-            if (settings.monthly?.days?.length > 0 && !settings.monthly.days.includes(day)) {
-                return false;
+            // ✅ PATTERN 1: Week-of-month pattern (e.g., "2nd Tuesday", "Last Friday")
+            if (settings.monthly?.useWeekOfMonth && settings.monthly?.weekOfMonth) {
+                const { ordinal, day: targetWeekday } = settings.monthly.weekOfMonth;
+
+                // Calculate what date the pattern refers to this month
+                const targetDate = calculateNthWeekdayOfMonth(
+                    now.getFullYear(),
+                    now.getMonth(),
+                    targetWeekday,
+                    ordinal
+                );
+
+                // Check if today matches the pattern
+                if (!targetDate || targetDate.getDate() !== day) {
+                    return false;
+                }
+
+                // Date matches, now check time if specified
+                if (settings.time) {
+                    const hour = settings.time.military
+                        ? settings.time.hour
+                        : convert12To24(settings.time.hour, settings.time.meridiem);
+                    const minute = settings.time.minute;
+                    return now.getHours() === hour && now.getMinutes() === minute;
+                }
+
+                return true;
             }
 
+            // ✅ PATTERN 2: Specific days with optional last day
+            if (settings.monthly?.useSpecificDays) {
+                const targetDays = settings.monthly?.days || [];
+                const includeLastDay = settings.monthly?.lastDay || false;
+
+                let dayMatches = false;
+
+                // Check if today is one of the specific days
+                if (targetDays.length > 0 && targetDays.includes(day)) {
+                    dayMatches = true;
+                }
+
+                // Check if today is the last day and lastDay is enabled
+                if (includeLastDay && isLastDayOfMonth(now)) {
+                    dayMatches = true;
+                }
+
+                if (!dayMatches) {
+                    return false;
+                }
+
+                // Day matches, now check time if specified
+                if (settings.time) {
+                    const hour = settings.time.military
+                        ? settings.time.hour
+                        : convert12To24(settings.time.hour, settings.time.meridiem);
+                    const minute = settings.time.minute;
+                    return now.getHours() === hour && now.getMinutes() === minute;
+                }
+
+                return true;
+            }
+
+            // ✅ PATTERN 3: No specific pattern - recur every day
             if (settings.time) {
                 const hour = settings.time.military
                     ? settings.time.hour
@@ -869,7 +1078,7 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
                 return now.getHours() === hour && now.getMinutes() === minute;
             }
 
-            return true; // If no time is set, trigger any time during the day
+            return true; // If no pattern and no time, trigger any time any day
 
         case "yearly":
             // ✅ FIX: If no specific months selected, recur every month of the year
@@ -1321,6 +1530,13 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
     };
 
     // ✅ Use existing settings if task was previously recurring, otherwise use defaults
+    console.log('🔍 Checking task recurringSettings:', {
+        hasSettings: !!task.recurringSettings,
+        settingsKeys: task.recurringSettings ? Object.keys(task.recurringSettings) : [],
+        settingsLength: task.recurringSettings ? Object.keys(task.recurringSettings).length : 0,
+        fullSettings: task.recurringSettings
+    });
+
     if (!task.recurringSettings || Object.keys(task.recurringSettings).length === 0) {
         // First time setting to recurring - use defaults
         task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
@@ -1339,7 +1555,7 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
 
     task.schemaVersion = 2;
 
-    // ✅ Create recurring template using AppState for consistency (immediate save)
+    // ✅ Update task AND template in AppState (immediate save)
     assertInjected('updateAppState', Deps.updateAppState);
     Deps.updateAppState(draft => {
         const activeCycleId = draft.appState?.activeCycleId;
@@ -1350,6 +1566,16 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             return;
         }
 
+        // ✅ Update the task in the tasks array to persist recurringSettings
+        const taskInState = currentCycleInState.tasks.find(t => t.id === assignedTaskId);
+        if (taskInState) {
+            taskInState.recurring = true;
+            taskInState.recurringSettings = structuredClone(task.recurringSettings);
+            taskInState.schemaVersion = 2;
+            console.log('✅ Updated task in AppState with recurringSettings');
+        }
+
+        // ✅ Create/update recurring template
         if (!currentCycleInState.recurringTemplates) {
             currentCycleInState.recurringTemplates = {};
         }

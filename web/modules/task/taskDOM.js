@@ -703,7 +703,11 @@ export class TaskDOMManager {
         // ✅ Mark that handler is attached to prevent double-attachment
         button.dataset.handlerAttached = 'true';
 
-        button.addEventListener("click", () => {
+        button.addEventListener("click", (event) => {
+            // ✅ Prevent event from bubbling to checkbox
+            event.stopPropagation();
+            event.preventDefault();
+
             // ✅ Read fresh state from AppState to avoid stale closure data
             const currentState = this.deps.AppState?.get();
             if (!currentState) {

@@ -329,9 +329,16 @@ export class RecurringPanelManager {
         toggleVisibility("biweekly-specific-days", "biweekly-day-container");
         toggleVisibility("biweekly-specific-time", "biweekly-time-container");
         toggleVisibility("monthly-specific-days", "monthly-day-container");
+        toggleVisibility("monthly-week-of-month", "monthly-week-container");
         toggleVisibility("monthly-specific-time", "monthly-time-container");
         toggleVisibility("yearly-specific-months", "yearly-month-container");
         toggleVisibility("yearly-specific-time", "yearly-time-container");
+
+        // Setup duration radio buttons
+        this.setupDurationRadioButtons();
+
+        // Setup mutual exclusivity for monthly options
+        this.setupMonthlyMutualExclusion();
     }
 
     /**
@@ -1135,6 +1142,74 @@ export class RecurringPanelManager {
     }
 
     /**
+     * Setup duration options (indefinitely checkbox, count/until radio buttons)
+     */
+    setupDurationRadioButtons() {
+        const indefinitelyCheckbox = this.deps.getElementById("recur-indefinitely");
+        const limitedContainer = this.deps.getElementById("recur-limited-container");
+        const countRadio = this.deps.getElementById("recur-count-radio");
+        const untilRadio = this.deps.getElementById("recur-until-radio");
+        const countContainer = this.deps.getElementById("recur-count-container");
+        const untilContainer = this.deps.getElementById("recur-until-container");
+
+        if (!indefinitelyCheckbox || !limitedContainer) return;
+
+        // Handle indefinitely checkbox
+        const updateLimitedVisibility = () => {
+            if (indefinitelyCheckbox.checked) {
+                limitedContainer.classList.add("hidden");
+            } else {
+                limitedContainer.classList.remove("hidden");
+                // Trigger radio button update
+                updateDurationContainers();
+            }
+        };
+
+        // Handle radio buttons within limited container
+        const updateDurationContainers = () => {
+            if (countRadio && countContainer) {
+                countContainer.classList.toggle("hidden", !countRadio.checked);
+            }
+            if (untilRadio && untilContainer) {
+                untilContainer.classList.toggle("hidden", !untilRadio.checked);
+            }
+        };
+
+        indefinitelyCheckbox.addEventListener("change", updateLimitedVisibility);
+        if (countRadio) countRadio.addEventListener("change", updateDurationContainers);
+        if (untilRadio) untilRadio.addEventListener("change", updateDurationContainers);
+
+        // Initialize visibility on load
+        updateLimitedVisibility();
+    }
+
+    /**
+     * Setup mutual exclusivity for monthly specific days vs week-of-month pattern
+     */
+    setupMonthlyMutualExclusion() {
+        const specificDays = this.deps.getElementById("monthly-specific-days");
+        const weekOfMonth = this.deps.getElementById("monthly-week-of-month");
+
+        if (!specificDays || !weekOfMonth) return;
+
+        specificDays.addEventListener("change", () => {
+            if (specificDays.checked && weekOfMonth.checked) {
+                weekOfMonth.checked = false;
+                const weekContainer = this.deps.getElementById("monthly-week-container");
+                if (weekContainer) weekContainer.classList.add("hidden");
+            }
+        });
+
+        weekOfMonth.addEventListener("change", () => {
+            if (weekOfMonth.checked && specificDays.checked) {
+                specificDays.checked = false;
+                const dayContainer = this.deps.getElementById("monthly-day-container");
+                if (dayContainer) dayContainer.classList.add("hidden");
+            }
+        });
+    }
+
+    /**
      * Setup additional event listeners for recurring panel
      */
     setupAdditionalListeners() {
@@ -1150,18 +1225,16 @@ export class RecurringPanelManager {
             });
         }
 
-        // Recur indefinitely checkbox
-        const recurIndefinitely = this.deps.getElementById("recur-indefinitely");
-        if (recurIndefinitely) {
-            recurIndefinitely.addEventListener("change", (e) => {
-                const countContainer = this.deps.getElementById("recur-count-container");
-                if (countContainer) {
-                    countContainer.classList.toggle("hidden", e.target.checked);
-                }
-                this.updateRecurCountVisibility();
-                this.updateRecurringSummary();
-            });
-        }
+        // Duration radio buttons summary update
+        ['recur-indefinitely', 'recur-count-radio', 'recur-until-radio'].forEach(id => {
+            const radio = this.deps.getElementById(id);
+            if (radio) {
+                radio.addEventListener("change", () => {
+                    this.updateRecurCountVisibility();
+                    this.updateRecurringSummary();
+                });
+            }
+        });
 
         // Document click handler for hiding preview when clicking outside
         document.addEventListener("click", (e) => {
@@ -1749,13 +1822,31 @@ export class RecurringPanelManager {
     buildRecurringSettingsFromPanel() {
         try {
             const frequency = this.deps.getElementById("recur-frequency")?.value || "daily";
-            const indefinitely = this.deps.getElementById("recur-indefinitely")?.checked ?? true;
-            const count = indefinitely ? null : parseInt(this.deps.getElementById("recur-count-input")?.value) || 1;
+
+            // Determine duration mode
+            const indefinitelyCheckbox = this.deps.getElementById("recur-indefinitely");
+            const indefinitely = indefinitelyCheckbox?.checked ?? true;
+
+            let count = null;
+            let untilDate = null;
+
+            // If not indefinite, check which limited duration option is selected
+            if (!indefinitely) {
+                const countRadio = this.deps.getElementById("recur-count-radio");
+                const untilRadio = this.deps.getElementById("recur-until-radio");
+
+                if (countRadio?.checked) {
+                    count = parseInt(this.deps.getElementById("recur-count-input")?.value) || 1;
+                } else if (untilRadio?.checked) {
+                    untilDate = this.deps.getElementById("recur-until-date")?.value || null;
+                }
+            }
 
             const settings = {
                 frequency,
                 indefinitely,
                 count,
+                untilDate,
                 useSpecificTime: false,
                 time: null,
                 specificDates: {
@@ -1832,9 +1923,18 @@ export class RecurringPanelManager {
 
                 // ✅ Monthly
                 if (frequency === "monthly") {
+                    const useSpecificDays = this.deps.getElementById("monthly-specific-days")?.checked;
+                    const useWeekOfMonth = this.deps.getElementById("monthly-week-of-month")?.checked;
+
                     settings.monthly = {
-                        useSpecificDays: this.deps.getElementById("monthly-specific-days")?.checked,
-                        days: Array.from(this.deps.querySelectorAll(".monthly-day-box.selected")).map(el => parseInt(el.dataset.day))
+                        useSpecificDays: useSpecificDays,
+                        days: useSpecificDays ? Array.from(this.deps.querySelectorAll(".monthly-day-box.selected")).map(el => parseInt(el.dataset.day)) : [],
+                        lastDay: useSpecificDays ? (this.deps.getElementById("monthly-last-day")?.checked || false) : false,
+                        useWeekOfMonth: useWeekOfMonth,
+                        weekOfMonth: useWeekOfMonth ? {
+                            ordinal: this.deps.getElementById("monthly-week-ordinal")?.value || "1",
+                            day: this.deps.getElementById("monthly-week-day")?.value || "Mon"
+                        } : null
                     };
                 }
 
@@ -2201,8 +2301,19 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
 
     // === 🔁 Normal Recurrence Fallback ===
     let summaryText = `⏱ Repeats ${freq}`;
+
+    // Duration: indefinitely, count, or until date
     if (!indefinitely && count) {
         summaryText += ` for ${count} time${count !== 1 ? "s" : ""}`;
+    } else if (!indefinitely && settings.untilDate) {
+        // Format date nicely for display
+        const dateObj = new Date(settings.untilDate + 'T00:00:00');
+        const formattedDate = dateObj.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        });
+        summaryText += ` until ${formattedDate}`;
     } else {
         summaryText += " indefinitely";
     }
@@ -2240,8 +2351,47 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
     }
 
     // === MONTHLY ===
-    if (freq === "monthly" && settings.monthly?.days?.length) {
-        summaryText += ` on day${settings.monthly.days.length > 1 ? "s" : ""} ${settings.monthly.days.join(", ")}`;
+    if (freq === "monthly") {
+        const monthly = settings.monthly || {};
+
+        // Week-of-month pattern (e.g., "2nd Tuesday", "Last Friday")
+        if (monthly.useWeekOfMonth && monthly.weekOfMonth) {
+            const ordinalMap = {
+                "1": "1st",
+                "2": "2nd",
+                "3": "3rd",
+                "4": "4th",
+                "last": "Last"
+            };
+            const dayMap = {
+                "Sun": "Sunday",
+                "Mon": "Monday",
+                "Tue": "Tuesday",
+                "Wed": "Wednesday",
+                "Thu": "Thursday",
+                "Fri": "Friday",
+                "Sat": "Saturday"
+            };
+            const ordinal = ordinalMap[monthly.weekOfMonth.ordinal] || monthly.weekOfMonth.ordinal;
+            const day = dayMap[monthly.weekOfMonth.day] || monthly.weekOfMonth.day;
+            summaryText += ` on ${ordinal} ${day}`;
+        }
+        // Specific days pattern
+        else if (monthly.useSpecificDays && (monthly.days?.length || monthly.lastDay)) {
+            const parts = [];
+
+            if (monthly.days?.length) {
+                parts.push(`day${monthly.days.length > 1 ? "s" : ""} ${monthly.days.join(", ")}`);
+            }
+
+            if (monthly.lastDay) {
+                parts.push("last day");
+            }
+
+            if (parts.length > 0) {
+                summaryText += ` on ${parts.join(" and ")}`;
+            }
+        }
     }
 
     // === YEARLY ===
