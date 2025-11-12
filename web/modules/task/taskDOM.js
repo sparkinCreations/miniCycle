@@ -394,7 +394,11 @@ export class TaskDOMManager {
 
         if (isRecurring) {
             taskItem.classList.add("recurring");
-            // Use settings from template if available, otherwise use task's settings
+        }
+
+        // ✅ CRITICAL: Always set data-recurring-settings if settings exist, even when recurring=false
+        // This preserves settings when user toggles recurring OFF, so they can be restored when toggled back ON
+        if (hasRecurringTemplate || hasValidRecurringSettings) {
             const settingsToUse = hasRecurringTemplate
                 ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
                 : recurringSettings;

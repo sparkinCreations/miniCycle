@@ -1530,21 +1530,12 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
     };
 
     // ✅ Use existing settings if task was previously recurring, otherwise use defaults
-    console.log('🔍 Checking task recurringSettings:', {
-        hasSettings: !!task.recurringSettings,
-        settingsKeys: task.recurringSettings ? Object.keys(task.recurringSettings) : [],
-        settingsLength: task.recurringSettings ? Object.keys(task.recurringSettings).length : 0,
-        fullSettings: task.recurringSettings
-    });
-
     if (!task.recurringSettings || Object.keys(task.recurringSettings).length === 0) {
         // First time setting to recurring - use defaults
         task.recurringSettings = normalizeRecurringSettings(structuredClone(defaultSettings));
-        console.log('📝 First-time recurring activation - using default settings');
     } else {
         // Task was previously recurring - preserve existing settings
         task.recurringSettings = normalizeRecurringSettings(structuredClone(task.recurringSettings));
-        console.log('📝 Re-activating recurring - preserving previous settings:', task.recurringSettings);
     }
 
     // Update DOM if element exists
@@ -1572,7 +1563,6 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             taskInState.recurring = true;
             taskInState.recurringSettings = structuredClone(task.recurringSettings);
             taskInState.schemaVersion = 2;
-            console.log('✅ Updated task in AppState with recurringSettings');
         }
 
         // ✅ Create/update recurring template

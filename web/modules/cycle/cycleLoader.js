@@ -156,16 +156,6 @@ function renderTasksToDOM(tasks = []) {
   console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
 
   tasks.forEach(task => {
-    // ✅ DEBUG: Log task data to see if recurringSettings is present
-    console.log('🔍 Loading task from localStorage:', {
-      id: task.id,
-      text: task.text,
-      recurring: task.recurring,
-      hasRecurringSettings: !!task.recurringSettings,
-      recurringSettingsKeys: task.recurringSettings ? Object.keys(task.recurringSettings) : [],
-      fullRecurringSettings: task.recurringSettings
-    });
-
     // Call addTask but ensure it doesn't create new task objects in AppState
     // The isLoading=true flag should prevent this, but it still generates new IDs
     // So we need to call addTask but make sure it uses the EXACT task data from AppState
