@@ -1,0 +1,39 @@
+{
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:8080/miniCycle.html",
+        "http://localhost:8080/lite/miniCycle-lite.html"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop",
+        "chromeFlags": "--no-sandbox --disable-dev-shm-usage"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", {"minScore": 0.85}],
+        "categories:accessibility": ["warn", {"minScore": 0.90}],
+        "categories:best-practices": ["warn", {"minScore": 0.90}],
+        "categories:seo": ["warn", {"minScore": 0.85}],
+        "categories:pwa": ["warn", {"minScore": 0.90}],
+
+        "first-contentful-paint": ["error", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "total-blocking-time": ["warn", {"maxNumericValue": 300}],
+        "speed-index": ["warn", {"maxNumericValue": 3400}],
+
+        "interactive": ["warn", {"maxNumericValue": 3800}],
+        "max-potential-fid": ["warn", {"maxNumericValue": 130}],
+
+        "uses-responsive-images": "off",
+        "offscreen-images": "off"
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

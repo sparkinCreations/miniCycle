@@ -11,7 +11,10 @@
     "blog:build": "cd blog && npm run build",
     "test": "node tests/automated/run-browser-tests.js",
     "test:browser": "node tests/automated/run-browser-tests.js",
-    "test:manual": "python3 -m http.server 8080"
+    "test:manual": "python3 -m http.server 8080",
+    "perf": "node tests/automated/run-performance-benchmarks.js",
+    "lighthouse": "lhci autorun",
+    "lighthouse:install": "npm install -g @lhci/cli"
   },
   "keywords": [
     "productivity",

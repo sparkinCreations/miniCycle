@@ -205,6 +205,7 @@
         <label for="module-select">Choose a module to test:</label>
         <select id="module-select">
             <option value="">-- Select Module --</option>
+            <option value="performance">⚡ Performance Benchmarks</option>
             <option value="integration">🔗 Integration Tests (E2E)</option>
             <option value="themeManager">ThemeManager</option>
             <option value="deviceDetection">DeviceDetection</option>
@@ -255,6 +256,7 @@
         const cacheBuster = Date.now();
 
         // Import test modules with cache busting
+        const { runPerformanceBenchmarks } = await import(`./performance.benchmark.js?v=${cacheBuster}`);
         const { runIntegrationTests } = await import(`./integration.tests.js?v=${cacheBuster}`);
         const { runThemeManagerTests } = await import(`./themeManager.tests.js?v=${cacheBuster}`);
         const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
@@ -303,7 +305,11 @@
 
             try {
                 // Use cache buster for module imports to force fresh loads
-                if (moduleName === 'integration') {
+                if (moduleName === 'performance') {
+                    // Performance benchmarks don't need to import modules
+                    currentModule = 'performance';
+                    resultsDiv.innerHTML = '<p>✅ Performance Benchmarks ready. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'integration') {
                     // Integration tests don't need to import any modules - they test the whole app
                     currentModule = 'integration';
                     resultsDiv.innerHTML = '<p>✅ Integration Tests (E2E) ready. Click "Run Tests" to begin.</p>';
@@ -451,7 +457,9 @@
                 return;
             }
 
-            if (currentModule === 'integration') {
+            if (currentModule === 'performance') {
+                await runPerformanceBenchmarks(resultsDiv);
+            } else if (currentModule === 'integration') {
                 await runIntegrationTests(resultsDiv);
             } else if (currentModule === 'themeManager') {
                 await runThemeManagerTests(resultsDiv);
