@@ -996,6 +996,124 @@ export function runRecurringPanelTests(resultsDiv) {
         panel.showTaskSummaryPreview(null);
     });
 
+    test('showTaskSummaryPreview hides button when settings panel is open (edit mode)', () => {
+        const mockElements = {
+            'recurring-preview-text': { innerHTML: '' },
+            'change-recurring-settings': {
+                classList: {
+                    contains: () => false,
+                    add: function(className) { this._hidden = (className === 'hidden'); },
+                    remove: function(className) { if (className === 'hidden') this._hidden = false; },
+                    _hidden: false
+                },
+                style: {}
+            },
+            'recurring-settings-panel': {
+                classList: {
+                    contains: (className) => className === 'hidden' ? false : true // Panel is visible (edit mode)
+                }
+            },
+            'recurring-summary-preview': {
+                classList: {
+                    remove: () => {},
+                    contains: () => false
+                }
+            }
+        };
+
+        const task = {
+            id: 'task-1',
+            text: 'Test Task',
+            recurringSettings: { frequency: 'daily' }
+        };
+
+        const mockState = {
+            data: {
+                cycles: {
+                    'cycle-1': {
+                        tasks: [task],
+                        recurringTemplates: {}
+                    }
+                }
+            },
+            appState: { activeCycleId: 'cycle-1' }
+        };
+
+        const panel = new RecurringPanelManager({
+            getElementById: (id) => mockElements[id] || null,
+            isAppStateReady: () => true,
+            getAppState: () => mockState,
+            buildRecurringSummary: () => 'Daily',
+            formatNextOccurrence: () => 'Tomorrow'
+        });
+
+        panel.showTaskSummaryPreview(task);
+
+        const button = mockElements['change-recurring-settings'];
+        if (!button.classList._hidden) {
+            throw new Error('Button should be hidden when settings panel is open (edit mode)');
+        }
+    });
+
+    test('showTaskSummaryPreview shows button when settings panel is closed (view mode)', () => {
+        const mockElements = {
+            'recurring-preview-text': { innerHTML: '' },
+            'change-recurring-settings': {
+                classList: {
+                    contains: () => false,
+                    add: function(className) { this._hidden = (className === 'hidden'); },
+                    remove: function(className) { if (className === 'hidden') this._hidden = false; },
+                    _hidden: true
+                },
+                style: {}
+            },
+            'recurring-settings-panel': {
+                classList: {
+                    contains: (className) => className === 'hidden' ? true : false // Panel is hidden (view mode)
+                }
+            },
+            'recurring-summary-preview': {
+                classList: {
+                    remove: () => {},
+                    contains: () => false
+                }
+            }
+        };
+
+        const task = {
+            id: 'task-1',
+            text: 'Test Task',
+            recurringSettings: { frequency: 'weekly' }
+        };
+
+        const mockState = {
+            data: {
+                cycles: {
+                    'cycle-1': {
+                        tasks: [task],
+                        recurringTemplates: {}
+                    }
+                }
+            },
+            appState: { activeCycleId: 'cycle-1' }
+        };
+
+        const panel = new RecurringPanelManager({
+            getElementById: (id) => mockElements[id] || null,
+            isAppStateReady: () => true,
+            getAppState: () => mockState,
+            buildRecurringSummary: () => 'Weekly',
+            formatNextOccurrence: () => 'Next Monday'
+        });
+
+        panel.showTaskSummaryPreview(task);
+
+        const button = mockElements['change-recurring-settings'];
+        if (button.classList._hidden) {
+            throw new Error('Button should be visible when settings panel is closed (view mode)');
+        }
+    });
+
     test('buildRecurringSettingsFromPanel handles errors gracefully', () => {
         const panel = new RecurringPanelManager({
             getElementById: () => { throw new Error('DOM error'); },

@@ -1704,6 +1704,130 @@ export function runRecurringCoreTests(resultsDiv) {
         }
     });
 
+    // === SETTINGS PERSISTENCE TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 Settings Persistence</h4>';
+
+    test('preserves recurringSettings when toggling OFF then ON', () => {
+        const originalSettings = normalizeRecurringSettings({
+            frequency: 'weekly',
+            weekly: { days: [2, 4] }, // Tuesday and Thursday
+            indefinitely: true,
+            time: { hour: 9, minute: 30, military: true }
+        });
+
+        // Simulate toggle OFF (settings should be preserved but not active)
+        const taskAfterToggleOff = {
+            id: 'task-1',
+            recurring: false,
+            recurringSettings: originalSettings // Settings preserved
+        };
+
+        // Verify settings are still there
+        if (!taskAfterToggleOff.recurringSettings) {
+            throw new Error('Settings should be preserved after toggle OFF');
+        }
+        if (taskAfterToggleOff.recurringSettings.frequency !== 'weekly') {
+            throw new Error('Frequency should be preserved');
+        }
+        if (!Array.isArray(taskAfterToggleOff.recurringSettings.weekly.days)) {
+            throw new Error('Weekly days should be preserved');
+        }
+        if (taskAfterToggleOff.recurringSettings.weekly.days.length !== 2) {
+            throw new Error('Should preserve 2 days');
+        }
+
+        // Simulate toggle back ON (should restore same settings)
+        const taskAfterToggleOn = {
+            id: 'task-1',
+            recurring: true,
+            recurringSettings: normalizeRecurringSettings(taskAfterToggleOff.recurringSettings)
+        };
+
+        // Verify settings match original
+        if (taskAfterToggleOn.recurringSettings.frequency !== originalSettings.frequency) {
+            throw new Error('Frequency should match after toggle ON');
+        }
+        if (taskAfterToggleOn.recurringSettings.weekly.days.length !== originalSettings.weekly.days.length) {
+            throw new Error('Weekly days should match after toggle ON');
+        }
+        if (taskAfterToggleOn.recurringSettings.time.hour !== originalSettings.time.hour) {
+            throw new Error('Time should match after toggle ON');
+        }
+    });
+
+    test('normalizeRecurringSettings preserves all properties through toggle cycle', () => {
+        const complexSettings = {
+            frequency: 'monthly',
+            monthly: {
+                useSpecificDays: true,
+                days: [1, 15, 28],
+                lastDay: true,
+                useWeekOfMonth: true,
+                weekOfMonth: {
+                    ordinal: '2',  // ✅ Use correct format: object with ordinal and day
+                    day: 'Tue'     // Tuesday
+                }
+            },
+            indefinitely: false,
+            count: 5,
+            time: { hour: 14, minute: 30, military: true }
+        };
+
+        // Toggle OFF then ON (simulate)
+        const normalized1 = normalizeRecurringSettings(complexSettings);
+        const normalized2 = normalizeRecurringSettings(normalized1);
+
+        // Both normalizations should produce identical results
+        if (normalized2.frequency !== complexSettings.frequency) {
+            throw new Error('Frequency lost after second normalization');
+        }
+        if (normalized2.monthly.days.length !== complexSettings.monthly.days.length) {
+            throw new Error('Monthly days lost after second normalization');
+        }
+        if (normalized2.monthly.lastDay !== complexSettings.monthly.lastDay) {
+            throw new Error('Monthly lastDay lost after second normalization');
+        }
+        if (normalized2.monthly.weekOfMonth?.ordinal !== complexSettings.monthly.weekOfMonth.ordinal) {
+            throw new Error('Monthly weekOfMonth ordinal lost after second normalization');
+        }
+        if (normalized2.monthly.weekOfMonth?.day !== complexSettings.monthly.weekOfMonth.day) {
+            throw new Error('Monthly weekOfMonth day lost after second normalization');
+        }
+        if (normalized2.count !== complexSettings.count) {
+            throw new Error('Count lost after second normalization');
+        }
+        if (normalized2.time.hour !== complexSettings.time.hour) {
+            throw new Error('Time lost after second normalization');
+        }
+    });
+
+    test('empty settings object does not break normalization', () => {
+        // Simulate task with empty settings (bug scenario)
+        const emptySettings = {};
+
+        const normalized = normalizeRecurringSettings(emptySettings);
+
+        // Should get defaults
+        if (normalized.frequency !== 'daily') {
+            throw new Error('Should default to daily frequency');
+        }
+        if (normalized.indefinitely !== true) {
+            throw new Error('Should default to indefinitely');
+        }
+    });
+
+    test('undefined settings gets default values', () => {
+        // Simulate task with undefined settings
+        const normalized = normalizeRecurringSettings(undefined);
+
+        if (!normalized.frequency) {
+            throw new Error('Should have default frequency');
+        }
+        if (typeof normalized.indefinitely !== 'boolean') {
+            throw new Error('Should have default indefinitely value');
+        }
+    });
+
     // === RESULTS SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

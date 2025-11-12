@@ -427,6 +427,68 @@ export async function runTaskDOMTests(resultsDiv) {
         }
     });
 
+    await test('createMainTaskElement preserves recurringSettings in DOM when recurring=false', () => {
+        const manager = new TaskDOMManager();
+
+        const recurringSettings = {
+            frequency: 'weekly',
+            weekly: { days: [2, 4] },
+            indefinitely: true
+        };
+
+        // recurring=false but settings exist (user toggled OFF)
+        const taskItem = manager.createMainTaskElement('test-id', false, false, recurringSettings, {});
+
+        const attr = taskItem.getAttribute('data-recurring-settings');
+        if (!attr) {
+            throw new Error('Should preserve data-recurring-settings even when recurring=false');
+        }
+
+        const parsed = JSON.parse(attr);
+        if (parsed.frequency !== 'weekly') {
+            throw new Error('Settings not preserved correctly');
+        }
+        if (!parsed.weekly || !Array.isArray(parsed.weekly.days)) {
+            throw new Error('Weekly settings not preserved');
+        }
+        if (parsed.weekly.days.length !== 2) {
+            throw new Error('Weekly days not preserved');
+        }
+    });
+
+    await test('createMainTaskElement sets data-recurring-settings when recurring=true', () => {
+        const manager = new TaskDOMManager();
+
+        const recurringSettings = {
+            frequency: 'daily',
+            indefinitely: true
+        };
+
+        const taskItem = manager.createMainTaskElement('test-id', false, true, recurringSettings, {});
+
+        const attr = taskItem.getAttribute('data-recurring-settings');
+        if (!attr) {
+            throw new Error('Should have data-recurring-settings when recurring=true');
+        }
+
+        const parsed = JSON.parse(attr);
+        if (parsed.frequency !== 'daily') {
+            throw new Error('Settings not set correctly');
+        }
+    });
+
+    await test('createMainTaskElement does not set data-recurring-settings when no settings exist', () => {
+        const manager = new TaskDOMManager();
+
+        // No settings provided
+        const taskItem = manager.createMainTaskElement('test-id', false, false, {}, {});
+
+        const attr = taskItem.getAttribute('data-recurring-settings');
+        if (attr) {
+            throw new Error('Should not have data-recurring-settings when no settings exist');
+        }
+    });
+
     // ============================================
     // 🔄 RENDERING TESTS
     // ============================================

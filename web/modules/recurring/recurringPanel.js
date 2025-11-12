@@ -12,7 +12,7 @@
  * - Button visibility management
  *
  * @module recurringPanel
- * @version 1.349
+ * @version 1.350
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
@@ -1702,14 +1702,6 @@ export class RecurringPanelManager {
                 return;
             }
 
-            // ✅ Debug: Check button state before updating preview
-            const changeBtnBefore = this.deps.getElementById("change-recurring-settings");
-            console.log('🔍 Button state before preview update:', {
-                exists: !!changeBtnBefore,
-                visible: changeBtnBefore ? !changeBtnBefore.classList.contains("hidden") : false,
-                hasEventListener: changeBtnBefore ? changeBtnBefore.onclick !== null : false
-            });
-
             if (!recurringSettings) {
                 previewText.innerHTML = `
                     <strong>${task.text}</strong><br>
@@ -1731,24 +1723,23 @@ export class RecurringPanelManager {
                 ${nextOccurrenceText ? `<br><span class="next-occurrence-text">${nextOccurrenceText}</span>` : ''}
             `;
 
-            // ✅ Ensure the button is visible after updating preview
+            // ✅ Only show button if settings panel is NOT currently open
             const changeBtn = this.deps.getElementById("change-recurring-settings");
+            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
+            const isEditingSettings = settingsPanel && !settingsPanel.classList.contains("hidden");
+
             if (changeBtn) {
-                changeBtn.style.display = ""; // Remove any display: none
-                changeBtn.classList.remove("hidden"); // Remove hidden class if present
-                console.log('✅ Change recurring settings button made visible');
+                if (isEditingSettings) {
+                    // Keep button hidden while editing
+                    changeBtn.classList.add("hidden");
+                } else {
+                    // Show button when not editing
+                    changeBtn.style.display = ""; // Remove any display: none
+                    changeBtn.classList.remove("hidden"); // Remove hidden class if present
+                }
             } else {
                 console.warn('⚠️ Change recurring settings button not found in DOM');
             }
-
-            // ✅ Debug: Check button state after updating preview
-            console.log('🔍 Button state after preview update:', {
-                exists: !!changeBtn,
-                visible: changeBtn ? !changeBtn.classList.contains("hidden") : false,
-                parentVisible: summaryContainer ? !summaryContainer.classList.contains("hidden") : false
-            });
-
-            console.log('✅ Task summary preview displayed');
 
         } catch (error) {
             console.error('❌ Error showing task summary:', error);
