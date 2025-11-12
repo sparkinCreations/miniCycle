@@ -288,6 +288,162 @@ export function runPerformanceBenchmarks(resultsDiv) {
         objects = null;
     }, 20);
 
+    // ===== DOM MANIPULATION =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation</h4>';
+
+    benchmark('Add and remove 100 DOM elements', () => {
+        const container = document.createElement('div');
+        const elements = [];
+
+        // Add
+        for (let i = 0; i < 100; i++) {
+            const el = document.createElement('div');
+            el.textContent = `Element ${i}`;
+            container.appendChild(el);
+            elements.push(el);
+        }
+
+        // Remove
+        elements.forEach(el => el.remove());
+    }, 30);
+
+    benchmark('Update 100 element styles', () => {
+        const container = document.createElement('div');
+        const elements = [];
+
+        for (let i = 0; i < 100; i++) {
+            const el = document.createElement('div');
+            container.appendChild(el);
+            elements.push(el);
+        }
+
+        // Batch style updates
+        elements.forEach(el => {
+            el.style.backgroundColor = '#f0f0f0';
+            el.style.padding = '10px';
+            el.style.margin = '5px';
+        });
+
+        container.remove();
+    }, 20);
+
+    // ===== CYCLE OPERATIONS =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Cycle Operations</h4>';
+
+    benchmark('Create cycle with 100 tasks', () => {
+        const cycle = {
+            id: 'perf-cycle',
+            name: 'Performance Test Cycle',
+            tasks: Array.from({ length: 100 }, (_, i) => ({
+                id: `task-${i}`,
+                text: `Task ${i}`,
+                checked: false,
+                priority: ['high', 'normal', 'low'][i % 3],
+                createdAt: Date.now() - (i * 1000)
+            })),
+            cycleCount: 0,
+            autoReset: false,
+            deleteCheckedTasks: false
+        };
+    }, 15);
+
+    benchmark('Complete all tasks in 100-task cycle', () => {
+        const tasks = Array.from({ length: 100 }, (_, i) => ({
+            id: `task-${i}`,
+            text: `Task ${i}`,
+            checked: false
+        }));
+
+        // Mark all as checked
+        tasks.forEach(task => task.checked = true);
+    }, 5);
+
+    benchmark('Reset 100 tasks (cycle completion)', () => {
+        const tasks = Array.from({ length: 100 }, (_, i) => ({
+            id: `task-${i}`,
+            text: `Task ${i}`,
+            checked: true
+        }));
+
+        // Reset all
+        tasks.forEach(task => task.checked = false);
+    }, 5);
+
+    // ===== SEARCH AND FILTER =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🔍 Search & Filter</h4>';
+
+    benchmark('Search through 1000 tasks', () => {
+        const tasks = Array.from({ length: 1000 }, (_, i) => ({
+            id: `task-${i}`,
+            text: `Task number ${i} with some description`,
+            checked: i % 2 === 0
+        }));
+
+        const searchTerms = ['number', 'Task', 'description', '500'];
+        searchTerms.forEach(term => {
+            const results = tasks.filter(task =>
+                task.text.toLowerCase().includes(term.toLowerCase())
+            );
+        });
+    }, 10);
+
+    benchmark('Filter tasks by multiple criteria', () => {
+        const tasks = Array.from({ length: 1000 }, (_, i) => ({
+            id: `task-${i}`,
+            text: `Task ${i}`,
+            checked: i % 2 === 0,
+            priority: ['high', 'normal', 'low'][i % 3],
+            hasDueDate: i % 5 === 0,
+            isRecurring: i % 7 === 0
+        }));
+
+        // Apply multiple filters
+        const filtered = tasks.filter(t =>
+            !t.checked &&
+            t.priority === 'high' &&
+            t.hasDueDate &&
+            !t.isRecurring
+        );
+    }, 10);
+
+    // ===== JSON OPERATIONS =====
+    resultsDiv.innerHTML += '<h4 class="test-section">📦 JSON Operations</h4>';
+
+    benchmark('Deep clone 100 task objects', () => {
+        const tasks = Array.from({ length: 100 }, (_, i) => ({
+            id: `task-${i}`,
+            text: `Task ${i}`,
+            checked: false,
+            priority: 'normal',
+            metadata: {
+                createdAt: Date.now(),
+                tags: ['tag1', 'tag2'],
+                history: [{ action: 'created', timestamp: Date.now() }]
+            }
+        }));
+
+        const cloned = tasks.map(task => JSON.parse(JSON.stringify(task)));
+    }, 15);
+
+    benchmark('Serialize and deserialize cycle data', () => {
+        const data = {
+            schemaVersion: 2.5,
+            cycles: {
+                'cycle-1': {
+                    name: 'Test',
+                    tasks: Array.from({ length: 100 }, (_, i) => ({
+                        id: `task-${i}`,
+                        text: `Task ${i}`,
+                        checked: false
+                    }))
+                }
+            }
+        };
+
+        const serialized = JSON.stringify(data);
+        const deserialized = JSON.parse(serialized);
+    }, 20);
+
     // ===== RESULTS SUMMARY =====
     resultsDiv.innerHTML += '<h3>📊 Performance Summary</h3>';
 
@@ -297,26 +453,27 @@ export function runPerformanceBenchmarks(resultsDiv) {
 
     const avgDuration = (totalDuration / results.filter(r => r.duration !== 'ERROR').length).toFixed(2);
 
-    resultsDiv.innerHTML += `<div class="result info">📈 Total benchmark time: ${totalDuration.toFixed(2)}ms</div>`;
-    resultsDiv.innerHTML += `<div class="result info">📊 Average operation time: ${avgDuration}ms</div>`;
-    resultsDiv.innerHTML += `<div class="result info">✅ Passed: ${passed.count}/${total.count} benchmarks</div>`;
+    resultsDiv.innerHTML += `<div class="result pass" style="background: rgba(255, 255, 255, 0.95); color: #333; font-weight: 600;">📈 Total benchmark time: ${totalDuration.toFixed(2)}ms</div>`;
+    resultsDiv.innerHTML += `<div class="result pass" style="background: rgba(255, 255, 255, 0.95); color: #333; font-weight: 600;">📊 Average operation time: ${avgDuration}ms</div>`;
+    resultsDiv.innerHTML += `<div class="result pass" style="background: rgba(255, 255, 255, 0.95); color: #155724; font-weight: 600;">✅ Passed: ${passed.count}/${total.count} benchmarks</div>`;
 
     // Show warnings if any exceeded thresholds
     const warnings = results.filter(r => r.status === 'warn');
     if (warnings.length > 0) {
-        resultsDiv.innerHTML += `<div class="result warn">⚠️ ${warnings.length} operation(s) exceeded performance thresholds</div>`;
+        resultsDiv.innerHTML += `<div class="result" style="background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; font-weight: 600;">⚠️ ${warnings.length} operation(s) exceeded performance thresholds</div>`;
     }
 
     const errors = results.filter(r => r.status === 'error');
     if (errors.length > 0) {
-        resultsDiv.innerHTML += `<div class="result fail">❌ ${errors.length} operation(s) encountered errors</div>`;
+        resultsDiv.innerHTML += `<div class="result fail" style="font-weight: 600;">❌ ${errors.length} operation(s) encountered errors</div>`;
     }
 
     // Memory info if available
     if (performance.memory) {
         const memoryMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2);
         const limitMB = (performance.memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2);
-        resultsDiv.innerHTML += `<div class="result info">🧠 Memory usage: ${memoryMB}MB / ${limitMB}MB (${((memoryMB / limitMB) * 100).toFixed(1)}%)</div>`;
+        const memoryPercent = ((memoryMB / limitMB) * 100).toFixed(1);
+        resultsDiv.innerHTML += `<div class="result pass" style="background: rgba(255, 255, 255, 0.95); color: #333; font-weight: 600;">🧠 Memory usage: ${memoryMB}MB / ${limitMB}MB (${memoryPercent}%)</div>`;
     }
 
     return { passed: passed.count, total: total.count, results };
