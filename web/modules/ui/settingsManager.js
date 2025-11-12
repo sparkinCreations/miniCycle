@@ -255,6 +255,78 @@ export class SettingsManager {
             console.log('✅ Three dots toggle setup completed');
         }
 
+        // ✅ Toggle Completed Dropdown Setting (Schema 2.5 only)
+        const completedDropdownToggle = this.deps.getElementById("toggle-completed-dropdown");
+        if (completedDropdownToggle) {
+            console.log('🔄 Setting up completed dropdown toggle (Schema 2.5 only)...');
+
+            // ✅ Use state-based approach - disabled by default
+            let completedDropdownEnabled = false;
+
+            const AppState = this.deps.AppState();
+            if (AppState?.isReady?.()) {
+                const currentState = AppState.get();
+                completedDropdownEnabled = currentState?.settings?.showCompletedDropdown || false;
+            }
+
+            console.log('📊 Loading completed dropdown setting from state:', completedDropdownEnabled);
+
+            completedDropdownToggle.checked = completedDropdownEnabled;
+
+            completedDropdownToggle.addEventListener("change", () => {
+                const enabled = completedDropdownToggle.checked;
+
+                console.log('🔄 Completed dropdown toggle changed:', enabled);
+
+                // ✅ Use state system if available
+                const AppState = this.deps.AppState();
+                if (AppState?.isReady?.()) {
+                    AppState.update(state => {
+                        if (!state.settings) state.settings = {};
+                        state.settings.showCompletedDropdown = enabled;
+                        state.metadata.lastModified = Date.now();
+                    }, true); // immediate save
+
+                    console.log('✅ Completed dropdown setting saved to state:', enabled);
+                } else {
+                    // ✅ Fallback to localStorage if state not ready
+                    console.warn('⚠️ AppState not ready, using localStorage fallback');
+                    const schemaData = this.deps.loadMiniCycleData();
+                    if (schemaData) {
+                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                        if (!fullSchemaData.settings) fullSchemaData.settings = {};
+                        fullSchemaData.settings.showCompletedDropdown = enabled;
+                        fullSchemaData.metadata.lastModified = Date.now();
+                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                    }
+                }
+
+                // ✅ If enabling, organize existing completed tasks
+                if (enabled && typeof window.organizeCompletedTasks === 'function') {
+                    window.organizeCompletedTasks();
+                }
+
+                // ✅ If disabling, move completed tasks back to main list
+                if (!enabled) {
+                    const completedList = document.getElementById('completedTaskList');
+                    const taskList = document.getElementById('taskList');
+                    if (completedList && taskList) {
+                        const completedTasks = Array.from(completedList.querySelectorAll('.task'));
+                        completedTasks.forEach(task => {
+                            taskList.appendChild(task);
+                        });
+                        // Hide the section
+                        const completedSection = document.getElementById('completed-tasks-section');
+                        if (completedSection) {
+                            completedSection.style.display = 'none';
+                        }
+                    }
+                }
+            });
+
+            console.log('✅ Completed dropdown toggle setup completed');
+        }
+
         // ✅ Update backup function to be Schema 2.5 only
         const backupBtn = this.deps.getElementById("backup-mini-cycles");
         if (backupBtn) {

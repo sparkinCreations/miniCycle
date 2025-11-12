@@ -497,6 +497,11 @@ export class TaskCore {
                 }
             }
 
+            // Move task between active and completed lists
+            if (typeof window.handleTaskListMovement === 'function') {
+                window.handleTaskListMovement(taskItem, checkbox.checked);
+            }
+
             // Update help window if available
             if (window.helpWindowManager && typeof window.helpWindowManager.updateConstantMessage === 'function') {
                 setTimeout(() => {

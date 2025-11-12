@@ -1327,7 +1327,12 @@ window.installApp = () => {
               <input type="checkbox" id="always-show-recurring">
               Always Show Recurring Button in Task Options
           </label>
-                
+
+                <label class="settings-option">
+                    <input type="checkbox" id="toggle-completed-dropdown">
+                    Show Completed Tasks in Dropdown
+                </label>
+
                 <!-- Dark Mode Toggle -->
                 <label class="settings-option">
                     <input type="checkbox" id="darkModeToggle" />
@@ -1716,8 +1721,16 @@ window.installApp = () => {
     </div>
     <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
     <div class="task-list-container">
-        <!--Tasks will go here--> 
+        <!--Tasks will go here-->
         <ul id="taskList" class="task-list"></ul>
+
+        <!-- Completed Tasks Collapsible Section -->
+        <div class="completed-tasks-section" id="completed-tasks-section">
+            <h3 class="completed-tasks-header clickable" id="completed-tasks-header">
+                ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
+            </h3>
+            <ul id="completedTaskList" class="completed-task-list"></ul>
+        </div>
     </div>
     <div class="progress-container">
         <div id="progressBar" class="progress-bar"></div>

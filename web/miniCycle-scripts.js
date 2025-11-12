@@ -1299,6 +1299,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // ✅ App already marked as ready at line 777 after Phase 2 modules loaded
   console.log('✅ miniCycle initialization complete - app is ready');
 
+  // ✅ Initialize completed tasks section
+  if (typeof initCompletedTasksSection === 'function') {
+    initCompletedTasksSection();
+  }
+
   // ✅ Keep isInitializing true - will be disabled on first user interaction
   // This prevents the undo button from appearing on page load
   console.log('✅ Initialization complete - undo system will activate on first user action');
@@ -1562,6 +1567,12 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
     if (typeof window.checkOverdueTasks === 'function') {
       await window.checkOverdueTasks();
       console.log('✅ Overdue tasks checked after task rendering');
+    }
+
+    // ✅ Organize completed tasks into completed section
+    if (typeof window.organizeCompletedTasks === 'function') {
+      window.organizeCompletedTasks();
+      console.log('✅ Completed tasks organized after task rendering');
     }
   } else {
     console.log('⏳ Loader not ready yet, flagging pending load');
@@ -2986,9 +2997,225 @@ document.addEventListener("click", (e) => {
 
     // ✅ Export for taskDOM module
     window.hideTaskOptions = hideTaskOptions;
-    
-    
+
+
 // ✅ REMOVED: handleTaskCompletionChange - now in modules/task/taskCore.js
+
+// ========================================
+// Completed Tasks Management
+// ========================================
+
+/**
+ * Initialize completed tasks section
+ * Sets up event listeners and restores saved state
+ */
+function initCompletedTasksSection() {
+    console.log('🎯 Initializing completed tasks section...');
+
+    const header = document.getElementById('completed-tasks-header');
+    const completedList = document.getElementById('completedTaskList');
+
+    if (!header || !completedList) {
+        console.warn('⚠️ Completed tasks elements not found');
+        return;
+    }
+
+    // Add click handler for toggling
+    safeAddEventListener(header, 'click', toggleCompletedTasksSection);
+
+    // Restore saved collapsed state
+    restoreCompletedTasksState();
+
+    // Update count on page load
+    updateCompletedTasksCount();
+
+    console.log('✅ Completed tasks section initialized');
+}
+
+/**
+ * Toggle the completed tasks section visibility
+ */
+function toggleCompletedTasksSection() {
+    const completedList = document.getElementById('completedTaskList');
+    const toggleIcon = document.querySelector('#completed-tasks-header .toggle-icon');
+
+    if (!completedList || !toggleIcon) return;
+
+    const isVisible = completedList.classList.toggle('visible');
+    toggleIcon.textContent = isVisible ? '▲' : '▼';
+
+    // Save preference to AppState
+    if (window.AppState && window.AppState.isReady()) {
+        window.AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.completedTasksExpanded = isVisible;
+        }, true);
+    }
+
+    console.log(`✅ Completed tasks section ${isVisible ? 'expanded' : 'collapsed'}`);
+}
+
+/**
+ * Restore completed tasks section state from AppState
+ */
+function restoreCompletedTasksState() {
+    if (!window.AppState || !window.AppState.isReady()) return;
+
+    const state = window.AppState.get();
+    const isExpanded = state?.settings?.completedTasksExpanded || false;
+
+    const completedList = document.getElementById('completedTaskList');
+    const toggleIcon = document.querySelector('#completed-tasks-header .toggle-icon');
+
+    if (completedList && toggleIcon) {
+        if (isExpanded) {
+            completedList.classList.add('visible');
+            toggleIcon.textContent = '▲';
+        } else {
+            completedList.classList.remove('visible');
+            toggleIcon.textContent = '▼';
+        }
+    }
+}
+
+/**
+ * Move a task to the completed list
+ * @param {HTMLElement} taskElement - The task element to move
+ */
+function moveTaskToCompleted(taskElement) {
+    const completedList = document.getElementById('completedTaskList');
+    const completedSection = document.getElementById('completed-tasks-section');
+
+    if (!completedList || !completedSection || !taskElement) return;
+
+    // Move the task element
+    completedList.appendChild(taskElement);
+
+    // Show the completed section if it has tasks
+    completedSection.style.display = 'block';
+
+    // Update count
+    updateCompletedTasksCount();
+
+    console.log('✅ Task moved to completed section');
+}
+
+/**
+ * Move a task back to the active list
+ * @param {HTMLElement} taskElement - The task element to move
+ */
+function moveTaskToActive(taskElement) {
+    const taskList = document.getElementById('taskList');
+
+    if (!taskList || !taskElement) return;
+
+    // Move the task element back to the top of active list
+    taskList.insertBefore(taskElement, taskList.firstChild);
+
+    // Update count
+    updateCompletedTasksCount();
+
+    console.log('✅ Task moved back to active list');
+}
+
+/**
+ * Update the completed tasks count display
+ */
+function updateCompletedTasksCount() {
+    const completedList = document.getElementById('completedTaskList');
+    const completedCount = document.getElementById('completed-count');
+    const completedSection = document.getElementById('completed-tasks-section');
+
+    if (!completedList || !completedCount || !completedSection) return;
+
+    const count = completedList.children.length;
+    completedCount.textContent = count;
+
+    // Hide section if no completed tasks
+    if (count === 0) {
+        completedSection.style.display = 'none';
+    } else {
+        completedSection.style.display = 'block';
+    }
+}
+
+/**
+ * Handle task completion/un-completion to move between lists
+ * This should be called after the checkbox state changes
+ * @param {HTMLElement} taskElement - The task element
+ * @param {boolean} isCompleted - Whether the task is completed
+ */
+function handleTaskListMovement(taskElement, isCompleted) {
+    if (!taskElement) return;
+
+    // Check if completed dropdown feature is enabled
+    const isFeatureEnabled = isCompletedDropdownEnabled();
+    if (!isFeatureEnabled) {
+        return; // Feature disabled, keep tasks in main list
+    }
+
+    if (isCompleted) {
+        moveTaskToCompleted(taskElement);
+    } else {
+        moveTaskToActive(taskElement);
+    }
+}
+
+/**
+ * Check if the completed dropdown feature is enabled
+ * @returns {boolean} - True if enabled, false otherwise
+ */
+function isCompletedDropdownEnabled() {
+    // Check AppState first
+    if (window.AppState && window.AppState.isReady()) {
+        const state = window.AppState.get();
+        return state?.settings?.showCompletedDropdown || false;
+    }
+
+    // Fallback to checkbox state
+    const toggle = document.getElementById('toggle-completed-dropdown');
+    return toggle ? toggle.checked : false;
+}
+
+/**
+ * Organize all completed tasks when loading a cycle
+ * Scans the main task list and moves completed tasks to the completed section
+ */
+function organizeCompletedTasks() {
+    // Check if feature is enabled first
+    if (!isCompletedDropdownEnabled()) {
+        console.log('⏭️ Completed dropdown disabled, skipping organization');
+        return;
+    }
+
+    const taskList = document.getElementById('taskList');
+    if (!taskList) return;
+
+    console.log('🔄 Organizing completed tasks on load...');
+
+    // Get all tasks in the main list
+    const tasks = Array.from(taskList.querySelectorAll('.task'));
+
+    // Move each completed task to the completed section
+    tasks.forEach(taskElement => {
+        const checkbox = taskElement.querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+            moveTaskToCompleted(taskElement);
+        }
+    });
+
+    console.log(`✅ Organized ${taskList.querySelectorAll('.task').length} active and completed tasks`);
+}
+
+// Export functions globally
+window.initCompletedTasksSection = initCompletedTasksSection;
+window.toggleCompletedTasksSection = toggleCompletedTasksSection;
+window.moveTaskToCompleted = moveTaskToCompleted;
+window.moveTaskToActive = moveTaskToActive;
+window.updateCompletedTasksCount = updateCompletedTasksCount;
+window.handleTaskListMovement = handleTaskListMovement;
+window.organizeCompletedTasks = organizeCompletedTasks;
+window.isCompletedDropdownEnabled = isCompletedDropdownEnabled;
 
     /**
  * Istouchdevice function.

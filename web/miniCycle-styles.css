@@ -503,6 +503,79 @@ border-radius: 10px;
 background: transparent;
 }
 
+/* ========================================
+   Completed Tasks Collapsible Section
+   ======================================== */
+.completed-tasks-section {
+    width: 100%;
+    margin: 15px 0 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 10px;
+    display: none; /* Hidden by default, shown when tasks are added */
+}
+
+.completed-tasks-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    padding: 10px 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.completed-tasks-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.01);
+}
+
+.completed-tasks-header .toggle-icon {
+    margin-left: 5px;
+    font-size: 0.9em;
+    transition: transform 0.2s ease;
+}
+
+#completed-count {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.completed-task-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    display: none; /* Hidden by default */
+}
+
+.completed-task-list.visible {
+    display: block;
+}
+
+/* Completed tasks have slightly reduced opacity */
+.completed-task-list .task {
+    opacity: 0.75;
+    transition: opacity 0.2s ease;
+}
+
+.completed-task-list .task:hover {
+    opacity: 0.9;
+}
+
+/* Hide certain buttons for completed tasks */
+.completed-task-list .task .recurring-settings-btn,
+.completed-task-list .task .due-date-btn,
+.completed-task-list .task .reminder-btn {
+    opacity: 0.5;
+}
+
 .task {
     display: flex;
     flex-direction: column;
