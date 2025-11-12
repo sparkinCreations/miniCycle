@@ -261,12 +261,23 @@ export class MiniCycleNotifications {
         notification.classList.add(type);
       }
 
+      // ✅ XSS PROTECTION: Escape HTML in message content
+      // Check if message contains HTML by looking for < or > characters
+      const containsHtml = /<|>/.test(message);
+      const escapedMessage = containsHtml && typeof window.escapeHtml === 'function'
+        ? window.escapeHtml(message)
+        : message;
+
       // Only add default close button if one is not already in message HTML
       if (message.includes('class="close-btn"')) {
-        notification.innerHTML = message;
+        // For structured notifications with close button already included
+        // Still escape to prevent XSS
+        notification.innerHTML = containsHtml && typeof window.escapeHtml === 'function'
+          ? window.escapeHtml(message)
+          : message;
       } else {
         notification.innerHTML = `
-          <div class="notification-content">${message}</div>
+          <div class="notification-content">${escapedMessage}</div>
           <button class="close-btn" title="Close" aria-label="Close notification">✖</button>
         `;
       }

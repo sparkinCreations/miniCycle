@@ -329,6 +329,56 @@ export class GlobalUtils {
     }
 
     /**
+     * Escape HTML special characters to prevent XSS attacks.
+     * Converts <, >, &, ", and ' to their HTML entity equivalents.
+     * Use this when inserting user-provided content into innerHTML.
+     *
+     * @param {string} text - The text to escape.
+     * @returns {string} HTML-safe escaped text.
+     */
+    static escapeHtml(text) {
+        if (typeof text !== "string") return "";
+
+        const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            '/': '&#x2F;'
+        };
+
+        return text.replace(/[&<>"'\/]/g, char => escapeMap[char]);
+    }
+
+    /**
+     * Safely set innerHTML with HTML escaping for user content.
+     * Use this instead of directly setting innerHTML with user-provided data.
+     *
+     * @param {HTMLElement|string} elementOrId - Element or element ID.
+     * @param {string} content - Content to set (will be HTML-escaped).
+     * @param {boolean} allowHtml - If true, skips escaping (use only for trusted content).
+     * @returns {boolean} Success status.
+     */
+    static safeSetInnerHTMLWithEscape(elementOrId, content, allowHtml = false) {
+        const element = typeof elementOrId === 'string'
+            ? GlobalUtils.safeGetElementById(elementOrId)
+            : elementOrId;
+
+        if (!element) return false;
+
+        if (allowHtml) {
+            // Only use for trusted content (admin messages, static UI)
+            element.innerHTML = content;
+        } else {
+            // Escape user content to prevent XSS
+            element.innerHTML = GlobalUtils.escapeHtml(content);
+        }
+
+        return true;
+    }
+
+    /**
      * Get module version and statistics.
      *
      * @returns {Object} Module information.
@@ -367,6 +417,8 @@ window.throttle = GlobalUtils.throttle;
 window.isElementInViewport = GlobalUtils.isElementInViewport;
 window.generateId = GlobalUtils.generateId;
 window.sanitizeInput = GlobalUtils.sanitizeInput;
+window.escapeHtml = GlobalUtils.escapeHtml;
+window.safeSetInnerHTMLWithEscape = GlobalUtils.safeSetInnerHTMLWithEscape;
 
 // Make notification utility functions globally accessible
 window.generateNotificationId = GlobalUtils.generateNotificationId;

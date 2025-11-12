@@ -418,7 +418,20 @@ export class SettingsManager {
               const reader = new FileReader();
               reader.onload = (e) => {
                 try {
+                  // ✅ XSS PROTECTION: Validate file size (max 10MB)
+                  const maxSize = 10 * 1024 * 1024; // 10MB
+                  if (e.target.result.length > maxSize) {
+                    this.deps.showNotification("❌ File too large (max 10MB)", "error");
+                    return;
+                  }
+
                   const backupData = JSON.parse(e.target.result);
+
+                  // ✅ XSS PROTECTION: Validate backup data is an object
+                  if (typeof backupData !== 'object' || backupData === null) {
+                    this.deps.showNotification("❌ Invalid backup file format", "error");
+                    return;
+                  }
 
                   // ✅ Check if user is currently on Schema 2.5 (should always be true now)
                   const currentSchemaData = localStorage.getItem("miniCycleData");

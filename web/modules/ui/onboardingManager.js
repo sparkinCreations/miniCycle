@@ -150,8 +150,12 @@ export class OnboardingManager {
         const modal = document.createElement("div");
         modal.id = "onboarding-modal";
         modal.className = "onboarding-modal";
+
+        // ✅ XSS PROTECTION: Sanitize theme value (allow only alphanumeric and hyphens)
+        const safeTheme = typeof theme === 'string' ? theme.replace(/[^a-zA-Z0-9-]/g, '') : 'default';
+
         modal.innerHTML = `
-            <div class="onboarding-content theme-${theme}">
+            <div class="onboarding-content theme-${safeTheme}">
                 <button id="onboarding-skip" class="onboarding-skip">Skip ✖</button>
                 <div id="onboarding-step-content"></div>
                 <div class="onboarding-controls">

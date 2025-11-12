@@ -1448,13 +1448,18 @@ export class RecurringPanelManager {
         item.className = "recurring-task-item";
         item.setAttribute("data-task-id", task.id);
 
+        // ✅ XSS PROTECTION: Escape HTML in task text
+        const escapedTaskText = typeof window.escapeHtml === 'function'
+            ? window.escapeHtml(task.text)
+            : task.text;
+
         item.innerHTML = `
             <input type="checkbox"
                    class="recurring-check"
                    id="recurring-check-${task.id}"
                    name="recurring-check-${task.id}"
                    aria-label="Mark this task temporarily">
-            <span class="recurring-task-text">${task.text}</span>
+            <span class="recurring-task-text">${escapedTaskText}</span>
             <button title="Remove from Recurring" class="recurring-remove-btn">
               <i class='fas fa-trash recurring-trash-icon'></i>
             </button>
@@ -1703,9 +1708,14 @@ export class RecurringPanelManager {
                 return;
             }
 
+            // ✅ XSS PROTECTION: Escape HTML in task text
+            const escapedTaskText = typeof window.escapeHtml === 'function'
+                ? window.escapeHtml(task.text)
+                : task.text;
+
             if (!recurringSettings) {
                 previewText.innerHTML = `
-                    <strong>${task.text}</strong><br>
+                    <strong>${escapedTaskText}</strong><br>
                     <em>No recurring settings configured</em>
                 `;
                 return;
@@ -1719,7 +1729,7 @@ export class RecurringPanelManager {
                 : null;
 
             previewText.innerHTML = `
-                <strong>${task.text}</strong><br>
+                <strong>${escapedTaskText}</strong><br>
                 <span class="recurring-summary-text">${summaryText}</span>
                 ${nextOccurrenceText ? `<br><span class="next-occurrence-text">${nextOccurrenceText}</span>` : ''}
             `;
