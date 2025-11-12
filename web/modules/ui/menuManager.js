@@ -3,7 +3,7 @@
  * Handles main menu operations and interactions
  *
  * @module menuManager
- * @version 1.350
+ * @version 1.351
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../core/appInit.js';
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        this.version = '1.350';
+        this.version = '1.351';
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
@@ -343,9 +343,9 @@ export class MenuManager {
      * Clear all tasks (uncheck all)
      * Clearalltasks function.
      *
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    clearAllTasks() {
+    async clearAllTasks() {
         console.log('🧹 Clearing all tasks (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
@@ -368,7 +368,8 @@ export class MenuManager {
         // ✅ Create undo snapshot before making changes
 
         // ✅ Uncheck all tasks (DO NOT DELETE) - Use helper to prevent race conditions
-        const updateSuccess = this.deps.updateCycleData(activeCycle, cycle => {
+        // ✅ CRITICAL: Await the update to ensure state is saved before updating UI
+        const updateSuccess = await this.deps.updateCycleData(activeCycle, cycle => {
             cycle.tasks.forEach(task => task.completed = false);
         }, true);
 
@@ -438,7 +439,7 @@ export class MenuManager {
             message: `⚠ Are you sure you want to permanently delete all tasks in "${currentCycle.title}"? This action cannot be undone.`,
             confirmText: "Delete All",
             cancelText: "Cancel",
-            callback: (confirmed) => {
+            callback: async (confirmed) => {
                 if (!confirmed) {
                     console.log('❌ User cancelled deletion');
                     this.deps.showNotification("❌ Deletion cancelled.");
@@ -450,7 +451,8 @@ export class MenuManager {
                 // ✅ Push undo snapshot before deletion
 
                 // ✅ Clear tasks completely - Use helper to prevent race conditions
-                const updateSuccess = this.deps.updateCycleData(activeCycle, cycle => {
+                // ✅ CRITICAL: Await the update to ensure state is saved before updating UI
+                const updateSuccess = await this.deps.updateCycleData(activeCycle, cycle => {
                     cycle.tasks = [];
                     // ✅ Clear recurring templates too
                     if (cycle.recurringTemplates) {

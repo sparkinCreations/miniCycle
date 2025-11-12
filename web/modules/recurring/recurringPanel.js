@@ -12,7 +12,7 @@
  * - Button visibility management
  *
  * @module recurringPanel
- * @version 1.350
+ * @version 1.351
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
@@ -935,8 +935,9 @@ export class RecurringPanelManager {
             }
 
             // Batch all updates in one AppState operation
+            // ✅ CRITICAL: Await the update to ensure state is saved before re-rendering
             if (window.AppState && window.AppState.update) {
-                window.AppState.update(draft => {
+                await window.AppState.update(draft => {
                     // Save default recurring settings if requested
                     if (this.deps.getElementById("set-default-recurring")?.checked) {
                         if (!draft.settings) draft.settings = {};

@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.350'
+            currentVersion: '1.351'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -1021,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateCycleModeDescription: () => window.updateCycleModeDescription?.(),
                 checkGamesUnlock: () => window.checkGamesUnlock?.(),
                 sanitizeInput: (input) => window.sanitizeInput?.(input),
-                updateCycleData: (cycleId, producer, immediate) => window.updateCycleData?.(cycleId, producer, immediate),
+                updateCycleData: window.updateCycleData,
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -1888,9 +1888,9 @@ window.loadMiniCycleData = loadMiniCycleData;
  * @param {string} cycleId - The cycle ID to update
  * @param {function} updateFn - Function that receives the cycle and modifies it
  * @param {boolean} immediate - Force immediate save (default: true for safety)
- * @returns {boolean} - True if update succeeded, false otherwise
+ * @returns {Promise<boolean>} - True if update succeeded, false otherwise
  */
-function updateCycleData(cycleId, updateFn, immediate = true) {
+async function updateCycleData(cycleId, updateFn, immediate = true) {
     console.log(`🔄 Updating cycle data for: ${cycleId} (immediate: ${immediate})`);
 
     if (!cycleId) {
@@ -1906,7 +1906,8 @@ function updateCycleData(cycleId, updateFn, immediate = true) {
     try {
         // ✅ Use AppState if available (prevents race conditions)
         if (window.AppState?.isReady?.()) {
-            window.AppState.update(state => {
+            // ✅ CRITICAL: Await the update to ensure state is saved before returning
+            await window.AppState.update(state => {
                 const cycle = state.data.cycles[cycleId];
                 if (cycle) {
                     updateFn(cycle);
@@ -1939,7 +1940,8 @@ function updateCycleData(cycleId, updateFn, immediate = true) {
     }
 }
 
-
+// Make updateCycleData globally accessible for other modules
+window.updateCycleData = updateCycleData;
 
 
 
