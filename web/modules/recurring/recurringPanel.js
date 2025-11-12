@@ -2389,6 +2389,12 @@ export class RecurringPanelManager {
  * @returns {string} Summary text
  */
 export function buildRecurringSummaryFromSettings(settings = {}) {
+    // Normalize settings to ensure useSpecificDays is properly set
+    // This handles cases where settings are passed without normalization
+    if (settings.monthly && !('useSpecificDays' in settings.monthly) && settings.monthly.days?.length > 0) {
+        settings.monthly.useSpecificDays = true;
+    }
+
     const freq = settings.frequency || "daily";
     const indefinitely = settings.indefinitely ?? true;
     const count = settings.count;

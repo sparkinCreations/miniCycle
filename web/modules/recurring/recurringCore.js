@@ -150,7 +150,13 @@ export function normalizeRecurringSettings(settings = {}) {
         },
 
         monthly: {
-            useSpecificDays: settings.monthly?.useSpecificDays || false, // NEW: UI control
+            // Auto-enable useSpecificDays when days, lastDay, or weekOfMonth patterns are provided
+            useSpecificDays: settings.monthly?.useSpecificDays ?? (
+                (settings.monthly?.days?.length > 0) ||
+                settings.monthly?.lastDay ||
+                settings.monthly?.useWeekOfMonth ||
+                false
+            ),
             days: Array.isArray(settings.monthly?.days) ? settings.monthly.days : [],
             lastDay: settings.monthly?.lastDay || false, // NEW: Last day of month
             useWeekOfMonth: settings.monthly?.useWeekOfMonth || false, // NEW: Use week-of-month pattern

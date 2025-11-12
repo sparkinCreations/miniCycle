@@ -355,6 +355,7 @@ export function runRecurringPanelTests(resultsDiv) {
         const panel = new RecurringPanelManager({
             getElementById: (id) => {
                 if (id === 'recur-indefinitely') return { checked: false };
+                if (id === 'recur-count-radio') return { checked: true };
                 if (id === 'recur-count-input') return { value: '10' };
                 return null;
             },
