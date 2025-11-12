@@ -3515,11 +3515,13 @@ body:not(.show-three-dots-enabled) .task:active .task-options {
 }
 
 /* ✅ Show Buttons on Hover or Long Press */
+/* DISABLED: Replaced by conditional rule that respects three-dots setting
 .task:hover .task-options,
 .task:active .task-options {
     visibility: visible;
     opacity: 1;
 }
+*/
 
 @media (max-width: 768px) {
 
@@ -3623,11 +3625,13 @@ color: rgba(77, 77, 255, 0.771);
   outline-offset: 2px;
 }
 */
+/* DISABLED: Replaced by conditional rule that respects three-dots setting
 .task:hover .task-options {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
 }
+*/
 
 /* ✅ Ensure long-pressed tasks show options */
 .task.long-pressed .task-options {

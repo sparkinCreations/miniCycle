@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.351
+ * @version 1.352
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -12,7 +12,7 @@ import { calculateNextOccurrence } from '../recurring/recurringCore.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.351';
+        this.version = '1.352';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
@@ -230,18 +230,26 @@ export class SettingsManager {
 
                 console.log('🔄 Three dots toggle changed:', enabled);
 
-                const schemaData = this.deps.loadMiniCycleData();
-                if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for saving three dots setting');
-                    return;
+                // ✅ Update through AppState if available (prevents race conditions)
+                const AppState = this.deps.AppState();
+                if (AppState?.isReady?.()) {
+                    AppState.update(state => {
+                        if (!state.settings) state.settings = {};
+                        state.settings.showThreeDots = enabled;
+                        state.metadata.lastModified = Date.now();
+                    }, true); // immediate save
+                    console.log('✅ Three dots setting saved to AppState:', enabled);
+                } else {
+                    // Fallback to direct localStorage update
+                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    if (fullSchemaData) {
+                        if (!fullSchemaData.settings) fullSchemaData.settings = {};
+                        fullSchemaData.settings.showThreeDots = enabled;
+                        fullSchemaData.metadata.lastModified = Date.now();
+                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                        console.log('✅ Three dots setting saved to localStorage:', enabled);
+                    }
                 }
-
-                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                fullSchemaData.settings.showThreeDots = enabled;
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-                console.log('✅ Three dots setting saved to Schema 2.5:', enabled);
 
                 document.body.classList.toggle("show-three-dots-enabled", enabled);
 

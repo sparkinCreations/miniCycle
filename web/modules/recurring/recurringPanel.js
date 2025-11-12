@@ -12,7 +12,7 @@
  * - Button visibility management
  *
  * @module recurringPanel
- * @version 1.351
+ * @version 1.352
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
@@ -69,7 +69,239 @@ export class RecurringPanelManager {
             selectedYearlyDays: {} // key = month number, value = array of selected days
         };
 
+        // ✅ MEMORY LEAK FIX: Track event delegation initialization
+        this._eventDelegationInitialized = false;
+
         console.log('✅ RecurringPanelManager initialized');
+    }
+
+    // ============================================
+    // EVENT DELEGATION (MEMORY LEAK FIX)
+    // ============================================
+
+    /**
+     * Initialize event delegation for all repeated elements
+     * ✅ MEMORY LEAK FIX: Replaces 35-60+ anonymous listeners with ~5 delegated listeners
+     */
+    initEventDelegation() {
+        if (this._eventDelegationInitialized) {
+            console.log('⚠️ Recurring panel event delegation already initialized');
+            return;
+        }
+
+        // Setup delegation for monthly day boxes
+        this.setupMonthlyDayDelegation();
+
+        // Setup delegation for weekly day boxes
+        this.setupWeeklyDayDelegation();
+
+        // Setup delegation for yearly month boxes
+        this.setupYearlyMonthDelegation();
+
+        // Setup delegation for yearly day boxes
+        this.setupYearlyDayDelegation();
+
+        // Setup delegation for task list items
+        this.setupTaskListDelegation();
+
+        this._eventDelegationInitialized = true;
+        console.log('✅ Recurring panel event delegation initialized (memory leak fix applied)');
+    }
+
+    /**
+     * Event delegation for monthly day boxes
+     * ✅ Replaces 31 listeners with 1
+     */
+    setupMonthlyDayDelegation() {
+        const container = this.deps.querySelector(".monthly-days");
+        if (!container) return;
+
+        container.addEventListener("click", (event) => {
+            const dayBox = event.target.closest(".monthly-day-box");
+            if (!dayBox) return;
+
+            dayBox.classList.toggle("selected");
+        });
+    }
+
+    /**
+     * Event delegation for weekly day boxes
+     * ✅ Replaces 7 listeners with 1
+     */
+    setupWeeklyDayDelegation() {
+        const container = this.deps.querySelector(".weekly-days");
+        if (!container) return;
+
+        container.addEventListener("click", (event) => {
+            const dayBox = event.target.closest(".weekly-day-box");
+            if (!dayBox) return;
+
+            dayBox.classList.toggle("selected");
+        });
+    }
+
+    /**
+     * Event delegation for yearly month boxes
+     * ✅ Replaces 12 listeners with 1
+     */
+    setupYearlyMonthDelegation() {
+        const container = this.deps.querySelector(".yearly-months");
+        if (!container) return;
+
+        container.addEventListener("click", (event) => {
+            const monthBox = event.target.closest(".yearly-month-box");
+            if (!monthBox) return;
+
+            // Toggle selection
+            monthBox.classList.toggle("selected");
+
+            const selectedMonths = this.getSelectedYearlyMonths();
+
+            // Reveal or hide the specific-days checkbox label
+            const specificDaysLabel = this.deps.getElementById("yearly-specific-days-label");
+            if (specificDaysLabel) {
+                specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
+            }
+
+            // Show/hide day container based on selection + checkbox state
+            const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
+            const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
+
+            if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
+                const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
+                yearlyDayContainer.classList.toggle("hidden", !shouldShow);
+            }
+
+            // Update dropdown
+            const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
+            if (yearlyMonthSelect) {
+                yearlyMonthSelect.innerHTML = "";
+
+                selectedMonths.forEach((monthNum) => {
+                    const option = document.createElement("option");
+                    option.value = monthNum;
+                    option.textContent = new Date(0, monthNum - 1).toLocaleString('default', { month: 'long' });
+                    yearlyMonthSelect.appendChild(option);
+                });
+
+                // Trigger month change to update day grid
+                if (selectedMonths.length === 1) {
+                    yearlyMonthSelect.value = selectedMonths[0];
+                    yearlyMonthSelect.dispatchEvent(new Event("change"));
+                }
+            }
+        });
+    }
+
+    /**
+     * Event delegation for yearly day boxes
+     * ✅ Replaces 31 listeners with 1 (with complex apply-to-all logic)
+     */
+    setupYearlyDayDelegation() {
+        const container = this.deps.getElementById("yearly-day-container");
+        if (!container) return;
+
+        container.addEventListener("click", (event) => {
+            const dayBox = event.target.closest(".yearly-day-box");
+            if (!dayBox) return;
+
+            const day = parseInt(dayBox.getAttribute("data-day"));
+            if (isNaN(day)) return;
+
+            dayBox.classList.toggle("selected");
+            const isNowSelected = dayBox.classList.contains("selected");
+
+            // Get current state
+            const applyToAll = this.deps.getElementById("yearly-apply-all")?.checked || false;
+            const monthNumber = parseInt(this.deps.getElementById("yearly-month-select")?.value);
+            const activeMonths = this.getSelectedYearlyMonths();
+
+            if (applyToAll) {
+                // Update shared days
+                const sharedDays = this.state.selectedYearlyDays["all"] || [];
+                if (isNowSelected && !sharedDays.includes(day)) {
+                    sharedDays.push(day);
+                } else if (!isNowSelected && sharedDays.includes(day)) {
+                    const idx = sharedDays.indexOf(day);
+                    sharedDays.splice(idx, 1);
+                }
+
+                this.state.selectedYearlyDays["all"] = sharedDays;
+
+                // Sync all selected months
+                activeMonths.forEach(month => {
+                    this.state.selectedYearlyDays[month] = [...sharedDays];
+                });
+            } else {
+                // Regular mode, per-month
+                const current = this.state.selectedYearlyDays[monthNumber] || [];
+                if (isNowSelected && !current.includes(day)) {
+                    current.push(day);
+                } else if (!isNowSelected && current.includes(day)) {
+                    const idx = current.indexOf(day);
+                    current.splice(idx, 1);
+                }
+                this.state.selectedYearlyDays[monthNumber] = current;
+            }
+        });
+    }
+
+    /**
+     * Event delegation for task list items
+     * ✅ Replaces N×3 listeners (checkbox, remove, row click) with 1 delegated listener
+     */
+    setupTaskListDelegation() {
+        const container = this.deps.getElementById("recurring-task-list");
+        if (!container) return;
+
+        container.addEventListener("click", (event) => {
+            const item = event.target.closest(".recurring-task-item");
+            if (!item) return;
+
+            // Handle checkbox clicks
+            const checkbox = event.target.closest(".recurring-check");
+            if (checkbox) {
+                event.stopPropagation();
+                item.classList.toggle("checked");
+                return;
+            }
+
+            // Handle remove button clicks
+            const removeBtn = event.target.closest(".recurring-remove-btn");
+            if (removeBtn) {
+                event.stopPropagation();
+                const taskId = item.getAttribute("data-task-id");
+                if (taskId) {
+                    // Find task from data
+                    const cycleData = this.deps.loadData();
+                    const task = cycleData.cycles[cycleData.activeCycle]?.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        this.handleRemoveTask(task, item);
+                    }
+                }
+                return;
+            }
+
+            // Handle row click for selection
+            this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
+                el.classList.remove("selected");
+            });
+            item.classList.add("selected");
+
+            const taskId = item.getAttribute("data-task-id");
+            this.state.selectedTaskId = taskId;
+
+            // Get fresh data from AppState
+            if (this.deps.isAppStateReady()) {
+                const currentState = this.deps.getAppState();
+                const activeCycleId = currentState.appState?.activeCycleId;
+                const currentCycle = currentState.data?.cycles?.[activeCycleId];
+                const fullTask = currentCycle?.tasks.find(t => t.id === taskId);
+                if (fullTask) {
+                    this.showTaskSummaryPreview(fullTask);
+                }
+            }
+        });
     }
 
     // ============================================
@@ -266,6 +498,9 @@ export class RecurringPanelManager {
 
             // Attach summary listeners
             this.attachRecurringSummaryListeners();
+
+            // ✅ MEMORY LEAK FIX: Initialize event delegation for all repeated elements
+            this.initEventDelegation();
 
             this.state.isInitialized = true;
             console.log('✅ Recurring panel setup complete');
@@ -494,6 +729,7 @@ export class RecurringPanelManager {
 
     /**
      * Generate monthly day selection grid (1-31)
+     * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     generateMonthlyDayGrid() {
         const container = this.deps.querySelector(".monthly-days");
@@ -507,9 +743,7 @@ export class RecurringPanelManager {
             dayBox.setAttribute("data-day", i);
             dayBox.textContent = i;
 
-            dayBox.addEventListener("click", () => {
-                dayBox.classList.toggle("selected");
-            });
+            // ✅ NO listener added - handled by setupMonthlyDayDelegation()
 
             container.appendChild(dayBox);
         }
@@ -517,17 +751,16 @@ export class RecurringPanelManager {
 
     /**
      * Setup weekly day toggle handlers
+     * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     setupWeeklyDayToggle() {
-        this.deps.querySelectorAll(".weekly-day-box").forEach(box => {
-            box.addEventListener("click", () => {
-                box.classList.toggle("selected");
-            });
-        });
+        // ✅ NO listeners added - handled by setupWeeklyDayDelegation()
+        // This method kept for backward compatibility but does nothing
     }
 
     /**
      * Generate yearly month selection grid
+     * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     generateYearlyMonthGrid() {
         const container = this.deps.querySelector(".yearly-months");
@@ -544,48 +777,7 @@ export class RecurringPanelManager {
             monthBox.setAttribute("data-month", index + 1);
             monthBox.textContent = name;
 
-            monthBox.addEventListener("click", () => {
-                // Toggle selection
-                monthBox.classList.toggle("selected");
-
-                const selectedMonths = this.getSelectedYearlyMonths();
-
-                // Reveal or hide the specific-days checkbox label
-                const specificDaysLabel = this.deps.getElementById("yearly-specific-days-label");
-                if (specificDaysLabel) {
-                    specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
-                }
-
-                // Show/hide day container based on selection + checkbox state
-                const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
-                const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
-
-                if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
-                    const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
-                    yearlyDayContainer.classList.toggle("hidden", !shouldShow);
-                }
-
-                // Update dropdown
-                const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
-                if (yearlyMonthSelect) {
-                    yearlyMonthSelect.innerHTML = "";
-
-                    selectedMonths.forEach((monthNum) => {
-                        const option = document.createElement("option");
-                        option.value = monthNum;
-                        option.textContent = new Date(0, monthNum - 1).toLocaleString('default', { month: 'long' });
-                        yearlyMonthSelect.appendChild(option);
-                    });
-
-                    if (selectedMonths.length > 0) {
-                        const currentMonth = index + 1;
-                        yearlyMonthSelect.value = currentMonth;
-                        this.generateYearlyDayGrid(currentMonth);
-                    } else {
-                        this.deps.querySelector(".yearly-days").innerHTML = "";
-                    }
-                }
-            });
+            // ✅ NO listener added - handled by setupYearlyMonthDelegation()
 
             container.appendChild(monthBox);
         });
@@ -593,6 +785,7 @@ export class RecurringPanelManager {
 
     /**
      * Generate yearly day grid for a specific month
+     * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     generateYearlyDayGrid(monthNumber) {
         const container = this.deps.querySelector(".yearly-days");
@@ -604,7 +797,6 @@ export class RecurringPanelManager {
         const selectedDays = this.state.selectedYearlyDays[monthNumber] || [];
         const yearlyApplyToAllCheckbox = this.deps.getElementById("yearly-apply-days-to-all");
         const applyToAll = yearlyApplyToAllCheckbox?.checked;
-        const activeMonths = this.getSelectedYearlyMonths();
 
         // If "apply to all" is checked, use the shared day list
         const sharedDays = this.state.selectedYearlyDays["all"] || [];
@@ -623,37 +815,7 @@ export class RecurringPanelManager {
                 dayBox.classList.add("selected");
             }
 
-            dayBox.addEventListener("click", () => {
-                dayBox.classList.toggle("selected");
-                const isNowSelected = dayBox.classList.contains("selected");
-
-                if (applyToAll) {
-                    // Update sharedDays
-                    if (isNowSelected && !sharedDays.includes(i)) {
-                        sharedDays.push(i);
-                    } else if (!isNowSelected && sharedDays.includes(i)) {
-                        const idx = sharedDays.indexOf(i);
-                        sharedDays.splice(idx, 1);
-                    }
-
-                    this.state.selectedYearlyDays["all"] = sharedDays;
-
-                    // Sync all selected months
-                    activeMonths.forEach(month => {
-                        this.state.selectedYearlyDays[month] = [...sharedDays];
-                    });
-                } else {
-                    // Regular mode, per-month
-                    const current = this.state.selectedYearlyDays[monthNumber] || [];
-                    if (isNowSelected && !current.includes(i)) {
-                        current.push(i);
-                    } else if (!isNowSelected && current.includes(i)) {
-                        const idx = current.indexOf(i);
-                        current.splice(idx, 1);
-                    }
-                    this.state.selectedYearlyDays[monthNumber] = current;
-                }
-            });
+            // ✅ NO listener added - handled by setupYearlyDayDelegation()
 
             container.appendChild(dayBox);
         }
@@ -1465,44 +1627,10 @@ export class RecurringPanelManager {
             </button>
         `;
 
-        // Setup checkbox
+        // ✅ MEMORY LEAK FIX: No listeners added - handled by setupTaskListDelegation()
+        // Checkbox is hidden by default
         const checkbox = item.querySelector(".recurring-check");
-        checkbox.addEventListener("click", (e) => {
-            e.stopPropagation();
-            item.classList.toggle("checked");
-        });
         checkbox.classList.add("hidden");
-
-        // Setup remove button
-        const removeBtn = item.querySelector("button");
-        removeBtn.addEventListener("click", () => this.handleRemoveTask(task, item));
-
-        // Setup row click for selection
-        item.addEventListener("click", (e) => {
-            if (e.target.closest(".recurring-remove-btn") || e.target.closest("input[type='checkbox']")) {
-                return;
-            }
-
-            this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                el.classList.remove("selected");
-            });
-            item.classList.add("selected");
-
-            this.state.selectedTaskId = task.id;
-            
-            // ✅ Get fresh data from AppState instead of using stale cycleData
-            if (this.deps.isAppStateReady()) {
-                const currentState = this.deps.getAppState();
-                const activeCycleId = currentState.appState?.activeCycleId;
-                const currentCycle = currentState.data?.cycles?.[activeCycleId];
-                const fullTask = currentCycle?.tasks.find(t => t.id === task.id) || task;
-                this.showTaskSummaryPreview(fullTask);
-            } else {
-                // Fallback to original behavior if AppState not ready
-                const fullTask = cycleData.tasks.find(t => t.id === task.id) || task;
-                this.showTaskSummaryPreview(fullTask);
-            }
-        });
 
         return item;
     }

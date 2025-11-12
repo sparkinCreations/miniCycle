@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.351
+ * @version 1.352
  */
 
 export class TaskEvents {
@@ -29,9 +29,81 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.351';
+        this.version = '1.352';
+
+        // Track if event delegation is initialized
+        this._eventDelegationInitialized = false;
 
         console.log('🎮 TaskEvents created');
+    }
+
+    /**
+     * Initialize event delegation for task clicks
+     * ✅ MEMORY LEAK FIX: Uses ONE listener for all tasks instead of one per task
+     * This prevents listener accumulation when tasks are re-rendered
+     */
+    initEventDelegation() {
+        if (this._eventDelegationInitialized) {
+            console.log('⚠️ Task click event delegation already initialized');
+            return;
+        }
+
+        const taskList = this.deps.getElementById("taskList");
+        if (!taskList) {
+            console.warn('⚠️ Cannot initialize task click delegation - #taskList not found');
+            return;
+        }
+
+        // ✅ ONE listener for ALL tasks (current and future)
+        taskList.addEventListener("click", (event) => {
+            // Find the closest .task element
+            const taskItem = event.target.closest(".task");
+            if (!taskItem) return;
+
+            // Get task elements (✅ checkbox has no class, use type selector)
+            const checkbox = taskItem.querySelector("input[type='checkbox']");
+            const buttonContainer = taskItem.querySelector(".task-options");
+            const dueDateInput = taskItem.querySelector(".due-date");
+
+            // ✅ Early return if checkbox not found (incomplete task structure)
+            if (!checkbox) {
+                console.warn('⚠️ Task clicked but no checkbox found - skipping');
+                return;
+            }
+
+            // Ignore clicks on checkbox, buttons, or due date input
+            if (event.target === checkbox ||
+                buttonContainer?.contains(event.target) ||
+                event.target === dueDateInput) {
+                return;
+            }
+
+            // ✅ Enable undo system on first user interaction
+            if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
+                window.enableUndoSystemOnFirstInteraction();
+            }
+
+            // Toggle checkbox
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event("change"));
+            checkbox.setAttribute("aria-checked", checkbox.checked);
+
+            // Trigger mini cycle check
+            if (typeof window.checkMiniCycle === 'function') {
+                window.checkMiniCycle();
+            }
+
+            // Auto-save
+            this.deps.autoSave?.();
+
+            // Logo background animation
+            if (typeof window.triggerLogoBackground === 'function') {
+                window.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+            }
+        });
+
+        this._eventDelegationInitialized = true;
+        console.log('✅ Task click event delegation initialized (memory leak fix applied)');
     }
 
     // Fallback functions
@@ -143,7 +215,7 @@ export class TaskEvents {
             }
         });
 
-        // ✅ Show this task's options
+        // ✅ ALWAYS Show this task's options (no toggle for now)
         taskOptions.style.visibility = "visible";
         taskOptions.style.opacity = "1";
         taskOptions.style.pointerEvents = "auto";
@@ -240,8 +312,9 @@ export class TaskEvents {
         const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
         const { settings } = taskContext;
 
-        // Setup task click interaction
-        this.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+        // ✅ MEMORY LEAK FIX: Task click is now handled by event delegation
+        // setupTaskClickInteraction() is NO LONGER CALLED to prevent listener leaks
+        // Instead, call initEventDelegation() once during app initialization
 
         // Setup priority button state
         this.setupPriorityButtonState(buttonContainer, taskContext.highPriority);
@@ -259,36 +332,20 @@ export class TaskEvents {
     }
 
     /**
-     * Setup task click interaction (click to toggle completion)
-     * @param {HTMLElement} taskItem - Task element
-     * @param {HTMLElement} checkbox - Checkbox element
-     * @param {HTMLElement} buttonContainer - Button container element
-     * @param {HTMLElement} dueDateInput - Due date input element
+     * @deprecated This method is deprecated and no longer used.
+     * Task click handling is now done via event delegation in initEventDelegation().
+     * This method is kept for backward compatibility but does nothing.
+     *
+     * @param {HTMLElement} taskItem - Task element (unused)
+     * @param {HTMLElement} checkbox - Checkbox element (unused)
+     * @param {HTMLElement} buttonContainer - Button container element (unused)
+     * @param {HTMLElement} dueDateInput - Due date input element (unused)
      */
     setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-        taskItem.addEventListener("click", (event) => {
-            if (event.target === checkbox || buttonContainer.contains(event.target) || event.target === dueDateInput) return;
-
-            // ✅ Enable undo system on first user interaction
-            if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
-                window.enableUndoSystemOnFirstInteraction();
-            }
-
-            // ✅ RESTORED: Use the simple working approach
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change"));
-            checkbox.setAttribute("aria-checked", checkbox.checked);
-
-            if (typeof window.checkMiniCycle === 'function') {
-                window.checkMiniCycle();
-            }
-
-            this.deps.autoSave?.();
-
-            if (typeof window.triggerLogoBackground === 'function') {
-                window.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
-            }
-        });
+        // ✅ NO-OP: This method is deprecated
+        // Task click handling is now done via event delegation (initEventDelegation)
+        // Kept for backward compatibility only - does nothing
+        console.warn('⚠️ setupTaskClickInteraction is deprecated - use initEventDelegation() instead');
     }
 
     /**
@@ -327,11 +384,17 @@ export class TaskEvents {
         const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
 
         addListener(taskItem, "focus", () => {
-            const options = taskItem.querySelector(".task-options");
-            if (options) {
-                options.style.opacity = "1";
-                options.style.visibility = "visible";
-                options.style.pointerEvents = "auto";
+            // ✅ Only show buttons on focus if three dots mode is NOT enabled
+            const AppState = this.deps.AppState;
+            const threeDotsEnabled = AppState?.isReady?.() && AppState.get()?.settings?.showThreeDots;
+
+            if (!threeDotsEnabled) {
+                const options = taskItem.querySelector(".task-options");
+                if (options) {
+                    options.style.opacity = "1";
+                    options.style.visibility = "visible";
+                    options.style.pointerEvents = "auto";
+                }
             }
         });
 
@@ -359,6 +422,11 @@ export function initTaskEvents(dependencies = {}) {
     }
 
     taskEvents = new TaskEvents(dependencies);
+
+    // ✅ MEMORY LEAK FIX: Initialize event delegation for task clicks
+    // This sets up ONE listener for all tasks instead of one per task
+    taskEvents.initEventDelegation();
+
     return taskEvents;
 }
 

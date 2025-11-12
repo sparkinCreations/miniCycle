@@ -423,30 +423,38 @@ export async function runTaskEventsTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Interaction Setup</h4>';
 
-    await test('setupTaskClickInteraction attaches click handler', () => {
+    await test('initEventDelegation sets up task click handler', () => {
         const deps = createMockDependencies();
         const events = new TaskEvents(deps);
 
+        // Create taskList if it doesn't exist
+        let taskList = document.getElementById('taskList');
+        if (!taskList) {
+            taskList = document.createElement('ul');
+            taskList.id = 'taskList';
+            document.body.appendChild(taskList);
+        }
+
         const taskItem = createMockTaskItem();
-        const checkbox = taskItem.querySelector('.task-checkbox');
-        const buttonContainer = taskItem.querySelector('.task-options');
-        const dueDateInput = document.createElement('input');
-        dueDateInput.type = 'date';
+        const checkbox = taskItem.querySelector("input[type='checkbox']"); // ✅ Use correct selector
+        taskList.appendChild(taskItem);
 
-        document.body.appendChild(taskItem);
+        // Initialize event delegation
+        events.initEventDelegation();
 
-        events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
-
-        // Simulate click
+        // Simulate click on task
         const initialChecked = checkbox.checked;
         taskItem.click();
 
         if (checkbox.checked === initialChecked) {
-            throw new Error('Click handler not working - checkbox state not toggled');
+            throw new Error('Event delegation click handler not working - checkbox state not toggled');
         }
 
         // Clean up
-        document.body.removeChild(taskItem);
+        taskList.removeChild(taskItem);
+        if (taskList.children.length === 0) {
+            document.body.removeChild(taskList);
+        }
     });
 
     await test('setupPriorityButtonState marks high priority', () => {
@@ -539,12 +547,8 @@ export async function runTaskEventsTests(resultsDiv) {
             throw new Error('setupTaskInteractions did not set priority');
         }
 
-        // Verify click handler works
-        const initialChecked = checkbox.checked;
-        taskItem.click();
-        if (checkbox.checked === initialChecked) {
-            throw new Error('setupTaskInteractions did not attach click handler');
-        }
+        // ✅ Click handler is now set via event delegation (initEventDelegation)
+        // Not testing click here - see 'initEventDelegation sets up task click handler' test
 
         // Clean up
         document.body.removeChild(taskItem);

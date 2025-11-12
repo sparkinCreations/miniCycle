@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.351'
+            currentVersion: '1.352'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -1845,6 +1845,24 @@ async function directSave(overrideTaskList = null) {
 
 // ✅ Make loadMiniCycleData() return legacy-compatible data as fallback
 function loadMiniCycleData() {
+    // ✅ Try AppState first for most current data (if available)
+    if (window.AppState?.isReady?.()) {
+        try {
+            const state = window.AppState.get();
+            if (state) {
+                return {
+                    cycles: state.data.cycles,
+                    activeCycle: state.appState.activeCycleId,
+                    reminders: state.customReminders,
+                    settings: state.settings
+                };
+            }
+        } catch (error) {
+            console.warn('⚠️ AppState read failed, falling back to localStorage:', error);
+        }
+    }
+
+    // Fallback to localStorage
     const data = localStorage.getItem("miniCycleData");
     if (data) {
         try {

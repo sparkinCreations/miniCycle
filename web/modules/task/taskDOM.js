@@ -12,7 +12,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.351
+ * @version 1.352
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -83,11 +83,15 @@ export class TaskDOMManager {
             renderCount: 0
         };
 
+        // ✅ MEMORY LEAK FIX: Track three dots button handlers
+        // WeakMap automatically garbage collects when buttons are removed
+        this._threeDotsHandlers = new WeakMap();
+
         // Initialization flag
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.351';
+        this.version = '1.352';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
@@ -409,7 +413,22 @@ export class TaskDOMManager {
     }
 
     /**
+     * Handle three dots button click
+     * ✅ MEMORY LEAK FIX: Named handler stored in WeakMap for proper cleanup
+     * @param {HTMLElement} taskItem - The task element
+     * @param {Event} event - Click event
+     */
+    handleThreeDotsClick(taskItem, event) {
+        event.stopPropagation();
+        // Use revealTaskButtons from window (will be available)
+        if (typeof window.revealTaskButtons === 'function') {
+            window.revealTaskButtons(taskItem);
+        }
+    }
+
+    /**
      * Create three dots button (reveal menu)
+     * ✅ MEMORY LEAK FIX: Uses named handler with safeAddEventListener
      */
     createThreeDotsButton(taskItem, settings) {
         const showThreeDots = settings.showThreeDots || false;
@@ -418,13 +437,21 @@ export class TaskDOMManager {
             const threeDotsButton = document.createElement("button");
             threeDotsButton.classList.add("three-dots-btn");
             threeDotsButton.innerHTML = "⋮";
-            threeDotsButton.addEventListener("click", (event) => {
-                event.stopPropagation();
-                // Use revealTaskButtons from window (will be available)
-                if (typeof window.revealTaskButtons === 'function') {
-                    window.revealTaskButtons(taskItem);
-                }
-            });
+
+            // ✅ MEMORY LEAK FIX: Create named handler bound to taskItem
+            const handler = (event) => this.handleThreeDotsClick(taskItem, event);
+
+            // Store handler reference for potential cleanup
+            this._threeDotsHandlers.set(threeDotsButton, handler);
+
+            // Use safeAddEventListener to prevent duplicate listeners
+            const safeAdd = this.deps.safeAddEventListener || window.safeAddEventListener;
+            if (safeAdd) {
+                safeAdd(threeDotsButton, "click", handler);
+            } else {
+                threeDotsButton.addEventListener("click", handler);
+            }
+
             taskItem.appendChild(threeDotsButton);
             return threeDotsButton;
         }
@@ -444,6 +471,15 @@ export class TaskDOMManager {
 
         const buttonContainer = document.createElement("div");
         buttonContainer.classList.add("task-options");
+
+        // ✅ If three dots mode is enabled, ensure buttons start explicitly HIDDEN
+        const threeDotsEnabled = settings.showThreeDots || false;
+        if (threeDotsEnabled) {
+            // Explicitly hide with inline styles so toggle check works correctly
+            buttonContainer.style.visibility = "hidden";
+            buttonContainer.style.opacity = "0";
+            buttonContainer.style.pointerEvents = "none";
+        }
 
         const showRecurring = !autoResetEnabled && deleteCheckedEnabled;
 

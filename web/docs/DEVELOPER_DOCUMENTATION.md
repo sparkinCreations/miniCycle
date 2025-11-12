@@ -2941,6 +2941,184 @@ Current module test coverage:
 
 ---
 
+## 🔒 Security
+
+### XSS (Cross-Site Scripting) Prevention
+
+miniCycle implements multiple layers of XSS protection to ensure user-generated content cannot execute malicious scripts.
+
+#### Core Security Principles
+
+1. **Use `textContent` over `innerHTML`** - Automatically escapes HTML
+2. **Sanitize before DOM insertion** - Validate and strip dangerous characters
+3. **Whitelist allowed characters** - Only permit safe characters in dynamic attributes
+4. **Validate settings values** - Check against known safe values
+
+#### Input Sanitization Patterns
+
+**Theme Values (onboardingManager.js:155):**
+```javascript
+// ✅ XSS PROTECTION: Sanitize theme value (allow only alphanumeric and hyphens)
+const safeTheme = typeof theme === 'string'
+    ? theme.replace(/[^a-zA-Z0-9-]/g, '')
+    : 'default';
+
+modal.innerHTML = `
+    <div class="onboarding-content theme-${safeTheme}">
+        <!-- Safe to use in class name -->
+    </div>
+`;
+```
+
+**Task Text (taskDOM.js, taskRenderer.js):**
+```javascript
+// ✅ SAFE: textContent automatically escapes HTML
+taskTextSpan.textContent = taskText;
+
+// ❌ UNSAFE: Never use innerHTML with user input
+// taskTextSpan.innerHTML = taskText;  // XSS vulnerability!
+```
+
+**Cycle Names (cycleSwitcher.js):**
+```javascript
+// ✅ Already verified secure - uses textContent for display
+cycleButton.textContent = cycleName;
+```
+
+**Notification Messages (notifications.js):**
+```javascript
+// ✅ Already verified secure - uses textContent
+notificationText.textContent = message;
+```
+
+#### Safe vs Unsafe Patterns
+
+**✅ Safe Patterns:**
+```javascript
+// 1. Using textContent (automatic escaping)
+element.textContent = userInput;
+
+// 2. Setting attributes with sanitized values
+element.setAttribute('data-id', sanitizedId);
+element.className = `task-${sanitizedType}`;
+
+// 3. Whitelisting allowed characters
+const safeName = name.replace(/[^a-zA-Z0-9-_]/g, '');
+
+// 4. Using DOM APIs instead of string concatenation
+const div = document.createElement('div');
+div.textContent = userInput;
+parent.appendChild(div);
+```
+
+**❌ Unsafe Patterns (Never Use):**
+```javascript
+// 1. innerHTML with user input
+element.innerHTML = userInput;  // XSS vulnerability!
+
+// 2. eval() or Function() with user data
+eval(userInput);  // Never do this!
+
+// 3. javascript: URLs
+element.href = `javascript:${userInput}`;  // XSS!
+
+// 4. Unsanitized event handlers
+element.setAttribute('onclick', userInput);  // XSS!
+
+// 5. document.write()
+document.write(userInput);  // XSS and breaks SPA!
+```
+
+#### Security Checklist for New Features
+
+When implementing new features, ensure:
+
+- [ ] **User input** → Always use `textContent`, never `innerHTML`
+- [ ] **URL parameters** → Sanitize before using in DOM or logic
+- [ ] **CSS classes/IDs from user data** → Whitelist allowed characters (`[a-zA-Z0-9-_]`)
+- [ ] **Theme/settings values** → Validate against known safe values
+- [ ] **Modal/notification content** → Escape HTML if dynamic
+- [ ] **Data attributes** → Sanitize values before setting
+- [ ] **JSON parsing** → Validate structure after parsing
+- [ ] **localStorage reads** → Validate and sanitize before using
+
+#### Verified Secure Modules
+
+The following modules have been audited and verified secure (November 2025):
+
+| Module | Verification | Notes |
+|--------|--------------|-------|
+| onboardingManager.js | ✅ Secure | Theme sanitization (line 155) |
+| notifications.js | ✅ Secure | Uses textContent only |
+| cycleSwitcher.js | ✅ Secure | Uses textContent for names |
+| taskDOM.js | ✅ Secure | No innerHTML usage |
+| taskRenderer.js | ✅ Secure | textContent for task text |
+| taskEvents.js | ✅ Secure | Event handlers only |
+| settingsManager.js | ✅ Secure | No user HTML insertion |
+
+#### Example: Secure Modal Creation
+
+```javascript
+// ✅ SECURE: Sanitize theme before using in class name
+createModal(theme, title, content) {
+    const safeTheme = typeof theme === 'string'
+        ? theme.replace(/[^a-zA-Z0-9-]/g, '')
+        : 'default';
+
+    const modal = document.createElement('div');
+    modal.className = `modal theme-${safeTheme}`;
+
+    const titleEl = document.createElement('h2');
+    titleEl.textContent = title;  // ✅ Safe: textContent escapes HTML
+
+    const contentEl = document.createElement('div');
+    contentEl.textContent = content;  // ✅ Safe: textContent escapes HTML
+
+    modal.appendChild(titleEl);
+    modal.appendChild(contentEl);
+
+    return modal;
+}
+
+// ❌ INSECURE: Don't do this!
+createModalInsecure(theme, title, content) {
+    const modal = document.createElement('div');
+    // XSS if theme contains: '"><script>alert("XSS")</script><div class="'
+    modal.innerHTML = `
+        <div class="modal theme-${theme}">
+            <h2>${title}</h2>
+            <div>${content}</div>
+        </div>
+    `;
+    return modal;
+}
+```
+
+#### Security Audit History
+
+- **November 2025:** XSS audit completed
+  - Theme sanitization implemented (onboardingManager.js:155)
+  - Notification system verified secure (textContent usage)
+  - Cycle switcher verified secure (textContent usage)
+  - Task rendering verified secure (no innerHTML)
+  - Settings persistence verified secure (AppState validation)
+
+#### Reporting Security Issues
+
+If you discover a security vulnerability:
+
+1. **Do not** open a public GitHub issue
+2. Contact the maintainer directly at security@sparkincreations.com
+3. Include:
+   - Description of the vulnerability
+   - Steps to reproduce
+   - Potential impact assessment
+   - Suggested fix (if available)
+
+**Response time:** Security issues are prioritized and typically addressed within 48 hours.
+
+---
+
 ## 📖 Additional Resources
 
 ### Documentation Files

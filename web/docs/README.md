@@ -55,6 +55,10 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md)** - PWA updates and cache management
 - **[MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md)** - Import/export file format specification
 
+### Security & Performance
+- **[DEVELOPER_DOCUMENTATION.md#-security](./DEVELOPER_DOCUMENTATION.md#-security)** - XSS prevention, secure coding patterns, and security checklist
+- **[EVENT_LISTENER_AUDIT.md](./EVENT_LISTENER_AUDIT.md)** - Event listener leak audit and prevention strategies
+
 ### Browser Compatibility
 - **[SAFARI_DRAGDROP_FIX.md](./SAFARI_DRAGDROP_FIX.md)** - Safari-specific drag & drop fixes
 
