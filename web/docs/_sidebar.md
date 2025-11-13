@@ -3,11 +3,20 @@
 * **Getting Started**
   * [Home](/)
   * [What is miniCycle?](WHAT_IS_MINICYCLE.md)
+  * [User Guide](USER_GUIDE.md)
   * [Quick Reference](QUICK_REFERENCE.md)
+  * [FAQ](FAQ.md)
+
+* **Project Info**
+  * [Roadmap](ROADMAP.md)
   * [Contributing](CONTRIBUTING.md)
+  * [Privacy Policy](PRIVACY.md)
+  * [Browser Compatibility](BROWSER_COMPATIBILITY.md)
+  * [Accessibility](ACCESSIBILITY.md)
 
 * **Developer Guides**
   * [Developer Documentation](DEVELOPER_DOCUMENTATION.md)
+  * [Documentation Index](INDEX.md)
   * [Folder Structure](FOLDER_STRUCTURE.md)
   * [Claude AI Guide](CLAUDE.md)
   * [Testing Quick Reference](TESTING_QUICK_REFERENCE.md)
@@ -24,8 +33,17 @@
   * [MCYC File Format](MCYC_FILE_FORMAT.md)
 
 * **Features**
+  * [Completed Tasks Dropdown](COMPLETED_TASKS_DROPDOWN.md)
   * [Recurring Tasks Guide](minicycle-recurring-guide.md)
   * [Recurring Watch Function](RECURRING_WATCH_FUNCTION.md)
+
+* **Testing & Performance**
+  * [Testing Architecture](TESTING_ARCHITECTURE.md)
+  * [Testing README](TESTING_README.md)
+  * [Performance Testing Guide](PERFORMANCE_TESTING_GUIDE.md)
+  * [Performance Setup](PERFORMANCE_SETUP.md)
+  * [Performance Summary](PERFORMANCE_SUMMARY.md)
+  * [Event Listener Audit](EVENT_LISTENER_AUDIT.md)
 
 * **Deployment & Updates**
   * [Deployment Guide](DEPLOYMENT.md)
@@ -33,6 +51,7 @@
   * [Update Version Guide](UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
+  * [Task Options Customizer Plan](TASK_OPTIONS_CUSTOMIZER_PLAN.md)
   * [CSS Refactor Plan](CSS_REFACTOR_PLAN.md)
   * [Remaining Extractions Analysis](REMAINING_EXTRACTIONS_ANALYSIS.md)
 

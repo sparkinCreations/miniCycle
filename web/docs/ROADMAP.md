@@ -148,6 +148,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 ### High Priority (May Add)
 
+- [ ] **Task Options Customizer** - Per-cycle button visibility customization ([See plan](TASK_OPTIONS_CUSTOMIZER_PLAN.md))
 - [ ] Subtasks/checklist items (within tasks)
 - [ ] Task dependencies (simple)
 - [ ] More theme options
