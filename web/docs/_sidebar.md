@@ -44,6 +44,12 @@
   * [Performance Setup](PERFORMANCE_SETUP.md)
   * [Performance Summary](PERFORMANCE_SUMMARY.md)
 
+* **Audits**
+  * [Error Handling Audit - Start Here](audits/AUDIT_README.md)
+  * [Audit Summary (Executive)](audits/AUDIT_SUMMARY.txt)
+  * [Error Handling Analysis](audits/ERROR_HANDLING_AUDIT.md)
+  * [File-by-File Analysis](audits/FILE_ERROR_HANDLING_ANALYSIS.md)
+
 * **Deployment & Updates**
   * [Deployment Guide](DEPLOYMENT.md)
   * [Service Worker Update Strategy](SERVICE_WORKER_UPDATE_STRATEGY.md)
