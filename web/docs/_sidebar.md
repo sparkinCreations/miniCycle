@@ -43,7 +43,6 @@
   * [Performance Testing Guide](PERFORMANCE_TESTING_GUIDE.md)
   * [Performance Setup](PERFORMANCE_SETUP.md)
   * [Performance Summary](PERFORMANCE_SUMMARY.md)
-  * [Event Listener Audit](EVENT_LISTENER_AUDIT.md)
 
 * **Deployment & Updates**
   * [Deployment Guide](DEPLOYMENT.md)
@@ -100,6 +99,9 @@
     * [Undo/Redo Phase 2 Complete](archive/PHASE2_COMPLETE_undoRedoManager.md)
     * [Undo/Redo Test Plan](archive/TEST_PLAN_undoRedoManager.md)
     * [Automated Testing Integration](archive/AUTOMATED_TESTING_INTEGRATION.md)
+
+  * **Audits & Analysis (Complete)**
+    * [Event Listener Audit](archive/EVENT_LISTENER_AUDIT.md)
 
   * **Historical Updates**
     * [October 2025 Improvements](archive/OCTOBER_2025_IMPROVEMENTS.md)
