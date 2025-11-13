@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Reduction:** 74.8% achieved
 - **Modules:** 33 modules (12,003 lines extracted)
 - **Core functions:** 14 (orchestration only)
-- **Test coverage:** 100% (958/958 tests passing) ✅
-- **Version:** 1.341 (November 9, 2025)
+- **Test coverage:** 100% (1011/1011 tests passing) ✅
+- **Version:** 1.352 (November 13, 2025)
 - **Cross-platform:** All tests pass on Mac, iPad, iPhone
 
 **Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
@@ -34,7 +34,7 @@ npm start                    # Starts Python HTTP server on port 8080
 
 ### Testing
 ```bash
-npm test                    # Run automated tests (958 tests)
+npm test                    # Run automated tests (1011 tests)
 npm run test:watch          # Run Jest tests in watch mode
 npm run test:coverage       # Generate Jest coverage report
 ```
@@ -134,6 +134,18 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 - **cycle/cycleSwitcher.js**: Cycle switching with modal UI
 - **cycle/modeManager.js**: Auto/Manual/Todo mode management
 
+#### Completed Tasks Dropdown (v1.352+)
+- **Optional feature:** Separates completed tasks into a collapsible dropdown section
+- **Settings toggle:** Enable/disable via Settings → "Show Completed Tasks in Dropdown"
+- **Persistence:** Completion state saved to AppState/localStorage (survives refresh)
+- **Cycle reset integration:** Tasks from both active and completed lists reset properly
+- **Recurring task integration:** Recurring system respects completed tasks in dropdown
+- **DOM structure:** Uses `#taskList` (active) and `#completedTaskList` (completed)
+- **Implementation:**
+  - `miniCycle-scripts.js`: `organizeCompletedTasks()`, `handleTaskListMovement()`
+  - `modules/task/taskCore.js`: `handleTaskCompletionChange()` saves state to AppState
+  - `modules/ui/settingsManager.js`: Settings UI and state management
+
 #### Global State Management
 ```javascript
 window.AppGlobalState = {
@@ -175,6 +187,11 @@ window.AppGlobalState = {
   appState: {
     activeCycleId: string,
     currentMode: 'auto-cycle' | 'manual-cycle' | 'todo-mode'
+  },
+  settings: {
+    showCompletedDropdown: boolean,    // v1.352+: Enable completed tasks dropdown
+    completedTasksExpanded: boolean,   // UI state for dropdown visibility
+    // ... other settings
   }
 }
 ```
