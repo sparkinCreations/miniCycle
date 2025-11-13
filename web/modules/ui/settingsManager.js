@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.353
+ * @version 1.354
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -12,7 +12,7 @@ import { calculateNextOccurrence } from '../recurring/recurringCore.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.353';
+        this.version = '1.354';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
