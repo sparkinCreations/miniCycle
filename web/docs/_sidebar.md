@@ -44,7 +44,8 @@
   * [Performance Setup](PERFORMANCE_SETUP.md)
   * [Performance Summary](PERFORMANCE_SUMMARY.md)
 
-* **Audits**
+* **Audits & Security**
+  * [Error Handling Improvements](ERROR_HANDLING_IMPROVEMENTS.md)
   * [Error Handling Audit - Start Here](audits/AUDIT_README.md)
   * [Audit Summary (Executive)](audits/AUDIT_SUMMARY.txt)
   * [Error Handling Analysis](audits/ERROR_HANDLING_AUDIT.md)

@@ -379,6 +379,114 @@ export class GlobalUtils {
     }
 
     /**
+     * Safe localStorage getter with error handling.
+     * Prevents crashes from QuotaExceededError, SecurityError, or corrupted data.
+     *
+     * @param {string} key - The localStorage key to retrieve.
+     * @param {*} defaultValue - Default value if retrieval fails (default: null).
+     * @returns {string|null} The stored value or default value.
+     */
+    static safeLocalStorageGet(key, defaultValue = null) {
+        try {
+            const value = localStorage.getItem(key);
+            return value;
+        } catch (error) {
+            console.error(`[GlobalUtils] Failed to read localStorage key "${key}":`, error);
+            if (typeof window.showNotification === 'function') {
+                window.showNotification('Storage access error. Some data may not load.', 'error');
+            }
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Safe localStorage setter with error handling.
+     * Prevents crashes from QuotaExceededError, SecurityError, or storage full errors.
+     *
+     * @param {string} key - The localStorage key to set.
+     * @param {string} value - The value to store.
+     * @param {boolean} silent - If true, don't show user notifications (default: false).
+     * @returns {boolean} True if successful, false otherwise.
+     */
+    static safeLocalStorageSet(key, value, silent = false) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (error) {
+            console.error(`[GlobalUtils] Failed to write localStorage key "${key}":`, error);
+
+            if (!silent && typeof window.showNotification === 'function') {
+                if (error.name === 'QuotaExceededError') {
+                    window.showNotification('Storage quota exceeded. Please export your data and clear some space.', 'error');
+                } else {
+                    window.showNotification('Failed to save data. Your changes may not be preserved.', 'error');
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Safe localStorage remover with error handling.
+     *
+     * @param {string} key - The localStorage key to remove.
+     * @returns {boolean} True if successful, false otherwise.
+     */
+    static safeLocalStorageRemove(key) {
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (error) {
+            console.error(`[GlobalUtils] Failed to remove localStorage key "${key}":`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Safe JSON.parse with error handling and fallback.
+     * Prevents crashes from corrupted or invalid JSON data.
+     *
+     * @param {string} jsonString - The JSON string to parse.
+     * @param {*} defaultValue - Default value if parsing fails (default: null).
+     * @param {boolean} silent - If true, don't log errors (default: false).
+     * @returns {*} Parsed object or default value.
+     */
+    static safeJSONParse(jsonString, defaultValue = null, silent = false) {
+        try {
+            if (!jsonString || typeof jsonString !== 'string') {
+                return defaultValue;
+            }
+            return JSON.parse(jsonString);
+        } catch (error) {
+            if (!silent) {
+                console.error('[GlobalUtils] Failed to parse JSON:', error);
+                console.error('Invalid JSON string:', jsonString?.substring(0, 100) + '...');
+            }
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Safe JSON.stringify with error handling.
+     * Prevents crashes from circular references or non-serializable data.
+     *
+     * @param {*} data - The data to stringify.
+     * @param {string} defaultValue - Default value if stringification fails (default: null).
+     * @param {boolean} silent - If true, don't log errors (default: false).
+     * @returns {string|null} JSON string or default value.
+     */
+    static safeJSONStringify(data, defaultValue = null, silent = false) {
+        try {
+            return JSON.stringify(data);
+        } catch (error) {
+            if (!silent) {
+                console.error('[GlobalUtils] Failed to stringify data:', error);
+            }
+            return defaultValue;
+        }
+    }
+
+    /**
      * Get module version and statistics.
      *
      * @returns {Object} Module information.
@@ -419,6 +527,13 @@ window.generateId = GlobalUtils.generateId;
 window.sanitizeInput = GlobalUtils.sanitizeInput;
 window.escapeHtml = GlobalUtils.escapeHtml;
 window.safeSetInnerHTMLWithEscape = GlobalUtils.safeSetInnerHTMLWithEscape;
+
+// Make safe storage/JSON utilities globally accessible
+window.safeLocalStorageGet = GlobalUtils.safeLocalStorageGet;
+window.safeLocalStorageSet = GlobalUtils.safeLocalStorageSet;
+window.safeLocalStorageRemove = GlobalUtils.safeLocalStorageRemove;
+window.safeJSONParse = GlobalUtils.safeJSONParse;
+window.safeJSONStringify = GlobalUtils.safeJSONStringify;
 
 // Make notification utility functions globally accessible
 window.generateNotificationId = GlobalUtils.generateNotificationId;

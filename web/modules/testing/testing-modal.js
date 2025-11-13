@@ -629,7 +629,7 @@ function setupTestButtons() {
 
     // Console capture buttons
     safeAddEventListenerById("enable-auto-capture", "click", () => {
-        localStorage.setItem("miniCycle_enableAutoConsoleCapture", "true");
+        safeLocalStorageSet("miniCycle_enableAutoConsoleCapture", "true");
         if (typeof startAutoConsoleCapture === 'function' && !window.consoleCapturing) {
             startAutoConsoleCapture();
         }
@@ -662,7 +662,7 @@ function setupTestButtons() {
     });
 
     safeAddEventListenerById("stop-console-capture", "click", () => {
-        localStorage.removeItem("miniCycle_enableAutoConsoleCapture");
+        safeLocalStorageRemove("miniCycle_enableAutoConsoleCapture");
         if (typeof stopConsoleCapture === 'function') {
             stopConsoleCapture();
         }
@@ -921,7 +921,7 @@ function testMigrationConfig() {
     const requiredKeys = ['miniCycleStorage', 'lastUsedMiniCycle'];
     let keysFound = 0;
     requiredKeys.forEach(key => {
-        if (localStorage.getItem(key)) {
+        if (safeLocalStorageGet(key, null)) {
             keysFound++;
         }
     });
@@ -982,17 +982,22 @@ function simulateMigration() {
 
 function backupBeforeMigration() {
     appendToTestResults("💾 Creating Migration Backup...\n");
-    
-    const backupData = JSON.stringify(localStorage);
+
+    const backupData = safeJSONStringify(localStorage, null);
+    if (!backupData) {
+        appendToTestResults(`❌ Backup Failed: Could not serialize localStorage\n\n`);
+        showNotification("❌ Failed to create backup", "error", 3000);
+        return;
+    }
     const backupKey = `miniCycle_backup_${Date.now()}`;
-    
-    try {
-        localStorage.setItem(backupKey, backupData);
+
+    const success = safeLocalStorageSet(backupKey, backupData);
+    if (success) {
         appendToTestResults(`✅ Backup Created: ${backupKey}\n`);
         appendToTestResults(`Backup Size: ${(backupData.length / 1024).toFixed(2)} KB\n\n`);
         showNotification("✅ Migration backup created successfully", "success", 3000);
-    } catch (error) {
-        appendToTestResults(`❌ Backup Failed: ${error.message}\n\n`);
+    } else {
+        appendToTestResults(`❌ Backup Failed: Could not save to localStorage\n\n`);
         showNotification("❌ Failed to create backup", "error", 3000);
     }
 }
@@ -1010,15 +1015,15 @@ function validateMigrationData() {
     
     // Check 1: Current data exists
     validation.checks++;
-    const oldCycles = localStorage.getItem("miniCycleStorage");
+    const oldCycles = safeLocalStorageGet("miniCycleStorage", null);
     if (oldCycles) {
         validation.passed++;
         appendToTestResults("✅ miniCycleStorage data found\n");
-        
-        try {
-            const parsed = JSON.parse(oldCycles);
+
+        const parsed = safeJSONParse(oldCycles, null);
+        if (parsed) {
             appendToTestResults(`  - Found ${Object.keys(parsed).length} cycles\n`);
-        } catch (e) {
+        } else {
             validation.errors++;
             appendToTestResults("❌ miniCycleStorage data is corrupted\n");
         }
@@ -1029,7 +1034,7 @@ function validateMigrationData() {
     
     // Check 2: Last used cycle
     validation.checks++;
-    const lastUsed = localStorage.getItem("lastUsedMiniCycle");
+    const lastUsed = safeLocalStorageGet("lastUsedMiniCycle", null);
     if (lastUsed) {
         validation.passed++;
         appendToTestResults(`✅ Active cycle: ${lastUsed}\n`);
@@ -1037,10 +1042,10 @@ function validateMigrationData() {
         validation.warnings++;
         appendToTestResults("⚠️ No active cycle set\n");
     }
-    
+
     // Check 3: Settings data
     validation.checks++;
-    const reminders = localStorage.getItem("miniCycleReminders");
+    const reminders = safeLocalStorageGet("miniCycleReminders", null);
     if (reminders) {
         validation.passed++;
         appendToTestResults("✅ Reminder settings found\n");
@@ -1051,7 +1056,8 @@ function validateMigrationData() {
     
     // Check 4: Available space
     validation.checks++;
-    const currentSize = JSON.stringify(localStorage).length;
+    const localStorageStr = safeJSONStringify(localStorage, "{}");
+    const currentSize = localStorageStr.length;
     const estimatedNewSize = currentSize * 1.5; // rough estimate
     const maxSize = 5 * 1024 * 1024; // 5MB typical limit
     
@@ -1170,7 +1176,8 @@ function listAvailableBackups() {
         allBackups.forEach(key => {
             const timestamp = key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, '');
             const date = new Date(parseInt(timestamp)).toLocaleString();
-            const size = (localStorage.getItem(key).length / 1024).toFixed(2);
+            const backupValue = safeLocalStorageGet(key, "");
+            const size = (backupValue.length / 1024).toFixed(2);
             const type = key.startsWith('auto_migration_backup_') ? 'AUTO' : 'MANUAL';
             appendToTestResults(`- ${key} (${date}) - ${size} KB [${type}]\n`);
         });
@@ -1257,30 +1264,31 @@ function restoreFromBackup() {
     sortedBackups.forEach((backupKey, index) => {
         const timestamp = backupKey.replace(/^(miniCycle_backup_|auto_migration_backup_)/, '');
         const date = new Date(parseInt(timestamp));
-        const backupData = localStorage.getItem(backupKey);
-        const size = (backupData.length / 1024).toFixed(2);
+        const backupData = safeLocalStorageGet(backupKey, null);
+        const size = backupData ? (backupData.length / 1024).toFixed(2) : 0;
         const isAuto = backupKey.startsWith('auto_migration_backup_');
-        
+
         // ✅ Try to extract cycle count from backup data
         let cycleInfo = "";
-        try {
-            const parsed = JSON.parse(backupData);
-            
+        const parsed = safeJSONParse(backupData, null);
+        if (parsed) {
             // ✅ Handle different backup formats
             let storage = {};
             if (isAuto) {
                 // Auto-migration backup format
-                storage = parsed.data?.miniCycleStorage ? JSON.parse(parsed.data.miniCycleStorage) : {};
+                const miniCycleStorageStr = parsed.data?.miniCycleStorage;
+                storage = safeJSONParse(miniCycleStorageStr, {});
             } else {
                 // Manual backup format
-                storage = parsed.miniCycleStorage ? JSON.parse(parsed.miniCycleStorage) : {};
+                const miniCycleStorageStr = parsed.miniCycleStorage;
+                storage = safeJSONParse(miniCycleStorageStr, {});
             }
-            
+
             const cycleCount = Object.keys(storage).length;
-            const taskCount = Object.values(storage).reduce((acc, cycle) => 
+            const taskCount = Object.values(storage).reduce((acc, cycle) =>
                 acc + (cycle.tasks?.length || 0), 0);
             cycleInfo = ` • ${cycleCount} cycle${cycleCount !== 1 ? 's' : ''}, ${taskCount} task${taskCount !== 1 ? 's' : ''}`;
-        } catch (e) {
+        } else {
             cycleInfo = " • Unknown content";
         }
         
@@ -1403,23 +1411,26 @@ function restoreFromBackup() {
                 }
                 
                 try {
-                    const backupData = localStorage.getItem(selectedBackup);
-                    const parsed = JSON.parse(backupData);
+                    const backupData = safeLocalStorageGet(selectedBackup, null);
+                    const parsed = safeJSONParse(backupData, null);
+                    if (!parsed) {
+                        throw new Error('Failed to parse backup data');
+                    }
                     const isAuto = selectedBackup.startsWith('auto_migration_backup_');
-                    
+
                     appendToTestResults(`🔄 Restoring ${isAuto ? 'auto-migration' : 'manual'} backup: ${selectedBackup}\n`);
-                    
+
                     // ✅ Handle different backup formats
                     let keysToReplace = [];
                     if (isAuto) {
                         // Auto-migration backup format
                         keysToReplace = ['miniCycleStorage', 'miniCycleReminders'];
                         if (parsed.data?.miniCycleStorage) {
-                            localStorage.setItem('miniCycleStorage', parsed.data.miniCycleStorage);
+                            safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
                             appendToTestResults(`✅ Restored: miniCycleStorage\n`);
                         }
                         if (parsed.data?.miniCycleReminders) {
-                            localStorage.setItem('miniCycleReminders', parsed.data.miniCycleReminders);
+                            safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
                             appendToTestResults(`✅ Restored: miniCycleReminders\n`);
                         }
                         if (parsed.data?.settings) {
@@ -1427,7 +1438,7 @@ function restoreFromBackup() {
                             Object.keys(parsed.data.settings).forEach(key => {
                                 if (parsed.data.settings[key] !== null && parsed.data.settings[key] !== undefined) {
                                     const storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
-                                    localStorage.setItem(storageKey, parsed.data.settings[key]);
+                                    safeLocalStorageSet(storageKey, parsed.data.settings[key]);
                                     appendToTestResults(`✅ Restored setting: ${storageKey}\n`);
                                 }
                             });
@@ -1437,14 +1448,14 @@ function restoreFromBackup() {
                         keysToReplace = ['miniCycleStorage', 'lastUsedMiniCycle'];
                         keysToReplace.forEach(key => {
                             if (parsed[key]) {
-                                localStorage.setItem(key, parsed[key]);
+                                safeLocalStorageSet(key, parsed[key]);
                                 appendToTestResults(`✅ Restored: ${key}\n`);
                             }
                         });
                     }
-                    
+
                     // ✅ Remove any Schema 2.5 data if present
-                    localStorage.removeItem('miniCycleData');
+                    safeLocalStorageRemove('miniCycleData');
                     
                     appendToTestResults(`✅ Backup restored successfully!\n`);
                     appendToTestResults(`🔄 Reloading application...\n\n`);
@@ -1488,19 +1499,19 @@ function restoreFromBackup() {
 }
 function cleanOldBackups() {
     appendToTestResults("🧹 Cleaning Old Backups...\n");
-    
+
     const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
     const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     let cleaned = 0;
-    
+
     backupKeys.forEach(key => {
         const timestamp = parseInt(key.replace('miniCycle_backup_', ''));
         if (timestamp < oneWeekAgo) {
-            localStorage.removeItem(key);
+            safeLocalStorageRemove(key);
             cleaned++;
         }
     });
-    
+
     appendToTestResults(`🧹 Cleaned ${cleaned} old backups\n`);
     appendToTestResults(`Remaining backups: ${backupKeys.length - cleaned}\n\n`);
     showNotification(`🧹 Cleaned ${cleaned} old backups`, "success", 2000);
@@ -1658,24 +1669,24 @@ function exportDebugData() {
 
 function cleanOldData() {
     appendToTestResults("🧹 Cleaning Old Data...\n");
-    
+
     // Clean up old backup files older than 30 days
     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     let cleaned = 0;
-    
+
     Object.keys(localStorage).forEach(key => {
         if (key.startsWith('miniCycle_backup_')) {
             const timestamp = parseInt(key.replace('miniCycle_backup_', ''));
             if (timestamp < thirtyDaysAgo) {
-                localStorage.removeItem(key);
+                safeLocalStorageRemove(key);
                 cleaned++;
             }
         }
     });
-    
+
     appendToTestResults(`🧹 Cleaned ${cleaned} old backup files\n`);
     appendToTestResults(`Freed up storage space\n\n`);
-    
+
     showNotification(`🧹 Cleaned ${cleaned} old data files`, "success", 2000);
 }
 
@@ -1713,9 +1724,9 @@ function repairData() {
                 }
             });
         });
-        
-        localStorage.setItem("miniCycleStorage", JSON.stringify(savedMiniCycles));
-        
+
+        safeLocalStorageSet("miniCycleStorage", safeJSONStringify(savedMiniCycles, null));
+
         appendToTestResults(`🔧 Data Repair Complete:\n`);
         appendToTestResults(`- Repairs made: ${repaired}\n`);
         appendToTestResults(`- Data structure normalized\n\n`);
@@ -1756,12 +1767,12 @@ function generateDebugReport() {
                 totalCycles: Object.keys(savedMiniCycles).length,
                 activeCycle: lastUsedMiniCycle,
                 totalTasks: Object.values(savedMiniCycles).reduce((acc, cycle) => acc + (cycle.tasks?.length || 0), 0),
-                storageUsed: JSON.stringify(localStorage).length
+                storageUsed: safeJSONStringify(localStorage, "{}").length
             }
         };
-        
+
         appendToTestResults("📋 Debug Report Generated:\n");
-        appendToTestResults(JSON.stringify(report, null, 2));
+        appendToTestResults(safeJSONStringify(report, "Error generating report", false, 2));
         appendToTestResults("\n\n");
         
         showNotification("📋 Debug report generated successfully", "success", 3000);
@@ -1835,8 +1846,8 @@ function openStorageViewer() {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key) continue;
-      
-      const rawValue = localStorage.getItem(key);
+
+      const rawValue = safeLocalStorageGet(key, null);
       if (rawValue === null) continue;
 
       const wrapper = document.createElement("div");
@@ -1900,16 +1911,14 @@ function openStorageViewer() {
       valueContainer.style.display = "none"; // Start collapsed
 
       let valueEl;
-      try {
-        const parsed = JSON.parse(rawValue);
-        if (typeof parsed === "object" && parsed !== null) {
-          valueEl = renderExpandableJSON(parsed);
-        } else {
-          valueEl = document.createElement("pre");
-          valueEl.textContent = String(parsed);
-          valueEl.style.cssText = "background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 12px; overflow-x: auto; word-wrap: break-word;";
-        }
-      } catch (error) {
+      const parsed = safeJSONParse(rawValue, null, true);
+      if (parsed !== null && typeof parsed === "object") {
+        valueEl = renderExpandableJSON(parsed);
+      } else if (parsed !== null) {
+        valueEl = document.createElement("pre");
+        valueEl.textContent = String(parsed);
+        valueEl.style.cssText = "background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 12px; overflow-x: auto; word-wrap: break-word;";
+      } else {
         valueEl = document.createElement("pre");
         valueEl.textContent = rawValue;
         valueEl.style.cssText = "background: #e8f4f8; padding: 8px; border-radius: 4px; font-size: 12px; overflow-x: auto; word-wrap: break-word; border-left: 4px solid #17a2b8; color: #0c5460;";
@@ -2202,7 +2211,7 @@ function renderExpandableJSON(data, depth = 0) {
         entry.appendChild(child);
       } else {
         // ✅ FIX: Better formatting for different value types
-        const valueText = JSON.stringify(value);
+        const valueText = safeJSONStringify(value, String(value));
         valueEl.textContent = valueText;
         
         // ✅ FIX: Color coding by value type
@@ -2654,32 +2663,36 @@ function showFeatureFlags() {
 
 function testLocalStorage() {
     appendToTestResults("💾 Testing localStorage Operations...\n");
-    
+
     try {
         // Test write
         const testKey = "miniCycle_test_" + Date.now();
         const testData = { test: true, timestamp: Date.now() };
-        localStorage.setItem(testKey, JSON.stringify(testData));
-        appendToTestResults("✅ Write test: PASSED\n");
-        
+        const writeSuccess = safeLocalStorageSet(testKey, safeJSONStringify(testData, null));
+        if (writeSuccess) {
+            appendToTestResults("✅ Write test: PASSED\n");
+        } else {
+            appendToTestResults("❌ Write test: FAILED\n");
+        }
+
         // Test read
-        const retrieved = JSON.parse(localStorage.getItem(testKey));
-        if (retrieved.test === true) {
+        const retrieved = safeJSONParse(safeLocalStorageGet(testKey, null), null);
+        if (retrieved && retrieved.test === true) {
             appendToTestResults("✅ Read test: PASSED\n");
         } else {
             appendToTestResults("❌ Read test: FAILED\n");
         }
-        
+
         // Test delete
-        localStorage.removeItem(testKey);
-        if (localStorage.getItem(testKey) === null) {
+        safeLocalStorageRemove(testKey);
+        if (safeLocalStorageGet(testKey, null) === null) {
             appendToTestResults("✅ Delete test: PASSED\n");
         } else {
             appendToTestResults("❌ Delete test: FAILED\n");
         }
-        
+
         // Storage capacity test
-        const storageUsed = JSON.stringify(localStorage).length;
+        const storageUsed = safeJSONStringify(localStorage, "{}").length;
         const storageLimit = 5 * 1024 * 1024; // 5MB estimate
         const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
         

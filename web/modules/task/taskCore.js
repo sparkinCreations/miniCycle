@@ -274,10 +274,12 @@ export class TaskCore {
                                 const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
                                 if (task) {
                                     task.text = cleanText;
-                                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                                    fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                                    fullSchemaData.metadata.lastModified = Date.now();
-                                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                                    if (fullSchemaData) {
+                                        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
+                                        fullSchemaData.metadata.lastModified = Date.now();
+                                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                                    }
                                 }
                             }
                         }
@@ -359,16 +361,18 @@ export class TaskCore {
 
                             if (index !== -1) {
                                 tasks.splice(index, 1);
-                                const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                                fullSchemaData.data.cycles[activeCycle].tasks = tasks;
-                                fullSchemaData.metadata.lastModified = Date.now();
-                                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                                const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                                if (fullSchemaData) {
+                                    fullSchemaData.data.cycles[activeCycle].tasks = tasks;
+                                    fullSchemaData.metadata.lastModified = Date.now();
+                                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
 
-                                taskItem.remove();
-                                this.deps.showNotification(`Task "${taskName}" deleted.`, "show", 2500);
-                                this.deps.updateStatsPanel();
-                                this.deps.updateProgressBar();
-                                this.deps.checkCompleteAllButton();
+                                    taskItem.remove();
+                                    this.deps.showNotification(`Task "${taskName}" deleted.`, "show", 2500);
+                                    this.deps.updateStatsPanel();
+                                    this.deps.updateProgressBar();
+                                    this.deps.checkCompleteAllButton();
+                                }
                             }
                         }
                     }
@@ -457,15 +461,17 @@ export class TaskCore {
                     const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
                     if (task) {
                         task.highPriority = taskItem.classList.contains("high-priority");
-                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                        this.deps.showNotification(
-                            `Priority ${task.highPriority ? "enabled" : "removed"}.`,
-                            task.highPriority ? "error" : "info",
-                            1500
-                        );
+                        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                        if (fullSchemaData) {
+                            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
+                            fullSchemaData.metadata.lastModified = Date.now();
+                            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                            this.deps.showNotification(
+                                `Priority ${task.highPriority ? "enabled" : "removed"}.`,
+                                task.highPriority ? "error" : "info",
+                                1500
+                            );
+                        }
                     }
                 }
             }
@@ -515,13 +521,13 @@ export class TaskCore {
                             task.completed = isCompleted;
 
                             // Save to localStorage
-                            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
                             if (fullSchemaData?.data?.cycles?.[activeCycle]) {
                                 const taskIndex = fullSchemaData.data.cycles[activeCycle].tasks.findIndex(t => t.id === taskId);
                                 if (taskIndex !== -1) {
                                     fullSchemaData.data.cycles[activeCycle].tasks[taskIndex].completed = isCompleted;
                                     fullSchemaData.metadata.lastModified = Date.now();
-                                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
                                     console.log(`✅ Task completion saved to localStorage: ${task.text} = ${isCompleted}`);
                                 }
                             }
@@ -604,10 +610,12 @@ export class TaskCore {
 
             currentCycle.tasks = reorderedTasks;
 
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+            if (fullSchemaData) {
+                fullSchemaData.data.cycles[activeCycle] = currentCycle;
+                fullSchemaData.metadata.lastModified = Date.now();
+                safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+            }
 
         } catch (error) {
             console.warn('⚠️ Save task order failed:', error);
@@ -640,11 +648,11 @@ export class TaskCore {
 
         // Fallback to localStorage if AppState not ready or failed
         try {
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
             if (fullSchemaData && fullSchemaData.data && fullSchemaData.data.cycles) {
                 fullSchemaData.data.cycles[activeCycle] = currentCycle;
                 fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
             } else {
                 console.error('❌ Invalid schema data structure in localStorage');
             }
@@ -779,11 +787,11 @@ export class TaskCore {
                     console.log('✅ Reset task data saved to AppState (will persist to localStorage)');
                 } else {
                     // Fallback: Save directly to localStorage if AppState not available
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
                     if (fullSchemaData?.data?.cycles?.[activeCycle]) {
                         fullSchemaData.data.cycles[activeCycle] = cycleData;
                         fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
                         console.log('✅ Reset task data saved to localStorage (AppState fallback)');
                     }
                 }
@@ -970,10 +978,12 @@ export class TaskCore {
                 } else {
                     // Fallback to localStorage
                     cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    fullSchemaData.data.cycles[activeCycle] = cycleData;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                    if (fullSchemaData) {
+                        fullSchemaData.data.cycles[activeCycle] = cycleData;
+                        fullSchemaData.metadata.lastModified = Date.now();
+                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                    }
                 }
 
                 // ✅ Update progress bar after bulk deletion

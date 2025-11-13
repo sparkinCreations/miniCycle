@@ -324,6 +324,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./modules/utils/globalUtils.js'));
     console.log('🛠️ Global utilities loaded');
 
+    // ✅ Load Error Handler (global error catching)
+    await import(withV('./modules/utils/errorHandler.js'));
+    console.log('🛡️ Global error handlers initialized');
+
     const { default: consoleCapture } = await import(withV('./modules/utils/consoleCapture.js'));
     window.consoleCapture = consoleCapture;
 

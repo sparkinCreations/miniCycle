@@ -75,7 +75,11 @@ export class CycleManager {
                     console.log('🔄 Creating new cycle:', newCycleName);
 
                     // Create new cycle in Schema 2.5 format
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                    if (!fullSchemaData) {
+                        console.error('❌ Failed to load schema data');
+                        return;
+                    }
 
                     fullSchemaData.data.cycles[cycleId] = {
                         id: cycleId,
@@ -92,7 +96,7 @@ export class CycleManager {
                     fullSchemaData.metadata.lastModified = Date.now();
                     fullSchemaData.metadata.totalCyclesCreated++;
 
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
 
                     // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
                     if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
@@ -137,7 +141,11 @@ export class CycleManager {
                 throw new Error('Schema 2.5 data not found');
             }
 
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+            if (!fullSchemaData) {
+                console.error('❌ Failed to load schema data');
+                throw new Error('Failed to load schema data');
+            }
             const cycleId = `cycle_${Date.now()}`;
 
             console.log('🔄 Creating sample cycle with ID:', cycleId);
@@ -158,7 +166,7 @@ export class CycleManager {
             fullSchemaData.metadata.lastModified = Date.now();
             fullSchemaData.metadata.totalCyclesCreated++;
 
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
 
             // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
             if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
@@ -200,7 +208,11 @@ export class CycleManager {
     createBasicFallbackCycle() {
         console.log('🆘 Creating basic fallback cycle...');
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+        if (!fullSchemaData) {
+            console.error('❌ Failed to load schema data for fallback cycle');
+            return;
+        }
         const cycleId = `cycle_${Date.now()}`;
 
         fullSchemaData.data.cycles[cycleId] = {
@@ -231,7 +243,7 @@ export class CycleManager {
         fullSchemaData.metadata.lastModified = Date.now();
         fullSchemaData.metadata.totalCyclesCreated++;
 
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
 
         // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
         if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
