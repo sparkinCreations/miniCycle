@@ -1,0 +1,134 @@
+# miniCycle Security Headers Configuration
+# Apache .htaccess file for enhanced security
+# Version: 1.353
+# Created: November 13, 2025
+
+<IfModule mod_headers.c>
+    # ===================================================================
+    # CONTENT SECURITY POLICY (CSP)
+    # ===================================================================
+    # Prevents XSS attacks by controlling which resources can be loaded
+
+    Header set Content-Security-Policy "\
+        default-src 'self'; \
+        script-src 'self' 'unsafe-inline'; \
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; \
+        font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; \
+        img-src 'self' data: https:; \
+        connect-src 'self'; \
+        frame-ancestors 'none'; \
+        base-uri 'self'; \
+        form-action 'self'; \
+        upgrade-insecure-requests;"
+
+    # ===================================================================
+    # X-FRAME-OPTIONS
+    # ===================================================================
+    # Prevents clickjacking attacks
+    Header always set X-Frame-Options "DENY"
+
+    # ===================================================================
+    # X-CONTENT-TYPE-OPTIONS
+    # ===================================================================
+    # Prevents MIME-sniffing attacks
+    Header always set X-Content-Type-Options "nosniff"
+
+    # ===================================================================
+    # X-XSS-PROTECTION
+    # ===================================================================
+    # Legacy XSS filter (deprecated but still useful for older browsers)
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # ===================================================================
+    # REFERRER-POLICY
+    # ===================================================================
+    # Controls how much referrer information is sent
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # ===================================================================
+    # PERMISSIONS-POLICY
+    # ===================================================================
+    # Controls which browser features can be used
+    Header always set Permissions-Policy "\
+        geolocation=(), \
+        microphone=(), \
+        camera=(), \
+        payment=(), \
+        usb=(), \
+        magnetometer=(), \
+        gyroscope=(), \
+        accelerometer=()"
+
+    # ===================================================================
+    # STRICT-TRANSPORT-SECURITY (HSTS)
+    # ===================================================================
+    # Forces HTTPS connections (only enable if using HTTPS)
+    # Uncomment the line below if your site uses HTTPS
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+</IfModule>
+
+# ===================================================================
+# DISABLE SERVER SIGNATURE
+# ===================================================================
+# Hide server version information
+ServerSignature Off
+
+# ===================================================================
+# DISABLE DIRECTORY LISTING
+# ===================================================================
+Options -Indexes
+
+# ===================================================================
+# FORCE HTTPS (Optional - only if using HTTPS)
+# ===================================================================
+# Uncomment to force HTTPS connections
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} off
+#     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+
+# ===================================================================
+# CACHE CONTROL
+# ===================================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # HTML files - no cache (always fresh)
+    ExpiresByType text/html "access plus 0 seconds"
+
+    # JavaScript - short cache (for quick updates)
+    ExpiresByType application/javascript "access plus 1 hour"
+    ExpiresByType text/javascript "access plus 1 hour"
+
+    # CSS - short cache
+    ExpiresByType text/css "access plus 1 hour"
+
+    # Images - longer cache
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    # Fonts - long cache
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+
+    # JSON files - no cache
+    ExpiresByType application/json "access plus 0 seconds"
+</IfModule>
+
+# ===================================================================
+# PROTECT SENSITIVE FILES
+# ===================================================================
+<FilesMatch "^(package\.json|package-lock\.json|\.env|\.git.*|\.DS_Store)$">
+    Require all denied
+</FilesMatch>
+
+# Protect backup and config files
+<FilesMatch "\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)$">
+    Require all denied
+</FilesMatch>

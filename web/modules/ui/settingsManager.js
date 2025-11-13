@@ -441,6 +441,10 @@ export class SettingsManager {
                     return;
                   }
 
+                  // ✅ XSS PROTECTION: Sanitize all user-generated content in imported data
+                  // Security fix (v1.353): Prevent XSS attacks via malicious .mcyc files
+                  this.sanitizeImportedData(backupData);
+
                   // ✅ Check if user is currently on Schema 2.5 (should always be true now)
                   const currentSchemaData = localStorage.getItem("miniCycleData");
                   if (!currentSchemaData) {
@@ -1071,6 +1075,99 @@ export class SettingsManager {
         if (element) {
             element.addEventListener(event, handler);
         }
+    }
+
+    /**
+     * Sanitize all user-generated content in imported backup data
+     * Security fix (v1.353): Prevent XSS attacks via malicious .mcyc files
+     * @param {Object} backupData - The parsed backup data object
+     */
+    sanitizeImportedData(backupData) {
+        console.log('🔒 Sanitizing imported data for XSS protection...');
+
+        // Get sanitization function (with fallback)
+        const sanitize = typeof window.sanitizeInput === 'function'
+            ? window.sanitizeInput
+            : (text, maxLength) => {
+                if (typeof text !== 'string') return '';
+                const temp = document.createElement('div');
+                temp.textContent = text;
+                return temp.textContent.trim().substring(0, maxLength || 500);
+            };
+
+        // Sanitize Schema 2.5 format
+        if (backupData.schemaVersion === '2.5' && backupData.miniCycleData) {
+            try {
+                const data = JSON.parse(backupData.miniCycleData);
+
+                if (data.cycles && typeof data.cycles === 'object') {
+                    Object.values(data.cycles).forEach(cycle => {
+                        if (!cycle || typeof cycle !== 'object') return;
+
+                        // Sanitize cycle title
+                        if (cycle.title) {
+                            cycle.title = sanitize(cycle.title, 100);
+                        }
+
+                        // Sanitize all task text
+                        if (Array.isArray(cycle.tasks)) {
+                            cycle.tasks.forEach(task => {
+                                if (task && typeof task === 'object') {
+                                    if (task.text) {
+                                        task.text = sanitize(task.text, 500);
+                                    }
+                                    // Sanitize recurring task template text if present
+                                    if (task.recurringTemplate?.text) {
+                                        task.recurringTemplate.text = sanitize(task.recurringTemplate.text, 500);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Write sanitized data back
+                backupData.miniCycleData = JSON.stringify(data);
+                console.log('✅ Schema 2.5 data sanitized successfully');
+            } catch (error) {
+                console.error('⚠️ Error sanitizing Schema 2.5 data:', error);
+            }
+        }
+
+        // Sanitize legacy format
+        if (backupData.miniCycleStorage) {
+            try {
+                const legacyData = JSON.parse(backupData.miniCycleStorage);
+
+                if (Array.isArray(legacyData)) {
+                    legacyData.forEach(cycle => {
+                        if (!cycle || typeof cycle !== 'object') return;
+
+                        // Sanitize cycle name
+                        if (cycle.name) {
+                            cycle.name = sanitize(cycle.name, 100);
+                        }
+
+                        // Sanitize task text
+                        if (Array.isArray(cycle.tasks)) {
+                            cycle.tasks.forEach(task => {
+                                if (task && typeof task === 'object' && task.text) {
+                                    task.text = sanitize(task.text, 500);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Write sanitized data back
+                backupData.miniCycleStorage = JSON.stringify(legacyData);
+                console.log('✅ Legacy data sanitized successfully');
+            } catch (error) {
+                console.error('⚠️ Error sanitizing legacy data:', error);
+            }
+        }
+
+        return backupData;
     }
 }
 

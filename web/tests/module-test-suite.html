@@ -236,9 +236,10 @@
             <option value="taskRenderer">TaskRenderer</option>
             <option value="taskEvents">TaskEvents</option>
             <option value="taskDOM">TaskDOM</option>
+            <option value="xss-vulnerability">🔒 XSS Vulnerability Tests</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (30 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (31 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -287,6 +288,7 @@
         const { runTaskRendererTests } = await import(`./taskRenderer.tests.js?v=${cacheBuster}`);
         const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
         const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
+        const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -444,6 +446,11 @@
                     await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
                     currentModule = 'taskDOM';
                     resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'xss-vulnerability') {
+                    // Load globalUtils first (provides window.sanitizeInput and escapeHtml)
+                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    currentModule = 'xss-vulnerability';
+                    resultsDiv.innerHTML = '<p>✅ XSS Vulnerability Tests ready (with globalUtils). Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -519,6 +526,8 @@
                 await runTaskEventsTests(resultsDiv);
             } else if (currentModule === 'taskDOM') {
                 await runTaskDOMTests(resultsDiv);
+            } else if (currentModule === 'xss-vulnerability') {
+                await runAllXSSTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -634,7 +643,8 @@
                 { name: 'TaskUtils', key: 'taskUtils', runFn: runTaskUtilsTests, importPath: '../modules/task/taskUtils.js' },
                 { name: 'TaskRenderer', key: 'taskRenderer', runFn: runTaskRendererTests, importPath: '../modules/task/taskRenderer.js' },
                 { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../modules/task/taskEvents.js' },
-                { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' }
+                { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' },
+                { name: 'XSS Vulnerability', key: 'xss-vulnerability', runFn: runAllXSSTests, importPath: null }
             ];
 
             let allResults = [];
