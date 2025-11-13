@@ -487,19 +487,66 @@ export class TaskCore {
     async handleTaskCompletionChange(checkbox) {
         try {
             const taskItem = checkbox.closest(".task");
+            const taskId = taskItem?.dataset?.taskId;
+            const isCompleted = checkbox.checked;
 
-            if (checkbox.checked) {
-                taskItem.classList.remove("overdue-task");
-            } else {
-                // Check if task is overdue
-                if (typeof window.checkOverdueTasks === 'function') {
-                    window.checkOverdueTasks(taskItem);
+            // ✅ UPDATE: Save completion state to AppState/localStorage (only if taskId exists)
+            if (taskId) {
+                // Update AppState if available
+                if (this.deps.AppState?.isReady?.()) {
+                    await this.deps.AppState.update(state => {
+                        const cid = state.appState?.activeCycleId;
+                        const cycle = state.data?.cycles?.[cid];
+                        if (!cycle?.tasks) return;
+
+                        const task = cycle.tasks.find(t => t.id === taskId);
+                        if (task) {
+                            task.completed = isCompleted;
+                            console.log(`✅ Task completion saved to AppState: ${task.text} = ${isCompleted}`);
+                        }
+                    }, false); // Don't force immediate save, let debounce handle it
+                } else {
+                    // Fallback to localStorage
+                    const schemaData = this.deps.loadMiniCycleData();
+                    if (schemaData) {
+                        const activeCycle = schemaData.appState?.activeCycleId;
+                        const task = schemaData.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
+                        if (task) {
+                            task.completed = isCompleted;
+
+                            // Save to localStorage
+                            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
+                            if (fullSchemaData?.data?.cycles?.[activeCycle]) {
+                                const taskIndex = fullSchemaData.data.cycles[activeCycle].tasks.findIndex(t => t.id === taskId);
+                                if (taskIndex !== -1) {
+                                    fullSchemaData.data.cycles[activeCycle].tasks[taskIndex].completed = isCompleted;
+                                    fullSchemaData.metadata.lastModified = Date.now();
+                                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                                    console.log(`✅ Task completion saved to localStorage: ${task.text} = ${isCompleted}`);
+                                }
+                            }
+                        }
+                    }
                 }
+            } else {
+                console.warn('⚠️ No task ID found - completion state not saved (DOM update only)');
             }
 
-            // Move task between active and completed lists
-            if (typeof window.handleTaskListMovement === 'function') {
-                window.handleTaskListMovement(taskItem, checkbox.checked);
+            // Update DOM classes (always do this, even without taskId for test compatibility)
+            if (taskItem) {
+                if (isCompleted) {
+                    taskItem.classList.remove("overdue-task");
+                } else {
+                    // Check if task is overdue
+                    if (typeof window.checkOverdueTasks === 'function') {
+                        window.checkOverdueTasks(taskItem);
+                    }
+                }
+
+                // Move task between active and completed lists
+                if (typeof window.handleTaskListMovement === 'function') {
+                    window.handleTaskListMovement(taskItem, isCompleted);
+                }
             }
 
             // Update help window if available
@@ -622,7 +669,17 @@ export class TaskCore {
 
             let cycles, activeCycle, cycleData;
             const taskList = this.deps.querySelector("#taskList");
-            const taskElements = taskList ? [...taskList.querySelectorAll(".task")] : [];
+            const completedTaskList = this.deps.querySelector("#completedTaskList");
+
+            // ✅ FIX: Get tasks from BOTH active and completed lists
+            let taskElements = [];
+            if (taskList) {
+                taskElements.push(...taskList.querySelectorAll(".task"));
+            }
+            if (completedTaskList) {
+                taskElements.push(...completedTaskList.querySelectorAll(".task"));
+            }
+
             const progressBar = this.deps.querySelector("#progressBar");
 
             // Validate DOM elements
@@ -728,6 +785,25 @@ export class TaskCore {
                         fullSchemaData.metadata.lastModified = Date.now();
                         localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
                         console.log('✅ Reset task data saved to localStorage (AppState fallback)');
+                    }
+                }
+
+                // ✅ FIX: Move completed tasks back to active list after reset
+                if (completedTaskList && taskList) {
+                    const completedTaskElements = completedTaskList.querySelectorAll('.task');
+                    completedTaskElements.forEach(taskEl => {
+                        // Only move non-recurring tasks (recurring tasks are already removed)
+                        if (!taskEl.classList.contains('recurring')) {
+                            taskList.appendChild(taskEl);
+                        }
+                    });
+                    if (completedTaskElements.length > 0) {
+                        console.log(`✅ Moved ${completedTaskElements.length} task(s) from completed list back to active list`);
+                    }
+
+                    // Update completed tasks count
+                    if (typeof window.updateCompletedTasksCount === 'function') {
+                        window.updateCompletedTasksCount();
                     }
                 }
 
