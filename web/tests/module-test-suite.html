@@ -210,9 +210,12 @@
             <option value="themeManager">ThemeManager</option>
             <option value="deviceDetection">DeviceDetection</option>
             <option value="cycleLoader">CycleLoader</option>
+            <option value="cycleManager">CycleManager</option>
             <option value="statsPanel">StatsPanel</option>
             <option value="consoleCapture">ConsoleCapture</option>
             <option value="state">State</option>
+            <option value="appInit">AppInit</option>
+            <option value="namespace">Namespace API</option>
             <option value="recurringCore">RecurringCore</option>
             <option value="recurringIntegration">RecurringIntegration</option>
             <option value="recurringPanel">RecurringPanel</option>
@@ -263,9 +266,12 @@
         const { runThemeManagerTests } = await import(`./themeManager.tests.js?v=${cacheBuster}`);
         const { runDeviceDetectionTests } = await import(`./deviceDetection.tests.js?v=${cacheBuster}`);
         const { runCycleLoaderTests } = await import(`./cycleLoader.tests.js?v=${cacheBuster}`);
+        const { runCycleManagerTests } = await import(`./cycleManager.tests.js?v=${cacheBuster}`);
         const { runStatsPanelTests } = await import(`./statsPanel.tests.js?v=${cacheBuster}`);
         const { runConsoleCaptureTests } = await import(`./consoleCapture.tests.js?v=${cacheBuster}`);
         const { runStateTests } = await import(`./state.tests.js?v=${cacheBuster}`);
+        const { runAppInitTests } = await import(`./appInit.tests.js?v=${cacheBuster}`);
+        const { runNamespaceTests } = await import(`./namespace.tests.js?v=${cacheBuster}`);
         const { runRecurringCoreTests } = await import(`./recurringCore.tests.js?v=${cacheBuster}`);
         const { runRecurringIntegrationTests } = await import(`./recurringIntegration.tests.js?v=${cacheBuster}`);
         const { runRecurringPanelTests } = await import(`./recurringPanel.tests.js?v=${cacheBuster}`);
@@ -329,6 +335,13 @@
                     await import(`../modules/cycle/cycleLoader.js?v=${cacheBuster}`);
                     currentModule = 'cycleLoader';
                     resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'cycleManager') {
+                    // Load dependencies for CycleManager
+                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                    await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
+                    currentModule = 'cycleManager';
+                    resultsDiv.innerHTML = '<p>✅ CycleManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'statsPanel') {
                     await import(`../modules/features/statsPanel.js?v=${cacheBuster}`);
                     currentModule = 'statsPanel';
@@ -341,6 +354,20 @@
                     await import(`../modules/core/appState.js?v=${cacheBuster}`);
                     currentModule = 'state';
                     resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'appInit') {
+                    await import(`../modules/core/appInit.js?v=${cacheBuster}`);
+                    currentModule = 'appInit';
+                    resultsDiv.innerHTML = '<p>✅ AppInit loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'namespace') {
+                    // Load dependencies first
+                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                    // Load namespace module
+                    const { initializeNamespace } = await import(`../modules/core/namespace.js?v=${cacheBuster}`);
+                    // Initialize the namespace
+                    initializeNamespace();
+                    currentModule = 'namespace';
+                    resultsDiv.innerHTML = '<p>✅ Namespace loaded and initialized. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringCore') {
                     await import(`../modules/recurring/recurringCore.js?v=${cacheBuster}`);
                     currentModule = 'recurringCore';
@@ -482,12 +509,18 @@
                 await runDeviceDetectionTests(resultsDiv);
             } else if (currentModule === 'cycleLoader') {
                 await runCycleLoaderTests(resultsDiv);
+            } else if (currentModule === 'cycleManager') {
+                await runCycleManagerTests(resultsDiv);
             } else if (currentModule === 'statsPanel') {
                 await runStatsPanelTests(resultsDiv);
             } else if (currentModule === 'consoleCapture') {
                 await runConsoleCaptureTests(resultsDiv);
             } else if (currentModule === 'state') {
                 await runStateTests(resultsDiv);
+            } else if (currentModule === 'appInit') {
+                await runAppInitTests(resultsDiv);
+            } else if (currentModule === 'namespace') {
+                await runNamespaceTests(resultsDiv);
             } else if (currentModule === 'recurringCore') {
                 await runRecurringCoreTests(resultsDiv);
             } else if (currentModule === 'recurringIntegration') {
@@ -628,9 +661,12 @@
                 { name: 'ThemeManager', key: 'themeManager', runFn: runThemeManagerTests, importPath: '../modules/features/themeManager.js' },
                 { name: 'DeviceDetection', key: 'deviceDetection', runFn: runDeviceDetectionTests, importPath: '../modules/utils/deviceDetection.js' },
                 { name: 'CycleLoader', key: 'cycleLoader', runFn: runCycleLoaderTests, importPath: '../modules/cycle/cycleLoader.js' },
+                { name: 'CycleManager', key: 'cycleManager', runFn: runCycleManagerTests, importPath: '../modules/cycle/cycleManager.js' },
                 { name: 'StatsPanel', key: 'statsPanel', runFn: runStatsPanelTests, importPath: '../modules/features/statsPanel.js' },
                 { name: 'ConsoleCapture', key: 'consoleCapture', runFn: runConsoleCaptureTests, importPath: '../modules/utils/consoleCapture.js' },
                 { name: 'State', key: 'state', runFn: runStateTests, importPath: '../modules/core/appState.js' },
+                { name: 'AppInit', key: 'appInit', runFn: runAppInitTests, importPath: '../modules/core/appInit.js' },
+                { name: 'Namespace', key: 'namespace', runFn: runNamespaceTests, importPath: '../modules/core/namespace.js' },
                 { name: 'RecurringCore', key: 'recurringCore', runFn: runRecurringCoreTests, importPath: '../modules/recurring/recurringCore.js' },
                 { name: 'RecurringIntegration', key: 'recurringIntegration', runFn: runRecurringIntegrationTests, importPath: '../modules/recurring/recurringIntegration.js' },
                 { name: 'RecurringPanel', key: 'recurringPanel', runFn: runRecurringPanelTests, importPath: '../modules/recurring/recurringPanel.js' },

@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'xss-vulnerability', 'errorHandler'];
+const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'cycleManager', 'statsPanel', 'consoleCapture', 'state', 'appInit', 'namespace', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'xss-vulnerability', 'errorHandler'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
@@ -42,8 +42,8 @@ async function runModuleTests(page, moduleName) {
         // Wait a bit for tests to start
         await page.waitForTimeout(500);
 
-        // Wait for results (increased timeout for statsPanel with 27 tests, taskCore with 34 tests)
-        const timeout = moduleName === 'taskCore' ? 60000 : 45000;
+        // Wait for results (increased timeout for statsPanel with 27 tests, taskCore with 34 tests, namespace with 71 tests)
+        const timeout = moduleName === 'namespace' ? 90000 : (moduleName === 'taskCore' ? 60000 : 45000);
         await page.waitForSelector('h3:has-text("Results:")', { timeout });
 
         // Extract summary (h3 with "Results:" text)

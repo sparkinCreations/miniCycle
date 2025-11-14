@@ -324,6 +324,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./modules/utils/globalUtils.js'));
     console.log('🛠️ Global utilities loaded');
 
+    // ✅ Load Namespace Module (consolidates globals into window.miniCycle.*)
+    const { initializeNamespace, setupBackwardCompatibility } = await import(withV('./modules/core/namespace.js'));
+    initializeNamespace();
+    console.log('🎯 Namespace initialized (window.miniCycle.*)');
+
+    // Store backward compatibility function for later (after all modules loaded)
+    window._setupBackwardCompatibility = setupBackwardCompatibility;
+
     // ✅ Load Error Handler (global error catching)
     await import(withV('./modules/utils/errorHandler.js'));
     console.log('🛡️ Global error handlers initialized');
@@ -1135,6 +1143,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();
+
+        // ✅ Setup backward compatibility layer now that all modules are loaded
+        if (typeof window._setupBackwardCompatibility === 'function') {
+            window._setupBackwardCompatibility();
+            console.log('🔄 Backward compatibility layer active');
+        }
 
         // ============ PHASE 3: DATA LOADING ============
         console.log('📊 Phase 3: Loading app data...');
