@@ -215,9 +215,66 @@ miniCycle **never** uses:
 
 All code is statically analyzable and safe.
 
+### Error Handling & Resilience
+
+**v1.355+ includes comprehensive error handling:**
+
+**Global Error Handlers:**
+- `window.onerror` - Catches all synchronous errors
+- `unhandledrejection` - Catches all promise rejections
+- Prevents app crashes from unexpected errors
+- User-friendly error notifications with recovery suggestions
+
+**Safe Utility Functions:**
+```javascript
+// Protected localStorage operations
+safeLocalStorageGet(key, defaultValue)
+safeLocalStorageSet(key, value)
+safeLocalStorageRemove(key)
+
+// Protected JSON operations
+safeJSONParse(jsonString, defaultValue)
+safeJSONStringify(data, defaultValue)
+```
+
+**What This Protects Against:**
+- Storage quota exceeded errors
+- Corrupted localStorage data
+- Invalid JSON data
+- Circular reference errors
+- Browser storage unavailable (private browsing)
+- Unexpected runtime exceptions
+
+**Security Benefits:**
+- Prevents data loss from errors
+- Graceful degradation under failure conditions
+- No silent failures that could mask security issues
+- Error logging for debugging (last 50 errors)
+- Spam prevention (max 10 error notifications)
+
+**Test Coverage:**
+- 34 error handler tests
+- 25 XSS vulnerability tests
+- 59 total security & error handling tests
+- 100% pass rate
+
+For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMARY.md).
+
 ---
 
 ## Vulnerability History
+
+### v1.355 (2025-11-14)
+
+**Error Handling & Resilience Enhancement:**
+- Added global error handlers (window.onerror, unhandledrejection)
+- Implemented safe utility functions for localStorage and JSON operations
+- Protected 50+ unprotected localStorage operations
+- Protected 23+ unprotected JSON.parse operations
+- Added comprehensive error handling tests (34 tests)
+- **Impact:** Prevents data loss, improves stability, prevents silent failures
+- **Severity:** Medium (security hardening, no known exploitation)
+- **Reporter:** Internal security audit
 
 ### v1.352 (2025-11-13)
 
@@ -382,7 +439,7 @@ If self-hosting or modifying miniCycle:
 ---
 
 **Security Policy Version:** 1.0
-**Last Updated:** November 13, 2025
-**miniCycle Version:** 1.352
+**Last Updated:** November 14, 2025
+**miniCycle Version:** 1.356
 
 *This security policy is a living document and will be updated as needed.*

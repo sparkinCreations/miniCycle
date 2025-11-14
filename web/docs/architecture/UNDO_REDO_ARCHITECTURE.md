@@ -1,7 +1,7 @@
 # Undo/Redo System Architecture
 
-**Module:** `modules/ui/undoRedoManager.js` (1,050 lines)
-**Version:** 1.347
+**Module:** `modules/ui/undoRedoManager.js` (1,049 lines)
+**Version:** 1.356
 **Test Coverage:** 73/73 tests passing (100%)
 **Status:** Production-ready, per-cycle IndexedDB persistence
 
@@ -109,7 +109,7 @@ Each snapshot captures **complete cycle state** at a point in time:
   undoStack: Snapshot[],           // Array of up to 20 snapshots
   redoStack: Snapshot[],           // Array of redo snapshots
   lastUpdated: number,             // Timestamp of last save
-  version: string                  // App version (e.g., "1.344")
+  version: string                  // App version (e.g., "1.356")
 }
 ```
 
@@ -633,6 +633,6 @@ console.log(window.AppGlobalState.activeCycleIdForUndo);
 
 ---
 
-**Last Updated:** November 10, 2025
-**Module Version:** 1.347
+**Last Updated:** November 14, 2025
+**Module Version:** 1.356
 **Test Status:** 73/73 passing ✅
