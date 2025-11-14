@@ -143,6 +143,37 @@ miniCycle is 100% offline-capable and privacy-respecting.
    - No data transmitted over network
    - Safe to use on public Wi-Fi
 
+### Import/Export Security
+
+**Import Validation (v1.353+):**
+
+When importing `.mcyc` files, miniCycle performs validation:
+
+```javascript
+// File size limit
+maxSize: 10MB  // Prevents memory issues
+
+// Content sanitization
+sanitizeImportedData() {
+  - Sanitizes all task text
+  - Sanitizes cycle names
+  - Sanitizes recurring template text
+  - Prevents XSS via malicious imports
+}
+
+// Schema validation
+- Checks for valid schemaVersion
+- Validates data structure
+- Safe JSON parsing
+```
+
+**Security checks on import:**
+- ✅ File size limited to 10MB
+- ✅ All user content sanitized for XSS
+- ✅ Schema version validated
+- ✅ JSON parsing protected with safeJSONParse
+- ✅ Invalid files rejected with error message
+
 ### When Sharing Data
 
 **If exporting/sharing .mcyc files:**
@@ -161,6 +192,12 @@ miniCycle is 100% offline-capable and privacy-respecting.
    - Only share cycles meant for collaboration
    - Remove personal tasks first
    - Consider separate work/personal cycles
+
+4. **Receiving .mcyc files:**
+   - Only import from trusted sources
+   - Review file contents before import (plain JSON)
+   - 10MB size limit protects against memory issues
+   - All content automatically sanitized on import
 
 ---
 
@@ -190,6 +227,15 @@ function escapeHtml(text) {
 - Notification messages
 - Onboarding theme names
 - All user-generated content
+
+**Input Length Limits:**
+```javascript
+sanitizeInput(input, maxLength = 100)
+```
+- Default 100-character limit for most inputs
+- Configurable per use case
+- Prevents UI/performance issues (not a security feature)
+- Used in 11+ locations across codebase
 
 ### Content Security Policy
 
@@ -274,6 +320,18 @@ For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMA
 - Added comprehensive error handling tests (34 tests)
 - **Impact:** Prevents data loss, improves stability, prevents silent failures
 - **Severity:** Medium (security hardening, no known exploitation)
+- **Reporter:** Internal security audit
+
+### v1.353 (2025-11-13)
+
+**Import Validation & XSS Prevention:**
+- Added 10MB file size limit for imports
+- Implemented `sanitizeImportedData()` function
+- Sanitizes all user content in imported .mcyc files
+- Schema validation on import
+- Protected JSON parsing with safeJSONParse
+- **Impact:** Prevents XSS via malicious .mcyc files, prevents memory issues
+- **Severity:** Medium (defense in depth)
 - **Reporter:** Internal security audit
 
 ### v1.352 (2025-11-13)
