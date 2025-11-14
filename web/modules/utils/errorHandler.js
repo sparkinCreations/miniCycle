@@ -192,9 +192,8 @@ class ErrorHandler {
 // Create singleton instance
 const errorHandler = new ErrorHandler();
 
-// Make available globally
-window.ErrorHandler = errorHandler;
+// Export for use in other modules (NO window pollution)
+export default errorHandler;
+export { ErrorHandler };
 
 console.log('🛡️ ErrorHandler module loaded');
-
-export default errorHandler;

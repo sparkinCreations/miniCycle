@@ -5,6 +5,9 @@
  * Tests the global error handling system and safe utility functions.
  */
 
+// Import ErrorHandler directly (no window pollution in Phase 2)
+import errorHandler from '../modules/utils/errorHandler.js';
+
 export function runErrorHandlerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛡️ Error Handler Tests</h2><h3>Running tests...</h3>';
 
@@ -26,20 +29,20 @@ export function runErrorHandlerTests(resultsDiv) {
     // ===== ERROR HANDLER MODULE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ ErrorHandler Module</h4>';
 
-    test('ErrorHandler is loaded globally', () => {
-        if (typeof window.ErrorHandler === 'undefined') {
-            throw new Error('ErrorHandler not found on window');
+    test('ErrorHandler module is loaded', () => {
+        if (typeof errorHandler === 'undefined') {
+            throw new Error('ErrorHandler not imported');
         }
     });
 
     test('ErrorHandler has getStats method', () => {
-        if (typeof window.ErrorHandler.getStats !== 'function') {
-            throw new Error('ErrorHandler.getStats not found');
+        if (typeof errorHandler.getStats !== 'function') {
+            throw new Error('errorHandler.getStats not found');
         }
     });
 
     test('ErrorHandler stats returns correct structure', () => {
-        const stats = window.ErrorHandler.getStats();
+        const stats = errorHandler.getStats();
         if (!stats.hasOwnProperty('totalErrors') ||
             !stats.hasOwnProperty('recentErrors') ||
             !stats.hasOwnProperty('errorLog')) {
@@ -48,27 +51,27 @@ export function runErrorHandlerTests(resultsDiv) {
     });
 
     test('ErrorHandler has reset method', () => {
-        if (typeof window.ErrorHandler.reset !== 'function') {
-            throw new Error('ErrorHandler.reset not found');
+        if (typeof errorHandler.reset !== 'function') {
+            throw new Error('errorHandler.reset not found');
         }
     });
 
     test('ErrorHandler reset clears error count', () => {
-        window.ErrorHandler.reset();
-        const stats = window.ErrorHandler.getStats();
+        errorHandler.reset();
+        const stats = errorHandler.getStats();
         if (stats.totalErrors !== 0) {
             throw new Error('Reset did not clear error count');
         }
     });
 
     test('ErrorHandler has exportErrorLog method', () => {
-        if (typeof window.ErrorHandler.exportErrorLog !== 'function') {
-            throw new Error('ErrorHandler.exportErrorLog not found');
+        if (typeof errorHandler.exportErrorLog !== 'function') {
+            throw new Error('errorHandler.exportErrorLog not found');
         }
     });
 
     test('ErrorHandler exportErrorLog returns string', () => {
-        const log = window.ErrorHandler.exportErrorLog();
+        const log = errorHandler.exportErrorLog();
         if (typeof log !== 'string') {
             throw new Error('Error log is not a string');
         }
