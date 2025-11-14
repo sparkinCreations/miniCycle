@@ -186,6 +186,12 @@ export function captureStateSnapshot(state) {
     return;
   }
 
+  // ✅ FIX #8: Don't capture snapshots during batch operations (reset, complete all)
+  if (Deps.AppGlobalState.isResetting) {
+    console.log('⏭️ Skipping snapshot during batch reset operation');
+    return;
+  }
+
   if (!state?.data?.cycles || !state?.appState?.activeCycleId) {
     console.warn('⚠️ Invalid state for snapshot');
     return;
@@ -713,6 +719,19 @@ export async function onCycleSwitched(newCycleId) {
 
     // ✅ Small delay to let cycle fully load before re-enabling snapshots
     await new Promise(resolve => setTimeout(resolve, 300));
+  } catch (e) {
+    // ✅ FIX #5: Error boundary for cycle switching
+    console.error('❌ Cycle switch failed:', e);
+
+    // Clear stacks to prevent stale data
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+    Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+    updateUndoRedoButtons();
+
+    if (Deps.showNotification) {
+      Deps.showNotification('⚠️ Undo history unavailable for this cycle', 'warning', 3000);
+    }
   } finally {
     // ✅ Always clear the flag, even on error
     Deps.AppGlobalState.isSwitchingCycles = false;
@@ -727,15 +746,28 @@ export async function onCycleSwitched(newCycleId) {
 export async function onCycleCreated(cycleId) {
   console.log(`🆕 New cycle created: "${cycleId}" - initializing empty undo stack`);
 
-  // Initialize empty stacks in IndexedDB
-  await saveUndoStackToIndexedDB(cycleId, [], []);
+  try {
+    // Initialize empty stacks in IndexedDB
+    await saveUndoStackToIndexedDB(cycleId, [], []);
 
-  // Set as active cycle for undo and clear in-memory stacks
-  // (newly created cycles immediately become active)
-  Deps.AppGlobalState.activeCycleIdForUndo = cycleId;
-  Deps.AppGlobalState.activeUndoStack = [];
-  Deps.AppGlobalState.activeRedoStack = [];
-  updateUndoRedoButtons();
+    // Set as active cycle for undo and clear in-memory stacks
+    // (newly created cycles immediately become active)
+    Deps.AppGlobalState.activeCycleIdForUndo = cycleId;
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+    updateUndoRedoButtons();
+  } catch (e) {
+    // ✅ FIX #5: Error boundary for cycle creation
+    console.error('❌ Failed to initialize undo stack for new cycle:', e);
+
+    // Still set up empty stacks in memory even if IndexedDB fails
+    Deps.AppGlobalState.activeCycleIdForUndo = cycleId;
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+    updateUndoRedoButtons();
+
+    // Don't notify user - this is an internal operation
+  }
 }
 
 /**
@@ -745,15 +777,30 @@ export async function onCycleCreated(cycleId) {
 export async function onCycleDeleted(cycleId) {
   console.log(`🗑️ Cycle deleted: "${cycleId}" - removing undo history`);
 
-  // Remove from IndexedDB
-  await deleteUndoStackFromIndexedDB(cycleId);
+  try {
+    // Remove from IndexedDB
+    await deleteUndoStackFromIndexedDB(cycleId);
 
-  // If this was the active cycle, clear memory
-  if (Deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
-    Deps.AppGlobalState.activeUndoStack = [];
-    Deps.AppGlobalState.activeRedoStack = [];
-    Deps.AppGlobalState.activeCycleIdForUndo = null;
-    updateUndoRedoButtons();
+    // If this was the active cycle, clear memory
+    if (Deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
+      Deps.AppGlobalState.activeUndoStack = [];
+      Deps.AppGlobalState.activeRedoStack = [];
+      Deps.AppGlobalState.activeCycleIdForUndo = null;
+      updateUndoRedoButtons();
+    }
+  } catch (e) {
+    // ✅ FIX #5: Error boundary for cycle deletion
+    console.error('❌ Failed to delete undo stack:', e);
+
+    // Still clean up memory even if IndexedDB fails
+    if (Deps.AppGlobalState.activeCycleIdForUndo === cycleId) {
+      Deps.AppGlobalState.activeUndoStack = [];
+      Deps.AppGlobalState.activeRedoStack = [];
+      Deps.AppGlobalState.activeCycleIdForUndo = null;
+      updateUndoRedoButtons();
+    }
+
+    // Don't notify user - this is an internal cleanup operation
   }
 }
 
@@ -764,12 +811,24 @@ export async function onCycleDeleted(cycleId) {
 export async function onCycleRenamed(oldCycleId, newCycleId) {
   console.log(`📝 Cycle renamed: "${oldCycleId}" → "${newCycleId}"`);
 
-  // Migrate in IndexedDB
-  await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
+  try {
+    // Migrate in IndexedDB
+    await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
 
-  // Update in-memory tracking
-  if (Deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
-    Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+    // Update in-memory tracking
+    if (Deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
+      Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+    }
+  } catch (e) {
+    // ✅ FIX #5: Error boundary for cycle rename
+    console.error('❌ Failed to rename undo stack:', e);
+
+    // Still update in-memory tracking even if IndexedDB fails
+    if (Deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
+      Deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+    }
+
+    // Don't notify user - this is an internal operation
   }
 }
 
@@ -783,59 +842,73 @@ export async function initializeUndoSystemForApp() {
 
   console.log('🔄 Initializing undo system...');
 
-  // 1. Initialize IndexedDB
-  await initializeUndoIndexedDB();
+  try {
+    // 1. Initialize IndexedDB
+    await initializeUndoIndexedDB();
 
-  // 2. Get current active cycle
-  const currentState = Deps.AppState.get();
-  const activeCycleId = currentState?.appState?.activeCycleId;
+    // 2. Get current active cycle
+    const currentState = Deps.AppState.get();
+    const activeCycleId = currentState?.appState?.activeCycleId;
 
-  if (!activeCycleId) {
-    console.warn('⚠️ No active cycle for undo initialization');
-    return;
-  }
-
-  // 3. Load that cycle's undo history
-  const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
-  Deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
-  Deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
-  Deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
-
-  // 4. Update UI
-  updateUndoRedoButtons();
-
-  // 5. Set up page unload handler to force immediate save
-  window.addEventListener('beforeunload', () => {
-    // Clear debounce timeout and save immediately
-    if (dbWriteTimeout) {
-      clearTimeout(dbWriteTimeout);
-      dbWriteTimeout = null;
+    if (!activeCycleId) {
+      console.warn('⚠️ No active cycle for undo initialization');
+      return;
     }
 
-    const cycleId = Deps.AppGlobalState.activeCycleIdForUndo;
-    if (cycleId && undoDB) {
-      // Force immediate synchronous save (no await)
-      try {
-        const transaction = undoDB.transaction(["undoStacks"], "readwrite");
-        const objectStore = transaction.objectStore("undoStacks");
+    // 3. Load that cycle's undo history
+    const loaded = await loadUndoStackFromIndexedDB(activeCycleId);
+    Deps.AppGlobalState.activeUndoStack = loaded.undoStack || [];
+    Deps.AppGlobalState.activeRedoStack = loaded.redoStack || [];
+    Deps.AppGlobalState.activeCycleIdForUndo = activeCycleId;
 
-        const data = {
-          cycleId,
-          undoStack: Deps.AppGlobalState.activeUndoStack || [],
-          redoStack: Deps.AppGlobalState.activeRedoStack || [],
-          lastUpdated: Date.now(),
-          version: "1.344"
-        };
+    // 4. Update UI
+    updateUndoRedoButtons();
 
-        objectStore.put(data);
-        console.log('💾 Force-saved undo history on page unload');
-      } catch (e) {
-        console.warn('⚠️ Failed to force-save undo history:', e);
+    // 5. Set up page unload handler to force immediate save
+    window.addEventListener('beforeunload', () => {
+      // Clear debounce timeout and save immediately
+      if (dbWriteTimeout) {
+        clearTimeout(dbWriteTimeout);
+        dbWriteTimeout = null;
       }
-    }
-  });
 
-  console.log(`✅ Undo system initialized with ${loaded.undoStack.length} undo steps`);
+      const cycleId = Deps.AppGlobalState.activeCycleIdForUndo;
+      if (cycleId && undoDB) {
+        // Force immediate synchronous save (no await)
+        try {
+          const transaction = undoDB.transaction(["undoStacks"], "readwrite");
+          const objectStore = transaction.objectStore("undoStacks");
+
+          const data = {
+            cycleId,
+            undoStack: Deps.AppGlobalState.activeUndoStack || [],
+            redoStack: Deps.AppGlobalState.activeRedoStack || [],
+            lastUpdated: Date.now(),
+            version: "1.344"
+          };
+
+          objectStore.put(data);
+          console.log('💾 Force-saved undo history on page unload');
+        } catch (e) {
+          console.warn('⚠️ Failed to force-save undo history:', e);
+        }
+      }
+    });
+
+    console.log(`✅ Undo system initialized with ${loaded.undoStack.length} undo steps`);
+  } catch (e) {
+    // ✅ FIX #5: Error boundary for undo system initialization
+    console.error('❌ Undo system initialization failed:', e);
+
+    // Initialize with empty stacks to ensure app still works
+    Deps.AppGlobalState.activeUndoStack = [];
+    Deps.AppGlobalState.activeRedoStack = [];
+    updateUndoRedoButtons();
+
+    if (Deps.showNotification) {
+      Deps.showNotification('⚠️ Undo history unavailable', 'warning', 3000);
+    }
+  }
 }
 
 // ============ INDEXEDDB PERSISTENCE ============
@@ -908,15 +981,32 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack) {
 
       const request = objectStore.put(data);
 
-      request.onsuccess = () => {
-        console.log(`💾 Saved undo history for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
-      };
+      // ✅ FIX #11: Properly await IndexedDB operation
+      await new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          console.log(`💾 Saved undo history for "${cycleId}" (${undoStack?.length || 0} undo, ${redoStack?.length || 0} redo)`);
+          resolve();
+        };
 
-      request.onerror = () => {
-        console.warn(`⚠️ Failed to save undo history for "${cycleId}"`);
-      };
+        request.onerror = () => {
+          console.warn(`⚠️ Failed to save undo history for "${cycleId}"`);
+          reject(request.error);
+        };
+      });
     } catch (e) {
-      console.warn('⚠️ IndexedDB write error:', e);
+      console.error('❌ IndexedDB write failed:', e);
+
+      // ✅ FIX #11: Handle quota exceeded errors
+      if (e.name === 'QuotaExceededError') {
+        console.error('💾 Storage quota exceeded - undo history not saved');
+        if (Deps.showNotification) {
+          Deps.showNotification(
+            '⚠️ Storage full - undo history not saved. Consider exporting your data.',
+            'warning',
+            5000
+          );
+        }
+      }
     }
   }, UNDO_DB_WRITE_DEBOUNCE_MS);
 }
@@ -975,15 +1065,20 @@ export async function deleteUndoStackFromIndexedDB(cycleId) {
     const objectStore = transaction.objectStore("undoStacks");
     const request = objectStore.delete(cycleId);
 
-    request.onsuccess = () => {
-      console.log(`🗑️ Deleted undo history for "${cycleId}"`);
-    };
+    // ✅ FIX #11: Properly await IndexedDB operation
+    await new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        console.log(`🗑️ Deleted undo history for "${cycleId}"`);
+        resolve();
+      };
 
-    request.onerror = () => {
-      console.warn(`⚠️ Failed to delete undo history for "${cycleId}"`);
-    };
+      request.onerror = () => {
+        console.warn(`⚠️ Failed to delete undo history for "${cycleId}"`);
+        reject(request.error);
+      };
+    });
   } catch (e) {
-    console.warn('⚠️ IndexedDB delete error:', e);
+    console.error('❌ IndexedDB delete failed:', e);
   }
 }
 
@@ -1010,14 +1105,23 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
       version: "1.344"
     };
 
-    await objectStore.put(newData);
+    // ✅ FIX #11: Properly await IndexedDB operations
+    const putRequest = objectStore.put(newData);
+    await new Promise((resolve, reject) => {
+      putRequest.onsuccess = () => resolve();
+      putRequest.onerror = () => reject(putRequest.error);
+    });
 
     // Delete old key
-    await objectStore.delete(oldCycleId);
+    const deleteRequest = objectStore.delete(oldCycleId);
+    await new Promise((resolve, reject) => {
+      deleteRequest.onsuccess = () => resolve();
+      deleteRequest.onerror = () => reject(deleteRequest.error);
+    });
 
     console.log(`📝 Renamed undo history: "${oldCycleId}" → "${newCycleId}"`);
   } catch (e) {
-    console.warn('⚠️ IndexedDB rename error:', e);
+    console.error('❌ IndexedDB rename failed:', e);
   }
 }
 
@@ -1032,13 +1136,18 @@ export async function clearAllUndoHistoryFromIndexedDB() {
     const objectStore = transaction.objectStore("undoStacks");
     const request = objectStore.clear();
 
-    request.onsuccess = () => {
-      console.log('🧹 Cleared all undo history from IndexedDB');
-    };
+    // ✅ FIX #11: Properly await IndexedDB operation
+    await new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        console.log('🧹 Cleared all undo history from IndexedDB');
+        resolve();
+      };
 
-    request.onerror = () => {
-      console.warn('⚠️ Failed to clear undo history');
-    };
+      request.onerror = () => {
+        console.warn('⚠️ Failed to clear undo history');
+        reject(request.error);
+      };
+    });
   } catch (e) {
     console.warn('⚠️ IndexedDB clear error:', e);
   }

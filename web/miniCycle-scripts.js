@@ -556,6 +556,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
 
     mod.setCycleLoaderDependencies({
+      AppState: window.AppState,  // ✅ FIX #4: Add AppState for coordinated saves
       loadMiniCycleData: () => window.loadMiniCycleData?.(),
       createInitialSchema25Data: () => window.createInitialSchema25Data?.(),
       addTask: (...args) => window.addTask?.(...args),  // ✅ Forward ALL parameters
@@ -645,7 +646,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Drag & Drop Manager (Phase 2 module - waits for core internally)
         console.log('🔄 Initializing drag & drop manager...');
-        const { initDragDropManager } = await import(withV('./modules/task/dragDropManager.js'));
+        const { initDragDropManager, enableDragAndDropOnTask } = await import(withV('./modules/task/dragDropManager.js'));
 
         await initDragDropManager({
           saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
@@ -662,6 +663,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
           enableUndoSystemOnFirstInteraction: () => enableUndoSystemOnFirstInteraction?.(),
           showNotification: (msg, type, duration) => showNotification?.(msg, type, duration)
         });
+
+        // ✅ FIX: Expose enableDragAndDropOnTask globally for taskRenderer
+        window.enableDragAndDropOnTask = enableDragAndDropOnTask;
 
         console.log('✅ DragDropManager initialized and ready (Phase 2)');
 

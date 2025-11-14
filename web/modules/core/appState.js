@@ -18,7 +18,7 @@ class MiniCycleState {
             loadInitialData: dependencies.loadInitialData || (() => null),
             createInitialData: dependencies.createInitialData || (() => this.createInitialState())
         };
-        
+
         // Your existing properties
         this.data = null;
         this.isDirty = false;
@@ -27,6 +27,7 @@ class MiniCycleState {
         this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
         this.version = '1.356';
         this.isInitialized = false; // ✅ Add this flag
+        this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
     }
 
     // ✅ FIXED: Move isReady method to proper location
@@ -39,15 +40,35 @@ class MiniCycleState {
         return this.data;
     }
 
-    // ✅ Enhanced init with better data validation
+    // ✅ FIX #1: Enhanced init with initialization lock to prevent race conditions
     async init() {
+        // Already initialized - return immediately
         if (this.isInitialized) {
             console.log('✅ State already initialized');
             return this.data;
         }
-        
+
+        // Initialization in progress - wait for it
+        if (this._initPromise) {
+            console.log('⏳ Waiting for existing initialization...');
+            return this._initPromise;
+        }
+
+        // Start new initialization
+        this._initPromise = this._initializeInternal();
+
+        try {
+            const result = await this._initPromise;
+            return result;
+        } finally {
+            this._initPromise = null;
+        }
+    }
+
+    // ✅ FIX #1: Internal initialization method (called only once)
+    async _initializeInternal() {
         console.log('🏗️ Initializing MiniCycle state...');
-        
+
         try {
             // ✅ Check if Schema 2.5 data already exists
             let existingData = null;
@@ -66,7 +87,7 @@ class MiniCycleState {
             } catch (parseError) {
                 console.warn('⚠️ Could not parse existing data:', parseError);
             }
-            
+
             // Use existing data or create initial data
             if (existingData) {
                 this.data = existingData;
@@ -78,11 +99,11 @@ class MiniCycleState {
                 this.isInitialized = false;
                 return null;
             }
-            
+
             this.isInitialized = true;
             console.log('✅ State initialization completed');
             return this.data;
-            
+
         } catch (error) {
             console.error('❌ State initialization failed:', error);
             this.data = null;
@@ -194,6 +215,45 @@ class MiniCycleState {
         }
 
         try {
+            // ✅ FIX #4: Check for concurrent modifications before saving
+            const currentStored = this.deps.storage.getItem("miniCycleData");
+            if (currentStored) {
+                try {
+                    const storedData = JSON.parse(currentStored);
+                    const storedTimestamp = storedData?.metadata?.lastModified || 0;
+                    const ourTimestamp = this.data?.metadata?.lastModified || 0;
+
+                    // If stored data is newer, check if it's a real conflict or just rapid saves
+                    if (storedTimestamp > ourTimestamp) {
+                        const diff = storedTimestamp - ourTimestamp;
+
+                        // ✅ FIX: Only treat as conflict if timestamp diff > 1000ms
+                        // Differences < 1000ms are likely rapid-fire saves from same session
+                        // (e.g., arrow click → UI refresh within 600ms debounce window)
+                        if (diff > 1000) {
+                            console.warn('⚠️ Real concurrent modification detected!', {
+                                storedTimestamp,
+                                ourTimestamp,
+                                diff
+                            });
+
+                            // Reload the newer data to prevent overwriting
+                            console.log('🔄 Reloading newer data from storage...');
+                            this.data = storedData;
+                            this.isDirty = false;
+                            console.log('✅ Data reloaded, save cancelled to prevent data loss');
+                            return;
+                        } else {
+                            // Small diff - just our own rapid saves, proceed with save
+                            console.log('⏭️ Ignoring small timestamp diff (rapid saves):', diff, 'ms');
+                        }
+                    }
+                } catch (parseError) {
+                    console.warn('⚠️ Could not parse stored data for conflict check:', parseError);
+                    // Continue with save if we can't parse stored data
+                }
+            }
+
             console.log('💾 Saving to localStorage...', {
                 isDirty: this.isDirty,
                 dataSize: JSON.stringify(this.data).length,

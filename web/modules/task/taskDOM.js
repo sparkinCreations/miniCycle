@@ -853,10 +853,19 @@ export class TaskDOMManager {
     finalizeTaskCreation(taskElements, taskContext, options) {
         const { taskItem, taskList, taskInput } = taskElements;
         const { completed } = taskContext;
-        const { shouldSave, isLoading } = options;
+        const { shouldSave, isLoading, deferAppend, targetContainer } = options;
 
-        // Append to DOM
-        taskList.appendChild(taskItem);
+        // ✅ FIX #6: Support batched DOM operations
+        const container = targetContainer || taskList;
+
+        // Append to DOM (or deferred container like DocumentFragment)
+        if (!deferAppend) {
+            container.appendChild(taskItem);
+        } else {
+            // In deferred mode, append to container but skip UI updates
+            container.appendChild(taskItem);
+            return taskItem; // Return for batch processing
+        }
 
         // Clear input
         if (taskInput) taskInput.value = "";
@@ -872,6 +881,8 @@ export class TaskDOMManager {
 
         // Setup final interactions (delegated to TaskUtils)
         TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
+
+        return taskItem;
     }
 
     /**

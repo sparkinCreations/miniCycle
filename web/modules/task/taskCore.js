@@ -22,6 +22,9 @@ export class TaskCore {
     constructor(dependencies = {}) {
         this.version = '1.356';
 
+        // ✅ FIX #7: Track active timeouts for cleanup
+        this.activeTimeouts = new Set();
+
         // Store dependencies with intelligent fallbacks
         this.deps = {
             // State management
@@ -158,6 +161,39 @@ export class TaskCore {
     }
 
     // ============================================================================
+    // ✅ FIX #7: TIMEOUT MANAGEMENT
+    // ============================================================================
+
+    /**
+     * Track a timeout for later cleanup
+     * @param {number} timeoutId - The timeout ID returned by setTimeout
+     */
+    trackTimeout(timeoutId) {
+        this.activeTimeouts.add(timeoutId);
+        return timeoutId;
+    }
+
+    /**
+     * Clear a specific timeout and remove from tracking
+     * @param {number} timeoutId - The timeout ID to clear
+     */
+    clearTrackedTimeout(timeoutId) {
+        clearTimeout(timeoutId);
+        this.activeTimeouts.delete(timeoutId);
+    }
+
+    /**
+     * Clear all tracked timeouts (called on cleanup/destroy)
+     */
+    clearAllTimeouts() {
+        console.log(`🧹 Clearing ${this.activeTimeouts.size} active timeouts`);
+        for (const timeoutId of this.activeTimeouts) {
+            clearTimeout(timeoutId);
+        }
+        this.activeTimeouts.clear();
+    }
+
+    // ============================================================================
     // TASK CRUD OPERATIONS
     // ============================================================================
 
@@ -174,7 +210,7 @@ export class TaskCore {
      * @param {string|null} taskId - Specific task ID (for loading)
      * @param {object} recurringSettings - Settings for recurring tasks
      */
-    async addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
+    async addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}, deferAppend = false, targetContainer = null) {
         try {
             // Wait for core to be ready
             await this.waitForCoreWithTimeout();
@@ -209,10 +245,17 @@ export class TaskCore {
             // Setup task interactions and events
             this.deps.setupTaskInteractions?.(taskElements, taskContext);
 
-            // Finalize task creation
-            this.deps.finalizeTaskCreation?.(taskElements, taskContext, { shouldSave, isLoading });
+            // Finalize task creation (✅ FIX #6: Pass batch options)
+            const result = this.deps.finalizeTaskCreation?.(taskElements, taskContext, {
+                shouldSave,
+                isLoading,
+                deferAppend,
+                targetContainer
+            });
 
             console.log('✅ Task creation completed (Schema 2.5)');
+
+            return result; // ✅ FIX #6: Return taskItem for batch processing
 
         } catch (error) {
             console.warn('⚠️ Task creation failed:', error);
@@ -1027,27 +1070,42 @@ let taskCoreInstance = null;
  */
 export async function initTaskCore(dependencies = {}) {
     if (!taskCoreInstance) {
-        taskCoreInstance = new TaskCore(dependencies);
-        await taskCoreInstance.init();
+        try {
+            taskCoreInstance = new TaskCore(dependencies);
+            await taskCoreInstance.init();
 
-        // Make available globally for backward compatibility
-        window.TaskCore = TaskCore; // Export class for testing
-        window.taskCore = taskCoreInstance;
+            // Make available globally for backward compatibility
+            window.TaskCore = TaskCore; // Export class for testing
+            window.taskCore = taskCoreInstance;
 
-        // Export individual methods globally
-        window.addTask = (...args) => taskCoreInstance.addTask(...args);
-        window.editTaskFromCore = (taskItem) => taskCoreInstance.editTask(taskItem);
-        window.deleteTaskFromCore = (taskItem) => taskCoreInstance.deleteTask(taskItem);
-        window.toggleTaskPriorityFromCore = (taskItem) => taskCoreInstance.toggleTaskPriority(taskItem);
+            // Export individual methods globally
+            window.addTask = (...args) => taskCoreInstance.addTask(...args);
+            window.editTaskFromCore = (taskItem) => taskCoreInstance.editTask(taskItem);
+            window.deleteTaskFromCore = (taskItem) => taskCoreInstance.deleteTask(taskItem);
+            window.toggleTaskPriorityFromCore = (taskItem) => taskCoreInstance.toggleTaskPriority(taskItem);
 
-        // Export new batch operations
-        window.handleTaskCompletionChange = (checkbox) => taskCoreInstance.handleTaskCompletionChange(checkbox);
-        window.saveCurrentTaskOrder = () => taskCoreInstance.saveCurrentTaskOrder();
-        window.saveTaskToSchema25 = (cycleId, cycleData) => taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
-        window.resetTasks = () => taskCoreInstance.resetTasks();
-        window.handleCompleteAllTasks = () => taskCoreInstance.handleCompleteAllTasks();
+            // Export new batch operations
+            window.handleTaskCompletionChange = (checkbox) => taskCoreInstance.handleTaskCompletionChange(checkbox);
+            window.saveCurrentTaskOrder = () => taskCoreInstance.saveCurrentTaskOrder();
+            window.saveTaskToSchema25 = (cycleId, cycleData) => taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
+            window.resetTasks = () => taskCoreInstance.resetTasks();
+            window.handleCompleteAllTasks = () => taskCoreInstance.handleCompleteAllTasks();
 
-        console.log('✅ TaskCore initialized and globally available');
+            console.log('✅ TaskCore initialized and globally available');
+        } catch (e) {
+            // ✅ FIX #5: Error boundary for TaskCore initialization
+            console.error('❌ TaskCore initialization failed:', e);
+
+            // Clean up partial initialization
+            taskCoreInstance = null;
+
+            // Notify user if notification system is available
+            if (dependencies.showNotification) {
+                dependencies.showNotification('⚠️ Task system failed to initialize', 'error', 5000);
+            }
+
+            throw e; // Re-throw so caller knows initialization failed
+        }
     }
     return taskCoreInstance;
 }

@@ -9,6 +9,7 @@
 
 import { appInit } from '../core/appInit.js';
 import { calculateNextOccurrence } from '../recurring/recurringCore.js';
+import { DataValidator } from '../utils/dataValidator.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
@@ -903,13 +904,14 @@ export class SettingsManager {
 
               console.log("🔄 Creating imported cycle with ID:", cycleId);
 
-              // Map tasks with proper structure
+              // ✅ FIX #12: Validate and sanitize all task data at import boundary
               const mappedTasks = importedData.tasks.map((task) => {
                 const safeSettings = task.recurringSettings || {};
                 if (task.recurring && !safeSettings.specificTime && !safeSettings.defaultRecurTime) {
                   safeSettings.defaultRecurTime = new Date().toISOString();
                 }
-                return {
+
+                const taskData = {
                   id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                   text: task.text || "",
                   completed: false,
@@ -920,7 +922,15 @@ export class SettingsManager {
                   recurringSettings: safeSettings,
                   schemaVersion: task.schemaVersion || 2
                 };
-              });
+
+                // Validate task structure and sanitize text
+                try {
+                  return DataValidator.validateTask(taskData);
+                } catch (error) {
+                  console.warn(`⚠️ Skipping invalid task during import:`, error.message);
+                  return null;
+                }
+              }).filter(task => task !== null);
 
               // ✅ Create recurring templates for tasks with recurring: true
               const recurringTemplates = {};
@@ -945,9 +955,18 @@ export class SettingsManager {
                 }
               });
 
+              // ✅ FIX #12: Validate and sanitize cycle title
+              let cycleTitle = importedData.title || importedData.name || 'Imported Cycle';
+              try {
+                cycleTitle = DataValidator.validateCycleName(cycleTitle);
+              } catch (error) {
+                console.warn(`⚠️ Invalid cycle title, using default:`, error.message);
+                cycleTitle = 'Imported Cycle';
+              }
+
               fullSchemaData.data.cycles[cycleId] = {
                 id: cycleId,
-                title: importedData.title || importedData.name,
+                title: cycleTitle,
                 tasks: mappedTasks,
                 autoReset: importedData.autoReset !== false,
                 cycleCount: importedData.cycleCount || 0,

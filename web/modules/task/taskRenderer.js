@@ -61,15 +61,19 @@ export class TaskRenderer {
 
         console.log(`📋 Rendering ${tasksArray.length} tasks`);
 
-        tasksArray.forEach(task => {
+        // ✅ FIX #6: Use DocumentFragment for batched DOM updates
+        const fragment = document.createDocumentFragment();
+
+        // Add all tasks to fragment (batch operation)
+        for (const task of tasksArray) {
             if (!task || !task.id) {
                 console.warn('⚠️ Skipping invalid task:', task);
-                return;
+                continue;
             }
 
-            // Use window.addTask (from taskCore) to render each task
+            // Use window.addTask with batch mode
             if (typeof window.addTask === 'function') {
-                window.addTask(
+                await window.addTask(
                     task.text,
                     task.completed,
                     false,                     // shouldSave: false (don't save during render)
@@ -79,12 +83,17 @@ export class TaskRenderer {
                     task.remindersEnabled,
                     task.recurring,
                     task.id,
-                    task.recurringSettings
+                    task.recurringSettings,
+                    true,                      // ✅ FIX #6: deferAppend: batch mode
+                    fragment                   // ✅ FIX #6: targetContainer: append to fragment
                 );
             } else {
                 console.warn('⚠️ addTask function not available');
             }
-        });
+        }
+
+        // ✅ FIX #6: Append entire fragment to DOM in one operation (single reflow)
+        taskList.appendChild(fragment);
 
         // Re-run UI state updates
         this.deps.updateProgressBar?.();
@@ -103,7 +112,17 @@ export class TaskRenderer {
             }, 500);
         }
 
-        console.log('✅ Tasks rendered successfully');
+        // ✅ FIX: Re-initialize drag handlers on newly rendered tasks
+        // This is needed after refreshUIFromState() recreates the DOM
+        if (typeof window.enableDragAndDropOnTask === 'function') {
+            const tasks = document.querySelectorAll('#taskList .task');
+            tasks.forEach(task => {
+                window.enableDragAndDropOnTask(task);
+            });
+            console.log(`🎯 Re-initialized drag handlers for ${tasks.length} tasks`);
+        }
+
+        console.log('✅ Tasks rendered successfully (batched DOM update)');
     }
 
     /**

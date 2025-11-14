@@ -10,6 +10,7 @@
 import { appInit } from '../core/appInit.js';
 
 const Deps = {
+  AppState: null,
   loadMiniCycleData: null,
   createInitialSchema25Data: null,
   addTask: null,
@@ -256,22 +257,42 @@ function updateDependentComponents() {
 
 /**
  * Persist cycle changes
+ * ✅ FIX #4: Use AppState.update() instead of direct localStorage writes
+ * to prevent race conditions with concurrent saves
  */
 async function saveCycleData(activeCycle, currentCycle) {
   // ✅ Wait for core systems to be ready (AppState + data)
   // This prevents conflicts with AppState initialization
   await appInit.waitForCore();
 
-  const raw = localStorage.getItem('miniCycleData');
-  if (!raw) return;
+  // ✅ FIX #4: Use AppState instead of direct localStorage write
+  if (!Deps.AppState || typeof Deps.AppState.update !== 'function') {
+    console.warn('⚠️ AppState not available, falling back to direct save');
+    // Fallback to direct write only if AppState unavailable
+    const raw = localStorage.getItem('miniCycleData');
+    if (!raw) return;
+    try {
+      const full = JSON.parse(raw);
+      if (!full.data || !full.data.cycles) return;
+      full.data.cycles[activeCycle] = currentCycle;
+      if (full.metadata) full.metadata.lastModified = Date.now();
+      localStorage.setItem('miniCycleData', JSON.stringify(full));
+    } catch (e) {
+      console.error('❌ Failed to save cycle data', e);
+    }
+    return;
+  }
+
+  // Use AppState for coordinated saves
   try {
-    const full = JSON.parse(raw);
-    if (!full.data || !full.data.cycles) return;
-    full.data.cycles[activeCycle] = currentCycle;
-    if (full.metadata) full.metadata.lastModified = Date.now();
-    localStorage.setItem('miniCycleData', JSON.stringify(full));
+    await Deps.AppState.update((state) => {
+      if (state.data?.cycles?.[activeCycle]) {
+        state.data.cycles[activeCycle] = currentCycle;
+        console.log(`💾 Saved cycle "${activeCycle}" via AppState`);
+      }
+    }, true); // immediate = true for cycle repairs
   } catch (e) {
-    console.error('❌ Failed to save cycle data', e);
+    console.error('❌ Failed to save cycle data via AppState', e);
   }
 }
 

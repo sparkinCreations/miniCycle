@@ -208,6 +208,7 @@ export class MiniCycleNotifications {
   constructor() {
     this.educationalTips = new EducationalTipManager();
     this.isDraggingNotification = false;
+    this._activeListeners = new WeakMap(); // ✅ FIX #2: Track cleanup functions per notification
   }
 
   // Helper method to sync with global variable
@@ -273,6 +274,9 @@ export class MiniCycleNotifications {
         <button class="close-btn" title="Close" aria-label="Close notification">✖</button>
       `;
 
+      // ✅ FIX #7: Track cleanup function for timeouts
+      let cleanupTimeouts = null;
+
       // Style and handler for any close button
       const closeBtn = notification.querySelector(".close-btn");
       if (closeBtn) {
@@ -291,6 +295,10 @@ export class MiniCycleNotifications {
 
         closeBtn.addEventListener("click", (e) => {
           e.stopPropagation();
+
+          // ✅ FIX #7: Clean up any active timeouts before removing
+          if (cleanupTimeouts) cleanupTimeouts();
+
           notification.classList.remove("show");
           setTimeout(() => notification.remove(), 300);
         });
@@ -305,7 +313,7 @@ export class MiniCycleNotifications {
       console.log(`🔍 Notification debug - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), Will auto-dismiss: ${!!duration}, Truthy check: ${Boolean(duration)}`);
       if (duration) {
         console.log(`⏱️ Setting up auto-remove with duration: ${duration}ms`);
-        this.setupAutoRemove(notification, duration);
+        cleanupTimeouts = this.setupAutoRemove(notification, duration);
       } else {
         console.log(`♾️ No duration set - notification requires manual dismissal (received: ${duration})`);
       }
@@ -372,11 +380,18 @@ export class MiniCycleNotifications {
 
       notificationContainer.appendChild(notification);
 
+      // ✅ FIX #7: Track cleanup function for timeouts
+      let cleanupTimeouts = null;
+
       // Close button click
       const closeBtn = notification.querySelector(".close-btn, .notification-close");
       if (closeBtn) {
         closeBtn.addEventListener("click", (e) => {
           e.stopPropagation();
+
+          // ✅ FIX #7: Clean up any active timeouts before removing
+          if (cleanupTimeouts) cleanupTimeouts();
+
           notification.classList.remove("show");
           setTimeout(() => notification.remove(), 300);
         });
@@ -392,7 +407,7 @@ export class MiniCycleNotifications {
 
       // Auto-remove logic with hover pause
       if (duration) {
-        this.setupAutoRemove(notification, duration);
+        cleanupTimeouts = this.setupAutoRemove(notification, duration);
       }
 
       // Dragging setup
@@ -519,18 +534,20 @@ async setDefaultPosition(notificationContainer) {
 }
   /**
    * ⏰ Setup auto-remove with hover pause functionality
+   * Returns cleanup function to clear timeouts
    */
   setupAutoRemove(notification, duration) {
     console.log(`🔧 setupAutoRemove called with duration: ${duration} (type: ${typeof duration})`);
     let hoverPaused = false;
     let remaining = duration;
     let removeTimeout;
+    let removeDelayTimeout; // ✅ FIX #7: Track fade-out delay timeout
     let startTime = Date.now();
 
     const clearNotification = () => {
       console.log(`🗑️ Auto-removing notification after ${duration}ms`);
       notification.classList.remove("show");
-      setTimeout(() => notification.remove(), 300);
+      removeDelayTimeout = setTimeout(() => notification.remove(), 300);
     };
 
     const startTimer = () => {
@@ -554,6 +571,13 @@ async setDefaultPosition(notificationContainer) {
     startTimer();
     notification.addEventListener("mouseenter", pauseTimer);
     notification.addEventListener("mouseleave", resumeTimer);
+
+    // ✅ FIX #7: Return cleanup function to clear all timeouts
+    return () => {
+      if (removeTimeout) clearTimeout(removeTimeout);
+      if (removeDelayTimeout) clearTimeout(removeDelayTimeout);
+      console.log('🧹 Cleared notification timeouts');
+    };
   }
 
   /**
@@ -592,8 +616,11 @@ async setDefaultPosition(notificationContainer) {
       }
     };
 
+    // ✅ FIX #2: Track cleanup functions for this notification
+    const cleanupFunctions = [];
+
     // Mouse dragging
-    notificationContainer.addEventListener("mousedown", (e) => {
+    const mouseDownHandler = (e) => {
       const isInteractive = interactiveSelectors.some(selector =>
         e.target.matches(selector) || e.target.closest(selector)
       );
@@ -624,11 +651,11 @@ async setDefaultPosition(notificationContainer) {
           e.preventDefault();
           const newY = e.clientY - offsetY;
           const newX = e.clientX - offsetX;
-          
+
           notificationContainer.style.top = `${newY}px`;
           notificationContainer.style.left = `${newX}px`;
           notificationContainer.style.right = "auto";
-          
+
           savePositionToSchema25(newX, newY);
         }
       };
@@ -649,10 +676,21 @@ async setDefaultPosition(notificationContainer) {
 
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
+
+      // ✅ FIX #2: Store cleanup for forced cleanup on notification removal
+      cleanupFunctions.push(() => {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      });
+    };
+
+    notificationContainer.addEventListener("mousedown", mouseDownHandler);
+    cleanupFunctions.push(() => {
+      notificationContainer.removeEventListener("mousedown", mouseDownHandler);
     });
 
     // Touch dragging
-    notificationContainer.addEventListener("touchstart", (e) => {
+    const touchStartHandler = (e) => {
       const isInteractive = interactiveSelectors.some(selector =>
         e.target.matches(selector) || e.target.closest(selector)
       );
@@ -685,11 +723,11 @@ async setDefaultPosition(notificationContainer) {
           e.preventDefault();
           const newY = touch.clientY - offsetY;
           const newX = touch.clientX - offsetX;
-          
+
           notificationContainer.style.top = `${newY}px`;
           notificationContainer.style.left = `${newX}px`;
           notificationContainer.style.right = "auto";
-          
+
           savePositionToSchema25(newX, newY);
         }
       };
@@ -711,7 +749,47 @@ async setDefaultPosition(notificationContainer) {
 
       document.addEventListener("touchmove", onTouchMove, { passive: false });
       document.addEventListener("touchend", onTouchEnd, { passive: false });
-    }, { passive: true });
+
+      // ✅ FIX #2: Store cleanup for forced cleanup on notification removal
+      cleanupFunctions.push(() => {
+        document.removeEventListener("touchmove", onTouchMove);
+        document.removeEventListener("touchend", onTouchEnd);
+      });
+    };
+
+    notificationContainer.addEventListener("touchstart", touchStartHandler, { passive: true });
+    cleanupFunctions.push(() => {
+      notificationContainer.removeEventListener("touchstart", touchStartHandler);
+    });
+
+    // ✅ FIX #2: Watch for notification removal and cleanup listeners
+    const cleanup = () => {
+      console.log('🧹 Cleaning up notification listeners');
+      cleanupFunctions.forEach(fn => fn());
+      this._activeListeners.delete(notificationContainer);
+    };
+
+    // Store cleanup function in WeakMap
+    this._activeListeners.set(notificationContainer, cleanup);
+
+    // Use MutationObserver to detect when notification is removed
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.removedNodes) {
+          if (node === notificationContainer || node.contains(notificationContainer)) {
+            cleanup();
+            observer.disconnect();
+            return;
+          }
+        }
+      }
+    });
+
+    // Observe the parent for child removal
+    if (notificationContainer.parentNode) {
+      observer.observe(notificationContainer.parentNode, { childList: true });
+      cleanupFunctions.push(() => observer.disconnect());
+    }
   }
 
   /**
