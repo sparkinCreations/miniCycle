@@ -310,6 +310,27 @@ For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMA
 
 ## Vulnerability History
 
+### v1.357 (2025-11-14)
+
+**Namespace Pollution Fix (Phase 1):**
+- Created unified `window.miniCycle.*` API to replace 163 global variables
+- Added comprehensive namespace architecture documentation
+- Implemented 75 namespace API tests
+- Added deprecation warnings for old global API
+- Full backward compatibility maintained
+- **Impact:** Improved code organization, reduced global namespace pollution
+- **Severity:** Low (architectural improvement, no security impact)
+- **Reporter:** Internal code quality audit
+
+### v1.356 (2025-11-14)
+
+**Mini Games & Documentation:**
+- Added mini games (Task Whack-a-Task, Task Whack-a-Order, Task Name Scramble)
+- Enhanced Undo/Redo architecture documentation
+- Performance testing framework and benchmarks
+- **Impact:** Feature additions, no security changes
+- **Severity:** N/A (feature release)
+
 ### v1.355 (2025-11-14)
 
 **Error Handling & Resilience Enhancement:**
@@ -498,6 +519,6 @@ If self-hosting or modifying miniCycle:
 
 **Security Policy Version:** 1.0
 **Last Updated:** November 14, 2025
-**miniCycle Version:** 1.356
+**miniCycle Version:** 1.357
 
 *This security policy is a living document and will be updated as needed.*
