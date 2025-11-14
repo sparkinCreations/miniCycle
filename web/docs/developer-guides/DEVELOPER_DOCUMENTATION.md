@@ -138,7 +138,7 @@ This is fundamentally different from traditional to-do apps where completed task
 | **Browser Support** | Modern + ES5 | Dual-version system |
 | **Test Coverage** | 100% ✅ | 958 tests across 30 modules |
 
-**Modularization Complete:** The main script has been reduced by 74.8% (15,677 → 3,674 lines). Optional further optimizations documented in [REMAINING_EXTRACTIONS_ANALYSIS.md](./REMAINING_EXTRACTIONS_ANALYSIS.md) could reduce it an additional 31.8% to ~2,500 lines.
+**Modularization Complete:** The main script has been reduced by 74.8% (15,677 → 3,674 lines). Optional further optimizations documented in [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) could reduce it an additional 31.8% to ~2,500 lines.
 
 ### Technology Stack
 
@@ -534,7 +534,7 @@ await onCycleSwitched(newCycleId);
 ```
 
 **For complete architecture details, see:**
-→ **[UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md)** - Full architecture documentation
+→ **[UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md)** - Full architecture documentation
 
 ---
 
@@ -1874,7 +1874,7 @@ console.log(cycle.recurringTemplates);
 
 ### Deploying Changes
 
-**See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide.**
+**See [DEPLOYMENT.md](../deployment/DEPLOYMENT.md) for complete deployment guide.**
 
 **Quick Deployment:**
 
@@ -3201,6 +3201,6 @@ web/
 - ✅ Documented optional extractions (see REMAINING_EXTRACTIONS_ANALYSIS.md)
 
 **Optional Future Work:**
-- See [REMAINING_EXTRACTIONS_ANALYSIS.md](./REMAINING_EXTRACTIONS_ANALYSIS.md) for 19 optional functions (~1,167 lines) that could be extracted to reduce main script to ~2,500 lines (additional 31.8% reduction)
+- See [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) for 19 optional functions (~1,167 lines) that could be extracted to reduce main script to ~2,500 lines (additional 31.8% reduction)
 
 **Questions?** Check console for debug info, use built-in testing modal, or review code comments!

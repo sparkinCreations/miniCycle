@@ -193,5 +193,5 @@ This schema structure is also used in `.mcyc` file exports/imports, ensuring con
 ## Related Documentation
 
 - [MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md) - File import/export format
-- [DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md) - Architecture overview
-- [minicycle-recurring-guide.md](./minicycle-recurring-guide.md) - Recurring task implementation
+- [DEVELOPER_DOCUMENTATION.md](../developer-guides/DEVELOPER_DOCUMENTATION.md) - Architecture overview
+- [minicycle-recurring-guide.md](../features/minicycle-recurring-guide.md) - Recurring task implementation

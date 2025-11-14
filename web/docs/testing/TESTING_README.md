@@ -3,7 +3,7 @@
 > **Complete guide to testing miniCycle - functional tests, performance benchmarks, and quality assurance**
 
 **Current Status**:
-- ✅ **Functional Tests**: 1011/1011 (100%)
+- ✅ **Functional Tests**: 1070/1070 (100%)
 - ✅ **Performance Benchmarks**: 12/12 (100%)
 - ✅ **Execution Time**: 21.40ms total
 - ✅ **Memory Usage**: 9.54MB (0.3%)
@@ -16,10 +16,10 @@
 
 | Document | Description | When to Use |
 |----------|-------------|-------------|
-| **[PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)** | Complete performance testing reference | Deep dive into optimization |
-| **[../PERFORMANCE_SETUP.md](../PERFORMANCE_SETUP.md)** | Quick start for performance testing | Getting started |
-| **[../tests/PERFORMANCE_TESTING.md](../tests/PERFORMANCE_TESTING.md)** | Practical testing scenarios | Real-world testing |
-| **[CLAUDE.md](./CLAUDE.md)** | Architecture and development guide | Understanding codebase |
+| **[PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)** | Complete performance testing reference | Deep dive into optimization |
+| **[../PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)** | Quick start for performance testing | Getting started |
+| **[../tests/PERFORMANCE_TESTING.md](../../tests/PERFORMANCE_TESTING.md)** | Practical testing scenarios | Real-world testing |
+| **[CLAUDE.md](../developer-guides/CLAUDE.md)** | Architecture and development guide | Understanding codebase |
 
 ---
 
@@ -28,7 +28,7 @@
 ### Run All Tests
 
 ```bash
-# 1. Functional tests (1011 tests, ~60s)
+# 1. Functional tests (1070 tests, ~60s)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -48,7 +48,7 @@ npm start
 **Available test suites:**
 - ⚡ Performance Benchmarks (this page)
 - 🔗 Integration Tests (E2E)
-- 30 module-specific test suites
+- 32 module-specific test suites
 
 ---
 
@@ -61,12 +61,12 @@ tests/
 ├── automated/
 │   ├── run-browser-tests.js         # Main test runner (Playwright)
 │   └── run-performance-benchmarks.js # Performance runner
-├── *.tests.js                        # 30 test modules
+├── *.tests.js                        # 32 test modules
 ├── module-test-suite.html            # Browser test UI
 └── integration.tests.js              # E2E tests
 ```
 
-### Test Modules (30 Total)
+### Test Modules (32 Total)
 
 | Category | Modules | Tests |
 |----------|---------|-------|
@@ -77,8 +77,9 @@ tests/
 | **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager | 239 |
 | **Features** | notifications, statsPanel, themeManager, dragDropManager, dueDates, reminders | 197 |
 | **Utilities** | globalUtils, deviceDetection, consoleCapture | 76 |
+| **Security & Error Handling** | xssVulnerability, errorHandler | 59 |
 
-**Total**: 1011 tests across 30 modules
+**Total**: 1070 tests across 32 modules
 
 ### Running Specific Tests
 
@@ -99,8 +100,8 @@ npm start
 ### Test Coverage
 
 ```
-Module Coverage: 100% (30/30 modules)
-Test Pass Rate: 100% (1011/1011)
+Module Coverage: 100% (32/32 modules)
+Test Pass Rate: 100% (1070/1070)
 Lines Covered: ~12,000 lines across 33 modules
 ```
 
@@ -180,7 +181,7 @@ npm run lighthouse  # Terminal 2
 4. Take another snapshot
 5. Compare to find leaks
 
-**See [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md) for detailed instructions**
+**See [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) for detailed instructions**
 
 ---
 
@@ -198,7 +199,7 @@ npm run lighthouse  # Terminal 2
 **Runs:**
 - Installs dependencies
 - Starts dev server
-- Runs 1011 automated tests
+- Runs 1070 automated tests
 - Tests on Node.js 18.x and 20.x
 
 **Status:**
@@ -292,8 +293,10 @@ npm run lighthouse  # Terminal 2
 ✅ taskRenderer         16/16 tests
 ✅ taskEvents           22/22 tests
 ✅ taskDOM              46/46 tests
+✅ xssVulnerability     25/25 tests
+✅ errorHandler         34/34 tests
 
-🎉 All tests passed! (1011/1011 - 100%)
+🎉 All tests passed! (1070/1070 - 100%)
 ```
 
 ### Performance Benchmark Results
@@ -535,11 +538,11 @@ diff performance-baselines/v1.352.txt performance-baselines/v1.353.txt
 
 ### Internal Documentation
 
-- **[PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)** - Complete performance reference
-- **[PERFORMANCE_SETUP.md](../PERFORMANCE_SETUP.md)** - Quick setup guide
-- **[CLAUDE.md](./CLAUDE.md)** - Architecture documentation
-- **[UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md)** - Undo/redo system
-- **[WHAT_IS_MINICYCLE.md](./WHAT_IS_MINICYCLE.md)** - Product overview
+- **[PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)** - Complete performance reference
+- **[PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)** - Quick setup guide
+- **[CLAUDE.md](../developer-guides/CLAUDE.md)** - Architecture documentation
+- **[UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md)** - Undo/redo system
+- **[WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)** - Product overview
 
 ### External Resources
 
@@ -614,9 +617,9 @@ Before releasing:
 
 ```
 📊 Test Statistics
-├── Functional Tests: 1011/1011 (100%) ✅
+├── Functional Tests: 1070/1070 (100%) ✅
 ├── Performance Tests: 12/12 (100%) ✅
-├── Module Coverage: 30/30 (100%) ✅
+├── Module Coverage: 32/32 (100%) ✅
 ├── Line Coverage: ~12,000 lines ✅
 └── Platform Coverage: Mac, iPad, iPhone ✅
 
@@ -667,4 +670,4 @@ npm test && npm run perf
 **Last Updated**: November 12, 2025
 **Status**: ✅ Complete
 
-*Testing documentation for miniCycle v1.352*
+*Testing documentation for miniCycle v1.355*

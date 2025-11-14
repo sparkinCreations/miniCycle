@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Reduction:** 74.8% achieved
 - **Modules:** 33 modules (12,003 lines extracted)
 - **Core functions:** 14 (orchestration only)
-- **Test coverage:** 100% (1011/1011 tests passing) ✅
-- **Version:** 1.352 (November 13, 2025)
+- **Test coverage:** 100% (1070/1070 tests passing) ✅
+- **Version:** 1.355 (November 14, 2025)
 - **Cross-platform:** All tests pass on Mac, iPad, iPhone
 
 **Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
@@ -34,7 +34,7 @@ npm start                    # Starts Python HTTP server on port 8080
 
 ### Testing
 ```bash
-npm test                    # Run automated tests (1011 tests)
+npm test                    # Run automated tests (1070 tests)
 npm run test:watch          # Run Jest tests in watch mode
 npm run test:coverage       # Generate Jest coverage report
 ```
@@ -122,7 +122,7 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 - **Debounced writes:** Batches IndexedDB writes every 3 seconds
 - **Lifecycle integration:** Automatic cycle switching, creation, deletion, rename
 - **73/73 tests passing:** Comprehensive test coverage
-- **See:** [UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md) for complete architecture details
+- **See:** [UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md) for complete architecture details
 
 #### Module System (`utilities/`)
 - **notifications.js**: Advanced notification system with drag support and educational tips
@@ -309,7 +309,7 @@ When modifying core files, increment both app version and cache version to trigg
 ## Testing and Validation
 
 ### Automated Testing (100% Pass Rate) ✅
-- **958 tests** across 30 modules
+- **1070 tests** across 32 modules
 - **GitHub Actions** CI/CD on every push/PR
 - **Node.js 18.x and 20.x** compatibility testing
 - **Browser-based tests** via Playwright
@@ -343,7 +343,7 @@ As of October 27, 2025, modularization is **technically complete**:
 - Main script reduced from 15,677 → 3,674 lines (74.8% reduction)
 - 33 modules extracted (12,003 lines)
 - 14 core orchestration functions remain
-- 100% test coverage achieved (958/958 tests) ✅
+- 100% test coverage achieved (1070/1070 tests) ✅
 
 **Optional work:** `REMAINING_EXTRACTIONS_ANALYSIS.md` documents 19 optional functions (~1,167 lines) that could be extracted for additional optimization. This is NOT required.
 

@@ -2,8 +2,8 @@
 
 > **Complete guide to all miniCycle documentation**
 
-**Version**: 1.352
-**Last Updated**: November 13, 2025
+**Version**: 1.355
+**Last Updated**: November 14, 2025
 **Status**: ✅ Production Ready
 
 ---
@@ -12,12 +12,12 @@
 
 | Need | Document | Time to Read |
 |------|----------|--------------|
-| **Get started with testing** | [PERFORMANCE_SETUP.md](../PERFORMANCE_SETUP.md) | 5 min |
-| **Run performance tests** | [TESTING_README.md](./TESTING_README.md) | 10 min |
+| **Get started with testing** | [PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md) | 5 min |
+| **Run performance tests** | [TESTING_README.md](../testing/TESTING_README.md) | 10 min |
 | **Understand the architecture** | [CLAUDE.md](./CLAUDE.md) | 15 min |
-| **See test results** | [PERFORMANCE_SUMMARY.md](./PERFORMANCE_SUMMARY.md) | 5 min |
-| **Deep dive into testing** | [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md) | 30 min |
-| **Understand the system** | [WHAT_IS_MINICYCLE.md](./WHAT_IS_MINICYCLE.md) | 5 min |
+| **See test results** | [PERFORMANCE_SUMMARY.md](../performance/PERFORMANCE_SUMMARY.md) | 5 min |
+| **Deep dive into testing** | [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) | 30 min |
+| **Understand the system** | [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) | 5 min |
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### 🚀 Getting Started
 
-#### [WHAT_IS_MINICYCLE.md](./WHAT_IS_MINICYCLE.md)
+#### [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
 **What it is**: Product overview and core concepts
 **Read if**: You're new to miniCycle
 **Time**: 5 minutes
@@ -51,7 +51,7 @@
 
 ### ⚡ Performance Testing
 
-#### [PERFORMANCE_SETUP.md](../PERFORMANCE_SETUP.md)
+#### [PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)
 **What it is**: Quick start guide for performance testing
 **Read if**: You want to run tests NOW
 **Time**: 5 minutes
@@ -63,7 +63,7 @@
 - GitHub Actions configuration
 - Next steps
 
-#### [PERFORMANCE_SUMMARY.md](./PERFORMANCE_SUMMARY.md)
+#### [PERFORMANCE_SUMMARY.md](../performance/PERFORMANCE_SUMMARY.md)
 **What it is**: Executive summary of test results
 **Read if**: You want the bottom line
 **Time**: 5 minutes
@@ -75,7 +75,7 @@
 - Performance over time
 - Quality checklist
 
-#### [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)
+#### [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)
 **What it is**: Complete performance testing reference
 **Read if**: You need deep technical details
 **Time**: 30 minutes
@@ -91,13 +91,13 @@
 
 ### 🧪 Testing
 
-#### [TESTING_README.md](./TESTING_README.md)
+#### [TESTING_README.md](../testing/TESTING_README.md)
 **What it is**: Complete testing documentation index
 **Read if**: You're working with tests
 **Time**: 10 minutes
 
 **Topics:**
-- Functional testing (1011 tests)
+- Functional testing (1070 tests)
 - Performance testing (12 benchmarks)
 - CI/CD integration
 - Test results
@@ -105,7 +105,7 @@
 - Debugging failures
 - Monitoring & maintenance
 
-#### [TESTING_ARCHITECTURE.md](./TESTING_ARCHITECTURE.md)
+#### [TESTING_ARCHITECTURE.md](../testing/TESTING_ARCHITECTURE.md)
 **What it is**: Visual guide to test system
 **Read if**: You want to understand the system architecture
 **Time**: 15 minutes
@@ -133,7 +133,7 @@
 
 ### 🏗️ Architecture
 
-#### [UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md)
+#### [UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md)
 **What it is**: Undo/redo system documentation
 **Read if**: You're working with history management
 **Time**: 10 minutes
@@ -145,8 +145,8 @@
 - Throttled captures
 - 73/73 tests passing
 
-#### [COMPLETED_TASKS_DROPDOWN.md](./COMPLETED_TASKS_DROPDOWN.md)
-**What it is**: Completed tasks dropdown feature documentation (v1.352+)
+#### [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md)
+**What it is**: Completed tasks dropdown feature documentation (v1.355+)
 **Read if**: You're working with task completion or UI features
 **Time**: 15 minutes
 
@@ -157,7 +157,7 @@
 - Recurring task integration
 - Testing and troubleshooting
 
-#### [SCHEMA_2_5.md](./SCHEMA_2_5.md)
+#### [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md)
 **What it is**: Data structure and schema documentation
 **Read if**: You're working with data persistence or state management
 **Time**: 10 minutes
@@ -169,7 +169,7 @@
 - Settings and metadata
 - Migration and backward compatibility
 
-#### [DRAG_DROP_ARCHITECTURE.md](./DRAG_DROP_ARCHITECTURE.md)
+#### [DRAG_DROP_ARCHITECTURE.md](../architecture/DRAG_DROP_ARCHITECTURE.md)
 **What it is**: Drag & drop system implementation
 **Read if**: You're working with task reordering or touch interactions
 **Time**: 15 minutes
@@ -181,7 +181,7 @@
 - Fallback to arrow navigation
 - Performance optimization
 
-#### [THEME_ARCHITECTURE.md](./THEME_ARCHITECTURE.md)
+#### [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md)
 **What it is**: Theming system documentation
 **Read if**: You're working with UI styling or adding themes
 **Time**: 10 minutes
@@ -193,7 +193,7 @@
 - Achievement-based progression
 - Creating new themes
 
-#### [RECURRING_WATCH_FUNCTION.md](./RECURRING_WATCH_FUNCTION.md)
+#### [RECURRING_WATCH_FUNCTION.md](../features/RECURRING_WATCH_FUNCTION.md)
 **What it is**: Recurring tasks scheduling system
 **Read if**: You're working with recurring task functionality
 **Time**: 20 minutes
@@ -205,7 +205,7 @@
 - Catch-up logic for missed tasks
 - Performance optimizations
 
-#### [SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md)
+#### [SERVICE_WORKER_UPDATE_STRATEGY.md](../deployment/SERVICE_WORKER_UPDATE_STRATEGY.md)
 **What it is**: PWA update mechanism and caching strategy
 **Read if**: You're working with PWA functionality or cache issues
 **Time**: 10 minutes
@@ -217,7 +217,7 @@
 - User update notifications
 - Troubleshooting stale caches
 
-#### [MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md)
+#### [MCYC_FILE_FORMAT.md](../data-schema/MCYC_FILE_FORMAT.md)
 **What it is**: .mcyc file format specification
 **Read if**: You're working with import/export functionality
 **Time**: 5 minutes
@@ -229,7 +229,7 @@
 - Import validation
 - Data portability
 
-#### [REMAINING_EXTRACTIONS_ANALYSIS.md](./REMAINING_EXTRACTIONS_ANALYSIS.md)
+#### [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)
 **What it is**: Optional modularization opportunities
 **Read if**: You want to optimize further (optional)
 **Time**: 10 minutes
@@ -249,60 +249,60 @@
 1. **Quick functional tests**: `npm test`
 2. **Quick performance**: `npm run perf`
 3. **Full audit**: `npm run lighthouse`
-4. **Read**: [PERFORMANCE_SETUP.md](../PERFORMANCE_SETUP.md)
+4. **Read**: [PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)
 
 ### "I want to understand performance"
 
-1. **Results summary**: [PERFORMANCE_SUMMARY.md](./PERFORMANCE_SUMMARY.md)
-2. **Detailed guide**: [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)
-3. **Architecture**: [TESTING_ARCHITECTURE.md](./TESTING_ARCHITECTURE.md)
+1. **Results summary**: [PERFORMANCE_SUMMARY.md](../performance/PERFORMANCE_SUMMARY.md)
+2. **Detailed guide**: [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)
+3. **Architecture**: [TESTING_ARCHITECTURE.md](../testing/TESTING_ARCHITECTURE.md)
 
 ### "I'm new to miniCycle"
 
-1. **Product overview**: [WHAT_IS_MINICYCLE.md](./WHAT_IS_MINICYCLE.md)
+1. **Product overview**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
 2. **Architecture**: [CLAUDE.md](./CLAUDE.md)
-3. **Data structure**: [SCHEMA_2_5.md](./SCHEMA_2_5.md)
-4. **Test system**: [TESTING_README.md](./TESTING_README.md)
+3. **Data structure**: [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md)
+4. **Test system**: [TESTING_README.md](../testing/TESTING_README.md)
 
 ### "I'm debugging an issue"
 
-1. **Test failures**: [TESTING_README.md](./TESTING_README.md) → Debugging section
-2. **Performance issues**: [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md) → Optimization section
-3. **Cache/PWA issues**: [SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md) → Troubleshooting
-4. **Data corruption**: [SCHEMA_2_5.md](./SCHEMA_2_5.md) → Migration section
-5. **Memory leaks**: [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md) → Chrome DevTools section
+1. **Test failures**: [TESTING_README.md](../testing/TESTING_README.md) → Debugging section
+2. **Performance issues**: [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) → Optimization section
+3. **Cache/PWA issues**: [SERVICE_WORKER_UPDATE_STRATEGY.md](../deployment/SERVICE_WORKER_UPDATE_STRATEGY.md) → Troubleshooting
+4. **Data corruption**: [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) → Migration section
+5. **Memory leaks**: [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) → Chrome DevTools section
 
 ### "I'm adding a feature"
 
 1. **Architecture**: [CLAUDE.md](./CLAUDE.md) → Module System
-2. **Data model**: [SCHEMA_2_5.md](./SCHEMA_2_5.md) → Adding fields
-3. **Example feature**: [COMPLETED_TASKS_DROPDOWN.md](./COMPLETED_TASKS_DROPDOWN.md) → Implementation Details
-4. **Write tests**: [TESTING_README.md](./TESTING_README.md) → Writing Tests
+2. **Data model**: [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) → Adding fields
+3. **Example feature**: [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md) → Implementation Details
+4. **Write tests**: [TESTING_README.md](../testing/TESTING_README.md) → Writing Tests
 5. **Version update**: [CLAUDE.md](./CLAUDE.md) → Version Management
 
 ### "I'm working with specific features"
 
 **Drag & Drop:**
-1. [DRAG_DROP_ARCHITECTURE.md](./DRAG_DROP_ARCHITECTURE.md) → Implementation
+1. [DRAG_DROP_ARCHITECTURE.md](../architecture/DRAG_DROP_ARCHITECTURE.md) → Implementation
 2. [CLAUDE.md](./CLAUDE.md) → Module overview
 
 **Themes:**
-1. [THEME_ARCHITECTURE.md](./THEME_ARCHITECTURE.md) → Theme system
-2. [SCHEMA_2_5.md](./SCHEMA_2_5.md) → Theme data
+1. [THEME_ARCHITECTURE.md](../architecture/THEME_ARCHITECTURE.md) → Theme system
+2. [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) → Theme data
 
 **Recurring Tasks:**
-1. [RECURRING_WATCH_FUNCTION.md](./RECURRING_WATCH_FUNCTION.md) → Scheduling
-2. [COMPLETED_TASKS_DROPDOWN.md](./COMPLETED_TASKS_DROPDOWN.md) → Integration
+1. [RECURRING_WATCH_FUNCTION.md](../features/RECURRING_WATCH_FUNCTION.md) → Scheduling
+2. [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md) → Integration
 
 **Import/Export:**
-1. [MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md) → File format
-2. [SCHEMA_2_5.md](./SCHEMA_2_5.md) → Data structure
+1. [MCYC_FILE_FORMAT.md](../data-schema/MCYC_FILE_FORMAT.md) → File format
+2. [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) → Data structure
 
 ### "I'm optimizing performance"
 
-1. **Current status**: [PERFORMANCE_SUMMARY.md](./PERFORMANCE_SUMMARY.md)
-2. **Optimization guide**: [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md) → Optimization Strategies
-3. **Profile with DevTools**: [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md) → Chrome DevTools
+1. **Current status**: [PERFORMANCE_SUMMARY.md](../performance/PERFORMANCE_SUMMARY.md)
+2. **Optimization guide**: [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) → Optimization Strategies
+3. **Profile with DevTools**: [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) → Chrome DevTools
 
 ---
 
@@ -311,7 +311,7 @@
 ### Test Results
 
 ```
-✅ Functional Tests: 1011/1011 (100%)
+✅ Functional Tests: 1070/1070 (100%)
 ✅ Performance Tests: 12/12 (100%)
 ✅ Execution Time: 21.40ms
 ✅ Memory Usage: 9.54MB (0.3%)
@@ -344,7 +344,7 @@
 
 ```bash
 # Testing
-npm test                # Run all functional tests (1011)
+npm test                # Run all functional tests (1070)
 npm run perf            # Run performance benchmarks (12)
 npm run lighthouse      # Run Lighthouse CI audit
 
@@ -417,8 +417,8 @@ Status: Complete ✅
 | PERFORMANCE_SUMMARY.md | 2025-11-12 | ✅ Current |
 | PERFORMANCE_SETUP.md | 2025-11-12 | ✅ Current |
 | COMPLETED_TASKS_DROPDOWN.md | 2025-11-13 | ✅ Current |
-| CLAUDE.md | 2025-11-13 | ✅ Current |
-| INDEX.md | 2025-11-13 | ✅ Current |
+| CLAUDE.md | 2025-11-14 | ✅ Current |
+| INDEX.md | 2025-11-14 | ✅ Current |
 | SCHEMA_2_5.md | 2025-01 | ✅ Current |
 | DRAG_DROP_ARCHITECTURE.md | 2025-01 | ✅ Current |
 | THEME_ARCHITECTURE.md | 2024-11-09 | ✅ Current |
@@ -558,11 +558,11 @@ miniCycle has **world-class documentation**:
 
 **Most Important Documents:**
 
-1. **Getting Started**: [PERFORMANCE_SETUP.md](../PERFORMANCE_SETUP.md)
+1. **Getting Started**: [PERFORMANCE_SETUP.md](../performance/PERFORMANCE_SETUP.md)
 2. **Architecture**: [CLAUDE.md](./CLAUDE.md)
-3. **Testing**: [TESTING_README.md](./TESTING_README.md)
-4. **Results**: [PERFORMANCE_SUMMARY.md](./PERFORMANCE_SUMMARY.md)
-5. **Deep Dive**: [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)
+3. **Testing**: [TESTING_README.md](../testing/TESTING_README.md)
+4. **Results**: [PERFORMANCE_SUMMARY.md](../performance/PERFORMANCE_SUMMARY.md)
+5. **Deep Dive**: [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)
 
 ### Next Steps
 
@@ -574,10 +574,10 @@ miniCycle has **world-class documentation**:
 ---
 
 **Index Version**: 2.0
-**Last Updated**: November 13, 2025
+**Last Updated**: November 14, 2025
 **Status**: ✅ Complete
 
-*Documentation index for miniCycle v1.352*
+*Documentation index for miniCycle v1.355*
 
 **Major Update (v2.0):**
 - Added 6 high-priority architecture documents

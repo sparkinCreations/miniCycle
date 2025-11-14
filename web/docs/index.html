@@ -82,8 +82,11 @@
       name: 'miniCycle',
       repo: '', // Add your GitHub repo URL here if you want a GitHub corner link
 
-      // Load sidebar
+      // Load sidebar (use root _sidebar.md only, not subdirectories)
       loadSidebar: true,
+      alias: {
+        '/.*/_sidebar.md': '/_sidebar.md'
+      },
 
       // Auto header with sidebar
       subMaxLevel: 3,

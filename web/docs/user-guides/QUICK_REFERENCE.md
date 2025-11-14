@@ -816,6 +816,6 @@ window.exportDebugData()                 // Debug package
 - 14 core orchestration functions remain
 - 100% test coverage (958/958 tests passing) ✅
 
-**Optional Future Work:** See [REMAINING_EXTRACTIONS_ANALYSIS.md](./REMAINING_EXTRACTIONS_ANALYSIS.md) for 19 optional functions that could reduce main script to ~2,500 lines.
+**Optional Future Work:** See [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) for 19 optional functions that could reduce main script to ~2,500 lines.
 
 **Questions?** Check console, use testing modal, review code comments!

@@ -226,7 +226,7 @@ Since all data is local:
 - Keep browser updated
 - Backup data yourself
 
-See [SECURITY.md](../SECURITY.md) for details.
+See [SECURITY.md](../security/SECURITY.md) for details.
 
 ---
 

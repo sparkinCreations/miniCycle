@@ -506,7 +506,7 @@ Change modes in Settings for each cycle.
 
 ### Can I contribute to miniCycle?
 
-**Yes!** See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+**Yes!** See [CONTRIBUTING.md](../project-info/CONTRIBUTING.md) for:
 - Code contribution guidelines
 - Pull request process
 - Code style requirements
@@ -519,9 +519,9 @@ Change modes in Settings for each cycle.
 ### Documentation Resources
 
 - **User Guide:** [USER_GUIDE.md](./USER_GUIDE.md) - Complete user manual
-- **Developer Docs:** [CLAUDE.md](./CLAUDE.md) - Technical architecture
-- **Changelog:** [CHANGELOG.md](../CHANGELOG.md) - Version history
-- **All Docs:** [INDEX.md](./INDEX.md) - Documentation index
+- **Developer Docs:** [CLAUDE.md](../developer-guides/CLAUDE.md) - Technical architecture
+- **Changelog:** [CHANGELOG.md](../../CHANGELOG.md) - Version history
+- **All Docs:** [INDEX.md](../developer-guides/INDEX.md) - Documentation index
 
 ### Support Channels
 

@@ -314,8 +314,8 @@ Current: Custom hosting at `minicycle.app`
 
 - **[UPDATE-VERSION-GUIDE.md](./UPDATE-VERSION-GUIDE.md)** - Detailed version management
 - **[SERVICE_WORKER_UPDATE_STRATEGY.md](./SERVICE_WORKER_UPDATE_STRATEGY.md)** - PWA update mechanics
-- **[DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md)** - Complete development guide
-- **[TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)** - Testing procedures
+- **[DEVELOPER_DOCUMENTATION.md](../developer-guides/DEVELOPER_DOCUMENTATION.md)** - Complete development guide
+- **[TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md)** - Testing procedures
 
 ---
 

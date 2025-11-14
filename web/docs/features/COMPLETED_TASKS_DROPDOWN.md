@@ -1,8 +1,8 @@
 # Completed Tasks Dropdown Feature
 
-> **Version:** 1.352+ (November 13, 2025)
+> **Version:** 1.355+ (November 14, 2025)
 > **Status:** ✅ Production Ready
-> **Test Coverage:** 100% (1011/1011 tests passing)
+> **Test Coverage:** 100% (1070/1070 tests passing)
 
 ## Overview
 
@@ -258,7 +258,7 @@ if (taskList.some(task => task.id === id)) return false;  // Already exists, don
 - ✅ Task movement between lists
 - ✅ Badge counter updates
 
-**Total Coverage:** 1011/1011 tests passing (100%)
+**Total Coverage:** 1070/1070 tests passing (100%)
 
 ### Manual Testing Checklist
 
@@ -331,6 +331,6 @@ if (taskList.some(task => task.id === id)) return false;  // Already exists, don
 
 ---
 
-**Last Updated:** November 13, 2025
+**Last Updated:** November 14, 2025
 **Contributors:** Development team, Claude Code (bug fixes)
 **Status:** ✅ Production Ready

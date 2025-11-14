@@ -2,64 +2,66 @@
 
 * **Getting Started**
   * [Home](/)
-  * [What is miniCycle?](WHAT_IS_MINICYCLE.md)
-  * [User Guide](USER_GUIDE.md)
-  * [Quick Reference](QUICK_REFERENCE.md)
-  * [FAQ](FAQ.md)
+  * [What is miniCycle?](user-guides/WHAT_IS_MINICYCLE.md)
+  * [User Guide](user-guides/USER_GUIDE.md)
+  * [Quick Reference](user-guides/QUICK_REFERENCE.md)
+  * [FAQ](user-guides/FAQ.md)
 
 * **Project Info**
-  * [Roadmap](ROADMAP.md)
-  * [Contributing](CONTRIBUTING.md)
-  * [Privacy Policy](PRIVACY.md)
-  * [Browser Compatibility](BROWSER_COMPATIBILITY.md)
-  * [Accessibility](ACCESSIBILITY.md)
+  * [Roadmap](project-info/ROADMAP.md)
+  * [Contributing](project-info/CONTRIBUTING.md)
+  * [Privacy Policy](project-info/PRIVACY.md)
+  * [Browser Compatibility](project-info/BROWSER_COMPATIBILITY.md)
+  * [Accessibility](project-info/ACCESSIBILITY.md)
 
 * **Developer Guides**
-  * [Developer Documentation](DEVELOPER_DOCUMENTATION.md)
-  * [Documentation Index](INDEX.md)
-  * [Folder Structure](FOLDER_STRUCTURE.md)
-  * [Claude AI Guide](CLAUDE.md)
-  * [Testing Quick Reference](TESTING_QUICK_REFERENCE.md)
+  * [Developer Documentation](developer-guides/DEVELOPER_DOCUMENTATION.md)
+  * [Documentation Index](developer-guides/INDEX.md)
+  * [Folder Structure](developer-guides/FOLDER_STRUCTURE.md)
+  * [Claude AI Guide](developer-guides/CLAUDE.md)
+  * [Testing Quick Reference](testing/TESTING_QUICK_REFERENCE.md)
 
 * **Architecture**
-  * [AppInit Explained](APPINIT_EXPLAINED.md)
-  * [Undo/Redo Architecture](UNDO_REDO_ARCHITECTURE.md)
-  * [Drag & Drop Architecture](DRAG_DROP_ARCHITECTURE.md)
-  * [Drag & Drop Long Press](DRAG_DROP_LONG_PRESS.md)
-  * [Theme Architecture](THEME_ARCHITECTURE.md)
+  * [AppInit Explained](architecture/APPINIT_EXPLAINED.md)
+  * [Undo/Redo Architecture](architecture/UNDO_REDO_ARCHITECTURE.md)
+  * [Drag & Drop Architecture](architecture/DRAG_DROP_ARCHITECTURE.md)
+  * [Drag & Drop Long Press](architecture/DRAG_DROP_LONG_PRESS.md)
+  * [Theme Architecture](architecture/THEME_ARCHITECTURE.md)
 
 * **Data & Schema**
-  * [Schema 2.5](SCHEMA_2_5.md)
-  * [MCYC File Format](MCYC_FILE_FORMAT.md)
+  * [Schema 2.5](data-schema/SCHEMA_2_5.md)
+  * [MCYC File Format](data-schema/MCYC_FILE_FORMAT.md)
 
 * **Features**
-  * [Completed Tasks Dropdown](COMPLETED_TASKS_DROPDOWN.md)
-  * [Recurring Tasks Guide](minicycle-recurring-guide.md)
-  * [Recurring Watch Function](RECURRING_WATCH_FUNCTION.md)
+  * [Completed Tasks Dropdown](features/COMPLETED_TASKS_DROPDOWN.md)
+  * [Recurring Tasks Guide](features/minicycle-recurring-guide.md)
+  * [Recurring Watch Function](features/RECURRING_WATCH_FUNCTION.md)
 
 * **Testing & Performance**
-  * [Testing Architecture](TESTING_ARCHITECTURE.md)
-  * [Testing README](TESTING_README.md)
-  * [Performance Testing Guide](PERFORMANCE_TESTING_GUIDE.md)
-  * [Performance Setup](PERFORMANCE_SETUP.md)
-  * [Performance Summary](PERFORMANCE_SUMMARY.md)
+  * [Testing Architecture](testing/TESTING_ARCHITECTURE.md)
+  * [Testing README](testing/TESTING_README.md)
+  * [Performance Testing Guide](performance/PERFORMANCE_TESTING_GUIDE.md)
+  * [Performance Setup](performance/PERFORMANCE_SETUP.md)
+  * [Performance Summary](performance/PERFORMANCE_SUMMARY.md)
 
-* **Audits & Security**
-  * [Error Handling Improvements](ERROR_HANDLING_IMPROVEMENTS.md)
-  * [Error Handling Audit - Start Here](audits/AUDIT_README.md)
-  * [Audit Summary (Executive)](audits/AUDIT_SUMMARY.txt)
-  * [Error Handling Analysis](audits/ERROR_HANDLING_AUDIT.md)
-  * [File-by-File Analysis](audits/FILE_ERROR_HANDLING_ANALYSIS.md)
+* **Security & Error Handling**
+  * [📊 Complete Summary (Start Here)](security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)
+  * [Error Handling Improvements](security/ERROR_HANDLING_IMPROVEMENTS.md)
+  * [Security Overview](security/SECURITY.md)
+  * [Error Handling Audit](security/audits/AUDIT_README.md)
+  * [Audit Summary (Executive)](security/audits/AUDIT_SUMMARY.md)
+  * [Error Handling Analysis](security/audits/ERROR_HANDLING_AUDIT.md)
+  * [File-by-File Analysis](security/audits/FILE_ERROR_HANDLING_ANALYSIS.md)
 
 * **Deployment & Updates**
-  * [Deployment Guide](DEPLOYMENT.md)
-  * [Service Worker Update Strategy](SERVICE_WORKER_UPDATE_STRATEGY.md)
-  * [Update Version Guide](UPDATE-VERSION-GUIDE.md)
+  * [Deployment Guide](deployment/DEPLOYMENT.md)
+  * [Service Worker Update Strategy](deployment/SERVICE_WORKER_UPDATE_STRATEGY.md)
+  * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
-  * [Task Options Customizer Plan](TASK_OPTIONS_CUSTOMIZER_PLAN.md)
-  * [CSS Refactor Plan](CSS_REFACTOR_PLAN.md)
-  * [Remaining Extractions Analysis](REMAINING_EXTRACTIONS_ANALYSIS.md)
+  * [Task Options Customizer Plan](future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)
+  * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
+  * [Remaining Extractions Analysis](future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)
 
 * **Links**
   * [📱 Launch App](https://minicycle.app/miniCycle.html)
