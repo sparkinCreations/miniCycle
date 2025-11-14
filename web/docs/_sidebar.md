@@ -59,6 +59,8 @@
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
+  * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
+  * [Folder Structure Refactor Plan](future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)
   * [Task Options Customizer Plan](future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
   * [Remaining Extractions Analysis](future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)
