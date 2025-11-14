@@ -1,10 +1,10 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.341
+**Version**: 1.355
 **Service Worker**: v82
-**Last Updated**: November 9, 2025
+**Last Updated**: November 14, 2025
 **Modularization Status**: ✅ COMPLETE (74.8% reduction achieved!)
-**Test Status**: ✅ 958/958 tests passing (100%) - All platforms
+**Test Status**: ✅ 1070/1070 tests passing (100%) - All platforms
 **Target Audience**: Developers, Contributors, Technical Partners
 
 ---
@@ -43,7 +43,7 @@ npx serve .                         # Node.js
 # Lite version: http://localhost:8080/lite/miniCycle-lite.html
 
 # 4. Run tests (optional)
-npm test                            # Automated tests (958/958 passing)
+npm test                            # Automated tests (1070/1070 passing)
 open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 
@@ -126,17 +126,17 @@ This is fundamentally different from traditional to-do apps where completed task
 
 ## 🏗️ Architecture at a Glance
 
-### Current Stats (October 2025) - ✅ MODULARIZATION COMPLETE!
+### Current Stats (November 2025) - ✅ MODULARIZATION COMPLETE!
 
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Main Script** | 3,674 lines | Down from 15,677 (74.8% reduction) ✅ |
 | **Modules** | 33 modules | All major systems modularized! |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.341 | Stable production release |
+| **App Version** | 1.355 | Stable production release |
 | **SW Cache** | v82 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 958 tests across 30 modules |
+| **Test Coverage** | 100% ✅ | 1070 tests across 32 modules |
 
 **Modularization Complete:** The main script has been reduced by 74.8% (15,677 → 3,674 lines). Optional further optimizations documented in [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) could reduce it an additional 31.8% to ~2,500 lines.
 
@@ -1883,7 +1883,7 @@ console.log(cycle.recurringTemplates);
 ./update-version.sh
 
 # 2. Run tests
-npm test  # Ensure all 958 tests pass
+npm test  # Ensure all 1070 tests pass
 
 # 3. Commit changes
 git add .
@@ -2220,7 +2220,7 @@ window.exportDebugData()                 // Debug package
 
 ### Overview
 
-miniCycle has **100% test coverage** with **958 tests passing** across 30 modules. The testing system runs:
+miniCycle has **100% test coverage** with **1070 tests passing** across 32 modules. The testing system runs:
 - ✅ **Locally** - Browser-based manual testing via web interface
 - ✅ **Automated** - Playwright-based automated testing
 - ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
@@ -2313,9 +2313,9 @@ Running 30 test modules across all systems...
    ✅ PASS recurringCore          44/44 tests
    ✅ PASS taskCore               53/53 tests
    ✅ PASS dragDropManager        67/67 tests
-   ... (30 modules total)
+   ... (32 modules total)
 ============================================================
-🎉 All tests passed! (958/958 - 100%) ✅
+🎉 All tests passed! (1070/1070 - 100%) ✅
 ============================================================
 
 Automated via GitHub Actions on every push/PR
@@ -2344,7 +2344,7 @@ miniCycle has **automated testing** that runs on every push and pull request via
 2. Setup Node.js environment
 3. Install dependencies (Playwright)
 4. Start HTTP server on port 8080
-5. Run all 958 tests via Playwright
+5. Run all 1070 tests via Playwright
 6. Report results (pass/fail)
 
 #### Viewing Test Results
@@ -2357,7 +2357,7 @@ miniCycle has **automated testing** that runs on every push and pull request via
 
 **Test Status Badge:**
 The repository shows a badge indicating test status:
-- ✅ Green = All tests passing (958/958)
+- ✅ Green = All tests passing (1070/1070)
 - ❌ Red = Tests failing
 
 #### Manual CI Trigger
@@ -2370,7 +2370,7 @@ You can manually trigger the test workflow:
 4. Select branch
 5. Click **"Run workflow"** button
 
-**Current Status:** 958/958 tests passing (100%) ✅
+**Current Status:** 1070/1070 tests passing (100%) ✅
 
 ### Creating New Tests
 
@@ -2903,12 +2903,15 @@ Current module test coverage:
 | TaskEvents | `taskEvents.tests.js` | 22 | ✅ 100% 🎉 |
 | TaskDOM | `taskDOM.tests.js` | 43 | ✅ 100% 🎉 |
 
-**Total: 958 tests across 30 modules**
+**Total: 1070 tests across 32 modules**
 
-**Overall Pass Rate: 100% ✅ (958/958 tests passing)**
+**Overall Pass Rate: 100% ✅ (1070/1070 tests passing)**
 
-**Recent Improvements (October 2025):**
-- ✅ **100% Test Coverage Achieved** (Oct 31) - All 958 tests passing! 🎉
+**Recent Improvements (November 2025):**
+- ✅ **Test Suite Expanded** (Nov 14) - Now 1070 tests across 32 modules! 🎉
+- ✅ **XSS Vulnerability Tests Added** - Security testing module
+- ✅ **Error Handler Tests Added** - Safe storage and JSON utilities
+- ✅ **100% Test Coverage Maintained** (Oct 31) - All tests passing! 🎉
 - ✅ **ConsoleCapture Fixed** (Oct 31) - Resolved 3 auto-start edge case tests
 - ✅ **GitHub Actions CI/CD** (Oct 31) - Automated testing on push/PR
 - ✅ TaskValidation (25 tests) - Input validation & sanitization (Oct 26)
@@ -2924,7 +2927,7 @@ Current module test coverage:
 - ✅ MenuManager (29 tests) - Main menu operations (Oct 25)
 - ✅ SettingsManager (33 tests) - Settings panel, import/export (Oct 25)
 
-**All 30 modules are at 100% test pass rate (958/958 tests passing).** ✅
+**All 32 modules are at 100% test pass rate (1070/1070 tests passing).** ✅
 
 ### Tips for Writing Good Tests
 
@@ -3175,8 +3178,8 @@ web/
 
 ---
 
-**Version**: 1.348
-**Last Updated**: November 10, 2025
+**Version**: 1.355
+**Last Updated**: November 14, 2025
 **Maintained By**: sparkinCreations
 
 **✅ MODULARIZATION COMPLETE!**
@@ -3184,9 +3187,15 @@ web/
 - **74.8% reduction achieved**
 - **33 modules** extracted (12,003 lines)
 - **14 core orchestration functions** remain
-- **100% test coverage** ✅ (979/979 tests passing)
+- **100% test coverage** ✅ (1070/1070 tests passing)
 
-**Recent Major Updates (November 10, 2025):**
+**Recent Major Updates (November 14, 2025):**
+- ✅ Test suite expansion - 1070 tests across 32 modules (added xss-vulnerability and errorHandler)
+- ✅ Security testing - XSS vulnerability test module added
+- ✅ Error handling utilities - Safe localStorage and JSON parsing functions
+- ✅ Performance benchmarks - DOM manipulation, cycle operations, search/filter, JSON benchmarks
+
+**Previous Updates (November 10, 2025):**
 - ✅ Folder structure reorganization - modules/ organized into domain subfolders
 - ✅ Documentation archive - completed docs moved to docs/archive/
 - ✅ Root cleanup - marketing/legal pages organized into pages/legal/lite/ folders

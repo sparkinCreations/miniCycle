@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle task cycling application.**
 
-**Version**: 1.341 | **Test Coverage**: 958/958 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.355 | **Test Coverage**: 1070/1070 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -38,7 +38,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (30 modules, 958/958 tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (32 modules, 1070/1070 tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -56,8 +56,11 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[MCYC_FILE_FORMAT.md](./data-schema/MCYC_FILE_FORMAT.md)** - Import/export file format specification
 
 ### Security & Performance
+- **[ERROR_HANDLING_AND_TESTING_SUMMARY.md](./security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)** - Complete error handling improvements (v1.355)
+- **[ERROR_HANDLING_IMPROVEMENTS.md](./security/ERROR_HANDLING_IMPROVEMENTS.md)** - Implementation details and safe utility functions
 - **[DEVELOPER_DOCUMENTATION.md#-security](./developer-guides/DEVELOPER_DOCUMENTATION.md#-security)** - XSS prevention, secure coding patterns, and security checklist
 - **[EVENT_LISTENER_AUDIT.md](./archive/EVENT_LISTENER_AUDIT.md)** - Event listener leak audit and prevention strategies
+- **[security/audits/](./security/audits/)** - Comprehensive error handling audit reports
 
 ### Browser Compatibility
 - **[SAFARI_DRAGDROP_FIX.md](./archive/SAFARI_DRAGDROP_FIX.md)** - Safari-specific drag & drop fixes
@@ -79,10 +82,17 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 ## 📊 Code Quality & Audits
 
-### Recent Improvements (October 2025)
+### Recent Improvements (November 2025)
+- **[ERROR_HANDLING_AND_TESTING_SUMMARY.md](./security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)** - Error handling system and security testing (v1.355)
 - **[OCTOBER_2025_IMPROVEMENTS.md](./archive/OCTOBER_2025_IMPROVEMENTS.md)** - Summary of notification standardization and test improvements
 - **[COUPLING_AUDIT_REPORT.md](./archive/COUPLING_AUDIT_REPORT.md)** - Comprehensive coupling audit (Score: 8.2/10)
 - **[NOTIFICATION_STANDARDIZATION_PLAN.md](./archive/NOTIFICATION_STANDARDIZATION_PLAN.md)** - Dependency injection standardization (Phase 1 complete)
+
+### Future Work & Planned Improvements
+- **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
+- **[FOLDER_STRUCTURE_REFACTOR_PLAN.md](./future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)** - Module naming consistency
+- **[TASK_OPTIONS_CUSTOMIZER_PLAN.md](./future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)** - Enhanced task customization
+- **[CSS_REFACTOR_PLAN.md](./future-work/CSS_REFACTOR_PLAN.md)** - CSS organization improvements
 
 ### Optimization Analysis
 - **[DECOUPLING_OPTIMIZATION_PLAN.md](./archive/DECOUPLING_OPTIMIZATION_PLAN.md)** - Proposed 45-hour plan (NOT RECOMMENDED)
