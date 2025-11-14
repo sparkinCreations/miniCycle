@@ -23,6 +23,7 @@
 
 * **Architecture**
   * [AppInit Explained](architecture/APPINIT_EXPLAINED.md)
+  * [Namespace Architecture](architecture/NAMESPACE_ARCHITECTURE.md)
   * [Undo/Redo Architecture](architecture/UNDO_REDO_ARCHITECTURE.md)
   * [Drag & Drop Architecture](architecture/DRAG_DROP_ARCHITECTURE.md)
   * [Drag & Drop Long Press](architecture/DRAG_DROP_LONG_PRESS.md)

@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle task cycling application.**
 
-**Version**: 1.355 | **Test Coverage**: 1070/1070 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.357 | **Test Coverage**: 1198/1198 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -25,6 +25,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 ### Application Structure
 - **[FINAL-MODULE-STRUCTURE.md](./archive/FINAL-MODULE-STRUCTURE.md)** - Current module organization and responsibilities
 - **[APPINIT_EXPLAINED.md](./architecture/APPINIT_EXPLAINED.md)** - Initialization system deep-dive
+- **[NAMESPACE_ARCHITECTURE.md](./architecture/NAMESPACE_ARCHITECTURE.md)** - Global namespace pollution fix (163 → 1 global)
 - **[SCHEMA_2_5.md](./data-schema/SCHEMA_2_5.md)** - Data structure and schema documentation
 
 ### Key Features
@@ -38,7 +39,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (32 modules, 1070/1070 tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (35 modules, 1198/1198 tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
