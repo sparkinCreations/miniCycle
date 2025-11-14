@@ -9,6 +9,7 @@ https://www.minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
 /product.html           /pages/product.html           301
 /learn_more.html        /pages/learn_more.html        301
 /miniCycle-lite.html    /lite/miniCycle-lite.html     301
+/miniCycleGames/*       /games/:splat                 301
 
 # Redirect root to miniCycle.html
 /    /miniCycle.html    200

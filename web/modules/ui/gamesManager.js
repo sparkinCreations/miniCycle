@@ -13,14 +13,14 @@
  * - DOM elements (games-panel, games-menu-option)
  *
  * @module gamesManager
- * @version 1.355
+ * @version 1.356
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class GamesManager {
     constructor() {
-        this.version = '1.355';
+        this.version = '1.356';
         this.initialized = false;
     }
 
@@ -184,7 +184,7 @@ export class GamesManager {
         const gameButton = document.getElementById("open-task-order-game");
         if (gameButton) {
             gameButton.addEventListener("click", () => {
-                window.location.href = "miniCycleGames/miniCycle-taskOrder.html";
+                window.location.href = "games/miniCycle-taskOrder.html";
             });
         }
 
