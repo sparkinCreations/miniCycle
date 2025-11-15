@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.358
+ * @version 1.360
  */
 
 import { appInit } from '../core/appInit.js';
@@ -166,7 +166,7 @@ export class DragDropManager {
             let isLongPress = false;
             let isTap = false;
             let preventClick = false;
-            const moveThreshold = 15; // Movement threshold for long press
+            const moveThreshold = 30; // ✅ FIX: Increased from 15px to 30px for mobile (retina screens need higher threshold)
 
             // 📱 **Touch-based Drag for Mobile**
             taskElement.addEventListener("touchstart", (event) => {
@@ -211,18 +211,20 @@ export class DragDropManager {
                 const deltaX = Math.abs(touchMoveX - touchStartX);
                 const deltaY = Math.abs(touchMoveY - touchStartY);
 
-                // Cancel long press if moving too much
+                // ✅ FIX: Cancel long press if moving too much (prevents accidental long press during scrolling)
                 if (deltaX > moveThreshold || deltaY > moveThreshold) {
                     clearTimeout(holdTimeout);
                     isLongPress = false;
                     isTap = false;
+                    taskElement.classList.remove("long-pressed");
                     return;
                 }
 
-                // Allow normal scrolling if moving vertically
-                if (deltaY > deltaX) {
+                // ✅ FIX: Allow normal scrolling if moving vertically (even slight vertical movement cancels long press)
+                if (deltaY > deltaX && deltaY > 5) { // Require at least 5px vertical movement to distinguish from jitter
                     clearTimeout(holdTimeout);
                     isTap = false;
+                    taskElement.classList.remove("long-pressed");
                     return;
                 }
 
