@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.362
+ * @version 1.363
  */
 
 import { appInit } from '../core/appInit.js';
@@ -191,9 +191,9 @@ export class DragDropManager {
                 holdTimeout = setTimeout(() => {
                     isLongPress = true;
                     isTap = false;
-
-                    // ✅ FIX: Don't set isDragging yet - only reveal task options
-                    // Dragging will be enabled on touchmove if readyToDrag is true (line 233)
+                    if (window.AppGlobalState) {
+                        window.AppGlobalState.draggedTask = taskElement;
+                    }
                     taskElement.classList.add("long-pressed");
 
                     event.preventDefault();
@@ -352,15 +352,28 @@ export class DragDropManager {
 
             if (offset > bounding.height / 3) {
                 if (target.nextSibling !== window.AppGlobalState.draggedTask) {
-                    parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
+                    // ✅ FIX: Validate nodes are still in DOM before insertBefore
+                    if (document.contains(window.AppGlobalState.draggedTask) &&
+                        document.contains(target) &&
+                        parent.contains(target)) {
+                        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
+                    }
                 }
             } else {
                 if (target.previousSibling !== window.AppGlobalState.draggedTask) {
-                    parent.insertBefore(window.AppGlobalState.draggedTask, target);
+                    // ✅ FIX: Validate nodes are still in DOM before insertBefore
+                    if (document.contains(window.AppGlobalState.draggedTask) &&
+                        document.contains(target) &&
+                        parent.contains(target)) {
+                        parent.insertBefore(window.AppGlobalState.draggedTask, target);
+                    }
                 }
             }
 
-            window.AppGlobalState.draggedTask.classList.add("drop-target");
+            // ✅ FIX: Only add class if draggedTask still exists in DOM
+            if (document.contains(window.AppGlobalState.draggedTask)) {
+                window.AppGlobalState.draggedTask.classList.add("drop-target");
+            }
         }, this.REARRANGE_DELAY);
     }
 
