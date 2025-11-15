@@ -3640,12 +3640,11 @@ color: rgba(77, 77, 255, 0.771);
 */
 
 /* ✅ Ensure long-pressed tasks show options */
-/* ✅ FIX: Added !important to override mobile touch CSS that blocks hover */
 .task.long-pressed .task-options {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
+    display:flex;
+    visibility: visible ;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .overdue-task {
@@ -3751,8 +3750,7 @@ color: rgba(77, 77, 255, 0.771);
 
 
   @media (hover: none) and (pointer: coarse) {
-    /* ✅ FIX: Don't block task options on hover for touch devices if long-pressed or explicitly shown */
-    .task:hover:not(.long-pressed) .task-options:not([style*="visibility: visible"]) {
+    .task:hover .task-options {
       pointer-events: none;
       opacity: 0;
     }

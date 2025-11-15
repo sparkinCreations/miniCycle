@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.363
+ * @version 1.358
  */
 
 import { appInit } from '../core/appInit.js';
@@ -166,8 +166,7 @@ export class DragDropManager {
             let isLongPress = false;
             let isTap = false;
             let preventClick = false;
-            const cancelThreshold = 50; // ✅ Cancel long press if moving more than this (scrolling intent)
-            const scrollThreshold = 20;  // ✅ Detect vertical scrolling intent (must be significant movement)
+            const moveThreshold = 15; // Movement threshold for long press
 
             // 📱 **Touch-based Drag for Mobile**
             taskElement.addEventListener("touchstart", (event) => {
@@ -194,7 +193,8 @@ export class DragDropManager {
                     if (window.AppGlobalState) {
                         window.AppGlobalState.draggedTask = taskElement;
                     }
-                    taskElement.classList.add("long-pressed");
+                    isDragging = true;
+                    taskElement.classList.add("dragging", "long-pressed");
 
                     event.preventDefault();
 
@@ -211,21 +211,18 @@ export class DragDropManager {
                 const deltaX = Math.abs(touchMoveX - touchStartX);
                 const deltaY = Math.abs(touchMoveY - touchStartY);
 
-                // ✅ FIX: Cancel long press only if moving A LOT (clear scrolling/swipe intent)
-                if (deltaX > cancelThreshold || deltaY > cancelThreshold) {
+                // Cancel long press if moving too much
+                if (deltaX > moveThreshold || deltaY > moveThreshold) {
                     clearTimeout(holdTimeout);
                     isLongPress = false;
                     isTap = false;
-                    taskElement.classList.remove("long-pressed");
                     return;
                 }
 
-                // ✅ FIX: Detect vertical scrolling intent (significant vertical movement)
-                // Only cancel if user is clearly scrolling, not just finger jitter
-                if (deltaY > scrollThreshold && deltaY > deltaX * 1.5) {
+                // Allow normal scrolling if moving vertically
+                if (deltaY > deltaX) {
                     clearTimeout(holdTimeout);
                     isTap = false;
-                    taskElement.classList.remove("long-pressed");
                     return;
                 }
 
@@ -352,28 +349,15 @@ export class DragDropManager {
 
             if (offset > bounding.height / 3) {
                 if (target.nextSibling !== window.AppGlobalState.draggedTask) {
-                    // ✅ FIX: Validate nodes are still in DOM before insertBefore
-                    if (document.contains(window.AppGlobalState.draggedTask) &&
-                        document.contains(target) &&
-                        parent.contains(target)) {
-                        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
-                    }
+                    parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
                 }
             } else {
                 if (target.previousSibling !== window.AppGlobalState.draggedTask) {
-                    // ✅ FIX: Validate nodes are still in DOM before insertBefore
-                    if (document.contains(window.AppGlobalState.draggedTask) &&
-                        document.contains(target) &&
-                        parent.contains(target)) {
-                        parent.insertBefore(window.AppGlobalState.draggedTask, target);
-                    }
+                    parent.insertBefore(window.AppGlobalState.draggedTask, target);
                 }
             }
 
-            // ✅ FIX: Only add class if draggedTask still exists in DOM
-            if (document.contains(window.AppGlobalState.draggedTask)) {
-                window.AppGlobalState.draggedTask.classList.add("drop-target");
-            }
+            window.AppGlobalState.draggedTask.classList.add("drop-target");
         }, this.REARRANGE_DELAY);
     }
 

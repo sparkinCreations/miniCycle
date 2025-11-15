@@ -1,6 +1,6 @@
 /**
  * @module taskOptionsCustomizer
- * @version 1.360
+ * @version 1.358
  * @pattern Simple Instance 🎯
  * @description Manages customization of task option button visibility per cycle
  *
@@ -609,28 +609,22 @@ let taskOptionsCustomizer = null;
 /**
  * Initialize the task options customizer
  * @param {Object} dependencies - Dependency injection object
- * @returns {Promise<TaskOptionsCustomizer>} The initialized instance
+ * @returns {TaskOptionsCustomizer} The initialized instance
  */
-export async function initTaskOptionsCustomizer(dependencies = {}) {
+export function initTaskOptionsCustomizer(dependencies = {}) {
     if (taskOptionsCustomizer) {
         console.warn('⚠️ TaskOptionsCustomizer already initialized');
         return taskOptionsCustomizer;
     }
-
-    // ✅ FIX: Wait for core systems (AppState + data) before initializing
-    console.log('⏳ TaskOptionsCustomizer waiting for core systems...');
-    await appInit.waitForCore();
-    console.log('✅ Core systems ready, initializing TaskOptionsCustomizer...');
 
     taskOptionsCustomizer = new TaskOptionsCustomizer(dependencies);
 
     // Setup event listeners for settings button
     taskOptionsCustomizer.setupEventListeners();
 
-    // ✅ Export instance to window AFTER successful initialization
+    // Export instance to window for easy access
     window.taskOptionsCustomizer = taskOptionsCustomizer;
 
-    console.log('✅ TaskOptionsCustomizer fully initialized and exported to window');
     return taskOptionsCustomizer;
 }
 

@@ -572,10 +572,6 @@ export class TaskDOMManager {
                 }
             } else {
                 console.warn('⚠️ TaskOptionsCustomizer not initialized');
-                // ✅ FIX: Show user-friendly message instead of silent failure
-                if (typeof window.showNotification === 'function') {
-                    window.showNotification('Task customization feature is still loading...', 'info', 2000);
-                }
             }
         });
 
