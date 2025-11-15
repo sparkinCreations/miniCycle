@@ -12,7 +12,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.358
+ * @version 1.359
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -91,7 +91,7 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.358';
+        this.version = '1.359';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
