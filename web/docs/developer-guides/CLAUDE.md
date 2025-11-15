@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Reduction:** 74.8% achieved
 - **Modules:** 33 modules (12,003 lines extracted)
 - **Core functions:** 14 (orchestration only)
-- **Test coverage:** 100% (1070/1070 tests passing) ✅
-- **Version:** 1.355 (November 14, 2025)
+- **Test coverage:** 100% (1099/1099 tests passing) ✅
+- **Version:** 1.357 (November 15, 2025)
 - **Cross-platform:** All tests pass on Mac, iPad, iPhone
 
 **Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
@@ -34,7 +34,7 @@ npm start                    # Starts Python HTTP server on port 8080
 
 ### Testing
 ```bash
-npm test                    # Run automated tests (1070 tests)
+npm test                    # Run automated tests (1099 tests)
 npm run test:watch          # Run Jest tests in watch mode
 npm run test:coverage       # Generate Jest coverage report
 ```
@@ -129,6 +129,7 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 - **statsPanel.js**: Statistics panel with swipe navigation and achievement system
 - **deviceDetection.js**: Platform-specific feature detection and optimization
 - **themeManager.js**: Dynamic theming system with unlockable themes
+- **taskOptionsCustomizer.js**: Per-cycle task button visibility customization (v1.357+)
 - **cycle/cycleLoader.js**: Data loading, migration, and file import/export (.mcyc format)
 - **cycle/cycleManager.js**: Cycle creation, onboarding, and management
 - **cycle/cycleSwitcher.js**: Cycle switching with modal UI
@@ -145,6 +146,21 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
   - `miniCycle-scripts.js`: `organizeCompletedTasks()`, `handleTaskListMovement()`
   - `modules/task/taskCore.js`: `handleTaskCompletionChange()` saves state to AppState
   - `modules/ui/settingsManager.js`: Settings UI and state management
+
+#### Task Options Customizer (v1.357+)
+- **Per-cycle customization:** Each cycle can have different task button visibility settings
+- **Customization button:** `-/+` button on each task opens customization modal
+- **Real-time preview:** Changes apply immediately, live preview panel shows results
+- **Global vs cycle settings:** Move arrows and three dots are global, others per-cycle
+- **Bidirectional sync:** Changes sync with settings panel, reminders modal, and three dots menu
+- **Responsive design:** Two-column desktop layout with preview, single-column mobile without preview
+- **Persistent storage:** Settings saved to cycle.taskOptionButtons in Schema 2.5
+- **Implementation:**
+  - `modules/ui/taskOptionsCustomizer.js`: Core customizer with modal UI (635 lines, 29 tests)
+  - `modules/task/taskDOM.js`: Creates `-/+` customize button, renders task buttons based on settings
+  - `modules/cycle/cycleManager.js`: Initializes taskOptionButtons for new cycles
+  - `modules/features/reminders.js`: Syncs reminders button visibility with customizer
+  - `modules/utils/globalUtils.js`: DEFAULT_TASK_OPTION_BUTTONS constant
 
 #### Global State Management
 ```javascript
@@ -181,16 +197,31 @@ window.AppGlobalState = {
       tasks: Task[],
       cycleCount: number,
       autoReset: boolean,        // Auto Cycle Mode
-      deleteCheckedTasks: boolean // To-Do Mode
+      deleteCheckedTasks: boolean, // To-Do Mode
+      taskOptionButtons: {       // v1.357+: Per-cycle button visibility
+        customize: boolean,      // -/+ customize button (always true)
+        moveArrows: boolean,     // ▲▼ move task arrows (global)
+        threeDots: boolean,      // ⋮ three dots menu (global)
+        highPriority: boolean,   // ⚡ high priority toggle
+        rename: boolean,         // ✏️ rename/edit task
+        delete: boolean,         // 🗑️ delete task
+        recurring: boolean,      // 🔁 recurring task
+        dueDate: boolean,        // 📅 due date
+        reminders: boolean       // 🔔 reminders
+      }
     }
   },
   appState: {
     activeCycleId: string,
     currentMode: 'auto-cycle' | 'manual-cycle' | 'todo-mode'
   },
+  ui: {
+    moveArrowsVisible: boolean   // v1.357+: Global arrow visibility
+  },
   settings: {
     showCompletedDropdown: boolean,    // v1.352+: Enable completed tasks dropdown
     completedTasksExpanded: boolean,   // UI state for dropdown visibility
+    showThreeDots: boolean,           // v1.357+: Global three dots setting
     // ... other settings
   }
 }
@@ -309,7 +340,7 @@ When modifying core files, increment both app version and cache version to trigg
 ## Testing and Validation
 
 ### Automated Testing (100% Pass Rate) ✅
-- **1070 tests** across 32 modules
+- **1099 tests** across 33 modules
 - **GitHub Actions** CI/CD on every push/PR
 - **Node.js 18.x and 20.x** compatibility testing
 - **Browser-based tests** via Playwright
@@ -343,7 +374,7 @@ As of October 27, 2025, modularization is **technically complete**:
 - Main script reduced from 15,677 → 3,674 lines (74.8% reduction)
 - 33 modules extracted (12,003 lines)
 - 14 core orchestration functions remain
-- 100% test coverage achieved (1070/1070 tests) ✅
+- 100% test coverage achieved (1099/1099 tests) ✅
 
 **Optional work:** `REMAINING_EXTRACTIONS_ANALYSIS.md` documents 19 optional functions (~1,167 lines) that could be extracted for additional optimization. This is NOT required.
 
@@ -377,3 +408,9 @@ When working with browser APIs, be aware of Safari/iOS differences:
 - DeviceDetection: Fixed boolean type errors on Safari
 - Reminders: Added missing state properties and interval management
 - ConsoleCapture: Fixed test environment isolation
+
+**New Features (v1.357):**
+- Task Options Customizer: Per-cycle button visibility customization with `-/+` button
+- Schema 2.5 enhancements: Added taskOptionButtons per cycle, global UI settings
+- CSS architecture: Migrated from inline styles to CSS class-based visibility (.hidden)
+- Responsive modal design: Desktop two-column with preview, mobile single-column

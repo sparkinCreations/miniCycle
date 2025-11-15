@@ -7,7 +7,7 @@
  * These are foundational utilities that need to be available globally
  * without import overhead for frequently called functions.
  * 
- * @version 1.357
+ * @version 1.358
  * @author miniCycle Development Team
  */
 
@@ -493,13 +493,43 @@ export class GlobalUtils {
      */
     static getModuleInfo() {
         return {
-            version: '1.357',
+            version: '1.358',
             name: 'GlobalUtils',
             functionsCount: Object.getOwnPropertyNames(GlobalUtils).filter(prop => typeof GlobalUtils[prop] === 'function').length - 1, // -1 for constructor
             loadedAt: new Date().toISOString()
         };
     }
 }
+
+// ===========================================
+// 🎯 TASK OPTIONS CUSTOMIZER CONSTANTS
+// ===========================================
+
+/**
+ * Default button visibility settings for task options.
+ * Used when creating new cycles or migrating existing cycles without taskOptionButtons.
+ *
+ * Button Keys:
+ * - customize: Customization button (⋯) - always visible
+ * - moveUp: Move task up (▲)
+ * - moveDown: Move task down (▼)
+ * - highPriority: High priority toggle (⚡)
+ * - rename: Rename/edit task (✏️)
+ * - delete: Delete task (🗑️)
+ * - recurring: Recurring task (🔁)
+ * - dueDate: Set due date (📅)
+ * - reminders: Task reminders (🔔)
+ */
+export const DEFAULT_TASK_OPTION_BUTTONS = {
+    customize: true,        // -/+ Customize button (always visible, can't disable)
+    moveArrows: false,      // ▲▼ Move task arrows (up and down together)
+    highPriority: true,     // ⚡ High priority toggle
+    rename: true,           // ✏️ Rename/edit task
+    delete: true,           // 🗑️ Delete task
+    recurring: false,       // 🔁 Recurring task
+    dueDate: false,         // 📅 Set due date
+    reminders: false        // 🔔 Task reminders
+};
 
 // ===========================================
 // 🌐 GLOBAL FUNCTION REGISTRATION
@@ -538,6 +568,9 @@ window.safeJSONStringify = GlobalUtils.safeJSONStringify;
 // Make notification utility functions globally accessible
 window.generateNotificationId = GlobalUtils.generateNotificationId;
 window.generateHashId = GlobalUtils.generateHashId;
+
+// Make task options customizer constants globally accessible
+window.DEFAULT_TASK_OPTION_BUTTONS = DEFAULT_TASK_OPTION_BUTTONS;
 
 // Make the class itself globally accessible
 window.GlobalUtils = GlobalUtils;

@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle task cycling application.**
 
-**Version**: 1.355 | **Test Coverage**: 1070/1070 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.357 | **Test Coverage**: 1099/1099 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -28,6 +28,8 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 - **[SCHEMA_2_5.md](./data-schema/SCHEMA_2_5.md)** - Data structure and schema documentation
 
 ### Key Features
+- **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization with global vs cycle philosophy (v1.357+, 29 tests ✅)
+- **[COMPLETED_TASKS_DROPDOWN.md](./features/COMPLETED_TASKS_DROPDOWN.md)** - Optional completed tasks dropdown (v1.352+)
 - **[minicycle-recurring-guide.md](./features/minicycle-recurring-guide.md)** - Recurring tasks implementation
 - **[RECURRING_WATCH_FUNCTION.md](./features/RECURRING_WATCH_FUNCTION.md)** - Polling-based task scheduling
 - **[DRAG_DROP_ARCHITECTURE.md](./architecture/DRAG_DROP_ARCHITECTURE.md)** - Drag & drop system architecture
@@ -38,7 +40,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (32 modules, 1070/1070 tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (33 modules, 1099/1099 tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -91,7 +93,7 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 ### Future Work & Planned Improvements
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
 - **[FOLDER_STRUCTURE_REFACTOR_PLAN.md](./future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)** - Module naming consistency
-- **[TASK_OPTIONS_CUSTOMIZER_PLAN.md](./future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)** - Enhanced task customization
+- **[TASK_OPTIONS_CUSTOMIZER_PLAN.md](./future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)** - ✅ COMPLETED (v1.357) - Per-cycle button visibility customization
 - **[CSS_REFACTOR_PLAN.md](./future-work/CSS_REFACTOR_PLAN.md)** - CSS organization improvements
 
 ### Optimization Analysis

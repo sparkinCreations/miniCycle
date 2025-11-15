@@ -71,6 +71,9 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                         version: "2.5",
                         lastModified: Date.now()
                     },
+                    appState: {
+                        activeCycleId: 'test-cycle'
+                    },
                     data: {
                         cycles: {
                             'test-cycle': {
@@ -88,10 +91,12 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                                         completed: false,
                                         remindersEnabled: true
                                     }
-                                ]
+                                ],
+                                taskOptionButtons: {
+                                    reminders: false
+                                }
                             }
-                        },
-                        activeCycle: 'test-cycle'
+                        }
                     },
                     // NOTE: Code reads from 'reminders' property
                     reminders: {
@@ -118,8 +123,17 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                 // Clear test container
                 testContainer.innerHTML = '';
 
-                // Clear any global state (but preserve appInit!)
-                delete window.AppState;
+                // Mock AppState for tests that need it
+                window.AppState = {
+                    isReady: () => true,
+                    get: () => mockSchemaData,
+                    update: (fn) => {
+                        fn(mockSchemaData);
+                        localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
+                    }
+                };
+
+                // Clear reminder manager instance
                 delete window.reminderManager;
 
                 // Ensure AppGlobalState exists and is reset

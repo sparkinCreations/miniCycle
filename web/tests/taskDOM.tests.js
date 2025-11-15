@@ -828,10 +828,12 @@ export async function runTaskDOMTests(resultsDiv) {
         delete window.addTask;
     });
 
-    await test('revealTaskButtons respects arrow visibility setting', async () => {
+    await test('revealTaskButtons shows options without manipulating arrows', async () => {
         const taskItem = document.createElement('li');
         const taskOptions = document.createElement('div');
         taskOptions.className = 'task-options';
+        taskOptions.style.visibility = 'hidden';
+        taskOptions.style.opacity = '0';
 
         const upBtn = document.createElement('button');
         upBtn.className = 'task-btn move-up';
@@ -867,13 +869,17 @@ export async function runTaskDOMTests(resultsDiv) {
 
         manager.events.revealTaskButtons(taskItem);
 
-        if (upBtn.style.visibility !== 'hidden') {
-            throw new Error('Up arrow should be hidden when setting is false');
+        // Task options should be revealed
+        if (taskOptions.style.visibility !== 'visible') {
+            throw new Error('Task options should be visible');
         }
 
-        if (downBtn.style.visibility !== 'hidden') {
-            throw new Error('Down arrow should be hidden when setting is false');
+        if (taskOptions.style.opacity !== '1') {
+            throw new Error('Task options opacity should be 1');
         }
+
+        // Arrow visibility is NOT controlled by revealTaskButtons
+        // It's controlled by taskOptionsCustomizer via .hidden class and DragDropManager
     });
 
     // ============================================

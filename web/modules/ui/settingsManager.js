@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.357
+ * @version 1.358
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -13,7 +13,7 @@ import { DataValidator } from '../utils/dataValidator.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.357';
+        this.version = '1.358';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
@@ -203,6 +203,16 @@ export class SettingsManager {
                 }
 
                 this.deps.updateMoveArrowsVisibility();
+
+                // ✅ Sync with customizer modal if it's open
+                const customizerModal = document.getElementById('task-options-customizer-modal');
+                if (customizerModal) {
+                    const moveArrowsCheckbox = customizerModal.querySelector('[data-option="moveArrows"]');
+                    if (moveArrowsCheckbox) {
+                        moveArrowsCheckbox.checked = enabled;
+                        console.log('🔄 Synced customizer modal checkbox:', enabled);
+                    }
+                }
             });
 
             console.log('✅ Move arrows toggle setup completed');

@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module dueDates
- * @version 1.357
+ * @version 1.358
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        this.version = '1.357';
+        this.version = '1.358';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
@@ -432,10 +432,11 @@ export class MiniCycleDueDates {
             dueDatesRemindersOption.style.display = autoReset ? "none" : "block";
         }
 
-        // Toggle visibility of "Set Due Date" buttons
-        this.deps.querySelectorAll(".set-due-date").forEach(button => {
-            button.classList.toggle("hidden", autoReset);
-        });
+        // ✅ NO LONGER hide "Set Due Date" buttons based on mode
+        // Button visibility is now controlled by taskOptionButtons customization
+        // this.deps.querySelectorAll(".set-due-date").forEach(button => {
+        //     button.classList.toggle("hidden", autoReset);
+        // });
 
         if (autoReset) {
             // Auto Reset ON = hide all due dates

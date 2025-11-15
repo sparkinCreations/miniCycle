@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Version:** 1.348
-**Last Updated:** November 10, 2025
+**Version:** 1.357
+**Last Updated:** November 15, 2025
 **Status:** Current production structure
 
 ---
@@ -58,7 +58,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 979/979 tests passing ✅
+- 1099/1099 tests passing ✅
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -124,10 +124,10 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (979 tests, 100% passing)
+├── 📁 tests/                            # Test suite (1099 tests, 100% passing)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
-│   ├── [30 module test files]
+│   ├── [33 module test files]
 │   └── MODULE_TEMPLATE.tests.js         # Template for new tests
 │
 ├── 📁 assets/                           # Static assets
@@ -172,7 +172,7 @@ web/
 **Why this matters:** GitHub renders Markdown beautifully, Docsify adds navigation
 
 ### `/tests/` - Test Suite
-**Purpose:** 979 automated tests mirroring module structure
+**Purpose:** 1099 automated tests mirroring module structure
 **Philosophy:** Tests are first-class citizens, not afterthoughts
 **Why this matters:** 100% passing tests = confidence to refactor fearlessly
 
@@ -291,9 +291,9 @@ The `/modules/` directory contains 33 ES6 modules organized into 9 logical group
 
 ---
 
-### `ui/` - UI Coordination (6 modules)
+### `ui/` - UI Coordination (7 modules)
 **Purpose:** Application-level UI that coordinates multiple systems
-**When to add here:** Modals, menus, settings, onboarding, undo/redo
+**When to add here:** Modals, menus, settings, onboarding, undo/redo, customization
 
 - `modalManager.js` (383 lines) - Modal lifecycle and stacking
 - `menuManager.js` (546 lines) - Settings menu and navigation
@@ -301,6 +301,7 @@ The `/modules/` directory contains 33 ES6 modules organized into 9 logical group
 - `onboardingManager.js` (291 lines) - First-time user experience
 - `undoRedoManager.js` (463 lines) - Per-cycle undo/redo with IndexedDB
 - `gamesManager.js` (195 lines) - Mini-game unlock and panel
+- `taskOptionsCustomizer.js` (635 lines) - Per-cycle button visibility customization (v1.357+)
 
 **Philosophy:** UI modules don't contain business logic - they coordinate other modules and present data.
 

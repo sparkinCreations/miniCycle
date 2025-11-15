@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v138'; // Bumped to fix safeShowNotification default duration bug
+var CACHE_VERSION = 'v178'; // Made task buttons smaller and more compact for Safari
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -63,6 +63,7 @@ var UTILITIES = [
   './modules/ui/modalManager.js',
   './modules/ui/onboardingManager.js',
   './modules/ui/settingsManager.js',
+  './modules/ui/taskOptionsCustomizer.js',
   './modules/ui/undoRedoManager.js'
 ];
 

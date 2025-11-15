@@ -1,10 +1,10 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.355
+**Version**: 1.357
 **Service Worker**: v82
-**Last Updated**: November 14, 2025
+**Last Updated**: November 15, 2025
 **Modularization Status**: ✅ COMPLETE (74.8% reduction achieved!)
-**Test Status**: ✅ 1070/1070 tests passing (100%) - All platforms
+**Test Status**: ✅ 1099/1099 tests passing (100%) - All platforms
 **Target Audience**: Developers, Contributors, Technical Partners
 
 ---
@@ -43,7 +43,7 @@ npx serve .                         # Node.js
 # Lite version: http://localhost:8080/lite/miniCycle-lite.html
 
 # 4. Run tests (optional)
-npm test                            # Automated tests (1070/1070 passing)
+npm test                            # Automated tests (1099/1099 passing)
 open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 
@@ -133,10 +133,10 @@ This is fundamentally different from traditional to-do apps where completed task
 | **Main Script** | 3,674 lines | Down from 15,677 (74.8% reduction) ✅ |
 | **Modules** | 33 modules | All major systems modularized! |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.355 | Stable production release |
+| **App Version** | 1.357 | Stable production release |
 | **SW Cache** | v82 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1070 tests across 32 modules |
+| **Test Coverage** | 100% ✅ | 1099 tests across 33 modules |
 
 **Modularization Complete:** The main script has been reduced by 74.8% (15,677 → 3,674 lines). Optional further optimizations documented in [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) could reduce it an additional 31.8% to ~2,500 lines.
 
@@ -202,7 +202,8 @@ web/
 │   │   ├── undoRedoManager.js       # ✅ Undo/redo system (463 lines)
 │   │   ├── modalManager.js          # ✅ Modal management (383 lines)
 │   │   ├── onboardingManager.js     # ✅ First-time setup (291 lines)
-│   │   └── gamesManager.js          # ✅ Mini-games (195 lines)
+│   │   ├── gamesManager.js          # ✅ Mini-games (195 lines)
+│   │   └── taskOptionsCustomizer.js # ✅ Per-cycle button customization (635 lines) - Nov 15
 │   ├── themeManager.js              # ✅ Theme management (856 lines)
 │   ├── dueDates.js                  # ✅ Due date management (233 lines)
 │   └── reminders.js                 # ✅ Reminder system (621 lines)
@@ -535,6 +536,55 @@ await onCycleSwitched(newCycleId);
 
 **For complete architecture details, see:**
 → **[UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md)** - Full architecture documentation
+
+---
+
+### 5. Task Options Customizer
+
+**Per-Cycle Button Visibility with Global vs Cycle Philosophy**
+
+The task options customizer (`modules/ui/taskOptionsCustomizer.js`) enables per-cycle button visibility customization while maintaining global UI consistency.
+
+**Key Architecture:**
+- ✅ **Per-cycle customization** - Each cycle controls its own button visibility
+- ✅ **Global UI preferences** - Move arrows and three dots stay consistent across cycles
+- ✅ **Real-time preview** - Desktop shows live preview of button changes
+- ✅ **Bidirectional sync** - Global settings sync between customizer, settings panel, and reminders modal
+- ✅ **Backward compatible** - Fallback defaults for cycles without settings
+- ✅ **29/29 tests passing** - Comprehensive test coverage
+
+**Global vs Cycle Philosophy:**
+
+**Global Settings** (synchronized across all cycles):
+- `moveArrows` (▲▼) - UI navigation preference
+- `threeDots` (⋮) - Access method preference
+- **Rationale:** Interaction paradigm should be consistent everywhere
+
+**Per-Cycle Settings** (customizable per routine):
+- `highPriority`, `rename`, `delete`, `recurring`, `dueDate`, `reminders`
+- **Rationale:** Different cycles have different feature requirements
+  - Simple routines need minimal buttons
+  - Complex projects need full feature set
+  - Shopping lists need ultra-minimal interface
+
+**Example - Minimal Morning Routine:**
+```javascript
+cycle.taskOptionButtons = {
+    customize: true,      // Always available
+    moveArrows: false,    // ← Global preference
+    threeDots: false,     // ← Global preference
+    highPriority: true,   // Some tasks matter more
+    rename: true,         // Occasional adjustments
+    delete: true,         // Remove unneeded tasks
+    recurring: false,     // Daily routine, no recurring needed
+    dueDate: false,       // No deadlines in morning
+    reminders: false      // I do it every morning anyway
+}
+// Result: Clean 4-button interface
+```
+
+**For complete documentation, see:**
+→ **[TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md)** - Full feature documentation with global vs cycle reasoning
 
 ---
 
@@ -1883,7 +1933,7 @@ console.log(cycle.recurringTemplates);
 ./update-version.sh
 
 # 2. Run tests
-npm test  # Ensure all 1070 tests pass
+npm test  # Ensure all 1099 tests pass
 
 # 3. Commit changes
 git add .
@@ -2220,7 +2270,7 @@ window.exportDebugData()                 // Debug package
 
 ### Overview
 
-miniCycle has **100% test coverage** with **1070 tests passing** across 32 modules. The testing system runs:
+miniCycle has **100% test coverage** with **1099 tests passing** across 33 modules. The testing system runs:
 - ✅ **Locally** - Browser-based manual testing via web interface
 - ✅ **Automated** - Playwright-based automated testing
 - ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
@@ -2313,9 +2363,9 @@ Running 30 test modules across all systems...
    ✅ PASS recurringCore          44/44 tests
    ✅ PASS taskCore               53/53 tests
    ✅ PASS dragDropManager        67/67 tests
-   ... (32 modules total)
+   ... (33 modules total)
 ============================================================
-🎉 All tests passed! (1070/1070 - 100%) ✅
+🎉 All tests passed! (1099/1099 - 100%) ✅
 ============================================================
 
 Automated via GitHub Actions on every push/PR
@@ -2344,7 +2394,7 @@ miniCycle has **automated testing** that runs on every push and pull request via
 2. Setup Node.js environment
 3. Install dependencies (Playwright)
 4. Start HTTP server on port 8080
-5. Run all 1070 tests via Playwright
+5. Run all 1099 tests via Playwright
 6. Report results (pass/fail)
 
 #### Viewing Test Results
@@ -2357,7 +2407,7 @@ miniCycle has **automated testing** that runs on every push and pull request via
 
 **Test Status Badge:**
 The repository shows a badge indicating test status:
-- ✅ Green = All tests passing (1070/1070)
+- ✅ Green = All tests passing (1099/1099)
 - ❌ Red = Tests failing
 
 #### Manual CI Trigger
@@ -2370,7 +2420,7 @@ You can manually trigger the test workflow:
 4. Select branch
 5. Click **"Run workflow"** button
 
-**Current Status:** 1070/1070 tests passing (100%) ✅
+**Current Status:** 1099/1099 tests passing (100%) ✅
 
 ### Creating New Tests
 
@@ -2903,12 +2953,12 @@ Current module test coverage:
 | TaskEvents | `taskEvents.tests.js` | 22 | ✅ 100% 🎉 |
 | TaskDOM | `taskDOM.tests.js` | 43 | ✅ 100% 🎉 |
 
-**Total: 1070 tests across 32 modules**
+**Total: 1099 tests across 33 modules**
 
-**Overall Pass Rate: 100% ✅ (1070/1070 tests passing)**
+**Overall Pass Rate: 100% ✅ (1099/1099 tests passing)**
 
 **Recent Improvements (November 2025):**
-- ✅ **Test Suite Expanded** (Nov 14) - Now 1070 tests across 32 modules! 🎉
+- ✅ **Test Suite Expanded** (Nov 14) - Now 1099 tests across 33 modules! 🎉
 - ✅ **XSS Vulnerability Tests Added** - Security testing module
 - ✅ **Error Handler Tests Added** - Safe storage and JSON utilities
 - ✅ **100% Test Coverage Maintained** (Oct 31) - All tests passing! 🎉
@@ -2927,7 +2977,7 @@ Current module test coverage:
 - ✅ MenuManager (29 tests) - Main menu operations (Oct 25)
 - ✅ SettingsManager (33 tests) - Settings panel, import/export (Oct 25)
 
-**All 32 modules are at 100% test pass rate (1070/1070 tests passing).** ✅
+**All 33 modules are at 100% test pass rate (1099/1099 tests passing).** ✅
 
 ### Tips for Writing Good Tests
 
@@ -3147,12 +3197,12 @@ web/
 │   ├── task/                     # Task management (7 modules)
 │   ├── cycle/                    # Cycle management (5 modules)
 │   ├── recurring/                # Recurring tasks (3 modules)
-│   ├── ui/                       # UI coordination (6 modules)
+│   ├── ui/                       # UI coordination (7 modules)
 │   ├── features/                 # Optional features (4 modules)
 │   ├── utils/                    # Shared utilities (4 modules)
 │   ├── testing/                  # Test infrastructure (5 modules)
 │   └── other/                    # Plugin examples (3 modules)
-├── tests/                        # 979 tests, 100% passing ✅
+├── tests/                        # 1099 tests, 100% passing ✅
 ├── docs/                         # Developer documentation (you are here!)
 ├── pages/                        # Marketing pages
 ├── legal/                        # Privacy, terms, user manual
@@ -3178,8 +3228,8 @@ web/
 
 ---
 
-**Version**: 1.355
-**Last Updated**: November 14, 2025
+**Version**: 1.357
+**Last Updated**: November 15, 2025
 **Maintained By**: sparkinCreations
 
 **✅ MODULARIZATION COMPLETE!**
@@ -3187,11 +3237,13 @@ web/
 - **74.8% reduction achieved**
 - **33 modules** extracted (12,003 lines)
 - **14 core orchestration functions** remain
-- **100% test coverage** ✅ (1070/1070 tests passing)
+- **100% test coverage** ✅ (1099/1099 tests passing)
 
-**Recent Major Updates (November 14, 2025):**
-- ✅ Test suite expansion - 1070 tests across 32 modules (added xss-vulnerability and errorHandler)
-- ✅ Security testing - XSS vulnerability test module added
+**Recent Major Updates (November 15, 2025):**
+- ✅ Task Options Customizer - Per-cycle button visibility customization (v1.357)
+- ✅ Schema 2.5 enhancements - taskOptionButtons per cycle, global UI settings
+- ✅ Test suite expansion - 1099 tests across 33 modules (added taskOptionsCustomizer)
+- ✅ CSS architecture improvements - Migrated to class-based visibility (.hidden)
 - ✅ Error handling utilities - Safe localStorage and JSON parsing functions
 - ✅ Performance benchmarks - DOM manipulation, cycle operations, search/filter, JSON benchmarks
 

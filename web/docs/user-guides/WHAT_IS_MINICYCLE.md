@@ -391,12 +391,13 @@ Progressive Web App (PWA) works without internet.
 
 ### miniCycle
 
-✅ **Persistent routines** that don’t disappear  
-✅ **Complex workflows** with multiple tasks  
-✅ **Flexible cycling** modes for different needs  
-✅ **Full task management** within routine structure  
-✅ **Time-based features** (recurring, due dates, notifications)  
-✅ **Privacy-focused** (local storage only)  
+✅ **Persistent routines** that don't disappear
+✅ **Complex workflows** with multiple tasks
+✅ **Flexible cycling** modes for different needs
+✅ **Full task management** within routine structure
+✅ **Time-based features** (recurring, due dates, notifications)
+✅ **Customizable interface** (show/hide task option buttons per cycle)
+✅ **Privacy-focused** (local storage only)
 ✅ **Works offline** (PWA)
 
 -----

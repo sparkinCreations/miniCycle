@@ -236,11 +236,12 @@
             <option value="taskRenderer">TaskRenderer</option>
             <option value="taskEvents">TaskEvents</option>
             <option value="taskDOM">TaskDOM</option>
+            <option value="taskOptionsCustomizer">TaskOptionsCustomizer</option>
             <option value="xss-vulnerability">🔒 XSS Vulnerability Tests</option>
             <option value="errorHandler">🛡️ Error Handler Tests</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (32 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (33 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -289,6 +290,7 @@
         const { runTaskRendererTests } = await import(`./taskRenderer.tests.js?v=${cacheBuster}`);
         const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
         const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
+        const { runTaskOptionsCustomizerTests } = await import(`./taskOptionsCustomizer.tests.js?v=${cacheBuster}`);
         const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
         const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
 
@@ -448,6 +450,11 @@
                     await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
                     currentModule = 'taskDOM';
                     resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskOptionsCustomizer') {
+                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/ui/taskOptionsCustomizer.js?v=${cacheBuster}`);
+                    currentModule = 'taskOptionsCustomizer';
+                    resultsDiv.innerHTML = '<p>✅ TaskOptionsCustomizer loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'xss-vulnerability') {
                     // Load globalUtils first (provides window.sanitizeInput and escapeHtml)
                     await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
@@ -534,6 +541,8 @@
                 await runTaskEventsTests(resultsDiv);
             } else if (currentModule === 'taskDOM') {
                 await runTaskDOMTests(resultsDiv);
+            } else if (currentModule === 'taskOptionsCustomizer') {
+                await runTaskOptionsCustomizerTests(resultsDiv);
             } else if (currentModule === 'xss-vulnerability') {
                 await runAllXSSTests(resultsDiv);
             } else if (currentModule === 'errorHandler') {
@@ -654,6 +663,7 @@
                 { name: 'TaskRenderer', key: 'taskRenderer', runFn: runTaskRendererTests, importPath: '../modules/task/taskRenderer.js' },
                 { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../modules/task/taskEvents.js' },
                 { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' },
+                { name: 'TaskOptionsCustomizer', key: 'taskOptionsCustomizer', runFn: runTaskOptionsCustomizerTests, importPath: '../modules/ui/taskOptionsCustomizer.js' },
                 { name: 'XSS Vulnerability', key: 'xss-vulnerability', runFn: runAllXSSTests, importPath: null },
                 { name: 'Error Handler', key: 'errorHandler', runFn: runErrorHandlerTests, importPath: '../modules/utils/errorHandler.js' }
             ];

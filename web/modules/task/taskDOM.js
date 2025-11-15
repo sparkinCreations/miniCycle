@@ -12,7 +12,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.357
+ * @version 1.358
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -91,7 +91,7 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.357';
+        this.version = '1.358';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
@@ -481,17 +481,58 @@ export class TaskDOMManager {
             buttonContainer.style.pointerEvents = "none";
         }
 
-        const showRecurring = !autoResetEnabled && deleteCheckedEnabled;
+        // ✅ NEW: Get button visibility settings for this cycle
+        const visibleOptions = currentCycle.taskOptionButtons || window.DEFAULT_TASK_OPTION_BUTTONS || {};
 
+        // ✅ NEW: Always show customize button first
+        const customizeBtn = this.createCustomizeButton();
+        buttonContainer.appendChild(customizeBtn);
+
+        // ✅ UPDATED: Button configuration with visibility checks (no mode dependencies)
+        // ⚠️ Move arrows visibility is controlled by global state.ui.moveArrowsVisible
+        // via updateMoveArrowsVisibility(), not by taskOptionButtons
         const buttons = [
-            { class: "move-up", icon: "▲", show: true },
-            { class: "move-down", icon: "▼", show: true },
-            { class: "recurring-btn", icon: "<i class='fas fa-repeat'></i>", show: showRecurring || (settings.alwaysShowRecurring || false) },
-            { class: "set-due-date", icon: "<i class='fas fa-calendar-alt'></i>", show: !autoResetEnabled },
-            { class: "enable-task-reminders", icon: "<i class='fas fa-bell'></i>", show: remindersEnabled || remindersEnabledGlobal, toggle: true },
-            { class: "priority-btn", icon: "<i class='fas fa-exclamation-triangle'></i>", show: true },
-            { class: "edit-btn", icon: "<i class='fas fa-edit'></i>", show: true },
-            { class: "delete-btn", icon: "<i class='fas fa-trash'></i>", show: true }
+            {
+                class: "move-up",
+                icon: "▲",
+                show: true // Always render, visibility controlled by global setting
+            },
+            {
+                class: "move-down",
+                icon: "▼",
+                show: true // Always render, visibility controlled by global setting
+            },
+            {
+                class: "priority-btn",
+                icon: "<i class='fas fa-exclamation-triangle'></i>",
+                show: visibleOptions.highPriority ?? true
+            },
+            {
+                class: "edit-btn",
+                icon: "<i class='fas fa-edit'></i>",
+                show: visibleOptions.rename ?? true
+            },
+            {
+                class: "delete-btn",
+                icon: "<i class='fas fa-trash'></i>",
+                show: visibleOptions.delete ?? true
+            },
+            {
+                class: "recurring-btn",
+                icon: "<i class='fas fa-repeat'></i>",
+                show: visibleOptions.recurring ?? false
+            },
+            {
+                class: "set-due-date",
+                icon: "<i class='fas fa-calendar-alt'></i>",
+                show: visibleOptions.dueDate ?? false
+            },
+            {
+                class: "enable-task-reminders",
+                icon: "<i class='fas fa-bell'></i>",
+                show: visibleOptions.reminders ?? false,
+                toggle: true
+            }
         ];
 
         buttons.forEach(buttonConfig => {
@@ -500,6 +541,49 @@ export class TaskDOMManager {
         });
 
         return buttonContainer;
+    }
+
+    /**
+     * ✅ NEW: Create the customize button (⋯)
+     * Opens the task options customization modal for the current cycle
+     * @returns {HTMLButtonElement} The customize button element
+     */
+    createCustomizeButton() {
+        const button = document.createElement("button");
+        button.classList.add("task-btn", "customize-btn");
+        button.innerHTML = "-/+"; // Customize icon
+        button.setAttribute("type", "button");
+        button.setAttribute("title", "Customize task options");
+        button.setAttribute("tabindex", "0");
+        button.setAttribute("aria-label", "Customize which task option buttons are visible");
+
+        // Click handler
+        button.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (window.taskOptionsCustomizer) {
+                // ✅ Always use the active cycle ID from AppState
+                const state = window.AppState?.get?.();
+                const activeCycleId = state?.appState?.activeCycleId;
+
+                if (activeCycleId) {
+                    window.taskOptionsCustomizer.showCustomizationModal(activeCycleId);
+                } else {
+                    console.warn('⚠️ No active cycle ID found');
+                }
+            } else {
+                console.warn('⚠️ TaskOptionsCustomizer not initialized');
+            }
+        });
+
+        // Keyboard handler
+        button.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                button.click();
+            }
+        });
+
+        return button;
     }
 
     /**
@@ -513,7 +597,15 @@ export class TaskDOMManager {
         button.classList.add("task-btn", btnClass);
         button.innerHTML = icon;
         button.setAttribute("type", "button");
-        if (!show) button.classList.add("hidden");
+
+        // ✅ Special handling for move arrows: always render but start hidden
+        // Their visibility will be controlled by updateArrowsInDOM() based on global setting
+        if (btnClass === "move-up" || btnClass === "move-down") {
+            // Use .hidden class for consistent behavior (display: none !important)
+            button.classList.add("hidden");
+        } else if (!show) {
+            button.classList.add("hidden");
+        }
 
         // Setup accessibility attributes
         this.setupButtonAccessibility(button, btnClass, buttonContainer);
@@ -766,14 +858,6 @@ export class TaskDOMManager {
             const task = freshCycle.tasks.find(t => t.id === assignedTaskId);
             if (!task) {
                 console.warn('⚠️ Task not found:', assignedTaskId);
-                return;
-            }
-
-            const alwaysShowRecurring = currentState?.settings?.alwaysShowRecurring || false;
-            const showRecurring = !taskContext.autoResetEnabled && taskContext.deleteCheckedEnabled;
-
-            if (!(showRecurring || alwaysShowRecurring)) {
-                console.log('🚫 Recurring button click ignored - not in correct mode and always-show not enabled');
                 return;
             }
 

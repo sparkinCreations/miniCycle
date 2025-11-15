@@ -2,8 +2,8 @@
 
 > **Future plans for miniCycle - The Free Tier**
 
-**Last Updated:** November 14, 2025
-**Version:** 1.355
+**Last Updated:** November 15, 2025
+**Version:** 1.357
 
 ---
 
@@ -59,10 +59,11 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 ## Current Status ✅
 
-**v1.355 - November 2025**
+**v1.357 - November 2025**
 
-- ✅ Modularization Complete (74.8% reduction)
-- ✅ 1070/1070 Tests Passing (100%)
+- ✅ Modularization Complete (74.8% reduction, 33 modules)
+- ✅ 1099/1099 Tests Passing (100%)
+- ✅ Task Options Customizer (per-cycle button visibility)
 - ✅ XSS Vulnerability Tests (25 tests)
 - ✅ Error Handler Tests (34 tests)
 - ✅ Schema 2.5 Stable

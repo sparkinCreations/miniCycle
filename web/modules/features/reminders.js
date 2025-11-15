@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module reminders
- * @version 1.357
+ * @version 1.358
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
-        this.version = '1.357';
+        this.version = '1.358';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
@@ -140,8 +140,39 @@ export class MiniCycleReminders {
         // Save updated settings and get the current global state
         const globalReminderState = this.autoSaveReminders();
 
+        // ✅ Sync with customizer modal if it's open
+        const customizerModal = document.getElementById('task-options-customizer-modal');
+        if (customizerModal) {
+            const remindersCheckbox = customizerModal.querySelector('[data-option="reminders"]');
+            if (remindersCheckbox) {
+                remindersCheckbox.checked = isEnabled;
+                console.log('🔄 Synced customizer modal checkbox:', isEnabled);
+            }
+        }
+
+        // ✅ Update cycle's taskOptionButtons.reminders setting
+        if (this.deps.AppState?.update && this.deps.AppState?.get) {
+            const state = this.deps.AppState.get();
+            const activeCycleId = state.appState?.activeCycleId;
+            if (activeCycleId && state.data?.cycles?.[activeCycleId]) {
+                this.deps.AppState.update(s => {
+                    if (!s.data.cycles[activeCycleId].taskOptionButtons) {
+                        s.data.cycles[activeCycleId].taskOptionButtons = {};
+                    }
+                    s.data.cycles[activeCycleId].taskOptionButtons.reminders = isEnabled;
+                });
+                console.log(`✅ Updated cycle taskOptionButtons.reminders to: ${isEnabled}`);
+            }
+        }
+
         // Update the 🔔 task buttons
         this.updateReminderButtons();
+
+        // ✅ Refresh task list to show/hide reminder buttons
+        if (typeof window.refreshTaskListUI === 'function') {
+            window.refreshTaskListUI();
+            console.log('🔄 Refreshed task list to update button visibility');
+        }
 
         // Start or stop reminders
         if (globalReminderState) {
@@ -157,6 +188,7 @@ export class MiniCycleReminders {
             }
             this.stopReminders();
         }
+
 
         console.log('✅ Reminder toggle handled successfully');
     }
@@ -270,16 +302,24 @@ export class MiniCycleReminders {
             remindersToSave.timesReminded = previousSettings.timesReminded || 0;
         }
 
-        // ✅ Use AppState instead of direct localStorage
+        // ✅ Use AppState instead of direct localStorage - Save per-cycle
         if (this.deps.AppState?.update) {
             this.deps.AppState.update(state => {
-                state.customReminders = remindersToSave;
+                const activeCycleId = state.appState.activeCycleId;
+                if (activeCycleId && state.data.cycles[activeCycleId]) {
+                    state.data.cycles[activeCycleId].reminders = remindersToSave;
+                    console.log(`✅ Saved reminders to cycle: ${activeCycleId}`);
+                }
                 state.metadata.lastModified = Date.now();
             }, true); // immediate save for reminders
         } else {
             console.warn('⚠️ AppState not available, falling back to localStorage');
             const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.customReminders = remindersToSave;
+            const activeCycleId = fullSchemaData.appState.activeCycleId;
+            if (activeCycleId && fullSchemaData.data.cycles[activeCycleId]) {
+                fullSchemaData.data.cycles[activeCycleId].reminders = remindersToSave;
+                console.log(`✅ Saved reminders to cycle: ${activeCycleId}`);
+            }
             fullSchemaData.metadata.lastModified = Date.now();
             localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
         }
@@ -458,18 +498,24 @@ export class MiniCycleReminders {
         const intervalMs = remindersSettings.frequencyValue * multiplier;
         const now = Date.now();
 
-        // ✅ Use AppState instead of direct localStorage
+        // ✅ Use AppState instead of direct localStorage - Save per-cycle
         if (this.deps.AppState?.update) {
             this.deps.AppState.update(state => {
-                state.customReminders.timesReminded = timesReminded + 1;
-                state.customReminders.nextReminderTime = now + intervalMs;
+                const activeCycleId = state.appState.activeCycleId;
+                if (activeCycleId && state.data.cycles[activeCycleId]?.reminders) {
+                    state.data.cycles[activeCycleId].reminders.timesReminded = timesReminded + 1;
+                    state.data.cycles[activeCycleId].reminders.nextReminderTime = now + intervalMs;
+                }
                 state.metadata.lastModified = Date.now();
             }, true); // immediate save for reminders
         } else {
             console.warn('⚠️ AppState not available, falling back to localStorage');
             const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            fullSchemaData.customReminders.timesReminded = timesReminded + 1;
-            fullSchemaData.customReminders.nextReminderTime = now + intervalMs;
+            const activeCycleId = fullSchemaData.appState.activeCycleId;
+            if (activeCycleId && fullSchemaData.data.cycles[activeCycleId]?.reminders) {
+                fullSchemaData.data.cycles[activeCycleId].reminders.timesReminded = timesReminded + 1;
+                fullSchemaData.data.cycles[activeCycleId].reminders.nextReminderTime = now + intervalMs;
+            }
             fullSchemaData.metadata.lastModified = Date.now();
             localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
         }
@@ -643,7 +689,48 @@ export class MiniCycleReminders {
             // Update undo/redo button states
             this.deps.updateUndoRedoButtons();
 
-            this.deps.showNotification(`Reminders ${isActive ? "enabled" : "disabled"} for task.`, "info", 1500);
+            // ✅ Enhanced notification with settings info and click-to-configure
+            if (isActive) {
+                const reminderSettings = schemaData.reminders || {};
+                const freq = reminderSettings.frequencyValue || 0;
+                const unit = reminderSettings.frequencyUnit || 'hours';
+                const settingsText = freq > 0
+                    ? `Every ${freq} ${unit}`
+                    : 'Custom settings';
+
+                const message = `🔔 Reminder enabled: ${settingsText}\nClick to configure`;
+                const notificationElement = this.deps.showNotification(message, "success", 5000);
+
+                // Add click listener to open reminders modal
+                if (notificationElement) {
+                    const clickHandler = (e) => {
+                        // Don't trigger if clicking the close button
+                        if (e.target.classList.contains('close-btn')) return;
+
+                        const remindersModal = document.getElementById('reminders-modal');
+                        if (remindersModal) {
+                            remindersModal.style.display = 'flex';
+                            remindersModal.style.alignItems = 'center';
+                            remindersModal.style.justifyContent = 'center';
+                        }
+
+                        // Remove notification after clicking
+                        notificationElement.remove();
+                    };
+
+                    notificationElement.addEventListener('click', clickHandler);
+                    notificationElement.style.cursor = 'pointer';
+                    notificationElement.title = 'Click to configure reminder settings';
+
+                    // ✅ Enable line breaks in notification
+                    const notificationContent = notificationElement.querySelector('.notification-content');
+                    if (notificationContent) {
+                        notificationContent.style.whiteSpace = 'pre-line';
+                    }
+                }
+            } else {
+                this.deps.showNotification('🔕 Reminder disabled for task.', 'info', 1500);
+            }
         });
     }
 
@@ -689,75 +776,14 @@ export class MiniCycleReminders {
 
           console.log(`🔍 Task ${taskId}: reminders enabled = ${isActive}`);
 
-          if (remindersGloballyEnabled) {
-            if (!reminderButton) {
-              console.log(`   ⚠️ Creating NEW reminder button for task ${taskId} (shouldn't happen on page load)`);
-              // Create Reminder Button
-              reminderButton = document.createElement("button");
-              reminderButton.classList.add("task-btn", "enable-task-reminders");
-              reminderButton.innerHTML = "<i class='fas fa-bell'></i>";
-
-              // Add click event - read from AppState, not DOM
-              reminderButton.addEventListener("click", async () => {
-                await appInit.waitForCore();
-
-                // ✅ Read fresh state from localStorage/AppState (source of truth)
-                const schemaData = this.deps.loadMiniCycleData();
-                if (!schemaData) {
-                  console.error('❌ Cannot toggle reminder - no data available');
-                  return;
-                }
-
-                const { cycles, activeCycle } = schemaData;
-                const currentCycle = cycles[activeCycle];
-                const taskData = currentCycle?.tasks?.find(t => t.id === taskId);
-
-                if (!taskData) {
-                  console.warn('⚠️ Task not found for reminder toggle:', taskId);
-                  return;
-                }
-
-                // ✅ Toggle based on actual state, not DOM class
-                const isCurrentlyEnabled = taskData.remindersEnabled === true;
-                const nowActive = !isCurrentlyEnabled;
-
-                console.log('🔔 Toggling reminder:', {
-                  taskId,
-                  wasEnabled: isCurrentlyEnabled,
-                  willBeEnabled: nowActive
-                });
-
-                // Update DOM to match new state
-                reminderButton.classList.toggle("reminder-active", nowActive);
-                reminderButton.setAttribute("aria-pressed", nowActive.toString());
-
-                // Save new state
-                await this.saveTaskReminderState(taskId, nowActive);
-                this.autoSaveReminders();
-
-                this.deps.showNotification(`Reminders ${nowActive ? "enabled" : "disabled"} for task.`, "info", 1500);
-              });
-
-              buttonContainer?.insertBefore(reminderButton, buttonContainer.children[2]);
-              console.log("   ✅ Reminder Button Created & Inserted");
-            }
-
-            // Ensure correct state and make it visible
-            console.log(`   🔄 Updating EXISTING reminder button for task ${taskId} - setting active: ${isActive}`);
+          // ✅ NO LONGER control button visibility based on global settings
+          // Button visibility is now controlled by taskOptionButtons customization
+          // Only update the button state (active/inactive) if it exists
+          if (reminderButton) {
+            console.log(`   🔄 Updating reminder button state for task ${taskId} - setting active: ${isActive}`);
             reminderButton.classList.toggle("reminder-active", isActive);
             reminderButton.setAttribute("aria-pressed", isActive.toString());
-            reminderButton.classList.remove("hidden");
-
             console.log(`   ✅ Reminder Button Updated - Active: ${isActive}`);
-          } else {
-            // Hide button if reminders are disabled globally
-            if (reminderButton) {
-              reminderButton.classList.add("hidden");
-              reminderButton.classList.remove("reminder-active");
-              reminderButton.setAttribute("aria-pressed", "false");
-
-              console.log("   🔕 Reminder Button Hidden (Global toggle OFF)");
-            }
           }
         });
 
@@ -798,22 +824,22 @@ export class MiniCycleReminders {
                     return;
                 }
 
-                // ✅ Use AppState instead of direct localStorage
+                // ✅ Use AppState instead of direct localStorage - Save per-cycle
                 if (this.deps.AppState?.update) {
                     this.deps.AppState.update(state => {
-                        if (!state.customReminders) {
-                            state.customReminders = {};
+                        const activeCycleId = state.appState.activeCycleId;
+                        if (activeCycleId && state.data.cycles[activeCycleId]?.reminders) {
+                            state.data.cycles[activeCycleId].reminders.dueDatesReminders = dueDatesReminders.checked;
                         }
-                        state.customReminders.dueDatesReminders = dueDatesReminders.checked;
                         state.metadata.lastModified = Date.now();
                     }, true); // immediate save
                 } else {
                     console.warn('⚠️ AppState not available, falling back to localStorage');
                     const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    if (!fullSchemaData.customReminders) {
-                        fullSchemaData.customReminders = {};
+                    const activeCycleId = fullSchemaData.appState.activeCycleId;
+                    if (activeCycleId && fullSchemaData.data.cycles[activeCycleId]?.reminders) {
+                        fullSchemaData.data.cycles[activeCycleId].reminders.dueDatesReminders = dueDatesReminders.checked;
                     }
-                    fullSchemaData.customReminders.dueDatesReminders = dueDatesReminders.checked;
                     fullSchemaData.metadata.lastModified = Date.now();
                     localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
                 }

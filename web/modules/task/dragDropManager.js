@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.357
+ * @version 1.358
  */
 
 import { appInit } from '../core/appInit.js';
@@ -546,15 +546,20 @@ export class DragDropManager {
                 const taskOptions = task.querySelector('.task-options');
                 const taskButtons = task.querySelectorAll('.task-btn');
 
+                // ✅ Use .hidden class for consistent behavior (display: none !important)
                 if (upButton) {
-                    upButton.style.visibility = (showArrows && index !== 0) ? "visible" : "hidden";
-                    upButton.style.opacity = (showArrows && index !== 0) ? "1" : "0";
-                    upButton.style.pointerEvents = showArrows ? "auto" : "none";
+                    if (showArrows && index !== 0) {
+                        upButton.classList.remove("hidden");
+                    } else {
+                        upButton.classList.add("hidden");
+                    }
                 }
                 if (downButton) {
-                    downButton.style.visibility = (showArrows && index !== allTasks.length - 1) ? "visible" : "hidden";
-                    downButton.style.opacity = (showArrows && index !== allTasks.length - 1) ? "1" : "0";
-                    downButton.style.pointerEvents = showArrows ? "auto" : "none";
+                    if (showArrows && index !== allTasks.length - 1) {
+                        downButton.classList.remove("hidden");
+                    } else {
+                        downButton.classList.add("hidden");
+                    }
                 }
 
                 // Ensure task options remain interactive

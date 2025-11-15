@@ -366,7 +366,7 @@ export async function runTaskEventsTests(resultsDiv) {
         document.body.removeChild(taskItem);
     });
 
-    await test('revealTaskButtons handles arrow visibility based on settings', () => {
+    await test('revealTaskButtons toggles options visibility', () => {
         const deps = createMockDependencies();
         const events = new TaskEvents(deps);
 
@@ -375,19 +375,35 @@ export async function runTaskEventsTests(resultsDiv) {
         document.body.appendChild(taskItem1);
         document.body.appendChild(taskItem2);
 
+        const taskOptions = taskItem1.querySelector('.task-options');
+
+        // First click - should show
         events.revealTaskButtons(taskItem1);
-
-        const upArrow = taskItem1.querySelector('.move-up');
-        const downArrow = taskItem1.querySelector('.move-down');
-
-        // First task should not show up arrow
-        if (upArrow.style.visibility === 'visible') {
-            throw new Error('First task should not show up arrow');
+        if (taskOptions.style.visibility !== 'visible') {
+            throw new Error('Task options should be visible after first click');
         }
-        // First task should show down arrow (if arrows enabled)
-        if (downArrow.style.visibility !== 'visible') {
-            throw new Error('First task should show down arrow when arrows enabled');
+        if (taskOptions.style.opacity !== '1') {
+            throw new Error('Task options opacity should be 1 after first click');
         }
+
+        // Second click - should hide (toggle)
+        events.revealTaskButtons(taskItem1);
+        if (taskOptions.style.visibility !== 'hidden') {
+            throw new Error('Task options should be hidden after second click');
+        }
+        if (taskOptions.style.opacity !== '0') {
+            throw new Error('Task options opacity should be 0 after second click');
+        }
+
+        // Third click - should show again
+        events.revealTaskButtons(taskItem1);
+        if (taskOptions.style.visibility !== 'visible') {
+            throw new Error('Task options should be visible after third click');
+        }
+
+        // Arrow visibility is NOT controlled by revealTaskButtons anymore
+        // It's controlled by taskOptionsCustomizer via .hidden class
+        // So we don't check arrow visibility here
 
         // Clean up
         document.body.removeChild(taskItem1);

@@ -8,7 +8,7 @@
  * - Pure input validation logic
  *
  * @module modules/task/taskValidation
- * @version 1.357
+ * @version 1.358
  */
 
 export class TaskValidator {
@@ -23,7 +23,7 @@ export class TaskValidator {
         this.TASK_LIMIT = 100; // Character limit for tasks
 
         // Instance version
-        this.version = '1.357';
+        this.version = '1.358';
 
         console.log('🔒 TaskValidator created');
     }

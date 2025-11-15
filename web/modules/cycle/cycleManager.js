@@ -2,7 +2,7 @@
  * @file cycleManager.js
  * @description Cycle creation and management functionality for miniCycle
  * @module modules/cycleManager
- * @version 1.357
+ * @version 1.358
  * @pattern Resilient Constructor 🛡️
  *
  * Handles:
@@ -38,7 +38,7 @@ export class CycleManager {
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
-        this.version = '1.357';
+        this.version = '1.358';
         console.log('✅ CycleManager initialized');
     }
 
@@ -89,7 +89,15 @@ export class CycleManager {
                         deleteCheckedTasks: false,
                         cycleCount: 0,
                         createdAt: Date.now(),
-                        recurringTemplates: {}
+                        recurringTemplates: {},
+                        reminders: {
+                            enabled: false,
+                            indefinite: false,
+                            dueDatesReminders: false,
+                            repeatCount: 0,
+                            frequencyValue: 30,
+                            frequencyUnit: "minutes"
+                        }
                     };
 
                     fullSchemaData.appState.activeCycleId = cycleId;
@@ -159,7 +167,15 @@ export class CycleManager {
                 cycleCount: sample.cycleCount || 0,
                 deleteCheckedTasks: sample.deleteCheckedTasks || false,
                 createdAt: Date.now(),
-                recurringTemplates: {}
+                recurringTemplates: {},
+                reminders: {
+                    enabled: false,
+                    indefinite: false,
+                    dueDatesReminders: false,
+                    repeatCount: 0,
+                    frequencyValue: 30,
+                    frequencyUnit: "minutes"
+                }
             };
 
             fullSchemaData.appState.activeCycleId = cycleId;
@@ -339,7 +355,17 @@ export class CycleManager {
                         deleteCheckedTasks: false,
                         cycleCount: 0,
                         createdAt: Date.now(),
-                        recurringTemplates: {}
+                        recurringTemplates: {},
+                        taskOptionButtons: window.DEFAULT_TASK_OPTION_BUTTONS ? { ...window.DEFAULT_TASK_OPTION_BUTTONS } : {
+                            customize: true,
+                            moveArrows: false,
+                            highPriority: true,
+                            rename: true,
+                            delete: true,
+                            recurring: false,
+                            dueDate: false,
+                            reminders: false
+                        }
                     };
 
                     // ✅ Set as active cycle using the storage key

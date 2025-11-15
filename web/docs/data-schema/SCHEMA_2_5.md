@@ -44,6 +44,10 @@ const SCHEMA_2_5_CURRENT = {
       notificationPosition: { x: 0, y: 0 },  // Current: draggable notifications
       notificationPositionModified: false,
 
+      showCompletedDropdown: false,   // v1.352+: Enable completed tasks dropdown
+      completedTasksExpanded: false,  // v1.352+: UI state for dropdown visibility
+      showThreeDots: false,           // v1.357+: Global three dots menu setting
+
       accessibility: {
         reducedMotion: false,        // Future-ready for accessibility
         highContrast: false,
@@ -60,9 +64,24 @@ const SCHEMA_2_5_CURRENT = {
           recurringTemplates: {},
           autoReset: true,
           deleteCheckedTasks: false,
-          cycleCount: 0
+          cycleCount: 0,
+          taskOptionButtons: {        // v1.357+: Per-cycle button visibility
+            customize: true,          // -/+ customize button (always visible)
+            moveArrows: false,        // ▲▼ move task arrows (synced with global setting)
+            threeDots: false,         // ⋮ three dots menu (synced with global setting)
+            highPriority: true,       // ⚡ high priority toggle
+            rename: true,             // ✏️ rename/edit task
+            delete: true,             // 🗑️ delete task
+            recurring: false,         // 🔁 recurring task
+            dueDate: false,           // 📅 due date
+            reminders: false          // 🔔 reminders
+          }
         }
       }
+    },
+
+    ui: {
+      moveArrowsVisible: false        // v1.357+: Global arrow visibility setting
     },
 
     appState: {
@@ -118,6 +137,11 @@ Tracks application-level information and migration history:
 - **notificationPosition**: User-draggable notification position (x, y coordinates)
 - **notificationPositionModified**: Whether user has customized position
 
+#### UI Preferences (v1.352+, v1.357+)
+- **showCompletedDropdown**: Enable completed tasks dropdown section (v1.352+)
+- **completedTasksExpanded**: UI state for dropdown visibility (v1.352+)
+- **showThreeDots**: Global three dots menu visibility setting (v1.357+)
+
 #### Accessibility (Future-Ready)
 - **reducedMotion**: Respect user motion preferences
 - **highContrast**: High contrast mode
@@ -134,6 +158,21 @@ Each cycle contains:
 - **autoReset**: Auto Cycle Mode (true) or Manual Cycle Mode (false)
 - **deleteCheckedTasks**: To-Do Mode (true) or Cycle Mode (false)
 - **cycleCount**: Number of times cycle has been completed
+- **taskOptionButtons** (v1.357+): Per-cycle button visibility settings
+  - `customize`: -/+ customize button (always true, cannot be disabled)
+  - `moveArrows`: ▲▼ move task arrows (synced with global ui.moveArrowsVisible)
+  - `threeDots`: ⋮ three dots menu (synced with global settings.showThreeDots)
+  - `highPriority`: ⚡ high priority toggle
+  - `rename`: ✏️ rename/edit task
+  - `delete`: 🗑️ delete task
+  - `recurring`: 🔁 recurring task
+  - `dueDate`: 📅 due date
+  - `reminders`: 🔔 reminders
+
+### UI State (v1.357+)
+
+Global UI configuration:
+- **moveArrowsVisible**: Global arrow visibility setting (synced with all cycles' taskOptionButtons.moveArrows)
 
 ### App State
 

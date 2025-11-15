@@ -1,7 +1,7 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: November 9, 2025
-**Test Coverage**: 100% (958/958 tests passing) ✅
+**Last Updated**: November 15, 2025
+**Test Coverage**: 100% (1099/1099 tests passing) ✅
 **Platforms**: Mac ✅ | iPad ✅ | iPhone ✅
 
 ---
@@ -78,7 +78,9 @@ tests/
 ├── themeManager.tests.js           # ThemeManager tests
 ├── deviceDetection.tests.js        # DeviceDetection tests
 ├── cycleLoader.tests.js            # CycleLoader tests
-└── notifications.tests.js          # Notifications tests
+├── notifications.tests.js          # Notifications tests
+├── taskOptionsCustomizer.tests.js  # TaskOptionsCustomizer tests
+└── ... (33 modules total)
 ```
 
 ---

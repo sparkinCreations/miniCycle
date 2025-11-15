@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.357
+ * @version 1.358
  */
 
 export class TaskEvents {
@@ -29,7 +29,7 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.357';
+        this.version = '1.358';
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;
@@ -200,80 +200,32 @@ export class TaskEvents {
         const taskOptions = taskItem.querySelector(".task-options");
         if (!taskOptions) return;
 
+        // ✅ Check if this menu is currently visible
+        const isCurrentlyVisible = taskOptions.style.visibility === "visible";
+
         // 🧹 Hide all other task option menus
         document.querySelectorAll(".task-options").forEach(opts => {
             if (opts !== taskOptions) {
                 opts.style.visibility = "hidden";
                 opts.style.opacity = "0";
                 opts.style.pointerEvents = "none";
-
-                opts.querySelectorAll(".task-btn").forEach(btn => {
-                    btn.style.visibility = "hidden";
-                    btn.style.opacity = "0";
-                    btn.style.pointerEvents = "none";
-                });
             }
         });
 
-        // ✅ ALWAYS Show this task's options (no toggle for now)
-        taskOptions.style.visibility = "visible";
-        taskOptions.style.opacity = "1";
-        taskOptions.style.pointerEvents = "auto";
-
-        // Get settings
-        const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
-        const autoResetEnabled = toggleAutoReset?.checked;
-
-        // ✅ Early return if AppState not ready
-        if (!this.deps.AppState?.isReady?.()) {
-            console.log('⏳ revealTaskButtons deferred - AppState not ready');
-            return;
+        // ✅ Toggle this task's options container
+        if (isCurrentlyVisible) {
+            // Hide if already visible (second click)
+            taskOptions.style.visibility = "hidden";
+            taskOptions.style.opacity = "0";
+            taskOptions.style.pointerEvents = "none";
+        } else {
+            // Show if hidden (first click)
+            // ✅ UPDATED: No longer manipulates individual button visibility
+            // Button visibility is controlled by taskOptionButtons settings via .hidden class
+            taskOptions.style.visibility = "visible";
+            taskOptions.style.opacity = "1";
+            taskOptions.style.pointerEvents = "auto";
         }
-
-        const state = this.deps.AppState.get();
-        const activeCycleId = state?.appState?.activeCycleId;
-        const cycleData = state?.data?.cycles?.[activeCycleId] || {};
-        const deleteCheckedEnabled = cycleData.deleteCheckedTasks;
-        const alwaysShow = state?.settings?.alwaysShowRecurring === true;
-        const showRecurring = alwaysShow || (!autoResetEnabled && deleteCheckedEnabled);
-
-        // ✅ Check arrow visibility settings
-        const arrowsEnabled = state?.ui?.moveArrowsVisible || false;
-
-        // ✅ Get task position for arrow logic
-        const allTasks = document.querySelectorAll(".task");
-        const taskIndex = Array.from(allTasks).indexOf(taskItem);
-        const isFirstTask = taskIndex === 0;
-        const isLastTask = taskIndex === allTasks.length - 1;
-
-        taskOptions.querySelectorAll(".task-btn").forEach(btn => {
-            const isReminderBtn = btn.classList.contains("enable-task-reminders");
-            const isRecurringBtn = btn.classList.contains("recurring-btn");
-            const isDueDateBtn = btn.classList.contains("set-due-date");
-            const isUpArrow = btn.classList.contains("move-up");
-            const isDownArrow = btn.classList.contains("move-down");
-
-            let shouldShow;
-
-            // ✅ Special handling for arrows
-            if (isUpArrow || isDownArrow) {
-                shouldShow = arrowsEnabled && (
-                    (isUpArrow && !isFirstTask) ||
-                    (isDownArrow && !isLastTask)
-                );
-            } else {
-                // Regular button logic
-                shouldShow =
-                    (!isReminderBtn && !isRecurringBtn && !isDueDateBtn) ||
-                    (isRecurringBtn && showRecurring) ||
-                    (isDueDateBtn && !autoResetEnabled) ||
-                    (isReminderBtn);
-            }
-
-            btn.style.visibility = shouldShow ? "visible" : "hidden";
-            btn.style.opacity = shouldShow ? "1" : "0";
-            btn.style.pointerEvents = shouldShow ? "auto" : "none";
-        });
     }
 
     /**

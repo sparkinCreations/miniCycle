@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.357'
+            currentVersion: '1.358'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -787,6 +787,28 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 showNotification('Task DOM feature unavailable', 'warning', 3000);
             }
             console.warn('⚠️ App will continue without task DOM functionality');
+        }
+
+        // ✅ Initialize Task Options Customizer (Phase 2 module)
+        console.log('⚙️ Initializing task options customizer...');
+        try {
+            const { initTaskOptionsCustomizer } = await import(withV('./modules/ui/taskOptionsCustomizer.js'));
+
+            await initTaskOptionsCustomizer({
+                AppState: window.AppState,
+                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                getElementById: (id) => document.getElementById(id),
+                querySelector: (sel) => document.querySelector(sel),
+                renderTaskList: () => window.refreshTaskListUI?.()
+            });
+
+            console.log('✅ Task options customizer initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task options customizer:', error);
+            if (typeof showNotification === 'function') {
+                showNotification('Task customization feature unavailable', 'warning', 3000);
+            }
+            console.warn('⚠️ App will continue without task customization functionality');
         }
 
         // ✅ Initialize Reminders Module (Phase 2 module)
@@ -1858,10 +1880,22 @@ function loadMiniCycleData() {
         try {
             const state = window.AppState.get();
             if (state) {
+                // ✅ Load reminders from active cycle (per-cycle)
+                const activeCycleId = state.appState.activeCycleId;
+                const activeCycle = state.data.cycles[activeCycleId];
+                const reminders = activeCycle?.reminders || {
+                    enabled: false,
+                    indefinite: false,
+                    dueDatesReminders: false,
+                    repeatCount: 0,
+                    frequencyValue: 30,
+                    frequencyUnit: "minutes"
+                };
+
                 return {
                     cycles: state.data.cycles,
-                    activeCycle: state.appState.activeCycleId,
-                    reminders: state.customReminders,
+                    activeCycle: activeCycleId,
+                    reminders: reminders, // Per-cycle reminders
                     settings: state.settings
                 };
             }
@@ -1875,10 +1909,22 @@ function loadMiniCycleData() {
     if (data) {
         try {
             const parsed = JSON.parse(data);
+            // ✅ Load reminders from active cycle (per-cycle)
+            const activeCycleId = parsed.appState.activeCycleId;
+            const activeCycle = parsed.data.cycles[activeCycleId];
+            const reminders = activeCycle?.reminders || {
+                enabled: false,
+                indefinite: false,
+                dueDatesReminders: false,
+                repeatCount: 0,
+                frequencyValue: 30,
+                frequencyUnit: "minutes"
+            };
+
             return {
                 cycles: parsed.data.cycles,
-                activeCycle: parsed.appState.activeCycleId,
-                reminders: parsed.customReminders,
+                activeCycle: activeCycleId,
+                reminders: reminders, // Per-cycle reminders
                 settings: parsed.settings
             };
         } catch (error) {
@@ -1904,10 +1950,22 @@ function loadMiniCycleData() {
     const newData = localStorage.getItem("miniCycleData");
     if (newData) {
         const parsed = JSON.parse(newData);
+        // ✅ Load reminders from active cycle (per-cycle)
+        const activeCycleId = parsed.appState.activeCycleId;
+        const activeCycle = parsed.data.cycles[activeCycleId];
+        const reminders = activeCycle?.reminders || {
+            enabled: false,
+            indefinite: false,
+            dueDatesReminders: false,
+            repeatCount: 0,
+            frequencyValue: 30,
+            frequencyUnit: "minutes"
+        };
+
         return {
             cycles: parsed.data.cycles,
-            activeCycle: parsed.appState.activeCycleId,
-            reminders: parsed.customReminders,
+            activeCycle: activeCycleId,
+            reminders: reminders, // Per-cycle reminders
             settings: parsed.settings
         };
     }
@@ -2973,19 +3031,37 @@ document.addEventListener("click", (e) => {
       }
         const taskOptions = taskItem.querySelector(".task-options");
         if (!taskOptions) return;
-    
-        taskOptions.style.visibility = "hidden";
-        taskOptions.style.opacity = "0";
-        taskOptions.style.pointerEvents = "none";
-    
-        taskItem.querySelectorAll(".task-btn").forEach(btn => {
-            btn.style.visibility = "hidden";
-            btn.style.opacity = "0";
-            btn.style.pointerEvents = "none";
-        });
-    
-        // Keep layout and interactivity clean
-        updateMoveArrowsVisibility();
+
+        // ✅ Check if three-dots mode is enabled
+        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
+
+        if (threeDotsEnabled) {
+            // Three-dots mode: use inline styles to explicitly hide
+            taskOptions.style.visibility = "hidden";
+            taskOptions.style.opacity = "0";
+            taskOptions.style.pointerEvents = "none";
+
+            taskItem.querySelectorAll(".task-btn").forEach(btn => {
+                btn.style.visibility = "hidden";
+                btn.style.opacity = "0";
+                btn.style.pointerEvents = "none";
+            });
+        } else {
+            // Regular hover mode: clear inline styles to let CSS handle it
+            taskOptions.style.visibility = "";
+            taskOptions.style.opacity = "";
+            taskOptions.style.pointerEvents = "";
+
+            taskItem.querySelectorAll(".task-btn").forEach(btn => {
+                btn.style.visibility = "";
+                btn.style.opacity = "";
+                btn.style.pointerEvents = "";
+            });
+        }
+
+        // ✅ REMOVED: updateMoveArrowsVisibility() - was causing performance issues
+        // Arrow visibility is now controlled by taskOptionButtons customization
+        // and should only update when settings change, not on every hide event
     }
 
 
@@ -3600,14 +3676,25 @@ document.getElementById("open-reminders-modal")?.addEventListener("click", () =>
 safeAddEventListener(document, "click", (event) => {
     let isTaskOrOptionsClick = event.target.closest(".task, .task-options");
     let isModalClick = event.target.closest(".modal, .mini-modal-overlay, .settings-modal, .notification");
-    
+
     if (!isTaskOrOptionsClick && !isModalClick) {
         console.log("✅ Clicking outside - closing task buttons");
 
+        // ✅ Check if three-dots mode is enabled
+        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
+
         document.querySelectorAll(".task-options").forEach(action => {
-            action.style.opacity = "0";
-            action.style.visibility = "hidden";
-            action.style.pointerEvents = "none";
+            if (threeDotsEnabled) {
+                // Three-dots mode: use inline styles to explicitly hide
+                action.style.opacity = "0";
+                action.style.visibility = "hidden";
+                action.style.pointerEvents = "none";
+            } else {
+                // Regular hover mode: clear inline styles to let CSS handle it
+                action.style.opacity = "";
+                action.style.visibility = "";
+                action.style.pointerEvents = "";
+            }
         });
 
         document.querySelectorAll(".task").forEach(task => {

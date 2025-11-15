@@ -3,7 +3,7 @@
 > **Complete guide to testing miniCycle - functional tests, performance benchmarks, and quality assurance**
 
 **Current Status**:
-- ✅ **Functional Tests**: 1070/1070 (100%)
+- ✅ **Functional Tests**: 1099/1099 (100%)
 - ✅ **Performance Benchmarks**: 12/12 (100%)
 - ✅ **Execution Time**: 21.40ms total
 - ✅ **Memory Usage**: 9.54MB (0.3%)
@@ -28,7 +28,7 @@
 ### Run All Tests
 
 ```bash
-# 1. Functional tests (1070 tests, ~60s)
+# 1. Functional tests (1099 tests, ~60s)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -48,7 +48,7 @@ npm start
 **Available test suites:**
 - ⚡ Performance Benchmarks (this page)
 - 🔗 Integration Tests (E2E)
-- 32 module-specific test suites
+- 33 module-specific test suites (including TaskOptionsCustomizer)
 
 ---
 
@@ -61,12 +61,12 @@ tests/
 ├── automated/
 │   ├── run-browser-tests.js         # Main test runner (Playwright)
 │   └── run-performance-benchmarks.js # Performance runner
-├── *.tests.js                        # 32 test modules
+├── *.tests.js                        # 33 test modules
 ├── module-test-suite.html            # Browser test UI
 └── integration.tests.js              # E2E tests
 ```
 
-### Test Modules (32 Total)
+### Test Modules (33 Total)
 
 | Category | Modules | Tests |
 |----------|---------|-------|
@@ -74,12 +74,12 @@ tests/
 | **Task Management** | taskCore, taskValidation, taskUtils, taskRenderer, taskEvents, taskDOM | 166 |
 | **Cycle System** | cycleLoader, modeManager, cycleSwitcher, migrationManager | 100 |
 | **Recurring Tasks** | recurringCore, recurringIntegration, recurringPanel | 181 |
-| **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager | 239 |
+| **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager, taskOptionsCustomizer | 268 |
 | **Features** | notifications, statsPanel, themeManager, dragDropManager, dueDates, reminders | 197 |
 | **Utilities** | globalUtils, deviceDetection, consoleCapture | 76 |
 | **Security & Error Handling** | xssVulnerability, errorHandler | 59 |
 
-**Total**: 1070 tests across 32 modules
+**Total**: 1099 tests across 33 modules
 
 ### Running Specific Tests
 
@@ -101,7 +101,7 @@ npm start
 
 ```
 Module Coverage: 100% (32/32 modules)
-Test Pass Rate: 100% (1070/1070)
+Test Pass Rate: 100% (1099/1099)
 Lines Covered: ~12,000 lines across 33 modules
 ```
 
@@ -199,7 +199,7 @@ npm run lighthouse  # Terminal 2
 **Runs:**
 - Installs dependencies
 - Starts dev server
-- Runs 1070 automated tests
+- Runs 1099 automated tests
 - Tests on Node.js 18.x and 20.x
 
 **Status:**
@@ -296,7 +296,7 @@ npm run lighthouse  # Terminal 2
 ✅ xssVulnerability     25/25 tests
 ✅ errorHandler         34/34 tests
 
-🎉 All tests passed! (1070/1070 - 100%)
+🎉 All tests passed! (1099/1099 - 100%)
 ```
 
 ### Performance Benchmark Results
@@ -617,7 +617,7 @@ Before releasing:
 
 ```
 📊 Test Statistics
-├── Functional Tests: 1070/1070 (100%) ✅
+├── Functional Tests: 1099/1099 (100%) ✅
 ├── Performance Tests: 12/12 (100%) ✅
 ├── Module Coverage: 32/32 (100%) ✅
 ├── Line Coverage: ~12,000 lines ✅

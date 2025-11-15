@@ -441,13 +441,13 @@ export async function runDragDropManagerTests(resultsDiv) {
         manager.updateArrowsInDOM(true);
 
         // First task's up button should be hidden (at top)
-        if (upBtn1.style.visibility !== 'hidden') {
-            throw new Error('First task up button should be hidden');
+        if (!upBtn1.classList.contains('hidden')) {
+            throw new Error('First task up button should have hidden class');
         }
 
-        // Second task's up button should be visible
-        if (upBtn2.style.visibility !== 'visible') {
-            throw new Error('Second task up button should be visible');
+        // Second task's up button should be visible (no hidden class)
+        if (upBtn2.classList.contains('hidden')) {
+            throw new Error('Second task up button should not have hidden class');
         }
 
         // Cleanup
@@ -472,11 +472,11 @@ export async function runDragDropManagerTests(resultsDiv) {
 
         manager.updateArrowsInDOM(false);
 
-        if (upBtn.style.visibility !== 'hidden') {
-            throw new Error('Up button should be hidden when arrows disabled');
+        if (!upBtn.classList.contains('hidden')) {
+            throw new Error('Up button should have hidden class when arrows disabled');
         }
-        if (downBtn.style.visibility !== 'hidden') {
-            throw new Error('Down button should be hidden when arrows disabled');
+        if (!downBtn.classList.contains('hidden')) {
+            throw new Error('Down button should have hidden class when arrows disabled');
         }
 
         // Cleanup
