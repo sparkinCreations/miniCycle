@@ -2972,7 +2972,7 @@ document.addEventListener("click", (e) => {
        */
       safeAddEventListener(taskItem, "focusin", (e) => {
         const target = e.target;
-    
+
         // ✅ Skip if focusing on safe elements that shouldn't trigger button reveal
         if (
           target.classList.contains("task-text") ||
@@ -2981,7 +2981,14 @@ document.addEventListener("click", (e) => {
         ) {
           return;
         }
-    
+
+        // ✅ FIX: Don't auto-reveal options in three-dots mode - only the three-dots button should control visibility
+        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
+        if (threeDotsEnabled) {
+          console.log('⏭️ Skipping focusin auto-reveal (three-dots mode enabled)');
+          return;
+        }
+
         const options = taskItem.querySelector(".task-options");
         if (options) {
           options.style.opacity = "1";
@@ -3035,6 +3042,13 @@ document.addEventListener("click", (e) => {
         // ✅ Check if three-dots mode is enabled
         const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
 
+        console.log('🟠 hideTaskButtons called:', {
+            taskId: taskItem.dataset.id || 'unknown',
+            threeDotsEnabled,
+            currentVisibility: taskOptions.style.visibility || '(not set)',
+            timestamp: Date.now()
+        });
+
         if (threeDotsEnabled) {
             // Three-dots mode: use inline styles to explicitly hide
             taskOptions.style.visibility = "hidden";
@@ -3074,6 +3088,14 @@ document.addEventListener("click", (e) => {
         const isMobile = isTouchDevice();
         const allowShow = !isMobile || taskElement.classList.contains("long-pressed");
 
+        console.log('🟣 showTaskOptions (hover handler) called:', {
+            taskId: taskElement.dataset.id || 'unknown',
+            eventType: event.type,
+            isMobile,
+            isLongPressed: taskElement.classList.contains("long-pressed"),
+            allowShow
+        });
+
         if (allowShow) {
             // ✅ Use NEW taskDOM module function if available
             if (typeof window.revealTaskButtons === 'function') {
@@ -3091,6 +3113,14 @@ document.addEventListener("click", (e) => {
         // ✅ Only hide if not long-pressed on mobile (so buttons stay open during drag)
         const isMobile = isTouchDevice();
         const allowHide = !isMobile || !taskElement.classList.contains("long-pressed");
+
+        console.log('🔴 hideTaskOptions (mouseleave handler) called:', {
+            taskId: taskElement.dataset.id || 'unknown',
+            eventType: event.type,
+            isMobile,
+            isLongPressed: taskElement.classList.contains("long-pressed"),
+            allowHide
+        });
 
         if (allowHide) {
             hideTaskButtons(taskElement);

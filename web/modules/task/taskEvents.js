@@ -64,6 +64,7 @@ export class TaskEvents {
             const checkbox = taskItem.querySelector("input[type='checkbox']");
             const buttonContainer = taskItem.querySelector(".task-options");
             const dueDateInput = taskItem.querySelector(".due-date");
+            const threeDotsButton = taskItem.querySelector(".three-dots-btn");
 
             // ✅ Early return if checkbox not found (incomplete task structure)
             if (!checkbox) {
@@ -71,12 +72,20 @@ export class TaskEvents {
                 return;
             }
 
-            // Ignore clicks on checkbox, buttons, or due date input
-            if (event.target === checkbox ||
-                buttonContainer?.contains(event.target) ||
-                event.target === dueDateInput) {
+            // Ignore clicks on checkbox, buttons, three-dots button, or due date input
+            const isThreeDots = event.target === threeDotsButton || event.target.closest(".three-dots-btn");
+            const isCheckbox = event.target === checkbox;
+            const isButton = buttonContainer?.contains(event.target);
+            const isDueDate = event.target === dueDateInput;
+
+            if (isCheckbox || isThreeDots || isButton || isDueDate) {
+                if (isThreeDots) {
+                    console.log('🟡 Task delegation: Ignoring three-dots click (correct behavior)');
+                }
                 return;
             }
+
+            console.log('🟢 Task delegation: Processing task click (will toggle checkbox)');
 
             // ✅ Enable undo system on first user interaction
             if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
@@ -198,30 +207,52 @@ export class TaskEvents {
      */
     revealTaskButtons(taskItem) {
         const taskOptions = taskItem.querySelector(".task-options");
-        if (!taskOptions) return;
+        if (!taskOptions) {
+            console.warn('⚠️ revealTaskButtons: No .task-options found');
+            return;
+        }
 
-        // ✅ Check if this menu is currently visible
+        // ✅ FIX: Check INLINE visibility only (not computed) to avoid :hover pseudo-class interference
+        // Using inline style check ensures we're only checking state set by our code, not CSS rules
         const isCurrentlyVisible = taskOptions.style.visibility === "visible";
+        const computedStyle = window.getComputedStyle(taskOptions);
 
-        // 🧹 Hide all other task option menus
+        console.log('🔍 revealTaskButtons called:', {
+            taskId: taskItem.dataset.id || 'unknown',
+            inlineVisibility: taskOptions.style.visibility || '(not set)',
+            computedVisibility: computedStyle.visibility,
+            isCurrentlyVisible,
+            willToggleOff: isCurrentlyVisible
+        });
+
+        // 🧹 Hide all other task option menus FIRST
+        let hiddenCount = 0;
         document.querySelectorAll(".task-options").forEach(opts => {
             if (opts !== taskOptions) {
                 opts.style.visibility = "hidden";
                 opts.style.opacity = "0";
                 opts.style.pointerEvents = "none";
+                hiddenCount++;
             }
         });
 
-        // ✅ Toggle this task's options container
+        if (hiddenCount > 0) {
+            console.log(`🧹 Hidden ${hiddenCount} other task option menus`);
+        }
+
+        // ✅ FIX: Only toggle if clicking the SAME task again
+        // If clicking a different task, always show (don't toggle)
         if (isCurrentlyVisible) {
-            // Hide if already visible (second click)
+            // Hide if already visible (clicking same task again)
+            console.log('👆 TOGGLING OFF (same task clicked twice)');
             taskOptions.style.visibility = "hidden";
             taskOptions.style.opacity = "0";
             taskOptions.style.pointerEvents = "none";
         } else {
-            // Show if hidden (first click)
+            // Show if hidden (first click or switching tasks)
             // ✅ UPDATED: No longer manipulates individual button visibility
             // Button visibility is controlled by taskOptionButtons settings via .hidden class
+            console.log('✨ SHOWING task options (first click or switching tasks)');
             taskOptions.style.visibility = "visible";
             taskOptions.style.opacity = "1";
             taskOptions.style.pointerEvents = "auto";

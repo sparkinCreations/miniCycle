@@ -397,6 +397,15 @@ miniCycle is NOT a traditional task manager. It's a routine management system wh
 - Maintain backward compatibility with existing .mcyc files
 - Optional extractions are documented but not required
 
+### Event Flow & UI State Management (v1.359+)
+When working with event handlers that control shared UI state:
+- **Read [Event Flow Patterns](../architecture/EVENT_FLOW_PATTERNS.md)** - Essential guide for mode-aware event coordination
+- **Add mode checks** - Every handler must check if it should run in the current mode
+- **Centralize state control** - Use controller functions instead of scattered DOM manipulation
+- **Document event flow** - Maintain clear documentation of which handler runs when
+- **Watch for race conditions** - Focus/click/hover events can fire in unexpected order
+- **Example**: Task options visibility uses mode-aware guards to prevent focus events from interfering with three-dots button clicks
+
 ### Cross-Platform Considerations (November 2025 Fixes)
 When working with browser APIs, be aware of Safari/iOS differences:
 - **Always use Boolean()** for browser API checks (`Boolean(navigator.connection && ...)`)
@@ -414,3 +423,8 @@ When working with browser APIs, be aware of Safari/iOS differences:
 - Schema 2.5 enhancements: Added taskOptionButtons per cycle, global UI settings
 - CSS architecture: Migrated from inline styles to CSS class-based visibility (.hidden)
 - Responsive modal design: Desktop two-column with preview, mobile single-column
+
+**Recent Fixes (v1.359):**
+- Event Flow: Fixed three-dots button requiring double-click (focusin race condition)
+- Mode-aware guards: Added mode checks to focusin handler to prevent interference with three-dots mode
+- Documentation: Created EVENT_FLOW_PATTERNS.md architecture guide for future event coordination

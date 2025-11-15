@@ -1,6 +1,6 @@
 # miniCycle - Developer Documentation
 
-**Version**: 1.357
+**Version**: 1.359
 **Service Worker**: v82
 **Last Updated**: November 15, 2025
 **Modularization Status**: ✅ COMPLETE (74.8% reduction achieved!)
@@ -21,7 +21,8 @@
 8. [API Reference](#api-reference)
 9. [Development Workflow](#development-workflow)
 10. [Common Tasks & How-Tos](#common-tasks--how-tos)
-11. [Troubleshooting](#troubleshooting)
+11. [Event Flow & UI State Patterns](#event-flow--ui-state-patterns)
+12. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -3246,6 +3247,70 @@ web/
 - ✅ CSS architecture improvements - Migrated to class-based visibility (.hidden)
 - ✅ Error handling utilities - Safe localStorage and JSON parsing functions
 - ✅ Performance benchmarks - DOM manipulation, cycle operations, search/filter, JSON benchmarks
+
+---
+
+## Event Flow & UI State Patterns
+
+### Mode-Aware Event Coordination
+
+When building features with multiple event handlers that control the same UI element, you must coordinate them to prevent race conditions and conflicting behaviors.
+
+**Key Principle**: Each handler should check the current operational mode before modifying shared UI state.
+
+**Example Problem** (Fixed in v1.359):
+- Task options visibility controlled by hover, focus, AND three-dots button
+- `focusin` event fired BEFORE three-dots click, setting visibility to "visible"
+- Three-dots click handler saw options already visible and toggled them OFF
+- Result: Required double-click to show options
+
+**Solution**:
+```javascript
+// ✅ Mode-aware handler
+taskItem.addEventListener("focusin", (e) => {
+    // Check if three-dots mode is enabled
+    const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
+
+    if (threeDotsEnabled) {
+        // In three-dots mode, only the button should control visibility
+        console.log('⏭️ Skipping focusin auto-reveal (three-dots mode enabled)');
+        return;
+    }
+
+    // Proceed only in hover mode...
+});
+```
+
+### Essential Reading
+
+📖 **[Event Flow Patterns Architecture Guide](../architecture/EVENT_FLOW_PATTERNS.md)**
+
+This comprehensive guide covers:
+- ✅ Mode-aware event coordination patterns
+- ✅ Centralized visibility controllers
+- ✅ Event responsibility matrix
+- ✅ Common pitfalls and how to avoid them
+- ✅ Debugging strategies for race conditions
+- ✅ Complete case study: Task Options Visibility
+
+**When to Use These Patterns:**
+- Multiple event types control the same UI element
+- You have explicit operational modes (hover vs click, auto vs manual, etc.)
+- Timing/order of events matters
+- Adding new interaction patterns to existing features
+
+**Required for:**
+- Any event handler that shows/hides UI elements
+- Features with multiple interaction modes
+- Keyboard accessibility implementations
+- Touch/mouse/focus event coordination
+
+---
+
+**Previous Updates (November 15, 2025 - v1.359):**
+- ✅ Event flow patterns - Fixed three-dots button requiring double-click (focusin race condition)
+- ✅ Mode-aware guards - Added mode checks to prevent event handler conflicts
+- ✅ Architecture documentation - Created EVENT_FLOW_PATTERNS.md guide
 
 **Previous Updates (November 10, 2025):**
 - ✅ Folder structure reorganization - modules/ organized into domain subfolders

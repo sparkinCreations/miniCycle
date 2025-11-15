@@ -419,10 +419,20 @@ export class TaskDOMManager {
      * @param {Event} event - Click event
      */
     handleThreeDotsClick(taskItem, event) {
+        console.log('🔵 Three-dots button clicked:', {
+            taskId: taskItem.dataset.id || 'unknown',
+            eventType: event.type,
+            target: event.target.className,
+            timestamp: Date.now()
+        });
+
         event.stopPropagation();
+
         // Use revealTaskButtons from window (will be available)
         if (typeof window.revealTaskButtons === 'function') {
             window.revealTaskButtons(taskItem);
+        } else {
+            console.warn('⚠️ window.revealTaskButtons not available');
         }
     }
 

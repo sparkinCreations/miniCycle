@@ -23,6 +23,7 @@
 
 * **Architecture**
   * [AppInit Explained](architecture/APPINIT_EXPLAINED.md)
+  * [Event Flow Patterns](architecture/EVENT_FLOW_PATTERNS.md)
   * [Undo/Redo Architecture](architecture/UNDO_REDO_ARCHITECTURE.md)
   * [Drag & Drop Architecture](architecture/DRAG_DROP_ARCHITECTURE.md)
   * [Drag & Drop Long Press](architecture/DRAG_DROP_LONG_PRESS.md)
