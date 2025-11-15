@@ -400,11 +400,23 @@ miniCycle is NOT a traditional task manager. It's a routine management system wh
 ### Event Flow & UI State Management (v1.359+)
 When working with event handlers that control shared UI state:
 - **Read [Event Flow Patterns](../architecture/EVENT_FLOW_PATTERNS.md)** - Essential guide for mode-aware event coordination
-- **Add mode checks** - Every handler must check if it should run in the current mode
-- **Centralize state control** - Use controller functions instead of scattered DOM manipulation
+- **Use TaskOptionsVisibilityController** - Centralized controller now live (miniCycle-scripts.js:2974-3047)
+- **Mode-aware permissions** - Controller automatically checks if handler is allowed in current mode
 - **Document event flow** - Maintain clear documentation of which handler runs when
 - **Watch for race conditions** - Focus/click/hover events can fire in unexpected order
-- **Example**: Task options visibility uses mode-aware guards to prevent focus events from interfering with three-dots button clicks
+- **Implementation**: All task options visibility changes route through controller (6 handlers updated)
+
+**How to use the controller:**
+```javascript
+// Show task options
+TaskOptionsVisibilityController.show(taskItem, 'your-handler-name');
+
+// Hide task options
+TaskOptionsVisibilityController.hide(taskItem, 'your-handler-name');
+
+// Check current mode
+const mode = TaskOptionsVisibilityController.getMode(); // 'hover' | 'three-dots'
+```
 
 ### Cross-Platform Considerations (November 2025 Fixes)
 When working with browser APIs, be aware of Safari/iOS differences:
@@ -426,5 +438,6 @@ When working with browser APIs, be aware of Safari/iOS differences:
 
 **Recent Fixes (v1.359):**
 - Event Flow: Fixed three-dots button requiring double-click (focusin race condition)
-- Mode-aware guards: Added mode checks to focusin handler to prevent interference with three-dots mode
-- Documentation: Created EVENT_FLOW_PATTERNS.md architecture guide for future event coordination
+- TaskOptionsVisibilityController: Centralized controller for all task options visibility changes (miniCycle-scripts.js:2974-3047)
+- Mode-aware permissions: All 6 event handlers now route through controller with automatic mode checking
+- Documentation: Created EVENT_FLOW_PATTERNS.md architecture guide with full implementation examples

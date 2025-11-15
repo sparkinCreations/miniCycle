@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.359'
+            currentVersion: '1.360'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -2956,11 +2956,105 @@ document.addEventListener("click", (e) => {
 // ✅ sanitizeInput removed - now using module version from globalUtils.js
 
     /**
+ * ═══════════════════════════════════════════════════════════════════
+ * TASK OPTIONS VISIBILITY CONTROLLER
+ * ═══════════════════════════════════════════════════════════════════
+ *
+ * Centralized controller for task options visibility state.
+ * Coordinates between multiple interaction modes (hover, three-dots, focus)
+ * to prevent race conditions and conflicting behavior.
+ *
+ * MODES:
+ * - HOVER MODE: Options show on mouseenter/focusin, hide on mouseleave/focusout
+ * - THREE-DOTS MODE: Options show ONLY on three-dots button click (manual toggle)
+ *
+ * See: docs/architecture/EVENT_FLOW_PATTERNS.md for complete documentation
+ * ═══════════════════════════════════════════════════════════════════
+ */
+class TaskOptionsVisibilityController {
+    /**
+     * Get the current visibility mode
+     * @returns {'hover' | 'three-dots'} Current mode
+     */
+    static getMode() {
+        return document.body.classList.contains("show-three-dots-enabled") ? 'three-dots' : 'hover';
+    }
+
+    /**
+     * Check if a caller is allowed to change visibility in the current mode
+     * @param {string} caller - Identifier for the event handler calling this
+     * @returns {boolean} Whether the caller can modify visibility
+     */
+    static canHandle(caller) {
+        const mode = this.getMode();
+
+        const permissions = {
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout'],
+            'three-dots': ['three-dots-button', 'focusout']
+        };
+
+        return permissions[mode]?.includes(caller) || false;
+    }
+
+    /**
+     * Set task options visibility with mode-aware coordination
+     * @param {HTMLElement} taskItem - The task element
+     * @param {boolean} visible - Desired visibility state
+     * @param {string} caller - Identifier for the event handler (for logging/permissions)
+     * @returns {boolean} Whether the visibility was changed
+     */
+    static setVisibility(taskItem, visible, caller = 'unknown') {
+        const taskOptions = taskItem.querySelector('.task-options');
+        if (!taskOptions) {
+            console.warn(`⚠️ TaskOptionsVisibilityController: No .task-options found for ${caller}`);
+            return false;
+        }
+
+        // Check if this caller is allowed to change visibility in current mode
+        if (!this.canHandle(caller)) {
+            console.log(`⏭️ ${caller}: Skipping visibility change in ${this.getMode()} mode`);
+            return false;
+        }
+
+        // Apply visibility state
+        taskOptions.style.visibility = visible ? "visible" : "hidden";
+        taskOptions.style.opacity = visible ? "1" : "0";
+        taskOptions.style.pointerEvents = visible ? "auto" : "none";
+
+        console.log(`👁️ ${caller}: visibility → ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
+        return true;
+    }
+
+    /**
+     * Show task options (convenience method)
+     * @param {HTMLElement} taskItem - The task element
+     * @param {string} caller - Identifier for the event handler
+     * @returns {boolean} Whether the visibility was changed
+     */
+    static show(taskItem, caller) {
+        return this.setVisibility(taskItem, true, caller);
+    }
+
+    /**
+     * Hide task options (convenience method)
+     * @param {HTMLElement} taskItem - The task element
+     * @param {string} caller - Identifier for the event handler
+     * @returns {boolean} Whether the visibility was changed
+     */
+    static hide(taskItem, caller) {
+        return this.setVisibility(taskItem, false, caller);
+    }
+}
+
+// Export for global access
+window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
+
+    /**
  * ⌨️ Accessibility Helper: Toggles visibility of task buttons when task item is focused or blurred.
- * 
+ *
  * When navigating with the keyboard (e.g., using Tab), this ensures that the task option buttons
  * (edit, delete, reminders, etc.) are shown while the task is focused and hidden when it loses focus.
- * 
+ *
  * This provides a keyboard-accessible experience similar to mouse hover.
  *
  * @param {HTMLElement} taskItem - The task <li> element to attach listeners to.
@@ -2982,33 +3076,18 @@ document.addEventListener("click", (e) => {
           return;
         }
 
-        // ✅ FIX: Don't auto-reveal options in three-dots mode - only the three-dots button should control visibility
-        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
-        if (threeDotsEnabled) {
-          console.log('⏭️ Skipping focusin auto-reveal (three-dots mode enabled)');
-          return;
-        }
-
-        const options = taskItem.querySelector(".task-options");
-        if (options) {
-          options.style.opacity = "1";
-          options.style.visibility = "visible";
-          options.style.pointerEvents = "auto";
-        }
+        // ✅ Use centralized controller (handles mode checking automatically)
+        TaskOptionsVisibilityController.show(taskItem, 'focusin');
       });
-    
+
       /**
        * ⌨️ Hide task buttons when focus moves outside the entire task
        */
       safeAddEventListener(taskItem, "focusout", (e) => {
         if (taskItem.contains(e.relatedTarget)) return;
 
-        const options = taskItem.querySelector(".task-options");
-        if (options) {
-          options.style.opacity = "0";
-          options.style.visibility = "hidden";
-          options.style.pointerEvents = "none";
-        }
+        // ✅ Use centralized controller (handles mode checking automatically)
+        TaskOptionsVisibilityController.hide(taskItem, 'focusout');
       });
     }
 
@@ -3097,10 +3176,8 @@ document.addEventListener("click", (e) => {
         });
 
         if (allowShow) {
-            // ✅ Use NEW taskDOM module function if available
-            if (typeof window.revealTaskButtons === 'function') {
-                window.revealTaskButtons(taskElement);
-            }
+            // ✅ Use centralized controller (handles mode checking automatically)
+            TaskOptionsVisibilityController.show(taskElement, 'mouseenter');
         }
     }
 
@@ -3123,7 +3200,8 @@ document.addEventListener("click", (e) => {
         });
 
         if (allowHide) {
-            hideTaskButtons(taskElement);
+            // ✅ Use centralized controller (handles mode checking automatically)
+            TaskOptionsVisibilityController.hide(taskElement, 'mouseleave');
         }
     }
 

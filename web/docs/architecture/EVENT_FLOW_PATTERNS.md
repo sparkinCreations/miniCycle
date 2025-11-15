@@ -135,52 +135,109 @@ Document which handler is responsible in which mode:
 
 ### Pattern 3: Centralized Visibility Controller
 
-Instead of multiple handlers directly manipulating DOM:
+✅ **IMPLEMENTED in v1.359** - miniCycle now uses `TaskOptionsVisibilityController`
+
+Instead of multiple handlers directly manipulating DOM, all visibility changes route through a centralized controller:
 
 ```javascript
 /**
- * Single function to control task options visibility
- * Checks all mode conditions and applies appropriate logic
- *
- * @param {HTMLElement} taskItem - The task element
- * @param {boolean} shouldShow - Desired visibility state
- * @param {string} caller - Which handler is calling (for logging/debugging)
+ * ✅ ACTUAL IMPLEMENTATION (miniCycle-scripts.js:2974-3047)
+ * TaskOptionsVisibilityController - Centralized controller for task options visibility
  */
-function setTaskOptionsVisibility(taskItem, shouldShow, caller = 'unknown') {
-    const threeDotsMode = document.body.classList.contains("show-three-dots-enabled");
-    const taskOptions = taskItem.querySelector(".task-options");
-
-    if (!taskOptions) return;
-
-    // In three-dots mode, ONLY the three-dots button can control visibility
-    if (threeDotsMode && caller !== 'three-dots-button') {
-        console.log(`⏭️ Ignoring visibility change from ${caller} (three-dots mode)`);
-        return;
+class TaskOptionsVisibilityController {
+    /**
+     * Get the current visibility mode
+     * @returns {'hover' | 'three-dots'} Current mode
+     */
+    static getMode() {
+        return document.body.classList.contains("show-three-dots-enabled") ? 'three-dots' : 'hover';
     }
 
-    // Log state changes for debugging
-    console.log(`👁️ ${caller}: setting visibility to ${shouldShow ? 'visible' : 'hidden'}`);
+    /**
+     * Check if a caller is allowed to change visibility in the current mode
+     * @param {string} caller - Identifier for the event handler calling this
+     * @returns {boolean} Whether the caller can modify visibility
+     */
+    static canHandle(caller) {
+        const mode = this.getMode();
 
-    // Apply visibility state
-    taskOptions.style.visibility = shouldShow ? "visible" : "hidden";
-    taskOptions.style.opacity = shouldShow ? "1" : "0";
-    taskOptions.style.pointerEvents = shouldShow ? "auto" : "none";
+        const permissions = {
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout'],
+            'three-dots': ['three-dots-button', 'focusout']
+        };
+
+        return permissions[mode]?.includes(caller) || false;
+    }
+
+    /**
+     * Set task options visibility with mode-aware coordination
+     * @param {HTMLElement} taskItem - The task element
+     * @param {boolean} visible - Desired visibility state
+     * @param {string} caller - Identifier for the event handler (for logging/permissions)
+     * @returns {boolean} Whether the visibility was changed
+     */
+    static setVisibility(taskItem, visible, caller = 'unknown') {
+        const taskOptions = taskItem.querySelector('.task-options');
+        if (!taskOptions) {
+            console.warn(`⚠️ TaskOptionsVisibilityController: No .task-options found for ${caller}`);
+            return false;
+        }
+
+        // Check if this caller is allowed to change visibility in current mode
+        if (!this.canHandle(caller)) {
+            console.log(`⏭️ ${caller}: Skipping visibility change in ${this.getMode()} mode`);
+            return false;
+        }
+
+        // Apply visibility state
+        taskOptions.style.visibility = visible ? "visible" : "hidden";
+        taskOptions.style.opacity = visible ? "1" : "0";
+        taskOptions.style.pointerEvents = visible ? "auto" : "none";
+
+        console.log(`👁️ ${caller}: visibility → ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
+        return true;
+    }
+
+    /**
+     * Show task options (convenience method)
+     */
+    static show(taskItem, caller) {
+        return this.setVisibility(taskItem, true, caller);
+    }
+
+    /**
+     * Hide task options (convenience method)
+     */
+    static hide(taskItem, caller) {
+        return this.setVisibility(taskItem, false, caller);
+    }
 }
 
 // All handlers route through centralized controller
 taskItem.addEventListener("mouseenter", () => {
-    setTaskOptionsVisibility(taskItem, true, 'mouseenter');
+    TaskOptionsVisibilityController.show(taskItem, 'mouseenter');
 });
 
 taskItem.addEventListener("focusin", () => {
-    setTaskOptionsVisibility(taskItem, true, 'focusin');
+    TaskOptionsVisibilityController.show(taskItem, 'focusin');
 });
 
 threeDotsButton.addEventListener("click", () => {
     const currentlyVisible = taskOptions.style.visibility === "visible";
-    setTaskOptionsVisibility(taskItem, !currentlyVisible, 'three-dots-button');
+    if (currentlyVisible) {
+        TaskOptionsVisibilityController.hide(taskItem, 'three-dots-button');
+    } else {
+        TaskOptionsVisibilityController.show(taskItem, 'three-dots-button');
+    }
 });
 ```
+
+**Implementation Locations:**
+- **Controller Class**: `miniCycle-scripts.js:2974-3047`
+- **focusin/focusout**: `miniCycle-scripts.js:3080, 3090`
+- **mouseenter/mouseleave**: `miniCycle-scripts.js:3180, 3204`
+- **three-dots toggle**: `modules/task/taskEvents.js:243-247`
+- **focus handler**: `modules/task/taskEvents.js:360`
 
 **Benefits:**
 - ✅ Single source of truth for visibility logic
@@ -188,6 +245,7 @@ threeDotsButton.addEventListener("click", () => {
 - ✅ Easy to add logging/debugging
 - ✅ Changes to visibility logic only need one update
 - ✅ Clear audit trail of who changed what
+- ✅ Permission system prevents conflicting handlers
 
 ---
 
@@ -979,10 +1037,31 @@ class ModeManager {
 ### Key Takeaways
 
 1. **Mode awareness is critical** - Every event handler must check if it should run in the current mode
-2. **Centralize state management** - Don't scatter DOM manipulation across handlers
+2. **Centralize state management** - Don't scatter DOM manipulation across handlers ✅ **IMPLEMENTED**
 3. **Document event flow** - Future developers (including you!) need to understand the interaction model
 4. **Log liberally during debugging** - Comprehensive logging reveals timing issues and race conditions
 5. **Test mode transitions** - Ensure clean state when switching between operational modes
+
+### Implementation Status
+
+✅ **TaskOptionsVisibilityController is now live in miniCycle v1.359**
+
+All task options visibility changes now route through the centralized controller:
+- **Location**: `miniCycle-scripts.js:2974-3047`
+- **Usage**: All 6 event handlers (focusin, focusout, mouseenter, mouseleave, three-dots, focus)
+- **Benefits**: Single source of truth, mode-aware permissions, consistent logging
+
+**To use in new features:**
+```javascript
+// Show task options
+TaskOptionsVisibilityController.show(taskItem, 'your-handler-name');
+
+// Hide task options
+TaskOptionsVisibilityController.hide(taskItem, 'your-handler-name');
+
+// Check current mode
+const mode = TaskOptionsVisibilityController.getMode(); // 'hover' | 'three-dots'
+```
 
 ### When to Apply These Patterns
 
@@ -1002,4 +1081,5 @@ Use mode-aware coordination when:
 ---
 
 **Document History:**
+- v1.1 (Nov 15, 2025): Added implementation status - TaskOptionsVisibilityController now live
 - v1.0 (Nov 15, 2025): Initial version based on three-dots debugging session

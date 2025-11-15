@@ -3264,28 +3264,47 @@ When building features with multiple event handlers that control the same UI ele
 - Three-dots click handler saw options already visible and toggled them OFF
 - Result: Required double-click to show options
 
-**Solution**:
+**Solution - TaskOptionsVisibilityController**:
 ```javascript
-// ✅ Mode-aware handler
-taskItem.addEventListener("focusin", (e) => {
-    // Check if three-dots mode is enabled
-    const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
-
-    if (threeDotsEnabled) {
-        // In three-dots mode, only the button should control visibility
-        console.log('⏭️ Skipping focusin auto-reveal (three-dots mode enabled)');
-        return;
+// ✅ IMPLEMENTED: Centralized controller for all visibility changes
+class TaskOptionsVisibilityController {
+    static show(taskItem, caller) {
+        // Automatically checks mode permissions
+        // Only allows handler if permitted in current mode
     }
 
-    // Proceed only in hover mode...
+    static hide(taskItem, caller) {
+        // Automatically checks mode permissions
+    }
+
+    static getMode() {
+        // Returns 'hover' or 'three-dots'
+    }
+}
+
+// All handlers use the controller
+taskItem.addEventListener("focusin", (e) => {
+    // Controller automatically checks if focusin is allowed in current mode
+    TaskOptionsVisibilityController.show(taskItem, 'focusin');
+});
+
+taskItem.addEventListener("click", () => {
+    TaskOptionsVisibilityController.show(taskItem, 'three-dots-button');
 });
 ```
+
+**Implementation Details:**
+- **Controller Location**: `miniCycle-scripts.js:2974-3047`
+- **Handler Updates**: 6 event handlers now use the controller
+- **Permission System**: Mode-aware rules prevent conflicting handlers
+- **Benefits**: Single source of truth, consistent logging, easier debugging
 
 ### Essential Reading
 
 📖 **[Event Flow Patterns Architecture Guide](../architecture/EVENT_FLOW_PATTERNS.md)**
 
 This comprehensive guide covers:
+- ✅ **TaskOptionsVisibilityController implementation** (now live in v1.359)
 - ✅ Mode-aware event coordination patterns
 - ✅ Centralized visibility controllers
 - ✅ Event responsibility matrix
@@ -3299,6 +3318,18 @@ This comprehensive guide covers:
 - Timing/order of events matters
 - Adding new interaction patterns to existing features
 
+**How to Use TaskOptionsVisibilityController in Your Code:**
+```javascript
+// Show task options
+TaskOptionsVisibilityController.show(taskItem, 'your-handler-name');
+
+// Hide task options
+TaskOptionsVisibilityController.hide(taskItem, 'your-handler-name');
+
+// Check current mode
+const mode = TaskOptionsVisibilityController.getMode(); // 'hover' | 'three-dots'
+```
+
 **Required for:**
 - Any event handler that shows/hides UI elements
 - Features with multiple interaction modes
@@ -3309,8 +3340,9 @@ This comprehensive guide covers:
 
 **Previous Updates (November 15, 2025 - v1.359):**
 - ✅ Event flow patterns - Fixed three-dots button requiring double-click (focusin race condition)
-- ✅ Mode-aware guards - Added mode checks to prevent event handler conflicts
-- ✅ Architecture documentation - Created EVENT_FLOW_PATTERNS.md guide
+- ✅ TaskOptionsVisibilityController - Centralized controller for task options visibility (miniCycle-scripts.js:2974-3047)
+- ✅ Mode-aware permissions - All 6 event handlers now route through controller with automatic mode checking
+- ✅ Architecture documentation - Created EVENT_FLOW_PATTERNS.md guide with implementation examples
 
 **Previous Updates (November 10, 2025):**
 - ✅ Folder structure reorganization - modules/ organized into domain subfolders

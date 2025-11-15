@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.359
+ * @version 1.360
  */
 
 export class TaskEvents {
@@ -29,7 +29,7 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.359';
+        this.version = '1.360';
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;
@@ -212,26 +212,22 @@ export class TaskEvents {
             return;
         }
 
-        // ✅ FIX: Check INLINE visibility only (not computed) to avoid :hover pseudo-class interference
-        // Using inline style check ensures we're only checking state set by our code, not CSS rules
+        // Check current visibility state
         const isCurrentlyVisible = taskOptions.style.visibility === "visible";
-        const computedStyle = window.getComputedStyle(taskOptions);
 
         console.log('🔍 revealTaskButtons called:', {
             taskId: taskItem.dataset.id || 'unknown',
             inlineVisibility: taskOptions.style.visibility || '(not set)',
-            computedVisibility: computedStyle.visibility,
             isCurrentlyVisible,
-            willToggleOff: isCurrentlyVisible
+            willToggle: isCurrentlyVisible ? 'OFF' : 'ON'
         });
 
         // 🧹 Hide all other task option menus FIRST
         let hiddenCount = 0;
         document.querySelectorAll(".task-options").forEach(opts => {
             if (opts !== taskOptions) {
-                opts.style.visibility = "hidden";
-                opts.style.opacity = "0";
-                opts.style.pointerEvents = "none";
+                // Use controller for consistency
+                window.TaskOptionsVisibilityController?.hide(opts.closest('.task'), 'three-dots-button');
                 hiddenCount++;
             }
         });
@@ -240,22 +236,15 @@ export class TaskEvents {
             console.log(`🧹 Hidden ${hiddenCount} other task option menus`);
         }
 
-        // ✅ FIX: Only toggle if clicking the SAME task again
-        // If clicking a different task, always show (don't toggle)
+        // Toggle visibility using centralized controller
         if (isCurrentlyVisible) {
             // Hide if already visible (clicking same task again)
             console.log('👆 TOGGLING OFF (same task clicked twice)');
-            taskOptions.style.visibility = "hidden";
-            taskOptions.style.opacity = "0";
-            taskOptions.style.pointerEvents = "none";
+            window.TaskOptionsVisibilityController?.hide(taskItem, 'three-dots-button');
         } else {
             // Show if hidden (first click or switching tasks)
-            // ✅ UPDATED: No longer manipulates individual button visibility
-            // Button visibility is controlled by taskOptionButtons settings via .hidden class
-            console.log('✨ SHOWING task options (first click or switching tasks)');
-            taskOptions.style.visibility = "visible";
-            taskOptions.style.opacity = "1";
-            taskOptions.style.pointerEvents = "auto";
+            console.log('✨ TOGGLING ON (first click or switching tasks)');
+            window.TaskOptionsVisibilityController?.show(taskItem, 'three-dots-button');
         }
     }
 
@@ -367,21 +356,11 @@ export class TaskEvents {
         const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
 
         addListener(taskItem, "focus", () => {
-            // ✅ Only show buttons on focus if three dots mode is NOT enabled
-            const AppState = this.deps.AppState;
-            const threeDotsEnabled = AppState?.isReady?.() && AppState.get()?.settings?.showThreeDots;
-
-            if (!threeDotsEnabled) {
-                const options = taskItem.querySelector(".task-options");
-                if (options) {
-                    options.style.opacity = "1";
-                    options.style.visibility = "visible";
-                    options.style.pointerEvents = "auto";
-                }
-            }
+            // ✅ Use centralized controller (handles mode checking automatically)
+            window.TaskOptionsVisibilityController?.show(taskItem, 'focusin');
         });
 
-        // Keyboard task option toggle
+        // Keyboard task option toggle (handles focusin/focusout with better bubbling)
         if (typeof window.attachKeyboardTaskOptionToggle === 'function') {
             window.attachKeyboardTaskOptionToggle(taskItem);
         }
