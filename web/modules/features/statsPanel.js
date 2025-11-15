@@ -10,7 +10,7 @@
  * - Theme unlock status management
  * - Navigation dot updates
  *
- * @version 1.358
+ * @version 1.359
  * @author miniCycle Development Team
  */
 
@@ -891,7 +891,7 @@ export class StatsPanelManager {
                         needsUpdate = true;
                     }
                 }
-            }, true); // immediate save
+            }, needsUpdate); // ✅ FIX: Only immediate save if themes were actually unlocked
 
             if (needsUpdate) {
                 console.log('✅ Themes/features unlocked via state system (global cycles)');
@@ -1217,7 +1217,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.358',
+            version: '1.359',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config
