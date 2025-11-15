@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.360
+ * @version 1.362
  */
 
 import { appInit } from '../core/appInit.js';
@@ -166,7 +166,8 @@ export class DragDropManager {
             let isLongPress = false;
             let isTap = false;
             let preventClick = false;
-            const moveThreshold = 30; // ✅ FIX: Increased from 15px to 30px for mobile (retina screens need higher threshold)
+            const cancelThreshold = 50; // ✅ Cancel long press if moving more than this (scrolling intent)
+            const scrollThreshold = 20;  // ✅ Detect vertical scrolling intent (must be significant movement)
 
             // 📱 **Touch-based Drag for Mobile**
             taskElement.addEventListener("touchstart", (event) => {
@@ -190,11 +191,10 @@ export class DragDropManager {
                 holdTimeout = setTimeout(() => {
                     isLongPress = true;
                     isTap = false;
-                    if (window.AppGlobalState) {
-                        window.AppGlobalState.draggedTask = taskElement;
-                    }
-                    isDragging = true;
-                    taskElement.classList.add("dragging", "long-pressed");
+
+                    // ✅ FIX: Don't set isDragging yet - only reveal task options
+                    // Dragging will be enabled on touchmove if readyToDrag is true (line 233)
+                    taskElement.classList.add("long-pressed");
 
                     event.preventDefault();
 
@@ -211,8 +211,8 @@ export class DragDropManager {
                 const deltaX = Math.abs(touchMoveX - touchStartX);
                 const deltaY = Math.abs(touchMoveY - touchStartY);
 
-                // ✅ FIX: Cancel long press if moving too much (prevents accidental long press during scrolling)
-                if (deltaX > moveThreshold || deltaY > moveThreshold) {
+                // ✅ FIX: Cancel long press only if moving A LOT (clear scrolling/swipe intent)
+                if (deltaX > cancelThreshold || deltaY > cancelThreshold) {
                     clearTimeout(holdTimeout);
                     isLongPress = false;
                     isTap = false;
@@ -220,8 +220,9 @@ export class DragDropManager {
                     return;
                 }
 
-                // ✅ FIX: Allow normal scrolling if moving vertically (even slight vertical movement cancels long press)
-                if (deltaY > deltaX && deltaY > 5) { // Require at least 5px vertical movement to distinguish from jitter
+                // ✅ FIX: Detect vertical scrolling intent (significant vertical movement)
+                // Only cancel if user is clearly scrolling, not just finger jitter
+                if (deltaY > scrollThreshold && deltaY > deltaX * 1.5) {
                     clearTimeout(holdTimeout);
                     isTap = false;
                     taskElement.classList.remove("long-pressed");
