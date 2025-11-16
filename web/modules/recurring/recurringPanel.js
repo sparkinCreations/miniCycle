@@ -1892,7 +1892,33 @@ export class RecurringPanelManager {
     createTaskSummaryPreview() {
         const container = document.createElement('div');
         container.id = 'recurring-summary-preview';
-        container.className = 'recurring-summary-preview';
+        container.className = 'recurring-summary-preview hidden';
+
+        // Create inner structure
+        const summaryBox = document.createElement('div');
+        summaryBox.className = 'summary-box';
+
+        const previewText = document.createElement('p');
+        previewText.id = 'recurring-preview-text';
+
+        const changeBtn = document.createElement('button');
+        changeBtn.id = 'change-recurring-settings';
+        changeBtn.className = 'change-recurring-btn';
+        changeBtn.textContent = 'Change Recurring Settings';
+
+        // Attach click listener to button
+        changeBtn.addEventListener('click', () => {
+            console.log('🔧 Change recurring settings clicked');
+            if (this.state.selectedTaskId) {
+                this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
+            } else {
+                console.warn('⚠️ No task selected for changing settings');
+            }
+        });
+
+        summaryBox.appendChild(previewText);
+        summaryBox.appendChild(changeBtn);
+        container.appendChild(summaryBox);
 
         const panel = this.deps.getElementById('recurring-panel');
         if (panel) {
