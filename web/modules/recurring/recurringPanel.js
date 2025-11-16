@@ -271,12 +271,15 @@ export class RecurringPanelManager {
             if (removeBtn) {
                 event.stopPropagation();
                 const taskId = item.getAttribute("data-task-id");
-                if (taskId) {
-                    // Find task from data
-                    const cycleData = this.deps.loadData();
-                    const task = cycleData.cycles[cycleData.activeCycle]?.tasks.find(t => t.id === taskId);
-                    if (task) {
-                        this.handleRemoveTask(task, item);
+                if (taskId && this.deps.isAppStateReady()) {
+                    // Get template from recurringTemplates (not tasks array)
+                    const currentState = this.deps.getAppState();
+                    const activeCycleId = currentState.appState?.activeCycleId;
+                    const currentCycle = currentState.data?.cycles?.[activeCycleId];
+                    const template = currentCycle?.recurringTemplates?.[taskId];
+
+                    if (template) {
+                        this.handleRemoveTask(template, item);
                     }
                 }
                 return;
@@ -291,14 +294,20 @@ export class RecurringPanelManager {
             const taskId = item.getAttribute("data-task-id");
             this.state.selectedTaskId = taskId;
 
-            // Get fresh data from AppState
+            // Get fresh data from AppState - ONLY use recurringTemplates
             if (this.deps.isAppStateReady()) {
                 const currentState = this.deps.getAppState();
                 const activeCycleId = currentState.appState?.activeCycleId;
                 const currentCycle = currentState.data?.cycles?.[activeCycleId];
-                const fullTask = currentCycle?.tasks.find(t => t.id === taskId);
-                if (fullTask) {
-                    this.showTaskSummaryPreview(fullTask);
+
+                // Get task from recurringTemplates ONLY (independent from tasks array)
+                const template = currentCycle?.recurringTemplates?.[taskId];
+
+                if (template) {
+                    // Use the template directly (it has all needed properties)
+                    this.showTaskSummaryPreview(template);
+                } else {
+                    console.warn('⚠️ Template not found for task:', taskId);
                 }
             }
         });
@@ -1529,13 +1538,9 @@ export class RecurringPanelManager {
             console.log('📊 Processing recurring templates:', Object.keys(cycleData.recurringTemplates || {}).length);
             console.log('🔍 Template IDs found:', Object.keys(cycleData.recurringTemplates || {}));
 
-            const templateTasks = Object.values(cycleData.recurringTemplates || {});
-            console.log('📋 Template tasks:', templateTasks.map(t => ({ id: t.id, text: t.text })));
-            
-            const recurringTasks = templateTasks.map(template => {
-                const existingTask = cycleData.tasks.find(t => t.id === template.id);
-                return existingTask || template;
-            });
+            // Use templates directly - they are the source of truth, independent of tasks array
+            const recurringTasks = Object.values(cycleData.recurringTemplates || {});
+            console.log('📋 Recurring templates:', recurringTasks.map(t => ({ id: t.id, text: t.text })));
 
             // Clear existing list
             recurringList.innerHTML = "";
