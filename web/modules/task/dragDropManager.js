@@ -336,51 +336,62 @@ export class DragDropManager {
 
             document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
 
-            if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) {
-                // ✅ Verify nodes are still valid before DOM manipulation
-                if (!document.contains(window.AppGlobalState.draggedTask) || !parent.contains) {
-                    console.warn('⚠️ DOM nodes became invalid before appendChild');
-                    return;
-                }
-                parent.appendChild(window.AppGlobalState.draggedTask);
-                window.AppGlobalState.draggedTask.classList.add("drop-target");
-                return;
-            }
-
-            if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) {
-                // ✅ Verify nodes are still valid before DOM manipulation
-                if (!document.contains(window.AppGlobalState.draggedTask) || !parent.firstChild) {
-                    console.warn('⚠️ DOM nodes became invalid before insertBefore (first child)');
-                    return;
-                }
-                parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild);
-                window.AppGlobalState.draggedTask.classList.add("drop-target");
-                return;
-            }
-
-            if (offset > bounding.height / 3) {
-                if (target.nextSibling !== window.AppGlobalState.draggedTask) {
+            // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
+            try {
+                if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) {
                     // ✅ Verify nodes are still valid before DOM manipulation
-                    if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
-                        console.warn('⚠️ DOM nodes became invalid before insertBefore (next sibling)');
+                    if (!document.contains(window.AppGlobalState.draggedTask) || !parent.contains) {
+                        console.warn('⚠️ DOM nodes became invalid before appendChild');
                         return;
                     }
-                    parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
+                    parent.appendChild(window.AppGlobalState.draggedTask);
+                    window.AppGlobalState.draggedTask.classList.add("drop-target");
+                    return;
                 }
-            } else {
-                if (target.previousSibling !== window.AppGlobalState.draggedTask) {
-                    // ✅ Verify nodes are still valid before DOM manipulation (line 357 fix)
-                    if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
-                        console.warn('⚠️ DOM nodes became invalid before insertBefore (target)');
-                        return;
-                    }
-                    parent.insertBefore(window.AppGlobalState.draggedTask, target);
-                }
-            }
 
-            // ✅ Final verification before adding class
-            if (window.AppGlobalState.draggedTask && document.contains(window.AppGlobalState.draggedTask)) {
-                window.AppGlobalState.draggedTask.classList.add("drop-target");
+                if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) {
+                    // ✅ Verify nodes are still valid before DOM manipulation
+                    if (!document.contains(window.AppGlobalState.draggedTask) || !parent.firstChild) {
+                        console.warn('⚠️ DOM nodes became invalid before insertBefore (first child)');
+                        return;
+                    }
+                    parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild);
+                    window.AppGlobalState.draggedTask.classList.add("drop-target");
+                    return;
+                }
+
+                if (offset > bounding.height / 3) {
+                    if (target.nextSibling !== window.AppGlobalState.draggedTask) {
+                        // ✅ Verify nodes are still valid before DOM manipulation
+                        if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
+                            console.warn('⚠️ DOM nodes became invalid before insertBefore (next sibling)');
+                            return;
+                        }
+                        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
+                    }
+                } else {
+                    if (target.previousSibling !== window.AppGlobalState.draggedTask) {
+                        // ✅ Verify nodes are still valid before DOM manipulation (line 357 fix)
+                        if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
+                            console.warn('⚠️ DOM nodes became invalid before insertBefore (target)');
+                            return;
+                        }
+                        parent.insertBefore(window.AppGlobalState.draggedTask, target);
+                    }
+                }
+
+                // ✅ Final verification before adding class
+                if (window.AppGlobalState.draggedTask && document.contains(window.AppGlobalState.draggedTask)) {
+                    window.AppGlobalState.draggedTask.classList.add("drop-target");
+                }
+            } catch (error) {
+                // ✅ Gracefully handle DOM manipulation errors (e.g., NotFoundError during race conditions)
+                console.warn('⚠️ DOM manipulation failed during rearrange (likely race condition):', error.message);
+                // Clear dragging state to prevent stuck UI
+                if (window.AppGlobalState.draggedTask) {
+                    window.AppGlobalState.draggedTask.classList.remove("dragging", "drop-target");
+                }
+                return;
             }
         }, this.REARRANGE_DELAY);
     }

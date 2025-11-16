@@ -413,9 +413,9 @@ function toggleHoverTaskOptions(enableHover) {
     taskEvents.toggleHoverTaskOptions(enableHover);
 }
 
-function revealTaskButtons(taskItem) {
+function revealTaskButtons(taskItem, caller = 'three-dots-button') {
     if (!taskEvents) return;
-    taskEvents.revealTaskButtons(taskItem);
+    taskEvents.revealTaskButtons(taskItem, caller);
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {
