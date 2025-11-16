@@ -2988,9 +2988,16 @@ class TaskOptionsVisibilityController {
     static canHandle(caller) {
         const mode = this.getMode();
 
+        // 🟣 Always allow long-press, regardless of mode
+        // This guarantees mobile long-press can reveal options
+        // whether three-dots is enabled or not.
+        if (caller === 'long-press') {
+            return true;
+        }
+
         const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons', 'long-press'],
-            'three-dots': ['three-dots-button', 'focusout', 'long-press']  // hideTaskButtons NOT allowed, but long-press allowed as accessibility fallback
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
+            'three-dots': ['three-dots-button', 'focusout']
         };
 
         return permissions[mode]?.includes(caller) || false;

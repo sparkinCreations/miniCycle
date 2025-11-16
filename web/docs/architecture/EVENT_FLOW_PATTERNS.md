@@ -135,6 +135,8 @@ Document which handler is responsible in which mode:
 | `long-press` | ✅ Show options | ✅ Show options | Touch device long-press (all modes) |
 | Three-dots click | ❌ N/A | ✅ Toggle visibility | Explicit control in three-dots mode |
 
+**Note on `long-press`:** This caller is hard-wired to always return `true` from `canHandle()`, regardless of mode. This ensures mobile users always have a reliable way to access task options via long-press, whether three-dots is enabled or not. This is implemented as an early return in the permission check rather than being listed in the permissions map.
+
 ### Pattern 3: Centralized Visibility Controller
 
 ✅ **IMPLEMENTED in v1.359** - miniCycle now uses `TaskOptionsVisibilityController`
@@ -163,9 +165,16 @@ class TaskOptionsVisibilityController {
     static canHandle(caller) {
         const mode = this.getMode();
 
+        // 🟣 Always allow long-press, regardless of mode
+        // This guarantees mobile long-press can reveal options
+        // whether three-dots is enabled or not.
+        if (caller === 'long-press') {
+            return true;
+        }
+
         const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons', 'long-press'],
-            'three-dots': ['three-dots-button', 'focusout', 'long-press']  // hideTaskButtons NOT allowed, but long-press is!
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
+            'three-dots': ['three-dots-button', 'focusout']
         };
 
         return permissions[mode]?.includes(caller) || false;
