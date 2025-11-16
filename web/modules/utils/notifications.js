@@ -14,7 +14,7 @@
  *   notifications.show("Hello World!", "success", 3000);
  *
  * @module notifications
- * @version 1.364
+ * @version 1.365
  * @requires AppInit (for initialization coordination)
  */
 

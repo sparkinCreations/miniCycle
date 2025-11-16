@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.364'
+            currentVersion: '1.365'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -3113,6 +3113,12 @@ window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
 
       if (taskItem.classList.contains("rearranging")) {
         console.log("⏳ Skipping hide during task rearrangement");
+        return;
+      }
+
+      // ✅ Don't hide if task is long-pressed (mobile long-press in progress)
+      if (taskItem.classList.contains("long-pressed")) {
+        console.log("⏳ Skipping hide during long-press");
         return;
       }
 

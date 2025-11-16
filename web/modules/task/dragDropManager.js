@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.364
+ * @version 1.365
  */
 
 import { appInit } from '../core/appInit.js';
@@ -337,12 +337,22 @@ export class DragDropManager {
             document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
 
             if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) {
+                // ✅ Verify nodes are still valid before DOM manipulation
+                if (!document.contains(window.AppGlobalState.draggedTask) || !parent.contains) {
+                    console.warn('⚠️ DOM nodes became invalid before appendChild');
+                    return;
+                }
                 parent.appendChild(window.AppGlobalState.draggedTask);
                 window.AppGlobalState.draggedTask.classList.add("drop-target");
                 return;
             }
 
             if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) {
+                // ✅ Verify nodes are still valid before DOM manipulation
+                if (!document.contains(window.AppGlobalState.draggedTask) || !parent.firstChild) {
+                    console.warn('⚠️ DOM nodes became invalid before insertBefore (first child)');
+                    return;
+                }
                 parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild);
                 window.AppGlobalState.draggedTask.classList.add("drop-target");
                 return;
@@ -350,15 +360,28 @@ export class DragDropManager {
 
             if (offset > bounding.height / 3) {
                 if (target.nextSibling !== window.AppGlobalState.draggedTask) {
+                    // ✅ Verify nodes are still valid before DOM manipulation
+                    if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
+                        console.warn('⚠️ DOM nodes became invalid before insertBefore (next sibling)');
+                        return;
+                    }
                     parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
                 }
             } else {
                 if (target.previousSibling !== window.AppGlobalState.draggedTask) {
+                    // ✅ Verify nodes are still valid before DOM manipulation (line 357 fix)
+                    if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
+                        console.warn('⚠️ DOM nodes became invalid before insertBefore (target)');
+                        return;
+                    }
                     parent.insertBefore(window.AppGlobalState.draggedTask, target);
                 }
             }
 
-            window.AppGlobalState.draggedTask.classList.add("drop-target");
+            // ✅ Final verification before adding class
+            if (window.AppGlobalState.draggedTask && document.contains(window.AppGlobalState.draggedTask)) {
+                window.AppGlobalState.draggedTask.classList.add("drop-target");
+            }
         }, this.REARRANGE_DELAY);
     }
 
