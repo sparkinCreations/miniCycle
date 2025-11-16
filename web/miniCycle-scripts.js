@@ -2989,8 +2989,8 @@ class TaskOptionsVisibilityController {
         const mode = this.getMode();
 
         const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout'],
-            'three-dots': ['three-dots-button', 'focusout']
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
+            'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed in three-dots mode!
         };
 
         return permissions[mode]?.includes(caller) || false;
@@ -3115,41 +3115,38 @@ window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
         console.log("⏳ Skipping hide during task rearrangement");
         return;
       }
+
+        // ✅ Use centralized controller instead of direct manipulation
+        // Controller will check permissions and skip if not allowed in current mode
+        // In three-dots mode: hideTaskButtons is NOT in the permissions list,
+        // so it won't be able to override the three-dots button's visibility control
+        const wasHidden = TaskOptionsVisibilityController.hide(taskItem, 'hideTaskButtons');
+
+        if (!wasHidden) {
+            console.log('⏭️ hideTaskButtons: Skipped by controller (three-dots mode protection)');
+            return;
+        }
+
+        // Clear individual button inline styles if we successfully hid
         const taskOptions = taskItem.querySelector(".task-options");
-        if (!taskOptions) return;
+        if (taskOptions) {
+            const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
 
-        // ✅ Check if three-dots mode is enabled
-        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
-
-        console.log('🟠 hideTaskButtons called:', {
-            taskId: taskItem.dataset.id || 'unknown',
-            threeDotsEnabled,
-            currentVisibility: taskOptions.style.visibility || '(not set)',
-            timestamp: Date.now()
-        });
-
-        if (threeDotsEnabled) {
-            // Three-dots mode: use inline styles to explicitly hide
-            taskOptions.style.visibility = "hidden";
-            taskOptions.style.opacity = "0";
-            taskOptions.style.pointerEvents = "none";
-
-            taskItem.querySelectorAll(".task-btn").forEach(btn => {
-                btn.style.visibility = "hidden";
-                btn.style.opacity = "0";
-                btn.style.pointerEvents = "none";
-            });
-        } else {
-            // Regular hover mode: clear inline styles to let CSS handle it
-            taskOptions.style.visibility = "";
-            taskOptions.style.opacity = "";
-            taskOptions.style.pointerEvents = "";
-
-            taskItem.querySelectorAll(".task-btn").forEach(btn => {
-                btn.style.visibility = "";
-                btn.style.opacity = "";
-                btn.style.pointerEvents = "";
-            });
+            if (threeDotsEnabled) {
+                // Three-dots mode: use inline styles to explicitly hide individual buttons
+                taskItem.querySelectorAll(".task-btn").forEach(btn => {
+                    btn.style.visibility = "hidden";
+                    btn.style.opacity = "0";
+                    btn.style.pointerEvents = "none";
+                });
+            } else {
+                // Regular hover mode: clear inline styles to let CSS handle it
+                taskItem.querySelectorAll(".task-btn").forEach(btn => {
+                    btn.style.visibility = "";
+                    btn.style.opacity = "";
+                    btn.style.pointerEvents = "";
+                });
+            }
         }
 
         // ✅ REMOVED: updateMoveArrowsVisibility() - was causing performance issues

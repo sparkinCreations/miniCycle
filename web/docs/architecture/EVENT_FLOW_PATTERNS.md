@@ -131,6 +131,7 @@ Document which handler is responsible in which mode:
 | `mouseleave` | ✅ Hide options | ❌ Ignore | Mouse users in hover mode |
 | `focusin` | ✅ Show options | ❌ Ignore | Keyboard users in hover mode |
 | `focusout` | ✅ Hide options | ✅ Hide options | Keyboard users (all modes) |
+| `hideTaskButtons` | ✅ Hide options | ❌ Blocked | Cleanup during drag/rearrange |
 | Three-dots click | ❌ N/A | ✅ Toggle visibility | Explicit control in three-dots mode |
 
 ### Pattern 3: Centralized Visibility Controller
@@ -162,8 +163,8 @@ class TaskOptionsVisibilityController {
         const mode = this.getMode();
 
         const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout'],
-            'three-dots': ['three-dots-button', 'focusout']
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
+            'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed in three-dots mode!
         };
 
         return permissions[mode]?.includes(caller) || false;
@@ -495,16 +496,61 @@ taskItem.addEventListener('focusin', () => {
  * LESSON: Every event handler must check mode before modifying UI
  *
  * ═══════════════════════════════════════════════════════════════════
+ * CRITICAL FIXES (v1.360) - Mobile Three-Dots
+ * ═══════════════════════════════════════════════════════════════════
+ *
+ * BUG: Three-dots worked initially but stopped working after clicking different task
+ * SYMPTOMS: On mobile, first three-dots click worked, but clicking another task's
+ *           three-dots would cause both to stop working until page refresh
+ * ROOT CAUSE: hideTaskButtons() was directly manipulating styles, bypassing controller
+ * TIMELINE:
+ *   1. User clicks three-dots → controller shows options (visibility = "visible")
+ *   2. hideTaskButtons() called from drag/drop manager
+ *   3. hideTaskButtons() directly set visibility = "hidden" (no permission check!)
+ *   4. Controller's visibility control was overridden
+ *   5. Three-dots button could no longer toggle (visibility stuck at "hidden")
+ *
+ * FIX: Updated hideTaskButtons() to use controller instead of direct manipulation
+ *
+ * ```javascript
+ * function hideTaskButtons(taskItem) {
+ *     // ✅ Use controller - it checks permissions automatically
+ *     const wasHidden = TaskOptionsVisibilityController.hide(taskItem, 'hideTaskButtons');
+ *
+ *     if (!wasHidden) {
+ *         // Controller blocked us (we're in three-dots mode and not allowed)
+ *         console.log('⏭️ hideTaskButtons: Skipped by controller');
+ *         return;
+ *     }
+ *
+ *     // Only proceed if controller allowed the hide...
+ * }
+ * ```
+ *
+ * PERMISSION UPDATE: Added 'hideTaskButtons' to hover mode, blocked in three-dots mode
+ *
+ * ```javascript
+ * const permissions = {
+ *     'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
+ *     'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed!
+ * };
+ * ```
+ *
+ * LESSON: ALL functions that manipulate shared UI must route through controller,
+ *         not just event handlers. Hidden cleanup functions can override state!
+ *
+ * ═══════════════════════════════════════════════════════════════════
  * HANDLER RESPONSIBILITY MATRIX
  * ═══════════════════════════════════════════════════════════════════
  *
- * | Event         | Hover Mode | Three-Dots Mode | Location                      |
- * |---------------|------------|-----------------|-------------------------------|
- * | mouseenter    | ✅ Show    | ❌ Skip         | miniCycle-scripts.js:3070     |
- * | mouseleave    | ✅ Hide    | ❌ Skip         | miniCycle-scripts.js:3096     |
- * | focusin       | ✅ Show    | ❌ Skip (v1.359)| miniCycle-scripts.js:2973     |
- * | focusout      | ✅ Hide    | ✅ Hide         | miniCycle-scripts.js:2996     |
- * | three-dots    | N/A        | ✅ Toggle       | taskDOM.js:421 → taskEvents:207|
+ * | Event            | Hover Mode | Three-Dots Mode | Location                      |
+ * |------------------|------------|-----------------|-------------------------------|
+ * | mouseenter       | ✅ Show    | ❌ Skip         | miniCycle-scripts.js:3180     |
+ * | mouseleave       | ✅ Hide    | ❌ Skip         | miniCycle-scripts.js:3204     |
+ * | focusin          | ✅ Show    | ❌ Skip (v1.359)| miniCycle-scripts.js:3080     |
+ * | focusout         | ✅ Hide    | ✅ Hide         | miniCycle-scripts.js:3090     |
+ * | hideTaskButtons  | ✅ Hide    | ❌ Blocked (v1.360) | miniCycle-scripts.js:3112     |
+ * | three-dots       | N/A        | ✅ Toggle       | taskEvents.js:208-249         |
  *
  * ═══════════════════════════════════════════════════════════════════
  */
@@ -1044,12 +1090,13 @@ class ModeManager {
 
 ### Implementation Status
 
-✅ **TaskOptionsVisibilityController is now live in miniCycle v1.359**
+✅ **TaskOptionsVisibilityController is now live in miniCycle v1.359+**
 
 All task options visibility changes now route through the centralized controller:
 - **Location**: `miniCycle-scripts.js:2974-3047`
-- **Usage**: All 6 event handlers (focusin, focusout, mouseenter, mouseleave, three-dots, focus)
-- **Benefits**: Single source of truth, mode-aware permissions, consistent logging
+- **Usage**: All 7 handlers (focusin, focusout, mouseenter, mouseleave, three-dots, focus, hideTaskButtons)
+- **Mobile Fix (v1.360)**: `hideTaskButtons()` now uses controller, preventing override of three-dots visibility on mobile
+- **Benefits**: Single source of truth, mode-aware permissions, consistent logging, no race conditions
 
 **To use in new features:**
 ```javascript

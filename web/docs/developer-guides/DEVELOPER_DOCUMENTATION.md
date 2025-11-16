@@ -3338,10 +3338,15 @@ const mode = TaskOptionsVisibilityController.getMode(); // 'hover' | 'three-dots
 
 ---
 
+**Recent Updates (November 15, 2025 - v1.360):**
+- ✅ Mobile three-dots fix - `hideTaskButtons()` now uses controller, preventing override of three-dots visibility
+- ✅ Permission system expanded - Added `hideTaskButtons` to hover mode permissions (blocked in three-dots mode)
+- ✅ All 7 handlers coordinated - Complete coverage of visibility manipulation (focusin, focusout, mouseenter, mouseleave, three-dots, focus, hideTaskButtons)
+
 **Previous Updates (November 15, 2025 - v1.359):**
-- ✅ Event flow patterns - Fixed three-dots button requiring double-click (focusin race condition)
+- ✅ Event flow patterns - Fixed desktop three-dots button requiring double-click (focusin race condition)
 - ✅ TaskOptionsVisibilityController - Centralized controller for task options visibility (miniCycle-scripts.js:2974-3047)
-- ✅ Mode-aware permissions - All 6 event handlers now route through controller with automatic mode checking
+- ✅ Mode-aware permissions - Initial implementation with 6 event handlers routing through controller
 - ✅ Architecture documentation - Created EVENT_FLOW_PATTERNS.md guide with implementation examples
 
 **Previous Updates (November 10, 2025):**

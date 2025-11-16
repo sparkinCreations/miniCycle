@@ -224,10 +224,12 @@ export class TaskEvents {
 
         // 🧹 Hide all other task option menus FIRST
         let hiddenCount = 0;
-        document.querySelectorAll(".task-options").forEach(opts => {
-            if (opts !== taskOptions) {
+        // ✅ FIX: Query .task elements directly instead of using .closest()
+        // This is more reliable on mobile where .closest() can sometimes fail
+        document.querySelectorAll(".task").forEach(task => {
+            if (task !== taskItem) {
                 // Use controller for consistency
-                window.TaskOptionsVisibilityController?.hide(opts.closest('.task'), 'three-dots-button');
+                window.TaskOptionsVisibilityController?.hide(task, 'three-dots-button');
                 hiddenCount++;
             }
         });

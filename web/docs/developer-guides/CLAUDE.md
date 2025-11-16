@@ -436,8 +436,13 @@ When working with browser APIs, be aware of Safari/iOS differences:
 - CSS architecture: Migrated from inline styles to CSS class-based visibility (.hidden)
 - Responsive modal design: Desktop two-column with preview, mobile single-column
 
-**Recent Fixes (v1.359):**
-- Event Flow: Fixed three-dots button requiring double-click (focusin race condition)
+**Recent Fixes (v1.360):**
+- Mobile three-dots fix: `hideTaskButtons()` now uses controller, preventing override of three-dots visibility on mobile
+- Permission system expanded: Added `hideTaskButtons` to hover mode permissions (blocked in three-dots mode)
+- All 7 handlers coordinated: Complete coverage of visibility manipulation (focusin, focusout, mouseenter, mouseleave, three-dots, focus, hideTaskButtons)
+
+**Previous Fixes (v1.359):**
+- Event Flow: Fixed desktop three-dots button requiring double-click (focusin race condition)
 - TaskOptionsVisibilityController: Centralized controller for all task options visibility changes (miniCycle-scripts.js:2974-3047)
-- Mode-aware permissions: All 6 event handlers now route through controller with automatic mode checking
+- Mode-aware permissions: Initial implementation with 6 event handlers routing through controller
 - Documentation: Created EVENT_FLOW_PATTERNS.md architecture guide with full implementation examples
