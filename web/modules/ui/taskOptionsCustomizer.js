@@ -16,7 +16,22 @@
  */
 
 import { appInit } from '../core/appInit.js';
-import { DEFAULT_TASK_OPTION_BUTTONS } from '../utils/globalUtils.js';
+
+// ✅ Use window export to avoid cache-busting mismatch
+// globalUtils.js is loaded with version parameter in main script,
+// but ES6 imports don't support dynamic version parameters.
+// Using window.DEFAULT_TASK_OPTION_BUTTONS ensures we get the
+// versioned copy that was loaded by the main script.
+const DEFAULT_TASK_OPTION_BUTTONS = window.DEFAULT_TASK_OPTION_BUTTONS || {
+    customize: true,
+    moveArrows: false,
+    highPriority: true,
+    rename: true,
+    delete: true,
+    recurring: false,
+    dueDate: false,
+    reminders: false
+};
 
 // Button configuration with labels, icons, descriptions, and scope
 const BUTTON_CONFIG = [
