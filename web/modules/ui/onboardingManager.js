@@ -17,14 +17,14 @@
  * - appInit (initialization system)
  *
  * @module onboardingManager
- * @version 1.361
+ * @version 1.362
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class OnboardingManager {
     constructor(dependencies = {}) {
-        this.version = '1.361';
+        this.version = '1.362';
         this.initialized = false;
 
         // Store injected dependencies

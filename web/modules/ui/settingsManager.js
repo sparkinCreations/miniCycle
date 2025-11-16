@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.361
+ * @version 1.362
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -13,7 +13,7 @@ import { DataValidator } from '../utils/dataValidator.js';
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.361';
+        this.version = '1.362';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
