@@ -13,14 +13,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module task/taskCore
- * @version 1.368
+ * @version 1.369
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class TaskCore {
     constructor(dependencies = {}) {
-        this.version = '1.368';
+        this.version = '1.369';
 
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();

@@ -5,7 +5,7 @@
  * Provides user-friendly notifications and debug logging.
  *
  * @module modules/utils/errorHandler
- * @version 1.368
+ * @version 1.369
  * @created November 13, 2025
  */
 

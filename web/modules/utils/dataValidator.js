@@ -6,7 +6,7 @@
  * preventing malicious/invalid data from import/export bypass
  *
  * @module utils/dataValidator
- * @version 1.368
+ * @version 1.369
  */
 
 export class DataValidator {

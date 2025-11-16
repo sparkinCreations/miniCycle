@@ -8,7 +8,7 @@
  * - Updates UI components
  *
  * @module modules/task/taskRenderer
- * @version 1.368
+ * @version 1.369
  */
 
 export class TaskRenderer {
@@ -29,7 +29,7 @@ export class TaskRenderer {
         };
 
         // Instance version
-        this.version = '1.368';
+        this.version = '1.369';
 
         console.log('🎨 TaskRenderer created');
     }
