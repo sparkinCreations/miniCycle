@@ -298,18 +298,18 @@ export class TaskOptionsCustomizer {
         return `
             <div class="options-section">
                 <div class="section-header">
-                    <h3>🌐 Global</h3>
-                </div>
-                <div class="section-options">
-                    ${globalOptions.map(buildOption).join('')}
-                </div>
-            </div>
-            <div class="options-section">
-                <div class="section-header">
                     <h3>📋 This Cycle</h3>
                 </div>
                 <div class="section-options">
                     ${cycleOptions.map(buildOption).join('')}
+                </div>
+            </div>
+            <div class="options-section">
+                <div class="section-header">
+                    <h3>🌐 Global</h3>
+                </div>
+                <div class="section-options">
+                    ${globalOptions.map(buildOption).join('')}
                 </div>
             </div>
         `;

@@ -7874,7 +7874,18 @@ body.dark-mode .close-button-fullwidth:active {
     /* Add subtle borders to option items on mobile */
     .task-option-item {
         border: 1px solid #e0e0e0;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
+        padding: 8px;
+    }
+
+    /* Tighter section spacing */
+    .options-section {
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    .section-options {
+        gap: 4px;
     }
 
     /* Reduce height of preview panel on mobile - hide it to save space */
