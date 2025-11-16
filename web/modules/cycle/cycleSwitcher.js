@@ -3,7 +3,7 @@
  * Manages cycle switching UI and operations
  *
  * @module cycleSwitcher
- * @version 1.370
+ * @version 1.371
  */
 
 export class CycleSwitcher {
@@ -30,7 +30,7 @@ export class CycleSwitcher {
         };
 
         this.loadMiniCycleListTimeout = null;
-        this.version = '1.370';
+        this.version = '1.371';
 
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();

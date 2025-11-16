@@ -8,7 +8,7 @@
  * - Dependencies passed as parameters
  *
  * @module modules/task/taskUtils
- * @version 1.370
+ * @version 1.371
  */
 
 export class TaskUtils {
