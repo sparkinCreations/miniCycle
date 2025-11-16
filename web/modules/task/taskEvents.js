@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.363
+ * @version 1.364
  */
 
 export class TaskEvents {
@@ -29,7 +29,7 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.363';
+        this.version = '1.364';
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;
@@ -202,10 +202,11 @@ export class TaskEvents {
     }
 
     /**
-     * Reveal task buttons (three dots menu)
+     * Reveal task buttons (three dots menu OR long-press)
      * @param {HTMLElement} taskItem - Task element
+     * @param {string} caller - Caller identifier ('three-dots-button' or 'long-press')
      */
-    revealTaskButtons(taskItem) {
+    revealTaskButtons(taskItem, caller = 'three-dots-button') {
         const taskOptions = taskItem.querySelector(".task-options");
         if (!taskOptions) {
             console.warn('⚠️ revealTaskButtons: No .task-options found');
@@ -217,6 +218,7 @@ export class TaskEvents {
 
         console.log('🔍 revealTaskButtons called:', {
             taskId: taskItem.dataset.id || 'unknown',
+            caller,
             inlineVisibility: taskOptions.style.visibility || '(not set)',
             isCurrentlyVisible,
             willToggle: isCurrentlyVisible ? 'OFF' : 'ON'
@@ -228,8 +230,8 @@ export class TaskEvents {
         // This is more reliable on mobile where .closest() can sometimes fail
         document.querySelectorAll(".task").forEach(task => {
             if (task !== taskItem) {
-                // Use controller for consistency
-                window.TaskOptionsVisibilityController?.hide(task, 'three-dots-button');
+                // Use controller for consistency (use same caller for hide)
+                window.TaskOptionsVisibilityController?.hide(task, caller);
                 hiddenCount++;
             }
         });
@@ -242,11 +244,11 @@ export class TaskEvents {
         if (isCurrentlyVisible) {
             // Hide if already visible (clicking same task again)
             console.log('👆 TOGGLING OFF (same task clicked twice)');
-            window.TaskOptionsVisibilityController?.hide(taskItem, 'three-dots-button');
+            window.TaskOptionsVisibilityController?.hide(taskItem, caller);
         } else {
             // Show if hidden (first click or switching tasks)
             console.log('✨ TOGGLING ON (first click or switching tasks)');
-            window.TaskOptionsVisibilityController?.show(taskItem, 'three-dots-button');
+            window.TaskOptionsVisibilityController?.show(taskItem, caller);
         }
     }
 

@@ -3528,8 +3528,9 @@ body:not(.show-three-dots-enabled) .task:active .task-options {
 }
 */
 
-@media (max-width: 768px) {
-  /* ✅ Hide task options on hover on mobile ONLY when three-dots is disabled */
+/* ✅ Only disable hover on ACTUAL touch devices, not just small screens */
+@media (hover: none) and (pointer: coarse) {
+  /* Hide task options on hover on touch devices ONLY when three-dots is disabled */
   /* When three-dots is enabled, options should only show via three-dots click */
   body:not(.show-three-dots-enabled) .task:hover .task-options,
   body:not(.show-three-dots-enabled) .task:active .task-options,
@@ -3616,11 +3617,12 @@ color: rgba(77, 77, 255, 0.771);
     overscroll-behavior: contain;
     touch-action: pan-y; /* Allows normal vertical scrolling */
 }
+/* ❌ REMOVED: Duplicate rule that was overriding hover behavior
 .task-options {
     visibility: hidden;
     opacity: 0;
-   
 }
+*/
 
 .hidden-task-btn {
   display: none;
@@ -3749,12 +3751,14 @@ color: rgba(77, 77, 255, 0.771);
 
 
 
+  /* ❌ REMOVED: Duplicate media query - already handled above with three-dots awareness
   @media (hover: none) and (pointer: coarse) {
     .task:hover .task-options {
       pointer-events: none;
       opacity: 0;
     }
   }
+  */
   
   .three-dots-btn {
     position: absolute;

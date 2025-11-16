@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.363
+ * @version 1.364
  */
 
 import { appInit } from '../core/appInit.js';
@@ -201,7 +201,8 @@ export class DragDropManager {
                     console.log("📱 Long Press Detected - Showing Task Options", taskElement);
 
                     // Ensure task options remain visible
-                    this.deps.revealTaskButtons(taskElement);
+                    // Pass 'long-press' as caller so controller allows it in both modes
+                    this.deps.revealTaskButtons(taskElement, 'long-press');
                 }, 500); // Long-press delay (500ms)
             }, { passive: false }); // Must be non-passive - calls preventDefault() on line 199
 

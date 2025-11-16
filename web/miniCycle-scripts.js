@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
-            currentVersion: '1.363'
+            currentVersion: '1.364'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -2989,8 +2989,8 @@ class TaskOptionsVisibilityController {
         const mode = this.getMode();
 
         const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
-            'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed in three-dots mode!
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons', 'long-press'],
+            'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed, long-press NOT allowed (use three-dots button instead)
         };
 
         return permissions[mode]?.includes(caller) || false;

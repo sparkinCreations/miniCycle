@@ -132,6 +132,7 @@ Document which handler is responsible in which mode:
 | `focusin` | ✅ Show options | ❌ Ignore | Keyboard users in hover mode |
 | `focusout` | ✅ Hide options | ✅ Hide options | Keyboard users (all modes) |
 | `hideTaskButtons` | ✅ Hide options | ❌ Blocked | Cleanup during drag/rearrange |
+| `long-press` | ✅ Show options | ✅ Show options | Touch device long-press (all modes) |
 | Three-dots click | ❌ N/A | ✅ Toggle visibility | Explicit control in three-dots mode |
 
 ### Pattern 3: Centralized Visibility Controller
@@ -163,8 +164,8 @@ class TaskOptionsVisibilityController {
         const mode = this.getMode();
 
         const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
-            'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed in three-dots mode!
+            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons', 'long-press'],
+            'three-dots': ['three-dots-button', 'focusout', 'long-press']  // hideTaskButtons NOT allowed, but long-press is!
         };
 
         return permissions[mode]?.includes(caller) || false;
