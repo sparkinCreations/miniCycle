@@ -7832,6 +7832,131 @@ body.dark-mode .close-button-fullwidth:active {
 }
 
 /* ================================================
+   MOBILE RESPONSIVE STYLES
+   ================================================ */
+
+@media (max-width: 768px) {
+    .task-options-modal {
+        max-width: 92%;
+        width: 92%;
+        max-height: 70vh;
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .task-options-modal .modal-body {
+        padding: 8px;
+        max-height: none;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        background: #ffffff; /* Clean white background on mobile */
+    }
+
+    /* Stack columns vertically on mobile */
+    .task-options-container {
+        grid-template-columns: 1fr;
+        gap: 0;
+        min-height: auto;
+    }
+
+    /* Remove scrolling from options list - let modal body handle it */
+    .task-options-list {
+        max-height: none;
+        overflow-y: visible;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+    }
+
+    /* Add subtle borders to option items on mobile */
+    .task-option-item {
+        border: 1px solid #e0e0e0;
+        margin-bottom: 6px;
+    }
+
+    /* Reduce height of preview panel on mobile - hide it to save space */
+    .task-option-preview {
+        display: none;
+    }
+
+    /* Compact header on mobile */
+    .task-options-modal .modal-header {
+        padding: 8px 8px 8px 45px;
+    }
+
+    .task-options-modal .modal-header h2 {
+        font-size: 1.1em;
+    }
+
+    .task-options-modal .modal-subtitle {
+        font-size: 0.85em;
+    }
+
+    .task-options-modal .modal-logo {
+        width: 24px;
+        height: 24px;
+        top: 10px;
+        left: 10px;
+    }
+
+    /* Compact sections */
+    .section-header h3 {
+        font-size: 0.85em;
+    }
+
+    .option-label {
+        font-size: 0.85em;
+    }
+
+    /* Compact footer */
+    .task-options-modal .modal-footer {
+        padding: 8px;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .modal-footer-note {
+        font-size: 0.7em;
+        margin: 0 0 6px 0;
+    }
+
+    /* Compact close button on mobile */
+    .close-button-fullwidth {
+        padding: 8px 12px;
+        font-size: 0.9em;
+        margin-top: 4px;
+    }
+
+    /* Compact reset button on mobile */
+    #reset-task-options-btn {
+        padding: 6px 10px;
+        font-size: 0.8em;
+    }
+
+    /* Ensure modal doesn't overflow viewport */
+    .task-options-modal .modal-header {
+        flex-shrink: 0;
+    }
+
+    /* Dark mode mobile adjustments */
+    body.dark-mode .task-options-modal .modal-body {
+        background: #1e293b; /* Clean dark background on mobile */
+    }
+
+    body.dark-mode .task-options-list {
+        background: transparent;
+        border: none;
+    }
+
+    body.dark-mode .task-option-item {
+        border-color: #334155;
+    }
+}
+
+/* ================================================
    THEME SUPPORT: DARK OCEAN
    ================================================ */
 
