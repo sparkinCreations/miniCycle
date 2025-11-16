@@ -22,16 +22,7 @@ import { appInit } from '../core/appInit.js';
 // but ES6 imports don't support dynamic version parameters.
 // Using window.DEFAULT_TASK_OPTION_BUTTONS ensures we get the
 // versioned copy that was loaded by the main script.
-const DEFAULT_TASK_OPTION_BUTTONS = window.DEFAULT_TASK_OPTION_BUTTONS || {
-    customize: true,
-    moveArrows: false,
-    highPriority: true,
-    rename: true,
-    delete: true,
-    recurring: false,
-    dueDate: false,
-    reminders: false
-};
+const DEFAULT_TASK_OPTION_BUTTONS = window.DEFAULT_TASK_OPTION_BUTTONS;
 
 // Button configuration with labels, icons, descriptions, and scope
 const BUTTON_CONFIG = [
