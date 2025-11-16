@@ -10,7 +10,7 @@
  * - Theme unlock status management
  * - Navigation dot updates
  *
- * @version 1.360
+ * @version 1.361
  * @author miniCycle Development Team
  */
 
@@ -1217,7 +1217,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.360',
+            version: '1.361',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config
