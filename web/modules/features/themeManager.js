@@ -23,7 +23,7 @@
  * DOM: Handles missing elements gracefully
  *
  * @module themeManager
- * @version 1.365
+ * @version 1.366
  * @requires AppInit (for initialization coordination)
  */
 

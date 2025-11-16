@@ -5,7 +5,7 @@
  * miniCycle functionality, including storage, migration, and state management.
  *
  * @module testing-modal
- * @version 1.365
+ * @version 1.366
  */
 
 // ==========================================
