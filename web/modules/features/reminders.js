@@ -302,24 +302,16 @@ export class MiniCycleReminders {
             remindersToSave.timesReminded = previousSettings.timesReminded || 0;
         }
 
-        // ✅ Use AppState instead of direct localStorage - Save per-cycle
+        // ✅ Use AppState instead of direct localStorage - Save to customReminders
         if (this.deps.AppState?.update) {
             this.deps.AppState.update(state => {
-                const activeCycleId = state.appState.activeCycleId;
-                if (activeCycleId && state.data.cycles[activeCycleId]) {
-                    state.data.cycles[activeCycleId].reminders = remindersToSave;
-                    console.log(`✅ Saved reminders to cycle: ${activeCycleId}`);
-                }
+                state.customReminders = remindersToSave;
                 state.metadata.lastModified = Date.now();
             }, true); // immediate save for reminders
         } else {
             console.warn('⚠️ AppState not available, falling back to localStorage');
             const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            const activeCycleId = fullSchemaData.appState.activeCycleId;
-            if (activeCycleId && fullSchemaData.data.cycles[activeCycleId]) {
-                fullSchemaData.data.cycles[activeCycleId].reminders = remindersToSave;
-                console.log(`✅ Saved reminders to cycle: ${activeCycleId}`);
-            }
+            fullSchemaData.customReminders = remindersToSave;
             fullSchemaData.metadata.lastModified = Date.now();
             localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
         }
@@ -401,7 +393,9 @@ export class MiniCycleReminders {
             throw new Error('Schema 2.5 data not found');
         }
 
-        const { cycles, activeCycle } = schemaData;
+        // Schema 2.5 structure: data.cycles and appState.activeCycleId
+        const cycles = schemaData.data?.cycles || schemaData.cycles;
+        const activeCycle = schemaData.appState?.activeCycleId || schemaData.activeCycle;
 
         if (!activeCycle || !cycles[activeCycle]) {
             console.error('❌ No active cycle found for task reminder state');

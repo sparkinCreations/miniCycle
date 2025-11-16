@@ -228,7 +228,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskReminderState updates task in Schema 2.5', async () => {
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
             });
 
             await instance.saveTaskReminderState('task-1', true);
@@ -386,7 +386,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('handles missing task gracefully', async () => {
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 showNotification: () => {}
             });
 
@@ -440,7 +440,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('setupReminderButtonHandler attaches event listener', async () => {
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
             });
 
             const button = document.createElement('button');
@@ -529,7 +529,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskReminderState completes within reasonable time', async () => {
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
             });
 
             const startTime = performance.now();

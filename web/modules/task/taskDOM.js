@@ -447,6 +447,8 @@ export class TaskDOMManager {
             const threeDotsButton = document.createElement("button");
             threeDotsButton.classList.add("three-dots-btn");
             threeDotsButton.innerHTML = "⋮";
+            threeDotsButton.setAttribute("title", "Show task options");
+            threeDotsButton.setAttribute("aria-label", "Show task options");
 
             // ✅ MEMORY LEAK FIX: Create named handler bound to taskItem
             const handler = (event) => this.handleThreeDotsClick(taskItem, event);
@@ -653,7 +655,7 @@ export class TaskDOMManager {
             }
         });
 
-        // ARIA labels
+        // ARIA labels and tooltips
         const ariaLabels = {
             "move-up": "Move task up",
             "move-down": "Move task down",
@@ -664,7 +666,9 @@ export class TaskDOMManager {
             "edit-btn": "Edit task",
             "delete-btn": "Delete task"
         };
-        button.setAttribute("aria-label", ariaLabels[btnClass] || "Task action");
+        const label = ariaLabels[btnClass] || "Task action";
+        button.setAttribute("aria-label", label);
+        button.setAttribute("title", label); // Add tooltip
     }
 
     /**

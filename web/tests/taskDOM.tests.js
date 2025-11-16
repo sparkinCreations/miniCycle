@@ -829,6 +829,27 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('revealTaskButtons shows options without manipulating arrows', async () => {
+        // Enable three-dots mode so 'three-dots-button' caller is allowed
+        document.body.classList.add('show-three-dots-enabled');
+
+        // Mock the TaskOptionsVisibilityController
+        window.TaskOptionsVisibilityController = {
+            show: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'visible';
+                    opts.style.opacity = '1';
+                }
+            },
+            hide: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'hidden';
+                    opts.style.opacity = '0';
+                }
+            }
+        };
+
         const taskItem = document.createElement('li');
         const taskOptions = document.createElement('div');
         taskOptions.className = 'task-options';
@@ -877,6 +898,10 @@ export async function runTaskDOMTests(resultsDiv) {
         if (taskOptions.style.opacity !== '1') {
             throw new Error('Task options opacity should be 1');
         }
+
+        // Clean up
+        delete window.TaskOptionsVisibilityController;
+        document.body.classList.remove('show-three-dots-enabled');
 
         // Arrow visibility is NOT controlled by revealTaskButtons
         // It's controlled by taskOptionsCustomizer via .hidden class and DragDropManager

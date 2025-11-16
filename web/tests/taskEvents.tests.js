@@ -349,6 +349,27 @@ export async function runTaskEventsTests(resultsDiv) {
         const deps = createMockDependencies();
         const events = new TaskEvents(deps);
 
+        // Enable three-dots mode so 'three-dots-button' caller is allowed
+        document.body.classList.add('show-three-dots-enabled');
+
+        // Mock the TaskOptionsVisibilityController
+        window.TaskOptionsVisibilityController = {
+            show: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'visible';
+                    opts.style.opacity = '1';
+                }
+            },
+            hide: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'hidden';
+                    opts.style.opacity = '0';
+                }
+            }
+        };
+
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
 
@@ -363,12 +384,35 @@ export async function runTaskEventsTests(resultsDiv) {
         }
 
         // Clean up
+        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem);
+        document.body.classList.remove('show-three-dots-enabled');
     });
 
     await test('revealTaskButtons toggles options visibility', () => {
         const deps = createMockDependencies();
         const events = new TaskEvents(deps);
+
+        // Enable three-dots mode so 'three-dots-button' caller is allowed
+        document.body.classList.add('show-three-dots-enabled');
+
+        // Mock the TaskOptionsVisibilityController
+        window.TaskOptionsVisibilityController = {
+            show: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'visible';
+                    opts.style.opacity = '1';
+                }
+            },
+            hide: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'hidden';
+                    opts.style.opacity = '0';
+                }
+            }
+        };
 
         const taskItem1 = createMockTaskItem({ id: 'task-1' });
         const taskItem2 = createMockTaskItem({ id: 'task-2' });
@@ -406,8 +450,10 @@ export async function runTaskEventsTests(resultsDiv) {
         // So we don't check arrow visibility here
 
         // Clean up
+        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem1);
         document.body.removeChild(taskItem2);
+        document.body.classList.remove('show-three-dots-enabled');
     });
 
     await test('syncRecurringStateToDOM adds recurring indicator', () => {
@@ -521,6 +567,15 @@ export async function runTaskEventsTests(resultsDiv) {
         taskItem.setAttribute('tabindex', '0');
         document.body.appendChild(taskItem);
 
+        // Mock the TaskOptionsVisibilityController
+        window.TaskOptionsVisibilityController = {
+            show: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                opts.style.visibility = 'visible';
+                opts.style.opacity = '1';
+            }
+        };
+
         events.setupTaskFocusInteractions(taskItem);
 
         // Simulate focus
@@ -533,6 +588,7 @@ export async function runTaskEventsTests(resultsDiv) {
         }
 
         // Clean up
+        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem);
     });
 
@@ -610,6 +666,27 @@ export async function runTaskEventsTests(resultsDiv) {
         const deps = createMockDependencies();
         const events = initTaskEvents(deps);
 
+        // Enable three-dots mode so 'three-dots-button' caller is allowed
+        document.body.classList.add('show-three-dots-enabled');
+
+        // Mock the TaskOptionsVisibilityController
+        window.TaskOptionsVisibilityController = {
+            show: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'visible';
+                    opts.style.opacity = '1';
+                }
+            },
+            hide: (item, caller) => {
+                const opts = item.querySelector('.task-options');
+                if (opts) {
+                    opts.style.visibility = 'hidden';
+                    opts.style.opacity = '0';
+                }
+            }
+        };
+
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
 
@@ -621,7 +698,9 @@ export async function runTaskEventsTests(resultsDiv) {
         }
 
         // Clean up
+        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem);
+        document.body.classList.remove('show-three-dots-enabled');
     });
 
     await test('Global setupTaskInteractions wrapper works', () => {
