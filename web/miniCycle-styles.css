@@ -3530,12 +3530,12 @@ body:not(.show-three-dots-enabled) .task:active .task-options {
 
 /* ✅ Only disable hover on ACTUAL touch devices, not just small screens */
 @media (hover: none) and (pointer: coarse) {
-  /* Hide task options on hover on touch devices ONLY when three-dots is disabled */
-  /* When three-dots is enabled, options should only show via three-dots click */
-  body:not(.show-three-dots-enabled) .task:hover .task-options,
-  body:not(.show-three-dots-enabled) .task:active .task-options,
-  body:not(.show-three-dots-enabled) .task:hover .task-btn,
-  body:not(.show-three-dots-enabled) .task:active .task-btn {
+  /* Hide task options on simple hover/active on touch devices
+     ONLY when three-dots is disabled – but allow long-press. */
+  body:not(.show-three-dots-enabled) .task:not(.long-pressed):hover .task-options,
+  body:not(.show-three-dots-enabled) .task:not(.long-pressed):active .task-options,
+  body:not(.show-three-dots-enabled) .task:not(.long-pressed):hover .task-btn,
+  body:not(.show-three-dots-enabled) .task:not(.long-pressed):active .task-btn {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;

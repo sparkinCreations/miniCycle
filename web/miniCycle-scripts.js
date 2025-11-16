@@ -2990,7 +2990,7 @@ class TaskOptionsVisibilityController {
 
         const permissions = {
             'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons', 'long-press'],
-            'three-dots': ['three-dots-button', 'focusout']  // hideTaskButtons NOT allowed, long-press NOT allowed (use three-dots button instead)
+            'three-dots': ['three-dots-button', 'focusout', 'long-press']  // hideTaskButtons NOT allowed, but long-press allowed as accessibility fallback
         };
 
         return permissions[mode]?.includes(caller) || false;
