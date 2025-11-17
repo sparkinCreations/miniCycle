@@ -1,13 +1,16 @@
 /**
  * Mode Manager - Manages Auto Cycle, Manual Cycle, and To-Do Mode
  * @module modules/cycle/modeManager
- * @version 1.372
+ * @version 1.371
  * @pattern Resilient Constructor 🛡️
  *
  * Handles three cycling modes:
  * - Auto Cycle ↻: Tasks auto-reset when all completed
  * - Manual Cycle ✔︎↻: Tasks reset only on manual button click
  * - To-Do Mode ✓: Tasks are deleted instead of reset
+ *
+ * WORKAROUND (v1.371): Mode changes trigger page reload to apply
+ * mode-specific button visibility due to module instance problem.
  */
 
 import { appInit } from '../core/appInit.js';
@@ -486,18 +489,40 @@ export class ModeManager {
             console.log('🎯 ModeManager: Desktop mode selector changed:', e.target.value);
             syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
+
+            // ✅ WORKAROUND: Force page reload to apply mode-specific button visibility
+            sessionStorage.setItem('restoreModeAfterReload', e.target.value);
+
             if (this.deps.showNotification) {
-                this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'info', 2000);
+                this.deps.showNotification(`Switching to ${this.getModeName(e.target.value)}...`, 'info', 2000);
             }
+
+            console.log('🔄 ModeManager: Reloading page to apply mode change...');
+
+            // Wait for debounced save to complete (AppState auto-save is typically 500ms)
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         });
 
         mobileModeSelector.addEventListener('change', (e) => {
             console.log('📱 ModeManager: Mobile mode selector changed:', e.target.value);
             syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
+
+            // ✅ WORKAROUND: Force page reload to apply mode-specific button visibility
+            sessionStorage.setItem('restoreModeAfterReload', e.target.value);
+
             if (this.deps.showNotification) {
-                this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'info', 2000);
+                this.deps.showNotification(`Switching to ${this.getModeName(e.target.value)}...`, 'info', 2000);
             }
+
+            console.log('🔄 ModeManager: Reloading page to apply mode change...');
+
+            // Wait for debounced save to complete (AppState auto-save is typically 500ms)
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         });
 
         toggleAutoReset.addEventListener('change', (e) => {
@@ -538,6 +563,25 @@ export class ModeManager {
         // ✅ Initialize on load
         console.log('🚀 ModeManager: Initializing mode selectors...');
         this.syncModeFromToggles();
+
+        // ✅ Check if we need to restore mode after reload
+        const modeToRestore = sessionStorage.getItem('restoreModeAfterReload');
+        if (modeToRestore) {
+            console.log('🔄 ModeManager: Restoring mode after reload:', modeToRestore);
+            sessionStorage.removeItem('restoreModeAfterReload');
+
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                modeSelector.value = modeToRestore;
+                mobileModeSelector.value = modeToRestore;
+                this.syncModeFromToggles();
+                this.updateCycleModeDescription();
+
+                if (this.deps.showNotification) {
+                    this.deps.showNotification(`✅ Switched to ${this.getModeName(modeToRestore)}`, 'success', 3000);
+                }
+            }, 500);
+        }
 
         console.log('✅ ModeManager: Mode selectors setup complete');
     }

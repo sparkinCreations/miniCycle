@@ -682,13 +682,21 @@ const optionLabels = {
 6. `modules/ui/taskOptionsCustomizer.js` - Force reload workaround
 7. `modules/recurring/recurringCore.js` - Downgraded warnings to info logs
 8. `modules/ui/undoRedoManager.js` - Downgraded warnings to info logs
-9. `modules/cycle/modeManager.js` - Downgraded warnings to info logs
+9. `modules/cycle/modeManager.js` - Force reload workaround for mode switching, downgraded warnings
 10. `miniCycle-scripts.js` - Moved cycleLoader to Phase 2, lazy AppState getter
 11. `tests/deleteWhenComplete.tests.js` - **NEW**: 38 comprehensive tests
 12. `tests/module-test-suite.html` - Added deleteWhenComplete module
 13. `tests/automated/run-browser-tests.js` - Added to automation
 
 ### ⚠️ CRITICAL TECH DEBT
+
+**Four interconnected problems requiring refactoring:**
+1. **Module Instance Problem** - ES6 versioned imports create multiple instances
+2. **Customizer Force Reload** - Button visibility changes require page reload
+3. **Mode Switching Force Reload** - Mode changes require page reload
+4. **Inconsistent AppState Access** - Mixed value/getter patterns
+
+**All stem from the same root cause** (Problem 1). Fixing that will resolve Problems 2 and 3.
 
 #### Problem 1: Multiple ES6 Module Instances
 **Root Cause**: Versioned imports (`?v=1.371`) create separate module instances
@@ -746,7 +754,44 @@ const utils = TaskUtils || window.__TaskUtils;
 - Remove reload, remove sessionStorage flags
 - Remove artificial 1s delay
 
-#### Problem 3: Inconsistent AppState Access
+#### Problem 3: Mode Switching Force Reload
+**Root Cause**: Module instance issues prevent mode-specific button visibility from updating
+- When switching modes (Cycle ↔ To-Do), delete-when-complete buttons don't update
+- Different module instances don't share the same TaskDOM manager
+
+**Band-Aid Solution Implemented**:
+```javascript
+// modeManager.js lines 490-502 (desktop) and 510-522 (mobile)
+// On mode change:
+// 1. Save mode to sessionStorage
+// 2. Wait 1s for debounced save
+// 3. location.reload()
+// 4. On reload: Restore mode selector from sessionStorage
+sessionStorage.setItem('restoreModeAfterReload', selectedMode);
+setTimeout(() => location.reload(), 1000);
+
+// On page load (lines 565-580):
+const modeToRestore = sessionStorage.getItem('restoreModeAfterReload');
+if (modeToRestore) {
+    modeSelector.value = modeToRestore;
+    this.syncModeFromToggles();
+}
+```
+
+**Issues with This Approach**:
+- ❌ Poor UX (jarring full page reload on every mode switch)
+- ❌ Loses undo history (page reload clears state)
+- ❌ Can't quickly toggle between modes
+- ❌ 1 second artificial delay
+- ❌ Same root cause as Problem 2 (module instances)
+
+**Proper Fix Needed**:
+- Fix module instances (see Problem 1)
+- Mode changes should call `refreshTaskButtonsForModeChange()` directly
+- Remove reload, remove sessionStorage flags
+- Remove artificial 1s delay
+
+#### Problem 4: Inconsistent AppState Access
 **Root Cause**: AppState passed as value (captured null) instead of lazy getter
 
 **Band-Aid Solution Implemented**:
@@ -783,11 +828,12 @@ if (!appState) { /* fallback */ }
 4. Remove global fallbacks from taskDOM.js
 5. Remove `window.__*` globals
 
-**Priority 2: Remove Customizer Reload** (30 mins)
+**Priority 2: Remove Force Reloads** (45 mins - both customizer and mode switching)
 1. After fixing Priority 1, test if live updates work
-2. Remove `location.reload()` from saveCustomization
-3. Remove sessionStorage flags
-4. Remove 1s artificial delay
+2. Remove `location.reload()` from taskOptionsCustomizer.js (lines 525-535)
+3. Remove `location.reload()` from modeManager.js (lines 500-502, 520-522)
+4. Remove all sessionStorage reload flags
+5. Remove 1s artificial delays
 
 **Priority 3: Standardize Dependency Injection** (1 hour)
 1. Document pattern: values vs getters
@@ -808,6 +854,7 @@ if (!appState) { /* fallback */ }
 
 **Manual Testing**: ✅ Functional
 - Task customizer works (with reload)
+- Mode switching works (with reload)
 - Delete-when-complete buttons toggle correctly
 - Mode-specific defaults apply
 - Tasks delete on auto-reset as expected
