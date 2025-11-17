@@ -16,6 +16,7 @@
  */
 
 import { appInit } from '../core/appInit.js';
+import { refreshTaskListUI as refreshTasksFromDOM } from '../task/taskDOM.js';
 
 // ✅ Use window export to avoid cache-busting mismatch
 // globalUtils.js is loaded with version parameter in main script,
@@ -30,7 +31,8 @@ const DEFAULT_TASK_OPTION_BUTTONS = window.DEFAULT_TASK_OPTION_BUTTONS || {
     delete: true,
     recurring: false,
     dueDate: false,
-    reminders: false
+    reminders: false,
+    deleteWhenComplete: false
 };
 
 // Button configuration with labels, icons, descriptions, and scope
@@ -98,6 +100,13 @@ const BUTTON_CONFIG = [
         icon: '🔔',
         scope: 'cycle',
         description: 'Set notification reminders'
+    },
+    {
+        key: 'deleteWhenComplete',
+        label: 'Delete When Complete',
+        icon: '❌',
+        scope: 'cycle',
+        description: 'Permanently remove task during auto-reset instead of unchecking'
     }
 ];
 
@@ -143,6 +152,9 @@ export class TaskOptionsCustomizer {
             } else {
                 console.warn('⚠️ open-task-options-customizer button not found');
             }
+
+            // ✅ Check if we need to re-open customizer after page reload
+            this.checkAndReopenAfterReload();
         };
 
         // Try immediately, and also on DOMContentLoaded
@@ -150,6 +162,30 @@ export class TaskOptionsCustomizer {
             document.addEventListener('DOMContentLoaded', attachListener);
         } else {
             attachListener();
+        }
+    }
+
+    /**
+     * Check if customizer should re-open after page reload
+     * Called after page loads to restore customizer modal if user was customizing before reload
+     */
+    async checkAndReopenAfterReload() {
+        const shouldReopen = sessionStorage.getItem('reopenTaskCustomizer');
+        if (shouldReopen === 'true') {
+            // Clear the flag
+            sessionStorage.removeItem('reopenTaskCustomizer');
+
+            // Wait a bit for everything to be ready
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Get current cycle and re-open modal
+            const state = this.deps.AppState?.get();
+            const currentCycleId = state?.appState?.activeCycleId;
+
+            if (currentCycleId) {
+                console.log('🔄 Re-opening task customizer after reload...');
+                this.showCustomizationModal(currentCycleId);
+            }
         }
     }
 
@@ -513,12 +549,17 @@ export class TaskOptionsCustomizer {
             }
         }
 
-        // Refresh all task buttons in the UI
-        this.refreshAllTaskButtons();
-
-        // ✅ No notification needed for real-time updates - visual feedback is immediate
+        // ✅ WORKAROUND: Force page reload to handle module instance issues
+        // Set flag to re-open modal after reload
+        sessionStorage.setItem('reopenTaskCustomizer', 'true');
 
         console.log(`✅ Saved task option customization for cycle: ${cycleId}`, newOptions);
+        console.log('🔄 Reloading page to apply button visibility changes...');
+
+        // Wait for debounced save to complete (AppState auto-save is typically 500ms)
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
     }
 
     /**
@@ -549,13 +590,32 @@ export class TaskOptionsCustomizer {
      * Refresh task button visibility for all tasks
      * Re-renders the entire task list with updated button visibility
      */
-    refreshAllTaskButtons() {
-        // Call renderTaskList to re-render all tasks with new button visibility
-        if (typeof this.deps.renderTaskList === 'function') {
-            this.deps.renderTaskList();
-            console.log('✅ Task list re-rendered with updated button visibility');
-        } else {
-            console.warn('⚠️ renderTaskList function not available');
+    async refreshAllTaskButtons() {
+        try {
+            // ✅ PRIORITY 1: Use global window.refreshTaskListUI (guaranteed to be from initialized instance)
+            if (typeof window.refreshTaskListUI === 'function') {
+                await window.refreshTaskListUI();
+                console.log('✅ Task list re-rendered with updated button visibility (global refreshTaskListUI)');
+                return;
+            }
+
+            // ✅ PRIORITY 2: Module import (may be different instance due to versioning)
+            if (typeof refreshTasksFromDOM === 'function') {
+                await refreshTasksFromDOM();
+                console.log('✅ Task list re-rendered with updated button visibility (TaskDOM module import)');
+                return;
+            }
+
+            // ✅ PRIORITY 3: Last resort - use injected renderTaskList
+            if (typeof this.deps.renderTaskList === 'function') {
+                await this.deps.renderTaskList();
+                console.log('✅ Task list re-rendered with updated button visibility (deps.renderTaskList)');
+                return;
+            }
+
+            console.warn('⚠️ No task list refresh function available in refreshAllTaskButtons');
+        } catch (error) {
+            console.error('⚠️ Failed to refresh task buttons:', error);
         }
     }
 

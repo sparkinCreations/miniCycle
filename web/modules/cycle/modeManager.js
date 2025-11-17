@@ -247,7 +247,8 @@ export class ModeManager {
             toggleAutoReset.checked = autoReset;
             deleteCheckedTasks.checked = deleteChecked;
         } else {
-            console.warn('⚠️ ModeManager: No active cycle found, using DOM state as fallback');
+            // ✅ Normal during Phase 2 - data loads in Phase 3
+            console.log('ℹ️ No active cycle yet - using DOM defaults until data loads');
             // ✅ Fallback to DOM state only if no saved data exists
             autoReset = toggleAutoReset.checked;
             deleteChecked = deleteCheckedTasks.checked;

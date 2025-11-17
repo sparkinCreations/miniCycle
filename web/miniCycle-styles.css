@@ -3604,6 +3604,43 @@ color: rgba(77, 77, 255, 0.771);
     border-left: 5px solid red;
 }
 
+/* ✅ Delete When Complete Button Styling */
+.delete-when-complete-btn.active,
+.delete-when-complete-btn.delete-when-complete-active {
+    background-color: #ff4444;
+    color: white;
+}
+
+/* ✅ Task marked for deletion on reset (Cycle mode ONLY - not default) */
+.task.show-delete-indicator::before {
+    content: "❌";
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ✅ Task marked to be kept in To-Do mode (opted out of default) */
+.task.kept-task::before {
+    content: "📌";
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ✅ Adjust task padding to make room for indicators */
+.task.show-delete-indicator,
+.task.kept-task {
+    padding-left: 30px;
+}
+
 /* ✅ Task Dragging Effect */
 .dragging {
     opacity: 0.7;

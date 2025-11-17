@@ -128,6 +128,7 @@ export class TaskRenderer {
     /**
      * Refresh UI from state (re-render tasks from AppState or localStorage)
      * @param {Object} providedState - Optional state object (uses AppState if not provided)
+     * NOTE: Can only be called after Phase 2 complete (TaskDOMManager ready)
      */
     async refreshUIFromState(providedState = null) {
         const state =

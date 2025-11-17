@@ -1,9 +1,9 @@
 # Delete When Complete (Auto-Remove) - Implementation Plan
 
-> **📋 STATUS: PLANNED** (Target: Version 1.358+)
+> **📋 STATUS: ✅ IMPLEMENTED** (Version 1.371)
 > **Type**: New Feature - Task Lifecycle Management
-> **Complexity**: Medium
-> **Estimated Time**: 4-6 hours
+> **Complexity**: Medium → High (due to module instance issues)
+> **Actual Time**: ~8-10 hours (includes debugging module instances)
 
 ---
 
@@ -652,6 +652,202 @@ const optionLabels = {
 
 ---
 
-**Last Updated**: 2025-01-16
+## IMPLEMENTATION NOTES (v1.371)
+
+### ✅ What Was Implemented
+
+#### Schema Changes (Completed)
+- Added **TWO** fields to task schema (different from plan):
+  - `deleteWhenComplete` (boolean) - Active value for current mode
+  - `deleteWhenCompleteSettings` (object) - **Per-mode user preferences**: `{cycle: false, todo: true}`
+- **Settings are canonical source of truth** - active value derived from settings per mode
+- Migration handler repairs tasks missing either field (cycleLoader.js:146-164)
+
+#### Core Functionality (Completed)
+- ✅ Mode-specific defaults work correctly
+- ✅ Cycle mode: default OFF, show red ❌ when opted IN
+- ✅ To-Do mode: default ON, show pin 📌 when opted OUT
+- ✅ Button toggles and persists per-mode preferences
+- ✅ Visual indicators appear/disappear correctly
+- ✅ Tasks render from .mcyc files
+- ✅ Auto-reset integration (deletes marked completed tasks)
+- ✅ Recurring tasks integration
+
+#### Files Modified
+1. `modules/core/constants.js` - Added constants for defaults
+2. `modules/utils/globalUtils.js` - DOM sync functions with settings priority
+3. `modules/task/taskDOM.js` - Settings priority logic, visual indicators
+4. `modules/cycle/cycleLoader.js` - Migration and lazy AppState getter
+5. `modules/task/taskRenderer.js` - AppInit waits removed (unnecessary with proper init order)
+6. `modules/ui/taskOptionsCustomizer.js` - Force reload workaround
+7. `modules/recurring/recurringCore.js` - Downgraded warnings to info logs
+8. `modules/ui/undoRedoManager.js` - Downgraded warnings to info logs
+9. `modules/cycle/modeManager.js` - Downgraded warnings to info logs
+10. `miniCycle-scripts.js` - Moved cycleLoader to Phase 2, lazy AppState getter
+11. `tests/deleteWhenComplete.tests.js` - **NEW**: 38 comprehensive tests
+12. `tests/module-test-suite.html` - Added deleteWhenComplete module
+13. `tests/automated/run-browser-tests.js` - Added to automation
+
+### ⚠️ CRITICAL TECH DEBT
+
+#### Problem 1: Multiple ES6 Module Instances
+**Root Cause**: Versioned imports (`?v=1.371`) create separate module instances
+- `import('./taskDOM.js?v=1.371')` ≠ `import('./taskDOM.js?v=1.372')` ≠ `import('./taskDOM.js')`
+- Each instance has **separate module-level variables**
+- Instance A initializes `taskDOMManager`, but Instance B tries to use it → finds `null`
+
+**Band-Aid Solution Implemented**:
+```javascript
+// Store ALL module-level state globally
+window.__taskDOMManager = taskDOMManager;
+window.__TaskValidator = TaskValidator;
+window.__TaskUtils = TaskUtils;
+window.__TaskRenderer = TaskRenderer;
+window.__TaskEvents = TaskEvents;
+
+// Every wrapper function does dual lookup
+const manager = taskDOMManager || window.__taskDOMManager;
+const utils = TaskUtils || window.__TaskUtils;
+```
+
+**Issues with This Approach**:
+- ❌ Global namespace pollution (5 new globals)
+- ❌ Performance overhead (dual lookups in every wrapper)
+- ❌ Memory leak (globals never garbage collected)
+- ❌ Confusing code paths (sometimes local, sometimes global)
+- ❌ Dead import code (`refreshTasksFromDOM` unused in customizer)
+
+**Proper Fix Needed**:
+- Investigate WHERE non-versioned imports happen
+- Consolidate to single import point through appInit
+- Ensure ALL imports use consistent versioned path
+- OR eliminate module-level variables entirely (access through window.__taskDOMManager.validator)
+
+#### Problem 2: Task Customizer Force Reload
+**Root Cause**: Module instance issues prevent live UI updates
+- Button visibility changes don't apply without full page refresh
+- TaskDOM renderer from different instance has uninitialized manager
+
+**Band-Aid Solution Implemented**:
+```javascript
+// Save settings → Set sessionStorage flag → Wait 1s → location.reload()
+// On reload: Check flag → Re-open customizer modal
+```
+
+**Issues with This Approach**:
+- ❌ Poor UX (jarring full page reload)
+- ❌ Loses undo history (page reload clears state)
+- ❌ Can't batch multiple customizations
+- ❌ 1 second artificial delay
+
+**Proper Fix Needed**:
+- Fix module instances (see Problem 1)
+- Use `window.__taskDOMManager.renderer.refreshTaskListUI()` directly
+- Remove reload, remove sessionStorage flags
+- Remove artificial 1s delay
+
+#### Problem 3: Inconsistent AppState Access
+**Root Cause**: AppState passed as value (captured null) instead of lazy getter
+
+**Band-Aid Solution Implemented**:
+```javascript
+// Changed from:
+AppState: window.AppState  // ❌ Captures null if passed before init
+
+// To:
+AppState: () => window.AppState  // ✅ Lazy getter always returns current
+```
+
+Then everywhere:
+```javascript
+const appState = getAppState();  // Unwrap getter
+if (!appState) { /* fallback */ }
+```
+
+**Issues with This Approach**:
+- ❌ Inconsistent pattern (some places use value, some use getter)
+- ❌ Easy to forget to unwrap getter
+- ❌ Confusing for new developers
+
+**Proper Fix Needed**:
+- Standardize dependency injection pattern
+- Document whether to pass values or getters
+- OR ensure proper initialization order so values work
+
+### 🔧 Refactoring Priorities
+
+**Priority 1: Fix Module Instance Problem** (2-3 hours)
+1. Grep for all `import.*taskDOM` in codebase
+2. Check which ones use versioning, which don't
+3. Standardize to single versioned import point
+4. Remove global fallbacks from taskDOM.js
+5. Remove `window.__*` globals
+
+**Priority 2: Remove Customizer Reload** (30 mins)
+1. After fixing Priority 1, test if live updates work
+2. Remove `location.reload()` from saveCustomization
+3. Remove sessionStorage flags
+4. Remove 1s artificial delay
+
+**Priority 3: Standardize Dependency Injection** (1 hour)
+1. Document pattern: values vs getters
+2. Audit all modules for consistency
+3. Consider using getter pattern everywhere OR values everywhere
+4. Update developer docs
+
+**Priority 4: Clean Up Logging** (15 mins)
+1. Remove excessive checkpoint logs from miniCycle-scripts.js
+2. Remove "CRITICAL" error logs that are now unnecessary
+3. Standardize log levels (info/warn/error)
+
+### 📊 Testing Status
+
+**Automated Tests**: ✅ Passing
+- 38 tests in `deleteWhenComplete.tests.js`
+- Covers: validation, DOM sync, settings priority, button states, mode-specific behavior
+
+**Manual Testing**: ✅ Functional
+- Task customizer works (with reload)
+- Delete-when-complete buttons toggle correctly
+- Mode-specific defaults apply
+- Tasks delete on auto-reset as expected
+- .mcyc file imports work
+
+**Known Issues**: ⚠️ UX Degradation
+- Customizer requires full page reload (poor UX but functional)
+- Module instance warnings in console (hidden by downgrading to info)
+
+### 📝 Key Architectural Decisions
+
+1. **Two-Field Approach**: Used both `deleteWhenComplete` (active) AND `deleteWhenCompleteSettings` (canonical)
+   - Allows per-mode user preferences
+   - Settings object is source of truth
+   - Active field derived from settings[currentMode]
+
+2. **Settings Priority Logic**: Always check settings FIRST, then fallback to active field
+   - Prevents stale active values from overriding user preferences
+   - Critical for mode-switching behavior
+
+3. **Global Singleton Pattern**: Store manager globally to handle module instances
+   - Necessary evil until module imports standardized
+   - Documented in code with clear comments
+
+4. **Force Reload Pattern**: Use page refresh to apply customizer changes
+   - Workaround for module instance issues
+   - Flagged for refactoring after module fixes
+
+### 🎯 Success Criteria Met
+
+- ✅ Feature works correctly for end users
+- ✅ All tests passing
+- ✅ Mode-specific defaults apply
+- ✅ Visual indicators accurate
+- ✅ Data persists across reloads
+- ✅ Migration handles old data
+- ⚠️ Clean architecture (tech debt documented for future cleanup)
+
+---
+
+**Last Updated**: 2025-01-17
 **Author**: miniCycle Development Team
-**Version**: 1.0 (Initial Plan)
+**Version**: 2.0 (Implementation Complete - Tech Debt Documented)

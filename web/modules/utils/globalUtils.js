@@ -499,6 +499,127 @@ export class GlobalUtils {
             loadedAt: new Date().toISOString()
         };
     }
+
+    /**
+     * Validates deleteWhenComplete settings structure
+     * @param {Object} settings - Settings object to validate
+     * @returns {boolean} - True if valid, false otherwise
+     */
+    static validateDeleteSettings(settings) {
+        if (!settings || typeof settings !== 'object') {
+            return false;
+        }
+
+        return typeof settings.cycle === 'boolean' &&
+               typeof settings.todo === 'boolean';
+    }
+
+    /**
+     * Synchronizes task DOM element with deleteWhenComplete state
+     * Pure function - no side effects beyond DOM updates
+     *
+     * @param {HTMLElement} taskElement - Task DOM element to update
+     * @param {Object} taskData - Task data containing deleteWhenComplete state
+     * @param {string} currentMode - Current mode ('cycle' or 'todo')
+     * @param {Object} constants - Constants object with DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+     */
+    static syncTaskDeleteWhenCompleteDOM(taskElement, taskData, currentMode, constants) {
+        if (!taskElement || !taskData) {
+            console.warn('⚠️ syncTaskDeleteWhenCompleteDOM: Missing taskElement or taskData');
+            return;
+        }
+
+        const { deleteWhenComplete, deleteWhenCompleteSettings } = taskData;
+        const isToDoMode = currentMode === 'todo';
+        const isRecurring = taskElement.classList.contains('recurring');
+
+        // Validate settings
+        const validSettings = this.validateDeleteSettings(deleteWhenCompleteSettings)
+            ? deleteWhenCompleteSettings
+            : { ...constants.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+
+        // ✅ Decide active deleteWhenComplete strictly from settings when possible
+        // Priority: mode-specific setting (canonical) > legacy field > hard defaults
+        let finalDeleteWhenComplete;
+
+        // 1) Preferred: mode-specific setting (canonical source of truth)
+        if (typeof validSettings[currentMode] === 'boolean') {
+            finalDeleteWhenComplete = validSettings[currentMode];
+
+        // 2) Fallback: legacy/temporary field if settings are somehow missing
+        } else if (typeof deleteWhenComplete === 'boolean') {
+            finalDeleteWhenComplete = deleteWhenComplete;
+
+        // 3) Last-resort: hard defaults per mode
+        } else {
+            finalDeleteWhenComplete = currentMode === 'todo'
+                ? true   // To-Do default = delete
+                : false; // Cycle default = keep
+        }
+
+        // Update data attributes
+        taskElement.dataset.deleteWhenComplete = finalDeleteWhenComplete.toString();
+        taskElement.dataset.deleteWhenCompleteSettings = JSON.stringify(validSettings);
+
+        // Update button state
+        const deleteBtn = taskElement.querySelector('.delete-when-complete-btn');
+        if (deleteBtn && !isRecurring) {
+            deleteBtn.classList.toggle('active', finalDeleteWhenComplete);
+            deleteBtn.classList.toggle('delete-when-complete-active', finalDeleteWhenComplete);
+            deleteBtn.setAttribute('aria-pressed', finalDeleteWhenComplete.toString());
+        }
+
+        // Update visual indicators based on mode
+        if (isToDoMode) {
+            // To-Do mode: show pin if kept (deleteWhenComplete=false)
+            taskElement.classList.remove('show-delete-indicator');
+            if (!finalDeleteWhenComplete && !isRecurring) {
+                taskElement.classList.add('kept-task');
+            } else {
+                taskElement.classList.remove('kept-task');
+            }
+        } else {
+            // Cycle mode: show red X if deleted (deleteWhenComplete=true)
+            taskElement.classList.remove('kept-task');
+            if (finalDeleteWhenComplete && !isRecurring) {
+                taskElement.classList.add('show-delete-indicator');
+            } else {
+                taskElement.classList.remove('show-delete-indicator');
+            }
+        }
+    }
+
+    /**
+     * Batch synchronize all tasks in the DOM with current mode
+     * @param {string} currentMode - Current mode ('cycle' or 'todo')
+     * @param {Object} tasksData - Map of task IDs to task data objects
+     * @param {Object} constants - Constants object
+     */
+    static syncAllTasksWithMode(currentMode, tasksData, constants) {
+        const taskList = document.getElementById('taskList');
+        if (!taskList) {
+            console.warn('⚠️ syncAllTasksWithMode: Task list not found');
+            return;
+        }
+
+        const allTasks = taskList.querySelectorAll('.task');
+        let syncedCount = 0;
+
+        allTasks.forEach(taskEl => {
+            const taskId = taskEl.dataset.taskId;
+            const taskData = tasksData[taskId];
+
+            if (taskData) {
+                this.syncTaskDeleteWhenCompleteDOM(taskEl, taskData, currentMode, constants);
+                syncedCount++;
+            } else {
+                console.warn(`⚠️ No data found for task ${taskId}`);
+            }
+        });
+
+        console.log(`✅ Synced ${syncedCount} tasks with ${currentMode} mode`);
+        return syncedCount;
+    }
 }
 
 // ===========================================
@@ -528,7 +649,8 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
     delete: true,           // 🗑️ Delete task
     recurring: false,       // 🔁 Recurring task
     dueDate: false,         // 📅 Set due date
-    reminders: false        // 🔔 Task reminders
+    reminders: false,       // 🔔 Task reminders
+    deleteWhenComplete: false  // ❌ Delete when complete (auto-remove on reset)
 };
 
 // ===========================================
@@ -568,6 +690,11 @@ window.safeJSONStringify = GlobalUtils.safeJSONStringify;
 // Make notification utility functions globally accessible
 window.generateNotificationId = GlobalUtils.generateNotificationId;
 window.generateHashId = GlobalUtils.generateHashId;
+
+// Make deleteWhenComplete utilities globally accessible
+window.validateDeleteSettings = GlobalUtils.validateDeleteSettings;
+window.syncTaskDeleteWhenCompleteDOM = GlobalUtils.syncTaskDeleteWhenCompleteDOM.bind(GlobalUtils);
+window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode.bind(GlobalUtils);
 
 // Make task options customizer constants globally accessible
 window.DEFAULT_TASK_OPTION_BUTTONS = DEFAULT_TASK_OPTION_BUTTONS;

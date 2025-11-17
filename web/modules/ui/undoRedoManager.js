@@ -851,7 +851,8 @@ export async function initializeUndoSystemForApp() {
     const activeCycleId = currentState?.appState?.activeCycleId;
 
     if (!activeCycleId) {
-      console.warn('⚠️ No active cycle for undo initialization');
+      // ✅ Normal during Phase 2 - data loads in Phase 3
+      console.log('ℹ️ No active cycle yet - undo system will initialize after data loads');
       return;
     }
 

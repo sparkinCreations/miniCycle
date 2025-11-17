@@ -8,6 +8,12 @@
  * @version 1.371
  */
 
+// Import constants
+import {
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
+    DEFAULT_RECURRING_DELETE_SETTINGS
+} from './constants.js';
+
 // MiniCycleState class definition
 class MiniCycleState {
     constructor(dependencies = {}) {
@@ -92,6 +98,40 @@ class MiniCycleState {
             if (existingData) {
                 this.data = existingData;
                 console.log('✅ Loaded existing Schema 2.5 data');
+
+                // ✅ Initialize deleteWhenCompleteSettings for existing tasks
+                let tasksInitialized = 0;
+                let templatesInitialized = 0;
+
+                if (this.data.data?.cycles) {
+                    Object.values(this.data.data.cycles).forEach(cycle => {
+                        // Initialize settings for regular tasks
+                        if (cycle.tasks) {
+                            cycle.tasks.forEach(task => {
+                                if (!task.deleteWhenCompleteSettings) {
+                                    task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                                    tasksInitialized++;
+                                }
+                            });
+                        }
+
+                        // Initialize settings for recurring templates
+                        if (cycle.recurringTemplates) {
+                            Object.values(cycle.recurringTemplates).forEach(template => {
+                                if (!template.deleteWhenCompleteSettings) {
+                                    template.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
+                                    templatesInitialized++;
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (tasksInitialized > 0 || templatesInitialized > 0) {
+                    console.log(`✅ Initialized deleteWhenCompleteSettings for ${tasksInitialized} tasks and ${templatesInitialized} templates`);
+                    // Save the updated data immediately
+                    this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+                }
             } else {
                 // ✅ Don't create data if none exists - let the main app handle this
                 console.log('⚠️ No valid Schema 2.5 data found - deferring to main app initialization');

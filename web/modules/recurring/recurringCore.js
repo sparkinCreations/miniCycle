@@ -17,6 +17,10 @@
  */
 
 import { appInit } from '../core/appInit.js';
+import {
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
+    DEFAULT_RECURRING_DELETE_SETTINGS
+} from '../core/constants.js';
 
 // ============================================
 // DEPENDENCY INJECTION SETUP
@@ -1258,7 +1262,9 @@ export async function catchUpMissedRecurringTasks() {
           remindersEnabled: template.remindersEnabled,
           recurring: true,
           id: template.id,
-          recurringSettings: template.recurringSettings
+          recurringSettings: template.recurringSettings,
+          deleteWhenComplete: template.deleteWhenComplete || true,
+          deleteWhenCompleteSettings: template.deleteWhenCompleteSettings || { ...DEFAULT_RECURRING_DELETE_SETTINGS }
       });
 
       // Calculate NEXT future occurrence
@@ -1399,7 +1405,9 @@ export async function watchRecurringTasks() {
             remindersEnabled: template.remindersEnabled,
             recurring: true,
             id: template.id,
-            recurringSettings: template.recurringSettings
+            recurringSettings: template.recurringSettings,
+            deleteWhenComplete: template.deleteWhenComplete || true,
+            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings || { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
         // ✅ Recalculate next occurrence after triggering
@@ -1472,13 +1480,15 @@ export async function setupRecurringWatcher() {
     const activeCycleId = state.appState?.activeCycleId;
 
     if (!activeCycleId) {
-        console.warn('⚠️ No active cycle ID found for recurring watcher setup');
+        // ✅ Normal during Phase 2 - data loads in Phase 3
+        console.log('ℹ️ No active cycle yet - recurring watcher will initialize after data loads');
         return;
     }
 
     const cycleData = state.data?.cycles?.[activeCycleId];
     if (!cycleData) {
-        console.warn('⚠️ No active cycle found for recurring watcher setup');
+        // ✅ Normal during Phase 2 - data loads in Phase 3
+        console.log('ℹ️ No cycle data yet - recurring watcher will initialize after data loads');
         return;
     }
 
@@ -1584,6 +1594,8 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             highPriority: task.highPriority || false,
             dueDate: task.dueDate || null,
             remindersEnabled: task.remindersEnabled || false,
+            deleteWhenComplete: true, // Recurring tasks always auto-remove
+            deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
             lastTriggeredTimestamp: null,
             nextScheduledOccurrence: calculateNextOccurrence(task.recurringSettings, Date.now()),
             schemaVersion: 2

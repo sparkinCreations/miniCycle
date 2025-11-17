@@ -236,12 +236,13 @@
             <option value="taskRenderer">TaskRenderer</option>
             <option value="taskEvents">TaskEvents</option>
             <option value="taskDOM">TaskDOM</option>
+            <option value="deleteWhenComplete">🗑️ Delete-When-Complete</option>
             <option value="taskOptionsCustomizer">TaskOptionsCustomizer</option>
             <option value="xss-vulnerability">🔒 XSS Vulnerability Tests</option>
             <option value="errorHandler">🛡️ Error Handler Tests</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (33 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (34 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -290,6 +291,7 @@
         const { runTaskRendererTests } = await import(`./taskRenderer.tests.js?v=${cacheBuster}`);
         const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
         const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
+        const { runDeleteWhenCompleteTests } = await import(`./deleteWhenComplete.tests.js?v=${cacheBuster}`);
         const { runTaskOptionsCustomizerTests } = await import(`./taskOptionsCustomizer.tests.js?v=${cacheBuster}`);
         const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
         const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
@@ -450,6 +452,12 @@
                     await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
                     currentModule = 'taskDOM';
                     resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'deleteWhenComplete') {
+                    // Load required modules for delete-when-complete tests
+                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    await import(`../modules/core/constants.js?v=${cacheBuster}`);
+                    currentModule = 'deleteWhenComplete';
+                    resultsDiv.innerHTML = '<p>✅ Delete-When-Complete tests loaded (with globalUtils and constants). Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskOptionsCustomizer') {
                     await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
                     await import(`../modules/ui/taskOptionsCustomizer.js?v=${cacheBuster}`);
@@ -541,6 +549,8 @@
                 await runTaskEventsTests(resultsDiv);
             } else if (currentModule === 'taskDOM') {
                 await runTaskDOMTests(resultsDiv);
+            } else if (currentModule === 'deleteWhenComplete') {
+                await runDeleteWhenCompleteTests(resultsDiv);
             } else if (currentModule === 'taskOptionsCustomizer') {
                 await runTaskOptionsCustomizerTests(resultsDiv);
             } else if (currentModule === 'xss-vulnerability') {

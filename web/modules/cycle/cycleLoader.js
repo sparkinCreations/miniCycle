@@ -8,9 +8,10 @@
  */
 
 import { appInit } from '../core/appInit.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 const Deps = {
-  AppState: null,
+  AppState: null,  // ✅ Will be a GETTER FUNCTION: () => window.AppState
   loadMiniCycleData: null,
   createInitialSchema25Data: null,
   addTask: null,
@@ -27,6 +28,15 @@ function setCycleLoaderDependencies(overrides = {}) {
   Object.assign(Deps, overrides);
 }
 
+/**
+ * Get AppState instance (handles both function and direct references)
+ * @returns {Object} AppState instance
+ */
+function getAppState() {
+  // ✅ Handle both getter function and direct reference
+  return typeof Deps.AppState === 'function' ? Deps.AppState() : Deps.AppState;
+}
+
 function assertInjected(name, fn) {
   if (typeof fn !== 'function') {
     throw new Error(`cycleLoader: missing dependency ${name}`);
@@ -35,6 +45,8 @@ function assertInjected(name, fn) {
 
 /**
  * Main coordination function
+ * NOTE: This is now called in Phase 3 (after all modules initialized)
+ * so no need to wait for appInit - guaranteed to be ready
  */
 async function loadMiniCycle() {
   console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
@@ -76,6 +88,21 @@ async function loadMiniCycle() {
   // It only creates DOM elements from the existing task data
   renderTasksToDOM(currentCycle.tasks || []);
 
+  // 2.5) Sync visual indicators with current mode
+  // ✅ After rendering tasks, sync all delete-when-complete visual indicators
+  if (currentCycle.tasks && window.syncAllTasksWithMode) {
+    const currentMode = currentCycle.deleteCheckedTasks === true ? 'todo' : 'cycle';
+    const tasksDataMap = {};
+    currentCycle.tasks.forEach(task => {
+      tasksDataMap[task.id] = task;
+    });
+
+    window.syncAllTasksWithMode(currentMode, tasksDataMap, {
+      DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+    });
+    console.log(`✅ Synced all task visual indicators with ${currentMode} mode`);
+  }
+
   // 3) Update UI state
   updateCycleUIState(currentCycle, schemaData.settings || {});
 
@@ -100,6 +127,10 @@ function repairAndCleanTasks(currentCycle) {
   let tasksModified = false;
   const originalLength = currentCycle.tasks.length;
 
+  // Determine current mode for deleteWhenComplete defaults
+  const isToDoMode = currentCycle.deleteCheckedTasks === true;
+  const currentMode = isToDoMode ? 'todo' : 'cycle';
+
   currentCycle.tasks.forEach((task, index) => {
     if (!task) return;
     if (typeof task !== 'object') return; // Skip non-objects (strings, numbers, etc.)
@@ -111,12 +142,26 @@ function repairAndCleanTasks(currentCycle) {
       tasksModified = true;
       console.warn('⚠️ Repaired task with missing text:', task.id);
     }
-    
+
     // ✅ Repair missing ID
     if (!task.id) {
       task.id = `task-${Date.now()}-${index}`;
       tasksModified = true;
       console.warn('⚠️ Repaired task with missing ID');
+    }
+
+    // ✅ Repair missing deleteWhenCompleteSettings
+    if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
+      task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+      tasksModified = true;
+      console.warn('⚠️ Repaired task with missing deleteWhenCompleteSettings:', task.id);
+    }
+
+    // ✅ Repair missing deleteWhenComplete (sync with current mode)
+    if (task.deleteWhenComplete === undefined || task.deleteWhenComplete === null) {
+      task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+      tasksModified = true;
+      console.warn('⚠️ Repaired task with missing deleteWhenComplete:', task.id, '- set to', task.deleteWhenComplete);
     }
   });
 
@@ -170,7 +215,9 @@ function renderTasksToDOM(tasks = []) {
       task.remindersEnabled || false,
       task.recurring || false,
       task.id,                    // ✅ MUST use existing ID (removed fallback)
-      task.recurringSettings || {} // ✅ NOTE: This converts undefined to {}
+      task.recurringSettings || {}, // ✅ NOTE: This converts undefined to {}
+      task.deleteWhenComplete,      // ✅ Pass through deleteWhenComplete
+      task.deleteWhenCompleteSettings // ✅ Pass through settings
     );
   });
 
@@ -266,7 +313,8 @@ async function saveCycleData(activeCycle, currentCycle) {
   await appInit.waitForCore();
 
   // ✅ FIX #4: Use AppState instead of direct localStorage write
-  if (!Deps.AppState || typeof Deps.AppState.update !== 'function') {
+  const appState = getAppState();
+  if (!appState || typeof appState.update !== 'function') {
     console.warn('⚠️ AppState not available, falling back to direct save');
     // Fallback to direct write only if AppState unavailable
     const raw = localStorage.getItem('miniCycleData');
@@ -285,7 +333,7 @@ async function saveCycleData(activeCycle, currentCycle) {
 
   // Use AppState for coordinated saves
   try {
-    await Deps.AppState.update((state) => {
+    await appState.update((state) => {
       if (state.data?.cycles?.[activeCycle]) {
         state.data.cycles[activeCycle] = currentCycle;
         console.log(`💾 Saved cycle "${activeCycle}" via AppState`);

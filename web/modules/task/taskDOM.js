@@ -9,6 +9,19 @@
  * - Shows user-friendly error messages
  * - Falls back to basic task display
  *
+ * ⚠️ IMPORTANT: Multiple Module Instance Handling
+ * Due to ES6 module versioning (?v=1.371), the same module can be loaded
+ * multiple times, creating separate instances with separate module-level variables.
+ *
+ * Solution: All critical state is stored BOTH locally AND globally:
+ * - taskDOMManager → window.__taskDOMManager
+ * - TaskValidator → window.__TaskValidator
+ * - TaskUtils → window.__TaskUtils
+ * - TaskRenderer → window.__TaskRenderer
+ * - TaskEvents → window.__TaskEvents
+ *
+ * All wrapper functions check: `const utils = TaskUtils || window.__TaskUtils;`
+ *
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
@@ -17,8 +30,13 @@
  */
 
 import { appInit } from '../core/appInit.js';
+import {
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
+    DEFAULT_RECURRING_DELETE_SETTINGS
+} from '../core/constants.js';
 
 // ✅ Module classes will be loaded dynamically with versioning
+// ✅ Also stored globally to handle multiple module instances (see note above)
 let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;
 
 export class TaskDOMManager {
@@ -65,6 +83,7 @@ export class TaskDOMManager {
             captureStateSnapshot: dependencies.captureStateSnapshot || this.fallbackCapture,
 
             // Global utils (optional)
+            GlobalUtils: dependencies.GlobalUtils || window.GlobalUtils,
             sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
             safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
             safeGetElement: dependencies.safeGetElement || this.fallbackGetElement,
@@ -114,9 +133,11 @@ export class TaskDOMManager {
                 // Get version for cache busting
                 const version = typeof self !== 'undefined' && self.APP_VERSION
                     ? self.APP_VERSION
-                    : window.APP_VERSION || '1.337';
+                    : window.APP_VERSION || '1.371';
+                console.log(`📦 Using version ${version} for sub-module imports`);
 
                 // Load all 4 sub-modules with versioned imports
+                console.log('📦 Starting Promise.all for sub-module imports...');
                 const [
                     { TaskValidator: ValidatorClass },
                     { TaskUtils: UtilsClass },
@@ -128,12 +149,26 @@ export class TaskDOMManager {
                     import(`./taskRenderer.js?v=${version}`),
                     import(`./taskEvents.js?v=${version}`)
                 ]);
+                console.log('✅ All 4 sub-modules imported successfully');
 
-                // Store classes for module-level access
+                // Store classes for module-level access (both local and global)
                 TaskValidator = ValidatorClass;
                 TaskUtils = UtilsClass;
                 TaskRenderer = RendererClass;
                 TaskEvents = EventsClass;
+
+                // ✅ CRITICAL FIX: Store globally to handle multiple module instances
+                window.__TaskValidator = TaskValidator;
+                window.__TaskUtils = TaskUtils;
+                window.__TaskRenderer = TaskRenderer;
+                window.__TaskEvents = TaskEvents;
+
+                console.log('✅ Module-level classes stored (local + global):', {
+                    TaskValidator: !!TaskValidator,
+                    TaskUtils: !!TaskUtils,
+                    TaskRenderer: !!TaskRenderer,
+                    TaskEvents: !!TaskEvents
+                });
 
                 // Initialize validator module
                 this.validator = this.dependencies.validator || new TaskValidator({
@@ -208,8 +243,12 @@ export class TaskDOMManager {
             this.initialized = true;
             console.log('✅ TaskDOMManager initialized successfully');
         } catch (error) {
-            console.warn('⚠️ TaskDOMManager initialization failed:', error);
+            console.error('❌ TaskDOMManager initialization failed:', error);
+            console.error('❌ Error stack:', error.stack);
             this.deps.showNotification?.('Task display may not work properly', 'warning');
+
+            // ✅ Rethrow error so initTaskDOMManager() knows initialization failed
+            throw error;
         }
     }
 
@@ -334,15 +373,21 @@ export class TaskDOMManager {
     createTaskDOMElements(taskContext, taskData) {
         const {
             assignedTaskId, taskTextTrimmed, highPriority, recurring,
-            recurringSettings, settings, autoResetEnabled, currentCycle
+            recurringSettings, settings, autoResetEnabled, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings
         } = taskContext;
 
         // Get required DOM elements
         const taskList = this.deps.getElementById("taskList");
         const taskInput = this.deps.getElementById("taskInput");
 
+        // Validate taskList exists
+        if (!taskList) {
+            console.error('❌ Task list element (#taskList) not found in DOM');
+            throw new Error('Task list container not found');
+        }
+
         // Create main task element
-        const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
+        const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
 
         // Create three dots button if needed
         const threeDotsButton = this.createThreeDotsButton(taskItem, settings);
@@ -379,7 +424,7 @@ export class TaskDOMManager {
     /**
      * Create main task element (li)
      */
-    createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
+    createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete = false, deleteWhenCompleteSettings = null) {
         const taskItem = document.createElement("li");
         taskItem.classList.add("task");
         taskItem.setAttribute("draggable", "true");
@@ -407,6 +452,54 @@ export class TaskDOMManager {
                 ? currentCycle.recurringTemplates[assignedTaskId].recurringSettings
                 : recurringSettings;
             taskItem.setAttribute("data-recurring-settings", JSON.stringify(settingsToUse));
+        }
+
+        // ✅ Store deleteWhenComplete state and settings
+        const isToDoMode = currentCycle?.deleteCheckedTasks === true;
+        const currentMode = isToDoMode ? 'todo' : 'cycle';
+
+        // Validate and initialize settings if missing
+        const validSettings = deleteWhenCompleteSettings &&
+            typeof deleteWhenCompleteSettings === 'object' &&
+            typeof deleteWhenCompleteSettings.cycle === 'boolean' &&
+            typeof deleteWhenCompleteSettings.todo === 'boolean'
+            ? deleteWhenCompleteSettings
+            : { cycle: false, todo: true }; // Use defaults if invalid
+
+        // ✅ Decide active deleteWhenComplete strictly from settings when possible
+        // Priority: mode-specific setting (canonical) > legacy field > hard defaults
+        let finalDeleteWhenComplete;
+
+        // 1) Preferred: mode-specific setting (canonical source of truth)
+        if (typeof validSettings[currentMode] === 'boolean') {
+            finalDeleteWhenComplete = validSettings[currentMode];
+
+        // 2) Fallback: legacy/temporary field if settings are somehow missing
+        } else if (typeof deleteWhenComplete === 'boolean') {
+            finalDeleteWhenComplete = deleteWhenComplete;
+
+        // 3) Last-resort: hard defaults per mode
+        } else {
+            finalDeleteWhenComplete = currentMode === 'todo'
+                ? true   // To-Do default = delete
+                : false; // Cycle default = keep
+        }
+
+        // ✅ ALWAYS set the dataset attribute (for DOM sync)
+        taskItem.dataset.deleteWhenComplete = finalDeleteWhenComplete.toString();
+        taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(validSettings);
+
+        // ✅ Apply visual indicators based on mode
+        if (isToDoMode) {
+            // To-Do mode: show pin ONLY if opted OUT (deleteWhenComplete=false)
+            if (!finalDeleteWhenComplete && !isRecurring) {
+                taskItem.classList.add("kept-task");
+            }
+        } else {
+            // Cycle mode: show red X ONLY if opted IN (deleteWhenComplete=true)
+            if (finalDeleteWhenComplete && !isRecurring) {
+                taskItem.classList.add("show-delete-indicator");
+            }
         }
 
         return taskItem;
@@ -544,6 +637,12 @@ export class TaskDOMManager {
                 icon: "<i class='fas fa-bell'></i>",
                 show: visibleOptions.reminders ?? false,
                 toggle: true
+            },
+            {
+                class: "delete-when-complete-btn",
+                icon: "❌",
+                show: visibleOptions.deleteWhenComplete ?? false,
+                toggle: true
             }
         ];
 
@@ -603,7 +702,7 @@ export class TaskDOMManager {
      */
     createTaskButton(buttonConfig, taskContext, buttonContainer) {
         const { class: btnClass, icon, toggle = false, show } = buttonConfig;
-        const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority } = taskContext;
+        const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority, deleteWhenComplete } = taskContext;
 
         const button = document.createElement("button");
         button.classList.add("task-btn", btnClass);
@@ -623,7 +722,7 @@ export class TaskDOMManager {
         this.setupButtonAccessibility(button, btnClass, buttonContainer);
 
         // Setup ARIA states
-        this.setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle);
+        this.setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete);
 
         // Setup button event handlers
         this.setupButtonEventHandlers(button, btnClass, taskContext);
@@ -664,7 +763,8 @@ export class TaskDOMManager {
             "enable-task-reminders": "Toggle reminders for this task",
             "priority-btn": "Mark task as high priority",
             "edit-btn": "Edit task",
-            "delete-btn": "Delete task"
+            "delete-btn": "Delete task",
+            "delete-when-complete-btn": "Toggle delete when complete (permanently remove on auto-reset)"
         };
         const label = ariaLabels[btnClass] || "Task action";
         button.setAttribute("aria-label", label);
@@ -674,10 +774,15 @@ export class TaskDOMManager {
     /**
      * Setup button ARIA states (pressed, active)
      */
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle) {
+    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete) {
         if (btnClass === "enable-task-reminders") {
             const isActive = remindersEnabled === true;
             button.classList.toggle("reminder-active", isActive);
+            button.setAttribute("aria-pressed", isActive.toString());
+        } else if (btnClass === "delete-when-complete-btn") {
+            const isActive = deleteWhenComplete === true;
+            button.classList.toggle("active", isActive);
+            button.classList.toggle("delete-when-complete-active", isActive);
             button.setAttribute("aria-pressed", isActive.toString());
         } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
             let isActive;
@@ -720,6 +825,9 @@ export class TaskDOMManager {
             } else {
                 console.warn('⚠️ setupReminderButtonHandler not available - reminders module failed to load');
             }
+        } else if (btnClass === "delete-when-complete-btn") {
+            // ✅ Setup delete-when-complete button handler
+            this.setupDeleteWhenCompleteButtonHandler(button, taskContext);
         } else if (btnClass === "move-up" || btnClass === "move-down") {
             // ✅ Skip attaching old handlers to move buttons - using event delegation
             console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
@@ -729,6 +837,215 @@ export class TaskDOMManager {
                 button.addEventListener("click", window.handleTaskButtonClick);
             }
         }
+    }
+
+    /**
+     * Setup delete-when-complete button handler
+     * @param {HTMLButtonElement} button - The delete-when-complete button
+     * @param {Object} taskContext - Task context object
+     */
+    setupDeleteWhenCompleteButtonHandler(button, taskContext) {
+        const { assignedTaskId } = taskContext;
+
+        button.addEventListener("click", async (e) => {
+            e.stopPropagation();
+
+            const taskItem = button.closest(".task");
+            if (!taskItem) {
+                console.warn('⚠️ Task item not found for delete-when-complete button');
+                return;
+            }
+
+            // Check if task is recurring
+            const isRecurring = taskItem.classList.contains("recurring");
+
+            // Get current state
+            const currentlyActive = button.classList.contains("delete-when-complete-active");
+            const newState = !currentlyActive;
+
+            // ✅ Prevent disabling delete-when-complete for recurring tasks
+            if (isRecurring && !newState) {
+                // Show confirmation modal for recurring tasks
+                if (typeof this.deps.showNotification === 'function') {
+                    this.deps.showNotification(
+                        "⚠️ Recurring tasks must auto-delete on reset. Disabling this will prevent the task from recurring.",
+                        "warning",
+                        4000
+                    );
+                }
+
+                // Optionally show a confirmation dialog
+                const confirmed = confirm(
+                    "Recurring tasks must be removed on auto-reset to spawn new instances.\n\n" +
+                    "If you disable 'Delete When Complete', this task will no longer recur.\n\n" +
+                    "Are you sure you want to disable recurring for this task?"
+                );
+
+                if (!confirmed) {
+                    return; // User cancelled, don't change the state
+                }
+
+                // If confirmed, also disable recurring for this task
+                console.log('🔁 User confirmed: Disabling recurring for task', assignedTaskId);
+
+                // Remove recurring template and update task
+                if (this.deps.AppState?.isReady?.()) {
+                    await this.deps.AppState.update(state => {
+                        const cid = state.appState.activeCycleId;
+                        const cycle = state.data.cycles[cid];
+
+                        // Remove recurring template
+                        if (cycle?.recurringTemplates?.[assignedTaskId]) {
+                            delete cycle.recurringTemplates[assignedTaskId];
+                            console.log(`🗑️ Removed recurring template for task ${assignedTaskId}`);
+                        }
+
+                        // Update task to not be recurring
+                        const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
+                        if (task) {
+                            task.recurring = false;
+
+                            // ✅ Restore mode-specific deleteWhenComplete setting
+                            // Initialize settings if missing
+                            if (!task.deleteWhenCompleteSettings) {
+                                task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                            }
+
+                            // Determine current mode and restore that mode's setting
+                            const isToDoMode = cycle?.deleteCheckedTasks === true;
+                            const currentMode = isToDoMode ? 'todo' : 'cycle';
+                            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+
+                            console.log(`✅ Restored deleteWhenComplete from ${currentMode} mode settings:`, task.deleteWhenComplete);
+                        }
+                    }, true);
+
+                    // ✅ Get the restored task data and current mode
+                    const state = this.deps.AppState.get();
+                    const cid = state.appState.activeCycleId;
+                    const cycle = state.data.cycles[cid];
+                    const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
+                    const isToDoMode = cycle?.deleteCheckedTasks === true;
+                    const currentMode = isToDoMode ? 'todo' : 'cycle';
+
+                    // Update DOM - remove recurring class
+                    taskItem.classList.remove("recurring");
+
+                    const recurringBtn = taskItem.querySelector(".recurring-btn");
+                    if (recurringBtn) {
+                        recurringBtn.classList.remove("active");
+                        recurringBtn.setAttribute("aria-pressed", "false");
+                    }
+
+                    // ✅ Use centralized DOM sync function for deleteWhenComplete state
+                    if (task && this.deps.GlobalUtils) {
+                        this.deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+                            taskItem,
+                            task,
+                            currentMode,
+                            { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
+                        );
+                    } else if (!this.deps.GlobalUtils) {
+                        console.error('❌ GlobalUtils not available for recurring disable sync');
+                        // Fallback: manual update
+                        const restoredDeleteWhenComplete = task?.deleteWhenComplete || false;
+                        taskItem.dataset.deleteWhenComplete = restoredDeleteWhenComplete.toString();
+                        button.classList.toggle("active", restoredDeleteWhenComplete);
+                        button.classList.toggle("delete-when-complete-active", restoredDeleteWhenComplete);
+                        button.setAttribute("aria-pressed", restoredDeleteWhenComplete.toString());
+                    }
+
+                    this.deps.showNotification?.("Recurring disabled for this task", "info", 2000);
+                    return; // Exit early since we've handled everything
+                }
+            }
+
+            // ✅ Update state and DOM using centralized functions
+            if (!this.deps.AppState?.isReady?.()) {
+                console.error('❌ AppState not available for delete-when-complete toggle');
+                this.deps.showNotification?.('Feature temporarily unavailable', 'error', 3000);
+                return;
+            }
+
+            // Check GlobalUtils availability
+            if (!this.deps.GlobalUtils) {
+                console.error('❌ GlobalUtils not available - using fallback');
+            }
+
+            // Get current state info
+            let state = this.deps.AppState.get();
+            let activeCycleId = state.appState.activeCycleId;
+            let cycle = state.data.cycles[activeCycleId];
+            let isToDoMode = cycle?.deleteCheckedTasks === true;
+            const currentMode = isToDoMode ? 'todo' : 'cycle';
+
+            // Update task data in AppState
+            await this.deps.AppState.update(state => {
+                const cycle = state.data.cycles[activeCycleId];
+                const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
+
+                if (task) {
+                    // Validate and initialize settings if missing
+                    const isValid = this.deps.GlobalUtils?.validateDeleteSettings(task.deleteWhenCompleteSettings);
+                    if (!isValid) {
+                        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                        console.warn('⚠️ Initialized missing deleteWhenCompleteSettings for task', assignedTaskId);
+                    }
+
+                    // Update active value AND mode-specific setting
+                    task.deleteWhenComplete = newState;
+                    task.deleteWhenCompleteSettings[currentMode] = newState;
+
+                    console.log(`✅ Set deleteWhenComplete for task ${assignedTaskId} (${currentMode} mode): ${newState}`);
+                }
+            }, true);
+
+            // Refresh state after update
+            state = this.deps.AppState.get();
+            const task = state.data.cycles[activeCycleId]?.tasks?.find(t => t.id === assignedTaskId);
+
+            if (task) {
+                // ✅ Use centralized DOM sync function if available
+                if (this.deps.GlobalUtils) {
+                    this.deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+                        taskItem,
+                        task,
+                        currentMode,
+                        { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
+                    );
+                } else {
+                    // Fallback: manual DOM update
+                    console.warn('⚠️ Using fallback DOM update - GlobalUtils not available');
+                    taskItem.dataset.deleteWhenComplete = newState.toString();
+                    taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(task.deleteWhenCompleteSettings);
+
+                    // Update button state
+                    button.classList.toggle("active", newState);
+                    button.classList.toggle("delete-when-complete-active", newState);
+                    button.setAttribute("aria-pressed", newState.toString());
+
+                    // Update visual indicators
+                    if (isToDoMode) {
+                        taskItem.classList.remove('show-delete-indicator');
+                        taskItem.classList.toggle('kept-task', !newState);
+                    } else {
+                        taskItem.classList.remove('kept-task');
+                        taskItem.classList.toggle('show-delete-indicator', newState);
+                    }
+                }
+            }
+
+            // Show notification (mode-specific messaging)
+            let message;
+            if (newState) {
+                message = "Task will be removed on auto-reset";
+            } else {
+                message = isToDoMode
+                    ? "📌 Task will be kept on complete (pinned)"
+                    : "Task will remain in list on auto-reset";
+            }
+            this.deps.showNotification?.(message, "info", 2000);
+        });
     }
 
     /**
@@ -956,6 +1273,12 @@ export class TaskDOMManager {
         // ✅ FIX #6: Support batched DOM operations
         const container = targetContainer || taskList;
 
+        // Safety check: ensure container exists and is a DOM element
+        if (!container || typeof container.appendChild !== 'function') {
+            console.error('❌ Invalid container for task creation:', container);
+            throw new Error('Task container not found or invalid');
+        }
+
         // Append to DOM (or deferred container like DocumentFragment)
         if (!deferAppend) {
             container.appendChild(taskItem);
@@ -1015,6 +1338,20 @@ let taskDOMManager = null;
  * @param {Object} dependencies - Required dependencies
  */
 async function initTaskDOMManager(dependencies = {}) {
+    // ✅ Check global instance first (handles multiple module instances)
+    if (window.__taskDOMManager) {
+        console.warn('⚠️ TaskDOMManager already initialized (using global instance)');
+        taskDOMManager = window.__taskDOMManager;
+
+        // ✅ Also restore module-level class references from global
+        if (!TaskUtils && window.__TaskUtils) TaskUtils = window.__TaskUtils;
+        if (!TaskValidator && window.__TaskValidator) TaskValidator = window.__TaskValidator;
+        if (!TaskRenderer && window.__TaskRenderer) TaskRenderer = window.__TaskRenderer;
+        if (!TaskEvents && window.__TaskEvents) TaskEvents = window.__TaskEvents;
+
+        return taskDOMManager;
+    }
+
     if (taskDOMManager) {
         console.warn('⚠️ TaskDOMManager already initialized');
         return taskDOMManager;
@@ -1022,6 +1359,36 @@ async function initTaskDOMManager(dependencies = {}) {
 
     taskDOMManager = new TaskDOMManager(dependencies);
     await taskDOMManager.init(); // Await async init
+
+    // ✅ Verify initialization succeeded
+    if (!taskDOMManager.initialized || !taskDOMManager.modulesLoaded) {
+        const error = new Error('TaskDOMManager initialization failed - modules not loaded');
+        console.error('❌', error.message);
+        throw error;
+    }
+
+    // ✅ Verify sub-module classes are available (check both local and global)
+    const utils = TaskUtils || window.__TaskUtils;
+    const validator = TaskValidator || window.__TaskValidator;
+    const renderer = TaskRenderer || window.__TaskRenderer;
+    const events = TaskEvents || window.__TaskEvents;
+
+    if (!utils || !validator || !renderer || !events) {
+        const error = new Error('TaskDOMManager sub-modules not loaded properly');
+        console.error('❌', error.message, {
+            TaskUtils: !!utils,
+            TaskValidator: !!validator,
+            TaskRenderer: !!renderer,
+            TaskEvents: !!events
+        });
+        throw error;
+    }
+
+    // ✅ CRITICAL FIX: Store globally to handle multiple module instances
+    window.__taskDOMManager = taskDOMManager;
+    console.log('✅ TaskDOMManager stored globally for cross-module access');
+
+    console.log('✅ TaskDOMManager initialization verified - all sub-modules loaded');
     return taskDOMManager;
 }
 
@@ -1038,14 +1405,19 @@ async function initTaskDOMManager(dependencies = {}) {
  * ✅ DELEGATES TO: taskValidation.js module
  */
 function validateAndSanitizeTaskInput(taskText) {
-    if (!taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager not initialized - using basic validation');
+    // ✅ Get manager from global if not in this module instance
+    const manager = taskDOMManager || window.__taskDOMManager;
+
+    if (!manager) {
+        console.error('❌ CRITICAL: TaskDOMManager not found in module OR global!');
+        console.error('❌ This means initTaskDOMManager() never ran');
+        console.trace('❌ Call stack:');
         // Fallback validation
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
         return taskText.trim();
     }
     // Delegate to validator module
-    return taskDOMManager.validator.validateAndSanitizeTaskInput(taskText);
+    return manager.validator.validateAndSanitizeTaskInput(taskText);
 }
 
 // ============================================
@@ -1054,15 +1426,97 @@ function validateAndSanitizeTaskInput(taskText) {
 // ✅ DELEGATES TO: taskUtils.js
 
 function buildTaskContext(taskItem, taskId) {
-    return TaskUtils.buildTaskContext(taskItem, taskId, window.AppState);
+    const utils = TaskUtils || window.__TaskUtils;
+    if (!utils) {
+        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
+        return window.TaskUtils?.buildTaskContext?.(taskItem, taskId, window.AppState) || {};
+    }
+    return utils.buildTaskContext(taskItem, taskId, window.AppState);
 }
 
 function extractTaskDataFromDOM() {
-    return TaskUtils.extractTaskDataFromDOM();
+    // ✅ Prefer the TaskUtils implementation when it's ready (check both local and global)
+    const utils = TaskUtils || window.__TaskUtils;
+    if (typeof utils?.extractTaskDataFromDOM === 'function') {
+        return utils.extractTaskDataFromDOM();
+    }
+
+    // 🔁 Fallback: local DOM extraction so autosave/directSave still works
+    console.warn('⚠️ TaskUtils not initialized yet, using fallback extractTaskDataFromDOM');
+
+    const taskListElement = document.getElementById('taskList');
+    if (!taskListElement) {
+        console.warn('⚠️ Task list element not found in fallback extractTaskDataFromDOM');
+        return [];
+    }
+
+    const tasks = [...taskListElement.children].map(taskElement => {
+        const taskTextElement = taskElement.querySelector(".task-text");
+        const taskId = taskElement.dataset.taskId;
+
+        if (!taskTextElement || !taskId) {
+            console.warn("⚠️ Skipping invalid task element in fallback extractTaskDataFromDOM");
+            return null;
+        }
+
+        // Recurring settings
+        let recurringSettings = {};
+        try {
+            const recurringAttr = taskElement.getAttribute("data-recurring-settings");
+            if (recurringAttr) {
+                recurringSettings = JSON.parse(recurringAttr);
+            }
+        } catch (err) {
+            console.warn("⚠️ Invalid recurring settings in fallback, using empty object");
+        }
+
+        // deleteWhenCompleteSettings – use defaults unless valid JSON is present
+        let deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+        const dwcAttr = taskElement.dataset.deleteWhenCompleteSettings;
+        if (dwcAttr) {
+            try {
+                deleteWhenCompleteSettings = JSON.parse(dwcAttr);
+            } catch (err) {
+                console.warn("⚠️ Invalid deleteWhenCompleteSettings in fallback, using defaults");
+            }
+        }
+
+        return {
+            id: taskId,
+            text: taskTextElement.textContent,
+            completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
+            dueDate: taskElement.querySelector(".due-date")?.value || null,
+            highPriority: taskElement.classList.contains("high-priority"),
+            remindersEnabled: taskElement
+                .querySelector(".enable-task-reminders")
+                ?.classList.contains("reminder-active") || false,
+            recurring:
+                taskElement.classList.contains("recurring") ||
+                taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
+            recurringSettings,
+            deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
+            deleteWhenCompleteSettings,
+            schemaVersion: 2 // ✅ This path is only for legacy 2.5 saves
+        };
+    }).filter(Boolean);
+
+    return tasks;
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
-    return TaskUtils.loadTaskContext(
+    const utils = TaskUtils || window.__TaskUtils;
+    if (!utils) {
+        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
+        return window.TaskUtils?.loadTaskContext?.(
+            taskTextTrimmed,
+            taskId,
+            taskOptions,
+            isLoading,
+            window.loadMiniCycleData,
+            window.generateId
+        ) || null;
+    }
+    return utils.loadTaskContext(
         taskTextTrimmed,
         taskId,
         taskOptions,
@@ -1073,15 +1527,30 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false
 }
 
 function scrollToNewTask(taskList) {
-    TaskUtils.scrollToNewTask(taskList);
+    const utils = TaskUtils || window.__TaskUtils;
+    if (!utils) {
+        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
+        return window.TaskUtils?.scrollToNewTask?.(taskList);
+    }
+    utils.scrollToNewTask(taskList);
 }
 
 function handleOverdueStyling(taskItem, completed) {
-    TaskUtils.handleOverdueStyling(taskItem, completed);
+    const utils = TaskUtils || window.__TaskUtils;
+    if (!utils) {
+        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
+        return window.TaskUtils?.handleOverdueStyling?.(taskItem, completed);
+    }
+    utils.handleOverdueStyling(taskItem, completed);
 }
 
 function setupFinalTaskInteractions(taskItem, isLoading) {
-    TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
+    const utils = TaskUtils || window.__TaskUtils;
+    if (!utils) {
+        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
+        return window.TaskUtils?.setupFinalTaskInteractions?.(taskItem, isLoading);
+    }
+    utils.setupFinalTaskInteractions(taskItem, isLoading);
 }
 
 // ============================================
@@ -1089,41 +1558,47 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 // ============================================
 
 function createTaskDOMElements(taskContext, taskData) {
-    if (!taskDOMManager) {
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return null;
     }
-    return taskDOMManager.createTaskDOMElements(taskContext, taskData);
+    return manager.createTaskDOMElements(taskContext, taskData);
 }
 
 function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
-    if (!taskDOMManager) {
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return document.createElement('li');
     }
-    return taskDOMManager.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
+    return manager.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
 }
 
 function createThreeDotsButton(taskItem, settings) {
-    if (!taskDOMManager) return null;
-    return taskDOMManager.createThreeDotsButton(taskItem, settings);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) return null;
+    return manager.createThreeDotsButton(taskItem, settings);
 }
 
 function createTaskButtonContainer(taskContext) {
-    if (!taskDOMManager) {
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return document.createElement('div');
     }
-    return taskDOMManager.createTaskButtonContainer(taskContext);
+    return manager.createTaskButtonContainer(taskContext);
 }
 
 function createTaskButton(buttonConfig, taskContext, buttonContainer) {
-    if (!taskDOMManager) return document.createElement('button');
-    return taskDOMManager.createTaskButton(buttonConfig, taskContext, buttonContainer);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) return document.createElement('button');
+    return manager.createTaskButton(buttonConfig, taskContext, buttonContainer);
 }
 
 function createTaskContentElements(taskContext) {
-    if (!taskDOMManager) {
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         const fallbackId = `fallback-${Date.now()}`;
         const checkbox = document.createElement('input');
@@ -1138,22 +1613,24 @@ function createTaskContentElements(taskContext) {
             dueDateInput: dueDateInput
         };
     }
-    return taskDOMManager.createTaskContentElements(taskContext);
+    return manager.createTaskContentElements(taskContext);
 }
 
 function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
-    if (!taskDOMManager) {
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) {
         const fallbackCheckbox = document.createElement('input');
         fallbackCheckbox.id = `checkbox-fallback-${Date.now()}`;
         fallbackCheckbox.name = `task-fallback-${Date.now()}`;
         return fallbackCheckbox;
     }
-    return taskDOMManager.createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
+    return manager.createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
 }
 
 function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
-    if (!taskDOMManager) return document.createElement('span');
-    return taskDOMManager.createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) return document.createElement('span');
+    return manager.createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
 }
 
 // ============================================
@@ -1161,29 +1638,34 @@ function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
 // ============================================
 
 function setupRecurringButtonHandler(button, taskContext) {
-    if (!taskDOMManager) return;
-    taskDOMManager.setupRecurringButtonHandler(button, taskContext);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) return;
+    manager.setupRecurringButtonHandler(button, taskContext);
 }
 
 // ✅ DELEGATES TO: taskEvents.js
 function handleTaskButtonClick(event) {
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.handleTaskButtonClick(event);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.handleTaskButtonClick(event);
 }
 
 function toggleHoverTaskOptions(enableHover) {
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.toggleHoverTaskOptions(enableHover);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.toggleHoverTaskOptions(enableHover);
 }
 
 function revealTaskButtons(taskItem, caller = 'three-dots-button') {
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.revealTaskButtons(taskItem, caller);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.revealTaskButtons(taskItem, caller);
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.syncRecurringStateToDOM(taskEl, recurringSettings);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.syncRecurringStateToDOM(taskEl, recurringSettings);
 }
 
 // ============================================
@@ -1192,37 +1674,43 @@ function syncRecurringStateToDOM(taskEl, recurringSettings) {
 // ✅ DELEGATES TO: taskEvents.js
 
 function setupTaskInteractions(taskElements, taskContext) {
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.setupTaskInteractions(taskElements, taskContext);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.setupTaskInteractions(taskElements, taskContext);
 }
 
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
 }
 
 function setupTaskHoverInteractions(taskItem, settings) {
     // This method was removed from TaskEvents as it's integrated into setupTaskInteractions
     // Kept for backward compatibility
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.setupTaskHoverInteractions?.(taskItem, settings);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.setupTaskHoverInteractions?.(taskItem, settings);
 }
 
 function setupTaskFocusInteractions(taskItem) {
     // This method was removed from TaskEvents as it's integrated into setupTaskInteractions
     // Kept for backward compatibility
-    if (!taskDOMManager?.events) return;
-    taskDOMManager.events.setupTaskFocusInteractions?.(taskItem);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager?.events) return;
+    manager.events.setupTaskFocusInteractions?.(taskItem);
 }
 
 function finalizeTaskCreation(taskElements, taskContext, options) {
-    if (!taskDOMManager) return;
-    taskDOMManager.finalizeTaskCreation(taskElements, taskContext, options);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) return;
+    manager.finalizeTaskCreation(taskElements, taskContext, options);
 }
 
 function updateUIAfterTaskCreation(shouldSave) {
-    if (!taskDOMManager) return;
-    taskDOMManager.updateUIAfterTaskCreation(shouldSave);
+    const manager = taskDOMManager || window.__taskDOMManager;
+    if (!manager) return;
+    manager.updateUIAfterTaskCreation(shouldSave);
 }
 
 // ============================================

@@ -11,6 +11,12 @@
  * @version 1.371
  */
 
+// Import constants
+import {
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
+    DEFAULT_RECURRING_DELETE_SETTINGS
+} from '../core/constants.js';
+
 export class TaskUtils {
     /**
      * Build task context from DOM element
@@ -86,6 +92,17 @@ export class TaskUtils {
                 console.warn("⚠️ Invalid recurring settings, using empty object");
             }
 
+            // Extract deleteWhenCompleteSettings from data attribute or use defaults
+            let deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+            const settingsAttr = taskElement.dataset.deleteWhenCompleteSettings;
+            if (settingsAttr) {
+                try {
+                    deleteWhenCompleteSettings = JSON.parse(settingsAttr);
+                } catch (err) {
+                    console.warn("⚠️ Invalid deleteWhenCompleteSettings, using defaults");
+                }
+            }
+
             return {
                 id: taskId,
                 text: taskTextElement.textContent,
@@ -95,6 +112,8 @@ export class TaskUtils {
                 remindersEnabled: taskElement.querySelector(".enable-task-reminders")?.classList.contains("reminder-active") || false,
                 recurring: taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
                 recurringSettings,
+                deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
+                deleteWhenCompleteSettings: deleteWhenCompleteSettings,
                 schemaVersion: 2
             };
         }).filter(Boolean);

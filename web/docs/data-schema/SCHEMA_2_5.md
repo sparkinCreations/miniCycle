@@ -169,6 +169,22 @@ Each cycle contains:
   - `dueDate`: 📅 due date
   - `reminders`: 🔔 reminders
 
+#### Task Object Structure
+
+Each task object in the `tasks` array contains:
+- **id**: Unique task identifier (string)
+- **text**: Task description text (string)
+- **completed**: Completion status (boolean)
+- **dueDate**: Optional due date (string | null)
+- **highPriority**: Priority flag (boolean)
+- **remindersEnabled**: Task-specific reminder toggle (boolean)
+- **recurring**: Whether task is recurring (boolean)
+- **recurringSettings**: Recurring task configuration (object)
+- **deleteWhenComplete** (v1.372+): Auto-remove on reset instead of unchecking (boolean)
+  - Default: `false` for Cycle mode, `true` for To-Do mode
+  - Recurring tasks: Always `true` (auto-enabled)
+- **schemaVersion**: Schema version identifier (number)
+
 ### UI State (v1.357+)
 
 Global UI configuration:

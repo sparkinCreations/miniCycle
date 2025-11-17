@@ -270,13 +270,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // If we version this import, we create separate instances and break the shared state
   const { appInit } = await import('./modules/core/appInit.js');
 
-  // ✅ NOW create version helper for all OTHER dynamic imports (not appInit)
+  // ✅ Load core constants (without version for consistency)
+  const {
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
+    DEFAULT_RECURRING_DELETE_SETTINGS
+  } = await import('./modules/core/constants.js');
+
+  // ✅ NOW create version helper for all OTHER dynamic imports (not appInit or constants)
   const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
   // ✅ Set backward compatibility alias
   window.AppInit = appInit;
 
-  console.log('🚀 appInit loaded (2-phase initialization system)');
+  console.log('🚀 appInit and constants loaded (2-phase initialization system)');
 
 // ======================================================================
 // 🚀 APPINIT-COMPLIANT INITIALIZATION SEQUENCE
@@ -541,55 +547,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         applyTheme('default');
     }
 
-    // ...inside DOMContentLoaded, replace the current try { await cycleLoaderModulePromise; ... } block...
-    
-    // ...existing code...
-    
-    // Inside DOMContentLoaded, replace the current try { await window.cycleLoaderModulePromise; ... } with:
-// ✅ Load cycleLoader EARLY so window.loadMiniCycle exists before any initialSetup runs
-  try {
-    const mod = await import(withV('./modules/cycle/cycleLoader.js'));
-
-        // ✅ Ensure loadMiniCycle is available globally for refreshUIFromState()
-    if (!window.loadMiniCycle) {
-      window.loadMiniCycle = mod.loadMiniCycle;
-    }
-
-    mod.setCycleLoaderDependencies({
-      AppState: window.AppState,  // ✅ FIX #4: Add AppState for coordinated saves
-      loadMiniCycleData: () => window.loadMiniCycleData?.(),
-      createInitialSchema25Data: () => window.createInitialSchema25Data?.(),
-      addTask: (...args) => window.addTask?.(...args),  // ✅ Forward ALL parameters
-      updateThemeColor: () => window.updateThemeColor?.(),
-      startReminders: () => window.startReminders?.(),
-      catchUpMissedRecurringTasks: () => window.catchUpMissedRecurringTasks?.(),
-      updateProgressBar: () => window.updateProgressBar?.(),
-      checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
-      updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
-      updateStatsPanel: () => window.updateStatsPanel?.()
-    });
-
-    // If completeInitialSetup ran earlier and queued a load, honor it.
-    if (window.__pendingCycleLoad) {
-      await mod.loadMiniCycle();
-      window.__pendingCycleLoad = false;
-    }
-
-    // ✅ MOVED: DragDropManager initialization moved to Phase 2 (after markCoreSystemsReady)
-    // See async IIFE around line ~690 for the new appInit-compliant location
-
-    // ✅ MOVED: Data initialization moved to async IIFE (after dragDropManager is ready)
-    // See line ~700 where initializeAppWithAutoMigration() is now called
-    // This ensures: cycleLoader → AppState → dragDropManager → data loading (proper order)
-  } catch (e) {
-    console.error('❌ cycleLoader import failed:', e);
-  }
-
-
-  // ...remove the later duplicate cycleLoader import block that used to be here...
-  // ...existing code continues...
-
-    // ...existing code...
+    // ✅ MOVED TO PHASE 2: cycleLoader initialization moved after AppState is ready
+    // This prevents capturing null AppState reference
+    // See Phase 2 initialization section (line ~1152) for cycleLoader setup
 
     // ✅ Feature Setup
     console.log('⚙️ Setting up features...');
@@ -635,11 +595,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
-    // ✅ MOVED: DragDropManager initialization moved earlier (before initializeAppWithAutoMigration)
-    // See line ~600 for the new location - must be initialized before any tasks are created
-
-        // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
-        await appInit.markCoreSystemsReady();
+    // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
+    await appInit.markCoreSystemsReady();
 
         // ============ PHASE 2: MODULES ============
         console.log('🔌 Phase 2: Loading modules (appInit-compliant)...');
@@ -713,9 +670,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Task DOM Manager (Phase 2 module)
         console.log('🎨 Initializing task DOM module...');
+        console.log('⏱️ CHECKPOINT: About to call initTaskDOMManager');
         try {
             const { initTaskDOMManager } = await import(withV('./modules/task/taskDOM.js'));
+            console.log('✅ taskDOM.js imported successfully');
 
+            console.log('⏱️ CHECKPOINT: Calling initTaskDOMManager with dependencies...');
             await initTaskDOMManager({
                 // State management
                 AppState: window.AppState,
@@ -781,12 +741,21 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             });
 
             console.log('✅ Task DOM module initialized (Phase 2)');
+            console.log('⏱️ CHECKPOINT: initTaskDOMManager completed successfully');
+
+            // ✅ Expose taskDOMManager status globally for debugging
+            window.isTaskDOMReady = true;
+            console.log('✅ window.isTaskDOMReady = true');
         } catch (error) {
-            console.error('❌ Failed to initialize task DOM module:', error);
+            console.error('❌ CRITICAL: Failed to initialize task DOM module:', error);
+            console.error('❌ Error details:', error.message);
+            console.error('❌ Stack:', error.stack);
             if (typeof showNotification === 'function') {
-                showNotification('Task DOM feature unavailable', 'warning', 3000);
+                showNotification('❌ Critical error: Task DOM failed to initialize', 'error', 5000);
             }
-            console.warn('⚠️ App will continue without task DOM functionality');
+
+            // ✅ STOP EXECUTION - can't continue without TaskDOM
+            throw new Error('TaskDOM initialization failed - cannot render tasks');
         }
 
         // ✅ Initialize Task Options Customizer (Phase 2 module)
@@ -1153,7 +1122,38 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task core functionality');
         }
 
-        
+        // ✅ Initialize Cycle Loader (Phase 2 module - MUST be after AppState and TaskDOMManager)
+        console.log('🔄 Initializing cycle loader module...');
+        try {
+            const { loadMiniCycle, setCycleLoaderDependencies } = await import(withV('./modules/cycle/cycleLoader.js'));
+
+            // ✅ CRITICAL FIX: Pass AppState as GETTER FUNCTION, not value
+            // This prevents capturing null reference from early initialization
+            setCycleLoaderDependencies({
+                AppState: () => window.AppState,  // ✅ Lazy getter - always returns current value
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                createInitialSchema25Data: () => window.createInitialSchema25Data?.(),
+                addTask: (...args) => window.addTask?.(...args),
+                updateThemeColor: () => window.updateThemeColor?.(),
+                startReminders: () => window.startReminders?.(),
+                catchUpMissedRecurringTasks: () => window.catchUpMissedRecurringTasks?.(),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
+                updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
+                updateStatsPanel: () => window.updateStatsPanel?.()
+            });
+
+            // ✅ Expose globally
+            window.loadMiniCycle = loadMiniCycle;
+            window.setCycleLoaderDependencies = setCycleLoaderDependencies;
+
+            console.log('✅ Cycle loader module initialized (Phase 2)');
+        } catch (error) {
+            console.error('❌ CRITICAL: Failed to initialize cycle loader:', error);
+            console.error('❌ Stack:', error.stack);
+            throw new Error('Cycle loader initialization failed - cannot load cycles');
+        }
+
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
         await appInit.markAppReady();
@@ -1482,6 +1482,7 @@ if (!window.deviceDetectionManager) {
 
           // Re-render each task from Schema 2.5
           (cycleData.tasks || []).forEach(task => {
+              console.log(`🔄 Re-rendering task ${task.id}: deleteWhenComplete=${task.deleteWhenComplete}, settings=`, task.deleteWhenCompleteSettings);
               addTask(
                   task.text,
                   task.completed,
@@ -1492,7 +1493,9 @@ if (!window.deviceDetectionManager) {
                   task.remindersEnabled,
                   task.recurring,
                   task.id,
-                  task.recurringSettings
+                  task.recurringSettings,
+                  task.deleteWhenComplete,      // ✅ Pass through deleteWhenComplete
+                  task.deleteWhenCompleteSettings // ✅ Pass through settings
               );
           });
 
@@ -2582,7 +2585,7 @@ function showMilestoneMessage(miniCycleName, cycleCount) {
 
     
 // ✅ Main addTask function - now acts as orchestrator
-function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}) {
+function addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}, deleteWhenComplete = undefined, deleteWhenCompleteSettings = undefined) {
     // ✅ Use NEW taskDOM module functions via window.* (not old inline functions)
 
     // Input validation and sanitization
@@ -2591,9 +2594,9 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
 
     // Load and validate data context
     const taskContext = window.loadTaskContext?.(validatedInput, taskId, {
-        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
+        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
     }, isLoading) || loadTaskContext(validatedInput, taskId, {
-        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
+        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
     }, isLoading);
     if (!taskContext) return;
 
@@ -2695,13 +2698,27 @@ function createOrUpdateTaskData(taskContext) {
     const {
         cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
         highPriority, remindersEnabled, recurring, recurringSettings,
-        currentCycle, cycles, activeCycle, isLoading
+        currentCycle, cycles, activeCycle, isLoading, deleteWhenComplete,
+        deleteWhenCompleteSettings
     } = taskContext;
 
     let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
 
     if (!existingTask) {
         console.log('📋 Creating new task in Schema 2.5');
+
+        // ✅ Mode-specific deleteWhenComplete architecture:
+        // - Active value synced with current mode
+        // - Settings object stores preference per mode
+        const isToDoMode = currentCycle.deleteCheckedTasks === true;
+
+        // Use provided settings or defaults
+        const finalSettings = deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+
+        // Active value based on current mode (unless explicitly provided)
+        const activeDeleteWhenComplete = deleteWhenComplete !== undefined ?
+            deleteWhenComplete :
+            (isToDoMode ? finalSettings.todo : finalSettings.cycle);
 
         existingTask = {
             id: assignedTaskId,
@@ -2712,6 +2729,8 @@ function createOrUpdateTaskData(taskContext) {
             remindersEnabled,
             recurring,
             recurringSettings,
+            deleteWhenComplete: activeDeleteWhenComplete,
+            deleteWhenCompleteSettings: finalSettings,
             schemaVersion: 2
         };
 
@@ -2738,6 +2757,8 @@ function createOrUpdateTaskData(taskContext) {
                 highPriority: highPriority || false,
                 dueDate: dueDate || null,
                 remindersEnabled: remindersEnabled || false,
+                deleteWhenComplete: true, // Recurring tasks always auto-remove
+                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
                 lastTriggeredTimestamp: null,
                 schemaVersion: 2
             };
@@ -2769,12 +2790,16 @@ function createTaskDOMElements(taskContext, taskData) {
         recurringSettings, settings, autoResetEnabled, currentCycle
     } = taskContext;
 
+    // ✅ Extract deleteWhenComplete settings from task data
+    const deleteWhenComplete = taskData.deleteWhenComplete || false;
+    const deleteWhenCompleteSettings = taskData.deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+
     // Get required DOM elements
     const taskList = document.getElementById("taskList");
     const taskInput = document.getElementById("taskInput");
 
-    // Create main task element
-    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
+    // Create main task element with deleteWhenComplete settings
+    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
     
     // Create three dots button if needed
     const threeDotsButton = createThreeDotsButton(taskItem, settings);
@@ -3655,10 +3680,10 @@ function saveToggleAutoReset() {
 
 
  if (!deleteCheckedTasks.dataset.listenerAdded) {
-    deleteCheckedTasks.addEventListener("change", (event) => {
+    deleteCheckedTasks.addEventListener("change", async (event) => {
         // ✅ Schema 2.5 only
         console.log('🗑️ Delete checked tasks toggle changed (Schema 2.5 only)...');
-        
+
         const schemaData = loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
@@ -3667,25 +3692,79 @@ function saveToggleAutoReset() {
 
         const { cycles, activeCycle } = schemaData;
         const currentCycle = cycles[activeCycle];
-        
+
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active cycle found for delete checked tasks toggle');
             return;
         }
-        
-        // Update Schema 2.5
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = event.target.checked;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+
+        const isToDoMode = event.target.checked;
+        const currentMode = isToDoMode ? 'todo' : 'cycle';
+
+        // ✅ Update via AppState instead of direct localStorage manipulation
+        if (window.AppState?.isReady?.()) {
+            // Store updated state to avoid race condition
+            let updatedCycle = null;
+
+            await window.AppState.update(state => {
+                const cycle = state.data.cycles[activeCycle];
+
+                // Update mode
+                cycle.deleteCheckedTasks = isToDoMode;
+
+                // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings
+                if (cycle.tasks) {
+                    cycle.tasks.forEach(task => {
+                        // Initialize settings if missing (for existing tasks)
+                        if (!task.deleteWhenCompleteSettings) {
+                            task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                        }
+
+                        // Sync active value from mode-specific setting
+                        task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+                    });
+                    console.log(`✅ Synced deleteWhenComplete for all tasks to ${currentMode} mode settings`);
+                }
+
+                // ✅ Capture updated cycle to avoid race condition
+                updatedCycle = cycle;
+            }, true); // Immediate save
+
+            // ✅ Update UI using centralized DOM sync with captured state
+            if (updatedCycle?.tasks && window.syncAllTasksWithMode) {
+                // Create task data map for batch sync
+                const tasksDataMap = {};
+                updatedCycle.tasks.forEach(task => {
+                    tasksDataMap[task.id] = task;
+                });
+
+                console.log(`🔄 Mode switch: Syncing ${Object.keys(tasksDataMap).length} tasks to ${currentMode} mode`);
+
+                // Sync immediately AND after a small delay to catch any late DOM updates
+                window.syncAllTasksWithMode(currentMode, tasksDataMap, {
+                    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+                });
+
+                // Second sync after delay to catch any stragglers
+                setTimeout(() => {
+                    window.syncAllTasksWithMode(currentMode, tasksDataMap, {
+                        DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+                    });
+                }, 100);
+            } else if (!window.syncAllTasksWithMode) {
+                console.error('❌ syncAllTasksWithMode not available - GlobalUtils may not be loaded');
+            } else if (!updatedCycle?.tasks) {
+                console.warn('⚠️ No tasks to sync');
+            }
+        }
 
         // ✅ Update recurring button visibility in real-time
         if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
-        
+
         console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
     });
 
-    deleteCheckedTasks.dataset.listenerAdded = true; 
+    deleteCheckedTasks.dataset.listenerAdded = true;
 }
 
 

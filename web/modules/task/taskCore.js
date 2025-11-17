@@ -210,7 +210,7 @@ export class TaskCore {
      * @param {string|null} taskId - Specific task ID (for loading)
      * @param {object} recurringSettings - Settings for recurring tasks
      */
-    async addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}, deferAppend = false, targetContainer = null) {
+    async addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}, deleteWhenComplete = undefined, deleteWhenCompleteSettings = undefined, deferAppend = false, targetContainer = null) {
         try {
             // Wait for core to be ready
             await this.waitForCoreWithTimeout();
@@ -229,7 +229,7 @@ export class TaskCore {
 
             // Load and validate data context
             const taskContext = this.deps.loadTaskContext?.(validatedInput, taskId, {
-                completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings
+                completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
             }, isLoading);
             if (!taskContext) {
                 console.warn('⚠️ Could not load task context');
@@ -792,11 +792,23 @@ export class TaskCore {
                 }
 
                 // ✅ Update task data AND DOM for non-recurring tasks
+                const tasksToDelete = [];
                 taskElements.forEach(taskEl => {
                     const isRecurring = taskEl.classList.contains("recurring");
                     if (isRecurring) return;
 
                     const taskId = taskEl.dataset.taskId;
+                    const task = cycleData?.tasks?.find(t => t.id === taskId);
+
+                    // ✅ Check if task should be deleted on reset
+                    if (task?.deleteWhenComplete === true) {
+                        console.log(`🗑️ Marking task for deletion (deleteWhenComplete): ${task.text}`);
+                        tasksToDelete.push(taskId);
+                        taskEl.remove(); // Remove from DOM
+                        return;
+                    }
+
+                    // Otherwise, reset the task normally
                     const checkbox = taskEl.querySelector("input[type='checkbox']");
                     const dueDateInput = taskEl.querySelector(".due-date");
 
@@ -810,15 +822,18 @@ export class TaskCore {
                     }
 
                     // ✅ FIX: Update the actual task data in memory
-                    if (taskId && cycleData?.tasks) {
-                        const task = cycleData.tasks.find(t => t.id === taskId);
-                        if (task) {
-                            task.completed = false;
-                            task.dueDate = null;
-                            console.log(`✅ Reset task data for: ${task.text}`);
-                        }
+                    if (task) {
+                        task.completed = false;
+                        task.dueDate = null;
+                        console.log(`✅ Reset task data for: ${task.text}`);
                     }
                 });
+
+                // ✅ Remove tasks marked for deletion from cycle data
+                if (tasksToDelete.length > 0) {
+                    cycleData.tasks = cycleData.tasks.filter(t => !tasksToDelete.includes(t.id));
+                    console.log(`🗑️ Deleted ${tasksToDelete.length} task(s) with deleteWhenComplete=true`);
+                }
 
                 // ✅ FIX: Save the updated task data to AppState (will auto-save to localStorage after 600ms debounce)
                 if (this.deps.AppState?.isReady?.()) {
@@ -959,16 +974,29 @@ export class TaskCore {
                             if (!confirmed) return;
 
                             if (cycleData.deleteCheckedTasks) {
-                                const checkedTasks = document.querySelectorAll(".task input:checked");
-                                if (checkedTasks.length === 0) {
-                                    this.deps.showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
+                                // ✅ To-Do mode: Delete tasks based on deleteWhenComplete flag
+                                const tasksToDelete = [];
+                                const allTaskElements = taskList.querySelectorAll(".task");
+
+                                allTaskElements.forEach(taskElement => {
+                                    const taskId = taskElement.dataset.taskId;
+                                    const task = cycleData.tasks?.find(t => t.id === taskId);
+
+                                    // Delete if deleteWhenComplete is true
+                                    if (task?.deleteWhenComplete === true) {
+                                        tasksToDelete.push({ taskId, taskElement });
+                                    }
+                                });
+
+                                if (tasksToDelete.length === 0) {
+                                    this.deps.showNotification("⚠️ No tasks marked for deletion.", "default", 3000);
                                     return;
                                 }
 
-                                checkedTasks.forEach(checkbox => {
-                                    const taskId = checkbox.closest(".task").dataset.taskId;
+                                // Remove from DOM and data
+                                tasksToDelete.forEach(({ taskId, taskElement }) => {
                                     cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
-                                    checkbox.closest(".task").remove();
+                                    taskElement.remove();
                                 });
 
                                 this.deps.autoSave();
@@ -995,17 +1023,33 @@ export class TaskCore {
             }
 
             if (cycleData.deleteCheckedTasks) {
-                const checkedTasks = document.querySelectorAll(".task input:checked");
-                if (checkedTasks.length === 0) {
-                    this.deps.showNotification("⚠️ No tasks were selected for deletion.", "default", 3000);
+                // ✅ To-Do mode: Delete tasks based on deleteWhenComplete flag (single source of truth)
+                console.log('🗑️ To-Do mode: Deleting tasks marked for deletion');
+
+                // Find all tasks marked for deletion (deleteWhenComplete = true)
+                const tasksToDelete = [];
+                const allTaskElements = taskList.querySelectorAll(".task");
+
+                allTaskElements.forEach(taskElement => {
+                    const taskId = taskElement.dataset.taskId;
+                    const task = cycleData.tasks?.find(t => t.id === taskId);
+
+                    // Delete if deleteWhenComplete is true (single source of truth)
+                    if (task?.deleteWhenComplete === true) {
+                        tasksToDelete.push({ taskId, taskElement });
+                    }
+                });
+
+                if (tasksToDelete.length === 0) {
+                    this.deps.showNotification("⚠️ No tasks marked for deletion.", "default", 3000);
                     return;
                 }
 
-                console.log('🗑️ Deleting checked tasks from Schema 2.5');
+                console.log(`🗑️ Deleting ${tasksToDelete.length} tasks marked for deletion (deleteWhenComplete=true)`);
 
-                const taskIdsToDelete = Array.from(checkedTasks).map(checkbox => {
-                    const taskId = checkbox.closest(".task").dataset.taskId;
-                    checkbox.closest(".task").remove();
+                // Remove from DOM
+                const taskIdsToDelete = tasksToDelete.map(({ taskId, taskElement }) => {
+                    taskElement.remove();
                     return taskId;
                 });
 
@@ -1016,6 +1060,7 @@ export class TaskCore {
                         const cycle = state.data.cycles[cid];
                         if (cycle?.tasks) {
                             cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
+                            console.log(`✅ Removed ${taskIdsToDelete.length} tasks from state`);
                         }
                     }, true);
                 } else {
