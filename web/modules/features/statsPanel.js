@@ -9,8 +9,9 @@
  * - Stats data calculation and display
  * - Theme unlock status management
  * - Navigation dot updates
+ * - Collapsible section preferences (stored in AppState.settings.statsPanel)
  *
- * @version 1.372
+ * @version 1.371
  * @author miniCycle Development Team
  */
 
@@ -1025,28 +1026,76 @@ export class StatsPanelManager {
     }
 
     /**
-     * Save collapsible section preference to localStorage
+     * Save collapsible section preference to AppState
      * @param {string} key - Preference key
      * @param {boolean} value - Whether section is expanded
      */
     saveCollapsiblePreference(key, value) {
         try {
-            const preferences = JSON.parse(localStorage.getItem('statsPanelPreferences')) || {};
-            preferences[key] = value;
-            localStorage.setItem('statsPanelPreferences', JSON.stringify(preferences));
-            console.log(`💾 Saved preference: ${key} = ${value}`);
+            // ✅ Save to AppState instead of separate localStorage key
+            if (window.AppState?.isReady?.()) {
+                window.AppState.update(state => {
+                    // Initialize statsPanel preferences object if it doesn't exist
+                    if (!state.settings.statsPanel) {
+                        state.settings.statsPanel = {};
+                    }
+                    state.settings.statsPanel[key] = value;
+                }, false); // Debounced save
+
+                console.log(`💾 Saved preference to AppState: ${key} = ${value}`);
+            } else {
+                // Fallback for when AppState isn't ready
+                console.warn('⚠️ AppState not ready, using temporary localStorage fallback');
+                const preferences = JSON.parse(localStorage.getItem('statsPanelPreferences')) || {};
+                preferences[key] = value;
+                localStorage.setItem('statsPanelPreferences', JSON.stringify(preferences));
+            }
         } catch (error) {
             console.warn('⚠️ Failed to save collapsible preference:', error);
         }
     }
 
     /**
-     * Restore collapsible section preferences from localStorage
+     * Restore collapsible section preferences from AppState
      * Default: Current Routine starts expanded, Milestone Rewards starts collapsed
      */
     restoreCollapsiblePreferences() {
         try {
-            const preferences = JSON.parse(localStorage.getItem('statsPanelPreferences')) || {};
+            let preferences = {};
+
+            // ✅ Read from AppState first
+            if (window.AppState?.isReady?.()) {
+                const currentState = window.AppState.get();
+                if (currentState?.settings?.statsPanel) {
+                    preferences = currentState.settings.statsPanel;
+                    console.log('🔄 Reading preferences from AppState');
+                }
+            }
+
+            // ✅ MIGRATION: Check for old separate localStorage key
+            const oldPreferences = JSON.parse(localStorage.getItem('statsPanelPreferences'));
+            if (oldPreferences && Object.keys(oldPreferences).length > 0) {
+                console.log('🔄 Migrating old statsPanelPreferences to AppState...');
+
+                // Merge old preferences (they take priority if AppState is empty)
+                if (Object.keys(preferences).length === 0) {
+                    preferences = oldPreferences;
+                }
+
+                // Migrate to AppState
+                if (window.AppState?.isReady?.()) {
+                    window.AppState.update(state => {
+                        if (!state.settings.statsPanel) {
+                            state.settings.statsPanel = {};
+                        }
+                        Object.assign(state.settings.statsPanel, oldPreferences);
+                    }, true); // Immediate save
+
+                    // Remove old key after successful migration
+                    localStorage.removeItem('statsPanelPreferences');
+                    console.log('✅ Migration complete - removed old localStorage key');
+                }
+            }
 
             // Current Routine: defaults to expanded, Milestone Rewards: defaults to collapsed
             const currentRoutineExpanded = preferences.currentRoutineExpanded !== false;
@@ -1217,7 +1266,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.372',
+            version: '1.371',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config
