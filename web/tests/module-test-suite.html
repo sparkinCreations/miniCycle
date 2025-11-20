@@ -240,9 +240,10 @@
             <option value="taskOptionsCustomizer">TaskOptionsCustomizer</option>
             <option value="xss-vulnerability">🔒 XSS Vulnerability Tests</option>
             <option value="errorHandler">🛡️ Error Handler Tests</option>
+            <option value="testingModal">🧪 Testing Modal</option>
         </select>
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (34 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (35 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -295,6 +296,7 @@
         const { runTaskOptionsCustomizerTests } = await import(`./taskOptionsCustomizer.tests.js?v=${cacheBuster}`);
         const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
         const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
+        const { runTestingModalTests } = await import(`./testingModal.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -474,6 +476,12 @@
                     await import(`../modules/utils/errorHandler.js?v=${cacheBuster}`);
                     currentModule = 'errorHandler';
                     resultsDiv.innerHTML = '<p>✅ Error Handler Tests ready (with globalUtils and errorHandler). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'testingModal') {
+                    // Load testing modal dependencies
+                    await import(`../modules/testing/testing-modal.js?v=${cacheBuster}`);
+                    await import(`../modules/storage/backupManager.js?v=${cacheBuster}`);
+                    currentModule = 'testingModal';
+                    resultsDiv.innerHTML = '<p>✅ Testing Modal Tests ready (with testing-modal and backupManager). Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -557,6 +565,8 @@
                 await runAllXSSTests(resultsDiv);
             } else if (currentModule === 'errorHandler') {
                 await runErrorHandlerTests(resultsDiv);
+            } else if (currentModule === 'testingModal') {
+                await runTestingModalTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -675,7 +685,8 @@
                 { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' },
                 { name: 'TaskOptionsCustomizer', key: 'taskOptionsCustomizer', runFn: runTaskOptionsCustomizerTests, importPath: '../modules/ui/taskOptionsCustomizer.js' },
                 { name: 'XSS Vulnerability', key: 'xss-vulnerability', runFn: runAllXSSTests, importPath: null },
-                { name: 'Error Handler', key: 'errorHandler', runFn: runErrorHandlerTests, importPath: '../modules/utils/errorHandler.js' }
+                { name: 'Error Handler', key: 'errorHandler', runFn: runErrorHandlerTests, importPath: '../modules/utils/errorHandler.js' },
+                { name: 'Testing Modal', key: 'testingModal', runFn: runTestingModalTests, importPath: '../modules/testing/testing-modal.js' }
             ];
 
             let allResults = [];

@@ -1259,11 +1259,43 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 console.warn('⚠️ setupTestingModal function not found');
             }
 
+            // ✅ Initialize testing modal enhancements (keyboard shortcuts, etc.)
+            if (typeof window.initializeTestingModalEnhancements === 'function') {
+                window.initializeTestingModalEnhancements();
+                console.log('✅ Testing modal enhancements initialized');
+            }
+
             await import(withV('./modules/testing/testing-modal-integration.js'));
             console.log('✅ Testing modal integration loaded');
         } catch (error) {
             console.error('❌ Failed to load testing modal modules:', error);
             console.warn('⚠️ App will continue without testing modal functionality');
+        }
+
+        // ✅ Initialize Backup Manager (Phase 3)
+        console.log('💾 Loading backup manager...');
+        try {
+            await import(withV('./modules/storage/backupManager.js'));
+            console.log('✅ Backup manager loaded');
+
+            // ✅ Create auto-backup in background (non-blocking)
+            if (window.BackupManager) {
+                // Don't await - run in background
+                window.BackupManager.createAutoBackup()
+                    .then(created => {
+                        if (created) {
+                            console.log('✅ Auto-backup created successfully');
+                        } else {
+                            console.log('⏭️ Auto-backup skipped (recent backup exists)');
+                        }
+                    })
+                    .catch(error => {
+                        console.warn('⚠️ Auto-backup failed (non-critical):', error);
+                    });
+            }
+        } catch (error) {
+            console.error('❌ Failed to load backup manager:', error);
+            console.warn('⚠️ App will continue without auto-backup functionality');
         }
 
         // Optional debug subscribe

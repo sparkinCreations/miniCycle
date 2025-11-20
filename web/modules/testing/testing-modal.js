@@ -5,7 +5,7 @@
  * miniCycle functionality, including storage, migration, and state management.
  *
  * @module testing-modal
- * @version 1.372
+ * @version 1.371
  */
 
 // ==========================================
@@ -154,8 +154,7 @@ function setupTestingModal() {
             showNotification("Testing panel closed", "default", 2000);
         }
     });
-
-    // Add these missing functions after your existing code:
+}
 
 // ==========================================
 // 📑 TESTING TABS SETUP
@@ -240,22 +239,27 @@ function setupResultsControls() {
     }
 }
 
-// Add any other missing functions that are called in setupTestingModal()
-    
+// ==========================================
+// 🚀 INITIALIZE TESTING MODAL ENHANCEMENTS
+// ==========================================
+
+function initializeTestingModalEnhancements() {
+    console.log('🔬 Initializing testing modal enhancements...');
+
     // Setup enhanced functionality that doesn't depend on modal being visible
     setupTestingTabs();
     setupTestResultsEnhancements();
     addTestResultsHint();
-    
+
     // 🔬 Enhanced Testing Modal Keyboard Shortcut - Ctrl+J (PC) / Cmd+J (Mac)
     safeAddEventListener(document, "keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
             e.preventDefault();
             const testingModal = document.getElementById("testing-modal");
-            
+
             if (testingModal) {
                 const isOpen = testingModal.style.display === "flex" || testingModal.style.display === "block";
-                
+
                 if (isOpen) {
                     testingModal.style.display = "none";
                     showNotification("🔬 Testing panel closed", "info", 1500);
@@ -263,7 +267,7 @@ function setupResultsControls() {
                     testingModal.style.display = "flex";
                     initializeTestingModalDrag();
                     showNotification("🔬 Testing panel opened", "success", 2000);
-                    
+
                     // Setup functionality when opened via keyboard
                     setTimeout(() => {
                         setupTestingTabs();
@@ -282,6 +286,8 @@ function setupResultsControls() {
     setTimeout(() => {
         addTestingModalDoubleClickToCenter();
     }, 100);
+
+    console.log('✅ Testing modal enhancements initialized');
 }
 
 // ==========================================
@@ -554,7 +560,11 @@ function setupTestButtons() {
     safeAddEventListenerById("list-available-backups", "click", () => {
         listAvailableBackups();
     });
-    
+
+    safeAddEventListenerById("create-manual-backup", "click", () => {
+        createManualBackup();
+    });
+
     safeAddEventListenerById("restore-from-backup", "click", () => {
         restoreFromBackup();
     });
@@ -745,18 +755,37 @@ function copyTestResults() {
 function runHealthCheck() {
     appendToTestResults("🏥 Running Full Health Check...\n");
     showNotification("🔬 Running full diagnostic health check", "info", 3000);
-    
+
     setTimeout(() => {
-        const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
-        const cycleCount = Object.keys(savedMiniCycles).length;
-        const totalTasks = Object.values(savedMiniCycles).reduce((acc, cycle) => acc + (cycle.tasks?.length || 0), 0);
-        
+        // ✅ Use Schema 2.5 AppState access
+        if (!window.AppState?.isReady?.()) {
+            appendToTestResults("❌ AppState not ready\n\n");
+            showNotification("❌ AppState not available", "error", 3000);
+            return;
+        }
+
+        const currentState = window.AppState.get();
+        if (!currentState) {
+            appendToTestResults("❌ No state data available\n\n");
+            showNotification("❌ No data available", "error", 3000);
+            return;
+        }
+
+        const { data, metadata } = currentState;
+        const cycles = data.cycles || {};
+        const cycleCount = Object.keys(cycles).length;
+
+        let totalTasks = 0;
+        Object.values(cycles).forEach(cycle => {
+            totalTasks += (cycle.tasks?.length || 0);
+        });
+
         appendToTestResults(`✅ Health Check Complete!\n`);
-        appendToTestResults(`📊 Found ${cycleCount} miniCycles\n`);
+        appendToTestResults(`📊 Found ${cycleCount} routines\n`);
         appendToTestResults(`📝 Total Tasks: ${totalTasks}\n`);
         appendToTestResults(`💾 Storage Status: OK\n`);
-        appendToTestResults(`🔄 Schema Version: 2\n\n`);
-        
+        appendToTestResults(`🔄 Schema Version: ${metadata?.schemaVersion || '2.5'}\n\n`);
+
         showNotification("✅ Health check completed successfully!", "success", 3000);
     }, 1500);
 }
@@ -764,17 +793,55 @@ function runHealthCheck() {
 function checkDataIntegrity() {
     appendToTestResults("🔍 Checking Data Integrity...\n");
     showNotification("Checking data integrity...", "info", 2000);
-    
+
     setTimeout(() => {
-        const results = validateAllMiniCycleTasks(); // Your existing function
+        // ✅ Use Schema 2.5 AppState access
+        if (!window.AppState?.isReady?.()) {
+            appendToTestResults("❌ AppState not ready\n\n");
+            showNotification("❌ AppState not available", "error", 3000);
+            return;
+        }
+
+        const currentState = window.AppState.get();
+        if (!currentState) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        const { data } = currentState;
+        const cycles = data.cycles || {};
+        const results = [];
+
+        // Validate each cycle and its tasks
+        Object.entries(cycles).forEach(([cycleId, cycle]) => {
+            // Check cycle structure
+            if (!cycle.title) {
+                results.push({ cycle: cycleId, issue: 'Missing title' });
+            }
+            if (!Array.isArray(cycle.tasks)) {
+                results.push({ cycle: cycleId, issue: 'Tasks is not an array' });
+                return;
+            }
+
+            // Check each task
+            cycle.tasks.forEach((task, index) => {
+                if (!task.text || typeof task.text !== 'string') {
+                    results.push({ cycle: cycle.title, taskIndex: index, issue: 'Missing or invalid task text' });
+                }
+                if (task.id === undefined) {
+                    results.push({ cycle: cycle.title, taskIndex: index, issue: 'Missing task ID' });
+                }
+            });
+        });
+
         if (results.length === 0) {
             appendToTestResults("✅ Data Integrity: PASSED\n");
-            appendToTestResults("All tasks have valid structure\n\n");
+            appendToTestResults("All cycles and tasks have valid structure\n\n");
             showNotification("✅ Data integrity check passed!", "success", 3000);
         } else {
             appendToTestResults(`⚠️ Data Integrity: ${results.length} issues found\n`);
             results.forEach(result => {
-                appendToTestResults(`- Cycle: ${result.cycle}, Task: ${result.taskText}\n`);
+                appendToTestResults(`- Cycle: ${result.cycle}, Issue: ${result.issue}\n`);
             });
             appendToTestResults("\n");
             showNotification(`⚠️ Found ${results.length} data integrity issues`, "warning", 3000);
@@ -785,26 +852,45 @@ function checkDataIntegrity() {
 function validateSchema() {
     appendToTestResults("📋 Validating Schema Versions...\n");
     showNotification("Validating schema versions...", "info", 2000);
-    
+
     setTimeout(() => {
-        const { savedMiniCycles } = assignCycleVariables();
-        let v1Tasks = 0, v2Tasks = 0, unknownTasks = 0;
-        
-        Object.values(savedMiniCycles).forEach(cycle => {
-            cycle.tasks?.forEach(task => {
-                if (task.schemaVersion === 1) v1Tasks++;
-                else if (task.schemaVersion === 2) v2Tasks++;
-                else unknownTasks++;
-            });
+        // ✅ Use Schema 2.5 AppState access
+        if (!window.AppState?.isReady?.()) {
+            appendToTestResults("❌ AppState not ready\n\n");
+            showNotification("❌ AppState not available", "error", 3000);
+            return;
+        }
+
+        const currentState = window.AppState.get();
+        if (!currentState) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        const { data, metadata } = currentState;
+        const cycles = data.cycles || {};
+        const schemaVersion = metadata?.schemaVersion || 'unknown';
+
+        let totalTasks = 0;
+        let cyclesWithOldFormat = 0;
+
+        Object.values(cycles).forEach(cycle => {
+            totalTasks += (cycle.tasks?.length || 0);
+
+            // Check for old schema indicators
+            if (cycle.schemaVersion && cycle.schemaVersion < 2.5) {
+                cyclesWithOldFormat++;
+            }
         });
-        
+
         appendToTestResults(`📊 Schema Analysis:\n`);
-        appendToTestResults(`- Schema v1 Tasks: ${v1Tasks}\n`);
-        appendToTestResults(`- Schema v2 Tasks: ${v2Tasks}\n`);
-        appendToTestResults(`- Unknown Schema: ${unknownTasks}\n\n`);
-        
-        if (v1Tasks > 0) {
-            showNotification(`⚠️ Found ${v1Tasks} tasks using old schema v1`, "warning", 3000);
+        appendToTestResults(`- Current Schema Version: ${schemaVersion}\n`);
+        appendToTestResults(`- Total Routines: ${Object.keys(cycles).length}\n`);
+        appendToTestResults(`- Total Tasks: ${totalTasks}\n`);
+        appendToTestResults(`- Cycles needing migration: ${cyclesWithOldFormat}\n\n`);
+
+        if (cyclesWithOldFormat > 0) {
+            showNotification(`⚠️ Found ${cyclesWithOldFormat} cycles that may need migration`, "warning", 3000);
         } else {
             showNotification("✅ All tasks using current schema v2", "success", 3000);
         }
@@ -813,12 +899,22 @@ function validateSchema() {
 
 function showAppInfo() {
     appendToTestResults("ℹ️ Application Information:\n");
-    appendToTestResults(`- Version: 1.0\n`);
+
+    // ✅ Get actual version from AppState metadata
+    const state = window.AppState?.get();
+    const metadata = state?.metadata || {};
+    const version = metadata.version || metadata.schemaVersion || "1.371";
+    const buildDate = metadata.lastModified
+        ? new Date(metadata.lastModified).toLocaleDateString()
+        : "Unknown";
+
+    appendToTestResults(`- Version: ${version}\n`);
+    appendToTestResults(`- Schema Version: ${metadata.schemaVersion || "2.5"}\n`);
     appendToTestResults(`- Name: miniCycle\n`);
     appendToTestResults(`- Developer: Sparkin Creations\n`);
-    appendToTestResults(`- Build Date: August 25, 2025\n`);
+    appendToTestResults(`- Last Modified: ${buildDate}\n`);
     appendToTestResults(`- User Agent: ${navigator.userAgent}\n\n`);
-    
+
     showNotification("📱 App information displayed", "info", 2000);
 }
 
@@ -839,16 +935,24 @@ function showStorageInfo() {
 
 function showPerformanceInfo() {
     appendToTestResults("⚡ Performance Information:\n");
-    
+
     const performanceInfo = performance.getEntriesByType("navigation")[0];
     if (performanceInfo) {
-        appendToTestResults(`- Page Load Time: ${(performanceInfo.loadEventEnd - performanceInfo.navigationStart).toFixed(2)}ms\n`);
-        appendToTestResults(`- DOM Content Loaded: ${(performanceInfo.domContentLoadedEventEnd - performanceInfo.navigationStart).toFixed(2)}ms\n`);
+        const pageLoadTime = performanceInfo.loadEventEnd - performanceInfo.fetchStart;
+        const domLoadTime = performanceInfo.domContentLoadedEventEnd - performanceInfo.fetchStart;
+
+        appendToTestResults(`- Page Load Time: ${pageLoadTime > 0 ? pageLoadTime.toFixed(2) + 'ms' : 'N/A'}\n`);
+        appendToTestResults(`- DOM Content Loaded: ${domLoadTime > 0 ? domLoadTime.toFixed(2) + 'ms' : 'N/A'}\n`);
+        appendToTestResults(`- DNS Lookup: ${(performanceInfo.domainLookupEnd - performanceInfo.domainLookupStart).toFixed(2)}ms\n`);
+        appendToTestResults(`- Server Response: ${(performanceInfo.responseEnd - performanceInfo.requestStart).toFixed(2)}ms\n`);
+    } else {
+        appendToTestResults(`- Performance data not available\n`);
     }
-    
+
     appendToTestResults(`- Memory Used: ${(performance.memory?.usedJSHeapSize / 1024 / 1024 || 0).toFixed(2)} MB\n`);
+    appendToTestResults(`- Memory Limit: ${(performance.memory?.jsHeapSizeLimit / 1024 / 1024 || 0).toFixed(2)} MB\n`);
     appendToTestResults(`- Viewport: ${window.innerWidth}x${window.innerHeight}\n\n`);
-    
+
     showNotification("⚡ Performance info displayed", "info", 2000);
 }
 
@@ -1154,51 +1258,151 @@ function performActualMigration() {
     }, 2000);
 }
 
-function listAvailableBackups() {
-    appendToTestResults("📋 Available Backups:\n");
-    
-    // ✅ Look for BOTH manual and automatic backups
-    const manualBackups = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
-    const autoBackups = Object.keys(localStorage).filter(key => key.startsWith('auto_migration_backup_'));
-    const allBackups = [...manualBackups, ...autoBackups];
-    
-    if (allBackups.length === 0) {
-        appendToTestResults("No backups found\n\n");
-        showNotification("No backups available", "info", 2000);
-    } else {
-        // ✅ Sort all backups by timestamp
-        allBackups.sort((a, b) => {
+async function listAvailableBackups() {
+    appendToTestResults("📋 Available Backups:\n\n");
+
+    let totalBackups = 0;
+
+    // ✅ IndexedDB backups (new system)
+    if (window.BackupManager) {
+        try {
+            const { auto, manual } = await window.BackupManager.listAllBackups();
+
+            if (auto.length > 0) {
+                appendToTestResults("💾 Auto-Backups (IndexedDB):\n");
+                auto.forEach(backup => {
+                    const date = new Date(backup.timestamp).toLocaleString();
+                    const size = (backup.metadata.size / 1024).toFixed(2);
+                    appendToTestResults(`  - ${date} - ${size} KB [v${backup.metadata.schemaVersion}]\n`);
+                    totalBackups++;
+                });
+                appendToTestResults("\n");
+            }
+
+            if (manual.length > 0) {
+                appendToTestResults("📌 Manual Backups (IndexedDB):\n");
+                manual.forEach(backup => {
+                    const date = new Date(backup.timestamp).toLocaleString();
+                    const size = (backup.metadata.size / 1024).toFixed(2);
+                    appendToTestResults(`  - ${backup.name} (${date}) - ${size} KB\n`);
+                    totalBackups++;
+                });
+                appendToTestResults("\n");
+            }
+
+            // Show stats
+            const stats = await window.BackupManager.getStats();
+            if (stats) {
+                appendToTestResults(`📊 Total: ${stats.totalBackups} backups (${stats.totalSizeMB} MB)\n\n`);
+            }
+
+        } catch (error) {
+            appendToTestResults("⚠️ IndexedDB backups unavailable\n\n");
+            console.error('Error loading IndexedDB backups:', error);
+        }
+    }
+
+    // ✅ Legacy localStorage backups (old system)
+    const legacyManual = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
+    const legacyAuto = Object.keys(localStorage).filter(key => key.startsWith('auto_migration_backup_'));
+    const legacyBackups = [...legacyManual, ...legacyAuto];
+
+    if (legacyBackups.length > 0) {
+        appendToTestResults("📦 Legacy Backups (localStorage):\n");
+        legacyBackups.sort((a, b) => {
             const timestampA = parseInt(a.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
             const timestampB = parseInt(b.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
-            return timestampB - timestampA; // Newest first
+            return timestampB - timestampA;
         });
-        
-        allBackups.forEach(key => {
+
+        legacyBackups.forEach(key => {
             const timestamp = key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, '');
             const date = new Date(parseInt(timestamp)).toLocaleString();
             const backupValue = safeLocalStorageGet(key, "");
             const size = (backupValue.length / 1024).toFixed(2);
             const type = key.startsWith('auto_migration_backup_') ? 'AUTO' : 'MANUAL';
-            appendToTestResults(`- ${key} (${date}) - ${size} KB [${type}]\n`);
+            appendToTestResults(`  - ${date} - ${size} KB [${type}]\n`);
+            totalBackups++;
         });
         appendToTestResults("\n");
-        showNotification(`Found ${allBackups.length} backups (${autoBackups.length} auto, ${manualBackups.length} manual)`, "info", 2000);
+    }
+
+    if (totalBackups === 0) {
+        appendToTestResults("No backups found\n\n");
+        showNotification("No backups available", "info", 2000);
+    } else {
+        showNotification(`Found ${totalBackups} backups`, "info", 2000);
     }
 }
 
-function restoreFromBackup() {
-    // ✅ Look for BOTH manual and automatic backups
-    const manualBackups = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
-    const autoBackups = Object.keys(localStorage).filter(key => key.startsWith('auto_migration_backup_'));
-    const backupKeys = [...manualBackups, ...autoBackups];
-    
-    if (backupKeys.length === 0) {
+async function restoreFromBackup() {
+    appendToTestResults("🔄 Preparing backup selection...\n");
+
+    // ✅ Collect all available backups from both sources
+    let allBackups = [];
+
+    // Load IndexedDB backups
+    if (window.BackupManager) {
+        try {
+            const { auto, manual } = await window.BackupManager.listAllBackups();
+
+            // Add auto-backups
+            auto.forEach(backup => {
+                allBackups.push({
+                    type: 'indexeddb-auto',
+                    timestamp: backup.timestamp,
+                    id: backup.timestamp,
+                    name: `Auto-Backup ${new Date(backup.timestamp).toLocaleString()}`,
+                    size: backup.metadata.size,
+                    data: null, // Will load on restore
+                    metadata: backup.metadata
+                });
+            });
+
+            // Add manual backups
+            manual.forEach(backup => {
+                allBackups.push({
+                    type: 'indexeddb-manual',
+                    timestamp: backup.timestamp,
+                    id: backup.id,
+                    name: backup.name,
+                    size: backup.metadata.size,
+                    data: null,
+                    metadata: backup.metadata
+                });
+            });
+        } catch (error) {
+            console.warn('⚠️ Could not load IndexedDB backups:', error);
+        }
+    }
+
+    // Load localStorage backups (legacy)
+    const legacyManual = Object.keys(localStorage).filter(key => key.startsWith('miniCycle_backup_'));
+    const legacyAuto = Object.keys(localStorage).filter(key => key.startsWith('auto_migration_backup_'));
+    const legacyKeys = [...legacyManual, ...legacyAuto];
+
+    legacyKeys.forEach(key => {
+        const timestamp = parseInt(key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
+        const backupData = safeLocalStorageGet(key, null);
+        allBackups.push({
+            type: key.startsWith('auto_migration_backup_') ? 'localstorage-auto' : 'localstorage-manual',
+            timestamp,
+            id: key,
+            name: `Legacy ${key.startsWith('auto_migration_backup_') ? 'Auto' : 'Manual'} Backup`,
+            size: backupData ? backupData.length : 0,
+            data: backupData,
+            metadata: null
+        });
+    });
+
+    if (allBackups.length === 0) {
         appendToTestResults("❌ No backups available to restore\n\n");
         showNotification("❌ No backups available to restore", "error", 3000);
         return;
     }
-    
-    appendToTestResults("🔄 Preparing backup selection...\n");
+
+    // Sort all backups by timestamp (newest first)
+    allBackups.sort((a, b) => b.timestamp - a.timestamp);
     
     // ✅ Create backup selection modal (existing modal code...)
     const modal = document.createElement("div");
@@ -1251,47 +1455,32 @@ function restoreFromBackup() {
         padding: 10px;
     `;
     
-    // ✅ Sort backups by timestamp (newest first)
-    const sortedBackups = backupKeys.sort((a, b) => {
-        const timestampA = parseInt(a.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
-        const timestampB = parseInt(b.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
-        return timestampB - timestampA;
-    });
-    
     let selectedBackup = null;
-    
-    // ✅ Create backup selection items with type indicators
-    sortedBackups.forEach((backupKey, index) => {
-        const timestamp = backupKey.replace(/^(miniCycle_backup_|auto_migration_backup_)/, '');
-        const date = new Date(parseInt(timestamp));
-        const backupData = safeLocalStorageGet(backupKey, null);
-        const size = backupData ? (backupData.length / 1024).toFixed(2) : 0;
-        const isAuto = backupKey.startsWith('auto_migration_backup_');
 
-        // ✅ Try to extract cycle count from backup data
-        let cycleInfo = "";
-        const parsed = safeJSONParse(backupData, null);
-        if (parsed) {
-            // ✅ Handle different backup formats
-            let storage = {};
-            if (isAuto) {
-                // Auto-migration backup format
-                const miniCycleStorageStr = parsed.data?.miniCycleStorage;
-                storage = safeJSONParse(miniCycleStorageStr, {});
-            } else {
-                // Manual backup format
-                const miniCycleStorageStr = parsed.miniCycleStorage;
-                storage = safeJSONParse(miniCycleStorageStr, {});
-            }
+    // ✅ Create backup selection items - now from unified allBackups array
+    allBackups.forEach((backup, index) => {
+        const date = new Date(backup.timestamp);
+        const size = (backup.size / 1024).toFixed(2);
 
-            const cycleCount = Object.keys(storage).length;
-            const taskCount = Object.values(storage).reduce((acc, cycle) =>
-                acc + (cycle.tasks?.length || 0), 0);
-            cycleInfo = ` • ${cycleCount} cycle${cycleCount !== 1 ? 's' : ''}, ${taskCount} task${taskCount !== 1 ? 's' : ''}`;
+        // Determine type label based on backup source
+        let typeLabel = '';
+        let storageLabel = '';
+        if (backup.type === 'indexeddb-auto') {
+            typeLabel = '<span style="color: #28a745; font-size: 11px; font-weight: bold;">[AUTO]</span>';
+            storageLabel = '<span style="color: #17a2b8; font-size: 10px;">IndexedDB</span>';
+        } else if (backup.type === 'indexeddb-manual') {
+            typeLabel = '<span style="color: #007bff; font-size: 11px; font-weight: bold;">[MANUAL]</span>';
+            storageLabel = '<span style="color: #17a2b8; font-size: 10px;">IndexedDB</span>';
+        } else if (backup.type === 'localstorage-auto') {
+            typeLabel = '<span style="color: #ffc107; font-size: 11px; font-weight: bold;">[LEGACY AUTO]</span>';
+            storageLabel = '<span style="color: #6c757d; font-size: 10px;">localStorage</span>';
         } else {
-            cycleInfo = " • Unknown content";
+            typeLabel = '<span style="color: #6c757d; font-size: 11px; font-weight: bold;">[LEGACY MANUAL]</span>';
+            storageLabel = '<span style="color: #6c757d; font-size: 10px;">localStorage</span>';
         }
-        
+
+        const latestLabel = index === 0 ? '<span style="color: #ffc107; font-size: 12px;"> (Latest)</span>' : '';
+
         const backupItem = document.createElement("div");
         backupItem.className = "backup-item";
         backupItem.style.cssText = `
@@ -1303,46 +1492,44 @@ function restoreFromBackup() {
             transition: all 0.2s ease;
             background: rgba(255, 255, 255, 0.05);
         `;
-        
-        const typeLabel = isAuto ? '<span style="color: #28a745; font-size: 11px; font-weight: bold;">[AUTO-MIGRATION]</span>' : '<span style="color: #007bff; font-size: 11px; font-weight: bold;">[MANUAL]</span>';
-        const latestLabel = index === 0 ? '<span style="color: #ffc107; font-size: 12px;"> (Latest)</span>' : '';
-        
+
         backupItem.innerHTML = `
             <div style="font-weight: bold; margin-bottom: 4px;">
                 📅 ${date.toLocaleString()} ${typeLabel}${latestLabel}
             </div>
             <div style="font-size: 12px; color: #ccc;">
-                💾 ${size} KB${cycleInfo}
+                💾 ${size} KB • ${storageLabel}
+                ${backup.metadata ? ` • v${backup.metadata.schemaVersion}` : ''}
             </div>
-            <div style="font-size: 11px; color: #888; margin-top: 4px;">
-                ID: ${backupKey}
+            <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                ${backup.name}
             </div>
         `;
-        
-        // ✅ Selection and hover logic (same as before)
+
+        // ✅ Selection and hover logic
         backupItem.addEventListener("click", () => {
             document.querySelectorAll(".backup-item").forEach(item => {
                 item.style.border = "2px solid transparent";
                 item.style.background = "rgba(255, 255, 255, 0.05)";
             });
-            
+
             backupItem.style.border = "2px solid #007bff";
             backupItem.style.background = "rgba(0, 123, 255, 0.1)";
-            selectedBackup = backupKey;
-            
+            selectedBackup = backup; // Store the full backup object
+
             restoreBtn.disabled = false;
             restoreBtn.style.opacity = "1";
             restoreBtn.style.cursor = "pointer";
         });
         
         backupItem.addEventListener("mouseenter", () => {
-            if (selectedBackup !== backupKey) {
+            if (selectedBackup !== backup) {
                 backupItem.style.background = "rgba(255, 255, 255, 0.1)";
             }
         });
-        
+
         backupItem.addEventListener("mouseleave", () => {
-            if (selectedBackup !== backupKey) {
+            if (selectedBackup !== backup) {
                 backupItem.style.background = "rgba(255, 255, 255, 0.05)";
             }
         });
@@ -1392,77 +1579,99 @@ function restoreFromBackup() {
         appendToTestResults("❌ Backup restore cancelled\n\n");
     });
     
-    restoreBtn.addEventListener("click", () => {
+    restoreBtn.addEventListener("click", async () => {
         if (!selectedBackup) return;
-        
+
+        const backupDate = new Date(selectedBackup.timestamp).toLocaleString();
+        const backupType = selectedBackup.type.includes('auto') ? 'AUTO' : 'MANUAL';
+        const storage = selectedBackup.type.includes('indexeddb') ? 'IndexedDB' : 'localStorage';
+
         safeShowConfirmationModal({
             title: "Confirm Restore",
             message: `⚠️ WARNING: This will completely replace all your current miniCycle data!\n\n` +
-                     `Selected backup: ${new Date(parseInt(selectedBackup.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''))).toLocaleString()}\n` +
-                     `Type: ${selectedBackup.startsWith('auto_migration_backup_') ? 'AUTO-MIGRATION' : 'MANUAL'}\n\n` +
+                     `Selected backup: ${selectedBackup.name}\n` +
+                     `Date: ${backupDate}\n` +
+                     `Type: ${backupType} (${storage})\n\n` +
                      `Are you absolutely sure you want to proceed?\n\n` +
                      `This action cannot be undone!`,
             confirmText: "Restore",
             cancelText: "Cancel",
-            callback: (confirmed) => {
+            callback: async (confirmed) => {
                 if (!confirmed) {
                     appendToTestResults("❌ User cancelled restore confirmation\n\n");
                     return;
                 }
-                
+
                 try {
-                    const backupData = safeLocalStorageGet(selectedBackup, null);
-                    const parsed = safeJSONParse(backupData, null);
-                    if (!parsed) {
-                        throw new Error('Failed to parse backup data');
-                    }
-                    const isAuto = selectedBackup.startsWith('auto_migration_backup_');
+                    appendToTestResults(`🔄 Restoring backup: ${selectedBackup.name}\n`);
 
-                    appendToTestResults(`🔄 Restoring ${isAuto ? 'auto-migration' : 'manual'} backup: ${selectedBackup}\n`);
+                    let restoredData = null;
 
-                    // ✅ Handle different backup formats
-                    let keysToReplace = [];
-                    if (isAuto) {
-                        // Auto-migration backup format
-                        keysToReplace = ['miniCycleStorage', 'miniCycleReminders'];
-                        if (parsed.data?.miniCycleStorage) {
-                            safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
-                            appendToTestResults(`✅ Restored: miniCycleStorage\n`);
+                    // ✅ Handle IndexedDB backups
+                    if (selectedBackup.type.includes('indexeddb')) {
+                        const backupType = selectedBackup.type === 'indexeddb-auto' ? 'auto' : 'manual';
+                        restoredData = await window.BackupManager.restoreBackup(selectedBackup.id, backupType);
+
+                        if (!restoredData) {
+                            throw new Error('Failed to load backup from IndexedDB');
                         }
-                        if (parsed.data?.miniCycleReminders) {
-                            safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
-                            appendToTestResults(`✅ Restored: miniCycleReminders\n`);
+
+                        // ✅ Restore using AppState (Schema 2.5)
+                        if (window.AppState?.isReady?.()) {
+                            // Replace entire state
+                            localStorage.setItem('miniCycleData', JSON.stringify(restoredData));
+                            appendToTestResults(`✅ Restored to AppState (Schema 2.5)\n`);
+                        } else {
+                            throw new Error('AppState not available');
                         }
-                        if (parsed.data?.settings) {
-                            // Restore individual settings
-                            Object.keys(parsed.data.settings).forEach(key => {
-                                if (parsed.data.settings[key] !== null && parsed.data.settings[key] !== undefined) {
-                                    const storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
-                                    safeLocalStorageSet(storageKey, parsed.data.settings[key]);
-                                    appendToTestResults(`✅ Restored setting: ${storageKey}\n`);
+
+                    // ✅ Handle localStorage backups (legacy)
+                    } else {
+                        const backupData = safeLocalStorageGet(selectedBackup.id, null);
+                        const parsed = safeJSONParse(backupData, null);
+                        if (!parsed) {
+                            throw new Error('Failed to parse backup data');
+                        }
+
+                        const isAuto = selectedBackup.type === 'localstorage-auto';
+
+                        // Handle different legacy backup formats
+                        if (isAuto) {
+                            // Auto-migration backup format
+                            if (parsed.data?.miniCycleStorage) {
+                                safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
+                                appendToTestResults(`✅ Restored: miniCycleStorage\n`);
+                            }
+                            if (parsed.data?.miniCycleReminders) {
+                                safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
+                                appendToTestResults(`✅ Restored: miniCycleReminders\n`);
+                            }
+                            if (parsed.data?.settings) {
+                                Object.keys(parsed.data.settings).forEach(key => {
+                                    if (parsed.data.settings[key] !== null && parsed.data.settings[key] !== undefined) {
+                                        const storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
+                                        safeLocalStorageSet(storageKey, parsed.data.settings[key]);
+                                        appendToTestResults(`✅ Restored setting: ${storageKey}\n`);
+                                    }
+                                });
+                            }
+                        } else {
+                            // Manual backup format
+                            ['miniCycleStorage', 'lastUsedMiniCycle'].forEach(key => {
+                                if (parsed[key]) {
+                                    safeLocalStorageSet(key, parsed[key]);
+                                    appendToTestResults(`✅ Restored: ${key}\n`);
                                 }
                             });
                         }
-                    } else {
-                        // Manual backup format
-                        keysToReplace = ['miniCycleStorage', 'lastUsedMiniCycle'];
-                        keysToReplace.forEach(key => {
-                            if (parsed[key]) {
-                                safeLocalStorageSet(key, parsed[key]);
-                                appendToTestResults(`✅ Restored: ${key}\n`);
-                            }
-                        });
                     }
 
-                    // ✅ Remove any Schema 2.5 data if present
-                    safeLocalStorageRemove('miniCycleData');
-                    
                     appendToTestResults(`✅ Backup restored successfully!\n`);
                     appendToTestResults(`🔄 Reloading application...\n\n`);
-                    
+
                     modal.remove();
                     showNotification("✅ Backup restored successfully! Reloading...", "success", 3000);
-                    
+
                     setTimeout(() => location.reload(), 1500);
                     
                 } catch (error) {
@@ -1491,12 +1700,60 @@ function restoreFromBackup() {
     });
     
     document.body.appendChild(modal);
-    
-    appendToTestResults(`📋 Found ${backupKeys.length} available backups (${autoBackups.length} auto, ${manualBackups.length} manual)\n`);
+
+    const autoCount = allBackups.filter(b => b.type.includes('auto')).length;
+    const manualCount = allBackups.filter(b => b.type.includes('manual')).length;
+
+    appendToTestResults(`📋 Found ${allBackups.length} available backups (${autoCount} auto, ${manualCount} manual)\n`);
     appendToTestResults("👆 Select a backup above to restore\n\n");
-    
-    showNotification(`Found ${backupKeys.length} backups - select one to restore`, "info", 3000);
+
+    showNotification(`Found ${allBackups.length} backups - select one to restore`, "info", 3000);
 }
+
+async function createManualBackup() {
+    appendToTestResults("💾 Creating Manual Backup...\n");
+
+    // Check if BackupManager is available
+    if (!window.BackupManager) {
+        appendToTestResults("❌ BackupManager not available\n\n");
+        showNotification("❌ Backup system not loaded", "error", 3000);
+        return;
+    }
+
+    // Prompt user for backup name
+    const defaultName = `Manual Backup ${new Date().toLocaleString()}`;
+    const backupName = prompt("Enter a name for this backup:", defaultName);
+
+    if (!backupName) {
+        appendToTestResults("❌ Backup cancelled - no name provided\n\n");
+        showNotification("Backup cancelled", "info", 2000);
+        return;
+    }
+
+    try {
+        const success = await window.BackupManager.createManualBackup(backupName);
+
+        if (success) {
+            // Get stats to show user
+            const stats = await window.BackupManager.getStats();
+            const totalBackups = stats ? stats.totalBackups : '?';
+
+            appendToTestResults(`✅ Manual backup created successfully!\n`);
+            appendToTestResults(`📝 Name: ${backupName}\n`);
+            appendToTestResults(`📊 Total backups: ${totalBackups}\n\n`);
+
+            showNotification(`✅ Backup created: "${backupName}"`, "success", 3000);
+        } else {
+            throw new Error('Backup creation returned false');
+        }
+
+    } catch (error) {
+        appendToTestResults(`❌ Backup failed: ${error.message}\n\n`);
+        showNotification("❌ Failed to create backup", "error", 3000);
+        console.error('Manual backup error:', error);
+    }
+}
+
 function cleanOldBackups() {
     appendToTestResults("🧹 Cleaning Old Backups...\n");
 
@@ -1522,55 +1779,69 @@ function cleanOldBackups() {
 // ==========================================
 
 function analyzeCycles() {
-    appendToTestResults("📊 Analyzing miniCycles...\n");
-    showNotification("Analyzing your miniCycles...", "info", 2000);
-    
+    appendToTestResults("📊 Analyzing Routines...\n");
+    showNotification("Analyzing your routines...", "info", 2000);
+
     setTimeout(() => {
-        const { savedMiniCycles } = assignCycleVariables();
-        
+        const state = window.AppState?.get();
+        if (!state) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        const cycles = state.data.cycles || {};
+
         let totalCycles = 0;
         let totalTasks = 0;
         let completedTasks = 0;
         let recurringTasks = 0;
-        let cyclesWithAutoReset = 0;
-        
-        Object.values(savedMiniCycles).forEach(cycle => {
+        let cyclesWithAutoMode = 0;
+
+        Object.values(cycles).forEach(cycle => {
             totalCycles++;
-            if (cycle.autoReset) cyclesWithAutoReset++;
-            
+            // Check for auto mode (Schema 2.5 uses mode settings)
+            if (cycle.mode === 'auto' || cycle.autoReset) cyclesWithAutoMode++;
+
             cycle.tasks?.forEach(task => {
                 totalTasks++;
                 if (task.completed) completedTasks++;
-                if (task.recurring) recurringTasks++;
+                if (task.recurring || task.recurringTemplateId) recurringTasks++;
             });
         });
-        
-        appendToTestResults(`📊 Cycle Analysis Results:\n`);
-        appendToTestResults(`- Total Cycles: ${totalCycles}\n`);
+
+        appendToTestResults(`📊 Routine Analysis Results:\n`);
+        appendToTestResults(`- Total Routines: ${totalCycles}\n`);
         appendToTestResults(`- Total Tasks: ${totalTasks}\n`);
         appendToTestResults(`- Completed Tasks: ${completedTasks}\n`);
         appendToTestResults(`- Recurring Tasks: ${recurringTasks}\n`);
-        appendToTestResults(`- Auto-Reset Cycles: ${cyclesWithAutoReset}\n`);
+        appendToTestResults(`- Auto Mode Routines: ${cyclesWithAutoMode}\n`);
         appendToTestResults(`- Completion Rate: ${totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0}%\n\n`);
-        
-        showNotification(`📊 Analysis complete: ${totalCycles} cycles, ${totalTasks} tasks`, "success", 3000);
+
+        showNotification(`📊 Analysis complete: ${totalCycles} routines, ${totalTasks} tasks`, "success", 3000);
     }, 1500);
 }
 
 function analyzeTasks() {
     appendToTestResults("📝 Analyzing Individual Tasks...\n");
     showNotification("Analyzing task patterns...", "info", 2000);
-    
+
     setTimeout(() => {
-        const { savedMiniCycles } = assignCycleVariables();
-        
+        const state = window.AppState?.get();
+        if (!state) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        const cycles = state.data.cycles || {};
+
         let highPriorityTasks = 0;
         let tasksWithDueDates = 0;
         let overdueTasks = 0;
         let tasksWithReminders = 0;
+        let deleteWhenCompleteTasks = 0;
         const today = new Date();
-        
-        Object.values(savedMiniCycles).forEach(cycle => {
+
+        Object.values(cycles).forEach(cycle => {
             cycle.tasks?.forEach(task => {
                 if (task.highPriority) highPriorityTasks++;
                 if (task.dueDate) {
@@ -1578,15 +1849,19 @@ function analyzeTasks() {
                     if (new Date(task.dueDate) < today) overdueTasks++;
                 }
                 if (task.remindersEnabled) tasksWithReminders++;
+                if (task.deleteWhenComplete || task.deleteWhenCompleteSettings?.todo) {
+                    deleteWhenCompleteTasks++;
+                }
             });
         });
-        
+
         appendToTestResults(`📝 Task Analysis Results:\n`);
         appendToTestResults(`- High Priority Tasks: ${highPriorityTasks}\n`);
         appendToTestResults(`- Tasks with Due Dates: ${tasksWithDueDates}\n`);
         appendToTestResults(`- Overdue Tasks: ${overdueTasks}\n`);
-        appendToTestResults(`- Tasks with Reminders: ${tasksWithReminders}\n\n`);
-        
+        appendToTestResults(`- Tasks with Reminders: ${tasksWithReminders}\n`);
+        appendToTestResults(`- Delete When Complete: ${deleteWhenCompleteTasks}\n\n`);
+
         showNotification(`📝 Task analysis complete`, "success", 2000);
     }, 1200);
 }
@@ -1594,27 +1869,33 @@ function analyzeTasks() {
 function findDataIssues() {
     appendToTestResults("🔍 Scanning for Data Issues...\n");
     showNotification("Scanning for potential data issues...", "warning", 3000);
-    
+
     setTimeout(() => {
-        const { savedMiniCycles } = assignCycleVariables();
+        const state = window.AppState?.get();
+        if (!state) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        const cycles = state.data.cycles || {};
         const issues = [];
-        
-        Object.entries(savedMiniCycles).forEach(([cycleName, cycle]) => {
+
+        Object.entries(cycles).forEach(([cycleId, cycle]) => {
             if (!cycle.tasks) {
-                issues.push(`Cycle "${cycleName}" missing tasks array`);
+                issues.push(`Routine "${cycle.title || cycleId}" missing tasks array`);
             }
-            
+
             if (!cycle.title) {
-                issues.push(`Cycle "${cycleName}" missing title`);
+                issues.push(`Routine "${cycleId}" missing title`);
             }
-            
+
             cycle.tasks?.forEach((task, index) => {
-                if (!task.id) {
-                    issues.push(`Task ${index} in "${cycleName}" missing ID`);
+                if (task.id === undefined) {
+                    issues.push(`Task ${index} in "${cycle.title}" missing ID`);
                 }
-                
+
                 if (!task.text || task.text.trim() === '') {
-                    issues.push(`Task ${index} in "${cycleName}" has empty text`);
+                    issues.push(`Task ${index} in "${cycle.title}" has empty text`);
                 }
                 
                 if (task.recurring && (!task.recurringSettings || Object.keys(task.recurringSettings).length === 0)) {
@@ -1693,44 +1974,51 @@ function cleanOldData() {
 function repairData() {
     appendToTestResults("🔧 Repairing Data Issues...\n");
     showNotification("⚠️ Attempting to repair data issues...", "warning", 3000);
-    
-    setTimeout(() => {
-        const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
-        let repaired = 0;
-        
-        Object.entries(savedMiniCycles).forEach(([cycleName, cycle]) => {
-            // Ensure tasks array exists
-            if (!cycle.tasks) {
-                cycle.tasks = [];
-                repaired++;
-            }
-            
-            // Ensure title exists
-            if (!cycle.title) {
-                cycle.title = cycleName;
-                repaired++;
-            }
-            
-            // Fix task IDs
-            cycle.tasks?.forEach((task, index) => {
-                if (!task.id) {
-                    task.id = `repaired-task-${Date.now()}-${index}`;
-                    repaired++;
-                }
-                
-                if (!task.schemaVersion) {
-                    task.schemaVersion = 2;
-                    repaired++;
-                }
-            });
-        });
 
-        safeLocalStorageSet("miniCycleStorage", safeJSONStringify(savedMiniCycles, null));
+    setTimeout(() => {
+        const state = window.AppState?.get();
+        if (!state) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        let repaired = 0;
+
+        // ✅ Update via AppState to ensure proper save
+        window.AppState.update(appState => {
+            Object.entries(appState.data.cycles).forEach(([cycleId, cycle]) => {
+                // Ensure tasks array exists
+                if (!cycle.tasks) {
+                    cycle.tasks = [];
+                    repaired++;
+                }
+
+                // Ensure title exists
+                if (!cycle.title) {
+                    cycle.title = cycleId;
+                    repaired++;
+                }
+
+                // Fix task IDs and ensure Schema 2.5 fields
+                cycle.tasks?.forEach((task, index) => {
+                    if (task.id === undefined) {
+                        task.id = index;
+                        repaired++;
+                    }
+
+                    // Ensure delete when complete settings exist
+                    if (!task.deleteWhenCompleteSettings) {
+                        task.deleteWhenCompleteSettings = { cycle: false, todo: true };
+                        repaired++;
+                    }
+                });
+            });
+        }, true); // Immediate save
 
         appendToTestResults(`🔧 Data Repair Complete:\n`);
         appendToTestResults(`- Repairs made: ${repaired}\n`);
-        appendToTestResults(`- Data structure normalized\n\n`);
-        
+        appendToTestResults(`- Data structure normalized to Schema 2.5\n\n`);
+
         if (repaired > 0) {
             showNotification(`🔧 Repaired ${repaired} data issues`, "success", 3000);
         } else {
@@ -1746,13 +2034,23 @@ function repairData() {
 function generateDebugReport() {
     appendToTestResults("📋 Generating Debug Report...\n");
     showNotification("Generating comprehensive debug report...", "info", 3000);
-    
+
     setTimeout(() => {
-        const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
+        const state = window.AppState?.get();
+        if (!state) {
+            appendToTestResults("❌ No state data available\n\n");
+            return;
+        }
+
+        const cycles = state.data.cycles || {};
+        const activeCycleId = state.appState.activeCycleId;
+        const metadata = state.metadata;
+
         const report = {
             timestamp: new Date().toISOString(),
             appInfo: {
-                version: "1.0",
+                version: metadata?.version || "1.371",
+                schemaVersion: metadata?.schemaVersion || "2.5",
                 name: "miniCycle",
                 developer: "Sparkin Creations"
             },
@@ -1764,10 +2062,10 @@ function generateDebugReport() {
                 language: navigator.language
             },
             dataInfo: {
-                totalCycles: Object.keys(savedMiniCycles).length,
-                activeCycle: lastUsedMiniCycle,
-                totalTasks: Object.values(savedMiniCycles).reduce((acc, cycle) => acc + (cycle.tasks?.length || 0), 0),
-                storageUsed: safeJSONStringify(localStorage, "{}").length
+                totalRoutines: Object.keys(cycles).length,
+                activeCycle: activeCycleId,
+                totalTasks: Object.values(cycles).reduce((acc, cycle) => acc + (cycle.tasks?.length || 0), 0),
+                storageUsed: JSON.stringify(localStorage).length
             }
         };
 
@@ -2847,12 +3145,11 @@ function getServiceWorkerInfo() {
                     info.scope = registration.scope;
                     info.scriptURL = registration.active?.scriptURL || 'unknown';
                     info.updateAvailable = !!registration.waiting;
-                    
-                    // Try to get version info from service worker if available
-                    if (registration.active) {
-                        // You might have version info in your service worker
-                        // This is optional and depends on how your SW is structured
-                        info.version = 'active';
+
+                    // ✅ Extract version from script URL (e.g., service-worker.js?v=1.371)
+                    if (registration.active && info.scriptURL) {
+                        const versionMatch = info.scriptURL.match(/[?&]v=([^&]+)/);
+                        info.version = versionMatch ? versionMatch[1] : 'active';
                     }
                 }
                 resolve(info);
@@ -2866,6 +3163,7 @@ function getServiceWorkerInfo() {
 
 // Make functions globally available
 window.setupTestingModal = setupTestingModal;
+window.initializeTestingModalEnhancements = initializeTestingModalEnhancements;
 window.openStorageViewer = openStorageViewer;
 window.closeStorageViewer = closeStorageViewer;
 window.appendToTestResults = appendToTestResults;
