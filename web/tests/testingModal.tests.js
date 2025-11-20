@@ -12,7 +12,7 @@
  * and can be safely removed from production if needed.
  */
 
-export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
+export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Testing Modal Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
 
@@ -42,18 +42,19 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
 
     // Mock BackupManager if not available
     const mockBackupManager = {
-        listAllBackups: async () => ({ auto: [], manual: [] }),
+        createAutoBackup: async () => true,
         createManualBackup: async (name) => true,
+        listAllBackups: async () => ({ auto: [], manual: [] }),
+        restoreBackup: async (id, type) => ({
+            data: { cycles: {} },
+            metadata: { schemaVersion: '2.5' }
+        }),
         getStats: async () => ({
             autoBackups: 0,
             manualBackups: 0,
             totalBackups: 0,
             totalSize: 0,
             totalSizeMB: '0.00'
-        }),
-        restoreBackup: async (id, type) => ({
-            data: { cycles: {} },
-            metadata: { schemaVersion: '2.5' }
         })
     };
 
@@ -64,10 +65,15 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
             data: {
                 cycles: {
                     'test-cycle': {
-                        title: 'Test Cycle',
+                        title: 'Test Routine',
+                        mode: 'auto',
                         tasks: [
-                            { id: 0, text: 'Test Task 1', completed: false },
-                            { id: 1, text: 'Test Task 2', completed: true }
+                            {
+                                id: 0,
+                                text: 'Test Task',
+                                completed: false,
+                                deleteWhenCompleteSettings: { cycle: false, todo: true }
+                            }
                         ]
                     }
                 }
@@ -81,8 +87,10 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
                 lastModified: Date.now()
             },
             settings: {
-                darkMode: false
-            }
+                darkMode: false,
+                statsPanel: {}
+            },
+            userProgress: {}
         }),
         update: (mutator, immediate) => {
             const state = mockAppState.get();
@@ -148,7 +156,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === BACKUP MANAGER INTEGRATION TESTS ===
     resultsDiv.innerHTML += '<h4>💾 Backup Manager Integration</h4>';
 
-    test('BackupManager exists and has correct interface', async () => {
+    await test('BackupManager exists and has correct interface', async () => {
         if (!window.BackupManager) {
             throw new Error('BackupManager not available');
         }
@@ -168,7 +176,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         });
     });
 
-    test('can list available backups', async () => {
+    await test('can list available backups', async () => {
         const result = await window.BackupManager.listAllBackups();
 
         if (!result || typeof result !== 'object') {
@@ -180,7 +188,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('can create manual backup with name', async () => {
+    await test('can create manual backup with name', async () => {
         const backupName = 'Test Backup';
         const result = await window.BackupManager.createManualBackup(backupName);
 
@@ -189,7 +197,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('can get backup statistics', async () => {
+    await test('can get backup statistics', async () => {
         const stats = await window.BackupManager.getStats();
 
         if (!stats || typeof stats !== 'object') {
@@ -207,7 +215,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === DATA INTEGRITY TESTS ===
     resultsDiv.innerHTML += '<h4>🔍 Data Integrity Checks</h4>';
 
-    test('detects missing task IDs', async () => {
+    await test('detects missing task IDs', async () => {
         const state = window.AppState.get();
         const cycle = state.data.cycles['test-cycle'];
 
@@ -226,7 +234,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('detects missing cycle titles', async () => {
+    await test('detects missing cycle titles', async () => {
         const state = window.AppState.get();
         delete state.data.cycles['test-cycle'].title;
 
@@ -242,7 +250,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('detects missing task arrays', async () => {
+    await test('detects missing task arrays', async () => {
         const state = window.AppState.get();
         delete state.data.cycles['test-cycle'].tasks;
 
@@ -258,7 +266,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('validates deleteWhenCompleteSettings exist', async () => {
+    await test('validates deleteWhenCompleteSettings exist', async () => {
         const state = window.AppState.get();
         const task = state.data.cycles['test-cycle'].tasks[0];
 
@@ -279,7 +287,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === DATA REPAIR TESTS ===
     resultsDiv.innerHTML += '<h4>🔧 Data Repair Functions</h4>';
 
-    test('repairs missing task IDs', async () => {
+    await test('repairs missing task IDs', async () => {
         const state = window.AppState.get();
         const cycle = state.data.cycles['test-cycle'];
 
@@ -304,7 +312,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('repairs missing cycle titles', async () => {
+    await test('repairs missing cycle titles', async () => {
         const state = window.AppState.get();
         delete state.data.cycles['test-cycle'].title;
 
@@ -325,7 +333,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('repairs missing task arrays', async () => {
+    await test('repairs missing task arrays', async () => {
         const state = window.AppState.get();
         delete state.data.cycles['test-cycle'].tasks;
 
@@ -346,7 +354,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('repairs missing deleteWhenCompleteSettings', async () => {
+    await test('repairs missing deleteWhenCompleteSettings', async () => {
         const state = window.AppState.get();
         const task = state.data.cycles['test-cycle'].tasks[0];
         delete task.deleteWhenCompleteSettings;
@@ -369,7 +377,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === DEBUG REPORT TESTS ===
     resultsDiv.innerHTML += '<h4>📋 Debug Report Generation</h4>';
 
-    test('generates debug report with all sections', async () => {
+    await test('generates debug report with all sections', async () => {
         const state = window.AppState.get();
         const cycles = state.data.cycles || {};
         const activeCycleId = state.appState.activeCycleId;
@@ -407,7 +415,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('app info includes version and schema', async () => {
+    await test('app info includes version and schema', async () => {
         const state = window.AppState.get();
         const metadata = state?.metadata || {};
         const version = metadata.version || metadata.schemaVersion || "1.371";
@@ -422,7 +430,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('performance info calculates correctly', async () => {
+    await test('performance info calculates correctly', async () => {
         const performanceInfo = performance.getEntriesByType("navigation")[0];
 
         if (performanceInfo) {
@@ -444,7 +452,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === APP STATE INTEGRATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔄 AppState Integration</h4>';
 
-    test('can access AppState data', async () => {
+    await test('can access AppState data', async () => {
         const state = window.AppState?.get();
 
         if (!state) {
@@ -456,7 +464,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('can read cycles from AppState', async () => {
+    await test('can read cycles from AppState', async () => {
         const state = window.AppState?.get();
         const cycles = state?.data?.cycles || {};
 
@@ -469,7 +477,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('can update AppState data', async () => {
+    await test('can update AppState data', async () => {
         let updateCalled = false;
 
         window.AppState.update = (mutator, immediate) => {
@@ -487,7 +495,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('metadata includes required fields', async () => {
+    await test('metadata includes required fields', async () => {
         const state = window.AppState.get();
         const metadata = state?.metadata;
 
@@ -502,7 +510,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === SCHEMA VERSION TESTS ===
     resultsDiv.innerHTML += '<h4>📊 Schema Version Validation</h4>';
 
-    test('validates schema version is 2.5', async () => {
+    await test('validates schema version is 2.5', async () => {
         const state = window.AppState.get();
         const schemaVersion = state?.metadata?.schemaVersion;
 
@@ -511,7 +519,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('counts tasks correctly across cycles', async () => {
+    await test('counts tasks correctly across cycles', async () => {
         const state = window.AppState.get();
         const cycles = state.data.cycles || {};
 
@@ -525,7 +533,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('identifies mode settings correctly', async () => {
+    await test('identifies mode settings correctly', async () => {
         const state = window.AppState.get();
         const cycle = state.data.cycles['test-cycle'];
 
@@ -542,7 +550,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === STORAGE TESTS ===
     resultsDiv.innerHTML += '<h4>💾 Storage Operations</h4>';
 
-    test('calculates storage usage correctly', async () => {
+    await test('calculates storage usage correctly', async () => {
         const storageUsed = JSON.stringify(localStorage).length;
         const storageLimit = 5 * 1024 * 1024; // 5MB
         const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
@@ -556,7 +564,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('counts localStorage keys correctly', async () => {
+    await test('counts localStorage keys correctly', async () => {
         const keyCount = Object.keys(localStorage).length;
 
         if (typeof keyCount !== 'number') {
@@ -571,7 +579,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
 
-    test('handles missing AppState gracefully', async () => {
+    await test('handles missing AppState gracefully', async () => {
         delete window.AppState;
 
         const state = window.AppState?.get();
@@ -584,7 +592,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         window.AppState = mockAppState;
     });
 
-    test('handles missing BackupManager gracefully', async () => {
+    await test('handles missing BackupManager gracefully', async () => {
         delete window.BackupManager;
 
         const manager = window.BackupManager;
@@ -597,7 +605,7 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         window.BackupManager = mockBackupManager;
     });
 
-    test('handles corrupted localStorage data', async () => {
+    await test('handles corrupted localStorage data', async () => {
         localStorage.setItem('miniCycleData', 'invalid json');
 
         let errorThrown = false;
@@ -613,15 +621,14 @@ export function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === SUMMARY ===
-    resultsDiv.innerHTML += `
-        <div class="summary">
-            <h3>Summary</h3>
-            <p>Results: ${passed.count}/${total.count} tests passed</p>
-            ${passed.count === total.count ?
-                '<p class="all-pass">✅ All tests passed!</p>' :
-                `<p class="some-fail">⚠️ ${total.count - passed.count} test(s) failed</p>`}
-        </div>
-    `;
+    const percentage = total.count > 0 ? Math.round((passed.count / total.count) * 100) : 0;
+    resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
+
+    if (passed.count === total.count) {
+        resultsDiv.innerHTML += '<p class="all-pass">✅ All tests passed!</p>';
+    } else {
+        resultsDiv.innerHTML += `<p class="some-fail">⚠️ ${total.count - passed.count} test(s) failed</p>`;
+    }
 
     // 🔒 RESTORE REAL APP DATA after all tests (only when running individually)
     restoreOriginalData();

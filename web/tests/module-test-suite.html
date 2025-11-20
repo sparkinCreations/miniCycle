@@ -18,13 +18,48 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-gradient-start: #4c79ff;
+            --bg-gradient-end: #74c0fc;
+            --text-color: white;
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --card-text: white;
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --input-text: #333;
+            --button-bg: rgba(255, 255, 255, 0.95);
+            --button-text: #4c79ff;
+            --border-color: rgba(255, 255, 255, 0.3);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --result-bg: rgba(255, 255, 255, 0.95);
+            --result-text: #333;
+            --test-section-border: rgba(255, 255, 255, 0.3);
+        }
+
+        body.dark-mode {
+            --bg-gradient-start: #1a1a2e;
+            --bg-gradient-end: #16213e;
+            --text-color: #e0e0e0;
+            --card-bg: rgba(30, 30, 50, 0.8);
+            --card-text: #e0e0e0;
+            --input-bg: #2a2a3e;
+            --input-text: #e0e0e0;
+            --button-bg: #3a3a5e;
+            --button-text: #74c0fc;
+            --border-color: rgba(116, 192, 252, 0.3);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --result-bg: #2a2a3e;
+            --result-text: #e0e0e0;
+            --test-section-border: rgba(116, 192, 252, 0.3);
+        }
+
         html, body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #4c79ff, #74c0fc);
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: white;
+            color: var(--text-color);
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         body {
@@ -52,12 +87,28 @@
         }
 
         .module-selector {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: background 0.3s ease;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .controls-row input {
+            flex: 1;
+        }
+
+        .controls-row button {
+            margin: 0;
         }
 
         label {
@@ -65,34 +116,54 @@
             font-weight: 600;
             margin-bottom: 10px;
             font-size: 0.95rem;
+            color: var(--card-text);
         }
 
-        select {
+        select, input[type="search"] {
             width: 100%;
             padding: 12px 16px;
             border-radius: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--input-text);
             font-size: 16px;
             font-family: 'Inter', sans-serif;
-            cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        select:hover {
-            border-color: rgba(255, 255, 255, 0.5);
-            background: white;
+        select {
+            cursor: pointer;
+            padding: 8px 12px;
         }
 
-        select:focus {
+        select option {
+            padding: 8px 12px;
+            margin: 2px 0;
+        }
+
+        select option:hover {
+            background: var(--button-text);
+            color: white;
+        }
+
+        select:hover, input[type="search"]:hover {
+            border-color: var(--button-text);
+        }
+
+        select:focus, input[type="search"]:focus {
             outline: none;
-            border-color: white;
-            background: white;
+            border-color: var(--button-text);
+            box-shadow: 0 0 0 3px rgba(116, 192, 252, 0.2);
+        }
+
+        input[type="search"] {
+            cursor: text;
+            padding: 12px 16px;
         }
 
         button {
-            background: rgba(255, 255, 255, 0.95);
-            color: #4c79ff;
+            background: var(--button-bg);
+            color: var(--button-text);
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
@@ -101,18 +172,30 @@
             cursor: pointer;
             margin: 10px 5px 0 0;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px var(--shadow-color);
             font-family: 'Inter', sans-serif;
         }
 
         button:hover {
-            background: white;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            opacity: 0.9;
         }
 
         button:active {
             transform: translateY(0);
+        }
+
+        #dark-mode-toggle {
+            background: transparent;
+            border: 2px solid var(--border-color);
+            padding: 8px 16px;
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        #dark-mode-toggle:hover {
+            background: var(--card-bg);
         }
 
         #results {
@@ -138,31 +221,85 @@
             font-weight: 600;
             margin: 25px 0 10px;
             padding: 8px 0;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 2px solid var(--test-section-border);
+            color: var(--text-color);
         }
 
         .result {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--result-bg);
+            color: var(--result-text);
             padding: 12px 16px;
             margin: 8px 0;
             border-radius: 8px;
             font-size: 0.95rem;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease;
+            box-shadow: 0 2px 6px var(--shadow-color);
+            transition: transform 0.2s ease, background 0.3s ease;
         }
 
         .result:hover {
             transform: translateX(4px);
         }
 
+        .result.hidden {
+            display: none;
+        }
+
         .pass {
-            color: #155724;
             border-left: 4px solid #28a745;
         }
 
+        body:not(.dark-mode) .pass {
+            color: #155724;
+        }
+
+        body.dark-mode .pass {
+            color: #4ade80;
+        }
+
         .fail {
-            color: #721c24;
             border-left: 4px solid #dc3545;
+        }
+
+        body:not(.dark-mode) .fail {
+            color: #721c24;
+        }
+
+        body.dark-mode .fail {
+            color: #f87171;
+        }
+
+        .no-results {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: var(--text-color);
+            margin: 20px 0;
+        }
+
+        /* Summary table styles for dark mode */
+        table {
+            color: var(--text-color);
+        }
+
+        tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        body.dark-mode tbody tr {
+            background-color: rgba(30, 30, 50, 0.5) !important;
+        }
+
+        body.dark-mode tbody tr:hover {
+            background-color: rgba(50, 50, 70, 0.7) !important;
+        }
+
+        body.dark-mode tfoot tr {
+            background-color: rgba(40, 40, 60, 0.8) !important;
+        }
+
+        body.dark-mode th {
+            color: var(--text-color);
         }
 
         .test-element,
@@ -198,12 +335,22 @@
 </head>
 <body>
     <div class="container">
-        <h1>🧪 miniCycle Module Test Suite</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h1 style="margin: 0;">🧪 miniCycle Module Test Suite</h1>
+            <button id="dark-mode-toggle" title="Toggle Dark Mode">🌙</button>
+        </div>
         <p class="subtitle">Simple browser tests for miniCycle modules.</p>
 
     <div class="module-selector">
-        <label for="module-select">Choose a module to test:</label>
-        <select id="module-select">
+        <div style="margin-bottom: 15px;">
+            <label for="search-modules">🔍 Filter modules:</label>
+            <input type="search" id="search-modules" placeholder="Type to filter module list..." style="width: 100%;">
+        </div>
+
+        <div class="controls-row">
+            <div style="flex: 1;">
+                <label for="module-select">Choose a module to test:</label>
+                <select id="module-select" size="10" style="height: 300px;">
             <option value="">-- Select Module --</option>
             <option value="performance">⚡ Performance Benchmarks</option>
             <option value="integration">🔗 Integration Tests (E2E)</option>
@@ -242,6 +389,9 @@
             <option value="errorHandler">🛡️ Error Handler Tests</option>
             <option value="testingModal">🧪 Testing Modal</option>
         </select>
+            </div>
+        </div>
+
         <button id="run-tests-btn">Run Tests</button>
         <button id="run-all-tests-btn">▶️ Run All Tests (35 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
@@ -305,6 +455,71 @@
         const runAllTestsBtn = document.getElementById('run-all-tests-btn');
         const copyResultsBtn = document.getElementById('copy-results-btn');
         const resultsDiv = document.getElementById('results');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const searchModulesInput = document.getElementById('search-modules');
+
+        // ==========================================
+        // 🌙 Dark Mode Toggle
+        // ==========================================
+
+        // Load saved theme preference
+        const savedTheme = localStorage.getItem('testSuiteDarkMode');
+        if (savedTheme === 'true') {
+            document.body.classList.add('dark-mode');
+            darkModeToggle.textContent = '☀️';
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            darkModeToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('testSuiteDarkMode', isDark);
+        });
+
+        // ==========================================
+        // 🔍 Module Filter Functionality
+        // ==========================================
+
+        let searchTimeout;
+        searchModulesInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const query = e.target.value.toLowerCase().trim();
+                filterModules(query);
+            }, 200); // Debounce for better performance
+        });
+
+        function filterModules(query) {
+            const options = moduleSelect.querySelectorAll('option');
+            let visibleCount = 0;
+
+            options.forEach((option, index) => {
+                // Always show the first option ("-- Select Module --")
+                if (index === 0) {
+                    option.style.display = '';
+                    return;
+                }
+
+                if (!query) {
+                    option.style.display = '';
+                    visibleCount++;
+                } else {
+                    const text = option.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        option.style.display = '';
+                        visibleCount++;
+                    } else {
+                        option.style.display = 'none';
+                    }
+                }
+            });
+
+            // Show message in select if no matches
+            if (visibleCount === 0 && query) {
+                // Could add a temporary option showing "No matches found"
+                // but this might be confusing in a select element
+            }
+        }
 
         // Load selected module
         moduleSelect.addEventListener('change', async (e) => {
@@ -640,6 +855,32 @@
             resultsDiv.innerHTML = '<h2>🧪 Running All Tests...</h2><p>This may take a few moments...</p>';
             copyResultsBtn.style.display = 'none';
 
+            // 🛡️ PREVENT PAGE RELOADS during tests
+            const originalBeforeUnload = window.onbeforeunload;
+
+            // Set a flag that modules can check to avoid reload during tests
+            window.__TEST_MODE_NO_RELOAD__ = true;
+
+            // Monkey-patch setTimeout to intercept delayed reloads
+            const originalSetTimeout = window.setTimeout;
+            window.setTimeout = function(fn, delay, ...args) {
+                // Check if the function contains reload code
+                const fnStr = fn.toString();
+                if (fnStr.includes('location.reload') || fnStr.includes('window.location.reload')) {
+                    console.warn('⚠️ Blocked setTimeout with location.reload() during tests');
+                    return -1; // Return fake timer ID
+                }
+                return originalSetTimeout(fn, delay, ...args);
+            };
+
+            // Block beforeunload
+            window.onbeforeunload = (e) => {
+                console.warn('⚠️ Blocked beforeunload during tests');
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            };
+
             // 🔒 SAVE REAL APP DATA ONCE before all tests run
             const savedRealData = {};
             const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
@@ -686,35 +927,41 @@
                 { name: 'TaskOptionsCustomizer', key: 'taskOptionsCustomizer', runFn: runTaskOptionsCustomizerTests, importPath: '../modules/ui/taskOptionsCustomizer.js' },
                 { name: 'XSS Vulnerability', key: 'xss-vulnerability', runFn: runAllXSSTests, importPath: null },
                 { name: 'Error Handler', key: 'errorHandler', runFn: runErrorHandlerTests, importPath: '../modules/utils/errorHandler.js' },
-                { name: 'Testing Modal', key: 'testingModal', runFn: runTestingModalTests, importPath: '../modules/testing/testing-modal.js' }
+                { name: 'Testing Modal', key: 'testingModal', runFn: runTestingModalTests, importPath: '../modules/testing/testing-modal.js', secondaryImport: '../modules/storage/backupManager.js' }
             ];
 
             let allResults = [];
             let totalPassed = 0;
             let totalTests = 0;
 
-            // Run each module's tests
-            for (const module of allModules) {
-                try {
-                    // Load the module (skip for integration tests which don't need imports)
-                    if (module.importPath) {
-                        if (module.key === 'taskCore') {
-                            // TaskCore needs special initialization with test-friendly mocks
-                            const { initTaskCore } = await import(`${module.importPath}?v=${cacheBuster}`);
-                            await initTaskCore({
-                                showPromptModal: (options) => {
-                                    console.log('[TEST] Mock prompt:', options.message);
-                                    if (options.callback) options.callback('Test Task');
-                                },
-                                showConfirmationModal: (options) => {
-                                    console.log('[TEST] Mock confirmation:', options.message);
-                                    if (options.confirmCallback) options.confirmCallback();
-                                }
-                            });
-                        } else {
-                            await import(`${module.importPath}?v=${cacheBuster}`);
+            try {
+                // Run each module's tests
+                for (const module of allModules) {
+                    try {
+                        // Load the module (skip for integration tests which don't need imports)
+                        if (module.importPath) {
+                            // Load secondary import first if specified (e.g., dependencies)
+                            if (module.secondaryImport) {
+                                await import(`${module.secondaryImport}?v=${cacheBuster}`);
+                            }
+
+                            if (module.key === 'taskCore') {
+                                // TaskCore needs special initialization with test-friendly mocks
+                                const { initTaskCore } = await import(`${module.importPath}?v=${cacheBuster}`);
+                                await initTaskCore({
+                                    showPromptModal: (options) => {
+                                        console.log('[TEST] Mock prompt:', options.message);
+                                        if (options.callback) options.callback('Test Task');
+                                    },
+                                    showConfirmationModal: (options) => {
+                                        console.log('[TEST] Mock confirmation:', options.message);
+                                        if (options.confirmCallback) options.confirmCallback();
+                                    }
+                                });
+                            } else {
+                                await import(`${module.importPath}?v=${cacheBuster}`);
+                            }
                         }
-                    }
 
                     // Create a temporary div for results
                     const tempDiv = document.createElement('div');
@@ -754,15 +1001,15 @@
                         error: error.message,
                         html: `<div class="result fail">❌ Failed to run tests: ${error.message}</div>`
                     });
+                    }
                 }
-            }
 
-            const endTime = performance.now();
-            const duration = ((endTime - startTime) / 1000).toFixed(2);
+                const endTime = performance.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(2);
 
-            // Display aggregated results
-            let output = '<h2>🧪 All Module Test Results</h2>';
-            output += `<h3>Completed in ${duration}s</h3>`;
+                // Display aggregated results
+                let output = '<h2>🧪 All Module Test Results</h2>';
+                output += `<h3>Completed in ${duration}s</h3>`;
 
             // Summary table
             output += '<div style="background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 8px; margin: 20px 0; color: #333;">';
@@ -798,18 +1045,28 @@
                 output += '</div>';
             }
 
-            resultsDiv.innerHTML = output;
-            copyResultsBtn.style.display = 'inline-block';
+                resultsDiv.innerHTML = output;
+                copyResultsBtn.style.display = 'inline-block';
 
-            // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
-            await new Promise(resolve => setTimeout(resolve, 700));
+                // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
+                await new Promise(resolve => setTimeout(resolve, 700));
 
-            // 🔒 RESTORE REAL APP DATA after all tests complete (GUARANTEED)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-            console.log('✅ All tests completed - original localStorage restored');
+            } catch (error) {
+                console.error('❌ Fatal error during test execution:', error);
+                resultsDiv.innerHTML += `<div class="result fail">❌ Fatal error: ${error.message}</div>`;
+            } finally {
+                // 🔒 RESTORE REAL APP DATA after all tests complete (GUARANTEED)
+                localStorage.clear();
+                Object.keys(savedRealData).forEach(key => {
+                    localStorage.setItem(key, savedRealData[key]);
+                });
+                console.log('✅ All tests completed - original localStorage restored');
+
+                // 🛡️ RESTORE ORIGINAL handlers and clear flag
+                window.onbeforeunload = originalBeforeUnload;
+                window.setTimeout = originalSetTimeout;
+                delete window.__TEST_MODE_NO_RELOAD__;
+            }
         });
 
         // Convert HTML results to plain text format
