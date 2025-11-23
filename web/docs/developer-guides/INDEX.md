@@ -2,8 +2,8 @@
 
 > **Complete guide to all miniCycle documentation**
 
-**Version**: 1.357
-**Last Updated**: November 15, 2025
+**Version**: 1.373
+**Last Updated**: November 23, 2025
 **Status**: ✅ Production Ready
 
 ---
@@ -37,8 +37,8 @@
 - Core features
 
 #### [CLAUDE.md](./CLAUDE.md)
-**What it is**: Complete architecture and development guide
-**Read if**: You're developing or contributing
+**What it is**: Complete architecture and development guide (for AI assistants)
+**Read if**: You're using AI to work with the codebase
 **Time**: 15 minutes
 
 **Topics:**
@@ -48,6 +48,119 @@
 - Testing and validation
 - Version management
 - Important patterns for AI assistants
+
+---
+
+### 👩‍💻 Developer Guides
+
+#### [DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md)
+**What it is**: Hub/index for all developer documentation
+**Read if**: You want to navigate the developer guide system
+**Time**: 2 minutes
+
+#### [GETTING_STARTED.md](./GETTING_STARTED.md)
+**What it is**: Quick start guide for developers
+**Read if**: You're setting up miniCycle for the first time
+**Time**: 5 minutes
+
+**Topics:**
+- Get running in 2 minutes
+- Mobile device testing over WiFi
+- Your first code change
+- The "cycling" philosophy
+
+#### [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
+**What it is**: Complete system architecture and core concepts
+**Read if**: You need to understand how miniCycle works internally
+**Time**: 30 minutes
+
+**Topics:**
+- Current stats and modularization status
+- Technology stack and project structure
+- 6 core concepts with real examples
+- Task cycling system, state management, recurring tasks
+- Undo/redo, task options customizer, mode manager
+
+#### [MODULE_SYSTEM_GUIDE.md](./MODULE_SYSTEM_GUIDE.md)
+**What it is**: Guide to the 4 module patterns used in miniCycle
+**Read if**: You're creating or modifying modules
+**Time**: 20 minutes
+
+**Topics:**
+- Static Utilities (Pure Functions)
+- Simple Instance (Self-Contained)
+- Resilient Constructor (Graceful Degradation)
+- Strict Injection (Fail Fast)
+- Pattern selection guide
+
+#### [DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md)
+**What it is**: Practical guide to making changes and deploying
+**Read if**: You're actively developing features
+**Time**: 15 minutes
+
+**Topics:**
+- Making changes (JavaScript, modules, styles)
+- Testing your changes
+- Version management
+- Deployment process
+- Common tasks & troubleshooting
+
+#### [TESTING_GUIDE.md](./TESTING_GUIDE.md)
+**What it is**: Complete testing system documentation
+**Read if**: You're writing or running tests
+**Time**: 20 minutes
+
+**Topics:**
+- Manual testing (browser-based)
+- Automated testing (Playwright)
+- GitHub Actions CI/CD
+- Creating new tests
+- Test patterns and best practices
+- 1011 tests, 100% passing ✅
+
+#### [SECURITY_GUIDE.md](./SECURITY_GUIDE.md)
+**What it is**: Security patterns and best practices
+**Read if**: You're implementing features that handle user data
+**Time**: 15 minutes
+
+**Topics:**
+- XSS prevention
+- Input sanitization patterns
+- Safe vs unsafe patterns
+- Security checklist
+- Event flow & UI state patterns
+
+#### [API_REFERENCE.md](./API_REFERENCE.md)
+**What it is**: Complete API documentation
+**Read if**: You need to know what functions are available
+**Time**: 10 minutes (reference)
+
+**Topics:**
+- Global functions (task, cycle, state, UI, undo/redo)
+- Module APIs (notifications, stats, recurring, themes, modes)
+
+#### [APPINIT_SYSTEM.md](./APPINIT_SYSTEM.md)
+**What it is**: 2-phase initialization system deep dive
+**Read if**: You're working with app initialization or plugins
+**Time**: 15 minutes
+
+**Topics:**
+- 2-phase initialization system
+- Preventing race conditions
+- Plugin system & hooks
+- Testing integration
+
+#### [DATA_SCHEMA_GUIDE.md](./DATA_SCHEMA_GUIDE.md)
+**What it is**: Complete Schema 2.5 structure
+**Read if**: You're working with data persistence
+**Time**: 10 minutes
+
+**Topics:**
+- Complete data structure
+- How data flows through the app
+- Task options, recurring templates, user progress
+
+---
 
 ### ⚡ Performance Testing
 
@@ -193,6 +306,19 @@
 - Achievement-based progression
 - Creating new themes
 
+#### [MODE_MANAGER_ARCHITECTURE.md](../architecture/MODE_MANAGER_ARCHITECTURE.md)
+**What it is**: Mode management system documentation (v1.373+)
+**Read if**: You're working with cycling modes or mode switching
+**Time**: 15 minutes
+
+**Topics:**
+- Three operational modes (Auto Cycle, Manual Cycle, To-Do)
+- UI refresh without page reload (v1.372+)
+- Task button refresh architecture
+- Mode state synchronization
+- Debouncing patterns
+- Critical fixes for mode syncing
+
 #### [RECURRING_WATCH_FUNCTION.md](../features/RECURRING_WATCH_FUNCTION.md)
 **What it is**: Recurring tasks scheduling system
 **Read if**: You're working with recurring task functionality
@@ -294,6 +420,10 @@
 1. [RECURRING_WATCH_FUNCTION.md](../features/RECURRING_WATCH_FUNCTION.md) → Scheduling
 2. [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md) → Integration
 
+**Mode Switching:**
+1. [MODE_MANAGER_ARCHITECTURE.md](../architecture/MODE_MANAGER_ARCHITECTURE.md) → Mode management system
+2. [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) → Button customization per mode
+
 **Import/Export:**
 1. [MCYC_FILE_FORMAT.md](../data-schema/MCYC_FILE_FORMAT.md) → File format
 2. [SCHEMA_2_5.md](../data-schema/SCHEMA_2_5.md) → Data structure
@@ -311,7 +441,7 @@
 ### Test Results
 
 ```
-✅ Functional Tests: 1099/1099 (100%)
+✅ Functional Tests: 1011/1011 (100%)
 ✅ Performance Tests: 12/12 (100%)
 ✅ Execution Time: 21.40ms
 ✅ Memory Usage: 9.54MB (0.3%)
@@ -411,14 +541,16 @@ Status: Complete ✅
 
 | Document | Last Updated | Status |
 |----------|--------------|---------|
+| MODE_MANAGER_ARCHITECTURE.md | 2025-11-23 | ✅ Current |
+| TASK_OPTIONS_CUSTOMIZER.md | 2025-11-23 | ✅ Current |
+| CLAUDE.md | 2025-11-23 | ✅ Current |
+| INDEX.md | 2025-11-23 | ✅ Current |
 | PERFORMANCE_TESTING_GUIDE.md | 2025-11-12 | ✅ Current |
 | TESTING_README.md | 2025-11-12 | ✅ Current |
 | TESTING_ARCHITECTURE.md | 2025-11-12 | ✅ Current |
 | PERFORMANCE_SUMMARY.md | 2025-11-12 | ✅ Current |
 | PERFORMANCE_SETUP.md | 2025-11-12 | ✅ Current |
 | COMPLETED_TASKS_DROPDOWN.md | 2025-11-13 | ✅ Current |
-| CLAUDE.md | 2025-11-14 | ✅ Current |
-| INDEX.md | 2025-11-14 | ✅ Current |
 | SCHEMA_2_5.md | 2025-01 | ✅ Current |
 | DRAG_DROP_ARCHITECTURE.md | 2025-01 | ✅ Current |
 | THEME_ARCHITECTURE.md | 2024-11-09 | ✅ Current |

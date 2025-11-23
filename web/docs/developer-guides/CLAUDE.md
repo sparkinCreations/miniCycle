@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Reduction:** 74.8% achieved
 - **Modules:** 33 modules (12,003 lines extracted)
 - **Core functions:** 14 (orchestration only)
-- **Test coverage:** 100% (1099/1099 tests passing) ✅
-- **Version:** 1.357 (November 15, 2025)
+- **Test coverage:** 100% (1011/1011 tests passing) ✅
+- **Version:** 1.373 (November 23, 2025)
 - **Cross-platform:** All tests pass on Mac, iPad, iPhone
 
 **Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
@@ -124,16 +124,17 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 - **73/73 tests passing:** Comprehensive test coverage
 - **See:** [UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md) for complete architecture details
 
-#### Module System (`utilities/`)
-- **notifications.js**: Advanced notification system with drag support and educational tips
-- **statsPanel.js**: Statistics panel with swipe navigation and achievement system
-- **deviceDetection.js**: Platform-specific feature detection and optimization
-- **themeManager.js**: Dynamic theming system with unlockable themes
-- **taskOptionsCustomizer.js**: Per-cycle task button visibility customization (v1.357+)
+#### Module System (`modules/`)
+- **ui/notifications.js**: Advanced notification system with drag support and educational tips
+- **ui/statsPanel.js**: Statistics panel with swipe navigation and achievement system
+- **ui/taskOptionsCustomizer.js**: Per-cycle task button visibility customization (v1.357+, 703 lines)
+- **utils/deviceDetection.js**: Platform-specific feature detection and optimization
+- **utils/themeManager.js**: Dynamic theming system with unlockable themes
+- **utils/globalUtils.js**: 40+ utility functions including deleteWhenComplete helpers (v1.370+)
 - **cycle/cycleLoader.js**: Data loading, migration, and file import/export (.mcyc format)
 - **cycle/cycleManager.js**: Cycle creation, onboarding, and management
 - **cycle/cycleSwitcher.js**: Cycle switching with modal UI
-- **cycle/modeManager.js**: Auto/Manual/Todo mode management
+- **cycle/modeManager.js**: Auto/Manual/Todo mode management with UI refresh (v1.372+, 633 lines)
 
 #### Completed Tasks Dropdown (v1.352+)
 - **Optional feature:** Separates completed tasks into a collapsible dropdown section
@@ -155,12 +156,18 @@ const { MiniCycleState } = await import(withV('./utilities/state.js'));
 - **Bidirectional sync:** Changes sync with settings panel, reminders modal, and three dots menu
 - **Responsive design:** Two-column desktop layout with preview, single-column mobile without preview
 - **Persistent storage:** Settings saved to cycle.taskOptionButtons in Schema 2.5
+- **Recent enhancements (v1.372-1.373):**
+  - Real-time saving without save button
+  - Reopen after reload functionality
+  - Enhanced reminders integration
+  - Mobile tap preview for option details
+  - UI refresh without page reload
 - **Implementation:**
-  - `modules/ui/taskOptionsCustomizer.js`: Core customizer with modal UI (635 lines, 29 tests)
+  - `modules/ui/taskOptionsCustomizer.js`: Core customizer with modal UI (703 lines, 29 tests)
   - `modules/task/taskDOM.js`: Creates `-/+` customize button, renders task buttons based on settings
   - `modules/cycle/cycleManager.js`: Initializes taskOptionButtons for new cycles
   - `modules/features/reminders.js`: Syncs reminders button visibility with customizer
-  - `modules/utils/globalUtils.js`: DEFAULT_TASK_OPTION_BUTTONS constant
+  - `modules/utils/globalUtils.js`: DEFAULT_TASK_OPTION_BUTTONS constant, deleteWhenComplete utilities
 
 #### Global State Management
 ```javascript
@@ -429,6 +436,17 @@ When working with browser APIs, be aware of Safari/iOS differences:
 - DeviceDetection: Fixed boolean type errors on Safari
 - Reminders: Added missing state properties and interval management
 - ConsoleCapture: Fixed test environment isolation
+
+**New Features (v1.373):**
+- Mode Manager: UI refresh without page reload when switching modes
+- Task Options Customizer: Real-time saving, reopen after reload, enhanced reminders integration
+- Delete When Complete: New button option for auto-removing tasks during reset (v1.370+)
+- Testing: Dark mode toggle and module filtering in test suite
+
+**New Features (v1.372):**
+- Mode Manager: In-place UI refresh, debounced task button updates (150ms)
+- Mode Manager: Mode restoration after reload via sessionStorage
+- Task Options Customizer: Mobile tap preview for option details
 
 **New Features (v1.357):**
 - Task Options Customizer: Per-cycle button visibility customization with `-/+` button

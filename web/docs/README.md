@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle task cycling application.**
 
-**Version**: 1.357 | **Test Coverage**: 1099/1099 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.373 | **Test Coverage**: 1011/1011 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -28,7 +28,16 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 - **[SCHEMA_2_5.md](./data-schema/SCHEMA_2_5.md)** - Data structure and schema documentation
 
 ### Key Features
-- **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization with global vs cycle philosophy (v1.357+, 29 tests ✅)
+- **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization (v1.373+, 703 lines, 29 tests ✅)
+  - Real-time saving without save button (v1.372+)
+  - Reopen after reload functionality
+  - Enhanced reminders integration
+  - Mobile tap preview
+- **[MODE_MANAGER_ARCHITECTURE.md](./architecture/MODE_MANAGER_ARCHITECTURE.md)** - Mode management system (v1.373+, 633 lines)
+  - UI refresh without page reload (v1.372+)
+  - Three operational modes (Auto Cycle, Manual Cycle, To-Do)
+  - Debounced task button updates
+  - Mode state synchronization
 - **[COMPLETED_TASKS_DROPDOWN.md](./features/COMPLETED_TASKS_DROPDOWN.md)** - Optional completed tasks dropdown (v1.352+)
 - **[minicycle-recurring-guide.md](./features/minicycle-recurring-guide.md)** - Recurring tasks implementation
 - **[RECURRING_WATCH_FUNCTION.md](./features/RECURRING_WATCH_FUNCTION.md)** - Polling-based task scheduling
@@ -40,7 +49,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (33 modules, 1099/1099 tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (33 modules, 1011/1011 tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -85,6 +94,9 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 ## 📊 Code Quality & Audits
 
 ### Recent Improvements (November 2025)
+- **v1.373** - Enhanced UI refresh for task options and mode changes, dark mode in test suite
+- **v1.372** - Real-time saving in customizer, mode changes without page reload
+- **v1.370** - Delete When Complete feature
 - **[ERROR_HANDLING_AND_TESTING_SUMMARY.md](./security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)** - Error handling system and security testing (v1.355)
 - **[OCTOBER_2025_IMPROVEMENTS.md](./archive/OCTOBER_2025_IMPROVEMENTS.md)** - Summary of notification standardization and test improvements
 - **[COUPLING_AUDIT_REPORT.md](./archive/COUPLING_AUDIT_REPORT.md)** - Comprehensive coupling audit (Score: 8.2/10)

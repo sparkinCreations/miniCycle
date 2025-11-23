@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.373] - 2025-11-23
+
+### Changed
+- **Task Options Customizer**: Enhanced UI refresh handling for task options and mode changes
+- **Mode Manager**: Improved in-place UI refresh without page reload when switching modes
+- **Testing**: Added dark mode toggle and module filtering to test suite
+- **Performance**: Optimized task button refresh with debouncing (150ms delay)
+
+### Fixed
+- **Mode Manager**: Fixed mode syncing from AppState data (CRITICAL FIX at modeManager.js:248-250)
+- **Task Options**: Improved recurring button visibility updates when switching modes
+- **Mode Manager**: Re-attach due date listeners after button refresh to prevent broken interactions
+- **Mode Manager**: Pass currentCycle context to task button refresh for recurring handler
+
+---
+
+## [1.372] - 2025-11-22
+
+### Added
+- **Task Options Customizer**: Real-time saving - changes apply immediately without save button
+- **Task Options Customizer**: Reopen after reload - automatically restores customizer if user was editing
+- **Task Options Customizer**: Enhanced reminders integration - start/stop reminders when checkbox changes
+- **Task Options Customizer**: Mobile tap preview - shows option details when tapping on mobile
+- **Mode Manager**: Mode restoration after reload via sessionStorage
+
+### Changed
+- **Task Options Customizer**: Uses `refreshAllTaskButtons()` for consistent state updates
+- **Task Options Customizer**: Better UI sync between settings panel, reminders modal, and customizer
+- **Task Options Customizer**: Module file expanded to 703 lines
+- **Mode Manager**: Enhanced `refreshTaskButtonsForModeChange()` with better error handling
+
+---
+
+## [1.370] - 2025-11-18
+
+### Added
+- **Delete When Complete**: New button option for auto-removing tasks during reset
+- **Task Options Customizer**: Integration with deleteWhenComplete system
+- **Global Utils**: Added `deleteWhenComplete` utilities (`validateDeleteSettings`, `syncTaskDeleteWhenCompleteDOM`, `syncAllTasksWithMode`)
+
+### Changed
+- **Task Options**: Added `deleteWhenComplete` button configuration to BUTTON_CONFIG array
+
+---
+
 ## [1.352] - 2025-11-13
 
 ### Added

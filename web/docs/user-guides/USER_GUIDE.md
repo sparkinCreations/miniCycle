@@ -192,7 +192,7 @@ Click the checkbox again to uncheck a completed task.
 
 ## Understanding Modes
 
-miniCycle has **three operational modes** to match different workflows:
+miniCycle has **three operational modes** to match different workflows. **Mode changes apply instantly without page reload (v1.372+)** - your tasks update in real-time!
 
 ### 1. Auto Cycle Mode (Default)
 
@@ -382,6 +382,56 @@ Add deadlines to tasks:
 
 ## Customization
 
+### Task Button Customization (v1.373+)
+
+**Customize which buttons appear on each task - make your cycles as simple or feature-rich as you need!**
+
+miniCycle lets you control which action buttons show on each task, per cycle. This means your morning routine can be ultra-minimal while your work project cycle has all the features.
+
+#### How to Customize
+
+1. Click the **`-/+`** button on any task
+2. A modal opens showing all available buttons
+3. Check/uncheck options to show/hide buttons
+4. Changes apply immediately - no save button needed!
+
+#### Available Button Options
+
+**Per-Cycle Settings** (different for each routine):
+- ⚡ **High Priority** - Mark important tasks
+- ✏️ **Rename** - Edit task names
+- 🗑️ **Delete** - Remove tasks
+- 🔁 **Recurring** - Set tasks to auto-recreate
+- 📅 **Due Date** - Add deadlines
+- 🔔 **Reminders** - Get notifications
+- ❌ **Delete When Complete** - Auto-remove during reset (v1.370+)
+
+**Global Settings** (same across all cycles):
+- ▲▼ **Move Arrows** - Reorder tasks with arrows
+- ⋮ **Three Dots** - Access options via dropdown menu
+
+#### Real-World Examples
+
+**Minimal Morning Routine:**
+- ✅ High Priority, Rename, Delete
+- ❌ Recurring, Due Date, Reminders
+- Result: Clean 3-button interface
+
+**Full-Featured Work Projects:**
+- ✅ All buttons enabled
+- Result: Complete 9-button toolkit
+
+**Quick Shopping List:**
+- ✅ Rename, Delete only
+- Result: Ultra-minimal 2-button setup
+
+#### Desktop vs Mobile
+
+- **Desktop:** Two-column layout with live preview panel
+- **Mobile:** Single-column with tap-to-preview option details
+
+---
+
 ### Themes
 
 Unlock different color themes by completing cycles:
@@ -408,9 +458,10 @@ Access via **Menu → Settings**:
 - Sound effects
 
 **Cycle Settings:**
-- Auto Cycle / Manual / To-Do mode
+- Auto Cycle / Manual / To-Do mode (instant switching, no reload!)
 - Completed tasks dropdown
 - Recurring task defaults
+- Task button customization (`-/+` customize button)
 
 **Data Settings:**
 - Export cycle (backup)

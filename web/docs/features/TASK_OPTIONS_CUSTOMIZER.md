@@ -1,9 +1,9 @@
 # Task Options Customizer
 
-> **Version:** 1.357+ (November 15, 2025)
+> **Version:** 1.373+ (November 23, 2025)
 > **Status:** ✅ Production Ready
 > **Test Coverage:** 100% (29/29 tests passing)
-> **Module:** `modules/ui/taskOptionsCustomizer.js` (635 lines)
+> **Module:** `modules/ui/taskOptionsCustomizer.js` (703 lines)
 
 ---
 
@@ -27,12 +27,13 @@ The **Task Options Customizer** is a per-cycle button visibility system that all
 ### Key Features
 
 - ✅ **Per-cycle customization** - Each routine can have different button visibility
-- ✅ **Real-time preview** - See changes immediately in a preview task
-- ✅ **Responsive design** - Desktop (two-column + preview) vs Mobile (single-column)
+- ✅ **Real-time updates** - Changes apply immediately without page reload (v1.372+)
+- ✅ **Responsive design** - Desktop (two-column + preview) vs Mobile (single-column with tap preview)
 - ✅ **Bidirectional sync** - Changes sync with settings panel, reminders modal, three dots menu
 - ✅ **Global consistency** - UI chrome (arrows, three dots) stays consistent across cycles
 - ✅ **Zero-config defaults** - Sensible defaults for new cycles
 - ✅ **Backward compatible** - Existing cycles work with fallback defaults
+- ✅ **Reopen after reload** - Automatically restores customizer if user was editing before reload (v1.372+)
 
 ### Access Points
 
@@ -90,6 +91,7 @@ Feature Need:    "This cycle needs due dates"    → Per-cycle setting
 | **Recurring** | 🔁 | Only needed for cycles with repeating tasks |
 | **Due Date** | 📅 | Only needed for time-sensitive cycles |
 | **Reminders** | 🔔 | Only needed when notifications matter |
+| **Delete When Complete** | ❌ | Remove task during auto-reset instead of unchecking (v1.370+) |
 
 **Stored in:**
 - `cycle.taskOptionButtons` object per cycle
@@ -406,12 +408,22 @@ Updates the preview panel in real-time.
 **Move Arrows Sync:**
 ```javascript
 // Customizer → Global
-if (newOptions.moveArrows !== oldOptions.moveArrows) {
-    this.deps.AppState.update(state => {
+if (newOptions.moveArrows !== currentGlobalMoveArrows) {
+    await this.deps.AppState.update(state => {
         if (!state.ui) state.ui = {};
         state.ui.moveArrowsVisible = newOptions.moveArrows;
     });
-    this.deps.updateMoveArrowsVisibility?.(newOptions.moveArrows);
+
+    // Update visibility in DOM
+    if (typeof window.updateMoveArrowsVisibility === 'function') {
+        window.updateMoveArrowsVisibility();
+    }
+
+    // Sync with settings panel checkbox
+    const settingsMoveArrowsToggle = document.getElementById('toggle-move-arrows');
+    if (settingsMoveArrowsToggle) {
+        settingsMoveArrowsToggle.checked = newOptions.moveArrows;
+    }
 }
 
 // Global → Customizer (on open)
@@ -768,6 +780,24 @@ function backfillTaskOptionButtons(state) {
 ---
 
 ## Changelog
+
+### v1.373 (November 23, 2025)
+- ✅ Enhanced UI refresh handling for task options and mode changes
+- ✅ Improved module filter and dark mode in test suite
+- ✅ Module file count updated to 703 lines
+
+### v1.372 (November 22, 2025)
+- ✅ Real-time saving - Changes apply immediately without save button
+- ✅ Reopen after reload - Automatically restores customizer if user was editing
+- ✅ Enhanced reminders integration - Start/stop reminders when checkbox changes
+- ✅ Improved UI sync - Settings panel, reminders modal, and customizer stay in sync
+- ✅ Better state management - Uses `refreshAllTaskButtons()` for consistent updates
+- ✅ Mobile tap preview - Shows option details when tapping on mobile
+
+### v1.370 (November 18, 2025)
+- ✅ Delete When Complete feature added
+- ✅ New button option for auto-removing tasks during reset
+- ✅ Integration with deleteWhenComplete system
 
 ### v1.357 (November 15, 2025)
 - ✅ Initial release
