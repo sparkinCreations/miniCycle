@@ -462,7 +462,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Dark Mode Toggle Setup (Schema 2.5)
     const quickToggle = document.getElementById("quick-dark-toggle");
     let darkModeEnabled = false;
-    
+
+
     try {
         const schemaData = loadMiniCycleData();
         if (schemaData) {
@@ -471,7 +472,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     } catch (error) {
         console.warn('⚠️ Could not load dark mode setting, using default');
     }
-    
+
     if (quickToggle) {
         quickToggle.textContent = darkModeEnabled ? "☀️" : "🌙";
     }
@@ -1203,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
                   if (prev && typeof window.captureStateSnapshot === 'function') {
-                    window.captureStateSnapshot(prev);
+                    (window.miniCycle?.history?.capture || window.captureStateSnapshot)(prev);
                   }
                 }
               } catch (e) {
@@ -1234,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
               try {
                 const st = window.AppState.get?.();
                 if (st && typeof window.captureStateSnapshot === 'function') {
-                  window.captureStateSnapshot(st);
+                  window.miniCycle.history.capture(st);
                 }
               } catch (e) {
                 console.warn('⚠️ Initial snapshot failed:', e);
@@ -1456,10 +1457,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
-        performStateBasedUndo();
+        window.miniCycle.history.undo();
     } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
         e.preventDefault();
-        performStateBasedRedo();
+        window.miniCycle.history.redo();
     }
 });
 
@@ -1493,7 +1494,7 @@ if (!window.deviceDetectionManager) {
         function refreshTaskListUI() {
           console.log('🔄 Refreshing task list UI (Schema 2.5 only)...');
 
-          const schemaData = loadMiniCycleData();
+          const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
           if (!schemaData) {
               console.error('❌ Schema 2.5 data required for refreshTaskListUI');
               throw new Error('Schema 2.5 data not found');
@@ -1515,7 +1516,7 @@ if (!window.deviceDetectionManager) {
           // Re-render each task from Schema 2.5
           (cycleData.tasks || []).forEach(task => {
               console.log(`🔄 Re-rendering task ${task.id}: deleteWhenComplete=${task.deleteWhenComplete}, settings=`, task.deleteWhenCompleteSettings);
-              addTask(
+              (window.miniCycle?.tasks?.add || addTask)(
                   task.text,
                   task.completed,
                   false, // Don't double save
@@ -1531,7 +1532,7 @@ if (!window.deviceDetectionManager) {
               );
           });
 
-          if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
+          (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
           console.log("✅ Task list UI refreshed from Schema 2.5");
       }
 
@@ -1567,13 +1568,13 @@ async function initialSetup() {
         console.log('✅ Phase 2 modules ready, proceeding with initialSetup');
     }
 
-    let schemaData = loadMiniCycleData();
+    let schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     
     // ✅ CREATE SCHEMA 2.5 DATA IF IT DOESN'T EXIST
     if (!schemaData) {
         console.log('🆕 No Schema 2.5 data found - creating initial structure...');
         createInitialSchema25Data();
-        schemaData = loadMiniCycleData(); // Load the newly created data
+        schemaData = window.miniCycle?.state?.load() || loadMiniCycleData(); // Load the newly created data
     }
 
     const { cycles, activeCycle, reminders, settings } = schemaData;
@@ -1646,7 +1647,7 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
     
     // Get fresh data if not provided
     if (!schemaData) {
-        schemaData = loadMiniCycleData();
+        schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     }
     
     if (!fullSchemaData) {
@@ -1763,13 +1764,13 @@ function setupMiniCycleTitleListener() {
 
     if (!titleElement.dataset.listenerAdded) {
         titleElement.addEventListener("blur", async () => { // <= make async
-            let newTitle = sanitizeInput(titleElement.textContent.trim());
+            let newTitle = window.miniCycle.utils.sanitize(titleElement.textContent.trim());
 
 
             if (newTitle === "") {
                 console.log('🔍 Empty title detected, reverting (Schema 2.5 only)...');
                 
-                const schemaData = loadMiniCycleData();
+                const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
                 if (!schemaData) {
                     console.error('❌ Schema 2.5 data required for title revert');
                     return;
@@ -1784,7 +1785,7 @@ function setupMiniCycleTitleListener() {
             }
 
              console.log('📝 Updating title (Schema 2.5 only)...');
-            const schemaData = loadMiniCycleData();
+            const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
             if (!schemaData) {
                 console.error('❌ Schema 2.5 data required for setupMiniCycleTitleListener');
                 return;
@@ -1877,7 +1878,7 @@ async function autoSaveWithStateModule(overrideTaskList = null, immediate = fals
 
 // ✅ SIMPLIFIED: Direct save method (fallback)
 async function directSave(overrideTaskList = null) {
-  const schemaData = loadMiniCycleData();
+  const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
   if (!schemaData?.activeCycle) {
     throw new Error('No active cycle found');
   }
@@ -2092,7 +2093,7 @@ function remindOverdueTasks() {
         return;
     }
 
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for remindOverdueTasks');
         throw new Error('Schema 2.5 data not found');
@@ -2232,7 +2233,7 @@ function showApplyConfirmation(targetElement) {
  */
 function showNotificationWithTip(content, type = "default", duration = null, tipId = null) {
   if (!window.notifications || typeof window.notifications.showWithTip !== 'function') {
-    return showNotification(content, type, duration);
+    return window.miniCycle.ui.notifications.show(content, type, duration);
   }
   return notifications.showWithTip(content, type, duration, tipId);
 }
@@ -2248,14 +2249,14 @@ function showConfirmationModal(options) {
 }
 
 function showPromptModal(options) {
-  return notifications.showPromptModal(options);
+  return window.miniCycle.ui.modals.prompt(options);
 }
 
 /**
  * Close all modals - delegated to modalManager
  */
 function closeAllModals() {
-  return window.modalManager?.closeAllModals();
+  return window.miniCycle.ui.modals.closeAll();
 }
 
 // ✅ Expose globally for backward compatibility
@@ -2392,7 +2393,7 @@ function checkMiniCycle() {
         return;
     }
 
-     updateProgressBar();
+     (window.miniCycle?.ui?.progress?.update || updateProgressBar)();
 
     // ✅ Only trigger reset if ALL tasks are completed AND autoReset is enabled
     if (allCompleted && taskList.children.length > 0) {
@@ -2408,7 +2409,7 @@ function checkMiniCycle() {
         }
     }
     console.log("ran check MiniCyle function");
-    updateProgressBar();
+    (window.miniCycle?.ui?.progress?.update || updateProgressBar)();
     updateStatsPanel();
     // ✅ REMOVED: autoSave() here - task completion now saves directly via AppState.update()
     // This prevents duplicate saves and potential race conditions
@@ -2621,7 +2622,7 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     // ✅ Use NEW taskDOM module functions via window.* (not old inline functions)
 
     // Input validation and sanitization
-    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || validateAndSanitizeTaskInput(taskText);
+    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || (window.miniCycle?.tasks?.validate || validateAndSanitizeTaskInput)(taskText);
     if (!validatedInput) return;
 
     // Load and validate data context
@@ -2661,8 +2662,8 @@ function validateAndSanitizeTaskInput(taskText) {
         console.error("❌ Error: taskText is not a string", taskText);
         return null;
     }
-    
-    const taskTextTrimmed = sanitizeInput(taskText.trim());
+
+    const taskTextTrimmed = window.miniCycle.utils.sanitize(taskText.trim());
     if (!taskTextTrimmed) {
         console.warn("⚠ Skipping empty or unsafe task.");
         return null;
@@ -2684,7 +2685,7 @@ function validateAndSanitizeTaskInput(taskText) {
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     console.log('📝 Adding task (Schema 2.5 only)...');
 
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for addTask');
         throw new Error('Schema 2.5 data not found');
@@ -2799,7 +2800,7 @@ function createOrUpdateTaskData(taskContext) {
         // ✅ FIX: Only save to AppState if NOT loading from saved data
         if (!isLoading) {
             // Save to Schema 2.5
-            saveTaskToSchema25(activeCycle, currentCycle);
+            window.miniCycle.state.save(activeCycle, currentCycle);
             console.log('💾 Task saved to Schema 2.5');
         } else {
             console.log('⏭️ Skipping save during load (isLoading=true)');
@@ -3661,9 +3662,9 @@ function saveToggleAutoReset() {
             checkMiniCycle();
         }
 
-        refreshTaskListUI();
-        if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
-        
+        (window.miniCycle?.tasks?.refresh || refreshTaskListUI)();
+        (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
+
         console.log('✅ Auto reset settings saved (state-based)');
     }
 
@@ -3682,10 +3683,10 @@ function saveToggleAutoReset() {
                 cycle.deleteCheckedTasks = event.target.checked;
             }
         }, true); // immediate save
-        
+
         // ✅ Update recurring button visibility when setting changes
-        if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
-        
+        (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
+
         console.log('✅ Delete checked tasks setting saved (state-based)');
     }
 
@@ -3716,7 +3717,7 @@ function saveToggleAutoReset() {
         // ✅ Schema 2.5 only
         console.log('🗑️ Delete checked tasks toggle changed (Schema 2.5 only)...');
 
-        const schemaData = loadMiniCycleData();
+        const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
             throw new Error('Schema 2.5 data not found');
@@ -3791,7 +3792,7 @@ function saveToggleAutoReset() {
         }
 
         // ✅ Update recurring button visibility in real-time
-        if (window.recurringCore?.updateRecurringButtonVisibility) window.recurringCore.updateRecurringButtonVisibility();
+        (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
 
         console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
     });
@@ -3825,7 +3826,7 @@ safeAddEventListener(addTaskButton, "click", () => {
     }
 
 
-    addTask(taskText);
+    (window.miniCycle?.tasks?.add || addTask)(taskText);
     taskInput.value = "";
 });
 
@@ -3843,7 +3844,7 @@ safeAddEventListener(taskInput, "keypress", function (event) {
         }
 
 
-        addTask(taskText);
+        (window.miniCycle?.tasks?.add || addTask)(taskText);
         taskInput.value = "";
     }
 });
@@ -3867,7 +3868,7 @@ safeAddEventListener(menuButton, "click", function(event) {
 safeAddEventListenerById("reset-notification-position", "click", () => {
     console.log('🔄 Resetting notification position (Schema 2.5 only)...');
     
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for reset notification position');
         showNotification("❌ Schema 2.5 data required.", "error", 2000);
@@ -3896,8 +3897,8 @@ document.getElementById("open-reminders-modal")?.addEventListener("click", () =>
     // Load current settings from Schema 2.5 before opening
     loadRemindersSettings(); // This function already has Schema 2.5 support
     document.getElementById("reminders-modal").style.display = "flex";
-    hideMainMenu();
-    
+    window.miniCycle.ui.menu.hide();
+
     console.log('✅ Reminders modal opened');
 });
 
@@ -4166,7 +4167,7 @@ getCurrentStatusMessage() {
     const remaining = totalTasks - completedTasks;
     
     // ✅ Get cycle count from Schema 2.5 only
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     let cycleCount = 0;
     
     if (schemaData) {
@@ -4327,10 +4328,10 @@ window.hideLoader = function() {
  */
 window.withLoader = async function(asyncFunction, message = 'Processing...') {
   try {
-    window.showLoader(message);
+    window.miniCycle.ui.loader.show(message);
     const result = await asyncFunction();
     return result;
   } finally {
-    window.hideLoader();
+    window.miniCycle.ui.loader.hide();
   }
 };
