@@ -103,6 +103,9 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[NOTIFICATION_STANDARDIZATION_PLAN.md](./archive/NOTIFICATION_STANDARDIZATION_PLAN.md)** - Dependency injection standardization (Phase 1 complete)
 
 ### Future Work & Planned Improvements
+- **[NAMESPACE_ARCHITECTURE.md](./future-work/NAMESPACE_ARCHITECTURE.md)** - 🎯 **PRIORITY** - Consolidate 163 globals into window.miniCycle.* API
+  - [NAMESPACE_STEP0_PROGRESS.md](./future-work/NAMESPACE_STEP0_PROGRESS.md) - Migration tracking and progress
+  - [scripts/validate-namespace-migration.js](../scripts/validate-namespace-migration.js) - Automated validation script
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
 - **[FOLDER_STRUCTURE_REFACTOR_PLAN.md](./future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)** - Module naming consistency
 - **[TASK_OPTIONS_CUSTOMIZER_PLAN.md](./future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)** - ✅ COMPLETED (v1.357) - Per-cycle button visibility customization
@@ -150,6 +153,9 @@ Historical documents and outdated guides are preserved in:
 
 **...fix browser compatibility issues**
 → Review [SAFARI_DRAGDROP_FIX.md](./archive/SAFARI_DRAGDROP_FIX.md) and [DRAG_DROP_LONG_PRESS.md](./architecture/DRAG_DROP_LONG_PRESS.md)
+
+**...migrate to the namespace API**
+→ Read [NAMESPACE_ARCHITECTURE.md](./future-work/NAMESPACE_ARCHITECTURE.md) and track progress in [NAMESPACE_STEP0_PROGRESS.md](./future-work/NAMESPACE_STEP0_PROGRESS.md)
 
 ---
 

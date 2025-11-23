@@ -1,0 +1,237 @@
+#!/usr/bin/env node
+
+/**
+ * Namespace Migration Validator
+ *
+ * Scans miniCycle-scripts.js for remaining direct global calls that should
+ * be migrated to the namespace API (window.miniCycle.*).
+ *
+ * Usage:
+ *   node scripts/validate-namespace-migration.js
+ *
+ * Exit codes:
+ *   0 - No violations found (Step 0 complete!)
+ *   1 - Violations found (migration in progress)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// ANSI color codes
+const colors = {
+  reset: '\x1b[0m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+  bold: '\x1b[1m'
+};
+
+// Read main script
+const scriptPath = path.join(__dirname, '../miniCycle-scripts.js');
+
+if (!fs.existsSync(scriptPath)) {
+  console.error(`${colors.red}❌ Error: miniCycle-scripts.js not found at ${scriptPath}${colors.reset}`);
+  process.exit(1);
+}
+
+const mainScript = fs.readFileSync(scriptPath, 'utf8');
+const lines = mainScript.split('\n');
+
+// Patterns to detect deprecated direct global calls
+// Format: [pattern, namespace path, category]
+const deprecatedPatterns = [
+  // Tasks (28)
+  [/\baddTask\(/g, 'miniCycle.tasks.add()', 'Tasks'],
+  [/\beditTask\(/g, 'miniCycle.tasks.edit()', 'Tasks'],
+  [/\bdeleteTask\(/g, 'miniCycle.tasks.delete()', 'Tasks'],
+  [/\bvalidateAndSanitizeTaskInput\(/g, 'miniCycle.tasks.validate()', 'Tasks'],
+  [/\brenderTasks\(/g, 'miniCycle.tasks.render()', 'Tasks'],
+  [/\brefreshTaskListUI\(/g, 'miniCycle.tasks.refresh()', 'Tasks'],
+  [/\btoggleTaskCompletion\(/g, 'miniCycle.tasks.toggle()', 'Tasks'],
+  [/\btoggleHighPriority\(/g, 'miniCycle.tasks.priority.toggle()', 'Tasks'],
+  [/\bsetTaskPriority\(/g, 'miniCycle.tasks.priority.set()', 'Tasks'],
+  [/\bsetTaskRecurring\(/g, 'miniCycle.tasks.recurring.set()', 'Tasks'],
+  [/\bupdateRecurringButtonVisibility\(/g, 'miniCycle.tasks.recurring.update()', 'Tasks'],
+
+  // Cycles (19)
+  [/\bcreateNewMiniCycle\(/g, 'miniCycle.cycles.create()', 'Cycles'],
+  [/\bswitchMiniCycle\(/g, 'miniCycle.cycles.switch()', 'Cycles'],
+  [/\bdeleteMiniCycle\(/g, 'miniCycle.cycles.delete()', 'Cycles'],
+  [/\bresetCurrentMiniCycle\(/g, 'miniCycle.cycles.reset()', 'Cycles'],
+  [/\brenameMiniCycle\(/g, 'miniCycle.cycles.rename()', 'Cycles'],
+  [/\blistMiniCycles\(/g, 'miniCycle.cycles.list()', 'Cycles'],
+  [/\bimportMiniCycle\(/g, 'miniCycle.cycles.import()', 'Cycles'],
+  [/\bexportMiniCycle\(/g, 'miniCycle.cycles.export()', 'Cycles'],
+
+  // UI - Notifications (5)
+  [/\bshowNotification\(/g, 'miniCycle.ui.notifications.show()', 'Notifications'],
+  [/\bshowNotificationWithTip\(/g, 'miniCycle.ui.notifications.showWithTip()', 'Notifications'],
+  [/\bhideNotification\(/g, 'miniCycle.ui.notifications.hide()', 'Notifications'],
+  [/\bclearAllNotifications\(/g, 'miniCycle.ui.notifications.clearAll()', 'Notifications'],
+
+  // UI - Modals (8)
+  [/\bshowConfirmModal\(/g, 'miniCycle.ui.modals.confirm()', 'Modals'],
+  [/\bshowPromptModal\(/g, 'miniCycle.ui.modals.prompt()', 'Modals'],
+  [/\bcloseAllModals\(/g, 'miniCycle.ui.modals.closeAll()', 'Modals'],
+  [/\bshowModal\(/g, 'miniCycle.ui.modals.show()', 'Modals'],
+  [/\bhideModal\(/g, 'miniCycle.ui.modals.hide()', 'Modals'],
+
+  // UI - Loaders (6)
+  [/\bshowLoader\(/g, 'miniCycle.ui.loader.show()', 'Loaders'],
+  [/\bhideLoader\(/g, 'miniCycle.ui.loader.hide()', 'Loaders'],
+  [/\bwithLoader\(/g, 'miniCycle.ui.loader.with()', 'Loaders'],
+  [/\bupdateProgressBar\(/g, 'miniCycle.ui.progress.update()', 'Progress'],
+  [/\bshowProgressBar\(/g, 'miniCycle.ui.progress.show()', 'Progress'],
+  [/\bhideProgressBar\(/g, 'miniCycle.ui.progress.hide()', 'Progress'],
+
+  // UI - Menu (3)
+  [/\btoggleMainMenu\(/g, 'miniCycle.ui.menu.toggle()', 'Menu'],
+  [/\bhideMainMenu\(/g, 'miniCycle.ui.menu.hide()', 'Menu'],
+  [/\bshowMainMenu\(/g, 'miniCycle.ui.menu.show()', 'Menu'],
+
+  // Utils - DOM (12)
+  [/\baddManagedListener\(/g, 'miniCycle.utils.dom.addListener()', 'Utils-DOM'],
+  [/\bremoveManagedListener\(/g, 'miniCycle.utils.dom.removeListener()', 'Utils-DOM'],
+  [/\bsafeAddEventListener\(/g, 'miniCycle.utils.dom.addListener()', 'Utils-DOM'],
+  [/\bsafeQuerySelector\(/g, 'miniCycle.utils.dom.query()', 'Utils-DOM'],
+  [/\bsafeQuerySelectorAll\(/g, 'miniCycle.utils.dom.queryAll()', 'Utils-DOM'],
+
+  // Utils - Storage (4)
+  [/\bsafeLocalStorageGet\(/g, 'miniCycle.utils.storage.get()', 'Utils-Storage'],
+  [/\bsafeLocalStorageSet\(/g, 'miniCycle.utils.storage.set()', 'Utils-Storage'],
+  [/\bsafeLocalStorageRemove\(/g, 'miniCycle.utils.storage.remove()', 'Utils-Storage'],
+
+  // Utils - JSON (2)
+  [/\bsafeJSONParse\(/g, 'miniCycle.utils.json.parse()', 'Utils-JSON'],
+  [/\bsafeJSONStringify\(/g, 'miniCycle.utils.json.stringify()', 'Utils-JSON'],
+
+  // Utils - Sanitization (2)
+  [/\bsanitizeInput\(/g, 'miniCycle.utils.sanitize()', 'Utils-Sanitize'],
+  [/\bescapeHTML\(/g, 'miniCycle.utils.escape()', 'Utils-Sanitize'],
+
+  // Utils - IDs (2)
+  [/\bgenerateId\(/g, 'miniCycle.utils.generateId()', 'Utils-IDs'],
+  [/\bgenerateHashId\(/g, 'miniCycle.utils.generateHashId()', 'Utils-IDs'],
+
+  // Utils - Functions (2)
+  [/\bdebounce\(/g, 'miniCycle.utils.debounce()', 'Utils-Functions'],
+  [/\bthrottle\(/g, 'miniCycle.utils.throttle()', 'Utils-Functions'],
+
+  // State (3)
+  [/\bloadMiniCycleData\(/g, 'miniCycle.state.load()', 'State'],
+  [/\bsaveTaskToSchema25\(/g, 'miniCycle.state.save()', 'State'],
+
+  // History (3)
+  [/\bperformStateBasedUndo\(/g, 'miniCycle.history.undo()', 'History'],
+  [/\bperformStateBasedRedo\(/g, 'miniCycle.history.redo()', 'History'],
+  [/\bcaptureStateSnapshot\(/g, 'miniCycle.history.capture()', 'History']
+];
+
+// Excluded patterns (allowed to stay as globals)
+const excludedPatterns = [
+  /window\.miniCycle\./,  // Already using namespace
+  /\/\/.*$/,              // Comments
+  /\/\*[\s\S]*?\*\//,     // Block comments
+  /'[^']*'/,              // Strings
+  /"[^"]*"/,              // Strings
+  /`[^`]*`/               // Template strings
+];
+
+// Check if a line should be excluded
+function isExcluded(line) {
+  return excludedPatterns.some(pattern => pattern.test(line));
+}
+
+// Scan for violations
+let violations = [];
+let totalCount = 0;
+const categoryStats = {};
+
+deprecatedPatterns.forEach(([pattern, namespacePath, category]) => {
+  const matches = [];
+
+  lines.forEach((line, index) => {
+    // Skip excluded lines
+    if (isExcluded(line)) return;
+
+    const lineMatches = line.match(pattern);
+    if (lineMatches) {
+      matches.push({
+        line: index + 1,
+        content: line.trim(),
+        count: lineMatches.length
+      });
+    }
+  });
+
+  if (matches.length > 0) {
+    const count = matches.reduce((sum, m) => sum + m.count, 0);
+    violations.push({
+      pattern: pattern.source,
+      namespacePath,
+      category,
+      count,
+      matches
+    });
+
+    totalCount += count;
+
+    if (!categoryStats[category]) {
+      categoryStats[category] = 0;
+    }
+    categoryStats[category] += count;
+  }
+});
+
+// Print results
+console.log('\n' + colors.bold + '🔍 Namespace Migration Validator' + colors.reset);
+console.log('━'.repeat(60) + '\n');
+
+if (violations.length === 0) {
+  console.log(colors.green + colors.bold + '✅ Step 0 Complete!' + colors.reset);
+  console.log(colors.green + 'No direct global calls found in miniCycle-scripts.js' + colors.reset);
+  console.log(colors.green + 'All code is using the namespace API.' + colors.reset);
+  console.log('\n' + colors.cyan + '🎉 Ready to proceed to Phase 2 Step 1!' + colors.reset + '\n');
+  process.exit(0);
+}
+
+// Print violations by category
+console.log(colors.yellow + `⚠️  Found ${totalCount} direct global calls remaining\n` + colors.reset);
+
+console.log(colors.bold + 'Violations by Category:' + colors.reset);
+Object.keys(categoryStats).sort().forEach(category => {
+  console.log(`  ${colors.cyan}${category}:${colors.reset} ${categoryStats[category]} calls`);
+});
+
+console.log('\n' + colors.bold + 'Detailed Violations:' + colors.reset + '\n');
+
+violations.forEach(({ pattern, namespacePath, category, count, matches }) => {
+  console.log(colors.red + `❌ ${pattern}` + colors.reset);
+  console.log(`   ${colors.cyan}Replace with:${colors.reset} window.${namespacePath}`);
+  console.log(`   ${colors.yellow}Found ${count} occurrence(s)${colors.reset}`);
+
+  // Show first 3 matches with line numbers
+  matches.slice(0, 3).forEach(({ line, content }) => {
+    console.log(`   ${colors.blue}Line ${line}:${colors.reset} ${content.substring(0, 80)}...`);
+  });
+
+  if (matches.length > 3) {
+    console.log(`   ${colors.yellow}... and ${matches.length - 3} more${colors.reset}`);
+  }
+
+  console.log('');
+});
+
+// Summary
+console.log('━'.repeat(60));
+console.log(colors.bold + '\nSummary:' + colors.reset);
+console.log(`  Total violations: ${colors.yellow}${totalCount}${colors.reset}`);
+console.log(`  Categories affected: ${colors.yellow}${Object.keys(categoryStats).length}${colors.reset}`);
+console.log(`  Progress: ${colors.yellow}${Math.round((1 - (totalCount / 163)) * 100)}%${colors.reset} complete`);
+console.log('\n' + colors.cyan + '📖 See docs/future-work/NAMESPACE_STEP0_PROGRESS.md for tracking' + colors.reset);
+console.log(colors.cyan + '📖 See docs/future-work/NAMESPACE_ARCHITECTURE.md for full guide' + colors.reset);
+console.log('');
+
+process.exit(1);
