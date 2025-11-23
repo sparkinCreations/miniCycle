@@ -16,7 +16,6 @@
  */
 
 import { appInit } from '../core/appInit.js';
-import { refreshTaskListUI as refreshTasksFromDOM } from '../task/taskDOM.js';
 
 // ✅ Use window export to avoid cache-busting mismatch
 // globalUtils.js is loaded with version parameter in main script,
@@ -117,7 +116,7 @@ export class TaskOptionsCustomizer {
             showNotification: deps.showNotification || window.showNotification,
             getElementById: deps.getElementById || ((id) => document.getElementById(id)),
             querySelector: deps.querySelector || ((sel) => document.querySelector(sel)),
-            renderTaskList: deps.renderTaskList || window.refreshTaskListUI
+            renderTaskList: deps.renderTaskList || null // don't snapshot refreshTaskListUI here
         };
 
         console.log('✅ TaskOptionsCustomizer initialized');
@@ -454,7 +453,7 @@ export class TaskOptionsCustomizer {
         const newMoveArrows = newOptions.moveArrows || false;
 
         // Save to AppState
-        this.deps.AppState.update(state => {
+        await this.deps.AppState.update(state => {
             if (state.data.cycles[cycleId]) {
                 state.data.cycles[cycleId].taskOptionButtons = newOptions;
             }
@@ -485,7 +484,7 @@ export class TaskOptionsCustomizer {
 
         if (newThreeDots !== currentThreeDots) {
             // Update global three dots setting
-            this.deps.AppState.update(state => {
+            await this.deps.AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.showThreeDots = newThreeDots;
                 console.log(`✅ Synced global three dots setting to: ${newThreeDots}`);
@@ -515,7 +514,7 @@ export class TaskOptionsCustomizer {
 
         if (newRemindersEnabled !== currentRemindersEnabled) {
             // Update the cycle's reminder enabled status
-            this.deps.AppState.update(state => {
+            await this.deps.AppState.update(state => {
                 if (state.data.cycles[cycleId]?.reminders) {
                     state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
                     console.log(`✅ Set reminders enabled for cycle ${cycleId}: ${newRemindersEnabled}`);
@@ -549,17 +548,12 @@ export class TaskOptionsCustomizer {
             }
         }
 
-        // ✅ WORKAROUND: Force page reload to handle module instance issues
-        // Set flag to re-open modal after reload
-        sessionStorage.setItem('reopenTaskCustomizer', 'true');
+        // ✅ Refresh task list UI to apply button visibility changes
+        await this.refreshAllTaskButtons();
+
+        this.deps.showNotification?.('✅ Task options updated', 'success', 2000);
 
         console.log(`✅ Saved task option customization for cycle: ${cycleId}`, newOptions);
-        console.log('🔄 Reloading page to apply button visibility changes...');
-
-        // Wait for debounced save to complete (AppState auto-save is typically 500ms)
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
     }
 
     /**
@@ -591,32 +585,27 @@ export class TaskOptionsCustomizer {
      * Re-renders the entire task list with updated button visibility
      */
     async refreshAllTaskButtons() {
-        try {
-            // ✅ PRIORITY 1: Use global window.refreshTaskListUI (guaranteed to be from initialized instance)
-            if (typeof window.refreshTaskListUI === 'function') {
-                await window.refreshTaskListUI();
-                console.log('✅ Task list re-rendered with updated button visibility (global refreshTaskListUI)');
-                return;
-            }
+        // allow checkbox event + AppState listeners to finish
+        await Promise.resolve();
 
-            // ✅ PRIORITY 2: Module import (may be different instance due to versioning)
-            if (typeof refreshTasksFromDOM === 'function') {
-                await refreshTasksFromDOM();
-                console.log('✅ Task list re-rendered with updated button visibility (TaskDOM module import)');
-                return;
-            }
+        const renderFn =
+            this.deps.renderTaskList ||
+            window.refreshTaskListUI;
 
-            // ✅ PRIORITY 3: Last resort - use injected renderTaskList
-            if (typeof this.deps.renderTaskList === 'function') {
-                await this.deps.renderTaskList();
-                console.log('✅ Task list re-rendered with updated button visibility (deps.renderTaskList)');
-                return;
-            }
-
-            console.warn('⚠️ No task list refresh function available in refreshAllTaskButtons');
-        } catch (error) {
-            console.error('⚠️ Failed to refresh task buttons:', error);
+        if (typeof renderFn === "function") {
+            await renderFn();
+            console.log("✅ Task list re-rendered with updated button visibility");
+            return;
         }
+
+        // Fallback: rebuild just the option buttons if renderer not found
+        if (window.modeManager?.refreshTaskButtonsForModeChange) {
+            window.modeManager.refreshTaskButtonsForModeChange();
+            console.log("✅ ModeManager button refresh triggered");
+            return;
+        }
+
+        console.warn("⚠️ No valid task refresh function found");
     }
 
     /**

@@ -561,9 +561,9 @@ export class GlobalUtils {
         taskElement.dataset.deleteWhenComplete = finalDeleteWhenComplete.toString();
         taskElement.dataset.deleteWhenCompleteSettings = JSON.stringify(validSettings);
 
-        // Update button state
+        // Update button state (always update, even for recurring tasks)
         const deleteBtn = taskElement.querySelector('.delete-when-complete-btn');
-        if (deleteBtn && !isRecurring) {
+        if (deleteBtn) {
             deleteBtn.classList.toggle('active', finalDeleteWhenComplete);
             deleteBtn.classList.toggle('delete-when-complete-active', finalDeleteWhenComplete);
             deleteBtn.setAttribute('aria-pressed', finalDeleteWhenComplete.toString());

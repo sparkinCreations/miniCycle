@@ -1,7 +1,7 @@
 /**
  * Mode Manager - Manages Auto Cycle, Manual Cycle, and To-Do Mode
  * @module modules/cycle/modeManager
- * @version 1.371
+ * @version 1.372
  * @pattern Resilient Constructor 🛡️
  *
  * Handles three cycling modes:
@@ -9,8 +9,7 @@
  * - Manual Cycle ✔︎↻: Tasks reset only on manual button click
  * - To-Do Mode ✓: Tasks are deleted instead of reset
  *
- * WORKAROUND (v1.371): Mode changes trigger page reload to apply
- * mode-specific button visibility due to module instance problem.
+ * Mode changes refresh UI in-place without page reload.
  */
 
 import { appInit } from '../core/appInit.js';
@@ -490,19 +489,27 @@ export class ModeManager {
             syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
 
-            // ✅ WORKAROUND: Force page reload to apply mode-specific button visibility
-            sessionStorage.setItem('restoreModeAfterReload', e.target.value);
-
-            if (this.deps.showNotification) {
-                this.deps.showNotification(`Switching to ${this.getModeName(e.target.value)}...`, 'info', 2000);
+            if (this.deps.checkCompleteAllButton) {
+                this.deps.checkCompleteAllButton();
             }
 
-            console.log('🔄 ModeManager: Reloading page to apply mode change...');
+            // ✅ Refresh task buttons to apply mode-specific button visibility
+            this.refreshTaskButtonsForModeChange();
 
-            // Wait for debounced save to complete (AppState auto-save is typically 500ms)
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            // ✅ Update recurring button visibility for mode change
+            if (window.recurringCore?.updateRecurringButtonVisibility) {
+                console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
+                setTimeout(() => {
+                    window.recurringCore.updateRecurringButtonVisibility();
+                    console.log('🔁 ModeManager: Recurring button visibility update completed');
+                }, 100);
+            }
+
+            if (this.deps.showNotification) {
+                this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'success', 2000);
+            }
+
+            console.log('✅ ModeManager: Mode change applied without reload');
         });
 
         mobileModeSelector.addEventListener('change', (e) => {
@@ -510,19 +517,27 @@ export class ModeManager {
             syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
 
-            // ✅ WORKAROUND: Force page reload to apply mode-specific button visibility
-            sessionStorage.setItem('restoreModeAfterReload', e.target.value);
-
-            if (this.deps.showNotification) {
-                this.deps.showNotification(`Switching to ${this.getModeName(e.target.value)}...`, 'info', 2000);
+            if (this.deps.checkCompleteAllButton) {
+                this.deps.checkCompleteAllButton();
             }
 
-            console.log('🔄 ModeManager: Reloading page to apply mode change...');
+            // ✅ Refresh task buttons to apply mode-specific button visibility
+            this.refreshTaskButtonsForModeChange();
 
-            // Wait for debounced save to complete (AppState auto-save is typically 500ms)
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            // ✅ Update recurring button visibility for mode change
+            if (window.recurringCore?.updateRecurringButtonVisibility) {
+                console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
+                setTimeout(() => {
+                    window.recurringCore.updateRecurringButtonVisibility();
+                    console.log('🔁 ModeManager: Recurring button visibility update completed');
+                }, 100);
+            }
+
+            if (this.deps.showNotification) {
+                this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'success', 2000);
+            }
+
+            console.log('✅ ModeManager: Mode change applied without reload');
         });
 
         toggleAutoReset.addEventListener('change', (e) => {
