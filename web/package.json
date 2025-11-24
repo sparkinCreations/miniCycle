@@ -1,12 +1,13 @@
 {
   "name": "minicycle-web",
-  "version": "1.377",
+  "version": "1.378",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "private": true,
   "//": "=== TESTING NOTES ===",
   "// Jest removed": "Jest was removed in favor of comprehensive Playwright browser tests (958 tests, 100% coverage). Browser tests are more appropriate for this project since all modules use browser APIs (DOM, localStorage, etc.). Jest tests were experimental, broken, and added no value over the existing browser test suite.",
   "scripts": {
-    "start": "python3 -m http.server 8080",
+    "start": "python3 scripts/serve.py",
+    "start:simple": "python3 -m http.server 8080",
     "blog:install": "cd blog && npm install",
     "blog:build": "cd blog && npm run build",
     "test": "node tests/automated/run-browser-tests.js",
