@@ -18,7 +18,7 @@
 
 import { appInit } from '../core/appInit.js';
 
-export class GamesManager {
+class GamesManager {
     constructor() {
         this.version = '1.377';
         this.initialized = false;
