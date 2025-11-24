@@ -30,7 +30,7 @@
  * ❌ WRONG: { old: 'foo', newFunc: importedFoo, ... }  // Called before DI!
  * ✅ RIGHT: { old: 'foo', newFunc: () => window.obj.foo(), ... }  // Lazy lookup after DI
  *
- * @version 1.376
+ * @version 1.377
  * @see docs/future-work/NAMESPACE_ARCHITECTURE.md
  */
 
@@ -189,7 +189,7 @@ export function initializeNamespace() {
     // Create the root namespace object
     window.miniCycle = {
         // Internal metadata
-        _version: '1.374',
+        _version: '1.377',
         _deprecationWarnings: new Set(),
 
         // ===================================
