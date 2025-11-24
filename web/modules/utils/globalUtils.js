@@ -604,6 +604,7 @@ export class GlobalUtils {
 
         const allTasks = taskList.querySelectorAll('.task');
         let syncedCount = 0;
+        let removedCount = 0;
 
         allTasks.forEach(taskEl => {
             const taskId = taskEl.dataset.taskId;
@@ -613,11 +614,15 @@ export class GlobalUtils {
                 this.syncTaskDeleteWhenCompleteDOM(taskEl, taskData, currentMode, constants);
                 syncedCount++;
             } else {
-                console.warn(`⚠️ No data found for task ${taskId}`);
+                // Orphaned DOM element - task data doesn't exist
+                // Remove it to prevent data inconsistency
+                console.warn(`⚠️ Removing orphaned task element: ${taskId} (no matching data)`);
+                taskEl.remove();
+                removedCount++;
             }
         });
 
-        console.log(`✅ Synced ${syncedCount} tasks with ${currentMode} mode`);
+        console.log(`✅ Synced ${syncedCount} tasks with ${currentMode} mode${removedCount > 0 ? `, removed ${removedCount} orphaned elements` : ''}`);
         return syncedCount;
     }
 }

@@ -3,7 +3,7 @@
 > **Comprehensive documentation for miniCycle's namespace pollution fix**
 
 **Version**: 1.374
-**Status**: Phase 1 Complete ✅ | Phase 2 Step 0 Complete ✅ | Phase 2 Step 1 Complete ✅
+**Status**: Phase 1 Complete ✅ | Phase 2 Steps 0-3 Complete ✅
 **Tests**: 1011/1011 (100% pass)
 **Last Updated**: November 23, 2025
 
@@ -39,10 +39,10 @@ This reduces global namespace pollution, improves discoverability, enables autoc
 
 ### Key Metrics
 
-| Metric | Before | Phase 1 | Phase 2 Step 1 | Phase 2 Complete (Target) |
+| Metric | Before | Phase 1 | Phase 2 Step 3 | Phase 2 Complete (Target) |
 |--------|--------|---------|----------------|---------------------------|
-| Global Variables | 163 | 164 (+namespace) | ~148 (-15) | 1 (just miniCycle) |
-| Modules Migrated | 0/40 | 0/40 | 1/40 (globalUtils) | 40/40 |
+| Global Variables | 163 | 164 (+namespace) | ~143 (-20) | 1 (just miniCycle) |
+| Modules Migrated | 0/40 | 0/40 | 4/40 (globalUtils, themeManager, notifications, modalManager) | 40/40 |
 | API Entry Points | Scattered | Unified | Unified | Unified |
 | Backward Compatibility | N/A | 100% ✅ | 100% ✅ | 100% ✅ until v2.0 |
 | Test Coverage | 1011 tests | 1011 tests | 1011 tests ✅ | 1011+ tests |
@@ -70,8 +70,22 @@ This reduces global namespace pollution, improves discoverability, enables autoc
 - ✅ Net reduction: ~15 globals eliminated
 - ✅ All tests passing, app functional
 
-**Phase 2 Steps 2-40 (📋 PLANNED):**
-- Refactor remaining 39 modules to remove `window.*` exports
+**Phase 2 Step 2 (✅ COMPLETE - November 23, 2025):**
+- ✅ Refactored themeManager module (removed 12 `window.*` exports)
+- ✅ Updated namespace.js with direct themeManager imports
+- ✅ Installed 12 backward-compat shims for theme functions
+- ✅ All tests passing, app functional
+
+**Phase 2 Step 3 (✅ COMPLETE - November 23, 2025):**
+- ✅ Refactored notifications.js (removed 2 `window.*` exports)
+- ✅ Refactored modalManager.js (removed 3 `window.*` exports)
+- ✅ Updated namespace.js with direct imports for both modules
+- ✅ Installed 5 backward-compat shims (2 for notifications, 3 for modals)
+- ✅ Net reduction: ~20 globals eliminated total (Steps 1-3)
+- ✅ All tests passing, app functional
+
+**Phase 2 Steps 4-40 (📋 PLANNED):**
+- Refactor remaining 36 modules to remove `window.*` exports
 - Make namespace module the ONLY source of globals
 - Keep all tests passing continuously
 
@@ -925,26 +939,137 @@ window.debounce(fn, 300)   // → calls GlobalUtils.debounce()
 
 ---
 
-### Step 2: Migrate Stateless UI Helpers
+### ✅ Step 2: Migrate Feature Modules (ThemeManager) - COMPLETE
 
-UI helpers can drop globals once main script uses namespace.
+**Status**: ✅ **COMPLETE** (November 23, 2025)
+
+Refactored themeManager module to stop writing globals.
+Namespace now imports and delegates directly to the module.
+
+**Completed:**
+- ✅ `themeManager.js` - 11 theme functions + 1 class migrated
+- ✅ Removed 12 `window.*` exports
+- ✅ Updated namespace.js with direct imports
+- ✅ Installed 12 backward-compat shims
+- ✅ All tests passing (1011/1011)
+
+**Implementation:**
+
+```javascript
+// Before (themeManager.js):
+window.applyTheme = applyTheme;
+window.updateThemeColor = updateThemeColor;
+window.ThemeManager = ThemeManager;
+// ... 9 more window.* assignments
+
+// After (themeManager.js):
+export default ThemeManager;
+export {
+    themeManager,
+    applyTheme,
+    updateThemeColor,
+    // ... clean ES6 exports only
+};
+// NO window.* pollution
+
+// namespace.js imports and exposes:
+import ThemeManager, { applyTheme, updateThemeColor, ... } from './features/themeManager.js';
+
+window.miniCycle.features.themes.apply = (...args) => applyTheme(...args);
+window.miniCycle.features.themes.updateColor = (...args) => updateThemeColor(...args);
+// Direct delegation, no window.* middleman
+```
+
+**Backward Compatibility:**
+
+```javascript
+// Old code still works:
+window.applyTheme('dark-ocean')        // → calls applyTheme()
+window.updateThemeColor('#3498db')     // → calls updateThemeColor()
+
+// With deprecation warnings:
+⚠️ DEPRECATED: window.applyTheme() is deprecated.
+   Use window.miniCycle.features.themes.apply() instead.
+   Backward compatibility will be removed in v2.0.
+```
+
+---
+
+### ✅ Step 3: Migrate UI Helpers (Notifications + Modals) - COMPLETE
+
+**Status**: ✅ **COMPLETE** (November 23, 2025)
+
+Refactored notifications and modalManager modules to stop writing globals.
+
+**Completed:**
+- ✅ `notifications.js` - 2 class exports migrated
+- ✅ `modalManager.js` - 2 classes + 1 wrapper function migrated
+- ✅ Removed 5 `window.*` exports total
+- ✅ Updated namespace.js with direct imports
+- ✅ Installed 5 backward-compat shims
+- ✅ All tests passing (1011/1011)
+
+**Implementation:**
+
+```javascript
+// Before (notifications.js):
+window.MiniCycleNotifications = MiniCycleNotifications;
+window.EducationalTipManager = EducationalTipManager;
+
+// After (notifications.js):
+export { MiniCycleNotifications, EducationalTipManager };
+// NO window.* pollution
+
+// Before (modalManager.js):
+window.ModalManager = ModalManager;
+window.modalManager = modalManager;
+window.closeAllModals = () => modalManager?.closeAllModals();
+
+// After (modalManager.js):
+export default ModalManager;
+export { modalManager };
+// NO window.* pollution
+
+// namespace.js creates shims:
+const notificationsShims = [
+    { old: 'MiniCycleNotifications', newFunc: MiniCycleNotifications, new: 'ui.notifications (class)' },
+    { old: 'EducationalTipManager', newFunc: EducationalTipManager, new: 'ui.notifications.tips (class)' }
+];
+
+const modalManagerShims = [
+    { old: 'ModalManager', newFunc: ModalManager, new: 'ui.modals (class)' },
+    { old: 'modalManager', newFunc: modalManager, new: 'ui.modals (instance)' },
+    { old: 'closeAllModals', newFunc: () => modalManager?.closeAllModals(), new: 'ui.modals.closeAll()' }
+];
+```
+
+**Results:**
+- Net reduction: ~20 globals eliminated (Steps 1-3 combined)
+- 4 modules fully migrated
+- Zero breaking changes
+- Deprecation warnings guide future migration
+
+---
+
+### Step 4: Migrate Remaining UI Helpers
 
 **Target modules:**
-- UI notifications (19 functions)
-- Modals, loaders, progress bars
-- Stateless presentation logic
+- Onboarding manager
+- Games manager
+- Console capture
+- Other stateless UI helpers
 
 **Example:**
 
 ```javascript
-// Before (notifications.js):
-window.showNotification = function(...) { ... }
+// Before (onboardingManager.js):
+window.OnboardingManager = OnboardingManager;
 
-// After (notifications.js):
-export function showNotification(...) { ... }
+// After (onboardingManager.js):
+export default OnboardingManager;
 
 // namespace.js:
-import { showNotification } from './ui/notifications.js';
+import OnboardingManager from './ui/onboardingManager.js';
 window.miniCycle.ui.notifications.show = showNotification;
 ```
 

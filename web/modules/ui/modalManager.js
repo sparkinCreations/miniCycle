@@ -386,14 +386,11 @@ export class ModalManager {
 // Create single instance
 const modalManager = new ModalManager();
 
-// Expose for testing and global access
-window.ModalManager = ModalManager;
-window.modalManager = modalManager;
-
-// Global wrapper for backward compatibility
-window.closeAllModals = () => modalManager?.closeAllModals();
-
 // Initialize automatically after import
 modalManager.init();
 
-console.log('✅ Modal Manager module loaded');
+// Phase 2 Step 3 - Clean exports (no window.* pollution)
+console.log('✅ Modal Manager module loaded (Phase 2 - no window.* exports)');
+
+export default ModalManager;
+export { modalManager };

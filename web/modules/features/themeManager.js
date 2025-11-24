@@ -824,35 +824,22 @@ function setupThemesPanelWithData(schemaData) {
     return themeManager.setupThemesPanelWithData(schemaData);
 }
 
-// ===== GLOBAL EXPORTS =====
+// ===== MODULE EXPORTS (Phase 2 - No window.* pollution) =====
 
-// Export the class for advanced usage
-window.ThemeManager = ThemeManager;
+console.log('🎨 ThemeManager module loaded (Phase 2 - no window.* exports)');
 
-// Export the singleton instance
-window.themeManager = themeManager;
-
-// Export all global functions for backward compatibility
-window.applyTheme = applyTheme;
-window.updateThemeColor = updateThemeColor;
-window.setupDarkModeToggle = setupDarkModeToggle;
-window.setupQuickDarkToggle = setupQuickDarkToggle;
-window.unlockDarkOceanTheme = unlockDarkOceanTheme;
-window.unlockGoldenGlowTheme = unlockGoldenGlowTheme;
-window.initializeThemesPanel = initializeThemesPanel;
-window.refreshThemeToggles = refreshThemeToggles;
-window.setupThemesPanel = setupThemesPanel;
-window.setupThemesPanelWithData = setupThemesPanelWithData;
-
-console.log('🎨 ThemeManager module loaded - theme system available globally');
-console.log('📋 Available functions:', {
-    applyTheme: typeof applyTheme,
-    updateThemeColor: typeof updateThemeColor,
-    setupDarkModeToggle: typeof setupDarkModeToggle,
-    setupQuickDarkToggle: typeof setupQuickDarkToggle,
-    unlockDarkOceanTheme: typeof unlockDarkOceanTheme,
-    unlockGoldenGlowTheme: typeof unlockGoldenGlowTheme,
-    initializeThemesPanel: typeof initializeThemesPanel,
-    refreshThemeToggles: typeof refreshThemeToggles,
-    setupThemesPanel: typeof setupThemesPanel
-});
+// Export class, singleton, and wrapper functions
+export default ThemeManager;
+export {
+    themeManager,
+    applyTheme,
+    updateThemeColor,
+    setupDarkModeToggle,
+    setupQuickDarkToggle,
+    unlockDarkOceanTheme,
+    unlockGoldenGlowTheme,
+    initializeThemesPanel,
+    refreshThemeToggles,
+    setupThemesPanel,
+    setupThemesPanelWithData
+};

@@ -1153,13 +1153,7 @@ async setDefaultPosition(notificationContainer) {
   }
 }
 
-// Export both the main class and the tip manager for flexibility
+// Phase 2 Step 3 - Clean exports (no window.* pollution)
 export { EducationalTipManager };
 
-// Expose to window for testing and global access
-window.MiniCycleNotifications = MiniCycleNotifications;
-window.EducationalTipManager = EducationalTipManager;
-
-console.log('🔔 Notification system loaded and ready');
-console.log('  - MiniCycleNotifications:', typeof window.MiniCycleNotifications);
-console.log('  - EducationalTipManager:', typeof window.EducationalTipManager);
+console.log('🔔 Notification system loaded (Phase 2 - no window.* exports)');

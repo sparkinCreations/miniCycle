@@ -9,6 +9,8 @@
  * Phase 1: Wrapper layer that delegates to existing globals ✅
  * Phase 2: Direct module delegation (no globals) 🚧 IN PROGRESS
  *   - Step 1: GlobalUtils migrated ✅
+ *   - Step 2: ThemeManager migrated ✅
+ *   - Step 3: Notifications + ModalManager migrated ✅
  *
  * @version 1.374
  * @see docs/future-work/NAMESPACE_ARCHITECTURE.md
@@ -16,6 +18,21 @@
 
 // Phase 2 imports - direct module access
 import GlobalUtils, { DEFAULT_TASK_OPTION_BUTTONS } from './utils/globalUtils.js';
+import ThemeManager, {
+    themeManager,
+    applyTheme,
+    updateThemeColor,
+    setupDarkModeToggle,
+    setupQuickDarkToggle,
+    unlockDarkOceanTheme,
+    unlockGoldenGlowTheme,
+    initializeThemesPanel,
+    refreshThemeToggles,
+    setupThemesPanel,
+    setupThemesPanelWithData
+} from './features/themeManager.js';
+import { MiniCycleNotifications, EducationalTipManager } from './utils/notifications.js';
+import ModalManager, { modalManager } from './ui/modalManager.js';
 
 /**
  * Initialize the miniCycle namespace
@@ -233,10 +250,29 @@ export function initializeNamespace() {
 
         // ===================================
         // FEATURES API
+        // Phase 2 Step 2: ThemeManager migrated ✅
         // ===================================
         features: {
             themes: {
-                apply: (...args) => window.applyTheme?.(...args),
+                // Core theme operations - direct delegation
+                apply: (...args) => applyTheme(...args),
+                updateColor: (...args) => updateThemeColor(...args),
+
+                // Dark mode setup
+                setupDarkMode: (...args) => setupDarkModeToggle(...args),
+                setupQuickToggle: (...args) => setupQuickDarkToggle(...args),
+
+                // Theme unlocks
+                unlockDarkOcean: (...args) => unlockDarkOceanTheme(...args),
+                unlockGoldenGlow: (...args) => unlockGoldenGlowTheme(...args),
+
+                // Panel setup
+                initializePanel: (...args) => initializeThemesPanel(...args),
+                refreshToggles: (...args) => refreshThemeToggles(...args),
+                setupPanel: (...args) => setupThemesPanel(...args),
+                setupPanelWithData: (...args) => setupThemesPanelWithData(...args),
+
+                // Legacy API (still delegates to window.* if exists)
                 toggle: (...args) => window.toggleTheme?.(...args),
                 get: (...args) => window.getCurrentTheme?.(...args)
             },
@@ -287,8 +323,7 @@ export function installDeprecationWarnings() {
         { old: 'performStateBasedRedo', new: 'history.redo()' }
     ];
 
-    // Phase 2 Step 1: Install backward-compat shims for ALL GlobalUtils functions
-    // These redirect window.* calls to window.miniCycle.utils.*
+    // Phase 2 Step 1: GlobalUtils backward-compat shims
     const globalUtilsShims = [
         // DOM utilities
         { old: 'safeAddEventListener', new: 'utils.dom.addListener()' },
@@ -337,6 +372,34 @@ export function installDeprecationWarnings() {
         { old: 'syncAllTasksWithMode', new: 'utils.syncAllTasksWithMode()' }
     ];
 
+    // Phase 2 Step 2: ThemeManager backward-compat shims
+    const themeManagerShims = [
+        { old: 'applyTheme', newFunc: applyTheme, new: 'features.themes.apply()' },
+        { old: 'updateThemeColor', newFunc: updateThemeColor, new: 'features.themes.updateColor()' },
+        { old: 'setupDarkModeToggle', newFunc: setupDarkModeToggle, new: 'features.themes.setupDarkMode()' },
+        { old: 'setupQuickDarkToggle', newFunc: setupQuickDarkToggle, new: 'features.themes.setupQuickToggle()' },
+        { old: 'unlockDarkOceanTheme', newFunc: unlockDarkOceanTheme, new: 'features.themes.unlockDarkOcean()' },
+        { old: 'unlockGoldenGlowTheme', newFunc: unlockGoldenGlowTheme, new: 'features.themes.unlockGoldenGlow()' },
+        { old: 'initializeThemesPanel', newFunc: initializeThemesPanel, new: 'features.themes.initializePanel()' },
+        { old: 'refreshThemeToggles', newFunc: refreshThemeToggles, new: 'features.themes.refreshToggles()' },
+        { old: 'setupThemesPanel', newFunc: setupThemesPanel, new: 'features.themes.setupPanel()' },
+        { old: 'setupThemesPanelWithData', newFunc: setupThemesPanelWithData, new: 'features.themes.setupPanelWithData()' },
+        { old: 'ThemeManager', newFunc: ThemeManager, new: 'features.themes (class)' },
+        { old: 'themeManager', newFunc: themeManager, new: 'features.themes (instance)' }
+    ];
+
+    // Phase 2 Step 3: Notifications + ModalManager backward-compat shims
+    const notificationsShims = [
+        { old: 'MiniCycleNotifications', newFunc: MiniCycleNotifications, new: 'ui.notifications (class)' },
+        { old: 'EducationalTipManager', newFunc: EducationalTipManager, new: 'ui.notifications.tips (class)' }
+    ];
+
+    const modalManagerShims = [
+        { old: 'ModalManager', newFunc: ModalManager, new: 'ui.modals (class)' },
+        { old: 'modalManager', newFunc: modalManager, new: 'ui.modals (instance)' },
+        { old: 'closeAllModals', newFunc: () => modalManager?.closeAllModals(), new: 'ui.modals.closeAll()' }
+    ];
+
     // Install deprecation wrappers for existing globals
     topGlobals.forEach(({ old, new: newPath }) => {
         const original = window[old];
@@ -355,9 +418,11 @@ export function installDeprecationWarnings() {
         }
     });
 
-    // Phase 2: Install backward-compat shims for migrated GlobalUtils
+    // Phase 2: Install backward-compat shims for migrated modules
     // These functions no longer exist on window.*, so we create them
-    globalUtilsShims.forEach(({ old, new: newPath, newFunc }) => {
+    const allPhase2Shims = [...globalUtilsShims, ...themeManagerShims, ...notificationsShims, ...modalManagerShims];
+
+    allPhase2Shims.forEach(({ old, new: newPath, newFunc }) => {
         let targetFunc;
 
         // Option 1: Direct function reference
@@ -374,24 +439,31 @@ export function installDeprecationWarnings() {
             targetFunc = namespaceFunc;
         }
 
-        if (typeof targetFunc === 'function') {
-            window[old] = function (...args) {
-                if (!window.miniCycle._deprecationWarnings.has(old)) {
-                    console.warn(
-                        `⚠️ DEPRECATED: window.${old}() is deprecated. ` +
-                        `Use window.miniCycle.${newPath || 'utils.*'} instead. ` +
-                        `Backward compatibility will be removed in v2.0.`
-                    );
-                    window.miniCycle._deprecationWarnings.add(old);
-                }
-                return targetFunc.apply(this, args);
-            };
+        if (typeof targetFunc === 'function' || typeof targetFunc === 'object') {
+            // For functions, create wrapper with deprecation warning
+            if (typeof targetFunc === 'function') {
+                window[old] = function (...args) {
+                    if (!window.miniCycle._deprecationWarnings.has(old)) {
+                        console.warn(
+                            `⚠️ DEPRECATED: window.${old}() is deprecated. ` +
+                            `Use window.miniCycle.${newPath || 'features.*'} instead. ` +
+                            `Backward compatibility will be removed in v2.0.`
+                        );
+                        window.miniCycle._deprecationWarnings.add(old);
+                    }
+                    return targetFunc.apply(this, args);
+                };
+            }
+            // For objects/classes, expose directly (e.g., ThemeManager class, themeManager instance)
+            else {
+                window[old] = targetFunc;
+            }
         }
     });
 
-    // Also expose DEFAULT_TASK_OPTION_BUTTONS constant
+    // Also expose constants and classes
     window.DEFAULT_TASK_OPTION_BUTTONS = DEFAULT_TASK_OPTION_BUTTONS;
     window.GlobalUtils = GlobalUtils;
 
-    console.log(`⚠️  Deprecation warnings installed (20 top globals, ${globalUtilsShims.length} GlobalUtils shims)`);
+    console.log(`⚠️  Deprecation warnings installed (20 top globals, ${globalUtilsShims.length} GlobalUtils shims, ${themeManagerShims.length} ThemeManager shims, ${notificationsShims.length + modalManagerShims.length} Step 3 shims)`);
 }
