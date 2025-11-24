@@ -510,11 +510,16 @@ async function runAllAutomatedTests() {
     }, 2000);
 }
 
-// Export functions for global access
-window.setupAutomatedTestingFunctions = setupAutomatedTestingFunctions;
-window.runIndividualModuleTest = runIndividualModuleTest;
-window.runAllAutomatedTests = runAllAutomatedTests;
-window.loadTestModules = loadTestModules;
+// Phase 2 Step 7 - Clean exports (no window.* pollution)
+console.log('🧪 Testing modal integration loaded (Phase 2 - no window.* exports)');
+
+// Export functions for module use
+export {
+    setupAutomatedTestingFunctions,
+    runIndividualModuleTest,
+    runAllAutomatedTests,
+    loadTestModules
+};
 
 // Safe function accessors
 const safeAddEventListenerById = window.safeAddEventListenerById || function(id, event, handler) {

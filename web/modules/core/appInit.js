@@ -275,7 +275,5 @@ class AppInit {
 // Create singleton instance
 export const appInit = new AppInit();
 
-// Expose globally for debugging and legacy code
-window.appInit = appInit;
-
-console.log('🚀 miniCycle AppInit loaded - 2-phase initialization + plugin support ready');
+// Phase 2 Step 6 - Clean exports (no window.* pollution)
+console.log('🚀 miniCycle AppInit loaded (Phase 2 - no window.* exports)');

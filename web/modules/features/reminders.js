@@ -894,8 +894,8 @@ export class MiniCycleReminders {
 // MODULE INITIALIZATION & GLOBAL EXPORTS
 // ============================================
 
-// Expose class globally for testing
-window.MiniCycleReminders = MiniCycleReminders;
+// Phase 2 Step 5 - Clean exports (no window.* pollution)
+console.log('🔔 Reminders module loaded (Phase 2 - no window.* exports)');
 
 let reminderManager = null;
 

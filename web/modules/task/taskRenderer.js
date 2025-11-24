@@ -243,18 +243,12 @@ async function refreshTaskListUI() {
 // Exports
 // ============================================
 
+// Phase 2 Step 8 - Clean exports (no window.* pollution)
+console.log('🎨 TaskRenderer module loaded (Phase 2 - no window.* exports)');
+
 // ES6 exports
 export {
     renderTasks,
     refreshUIFromState,
     refreshTaskListUI
 };
-
-// Window exports (CRITICAL for ES6 module scope)
-window.TaskRenderer = TaskRenderer;
-window.initTaskRenderer = initTaskRenderer;
-window.renderTasks = renderTasks;
-window.refreshUIFromState = refreshUIFromState;
-window.refreshTaskListUI = refreshTaskListUI;
-
-console.log('🎨 TaskRenderer module loaded and ready');

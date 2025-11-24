@@ -110,9 +110,5 @@ function validateAndSanitizeTaskInput(taskText) {
 // ES6 exports
 export { validateAndSanitizeTaskInput };
 
-// Window exports (CRITICAL for ES6 module scope)
-window.TaskValidator = TaskValidator;
-window.initTaskValidator = initTaskValidator;
-window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
-
-console.log('🔒 TaskValidation module loaded and ready');
+// Phase 2 Step 6 - Clean exports (no window.* pollution)
+console.log('🔒 TaskValidation module loaded (Phase 2 - no window.* exports)');

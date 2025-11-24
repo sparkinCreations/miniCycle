@@ -2,10 +2,12 @@
  * ==========================================
  * 🔌 EXAMPLE PLUGIN: TIME TRACKER
  * ==========================================
- * 
+ *
  * A simple example plugin that demonstrates how to extend miniCycle
  * with time tracking functionality.
  */
+
+import { MiniCyclePlugin } from './basicPluginSystem.js';
 
 class TimeTrackerPlugin extends MiniCyclePlugin {
     constructor() {
@@ -251,5 +253,8 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
     }
 }
 
+// Phase 2 Step 7 - Clean exports (no window.* pollution)
+console.log('⏱️ TimeTrackerPlugin module loaded (Phase 2 - no window.* exports)');
+
 // Export for use
-window.TimeTrackerPlugin = TimeTrackerPlugin;
+export default TimeTrackerPlugin;

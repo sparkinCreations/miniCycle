@@ -691,26 +691,93 @@ export class CycleSwitcher {
     }
 }
 
-// Create global instance
+// ============================================
+// Global Instance Management
+// ============================================
+
 let cycleSwitcher = null;
 
-// Expose class for testing
-window.CycleSwitcher = CycleSwitcher;
-
-// Global wrappers for backward compatibility
-window.switchMiniCycle = () => cycleSwitcher?.switchMiniCycle();
-window.renameMiniCycle = () => cycleSwitcher?.renameMiniCycle();
-window.deleteMiniCycle = () => cycleSwitcher?.deleteMiniCycle();
-window.hideSwitchMiniCycleModal = () => cycleSwitcher?.hideSwitchMiniCycleModal();
-window.confirmMiniCycle = () => cycleSwitcher?.confirmMiniCycle();
-window.updatePreview = (cycleName) => cycleSwitcher?.updatePreview(cycleName);
-window.loadMiniCycleList = () => cycleSwitcher?.loadMiniCycleList();
-window.setupModalClickOutside = () => cycleSwitcher?.setupModalClickOutside();
-
-// Export initialization function
+/**
+ * Initialize the global cycle switcher
+ * @param {Object} dependencies - Required dependencies
+ */
 export function initializeCycleSwitcher(dependencies) {
     cycleSwitcher = new CycleSwitcher(dependencies);
+
+    // Expose on window for cross-module instance access
+    // (Needed due to versioned vs unversioned imports creating separate module instances)
+    window.cycleSwitcher = cycleSwitcher;
+
     return cycleSwitcher;
 }
 
-console.log('🔄 CycleSwitcher module loaded');
+// ============================================
+// Wrapper Functions
+// Note: Uses window.cycleSwitcher as fallback for cross-module instance access
+// ============================================
+
+function switchMiniCycle() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.switchMiniCycle();
+}
+
+function renameMiniCycle() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.renameMiniCycle();
+}
+
+function deleteMiniCycle() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.deleteMiniCycle();
+}
+
+function hideSwitchMiniCycleModal() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.hideSwitchMiniCycleModal();
+}
+
+function confirmMiniCycle() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.confirmMiniCycle();
+}
+
+function updatePreview(cycleName) {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.updatePreview(cycleName);
+}
+
+function loadMiniCycleList() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.loadMiniCycleList();
+}
+
+function setupModalClickOutside() {
+    const switcher = cycleSwitcher || window.cycleSwitcher;
+    if (!switcher) return;
+    switcher.setupModalClickOutside();
+}
+
+// ============================================
+// Exports
+// ============================================
+
+// Phase 2 Step 11 - Clean exports (no window.* pollution)
+console.log('🔄 CycleSwitcher module loaded (Phase 2 - no window.* exports)');
+
+export {
+    switchMiniCycle,
+    renameMiniCycle,
+    deleteMiniCycle,
+    hideSwitchMiniCycleModal,
+    confirmMiniCycle,
+    updatePreview,
+    loadMiniCycleList,
+    setupModalClickOutside
+};

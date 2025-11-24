@@ -412,21 +412,16 @@ export class MiniCycleConsoleCapture {
 // Auto-create instance and make globally accessible
 const consoleCapture = new MiniCycleConsoleCapture();
 
-// Export individual functions for backward compatibility
+// Phase 2 Step 4 - Clean exports (no window.* pollution)
 export const {
-    showAllCapturedLogs: showAllCapturedLogs,
-    clearAllConsoleLogs: clearAllConsoleLogs,
-    showMigrationErrorsOnly: showMigrationErrorsOnly,
-    getConsoleCaptureStats: getConsoleCaptureStats,
-    stopConsoleCapture: stopConsoleCapture,
-    startAutoConsoleCapture: startAutoConsoleCapture
+    showAllCapturedLogs,
+    clearAllConsoleLogs,
+    showMigrationErrorsOnly,
+    getConsoleCaptureStats,
+    stopConsoleCapture,
+    startAutoConsoleCapture
 } = consoleCapture;
 
-// Make functions globally accessible
-window.showAllCapturedLogs = () => consoleCapture.showAllCapturedLogs();
-window.clearAllConsoleLogs = () => consoleCapture.clearAllConsoleLogs();
-window.showMigrationErrorsOnly = () => consoleCapture.showMigrationErrorsOnly();
-window.getConsoleCaptureStats = () => consoleCapture.getConsoleCaptureStats();
-window.stopConsoleCapture = () => consoleCapture.stopConsoleCapture();
+console.log('🔍 Console Capture module loaded (Phase 2 - no window.* exports)');
 
 export default consoleCapture;

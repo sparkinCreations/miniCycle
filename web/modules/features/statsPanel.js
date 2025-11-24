@@ -1274,10 +1274,7 @@ export class StatsPanelManager {
     }
 }
 
-// Export for use in main script
+// Phase 2 Step 5 - Clean exports (no window.* pollution)
+console.log('📊 Stats Panel module loaded (Phase 2 - no window.* exports)');
+
 export default StatsPanelManager;
-
-// Make class globally available for backward compatibility
-window.StatsPanelManager = StatsPanelManager;
-
-console.log('📊 Stats Panel module loaded successfully');

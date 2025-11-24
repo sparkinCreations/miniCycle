@@ -195,15 +195,11 @@ export class GamesManager {
 // Create single instance
 const gamesManager = new GamesManager();
 
-// Expose for testing
-window.GamesManager = GamesManager;
-window.gamesManager = gamesManager;
-
-// Global wrappers for backward compatibility
-window.checkGamesUnlock = () => gamesManager.checkGamesUnlock();
-window.unlockMiniGame = () => gamesManager.unlockMiniGame();
-
 // Initialize automatically after import
 gamesManager.init();
 
-console.log('✅ Games Manager module loaded');
+// Phase 2 Step 4 - Clean exports (no window.* pollution)
+console.log('✅ Games Manager module loaded (Phase 2 - no window.* exports)');
+
+export default GamesManager;
+export { gamesManager };

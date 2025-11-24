@@ -299,14 +299,11 @@ export class OnboardingManager {
 // Create single instance
 const onboardingManager = new OnboardingManager();
 
-// Expose for testing and global access
-window.OnboardingManager = OnboardingManager;
-window.onboardingManager = onboardingManager;
-
-// Global wrapper for backward compatibility
-window.showOnboarding = (cycles, activeCycle) => onboardingManager.showOnboarding(cycles, activeCycle);
-
 // Initialize automatically after import
 onboardingManager.init();
 
-console.log('✅ Onboarding Manager module loaded');
+// Phase 2 Step 4 - Clean exports (no window.* pollution)
+console.log('✅ Onboarding Manager module loaded (Phase 2 - no window.* exports)');
+
+export default OnboardingManager;
+export { onboardingManager };

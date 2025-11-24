@@ -602,8 +602,8 @@ export class ModeManager {
     }
 }
 
-// Export class to window for testing
-window.ModeManager = ModeManager;
+// Phase 2 Step 6 - Clean exports (no window.* pollution)
+console.log('🎯 ModeManager module loaded (Phase 2 - no window.* exports)');
 
 /**
  * Initialize and configure the mode manager

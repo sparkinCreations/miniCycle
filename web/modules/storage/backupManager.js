@@ -425,7 +425,7 @@ class BackupManager {
 // Create singleton instance
 const backupManager = new BackupManager();
 
-// Export globally
-window.BackupManager = backupManager;
+// Phase 2 Step 5 - Clean exports (no window.* pollution)
+console.log('💾 BackupManager module loaded (Phase 2 - no window.* exports)');
 
 export default backupManager;

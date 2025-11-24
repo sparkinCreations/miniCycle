@@ -281,11 +281,11 @@ class PluginManager {
 // 🌐 GLOBAL INITIALIZATION
 // ===========================================
 
-// Create global plugin manager
-window.pluginManager = new PluginManager();
-window.MiniCyclePlugin = MiniCyclePlugin;
+// Create plugin manager instance
+const pluginManager = new PluginManager();
+
+// Phase 2 Step 7 - Clean exports (no window.* pollution)
+console.log('🔌 Basic Plugin System loaded (Phase 2 - no window.* exports)');
 
 // Export for module use
-export { PluginManager, MiniCyclePlugin, EventBus };
-
-console.log('🔌 Basic Plugin System loaded and ready');
+export { PluginManager, MiniCyclePlugin, EventBus, pluginManager };

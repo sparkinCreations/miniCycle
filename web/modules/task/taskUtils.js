@@ -265,6 +265,9 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 // Exports
 // ============================================
 
+// Phase 2 Step 9 - Clean exports (no window.* pollution)
+console.log('🛠️ TaskUtils module loaded (Phase 2 - no window.* exports)');
+
 // ES6 exports
 export {
     buildTaskContext,
@@ -274,14 +277,3 @@ export {
     handleOverdueStyling,
     setupFinalTaskInteractions
 };
-
-// Window exports (CRITICAL for ES6 module scope)
-window.TaskUtils = TaskUtils;
-window.buildTaskContext = buildTaskContext;
-window.extractTaskDataFromDOM = extractTaskDataFromDOM;
-window.loadTaskContext = loadTaskContext;
-window.scrollToNewTask = scrollToNewTask;
-window.handleOverdueStyling = handleOverdueStyling;
-window.setupFinalTaskInteractions = setupFinalTaskInteractions;
-
-console.log('🛠️ TaskUtils module loaded and ready');

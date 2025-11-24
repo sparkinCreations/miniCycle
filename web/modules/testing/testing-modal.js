@@ -3161,18 +3161,25 @@ function getServiceWorkerInfo() {
     });
 }
 
-// Make functions globally available
-window.setupTestingModal = setupTestingModal;
-window.initializeTestingModalEnhancements = initializeTestingModalEnhancements;
-window.openStorageViewer = openStorageViewer;
-window.closeStorageViewer = closeStorageViewer;
-window.appendToTestResults = appendToTestResults;
-window.clearTestResults = clearTestResults;
-window.exportTestResults = exportTestResults;
-window.copyTestResults = copyTestResults;
+// ============================================
+// Exports
+// ============================================
 
-// Make notification functions globally available
-window.showNotification = safeShowNotification;
-window.showConfirmationModal = safeShowConfirmationModal;
-window.showPromptModal = safeShowPromptModal;
+// Phase 2 Step 12 - Clean exports (no window.* pollution)
+console.log('🧪 Testing Modal module loaded (Phase 2 - no window.* exports)');
+
+// ES6 exports
+export {
+    setupTestingModal,
+    initializeTestingModalEnhancements,
+    openStorageViewer,
+    closeStorageViewer,
+    appendToTestResults,
+    clearTestResults,
+    exportTestResults,
+    copyTestResults,
+    safeShowNotification,
+    safeShowConfirmationModal,
+    safeShowPromptModal
+};
 

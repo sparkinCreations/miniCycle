@@ -215,7 +215,11 @@ export async function initializeRecurringModules() {
 
         console.log('🌐 Exposing recurring functions globally...');
 
-        // Core functions
+        // ✅ Phase 4 Step 4: Removed window.* exports
+        // These functions are now handled by namespace.js (Phase 3 Step 4 shims)
+        // Backward compatibility is maintained through miniCycle.features.recurring.*
+
+        // Keep convenience objects for direct access (non-shimmed)
         window.recurringCore = {
             applyRecurringSettings: recurringCore.applyRecurringToTaskSchema25,
             handleActivation: recurringCore.handleRecurringTaskActivation,
@@ -241,24 +245,10 @@ export async function initializeRecurringModules() {
             loadAlwaysShowRecurringSetting: () => recurringPanel.loadAlwaysShowRecurringSetting()
         };
 
-        // Backward compatibility - map old function names to new modules
-        window.applyRecurringToTaskSchema25 = recurringCore.applyRecurringToTaskSchema25;
-        window.handleRecurringTaskActivation = recurringCore.handleRecurringTaskActivation;
-        window.handleRecurringTaskDeactivation = recurringCore.handleRecurringTaskDeactivation;
-        window.deleteRecurringTemplate = recurringCore.deleteRecurringTemplate;
-        window.removeRecurringTasksFromCycle = recurringCore.removeRecurringTasksFromCycle;
-        window.handleRecurringTasksAfterReset = recurringCore.handleRecurringTasksAfterReset;
-        window.watchRecurringTasks = recurringCore.watchRecurringTasks;
-        window.catchUpMissedRecurringTasks = recurringCore.catchUpMissedRecurringTasks;
-        window.setupRecurringWatcher = recurringCore.setupRecurringWatcher;
+        console.log('✅ Recurring functions accessible via window.recurringCore and window.recurringPanel');
+        console.log('✅ Individual functions shimmed via namespace.js (use window.miniCycle.features.recurring.*)');
 
-        window.updateRecurringPanel = () => recurringPanel.updateRecurringPanel();
-        window.updateRecurringSummary = () => recurringPanel.updateRecurringSummary();
-        window.updateRecurringPanelButtonVisibility = () => recurringPanel.updateRecurringPanelButtonVisibility();
-        window.openRecurringSettingsPanelForTask = (taskId) => recurringPanel.openRecurringSettingsPanelForTask(taskId);
-        window.buildRecurringSummaryFromSettings = buildRecurringSummaryFromSettings;
 
-        console.log('✅ Recurring functions globally accessible');
 
         // ============================================
         // STEP 8: Process deferred setups

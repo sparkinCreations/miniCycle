@@ -1784,55 +1784,7 @@ export {
 };
 
 // ============================================
-// CRITICAL: Window Exports for ES6 Module Scope
+// Phase 2 Step 13 - Clean exports (no window.* pollution)
 // ============================================
-// These exports are MANDATORY for ES6 modules to work with miniCycle's architecture.
-// Without these, functions will exist in the module scope but not be accessible
-// via window.*, causing "function is not defined" errors.
 
-// Core manager
-window.TaskDOMManager = TaskDOMManager;
-window.initTaskDOMManager = initTaskDOMManager;
-
-// ✅ GROUP 1: Validation exports
-window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
-
-// ✅ GROUP 2: Utility exports
-window.buildTaskContext = buildTaskContext;
-window.extractTaskDataFromDOM = extractTaskDataFromDOM;
-window.loadTaskContext = loadTaskContext;
-window.scrollToNewTask = scrollToNewTask;
-window.handleOverdueStyling = handleOverdueStyling;
-window.setupFinalTaskInteractions = setupFinalTaskInteractions;
-
-// ✅ GROUP 3: DOM Creation exports
-window.createTaskDOMElements = createTaskDOMElements;
-window.createMainTaskElement = createMainTaskElement;
-window.createThreeDotsButton = createThreeDotsButton;
-window.createTaskButtonContainer = createTaskButtonContainer;
-window.createTaskButton = createTaskButton;
-window.createTaskContentElements = createTaskContentElements;
-window.createTaskCheckbox = createTaskCheckbox;
-window.createTaskLabel = createTaskLabel;
-
-// ✅ GROUP 4: Button Setup exports
-window.setupRecurringButtonHandler = setupRecurringButtonHandler;
-window.handleTaskButtonClick = handleTaskButtonClick;
-window.toggleHoverTaskOptions = toggleHoverTaskOptions;
-window.revealTaskButtons = revealTaskButtons;
-window.syncRecurringStateToDOM = syncRecurringStateToDOM;
-
-// ✅ GROUP 5: Task Interaction exports
-window.setupTaskInteractions = setupTaskInteractions;
-window.setupTaskClickInteraction = setupTaskClickInteraction;
-window.setupTaskHoverInteractions = setupTaskHoverInteractions;
-window.setupTaskFocusInteractions = setupTaskFocusInteractions;
-window.finalizeTaskCreation = finalizeTaskCreation;
-window.updateUIAfterTaskCreation = updateUIAfterTaskCreation;
-
-// ✅ GROUP 6: Rendering exports
-window.renderTasks = renderTasks;
-window.refreshUIFromState = refreshUIFromState;
-window.refreshTaskListUI = refreshTaskListUI;
-
-console.log('🎨 TaskDOM module loaded and ready');
+console.log('🎨 TaskDOM module loaded (Phase 2 - no window.* exports - FINAL MIGRATION!)');

@@ -32,8 +32,5 @@ export const DEFAULT_RECURRING_DELETE_SETTINGS = Object.freeze({
     todo: true     // Recurring always deletes in To-Do mode
 });
 
-// Window exports for global access
-window.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
-window.DEFAULT_RECURRING_DELETE_SETTINGS = DEFAULT_RECURRING_DELETE_SETTINGS;
-
-console.log('🔧 Core constants loaded');
+// Phase 2 Step 6 - Clean exports (no window.* pollution)
+console.log('🔧 Core constants loaded (Phase 2 - no window.* exports)');

@@ -421,16 +421,8 @@ export class CycleManager {
 // Create global instance
 let cycleManager = null;
 
-// Expose class for testing
-window.CycleManager = CycleManager;
-
-// Global wrappers for backward compatibility
-window.showCycleCreationModal = () => cycleManager?.showCycleCreationModal();
-window.preloadGettingStartedCycle = () => cycleManager?.preloadGettingStartedCycle();
-window.createBasicFallbackCycle = () => cycleManager?.createBasicFallbackCycle();
-window.createNewMiniCycle = () => cycleManager?.createNewMiniCycle();
-
-console.log('✅ CycleManager module loaded');
+// Phase 2 Step 8 - Clean exports (no window.* pollution)
+console.log('✅ CycleManager module loaded (Phase 2 - no window.* exports)');
 
 /**
  * Initialize the CycleManager module
@@ -439,6 +431,14 @@ console.log('✅ CycleManager module loaded');
  */
 export function initializeCycleManager(dependencies) {
     cycleManager = new CycleManager(dependencies);
-    console.log('✅ CycleManager instance created and globally accessible');
+    // Expose on window for cross-module instance access
+    // (Needed due to versioned vs unversioned imports creating separate module instances)
+    window.cycleManager = cycleManager;
+    console.log('✅ CycleManager instance created');
+    return cycleManager;
+}
+
+// Export for access to cycleManager instance
+export function getCycleManager() {
     return cycleManager;
 }

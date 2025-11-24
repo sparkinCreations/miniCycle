@@ -212,7 +212,5 @@ export class DataValidator {
     }
 }
 
-// Export globally for backward compatibility
-window.DataValidator = DataValidator;
-
-console.log('🛡️ DataValidator module loaded');
+// Phase 2 Step 5 - Clean exports (no window.* pollution)
+console.log('🛡️ DataValidator module loaded (Phase 2 - no window.* exports)');

@@ -1119,24 +1119,11 @@ export async function initTaskCore(dependencies = {}) {
             taskCoreInstance = new TaskCore(dependencies);
             await taskCoreInstance.init();
 
-            // Make available globally for backward compatibility
-            window.TaskCore = TaskCore; // Export class for testing
+            // Expose on window for cross-module instance access
+            // (Needed due to versioned vs unversioned imports creating separate module instances)
             window.taskCore = taskCoreInstance;
 
-            // Export individual methods globally
-            window.addTask = (...args) => taskCoreInstance.addTask(...args);
-            window.editTaskFromCore = (taskItem) => taskCoreInstance.editTask(taskItem);
-            window.deleteTaskFromCore = (taskItem) => taskCoreInstance.deleteTask(taskItem);
-            window.toggleTaskPriorityFromCore = (taskItem) => taskCoreInstance.toggleTaskPriority(taskItem);
-
-            // Export new batch operations
-            window.handleTaskCompletionChange = (checkbox) => taskCoreInstance.handleTaskCompletionChange(checkbox);
-            window.saveCurrentTaskOrder = () => taskCoreInstance.saveCurrentTaskOrder();
-            window.saveTaskToSchema25 = (cycleId, cycleData) => taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
-            window.resetTasks = () => taskCoreInstance.resetTasks();
-            window.handleCompleteAllTasks = () => taskCoreInstance.handleCompleteAllTasks();
-
-            console.log('✅ TaskCore initialized and globally available');
+            console.log('✅ TaskCore initialized (Phase 3 - clean exports)');
         } catch (e) {
             // ✅ FIX #5: Error boundary for TaskCore initialization
             console.error('❌ TaskCore initialization failed:', e);
@@ -1155,4 +1142,84 @@ export async function initTaskCore(dependencies = {}) {
     return taskCoreInstance;
 }
 
-export { taskCoreInstance };
+// ============================================================================
+// WRAPPER FUNCTIONS (for cross-module compatibility)
+// ============================================================================
+
+function addTask(...args) {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) {
+        console.warn('⚠️ TaskCore not initialized');
+        return Promise.reject(new Error('TaskCore not initialized'));
+    }
+    return instance.addTask(...args);
+}
+
+function editTaskFromCore(taskItem) {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.editTask(taskItem);
+}
+
+function deleteTaskFromCore(taskItem) {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.deleteTask(taskItem);
+}
+
+function toggleTaskPriorityFromCore(taskItem) {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.toggleTaskPriority(taskItem);
+}
+
+function handleTaskCompletionChange(checkbox) {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.handleTaskCompletionChange(checkbox);
+}
+
+function saveCurrentTaskOrder() {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.saveCurrentTaskOrder();
+}
+
+function saveTaskToSchema25(cycleId, cycleData) {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.saveTaskToSchema25(cycleId, cycleData);
+}
+
+function resetTasks() {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.resetTasks();
+}
+
+function handleCompleteAllTasks() {
+    const instance = taskCoreInstance || window.taskCore;
+    if (!instance) return;
+    return instance.handleCompleteAllTasks();
+}
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+// Phase 3 Step 1 - Clean exports (no window.* pollution)
+console.log('🎯 TaskCore module loaded (Phase 3 - no window.* exports)');
+
+export {
+    // TaskCore class already exported at line 21
+    taskCoreInstance,
+    addTask,
+    editTaskFromCore,
+    deleteTaskFromCore,
+    toggleTaskPriorityFromCore,
+    handleTaskCompletionChange,
+    saveCurrentTaskOrder,
+    saveTaskToSchema25,
+    resetTasks,
+    handleCompleteAllTasks
+};

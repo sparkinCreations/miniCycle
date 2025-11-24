@@ -347,12 +347,15 @@ function testDeviceDetection() {
   return initializeDeviceDetectionManager().testDeviceDetection();
 }
 
-// Make functions globally accessible
-if (typeof window !== 'undefined') {
-  window.DeviceDetectionManager = DeviceDetectionManager;
-  window.deviceDetectionManager = initializeDeviceDetectionManager();
-  window.runDeviceDetection = runDeviceDetection;
-  window.autoRedetectOnVersionChange = autoRedetectOnVersionChange;
-  window.reportDeviceCompatibility = reportDeviceCompatibility;
-  window.testDeviceDetection = testDeviceDetection;
-}
+// Phase 4 Step 1 - Clean exports (no window.* pollution)
+console.log('📱 DeviceDetection module loaded (Phase 4 - no window.* exports)');
+
+// ES6 exports (DeviceDetectionManager class already exported at line 19)
+export {
+  deviceDetectionManager,
+  initializeDeviceDetectionManager,
+  runDeviceDetection,
+  autoRedetectOnVersionChange,
+  reportDeviceCompatibility,
+  testDeviceDetection
+};

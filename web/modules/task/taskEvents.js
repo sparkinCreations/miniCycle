@@ -393,49 +393,63 @@ export function initTaskEvents(dependencies = {}) {
     // This sets up ONE listener for all tasks instead of one per task
     taskEvents.initEventDelegation();
 
+    // Expose on window for cross-module instance access
+    // (Needed due to versioned vs unversioned imports creating separate module instances)
+    window.taskEvents = taskEvents;
+
     return taskEvents;
 }
 
 // ============================================
 // Wrapper Functions
+// Note: Uses window.taskEvents as fallback for cross-module instance access
 // ============================================
 
 function handleTaskButtonClick(event) {
-    if (!taskEvents) {
+    const events = taskEvents || window.taskEvents;
+    if (!events) {
         console.warn('⚠️ TaskEvents not initialized');
         return;
     }
-    return taskEvents.handleTaskButtonClick(event);
+    return events.handleTaskButtonClick(event);
 }
 
 function toggleHoverTaskOptions(enableHover) {
-    if (!taskEvents) return;
-    taskEvents.toggleHoverTaskOptions(enableHover);
+    const events = taskEvents || window.taskEvents;
+    if (!events) return;
+    events.toggleHoverTaskOptions(enableHover);
 }
 
 function revealTaskButtons(taskItem, caller = 'three-dots-button') {
-    if (!taskEvents) return;
-    taskEvents.revealTaskButtons(taskItem, caller);
+    const events = taskEvents || window.taskEvents;
+    if (!events) return;
+    events.revealTaskButtons(taskItem, caller);
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {
-    if (!taskEvents) return;
-    taskEvents.syncRecurringStateToDOM(taskEl, recurringSettings);
+    const events = taskEvents || window.taskEvents;
+    if (!events) return;
+    events.syncRecurringStateToDOM(taskEl, recurringSettings);
 }
 
 function setupTaskInteractions(taskElements, taskContext) {
-    if (!taskEvents) return;
-    taskEvents.setupTaskInteractions(taskElements, taskContext);
+    const events = taskEvents || window.taskEvents;
+    if (!events) return;
+    events.setupTaskInteractions(taskElements, taskContext);
 }
 
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    if (!taskEvents) return;
-    taskEvents.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+    const events = taskEvents || window.taskEvents;
+    if (!events) return;
+    events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
 }
 
 // ============================================
 // Exports
 // ============================================
+
+// Phase 2 Step 10 - Clean exports (no window.* pollution)
+console.log('🎮 TaskEvents module loaded (Phase 2 - no window.* exports)');
 
 // ES6 exports
 export {
@@ -446,15 +460,3 @@ export {
     setupTaskInteractions,
     setupTaskClickInteraction
 };
-
-// Window exports (CRITICAL for ES6 module scope)
-window.TaskEvents = TaskEvents;
-window.initTaskEvents = initTaskEvents;
-window.handleTaskButtonClick = handleTaskButtonClick;
-window.toggleHoverTaskOptions = toggleHoverTaskOptions;
-window.revealTaskButtons = revealTaskButtons;
-window.syncRecurringStateToDOM = syncRecurringStateToDOM;
-window.setupTaskInteractions = setupTaskInteractions;
-window.setupTaskClickInteraction = setupTaskClickInteraction;
-
-console.log('🎮 TaskEvents module loaded and ready');

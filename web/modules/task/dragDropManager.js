@@ -676,41 +676,50 @@ async function initDragDropManager(dependencies = {}) {
 
     dragDropManager = new DragDropManager(dependencies);
     await dragDropManager.init(); // Await async init
+
+    // Expose on window for cross-module instance access
+    // (Needed due to versioned vs unversioned imports creating separate module instances)
+    window.dragDropManager = dragDropManager;
+
     return dragDropManager;
 }
 
 /**
  * Enable drag and drop on a task element
  * @param {HTMLElement} taskElement - The task element
+ * Note: Uses window.dragDropManager as fallback for cross-module instance access
  */
 function enableDragAndDropOnTask(taskElement) {
-    if (!dragDropManager) {
+    const manager = dragDropManager || window.dragDropManager;
+    if (!manager) {
         console.warn('⚠️ DragDropManager not initialized - call initDragDropManager() first');
         return;
     }
-    dragDropManager.enableDragAndDrop(taskElement);
+    manager.enableDragAndDrop(taskElement);
 }
 
 /**
  * Update move arrows visibility
  */
 function updateMoveArrowsVisibility() {
-    if (!dragDropManager) {
+    const manager = dragDropManager || window.dragDropManager;
+    if (!manager) {
         console.warn('⚠️ DragDropManager not initialized');
         return;
     }
-    dragDropManager.updateMoveArrowsVisibility();
+    manager.updateMoveArrowsVisibility();
 }
 
 /**
  * Toggle arrow visibility
  */
 function toggleArrowVisibility() {
-    if (!dragDropManager) {
+    const manager = dragDropManager || window.dragDropManager;
+    if (!manager) {
         console.warn('⚠️ DragDropManager not initialized');
         return;
     }
-    dragDropManager.toggleArrowVisibility();
+    manager.toggleArrowVisibility();
 }
 
 /**
@@ -718,22 +727,16 @@ function toggleArrowVisibility() {
  * @param {boolean} showArrows - Whether to show arrows
  */
 function updateArrowsInDOM(showArrows) {
-    if (!dragDropManager) {
+    const manager = dragDropManager || window.dragDropManager;
+    if (!manager) {
         console.warn('⚠️ DragDropManager not initialized');
         return;
     }
-    dragDropManager.updateArrowsInDOM(showArrows);
+    manager.updateArrowsInDOM(showArrows);
 }
+
+// Phase 2 Step 9 - Clean exports (no window.* pollution)
+console.log('🔄 DragDropManager module loaded (Phase 2 - no window.* exports)');
 
 // Export for ES6 modules
 export { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM };
-
-// Global wrappers for backward compatibility
-window.DragDropManager = DragDropManager;
-window.initDragDropManager = initDragDropManager;
-window.DragAndDrop = enableDragAndDropOnTask; // Backward compatible with old function name
-window.updateMoveArrowsVisibility = updateMoveArrowsVisibility;
-window.toggleArrowVisibility = toggleArrowVisibility;
-window.updateArrowsInDOM = updateArrowsInDOM;
-
-console.log('🔄 DragDropManager module loaded and ready');

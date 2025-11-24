@@ -500,8 +500,8 @@ export class MiniCycleDueDates {
 // MODULE INITIALIZATION & GLOBAL EXPORTS
 // ============================================
 
-// Expose class globally for testing
-window.MiniCycleDueDates = MiniCycleDueDates;
+// Phase 2 Step 5 - Clean exports (no window.* pollution)
+console.log('📅 DueDates module loaded (Phase 2 - no window.* exports)');
 
 let dueDatesManager = null;
 
