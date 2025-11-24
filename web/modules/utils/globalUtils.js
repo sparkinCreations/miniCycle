@@ -654,55 +654,17 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
 };
 
 // ===========================================
-// 🌐 GLOBAL FUNCTION REGISTRATION
+// 🌐 EXPORTS (Phase 2 - No window.* pollution)
+// ===========================================
+//
+// Phase 2 Change: GlobalUtils no longer assigns to window.*
+// All access goes through window.miniCycle.utils.* (via namespace.js)
+//
+// Backward compatibility maintained by Phase 1 wrapper in namespace.js
+// which delegates window.miniCycle.utils.* → GlobalUtils methods
 // ===========================================
 
-// Make core functions globally accessible for backward compatibility
-window.safeAddEventListener = GlobalUtils.safeAddEventListener;
-window.safeAddEventListenerById = GlobalUtils.safeAddEventListenerById;
-window.safeAddEventListenerBySelector = GlobalUtils.safeAddEventListenerBySelector;
-window.safeRemoveEventListener = GlobalUtils.safeRemoveEventListener;
-window.safeRemoveEventListenerById = GlobalUtils.safeRemoveEventListenerById;
-window.safeGetElementById = GlobalUtils.safeGetElementById;
-window.safeQuerySelectorAll = GlobalUtils.safeQuerySelectorAll;
-window.safeSetInnerHTML = GlobalUtils.safeSetInnerHTML;
-window.safeSetTextContent = GlobalUtils.safeSetTextContent;
-window.safeToggleClass = GlobalUtils.safeToggleClass;
-window.safeAddClass = GlobalUtils.safeAddClass;
-window.safeRemoveClass = GlobalUtils.safeRemoveClass;
-
-// Make utility functions globally accessible
-window.debounce = GlobalUtils.debounce;
-window.throttle = GlobalUtils.throttle;
-window.isElementInViewport = GlobalUtils.isElementInViewport;
-window.generateId = GlobalUtils.generateId;
-window.sanitizeInput = GlobalUtils.sanitizeInput;
-window.escapeHtml = GlobalUtils.escapeHtml;
-window.safeSetInnerHTMLWithEscape = GlobalUtils.safeSetInnerHTMLWithEscape;
-
-// Make safe storage/JSON utilities globally accessible
-window.safeLocalStorageGet = GlobalUtils.safeLocalStorageGet;
-window.safeLocalStorageSet = GlobalUtils.safeLocalStorageSet;
-window.safeLocalStorageRemove = GlobalUtils.safeLocalStorageRemove;
-window.safeJSONParse = GlobalUtils.safeJSONParse;
-window.safeJSONStringify = GlobalUtils.safeJSONStringify;
-
-// Make notification utility functions globally accessible
-window.generateNotificationId = GlobalUtils.generateNotificationId;
-window.generateHashId = GlobalUtils.generateHashId;
-
-// Make deleteWhenComplete utilities globally accessible
-window.validateDeleteSettings = GlobalUtils.validateDeleteSettings;
-window.syncTaskDeleteWhenCompleteDOM = GlobalUtils.syncTaskDeleteWhenCompleteDOM.bind(GlobalUtils);
-window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode.bind(GlobalUtils);
-
-// Make task options customizer constants globally accessible
-window.DEFAULT_TASK_OPTION_BUTTONS = DEFAULT_TASK_OPTION_BUTTONS;
-
-// Make the class itself globally accessible
-window.GlobalUtils = GlobalUtils;
-
-console.log('🛠️ GlobalUtils module loaded - all utilities available globally');
+console.log('🛠️ GlobalUtils module loaded (Phase 2 - no window.* exports)');
 
 export default GlobalUtils;
 

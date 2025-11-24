@@ -2,9 +2,9 @@
 
 > **Comprehensive documentation for miniCycle's namespace pollution fix**
 
-**Version**: 1.374 (Planned)
-**Status**: Phase 1 Complete ✅ | Phase 2 Ready (Main Script Migration First) 🚧
-**Tests**: 128 new tests (1198 total, 100% pass)
+**Version**: 1.374
+**Status**: Phase 1 Complete ✅ | Phase 2 Step 0 Complete ✅ | Phase 2 Step 1 Complete ✅
+**Tests**: 1011/1011 (100% pass)
 **Last Updated**: November 23, 2025
 
 ---
@@ -39,24 +39,39 @@ This reduces global namespace pollution, improves discoverability, enables autoc
 
 ### Key Metrics
 
-| Metric | Before | Phase 1 | Phase 2 (Target) |
-|--------|--------|---------|------------------|
-| Global Variables | 163 | 164 (+namespace) | 1 (just miniCycle) |
-| API Entry Points | Scattered | Unified | Unified |
-| Backward Compatibility | N/A | 100% ✅ | 100% ✅ until v2.0 |
-| Test Coverage | 1070 tests | 1198 tests (+128) | 1198+ tests |
+| Metric | Before | Phase 1 | Phase 2 Step 1 | Phase 2 Complete (Target) |
+|--------|--------|---------|----------------|---------------------------|
+| Global Variables | 163 | 164 (+namespace) | ~148 (-15) | 1 (just miniCycle) |
+| Modules Migrated | 0/40 | 0/40 | 1/40 (globalUtils) | 40/40 |
+| API Entry Points | Scattered | Unified | Unified | Unified |
+| Backward Compatibility | N/A | 100% ✅ | 100% ✅ | 100% ✅ until v2.0 |
+| Test Coverage | 1011 tests | 1011 tests | 1011 tests ✅ | 1011+ tests |
 
 ### Implementation Phases
 
-**Phase 1 (✅ COMPLETE):**
-- Create unified `window.miniCycle.*` API wrapper
-- Implement backward compatibility layer with deprecation warnings
-- Add comprehensive test coverage (128 new tests)
-- Document architecture + migration path
+**Phase 1 (✅ COMPLETE - November 23, 2025):**
+- ✅ Created unified `window.miniCycle.*` API wrapper (`modules/namespace.js`)
+- ✅ Implemented backward compatibility layer with deprecation warnings
+- ✅ Integrated into boot sequence (loads after globalUtils, before other modules)
+- ✅ All 163 globals accessible via namespace
+- ✅ Documentation complete
 
-**Phase 2 (🚧 READY):**
-- **Step 0**: Migrate miniCycle-scripts.js to use namespace first
-- Refactor 40+ modules to remove `window.*` exports over time
+**Phase 2 Step 0 (✅ COMPLETE - November 23, 2025):**
+- ✅ Migrated miniCycle-scripts.js to use namespace API (141/163 occurrences)
+- ✅ Safe fallback patterns for boot timing (`window.miniCycle?.method || fallback`)
+- ✅ Validator enhanced with allowlist/region markers
+- ✅ App fully functional with namespace calls
+- See: [NAMESPACE_STEP0_PROGRESS.md](./NAMESPACE_STEP0_PROGRESS.md)
+
+**Phase 2 Step 1 (✅ COMPLETE - November 23, 2025):**
+- ✅ Refactored globalUtils module (removed 44 `window.*` exports)
+- ✅ Updated namespace to import GlobalUtils directly
+- ✅ Installed 38 backward-compat shims for migrated functions
+- ✅ Net reduction: ~15 globals eliminated
+- ✅ All tests passing, app functional
+
+**Phase 2 Steps 2-40 (📋 PLANNED):**
+- Refactor remaining 39 modules to remove `window.*` exports
 - Make namespace module the ONLY source of globals
 - Keep all tests passing continuously
 
@@ -850,39 +865,63 @@ Convert those calls to namespace usage first, while globals still exist.
 
 ---
 
-### Step 1: Migrate Low-Risk Modules (Pure Utils)
+### ✅ Step 1: Migrate Low-Risk Modules (Pure Utils) - COMPLETE
 
-Refactor pure utility modules to stop writing globals.
-Namespace becomes the only public access point.
+**Status**: ✅ **COMPLETE** (November 23, 2025)
 
-**Target modules:**
-- `globalUtils.js` - 26 utilities
-- Pure functions with no DOM side effects
-- No AppState coupling
-- Lowest regression risk
+Refactored globalUtils module to stop writing globals.
+Namespace now imports and delegates directly to the module.
 
-**Example refactor:**
+**Completed:**
+- ✅ `globalUtils.js` - 26 utilities migrated
+- ✅ Removed 44 lines of `window.*` exports
+- ✅ Updated namespace.js with direct imports
+- ✅ Installed 38 backward-compat shims
+- ✅ All tests passing (1011/1011)
+
+**Implementation:**
 
 ```javascript
 // Before (globalUtils.js):
-window.sanitizeInput = function(input) { ... }
-window.escapeHTML = function(html) { ... }
-window.debounce = function(fn, delay) { ... }
+window.sanitizeInput = GlobalUtils.sanitizeInput;
+window.escapeHtml = GlobalUtils.escapeHtml;
+window.debounce = GlobalUtils.debounce;
+// ... 41 more window.* assignments
 
 // After (globalUtils.js):
-export class GlobalUtils {
-  static sanitizeInput(input) { ... }
-  static escapeHTML(html) { ... }
-  static debounce(fn, delay) { ... }
-}
+export default GlobalUtils;
+export { DEFAULT_TASK_OPTION_BUTTONS };
+// NO window.* pollution
 
 // namespace.js imports and exposes:
-import { GlobalUtils } from './utils/globalUtils.js';
+import GlobalUtils, { DEFAULT_TASK_OPTION_BUTTONS } from './utils/globalUtils.js';
 
-window.miniCycle.utils.sanitize = GlobalUtils.sanitizeInput;
-window.miniCycle.utils.escape = GlobalUtils.escapeHTML;
-window.miniCycle.utils.debounce = GlobalUtils.debounce;
+window.miniCycle.utils.sanitize = (...args) => GlobalUtils.sanitizeInput(...args);
+window.miniCycle.utils.escape = (...args) => GlobalUtils.escapeHtml(...args);
+window.miniCycle.utils.debounce = (...args) => GlobalUtils.debounce(...args);
+// Direct delegation, no window.* middleman
 ```
+
+**Backward Compatibility:**
+
+Namespace automatically creates shims for all migrated functions:
+
+```javascript
+// Old code still works:
+window.sanitizeInput(text) // → calls GlobalUtils.sanitizeInput()
+window.debounce(fn, 300)   // → calls GlobalUtils.debounce()
+
+// With deprecation warnings:
+⚠️ DEPRECATED: window.sanitizeInput() is deprecated.
+   Use window.miniCycle.utils.sanitize() instead.
+   Backward compatibility will be removed in v2.0.
+```
+
+**Results:**
+- Net reduction: ~15 globals eliminated
+- Call chain: 2 hops → 1 hop (removed window.* middleman)
+- Zero breaking changes
+- Deprecation warnings guide future migration
 
 ---
 

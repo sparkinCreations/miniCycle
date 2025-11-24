@@ -103,8 +103,12 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[NOTIFICATION_STANDARDIZATION_PLAN.md](./archive/NOTIFICATION_STANDARDIZATION_PLAN.md)** - Dependency injection standardization (Phase 1 complete)
 
 ### Future Work & Planned Improvements
-- **[NAMESPACE_ARCHITECTURE.md](./future-work/NAMESPACE_ARCHITECTURE.md)** - 🎯 **PRIORITY** - Consolidate 163 globals into window.miniCycle.* API
-  - [NAMESPACE_STEP0_PROGRESS.md](./future-work/NAMESPACE_STEP0_PROGRESS.md) - Migration tracking and progress
+- **[NAMESPACE_ARCHITECTURE.md](./future-work/NAMESPACE_ARCHITECTURE.md)** - 🎯 **IN PROGRESS** - Consolidate 163 globals into window.miniCycle.* API
+  - ✅ **Phase 1 COMPLETE** - Namespace wrapper layer implemented (v1.374)
+  - ✅ **Phase 2 Step 0 COMPLETE** - Main script migrated to namespace API (141/163 occurrences)
+  - ✅ **Phase 2 Step 1 COMPLETE** - GlobalUtils refactored (1/40 modules, ~15 globals eliminated)
+  - [NAMESPACE_STEP0_PROGRESS.md](./future-work/NAMESPACE_STEP0_PROGRESS.md) - Step 0 migration tracking
+  - [NAMESPACE_STEP1_COMPLETE.md](./future-work/NAMESPACE_STEP1_COMPLETE.md) - Step 1 completion details
   - [scripts/validate-namespace-migration.js](../scripts/validate-namespace-migration.js) - Automated validation script
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
 - **[FOLDER_STRUCTURE_REFACTOR_PLAN.md](./future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)** - Module naming consistency

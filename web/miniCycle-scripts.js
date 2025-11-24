@@ -330,6 +330,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await import(withV('./modules/utils/globalUtils.js'));
     console.log('🛠️ Global utilities loaded');
 
+    // ✅ Initialize Namespace (Phase 1 wrapper layer)
+    const { initializeNamespace, installDeprecationWarnings } = await import('./modules/namespace.js');
+    initializeNamespace();
+    installDeprecationWarnings();
+    console.log('✅ Namespace API initialized (window.miniCycle.*)');
+
     // ✅ Load Error Handler (global error catching)
     await import(withV('./modules/utils/errorHandler.js'));
     console.log('🛡️ Global error handlers initialized');
