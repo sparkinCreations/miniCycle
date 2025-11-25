@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v197'; // Force cache refresh after Netlify CDN propagation
+var CACHE_VERSION = 'v198'; // Fix: Precache utilities with version parameters
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -33,7 +33,9 @@ var LITE_SHELL = [
   './lite/miniCycle-lite-scripts.js'
 ];
 
-var UTILITIES = [
+// ✅ FIX: Add version parameters to utilities to prevent stale cache issues
+// Build versioned utility URLs dynamically using APP_VERSION
+var UTILITIES_BASE = [
   './modules/core/appInit.js',
   './modules/core/appState.js',
   './modules/features/themeManager.js',
@@ -66,6 +68,11 @@ var UTILITIES = [
   './modules/ui/taskOptionsCustomizer.js',
   './modules/ui/undoRedoManager.js'
 ];
+
+// Generate versioned URLs
+var UTILITIES = UTILITIES_BASE.map(function(url) {
+  return url + '?v=' + APP_VERSION;
+});
 
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
