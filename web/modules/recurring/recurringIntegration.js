@@ -229,6 +229,9 @@ export async function initializeRecurringModules() {
             handleAfterReset: recurringCore.handleRecurringTasksAfterReset,
             watchTasks: recurringCore.watchRecurringTasks,
             catchUpMissedTasks: recurringCore.catchUpMissedRecurringTasks,
+            // Utility functions
+            calculateNextOccurrence: recurringCore.calculateNextOccurrence,
+            calculateNextOccurrences: recurringCore.calculateNextOccurrences,
             // Backward compatibility - redirect button visibility to panel
             updateRecurringButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
         };

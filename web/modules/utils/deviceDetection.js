@@ -132,32 +132,24 @@ export class DeviceDetectionManager {
     // ✅ Wait for core systems to be ready (AppState + data)
     await appInit.waitForCore();
 
-    const schemaData = this.loadMiniCycleData();
-    if (!schemaData) {
-      console.error('❌ Schema 2.5 data required for device detection');
+    // ✅ Use AppState only (no localStorage fallback)
+    if (!window.AppState?.isReady?.()) {
+      console.error('❌ AppState not ready for saveCompatibilityData');
       return;
     }
-    
+
     try {
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      if (!fullSchemaData) {
-        console.error('❌ No Schema 2.5 data found in localStorage');
-        return;
-      }
-      
-      if (!fullSchemaData.settings) fullSchemaData.settings = {};
-      
-      fullSchemaData.settings.deviceCompatibility = {
-        ...compatibilityData,
-        lastDetectionVersion: this.currentVersion,
-        detectionDate: new Date().toISOString()
-      };
-      
-      // Ensure metadata exists and update timestamp
-      if (!fullSchemaData.metadata) fullSchemaData.metadata = {};
-      fullSchemaData.metadata.lastModified = Date.now();
-      
-      localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+      await window.AppState.update(state => {
+        if (!state.settings) state.settings = {};
+
+        state.settings.deviceCompatibility = {
+          ...compatibilityData,
+          lastDetectionVersion: this.currentVersion,
+          detectionDate: new Date().toISOString()
+        };
+      }, true);
+
+      console.log('✅ Device compatibility data saved via AppState');
     } catch (error) {
       console.error('❌ Error saving compatibility data:', error);
     }
@@ -301,19 +293,21 @@ export class DeviceDetectionManager {
     await this.runDeviceDetection();
   }
 
-  clearDetectionData() {
-    try {
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      if (fullSchemaData.settings?.deviceCompatibility) {
-        delete fullSchemaData.settings.deviceCompatibility;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-        console.log('🧹 Cleared device compatibility from Schema 2.5');
+  async clearDetectionData() {
+    // ✅ Use AppState only (no localStorage fallback)
+    if (window.AppState?.isReady?.()) {
+      try {
+        await window.AppState.update(state => {
+          if (state?.settings?.deviceCompatibility) {
+            delete state.settings.deviceCompatibility;
+            console.log('🧹 Cleared device compatibility from Schema 2.5');
+          }
+        }, true);
+      } catch (error) {
+        console.error('❌ Error clearing Schema 2.5 compatibility:', error);
       }
-    } catch (error) {
-      console.error('❌ Error clearing Schema 2.5 compatibility:', error);
     }
-    
+
     // Also clear legacy keys for cleanup
     localStorage.removeItem('miniCycleForceFullVersion');
     console.log('🧹 Cleared device detection cache');

@@ -327,25 +327,74 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 
-    await import(withV('./modules/utils/globalUtils.js'));
+    // ============================================
+    // MODULE LOADING WITH DEPENDENCY COLLECTION
+    // All modules loaded with withV() for cache-busting
+    // Exports collected for namespace injection
+    // ============================================
+    const namespaceDeps = {};
+
+    // ✅ Load GlobalUtils
+    const globalUtilsModule = await import(withV('./modules/utils/globalUtils.js'));
+    const GlobalUtils = globalUtilsModule.default;
+    namespaceDeps.GlobalUtils = GlobalUtils;
+    namespaceDeps.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
+    // Expose to window immediately (needed before namespace shims)
+    window.GlobalUtils = GlobalUtils;
+    window.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
+    // Expose individual utility functions to window
+    window.safeAddEventListener = GlobalUtils.safeAddEventListener;
+    window.safeAddEventListenerById = GlobalUtils.safeAddEventListenerById;
+    window.safeRemoveEventListener = GlobalUtils.safeRemoveEventListener;
+    window.safeGetElementById = GlobalUtils.safeGetElementById;
+    window.safeQuerySelector = GlobalUtils.safeQuerySelector;
+    window.safeQuerySelectorAll = GlobalUtils.safeQuerySelectorAll;
+    window.safeSetInnerHTML = GlobalUtils.safeSetInnerHTML;
+    window.safeSetTextContent = GlobalUtils.safeSetTextContent;
+    window.safeToggleClass = GlobalUtils.safeToggleClass;
+    window.safeAddClass = GlobalUtils.safeAddClass;
+    window.safeRemoveClass = GlobalUtils.safeRemoveClass;
+    window.safeLocalStorageGet = GlobalUtils.safeLocalStorageGet;
+    window.safeLocalStorageSet = GlobalUtils.safeLocalStorageSet;
+    window.safeLocalStorageRemove = GlobalUtils.safeLocalStorageRemove;
+    window.safeJSONParse = GlobalUtils.safeJSONParse;
+    window.safeJSONStringify = GlobalUtils.safeJSONStringify;
+    window.sanitizeInput = GlobalUtils.sanitizeInput;
+    window.escapeHtml = GlobalUtils.escapeHtml;
+    window.debounce = GlobalUtils.debounce;
+    window.throttle = GlobalUtils.throttle;
+    window.generateId = GlobalUtils.generateId;
+    window.generateHashId = GlobalUtils.generateHashId;
+    window.generateNotificationId = GlobalUtils.generateNotificationId;
+    window.isElementInViewport = GlobalUtils.isElementInViewport;
     console.log('🛠️ Global utilities loaded');
 
-    // ✅ Initialize Namespace (Phase 1 wrapper layer)
-    const { initializeNamespace, installDeprecationWarnings } = await import('./modules/namespace.js');
-    initializeNamespace();
-    installDeprecationWarnings();
-    console.log('✅ Namespace API initialized (window.miniCycle.*)');
-
-    // ✅ Load Error Handler (global error catching)
-    await import(withV('./modules/utils/errorHandler.js'));
+    // ✅ Load Error Handler
+    const errorHandlerMod = await import(withV('./modules/utils/errorHandler.js'));
+    namespaceDeps.errorHandler = errorHandlerMod.default;
     console.log('🛡️ Global error handlers initialized');
 
-    const { default: consoleCapture } = await import(withV('./modules/utils/consoleCapture.js'));
-    window.consoleCapture = consoleCapture;
+    // ✅ Load Data Validator (needed before settingsManager)
+    const dataValidatorMod = await import(withV('./modules/utils/dataValidator.js'));
+    namespaceDeps.DataValidator = dataValidatorMod.DataValidator;
+    window.DataValidator = dataValidatorMod.DataValidator;
+    console.log('🛡️ Data Validator loaded');
 
-    const { MiniCycleNotifications } = await import(withV('./modules/utils/notifications.js'));
-    const notifications = new MiniCycleNotifications();
+    // ✅ Load Console Capture
+    const consoleCaptureMod = await import(withV('./modules/utils/consoleCapture.js'));
+    namespaceDeps.consoleCapture = consoleCaptureMod.default;
+    namespaceDeps.showAllCapturedLogs = consoleCaptureMod.showAllCapturedLogs;
+    namespaceDeps.clearAllConsoleLogs = consoleCaptureMod.clearAllConsoleLogs;
+    namespaceDeps.showMigrationErrorsOnly = consoleCaptureMod.showMigrationErrorsOnly;
+    namespaceDeps.getConsoleCaptureStats = consoleCaptureMod.getConsoleCaptureStats;
+    namespaceDeps.stopConsoleCapture = consoleCaptureMod.stopConsoleCapture;
+    window.consoleCapture = consoleCaptureMod.default;
 
+    // ✅ Load Notifications
+    const notificationsMod = await import(withV('./modules/utils/notifications.js'));
+    namespaceDeps.MiniCycleNotifications = notificationsMod.MiniCycleNotifications;
+    namespaceDeps.EducationalTipManager = notificationsMod.EducationalTipManager;
+    const notifications = new notificationsMod.MiniCycleNotifications();
     window.notifications = notifications;
     window.showNotification = function(message, type, duration) {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
@@ -353,25 +402,67 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     };
     console.log('✅ Notifications loaded');
 
-    // ✅ Load Theme Manager (core visual system)
-    await import(withV('./modules/features/themeManager.js'));
+    // ✅ Load Theme Manager
+    const themeManagerMod = await import(withV('./modules/features/themeManager.js'));
+    namespaceDeps.ThemeManager = themeManagerMod.default;
+    namespaceDeps.themeManager = themeManagerMod.themeManager;
+    namespaceDeps.applyTheme = themeManagerMod.applyTheme;
+    namespaceDeps.updateThemeColor = themeManagerMod.updateThemeColor;
+    namespaceDeps.setupDarkModeToggle = themeManagerMod.setupDarkModeToggle;
+    namespaceDeps.setupQuickDarkToggle = themeManagerMod.setupQuickDarkToggle;
+    namespaceDeps.unlockDarkOceanTheme = themeManagerMod.unlockDarkOceanTheme;
+    namespaceDeps.unlockGoldenGlowTheme = themeManagerMod.unlockGoldenGlowTheme;
+    namespaceDeps.initializeThemesPanel = themeManagerMod.initializeThemesPanel;
+    namespaceDeps.refreshThemeToggles = themeManagerMod.refreshThemeToggles;
+    namespaceDeps.setupThemesPanel = themeManagerMod.setupThemesPanel;
+    namespaceDeps.setupThemesPanelWithData = themeManagerMod.setupThemesPanelWithData;
+    // Expose to window immediately (needed before namespace shims)
+    window.ThemeManager = themeManagerMod.default;
+    window.themeManager = themeManagerMod.themeManager;
+    window.applyTheme = themeManagerMod.applyTheme;
+    window.updateThemeColor = themeManagerMod.updateThemeColor;
+    window.setupDarkModeToggle = themeManagerMod.setupDarkModeToggle;
+    window.setupQuickDarkToggle = themeManagerMod.setupQuickDarkToggle;
+    window.unlockDarkOceanTheme = themeManagerMod.unlockDarkOceanTheme;
+    window.unlockGoldenGlowTheme = themeManagerMod.unlockGoldenGlowTheme;
+    window.initializeThemesPanel = themeManagerMod.initializeThemesPanel;
+    window.refreshThemeToggles = themeManagerMod.refreshThemeToggles;
+    window.setupThemesPanel = themeManagerMod.setupThemesPanel;
+    window.setupThemesPanelWithData = themeManagerMod.setupThemesPanelWithData;
     console.log('✅ Theme Manager loaded');
 
-    // ✅ Load Games Manager (simple UI component)
-    await import(withV('./modules/ui/gamesManager.js'));
+    // ✅ Load Games Manager
+    const gamesManagerMod = await import(withV('./modules/ui/gamesManager.js'));
+    namespaceDeps.GamesManager = gamesManagerMod.default;
+    namespaceDeps.gamesManager = gamesManagerMod.gamesManager;
+    // Expose to window immediately
+    window.GamesManager = gamesManagerMod.default;
+    window.gamesManager = gamesManagerMod.gamesManager;
+    window.unlockMiniGame = (...args) => gamesManagerMod.gamesManager?.unlockMiniGame?.(...args);
+    window.checkGamesUnlock = (...args) => gamesManagerMod.gamesManager?.checkGamesUnlock?.(...args);
     console.log('✅ Games Manager loaded');
 
-    // ✅ Load Onboarding Manager (simple UI component)
-    await import(withV('./modules/ui/onboardingManager.js'));
+    // ✅ Load Onboarding Manager
+    const onboardingManagerMod = await import(withV('./modules/ui/onboardingManager.js'));
+    namespaceDeps.OnboardingManager = onboardingManagerMod.default;
+    namespaceDeps.onboardingManager = onboardingManagerMod.onboardingManager;
     console.log('✅ Onboarding Manager loaded');
 
-    // ✅ Load Modal Manager (UI coordination)
-    await import(withV('./modules/ui/modalManager.js'));
+    // ✅ Load Modal Manager
+    const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
+    namespaceDeps.ModalManager = modalManagerMod.default;
+    namespaceDeps.modalManager = modalManagerMod.modalManager;
     console.log('✅ Modal Manager loaded');
 
-    // ✅ Load Migration Manager FIRST (before anything tries to use it)
+    // ✅ Load Migration Manager
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./modules/cycle/migrationManager.js'));
+    namespaceDeps.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
+    namespaceDeps.performSchema25Migration = migrationMod.performSchema25Migration;
+    namespaceDeps.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
+    namespaceDeps.simulateMigrationToSchema25 = migrationMod.simulateMigrationToSchema25;
+    namespaceDeps.validateAllMiniCycleTasksLenient = migrationMod.validateAllMiniCycleTasksLenient;
+    namespaceDeps.forceAppMigration = migrationMod.forceAppMigration;
 
     migrationMod.setMigrationManagerDependencies({
       storage: localStorage,
@@ -393,6 +484,24 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.forceAppMigration = migrationMod.forceAppMigration;
 
     console.log('✅ Migration Manager loaded (Phase 1)');
+
+    // ============================================
+    // NAMESPACE INITIALIZATION
+    // Load namespace.js with versioning, inject collected deps
+    // ============================================
+    console.log('🌐 Initializing namespace (Pure Orchestrator Pattern)...');
+    const { initializeNamespace, installDeprecationWarnings, injectNamespaceDeps } = await import(withV('./modules/namespace.js'));
+
+    // Inject all collected module dependencies
+    injectNamespaceDeps(namespaceDeps);
+
+    // Initialize the namespace API (window.miniCycle.*)
+    initializeNamespace();
+
+    // Install backward-compatibility shims
+    installDeprecationWarnings();
+
+    console.log('✅ Namespace API initialized (window.miniCycle.*)');
 
     // ✅ NOW it's safe to set up UI components that may call loadMiniCycleData()
     console.log('🎨 Setting up UI components (after migration manager)...');
@@ -592,12 +701,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   try {
     console.log('🗃️ Initializing state module...');
 
-    const { createStateManager } = await import(withV('./modules/core/appState.js'));
+    const { createStateManager, resetStateManager } = await import(withV('./modules/core/appState.js'));
     window.AppState = createStateManager({
       showNotification: window.showNotification || console.log.bind(console),
       storage: localStorage,
       createInitialData: createInitialSchema25Data
     });
+
+    // ✅ Inject state module exports into namespace
+    namespaceDeps.createStateManager = createStateManager;
+    namespaceDeps.resetStateManager = resetStateManager;
+    namespaceDeps.appInit = appInit;
 
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
@@ -610,7 +724,20 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Drag & Drop Manager (Phase 2 module - waits for core internally)
         console.log('🔄 Initializing drag & drop manager...');
-        const { initDragDropManager, enableDragAndDropOnTask } = await import(withV('./modules/task/dragDropManager.js'));
+        const dragDropMod = await import(withV('./modules/task/dragDropManager.js'));
+        const { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM } = dragDropMod;
+
+        // Collect for namespace and expose to window
+        namespaceDeps.initDragDropManager = initDragDropManager;
+        namespaceDeps.enableDragAndDropOnTask = enableDragAndDropOnTask;
+        namespaceDeps.updateMoveArrowsVisibility = updateMoveArrowsVisibility;
+        namespaceDeps.toggleArrowVisibility = toggleArrowVisibility;
+        namespaceDeps.updateArrowsInDOM = updateArrowsInDOM;
+
+        // Expose to window immediately (needed before namespace shims)
+        window.updateMoveArrowsVisibility = updateMoveArrowsVisibility;
+        window.toggleArrowVisibility = toggleArrowVisibility;
+        window.updateArrowsInDOM = updateArrowsInDOM;
 
         await initDragDropManager({
           saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
@@ -679,8 +806,24 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log('🎨 Initializing task DOM module...');
         console.log('⏱️ CHECKPOINT: About to call initTaskDOMManager');
         try {
-            const { initTaskDOMManager } = await import(withV('./modules/task/taskDOM.js'));
+            const {
+                initTaskDOMManager,
+                extractTaskDataFromDOM,
+                createTaskDOMElements,
+                setupTaskInteractions,
+                finalizeTaskCreation,
+                loadTaskContext,
+                validateAndSanitizeTaskInput
+            } = await import(withV('./modules/task/taskDOM.js'));
             console.log('✅ taskDOM.js imported successfully');
+
+            // ✅ Expose taskDOM functions to window (needed by addTask and other modules)
+            window.extractTaskDataFromDOM = extractTaskDataFromDOM;
+            window.createTaskDOMElements = createTaskDOMElements;
+            window.setupTaskInteractions = setupTaskInteractions;
+            window.finalizeTaskCreation = finalizeTaskCreation;
+            window.loadTaskContext = loadTaskContext;
+            window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
 
             console.log('⏱️ CHECKPOINT: Calling initTaskDOMManager with dependencies...');
             await initTaskDOMManager({
@@ -854,7 +997,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 saveTaskToSchema25: (cycleId, cycleData) => window.saveTaskToSchema25?.(cycleId, cycleData),
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
-                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler)
+                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
+                AppState: () => window.AppState  // ✅ Inject AppState getter
             });
 
             console.log('✅ Due dates module initialized (Phase 2)');
@@ -895,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Cycle Switcher (Phase 2 module)
         console.log('🔄 Initializing cycle switcher module...');
         try {
-            const { initializeCycleSwitcher } = await import(withV('./modules/cycle/cycleSwitcher.js'));
+            const { initializeCycleSwitcher, switchMiniCycle, renameMiniCycle, deleteMiniCycle } = await import(withV('./modules/cycle/cycleSwitcher.js'));
 
             await initializeCycleSwitcher({
                 AppState: window.AppState,
@@ -916,6 +1060,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
+
+            // ✅ Expose cycle switcher functions to window (needed by main menu and other modules)
+            window.switchMiniCycle = switchMiniCycle;
+            window.renameMiniCycle = renameMiniCycle;
+            window.deleteMiniCycle = deleteMiniCycle;
 
             console.log('✅ Cycle switcher module initialized (Phase 2)');
         } catch (error) {
@@ -946,6 +1095,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
+
+            // Expose cycle manager functions to window (needed by onboardingManager and main menu)
+            window.showCycleCreationModal = () => window.cycleManager?.showCycleCreationModal?.();
+            window.createNewMiniCycle = () => window.cycleManager?.createNewMiniCycle?.();
 
             console.log('✅ Cycle manager module initialized (Phase 2)');
         } catch (error) {
@@ -1255,22 +1408,32 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Testing Modal modules (Phase 3)
         console.log('🔬 Loading testing modal modules...');
         try {
-            await import(withV('./modules/testing/testing-modal.js'));
+            const testingModalMod = await import(withV('./modules/testing/testing-modal.js'));
             console.log('✅ Testing modal loaded');
 
-            // ✅ Setup testing modal button handlers
-            if (typeof window.setupTestingModal === 'function') {
-                window.setupTestingModal();
+            // ✅ Setup testing modal button handlers (call directly from module export)
+            if (typeof testingModalMod.setupTestingModal === 'function') {
+                testingModalMod.setupTestingModal();
+                window.setupTestingModal = testingModalMod.setupTestingModal; // Expose for compatibility
                 console.log('✅ Testing modal initialized');
             } else {
-                console.warn('⚠️ setupTestingModal function not found');
+                console.warn('⚠️ setupTestingModal function not found in module');
             }
 
             // ✅ Initialize testing modal enhancements (keyboard shortcuts, etc.)
-            if (typeof window.initializeTestingModalEnhancements === 'function') {
-                window.initializeTestingModalEnhancements();
+            if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
+                testingModalMod.initializeTestingModalEnhancements();
+                window.initializeTestingModalEnhancements = testingModalMod.initializeTestingModalEnhancements;
                 console.log('✅ Testing modal enhancements initialized');
             }
+
+            // Expose other testing modal functions to window
+            if (testingModalMod.openStorageViewer) window.openStorageViewer = testingModalMod.openStorageViewer;
+            if (testingModalMod.closeStorageViewer) window.closeStorageViewer = testingModalMod.closeStorageViewer;
+            if (testingModalMod.appendToTestResults) window.appendToTestResults = testingModalMod.appendToTestResults;
+            if (testingModalMod.clearTestResults) window.clearTestResults = testingModalMod.clearTestResults;
+            if (testingModalMod.exportTestResults) window.exportTestResults = testingModalMod.exportTestResults;
+            if (testingModalMod.copyTestResults) window.copyTestResults = testingModalMod.copyTestResults;
 
             await import(withV('./modules/testing/testing-modal-integration.js'));
             console.log('✅ Testing modal integration loaded');
@@ -1651,15 +1814,13 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
     window.__pendingCycleLoad = true;
   }
     
-    // Get fresh data if not provided
+    // Get fresh data if not provided (read-only, safe to use loadMiniCycleData)
     if (!schemaData) {
         schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
     }
-    
-    if (!fullSchemaData) {
-        fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    }
-    
+
+    // ✅ REMOVED: fullSchemaData was loaded but never used (dead code)
+
     const { cycles, reminders, settings } = schemaData;
     const currentCycle = cycles[activeCycle];
     
@@ -1808,21 +1969,19 @@ function setupMiniCycleTitleListener() {
             if (newTitle !== oldTitle) {
                 console.log(`🔄 Title change detected: "${oldTitle}" → "${newTitle}"`);
 
-                // ✅ Update via AppState so undo captures oldState
+                // ✅ Update via AppState only (no direct localStorage fallback)
                 if (window.AppState?.isReady?.()) {
                     await window.AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
+                        const cid = state?.appState?.activeCycleId;
+                        const cycle = state?.data?.cycles?.[cid];
                         if (cycle) cycle.title = newTitle;
                     }, true);
                 } else {
-                    // Fallback to direct localStorage
-                    titleElement.textContent = newTitle;
-                    miniCycleData.title = newTitle;
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    fullSchemaData.data.cycles[activeCycle] = miniCycleData;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                    // ✅ AppState should always be ready by this point
+                    console.error('❌ Title update failed: AppState not ready');
+                    showNotification('Failed to save title change', 'error');
+                    titleElement.textContent = oldTitle; // Revert UI
+                    return;
                 }
 
                 // 🔄 Refresh UI
@@ -1841,72 +2000,45 @@ function setupMiniCycleTitleListener() {
  */
 // ✅ SIMPLE FIX: Just make this function async and await the state module update
 
-// ✅ SIMPLIFIED: Clean autosave with proper fallback strategy
-// ...near your autoSave() and autoSaveWithStateModule()...
-let __stateSaveWarnedOnce = false;
+// ✅ UNIFIED: Single autoSave through AppState only (no direct localStorage writes)
+// This prevents race conditions and double-writes that cause data loss
 
 async function autoSave(overrideTaskList = null, immediate = false) {
-  // Prefer state module when truly ready
-  if (window.AppState && typeof window.AppState.isReady === 'function' && window.AppState.isReady()
-      && typeof window.AppState.update === 'function') {
-    try {
-      return await autoSaveWithStateModule(overrideTaskList, immediate);
-    } catch (error) {
-      if (!__stateSaveWarnedOnce) {
-        console.warn('⚠️ State module save failed, using direct method:', error?.message || error);
-        __stateSaveWarnedOnce = true; // avoid log spam
-        // optional: reset after a while
-        setTimeout(() => { __stateSaveWarnedOnce = false; }, 5000);
+  // ✅ AppState must be ready - if not, this is a bug in initialization order
+  if (!window.AppState?.isReady?.()) {
+    console.error('❌ autoSave called before AppState ready - this should not happen after Phase 1');
+    console.error('❌ Skipping save to prevent data corruption');
+    return { success: false, error: 'AppState not ready' };
+  }
+
+  try {
+    const taskData = overrideTaskList || window.extractTaskDataFromDOM?.() || [];
+
+    await window.AppState.update(state => {
+      const activeCycle = state?.appState?.activeCycleId;
+      if (!activeCycle) {
+        throw new Error('No active cycle ID found in state');
       }
-      // fall through to direct save
-    }
+
+      const currentCycle = state?.data?.cycles?.[activeCycle];
+      if (!currentCycle) {
+        throw new Error(`Active cycle "${activeCycle}" not found in state`);
+      }
+
+      currentCycle.tasks = taskData;
+      // ✅ updateRecurringTemplates handled by recurringCore module (called via watcher)
+    }, immediate);
+
+    return { success: true, taskCount: taskData.length };
+  } catch (error) {
+    console.error('❌ autoSave failed:', error?.message || error);
+    return { success: false, error: error?.message || 'Unknown error' };
   }
-  return await directSave(overrideTaskList);
 }
 
-async function autoSaveWithStateModule(overrideTaskList = null, immediate = false) {
-  if (!window.AppState || typeof window.AppState.isReady !== 'function' || !window.AppState.isReady()
-      || typeof window.AppState.update !== 'function') {
-    throw new Error('State module not ready');
-  }
-
-  const taskData = overrideTaskList || extractTaskDataFromDOM();
-  await window.AppState.update(state => {
-    const activeCycle = state.appState.activeCycleId;
-    const currentCycle = state.data.cycles[activeCycle];
-    if (!currentCycle) throw new Error(`Active cycle "${activeCycle}" not found`);
-    currentCycle.tasks = taskData;
-    // ✅ updateRecurringTemplates now handled by recurringCore module (called via watcher)
-  }, immediate);
-
-  return { success: true, taskCount: taskData.length };
-}
-
-// ✅ SIMPLIFIED: Direct save method (fallback)
-async function directSave(overrideTaskList = null) {
-  const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-  if (!schemaData?.activeCycle) {
-    throw new Error('No active cycle found');
-  }
-
-  const { cycles, activeCycle } = schemaData;
-  const taskData = overrideTaskList || extractTaskDataFromDOM();
-  
-  console.log('📝 Direct saving tasks:', taskData.length);
-  
-  // Update Schema 2.5 structure
-  const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-  const currentCycle = fullSchemaData.data.cycles[activeCycle];
-
-  currentCycle.tasks = taskData;
-  // ✅ updateRecurringTemplates now handled by recurringCore module (called via watcher)
-  
-  fullSchemaData.metadata.lastModified = Date.now();
-  localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-  
-  console.log('✅ Direct save completed');
-  return { success: true, taskCount: taskData.length };
-}
+// ✅ REMOVED: directSave() function
+// Direct localStorage writes bypass AppState's conflict detection and debouncing,
+// causing race conditions and data loss. All saves now go through AppState.
 
 
 // ==========================================
@@ -2041,36 +2173,23 @@ async function updateCycleData(cycleId, updateFn, immediate = true) {
     }
 
     try {
-        // ✅ Use AppState if available (prevents race conditions)
-        if (window.AppState?.isReady?.()) {
-            // ✅ CRITICAL: Await the update to ensure state is saved before returning
-            await window.AppState.update(state => {
-                const cycle = state.data.cycles[cycleId];
-                if (cycle) {
-                    updateFn(cycle);
-                    console.log('✅ Cycle updated via AppState');
-                } else {
-                    console.warn(`⚠️ Cycle not found: ${cycleId}`);
-                }
-            }, immediate);
-            return true;
-        } else {
-            // ✅ Fallback to direct localStorage if AppState not ready
-            console.warn('⚠️ AppState not ready, using localStorage fallback');
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-
-            if (!fullSchemaData?.data?.cycles?.[cycleId]) {
-                console.error(`❌ Cycle not found in localStorage: ${cycleId}`);
-                return false;
-            }
-
-            const cycle = fullSchemaData.data.cycles[cycleId];
-            updateFn(cycle);
-            fullSchemaData.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            console.log('✅ Cycle updated via localStorage (fallback)');
-            return true;
+        // ✅ Use AppState only (no direct localStorage fallback to prevent race conditions)
+        if (!window.AppState?.isReady?.()) {
+            console.error('❌ updateCycleData called before AppState ready');
+            return false;
         }
+
+        // ✅ CRITICAL: Await the update to ensure state is saved before returning
+        await window.AppState.update(state => {
+            const cycle = state?.data?.cycles?.[cycleId];
+            if (cycle) {
+                updateFn(cycle);
+                console.log('✅ Cycle updated via AppState');
+            } else {
+                console.warn(`⚠️ Cycle not found: ${cycleId}`);
+            }
+        }, immediate);
+        return true;
     } catch (error) {
         console.error('❌ updateCycleData failed:', error);
         return false;
@@ -2251,18 +2370,21 @@ window.showNotificationWithTip = showNotificationWithTip;
  * Show a confirmation modal and call callback with boolean result
  */
 function showConfirmationModal(options) {
-  return notifications.showConfirmationModal(options);
+  // Call notifications directly via window to access the instance
+  return window.notifications?.showConfirmationModal?.(options);
 }
 
 function showPromptModal(options) {
-  return window.miniCycle.ui.modals.prompt(options);
+  // Call notifications directly to avoid circular reference with namespace
+  return window.notifications?.showPromptModal?.(options);
 }
 
 /**
- * Close all modals - delegated to modalManager
+ * Close all modals - delegated to modalManager directly
  */
 function closeAllModals() {
-  return window.miniCycle.ui.modals.closeAll();
+  // Call modalManager directly to avoid circular reference with namespace
+  return window.modalManager?.closeAllModals?.();
 }
 
 // ✅ Expose globally for backward compatibility
@@ -2359,17 +2481,19 @@ function updateProgressBar() {
     const totalTasks = taskList.children.length;
     const completedTasks = [...taskList.children].filter(task => task.querySelector("input").checked).length;
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-    
+
     // ✅ Add consistent animation for all progress updates
     progressBar.style.transition = "width 0.2s ease-out";
     progressBar.style.width = `${progress}%`;
-    
+
     // ✅ Clear transition after animation
     setTimeout(() => {
         progressBar.style.transition = "";
     }, 200);
-    
-    autoSave();
+
+    // ✅ REMOVED: autoSave() here - causes race condition during initialization
+    // Task completion saves explicitly via autoSave(null, true) in checkbox handler
+    // This prevents empty task list from being saved before tasks are loaded
 }
 // ✅ Expose for cycleSwitcher module
 window.updateProgressBar = updateProgressBar;
@@ -3871,30 +3995,35 @@ safeAddEventListener(menuButton, "click", function(event) {
 
 
 
-safeAddEventListenerById("reset-notification-position", "click", () => {
+safeAddEventListenerById("reset-notification-position", "click", async () => {
     console.log('🔄 Resetting notification position (Schema 2.5 only)...');
-    
-    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for reset notification position');
-        showNotification("❌ Schema 2.5 data required.", "error", 2000);
+
+    // ✅ Use AppState only (no direct localStorage writes)
+    if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for reset notification position');
+        showNotification("❌ Unable to reset position.", "error", 2000);
         return;
     }
-    
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-    
-    // Reset notification position in Schema 2.5
-    fullSchemaData.settings.notificationPosition = { x: 0, y: 0 };
-    fullSchemaData.settings.notificationPositionModified = false;
-    fullSchemaData.metadata.lastModified = Date.now();
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-    
-    console.log('✅ Notification position reset in Schema 2.5');
-    
-    // Reset UI position
-    resetNotificationPosition();
-    
-    showNotification("🔄 Notification position reset (Schema 2.5).", "success", 2000);
+
+    try {
+        await window.AppState.update(state => {
+            if (!state?.settings) {
+                state.settings = {};
+            }
+            state.settings.notificationPosition = { x: 0, y: 0 };
+            state.settings.notificationPositionModified = false;
+        }, true);
+
+        console.log('✅ Notification position reset in Schema 2.5');
+
+        // Reset UI position
+        resetNotificationPosition();
+
+        showNotification("🔄 Notification position reset.", "success", 2000);
+    } catch (error) {
+        console.error('❌ Failed to reset notification position:', error);
+        showNotification("❌ Failed to reset position.", "error", 2000);
+    }
 });
 
 document.getElementById("open-reminders-modal")?.addEventListener("click", () => {

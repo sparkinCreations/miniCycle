@@ -304,7 +304,7 @@ function updateDependentComponents() {
 
 /**
  * Persist cycle changes
- * ✅ FIX #4: Use AppState.update() instead of direct localStorage writes
+ * ✅ Uses AppState.update() only - no direct localStorage writes
  * to prevent race conditions with concurrent saves
  */
 async function saveCycleData(activeCycle, currentCycle) {
@@ -312,29 +312,17 @@ async function saveCycleData(activeCycle, currentCycle) {
   // This prevents conflicts with AppState initialization
   await appInit.waitForCore();
 
-  // ✅ FIX #4: Use AppState instead of direct localStorage write
+  // ✅ Use AppState only (no localStorage fallback)
   const appState = getAppState();
-  if (!appState || typeof appState.update !== 'function') {
-    console.warn('⚠️ AppState not available, falling back to direct save');
-    // Fallback to direct write only if AppState unavailable
-    const raw = localStorage.getItem('miniCycleData');
-    if (!raw) return;
-    try {
-      const full = JSON.parse(raw);
-      if (!full.data || !full.data.cycles) return;
-      full.data.cycles[activeCycle] = currentCycle;
-      if (full.metadata) full.metadata.lastModified = Date.now();
-      localStorage.setItem('miniCycleData', JSON.stringify(full));
-    } catch (e) {
-      console.error('❌ Failed to save cycle data', e);
-    }
+  if (!appState?.isReady?.()) {
+    console.error('❌ AppState not ready for saveCycleData - this should not happen after waitForCore()');
     return;
   }
 
   // Use AppState for coordinated saves
   try {
     await appState.update((state) => {
-      if (state.data?.cycles?.[activeCycle]) {
+      if (state?.data?.cycles?.[activeCycle]) {
         state.data.cycles[activeCycle] = currentCycle;
         console.log(`💾 Saved cycle "${activeCycle}" via AppState`);
       }

@@ -679,13 +679,24 @@ export class ThemeManager {
     }
     
     /**
-     * Save Schema 2.5 data to localStorage
+     * Save Schema 2.5 data via AppState
+     * @deprecated Use AppState.update() directly instead
      */
-    saveSchemaData(data) {
+    async saveSchemaData(data) {
+        // ✅ Wait for core systems to be ready before saving
+        await appInit.waitForCore();
+
+        // ✅ Use AppState only (no localStorage fallback)
+        if (!window.AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for saveSchemaData after waitForCore - this should not happen');
+            return;
+        }
+
         try {
-            data.metadata = data.metadata || {};
-            data.metadata.lastModified = Date.now();
-            localStorage.setItem("miniCycleData", JSON.stringify(data));
+            // Replace entire state data
+            await window.AppState.update(state => {
+                Object.assign(state, data);
+            }, true);
         } catch (error) {
             console.warn('⚠️ Schema data save failed:', error.message);
         }

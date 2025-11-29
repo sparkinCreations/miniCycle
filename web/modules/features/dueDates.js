@@ -30,7 +30,8 @@ export class MiniCycleDueDates {
             saveTaskToSchema25: dependencies.saveTaskToSchema25 || this.fallbackSave,
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener,
+            AppState: dependencies.AppState || (() => window.AppState)  // ✅ AppState getter function
         };
 
         // Store reference to auto reset toggle element (will be set in init)
@@ -126,13 +127,26 @@ export class MiniCycleDueDates {
         // Update task due date
         task.dueDate = newDueDate;
 
-        // Update the full schema data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Use AppState only (no localStorage fallback)
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for saveTaskDueDate');
+            return;
+        }
 
-        console.log(`✅ Due date updated for task "${task.text}": ${newDueDate || 'cleared'}`);
+        try {
+            await AppState.update(state => {
+                if (state?.data?.cycles?.[activeCycle]) {
+                    const taskToUpdate = state.data.cycles[activeCycle].tasks?.find(t => t.id === taskId);
+                    if (taskToUpdate) {
+                        taskToUpdate.dueDate = newDueDate;
+                    }
+                }
+            }, true);
+            console.log(`✅ Due date updated for task "${task.text}": ${newDueDate || 'cleared'}`);
+        } catch (error) {
+            console.error('❌ Error saving task due date:', error);
+        }
     }
 
     /**
@@ -145,15 +159,16 @@ export class MiniCycleDueDates {
         const tasks = taskToCheck ? [taskToCheck] : this.deps.querySelectorAll(".task");
         let autoReset = this.toggleAutoReset?.checked || false;
 
-        // ✅ Get overdue states from Schema 2.5 instead of separate localStorage key
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for checkOverdueTasks');
+        // ✅ Use AppState only (no localStorage fallback)
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for checkOverdueTasks');
             return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        let overdueTaskStates = fullSchemaData.appState.overdueTaskStates || {};
+        // Get current overdue states from AppState
+        const currentState = AppState.get();
+        let overdueTaskStates = { ...(currentState?.appState?.overdueTaskStates || {}) };
 
         // ✅ Track tasks that just became overdue
         let newlyOverdueTasks = [];
@@ -194,10 +209,15 @@ export class MiniCycleDueDates {
             }
         });
 
-        // ✅ Save overdue states back to Schema 2.5
-        fullSchemaData.appState.overdueTaskStates = overdueTaskStates;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        // ✅ Save overdue states back via AppState
+        try {
+            await AppState.update(state => {
+                if (!state.appState) state.appState = {};
+                state.appState.overdueTaskStates = overdueTaskStates;
+            }, true);
+        } catch (error) {
+            console.error('❌ Error saving overdue states:', error);
+        }
 
         // ✅ Show notification ONLY if there are newly overdue tasks
         if (newlyOverdueTasks.length > 0) {
@@ -304,7 +324,7 @@ export class MiniCycleDueDates {
         if (!this.toggleAutoReset.dataset.dueDateListenerAdded) {
             this.toggleAutoReset.dataset.dueDateListenerAdded = true;
 
-            this.toggleAutoReset.addEventListener("change", () => {
+            this.toggleAutoReset.addEventListener("change", async () => {
                 console.log('🔄 Auto reset toggle changed for due dates:', this.toggleAutoReset.checked);
 
                 let autoReset = this.toggleAutoReset.checked;
@@ -313,20 +333,31 @@ export class MiniCycleDueDates {
                 const schemaData = this.deps.loadMiniCycleData();
                 if (!schemaData) {
                     console.error('❌ Schema 2.5 data required for due date toggle');
-                    throw new Error('Schema 2.5 data not found');
+                    return;
                 }
 
-                const { cycles, activeCycle } = schemaData;
+                const { activeCycle } = schemaData;
 
-                if (activeCycle && cycles[activeCycle]) {
-                    console.log('💾 Updating auto reset setting in Schema 2.5');
+                if (activeCycle) {
+                    console.log('💾 Updating auto reset setting via AppState');
 
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    fullSchemaData.data.cycles[activeCycle].autoReset = autoReset;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+                    // ✅ Use AppState only (no localStorage fallback)
+                    const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+                    if (!AppState?.isReady?.()) {
+                        console.error('❌ AppState not ready for auto reset toggle');
+                        return;
+                    }
 
-                    console.log('✅ Auto reset setting saved to Schema 2.5');
+                    try {
+                        await AppState.update(state => {
+                            if (state?.data?.cycles?.[activeCycle]) {
+                                state.data.cycles[activeCycle].autoReset = autoReset;
+                            }
+                        }, true);
+                        console.log('✅ Auto reset setting saved via AppState');
+                    } catch (error) {
+                        console.error('❌ Error saving auto reset setting:', error);
+                    }
                 } else {
                     console.warn('⚠️ No active cycle found for due date settings');
                 }
@@ -360,7 +391,7 @@ export class MiniCycleDueDates {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for handleDueDateChange');
-            throw new Error('Schema 2.5 data not found');
+            return;
         }
 
         const { cycles, activeCycle, reminders } = schemaData;
@@ -386,16 +417,25 @@ export class MiniCycleDueDates {
             newDueDate: dueDateValue
         });
 
-        // Update task due date
-        task.dueDate = dueDateValue;
+        // ✅ Use AppState only (no localStorage fallback)
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for handleDueDateChange');
+            return;
+        }
 
-        // Update the full schema data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-        console.log(`✅ Due date updated (Schema 2.5): "${task.text}" → ${dueDateValue || 'cleared'}`);
+        try {
+            await AppState.update(state => {
+                const taskToUpdate = state?.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
+                if (taskToUpdate) {
+                    taskToUpdate.dueDate = dueDateValue;
+                }
+            }, true);
+            console.log(`✅ Due date updated via AppState: "${task.text}" → ${dueDateValue || 'cleared'}`);
+        } catch (error) {
+            console.error('❌ Error saving due date:', error);
+            return;
+        }
 
         this.checkOverdueTasks(taskItem);
 

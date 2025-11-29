@@ -59,27 +59,21 @@ class EducationalTipManager {
     return this.dismissedTips;
   }
 
-  saveDismissedTips() {
+  async saveDismissedTips() {
     console.log('💾 Saving dismissed tips (Schema 2.5 only)...');
-    
+
     try {
-      // Check if loadMiniCycleData is available in global scope
-      if (typeof window.loadMiniCycleData !== 'function') {
-        console.error('❌ loadMiniCycleData not available for saveDismissedTips');
+      // ✅ Use AppState only (no localStorage fallback)
+      if (!window.AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for saveDismissedTips');
         return;
       }
 
-      const schemaData = window.loadMiniCycleData();
-      if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for saveDismissedTips');
-        return;
-      }
+      await window.AppState.update(state => {
+        if (!state.settings) state.settings = {};
+        state.settings.dismissedEducationalTips = this.getDismissedTips();
+      }, true);
 
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      fullSchemaData.settings.dismissedEducationalTips = this.getDismissedTips();
-      fullSchemaData.metadata.lastModified = Date.now();
-      localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-      
       console.log('✅ Dismissed tips saved to Schema 2.5');
     } catch (e) {
       console.error('❌ Error saving dismissed tips to Schema 2.5:', e);

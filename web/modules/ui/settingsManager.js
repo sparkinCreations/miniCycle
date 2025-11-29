@@ -8,8 +8,14 @@
  */
 
 import { appInit } from '../core/appInit.js';
-import { calculateNextOccurrence } from '../recurring/recurringCore.js';
-import { DataValidator } from '../utils/dataValidator.js';
+// ❌ REMOVED: Static imports cause duplicate module instances
+// These are loaded via withV() in miniCycle-scripts.js and exposed to window.*
+// import { calculateNextOccurrence } from '../recurring/recurringCore.js';
+// import { DataValidator } from '../utils/dataValidator.js';
+
+// Lazy accessors - use window.* which are populated by miniCycle-scripts.js
+const getDataValidator = () => window.DataValidator;
+const getCalculateNextOccurrence = () => window.recurringCore?.calculateNextOccurrence || window.calculateNextOccurrence;
 
 export class SettingsManager {
     constructor(dependencies = {}) {
@@ -175,31 +181,25 @@ export class SettingsManager {
 
             moveArrowsToggle.checked = moveArrowsEnabled;
 
-            moveArrowsToggle.addEventListener("change", () => {
+            moveArrowsToggle.addEventListener("change", async () => {
                 const enabled = moveArrowsToggle.checked;
 
                 console.log('🔄 Move arrows toggle changed:', enabled);
 
-                // ✅ Use state system if available
+                // ✅ Use AppState only (no localStorage fallback)
                 const AppState = this.deps.AppState();
                 if (AppState?.isReady?.()) {
-                    AppState.update(state => {
+                    await AppState.update(state => {
                         if (!state.ui) state.ui = {};
                         state.ui.moveArrowsVisible = enabled;
-                        state.metadata.lastModified = Date.now();
                     }, true); // immediate save
 
                     console.log('✅ Move arrows setting saved to state:', enabled);
                 } else {
-                    // ✅ Fallback to localStorage if state not ready
-                    console.warn('⚠️ AppState not ready, using localStorage fallback');
-                    const schemaData = this.deps.loadMiniCycleData();
-                    if (schemaData) {
-                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                        fullSchemaData.settings.showMoveArrows = enabled;
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                    }
+                    console.error('❌ AppState not ready - setting not saved');
+                    this.deps.showNotification?.('Failed to save setting', 'error');
+                    moveArrowsToggle.checked = !enabled; // Revert UI
+                    return;
                 }
 
                 this.deps.updateMoveArrowsVisibility();
@@ -236,30 +236,24 @@ export class SettingsManager {
             threeDotsToggle.checked = threeDotsEnabled;
             document.body.classList.toggle("show-three-dots-enabled", threeDotsEnabled);
 
-            threeDotsToggle.addEventListener("change", () => {
+            threeDotsToggle.addEventListener("change", async () => {
                 const enabled = threeDotsToggle.checked;
 
                 console.log('🔄 Three dots toggle changed:', enabled);
 
-                // ✅ Update through AppState if available (prevents race conditions)
+                // ✅ Use AppState only (no localStorage fallback)
                 const AppState = this.deps.AppState();
                 if (AppState?.isReady?.()) {
-                    AppState.update(state => {
+                    await AppState.update(state => {
                         if (!state.settings) state.settings = {};
                         state.settings.showThreeDots = enabled;
-                        state.metadata.lastModified = Date.now();
                     }, true); // immediate save
                     console.log('✅ Three dots setting saved to AppState:', enabled);
                 } else {
-                    // Fallback to direct localStorage update
-                    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                    if (fullSchemaData) {
-                        if (!fullSchemaData.settings) fullSchemaData.settings = {};
-                        fullSchemaData.settings.showThreeDots = enabled;
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                        console.log('✅ Three dots setting saved to localStorage:', enabled);
-                    }
+                    console.error('❌ AppState not ready - setting not saved');
+                    this.deps.showNotification?.('Failed to save setting', 'error');
+                    threeDotsToggle.checked = !enabled; // Revert UI
+                    return;
                 }
 
                 document.body.classList.toggle("show-three-dots-enabled", enabled);
@@ -292,32 +286,25 @@ export class SettingsManager {
 
             completedDropdownToggle.checked = completedDropdownEnabled;
 
-            completedDropdownToggle.addEventListener("change", () => {
+            completedDropdownToggle.addEventListener("change", async () => {
                 const enabled = completedDropdownToggle.checked;
 
                 console.log('🔄 Completed dropdown toggle changed:', enabled);
 
-                // ✅ Use state system if available
+                // ✅ Use AppState only (no localStorage fallback)
                 const AppState = this.deps.AppState();
                 if (AppState?.isReady?.()) {
-                    AppState.update(state => {
+                    await AppState.update(state => {
                         if (!state.settings) state.settings = {};
                         state.settings.showCompletedDropdown = enabled;
-                        state.metadata.lastModified = Date.now();
                     }, true); // immediate save
 
                     console.log('✅ Completed dropdown setting saved to state:', enabled);
                 } else {
-                    // ✅ Fallback to localStorage if state not ready
-                    console.warn('⚠️ AppState not ready, using localStorage fallback');
-                    const schemaData = this.deps.loadMiniCycleData();
-                    if (schemaData) {
-                        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-                        if (!fullSchemaData.settings) fullSchemaData.settings = {};
-                        fullSchemaData.settings.showCompletedDropdown = enabled;
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-                    }
+                    console.error('❌ AppState not ready - setting not saved');
+                    this.deps.showNotification?.('Failed to save setting', 'error');
+                    completedDropdownToggle.checked = !enabled; // Revert UI
+                    return;
                 }
 
                 // ✅ If enabling, organize existing completed tasks
@@ -708,17 +695,8 @@ export class SettingsManager {
      * Reset default recurring settings
      * Update reset recurring default for Schema 2.5 only
      */
-    resetDefaultRecurringSettings() {
+    async resetDefaultRecurringSettings() {
         console.log('🔁 Resetting recurring defaults (Schema 2.5 only)...');
-
-        const schemaData = localStorage.getItem("miniCycleData");
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for reset');
-            this.deps.showNotification("❌ No Schema 2.5 data found. Cannot reset defaults.", "error");
-            return;
-        }
-
-        const parsed = JSON.parse(schemaData);
 
         const defaultSettings = {
             frequency: "daily",
@@ -726,12 +704,19 @@ export class SettingsManager {
             time: null
         };
 
-        // Reset defaults in Schema 2.5
-        parsed.settings.defaultRecurringSettings = defaultSettings;
-        parsed.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(parsed));
+        // ✅ Use AppState only (no localStorage fallback)
+        const AppState = this.deps.AppState();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.defaultRecurringSettings = defaultSettings;
+            }, true);
 
-        this.deps.showNotification("🔁 Recurring default reset to Daily Indefinitely.", "success");
+            this.deps.showNotification("🔁 Recurring default reset to Daily Indefinitely.", "success");
+        } else {
+            console.error('❌ AppState not ready - settings not saved');
+            this.deps.showNotification("❌ Failed to reset defaults.", "error");
+        }
     }
 
     /**
@@ -935,7 +920,7 @@ export class SettingsManager {
 
                 // Validate task structure and sanitize text
                 try {
-                  return DataValidator.validateTask(taskData);
+                  return getDataValidator().validateTask(taskData);
                 } catch (error) {
                   console.warn(`⚠️ Skipping invalid task during import:`, error.message);
                   return null;
@@ -955,7 +940,7 @@ export class SettingsManager {
                       remindersEnabled: task.remindersEnabled || false,
                       recurring: true,
                       recurringSettings: structuredClone(task.recurringSettings),
-                      nextScheduledOccurrence: calculateNextOccurrence(task.recurringSettings, Date.now()),
+                      nextScheduledOccurrence: getCalculateNextOccurrence()(task.recurringSettings, Date.now()),
                       schemaVersion: 2
                     };
                     console.log(`✅ Created recurring template for imported task: ${task.id}`);
@@ -968,7 +953,7 @@ export class SettingsManager {
               // ✅ FIX #12: Validate and sanitize cycle title
               let cycleTitle = importedData.title || importedData.name || 'Imported Cycle';
               try {
-                cycleTitle = DataValidator.validateCycleName(cycleTitle);
+                cycleTitle = getDataValidator().validateCycleName(cycleTitle);
               } catch (error) {
                 console.warn(`⚠️ Invalid cycle title, using default:`, error.message);
                 cycleTitle = 'Imported Cycle';
@@ -1044,7 +1029,7 @@ export class SettingsManager {
     /**
      * Sync current settings to storage
      */
-    syncCurrentSettingsToStorage() {
+    async syncCurrentSettingsToStorage() {
         console.log('⚙️ Syncing current settings to storage (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
@@ -1073,14 +1058,20 @@ export class SettingsManager {
             deleteCheckedTasks: deleteCheckedTasks.checked
         });
 
-        // Update Schema 2.5 data
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.data.cycles[activeCycle].autoReset = toggleAutoReset.checked;
-        fullSchemaData.data.cycles[activeCycle].deleteCheckedTasks = deleteCheckedTasks.checked;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-
-        console.log('✅ Settings synced to Schema 2.5 successfully');
+        // ✅ Use AppState only (no localStorage fallback)
+        const AppState = this.deps.AppState();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                const cycle = state?.data?.cycles?.[activeCycle];
+                if (cycle) {
+                    cycle.autoReset = toggleAutoReset.checked;
+                    cycle.deleteCheckedTasks = deleteCheckedTasks.checked;
+                }
+            }, true);
+            console.log('✅ Settings synced to Schema 2.5 successfully');
+        } else {
+            console.error('❌ AppState not ready - settings not synced');
+        }
     }
 
     // Fallback methods

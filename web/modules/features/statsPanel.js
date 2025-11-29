@@ -869,63 +869,44 @@ export class StatsPanelManager {
      * @param {number} globalCyclesCompleted - Total cycles across all routines
      * @param {Object} milestoneUnlocks - Current unlock status
      */
-    unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks) {
-        // ✅ Use state-based updates instead of direct localStorage manipulation
-        if (window.AppState?.isReady?.()) {
-            let needsUpdate = false;
+    async unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks) {
+        // ✅ Use AppState only (no localStorage fallback)
+        if (!window.AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for unlockThemesIfEligible');
+            return;
+        }
 
-            window.AppState.update(state => {
-                // Unlock Golden Glow at 50 GLOBAL cycles
-                if (globalCyclesCompleted >= 50 && !milestoneUnlocks.goldenGlow) {
-                    if (!state.settings.unlockedThemes.includes("golden-glow")) {
-                        state.settings.unlockedThemes.push("golden-glow");
-                        state.userProgress.rewardMilestones.push("golden-glow-50");
-                        needsUpdate = true;
-                    }
-                }
+        let needsUpdate = false;
 
-                // Unlock Task Order Game at 100 GLOBAL cycles
-                if (globalCyclesCompleted >= 100 && !milestoneUnlocks.taskOrderGame) {
-                    if (!state.settings.unlockedFeatures.includes("task-order-game")) {
-                        state.settings.unlockedFeatures.push("task-order-game");
-                        state.userProgress.rewardMilestones.push("task-order-game-100");
-                        needsUpdate = true;
-                    }
-                }
-            }, needsUpdate); // ✅ FIX: Only immediate save if themes were actually unlocked
-
-            if (needsUpdate) {
-                console.log('✅ Themes/features unlocked via state system (global cycles)');
-            }
-        } else {
-            console.warn('⚠️ AppState not ready - using fallback localStorage approach');
-
-            // Fallback to old method if state not ready
-            const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-            if (!fullSchemaData) return;
-
-            let updated = false;
+        await window.AppState.update(state => {
+            // Ensure arrays exist
+            if (!state.settings) state.settings = {};
+            if (!state.settings.unlockedThemes) state.settings.unlockedThemes = [];
+            if (!state.settings.unlockedFeatures) state.settings.unlockedFeatures = [];
+            if (!state.userProgress) state.userProgress = {};
+            if (!state.userProgress.rewardMilestones) state.userProgress.rewardMilestones = [];
 
             // Unlock Golden Glow at 50 GLOBAL cycles
             if (globalCyclesCompleted >= 50 && !milestoneUnlocks.goldenGlow) {
-                if (!fullSchemaData.settings.unlockedThemes.includes("golden-glow")) {
-                    fullSchemaData.settings.unlockedThemes.push("golden-glow");
-                    updated = true;
+                if (!state.settings.unlockedThemes.includes("golden-glow")) {
+                    state.settings.unlockedThemes.push("golden-glow");
+                    state.userProgress.rewardMilestones.push("golden-glow-50");
+                    needsUpdate = true;
                 }
             }
 
             // Unlock Task Order Game at 100 GLOBAL cycles
             if (globalCyclesCompleted >= 100 && !milestoneUnlocks.taskOrderGame) {
-                if (!fullSchemaData.settings.unlockedFeatures.includes("task-order-game")) {
-                    fullSchemaData.settings.unlockedFeatures.push("task-order-game");
-                    updated = true;
+                if (!state.settings.unlockedFeatures.includes("task-order-game")) {
+                    state.settings.unlockedFeatures.push("task-order-game");
+                    state.userProgress.rewardMilestones.push("task-order-game-100");
+                    needsUpdate = true;
                 }
             }
+        }, needsUpdate); // ✅ Only immediate save if themes were actually unlocked
 
-            if (updated) {
-                fullSchemaData.metadata.lastModified = Date.now();
-                localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
-            }
+        if (needsUpdate) {
+            console.log('✅ Themes/features unlocked via state system (global cycles)');
         }
     }
 
@@ -1136,22 +1117,23 @@ export class StatsPanelManager {
 
     /**
      * Handle quick dark mode toggle
-     *
-    handleQuickDarkToggle() {
+     */
+    async handleQuickDarkToggle() {
         const isDark = document.body.classList.toggle("dark-mode");
-        
+
         console.log('🌙 Quick dark toggle (Schema 2.5 only)...');
-        
-        const schemaData = this.dependencies.loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for quick dark toggle');
+
+        // ✅ Use AppState only (no localStorage fallback)
+        if (!window.AppState?.isReady?.()) {
+            console.error('❌ AppState not ready for quick dark toggle');
+            document.body.classList.toggle("dark-mode"); // Revert
             return;
         }
 
-        const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-        fullSchemaData.settings.darkMode = isDark;
-        fullSchemaData.metadata.lastModified = Date.now();
-        localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        await window.AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.darkMode = isDark;
+        }, true);
 
         // Update theme color
         this.dependencies.updateThemeColor();
@@ -1169,8 +1151,6 @@ export class StatsPanelManager {
         
         console.log('✅ Quick dark toggle completed');
     }
-*/
-
 
     /**
      * Open themes panel
