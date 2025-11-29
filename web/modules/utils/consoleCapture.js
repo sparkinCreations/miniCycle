@@ -7,7 +7,7 @@
  * specifically designed for debugging migration processes.
  *
  * @module consoleCapture
- * @version 1.378
+ * @version 1.379
  */
 
 export class MiniCycleConsoleCapture {
