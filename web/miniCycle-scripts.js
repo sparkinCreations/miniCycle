@@ -812,6 +812,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 createTaskDOMElements,
                 createThreeDotsButton,
                 setupTaskInteractions,
+                setupRecurringButtonHandler,
                 finalizeTaskCreation,
                 loadTaskContext,
                 validateAndSanitizeTaskInput,
@@ -826,6 +827,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.createTaskDOMElements = createTaskDOMElements;
             window.createThreeDotsButton = createThreeDotsButton;
             window.setupTaskInteractions = setupTaskInteractions;
+            window.setupRecurringButtonHandler = setupRecurringButtonHandler;
             window.finalizeTaskCreation = finalizeTaskCreation;
             window.loadTaskContext = loadTaskContext;
             window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;

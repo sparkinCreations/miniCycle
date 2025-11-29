@@ -840,7 +840,7 @@ export function installDeprecationWarnings() {
     // Cycle loader shims
     if (modules.loadMiniCycle) window.loadMiniCycle = (...args) => modules.loadMiniCycle(...args);
 
-    // Recurring shims (use lazy evaluation through window.recurringCore)
+    // Recurring shims (use lazy evaluation through window.recurringCore and window.recurringPanel)
     window.applyRecurringToTaskSchema25 = (...args) => window.recurringCore?.applyRecurringSettings?.(...args);
     window.handleRecurringTaskActivation = (...args) => window.recurringCore?.handleActivation?.(...args);
     window.handleRecurringTaskDeactivation = (...args) => window.recurringCore?.handleDeactivation?.(...args);
@@ -849,6 +849,9 @@ export function installDeprecationWarnings() {
     window.handleRecurringTasksAfterReset = (...args) => window.recurringCore?.handleAfterReset?.(...args);
     window.watchRecurringTasks = (...args) => window.recurringCore?.watchTasks?.(...args);
     window.catchUpMissedRecurringTasks = (...args) => window.recurringCore?.catchUpMissedTasks?.(...args);
+    window.openRecurringSettingsPanelForTask = (...args) => window.recurringPanel?.openForTask?.(...args);
+    window.updateRecurringPanel = (...args) => window.recurringPanel?.updatePanel?.(...args);
+    window.updateRecurringSummary = (...args) => window.recurringPanel?.updateSummary?.(...args);
     if (modules.setupRecurringWatcher) window.setupRecurringWatcher = (...args) => modules.setupRecurringWatcher(...args);
     if (modules.buildRecurringSummaryFromSettings) window.buildRecurringSummaryFromSettings = (...args) => modules.buildRecurringSummaryFromSettings(...args);
 
