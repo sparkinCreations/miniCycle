@@ -852,6 +852,8 @@ export function installDeprecationWarnings() {
     window.openRecurringSettingsPanelForTask = (...args) => window.recurringPanel?.openForTask?.(...args);
     window.updateRecurringPanel = (...args) => window.recurringPanel?.updatePanel?.(...args);
     window.updateRecurringSummary = (...args) => window.recurringPanel?.updateSummary?.(...args);
+    window.updateRecurringButtonVisibility = (...args) => window.recurringPanel?.updateButtonVisibility?.(...args);
+    window.updateRecurringPanelButtonVisibility = (...args) => window.recurringPanel?.updateButtonVisibility?.(...args);
     if (modules.setupRecurringWatcher) window.setupRecurringWatcher = (...args) => modules.setupRecurringWatcher(...args);
     if (modules.buildRecurringSummaryFromSettings) window.buildRecurringSummaryFromSettings = (...args) => modules.buildRecurringSummaryFromSettings(...args);
 

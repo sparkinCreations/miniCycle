@@ -2055,6 +2055,8 @@ async function autoSave(overrideTaskList = null, immediate = false) {
 // Direct localStorage writes bypass AppState's conflict detection and debouncing,
 // causing race conditions and data loss. All saves now go through AppState.
 
+// ✅ Expose autoSave for modules that need it
+window.autoSave = autoSave;
 
 // ==========================================
 // 🔄 SCHEMA 2.5 MIGRATION SYSTEM. in migrationManager.js
@@ -2270,6 +2272,8 @@ function remindOverdueTasks() {
         console.log('✅ No overdue tasks found');
     }
 }
+// ✅ Expose for taskUtils module
+window.remindOverdueTasks = remindOverdueTasks;
 
 
 
