@@ -18,7 +18,7 @@
  * 3. miniCycle-scripts.js calls initializeNamespace() to create API
  * 4. miniCycle-scripts.js calls installDeprecationWarnings() for shims
  *
- * @version 1.380
+ * @version 1.381
  * @see docs/future-work/NAMESPACE_ARCHITECTURE.md
  */
 
@@ -285,7 +285,7 @@ export function initializeNamespace() {
     // Create the root namespace object
     window.miniCycle = {
         // Internal metadata
-        _version: '1.380',
+        _version: '1.381',
         _deprecationWarnings: new Set(),
 
         // ===================================
