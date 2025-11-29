@@ -539,6 +539,15 @@ export class TaskCore {
             const taskId = taskItem?.dataset?.taskId;
             const isCompleted = checkbox.checked;
 
+            // ✅ Capture state snapshot BEFORE making changes (for undo)
+            if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+                const currentState = this.deps.AppState?.get?.();
+                if (currentState) {
+                    window.captureStateSnapshot(currentState);
+                    console.log('📸 Captured snapshot before task completion change');
+                }
+            }
+
             // ✅ UPDATE: Save completion state to AppState/localStorage (only if taskId exists)
             if (taskId) {
                 // Update AppState if available

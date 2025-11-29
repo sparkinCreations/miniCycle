@@ -813,7 +813,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 setupTaskInteractions,
                 finalizeTaskCreation,
                 loadTaskContext,
-                validateAndSanitizeTaskInput
+                validateAndSanitizeTaskInput,
+                handleTaskButtonClick,
+                refreshUIFromState
             } = await import(withV('./modules/task/taskDOM.js'));
             console.log('✅ taskDOM.js imported successfully');
 
@@ -824,6 +826,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.finalizeTaskCreation = finalizeTaskCreation;
             window.loadTaskContext = loadTaskContext;
             window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
+            window.handleTaskButtonClick = handleTaskButtonClick;
+            window.refreshUIFromState = refreshUIFromState;
 
             console.log('⏱️ CHECKPOINT: Calling initTaskDOMManager with dependencies...');
             await initTaskDOMManager({
@@ -1231,7 +1235,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Task Core (Phase 2 module)
         console.log('🎯 Initializing task core module...');
         try {
-            const { initTaskCore } = await import(withV('./modules/task/taskCore.js'));
+            const { initTaskCore, handleTaskCompletionChange } = await import(withV('./modules/task/taskCore.js'));
+
+            // ✅ Expose handleTaskCompletionChange to window (needed by checkbox change listener)
+            window.handleTaskCompletionChange = handleTaskCompletionChange;
 
             await initTaskCore({
                 // State management
@@ -3042,15 +3049,27 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
     
     safeAddEventListener(checkbox, "change", () => {
         // ✅ Enable undo system on first user interaction
-        enableUndoSystemOnFirstInteraction();
+        if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
+            window.enableUndoSystemOnFirstInteraction();
+        }
 
-        handleTaskCompletionChange(checkbox);
-        checkMiniCycle();
+        // ✅ FIX: Use window. prefix to ensure function is found
+        if (typeof window.handleTaskCompletionChange === 'function') {
+            window.handleTaskCompletionChange(checkbox);
+        } else {
+            console.warn('⚠️ handleTaskCompletionChange not available');
+        }
+
+        if (typeof checkMiniCycle === 'function') {
+            checkMiniCycle();
+        }
         autoSave(null, true);  // ✅ FIX: Force immediate save on task completion
         triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
 
         // ✅ Update undo/redo button states
-        updateUndoRedoButtons();
+        if (typeof window.updateUndoRedoButtons === 'function') {
+            window.updateUndoRedoButtons();
+        }
 
         console.log("✅ Task completion toggled — undo snapshot pushed.");
     });

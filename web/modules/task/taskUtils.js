@@ -213,10 +213,10 @@ export class TaskUtils {
         }
 
         // Enable drag and drop
-        if (typeof window.DragAndDrop === 'function') {
-            window.DragAndDrop(taskItem);
+        if (typeof window.enableDragAndDropOnTask === 'function') {
+            window.enableDragAndDropOnTask(taskItem);
         } else {
-            console.warn('⚠️ DragAndDrop function not available');
+            console.warn('⚠️ enableDragAndDropOnTask function not available');
         }
 
         // Update move arrows visibility

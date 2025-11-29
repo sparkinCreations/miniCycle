@@ -218,18 +218,15 @@ export class TaskDOMManager {
                     safeAddEventListener: this.dependencies.safeAddEventListener || this.fallbackAddListener
                 });
 
-                // ✅ CRITICAL: Also initialize the global taskEvents instance for window.setupTaskInteractions()
-                if (typeof window.initTaskEvents === 'function') {
-                    window.initTaskEvents({
-                        AppState: this.dependencies.AppState || window.AppState,
-                        showNotification: this.dependencies.showNotification || this.fallbackNotification,
-                        autoSave: this.dependencies.autoSave || this.fallbackAutoSave,
-                        getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
-                        querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-                        safeAddEventListener: this.dependencies.safeAddEventListener || this.fallbackAddListener
-                    });
-                    console.log('✅ Global TaskEvents instance initialized');
+                // ✅ CRITICAL: Initialize event delegation for task clicks
+                // This sets up ONE listener for all tasks (memory leak fix)
+                if (this.events && typeof this.events.initEventDelegation === 'function') {
+                    this.events.initEventDelegation();
+                    console.log('✅ Task click event delegation initialized');
                 }
+
+                // ✅ Store globally for cross-module access
+                window.taskEvents = this.events;
 
                 this.modulesLoaded = true;
                 console.log('✅ Task sub-modules loaded successfully (versioned)');
