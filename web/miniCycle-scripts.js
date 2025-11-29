@@ -3980,8 +3980,8 @@ safeAddEventListener(addTaskButton, "click", () => {
         return;
     }
 
-
-    (window.miniCycle?.tasks?.add || addTask)(taskText);
+    // ✅ Use window.addTask directly (modules.addTask may not be set)
+    (window.addTask || addTask)(taskText);
     taskInput.value = "";
 });
 
@@ -3998,8 +3998,8 @@ safeAddEventListener(taskInput, "keypress", function (event) {
             return;
         }
 
-
-        (window.miniCycle?.tasks?.add || addTask)(taskText);
+        // ✅ Use window.addTask directly (modules.addTask may not be set)
+        (window.addTask || addTask)(taskText);
         taskInput.value = "";
     }
 });
