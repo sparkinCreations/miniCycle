@@ -531,7 +531,7 @@ export class TaskDOMManager {
      * ✅ MEMORY LEAK FIX: Uses named handler with safeAddEventListener
      */
     createThreeDotsButton(taskItem, settings) {
-        const showThreeDots = settings.showThreeDots || false;
+        const showThreeDots = settings?.showThreeDots || false;
 
         if (showThreeDots) {
             const threeDotsButton = document.createElement("button");

@@ -261,8 +261,12 @@ export class SettingsManager {
                 // ✅ Disable/enable hover behavior for current tasks
                 this.deps.toggleHoverTaskOptions(!enabled);
 
-                // ✅ Update task list UI
-                this.deps.refreshTaskListUI();
+                // ✅ Update task list UI to add/remove three-dots buttons
+                if (typeof this.deps.refreshTaskListUI === 'function') {
+                    this.deps.refreshTaskListUI();
+                } else if (typeof window.refreshTaskListUI === 'function') {
+                    window.refreshTaskListUI();
+                }
             });
 
             console.log('✅ Three dots toggle setup completed');

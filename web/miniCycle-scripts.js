@@ -810,11 +810,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 initTaskDOMManager,
                 extractTaskDataFromDOM,
                 createTaskDOMElements,
+                createThreeDotsButton,
                 setupTaskInteractions,
                 finalizeTaskCreation,
                 loadTaskContext,
                 validateAndSanitizeTaskInput,
                 handleTaskButtonClick,
+                revealTaskButtons,
                 refreshUIFromState
             } = await import(withV('./modules/task/taskDOM.js'));
             console.log('✅ taskDOM.js imported successfully');
@@ -822,11 +824,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // ✅ Expose taskDOM functions to window (needed by addTask and other modules)
             window.extractTaskDataFromDOM = extractTaskDataFromDOM;
             window.createTaskDOMElements = createTaskDOMElements;
+            window.createThreeDotsButton = createThreeDotsButton;
             window.setupTaskInteractions = setupTaskInteractions;
             window.finalizeTaskCreation = finalizeTaskCreation;
             window.loadTaskContext = loadTaskContext;
             window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
             window.handleTaskButtonClick = handleTaskButtonClick;
+            window.revealTaskButtons = revealTaskButtons;
             window.refreshUIFromState = refreshUIFromState;
 
             console.log('⏱️ CHECKPOINT: Calling initTaskDOMManager with dependencies...');
@@ -1235,10 +1239,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Task Core (Phase 2 module)
         console.log('🎯 Initializing task core module...');
         try {
-            const { initTaskCore, handleTaskCompletionChange } = await import(withV('./modules/task/taskCore.js'));
+            const { initTaskCore, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks } = await import(withV('./modules/task/taskCore.js'));
 
-            // ✅ Expose handleTaskCompletionChange to window (needed by checkbox change listener)
+            // ✅ Expose taskCore functions to window (needed by various modules)
             window.handleTaskCompletionChange = handleTaskCompletionChange;
+            window.resetTasks = resetTasks;
+            window.handleCompleteAllTasks = handleCompleteAllTasks;
 
             await initTaskCore({
                 // State management
@@ -1691,8 +1697,8 @@ if (!window.deviceDetectionManager) {
 
           // Re-render each task from Schema 2.5
           (cycleData.tasks || []).forEach(task => {
-              console.log(`🔄 Re-rendering task ${task.id}: deleteWhenComplete=${task.deleteWhenComplete}, settings=`, task.deleteWhenCompleteSettings);
-              (window.miniCycle?.tasks?.add || addTask)(
+              // ✅ Use window.addTask to ensure we get the correctly initialized function
+              (window.addTask || addTask)(
                   task.text,
                   task.completed,
                   false, // Don't double save
@@ -1703,8 +1709,8 @@ if (!window.deviceDetectionManager) {
                   task.recurring,
                   task.id,
                   task.recurringSettings,
-                  task.deleteWhenComplete,      // ✅ Pass through deleteWhenComplete
-                  task.deleteWhenCompleteSettings // ✅ Pass through settings
+                  task.deleteWhenComplete,
+                  task.deleteWhenCompleteSettings
               );
           });
 
@@ -2540,7 +2546,7 @@ function checkMiniCycle() {
         if (cycleData.autoReset) {
             console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
             setTimeout(() => {
-                resetTasks(); // ✅ Then reset tasks
+                (window.resetTasks || window.miniCycle?.tasks?.reset)?.();
             }, 1000);
             return;
         }
@@ -2773,7 +2779,7 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     // Create or update task data
     const taskData = window.createOrUpdateTaskData?.(taskContext) || createOrUpdateTaskData(taskContext);
 
-    // Create DOM elements
+    // Create DOM elements - prefer window.createTaskDOMElements from taskDOM.js
     const taskElements = window.createTaskDOMElements?.(taskContext, taskData) || createTaskDOMElements(taskContext, taskData);
 
     // Setup task interactions and events (from taskEvents.js via taskDOM.js)
@@ -2970,10 +2976,10 @@ function createTaskDOMElements(taskContext, taskData) {
 
     // Create main task element with deleteWhenComplete settings
     const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
-    
-    // Create three dots button if needed
-    const threeDotsButton = createThreeDotsButton(taskItem, settings);
-    
+
+    // Create three dots button if needed (use window.* to ensure we get the taskDOM version)
+    const threeDotsButton = (window.createThreeDotsButton || createThreeDotsButton)(taskItem, settings);
+
     // Create button container and buttons
     const buttonContainer = createTaskButtonContainer(taskContext);
     

@@ -983,22 +983,24 @@ export class TaskCore {
                             if (!confirmed) return;
 
                             if (cycleData.deleteCheckedTasks) {
-                                // ✅ To-Do mode: Delete tasks based on deleteWhenComplete flag
+                                // ✅ To-Do mode: Delete completed tasks that have deleteWhenComplete enabled
                                 const tasksToDelete = [];
                                 const allTaskElements = taskList.querySelectorAll(".task");
 
                                 allTaskElements.forEach(taskElement => {
                                     const taskId = taskElement.dataset.taskId;
                                     const task = cycleData.tasks?.find(t => t.id === taskId);
+                                    const checkbox = taskElement.querySelector("input[type='checkbox']");
+                                    const isCompleted = checkbox?.checked || false;
 
-                                    // Delete if deleteWhenComplete is true
-                                    if (task?.deleteWhenComplete === true) {
+                                    // Delete only if task is completed AND deleteWhenComplete is true
+                                    if (isCompleted && task?.deleteWhenComplete === true) {
                                         tasksToDelete.push({ taskId, taskElement });
                                     }
                                 });
 
                                 if (tasksToDelete.length === 0) {
-                                    this.deps.showNotification("⚠️ No tasks marked for deletion.", "default", 3000);
+                                    this.deps.showNotification("⚠️ No completed tasks to delete.", "default", 3000);
                                     return;
                                 }
 
@@ -1032,25 +1034,27 @@ export class TaskCore {
             }
 
             if (cycleData.deleteCheckedTasks) {
-                // ✅ To-Do mode: Delete tasks based on deleteWhenComplete flag (single source of truth)
-                console.log('🗑️ To-Do mode: Deleting tasks marked for deletion');
+                // ✅ To-Do mode: Delete completed tasks that have deleteWhenComplete enabled
+                console.log('🗑️ To-Do mode: Deleting completed tasks marked for deletion');
 
-                // Find all tasks marked for deletion (deleteWhenComplete = true)
+                // Find all tasks that are BOTH completed AND marked for deletion
                 const tasksToDelete = [];
                 const allTaskElements = taskList.querySelectorAll(".task");
 
                 allTaskElements.forEach(taskElement => {
                     const taskId = taskElement.dataset.taskId;
                     const task = cycleData.tasks?.find(t => t.id === taskId);
+                    const checkbox = taskElement.querySelector("input[type='checkbox']");
+                    const isCompleted = checkbox?.checked || false;
 
-                    // Delete if deleteWhenComplete is true (single source of truth)
-                    if (task?.deleteWhenComplete === true) {
+                    // Delete only if task is completed AND deleteWhenComplete is true
+                    if (isCompleted && task?.deleteWhenComplete === true) {
                         tasksToDelete.push({ taskId, taskElement });
                     }
                 });
 
                 if (tasksToDelete.length === 0) {
-                    this.deps.showNotification("⚠️ No tasks marked for deletion.", "default", 3000);
+                    this.deps.showNotification("⚠️ No completed tasks to delete.", "default", 3000);
                     return;
                 }
 
