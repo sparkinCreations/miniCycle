@@ -11,7 +11,7 @@
  * - Cycle reset integration
  *
  * @module recurringCore
- * @version 1.382
+ * @version 1.383
  * @requires AppState (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */

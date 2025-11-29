@@ -11,7 +11,7 @@
  * - Navigation dot updates
  * - Collapsible section preferences (stored in AppState.settings.statsPanel)
  *
- * @version 1.382
+ * @version 1.383
  * @author miniCycle Development Team
  */
 
@@ -1246,7 +1246,7 @@ export class StatsPanelManager {
     getModuleInfo() {
         return {
             name: 'StatsPanelManager',
-            version: '1.382',
+            version: '1.383',
             state: this.getState(),
             elements: Object.keys(this.elements).filter(key => this.elements[key]),
             config: this.config

@@ -18,7 +18,7 @@
  * Risk: Medium (critical data operations)
  *
  * @module modules/cycle/migrationManager
- * @version 1.382
+ * @version 1.383
  */
 
 // ==========================================
@@ -895,7 +895,7 @@ async function performAutoMigration(options = {}) {
         const migrationInfo = {
             completed: Deps.now(),
             backupKey: backupResult.backupKey,
-            version: '1.382',
+            version: '1.383',
             autoMigrated: true,
             dataFixesApplied: fixResult.fixedCount || 0,
             migrationSummary: {

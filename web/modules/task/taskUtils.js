@@ -8,7 +8,7 @@
  * - Dependencies passed as parameters
  *
  * @module modules/task/taskUtils
- * @version 1.382
+ * @version 1.383
  */
 
 // Import constants
