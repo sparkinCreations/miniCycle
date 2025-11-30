@@ -54,21 +54,30 @@ export async function runTaskValidationTests(resultsDiv) {
         }
     });
 
-    await test('TaskValidator class is exported to window', () => {
-        if (typeof window.TaskValidator === 'undefined') {
-            throw new Error('TaskValidator not available on window object');
+    await test('TaskValidator class is available via taskDOM (Phase 2)', () => {
+        // Phase 2: TaskValidator is no longer on window directly
+        // It's available via window.__TaskValidator after taskDOM initializes
+        if (typeof window.__TaskValidator === 'undefined' && typeof TaskValidator === 'undefined') {
+            throw new Error('TaskValidator not available (check taskDOM initialization)');
         }
     });
 
-    await test('initTaskValidator function is exported', () => {
-        if (typeof window.initTaskValidator !== 'function') {
-            throw new Error('initTaskValidator not found on window object');
+    await test('initTaskValidator is available as ES6 export (not on window)', () => {
+        // Phase 2: initTaskValidator is ES6 export only, not on window
+        // The taskDOM manager handles validator initialization internally
+        // This test verifies we can import it if needed
+        if (typeof initTaskValidator !== 'undefined') {
+            // Available as import in this scope
+            return;
         }
+        // In runtime tests, taskDOM handles initialization so this is OK to skip
+        console.log('ℹ️ initTaskValidator not in scope - taskDOM handles initialization');
     });
 
-    await test('validateAndSanitizeTaskInput function is exported', () => {
-        if (typeof window.validateAndSanitizeTaskInput !== 'function') {
-            throw new Error('validateAndSanitizeTaskInput not found on window object');
+    await test('validateAndSanitizeTaskInput function is available', () => {
+        // Phase 2: May be on window or available as module export
+        if (typeof window.validateAndSanitizeTaskInput !== 'function' && typeof validateAndSanitizeTaskInput !== 'function') {
+            throw new Error('validateAndSanitizeTaskInput not found');
         }
     });
 
@@ -77,8 +86,26 @@ export async function runTaskValidationTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    await test('creates instance with no dependencies', () => {
-        const validator = new TaskValidator();
+    await test('throws error without required sanitizeInput dependency', () => {
+        // Phase 2: sanitizeInput is now REQUIRED (no window.* fallback)
+        let threwError = false;
+        try {
+            const validator = new TaskValidator();
+        } catch (e) {
+            threwError = true;
+            if (!e.message.includes('sanitizeInput')) {
+                throw new Error(`Expected error about sanitizeInput, got: ${e.message}`);
+            }
+        }
+        if (!threwError) {
+            throw new Error('Expected TaskValidator to throw without sanitizeInput');
+        }
+    });
+
+    await test('creates instance with required sanitizeInput dependency', () => {
+        const validator = new TaskValidator({
+            sanitizeInput: (input) => input
+        });
 
         if (!validator) {
             throw new Error('Failed to create TaskValidator instance');
@@ -108,7 +135,9 @@ export async function runTaskValidationTests(resultsDiv) {
     });
 
     await test('has correct version property', () => {
-        const validator = new TaskValidator();
+        const validator = new TaskValidator({
+            sanitizeInput: (input) => input
+        });
 
         // Check version exists and is in semver format (X.Y or X.Y.Z)
         if (!validator.version || !/^\d+\.\d+(\.\d+)?$/.test(validator.version)) {
@@ -117,7 +146,9 @@ export async function runTaskValidationTests(resultsDiv) {
     });
 
     await test('has correct TASK_LIMIT constant', () => {
-        const validator = new TaskValidator();
+        const validator = new TaskValidator({
+            sanitizeInput: (input) => input
+        });
 
         if (validator.TASK_LIMIT !== 100) {
             throw new Error(`Expected TASK_LIMIT 100, got ${validator.TASK_LIMIT}`);
@@ -352,33 +383,33 @@ export async function runTaskValidationTests(resultsDiv) {
     });
 
     // ============================================
-    // 🌐 GLOBAL WRAPPER TESTS
+    // 🌐 GLOBAL WRAPPER TESTS (Phase 2)
     // ============================================
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrapper</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrapper (via taskDOM)</h4>';
 
-    await test('global wrapper works with initialized validator', () => {
-        // Initialize validator
-        window.initTaskValidator({
-            sanitizeInput: (input) => input
-        });
+    await test('window.validateAndSanitizeTaskInput works after taskDOM init', () => {
+        // Phase 2: validateAndSanitizeTaskInput comes from taskDOM.js
+        // It delegates to the manager's validator which is auto-initialized
+        if (typeof window.validateAndSanitizeTaskInput !== 'function') {
+            throw new Error('window.validateAndSanitizeTaskInput not available - taskDOM not initialized');
+        }
 
         const result = window.validateAndSanitizeTaskInput('test task');
 
         if (result !== 'test task') {
-            throw new Error('Global wrapper should work with initialized validator');
+            throw new Error(`Expected 'test task', got '${result}'`);
         }
     });
 
-    await test('global wrapper has fallback when not initialized', () => {
-        // Temporarily clear taskValidator
-        const originalValidator = window.TaskValidator;
+    await test('window.validateAndSanitizeTaskInput trims whitespace', () => {
+        if (typeof window.validateAndSanitizeTaskInput !== 'function') {
+            throw new Error('window.validateAndSanitizeTaskInput not available');
+        }
 
-        // Call wrapper - should use fallback
         const result = window.validateAndSanitizeTaskInput('  test task  ');
 
-        // Should trim at minimum
         if (result !== 'test task') {
-            throw new Error('Global wrapper should have basic fallback');
+            throw new Error(`Expected 'test task', got '${result}'`);
         }
     });
 

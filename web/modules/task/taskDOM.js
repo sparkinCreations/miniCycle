@@ -50,10 +50,10 @@ export class TaskDOMManager {
         this.events = null;
         this.modulesLoaded = false;
 
-        // Store dependencies with intelligent fallbacks
+        // Store dependencies - no window.* fallbacks (Phase 2)
         this.deps = {
             // Core data access (critical - will verify in methods)
-            AppState: dependencies.AppState || window.AppState,
+            AppState: dependencies.AppState || null,  // Required - must be injected
             loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
             saveTaskToSchema25: dependencies.saveTaskToSchema25 || this.fallbackSave,
 
@@ -82,9 +82,9 @@ export class TaskDOMManager {
             autoSave: dependencies.autoSave || this.fallbackAutoSave,
             captureStateSnapshot: dependencies.captureStateSnapshot || this.fallbackCapture,
 
-            // Global utils (optional)
-            GlobalUtils: dependencies.GlobalUtils || window.GlobalUtils,
-            sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
+            // Global utils - no window.* fallbacks
+            GlobalUtils: dependencies.GlobalUtils || null,
+            sanitizeInput: dependencies.sanitizeInput || null,  // Required - must be injected
             safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
             safeGetElement: dependencies.safeGetElement || this.fallbackGetElement,
             generateId: dependencies.generateId || this.fallbackGenerateId,
@@ -92,7 +92,10 @@ export class TaskDOMManager {
             // DOM helpers (fallback to native)
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+
+            // Constants (optional)
+            DEFAULT_TASK_OPTION_BUTTONS: dependencies.DEFAULT_TASK_OPTION_BUTTONS || {}
         };
 
         // Internal state
@@ -170,24 +173,16 @@ export class TaskDOMManager {
                     TaskEvents: !!TaskEvents
                 });
 
-                // Initialize validator module
+                // Initialize validator module - no window.* fallbacks (Phase 2)
+                // window.validateAndSanitizeTaskInput uses this validator via manager
                 this.validator = this.dependencies.validator || new TaskValidator({
-                    sanitizeInput: this.dependencies.sanitizeInput || window.sanitizeInput,
+                    sanitizeInput: this.dependencies.sanitizeInput,  // Required - must be injected
                     showNotification: this.dependencies.showNotification || this.fallbackNotification
                 });
 
-                // ✅ CRITICAL: Also initialize the global taskValidator instance for window.validateAndSanitizeTaskInput()
-                if (typeof window.initTaskValidator === 'function') {
-                    window.initTaskValidator({
-                        sanitizeInput: this.dependencies.sanitizeInput || window.sanitizeInput,
-                        showNotification: this.dependencies.showNotification || this.fallbackNotification
-                    });
-                    console.log('✅ Global TaskValidator instance initialized');
-                }
-
-                // Initialize renderer module
+                // Initialize renderer module - no window.* fallbacks (Phase 2)
                 this.renderer = this.dependencies.renderer || new TaskRenderer({
-                    AppState: this.dependencies.AppState || window.AppState,
+                    AppState: this.dependencies.AppState,  // Required - must be injected
                     updateProgressBar: this.dependencies.updateProgressBar || this.fallbackUpdate,
                     checkCompleteAllButton: this.dependencies.checkCompleteAllButton || this.fallbackUpdate,
                     updateStatsPanel: this.dependencies.updateStatsPanel || this.fallbackUpdate,
@@ -195,22 +190,9 @@ export class TaskDOMManager {
                     getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id))
                 });
 
-                // ✅ CRITICAL: Also initialize the global taskRenderer instance for window.renderTasks()
-                if (typeof window.initTaskRenderer === 'function') {
-                    window.initTaskRenderer({
-                        AppState: this.dependencies.AppState || window.AppState,
-                        updateProgressBar: this.dependencies.updateProgressBar || this.fallbackUpdate,
-                        checkCompleteAllButton: this.dependencies.checkCompleteAllButton || this.fallbackUpdate,
-                        updateStatsPanel: this.dependencies.updateStatsPanel || this.fallbackUpdate,
-                        updateMainMenuHeader: this.dependencies.updateMainMenuHeader || this.fallbackUpdate,
-                        getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id))
-                    });
-                    console.log('✅ Global TaskRenderer instance initialized');
-                }
-
-                // Initialize events module
+                // Initialize events module - no window.* fallbacks (Phase 2)
                 this.events = this.dependencies.events || new TaskEvents({
-                    AppState: this.dependencies.AppState || window.AppState,
+                    AppState: this.dependencies.AppState,  // Required - must be injected
                     showNotification: this.dependencies.showNotification || this.fallbackNotification,
                     autoSave: this.dependencies.autoSave || this.fallbackAutoSave,
                     getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
@@ -546,8 +528,8 @@ export class TaskDOMManager {
             // Store handler reference for potential cleanup
             this._threeDotsHandlers.set(threeDotsButton, handler);
 
-            // Use safeAddEventListener to prevent duplicate listeners
-            const safeAdd = this.deps.safeAddEventListener || window.safeAddEventListener;
+            // Use safeAddEventListener to prevent duplicate listeners (no window.* fallback)
+            const safeAdd = this.deps.safeAddEventListener;
             if (safeAdd) {
                 safeAdd(threeDotsButton, "click", handler);
             } else {
@@ -583,8 +565,8 @@ export class TaskDOMManager {
             buttonContainer.style.pointerEvents = "none";
         }
 
-        // ✅ NEW: Get button visibility settings for this cycle
-        const visibleOptions = currentCycle.taskOptionButtons || window.DEFAULT_TASK_OPTION_BUTTONS || {};
+        // ✅ Get button visibility settings for this cycle (no window.* fallback)
+        const visibleOptions = currentCycle.taskOptionButtons || this.deps.DEFAULT_TASK_OPTION_BUTTONS || {};
 
         // ✅ NEW: Always show customize button first
         const customizeBtn = this.createCustomizeButton();

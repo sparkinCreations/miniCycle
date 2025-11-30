@@ -4,18 +4,23 @@
  *
  * Pattern: Simple Instance ✨
  * - Single responsibility (validation only)
- * - Minimal dependencies (sanitizeInput, showNotification)
+ * - Required dependencies (sanitizeInput, showNotification)
  * - Pure input validation logic
  *
  * @module modules/task/taskValidation
- * @version 1.284
+ * @version 1.285
  */
 
 export class TaskValidator {
     constructor(dependencies = {}) {
-        // Store dependencies with fallbacks
+        // Require sanitizeInput - no fallback to window
+        if (typeof dependencies.sanitizeInput !== 'function') {
+            throw new Error('TaskValidator requires sanitizeInput function');
+        }
+
+        // Store dependencies - showNotification is optional
         this.deps = {
-            sanitizeInput: dependencies.sanitizeInput || window.sanitizeInput,
+            sanitizeInput: dependencies.sanitizeInput,
             showNotification: dependencies.showNotification || ((msg) => console.log(msg))
         };
 
@@ -23,7 +28,7 @@ export class TaskValidator {
         this.TASK_LIMIT = 100; // Character limit for tasks
 
         // Instance version
-        this.version = '1.284';
+        this.version = '1.285';
 
         console.log('🔒 TaskValidator created');
     }

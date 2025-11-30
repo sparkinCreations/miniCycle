@@ -9,11 +9,11 @@
  * - Individual modal setup (feedback, about, settings, reminders)
  * - Modal state tracking
  *
- * Dependencies (accessed via window.*):
- * - window.hideMainMenu (menu management)
- * - window.showNotification (notifications)
- * - window.sanitizeInput (input sanitization)
- * - window.safeAddEventListener (event listener helper)
+ * Dependencies (injected via setModalManagerDependencies):
+ * - hideMainMenu (menu management)
+ * - showNotification (notifications)
+ * - sanitizeInput (input sanitization)
+ * - safeAddEventListener (event listener helper)
  * - appInit (initialization system)
  *
  * @module modalManager
@@ -21,6 +21,26 @@
  */
 
 import { appInit } from '../core/appInit.js';
+
+// Module-level dependencies - set via setModalManagerDependencies
+let _deps = {
+    showNotification: null,
+    hideMainMenu: null,
+    sanitizeInput: null,
+    safeAddEventListener: null
+};
+
+/**
+ * Set dependencies for ModalManager
+ * Call this after dependencies are available
+ */
+export function setModalManagerDependencies(deps) {
+    if (deps.showNotification) _deps.showNotification = deps.showNotification;
+    if (deps.hideMainMenu) _deps.hideMainMenu = deps.hideMainMenu;
+    if (deps.sanitizeInput) _deps.sanitizeInput = deps.sanitizeInput;
+    if (deps.safeAddEventListener) _deps.safeAddEventListener = deps.safeAddEventListener;
+    console.log('🎭 ModalManager dependencies injected');
+}
 
 export class ModalManager {
     constructor(dependencies = {}) {
@@ -30,14 +50,14 @@ export class ModalManager {
         // Store injected dependencies
         this._injectedDeps = dependencies;
 
-        // Dependency injection with runtime fallbacks for testability
-        // Using getters so tests can mock window functions after construction
+        // Dependency injection - no window.* fallbacks
+        // Priority: module-level _deps → instance _injectedDeps → graceful fallback
         Object.defineProperty(this, 'deps', {
             get: () => ({
-                showNotification: this._injectedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
-                hideMainMenu: this._injectedDeps.hideMainMenu || window.hideMainMenu,
-                sanitizeInput: this._injectedDeps.sanitizeInput || window.sanitizeInput,
-                safeAddEventListener: this._injectedDeps.safeAddEventListener || window.safeAddEventListener
+                showNotification: _deps.showNotification || this._injectedDeps.showNotification || this.fallbackNotification.bind(this),
+                hideMainMenu: _deps.hideMainMenu || this._injectedDeps.hideMainMenu || null,
+                sanitizeInput: _deps.sanitizeInput || this._injectedDeps.sanitizeInput || null,
+                safeAddEventListener: _deps.safeAddEventListener || this._injectedDeps.safeAddEventListener || null
             })
         });
     }

@@ -23,16 +23,34 @@
  * DOM: Handles missing elements gracefully
  *
  * @module themeManager
- * @version 1.284
+ * @version 1.285
  * @requires AppInit (for initialization coordination)
  */
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level dependencies - set via setThemeManagerDependencies
+let _deps = {
+    AppState: null,
+    showNotification: null,
+    hideMainMenu: null
+};
+
+/**
+ * Set dependencies for ThemeManager
+ * Call this after AppState is available
+ */
+export function setThemeManagerDependencies(deps) {
+    if (deps.AppState) _deps.AppState = deps.AppState;
+    if (deps.showNotification) _deps.showNotification = deps.showNotification;
+    if (deps.hideMainMenu) _deps.hideMainMenu = deps.hideMainMenu;
+    console.log('🎨 ThemeManager dependencies injected');
+}
+
 export class ThemeManager {
     constructor() {
         console.log('🎨 ThemeManager initializing...');
-        
+
         this.themes = [
             {
                 id: "DarkOcean",
@@ -78,15 +96,16 @@ export class ThemeManager {
     /**
      * Apply a theme to the document
      * @param {string} themeName - Theme name ('default', 'dark-ocean', 'golden-glow')
+     * @param {boolean} shouldSave - Whether to save to storage (false during initial load)
      */
-    applyTheme(themeName) {
+    applyTheme(themeName, shouldSave = true) {
         try {
             console.log('🎨 Applying theme (Schema 2.5 only)...', themeName);
-            
+
             // Step 1: Remove all theme classes
             const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
             allThemes.forEach(theme => document.body?.classList.remove(theme));
-          
+
             // Step 2: Add selected theme class if it's not 'default'
             if (themeName && themeName !== 'default') {
                 document.body?.classList.add(`theme-${themeName}`);
@@ -94,13 +113,15 @@ export class ThemeManager {
 
             // Step 3: Update theme color after applying theme
             this.updateThemeColor();
-          
-            // Step 4: Save to Schema 2.5 only
-            this.saveThemeToStorage(themeName);
-          
+
+            // Step 4: Save to Schema 2.5 only (skip during initial load)
+            if (shouldSave) {
+                this.saveThemeToStorage(themeName);
+            }
+
             // Step 5: Update UI checkboxes
             this.updateThemeToggles(themeName);
-            
+
             console.log('✅ Theme application completed');
         } catch (error) {
             console.warn('⚠️ Theme application failed:', error.message, '- using defaults');
@@ -308,7 +329,12 @@ export class ThemeManager {
             // ✅ Wait for core systems to be ready (AppState + data)
             await appInit.waitForCore();
 
-            const currentState = window.AppState.get();
+            if (!_deps.AppState) {
+                console.warn('⚠️ AppState not injected - using fallback');
+                this.unlockThemeFallback('dark-ocean', 'Dark Ocean');
+                return;
+            }
+            const currentState = _deps.AppState.get();
             if (!currentState) {
                 console.warn('⚠️ No state data for unlockDarkOceanTheme - using fallback');
                 this.unlockThemeFallback('dark-ocean', 'Dark Ocean');
@@ -316,7 +342,7 @@ export class ThemeManager {
             }
             
             if (!currentState.settings.unlockedThemes.includes("dark-ocean")) {
-                window.AppState.update(state => {
+                _deps.AppState.update(state => {
                     state.settings.unlockedThemes.push("dark-ocean");
                     state.userProgress.rewardMilestones.push("dark-ocean-5");
                 }, true);
@@ -350,15 +376,20 @@ export class ThemeManager {
             // ✅ Wait for core systems to be ready (AppState + data)
             await appInit.waitForCore();
 
-            const currentState = window.AppState.get();
+            if (!_deps.AppState) {
+                console.warn('⚠️ AppState not injected - using fallback');
+                this.unlockThemeFallback('golden-glow', 'Golden Glow');
+                return;
+            }
+            const currentState = _deps.AppState.get();
             if (!currentState) {
                 console.warn('⚠️ No state data for unlockGoldenGlowTheme - using fallback');
                 this.unlockThemeFallback('golden-glow', 'Golden Glow');
                 return;
             }
-            
+
             if (!currentState.settings.unlockedThemes.includes("golden-glow")) {
-                window.AppState.update(state => {
+                _deps.AppState.update(state => {
                     state.settings.unlockedThemes.push("golden-glow");
                     state.userProgress.rewardMilestones.push("golden-glow-50");
                 }, true);
@@ -585,9 +616,7 @@ export class ThemeManager {
                 themeButton.addEventListener("click", () => {
                     if (themesModal) {
                         themesModal.style.display = "flex";
-                        if (window.hideMainMenu) {
-                            window.hideMainMenu();
-                        }
+                        _deps.hideMainMenu?.();
                     }
                 });
             }
@@ -686,15 +715,15 @@ export class ThemeManager {
         // ✅ Wait for core systems to be ready before saving
         await appInit.waitForCore();
 
-        // ✅ Use AppState only (no localStorage fallback)
-        if (!window.AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for saveSchemaData after waitForCore - this should not happen');
+        // ✅ Use injected AppState only (no window.* fallback)
+        if (!_deps.AppState?.isReady?.()) {
+            console.error('❌ AppState not injected or not ready for saveSchemaData');
             return;
         }
 
         try {
             // Replace entire state data
-            await window.AppState.update(state => {
+            await _deps.AppState.update(state => {
                 Object.assign(state, data);
             }, true);
         } catch (error) {
@@ -745,12 +774,12 @@ export class ThemeManager {
     }
     
     // ===== GRACEFUL FALLBACK PROPERTIES =====
-    
+
     /**
-     * Optional notification function (graceful fallback)
+     * Optional notification function (no window.* fallback)
      */
     get showNotification() {
-        return window.showNotification || null;
+        return _deps.showNotification || null;
     }
 }
 
@@ -764,9 +793,10 @@ const themeManager = new ThemeManager();
 /**
  * Apply a theme
  * @param {string} themeName - Theme to apply
+ * @param {boolean} shouldSave - Whether to save (default true)
  */
-function applyTheme(themeName) {
-    return themeManager.applyTheme(themeName);
+function applyTheme(themeName, shouldSave = true) {
+    return themeManager.applyTheme(themeName, shouldSave);
 }
 
 /**

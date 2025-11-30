@@ -6,8 +6,24 @@
  * preventing malicious/invalid data from import/export bypass
  *
  * @module utils/dataValidator
- * @version 1.284
+ * @version 1.285
+ * @pattern Static Utilities (with injected sanitizer)
  */
+
+// Module-level dependency - must be set before use
+let _sanitizeInput = null;
+
+/**
+ * Set the sanitize function dependency
+ * @param {Function} sanitizeFn - The sanitize function to use
+ */
+export function setDataValidatorDependencies({ sanitizeInput }) {
+    if (typeof sanitizeInput !== 'function') {
+        throw new Error('DataValidator requires sanitizeInput function');
+    }
+    _sanitizeInput = sanitizeInput;
+    console.log('🛡️ DataValidator dependencies injected');
+}
 
 export class DataValidator {
     /**
@@ -30,10 +46,11 @@ export class DataValidator {
             throw new Error('Cycle name too long (max 100 characters)');
         }
 
-        // Use global sanitizeInput if available
-        const sanitized = typeof window.sanitizeInput === 'function'
-            ? window.sanitizeInput(name, 100)
-            : name.trim().slice(0, 100);
+        // Use injected sanitizeInput
+        if (!_sanitizeInput) {
+            throw new Error('DataValidator: sanitizeInput not injected. Call setDataValidatorDependencies first.');
+        }
+        const sanitized = _sanitizeInput(name, 100);
 
         return sanitized;
     }
@@ -58,10 +75,11 @@ export class DataValidator {
             throw new Error('Task text too long (max 500 characters)');
         }
 
-        // Use global sanitizeInput if available
-        const sanitized = typeof window.sanitizeInput === 'function'
-            ? window.sanitizeInput(text, 500)
-            : text.trim().slice(0, 500);
+        // Use injected sanitizeInput
+        if (!_sanitizeInput) {
+            throw new Error('DataValidator: sanitizeInput not injected. Call setDataValidatorDependencies first.');
+        }
+        const sanitized = _sanitizeInput(text, 500);
 
         return sanitized;
     }

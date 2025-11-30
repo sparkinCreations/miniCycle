@@ -266,10 +266,29 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 
+  // ============================================
+  // 🎯 DEPENDENCY CONTAINER
+  // This object collects all module references for true dependency injection.
+  // Modules receive deps instead of reaching for window.*
+  // See: docs/future-work/MODULAR_OVERHAUL_PLAN.md
+  // ============================================
+  const deps = {
+    // Will be populated as modules are loaded
+    // Core utilities
+    utils: {},
+    // Feature modules
+    features: {},
+    // UI modules
+    ui: {},
+    // Cycle/task modules
+    core: {}
+  };
+
   // ✅ Load appInit FIRST without version (so all static imports in modules share this singleton)
   // This is critical: utility modules use static imports like `import { appInit } from './appInitialization.js'`
   // If we version this import, we create separate instances and break the shared state
   const { appInit } = await import('./modules/core/appInit.js');
+  deps.core.appInit = appInit;
 
   // ✅ Load core constants (without version for consistency)
   const {
@@ -338,6 +357,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Load GlobalUtils
     const globalUtilsModule = await import(withV('./modules/utils/globalUtils.js'));
     const GlobalUtils = globalUtilsModule.default;
+
+    // Store in deps container
+    deps.utils.GlobalUtils = GlobalUtils;
+    deps.utils.sanitizeInput = GlobalUtils.sanitizeInput;
+    deps.utils.escapeHtml = GlobalUtils.escapeHtml;
+    deps.utils.generateId = GlobalUtils.generateId;
+    deps.utils.debounce = GlobalUtils.debounce;
+    deps.utils.throttle = GlobalUtils.throttle;
+    deps.utils.safeAddEventListener = GlobalUtils.safeAddEventListener;
+    deps.utils.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
+    deps.utils.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
+
+    // Still expose to window for backward compat (will be removed incrementally)
     window.GlobalUtils = GlobalUtils;
     window.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
     // Expose individual utility functions to window
@@ -365,6 +397,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.generateHashId = GlobalUtils.generateHashId;
     window.generateNotificationId = GlobalUtils.generateNotificationId;
     window.isElementInViewport = GlobalUtils.isElementInViewport;
+    window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
     console.log('🛠️ Global utilities loaded');
 
     // ✅ Load Error Handler
@@ -373,6 +406,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Data Validator (needed before settingsManager)
     const dataValidatorMod = await import(withV('./modules/utils/dataValidator.js'));
+    // Wire dependency using deps container (true DI pattern)
+    dataValidatorMod.setDataValidatorDependencies({
+        sanitizeInput: deps.utils.sanitizeInput
+    });
+    deps.utils.DataValidator = dataValidatorMod.DataValidator;
+    // Still expose to window for backward compat
     window.DataValidator = dataValidatorMod.DataValidator;
     console.log('🛡️ Data Validator loaded');
 
@@ -383,11 +422,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Load Notifications
     const notificationsMod = await import(withV('./modules/utils/notifications.js'));
     const notifications = new notificationsMod.MiniCycleNotifications();
+
+    // Store in deps container - this is the canonical reference
+    deps.utils.notifications = notifications;
+    deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+
+    // Still expose to window for backward compat
     window.notifications = notifications;
-
-    // ✅ Create direct notification function for DI (avoids deprecated window.showNotification wrapper)
-    const showNotificationDirect = (message, type, duration) => notifications.show(message, type, duration);
-
     window.showNotification = function(message, type, duration) {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
         return notifications.show(message, type, duration);
@@ -408,6 +449,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.refreshThemeToggles = themeManagerMod.refreshThemeToggles;
     window.setupThemesPanel = themeManagerMod.setupThemesPanel;
     window.setupThemesPanelWithData = themeManagerMod.setupThemesPanelWithData;
+    // ✅ Inject available deps early (AppState injected later after it's created)
+    if (themeManagerMod.setThemeManagerDependencies) {
+        themeManagerMod.setThemeManagerDependencies({
+            showNotification: deps.utils.showNotification
+            // AppState and hideMainMenu injected later
+        });
+    }
     console.log('✅ Theme Manager loaded');
 
     // ✅ Load Games Manager
@@ -427,6 +475,15 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Load Modal Manager
     const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
     window.modalManager = modalManagerMod.modalManager;
+    // ✅ Inject available deps early (hideMainMenu injected later after it's created)
+    if (modalManagerMod.setModalManagerDependencies) {
+        modalManagerMod.setModalManagerDependencies({
+            showNotification: deps.utils.showNotification,
+            sanitizeInput: deps.utils.sanitizeInput,
+            safeAddEventListener: deps.utils.safeAddEventListener
+            // hideMainMenu injected later
+        });
+    }
     console.log('✅ Modal Manager loaded');
 
     // ✅ Load Migration Manager
@@ -598,20 +655,20 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     updateNavDots();
 
 
-    // ✅ Theme Loading (Schema 2.5 only)
+    // ✅ Theme Loading (Schema 2.5 only) - don't save during initial load
     console.log('🎨 Loading theme settings...');
     try {
         const schemaData = loadMiniCycleData();
         if (schemaData && schemaData.settings.theme) {
             console.log('🎨 Applying theme from Schema 2.5:', schemaData.settings.theme);
-            applyTheme(schemaData.settings.theme);
+            applyTheme(schemaData.settings.theme, false);  // Don't save during initial load
         } else {
             console.log('🎨 Using default theme');
-            applyTheme('default');
+            applyTheme('default', false);  // Don't save during initial load
         }
     } catch (error) {
         console.warn('⚠️ Theme loading failed, using default:', error);
-        applyTheme('default');
+        applyTheme('default', false);  // Don't save during initial load
     }
 
     // ✅ MOVED TO PHASE 2: cycleLoader initialization moved after AppState is ready
@@ -654,10 +711,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     const { createStateManager, resetStateManager } = await import(withV('./modules/core/appState.js'));
     window.AppState = createStateManager({
-      showNotification: showNotificationDirect || console.log.bind(console),  // ✅ Use direct function
+      showNotification: deps.utils.showNotification || console.log.bind(console),  // ✅ Use direct function
       storage: localStorage,
       createInitialData: createInitialSchema25Data
     });
+
+    // ✅ Store in deps container for DI
+    deps.core.AppState = window.AppState;
 
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
@@ -705,7 +765,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
-            showNotification: showNotificationDirect,  // ✅ Use direct function
+            showNotification: deps.utils.showNotification,  // ✅ Use direct function
             currentVersion: '1.284'
         });
 
@@ -719,7 +779,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const { StatsPanelManager } = await import(withV('./modules/features/statsPanel.js'));
 
         const statsPanelManager = new StatsPanelManager({
-            showNotification: showNotificationDirect,  // ✅ Use direct function
+            showNotification: deps.utils.showNotification,  // ✅ Use direct function
             loadMiniCycleData: () => {
                 // Defensive data loading with error handling
                 try {
@@ -780,17 +840,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             console.log('⏱️ CHECKPOINT: Calling initTaskDOMManager with dependencies...');
             await initTaskDOMManager({
-                // State management
-                AppState: window.AppState,
+                // State management - use deps container
+                AppState: window.AppState,  // Will be deps.core.AppState once wired
 
-                // Data operations
+                // Data operations - use deps.utils
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use GlobalUtils directly, not deprecated window.*
-                generateId: () => GlobalUtils.generateId(),
+                sanitizeInput: deps.utils.sanitizeInput,  // ✅ From deps container
+                generateId: deps.utils.generateId,  // ✅ From deps container
                 autoSave: () => window.autoSave?.(),
 
-                // UI notification and updates
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                // UI notification and updates - use deps.utils
+                showNotification: deps.utils.showNotification,  // ✅ From deps container
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -799,11 +859,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateRecurringPanelButtonVisibility: () => window.updateRecurringPanelButtonVisibility?.(),
                 triggerLogoBackground: (type, dur) => window.triggerLogoBackground?.(type, dur),
 
-                // DOM helpers
+                // DOM helpers - use deps.utils where available
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
-                safeAddEventListener: (el, evt, handler) => window.safeAddEventListener?.(el, evt, handler),
+                safeAddEventListener: deps.utils.safeAddEventListener,  // ✅ From deps container
 
                 // Task operations (from taskCore module)
                 handleTaskCompletionChange: (taskItem, shouldSave) => window.handleTaskCompletionChange?.(taskItem, shouldSave),
@@ -840,7 +900,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
                 // Cycle operations
                 checkMiniCycle: () => window.checkMiniCycle?.(),
-                loadMiniCycle: () => window.loadMiniCycle?.()
+                loadMiniCycle: () => window.loadMiniCycle?.(),
+
+                // Constants from deps container
+                DEFAULT_TASK_OPTION_BUTTONS: deps.utils.DEFAULT_TASK_OPTION_BUTTONS
             });
 
             console.log('✅ Task DOM module initialized (Phase 2)');
@@ -869,7 +932,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             await initTaskOptionsCustomizer({
                 AppState: window.AppState,
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
                 renderTaskList: () => window.refreshTaskListUI?.()
@@ -891,7 +954,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
 
             await initReminderManager({
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
@@ -945,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             await initDueDatesManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -976,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 createTaskButtonContainer: (ctx) => window.createTaskButtonContainer?.(ctx),
                 setupDueDateButtonInteraction: (btn, input) => window.setupDueDateButtonInteraction?.(btn, input),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
-                showNotification: showNotificationDirect,  // ✅ Use direct function, not deprecated wrapper
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function, not deprecated wrapper
                 helpWindowManager: () => window.helpWindowManager,
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
@@ -1000,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await initializeCycleSwitcher({
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 hideMainMenu: () => window.hideMainMenu?.(),
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
@@ -1041,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
                 completeInitialSetup: (id, data) => window.completeInitialSetup?.(id, data),
                 hideMainMenu: () => window.hideMainMenu?.(),
@@ -1077,9 +1140,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 refreshUIFromState: (state) => window.refreshUIFromState?.(state),
                 AppGlobalState: window.AppGlobalState,
                 getElementById: (id) => document.getElementById(id),
-                safeAddEventListener: window.safeAddEventListener,
+                safeAddEventListener: deps.utils.safeAddEventListener,  // ✅ From deps container
                 wrapperActive: false,
-                showNotification: showNotificationDirect  // ✅ Use direct function
+                showNotification: deps.utils.showNotification  // ✅ From deps container
             });
 
             // Wire up UI and initialize
@@ -1126,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await initMenuManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
                 getElementById: (id) => document.getElementById(id),
@@ -1156,6 +1219,25 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without menu manager functionality');
         }
 
+        // ✅ Wire ThemeManager dependencies now that AppState and hideMainMenu are available
+        if (themeManagerMod.setThemeManagerDependencies) {
+            themeManagerMod.setThemeManagerDependencies({
+                AppState: deps.core.AppState,  // ✅ From deps container
+                showNotification: deps.utils.showNotification,
+                hideMainMenu: () => window.hideMainMenu?.()
+            });
+        }
+
+        // ✅ Wire ModalManager dependencies
+        if (modalManagerMod.setModalManagerDependencies) {
+            modalManagerMod.setModalManagerDependencies({
+                showNotification: deps.utils.showNotification,
+                hideMainMenu: () => window.hideMainMenu?.(),
+                sanitizeInput: deps.utils.sanitizeInput,
+                safeAddEventListener: deps.utils.safeAddEventListener
+            });
+        }
+
         // ✅ Initialize Settings Manager (Phase 2 module)
         console.log('⚙️ Initializing settings manager module...');
         try {
@@ -1164,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await initSettingsManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
                 hideMainMenu: () => window.hideMainMenu?.(),
                 getElementById: (id) => document.getElementById(id),
@@ -1209,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
 
                 // UI updates
-                showNotification: showNotificationDirect,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),

@@ -611,7 +611,7 @@ export class GlobalUtils {
             const taskData = tasksData[taskId];
 
             if (taskData) {
-                this.syncTaskDeleteWhenCompleteDOM(taskEl, taskData, currentMode, constants);
+                GlobalUtils.syncTaskDeleteWhenCompleteDOM(taskEl, taskData, currentMode, constants);
                 syncedCount++;
             } else {
                 // Orphaned DOM element - task data doesn't exist
