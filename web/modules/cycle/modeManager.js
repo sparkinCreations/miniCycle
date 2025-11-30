@@ -1,7 +1,7 @@
 /**
  * Mode Manager - Manages Auto Cycle, Manual Cycle, and To-Do Mode
  * @module modules/cycle/modeManager
- * @version 1.383
+ * @version 1.284
  * @pattern Resilient Constructor 🛡️
  *
  * Handles three cycling modes:

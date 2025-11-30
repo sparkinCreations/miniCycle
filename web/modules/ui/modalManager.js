@@ -17,14 +17,14 @@
  * - appInit (initialization system)
  *
  * @module modalManager
- * @version 1.383
+ * @version 1.284
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class ModalManager {
     constructor(dependencies = {}) {
-        this.version = '1.383';
+        this.version = '1.284';
         this.initialized = false;
 
         // Store injected dependencies
