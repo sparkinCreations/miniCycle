@@ -36,44 +36,48 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: The Honest Assessment
 
-### Current State (November 2025)
+### Current State (November 2025 → Updated November 30, 2025)
 
-| Metric | Value |
-|--------|-------|
-| Main script | ~3,700 lines |
-| Modules | 43 files |
-| `window.*` globals created | ~68 |
-| `window.*` references consumed | ~748 |
-| Test coverage | 1011 tests passing |
+| Metric | Before | Current | Target |
+|--------|--------|---------|--------|
+| Main script | ~3,700 lines | ~3,800 lines | ~3,500 lines |
+| Modules | 43 files | 43 files | 43 files |
+| `window.*` globals created | ~68 | ~60 | <20 |
+| `window.*` references consumed | ~748 | ~700 | <100 |
+| Test coverage | 1011 tests | 1011+ tests | 1100+ tests |
+| `deps.*` container usage | 0 | ~45 | 100+ |
+| Modules with true DI | 0 | 6 | 15+ |
 
-### The Reality
+### The Reality (Being Improved)
 
-**The codebase has DI structure but global coupling:**
+**The codebase HAD DI structure but global coupling. Now transitioning:**
 
 ```javascript
-// DI pattern EXISTS in every module:
+// BEFORE: DI pattern with window.* fallbacks
 constructor(dependencies = {}) {
     this.deps = {
-        AppState: dependencies.AppState || window.AppState,
+        AppState: dependencies.AppState || window.AppState,  // ❌ fallback = coupling
         showNotification: dependencies.showNotification || this.fallback
     };
 }
 
-// But dependencies are INJECTED as global wrappers:
-await initTaskCore({
-    AppState: window.AppState,
-    updateStatsPanel: () => window.updateStatsPanel?.(),
-    // ← These are just pointers to globals
-});
+// AFTER: True DI (implemented in taskValidation, modalManager, themeManager, taskDOM)
+constructor(dependencies = {}) {
+    if (!dependencies.sanitizeInput) throw new Error('sanitizeInput required');  // ✅ fail fast
+    this.deps = {
+        sanitizeInput: dependencies.sanitizeInput,  // ✅ no fallback
+        showNotification: dependencies.showNotification || this.fallback
+    };
+}
 ```
 
-**Result:** DI complexity without DI benefits. Modules cannot be tested in isolation or reused elsewhere.
+**Progress:** 6 modules now use `set*Dependencies()` pattern with `deps` container. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
 ### Module Communication
 
-- **~96%** via `window.*` globals
-- **~4%** via ES6 imports (mostly just `appInit.js`)
-- **0** modules can work standalone
+- **~90%** via `window.*` globals (down from ~96%)
+- **~10%** via `deps` container + ES6 imports (up from ~4%)
+- **6** modules can accept injected deps without window.* fallbacks
 
 ### What Works Well
 

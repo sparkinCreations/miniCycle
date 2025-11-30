@@ -5,6 +5,48 @@
 
 ---
 
+## Progress Tracker
+
+**Last Updated:** November 30, 2025
+**Status:** ~15-20% Complete
+
+### What's Done ✅
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `deps` container created | ✅ Done | Central wiring hub in miniCycle-scripts.js |
+| `deps.core.AppState` | ✅ Done | Stored after creation |
+| `deps.utils.*` populated | ✅ Done | showNotification, sanitizeInput, generateId, safeAddEventListener, syncAllTasksWithMode, etc. |
+| taskValidation.js | ✅ Done | `sanitizeInput` required (throws if missing), no window.* fallback |
+| dataValidator.js | ✅ Done | `setDataValidatorDependencies()` added |
+| themeManager.js | ✅ Done | `setThemeManagerDependencies()`, window.* fallbacks removed |
+| modalManager.js | ✅ Done | `setModalManagerDependencies()`, window.* fallbacks removed |
+| taskDOM.js | ✅ Done | Constructor window.* fallbacks removed, uses injected deps |
+| undoRedoManager.js | ✅ Done | Wired with deps.utils.* |
+| Tests updated | ✅ Done | taskValidation.tests.js updated for Phase 2 |
+
+### What Remains 🔄
+
+| Item | Priority | Effort |
+|------|----------|--------|
+| Remove window.* fallbacks from remaining Tier 0 modules | High | ~1 hour |
+| Wire Tier 2: modeManager, cycleManager, recurringCore, taskCore | High | ~2-3 hours |
+| Wire Tier 3: cycleLoader, settingsManager, statsPanel, cycleSwitcher | Medium | ~2-3 hours |
+| Remove `window.*` **exports** from modules | Medium | ~2-3 hours |
+| Minimize window.* to HTML-only needs | Low | ~1-2 hours |
+| Add isolated tests for key modules | Low | ~2-3 hours |
+
+### Metrics
+
+| Metric | Before (Nov 2025) | Current | Target |
+|--------|-------------------|---------|--------|
+| `deps.*` usage in main script | 0 | ~45 | 100+ |
+| Modules with `set*Dependencies()` | 0 | 6 | 15+ |
+| Modules with window.* fallbacks removed | 0 | 4 | All |
+| window.* globals for HTML | ~68 | ~60 | <20 |
+
+---
+
 ## Current State vs Target State
 
 ### Current: Global Coupling
