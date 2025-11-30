@@ -258,9 +258,10 @@ export class MiniCycleNotifications {
 
       // ✅ XSS PROTECTION: Always escape HTML in message content
       // Security fix (v1.353): Remove bypass condition to prevent XSS
-      const escapedMessage = typeof window.escapeHtml === 'function'
-        ? window.escapeHtml(message)
-        : message;
+      // ✅ Use GlobalUtils.escapeHtml directly to avoid deprecated window.escapeHtml wrapper
+      const escapedMessage = window.GlobalUtils?.escapeHtml
+        ? window.GlobalUtils.escapeHtml(message)
+        : (typeof window.escapeHtml === 'function' ? window.escapeHtml(message) : message);
 
       // Always escape user content, regardless of structure
       notification.innerHTML = `

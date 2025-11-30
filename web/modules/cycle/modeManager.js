@@ -130,7 +130,8 @@ export class ModeManager {
             const oldButtonContainer = task.querySelector('.task-options');
 
             if (!oldButtonContainer) {
-                failureCount++;
+                // Task buttons not yet rendered - this is normal during initial load
+                // Don't count as failure, just skip silently
                 return;
             }
 
@@ -193,10 +194,11 @@ export class ModeManager {
         });
 
             // Summary logging instead of per-task spam
-            if (failureCount > 0) {
-                console.warn(`⚠️ ModeManager: Failed to refresh ${failureCount} task button(s), succeeded: ${successCount}`);
-            } else {
+            if (successCount > 0) {
                 console.log(`✅ ModeManager: Task button refresh complete (${successCount} tasks)`);
+            } else if (tasks.length > 0) {
+                // Only log if there were tasks but none had buttons yet (initial load)
+                console.log('ℹ️ ModeManager: Task buttons not yet rendered, will be created by taskDOM');
             }
         }, 150); // 150ms debounce delay - prevents multiple rapid reflows
     }

@@ -773,12 +773,18 @@ export class SettingsManager {
               remindersEnabled: task.remindersEnabled || false,
               recurring: task.recurring || false,
               recurringSettings: settings,
+              deleteWhenComplete: task.deleteWhenComplete,
+              deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
               schemaVersion: task.schemaVersion || 2
             };
           }),
           autoReset: cycle.autoReset || false,
           cycleCount: cycle.cycleCount || 0,
-          deleteCheckedTasks: cycle.deleteCheckedTasks || false
+          deleteCheckedTasks: cycle.deleteCheckedTasks || false,
+          taskOptionButtons: cycle.taskOptionButtons || null,
+          recurringTemplates: cycle.recurringTemplates || {},
+          reminders: cycle.reminders || null,
+          createdAt: cycle.createdAt || null
         };
 
         console.log('✅ Export data prepared');
@@ -913,12 +919,14 @@ export class SettingsManager {
                 const taskData = {
                   id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                   text: task.text || "",
-                  completed: false,
+                  completed: task.completed || false,
                   dueDate: task.dueDate || null,
                   highPriority: task.highPriority || false,
                   remindersEnabled: task.remindersEnabled || false,
                   recurring: task.recurring || false,
                   recurringSettings: safeSettings,
+                  deleteWhenComplete: task.deleteWhenComplete,
+                  deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
                   schemaVersion: task.schemaVersion || 2
                 };
 
@@ -971,7 +979,9 @@ export class SettingsManager {
                 cycleCount: importedData.cycleCount || 0,
                 deleteCheckedTasks: importedData.deleteCheckedTasks || false,
                 createdAt: Date.now(),
-                recurringTemplates: recurringTemplates
+                recurringTemplates: importedData.recurringTemplates || recurringTemplates,
+                taskOptionButtons: importedData.taskOptionButtons || null,
+                reminders: importedData.reminders || null
               };
 
               // Set as active cycle and persist

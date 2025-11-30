@@ -1,58 +1,64 @@
 {
-  "title": "Daily Routine 🌞",
+  "name": "cycle_1764477375116",
+  "title": "Getting Started 🚀",
   "tasks": [
     {
-      "id": "t1",
-      "text": "🌅 Wake up & stretch",
-      "completed": false
+      "id": "task-getting-started-1",
+      "text": "✅ Tap here to complete this task!",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
     },
     {
-      "id": "t2",
-      "text": "🛏️ Make bed",
-      "completed": false
+      "id": "task-getting-started-2",
+      "text": "➕ Add your own task using the box above",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
     },
     {
-      "id": "t3",
-      "text": "🪥 Brush teeth",
-      "completed": false
+      "id": "task-getting-started-3",
+      "text": "⚙️ Explore Settings and try a Theme!",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
     },
     {
-      "id": "t4",
-      "text": "🥣 Eat breakfast",
-      "completed": false
+      "id": "task-getting-started-4",
+      "text": "📱 Long press on a task to rearrange it",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
     },
     {
-      "id": "t5",
-      "text": "💧 Drink water",
-      "completed": false
-    },
-    {
-      "id": "t6",
-      "text": "🏋️ Exercise",
-      "completed": false
-    },
-    {
-      "id": "t7",
-      "text": "🧑‍💻 Start work / study",
-      "completed": false
-    },
-    {
-      "id": "t8",
-      "text": "🍎 Healthy snack",
-      "completed": false
-    },
-    {
-      "id": "t9",
-      "text": "📖 Read 10 minutes",
-      "completed": false
-    },
-    {
-      "id": "t10",
-      "text": "🌙 Evening reflection",
-      "completed": false
+      "id": "task-getting-started-5",
+      "text": "🔁 Try Auto Reset by completing all tasks",
+      "completed": false,
+      "dueDate": null,
+      "highPriority": false,
+      "remindersEnabled": false,
+      "recurring": false,
+      "recurringSettings": {},
+      "schemaVersion": 2
     }
   ],
   "autoReset": true,
-  "deleteCheckedTasks": false,
-  "cycleCount": 0
+  "cycleCount": 0,
+  "deleteCheckedTasks": false
 }

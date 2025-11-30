@@ -170,14 +170,15 @@ Object.defineProperty(window, 'isResetting', {
   set: (value) => { window.AppGlobalState.isResetting = value; }
 });
 
+// ✅ FIX: Map legacy names to actual property names (activeUndoStack/activeRedoStack)
 Object.defineProperty(window, 'undoStack', {
-  get: () => window.AppGlobalState.undoStack,
-  set: (value) => { window.AppGlobalState.undoStack = value; }
+  get: () => window.AppGlobalState.activeUndoStack,
+  set: (value) => { window.AppGlobalState.activeUndoStack = value; }
 });
 
 Object.defineProperty(window, 'redoStack', {
-  get: () => window.AppGlobalState.redoStack,
-  set: (value) => { window.AppGlobalState.redoStack = value; }
+  get: () => window.AppGlobalState.activeRedoStack,
+  set: (value) => { window.AppGlobalState.activeRedoStack = value; }
 });
 
 Object.defineProperty(window, 'isDragging', {
@@ -334,6 +335,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ============================================
     const namespaceDeps = {};
 
+    // ✅ Inject core constants (imported earlier, before withV was available)
+    namespaceDeps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+    namespaceDeps.DEFAULT_RECURRING_DELETE_SETTINGS = DEFAULT_RECURRING_DELETE_SETTINGS;
+
     // ✅ Load GlobalUtils
     const globalUtilsModule = await import(withV('./modules/utils/globalUtils.js'));
     const GlobalUtils = globalUtilsModule.default;
@@ -396,6 +401,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     namespaceDeps.EducationalTipManager = notificationsMod.EducationalTipManager;
     const notifications = new notificationsMod.MiniCycleNotifications();
     window.notifications = notifications;
+
+    // ✅ Create direct notification function for DI (avoids deprecated window.showNotification wrapper)
+    const showNotificationDirect = (message, type, duration) => notifications.show(message, type, duration);
+
     window.showNotification = function(message, type, duration) {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
         return notifications.show(message, type, duration);
@@ -703,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     const { createStateManager, resetStateManager } = await import(withV('./modules/core/appState.js'));
     window.AppState = createStateManager({
-      showNotification: window.showNotification || console.log.bind(console),
+      showNotification: showNotificationDirect || console.log.bind(console),  // ✅ Use direct function
       storage: localStorage,
       createInitialData: createInitialSchema25Data
     });
@@ -766,11 +775,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
-            showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+            showNotification: showNotificationDirect,  // ✅ Use direct function
             currentVersion: '1.383'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
+
+        // ✅ Collect for namespace injection (Phase 2)
+        namespaceDeps.DeviceDetectionManager = DeviceDetectionManager;
+        namespaceDeps.deviceDetectionManager = deviceDetectionManager;
+
         console.log('✅ DeviceDetectionManager initialized (Phase 2)');
 
         // ✅ Initialize Stats Panel (Phase 2 module)
@@ -778,7 +792,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const { StatsPanelManager } = await import(withV('./modules/features/statsPanel.js'));
 
         const statsPanelManager = new StatsPanelManager({
-            showNotification: (msg, type, duration) => window.showNotification ? window.showNotification(msg, type, duration) : console.log('Notification:', msg),
+            showNotification: showNotificationDirect,  // ✅ Use direct function
             loadMiniCycleData: () => {
                 // Defensive data loading with error handling
                 try {
@@ -800,6 +814,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         window.showStatsPanel = () => statsPanelManager.showStatsPanel();
         window.showTaskView = () => statsPanelManager.showTaskView();
         window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
+
+        // ✅ Collect for namespace injection (Phase 2)
+        namespaceDeps.StatsPanelManager = StatsPanelManager;
+
         console.log('✅ StatsPanelManager initialized (Phase 2)');
 
         // ✅ Initialize Task DOM Manager (Phase 2 module)
@@ -842,12 +860,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
                 // Data operations
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                sanitizeInput: (text) => window.sanitizeInput?.(text),
-                generateId: () => window.generateId?.(),
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use GlobalUtils directly, not deprecated window.*
+                generateId: () => GlobalUtils.generateId(),
                 autoSave: () => window.autoSave?.(),
 
                 // UI notification and updates
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -903,6 +921,20 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.log('✅ Task DOM module initialized (Phase 2)');
             console.log('⏱️ CHECKPOINT: initTaskDOMManager completed successfully');
 
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initTaskDOMManager = initTaskDOMManager;
+            namespaceDeps.extractTaskDataFromDOM = extractTaskDataFromDOM;
+            namespaceDeps.createTaskDOMElements = createTaskDOMElements;
+            namespaceDeps.createThreeDotsButton = createThreeDotsButton;
+            namespaceDeps.setupTaskInteractions = setupTaskInteractions;
+            namespaceDeps.setupRecurringButtonHandler = setupRecurringButtonHandler;
+            namespaceDeps.finalizeTaskCreation = finalizeTaskCreation;
+            namespaceDeps.loadTaskContext = loadTaskContext;
+            namespaceDeps.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
+            namespaceDeps.handleTaskButtonClick = handleTaskButtonClick;
+            namespaceDeps.revealTaskButtons = revealTaskButtons;
+            namespaceDeps.refreshUIFromState = refreshUIFromState;
+
             // ✅ Expose taskDOMManager status globally for debugging
             window.isTaskDOMReady = true;
             console.log('✅ window.isTaskDOMReady = true');
@@ -925,7 +957,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             await initTaskOptionsCustomizer({
                 AppState: window.AppState,
-                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
                 renderTaskList: () => window.refreshTaskListUI?.()
@@ -947,7 +979,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
 
             await initReminderManager({
-                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
@@ -971,6 +1003,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const { initializeRecurringModules } = await import(withV('./modules/recurring/recurringIntegration.js'));
             const recurringModules = await initializeRecurringModules();
             window._recurringModules = recurringModules;
+
+            // ✅ Collect for namespace injection (Phase 2)
+            // Note: Individual functions are shimmed via window.recurringCore/recurringPanel in namespace.js
+            namespaceDeps.setRecurringCoreDependencies = window.recurringCore?.setDependencies;
+            namespaceDeps.applyRecurringToTaskSchema25 = window.recurringCore?.applyRecurringSettings;
+            namespaceDeps.handleRecurringTaskActivation = window.recurringCore?.handleActivation;
+            namespaceDeps.handleRecurringTaskDeactivation = window.recurringCore?.handleDeactivation;
+            namespaceDeps.watchRecurringTasks = window.recurringCore?.watchTasks;
+            namespaceDeps.catchUpMissedRecurringTasks = window.recurringCore?.catchUpMissedTasks;
+            namespaceDeps.RecurringPanelManager = window.recurringPanel?.RecurringPanelManager;
+            namespaceDeps.buildRecurringSummaryFromSettings = window.recurringPanel?.buildSummary;
+
             console.log('✅ Recurring modules initialized (Phase 2)');
 
             // Optional: Run integration test in development
@@ -1000,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             await initDueDatesManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                showNotification: (msg, type, duration) => window.showNotification?.(msg, type, duration),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -1031,11 +1075,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 createTaskButtonContainer: (ctx) => window.createTaskButtonContainer?.(ctx),
                 setupDueDateButtonInteraction: (btn, input) => window.setupDueDateButtonInteraction?.(btn, input),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showNotification: showNotificationDirect,  // ✅ Use direct function, not deprecated wrapper
                 helpWindowManager: () => window.helpWindowManager,
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
+
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initModeManager = initModeManager;
 
             console.log('✅ Mode manager module initialized (Phase 2)');
         } catch (error) {
@@ -1054,11 +1101,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await initializeCycleSwitcher({
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 hideMainMenu: () => window.hideMainMenu?.(),
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
-                sanitizeInput: (input) => window.sanitizeInput?.(input),
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
                 loadMiniCycle: () => window.loadMiniCycle?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
@@ -1075,6 +1122,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.switchMiniCycle = switchMiniCycle;
             window.renameMiniCycle = renameMiniCycle;
             window.deleteMiniCycle = deleteMiniCycle;
+
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initializeCycleSwitcher = initializeCycleSwitcher;
+            namespaceDeps.switchMiniCycle = switchMiniCycle;
+            namespaceDeps.renameMiniCycle = renameMiniCycle;
+            namespaceDeps.deleteMiniCycle = deleteMiniCycle;
 
             console.log('✅ Cycle switcher module initialized (Phase 2)');
         } catch (error) {
@@ -1094,8 +1147,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
-                sanitizeInput: (input) => window.sanitizeInput?.(input),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
                 completeInitialSetup: (id, data) => window.completeInitialSetup?.(id, data),
                 hideMainMenu: () => window.hideMainMenu?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
@@ -1109,6 +1162,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // Expose cycle manager functions to window (needed by onboardingManager and main menu)
             window.showCycleCreationModal = () => window.cycleManager?.showCycleCreationModal?.();
             window.createNewMiniCycle = () => window.cycleManager?.createNewMiniCycle?.();
+
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initializeCycleManager = initializeCycleManager;
 
             console.log('✅ Cycle manager module initialized (Phase 2)');
         } catch (error) {
@@ -1131,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 getElementById: (id) => document.getElementById(id),
                 safeAddEventListener: window.safeAddEventListener,
                 wrapperActive: false,
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur)
+                showNotification: showNotificationDirect  // ✅ Use direct function
             });
 
             // Wire up UI and initialize
@@ -1160,6 +1216,33 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.onCycleDeleted = undoRedoModule.onCycleDeleted;
             window.onCycleRenamed = undoRedoModule.onCycleRenamed;
 
+            // ✅ Collect for namespace injection (Phase 2) - ALL undo/redo functions
+            namespaceDeps.setUndoRedoManagerDependencies = undoRedoModule.setUndoRedoManagerDependencies;
+            namespaceDeps.wireUndoRedoUI = undoRedoModule.wireUndoRedoUI;
+            namespaceDeps.initializeUndoRedoButtons = undoRedoModule.initializeUndoRedoButtons;
+            namespaceDeps.captureInitialSnapshot = undoRedoModule.captureInitialSnapshot;
+            namespaceDeps.setupStateBasedUndoRedo = undoRedoModule.setupStateBasedUndoRedo;
+            namespaceDeps.enableUndoSystemOnFirstInteraction = undoRedoModule.enableUndoSystemOnFirstInteraction;
+            namespaceDeps.captureStateSnapshot = undoRedoModule.captureStateSnapshot;
+            namespaceDeps.buildSnapshotSignature = undoRedoModule.buildSnapshotSignature;
+            namespaceDeps.snapshotsEqual = undoRedoModule.snapshotsEqual;
+            namespaceDeps.performStateBasedUndo = undoRedoModule.performStateBasedUndo;
+            namespaceDeps.performStateBasedRedo = undoRedoModule.performStateBasedRedo;
+            namespaceDeps.updateUndoRedoButtonStates = undoRedoModule.updateUndoRedoButtonStates;
+            namespaceDeps.updateUndoRedoButtonVisibility = undoRedoModule.updateUndoRedoButtonVisibility;
+            namespaceDeps.updateUndoRedoButtons = undoRedoModule.updateUndoRedoButtons;
+            namespaceDeps.onCycleSwitched = undoRedoModule.onCycleSwitched;
+            namespaceDeps.onCycleCreated = undoRedoModule.onCycleCreated;
+            namespaceDeps.onCycleDeleted = undoRedoModule.onCycleDeleted;
+            namespaceDeps.onCycleRenamed = undoRedoModule.onCycleRenamed;
+            namespaceDeps.initializeUndoSystemForApp = undoRedoModule.initializeUndoSystemForApp;
+            namespaceDeps.initializeUndoIndexedDB = undoRedoModule.initializeUndoIndexedDB;
+            namespaceDeps.saveUndoStackToIndexedDB = undoRedoModule.saveUndoStackToIndexedDB;
+            namespaceDeps.loadUndoStackFromIndexedDB = undoRedoModule.loadUndoStackFromIndexedDB;
+            namespaceDeps.deleteUndoStackFromIndexedDB = undoRedoModule.deleteUndoStackFromIndexedDB;
+            namespaceDeps.renameUndoStackInIndexedDB = undoRedoModule.renameUndoStackInIndexedDB;
+            namespaceDeps.clearAllUndoHistoryFromIndexedDB = undoRedoModule.clearAllUndoHistoryFromIndexedDB;
+
             console.log('✅ Undo/redo manager module initialized (Phase 2)');
         } catch (error) {
             console.error('❌ Failed to initialize undo/redo manager module:', error);
@@ -1177,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await initMenuManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
                 getElementById: (id) => document.getElementById(id),
@@ -1189,13 +1272,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 loadMiniCycle: () => window.loadMiniCycle?.(),
                 updateCycleModeDescription: () => window.updateCycleModeDescription?.(),
                 checkGamesUnlock: () => window.checkGamesUnlock?.(),
-                sanitizeInput: (input) => window.sanitizeInput?.(input),
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
                 updateCycleData: window.updateCycleData,
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.()
             });
+
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initMenuManager = initMenuManager;
 
             console.log('✅ Menu manager module initialized (Phase 2)');
         } catch (error) {
@@ -1214,7 +1300,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             await initSettingsManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
                 hideMainMenu: () => window.hideMainMenu?.(),
                 getElementById: (id) => document.getElementById(id),
@@ -1228,6 +1314,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 refreshTaskListUI: () => window.refreshTaskListUI?.(),
                 performSchema25Migration: () => window.performSchema25Migration?.()
             });
+
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initSettingsManager = initSettingsManager;
 
             console.log('✅ Settings manager module initialized (Phase 2)');
         } catch (error) {
@@ -1254,10 +1343,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
                 // Data operations
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                sanitizeInput: (text) => window.sanitizeInput?.(text),
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
 
                 // UI updates
-                showNotification: (msg, type, dur) => window.showNotification?.(msg, type, dur),
+                showNotification: showNotificationDirect,  // ✅ Use direct function
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -1287,6 +1376,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 // Auto-save
                 autoSave: () => window.autoSave?.()
             });
+
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.initTaskCore = initTaskCore;
+            namespaceDeps.handleTaskCompletionChange = handleTaskCompletionChange;
+            namespaceDeps.resetTasks = resetTasks;
+            namespaceDeps.handleCompleteAllTasks = handleCompleteAllTasks;
 
             console.log('✅ Task core module initialized (Phase 2)');
         } catch (error) {
@@ -1322,6 +1417,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.loadMiniCycle = loadMiniCycle;
             window.setCycleLoaderDependencies = setCycleLoaderDependencies;
 
+            // ✅ Collect for namespace injection (Phase 2)
+            namespaceDeps.loadMiniCycle = loadMiniCycle;
+            namespaceDeps.setCycleLoaderDependencies = setCycleLoaderDependencies;
+
             console.log('✅ Cycle loader module initialized (Phase 2)');
         } catch (error) {
             console.error('❌ CRITICAL: Failed to initialize cycle loader:', error);
@@ -1331,6 +1430,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
+
+        // ✅ CRITICAL: Re-inject namespace deps with ALL Phase 2 modules
+        // The first injection happened before Phase 2 loaded, so modules.* was null for Phase 2 exports
+        console.log('🔄 Re-injecting namespace dependencies after Phase 2...');
+        injectNamespaceDeps(namespaceDeps);
+        console.log('✅ Namespace dependencies updated with Phase 2 modules');
+
         await appInit.markAppReady();
 
         // ============ PHASE 3: DATA LOADING ============
@@ -1901,14 +2007,8 @@ async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaDa
     }
     
 
-  // ✅ Tell the app that data (active cycle) is ready
-  try {
-    window.AppInit?.signalReady?.(activeCycle);
-  } catch (e) {
-    console.warn('AppInit signal failed:', e);
-  }
-
     // ✅ Mark app as ready here (after data-ready)
+    // Note: signalReady was removed - appInit.markAppReady() is called in Phase 2
   window.AppReady = true;
   console.log("✅ miniCycle app is fully initialized and ready (Schema 2.5).");
   console.log('🎉 Initialization sequence completed successfully!');
