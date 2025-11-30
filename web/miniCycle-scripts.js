@@ -1338,12 +1338,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Task Core (Phase 2 module)
         console.log('🎯 Initializing task core module...');
         try {
-            const { initTaskCore, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore } = await import(withV('./modules/task/taskCore.js'));
+            const { initTaskCore, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore, saveTaskToSchema25 } = await import(withV('./modules/task/taskCore.js'));
 
             // ✅ Expose taskCore functions to window (needed by various modules)
             window.handleTaskCompletionChange = handleTaskCompletionChange;
             window.resetTasks = resetTasks;
             window.handleCompleteAllTasks = handleCompleteAllTasks;
+            window.saveTaskToSchema25 = saveTaskToSchema25;
 
             await initTaskCore({
                 // State management
@@ -1393,6 +1394,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             namespaceDeps.addTask = addTask;
             namespaceDeps.editTask = editTaskFromCore;
             namespaceDeps.deleteTask = deleteTaskFromCore;
+            namespaceDeps.saveTaskToSchema25 = saveTaskToSchema25;
 
             console.log('✅ Task core module initialized (Phase 2)');
         } catch (error) {
@@ -3072,8 +3074,8 @@ function createOrUpdateTaskData(taskContext) {
 
         // ✅ FIX: Only save to AppState if NOT loading from saved data
         if (!isLoading) {
-            // Save to Schema 2.5
-            window.miniCycle.state.save(activeCycle, currentCycle);
+            // Save to Schema 2.5 via direct function (not namespace)
+            window.saveTaskToSchema25(activeCycle, currentCycle);
             console.log('💾 Task saved to Schema 2.5');
         } else {
             console.log('⏭️ Skipping save during load (isLoading=true)');

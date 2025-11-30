@@ -115,11 +115,23 @@ export function initializeNamespace() {
         },
 
         // ===================================
-        // STATE API
+        // STATE API (read-only - writes go through AppState.update)
         // ===================================
         state: {
             load: (...args) => modules.loadMiniCycleData?.(...args),
-            get: () => modules.AppState
+            get: () => modules.AppState,
+            // 🚫 DEPRECATED: Use AppState.update(), updateCycleData(), or saveTaskToSchema25() instead
+            save: (...args) => {
+                console.error(
+                    '🚫 DEPRECATED: miniCycle.state.save() is removed.\n' +
+                    'Use one of these instead:\n' +
+                    '  • AppState.update(fn) - for any state changes\n' +
+                    '  • updateCycleData(cycleId, fn) - for cycle-specific changes\n' +
+                    '  • saveTaskToSchema25(cycleId, cycleData) - for task saves\n' +
+                    '  • autoSave() - to persist current DOM state'
+                );
+                return null;
+            }
         },
 
         // ===================================

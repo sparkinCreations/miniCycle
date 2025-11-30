@@ -162,9 +162,9 @@ const deprecatedPatterns = [
   [/\bdebounce\(/g, 'miniCycle.utils.debounce()', 'Utils-Functions'],
   [/\bthrottle\(/g, 'miniCycle.utils.throttle()', 'Utils-Functions'],
 
-  // State (3)
+  // State (2) - Note: saveTaskToSchema25 is NOT migrated to namespace, use directly
   [/\bloadMiniCycleData\(/g, 'miniCycle.state.load()', 'State'],
-  [/\bsaveTaskToSchema25\(/g, 'miniCycle.state.save()', 'State'],
+  // saveTaskToSchema25 stays as window.saveTaskToSchema25() - internal API, not on namespace
 
   // History (3)
   [/\bperformStateBasedUndo\(/g, 'miniCycle.history.undo()', 'History'],
