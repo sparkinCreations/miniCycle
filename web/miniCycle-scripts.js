@@ -331,24 +331,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ============================================
     // MODULE LOADING WITH DEPENDENCY COLLECTION
     // All modules loaded with withV() for cache-busting
-    // Exports collected for namespace injection
     // ============================================
-    const namespaceDeps = {};
 
     // ✅ Inject core constants (imported earlier, before withV was available)
-    namespaceDeps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
-    namespaceDeps.DEFAULT_RECURRING_DELETE_SETTINGS = DEFAULT_RECURRING_DELETE_SETTINGS;
 
     // ✅ Load GlobalUtils
     const globalUtilsModule = await import(withV('./modules/utils/globalUtils.js'));
     const GlobalUtils = globalUtilsModule.default;
-    namespaceDeps.GlobalUtils = GlobalUtils;
-    namespaceDeps.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
-    // ✅ Add utils to PUBLIC API namespace
-    namespaceDeps.sanitizeInput = GlobalUtils.sanitizeInput;
-    namespaceDeps.escapeHtml = GlobalUtils.escapeHtml;
-    namespaceDeps.generateId = GlobalUtils.generateId;
-    // Expose to window immediately (needed before namespace shims)
     window.GlobalUtils = GlobalUtils;
     window.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
     // Expose individual utility functions to window
@@ -380,29 +369,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Error Handler
     const errorHandlerMod = await import(withV('./modules/utils/errorHandler.js'));
-    namespaceDeps.errorHandler = errorHandlerMod.default;
     console.log('🛡️ Global error handlers initialized');
 
     // ✅ Load Data Validator (needed before settingsManager)
     const dataValidatorMod = await import(withV('./modules/utils/dataValidator.js'));
-    namespaceDeps.DataValidator = dataValidatorMod.DataValidator;
     window.DataValidator = dataValidatorMod.DataValidator;
     console.log('🛡️ Data Validator loaded');
 
     // ✅ Load Console Capture
     const consoleCaptureMod = await import(withV('./modules/utils/consoleCapture.js'));
-    namespaceDeps.consoleCapture = consoleCaptureMod.default;
-    namespaceDeps.showAllCapturedLogs = consoleCaptureMod.showAllCapturedLogs;
-    namespaceDeps.clearAllConsoleLogs = consoleCaptureMod.clearAllConsoleLogs;
-    namespaceDeps.showMigrationErrorsOnly = consoleCaptureMod.showMigrationErrorsOnly;
-    namespaceDeps.getConsoleCaptureStats = consoleCaptureMod.getConsoleCaptureStats;
-    namespaceDeps.stopConsoleCapture = consoleCaptureMod.stopConsoleCapture;
     window.consoleCapture = consoleCaptureMod.default;
 
     // ✅ Load Notifications
     const notificationsMod = await import(withV('./modules/utils/notifications.js'));
-    namespaceDeps.MiniCycleNotifications = notificationsMod.MiniCycleNotifications;
-    namespaceDeps.EducationalTipManager = notificationsMod.EducationalTipManager;
     const notifications = new notificationsMod.MiniCycleNotifications();
     window.notifications = notifications;
 
@@ -413,25 +392,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
         return notifications.show(message, type, duration);
     };
-    // ✅ Add to PUBLIC API namespace
-    namespaceDeps.showNotification = showNotificationDirect;
     console.log('✅ Notifications loaded');
 
     // ✅ Load Theme Manager
     const themeManagerMod = await import(withV('./modules/features/themeManager.js'));
-    namespaceDeps.ThemeManager = themeManagerMod.default;
-    namespaceDeps.themeManager = themeManagerMod.themeManager;
-    namespaceDeps.applyTheme = themeManagerMod.applyTheme;
-    namespaceDeps.updateThemeColor = themeManagerMod.updateThemeColor;
-    namespaceDeps.setupDarkModeToggle = themeManagerMod.setupDarkModeToggle;
-    namespaceDeps.setupQuickDarkToggle = themeManagerMod.setupQuickDarkToggle;
-    namespaceDeps.unlockDarkOceanTheme = themeManagerMod.unlockDarkOceanTheme;
-    namespaceDeps.unlockGoldenGlowTheme = themeManagerMod.unlockGoldenGlowTheme;
-    namespaceDeps.initializeThemesPanel = themeManagerMod.initializeThemesPanel;
-    namespaceDeps.refreshThemeToggles = themeManagerMod.refreshThemeToggles;
-    namespaceDeps.setupThemesPanel = themeManagerMod.setupThemesPanel;
-    namespaceDeps.setupThemesPanelWithData = themeManagerMod.setupThemesPanelWithData;
-    // Expose to window immediately (needed before namespace shims)
     window.ThemeManager = themeManagerMod.default;
     window.themeManager = themeManagerMod.themeManager;
     window.applyTheme = themeManagerMod.applyTheme;
@@ -448,8 +412,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Games Manager
     const gamesManagerMod = await import(withV('./modules/ui/gamesManager.js'));
-    namespaceDeps.GamesManager = gamesManagerMod.default;
-    namespaceDeps.gamesManager = gamesManagerMod.gamesManager;
     // Expose to window immediately
     window.GamesManager = gamesManagerMod.default;
     window.gamesManager = gamesManagerMod.gamesManager;
@@ -459,25 +421,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Onboarding Manager
     const onboardingManagerMod = await import(withV('./modules/ui/onboardingManager.js'));
-    namespaceDeps.OnboardingManager = onboardingManagerMod.default;
-    namespaceDeps.onboardingManager = onboardingManagerMod.onboardingManager;
+    window.onboardingManager = onboardingManagerMod.onboardingManager;
     console.log('✅ Onboarding Manager loaded');
 
     // ✅ Load Modal Manager
     const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
-    namespaceDeps.ModalManager = modalManagerMod.default;
-    namespaceDeps.modalManager = modalManagerMod.modalManager;
+    window.modalManager = modalManagerMod.modalManager;
     console.log('✅ Modal Manager loaded');
 
     // ✅ Load Migration Manager
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./modules/cycle/migrationManager.js'));
-    namespaceDeps.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
-    namespaceDeps.performSchema25Migration = migrationMod.performSchema25Migration;
-    namespaceDeps.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
-    namespaceDeps.simulateMigrationToSchema25 = migrationMod.simulateMigrationToSchema25;
-    namespaceDeps.validateAllMiniCycleTasksLenient = migrationMod.validateAllMiniCycleTasksLenient;
-    namespaceDeps.forceAppMigration = migrationMod.forceAppMigration;
 
     migrationMod.setMigrationManagerDependencies({
       storage: localStorage,
@@ -499,24 +453,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.forceAppMigration = migrationMod.forceAppMigration;
 
     console.log('✅ Migration Manager loaded (Phase 1)');
-
-    // ============================================
-    // NAMESPACE INITIALIZATION
-    // Load namespace.js with versioning, inject collected deps
-    // ============================================
-    console.log('🌐 Initializing namespace (Pure Orchestrator Pattern)...');
-    const { initializeNamespace, installDeprecationWarnings, injectNamespaceDeps } = await import(withV('./modules/namespace.js'));
-
-    // Inject all collected module dependencies
-    injectNamespaceDeps(namespaceDeps);
-
-    // Initialize the namespace API (window.miniCycle.*)
-    initializeNamespace();
-
-    // Install backward-compatibility shims
-    installDeprecationWarnings();
-
-    console.log('✅ Namespace API initialized (window.miniCycle.*)');
 
     // ✅ NOW it's safe to set up UI components that may call loadMiniCycleData()
     console.log('🎨 Setting up UI components (after migration manager)...');
@@ -723,13 +659,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       createInitialData: createInitialSchema25Data
     });
 
-    // ✅ Inject state module exports into namespace
-    namespaceDeps.createStateManager = createStateManager;
-    namespaceDeps.resetStateManager = resetStateManager;
-    namespaceDeps.appInit = appInit;
-    // ✅ Add to PUBLIC API namespace (state)
-    namespaceDeps.AppState = window.AppState;
-
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
 
@@ -744,14 +673,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const dragDropMod = await import(withV('./modules/task/dragDropManager.js'));
         const { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM } = dragDropMod;
 
-        // Collect for namespace and expose to window
-        namespaceDeps.initDragDropManager = initDragDropManager;
-        namespaceDeps.enableDragAndDropOnTask = enableDragAndDropOnTask;
-        namespaceDeps.updateMoveArrowsVisibility = updateMoveArrowsVisibility;
-        namespaceDeps.toggleArrowVisibility = toggleArrowVisibility;
-        namespaceDeps.updateArrowsInDOM = updateArrowsInDOM;
 
-        // Expose to window immediately (needed before namespace shims)
         window.updateMoveArrowsVisibility = updateMoveArrowsVisibility;
         window.toggleArrowVisibility = toggleArrowVisibility;
         window.updateArrowsInDOM = updateArrowsInDOM;
@@ -789,9 +711,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         window.deviceDetectionManager = deviceDetectionManager;
 
-        // ✅ Collect for namespace injection (Phase 2)
-        namespaceDeps.DeviceDetectionManager = DeviceDetectionManager;
-        namespaceDeps.deviceDetectionManager = deviceDetectionManager;
 
         console.log('✅ DeviceDetectionManager initialized (Phase 2)');
 
@@ -823,8 +742,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         window.showTaskView = () => statsPanelManager.showTaskView();
         window.updateStatsPanel = () => statsPanelManager.updateStatsPanel();
 
-        // ✅ Collect for namespace injection (Phase 2)
-        namespaceDeps.StatsPanelManager = StatsPanelManager;
 
         console.log('✅ StatsPanelManager initialized (Phase 2)');
 
@@ -929,19 +846,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.log('✅ Task DOM module initialized (Phase 2)');
             console.log('⏱️ CHECKPOINT: initTaskDOMManager completed successfully');
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initTaskDOMManager = initTaskDOMManager;
-            namespaceDeps.extractTaskDataFromDOM = extractTaskDataFromDOM;
-            namespaceDeps.createTaskDOMElements = createTaskDOMElements;
-            namespaceDeps.createThreeDotsButton = createThreeDotsButton;
-            namespaceDeps.setupTaskInteractions = setupTaskInteractions;
-            namespaceDeps.setupRecurringButtonHandler = setupRecurringButtonHandler;
-            namespaceDeps.finalizeTaskCreation = finalizeTaskCreation;
-            namespaceDeps.loadTaskContext = loadTaskContext;
-            namespaceDeps.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
-            namespaceDeps.handleTaskButtonClick = handleTaskButtonClick;
-            namespaceDeps.revealTaskButtons = revealTaskButtons;
-            namespaceDeps.refreshUIFromState = refreshUIFromState;
 
             // ✅ Expose taskDOMManager status globally for debugging
             window.isTaskDOMReady = true;
@@ -1012,17 +916,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const recurringModules = await initializeRecurringModules();
             window._recurringModules = recurringModules;
 
-            // ✅ Collect for namespace injection (Phase 2)
-            // Note: Individual functions are shimmed via window.recurringCore/recurringPanel in namespace.js
-            namespaceDeps.setRecurringCoreDependencies = window.recurringCore?.setDependencies;
-            namespaceDeps.applyRecurringToTaskSchema25 = window.recurringCore?.applyRecurringSettings;
-            namespaceDeps.handleRecurringTaskActivation = window.recurringCore?.handleActivation;
-            namespaceDeps.handleRecurringTaskDeactivation = window.recurringCore?.handleDeactivation;
-            namespaceDeps.watchRecurringTasks = window.recurringCore?.watchTasks;
-            namespaceDeps.catchUpMissedRecurringTasks = window.recurringCore?.catchUpMissedTasks;
-            namespaceDeps.RecurringPanelManager = window.recurringPanel?.RecurringPanelManager;
-            namespaceDeps.buildRecurringSummaryFromSettings = window.recurringPanel?.buildSummary;
-
             console.log('✅ Recurring modules initialized (Phase 2)');
 
             // Optional: Run integration test in development
@@ -1089,8 +982,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initModeManager = initModeManager;
 
             console.log('✅ Mode manager module initialized (Phase 2)');
         } catch (error) {
@@ -1131,11 +1022,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.renameMiniCycle = renameMiniCycle;
             window.deleteMiniCycle = deleteMiniCycle;
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initializeCycleSwitcher = initializeCycleSwitcher;
-            namespaceDeps.switchMiniCycle = switchMiniCycle;
-            namespaceDeps.renameMiniCycle = renameMiniCycle;
-            namespaceDeps.deleteMiniCycle = deleteMiniCycle;
 
             console.log('✅ Cycle switcher module initialized (Phase 2)');
         } catch (error) {
@@ -1171,8 +1057,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.showCycleCreationModal = () => window.cycleManager?.showCycleCreationModal?.();
             window.createNewMiniCycle = () => window.cycleManager?.createNewMiniCycle?.();
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initializeCycleManager = initializeCycleManager;
 
             console.log('✅ Cycle manager module initialized (Phase 2)');
         } catch (error) {
@@ -1224,32 +1108,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.onCycleDeleted = undoRedoModule.onCycleDeleted;
             window.onCycleRenamed = undoRedoModule.onCycleRenamed;
 
-            // ✅ Collect for namespace injection (Phase 2) - ALL undo/redo functions
-            namespaceDeps.setUndoRedoManagerDependencies = undoRedoModule.setUndoRedoManagerDependencies;
-            namespaceDeps.wireUndoRedoUI = undoRedoModule.wireUndoRedoUI;
-            namespaceDeps.initializeUndoRedoButtons = undoRedoModule.initializeUndoRedoButtons;
-            namespaceDeps.captureInitialSnapshot = undoRedoModule.captureInitialSnapshot;
-            namespaceDeps.setupStateBasedUndoRedo = undoRedoModule.setupStateBasedUndoRedo;
-            namespaceDeps.enableUndoSystemOnFirstInteraction = undoRedoModule.enableUndoSystemOnFirstInteraction;
-            namespaceDeps.captureStateSnapshot = undoRedoModule.captureStateSnapshot;
-            namespaceDeps.buildSnapshotSignature = undoRedoModule.buildSnapshotSignature;
-            namespaceDeps.snapshotsEqual = undoRedoModule.snapshotsEqual;
-            namespaceDeps.performStateBasedUndo = undoRedoModule.performStateBasedUndo;
-            namespaceDeps.performStateBasedRedo = undoRedoModule.performStateBasedRedo;
-            namespaceDeps.updateUndoRedoButtonStates = undoRedoModule.updateUndoRedoButtonStates;
-            namespaceDeps.updateUndoRedoButtonVisibility = undoRedoModule.updateUndoRedoButtonVisibility;
-            namespaceDeps.updateUndoRedoButtons = undoRedoModule.updateUndoRedoButtons;
-            namespaceDeps.onCycleSwitched = undoRedoModule.onCycleSwitched;
-            namespaceDeps.onCycleCreated = undoRedoModule.onCycleCreated;
-            namespaceDeps.onCycleDeleted = undoRedoModule.onCycleDeleted;
-            namespaceDeps.onCycleRenamed = undoRedoModule.onCycleRenamed;
-            namespaceDeps.initializeUndoSystemForApp = undoRedoModule.initializeUndoSystemForApp;
-            namespaceDeps.initializeUndoIndexedDB = undoRedoModule.initializeUndoIndexedDB;
-            namespaceDeps.saveUndoStackToIndexedDB = undoRedoModule.saveUndoStackToIndexedDB;
-            namespaceDeps.loadUndoStackFromIndexedDB = undoRedoModule.loadUndoStackFromIndexedDB;
-            namespaceDeps.deleteUndoStackFromIndexedDB = undoRedoModule.deleteUndoStackFromIndexedDB;
-            namespaceDeps.renameUndoStackInIndexedDB = undoRedoModule.renameUndoStackInIndexedDB;
-            namespaceDeps.clearAllUndoHistoryFromIndexedDB = undoRedoModule.clearAllUndoHistoryFromIndexedDB;
 
             console.log('✅ Undo/redo manager module initialized (Phase 2)');
         } catch (error) {
@@ -1288,8 +1146,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.()
             });
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initMenuManager = initMenuManager;
 
             console.log('✅ Menu manager module initialized (Phase 2)');
         } catch (error) {
@@ -1323,8 +1179,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 performSchema25Migration: () => window.performSchema25Migration?.()
             });
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initSettingsManager = initSettingsManager;
 
             console.log('✅ Settings manager module initialized (Phase 2)');
         } catch (error) {
@@ -1386,15 +1240,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 autoSave: () => window.autoSave?.()
             });
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.initTaskCore = initTaskCore;
-            namespaceDeps.handleTaskCompletionChange = handleTaskCompletionChange;
-            namespaceDeps.resetTasks = resetTasks;
-            namespaceDeps.handleCompleteAllTasks = handleCompleteAllTasks;
-            namespaceDeps.addTask = addTask;
-            namespaceDeps.editTask = editTaskFromCore;
-            namespaceDeps.deleteTask = deleteTaskFromCore;
-            namespaceDeps.saveTaskToSchema25 = saveTaskToSchema25;
 
             console.log('✅ Task core module initialized (Phase 2)');
         } catch (error) {
@@ -1430,9 +1275,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.loadMiniCycle = loadMiniCycle;
             window.setCycleLoaderDependencies = setCycleLoaderDependencies;
 
-            // ✅ Collect for namespace injection (Phase 2)
-            namespaceDeps.loadMiniCycle = loadMiniCycle;
-            namespaceDeps.setCycleLoaderDependencies = setCycleLoaderDependencies;
 
             console.log('✅ Cycle loader module initialized (Phase 2)');
         } catch (error) {
@@ -1443,12 +1285,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
-
-        // ✅ CRITICAL: Re-inject namespace deps with ALL Phase 2 modules
-        // The first injection happened before Phase 2 loaded, so modules.* was null for Phase 2 exports
-        console.log('🔄 Re-injecting namespace dependencies after Phase 2...');
-        injectNamespaceDeps(namespaceDeps);
-        console.log('✅ Namespace dependencies updated with Phase 2 modules');
 
         await appInit.markAppReady();
 
@@ -1497,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
                   if (prev && typeof window.captureStateSnapshot === 'function') {
-                    (window.miniCycle?.history?.capture || window.captureStateSnapshot)(prev);
+                    window.captureStateSnapshot(prev);
                   }
                 }
               } catch (e) {
@@ -1528,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
               try {
                 const st = window.AppState.get?.();
                 if (st && typeof window.captureStateSnapshot === 'function') {
-                  window.miniCycle.history.capture(st);
+                  window.captureStateSnapshot(st);
                 }
               } catch (e) {
                 console.warn('⚠️ Initial snapshot failed:', e);
@@ -1760,10 +1596,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
-        window.miniCycle.history.undo();
+        window.performStateBasedUndo?.();
     } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
         e.preventDefault();
-        window.miniCycle.history.redo();
+        window.performStateBasedRedo?.();
     }
 });
 
@@ -2059,13 +1895,13 @@ function setupMiniCycleTitleListener() {
 
     if (!titleElement.dataset.listenerAdded) {
         titleElement.addEventListener("blur", async () => { // <= make async
-            let newTitle = window.miniCycle.utils.sanitize(titleElement.textContent.trim());
+            let newTitle = window.sanitizeInput(titleElement.textContent.trim());
 
 
             if (newTitle === "") {
                 console.log('🔍 Empty title detected, reverting (Schema 2.5 only)...');
                 
-                const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
+                const schemaData = loadMiniCycleData();
                 if (!schemaData) {
                     console.error('❌ Schema 2.5 data required for title revert');
                     return;
@@ -2277,13 +2113,8 @@ function loadMiniCycleData() {
     return null;
 }
 
-// Make loadMiniCycleData globally accessible for the notification module
+// Make loadMiniCycleData globally accessible
 window.loadMiniCycleData = loadMiniCycleData;
-
-// ✅ Add to PUBLIC API namespace (state)
-if (typeof namespaceDeps !== 'undefined') {
-    namespaceDeps.loadMiniCycleData = loadMiniCycleData;
-}
 
 /**
  * Safely update cycle data - handles AppState or falls back to localStorage
@@ -2495,7 +2326,7 @@ function showApplyConfirmation(targetElement) {
  */
 function showNotificationWithTip(content, type = "default", duration = null, tipId = null) {
   if (!window.notifications || typeof window.notifications.showWithTip !== 'function') {
-    return window.miniCycle.ui.notifications.show(content, type, duration);
+    return showNotification(content, type, duration);
   }
   return notifications.showWithTip(content, type, duration, tipId);
 }
@@ -2512,7 +2343,7 @@ function showConfirmationModal(options) {
 }
 
 function showPromptModal(options) {
-  // Call notifications directly to avoid circular reference with namespace
+  // Call notifications directly directly
   return window.notifications?.showPromptModal?.(options);
 }
 
@@ -2520,22 +2351,14 @@ function showPromptModal(options) {
  * Close all modals - delegated to modalManager directly
  */
 function closeAllModals() {
-  // Call modalManager directly to avoid circular reference with namespace
+  // Call modalManager directly directly
   return window.modalManager?.closeAllModals?.();
 }
 
-// ✅ Expose globally for backward compatibility
+// ✅ Expose globally
 window.showConfirmationModal = showConfirmationModal;
 window.showPromptModal = showPromptModal;
 window.closeAllModals = closeAllModals;
-
-// ✅ Add to PUBLIC API namespace (modals)
-// Note: These are added to namespaceDeps after namespace init, so they'll be picked up on re-injection
-if (typeof namespaceDeps !== 'undefined') {
-    namespaceDeps.showConfirmModal = showConfirmationModal;
-    namespaceDeps.showPromptModal = showPromptModal;
-    namespaceDeps.closeAllModals = closeAllModals;
-}
 
 
   // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in modules/features/reminders.js
@@ -2938,7 +2761,7 @@ function validateAndSanitizeTaskInput(taskText) {
         return null;
     }
 
-    const taskTextTrimmed = window.miniCycle.utils.sanitize(taskText.trim());
+    const taskTextTrimmed = window.sanitizeInput(taskText.trim());
     if (!taskTextTrimmed) {
         console.warn("⚠ Skipping empty or unsafe task.");
         return null;
@@ -3074,7 +2897,7 @@ function createOrUpdateTaskData(taskContext) {
 
         // ✅ FIX: Only save to AppState if NOT loading from saved data
         if (!isLoading) {
-            // Save to Schema 2.5 via direct function (not namespace)
+            // Save to Schema 2.5 directly
             window.saveTaskToSchema25(activeCycle, currentCycle);
             console.log('💾 Task saved to Schema 2.5');
         } else {
@@ -4189,7 +4012,7 @@ document.getElementById("open-reminders-modal")?.addEventListener("click", () =>
     // Load current settings from Schema 2.5 before opening
     loadRemindersSettings(); // This function already has Schema 2.5 support
     document.getElementById("reminders-modal").style.display = "flex";
-    window.miniCycle.ui.menu.hide();
+    hideMainMenu();
 
     console.log('✅ Reminders modal opened');
 });
@@ -4620,10 +4443,10 @@ window.hideLoader = function() {
  */
 window.withLoader = async function(asyncFunction, message = 'Processing...') {
   try {
-    window.miniCycle.ui.loader.show(message);
+    showLoader(message);
     const result = await asyncFunction();
     return result;
   } finally {
-    window.miniCycle.ui.loader.hide();
+    hideLoader();
   }
 };

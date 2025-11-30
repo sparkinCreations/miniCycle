@@ -659,17 +659,12 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
 };
 
 // ===========================================
-// 🌐 EXPORTS (Phase 2 - No window.* pollution)
+// 🌐 EXPORTS
 // ===========================================
-//
-// Phase 2 Change: GlobalUtils no longer assigns to window.*
-// All access goes through window.miniCycle.utils.* (via namespace.js)
-//
-// Backward compatibility maintained by Phase 1 wrapper in namespace.js
-// which delegates window.miniCycle.utils.* → GlobalUtils methods
+// GlobalUtils methods are exposed to window.* by miniCycle-scripts.js
 // ===========================================
 
-console.log('🛠️ GlobalUtils module loaded (Phase 2 - no window.* exports)');
+console.log('🛠️ GlobalUtils module loaded');
 
 export default GlobalUtils;
 

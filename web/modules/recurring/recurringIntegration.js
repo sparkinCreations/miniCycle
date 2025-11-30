@@ -215,9 +215,7 @@ export async function initializeRecurringModules() {
 
         console.log('🌐 Exposing recurring functions globally...');
 
-        // ✅ Phase 4 Step 4: Removed window.* exports
-        // These functions are now handled by namespace.js (Phase 3 Step 4 shims)
-        // Backward compatibility is maintained through miniCycle.features.recurring.*
+        // Functions accessible via window.recurringCore and window.recurringPanel
 
         // Keep convenience objects for direct access (non-shimmed)
         window.recurringCore = {
@@ -249,7 +247,6 @@ export async function initializeRecurringModules() {
         };
 
         console.log('✅ Recurring functions accessible via window.recurringCore and window.recurringPanel');
-        console.log('✅ Individual functions shimmed via namespace.js (use window.miniCycle.features.recurring.*)');
 
 
 
