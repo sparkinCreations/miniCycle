@@ -22,12 +22,14 @@
   * [Testing Quick Reference](testing/TESTING_QUICK_REFERENCE.md)
 
 * **Architecture**
+  * [No-Build Module System](architecture/NO_BUILD_MODULE_SYSTEM.md)
   * [AppInit Explained](architecture/APPINIT_EXPLAINED.md)
   * [Event Flow Patterns](architecture/EVENT_FLOW_PATTERNS.md)
   * [Undo/Redo Architecture](architecture/UNDO_REDO_ARCHITECTURE.md)
   * [Drag & Drop Architecture](architecture/DRAG_DROP_ARCHITECTURE.md)
   * [Drag & Drop Long Press](architecture/DRAG_DROP_LONG_PRESS.md)
   * [Theme Architecture](architecture/THEME_ARCHITECTURE.md)
+  * [Mode Manager Architecture](architecture/MODE_MANAGER_ARCHITECTURE.md)
 
 * **Data & Schema**
   * [Schema 2.5](data-schema/SCHEMA_2_5.md)
