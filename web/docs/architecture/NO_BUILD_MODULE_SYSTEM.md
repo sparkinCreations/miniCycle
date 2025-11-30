@@ -56,7 +56,7 @@ miniCycle uses native ES modules without a build system (no Webpack, Vite, Rollu
 │  │  1. Import version.js (gets APP_VERSION)            │    │
 │  │  2. Define withV() helper                           │    │
 │  │  3. Dynamic import ALL modules with withV()         │    │
-│  │  4. Expose functions to window.*                    │    │
+│  │  4. Expose functions to window.miniCycle.*          │    │
 │  │  5. Initialize app                                  │    │
 │  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
@@ -77,18 +77,42 @@ miniCycle uses native ES modules without a build system (no Webpack, Vite, Rollu
 │  - Can import from core/constants.js (stable, rarely changes)│
 └─────────────────────────────────────────────────────────────┘
                               │
-                              │ window.* exposure
+                              │ window.miniCycle.* exposure
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Global Layer (window.*)                   │
+│               Global Layer (window.miniCycle)                │
 │                                                              │
-│  window.addTask, window.resetTasks, window.AppState, etc.   │
+│  window.miniCycle.tasks.add()                               │
+│  window.miniCycle.state.get()                               │
+│  window.miniCycle.ui.notifications.show()                   │
 │                                                              │
-│  Purpose: Cross-module communication channel                 │
+│  Purpose: Single namespace for cross-module communication   │
+│  - One global (window.miniCycle) instead of 100+ globals    │
 │  - Guaranteed single instance (one window object)           │
 │  - Safe even if modules are accidentally duplicated         │
+│  - Easier to migrate to bundler (one namespace to remove)   │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Prefer window.miniCycle Over window.*
+
+When exposing functions globally, prefer the organized namespace:
+
+```javascript
+// ✅ PREFERRED - Organized under single namespace
+window.miniCycle.tasks.add = addTask;
+window.miniCycle.tasks.reset = resetTasks;
+
+// ⚠️ LEGACY - Still works, but adds to global pollution
+window.addTask = addTask;
+window.resetTasks = resetTasks;
+```
+
+**Benefits of window.miniCycle:**
+- Reads cleaner to other developers
+- IDE autocomplete shows all available functions
+- One namespace to remove when migrating to a bundler
+- Clear ownership (it's a miniCycle function, not a random global)
 
 ---
 
@@ -131,6 +155,17 @@ Your service worker caches files. When you deploy v1.381:
 - New files get cached with new version
 - Old static imports (without `?v=`) may still hit old cache
 - Result: Mix of old and new code = broken app
+
+> **🔒 CRITICAL RULE: Version Lockstep**
+>
+> The `CACHE_VERSION` in `service-worker.js` **MUST** be bumped in lockstep with `APP_VERSION` in `version.js`.
+>
+> Use the `scripts/update-version.sh` script to update both automatically:
+> ```bash
+> ./scripts/update-version.sh 1.385
+> ```
+>
+> This ensures the service worker invalidates its cache when new code is deployed.
 
 ---
 
@@ -240,6 +275,12 @@ import { appInit } from '../core/appInit.js';
 // ❌ AVOID - Frequently updated modules
 import { GlobalUtils } from '../utils/globalUtils.js';
 ```
+
+> **⚠️ IMPORTANT WARNING**
+>
+> The "safe static imports" exception exists **only** because `constants.js` and `appInit.js` are stable infrastructure that rarely changes. **If we ever start modifying these files frequently, they MUST be converted to dependency injection like everything else.**
+>
+> The moment a "safe" file starts causing cache issues, it's no longer safe.
 
 ---
 
@@ -482,6 +523,31 @@ If you do adopt a build system, Vite is recommended because:
 npm create vite@latest miniCycle -- --template vanilla
 # Move files, done
 ```
+
+### Migration Path to Bundler
+
+This no-build architecture is **intentionally designed for easy migration**. When/if we move to Vite or another bundler, the migration steps are:
+
+1. **Remove `?v=` versioning entirely**
+   - Bundler generates hashed filenames (`app.a3f2b1.js`) automatically
+   - Delete `withV()` helper and all usages
+   - Remove `version.js`
+
+2. **Replace `window.miniCycle.*` with normal imports**
+   - Since bundler guarantees single module instances, we can import directly
+   - Convert `window.miniCycle.tasks.add()` → `import { addTask } from './taskCore.js'`
+   - This is why we use `window.miniCycle` (one namespace) instead of 100+ `window.*` globals
+
+3. **Gradually drop dependency injection**
+   - DI was only needed because modules couldn't import each other safely
+   - With a bundler, normal imports work fine
+   - Convert DI patterns back to direct imports
+
+4. **Remove service worker version management**
+   - Bundler handles cache busting via hashed filenames
+   - Simplify service worker to just cache the hashed files
+
+**This isn't a dead-end architecture** - it's a stepping stone. Every pattern we use today has a clear migration path to a more sophisticated setup when the project needs it.
 
 ---
 
