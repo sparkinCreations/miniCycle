@@ -11,21 +11,36 @@
  * @version 1.284
  */
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for TaskRenderer (call before initTaskRenderer)
+ * @param {Object} dependencies - { AppState, updateProgressBar, etc. }
+ */
+export function setTaskRendererDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎨 TaskRenderer dependencies set:', Object.keys(dependencies));
+}
+
 export class TaskRenderer {
     constructor(dependencies = {}) {
-        // Store dependencies with fallbacks
-        this.deps = {
-            // Core data access
-            AppState: dependencies.AppState || window.AppState,
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
 
-            // UI update functions
-            updateProgressBar: dependencies.updateProgressBar || this.fallbackUpdate,
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || this.fallbackUpdate,
-            updateStatsPanel: dependencies.updateStatsPanel || this.fallbackUpdate,
-            updateMainMenuHeader: dependencies.updateMainMenuHeader || this.fallbackUpdate,
+        // Store dependencies - no window.* fallbacks
+        this.deps = {
+            // Core data access (required)
+            AppState: mergedDeps.AppState || null,
+
+            // UI update functions (optional, fallback to no-op)
+            updateProgressBar: mergedDeps.updateProgressBar || this.fallbackUpdate,
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || this.fallbackUpdate,
+            updateStatsPanel: mergedDeps.updateStatsPanel || this.fallbackUpdate,
+            updateMainMenuHeader: mergedDeps.updateMainMenuHeader || this.fallbackUpdate,
 
             // DOM helpers
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id))
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id))
         };
 
         // Instance version

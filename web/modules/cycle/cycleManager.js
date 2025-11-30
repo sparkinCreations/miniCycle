@@ -13,29 +13,44 @@
  * - Onboarding integration
  */
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for CycleManager (call before creating instance)
+ * @param {Object} dependencies - { AppState, showNotification, sanitizeInput, etc. }
+ */
+export function setCycleManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔄 CycleManager dependencies set:', Object.keys(dependencies));
+}
+
 export class CycleManager {
     constructor(dependencies = {}) {
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         this.deps = {
-            // State management
-            AppState: dependencies.AppState || window.AppState,
-            loadMiniCycleData: dependencies.loadMiniCycleData || (() => window.loadMiniCycleData?.()),
+            // State management - no window.* fallbacks
+            AppState: mergedDeps.AppState || null,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || null,
 
-            // UI functions
-            showPromptModal: dependencies.showPromptModal || ((opts) => window.showPromptModal?.(opts)),
-            showNotification: dependencies.showNotification || this.fallbackNotification.bind(this),
-            sanitizeInput: dependencies.sanitizeInput || ((input) => window.sanitizeInput?.(input) || input),
+            // UI functions - no window.* fallbacks
+            showPromptModal: mergedDeps.showPromptModal || null,
+            showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this),
+            sanitizeInput: mergedDeps.sanitizeInput || ((input) => input),
 
-            // Lifecycle functions
-            completeInitialSetup: dependencies.completeInitialSetup || ((id, data) => window.completeInitialSetup?.(id, data)),
-            hideMainMenu: dependencies.hideMainMenu || (() => window.hideMainMenu?.()),
-            updateProgressBar: dependencies.updateProgressBar || (() => window.updateProgressBar?.()),
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || (() => window.checkCompleteAllButton?.()),
-            autoSave: dependencies.autoSave || (() => window.autoSave?.()),
+            // Lifecycle functions - no window.* fallbacks
+            completeInitialSetup: mergedDeps.completeInitialSetup || null,
+            hideMainMenu: mergedDeps.hideMainMenu || null,
+            updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
+            autoSave: mergedDeps.autoSave || (() => {}),
 
             // DOM functions
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
         this.version = '1.284';

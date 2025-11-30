@@ -17,8 +17,23 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for StatsPanelManager (call before creating instance)
+ * @param {Object} dependencies - { showNotification, loadMiniCycleData, etc. }
+ */
+export function setStatsPanelDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('📊 StatsPanel dependencies set:', Object.keys(dependencies));
+}
+
 export class StatsPanelManager {
     constructor(dependencies = {}) {
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // State management
         this.state = {
             startX: 0,
@@ -30,7 +45,7 @@ export class StatsPanelManager {
             isPointerSwiping: false,
             pointerStartX: 0
         };
-        
+
         // Configuration thresholds
         this.config = {
             SWIPE_THRESHOLD: 400,
@@ -39,16 +54,16 @@ export class StatsPanelManager {
             TOUCH_SWIPE_THRESHOLD: 50,
             MOUSE_DRAG_START_THRESHOLD: 20
         };
-        
-        // Dependencies (with fallbacks)
+
+        // Dependencies - no window.* fallbacks
         this.dependencies = {
-            showNotification: dependencies.showNotification || window.showNotification || this.fallbackNotification,
-            loadMiniCycleData: dependencies.loadMiniCycleData || window.loadMiniCycleData || this.fallbackLoadData,
-            isOverlayActive: dependencies.isOverlayActive || window.isOverlayActive || this.fallbackOverlayCheck,
-            isDraggingNotification: dependencies.isDraggingNotification || (() => window.isDraggingNotification || false),
-            updateThemeColor: dependencies.updateThemeColor || window.updateThemeColor || (() => {}),
-            hideMainMenu: dependencies.hideMainMenu || window.hideMainMenu || (() => {}),
-            setupDarkModeToggle: dependencies.setupDarkModeToggle || window.setupDarkModeToggle || (() => {})
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
+            isOverlayActive: mergedDeps.isOverlayActive || this.fallbackOverlayCheck,
+            isDraggingNotification: mergedDeps.isDraggingNotification || (() => false),
+            updateThemeColor: mergedDeps.updateThemeColor || (() => {}),
+            hideMainMenu: mergedDeps.hideMainMenu || (() => {}),
+            setupDarkModeToggle: mergedDeps.setupDarkModeToggle || (() => {})
         };
         
         // DOM elements cache

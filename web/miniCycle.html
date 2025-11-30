@@ -1679,15 +1679,18 @@ window.installApp = () => {
         <form id="feedback-form" action="https://api.web3forms.com/submit" method="POST">
             <!-- Your Web3Forms Access Key -->
             <input type="hidden" name="access_key" value="691907ec-ad04-4447-9d45-861ee622a091">
-            
+
+            <!-- Subject line for email identification -->
+            <input type="hidden" name="subject" value="miniCycle Feedback">
+
+            <!-- Web3Forms Honeypot Spam Protection -->
+            <input type="checkbox" name="botcheck" style="display: none;" tabindex="-1" autocomplete="off">
+
             <!-- Feedback Text -->
-            <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required></textarea>
+            <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
 
             <!-- Email (Optional, if you want users to provide their email) -->
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
-
-            <!-- Prevent Spam with Honeypot -->
-            <input type="text" id="feedback-honeypot" name="honeypot" style="display: none;" autocomplete="off" tabindex="-1">
 
             <!-- Show a success message instead of redirecting -->
             <button type="submit" id="submit-feedback">Submit</button>

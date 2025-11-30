@@ -14,21 +14,36 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for ModeManager (call before creating instance)
+ * @param {Object} dependencies - { getAppState, showNotification, etc. }
+ */
+export function setModeManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎯 ModeManager dependencies set:', Object.keys(dependencies));
+}
+
 export class ModeManager {
     constructor(dependencies = {}) {
         console.log('🎯 ModeManager: Constructing with dependencies');
 
-        // Store dependencies with optional chaining for resilience
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Store dependencies - no window.* fallbacks
         this.deps = {
-            getAppState: dependencies.getAppState || (() => window.AppState),
-            loadMiniCycleData: dependencies.loadMiniCycleData,
-            createTaskButtonContainer: dependencies.createTaskButtonContainer,
-            setupDueDateButtonInteraction: dependencies.setupDueDateButtonInteraction,
-            checkCompleteAllButton: dependencies.checkCompleteAllButton,
-            showNotification: dependencies.showNotification,
-            helpWindowManager: dependencies.helpWindowManager,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            getAppState: mergedDeps.getAppState || null,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData,
+            createTaskButtonContainer: mergedDeps.createTaskButtonContainer,
+            setupDueDateButtonInteraction: mergedDeps.setupDueDateButtonInteraction,
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton,
+            showNotification: mergedDeps.showNotification,
+            helpWindowManager: mergedDeps.helpWindowManager,
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
         // Debounce timer for refresh operations
