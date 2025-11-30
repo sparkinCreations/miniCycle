@@ -186,14 +186,20 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ## Future Direction
 
-### Planned: True Modular Overhaul
+### In Progress: True Modular Overhaul (~15-20% complete)
 
-See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)
+See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full tracking.
 
-The goal is to transform from global coupling to true dependency injection:
-- Modules receive dependencies, don't reach for globals
-- Main script is the only place with wiring
-- Modules become testable and reusable
+**Done:**
+- `deps` container created in miniCycle-scripts.js
+- 6 modules converted: taskValidation, dataValidator, themeManager, modalManager, taskDOM, undoRedoManager
+- window.* fallbacks removed from converted modules
+- Tests updated for Phase 2 patterns
+
+**Remaining:**
+- Wire remaining Tier 2/3 modules
+- Remove window.* exports from modules
+- Minimize window.* to HTML-only needs
 
 ### Not Planned
 

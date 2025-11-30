@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - 2025-11-30
+
+### Changed
+- **Architecture**: Started modular overhaul - transitioning from `window.*` globals to `deps` container pattern
+- **Dependency Injection**: Created central `deps` container in miniCycle-scripts.js for explicit dependency wiring
+- **taskValidation.js**: `sanitizeInput` now required (throws if missing), removed window.* fallback
+- **dataValidator.js**: Added `setDataValidatorDependencies()` for explicit DI
+- **themeManager.js**: Added `setThemeManagerDependencies()`, removed all window.* fallbacks
+- **modalManager.js**: Added `setModalManagerDependencies()`, removed all window.* fallbacks
+- **taskDOM.js**: Removed window.* fallbacks from constructor, uses injected deps only
+- **undoRedoManager.js**: Wired with `deps.utils.*` instead of window.* references
+- **globalUtils.js**: Fixed `syncAllTasksWithMode` to use `GlobalUtils.` instead of `this.` for proper context
+
+### Fixed
+- **themeManager.js**: Fixed timing issue - `applyTheme()` now accepts `shouldSave` parameter to skip saving during initial load
+- **Timing**: Moved dependency injection right after module imports to prevent "not available" errors
+- **globalUtils.js**: Exposed `syncAllTasksWithMode` to window for mode switching
+
+### Tests
+- **taskValidation.tests.js**: Updated for Phase 2 patterns (required deps, no window.* exports)
+
+### Documentation
+- **MODULAR_OVERHAUL_PLAN.md**: Added progress tracker section
+- **CLAUDE.md**: Updated architecture metrics and status
+- **DEPENDENCY_MAP.md**: Updated metrics to reflect current state
+
+---
+
 ## [1.373] - 2025-11-23
 
 ### Changed

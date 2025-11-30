@@ -1,20 +1,23 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
+> **Updated:** November 30, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
 
-The miniCycle codebase has **43 modules** across **11 directories**. Despite ES6 module syntax, communication is primarily through `window.*` globals (~96%) rather than ES6 imports (~4%).
+The miniCycle codebase has **43 modules** across **11 directories**. Communication is transitioning from `window.*` globals to a `deps` container pattern.
 
 ### Key Numbers
-| Metric | Count |
-|--------|-------|
-| Total modules | 43 |
-| `window.*` globals created | ~68 |
-| `window.*` references consumed | ~748 |
-| ES6 imports (excluding appInit) | 4 |
-| Modules that can work standalone | 0 |
+| Metric | Before | Current | Target |
+|--------|--------|---------|--------|
+| Total modules | 43 | 43 | 43 |
+| `window.*` globals created | ~68 | ~60 | <20 |
+| `window.*` references consumed | ~748 | ~700 | <100 |
+| Modules with true DI | 0 | 6 | 15+ |
+| `deps.*` container usage | 0 | ~45 | 100+ |
+
+> **Note:** Modular overhaul in progress (~15-20% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
 ---
 
