@@ -1,105 +1,58 @@
-# Module System Deep Dive
+# Module System Guide
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.284
+**Last Updated**: November 2025
 
 ---
 
-## Table of Contents
+## Current State: Honest Assessment
 
-1. [The 4 Module Patterns](#the-4-module-patterns)
-   - [Static Utilities](#static-utilities-pure-functions)
-   - [Simple Instance](#simple-instance-self-contained)
-   - [Resilient Constructor](#resilient-constructor-graceful-degradation)
-   - [Strict Injection](#strict-injection-fail-fast)
+The codebase uses 4 module patterns. However, there's an important caveat:
+
+**All patterns fall back to `window.*` globals.** The DI structure exists but doesn't provide true decoupling. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the plan to fix this.
 
 ---
 
 ## The 4 Module Patterns
 
-Your codebase uses 4 distinct patterns based on module purpose:
+### 1. Static Utilities (Pure Functions)
 
-### ⚡ Static Utilities (Pure Functions)
-
-**Example: globalUtils.js**
+**No dependencies, no state.** These are genuinely decoupled.
 
 ```javascript
-// utilities/globalUtils.js (actual code)
-
+// modules/utils/globalUtils.js
 export class GlobalUtils {
-    /**
-     * Safely add event listener (removes existing first)
-     */
-    static safeAddEventListenerById(elementId, event, handler) {
-        const element = document.getElementById(elementId);
-        if (!element) {
-            console.warn(`⚠️ Element #${elementId} not found`);
-            return;
-        }
-        element.removeEventListener(event, handler);
-        element.addEventListener(event, handler);
+    static sanitizeInput(text) {
+        if (typeof text !== 'string') return '';
+        return text.trim().replace(/[<>]/g, '');
     }
 
-    /**
-     * Generate unique ID with prefix
-     */
     static generateId(prefix = 'id') {
         return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
-
-    /**
-     * Format date for display
-     */
-    static formatDate(date) {
-        if (!date) return '';
-        const d = new Date(date);
-        return d.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    }
 }
-
-// Make available globally
-window.safeAddEventListenerById = GlobalUtils.safeAddEventListenerById;
-window.generateId = GlobalUtils.generateId;
-window.formatDate = GlobalUtils.formatDate;
 ```
 
-**Use case:** Pure utility functions with no dependencies.
+**Status:** ✅ Actually modular
 
 ---
 
-### 🎯 Simple Instance (Self-Contained)
+### 2. Simple Instance (Self-Contained)
 
-**Example: notifications.js**
+**Creates its own DOM, minimal external dependencies.**
 
 ```javascript
-// utilities/notifications.js (actual code excerpt)
-
+// modules/utils/notifications.js
 export class MiniCycleNotifications {
     constructor() {
-        this.activeNotifications = new Set();
-        this.isDragging = false;
         this.container = this.findOrCreateContainer();
     }
 
-    show(message, type = "info", duration = 3000) {
-        try {
-            const notification = this.createNotification(message, type);
-            this.container.appendChild(notification);
-            this.activeNotifications.add(notification);
-
-            if (duration) {
-                setTimeout(() => this.remove(notification), duration);
-            }
-
-            return notification;
-        } catch (error) {
-            // Graceful fallback
-            console.log(`[Notification] ${message}`);
-            console.warn('Notification system error:', error);
+    show(message, type = 'info', duration = 3000) {
+        const notification = this.createNotification(message, type);
+        this.container.appendChild(notification);
+        if (duration) {
+            setTimeout(() => this.remove(notification), duration);
         }
     }
 
@@ -108,181 +61,64 @@ export class MiniCycleNotifications {
         if (!container) {
             container = document.createElement('div');
             container.id = 'notification-container';
-            container.className = 'notification-container';
             document.body.appendChild(container);
         }
         return container;
     }
 }
 
-// Create global instance
+// Exposed globally
 const notifications = new MiniCycleNotifications();
-window.notifications = notifications;
 window.showNotification = (msg, type, dur) => notifications.show(msg, type, dur);
 ```
 
-**Example: modalManager.js**
-
-```javascript
-// utilities/ui/modalManager.js (actual code excerpt)
-
-export class ModalManager {
-    constructor() {
-        this.version = '1.330';
-        this.initialized = false;
-    }
-
-    async init() {
-        await appInit.waitForCore();
-        this.setupEventListeners();
-        this.initialized = true;
-        console.log('🎭 Modal Manager initialized');
-    }
-
-    /**
-     * Close all modals and overlays in the app
-     */
-    closeAllModals() {
-        // Close Schema 2.5 and legacy modals
-        const modalSelectors = [
-            "[data-modal]",
-            ".settings-modal",
-            "#feedback-modal",
-            // ... more modal types
-        ];
-
-        modalSelectors.forEach(selector => {
-            document.querySelectorAll(selector).forEach(modal => {
-                if (modal.dataset.modal !== undefined) {
-                    modal.classList.remove("visible");
-                } else {
-                    modal.style.display = "none";
-                }
-            });
-        });
-
-        // Reset task states
-        document.querySelectorAll(".task").forEach(task => {
-            task.classList.remove("long-pressed", "draggable", "dragging", "selected");
-        });
-    }
-
-    /**
-     * Set up global keyboard handlers (ESC key)
-     */
-    setupGlobalKeyHandlers() {
-        window.safeAddEventListener(document, "keydown", (e) => {
-            if (e.key === "Escape") {
-                e.preventDefault();
-                this.closeAllModals();
-            }
-        });
-    }
-}
-
-// Create single instance
-const modalManager = new ModalManager();
-window.modalManager = modalManager;
-window.closeAllModals = () => modalManager?.closeAllModals();
-
-// Initialize automatically
-modalManager.init();
-```
-
-**Use case:** Services that should always work, even if DOM is missing. These modules handle UI coordination, modal management, user onboarding, and achievement unlocks.
+**Status:** ⚠️ Self-contained but pollutes `window`
 
 ---
 
-### 🛡️ Resilient Constructor (Graceful Degradation)
+### 3. Resilient Constructor (Graceful Degradation)
 
-**Example: statsPanel.js**
+**Accepts dependencies with fallbacks.** This is where the "DI theater" happens.
 
 ```javascript
-// utilities/statsPanel.js (actual code excerpt)
-
+// modules/ui/statsPanel.js
 export class StatsPanelManager {
     constructor(dependencies = {}) {
-        // Store dependencies with fallbacks
         this.deps = {
             showNotification: dependencies.showNotification || this.fallbackNotification,
             loadData: dependencies.loadData || this.fallbackLoadData,
-            updateThemeColor: dependencies.updateThemeColor || (() => {})
         };
-
-        this.state = {
-            currentView: 'tasks',
-            lastUpdate: null
-        };
-
-        this.init();
     }
 
-    updateStatsPanel() {
-        try {
-            const data = this.deps.loadData();
-            if (!data) {
-                this.showPlaceholder();
-                return;
-            }
-
-            // Calculate stats
-            const stats = this.calculateStats(data);
-
-            // Update DOM
-            this.renderStats(stats);
-
-            this.deps.showNotification('Stats updated', 'success', 2000);
-        } catch (error) {
-            console.warn('Stats update failed:', error);
-            this.showError();
-        }
-    }
-
-    // Fallback methods
     fallbackNotification(msg) {
         console.log(`[Stats] ${msg}`);
     }
 
     fallbackLoadData() {
-        console.warn('⚠️ Data loading not available');
         return null;
     }
 }
 
-// Main script initializes with dependencies
+// In main script - dependencies ARE globals
 const statsPanel = new StatsPanelManager({
-    showNotification: window.showNotification,
-    loadData: window.loadMiniCycleData,
-    updateThemeColor: window.updateThemeColor
+    showNotification: window.showNotification,  // ← global
+    loadData: window.loadMiniCycleData,         // ← global
 });
-
-window.statsPanel = statsPanel;
 ```
 
-**Use case:** Complex UI that needs external functions but must work even when they're missing.
+**Status:** ❌ Looks like DI, but injects globals. Can't test without mocking `window`.
 
 ---
 
-### 🔧 Strict Injection (Fail Fast)
+### 4. Strict Injection (Fail Fast)
 
-**Example: cycleLoader.js**
+**Requires dependencies, throws if missing.**
 
 ```javascript
-// utilities/cycle/cycleLoader.js (actual code)
+// modules/cycle/cycleLoader.js
+const Deps = {};
 
-const Deps = {
-    loadMiniCycleData: null,
-    createInitialSchema25Data: null,
-    addTask: null,
-    updateThemeColor: null,
-    startReminders: null,
-    updateProgressBar: null,
-    checkCompleteAllButton: null,
-    updateMainMenuHeader: null,
-    updateStatsPanel: null
-};
-
-function setCycleLoaderDependencies(overrides = {}) {
+export function setCycleLoaderDependencies(overrides) {
     Object.assign(Deps, overrides);
 }
 
@@ -292,102 +128,111 @@ function assertInjected(name, fn) {
     }
 }
 
-// Main coordination function
-function loadMiniCycle() {
-    console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
-
-    // MUST have these dependencies
+export function loadMiniCycle() {
     assertInjected('loadMiniCycleData', Deps.loadMiniCycleData);
     assertInjected('addTask', Deps.addTask);
 
-    const schemaData = Deps.loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ No Schema 2.5 data found');
-        Deps.createInitialSchema25Data?.();
-        return;
-    }
-
-    // Load cycle data...
-    const cycles = schemaData.cycles || {};
-    const activeCycleId = schemaData.activeCycle || schemaData.activeCycleId;
-
-    if (!activeCycleId || !cycles[activeCycleId]) {
-        console.error('❌ No valid active cycle found');
-        return;
-    }
-
-    const currentCycle = cycles[activeCycleId];
-
-    // Render tasks to DOM
-    currentCycle.tasks.forEach(task => {
-        Deps.addTask(
-            task.text,
-            task.completed,
-            false,  // don't save during load
-            task.dueDate,
-            task.highPriority,
-            true,   // isLoading = true
-            task.remindersEnabled,
-            task.recurring,
-            task.id,
-            task.recurringSettings
-        );
-    });
-
-    // Update dependent UI
-    Deps.updateProgressBar?.();
-    Deps.updateStatsPanel?.();
-
-    console.log('✅ Cycle loading completed');
+    const data = Deps.loadMiniCycleData();
+    // ...
 }
 
-export { loadMiniCycle, setCycleLoaderDependencies };
+// In main script - still injects globals
+setCycleLoaderDependencies({
+    loadMiniCycleData: window.loadMiniCycleData,  // ← global
+    addTask: window.addTask,                       // ← global
+});
 ```
 
-**Main script configures dependencies:**
+**Status:** ❌ Enforces contract but still coupled to globals.
+
+---
+
+## The Problem
+
+Every pattern eventually resolves to `window.*`:
 
 ```javascript
-// miniCycle-scripts.js
+// What the code looks like:
+constructor(dependencies = {}) {
+    this.deps = {
+        AppState: dependencies.AppState || window.AppState,
+    };
+}
 
-const cycleLoader = await import('./utilities/cycle/cycleLoader.js');
-
-cycleLoader.setCycleLoaderDependencies({
-    loadMiniCycleData: window.loadMiniCycleData,
-    createInitialSchema25Data: createInitialSchema25Data,
-    addTask: addTask,
-    updateThemeColor: updateThemeColor,
-    startReminders: startReminders,
-    updateProgressBar: updateProgressBar,
-    checkCompleteAllButton: checkCompleteAllButton,
-    updateMainMenuHeader: updateMainMenuHeader,
-    updateStatsPanel: updateStatsPanel
+// What gets passed in:
+new Module({
+    AppState: window.AppState,  // Just a pointer to the global
 });
-
-// Now safe to use
-cycleLoader.loadMiniCycle();
 ```
 
-**Use case:** Critical business logic that CANNOT work without proper dependencies. Fails fast with clear errors.
+**Result:**
+- Can't test modules in isolation
+- Can't reuse modules in other projects
+- Dependencies are invisible (not in import statements)
+- Changing one global affects unknown modules
 
 ---
 
 ## Pattern Selection Guide
 
-| Module Type | Pattern | When to Use |
-|-------------|---------|-------------|
-| Utilities | Static | Pure functions, no state, no dependencies |
-| UI Components | Simple Instance | Self-contained, minimal dependencies |
-| Dashboard/Panels | Resilient | Needs dependencies but must gracefully degrade |
-| Core Business Logic | Strict Injection | Critical path, must fail fast if broken |
+| Pattern | When to Use | Testable? |
+|---------|-------------|-----------|
+| Static Utilities | Pure functions, no state | ✅ Yes |
+| Simple Instance | Self-contained UI components | ⚠️ Need to mock DOM |
+| Resilient Constructor | Complex features needing graceful degradation | ❌ Must mock `window` |
+| Strict Injection | Critical business logic | ❌ Must mock `window` |
+
+---
+
+## Future: True Modularity
+
+See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the plan to transform these patterns:
+
+**Current:**
+```javascript
+constructor(dependencies = {}) {
+    this.notify = dependencies.showNotification || window.showNotification;
+}
+```
+
+**Target:**
+```javascript
+constructor({ showNotification }) {
+    if (!showNotification) throw new Error('showNotification required');
+    this.notify = showNotification;
+}
+```
+
+The difference: no fallback to globals. Dependencies are required and explicit.
+
+---
+
+## Existing Modules by Pattern
+
+### Static Utilities
+- `modules/utils/globalUtils.js` - DOM utilities
+- `modules/task/taskValidation.js` - Task validation
+- `modules/utils/dataValidator.js` - Data validation
+
+### Simple Instance
+- `modules/utils/notifications.js` - Notification system
+- `modules/utils/deviceDetection.js` - Device detection
+
+### Resilient Constructor
+- `modules/ui/statsPanel.js` - Statistics panel
+- `modules/ui/settingsManager.js` - Settings UI
+- `modules/ui/modalManager.js` - Modal coordination
+- Most UI modules
+
+### Strict Injection
+- `modules/cycle/cycleLoader.js` - Cycle loading
+- `modules/recurring/recurringCore.js` - Recurring logic
+- `modules/ui/undoRedoManager.js` - Undo/redo system
 
 ---
 
 ## Next Steps
 
-- **[AppInit System](APPINIT_SYSTEM.md)** - Understand 2-phase initialization
-- **[API Reference](API_REFERENCE.md)** - Browse available functions
-- **[Development Workflow](DEVELOPMENT_WORKFLOW.md)** - Start building features
-
----
-
-**Questions?** Check the [Developer Documentation Hub](DEVELOPER_DOCUMENTATION.md) for links to all guides.
+- **[DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)** - See actual dependencies
+- **[MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true decoupling
+- **[DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)** - How to work with current code

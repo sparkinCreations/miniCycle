@@ -1279,8 +1279,9 @@ await transaction.execute();
 ### Issue #9: Global Namespace Pollution
 
 **Priority:** MEDIUM
-**Files:** All modules (737 `window.*` assignments)
-**Impact:** Name collision risks, memory overhead
+**Files:** All modules (~748 `window.*` references consumed, ~68 created)
+**Impact:** Name collision risks, untestable modules, hidden dependencies
+**Status:** ⚠️ NAMESPACE APPROACH ATTEMPTED AND REVERTED (November 2025)
 
 #### Problem
 
@@ -1292,24 +1293,24 @@ window.editTask = (item) => taskCoreInstance.editTask(item);
 // ... 50+ more global functions per module
 ```
 
-#### Recommended Fix
+#### Previous Recommendation (Reverted)
 
-Use namespaced API:
+The `window.miniCycle.*` namespace approach was attempted in November 2025 but reverted because:
+- It reorganized globals but didn't eliminate them
+- Modules still reached for `window.miniCycle.*` instead of `window.*`
+- No actual decoupling benefit
 
-```javascript
-window.miniCycle = {
-    tasks: {
-        add: (...args) => taskCoreInstance.addTask(...args),
-        edit: (item) => taskCoreInstance.editTask(item),
-    },
-    cycles: { /* ... */ },
-    state: { /* ... */ }
-};
-```
+#### Current Recommendation
+
+See **[MODULAR_OVERHAUL_PLAN.md](./MODULAR_OVERHAUL_PLAN.md)** for the true modularization plan:
+- Remove `window.*` fallbacks from constructors
+- Inject actual instances, not global wrappers
+- Main script becomes the only wiring location
+- Modules become testable in isolation
 
 #### Estimated Effort
-**Time:** 12-16 hours
-**Risk:** Medium (backward compatibility concerns)
+**Time:** 20-40 hours (bottom-up refactoring)
+**Risk:** Medium (requires careful testing at each tier)
 
 ---
 
@@ -2051,13 +2052,13 @@ After implementing fixes, verify:
 
 ### Code Quality Targets
 
-**Before:**
-- Global namespace: 737 items
+**Current State:**
+- Global variables: ~748 consumed, ~68 created
 - Magic numbers: 125+
 - Inconsistent patterns: 3 error styles
 
-**After (targets):**
-- Global namespace: <50 items (namespaced)
+**Target (via MODULAR_OVERHAUL_PLAN.md):**
+- Global variables: 0 (true DI, no window.* fallbacks)
 - Magic numbers: 0 (all in constants)
 - Inconsistent patterns: 1 standard Result pattern
 
@@ -2113,8 +2114,8 @@ After implementing fixes, verify:
 **Q: Should we fix all critical issues in one sprint?**
 A: Recommend spreading over 2 sprints to allow thorough testing. Critical fixes affect core functionality and need careful validation.
 
-**Q: Can we defer the global namespace refactor?**
-A: Yes, it's medium priority. Focus on data integrity and security first.
+**Q: What about the global coupling problem?**
+A: The namespace approach was attempted (November 2025) and reverted. See [MODULAR_OVERHAUL_PLAN.md](./MODULAR_OVERHAUL_PLAN.md) for the actual solution: true DI without window.* fallbacks.
 
 **Q: Should we bundle this with Schema 2.6?**
 A: No, keep separate. These are bug fixes, Schema 2.6 is feature work. However, you could implement both in parallel if you have capacity.

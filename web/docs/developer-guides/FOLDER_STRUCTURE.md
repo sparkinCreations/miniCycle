@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Version:** 1.357
-**Last Updated:** November 15, 2025
+**Version:** 1.284
+**Last Updated:** November 2025
 **Status:** Current production structure
 
 ---

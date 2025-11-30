@@ -1,10 +1,13 @@
 # 🧩 Contributing to miniCycle
 
-Welcome to the **miniCycle developer community!**  
+Welcome to the **miniCycle developer community!**
 This guide explains how the app is structured, how modules communicate, and how to safely extend or contribute new functionality.
 
-miniCycle is built with **vanilla JavaScript (ES6 modules)** and follows a **modular dependency-injection architecture**.  
-Every file is self-contained, versioned, and built to gracefully degrade — even if optional dependencies are missing.
+miniCycle is built with **vanilla JavaScript (ES6 modules)** and has **dependency injection boilerplate** in most modules.
+
+> **⚠️ Architecture Reality Check**
+>
+> The DI pattern exists but all dependencies resolve to `window.*` globals. Modules have constructor injection but use fallbacks like `dependencies.AppState || window.AppState`. This means modules cannot be tested in isolation without mocking `window`. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the plan to fix this.
 
 ---
 
@@ -12,11 +15,11 @@ Every file is self-contained, versioned, and built to gracefully degrade — eve
 
 | Principle | Description |
 |------------|--------------|
-| **Resilience First** | Every module should run even if optional dependencies aren’t loaded. Use `fallbackXYZ()` functions. |
-| **Explicit Dependencies** | Pass dependencies via constructor or `setXYZDependencies()` functions — *never* rely on hidden globals. |
+| **Resilience First** | Every module has fallback functions, though these currently fall back to `window.*` globals. |
+| **DI Boilerplate** | Pass dependencies via constructor or `setXYZDependencies()` functions. Note: currently all resolve to globals. |
 | **Schema Safety** | All data reads/writes must go through the `AppState` or schema-safe helpers like `loadMiniCycleData()`. |
 | **Two-Phase Initialization** | All modules wait for `appInit.waitForCore()` before executing logic that touches DOM or AppState. |
-| **Zero Frameworks** | No React/Vue. miniCycle’s architecture is custom-built to stay lightweight, offline-first, and localStorage-based. |
+| **Zero Frameworks** | No React/Vue. miniCycle's architecture is custom-built to stay lightweight, offline-first, and localStorage-based. |
 
 ---
 
@@ -182,11 +185,12 @@ Register it in your main script after `statsPanel.js` is loaded.
 
 ## 💡 10. Pro Tips for Contributors
 
-- Use **Dependency Injection over globals** — testability improves 10×.  
-- Always handle **missing DOM gracefully** (`if (!element) return;`).  
-- Keep UI logic isolated from data logic.  
-- Use **`AppState.update()`** to modify data, not direct object mutation.  
-- Add `@pattern` and `@version` in module headers — it’s part of the versioning philosophy.  
+- Follow the **existing DI pattern** even though it currently resolves to globals — this prepares for future true modularization.
+- Always handle **missing DOM gracefully** (`if (!element) return;`).
+- Keep UI logic isolated from data logic.
+- Use **`AppState.update()`** to modify data, not direct object mutation.
+- Add `@pattern` and `@version` in module headers — it's part of the versioning philosophy.
+- See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) to understand actual module dependencies.  
 
 ---
 

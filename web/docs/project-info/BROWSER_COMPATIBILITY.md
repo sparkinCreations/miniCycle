@@ -2,8 +2,8 @@
 
 > **Comprehensive browser support for miniCycle**
 
-**Version:** 1.352
-**Last Updated:** November 13, 2025
+**Version:** 1.284
+**Last Updated:** November 2025
 
 ---
 

@@ -1,7 +1,7 @@
 # Architecture Overview
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.284
+**Last Updated**: November 2025
 
 ---
 
@@ -27,7 +27,7 @@
 | **Main Script** | 3,674 lines | Down from 15,677 (74.8% reduction) ✅ |
 | **Modules** | 33 modules | All major systems modularized! |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.373 | Stable production release |
+| **App Version** | 1.284 | Stable production release |
 | **SW Cache** | v82 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
 | **Test Coverage** | 100% ✅ | 1011 tests across 33 modules |

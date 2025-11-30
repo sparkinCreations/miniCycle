@@ -1,8 +1,8 @@
 # miniCycle Documentation
 
-> **Comprehensive documentation for the miniCycle task cycling application.**
+> **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.373 | **Test Coverage**: 1011/1011 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.284 | **Test Coverage**: 1011/1011 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -11,7 +11,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 ## 🚀 Start Here
 
 ### New to miniCycle?
-- **[WHAT_IS_MINICYCLE.md](./user-guides/WHAT_IS_MINICYCLE.md)** - Product overview and philosophy
+- **[WHAT_IS_MINICYCLE.md](./user-guides/WHAT_IS_MINICYCLE.md)** - Product overview and philosophy (routine manager, not todo app!)
 - **[CLAUDE.md](./developer-guides/CLAUDE.md)** - Essential guidance for AI assistants and quick onboarding
 - **[QUICK_REFERENCE.md](./user-guides/QUICK_REFERENCE.md)** - Fast lookup for common tasks
 
@@ -23,27 +23,20 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 ## 🏗️ Core Architecture & Concepts
 
 ### Application Structure
-- **[FINAL-MODULE-STRUCTURE.md](./archive/FINAL-MODULE-STRUCTURE.md)** - Current module organization and responsibilities
-- **[APPINIT_EXPLAINED.md](./architecture/APPINIT_EXPLAINED.md)** - Initialization system deep-dive
+- **[DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md)** - Actual module dependencies and global usage
+- **[APPINIT_EXPLAINED.md](./architecture/APPINIT_EXPLAINED.md)** - 2-phase initialization system
 - **[SCHEMA_2_5.md](./data-schema/SCHEMA_2_5.md)** - Data structure and schema documentation
+- **[MODULE_SYSTEM_GUIDE.md](./developer-guides/MODULE_SYSTEM_GUIDE.md)** - Module patterns and their limitations
 
 ### Key Features
-- **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization (v1.373+, 703 lines, 29 tests ✅)
-  - Real-time saving without save button (v1.372+)
-  - Reopen after reload functionality
-  - Enhanced reminders integration
-  - Mobile tap preview
-- **[MODE_MANAGER_ARCHITECTURE.md](./architecture/MODE_MANAGER_ARCHITECTURE.md)** - Mode management system (v1.373+, 633 lines)
-  - UI refresh without page reload (v1.372+)
-  - Three operational modes (Auto Cycle, Manual Cycle, To-Do)
-  - Debounced task button updates
-  - Mode state synchronization
-- **[COMPLETED_TASKS_DROPDOWN.md](./features/COMPLETED_TASKS_DROPDOWN.md)** - Optional completed tasks dropdown (v1.352+)
+- **[TASK_OPTIONS_CUSTOMIZER.md](./features/TASK_OPTIONS_CUSTOMIZER.md)** - Per-cycle button visibility customization
+- **[MODE_MANAGER_ARCHITECTURE.md](./architecture/MODE_MANAGER_ARCHITECTURE.md)** - Mode management system
+- **[COMPLETED_TASKS_DROPDOWN.md](./features/COMPLETED_TASKS_DROPDOWN.md)** - Optional completed tasks dropdown
 - **[minicycle-recurring-guide.md](./features/minicycle-recurring-guide.md)** - Recurring tasks implementation
 - **[RECURRING_WATCH_FUNCTION.md](./features/RECURRING_WATCH_FUNCTION.md)** - Polling-based task scheduling
 - **[DRAG_DROP_ARCHITECTURE.md](./architecture/DRAG_DROP_ARCHITECTURE.md)** - Drag & drop system architecture
 - **[DRAG_DROP_LONG_PRESS.md](./architecture/DRAG_DROP_LONG_PRESS.md)** - Cross-platform interaction patterns
-- **[UNDO_REDO_ARCHITECTURE.md](./architecture/UNDO_REDO_ARCHITECTURE.md)** - Per-cycle undo/redo with IndexedDB persistence (73 tests ✅)
+- **[UNDO_REDO_ARCHITECTURE.md](./architecture/UNDO_REDO_ARCHITECTURE.md)** - Per-cycle undo/redo with IndexedDB persistence
 
 ---
 
@@ -67,66 +60,39 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[MCYC_FILE_FORMAT.md](./data-schema/MCYC_FILE_FORMAT.md)** - Import/export file format specification
 
 ### Security & Performance
-- **[ERROR_HANDLING_AND_TESTING_SUMMARY.md](./security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)** - Complete error handling improvements (v1.355)
+- **[ERROR_HANDLING_AND_TESTING_SUMMARY.md](./security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)** - Complete error handling improvements
 - **[ERROR_HANDLING_IMPROVEMENTS.md](./security/ERROR_HANDLING_IMPROVEMENTS.md)** - Implementation details and safe utility functions
-- **[DEVELOPER_DOCUMENTATION.md#-security](./developer-guides/DEVELOPER_DOCUMENTATION.md#-security)** - XSS prevention, secure coding patterns, and security checklist
-- **[EVENT_LISTENER_AUDIT.md](./archive/EVENT_LISTENER_AUDIT.md)** - Event listener leak audit and prevention strategies
-- **[security/audits/](./security/audits/)** - Comprehensive error handling audit reports
-
-### Browser Compatibility
-- **[SAFARI_DRAGDROP_FIX.md](./archive/SAFARI_DRAGDROP_FIX.md)** - Safari-specific drag & drop fixes
+- **[DEVELOPER_DOCUMENTATION.md#-security](./developer-guides/DEVELOPER_DOCUMENTATION.md#-security)** - XSS prevention, secure coding patterns
 
 ---
 
-## 📚 Modularization Journey
+## 📊 Architecture Status
 
-**Status: ✅ COMPLETE!** miniCycle has achieved 74.8% reduction (15,677 → 3,674 lines) with 33 modules.
+### Current State (November 2025)
 
-- **[minicycle_modularization_guide_v4.md](./archive/minicycle_modularization_guide_v4.md)** - Latest modularization guide
-- **[minicycle_modularization_lessons_learned.md](./archive/minicycle_modularization_lessons_learned.md)** - Key insights and patterns
-- **[FINAL-MODULE-STRUCTURE.md](./archive/FINAL-MODULE-STRUCTURE.md)** - Complete module architecture (74.8% reduction achieved!)
-- **[REMAINING_EXTRACTIONS_ANALYSIS.md](./future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)** - Optional future optimizations (31.8% additional reduction possible)
+| Metric | Value |
+|--------|-------|
+| Main script | ~3,700 lines |
+| Modules | 43 files |
+| `window.*` globals created | ~68 |
+| `window.*` globals consumed | ~748 |
+| Test coverage | 1011 tests (100%) |
 
-**Note:** Modularization is technically complete. The remaining extractions documented in REMAINING_EXTRACTIONS_ANALYSIS.md are optional optimizations that would reduce the main script from 3,674 → ~2,500 lines.
+### The Reality
 
----
+The codebase has **DI structure but global coupling**:
+- ✅ Code is organized into files
+- ✅ DI boilerplate exists in constructors
+- ❌ Modules can't be tested in isolation
+- ❌ Dependencies are invisible (not in imports)
+- ❌ Can't reuse modules elsewhere
 
-## 📊 Code Quality & Audits
+See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
-### Recent Improvements (November 2025)
-- **v1.373** - Enhanced UI refresh for task options and mode changes, dark mode in test suite
-- **v1.372** - Real-time saving in customizer, mode changes without page reload
-- **v1.370** - Delete When Complete feature
-- **[ERROR_HANDLING_AND_TESTING_SUMMARY.md](./security/ERROR_HANDLING_AND_TESTING_SUMMARY.md)** - Error handling system and security testing (v1.355)
-- **[OCTOBER_2025_IMPROVEMENTS.md](./archive/OCTOBER_2025_IMPROVEMENTS.md)** - Summary of notification standardization and test improvements
-- **[COUPLING_AUDIT_REPORT.md](./archive/COUPLING_AUDIT_REPORT.md)** - Comprehensive coupling audit (Score: 8.2/10)
-- **[NOTIFICATION_STANDARDIZATION_PLAN.md](./archive/NOTIFICATION_STANDARDIZATION_PLAN.md)** - Dependency injection standardization (Phase 1 complete)
-
-### Future Work & Planned Improvements
-- **[NAMESPACE_ARCHITECTURE.md](./future-work/NAMESPACE_ARCHITECTURE.md)** - 🎯 **IN PROGRESS** - Consolidate 163 globals into window.miniCycle.* API
-  - ✅ **Phase 1 COMPLETE** - Namespace wrapper layer implemented (v1.374)
-  - ✅ **Phase 2 Step 0 COMPLETE** - Main script migrated to namespace API (141/163 occurrences)
-  - ✅ **Phase 2 Step 1 COMPLETE** - GlobalUtils refactored (1/40 modules, ~15 globals eliminated)
-  - [NAMESPACE_STEP0_PROGRESS.md](./future-work/NAMESPACE_STEP0_PROGRESS.md) - Step 0 migration tracking
-  - [NAMESPACE_STEP1_COMPLETE.md](./future-work/NAMESPACE_STEP1_COMPLETE.md) - Step 1 completion details
-  - [scripts/validate-namespace-migration.js](../scripts/validate-namespace-migration.js) - Automated validation script
+### Future Work
+- **[MODULAR_OVERHAUL_PLAN.md](./future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true modularization
 - **[SCHEMA_2_6_PLAN.md](./future-work/SCHEMA_2_6_PLAN.md)** - Terminology alignment (cycles → routine)
-- **[FOLDER_STRUCTURE_REFACTOR_PLAN.md](./future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)** - Module naming consistency
-- **[TASK_OPTIONS_CUSTOMIZER_PLAN.md](./future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)** - ✅ COMPLETED (v1.357) - Per-cycle button visibility customization
 - **[CSS_REFACTOR_PLAN.md](./future-work/CSS_REFACTOR_PLAN.md)** - CSS organization improvements
-
-### Optimization Analysis
-- **[DECOUPLING_OPTIMIZATION_PLAN.md](./archive/DECOUPLING_OPTIMIZATION_PLAN.md)** - Proposed 45-hour plan (NOT RECOMMENDED)
-- **[DECOUPLING_IMPACT_VISUALIZATION.md](./archive/DECOUPLING_IMPACT_VISUALIZATION.md)** - Visualization of proposed changes (NOT NEEDED)
-
-**Status**: Audit recommended AGAINST the decoupling plan. Architecture is already excellent (8.2/10 coupling score, 100% test coverage).
-
----
-
-## 🏛️ Archive
-
-Historical documents and outdated guides are preserved in:
-- **[archive/](./archive/)** - Previous iterations, completion summaries, and legacy documentation
 
 ---
 
@@ -138,7 +104,7 @@ Historical documents and outdated guides are preserved in:
 → Start with [WHAT_IS_MINICYCLE.md](./user-guides/WHAT_IS_MINICYCLE.md) then [DEVELOPER_DOCUMENTATION.md](./developer-guides/DEVELOPER_DOCUMENTATION.md)
 
 **...add a new feature**
-→ Read [FINAL-MODULE-STRUCTURE.md](./archive/FINAL-MODULE-STRUCTURE.md) and [TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)
+→ Read [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) and [TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)
 
 **...work with AI assistants**
 → Point them to [CLAUDE.md](./developer-guides/CLAUDE.md)
@@ -155,11 +121,15 @@ Historical documents and outdated guides are preserved in:
 **...work with data/storage**
 → Check [SCHEMA_2_5.md](./data-schema/SCHEMA_2_5.md) and [MCYC_FILE_FORMAT.md](./data-schema/MCYC_FILE_FORMAT.md)
 
-**...fix browser compatibility issues**
-→ Review [SAFARI_DRAGDROP_FIX.md](./archive/SAFARI_DRAGDROP_FIX.md) and [DRAG_DROP_LONG_PRESS.md](./architecture/DRAG_DROP_LONG_PRESS.md)
+**...understand the architecture limitations**
+→ Read [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) and [MODULAR_OVERHAUL_PLAN.md](./future-work/MODULAR_OVERHAUL_PLAN.md)
 
-**...migrate to the namespace API**
-→ Read [NAMESPACE_ARCHITECTURE.md](./future-work/NAMESPACE_ARCHITECTURE.md) and track progress in [NAMESPACE_STEP0_PROGRESS.md](./future-work/NAMESPACE_STEP0_PROGRESS.md)
+---
+
+## 🏛️ Archive
+
+Historical documents and outdated guides are preserved in:
+- **[archive/](./archive/)** - Previous iterations, completion summaries, namespace docs, and legacy documentation
 
 ---
 
@@ -169,11 +139,8 @@ Historical documents and outdated guides are preserved in:
 - Redirects to: [minicycle.app/pages/product.html](https://minicycle.app/pages/product.html)
 - Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
 - Lite Version: [minicycle.app/lite/miniCycle-lite.html](https://minicycle.app/lite/miniCycle-lite.html)
-- Legal: [minicycle.app/legal/privacy.html](https://minicycle.app/legal/privacy.html), [terms](https://minicycle.app/legal/terms.html), [user manual](https://minicycle.app/legal/user-manual.html)
 - Documentation: [minicycle.app/docs](https://minicycle.app/docs)
 - Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)
-
-**Note:** Legacy URLs (e.g., `/product.html`, `/privacy.html`) redirect automatically via 301 redirects.
 
 See **[DEPLOYMENT.md](./deployment/DEPLOYMENT.md)** for complete deployment information.
 

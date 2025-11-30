@@ -321,6 +321,7 @@ For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMA
 - **Impact:** Improved code organization, reduced global namespace pollution
 - **Severity:** Low (architectural improvement, no security impact)
 - **Reporter:** Internal code quality audit
+- **Note:** This namespace approach was later reverted (Nov 2025) as it reorganized globals without eliminating them. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the actual solution.
 
 ### v1.356 (2025-11-14)
 

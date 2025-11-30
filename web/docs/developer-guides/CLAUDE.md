@@ -2,199 +2,109 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Modularization Status
+## What is miniCycle?
 
-**✅ COMPLETE!** miniCycle modularization is technically complete as of October 27, 2025.
+**miniCycle is a routine manager, not a todo app.**
 
-- **Main script:** 3,674 lines (down from 15,677 lines)
-- **Reduction:** 74.8% achieved
-- **Modules:** 33 modules (12,003 lines extracted)
-- **Core functions:** 14 (orchestration only)
-- **Test coverage:** 100% (1011/1011 tests passing) ✅
-- **Version:** 1.373 (November 23, 2025)
-- **Cross-platform:** All tests pass on Mac, iPad, iPhone
-
-**Optional work:** See `REMAINING_EXTRACTIONS_ANALYSIS.md` for 19 optional functions (~1,167 lines) that could reduce the main script to ~2,500 lines (additional 31.8% reduction).
+Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md) first to understand the product vision:
+- Routines persist and reset (not deleted when complete)
+- Cycle counts track consistency over time
+- Gamification rewards consistent routine completion
+- .mcyc files enable sharing routines with others
 
 ## Essential Commands
 
-### Development Server
 ```bash
+# Development Server
 npm start                    # Starts Python HTTP server on port 8080
-# Alternative: python3 -m http.server 8080
-```
 
-### Version Management
-```bash
-./update-version.sh          # Interactive version updater for app and service worker
-                            # Updates all files with version references (including package.json)
-                            # Creates automatic timestamped backups
-                            # Validates changes after completion
-```
+# Version Management
+./update-version.sh          # Interactive version updater
 
-### Testing
-```bash
-npm test                    # Run automated tests (1099 tests)
-npm run test:watch          # Run Jest tests in watch mode
-npm run test:coverage       # Generate Jest coverage report
-```
-
-### Blog System (Optional)
-```bash
-npm run blog:install        # Install blog dependencies
-npm run blog:build          # Build static blog from markdown posts
-```
-
-### CI/CD
-```bash
-# GitHub Actions runs automatically on push/PR
-# Workflow: .github/workflows/test.yml
-# Tests on Node.js 18.x and 20.x
-# Manual trigger available in GitHub Actions UI
+# Testing
+npm test                     # Run automated tests
+npm run test:watch           # Jest watch mode
+npm run test:coverage        # Coverage report
 ```
 
 ### File Access
-- **Main App**: http://localhost:8080/miniCycle.html (full version)
-- **Lite Version**: http://localhost:8080/lite/miniCycle-lite.html (ES5 compatible)
-- **Test Suite**: http://localhost:8080/tests/module-test-suite.html (browser tests)
+- **Main App**: http://localhost:8080/miniCycle.html
+- **Lite Version**: http://localhost:8080/lite/miniCycle-lite.html
+- **Test Suite**: http://localhost:8080/tests/module-test-suite.html
 
-### Mobile/Cross-Platform Testing
-miniCycle can be tested on iPad/iPhone over WiFi for cross-platform validation:
-```bash
-# Find Mac IP: ifconfig | grep "inet " | grep -v 127.0.0.1
-# On iPad/iPhone (same WiFi): http://YOUR_IP:8080/miniCycle.html
-# Tests: http://YOUR_IP:8080/tests/module-test-suite.html
-```
+---
 
-## Architecture Overview
+## Architecture: The Honest Assessment
 
-### Core Philosophy
-miniCycle implements **task cycling** - a methodology where task lists persist and only completion status resets, enabling routine building rather than traditional to-do management. This is fundamentally different from standard task apps.
+### Current State (November 2025)
 
-### Dual Version System
-- **miniCycle.html + miniCycle-scripts.js**: Full ES6+ version with all features
-- **miniCycle-lite.html + miniCycle-lite-scripts.js**: ES5 compatible version for older browsers
+| Metric | Value |
+|--------|-------|
+| Main script | ~3,700 lines |
+| Modules | 43 files |
+| `window.*` globals created | ~68 |
+| `window.*` references consumed | ~748 |
+| Test coverage | 1011 tests passing |
 
-### Modular ES6 Architecture ✅ COMPLETE!
-**Status:** All major systems have been extracted into 33 focused modules (12,003 lines).
+### The Reality
 
-The main application (`miniCycle-scripts.js`) now serves purely as an orchestrator (3,674 lines, down 74.8%):
+**The codebase has DI structure but global coupling:**
 
 ```javascript
-// CRITICAL: version.js provides single source of truth for APP_VERSION
-// Loaded first in HTML before any scripts execute
-// Available as window.APP_VERSION in browser, self.APP_VERSION in service worker
+// DI pattern EXISTS in every module:
+constructor(dependencies = {}) {
+    this.deps = {
+        AppState: dependencies.AppState || window.AppState,
+        showNotification: dependencies.showNotification || this.fallback
+    };
+}
 
-// Core module loading pattern with cache-busting
-const withV = (path) => `${path}?v=${window.APP_VERSION}`;
-
-// Exception: appInit must load WITHOUT version to maintain singleton
-const { appInit } = await import('./utilities/appInitialization.js');
-
-// All other modules use versioned imports for proper cache invalidation
-const { MiniCycleNotifications } = await import(withV('./utilities/notifications.js'));
-const { StatsPanelManager } = await import(withV('./utilities/statsPanel.js'));
-const { MiniCycleState } = await import(withV('./utilities/state.js'));
+// But dependencies are INJECTED as global wrappers:
+await initTaskCore({
+    AppState: window.AppState,
+    updateStatsPanel: () => window.updateStatsPanel?.(),
+    // ← These are just pointers to globals
+});
 ```
 
-**Main systems extracted:**
-- Task System (7 modules)
-- Cycle System (5 modules)
-- UI Coordination (6 modules)
-- Recurring System (3 modules)
-- Testing System (4 modules)
-- Support Services (8 modules)
+**Result:** DI complexity without DI benefits. Modules cannot be tested in isolation or reused elsewhere.
 
-### Key Architectural Components
+### Module Communication
 
-#### State Management (`modules/core/appState.js`)
-- Centralized state management with event subscription
-- Event-driven architecture with `cycle:ready` events
-- Automatic localStorage persistence with migration system
-- Schema version 2.5 with backward compatibility
+- **~96%** via `window.*` globals
+- **~4%** via ES6 imports (mostly just `appInit.js`)
+- **0** modules can work standalone
 
-#### Undo/Redo System (`modules/ui/undoRedoManager.js`)
-- **Per-cycle history:** Each cycle maintains independent undo/redo stacks
-- **IndexedDB persistence:** History survives page reloads
-- **20 snapshots per cycle:** Full state snapshots, not deltas
-- **Smart deduplication:** Prevents duplicate snapshots with signature caching
-- **Throttled capture:** 300ms minimum interval between snapshots
-- **Debounced writes:** Batches IndexedDB writes every 3 seconds
-- **Lifecycle integration:** Automatic cycle switching, creation, deletion, rename
-- **73/73 tests passing:** Comprehensive test coverage
-- **See:** [UNDO_REDO_ARCHITECTURE.md](../architecture/UNDO_REDO_ARCHITECTURE.md) for complete architecture details
+### What Works Well
 
-#### Module System (`modules/`)
-- **ui/notifications.js**: Advanced notification system with drag support and educational tips
-- **ui/statsPanel.js**: Statistics panel with swipe navigation and achievement system
-- **ui/taskOptionsCustomizer.js**: Per-cycle task button visibility customization (v1.357+, 703 lines)
-- **utils/deviceDetection.js**: Platform-specific feature detection and optimization
-- **utils/themeManager.js**: Dynamic theming system with unlockable themes
-- **utils/globalUtils.js**: 40+ utility functions including deleteWhenComplete helpers (v1.370+)
-- **cycle/cycleLoader.js**: Data loading, migration, and file import/export (.mcyc format)
-- **cycle/cycleManager.js**: Cycle creation, onboarding, and management
-- **cycle/cycleSwitcher.js**: Cycle switching with modal UI
-- **cycle/modeManager.js**: Auto/Manual/Todo mode management with UI refresh (v1.372+, 633 lines)
+- **appInit system** - 2-phase initialization prevents race conditions
+- **AppState** - Centralized state with subscriptions and debounced saves
+- **File organization** - Clear folder structure by feature
+- **Test coverage** - Comprehensive browser-based tests
 
-#### Completed Tasks Dropdown (v1.352+)
-- **Optional feature:** Separates completed tasks into a collapsible dropdown section
-- **Settings toggle:** Enable/disable via Settings → "Show Completed Tasks in Dropdown"
-- **Persistence:** Completion state saved to AppState/localStorage (survives refresh)
-- **Cycle reset integration:** Tasks from both active and completed lists reset properly
-- **Recurring task integration:** Recurring system respects completed tasks in dropdown
-- **DOM structure:** Uses `#taskList` (active) and `#completedTaskList` (completed)
-- **Implementation:**
-  - `miniCycle-scripts.js`: `organizeCompletedTasks()`, `handleTaskListMovement()`
-  - `modules/task/taskCore.js`: `handleTaskCompletionChange()` saves state to AppState
-  - `modules/ui/settingsManager.js`: Settings UI and state management
+### What Needs Work
 
-#### Task Options Customizer (v1.357+)
-- **Per-cycle customization:** Each cycle can have different task button visibility settings
-- **Customization button:** `-/+` button on each task opens customization modal
-- **Real-time preview:** Changes apply immediately, live preview panel shows results
-- **Global vs cycle settings:** Move arrows and three dots are global, others per-cycle
-- **Bidirectional sync:** Changes sync with settings panel, reminders modal, and three dots menu
-- **Responsive design:** Two-column desktop layout with preview, single-column mobile without preview
-- **Persistent storage:** Settings saved to cycle.taskOptionButtons in Schema 2.5
-- **Recent enhancements (v1.372-1.373):**
-  - Real-time saving without save button
-  - Reopen after reload functionality
-  - Enhanced reminders integration
-  - Mobile tap preview for option details
-  - UI refresh without page reload
-- **Implementation:**
-  - `modules/ui/taskOptionsCustomizer.js`: Core customizer with modal UI (703 lines, 29 tests)
-  - `modules/task/taskDOM.js`: Creates `-/+` customize button, renders task buttons based on settings
-  - `modules/cycle/cycleManager.js`: Initializes taskOptionButtons for new cycles
-  - `modules/features/reminders.js`: Syncs reminders button visibility with customizer
-  - `modules/utils/globalUtils.js`: DEFAULT_TASK_OPTION_BUTTONS constant, deleteWhenComplete utilities
+- **Global coupling** - Modules reach for `window.*` everywhere
+- **Invisible dependencies** - Can't see what a module needs from its imports
+- **Untestable in isolation** - Must mock entire `window` object
+- **DI theater** - Pattern exists but doesn't function as true DI
 
-#### Global State Management
-```javascript
-window.AppGlobalState = {
-  // Drag and touch interaction state
-  draggedTask: null,
-  isDragging: false,
+---
 
-  // Undo/redo system (per-cycle, IndexedDB-backed)
-  activeUndoStack: [],           // Current cycle's undo snapshots
-  activeRedoStack: [],           // Current cycle's redo snapshots
-  activeCycleIdForUndo: null,    // Which cycle owns current stacks
-  isPerformingUndoRedo: false,   // Flag to prevent recursive snapshots
-  isSwitchingCycles: false,      // Flag to block snapshots during cycle switch
-  isInitializing: true,          // Flag to skip snapshots during app init
-  lastSnapshotSignature: null,   // For deduplication
-  lastSnapshotTs: 0,             // For throttling
+## Key Systems
 
-  // UI state tracking
-  advancedVisible: false,
+### State Management (`modules/core/appState.js`)
+- Centralized state with `AppState.get()` and `AppState.update()`
+- Subscriber system for reactive updates
+- 600ms debounced saves to localStorage
+- Schema 2.5 data format
 
-  // Feature flags
-  hasInteracted: false
-};
-```
+### Initialization (`modules/core/appInit.js`)
+- **Phase 1**: Core systems ready (AppState loaded)
+- **Phase 2**: All modules initialized, app ready
+- Use `await appInit.waitForCore()` before accessing state
 
-### Data Schema (Version 2.5)
+### Data Schema (2.5)
 ```javascript
 {
   schemaVersion: 2.5,
@@ -203,264 +113,108 @@ window.AppGlobalState = {
       name: string,
       tasks: Task[],
       cycleCount: number,
-      autoReset: boolean,        // Auto Cycle Mode
-      deleteCheckedTasks: boolean, // To-Do Mode
-      taskOptionButtons: {       // v1.357+: Per-cycle button visibility
-        customize: boolean,      // -/+ customize button (always true)
-        moveArrows: boolean,     // ▲▼ move task arrows (global)
-        threeDots: boolean,      // ⋮ three dots menu (global)
-        highPriority: boolean,   // ⚡ high priority toggle
-        rename: boolean,         // ✏️ rename/edit task
-        delete: boolean,         // 🗑️ delete task
-        recurring: boolean,      // 🔁 recurring task
-        dueDate: boolean,        // 📅 due date
-        reminders: boolean       // 🔔 reminders
-      }
+      autoReset: boolean,
+      deleteCheckedTasks: boolean,
+      taskOptionButtons: { /* per-cycle button visibility */ }
     }
   },
-  appState: {
-    activeCycleId: string,
-    currentMode: 'auto-cycle' | 'manual-cycle' | 'todo-mode'
-  },
-  ui: {
-    moveArrowsVisible: boolean   // v1.357+: Global arrow visibility
-  },
-  settings: {
-    showCompletedDropdown: boolean,    // v1.352+: Enable completed tasks dropdown
-    completedTasksExpanded: boolean,   // UI state for dropdown visibility
-    showThreeDots: boolean,           // v1.357+: Global three dots setting
-    // ... other settings
-  }
+  appState: { activeCycleId: string },
+  settings: { /* user preferences */ }
 }
 ```
 
-### PWA Implementation
-- **service-worker.js**: Cache-first strategy with versioned updates
-- **manifest.json / manifest-lite.json**: PWA configuration for both versions
-- Offline functionality with background sync capabilities
+---
 
-## Critical Development Patterns
+## Making Changes
 
-### Event-Driven Initialization
-The app uses a sophisticated initialization system to ensure modules load after data is ready:
+### Before You Start
+1. Read this file completely
+2. Read [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+3. Understand this is a routine manager with gamification
 
+### Key Patterns
+
+**Wait for initialization:**
 ```javascript
-// Wait for data before initializing UI components
-document.addEventListener('cycle:ready', () => {
-  // Safe to access cycle data and update UI
-});
+import { appInit } from '../core/appInit.js';
+await appInit.waitForCore();
+// Now safe to access AppState
 ```
 
-### Version Synchronization & Cache Busting
-**CRITICAL:** All modules must use versioned imports to prevent cache issues.
-
-**version.js** - Single Source of Truth:
+**Access state:**
 ```javascript
-// Auto-generated by update-version.sh
-self.APP_VERSION = '1.330';
+const state = window.AppState.get();
+const activeCycle = state.data.cycles[state.appState.activeCycleId];
 ```
 
-**Why This Matters:**
-- Without versioned imports, modules cache with different URLs causing duplicates
-- Example: `notifications.js` (un-versioned) AND `notifications.js?v=1.330` (versioned)
-- Service worker caches both, users stuck on old cached versions
-- Incrementing version forces cache invalidation: `?v=1.330` → `?v=1.331`
-
-**Critical Pattern:**
+**Update state:**
 ```javascript
-// ✅ CORRECT - Version helper for cache busting
-const withV = (path) => `${path}?v=${window.APP_VERSION}`;
-await import(withV('./utilities/module.js'));  // module.js?v=1.330
-
-// ❌ WRONG - Un-versioned import creates cache duplicates
-await import('./utilities/module.js');  // Will cache separately!
-
-// ⚠️ EXCEPTION - appInit stays un-versioned (singleton requirement)
-const { appInit } = await import('./utilities/appInitialization.js');
+window.AppState.update(state => {
+    state.data.cycles[cycleId].tasks.push(newTask);
+}, true); // true = immediate save
 ```
 
-**Use `./update-version.sh`** to synchronize across all files:
-- version.js (single source of truth)
-- HTML meta tags and cache-busters
-- Service worker CACHE_VERSION and APP_VERSION
-- Manifest files
-- Module @version JSDoc annotations
+### Common Mistakes
 
-### Module Communication Pattern
-Modules communicate through dependency injection rather than global state:
+1. **Assuming it's a todo app** - It's a routine manager. Tasks persist and cycle.
+2. **Adding features without understanding the vision** - Check if it serves routine management.
+3. **Proposing architecture changes without reading existing docs** - We've tried namespace consolidation already.
 
-```javascript
-const statsPanel = new StatsPanelManager({
-  showNotification: notifications.show.bind(notifications),
-  loadMiniCycleData: window.loadMiniCycleData
-});
+---
+
+## Testing
+
+### Run Tests
+```bash
+npm test                    # All tests
+npm run test:watch          # Watch mode
 ```
 
-### Data Migration Strategy
-Always preserve backward compatibility when modifying data schema:
-- Increment schema version
-- Add migration logic in `cycle/cycleLoader.js`
-- Test with legacy data files
-- Create backup before migration
+### Browser Tests
+Open http://localhost:8080/tests/module-test-suite.html
 
-## Task Cycling Core Concepts
+### Before Committing
+- Run full test suite
+- Test both full and lite versions
+- Check PWA functionality still works
 
-### Three Operational Modes
-1. **Auto Cycle Mode**: Tasks reset automatically when all completed
-2. **Manual Cycle Mode**: User controls when to reset via "Complete Cycle"
-3. **To-Do Mode**: Traditional behavior - completed tasks are deleted
+---
 
-### Persistent vs Disposable Tasks
-- **Cycles**: Persistent task lists that reset completion status (routines, procedures)
-- **To-Do**: Disposable tasks that get deleted when completed (one-time actions)
+## Future Direction
 
-This distinction is fundamental to understanding miniCycle's value proposition and should be preserved in any modifications.
+### Planned: True Modular Overhaul
 
-## File Structure Significance
+See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)
 
-### Backup System
-- `backup/`: Automatic timestamped backups created by update-version.sh
-- Each backup includes restore.sh script for easy rollback
-- Maintains last 3 backups automatically
+The goal is to transform from global coupling to true dependency injection:
+- Modules receive dependencies, don't reach for globals
+- Main script is the only place with wiring
+- Modules become testable and reusable
 
-### Data Files
-- `data/*.mcyc`: Sample cycle files demonstrating the .mcyc export format
-- Used for testing import/export functionality
+### Not Planned
 
-### Legacy Code
-- `TTO/`: Contains older development artifacts and merge scripts
-- Generally safe to ignore for current development
+- ~~Namespace consolidation~~ - Attempted and reverted (Nov 2025)
+- ~~More file splitting without decoupling~~ - Creates more coupled files
 
-## PWA and Performance Considerations
+---
 
-### Service Worker Updates
-When modifying core files, increment both app version and cache version to trigger proper PWA updates:
-- Users receive update prompts automatically
-- Cache invalidation prevents stale content
-- Offline functionality remains intact
+## Quick Reference
 
-### Memory Management
-- Large task lists (>100 tasks) may impact performance
-- localStorage has browser-imposed limits
-- Modular loading reduces initial bundle size
+| Task | Command/Location |
+|------|------------------|
+| Start dev server | `npm start` |
+| Run tests | `npm test` |
+| Update version | `./update-version.sh` |
+| Main app | `miniCycle.html` |
+| Lite version | `lite/miniCycle-lite.html` |
+| State management | `modules/core/appState.js` |
+| Initialization | `modules/core/appInit.js` |
 
-## Testing and Validation
+---
 
-### Automated Testing (100% Pass Rate) ✅
-- **1099 tests** across 33 modules
-- **GitHub Actions** CI/CD on every push/PR
-- **Node.js 18.x and 20.x** compatibility testing
-- **Browser-based tests** via Playwright
-- **Jest tests** with coverage reporting
+## Documentation
 
-### Built-in Testing Modal
-Access via Settings → App Diagnostics & Testing:
-- Health checks for data integrity
-- Browser compatibility validation
-- Debug information export
-
-### Manual Testing Checklist
-1. Test both full and lite versions
-2. Verify PWA installation and offline functionality
-3. Test data migration with legacy files
-4. Validate undo/redo functionality (per-cycle history, IndexedDB persistence)
-5. Check stats panel updates after data loading
-6. Test cycle switching preserves undo history
-
-### GitHub Actions Workflow
-Location: `.github/workflows/test.yml`
-- Runs on push to `main` or `develop` branches
-- Runs on all pull requests
-- Manual trigger available via Actions tab
-- Results visible in commit status checks
-
-## Important Notes for AI Assistants
-
-### Modularization is Complete ✅
-As of October 27, 2025, modularization is **technically complete**:
-- Main script reduced from 15,677 → 3,674 lines (74.8% reduction)
-- 33 modules extracted (12,003 lines)
-- 14 core orchestration functions remain
-- 100% test coverage achieved (1099/1099 tests) ✅
-
-**Optional work:** `REMAINING_EXTRACTIONS_ANALYSIS.md` documents 19 optional functions (~1,167 lines) that could be extracted for additional optimization. This is NOT required.
-
-### Conceptual Understanding
-miniCycle is NOT a traditional task manager. It's a routine management system where:
-- Tasks represent steps in repeatable procedures
-- Completion status cycles, but task structure persists
-- The goal is habit formation and process consistency
-
-### Common Misconceptions to Avoid
-- Don't treat cycles as disposable to-do lists
-- Don't assume completed tasks should be deleted by default
-- The cycling mechanism is the core value proposition, not an edge case
-- Don't assume modularization is incomplete - it's done!
-
-### When Making Changes
-- Understand that modularization is complete (don't propose unnecessary extractions)
-- Use the update-version.sh script for version changes (now updates package.json too)
-- Preserve the modular architecture and async loading patterns
-- Maintain backward compatibility with existing .mcyc files
-- Optional extractions are documented but not required
-
-### Event Flow & UI State Management (v1.359+)
-When working with event handlers that control shared UI state:
-- **Read [Event Flow Patterns](../architecture/EVENT_FLOW_PATTERNS.md)** - Essential guide for mode-aware event coordination
-- **Use TaskOptionsVisibilityController** - Centralized controller now live (miniCycle-scripts.js:2974-3047)
-- **Mode-aware permissions** - Controller automatically checks if handler is allowed in current mode
-- **Document event flow** - Maintain clear documentation of which handler runs when
-- **Watch for race conditions** - Focus/click/hover events can fire in unexpected order
-- **Implementation**: All task options visibility changes route through controller (6 handlers updated)
-
-**How to use the controller:**
-```javascript
-// Show task options
-TaskOptionsVisibilityController.show(taskItem, 'your-handler-name');
-
-// Hide task options
-TaskOptionsVisibilityController.hide(taskItem, 'your-handler-name');
-
-// Check current mode
-const mode = TaskOptionsVisibilityController.getMode(); // 'hover' | 'three-dots'
-```
-
-### Cross-Platform Considerations (November 2025 Fixes)
-When working with browser APIs, be aware of Safari/iOS differences:
-- **Always use Boolean()** for browser API checks (`Boolean(navigator.connection && ...)`)
-- **Safari lacks support** for `navigator.connection`, `navigator.hardwareConcurrency` may be undefined
-- **Test on actual devices** - iPad/iPhone testing over WiFi catches platform-specific bugs
-- **Test isolation** - Clear localStorage before each test to prevent environment pollution
-
-**Recent Fixes (v1.341):**
-- DeviceDetection: Fixed boolean type errors on Safari
-- Reminders: Added missing state properties and interval management
-- ConsoleCapture: Fixed test environment isolation
-
-**New Features (v1.373):**
-- Mode Manager: UI refresh without page reload when switching modes
-- Task Options Customizer: Real-time saving, reopen after reload, enhanced reminders integration
-- Delete When Complete: New button option for auto-removing tasks during reset (v1.370+)
-- Testing: Dark mode toggle and module filtering in test suite
-
-**New Features (v1.372):**
-- Mode Manager: In-place UI refresh, debounced task button updates (150ms)
-- Mode Manager: Mode restoration after reload via sessionStorage
-- Task Options Customizer: Mobile tap preview for option details
-
-**New Features (v1.357):**
-- Task Options Customizer: Per-cycle button visibility customization with `-/+` button
-- Schema 2.5 enhancements: Added taskOptionButtons per cycle, global UI settings
-- CSS architecture: Migrated from inline styles to CSS class-based visibility (.hidden)
-- Responsive modal design: Desktop two-column with preview, mobile single-column
-
-**Recent Fixes (v1.360):**
-- Mobile three-dots fix: `hideTaskButtons()` now uses controller, preventing override of three-dots visibility on mobile
-- Permission system expanded: Added `hideTaskButtons` to hover mode permissions (blocked in three-dots mode)
-- All 7 handlers coordinated: Complete coverage of visibility manipulation (focusin, focusout, mouseenter, mouseleave, three-dots, focus, hideTaskButtons)
-
-**Previous Fixes (v1.359):**
-- Event Flow: Fixed desktop three-dots button requiring double-click (focusin race condition)
-- TaskOptionsVisibilityController: Centralized controller for all task options visibility changes (miniCycle-scripts.js:2974-3047)
-- Mode-aware permissions: Initial implementation with 6 event handlers routing through controller
-- Documentation: Created EVENT_FLOW_PATTERNS.md architecture guide with full implementation examples
+- **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
+- **Architecture**: [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)
+- **Future plans**: [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)
+- **All docs**: [README.md](../README.md)

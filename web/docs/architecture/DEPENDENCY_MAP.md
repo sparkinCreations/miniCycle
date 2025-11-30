@@ -1,6 +1,6 @@
 # miniCycle Dependency Map
 
-> **Generated:** November 2024
+> **Generated:** November 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
