@@ -4394,6 +4394,10 @@ document.addEventListener("touchstart", () => {}, { passive: true });
       appLoader.classList.add('fade-out');
       setTimeout(() => {
         appLoader.style.display = 'none';
+        // Cancel the load timeout failsafe since we loaded successfully
+        if (typeof window.__cancelLoadTimeout === 'function') {
+          window.__cancelLoadTimeout();
+        }
       }, 500);
     }
   }, 500);

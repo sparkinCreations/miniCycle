@@ -111,6 +111,26 @@
   }
 })();
 
+// ✅ Loading timeout failsafe - redirect to lite if app doesn't load in 60 seconds
+(function() {
+  var LOAD_TIMEOUT_MS = 60000; // 60 seconds
+  var timeoutId = setTimeout(function() {
+    // Check if app actually loaded (app-loader hidden means success)
+    var loader = document.getElementById('app-loader');
+    var isStillLoading = loader && loader.style.display !== 'none';
+
+    if (isStillLoading && location.pathname.indexOf('miniCycle-lite.html') === -1) {
+      console.warn('⚠️ App load timeout - redirecting to lite version');
+      location.replace('./lite/miniCycle-lite.html?mode=lite&src=load-timeout');
+    }
+  }, LOAD_TIMEOUT_MS);
+
+  // Cancel timeout if app loads successfully
+  window.__cancelLoadTimeout = function() {
+    clearTimeout(timeoutId);
+  };
+})();
+
 // ✅ Enhanced Service Worker Registration with Update Management
 if ('serviceWorker' in navigator) {
   let refreshing;
