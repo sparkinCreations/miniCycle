@@ -344,6 +344,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const GlobalUtils = globalUtilsModule.default;
     namespaceDeps.GlobalUtils = GlobalUtils;
     namespaceDeps.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
+    // ✅ Add utils to PUBLIC API namespace
+    namespaceDeps.sanitizeInput = GlobalUtils.sanitizeInput;
+    namespaceDeps.escapeHtml = GlobalUtils.escapeHtml;
+    namespaceDeps.generateId = GlobalUtils.generateId;
     // Expose to window immediately (needed before namespace shims)
     window.GlobalUtils = GlobalUtils;
     window.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
@@ -409,6 +413,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
         return notifications.show(message, type, duration);
     };
+    // ✅ Add to PUBLIC API namespace
+    namespaceDeps.showNotification = showNotificationDirect;
     console.log('✅ Notifications loaded');
 
     // ✅ Load Theme Manager
@@ -721,6 +727,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     namespaceDeps.createStateManager = createStateManager;
     namespaceDeps.resetStateManager = resetStateManager;
     namespaceDeps.appInit = appInit;
+    // ✅ Add to PUBLIC API namespace (state)
+    namespaceDeps.AppState = window.AppState;
 
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
@@ -1330,7 +1338,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Initialize Task Core (Phase 2 module)
         console.log('🎯 Initializing task core module...');
         try {
-            const { initTaskCore, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks } = await import(withV('./modules/task/taskCore.js'));
+            const { initTaskCore, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore } = await import(withV('./modules/task/taskCore.js'));
 
             // ✅ Expose taskCore functions to window (needed by various modules)
             window.handleTaskCompletionChange = handleTaskCompletionChange;
@@ -1382,6 +1390,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             namespaceDeps.handleTaskCompletionChange = handleTaskCompletionChange;
             namespaceDeps.resetTasks = resetTasks;
             namespaceDeps.handleCompleteAllTasks = handleCompleteAllTasks;
+            namespaceDeps.addTask = addTask;
+            namespaceDeps.editTask = editTaskFromCore;
+            namespaceDeps.deleteTask = deleteTaskFromCore;
 
             console.log('✅ Task core module initialized (Phase 2)');
         } catch (error) {
@@ -2267,6 +2278,11 @@ function loadMiniCycleData() {
 // Make loadMiniCycleData globally accessible for the notification module
 window.loadMiniCycleData = loadMiniCycleData;
 
+// ✅ Add to PUBLIC API namespace (state)
+if (typeof namespaceDeps !== 'undefined') {
+    namespaceDeps.loadMiniCycleData = loadMiniCycleData;
+}
+
 /**
  * Safely update cycle data - handles AppState or falls back to localStorage
  * Prevents race conditions with debounced saves by using AppState when available
@@ -2510,6 +2526,14 @@ function closeAllModals() {
 window.showConfirmationModal = showConfirmationModal;
 window.showPromptModal = showPromptModal;
 window.closeAllModals = closeAllModals;
+
+// ✅ Add to PUBLIC API namespace (modals)
+// Note: These are added to namespaceDeps after namespace init, so they'll be picked up on re-injection
+if (typeof namespaceDeps !== 'undefined') {
+    namespaceDeps.showConfirmModal = showConfirmationModal;
+    namespaceDeps.showPromptModal = showPromptModal;
+    namespaceDeps.closeAllModals = closeAllModals;
+}
 
 
   // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in modules/features/reminders.js
