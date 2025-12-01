@@ -3,13 +3,29 @@
  * Tests for modules/cycle/modeManager.js
  * Pattern: Resilient Constructor 🛡️
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * Tests the three cycling modes:
  * - Auto Cycle ↻: Tasks auto-reset when all completed
  * - Manual Cycle ✔︎↻: Tasks reset only on manual button click
  * - To-Do Mode ✓: Tasks are deleted instead of reset
  */
 
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification,
+    waitForAsyncOperations
+} from './testHelpers.js';
+
 export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
@@ -44,12 +60,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     if (!ModeManager) {
         resultsDiv.innerHTML += '<div class="result fail">❌ ModeManager class not found. Make sure the module is properly loaded.</div>';
         return { passed: 0, total: 1 };
-    }
-
-    // ✅ CRITICAL: Mark appInit as ready for tests
-    if (window.appInit && !window.appInit.isCoreReady()) {
-        await window.appInit.markCoreSystemsReady();
-        console.log('✅ Test environment: AppInit core systems marked as ready');
     }
 
     async function test(name, testFn) {

@@ -1,6 +1,6 @@
 /**
  * @module taskOptionsCustomizer
- * @version 1.385
+ * @version 1.386
  * @pattern Simple Instance 🎯
  * @description Manages customization of task option button visibility per cycle
  *
@@ -686,17 +686,10 @@ export function initTaskOptionsCustomizer(dependencies = {}) {
     // Setup event listeners for settings button
     taskOptionsCustomizer.setupEventListeners();
 
-    // Export instance to window for easy access
-    window.taskOptionsCustomizer = taskOptionsCustomizer;
-
+    // Phase 3 - No window.* exports (main script handles exposure)
     return taskOptionsCustomizer;
 }
 
 export { taskOptionsCustomizer };
 
-// Expose class for testing
-if (typeof window !== 'undefined') {
-    window.TaskOptionsCustomizer = TaskOptionsCustomizer;
-}
-
-console.log('✅ TaskOptionsCustomizer module loaded');
+console.log('✅ TaskOptionsCustomizer module loaded (Phase 3)');

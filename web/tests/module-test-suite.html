@@ -410,6 +410,16 @@
         // Cache-busting timestamp to force fresh module loads during development
         const cacheBuster = Date.now();
 
+        // Import shared test helpers for comprehensive mock setup
+        // Note: Individual test files use these helpers - they're imported here
+        // for future use but the "Run All Tests" button lets each test manage its own mocks
+        import {
+            setupTestEnvironment,
+            createMockAppState,
+            createMockData,
+            setupLocalStorage
+        } from './testHelpers.js';
+
         // Import test modules with cache busting
         const { runPerformanceBenchmarks } = await import(`./performance.benchmark.js?v=${cacheBuster}`);
         const { runIntegrationTests } = await import(`./integration.tests.js?v=${cacheBuster}`);
@@ -521,6 +531,290 @@
             }
         }
 
+        // ==========================================
+        // 🔧 Shared Module Loading & Exposure Helper
+        // ==========================================
+        // This function is used by both individual module loading AND "Run All Tests"
+        // to ensure consistent window.* exposure across both code paths.
+
+        // Helper to ensure appInit is ready before loading modules that depend on it
+        let appInitReady = false;
+        async function ensureAppInitReady() {
+            if (appInitReady) return;
+            try {
+                const { appInit } = await import('../modules/core/appInit.js');
+                appInit.coreReady = true;
+                if (appInit._coreResolve) {
+                    appInit._coreResolve();
+                }
+                appInit._corePromise = Promise.resolve();
+                appInitReady = true;
+                console.log('✅ appInit marked as ready for tests');
+            } catch (e) {
+                console.warn('⚠️ Could not set up appInit:', e);
+            }
+        }
+
+        async function loadAndExposeModule(moduleKey) {
+            const cacheBuster = Date.now();
+
+            // Ensure appInit is ready before loading any module that might import it
+            await ensureAppInitReady();
+
+            if (moduleKey === 'performance' || moduleKey === 'integration') {
+                // No imports needed
+                return;
+            } else if (moduleKey === 'themeManager') {
+                const { ThemeManager } = await import(`../modules/features/themeManager.js?v=${cacheBuster}`);
+                window.ThemeManager = ThemeManager;
+            } else if (moduleKey === 'deviceDetection') {
+                const mod = await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
+                window.DeviceDetectionManager = mod.DeviceDetectionManager;
+                window.deviceDetectionManager = mod.deviceDetectionManager;
+                window.runDeviceDetection = mod.runDeviceDetection;
+                window.reportDeviceCompatibility = mod.reportDeviceCompatibility;
+                window.testDeviceDetection = mod.testDeviceDetection;
+            } else if (moduleKey === 'cycleLoader') {
+                const mod = await import(`../modules/cycle/cycleLoader.js?v=${cacheBuster}`);
+                window.loadMiniCycle = mod.loadMiniCycle;
+                window.repairAndCleanTasks = mod.repairAndCleanTasks;
+                window.renderTasksToDOM = mod.renderTasksToDOM;
+            } else if (moduleKey === 'statsPanel') {
+                const mod = await import(`../modules/features/statsPanel.js?v=${cacheBuster}`);
+                window.StatsPanelManager = mod.StatsPanelManager;
+            } else if (moduleKey === 'consoleCapture') {
+                const mod = await import(`../modules/utils/consoleCapture.js?v=${cacheBuster}`);
+                window.ConsoleCapture = mod.ConsoleCapture;
+            } else if (moduleKey === 'state') {
+                const mod = await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                window.MiniCycleState = mod.MiniCycleState;
+                window.createStateManager = mod.createStateManager;
+            } else if (moduleKey === 'recurringCore') {
+                const mod = await import(`../modules/recurring/recurringCore.js?v=${cacheBuster}`);
+                window.RecurringCore = mod.RecurringCore;
+                window.setRecurringCoreDependencies = mod.setRecurringCoreDependencies;
+            } else if (moduleKey === 'recurringIntegration') {
+                const mod = await import(`../modules/recurring/recurringIntegration.js?v=${cacheBuster}`);
+                window.initializeRecurringModules = mod.initializeRecurringModules;
+                window.testRecurringIntegration = mod.testRecurringIntegration;
+            } else if (moduleKey === 'recurringPanel') {
+                const mod = await import(`../modules/recurring/recurringPanel.js?v=${cacheBuster}`);
+                window.RecurringPanelManager = mod.RecurringPanelManager;
+            } else if (moduleKey === 'globalUtils') {
+                const mod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                window.GlobalUtils = mod.GlobalUtils;
+                window.safeAddEventListener = mod.GlobalUtils.safeAddEventListener.bind(mod.GlobalUtils);
+                window.safeGetElementById = mod.GlobalUtils.safeGetElementById.bind(mod.GlobalUtils);
+                window.debounce = mod.GlobalUtils.debounce.bind(mod.GlobalUtils);
+                window.throttle = mod.GlobalUtils.throttle.bind(mod.GlobalUtils);
+                window.generateId = mod.GlobalUtils.generateId.bind(mod.GlobalUtils);
+                window.sanitizeInput = mod.GlobalUtils.sanitizeInput.bind(mod.GlobalUtils);
+                window.escapeHtml = mod.GlobalUtils.escapeHtml.bind(mod.GlobalUtils);
+                window.safeLocalStorageGet = mod.GlobalUtils.safeLocalStorageGet.bind(mod.GlobalUtils);
+                window.safeLocalStorageSet = mod.GlobalUtils.safeLocalStorageSet.bind(mod.GlobalUtils);
+                window.safeLocalStorageRemove = mod.GlobalUtils.safeLocalStorageRemove.bind(mod.GlobalUtils);
+                window.safeJSONParse = mod.GlobalUtils.safeJSONParse.bind(mod.GlobalUtils);
+                window.safeJSONStringify = mod.GlobalUtils.safeJSONStringify.bind(mod.GlobalUtils);
+            } else if (moduleKey === 'notifications') {
+                const mod = await import(`../modules/utils/notifications.js?v=${cacheBuster}`);
+                window.MiniCycleNotifications = mod.MiniCycleNotifications;
+                window.EducationalTipManager = mod.EducationalTipManager;
+            } else if (moduleKey === 'dragDropManager') {
+                const mod = await import(`../modules/task/dragDropManager.js?v=${cacheBuster}`);
+                window.DragDropManager = mod.DragDropManager;
+                window.initDragDropManager = mod.initDragDropManager;
+                window.enableDragAndDropOnTask = mod.enableDragAndDropOnTask;
+                window.updateMoveArrowsVisibility = mod.updateMoveArrowsVisibility;
+                window.toggleArrowVisibility = mod.toggleArrowVisibility;
+                window.updateArrowsInDOM = mod.updateArrowsInDOM;
+            } else if (moduleKey === 'migrationManager') {
+                const mod = await import(`../modules/cycle/migrationManager.js?v=${cacheBuster}`);
+                window.setMigrationManagerDependencies = mod.setMigrationManagerDependencies;
+                window.createInitialSchema25Data = mod.createInitialSchema25Data;
+                window.checkMigrationNeeded = mod.checkMigrationNeeded;
+                window.simulateMigrationToSchema25 = mod.simulateMigrationToSchema25;
+                window.performSchema25Migration = mod.performSchema25Migration;
+                window.validateAllMiniCycleTasksLenient = mod.validateAllMiniCycleTasksLenient;
+                window.fixTaskValidationIssues = mod.fixTaskValidationIssues;
+                window.initializeAppWithAutoMigration = mod.initializeAppWithAutoMigration;
+                window.forceAppMigration = mod.forceAppMigration;
+            } else if (moduleKey === 'dueDates') {
+                const mod = await import(`../modules/features/dueDates.js?v=${cacheBuster}`);
+                window.MiniCycleDueDates = mod.MiniCycleDueDates;
+                window.initDueDatesManager = mod.initDueDatesManager;
+            } else if (moduleKey === 'reminders') {
+                const mod = await import(`../modules/features/reminders.js?v=${cacheBuster}`);
+                window.MiniCycleReminders = mod.MiniCycleReminders;
+                window.initReminderManager = mod.initReminderManager;
+            } else if (moduleKey === 'modeManager') {
+                const mod = await import(`../modules/cycle/modeManager.js?v=${cacheBuster}`);
+                window.ModeManager = mod.ModeManager;
+                window.setModeManagerDependencies = mod.setModeManagerDependencies;
+                window.initModeManager = mod.initModeManager;
+            } else if (moduleKey === 'cycleSwitcher') {
+                const mod = await import(`../modules/cycle/cycleSwitcher.js?v=${cacheBuster}`);
+                window.CycleSwitcher = mod.CycleSwitcher;
+                window.initializeCycleSwitcher = mod.initializeCycleSwitcher;
+                window.switchMiniCycle = mod.switchMiniCycle;
+                window.renameMiniCycle = mod.renameMiniCycle;
+                window.deleteMiniCycle = mod.deleteMiniCycle;
+                window.hideSwitchMiniCycleModal = mod.hideSwitchMiniCycleModal;
+                window.confirmMiniCycle = mod.confirmMiniCycle;
+                window.updatePreview = mod.updatePreview;
+                window.loadMiniCycleList = mod.loadMiniCycleList;
+                window.setupModalClickOutside = mod.setupModalClickOutside;
+            } else if (moduleKey === 'undoRedoManager') {
+                const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
+                window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
+                window.wireUndoRedoUI = mod.wireUndoRedoUI;
+                window.initializeUndoRedoButtons = mod.initializeUndoRedoButtons;
+                window.captureInitialSnapshot = mod.captureInitialSnapshot;
+                window.setupStateBasedUndoRedo = mod.setupStateBasedUndoRedo;
+                window.enableUndoSystemOnFirstInteraction = mod.enableUndoSystemOnFirstInteraction;
+                window.captureStateSnapshot = mod.captureStateSnapshot;
+                window.performStateBasedUndo = mod.performStateBasedUndo;
+                window.performStateBasedRedo = mod.performStateBasedRedo;
+                window.updateUndoRedoButtonStates = mod.updateUndoRedoButtonStates;
+                window.initializeUndoSystemForApp = mod.initializeUndoSystemForApp;
+            } else if (moduleKey === 'gamesManager') {
+                const mod = await import(`../modules/ui/gamesManager.js?v=${cacheBuster}`);
+                window.GamesManager = mod.default;
+                window.gamesManager = mod.gamesManager;
+                window.checkGamesUnlock = () => mod.gamesManager.checkGamesUnlock();
+                window.unlockMiniGame = () => mod.gamesManager.unlockMiniGame();
+            } else if (moduleKey === 'onboardingManager') {
+                const mod = await import(`../modules/ui/onboardingManager.js?v=${cacheBuster}`);
+                window.OnboardingManager = mod.OnboardingManager;
+                window.onboardingManager = mod.onboardingManager;
+                window.showOnboarding = (...args) => mod.onboardingManager.showOnboarding(...args);
+            } else if (moduleKey === 'modalManager') {
+                const mod = await import(`../modules/ui/modalManager.js?v=${cacheBuster}`);
+                window.ModalManager = mod.ModalManager;
+                window.modalManager = mod.modalManager;
+                window.setModalManagerDependencies = mod.setModalManagerDependencies;
+                window.closeAllModals = () => mod.modalManager.closeAllModals();
+            } else if (moduleKey === 'menuManager') {
+                const mod = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
+                window.MenuManager = mod.MenuManager;
+                window.initMenuManager = mod.initMenuManager;
+                const menuManager = mod.initMenuManager({});
+                window.menuManager = menuManager;
+                window.setupMainMenu = () => menuManager?.setupMainMenu();
+                window.closeMainMenu = () => menuManager?.closeMainMenu();
+                window.hideMainMenu = () => menuManager?.hideMainMenu();
+            } else if (moduleKey === 'settingsManager') {
+                const mod = await import(`../modules/ui/settingsManager.js?v=${cacheBuster}`);
+                window.SettingsManager = mod.SettingsManager;
+                window.initSettingsManager = mod.initSettingsManager;
+                const settingsManager = mod.initSettingsManager({});
+                window.settingsManager = settingsManager;
+                window.setupSettingsMenu = () => settingsManager?.setupSettingsMenu();
+                window.setupDownloadMiniCycle = () => settingsManager?.setupDownloadMiniCycle();
+                window.setupUploadMiniCycle = () => settingsManager?.setupUploadMiniCycle();
+                window.syncCurrentSettingsToStorage = () => settingsManager?.syncCurrentSettingsToStorage();
+            } else if (moduleKey === 'taskCore') {
+                const mod = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
+                window.TaskCore = mod.TaskCore;
+                window.initTaskCore = mod.initTaskCore;
+                const taskCore = await mod.initTaskCore({
+                    showPromptModal: (options) => {
+                        console.log('[TEST] Mock prompt:', options.message);
+                        if (options.callback) options.callback('Test Task');
+                    },
+                    showConfirmationModal: (options) => {
+                        console.log('[TEST] Mock confirmation:', options.message);
+                        if (options.confirmCallback) options.confirmCallback();
+                    }
+                });
+                window.taskCore = taskCore;
+                window.addTask = mod.addTask;
+                window.handleTaskCompletionChange = mod.handleTaskCompletionChange;
+                window.saveCurrentTaskOrder = mod.saveCurrentTaskOrder;
+                window.resetTasks = mod.resetTasks;
+                window.handleCompleteAllTasks = mod.handleCompleteAllTasks;
+            } else if (moduleKey === 'taskValidation') {
+                const mod = await import(`../modules/task/taskValidation.js?v=${cacheBuster}`);
+                window.TaskValidator = mod.TaskValidator;
+                window.initTaskValidator = mod.initTaskValidator;
+                window.validateAndSanitizeTaskInput = mod.validateAndSanitizeTaskInput;
+            } else if (moduleKey === 'taskUtils') {
+                const mod = await import(`../modules/task/taskUtils.js?v=${cacheBuster}`);
+                window.TaskUtils = mod.TaskUtils;
+                window.buildTaskContext = mod.buildTaskContext;
+                window.extractTaskDataFromDOM = mod.extractTaskDataFromDOM;
+                window.loadTaskContext = mod.loadTaskContext;
+                window.scrollToNewTask = mod.scrollToNewTask;
+                window.handleOverdueStyling = mod.handleOverdueStyling;
+                window.setupFinalTaskInteractions = mod.setupFinalTaskInteractions;
+            } else if (moduleKey === 'taskRenderer') {
+                const mod = await import(`../modules/task/taskRenderer.js?v=${cacheBuster}`);
+                window.TaskRenderer = mod.TaskRenderer;
+                window.setTaskRendererDependencies = mod.setTaskRendererDependencies;
+                window.initTaskRenderer = mod.initTaskRenderer;
+                window.renderTasks = mod.renderTasks;
+                window.refreshUIFromState = mod.refreshUIFromState;
+                window.refreshTaskListUI = mod.refreshTaskListUI;
+            } else if (moduleKey === 'taskEvents') {
+                const mod = await import(`../modules/task/taskEvents.js?v=${cacheBuster}`);
+                window.TaskEvents = mod.TaskEvents;
+                window.initTaskEvents = mod.initTaskEvents;
+                window.handleTaskButtonClick = mod.handleTaskButtonClick;
+                window.toggleHoverTaskOptions = mod.toggleHoverTaskOptions;
+                window.revealTaskButtons = mod.revealTaskButtons;
+                window.syncRecurringStateToDOM = mod.syncRecurringStateToDOM;
+                window.setupTaskInteractions = mod.setupTaskInteractions;
+                window.setupTaskClickInteraction = mod.setupTaskClickInteraction;
+            } else if (moduleKey === 'taskDOM') {
+                // Load globalUtils first (provides sanitizeInput)
+                const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                window.GlobalUtils = globalMod.GlobalUtils;
+                window.sanitizeInput = globalMod.GlobalUtils.sanitizeInput.bind(globalMod.GlobalUtils);
+                window.generateId = globalMod.GlobalUtils.generateId.bind(globalMod.GlobalUtils);
+                // Load taskUtils for TaskUtils class
+                const taskUtilsMod = await import(`../modules/task/taskUtils.js?v=${cacheBuster}`);
+                window.TaskUtils = taskUtilsMod.TaskUtils;
+                window.buildTaskContext = taskUtilsMod.buildTaskContext;
+                window.extractTaskDataFromDOM = taskUtilsMod.extractTaskDataFromDOM;
+                window.loadTaskContext = taskUtilsMod.loadTaskContext;
+                // Load taskDOM
+                const mod = await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
+                window.TaskDOMManager = mod.TaskDOMManager;
+                window.initTaskDOMManager = mod.initTaskDOMManager;
+                window.validateAndSanitizeTaskInput = mod.validateAndSanitizeTaskInput;
+                window.createTaskDOMElements = mod.createTaskDOMElements;
+                window.createTaskCheckbox = mod.createTaskCheckbox;
+                window.createTaskLabel = mod.createTaskLabel;
+                window.renderTasks = mod.renderTasks;
+                window.refreshUIFromState = mod.refreshUIFromState;
+                window.setupTaskInteractions = mod.setupTaskInteractions;
+                window.revealTaskButtons = mod.revealTaskButtons;
+                window.handleTaskButtonClick = mod.handleTaskButtonClick;
+            } else if (moduleKey === 'taskOptionsCustomizer') {
+                const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                window.GlobalUtils = globalMod.GlobalUtils;
+                const mod = await import(`../modules/ui/taskOptionsCustomizer.js?v=${cacheBuster}`);
+                window.TaskOptionsCustomizer = mod.TaskOptionsCustomizer;
+                window.initTaskOptionsCustomizer = mod.initTaskOptionsCustomizer;
+                window.taskOptionsCustomizer = mod.taskOptionsCustomizer;
+            } else if (moduleKey === 'xss-vulnerability') {
+                const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                window.GlobalUtils = globalMod.GlobalUtils;
+            } else if (moduleKey === 'errorHandler') {
+                const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                window.GlobalUtils = globalMod.GlobalUtils;
+                window.safeLocalStorageGet = globalMod.GlobalUtils.safeLocalStorageGet.bind(globalMod.GlobalUtils);
+                window.safeLocalStorageSet = globalMod.GlobalUtils.safeLocalStorageSet.bind(globalMod.GlobalUtils);
+                window.safeLocalStorageRemove = globalMod.GlobalUtils.safeLocalStorageRemove.bind(globalMod.GlobalUtils);
+                window.safeJSONParse = globalMod.GlobalUtils.safeJSONParse.bind(globalMod.GlobalUtils);
+                window.safeJSONStringify = globalMod.GlobalUtils.safeJSONStringify.bind(globalMod.GlobalUtils);
+                const errorMod = await import(`../modules/utils/errorHandler.js?v=${cacheBuster}`);
+                window.ErrorHandler = errorMod.default;
+            } else if (moduleKey === 'testingModal') {
+                await import(`../modules/testing/testing-modal.js?v=${cacheBuster}`);
+                await import(`../modules/storage/backupManager.js?v=${cacheBuster}`);
+            }
+        }
+
         // Load selected module
         moduleSelect.addEventListener('change', async (e) => {
             const moduleName = e.target.value;
@@ -539,101 +833,212 @@
                     currentModule = 'integration';
                     resultsDiv.innerHTML = '<p>✅ Integration Tests (E2E) ready. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'themeManager') {
-                    await import(`../modules/features/themeManager.js?v=${cacheBuster}`);
+                    const { ThemeManager } = await import(`../modules/features/themeManager.js?v=${cacheBuster}`);
+                    window.ThemeManager = ThemeManager; // Expose for tests
                     currentModule = 'themeManager';
                     resultsDiv.innerHTML = '<p>✅ ThemeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'deviceDetection') {
-                    await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
+                    window.DeviceDetectionManager = mod.DeviceDetectionManager;
+                    window.deviceDetectionManager = mod.deviceDetectionManager;
+                    window.runDeviceDetection = mod.runDeviceDetection;
+                    window.reportDeviceCompatibility = mod.reportDeviceCompatibility;
+                    window.testDeviceDetection = mod.testDeviceDetection;
                     currentModule = 'deviceDetection';
                     resultsDiv.innerHTML = '<p>✅ DeviceDetection loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleLoader') {
-                    await import(`../modules/cycle/cycleLoader.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/cycle/cycleLoader.js?v=${cacheBuster}`);
+                    window.loadMiniCycle = mod.loadMiniCycle;
+                    window.repairAndCleanTasks = mod.repairAndCleanTasks;
+                    window.renderTasksToDOM = mod.renderTasksToDOM;
                     currentModule = 'cycleLoader';
                     resultsDiv.innerHTML = '<p>✅ CycleLoader loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'statsPanel') {
-                    await import(`../modules/features/statsPanel.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/features/statsPanel.js?v=${cacheBuster}`);
+                    window.StatsPanelManager = mod.StatsPanelManager;
                     currentModule = 'statsPanel';
                     resultsDiv.innerHTML = '<p>✅ StatsPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'consoleCapture') {
-                    await import(`../modules/utils/consoleCapture.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/utils/consoleCapture.js?v=${cacheBuster}`);
+                    window.ConsoleCapture = mod.ConsoleCapture;
                     currentModule = 'consoleCapture';
                     resultsDiv.innerHTML = '<p>✅ ConsoleCapture loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'state') {
-                    await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                    window.MiniCycleState = mod.MiniCycleState;
+                    window.createStateManager = mod.createStateManager;
                     currentModule = 'state';
                     resultsDiv.innerHTML = '<p>✅ State loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringCore') {
-                    await import(`../modules/recurring/recurringCore.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/recurring/recurringCore.js?v=${cacheBuster}`);
+                    window.RecurringCore = mod.RecurringCore;
+                    window.setRecurringCoreDependencies = mod.setRecurringCoreDependencies;
                     currentModule = 'recurringCore';
                     resultsDiv.innerHTML = '<p>✅ RecurringCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringIntegration') {
-                    await import(`../modules/recurring/recurringIntegration.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/recurring/recurringIntegration.js?v=${cacheBuster}`);
+                    window.initializeRecurringModules = mod.initializeRecurringModules;
+                    window.testRecurringIntegration = mod.testRecurringIntegration;
                     currentModule = 'recurringIntegration';
                     resultsDiv.innerHTML = '<p>✅ RecurringIntegration loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'recurringPanel') {
-                    await import(`../modules/recurring/recurringPanel.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/recurring/recurringPanel.js?v=${cacheBuster}`);
+                    window.RecurringPanelManager = mod.RecurringPanelManager;
                     currentModule = 'recurringPanel';
                     resultsDiv.innerHTML = '<p>✅ RecurringPanel loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'globalUtils') {
-                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    window.GlobalUtils = mod.GlobalUtils; // Expose class for tests
+                    // Expose common utility functions on window (like main app does)
+                    window.safeAddEventListener = mod.GlobalUtils.safeAddEventListener.bind(mod.GlobalUtils);
+                    window.safeGetElementById = mod.GlobalUtils.safeGetElementById.bind(mod.GlobalUtils);
+                    window.debounce = mod.GlobalUtils.debounce.bind(mod.GlobalUtils);
+                    window.throttle = mod.GlobalUtils.throttle.bind(mod.GlobalUtils);
+                    window.generateId = mod.GlobalUtils.generateId.bind(mod.GlobalUtils);
+                    window.sanitizeInput = mod.GlobalUtils.sanitizeInput.bind(mod.GlobalUtils);
+                    window.escapeHtml = mod.GlobalUtils.escapeHtml.bind(mod.GlobalUtils);
+                    window.safeLocalStorageGet = mod.GlobalUtils.safeLocalStorageGet.bind(mod.GlobalUtils);
+                    window.safeLocalStorageSet = mod.GlobalUtils.safeLocalStorageSet.bind(mod.GlobalUtils);
+                    window.safeLocalStorageRemove = mod.GlobalUtils.safeLocalStorageRemove.bind(mod.GlobalUtils);
+                    window.safeJSONParse = mod.GlobalUtils.safeJSONParse.bind(mod.GlobalUtils);
+                    window.safeJSONStringify = mod.GlobalUtils.safeJSONStringify.bind(mod.GlobalUtils);
                     currentModule = 'globalUtils';
                     resultsDiv.innerHTML = '<p>✅ GlobalUtils loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'notifications') {
-                    await import(`../modules/utils/notifications.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/utils/notifications.js?v=${cacheBuster}`);
+                    window.MiniCycleNotifications = mod.MiniCycleNotifications;
+                    window.EducationalTipManager = mod.EducationalTipManager;
                     currentModule = 'notifications';
                     resultsDiv.innerHTML = '<p>✅ Notifications loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'dragDropManager') {
-                    await import(`../modules/task/dragDropManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/task/dragDropManager.js?v=${cacheBuster}`);
+                    window.DragDropManager = mod.DragDropManager;
+                    window.initDragDropManager = mod.initDragDropManager;
+                    window.enableDragAndDropOnTask = mod.enableDragAndDropOnTask;
+                    window.updateMoveArrowsVisibility = mod.updateMoveArrowsVisibility;
+                    window.toggleArrowVisibility = mod.toggleArrowVisibility;
+                    window.updateArrowsInDOM = mod.updateArrowsInDOM;
                     currentModule = 'dragDropManager';
                     resultsDiv.innerHTML = '<p>✅ DragDropManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'migrationManager') {
-                    await import(`../modules/cycle/migrationManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/cycle/migrationManager.js?v=${cacheBuster}`);
+                    window.setMigrationManagerDependencies = mod.setMigrationManagerDependencies;
+                    window.createInitialSchema25Data = mod.createInitialSchema25Data;
+                    window.checkMigrationNeeded = mod.checkMigrationNeeded;
+                    window.simulateMigrationToSchema25 = mod.simulateMigrationToSchema25;
+                    window.performSchema25Migration = mod.performSchema25Migration;
+                    window.validateAllMiniCycleTasksLenient = mod.validateAllMiniCycleTasksLenient;
+                    window.fixTaskValidationIssues = mod.fixTaskValidationIssues;
+                    window.initializeAppWithAutoMigration = mod.initializeAppWithAutoMigration;
+                    window.forceAppMigration = mod.forceAppMigration;
                     currentModule = 'migrationManager';
                     resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'dueDates') {
-                    await import(`../modules/features/dueDates.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/features/dueDates.js?v=${cacheBuster}`);
+                    window.MiniCycleDueDates = mod.MiniCycleDueDates;
+                    window.initDueDatesManager = mod.initDueDatesManager;
                     currentModule = 'dueDates';
                     resultsDiv.innerHTML = '<p>✅ Due Dates loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'reminders') {
-                    await import(`../modules/features/reminders.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/features/reminders.js?v=${cacheBuster}`);
+                    window.MiniCycleReminders = mod.MiniCycleReminders;
+                    window.initReminderManager = mod.initReminderManager;
                     currentModule = 'reminders';
                     resultsDiv.innerHTML = '<p>✅ Reminders loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'modeManager') {
-                    await import(`../modules/cycle/modeManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/cycle/modeManager.js?v=${cacheBuster}`);
+                    window.ModeManager = mod.ModeManager;
+                    window.setModeManagerDependencies = mod.setModeManagerDependencies;
+                    window.initModeManager = mod.initModeManager;
                     currentModule = 'modeManager';
                     resultsDiv.innerHTML = '<p>✅ ModeManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'cycleSwitcher') {
-                    await import(`../modules/cycle/cycleSwitcher.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/cycle/cycleSwitcher.js?v=${cacheBuster}`);
+                    window.CycleSwitcher = mod.CycleSwitcher;
+                    window.initializeCycleSwitcher = mod.initializeCycleSwitcher;
+                    // Expose wrapper functions as globals
+                    window.switchMiniCycle = mod.switchMiniCycle;
+                    window.renameMiniCycle = mod.renameMiniCycle;
+                    window.deleteMiniCycle = mod.deleteMiniCycle;
+                    window.hideSwitchMiniCycleModal = mod.hideSwitchMiniCycleModal;
+                    window.confirmMiniCycle = mod.confirmMiniCycle;
+                    window.updatePreview = mod.updatePreview;
+                    window.loadMiniCycleList = mod.loadMiniCycleList;
+                    window.setupModalClickOutside = mod.setupModalClickOutside;
                     currentModule = 'cycleSwitcher';
                     resultsDiv.innerHTML = '<p>✅ CycleSwitcher loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'undoRedoManager') {
-                    await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
+                    window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
+                    window.wireUndoRedoUI = mod.wireUndoRedoUI;
+                    window.initializeUndoRedoButtons = mod.initializeUndoRedoButtons;
+                    window.captureInitialSnapshot = mod.captureInitialSnapshot;
+                    window.setupStateBasedUndoRedo = mod.setupStateBasedUndoRedo;
+                    window.enableUndoSystemOnFirstInteraction = mod.enableUndoSystemOnFirstInteraction;
+                    window.captureStateSnapshot = mod.captureStateSnapshot;
+                    window.performStateBasedUndo = mod.performStateBasedUndo;
+                    window.performStateBasedRedo = mod.performStateBasedRedo;
+                    window.updateUndoRedoButtonStates = mod.updateUndoRedoButtonStates;
+                    window.initializeUndoSystemForApp = mod.initializeUndoSystemForApp;
                     currentModule = 'undoRedoManager';
                     resultsDiv.innerHTML = '<p>✅ UndoRedoManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'gamesManager') {
-                    await import(`../modules/ui/gamesManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/ui/gamesManager.js?v=${cacheBuster}`);
+                    window.GamesManager = mod.default;
+                    window.gamesManager = mod.gamesManager;
+                    // Expose instance methods as globals
+                    window.checkGamesUnlock = () => mod.gamesManager.checkGamesUnlock();
+                    window.unlockMiniGame = () => mod.gamesManager.unlockMiniGame();
                     currentModule = 'gamesManager';
                     resultsDiv.innerHTML = '<p>✅ GamesManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'onboardingManager') {
-                    await import(`../modules/ui/onboardingManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/ui/onboardingManager.js?v=${cacheBuster}`);
+                    window.OnboardingManager = mod.OnboardingManager;
+                    window.onboardingManager = mod.onboardingManager;
+                    // Expose instance methods as globals
+                    window.showOnboarding = (...args) => mod.onboardingManager.showOnboarding(...args);
                     currentModule = 'onboardingManager';
                     resultsDiv.innerHTML = '<p>✅ OnboardingManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'modalManager') {
-                    await import(`../modules/ui/modalManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/ui/modalManager.js?v=${cacheBuster}`);
+                    window.ModalManager = mod.ModalManager;
+                    window.modalManager = mod.modalManager;
+                    window.setModalManagerDependencies = mod.setModalManagerDependencies;
+                    // Expose instance methods as globals
+                    window.closeAllModals = () => mod.modalManager.closeAllModals();
                     currentModule = 'modalManager';
                     resultsDiv.innerHTML = '<p>✅ ModalManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'menuManager') {
-                    await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
+                    window.MenuManager = mod.MenuManager;
+                    window.initMenuManager = mod.initMenuManager;
+                    // Initialize and expose instance methods as globals
+                    const menuManager = mod.initMenuManager({});
+                    window.menuManager = menuManager;
+                    window.setupMainMenu = () => menuManager?.setupMainMenu();
+                    window.closeMainMenu = () => menuManager?.closeMainMenu();
+                    window.hideMainMenu = () => menuManager?.hideMainMenu();
                     currentModule = 'menuManager';
                     resultsDiv.innerHTML = '<p>✅ MenuManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'settingsManager') {
-                    await import(`../modules/ui/settingsManager.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/ui/settingsManager.js?v=${cacheBuster}`);
+                    window.SettingsManager = mod.SettingsManager;
+                    window.initSettingsManager = mod.initSettingsManager;
+                    // Initialize and expose instance methods as globals
+                    const settingsManager = mod.initSettingsManager({});
+                    window.settingsManager = settingsManager;
+                    window.setupSettingsMenu = () => settingsManager?.setupSettingsMenu();
+                    window.setupDownloadMiniCycle = () => settingsManager?.setupDownloadMiniCycle();
+                    window.setupUploadMiniCycle = () => settingsManager?.setupUploadMiniCycle();
+                    window.syncCurrentSettingsToStorage = () => settingsManager?.syncCurrentSettingsToStorage();
                     currentModule = 'settingsManager';
                     resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskCore') {
-                    const { initTaskCore } = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
+                    window.TaskCore = mod.TaskCore;
+                    window.initTaskCore = mod.initTaskCore;
                     // Initialize with test-friendly mocks to avoid prompts
-                    await initTaskCore({
+                    const taskCore = await mod.initTaskCore({
                         showPromptModal: (options) => {
                             console.log('[TEST] Mock prompt:', options.message);
                             // Auto-provide a test value to avoid blocking tests
@@ -645,50 +1050,120 @@
                             if (options.confirmCallback) options.confirmCallback();
                         }
                     });
+                    // Expose instance and wrapper functions as globals
+                    window.taskCore = taskCore;
+                    window.addTask = mod.addTask;
+                    window.handleTaskCompletionChange = mod.handleTaskCompletionChange;
+                    window.saveCurrentTaskOrder = mod.saveCurrentTaskOrder;
+                    window.resetTasks = mod.resetTasks;
+                    window.handleCompleteAllTasks = mod.handleCompleteAllTasks;
                     currentModule = 'taskCore';
                     resultsDiv.innerHTML = '<p>✅ TaskCore loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskValidation') {
-                    await import(`../modules/task/taskValidation.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/task/taskValidation.js?v=${cacheBuster}`);
+                    window.TaskValidator = mod.TaskValidator;
+                    window.initTaskValidator = mod.initTaskValidator;
+                    window.validateAndSanitizeTaskInput = mod.validateAndSanitizeTaskInput;
                     currentModule = 'taskValidation';
                     resultsDiv.innerHTML = '<p>✅ TaskValidation loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskUtils') {
-                    await import(`../modules/task/taskUtils.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/task/taskUtils.js?v=${cacheBuster}`);
+                    window.TaskUtils = mod.TaskUtils;
+                    // Expose wrapper functions as globals
+                    window.buildTaskContext = mod.buildTaskContext;
+                    window.extractTaskDataFromDOM = mod.extractTaskDataFromDOM;
+                    window.loadTaskContext = mod.loadTaskContext;
+                    window.scrollToNewTask = mod.scrollToNewTask;
+                    window.handleOverdueStyling = mod.handleOverdueStyling;
+                    window.setupFinalTaskInteractions = mod.setupFinalTaskInteractions;
                     currentModule = 'taskUtils';
                     resultsDiv.innerHTML = '<p>✅ TaskUtils loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskRenderer') {
-                    await import(`../modules/task/taskRenderer.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/task/taskRenderer.js?v=${cacheBuster}`);
+                    window.TaskRenderer = mod.TaskRenderer;
+                    window.setTaskRendererDependencies = mod.setTaskRendererDependencies;
+                    window.initTaskRenderer = mod.initTaskRenderer;
+                    // Expose wrapper functions as globals
+                    window.renderTasks = mod.renderTasks;
+                    window.refreshUIFromState = mod.refreshUIFromState;
+                    window.refreshTaskListUI = mod.refreshTaskListUI;
                     currentModule = 'taskRenderer';
                     resultsDiv.innerHTML = '<p>✅ TaskRenderer loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskEvents') {
-                    await import(`../modules/task/taskEvents.js?v=${cacheBuster}`);
+                    const mod = await import(`../modules/task/taskEvents.js?v=${cacheBuster}`);
+                    window.TaskEvents = mod.TaskEvents;
+                    window.initTaskEvents = mod.initTaskEvents;
+                    // Expose wrapper functions as globals
+                    window.handleTaskButtonClick = mod.handleTaskButtonClick;
+                    window.toggleHoverTaskOptions = mod.toggleHoverTaskOptions;
+                    window.revealTaskButtons = mod.revealTaskButtons;
+                    window.syncRecurringStateToDOM = mod.syncRecurringStateToDOM;
+                    window.setupTaskInteractions = mod.setupTaskInteractions;
+                    window.setupTaskClickInteraction = mod.setupTaskClickInteraction;
                     currentModule = 'taskEvents';
                     resultsDiv.innerHTML = '<p>✅ TaskEvents loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskDOM') {
-                    // Load globalUtils first (provides window.sanitizeInput needed by validator)
-                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
-                    await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
+                    // Load globalUtils first (provides sanitizeInput)
+                    const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    window.GlobalUtils = globalMod.GlobalUtils;
+                    window.sanitizeInput = globalMod.GlobalUtils.sanitizeInput.bind(globalMod.GlobalUtils);
+                    window.generateId = globalMod.GlobalUtils.generateId.bind(globalMod.GlobalUtils);
+                    // Load taskUtils for TaskUtils class
+                    const taskUtilsMod = await import(`../modules/task/taskUtils.js?v=${cacheBuster}`);
+                    window.TaskUtils = taskUtilsMod.TaskUtils;
+                    window.buildTaskContext = taskUtilsMod.buildTaskContext;
+                    window.extractTaskDataFromDOM = taskUtilsMod.extractTaskDataFromDOM;
+                    window.loadTaskContext = taskUtilsMod.loadTaskContext;
+                    // Load taskDOM
+                    const mod = await import(`../modules/task/taskDOM.js?v=${cacheBuster}`);
+                    window.TaskDOMManager = mod.TaskDOMManager;
+                    window.initTaskDOMManager = mod.initTaskDOMManager;
+                    window.validateAndSanitizeTaskInput = mod.validateAndSanitizeTaskInput;
+                    window.createTaskDOMElements = mod.createTaskDOMElements;
+                    window.createTaskCheckbox = mod.createTaskCheckbox;
+                    window.createTaskLabel = mod.createTaskLabel;
+                    window.renderTasks = mod.renderTasks;
+                    window.refreshUIFromState = mod.refreshUIFromState;
+                    window.setupTaskInteractions = mod.setupTaskInteractions;
+                    window.revealTaskButtons = mod.revealTaskButtons;
+                    window.handleTaskButtonClick = mod.handleTaskButtonClick;
                     currentModule = 'taskDOM';
-                    resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils). Click "Run Tests" to begin.</p>';
+                    resultsDiv.innerHTML = '<p>✅ TaskDOM loaded (with globalUtils and taskUtils). Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'deleteWhenComplete') {
                     // Load required modules for delete-when-complete tests
-                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    window.GlobalUtils = globalMod.GlobalUtils;
                     await import(`../modules/core/constants.js?v=${cacheBuster}`);
                     currentModule = 'deleteWhenComplete';
                     resultsDiv.innerHTML = '<p>✅ Delete-When-Complete tests loaded (with globalUtils and constants). Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskOptionsCustomizer') {
-                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
-                    await import(`../modules/ui/taskOptionsCustomizer.js?v=${cacheBuster}`);
+                    const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    window.GlobalUtils = globalMod.GlobalUtils;
+                    const mod = await import(`../modules/ui/taskOptionsCustomizer.js?v=${cacheBuster}`);
+                    window.TaskOptionsCustomizer = mod.TaskOptionsCustomizer;
+                    window.initTaskOptionsCustomizer = mod.initTaskOptionsCustomizer;
+                    window.taskOptionsCustomizer = mod.taskOptionsCustomizer;
                     currentModule = 'taskOptionsCustomizer';
                     resultsDiv.innerHTML = '<p>✅ TaskOptionsCustomizer loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'xss-vulnerability') {
                     // Load globalUtils first (provides window.sanitizeInput and escapeHtml)
-                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    window.GlobalUtils = globalMod.GlobalUtils;
                     currentModule = 'xss-vulnerability';
                     resultsDiv.innerHTML = '<p>✅ XSS Vulnerability Tests ready (with globalUtils). Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'errorHandler') {
                     // Load globalUtils and errorHandler
-                    await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
-                    await import(`../modules/utils/errorHandler.js?v=${cacheBuster}`);
+                    const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
+                    window.GlobalUtils = globalMod.GlobalUtils;
+                    // Expose safe functions as globals (like main app does)
+                    window.safeLocalStorageGet = globalMod.GlobalUtils.safeLocalStorageGet.bind(globalMod.GlobalUtils);
+                    window.safeLocalStorageSet = globalMod.GlobalUtils.safeLocalStorageSet.bind(globalMod.GlobalUtils);
+                    window.safeLocalStorageRemove = globalMod.GlobalUtils.safeLocalStorageRemove.bind(globalMod.GlobalUtils);
+                    window.safeJSONParse = globalMod.GlobalUtils.safeJSONParse.bind(globalMod.GlobalUtils);
+                    window.safeJSONStringify = globalMod.GlobalUtils.safeJSONStringify.bind(globalMod.GlobalUtils);
+                    // Load errorHandler and expose
+                    const errorMod = await import(`../modules/utils/errorHandler.js?v=${cacheBuster}`);
+                    window.ErrorHandler = errorMod.default;
                     currentModule = 'errorHandler';
                     resultsDiv.innerHTML = '<p>✅ Error Handler Tests ready (with globalUtils and errorHandler). Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'testingModal') {
@@ -938,30 +1413,9 @@
                 // Run each module's tests
                 for (const module of allModules) {
                     try {
-                        // Load the module (skip for integration tests which don't need imports)
-                        if (module.importPath) {
-                            // Load secondary import first if specified (e.g., dependencies)
-                            if (module.secondaryImport) {
-                                await import(`${module.secondaryImport}?v=${cacheBuster}`);
-                            }
-
-                            if (module.key === 'taskCore') {
-                                // TaskCore needs special initialization with test-friendly mocks
-                                const { initTaskCore } = await import(`${module.importPath}?v=${cacheBuster}`);
-                                await initTaskCore({
-                                    showPromptModal: (options) => {
-                                        console.log('[TEST] Mock prompt:', options.message);
-                                        if (options.callback) options.callback('Test Task');
-                                    },
-                                    showConfirmationModal: (options) => {
-                                        console.log('[TEST] Mock confirmation:', options.message);
-                                        if (options.confirmCallback) options.confirmCallback();
-                                    }
-                                });
-                            } else {
-                                await import(`${module.importPath}?v=${cacheBuster}`);
-                            }
-                        }
+                        // Load and expose the module using shared helper
+                        // This ensures consistent window.* exposure for all modules
+                        await loadAndExposeModule(module.key);
 
                     // Create a temporary div for results
                     const tempDiv = document.createElement('div');

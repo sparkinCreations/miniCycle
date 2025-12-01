@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.385
+ * @version 1.386
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -19,7 +19,7 @@ const getCalculateNextOccurrence = () => window.recurringCore?.calculateNextOccu
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.385';
+        this.version = '1.386';
         this.initialized = false;
 
         // Store dependencies with resilient fallbacks
@@ -1214,16 +1214,5 @@ export function initSettingsManager(dependencies) {
     return settingsManager.init().then(() => settingsManager);
 }
 
-// Expose class for testing
-if (typeof window !== 'undefined') {
-    window.SettingsManager = SettingsManager;
-
-    // Global wrapper functions for backward compatibility
-    window.setupSettingsMenu = () => settingsManager?.setupSettingsMenu();
-    window.setupDownloadMiniCycle = () => settingsManager?.setupDownloadMiniCycle();
-    window.exportMiniCycleData = (data, name) => settingsManager?.exportMiniCycleData(data, name);
-    window.setupUploadMiniCycle = () => settingsManager?.setupUploadMiniCycle();
-    window.syncCurrentSettingsToStorage = () => settingsManager?.syncCurrentSettingsToStorage();
-}
-
-console.log('⚙️ Settings Manager v1.330 loaded');
+// Phase 3 - No window.* exports (main script handles exposure)
+console.log('⚙️ Settings Manager v1.330 loaded (Phase 3 - no window.* exports)');

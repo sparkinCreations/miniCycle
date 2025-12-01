@@ -4,6 +4,8 @@
  * Tests for modules/ui/settingsManager.js
  * Pattern: Resilient Constructor 🛡️
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * Functions tested:
  * - setupSettingsMenu() - Initialize settings UI
  * - setupDownloadMiniCycle() - Setup export functionality
@@ -12,7 +14,20 @@
  * - syncCurrentSettingsToStorage() - Sync settings to Schema 2.5
  */
 
-export function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification
+} from './testHelpers.js';
+
+export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)

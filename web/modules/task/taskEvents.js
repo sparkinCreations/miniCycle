@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.385
+ * @version 1.386
  */
 
 export class TaskEvents {
@@ -29,7 +29,7 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.385';
+        this.version = '1.386';
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;
@@ -393,10 +393,7 @@ export function initTaskEvents(dependencies = {}) {
     // This sets up ONE listener for all tasks instead of one per task
     taskEvents.initEventDelegation();
 
-    // Expose on window for cross-module instance access
-    // (Needed due to versioned vs unversioned imports creating separate module instances)
-    window.taskEvents = taskEvents;
-
+    // Phase 3 - No window.* exports (main script handles exposure via taskDOMManager.events)
     return taskEvents;
 }
 

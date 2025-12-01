@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module dueDates
- * @version 1.385
+ * @version 1.386
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        this.version = '1.385';
+        this.version = '1.386';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
@@ -561,19 +561,8 @@ export async function initDueDatesManager(dependencies = {}) {
     dueDatesManager = new MiniCycleDueDates(dependencies);
     await dueDatesManager.init();
 
-    // Make globally available for backward compatibility
-    window.dueDatesManager = dueDatesManager;
-
-    // Export individual methods globally
-    window.saveTaskDueDate = (taskId, newDueDate) => dueDatesManager.saveTaskDueDate(taskId, newDueDate);
-    window.checkOverdueTasks = (taskToCheck) => dueDatesManager.checkOverdueTasks(taskToCheck);
-    window.createDueDateInput = (assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle) =>
-        dueDatesManager.createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
-    window.setupDueDateButtonInteraction = (buttonContainer, dueDateInput) =>
-        dueDatesManager.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
-    window.updateDueDateVisibility = (autoReset) => dueDatesManager.updateDueDateVisibility(autoReset);
-
-    console.log('✅ Due Dates Manager initialized and globally accessible');
+    // Phase 3 - No window.* exports (main script handles exposure)
+    console.log('✅ Due Dates Manager initialized');
 
     return dueDatesManager;
 }

@@ -738,7 +738,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         window.toggleArrowVisibility = toggleArrowVisibility;
         window.updateArrowsInDOM = updateArrowsInDOM;
 
-        await initDragDropManager({
+        const dragDropManager = await initDragDropManager({
           saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
           autoSave: () => autoSave?.(),
           updateProgressBar: () => updateProgressBar?.(),
@@ -754,10 +754,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
           showNotification: (msg, type, duration) => showNotification?.(msg, type, duration)
         });
 
-        // ✅ FIX: Expose enableDragAndDropOnTask globally for taskRenderer
+        // Phase 3: Main script handles window.* exposure
+        window.dragDropManager = dragDropManager;
         window.enableDragAndDropOnTask = enableDragAndDropOnTask;
 
-        console.log('✅ DragDropManager initialized and ready (Phase 2)');
+        console.log('✅ DragDropManager initialized and ready (Phase 3)');
 
         // ✅ Initialize Device Detection (Phase 2 module)
         console.log('📱 Initializing device detection module...');
@@ -766,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: deps.utils.showNotification,  // ✅ Use direct function
-            currentVersion: '1.385'
+            currentVersion: '1.386'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -839,7 +840,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.refreshUIFromState = refreshUIFromState;
 
             console.log('⏱️ CHECKPOINT: Calling initTaskDOMManager with dependencies...');
-            await initTaskDOMManager({
+            const taskDOMManager = await initTaskDOMManager({
                 // State management - use deps container
                 AppState: window.AppState,  // Will be deps.core.AppState once wired
 
@@ -906,7 +907,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 DEFAULT_TASK_OPTION_BUTTONS: deps.utils.DEFAULT_TASK_OPTION_BUTTONS
             });
 
-            console.log('✅ Task DOM module initialized (Phase 2)');
+            // Phase 3: Main script handles window.* exposure
+            window.__taskDOMManager = taskDOMManager;
+            window.taskEvents = taskDOMManager.events;
+
+            console.log('✅ Task DOM module initialized (Phase 3)');
             console.log('⏱️ CHECKPOINT: initTaskDOMManager completed successfully');
 
 
@@ -925,12 +930,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             throw new Error('TaskDOM initialization failed - cannot render tasks');
         }
 
-        // ✅ Initialize Task Options Customizer (Phase 2 module)
+        // ✅ Initialize Task Options Customizer (Phase 3 module - no window.* in module)
         console.log('⚙️ Initializing task options customizer...');
         try {
-            const { initTaskOptionsCustomizer } = await import(withV('./modules/ui/taskOptionsCustomizer.js'));
+            const { initTaskOptionsCustomizer, TaskOptionsCustomizer } = await import(withV('./modules/ui/taskOptionsCustomizer.js'));
 
-            await initTaskOptionsCustomizer({
+            const taskOptionsCustomizer = await initTaskOptionsCustomizer({
                 AppState: window.AppState,
                 showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 getElementById: (id) => document.getElementById(id),
@@ -938,7 +943,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 renderTaskList: () => window.refreshTaskListUI?.()
             });
 
-            console.log('✅ Task options customizer initialized (Phase 2)');
+            // Phase 3: Main script handles window.* exposure
+            window.taskOptionsCustomizer = taskOptionsCustomizer;
+            window.TaskOptionsCustomizer = TaskOptionsCustomizer;
+
+            console.log('✅ Task options customizer initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize task options customizer:', error);
             if (typeof showNotification === 'function') {
@@ -947,14 +956,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task customization functionality');
         }
 
-        // ✅ Initialize Reminders Module (Phase 2 module)
+        // ✅ Initialize Reminders Module (Phase 3 module - no window.* in module)
         // IMPORTANT: Load BEFORE recurring modules because recurring task rendering needs reminder button handlers
         console.log('🔔 Initializing reminders module...');
         try {
             const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
 
-            await initReminderManager({
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
+            const reminderManager = await initReminderManager({
+                showNotification: deps.utils.showNotification,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
@@ -963,7 +972,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 autoSave: () => window.autoSave?.()
             });
 
-            console.log('✅ Reminders module initialized (Phase 2)');
+            // ✅ Phase 3: Main script handles window.* exposure (not the module)
+            window.reminderManager = reminderManager;
+            window.startReminders = () => reminderManager.startReminders();
+            window.stopReminders = () => reminderManager.stopReminders();
+            window.handleReminderToggle = () => reminderManager.handleReminderToggle();
+            window.autoSaveReminders = () => reminderManager.autoSaveReminders();
+            window.loadRemindersSettings = () => reminderManager.loadRemindersSettings();
+            window.saveTaskReminderState = (taskId, isEnabled) => reminderManager.saveTaskReminderState(taskId, isEnabled);
+            window.updateReminderButtons = () => reminderManager.updateReminderButtons();
+            window.setupReminderButtonHandler = (button, taskContext) => reminderManager.setupReminderButtonHandler(button, taskContext);
+
+            console.log('✅ Reminders module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize reminders module:', error);
             if (typeof showNotification === 'function') {
@@ -972,20 +992,28 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without reminders functionality');
         }
 
-        // ✅ Initialize Recurring Modules (Phase 2 module)
+        // ✅ Initialize Recurring Modules (Phase 3 module - no window.* in module)
         console.log('🔄 Initializing recurring task modules...');
         try {
-            const { initializeRecurringModules } = await import(withV('./modules/recurring/recurringIntegration.js'));
+            const { initializeRecurringModules, testRecurringIntegration } = await import(withV('./modules/recurring/recurringIntegration.js'));
             const recurringModules = await initializeRecurringModules();
-            window._recurringModules = recurringModules;
 
-            console.log('✅ Recurring modules initialized (Phase 2)');
+            // Phase 3: Main script handles window.* exposure
+            window._recurringModules = recurringModules;
+            window.recurringCore = recurringModules.coreAPI;
+            window.recurringPanel = recurringModules.panelAPI;
+            window.testRecurringIntegration = testRecurringIntegration;
+            // Direct function exposure for backward compatibility
+            window.openRecurringSettingsPanelForTask = (taskId) => recurringModules.panelAPI.openForTask(taskId);
+            window.updateRecurringPanelButtonVisibility = () => recurringModules.panelAPI.updateButtonVisibility();
+
+            console.log('✅ Recurring modules initialized (Phase 3)');
 
             // Optional: Run integration test in development
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 console.log('🧪 Running recurring integration test...');
                 setTimeout(() => {
-                    const results = window.testRecurringIntegration();
+                    const results = testRecurringIntegration();
                     if (Object.values(results).every(r => r === true)) {
                         console.log('✅ Recurring integration test PASSED:', results);
                     } else {
@@ -1001,12 +1029,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without recurring functionality');
         }
 
-        // ✅ Initialize Due Dates Module (Phase 2 module)
+        // ✅ Initialize Due Dates Module (Phase 3 module - no window.* in module)
         console.log('📅 Initializing due dates module...');
         try {
             const { initDueDatesManager } = await import(withV('./modules/features/dueDates.js'));
 
-            await initDueDatesManager({
+            const dueDatesManager = await initDueDatesManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 updateStatsPanel: () => window.updateStatsPanel?.(),
@@ -1019,7 +1047,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 AppState: () => window.AppState  // ✅ Inject AppState getter
             });
 
-            console.log('✅ Due dates module initialized (Phase 2)');
+            // Phase 3: Main script handles window.* exposure
+            window.dueDatesManager = dueDatesManager;
+            window.saveTaskDueDate = (taskId, newDueDate) => dueDatesManager.saveTaskDueDate(taskId, newDueDate);
+            window.checkOverdueTasks = (taskToCheck) => dueDatesManager.checkOverdueTasks(taskToCheck);
+            window.createDueDateInput = (assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle) =>
+                dueDatesManager.createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
+            window.setupDueDateButtonInteraction = (buttonContainer, dueDateInput) =>
+                dueDatesManager.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
+            window.updateDueDateVisibility = (autoReset) => dueDatesManager.updateDueDateVisibility(autoReset);
+
+            console.log('✅ Due dates module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize due dates module:', error);
             if (typeof showNotification === 'function') {
@@ -1028,25 +1066,34 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without due dates functionality');
         }
 
-        // ✅ Initialize Mode Manager (Phase 2 module)
+        // ✅ Initialize Mode Manager (Phase 3 module - no window.* in module)
         console.log('🎯 Initializing mode manager module...');
         try {
             const { initModeManager } = await import(withV('./modules/cycle/modeManager.js'));
 
-            await initModeManager({
+            const modeManager = await initModeManager({
                 getAppState: () => window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 createTaskButtonContainer: (ctx) => window.createTaskButtonContainer?.(ctx),
                 setupDueDateButtonInteraction: (btn, input) => window.setupDueDateButtonInteraction?.(btn, input),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function, not deprecated wrapper
+                showNotification: deps.utils.showNotification,
                 helpWindowManager: () => window.helpWindowManager,
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
 
+            // ✅ Phase 3: Main script handles window.* exposure (not the module)
+            window.modeManager = modeManager;
+            window.initializeModeSelector = () => modeManager.init();
+            window.setupModeSelector = () => modeManager.setupModeSelector();
+            window.syncModeFromToggles = () => modeManager.syncModeFromToggles();
+            window.updateStorageFromToggles = () => modeManager.updateStorageFromToggles();
+            window.refreshTaskButtonsForModeChange = () => modeManager.refreshTaskButtonsForModeChange();
+            window.updateCycleModeDescription = () => modeManager.updateCycleModeDescription();
+            window.getModeName = (mode) => modeManager.getModeName(mode);
 
-            console.log('✅ Mode manager module initialized (Phase 2)');
+            console.log('✅ Mode manager module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize mode manager module:', error);
             if (typeof showNotification === 'function') {
@@ -1055,19 +1102,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without mode manager functionality');
         }
 
-        // ✅ Initialize Cycle Switcher (Phase 2 module)
+        // ✅ Initialize Cycle Switcher (Phase 3 module - no window.* in module)
         console.log('🔄 Initializing cycle switcher module...');
         try {
             const { initializeCycleSwitcher, switchMiniCycle, renameMiniCycle, deleteMiniCycle } = await import(withV('./modules/cycle/cycleSwitcher.js'));
 
-            await initializeCycleSwitcher({
+            const cycleSwitcher = await initializeCycleSwitcher({
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,
                 hideMainMenu: () => window.hideMainMenu?.(),
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
-                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),
                 loadMiniCycle: () => window.loadMiniCycle?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
@@ -1080,13 +1127,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
 
-            // ✅ Expose cycle switcher functions to window (needed by main menu and other modules)
+            // ✅ Phase 3: Main script handles window.* exposure (not the module)
+            window.cycleSwitcher = cycleSwitcher;
             window.switchMiniCycle = switchMiniCycle;
             window.renameMiniCycle = renameMiniCycle;
             window.deleteMiniCycle = deleteMiniCycle;
 
-
-            console.log('✅ Cycle switcher module initialized (Phase 2)');
+            console.log('✅ Cycle switcher module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize cycle switcher module:', error);
             if (typeof showNotification === 'function') {
@@ -1095,17 +1142,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without cycle switcher functionality');
         }
 
-        // ✅ Initialize Cycle Manager (Phase 2 module)
+        // ✅ Initialize Cycle Manager (Phase 3 module - no window.* in module)
         console.log('🔄 Initializing cycle manager module...');
         try {
             const { initializeCycleManager } = await import(withV('./modules/cycle/cycleManager.js'));
 
-            await initializeCycleManager({
+            const cycleManager = await initializeCycleManager({
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
-                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),
                 completeInitialSetup: (id, data) => window.completeInitialSetup?.(id, data),
                 hideMainMenu: () => window.hideMainMenu?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
@@ -1116,12 +1163,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelectorAll: (sel) => document.querySelectorAll(sel)
             });
 
-            // Expose cycle manager functions to window (needed by onboardingManager and main menu)
-            window.showCycleCreationModal = () => window.cycleManager?.showCycleCreationModal?.();
-            window.createNewMiniCycle = () => window.cycleManager?.createNewMiniCycle?.();
+            // ✅ Phase 3: Main script handles window.* exposure (not the module)
+            window.cycleManager = cycleManager;
+            window.showCycleCreationModal = () => cycleManager.showCycleCreationModal?.();
+            window.createNewMiniCycle = () => cycleManager.createNewMiniCycle?.();
 
-
-            console.log('✅ Cycle manager module initialized (Phase 2)');
+            console.log('✅ Cycle manager module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize cycle manager module:', error);
             if (typeof showNotification === 'function') {
@@ -1181,15 +1228,15 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without undo/redo functionality');
         }
 
-        // ✅ Initialize Menu Manager (Phase 2 module)
+        // ✅ Initialize Menu Manager (Phase 3 module - no window.* in module)
         console.log('🎛️ Initializing menu manager module...');
         try {
-            const { initMenuManager } = await import(withV('./modules/ui/menuManager.js'));
+            const { initMenuManager, MenuManager } = await import(withV('./modules/ui/menuManager.js'));
 
-            await initMenuManager({
+            const menuManager = await initMenuManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,
                 showPromptModal: (opts) => window.showPromptModal?.(opts),
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
                 getElementById: (id) => document.getElementById(id),
@@ -1201,7 +1248,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 loadMiniCycle: () => window.loadMiniCycle?.(),
                 updateCycleModeDescription: () => window.updateCycleModeDescription?.(),
                 checkGamesUnlock: () => window.checkGamesUnlock?.(),
-                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),
                 updateCycleData: window.updateCycleData,
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
@@ -1209,8 +1256,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.()
             });
 
+            // ✅ Phase 3: Main script handles window.* exposure (not the module)
+            window.MenuManager = MenuManager;
+            window.menuManager = menuManager;
+            window.setupMainMenu = () => menuManager?.setupMainMenu();
+            window.closeMainMenu = () => menuManager?.closeMainMenu();
+            window.updateMainMenuHeader = () => menuManager?.updateMainMenuHeader();
+            window.hideMainMenu = () => menuManager?.hideMainMenu();
+            window.closeMenuOnClickOutside = (event) => menuManager?.closeMenuOnClickOutside(event);
+            window.saveMiniCycleAsNew = () => menuManager?.saveMiniCycleAsNew();
+            window.clearAllTasks = () => menuManager?.clearAllTasks();
+            window.deleteAllTasks = () => menuManager?.deleteAllTasks();
 
-            console.log('✅ Menu manager module initialized (Phase 2)');
+            console.log('✅ Menu manager module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize menu manager module:', error);
             if (typeof showNotification === 'function') {
@@ -1238,12 +1296,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             });
         }
 
-        // ✅ Initialize Settings Manager (Phase 2 module)
+        // ✅ Initialize Settings Manager (Phase 3 module - no window.* in module)
         console.log('⚙️ Initializing settings manager module...');
         try {
             const { initSettingsManager } = await import(withV('./modules/ui/settingsManager.js'));
 
-            await initSettingsManager({
+            const settingsManager = await initSettingsManager({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
                 showNotification: deps.utils.showNotification,  // ✅ Use direct function
@@ -1261,8 +1319,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 performSchema25Migration: () => window.performSchema25Migration?.()
             });
 
+            // Phase 3: Main script handles window.* exposure
+            window.settingsManager = settingsManager;
+            window.syncCurrentSettingsToStorage = () => settingsManager.syncCurrentSettingsToStorage();
 
-            console.log('✅ Settings manager module initialized (Phase 2)');
+            console.log('✅ Settings manager module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize settings manager module:', error);
             if (typeof showNotification === 'function') {
@@ -1282,7 +1343,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.handleCompleteAllTasks = handleCompleteAllTasks;
             window.saveTaskToSchema25 = saveTaskToSchema25;
 
-            await initTaskCore({
+            const taskCore = await initTaskCore({
                 // State management
                 AppState: window.AppState,
 
@@ -1322,8 +1383,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 autoSave: () => window.autoSave?.()
             });
 
+            // Phase 3: Main script handles window.* exposure
+            window.taskCore = taskCore;
 
-            console.log('✅ Task core module initialized (Phase 2)');
+            console.log('✅ Task core module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize task core module:', error);
             if (typeof showNotification === 'function') {

@@ -1,7 +1,7 @@
 /**
  * Mode Manager - Manages Auto Cycle, Manual Cycle, and To-Do Mode
  * @module modules/cycle/modeManager
- * @version 1.385
+ * @version 1.386
  * @pattern Resilient Constructor 🛡️
  *
  * Handles three cycling modes:
@@ -619,8 +619,8 @@ export class ModeManager {
     }
 }
 
-// Phase 2 Step 6 - Clean exports (no window.* pollution)
-console.log('🎯 ModeManager module loaded (Phase 2 - no window.* exports)');
+// Phase 3 - No window.* exports (main script handles exposure)
+console.log('🎯 ModeManager module loaded (Phase 3 - no window.* exports)');
 
 /**
  * Initialize and configure the mode manager
@@ -633,17 +633,7 @@ export async function initModeManager(dependencies = {}) {
     const manager = new ModeManager(dependencies);
     await manager.init();
 
-    // Export globally for backward compatibility
-    window.modeManager = manager;
-    window.initializeModeSelector = () => manager.init();
-    window.setupModeSelector = () => manager.setupModeSelector();
-    window.syncModeFromToggles = () => manager.syncModeFromToggles();
-    window.updateStorageFromToggles = () => manager.updateStorageFromToggles();
-    window.refreshTaskButtonsForModeChange = () => manager.refreshTaskButtonsForModeChange();
-    window.updateCycleModeDescription = () => manager.updateCycleModeDescription();
-    window.getModeName = (mode) => manager.getModeName(mode);
-
-    console.log('✅ Mode Manager initialized and exported globally');
+    console.log('✅ Mode Manager initialized');
 
     return manager;
 }

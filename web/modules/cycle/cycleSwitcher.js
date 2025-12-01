@@ -3,7 +3,7 @@
  * Manages cycle switching UI and operations
  *
  * @module cycleSwitcher
- * @version 1.385
+ * @version 1.386
  */
 
 export class CycleSwitcher {
@@ -30,7 +30,7 @@ export class CycleSwitcher {
         };
 
         this.loadMiniCycleListTimeout = null;
-        this.version = '1.385';
+        this.version = '1.386';
 
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
@@ -703,11 +703,7 @@ let cycleSwitcher = null;
  */
 export function initializeCycleSwitcher(dependencies) {
     cycleSwitcher = new CycleSwitcher(dependencies);
-
-    // Expose on window for cross-module instance access
-    // (Needed due to versioned vs unversioned imports creating separate module instances)
-    window.cycleSwitcher = cycleSwitcher;
-
+    console.log('✅ CycleSwitcher instance created');
     return cycleSwitcher;
 }
 

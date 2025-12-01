@@ -2,6 +2,8 @@
  * 🧪 TaskEvents Module Tests
  * Tests event handling and user interaction logic
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * Coverage:
  * - Module loading (TaskEvents class, window exports)
  * - Initialization (constructor, dependencies)
@@ -10,45 +12,26 @@
  * - Global wrapper functions
  */
 
+import {
+    setupTestEnvironment,
+    createProtectedTest
+} from './testHelpers.js';
+
 export async function runTaskEventsTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎮 TaskEvents Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>🎮 TaskEvents Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    // ============================================
-    // Test Helper Function with Data Protection
-    // ============================================
-    async function test(name, testFn) {
-        total.count++;
-
-        // 🔒 SAVE REAL APP DATA before test runs
-        const savedRealData = {};
-        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion', 'miniCycleMoveArrows'];
-        protectedKeys.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) savedRealData[key] = value;
-        });
-
-        try {
-            // Run test (handle both sync and async)
-            const result = testFn();
-            if (result instanceof Promise) {
-                await result;
-            }
-
-            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-            passed.count++;
-        } catch (error) {
-            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-        } finally {
-            // 🔒 RESTORE REAL APP DATA (runs even if test crashes)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-        }
-    }
+    // Use shared test helper with data protection
+    const test = createProtectedTest(resultsDiv, passed, total);
 
     // ============================================
     // Test Utilities

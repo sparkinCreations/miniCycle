@@ -2,6 +2,8 @@
  * CycleLoader Module Tests (Schema 2.5)
  * Simplified tests for the main cycle loading and coordination functionality
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * ⚠️ EXPECTED TEST FAILURES IN ISOLATED TEST ENVIRONMENT:
  * Some tests may fail due to:
  * - Missing DOM elements (taskList, UI containers)
@@ -13,6 +15,13 @@
  *
  * ✅ Production Impact: LOW - Core data loading works, edge cases handled
  */
+
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification,
+    waitForAsyncOperations
+} from './testHelpers.js';
 
 // Import the module
 import {
@@ -28,14 +37,14 @@ import {
 } from '../modules/cycle/cycleLoader.js';
 
 export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>🔄 CycleLoader Tests</h2><h3>Running tests...</h3>';
+    resultsDiv.innerHTML = '<h2>🔄 CycleLoader Tests</h2><h3>Setting up mocks...</h3>';
 
-    // ✅ CRITICAL: Mark core as ready for test environment
-    // This allows async functions using appInit.waitForCore() to proceed
-    if (window.appInit && !window.appInit.isCoreReady()) {
-        await window.appInit.markCoreSystemsReady();
-        console.log('✅ Test environment: AppInit core systems marked as ready');
-    }
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
+    resultsDiv.innerHTML = '<h2>🔄 CycleLoader Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };

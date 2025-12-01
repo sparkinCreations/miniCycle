@@ -4,6 +4,8 @@
  * Tests for modules/ui/menuManager.js
  * Pattern: Resilient Constructor 🛡️
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * Functions tested:
  * - setupMainMenu() - Initialize menu event listeners
  * - closeMainMenu() - Close menu modal
@@ -15,7 +17,20 @@
  * - deleteAllTasks() - Delete all tasks (CRITICAL)
  */
 
-export function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification
+} from './testHelpers.js';
+
+export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🎛️ Menu Manager Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>🎛️ Menu Manager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)

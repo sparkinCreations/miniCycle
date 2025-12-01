@@ -13,14 +13,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module task/taskCore
- * @version 1.385
+ * @version 1.386
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class TaskCore {
     constructor(dependencies = {}) {
-        this.version = '1.385';
+        this.version = '1.386';
 
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();
@@ -1132,11 +1132,8 @@ export async function initTaskCore(dependencies = {}) {
             taskCoreInstance = new TaskCore(dependencies);
             await taskCoreInstance.init();
 
-            // Expose on window for cross-module instance access
-            // (Needed due to versioned vs unversioned imports creating separate module instances)
-            window.taskCore = taskCoreInstance;
-
-            console.log('✅ TaskCore initialized (Phase 3 - clean exports)');
+            // Phase 3 - No window.* exports (main script handles exposure)
+            console.log('✅ TaskCore initialized (Phase 3)');
         } catch (e) {
             // ✅ FIX #5: Error boundary for TaskCore initialization
             console.error('❌ TaskCore initialization failed:', e);

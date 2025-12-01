@@ -1,9 +1,37 @@
 /**
  * ThemeManager Browser Tests
  * Test functions for module-test-suite.html
+ *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
  */
 
-export function runThemeManagerTests(resultsDiv) {
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification,
+    createMockHideMainMenu,
+    waitForAsyncOperations
+} from './testHelpers.js';
+
+export async function runThemeManagerTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎨 ThemeManager Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
+    // Import setThemeManagerDependencies to inject mocks
+    const themeModule = await import('../modules/features/themeManager.js');
+    const setThemeManagerDependencies = themeModule.setThemeManagerDependencies;
+
+    // Inject mock dependencies using testHelpers mocks
+    setThemeManagerDependencies({
+        AppState: env.AppState,
+        showNotification: createMockNotification(),
+        hideMainMenu: createMockHideMainMenu()
+    });
+
     resultsDiv.innerHTML = '<h2>🎨 ThemeManager Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
@@ -147,7 +175,7 @@ export function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('saves theme to localStorage', () => {
+    test('saves theme to localStorage', async () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -155,7 +183,11 @@ export function runThemeManagerTests(resultsDiv) {
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        tm.applyTheme('dark-ocean');
+        // applyTheme is now async due to waitForCore()
+        await tm.applyTheme('dark-ocean');
+
+        // Wait for async save to complete
+        await waitForAsyncOperations();
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
         if (savedData.settings.theme !== 'dark-ocean') {
@@ -187,7 +219,7 @@ export function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('saves dark mode to localStorage', () => {
+    test('saves dark mode to localStorage', async () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -195,7 +227,11 @@ export function runThemeManagerTests(resultsDiv) {
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        tm.toggleDarkMode(true);
+        // toggleDarkMode is now async due to waitForCore()
+        await tm.toggleDarkMode(true);
+
+        // Wait for async save to complete
+        await waitForAsyncOperations();
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
         if (savedData.settings.darkMode !== true) {
@@ -252,14 +288,18 @@ export function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('saveSchemaData updates lastModified', () => {
+    test('saveSchemaData updates lastModified', async () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: 0 },
             settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
         };
 
-        tm.saveSchemaData(mockData);
+        // saveSchemaData is now async
+        await tm.saveSchemaData(mockData);
+
+        // Wait for async save to complete
+        await waitForAsyncOperations();
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
         if (savedData.metadata.lastModified === 0) {
@@ -271,12 +311,12 @@ export function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    test('handles missing localStorage gracefully', () => {
+    test('handles missing localStorage gracefully', async () => {
         const tm = new ThemeManager();
         localStorage.clear();
 
-        // Should not throw
-        tm.applyTheme('dark-ocean');
+        // Should not throw - applyTheme is now async
+        await tm.applyTheme('dark-ocean');
     });
 
     test('handles null body element gracefully', () => {

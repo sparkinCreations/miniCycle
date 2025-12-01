@@ -3,6 +3,8 @@
  * Tests for modules/cycleSwitcher.js
  * Pattern: Resilient Constructor 🛡️
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * Tests cycle switching functionality:
  * - Opening switch modal
  * - Renaming cycles
@@ -12,7 +14,21 @@
  * - Preview generation
  */
 
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification,
+    waitForAsyncOperations
+} from './testHelpers.js';
+
 export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🔄 CycleSwitcher Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>🔄 CycleSwitcher Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 
@@ -47,12 +63,6 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
     if (!CycleSwitcher) {
         resultsDiv.innerHTML += '<div class="result fail">❌ CycleSwitcher class not found. Make sure the module is properly loaded.</div>';
         return { passed: 0, total: 1 };
-    }
-
-    // ✅ CRITICAL: Mark appInit as ready for tests
-    if (window.appInit && !window.appInit.isCoreReady()) {
-        await window.appInit.markCoreSystemsReady();
-        console.log('✅ Test environment: AppInit core systems marked as ready');
     }
 
     async function test(name, testFn) {

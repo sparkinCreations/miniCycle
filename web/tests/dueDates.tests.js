@@ -1,10 +1,26 @@
 /**
  * DueDates Module Tests
  * Comprehensive tests for the miniCycle Due Dates module (Schema 2.5)
+ *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
  * @version 1.330
  */
 
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification,
+    waitForAsyncOperations
+} from './testHelpers.js';
+
 export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
@@ -33,11 +49,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
 
     try {
-        // ✅ CRITICAL: Mark core as ready BEFORE anything else
-        if (window.appInit && !window.appInit.isCoreReady()) {
-            await window.appInit.markCoreSystemsReady();
-            console.log('✅ Test environment: AppInit core systems marked as ready');
-        }
 
         // Import the module class
         const MiniCycleDueDates = window.MiniCycleDueDates;

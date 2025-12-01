@@ -8,7 +8,7 @@
  * Copy this code into miniCycle-scripts.js DOMContentLoaded handler.
  *
  * @module recurringIntegration
- * @version 1.385
+ * @version 1.386
  * @requires AppInit (for initialization coordination)
  */
 
@@ -210,15 +210,11 @@ export async function initializeRecurringModules() {
         }, 100);
 
         // ============================================
-        // STEP 7: Make functions globally accessible
+        // STEP 7: Build return object (Phase 3 - no window.* exports)
         // ============================================
 
-        console.log('🌐 Exposing recurring functions globally...');
-
-        // Functions accessible via window.recurringCore and window.recurringPanel
-
-        // Keep convenience objects for direct access (non-shimmed)
-        window.recurringCore = {
+        // Build convenience objects for direct access
+        const recurringCoreAPI = {
             applyRecurringSettings: recurringCore.applyRecurringToTaskSchema25,
             handleActivation: recurringCore.handleRecurringTaskActivation,
             handleDeactivation: recurringCore.handleRecurringTaskDeactivation,
@@ -235,7 +231,7 @@ export async function initializeRecurringModules() {
         };
 
         // Panel functions
-        window.recurringPanel = {
+        const recurringPanelAPI = {
             updatePanel: () => recurringPanel.updateRecurringPanel(),
             updateSummary: () => recurringPanel.updateRecurringSummary(),
             updateButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility(),
@@ -246,9 +242,7 @@ export async function initializeRecurringModules() {
             loadAlwaysShowRecurringSetting: () => recurringPanel.loadAlwaysShowRecurringSetting()
         };
 
-        console.log('✅ Recurring functions accessible via window.recurringCore and window.recurringPanel');
-
-
+        // Phase 3 - No window.* exports (main script handles exposure)
 
         // ============================================
         // STEP 8: Process deferred setups
@@ -258,15 +252,18 @@ export async function initializeRecurringModules() {
         if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
             console.log('📊 Processing', window._deferredRecurringSetup.length, 'deferred recurring setups');
             window._deferredRecurringSetup.forEach(setupFn => setupFn());
-            window._deferredRecurringSetup = [];
+            delete window._deferredRecurringSetup;
         }
 
-        console.log('✅ Recurring modules fully initialized and ready');
+        console.log('✅ Recurring modules initialized (Phase 3)');
 
         return {
             core: recurringCore,
             panel: recurringPanel,
-            manager: recurringPanel
+            manager: recurringPanel,
+            // API wrappers for window exposure
+            coreAPI: recurringCoreAPI,
+            panelAPI: recurringPanelAPI
         };
 
     } catch (error) {
@@ -354,9 +351,7 @@ export function testRecurringIntegration() {
     return tests;
 }
 
-// Make test function globally available
-if (typeof window !== 'undefined') {
-    window.testRecurringIntegration = testRecurringIntegration;
-}
+// Phase 3 - testRecurringIntegration exported via ES modules, not window
+// Main script can expose to window if needed
 
-console.log('🔗 Recurring integration module loaded');
+console.log('🔗 Recurring integration module loaded (Phase 3)');

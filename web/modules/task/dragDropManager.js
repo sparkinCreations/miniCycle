@@ -4,7 +4,7 @@
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
- * @version 1.385
+ * @version 1.386
  */
 
 import { appInit } from '../core/appInit.js';
@@ -677,10 +677,7 @@ async function initDragDropManager(dependencies = {}) {
     dragDropManager = new DragDropManager(dependencies);
     await dragDropManager.init(); // Await async init
 
-    // Expose on window for cross-module instance access
-    // (Needed due to versioned vs unversioned imports creating separate module instances)
-    window.dragDropManager = dragDropManager;
-
+    // Phase 3 - No window.* exports (main script handles exposure)
     return dragDropManager;
 }
 

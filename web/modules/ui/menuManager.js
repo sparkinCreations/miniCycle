@@ -3,7 +3,7 @@
  * Handles main menu operations and interactions
  *
  * @module menuManager
- * @version 1.385
+ * @version 1.386
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -11,7 +11,7 @@ import { appInit } from '../core/appInit.js';
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        this.version = '1.385';
+        this.version = '1.386';
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
@@ -530,19 +530,5 @@ export function initMenuManager(dependencies) {
     return menuManager.init().then(() => menuManager);
 }
 
-// Expose class for testing
-if (typeof window !== 'undefined') {
-    window.MenuManager = MenuManager;
-
-    // Global wrapper functions for backward compatibility
-    window.setupMainMenu = () => menuManager?.setupMainMenu();
-    window.closeMainMenu = () => menuManager?.closeMainMenu();
-    window.updateMainMenuHeader = () => menuManager?.updateMainMenuHeader();
-    window.hideMainMenu = () => menuManager?.hideMainMenu();
-    window.closeMenuOnClickOutside = (event) => menuManager?.closeMenuOnClickOutside(event);
-    window.saveMiniCycleAsNew = () => menuManager?.saveMiniCycleAsNew();
-    window.clearAllTasks = () => menuManager?.clearAllTasks();
-    window.deleteAllTasks = () => menuManager?.deleteAllTasks();
-}
-
-console.log('🎛️ Menu Manager v1.330 loaded');
+// Phase 3 - No window.* exports (main script handles exposure)
+console.log('🎛️ Menu Manager v1.330 loaded (Phase 3 - no window.* exports)');

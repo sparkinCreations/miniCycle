@@ -4,6 +4,8 @@
  * Tests for device capability detection and app version routing
  * Following miniCycle browser testing patterns
  *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ *
  * ⚠️ EXPECTED TEST FAILURES IN BROWSER ENVIRONMENT:
  * Some tests may fail when run in a browser test environment due to:
  * - User agent detection (browser-specific)
@@ -16,16 +18,23 @@
  * ✅ Production Impact: NONE - Device detection is non-critical
  */
 
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockNotification,
+    waitForAsyncOperations
+} from './testHelpers.js';
+
 export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
-
-    // ✅ CRITICAL: Mark core as ready for test environment
-    // This allows async functions using appInit.waitForCore() to proceed
-    if (window.appInit && !window.appInit.isCoreReady()) {
-        await window.appInit.markCoreSystemsReady();
-        console.log('✅ Test environment: AppInit core systems marked as ready');
-    }
 
     // Import the DeviceDetectionManager class
     const DeviceDetectionManager = window.DeviceDetectionManager;

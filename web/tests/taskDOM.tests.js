@@ -1,53 +1,44 @@
 /**
  * 🧪 TaskDOM Tests
  * Tests for task DOM creation, rendering, and interaction management
+ *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
  */
 
+import {
+    setupTestEnvironment,
+    createMockAppState,
+    createMockSanitizeInput,
+    createMockNotification,
+    createProtectedTest,
+    waitForAsyncOperations
+} from './testHelpers.js';
+
 export async function runTaskDOMTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎨 TaskDOM Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
+    // Ensure sanitizeInput is available globally (required by TaskValidator)
+    if (!window.sanitizeInput) {
+        window.sanitizeInput = createMockSanitizeInput();
+    }
+
+    // Ensure GlobalUtils.sanitizeInput is also available
+    if (window.GlobalUtils && !window.GlobalUtils.sanitizeInput) {
+        window.GlobalUtils.sanitizeInput = window.sanitizeInput;
+    }
+
     resultsDiv.innerHTML = '<h2>🎨 TaskDOM Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    // ============================================
-    // Test Helper Function with Data Protection
-    // ============================================
-    async function test(name, testFn) {
-        total.count++;
-
-        // 🔒 SAVE REAL APP DATA before test runs
-        const savedRealData = {};
-        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion', 'miniCycleMoveArrows'];
-        protectedKeys.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) savedRealData[key] = value;
-        });
-
-        try {
-            // Run test (handle both sync and async)
-            const result = testFn();
-            if (result instanceof Promise) {
-                await result;
-            }
-
-            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-            passed.count++;
-        } catch (error) {
-            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-        } finally {
-            // 🔒 RESTORE REAL APP DATA (runs even if test crashes)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-        }
-    }
-
-    // ✅ CRITICAL: Mark core as ready for test environment
-    if (window.appInit && !window.appInit.isCoreReady()) {
-        await window.appInit.markCoreSystemsReady();
-        console.log('✅ Test environment: AppInit core systems marked as ready');
-    }
+    // Use shared test helper with data protection
+    const test = createProtectedTest(resultsDiv, passed, total);
 
     // ============================================
     // 📦 MODULE LOADING TESTS

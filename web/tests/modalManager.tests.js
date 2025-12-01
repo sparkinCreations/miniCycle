@@ -1,46 +1,30 @@
 /**
  * ModalManager Browser Tests
  * Test functions for module-test-suite.html
+ *
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers
  */
 
-export function runModalManagerTests(resultsDiv) {
+import {
+    setupTestEnvironment,
+    createProtectedTest
+} from './testHelpers.js';
+
+export async function runModalManagerTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Setting up mocks...</h3>';
+
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
+
     resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    async function test(name, testFn) {
-        total.count++;
-
-        // 🔒 SAVE REAL APP DATA before test runs
-        const savedRealData = {};
-        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
-        protectedKeys.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) {
-                savedRealData[key] = value;
-            }
-        });
-
-        try {
-            const result = testFn();
-            // Handle async test functions
-            if (result instanceof Promise) {
-                await result;
-            }
-            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-            passed.count++;
-        } catch (error) {
-            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-            console.error(`Test failed: ${name}`, error);
-        } finally {
-            // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-        }
-    }
+    // Use shared test helper with data protection
+    const test = createProtectedTest(resultsDiv, passed, total);
 
     // ===== INITIALIZATION TESTS =====
 

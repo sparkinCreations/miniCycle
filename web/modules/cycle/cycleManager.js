@@ -2,7 +2,7 @@
  * @file cycleManager.js
  * @description Cycle creation and management functionality for miniCycle
  * @module modules/cycleManager
- * @version 1.385
+ * @version 1.386
  * @pattern Resilient Constructor 🛡️
  *
  * Handles:
@@ -53,7 +53,7 @@ export class CycleManager {
             querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
-        this.version = '1.385';
+        this.version = '1.386';
         console.log('✅ CycleManager initialized');
     }
 
@@ -436,8 +436,8 @@ export class CycleManager {
 // Create global instance
 let cycleManager = null;
 
-// Phase 2 Step 8 - Clean exports (no window.* pollution)
-console.log('✅ CycleManager module loaded (Phase 2 - no window.* exports)');
+// Phase 3 - No window.* exports (main script handles exposure)
+console.log('✅ CycleManager module loaded (Phase 3 - no window.* exports)');
 
 /**
  * Initialize the CycleManager module
@@ -446,9 +446,6 @@ console.log('✅ CycleManager module loaded (Phase 2 - no window.* exports)');
  */
 export function initializeCycleManager(dependencies) {
     cycleManager = new CycleManager(dependencies);
-    // Expose on window for cross-module instance access
-    // (Needed due to versioned vs unversioned imports creating separate module instances)
-    window.cycleManager = cycleManager;
     console.log('✅ CycleManager instance created');
     return cycleManager;
 }

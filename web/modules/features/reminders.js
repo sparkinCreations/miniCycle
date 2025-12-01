@@ -11,14 +11,14 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module reminders
- * @version 1.385
+ * @version 1.386
  */
 
 import { appInit } from '../core/appInit.js';
 
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
-        this.version = '1.385';
+        this.version = '1.386';
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
@@ -893,20 +893,8 @@ export async function initReminderManager(dependencies = {}) {
     reminderManager = new MiniCycleReminders(dependencies);
     await reminderManager.init();
 
-    // Make globally available for backward compatibility
-    window.reminderManager = reminderManager;
-
-    // Export individual methods globally
-    window.startReminders = () => reminderManager.startReminders();
-    window.stopReminders = () => reminderManager.stopReminders();
-    window.handleReminderToggle = () => reminderManager.handleReminderToggle();
-    window.autoSaveReminders = () => reminderManager.autoSaveReminders();
-    window.loadRemindersSettings = () => reminderManager.loadRemindersSettings();
-    window.saveTaskReminderState = (taskId, isEnabled) => reminderManager.saveTaskReminderState(taskId, isEnabled);
-    window.updateReminderButtons = () => reminderManager.updateReminderButtons();
-    window.setupReminderButtonHandler = (button, taskContext) => reminderManager.setupReminderButtonHandler(button, taskContext);
-
-    console.log('✅ Reminder Manager initialized and globally accessible');
+    // Phase 3 - No window.* exports (main script handles exposure)
+    console.log('✅ Reminder Manager initialized');
 
     return reminderManager;
 }

@@ -25,7 +25,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.385
+ * @version 1.386
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -113,7 +113,7 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.385';
+        this.version = '1.386';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
@@ -154,19 +154,15 @@ export class TaskDOMManager {
                 ]);
                 console.log('✅ All 4 sub-modules imported successfully');
 
-                // Store classes for module-level access (both local and global)
+                // Store classes for module-level access
                 TaskValidator = ValidatorClass;
                 TaskUtils = UtilsClass;
                 TaskRenderer = RendererClass;
                 TaskEvents = EventsClass;
 
-                // ✅ CRITICAL FIX: Store globally to handle multiple module instances
-                window.__TaskValidator = TaskValidator;
-                window.__TaskUtils = TaskUtils;
-                window.__TaskRenderer = TaskRenderer;
-                window.__TaskEvents = TaskEvents;
+                // Phase 3 - No window.* exports (main script handles exposure)
 
-                console.log('✅ Module-level classes stored (local + global):', {
+                console.log('✅ Module-level classes stored:', {
                     TaskValidator: !!TaskValidator,
                     TaskUtils: !!TaskUtils,
                     TaskRenderer: !!TaskRenderer,
@@ -207,8 +203,7 @@ export class TaskDOMManager {
                     console.log('✅ Task click event delegation initialized');
                 }
 
-                // ✅ Store globally for cross-module access
-                window.taskEvents = this.events;
+                // Phase 3 - No window.* exports (main script handles exposure)
 
                 this.modulesLoaded = true;
                 console.log('✅ Task sub-modules loaded successfully (versioned)');
@@ -1363,10 +1358,7 @@ async function initTaskDOMManager(dependencies = {}) {
         throw error;
     }
 
-    // ✅ CRITICAL FIX: Store globally to handle multiple module instances
-    window.__taskDOMManager = taskDOMManager;
-    console.log('✅ TaskDOMManager stored globally for cross-module access');
-
+    // Phase 3 - No window.* exports (main script handles exposure)
     console.log('✅ TaskDOMManager initialization verified - all sub-modules loaded');
     return taskDOMManager;
 }
