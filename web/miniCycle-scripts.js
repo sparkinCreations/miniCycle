@@ -865,6 +865,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
                 safeAddEventListener: deps.utils.safeAddEventListener,  // ✅ From deps container
+                GlobalUtils: window.GlobalUtils,  // ✅ For delete-when-complete sync
 
                 // Task operations (from taskCore module)
                 handleTaskCompletionChange: (taskItem, shouldSave) => window.handleTaskCompletionChange?.(taskItem, shouldSave),
@@ -1006,6 +1007,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // Direct function exposure for backward compatibility
             window.openRecurringSettingsPanelForTask = (taskId) => recurringModules.panelAPI.openForTask(taskId);
             window.updateRecurringPanelButtonVisibility = () => recurringModules.panelAPI.updateButtonVisibility();
+            // ✅ Expose activation/deactivation handlers for taskDOM.js
+            window.handleRecurringTaskActivation = (task, taskContext, button) => recurringModules.coreAPI.handleActivation(task, taskContext, button);
+            window.handleRecurringTaskDeactivation = (task, taskContext, assignedTaskId) => recurringModules.coreAPI.handleDeactivation(task, taskContext, assignedTaskId);
+            window.applyRecurringToTaskSchema25 = (...args) => recurringModules.coreAPI.applyRecurringSettings(...args);
+            // ✅ Expose removeRecurringTasksFromCycle for taskCore.js reset logic
+            window.removeRecurringTasksFromCycle = (taskElements, cycleData) => recurringModules.coreAPI.removeTasksFromCycle(taskElements, cycleData);
 
             console.log('✅ Recurring modules initialized (Phase 3)');
 

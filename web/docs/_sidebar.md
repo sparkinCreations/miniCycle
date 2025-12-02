@@ -18,6 +18,7 @@
   * [Developer Documentation](developer-guides/DEVELOPER_DOCUMENTATION.md)
   * [Documentation Index](developer-guides/INDEX.md)
   * [Folder Structure](developer-guides/FOLDER_STRUCTURE.md)
+  * [Async UI Patterns](developer-guides/ASYNC_UI_PATTERNS.md)
   * [Claude AI Guide](developer-guides/CLAUDE.md)
   * [Testing Quick Reference](testing/TESTING_QUICK_REFERENCE.md)
 

@@ -3612,10 +3612,10 @@ color: rgba(77, 77, 255, 0.771);
 }
 
 /* ✅ Task marked for deletion on reset (Cycle mode ONLY - not default) */
-.task.show-delete-indicator::before {
+.task.show-delete-indicator::after {
     content: "❌";
     position: absolute;
-    left: 5px;
+    right: 40px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 16px;
@@ -3624,10 +3624,10 @@ color: rgba(77, 77, 255, 0.771);
 }
 
 /* ✅ Task marked to be kept in To-Do mode (opted out of default) */
-.task.kept-task::before {
+.task.kept-task::after {
     content: "📌";
     position: absolute;
-    left: 5px;
+    right: 40px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 14px;
@@ -3638,7 +3638,7 @@ color: rgba(77, 77, 255, 0.771);
 /* ✅ Adjust task padding to make room for indicators */
 .task.show-delete-indicator,
 .task.kept-task {
-    padding-left: 30px;
+    padding-right: 30px;
 }
 
 /* ✅ Task Dragging Effect */

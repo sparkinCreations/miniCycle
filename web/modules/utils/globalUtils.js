@@ -572,19 +572,27 @@ export class GlobalUtils {
         // Update visual indicators based on mode
         if (isToDoMode) {
             // To-Do mode: show pin if kept (deleteWhenComplete=false)
+            // Recurring tasks CAN show pin if user manually disabled deleteWhenComplete
             taskElement.classList.remove('show-delete-indicator');
-            if (!finalDeleteWhenComplete && !isRecurring) {
+            if (!finalDeleteWhenComplete) {
                 taskElement.classList.add('kept-task');
             } else {
                 taskElement.classList.remove('kept-task');
             }
         } else {
             // Cycle mode: show red X if deleted (deleteWhenComplete=true)
-            taskElement.classList.remove('kept-task');
+            // BUT recurring tasks never show ❌ (recurring symbol indicates deletion)
             if (finalDeleteWhenComplete && !isRecurring) {
                 taskElement.classList.add('show-delete-indicator');
+                taskElement.classList.remove('kept-task');
             } else {
                 taskElement.classList.remove('show-delete-indicator');
+                // Recurring tasks show pin 📌 if user manually disabled deleteWhenComplete
+                if (!finalDeleteWhenComplete && isRecurring) {
+                    taskElement.classList.add('kept-task');
+                } else {
+                    taskElement.classList.remove('kept-task');
+                }
             }
         }
     }

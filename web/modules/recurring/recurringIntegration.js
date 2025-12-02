@@ -52,11 +52,11 @@ export async function initializeRecurringModules() {
                 }
                 return window.AppState.get();
             },
-            updateAppState: (updateFn) => {
+            updateAppState: (updateFn, immediate = false) => {
                 if (!window.AppState) {
                     throw new Error('AppState not available');
                 }
-                return window.AppState.update(updateFn);
+                return window.AppState.update(updateFn, immediate);
             },
             isAppStateReady: () => {
                 return window.AppState && window.AppState.isReady();

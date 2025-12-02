@@ -1579,6 +1579,9 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             taskInState.recurring = true;
             taskInState.recurringSettings = structuredClone(task.recurringSettings);
             taskInState.schemaVersion = 2;
+            // ✅ Also set delete-on-complete settings for recurring tasks
+            taskInState.deleteWhenComplete = true;
+            taskInState.deleteWhenCompleteSettings = { ...DEFAULT_RECURRING_DELETE_SETTINGS };
         }
 
         // ✅ Create/update recurring template
@@ -1601,6 +1604,20 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             schemaVersion: 2
         };
     }, true); // ✅ Immediate save to prevent data loss on quick refresh
+
+    // ✅ Sync DOM to reflect delete-on-complete state for recurring task
+    if (taskItem && window.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
+        const currentMode = currentCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
+        window.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+            taskItem,
+            {
+                deleteWhenComplete: true,
+                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS }
+            },
+            currentMode,
+            { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
+        );
+    }
 
     console.log('✅ Recurring template created via AppState:', {
         taskId: assignedTaskId,
@@ -1686,6 +1703,11 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
 
     const taskItem = Deps.querySelector(`[data-task-id="${assignedTaskId}"]`);
 
+    // Get current mode for setting correct defaults
+    const currentCycle = state.data?.cycles?.[activeCycleId];
+    const isToDoMode = currentCycle?.deleteCheckedTasks === true;
+    const currentMode = isToDoMode ? 'todo' : 'cycle';
+
     // ✅ Update via AppState instead of direct manipulation (immediate save)
     Deps.updateAppState(draft => {
         const cycle = draft.data.cycles[activeCycleId];
@@ -1696,6 +1718,9 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
             // ✅ Keep recurringSettings so they can be restored if user toggles back on
             // Don't set to {} - preserve the settings!
             targetTask.schemaVersion = 2;
+            // ✅ Reset delete-on-complete to mode defaults (no longer recurring)
+            targetTask.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+            targetTask.deleteWhenComplete = DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode];
         }
 
         // Remove from templates, keep task in main array
@@ -1711,6 +1736,8 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
                 recurring: false,
                 // ✅ Preserve recurringSettings from original task
                 recurringSettings: task.recurringSettings || {},
+                deleteWhenCompleteSettings: { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS },
+                deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],
                 schemaVersion: 2
             });
         }
@@ -1720,6 +1747,19 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
     if (taskItem) {
         taskItem.removeAttribute("data-recurring-settings");
         taskItem.classList.remove("recurring");
+
+        // ✅ Sync delete-on-complete DOM state
+        if (window.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
+            window.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+                taskItem,
+                {
+                    deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],
+                    deleteWhenCompleteSettings: { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
+                },
+                currentMode,
+                { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
+            );
+        }
     }
 
     assertInjected('showNotification', Deps.showNotification);
@@ -1898,12 +1938,27 @@ export function deleteRecurringTemplate(taskId) {
  */
 export function removeRecurringTasksFromCycle(taskElements, cycleData) {
     let removedCount = 0;
+    let keptCount = 0;
 
     taskElements.forEach(taskEl => {
         const taskId = taskEl.dataset.taskId;
         const isRecurring = taskEl.classList.contains("recurring");
 
         if (isRecurring) {
+            // ✅ Check deleteWhenComplete - if false, keep the task (user opted out of deletion)
+            const task = cycleData?.tasks?.find(t => t.id === taskId);
+            const shouldDelete = task?.deleteWhenComplete !== false; // Default to true if not explicitly false
+
+            if (!shouldDelete) {
+                // User disabled deleteWhenComplete - keep the task, just reset it
+                console.log(`📌 Keeping recurring task (deleteWhenComplete=false): ${task?.text || taskId}`);
+                const checkbox = taskEl.querySelector("input[type='checkbox']");
+                if (checkbox) checkbox.checked = false;
+                if (task) task.completed = false;
+                keptCount++;
+                return; // Don't remove this task
+            }
+
             // Remove from DOM
             taskEl.remove();
             removedCount++;
@@ -1943,6 +1998,10 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
     if (removedCount > 0 && Deps.updateProgressBar) {
         Deps.updateProgressBar();
         console.log(`✅ Progress bar updated after removing ${removedCount} recurring task(s)`);
+    }
+
+    if (keptCount > 0) {
+        console.log(`📌 Kept ${keptCount} recurring task(s) with deleteWhenComplete=false`);
     }
 }
 

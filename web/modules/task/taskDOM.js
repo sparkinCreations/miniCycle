@@ -466,13 +466,19 @@ export class TaskDOMManager {
         // ✅ Apply visual indicators based on mode
         if (isToDoMode) {
             // To-Do mode: show pin ONLY if opted OUT (deleteWhenComplete=false)
-            if (!finalDeleteWhenComplete && !isRecurring) {
+            // Recurring tasks CAN show pin if user manually disabled deleteWhenComplete
+            if (!finalDeleteWhenComplete) {
                 taskItem.classList.add("kept-task");
             }
         } else {
             // Cycle mode: show red X ONLY if opted IN (deleteWhenComplete=true)
+            // BUT recurring tasks never show ❌ (recurring symbol indicates deletion)
             if (finalDeleteWhenComplete && !isRecurring) {
                 taskItem.classList.add("show-delete-indicator");
+            }
+            // Recurring tasks show pin 📌 if user manually disabled deleteWhenComplete
+            if (!finalDeleteWhenComplete && isRecurring) {
+                taskItem.classList.add("kept-task");
             }
         }
 
@@ -837,101 +843,15 @@ export class TaskDOMManager {
             const currentlyActive = button.classList.contains("delete-when-complete-active");
             const newState = !currentlyActive;
 
-            // ✅ Prevent disabling delete-when-complete for recurring tasks
+            // ✅ Allow toggling delete-when-complete on recurring tasks
+            // If disabled, show pin indicator - task will be kept on reset (won't respawn until re-enabled)
             if (isRecurring && !newState) {
-                // Show confirmation modal for recurring tasks
-                if (typeof this.deps.showNotification === 'function') {
-                    this.deps.showNotification(
-                        "⚠️ Recurring tasks must auto-delete on reset. Disabling this will prevent the task from recurring.",
-                        "warning",
-                        4000
-                    );
-                }
-
-                // Optionally show a confirmation dialog
-                const confirmed = confirm(
-                    "Recurring tasks must be removed on auto-reset to spawn new instances.\n\n" +
-                    "If you disable 'Delete When Complete', this task will no longer recur.\n\n" +
-                    "Are you sure you want to disable recurring for this task?"
+                // Show info notification (not a blocking modal)
+                this.deps.showNotification?.(
+                    "📌 This recurring task will be kept on reset instead of respawning.",
+                    "info",
+                    3000
                 );
-
-                if (!confirmed) {
-                    return; // User cancelled, don't change the state
-                }
-
-                // If confirmed, also disable recurring for this task
-                console.log('🔁 User confirmed: Disabling recurring for task', assignedTaskId);
-
-                // Remove recurring template and update task
-                if (this.deps.AppState?.isReady?.()) {
-                    await this.deps.AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
-
-                        // Remove recurring template
-                        if (cycle?.recurringTemplates?.[assignedTaskId]) {
-                            delete cycle.recurringTemplates[assignedTaskId];
-                            console.log(`🗑️ Removed recurring template for task ${assignedTaskId}`);
-                        }
-
-                        // Update task to not be recurring
-                        const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
-                        if (task) {
-                            task.recurring = false;
-
-                            // ✅ Restore mode-specific deleteWhenComplete setting
-                            // Initialize settings if missing
-                            if (!task.deleteWhenCompleteSettings) {
-                                task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                            }
-
-                            // Determine current mode and restore that mode's setting
-                            const isToDoMode = cycle?.deleteCheckedTasks === true;
-                            const currentMode = isToDoMode ? 'todo' : 'cycle';
-                            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
-
-                            console.log(`✅ Restored deleteWhenComplete from ${currentMode} mode settings:`, task.deleteWhenComplete);
-                        }
-                    }, true);
-
-                    // ✅ Get the restored task data and current mode
-                    const state = this.deps.AppState.get();
-                    const cid = state.appState.activeCycleId;
-                    const cycle = state.data.cycles[cid];
-                    const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
-                    const isToDoMode = cycle?.deleteCheckedTasks === true;
-                    const currentMode = isToDoMode ? 'todo' : 'cycle';
-
-                    // Update DOM - remove recurring class
-                    taskItem.classList.remove("recurring");
-
-                    const recurringBtn = taskItem.querySelector(".recurring-btn");
-                    if (recurringBtn) {
-                        recurringBtn.classList.remove("active");
-                        recurringBtn.setAttribute("aria-pressed", "false");
-                    }
-
-                    // ✅ Use centralized DOM sync function for deleteWhenComplete state
-                    if (task && this.deps.GlobalUtils) {
-                        this.deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
-                            taskItem,
-                            task,
-                            currentMode,
-                            { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
-                        );
-                    } else if (!this.deps.GlobalUtils) {
-                        console.error('❌ GlobalUtils not available for recurring disable sync');
-                        // Fallback: manual update
-                        const restoredDeleteWhenComplete = task?.deleteWhenComplete || false;
-                        taskItem.dataset.deleteWhenComplete = restoredDeleteWhenComplete.toString();
-                        button.classList.toggle("active", restoredDeleteWhenComplete);
-                        button.classList.toggle("delete-when-complete-active", restoredDeleteWhenComplete);
-                        button.setAttribute("aria-pressed", restoredDeleteWhenComplete.toString());
-                    }
-
-                    this.deps.showNotification?.("Recurring disabled for this task", "info", 2000);
-                    return; // Exit early since we've handled everything
-                }
             }
 
             // ✅ Update state and DOM using centralized functions
@@ -998,13 +918,25 @@ export class TaskDOMManager {
                     button.classList.toggle("delete-when-complete-active", newState);
                     button.setAttribute("aria-pressed", newState.toString());
 
-                    // Update visual indicators
+                    // Update visual indicators (must handle recurring tasks properly)
                     if (isToDoMode) {
                         taskItem.classList.remove('show-delete-indicator');
                         taskItem.classList.toggle('kept-task', !newState);
                     } else {
-                        taskItem.classList.remove('kept-task');
-                        taskItem.classList.toggle('show-delete-indicator', newState);
+                        // Cycle mode: handle recurring vs non-recurring differently
+                        if (newState && !isRecurring) {
+                            // Non-recurring with deleteWhenComplete=true: show red X
+                            taskItem.classList.add('show-delete-indicator');
+                            taskItem.classList.remove('kept-task');
+                        } else {
+                            taskItem.classList.remove('show-delete-indicator');
+                            // Recurring with deleteWhenComplete=false: show pin
+                            if (!newState && isRecurring) {
+                                taskItem.classList.add('kept-task');
+                            } else {
+                                taskItem.classList.remove('kept-task');
+                            }
+                        }
                     }
                 }
             }
@@ -1020,6 +952,86 @@ export class TaskDOMManager {
             }
             this.deps.showNotification?.(message, "info", 2000);
         });
+    }
+
+    /**
+     * Handle disabling recurring for a task (called from confirmation modal)
+     * @param {string} assignedTaskId - The task ID
+     * @param {HTMLElement} taskItem - The task DOM element
+     * @param {HTMLElement} button - The delete-when-complete button
+     */
+    async handleDisableRecurringForTask(assignedTaskId, taskItem, button) {
+        console.log('🔁 User confirmed: Disabling recurring for task', assignedTaskId);
+
+        // Remove recurring template and update task
+        if (this.deps.AppState?.isReady?.()) {
+            await this.deps.AppState.update(state => {
+                const cid = state.appState.activeCycleId;
+                const cycle = state.data.cycles[cid];
+
+                // Remove recurring template
+                if (cycle?.recurringTemplates?.[assignedTaskId]) {
+                    delete cycle.recurringTemplates[assignedTaskId];
+                    console.log(`🗑️ Removed recurring template for task ${assignedTaskId}`);
+                }
+
+                // Update task to not be recurring
+                const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
+                if (task) {
+                    task.recurring = false;
+
+                    // ✅ Restore mode-specific deleteWhenComplete setting
+                    // Initialize settings if missing
+                    if (!task.deleteWhenCompleteSettings) {
+                        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                    }
+
+                    // Determine current mode and restore that mode's setting
+                    const isToDoMode = cycle?.deleteCheckedTasks === true;
+                    const currentMode = isToDoMode ? 'todo' : 'cycle';
+                    task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+
+                    console.log(`✅ Restored deleteWhenComplete from ${currentMode} mode settings:`, task.deleteWhenComplete);
+                }
+            }, true);
+
+            // ✅ Get the restored task data and current mode
+            const state = this.deps.AppState.get();
+            const cid = state.appState.activeCycleId;
+            const cycle = state.data.cycles[cid];
+            const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
+            const isToDoMode = cycle?.deleteCheckedTasks === true;
+            const currentMode = isToDoMode ? 'todo' : 'cycle';
+
+            // Update DOM - remove recurring class
+            taskItem.classList.remove("recurring");
+
+            const recurringBtn = taskItem.querySelector(".recurring-btn");
+            if (recurringBtn) {
+                recurringBtn.classList.remove("active");
+                recurringBtn.setAttribute("aria-pressed", "false");
+            }
+
+            // ✅ Use centralized DOM sync function for deleteWhenComplete state
+            if (task && this.deps.GlobalUtils) {
+                this.deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+                    taskItem,
+                    task,
+                    currentMode,
+                    { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
+                );
+            } else if (!this.deps.GlobalUtils) {
+                console.error('❌ GlobalUtils not available for recurring disable sync');
+                // Fallback: manual update
+                const restoredDeleteWhenComplete = task?.deleteWhenComplete || false;
+                taskItem.dataset.deleteWhenComplete = restoredDeleteWhenComplete.toString();
+                button.classList.toggle("active", restoredDeleteWhenComplete);
+                button.classList.toggle("delete-when-complete-active", restoredDeleteWhenComplete);
+                button.setAttribute("aria-pressed", restoredDeleteWhenComplete.toString());
+            }
+
+            this.deps.showNotification?.("Recurring disabled for this task", "info", 2000);
+        }
     }
 
     /**
@@ -1166,9 +1178,11 @@ export class TaskDOMManager {
                 return;
             }
 
-            // ✅ Check template existence as source of truth (not task.recurring flag)
+            // ✅ Check template existence AND button state (handles async race condition)
             const hasRecurringTemplate = freshCycle?.recurringTemplates?.[assignedTaskId];
-            const isCurrentlyRecurring = !!hasRecurringTemplate;
+            const isButtonActive = button.classList.contains('active');
+            // Use button state as fallback if template doesn't exist yet (async update in progress)
+            const isCurrentlyRecurring = !!hasRecurringTemplate || isButtonActive;
             const isNowRecurring = !isCurrentlyRecurring;
 
             console.log('🔄 Toggling recurring state:', {
@@ -1212,9 +1226,41 @@ export class TaskDOMManager {
                 if (window.handleRecurringTaskActivation) {
                     window.handleRecurringTaskActivation(task, freshTaskContext, button);
                 }
+                // ✅ Immediately sync delete-on-complete button to show active (recurring = delete on complete)
+                const deleteBtn = taskItem?.querySelector('.delete-when-complete-btn');
+                if (deleteBtn) {
+                    deleteBtn.classList.add('active', 'delete-when-complete-active');
+                    deleteBtn.setAttribute('aria-pressed', 'true');
+                }
+                if (taskItem) {
+                    taskItem.dataset.deleteWhenComplete = 'true';
+                    // Remove any kept-task or show-delete-indicator (recurring has its own indicator)
+                    taskItem.classList.remove('kept-task', 'show-delete-indicator');
+                }
             } else {
                 if (window.handleRecurringTaskDeactivation) {
                     window.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
+                }
+                // ✅ Immediately sync delete-on-complete button to mode defaults
+                const isToDoMode = freshCycle?.deleteCheckedTasks === true;
+                const defaultDeleteState = isToDoMode; // todo=true, cycle=false
+                const deleteBtn = taskItem?.querySelector('.delete-when-complete-btn');
+                if (deleteBtn) {
+                    deleteBtn.classList.toggle('active', defaultDeleteState);
+                    deleteBtn.classList.toggle('delete-when-complete-active', defaultDeleteState);
+                    deleteBtn.setAttribute('aria-pressed', defaultDeleteState.toString());
+                }
+                if (taskItem) {
+                    taskItem.dataset.deleteWhenComplete = defaultDeleteState.toString();
+                    taskItem.classList.remove('recurring');
+                    // Update visual indicators based on mode
+                    if (isToDoMode) {
+                        taskItem.classList.remove('show-delete-indicator');
+                        taskItem.classList.toggle('kept-task', !defaultDeleteState);
+                    } else {
+                        taskItem.classList.toggle('show-delete-indicator', defaultDeleteState);
+                        taskItem.classList.remove('kept-task');
+                    }
                 }
             }
 

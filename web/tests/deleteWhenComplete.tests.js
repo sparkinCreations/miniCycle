@@ -344,7 +344,7 @@ export async function runDeleteWhenCompleteTests(resultsDiv, isPartOfSuite = fal
         }
     });
 
-    await test('To-Do mode: recurring tasks have NO pin indicator', () => {
+    await test('To-Do mode: recurring tasks show pin when deleteWhenComplete=false', () => {
         const mockTask = document.createElement('div');
         mockTask.className = 'task recurring';
 
@@ -360,8 +360,10 @@ export async function runDeleteWhenCompleteTests(resultsDiv, isPartOfSuite = fal
             { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
         );
 
-        if (mockTask.classList.contains('kept-task')) {
-            throw new Error('Recurring tasks should NOT show pin 📌 indicator');
+        // Recurring tasks SHOULD show pin 📌 when user manually disabled deleteWhenComplete
+        // This indicates the task will be kept at reset instead of being deleted
+        if (!mockTask.classList.contains('kept-task')) {
+            throw new Error('Recurring tasks with deleteWhenComplete=false should show pin 📌 indicator');
         }
     });
 
