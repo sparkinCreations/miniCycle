@@ -371,6 +371,7 @@
             <option value="modalManager">ModalManager</option>
             <option value="menuManager">MenuManager</option>
             <option value="settingsManager">SettingsManager</option>
+            <option value="pullToRefresh">PullToRefresh</option>
             <option value="taskCore">TaskCore</option>
             <option value="taskValidation">TaskValidation</option>
             <option value="taskUtils">TaskUtils</option>
@@ -387,7 +388,7 @@
         </div>
 
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (35 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (36 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -440,6 +441,7 @@
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
         const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
+        const { runPullToRefreshTests } = await import(`./pullToRefresh.tests.js?v=${cacheBuster}`);
         const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
         const { runTaskValidationTests } = await import(`./taskValidation.tests.js?v=${cacheBuster}`);
         const { runTaskUtilsTests } = await import(`./taskUtils.tests.js?v=${cacheBuster}`);
@@ -699,6 +701,15 @@
                 window.initSettingsManager = mod.initSettingsManager;
                 // Don't await initSettingsManager - it hangs waiting for DOM/appInit
                 // Tests should create instances directly with mocked dependencies
+            } else if (moduleKey === 'pullToRefresh') {
+                const mod = await import(`../modules/ui/pullToRefresh.js?v=${cacheBuster}`);
+                window.PullToRefresh = mod.PullToRefresh;
+                window.initPullToRefresh = mod.initPullToRefresh;
+                window.getPullToRefresh = mod.getPullToRefresh;
+                // Create test instance
+                window.pullToRefresh = mod.initPullToRefresh({
+                    showNotification: window.showNotification || console.log
+                });
             } else if (moduleKey === 'taskCore') {
                 const mod = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
                 window.TaskCore = mod.TaskCore;
@@ -1011,6 +1022,16 @@
                     // Tests should create instances directly with mocked dependencies
                     currentModule = 'settingsManager';
                     resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'pullToRefresh') {
+                    const mod = await import(`../modules/ui/pullToRefresh.js?v=${cacheBuster}`);
+                    window.PullToRefresh = mod.PullToRefresh;
+                    window.initPullToRefresh = mod.initPullToRefresh;
+                    window.getPullToRefresh = mod.getPullToRefresh;
+                    window.pullToRefresh = mod.initPullToRefresh({
+                        showNotification: window.showNotification || console.log
+                    });
+                    currentModule = 'pullToRefresh';
+                    resultsDiv.innerHTML = '<p>✅ PullToRefresh loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskCore') {
                     const mod = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
                     window.TaskCore = mod.TaskCore;
@@ -1213,6 +1234,8 @@
                 await runMenuManagerTests(resultsDiv);
             } else if (currentModule === 'settingsManager') {
                 await runSettingsManagerTests(resultsDiv);
+            } else if (currentModule === 'pullToRefresh') {
+                await runPullToRefreshTests(resultsDiv);
             } else if (currentModule === 'taskCore') {
                 await runTaskCoreTests(resultsDiv);
             } else if (currentModule === 'taskValidation') {
@@ -1365,6 +1388,7 @@
                 { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../modules/features/reminders.js' },
                 { name: 'MenuManager', key: 'menuManager', runFn: runMenuManagerTests, importPath: '../modules/ui/menuManager.js' },
                 { name: 'SettingsManager', key: 'settingsManager', runFn: runSettingsManagerTests, importPath: '../modules/ui/settingsManager.js' },
+                { name: 'PullToRefresh', key: 'pullToRefresh', runFn: runPullToRefreshTests, importPath: '../modules/ui/pullToRefresh.js' },
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../modules/cycle/modeManager.js' },
                 { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../modules/cycle/cycleSwitcher.js' },
                 { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../modules/ui/undoRedoManager.js' },

@@ -16,7 +16,7 @@ const colors = {
 };
 
 // Test modules to run
-const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'deleteWhenComplete', 'xss-vulnerability', 'errorHandler', 'testingModal'];
+const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'deleteWhenComplete', 'xss-vulnerability', 'errorHandler', 'testingModal'];
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
