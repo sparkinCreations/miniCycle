@@ -1,6 +1,6 @@
 /**
  * @module taskOptionsCustomizer
- * @version 1.388
+ * @version 1.389
  * @pattern Simple Instance 🎯
  * @description Manages customization of task option button visibility per cycle
  *

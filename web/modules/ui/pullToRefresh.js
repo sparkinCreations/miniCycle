@@ -6,7 +6,7 @@
  * 2. Refreshes UI from state
  * 3. Triggers recurring task check
  *
- * @version 1.388
+ * @version 1.389
  * @module pullToRefresh
  */
 
@@ -16,6 +16,7 @@ export class PullToRefresh {
         this.threshold = options.threshold || 80; // pixels to pull before triggering
         this.maxPull = options.maxPull || 120; // max pull distance
         this.resistance = options.resistance || 2.5; // pull resistance factor
+        this.activationDistance = options.activationDistance || 15; // min distance before activating (prevents accidental triggers)
 
         // Callbacks (injected dependencies)
         this.onRefresh = options.onRefresh || this.defaultRefresh.bind(this);
@@ -25,6 +26,7 @@ export class PullToRefresh {
         this.startY = 0;
         this.currentY = 0;
         this.isPulling = false;
+        this.isActivated = false; // True once pull exceeds activationDistance
         this.isRefreshing = false;
         this.enabled = true;
 
@@ -117,19 +119,34 @@ export class PullToRefresh {
         if (!this.isPulling || this.isRefreshing) return;
         if (!this.isAtTop()) {
             this.resetIndicator();
+            this.isPulling = false;
+            this.isActivated = false;
             return;
         }
 
         this.currentY = e.touches[0].clientY;
-        const pullDistance = (this.currentY - this.startY) / this.resistance;
+        const rawPullDistance = this.currentY - this.startY;
+        const pullDistance = rawPullDistance / this.resistance;
 
         // Only activate when pulling down
         if (pullDistance <= 0) {
             this.resetIndicator();
+            this.isActivated = false;
             return;
         }
 
-        // Prevent default scroll behavior when pulling
+        // Check if we've passed the activation threshold
+        // Only then do we prevent default and take over scrolling
+        if (!this.isActivated) {
+            if (rawPullDistance >= this.activationDistance) {
+                this.isActivated = true;
+            } else {
+                // Not activated yet - allow normal scroll behavior
+                return;
+            }
+        }
+
+        // Now we're activated - prevent default scroll behavior
         e.preventDefault();
 
         // Clamp pull distance
@@ -147,13 +164,14 @@ export class PullToRefresh {
 
         const pullDistance = (this.currentY - this.startY) / this.resistance;
 
-        if (pullDistance >= this.threshold && !this.isRefreshing) {
+        if (this.isActivated && pullDistance >= this.threshold && !this.isRefreshing) {
             this.triggerRefresh();
         } else {
             this.resetIndicator();
         }
 
         this.isPulling = false;
+        this.isActivated = false;
         this.startY = 0;
         this.currentY = 0;
     }
@@ -194,6 +212,9 @@ export class PullToRefresh {
         this.indicator.style.transform = 'translateY(-60px)';
         this.spinnerIcon.style.transform = 'rotate(0deg)';
         this.statusText.textContent = 'Pull to refresh';
+
+        // Reset activation state
+        this.isActivated = false;
     }
 
     /**

@@ -3,7 +3,7 @@
  * Application-wide constant values
  *
  * @module modules/core/constants
- * @version 1.388
+ * @version 1.389
  */
 
 /**

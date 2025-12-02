@@ -767,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: deps.utils.showNotification,  // ✅ Use direct function
-            currentVersion: '1.388'
+            currentVersion: '1.389'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
