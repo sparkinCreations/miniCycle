@@ -8385,3 +8385,82 @@ body.dark-mode.theme-golden-glow .close-button-fullwidth:hover {
         font-size: 0.95em;
     }
 }
+
+/* ============================================
+   Pull-to-Refresh Indicator
+   ============================================ */
+
+.pull-refresh-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: none;
+    transform: translateY(-60px);
+    transition: transform 0.2s ease-out;
+}
+
+.pull-refresh-indicator.visible {
+    transition: none;
+}
+
+.pull-refresh-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    background: var(--background-color, #fff);
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.pull-refresh-icon {
+    font-size: 1.4em;
+    transition: transform 0.1s ease-out;
+    color: var(--primary-color, #4a90d9);
+}
+
+.pull-refresh-text {
+    font-size: 0.9em;
+    color: var(--text-color, #333);
+    font-weight: 500;
+}
+
+.pull-refresh-indicator.ready .pull-refresh-icon {
+    color: var(--success-color, #4caf50);
+}
+
+.pull-refresh-indicator.ready .pull-refresh-text {
+    color: var(--success-color, #4caf50);
+}
+
+.pull-refresh-indicator.refreshing .pull-refresh-icon {
+    color: var(--primary-color, #4a90d9);
+}
+
+@keyframes pull-refresh-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Dark mode support */
+body.dark-mode .pull-refresh-content {
+    background: var(--background-color, #1a1a2e);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .pull-refresh-text {
+    color: var(--text-color, #e0e0e0);
+}
+
+/* Hide on desktop - only show on touch devices */
+@media (hover: hover) and (pointer: fine) {
+    .pull-refresh-indicator {
+        display: none;
+    }
+}

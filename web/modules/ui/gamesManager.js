@@ -13,14 +13,14 @@
  * - DOM elements (games-panel, games-menu-option)
  *
  * @module gamesManager
- * @version 1.387
+ * @version 1.388
  */
 
 import { appInit } from '../core/appInit.js';
 
 class GamesManager {
     constructor() {
-        this.version = '1.387';
+        this.version = '1.388';
         this.initialized = false;
     }
 

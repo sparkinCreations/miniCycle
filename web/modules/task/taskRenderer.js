@@ -8,7 +8,7 @@
  * - Updates UI components
  *
  * @module modules/task/taskRenderer
- * @version 1.387
+ * @version 1.388
  */
 
 // Module-level deps for late injection
@@ -44,7 +44,7 @@ export class TaskRenderer {
         };
 
         // Instance version
-        this.version = '1.387';
+        this.version = '1.388';
 
         console.log('🎨 TaskRenderer created');
     }

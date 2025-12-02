@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v207'; // Fix: Precache utilities with version parameters
+var CACHE_VERSION = 'v208'; // Add pull-to-refresh module
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -64,6 +64,7 @@ var UTILITIES_BASE = [
   './modules/ui/menuManager.js',
   './modules/ui/modalManager.js',
   './modules/ui/onboardingManager.js',
+  './modules/ui/pullToRefresh.js',
   './modules/ui/settingsManager.js',
   './modules/ui/taskOptionsCustomizer.js',
   './modules/ui/undoRedoManager.js'

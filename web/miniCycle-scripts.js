@@ -767,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: deps.utils.showNotification,  // ✅ Use direct function
-            currentVersion: '1.387'
+            currentVersion: '1.388'
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -1433,6 +1433,24 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.error('❌ CRITICAL: Failed to initialize cycle loader:', error);
             console.error('❌ Stack:', error.stack);
             throw new Error('Cycle loader initialization failed - cannot load cycles');
+        }
+
+        // ✅ Initialize Pull-to-Refresh (Phase 2 module - mobile only)
+        console.log('📱 Initializing pull-to-refresh module...');
+        try {
+            const { initPullToRefresh } = await import(withV('./modules/ui/pullToRefresh.js'));
+
+            const pullToRefresh = initPullToRefresh({
+                showNotification: deps.utils.showNotification
+            });
+
+            // Phase 2: Main script handles window.* exposure
+            window.pullToRefresh = pullToRefresh;
+
+            console.log('✅ Pull-to-refresh module initialized (Phase 2)');
+        } catch (error) {
+            console.error('⚠️ Failed to initialize pull-to-refresh module:', error);
+            console.warn('⚠️ App will continue without pull-to-refresh functionality');
         }
 
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
