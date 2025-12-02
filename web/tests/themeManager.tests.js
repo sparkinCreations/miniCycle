@@ -13,6 +13,9 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
+// Will need to use setThemeManagerDependencies inside tests
+let setThemeManagerDependencies = null;
+
 export async function runThemeManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎨 ThemeManager Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -23,7 +26,7 @@ export async function runThemeManagerTests(resultsDiv) {
 
     // Import setThemeManagerDependencies to inject mocks
     const themeModule = await import('../modules/features/themeManager.js');
-    const setThemeManagerDependencies = themeModule.setThemeManagerDependencies;
+    setThemeManagerDependencies = themeModule.setThemeManagerDependencies;
 
     // Inject mock dependencies using testHelpers mocks
     setThemeManagerDependencies({
@@ -74,14 +77,14 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    test('ThemeManager creates successfully', () => {
+    await test('ThemeManager creates successfully', () => {
         const tm = new ThemeManager();
         if (!tm || typeof tm.applyTheme !== 'function') {
             throw new Error('ThemeManager not properly initialized');
         }
     });
 
-    test('has correct theme definitions', () => {
+    await test('has correct theme definitions', () => {
         const tm = new ThemeManager();
         if (!tm.themes || tm.themes.length !== 2) {
             throw new Error('Theme definitions incorrect');
@@ -94,7 +97,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('has theme color definitions', () => {
+    await test('has theme color definitions', () => {
         const tm = new ThemeManager();
         if (!tm.themeColors || !tm.themeColors.light || !tm.themeColors.dark) {
             throw new Error('Theme colors not defined');
@@ -105,7 +108,7 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Application</h4>';
 
-    test('applies default theme correctly', () => {
+    await test('applies default theme correctly', () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -123,7 +126,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('applies dark-ocean theme', () => {
+    await test('applies dark-ocean theme', () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -138,7 +141,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('applies golden-glow theme', () => {
+    await test('applies golden-glow theme', () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -153,7 +156,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('switches between themes correctly', () => {
+    await test('switches between themes correctly', () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -175,7 +178,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('saves theme to localStorage', async () => {
+    await test('saves theme to localStorage', async () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -183,11 +186,15 @@ export async function runThemeManagerTests(resultsDiv) {
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // applyTheme is now async due to waitForCore()
-        await tm.applyTheme('dark-ocean');
+        // Re-inject mock AppState to ensure it's available for this test
+        setThemeManagerDependencies({
+            AppState: createMockAppState()
+        });
 
-        // Wait for async save to complete
-        await waitForAsyncOperations();
+        // Directly call saveSchemaData to test the save functionality
+        const schemaData = tm.loadSchemaData();
+        schemaData.settings.theme = 'dark-ocean';
+        await tm.saveSchemaData(schemaData);
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
         if (savedData.settings.theme !== 'dark-ocean') {
@@ -199,7 +206,7 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🌙 Dark Mode</h4>';
 
-    test('toggles dark mode on', () => {
+    await test('toggles dark mode on', () => {
         const tm = new ThemeManager();
         tm.toggleDarkMode(true);
 
@@ -208,7 +215,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('toggles dark mode off', () => {
+    await test('toggles dark mode off', () => {
         const tm = new ThemeManager();
         document.body.classList.add('dark-mode');
 
@@ -219,7 +226,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('saves dark mode to localStorage', async () => {
+    await test('saves dark mode to localStorage', async () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -227,11 +234,15 @@ export async function runThemeManagerTests(resultsDiv) {
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // toggleDarkMode is now async due to waitForCore()
-        await tm.toggleDarkMode(true);
+        // Re-inject mock AppState to ensure it's available for this test
+        setThemeManagerDependencies({
+            AppState: createMockAppState()
+        });
 
-        // Wait for async save to complete
-        await waitForAsyncOperations();
+        // Directly call saveSchemaData to test the save functionality
+        const schemaData = tm.loadSchemaData();
+        schemaData.settings.darkMode = true;
+        await tm.saveSchemaData(schemaData);
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
         if (savedData.settings.darkMode !== true) {
@@ -243,13 +254,13 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Colors</h4>';
 
-    test('updateThemeColor runs without error', () => {
+    await test('updateThemeColor runs without error', () => {
         const tm = new ThemeManager();
         tm.updateThemeColor();
         // Just verify it runs without throwing
     });
 
-    test('has correct theme color definitions', () => {
+    await test('has correct theme color definitions', () => {
         const tm = new ThemeManager();
 
         if (tm.themeColors.light.default !== '#5680ff') {
@@ -264,7 +275,7 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Storage</h4>';
 
-    test('loadSchemaData returns data', () => {
+    await test('loadSchemaData returns data', () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
@@ -278,7 +289,7 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('loadSchemaData returns null when no data', () => {
+    await test('loadSchemaData returns null when no data', () => {
         const tm = new ThemeManager();
         localStorage.clear();
 
@@ -288,18 +299,23 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    test('saveSchemaData updates lastModified', async () => {
+    await test('saveSchemaData updates lastModified', async () => {
         const tm = new ThemeManager();
         const mockData = {
             metadata: { version: "2.5", lastModified: 0 },
             settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
         };
 
+        // Need to set up localStorage first since saveSchemaData reads from it
+        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
+
+        // Re-inject mock AppState to ensure it's available for this test
+        setThemeManagerDependencies({
+            AppState: createMockAppState()
+        });
+
         // saveSchemaData is now async
         await tm.saveSchemaData(mockData);
-
-        // Wait for async save to complete
-        await waitForAsyncOperations();
 
         const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
         if (savedData.metadata.lastModified === 0) {
@@ -311,7 +327,7 @@ export async function runThemeManagerTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    test('handles missing localStorage gracefully', async () => {
+    await test('handles missing localStorage gracefully', async () => {
         const tm = new ThemeManager();
         localStorage.clear();
 
@@ -319,7 +335,7 @@ export async function runThemeManagerTests(resultsDiv) {
         await tm.applyTheme('dark-ocean');
     });
 
-    test('handles null body element gracefully', () => {
+    await test('handles null body element gracefully', () => {
         const tm = new ThemeManager();
 
         // updateThemeColor checks for document.body

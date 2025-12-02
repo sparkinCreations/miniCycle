@@ -28,6 +28,10 @@ export function createMockAppState(storageKey = 'miniCycleData') {
             } else if (replace) {
                 Object.assign(data, updater);
             }
+            // Update metadata.lastModified like the real AppState does
+            if (data.metadata) {
+                data.metadata.lastModified = Date.now();
+            }
             localStorage.setItem(storageKey, JSON.stringify(data));
             return data;
         },
@@ -135,7 +139,7 @@ export function createMockGenerateId() {
 // =====================================================
 
 /**
- * Creates default mock data for localStorage
+ * Creates default mock data for localStorage (Schema 2.5 format)
  * @param {Object} overrides - Properties to override in the default data
  * @returns {Object} Mock data object
  */
@@ -144,27 +148,64 @@ export function createMockData(overrides = {}) {
         metadata: {
             version: "2.5",
             lastModified: Date.now(),
-            schemaVersion: "2.5"
+            schemaVersion: "2.5",
+            totalCyclesCreated: 1
         },
         settings: {
             theme: 'default',
             darkMode: false,
             unlockedThemes: [],
             soundEnabled: true,
-            notifications: true
+            notifications: true,
+            alwaysShowRecurring: false
         },
-        cycles: {
-            main: {
-                id: 'main',
-                name: 'Main Cycle',
-                tasks: [],
-                createdAt: Date.now()
+        data: {
+            cycles: {
+                'cycle-main': {
+                    id: 'cycle-main',
+                    name: 'Main Cycle',
+                    title: 'Main Cycle',
+                    tasks: [],
+                    cycleCount: 0,
+                    autoReset: true,
+                    deleteCheckedTasks: false,
+                    recurringTemplates: {},
+                    createdAt: Date.now()
+                }
             }
         },
-        activeCycle: 'main'
+        appState: {
+            activeCycleId: 'cycle-main',
+            currentMode: 'auto-cycle'
+        },
+        userProgress: {
+            cyclesCompleted: 0,
+            totalTasksCompleted: 0
+        },
+        ui: {
+            moveArrowsVisible: false
+        },
+        reminders: {
+            enabled: false
+        }
     };
 
     return deepMerge(defaults, overrides);
+}
+
+/**
+ * Creates flattened mock data (format returned by loadMiniCycleData)
+ * @param {Object} schemaData - Full Schema 2.5 data (uses createMockData if not provided)
+ * @returns {Object} Flattened data with cycles and activeCycle
+ */
+export function createFlattenedMockData(schemaData = null) {
+    const fullData = schemaData || createMockData();
+    return {
+        metadata: fullData.metadata,
+        cycles: fullData.data?.cycles || {},
+        activeCycle: fullData.appState?.activeCycleId || null,
+        settings: fullData.settings
+    };
 }
 
 /**
@@ -191,6 +232,33 @@ export function clearTestStorage() {
 // =====================================================
 
 /**
+ * Creates a mock loadMiniCycleData function
+ * @param {Object} customData - Custom data to return (uses createFlattenedMockData if not provided)
+ * @returns {Function} Mock function
+ */
+export function createMockLoadMiniCycleData(customData = null) {
+    return () => customData || createFlattenedMockData();
+}
+
+/**
+ * Creates a mock updateCycleData function
+ * @returns {Function} Mock function that applies updates to localStorage
+ */
+export function createMockUpdateCycleData() {
+    return (cycleId, updateFn, shouldSave = true) => {
+        const data = JSON.parse(localStorage.getItem('miniCycleData') || '{}');
+        const cycle = data.data?.cycles?.[cycleId];
+        if (cycle && typeof updateFn === 'function') {
+            updateFn(cycle);
+            if (shouldSave) {
+                localStorage.setItem('miniCycleData', JSON.stringify(data));
+            }
+        }
+        return true;
+    };
+}
+
+/**
  * Creates a complete set of common dependencies for DI
  * @param {Object} overrides - Specific dependencies to override
  * @returns {Object} Dependencies object
@@ -200,10 +268,16 @@ export function createCommonDependencies(overrides = {}) {
 
     return {
         AppState: mockAppState,
+        getAppState: () => mockAppState,
         showNotification: createMockNotification(),
         hideMainMenu: createMockHideMainMenu(),
         sanitizeInput: createMockSanitizeInput(),
         generateId: createMockGenerateId(),
+        loadMiniCycleData: createMockLoadMiniCycleData(),
+        updateCycleData: createMockUpdateCycleData(),
+        getElementById: (id) => document.getElementById(id),
+        querySelector: (sel) => document.querySelector(sel),
+        querySelectorAll: (sel) => document.querySelectorAll(sel),
         ...overrides
     };
 }
@@ -378,8 +452,38 @@ export function wait(ms) {
 /**
  * Wait for async operations to settle (useful after triggering async saves)
  */
-export async function waitForAsyncOperations(ms = 50) {
+export async function waitForAsyncOperations(ms = 100) {
     await wait(ms);
+}
+
+/**
+ * Jest-style expect helper for exception testing
+ * @param {Function} fn - Function to test
+ * @returns {Object} Object with toThrow and not.toThrow methods
+ */
+export function expect(fn) {
+    return {
+        not: {
+            toThrow: () => {
+                try {
+                    fn();
+                } catch (error) {
+                    throw new Error('Expected function not to throw, but it threw: ' + error.message);
+                }
+            }
+        },
+        toThrow: () => {
+            let threw = false;
+            try {
+                fn();
+            } catch (error) {
+                threw = true;
+            }
+            if (!threw) {
+                throw new Error('Expected function to throw, but it did not');
+            }
+        }
+    };
 }
 
 console.log('✅ [TestHelpers] Module loaded - comprehensive mock setup available');

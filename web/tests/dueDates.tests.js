@@ -69,6 +69,23 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             document.body.appendChild(testContainer);
         }
 
+        // Helper to create mock AppState that actually updates localStorage
+        function createMockAppStateForDueDates() {
+            return {
+                isReady: () => true,
+                get: () => JSON.parse(localStorage.getItem('miniCycleData')),
+                update: async (updateFn, shouldSave = false) => {
+                    const currentData = JSON.parse(localStorage.getItem('miniCycleData'));
+                    updateFn(currentData);
+                    // Update metadata timestamp
+                    currentData.metadata.lastModified = Date.now();
+                    if (shouldSave) {
+                        localStorage.setItem('miniCycleData', JSON.stringify(currentData));
+                    }
+                }
+            };
+        }
+
         async function test(name, testFn) {
             total.count++;
             try {
@@ -164,7 +181,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskDueDate updates task in Schema 2.5', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                AppState: createMockAppStateForDueDates()
             });
 
             await instance.saveTaskDueDate('task-1', '2025-11-15');
@@ -184,7 +202,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                AppState: createMockAppStateForDueDates()
             });
 
             await instance.saveTaskDueDate('task-1', '2025-12-01');
@@ -198,7 +217,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('clears due date when set to null', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                AppState: createMockAppStateForDueDates()
             });
 
             await instance.saveTaskDueDate('task-2', null);
@@ -238,7 +258,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
         await test('checkOverdueTasks identifies overdue tasks', async () => {
             const instance = new MiniCycleDueDates({
                 loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
-                querySelectorAll: () => []
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates()
             });
 
             // Create mock task element
@@ -274,7 +295,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saves due date to correct Schema 2.5 location', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                AppState: createMockAppStateForDueDates()
             });
 
             await instance.saveTaskDueDate('task-2', '2026-01-01');
@@ -290,7 +312,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
         await test('stores overdue states in Schema 2.5', async () => {
             const instance = new MiniCycleDueDates({
                 loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
-                querySelectorAll: () => []
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates()
             });
 
             await instance.checkOverdueTasks();
@@ -399,7 +422,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskDueDate completes within reasonable time', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
+                AppState: createMockAppStateForDueDates()
             });
 
             const startTime = performance.now();
@@ -416,7 +440,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
         await test('checkOverdueTasks completes within reasonable time', async () => {
             const instance = new MiniCycleDueDates({
                 loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')).data,
-                querySelectorAll: () => []
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates()
             });
 
             const startTime = performance.now();

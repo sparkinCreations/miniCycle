@@ -17,7 +17,8 @@
 import {
     setupTestEnvironment,
     createMockAppState,
-    createMockNotification
+    createMockNotification,
+    expect
 } from './testHelpers.js';
 
 export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
@@ -708,39 +709,10 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === GLOBAL FUNCTIONS TESTS ===
     resultsDiv.innerHTML += '<h4>🌍 Global Functions</h4>';
 
-    test('exposes global setupSettingsMenu function', () => {
-        if (typeof window.setupSettingsMenu !== 'function') {
-            throw new Error('Global setupSettingsMenu not properly exposed');
-        }
-    });
-
-    test('exposes global setupDownloadMiniCycle function', () => {
-        if (typeof window.setupDownloadMiniCycle !== 'function') {
-            throw new Error('Global setupDownloadMiniCycle not properly exposed');
-        }
-    });
-
-    test('exposes global setupUploadMiniCycle function', () => {
-        if (typeof window.setupUploadMiniCycle !== 'function') {
-            throw new Error('Global setupUploadMiniCycle not properly exposed');
-        }
-    });
-
-    test('exposes global syncCurrentSettingsToStorage function', () => {
-        if (typeof window.syncCurrentSettingsToStorage !== 'function') {
-            throw new Error('Global syncCurrentSettingsToStorage not properly exposed');
-        }
-    });
-
-    test('global functions work correctly', () => {
-        // These should not throw
-        expect(() => {
-            window.setupSettingsMenu?.();
-            window.setupDownloadMiniCycle?.();
-            window.setupUploadMiniCycle?.();
-            window.syncCurrentSettingsToStorage?.();
-        }).not.toThrow();
-    });
+    // NOTE: Phase 3 - Global wrapper function tests removed
+    // window.setupSettingsMenu, window.setupDownloadMiniCycle, etc. are no longer
+    // exposed by the test module loader. The main script handles global exposure in production.
+    // Tests should use SettingsManager class directly with mocked dependencies.
 
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
@@ -914,30 +886,4 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     restoreOriginalData();
 
 return { passed: passed.count, total: total.count };
-}
-
-// Helper function for exception testing
-function expect(fn) {
-    return {
-        not: {
-            toThrow: () => {
-                try {
-                    fn();
-                } catch (error) {
-                    throw new Error('Expected function not to throw, but it threw: ' + error.message);
-                }
-            }
-        },
-        toThrow: () => {
-            let threw = false;
-            try {
-                fn();
-            } catch (error) {
-                threw = true;
-            }
-            if (!threw) {
-                throw new Error('Expected function to throw, but it did not');
-            }
-        }
-    };
 }

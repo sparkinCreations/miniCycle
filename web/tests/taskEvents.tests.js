@@ -469,37 +469,41 @@ export async function runTaskEventsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Interaction Setup</h4>';
 
     await test('initEventDelegation sets up task click handler', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
-        // Create taskList if it doesn't exist
-        let taskList = document.getElementById('taskList');
-        if (!taskList) {
-            taskList = document.createElement('ul');
-            taskList.id = 'taskList';
-            document.body.appendChild(taskList);
+        // Remove any existing taskList to ensure clean state (prevent accumulated listeners)
+        const existingTaskList = document.getElementById('taskList');
+        if (existingTaskList) {
+            existingTaskList.remove();
         }
 
+        // Create fresh taskList
+        const taskList = document.createElement('ul');
+        taskList.id = 'taskList';
+        document.body.appendChild(taskList);
+
+        // Create dependencies with getElementById that finds our taskList
+        const deps = createMockDependencies();
+        deps.getElementById = (id) => document.getElementById(id);
+
+        const events = new TaskEvents(deps);
+
         const taskItem = createMockTaskItem();
-        const checkbox = taskItem.querySelector("input[type='checkbox']"); // ✅ Use correct selector
+        const checkbox = taskItem.querySelector("input[type='checkbox']");
         taskList.appendChild(taskItem);
 
         // Initialize event delegation
         events.initEventDelegation();
 
-        // Simulate click on task
+        // Simulate click on task text (not on checkbox/buttons)
         const initialChecked = checkbox.checked;
-        taskItem.click();
+        const taskText = taskItem.querySelector('.task-text');
+        taskText.click(); // Click on the task text, not the item itself
 
         if (checkbox.checked === initialChecked) {
             throw new Error('Event delegation click handler not working - checkbox state not toggled');
         }
 
-        // Clean up
-        taskList.removeChild(taskItem);
-        if (taskList.children.length === 0) {
-            document.body.removeChild(taskList);
-        }
+        // Clean up - remove the taskList entirely to prevent listener accumulation
+        taskList.remove();
     });
 
     await test('setupPriorityButtonState marks high priority', () => {

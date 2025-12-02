@@ -505,24 +505,23 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Global Key Handlers</h4>';
 
     test('setupGlobalKeyHandlers attaches ESC key handler', () => {
-        const mm = new window.ModalManager();
-
-        // Mock safeAddEventListener
+        // Mock safeAddEventListener as a dependency
         let handlerAttached = false;
-        window.safeAddEventListener = (element, event, handler) => {
+        const mockSafeAddEventListener = (element, event, handler) => {
             if (element === document && event === 'keydown') {
                 handlerAttached = true;
             }
         };
+
+        const mm = new window.ModalManager({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
         mm.setupGlobalKeyHandlers();
 
         if (!handlerAttached) {
             throw new Error('ESC key handler should be attached');
         }
-
-        // Cleanup
-        delete window.safeAddEventListener;
     });
 
     test('setupGlobalKeyHandlers handles missing safeAddEventListener', () => {
@@ -536,22 +535,24 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('ESC key closes modals', () => {
-        const mm = new window.ModalManager();
-
         // Create test modal
         const modal = document.createElement('div');
         modal.id = 'feedback-modal';
         modal.style.display = 'flex';
         document.body.appendChild(modal);
 
-        // Mock safeAddEventListener to actually add the listener
+        // Mock safeAddEventListener as a dependency
         let keyHandler;
-        window.safeAddEventListener = (element, event, handler) => {
+        const mockSafeAddEventListener = (element, event, handler) => {
             if (element === document && event === 'keydown') {
                 keyHandler = handler;
                 document.addEventListener(event, handler);
             }
         };
+
+        const mm = new window.ModalManager({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
         mm.setupGlobalKeyHandlers();
 
@@ -568,7 +569,6 @@ export async function runModalManagerTests(resultsDiv) {
         if (keyHandler) {
             document.removeEventListener('keydown', keyHandler);
         }
-        delete window.safeAddEventListener;
     });
 
 
@@ -584,8 +584,21 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('isModalOpen returns false when no modals open', () => {
-        const mm = new window.ModalManager();
+        // Clean up any leftover modals from previous tests
+        const cleanupSelectors = [
+            '.mini-modal-overlay',
+            '.miniCycle-overlay',
+            '.onboarding-modal',
+            '#feedback-modal',
+            '#about-modal',
+            '#reminders-modal',
+            '.settings-modal'
+        ];
+        cleanupSelectors.forEach(sel => {
+            document.querySelectorAll(sel).forEach(el => el.remove());
+        });
 
+        const mm = new window.ModalManager();
         const result = mm.isModalOpen();
 
         if (result !== false) {
@@ -709,7 +722,11 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🖱️ Click Outside to Close</h4>';
 
     test('feedback modal closes when clicking outside', () => {
-        const mm = new window.ModalManager();
+        // Remove any existing feedback modal first
+        const existingModal = document.getElementById('feedback-modal');
+        if (existingModal) existingModal.remove();
+        const existingBtn = document.getElementById('open-feedback-modal');
+        if (existingBtn) existingBtn.remove();
 
         // Create mock elements
         const modal = document.createElement('div');
@@ -742,11 +759,13 @@ export async function runModalManagerTests(resultsDiv) {
         thankYou.id = 'thank-you-message';
         modal.appendChild(thankYou);
 
+        const mm = new window.ModalManager();
         mm.setupFeedbackModal();
 
-        // Simulate click on modal background (dispatch on modal, bubbles to window)
-        const clickEvent = new MouseEvent('click', { bubbles: true });
-        modal.dispatchEvent(clickEvent);
+        // Simulate click on modal background - use window event since handler is on window
+        const clickEvent = new MouseEvent('click', { bubbles: true, target: modal });
+        Object.defineProperty(clickEvent, 'target', { value: modal, writable: false });
+        window.dispatchEvent(clickEvent);
 
         if (modal.style.display !== 'none') {
             throw new Error('Modal should close when clicking outside');

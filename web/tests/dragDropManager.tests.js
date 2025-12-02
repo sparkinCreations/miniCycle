@@ -58,11 +58,8 @@ export async function runDragDropManagerTests(resultsDiv) {
         }
     });
 
-    test('Legacy DragAndDrop function is available', () => {
-        if (typeof window.DragAndDrop !== 'function') {
-            throw new Error('Backward compatible DragAndDrop function not found');
-        }
-    });
+    // NOTE: Legacy DragAndDrop test removed - Phase 3 intentionally removes window.* pollution
+    // The module now uses ES6 exports only, accessed via the main script
 
     // ============================================
     // 🔧 INITIALIZATION TESTS
@@ -790,11 +787,8 @@ export async function runDragDropManagerTests(resultsDiv) {
         }
     });
 
-    test('DragAndDrop backward compatibility exists', () => {
-        if (typeof window.DragAndDrop !== 'function') {
-            throw new Error('Legacy DragAndDrop function should exist for backward compatibility');
-        }
-    });
+    // NOTE: DragAndDrop backward compatibility test removed - Phase 3 pattern
+    // Legacy window.DragAndDrop is no longer exposed; use ES6 imports instead
 
     // ============================================
     // 🔗 INTEGRATION TESTS

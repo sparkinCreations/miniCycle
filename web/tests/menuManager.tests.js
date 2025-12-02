@@ -20,7 +20,8 @@
 import {
     setupTestEnvironment,
     createMockAppState,
-    createMockNotification
+    createMockNotification,
+    expect
 } from './testHelpers.js';
 
 export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
@@ -508,32 +509,10 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // === GLOBAL FUNCTIONS TESTS ===
     resultsDiv.innerHTML += '<h4>🌍 Global Functions</h4>';
 
-    test('exposes global setupMainMenu function', () => {
-        if (typeof window.setupMainMenu !== 'function') {
-            throw new Error('Global setupMainMenu not properly exposed');
-        }
-    });
-
-    test('exposes global closeMainMenu function', () => {
-        if (typeof window.closeMainMenu !== 'function') {
-            throw new Error('Global closeMainMenu not properly exposed');
-        }
-    });
-
-    test('exposes global hideMainMenu function', () => {
-        if (typeof window.hideMainMenu !== 'function') {
-            throw new Error('Global hideMainMenu not properly exposed');
-        }
-    });
-
-    test('global functions work correctly', () => {
-        // These should not throw
-        expect(() => {
-            window.setupMainMenu?.();
-            window.closeMainMenu?.();
-            window.hideMainMenu?.();
-        }).not.toThrow();
-    });
+    // NOTE: Phase 3 - Global wrapper function tests removed
+    // window.setupMainMenu, window.closeMainMenu, window.hideMainMenu are no longer
+    // exposed by the test module loader. The main script handles global exposure in production.
+    // Tests should use MenuManager class directly with mocked dependencies.
 
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
@@ -632,30 +611,4 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     restoreOriginalData();
 
 return { passed: passed.count, total: total.count };
-}
-
-// Helper function for exception testing
-function expect(fn) {
-    return {
-        not: {
-            toThrow: () => {
-                try {
-                    fn();
-                } catch (error) {
-                    throw new Error('Expected function not to throw, but it threw: ' + error.message);
-                }
-            }
-        },
-        toThrow: () => {
-            let threw = false;
-            try {
-                fn();
-            } catch (error) {
-                threw = true;
-            }
-            if (!threw) {
-                throw new Error('Expected function to throw, but it did not');
-            }
-        }
-    };
 }

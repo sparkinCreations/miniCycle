@@ -32,6 +32,14 @@ export async function runTaskDOMTests(resultsDiv) {
         window.GlobalUtils.sanitizeInput = window.sanitizeInput;
     }
 
+    // Helper to get default dependencies for TaskDOMManager
+    // This ensures sanitizeInput is always available (Phase 3 requires explicit DI)
+    const getDefaultDeps = () => ({
+        sanitizeInput: window.sanitizeInput || createMockSanitizeInput(),
+        showNotification: () => {},
+        AppState: createMockAppState()
+    });
+
     resultsDiv.innerHTML = '<h2>🎨 TaskDOM Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
@@ -112,6 +120,7 @@ export async function runTaskDOMTests(resultsDiv) {
         const mockNotification = (msg) => console.log(msg);
 
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             AppState: mockAppState,
             showNotification: mockNotification
         });
@@ -126,7 +135,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('has correct version property', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         if (!manager.version) {
             throw new Error('Version property not set');
@@ -138,7 +147,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('initializes with uninitialized flag', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         if (manager.initialized !== false) {
             throw new Error('Should start uninitialized');
@@ -146,7 +155,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('init method waits for core systems', async () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         await manager.init();
 
@@ -156,7 +165,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('init method is idempotent', async () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         await manager.init();
         await manager.init(); // Call again
@@ -167,7 +176,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('destroy method cleans up state', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
         manager.initialized = true;
         manager.state.renderCount = 10;
 
@@ -189,6 +198,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('validateAndSanitizeTaskInput rejects non-string', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             sanitizeInput: (input) => input
         });
 
@@ -203,6 +213,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('validateAndSanitizeTaskInput trims whitespace', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             sanitizeInput: (input) => input
         });
 
@@ -217,6 +228,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('validateAndSanitizeTaskInput rejects empty string', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             sanitizeInput: (input) => input.trim()
         });
 
@@ -231,6 +243,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('validateAndSanitizeTaskInput enforces character limit', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             sanitizeInput: (input) => input,
             showNotification: () => {}
         });
@@ -249,6 +262,7 @@ export async function runTaskDOMTests(resultsDiv) {
         let sanitizeCalled = false;
 
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             sanitizeInput: (input) => {
                 sanitizeCalled = true;
                 return input.replace(/[<>]/g, '');
@@ -487,6 +501,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('renderTasks requires taskList element', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             getElementById: (id) => null
         });
 
@@ -503,6 +518,7 @@ export async function runTaskDOMTests(resultsDiv) {
         taskList.id = 'taskList';
 
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             getElementById: (id) => id === 'taskList' ? taskList : null,
             updateProgressBar: () => {},
             checkCompleteAllButton: () => {},
@@ -520,6 +536,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('renderTasks validates array input', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             getElementById: (id) => document.createElement('ul')
         });
 
@@ -643,22 +660,28 @@ export async function runTaskDOMTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 
-    await test('handles missing sanitizeInput gracefully', async () => {
+    await test('throws when sanitizeInput is undefined (correct behavior)', async () => {
         // Save and clear window.sanitizeInput to ensure no fallback available
         const savedSanitize = window.sanitizeInput;
         delete window.sanitizeInput;
 
         try {
-            const manager = new TaskDOMManager({
-                sanitizeInput: undefined
-            });
-
-            await manager.init();
-
-            const result = manager.validator.validateAndSanitizeTaskInput('test');
-
-            if (result !== null) {
-                throw new Error('Should return null when sanitizeInput unavailable');
+            // TaskDOMManager/TaskValidator correctly throws when sanitizeInput is not provided
+            // This is expected behavior - sanitizeInput is a required dependency
+            let threw = false;
+            try {
+                const manager = new TaskDOMManager({
+                    sanitizeInput: undefined
+                });
+                await manager.init();
+            } catch (e) {
+                threw = true;
+                if (!e.message.includes('sanitizeInput')) {
+                    throw new Error('Error should mention sanitizeInput');
+                }
+            }
+            if (!threw) {
+                throw new Error('Should throw when sanitizeInput undefined');
             }
         } finally {
             // Restore window.sanitizeInput
@@ -670,6 +693,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('destroy handles missing DOM elements', () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             querySelectorAll: () => [] // No elements
         });
 
@@ -678,7 +702,9 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createTaskButton handles missing event handlers', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager({
+            ...getDefaultDeps()
+        });
 
         const buttonConfig = {
             class: 'test-btn',
@@ -707,6 +733,7 @@ export async function runTaskDOMTests(resultsDiv) {
 
     await test('refreshUIFromState handles null state', async () => {
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             AppState: {
                 isReady: () => false
             }
@@ -722,6 +749,7 @@ export async function runTaskDOMTests(resultsDiv) {
         let appStateCalled = false;
 
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             AppState: {
                 isReady: () => true,
                 get: () => {
@@ -800,6 +828,7 @@ export async function runTaskDOMTests(resultsDiv) {
         };
 
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             getElementById: (id) => id === 'taskList' ? taskList : null,
             updateProgressBar: () => {},
             checkCompleteAllButton: () => {},
@@ -858,6 +887,7 @@ export async function runTaskDOMTests(resultsDiv) {
         taskItem.appendChild(taskOptions);
 
         const manager = new TaskDOMManager({
+            ...getDefaultDeps(),
             AppState: {
                 isReady: () => true,
                 get: () => ({

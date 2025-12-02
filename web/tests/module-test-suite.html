@@ -244,29 +244,23 @@
             display: none;
         }
 
-        .pass {
-            border-left: 4px solid #28a745;
+        /* Light mode - high contrast pass/fail */
+        .result.pass,
+        div.result.pass {
+            border-left: 4px solid #16a34a !important;
+            background-color: #f0fdf4 !important;
+            color: #000000 !important;
+            font-weight: 600 !important;
         }
 
-        body:not(.dark-mode) .pass {
-            color: #155724;
+        .result.fail,
+        div.result.fail {
+            border-left: 4px solid #dc2626 !important;
+            background-color: #fef2f2 !important;
+            color: #000000 !important;
+            font-weight: 600 !important;
         }
 
-        body.dark-mode .pass {
-            color: #4ade80;
-        }
-
-        .fail {
-            border-left: 4px solid #dc3545;
-        }
-
-        body:not(.dark-mode) .fail {
-            color: #721c24;
-        }
-
-        body.dark-mode .fail {
-            color: #f87171;
-        }
 
         .no-results {
             background: var(--card-bg);
@@ -697,21 +691,14 @@
                 const mod = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
                 window.MenuManager = mod.MenuManager;
                 window.initMenuManager = mod.initMenuManager;
-                const menuManager = mod.initMenuManager({});
-                window.menuManager = menuManager;
-                window.setupMainMenu = () => menuManager?.setupMainMenu();
-                window.closeMainMenu = () => menuManager?.closeMainMenu();
-                window.hideMainMenu = () => menuManager?.hideMainMenu();
+                // Don't await initMenuManager - it hangs waiting for DOM/appInit
+                // Tests should create instances directly with mocked dependencies
             } else if (moduleKey === 'settingsManager') {
                 const mod = await import(`../modules/ui/settingsManager.js?v=${cacheBuster}`);
                 window.SettingsManager = mod.SettingsManager;
                 window.initSettingsManager = mod.initSettingsManager;
-                const settingsManager = mod.initSettingsManager({});
-                window.settingsManager = settingsManager;
-                window.setupSettingsMenu = () => settingsManager?.setupSettingsMenu();
-                window.setupDownloadMiniCycle = () => settingsManager?.setupDownloadMiniCycle();
-                window.setupUploadMiniCycle = () => settingsManager?.setupUploadMiniCycle();
-                window.syncCurrentSettingsToStorage = () => settingsManager?.syncCurrentSettingsToStorage();
+                // Don't await initSettingsManager - it hangs waiting for DOM/appInit
+                // Tests should create instances directly with mocked dependencies
             } else if (moduleKey === 'taskCore') {
                 const mod = await import(`../modules/task/taskCore.js?v=${cacheBuster}`);
                 window.TaskCore = mod.TaskCore;
@@ -1012,25 +999,16 @@
                     const mod = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
                     window.MenuManager = mod.MenuManager;
                     window.initMenuManager = mod.initMenuManager;
-                    // Initialize and expose instance methods as globals
-                    const menuManager = mod.initMenuManager({});
-                    window.menuManager = menuManager;
-                    window.setupMainMenu = () => menuManager?.setupMainMenu();
-                    window.closeMainMenu = () => menuManager?.closeMainMenu();
-                    window.hideMainMenu = () => menuManager?.hideMainMenu();
+                    // Don't await initMenuManager - it hangs waiting for DOM/appInit
+                    // Tests should create instances directly with mocked dependencies
                     currentModule = 'menuManager';
                     resultsDiv.innerHTML = '<p>✅ MenuManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'settingsManager') {
                     const mod = await import(`../modules/ui/settingsManager.js?v=${cacheBuster}`);
                     window.SettingsManager = mod.SettingsManager;
                     window.initSettingsManager = mod.initSettingsManager;
-                    // Initialize and expose instance methods as globals
-                    const settingsManager = mod.initSettingsManager({});
-                    window.settingsManager = settingsManager;
-                    window.setupSettingsMenu = () => settingsManager?.setupSettingsMenu();
-                    window.setupDownloadMiniCycle = () => settingsManager?.setupDownloadMiniCycle();
-                    window.setupUploadMiniCycle = () => settingsManager?.setupUploadMiniCycle();
-                    window.syncCurrentSettingsToStorage = () => settingsManager?.syncCurrentSettingsToStorage();
+                    // Don't await initSettingsManager - it hangs waiting for DOM/appInit
+                    // Tests should create instances directly with mocked dependencies
                     currentModule = 'settingsManager';
                     resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'taskCore') {
@@ -1420,21 +1398,9 @@
                     // Create a temporary div for results
                     const tempDiv = document.createElement('div');
 
-                    // Run the tests (pass isPartOfSuite=true for tests that manage localStorage)
+                    // Run the tests (pass isPartOfSuite=true for all tests to prevent localStorage conflicts)
                     let result;
-                    if (module.key === 'integration') {
-                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
-                    } else if (module.key === 'state') {
-                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
-                    } else if (module.key === 'cycleLoader') {
-                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
-                    } else if (module.key === 'deviceDetection') {
-                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
-                    } else if (module.key === 'migrationManager') {
-                        result = await module.runFn(tempDiv, true); // isPartOfSuite = true
-                    } else {
-                        result = await module.runFn(tempDiv);
-                    }
+                    result = await module.runFn(tempDiv, true);
 
                     // Store results
                     allResults.push({
@@ -1465,19 +1431,31 @@
                 let output = '<h2>🧪 All Module Test Results</h2>';
                 output += `<h3>Completed in ${duration}s</h3>`;
 
-            // Summary table
-            output += '<div style="background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 8px; margin: 20px 0; color: #333;">';
-            output += '<h3 style="color: #333; margin-top: 0;">📊 Summary</h3>';
+            // Summary table - check dark mode for colors
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const summaryBg = isDarkMode ? '#1e1e2e' : 'rgba(255, 255, 255, 0.95)';
+            const summaryText = isDarkMode ? '#e0e0e0' : '#333';
+            const headerBorder = isDarkMode ? '#4a4a6a' : '#ddd';
+            const rowBorder = isDarkMode ? '#3a3a5a' : '#eee';
+            const footerBg = isDarkMode ? '#2a2a4a' : '#e9ecef';
+            const passRowBg = isDarkMode ? '#166534' : '#d1fae5';
+            const passRowText = isDarkMode ? '#ffffff' : '#000000';
+            const failRowBg = isDarkMode ? '#7f1d1d' : '#fee2e2';
+            const failRowText = isDarkMode ? '#ffffff' : '#000000';
+
+            output += `<div style="background: ${summaryBg}; padding: 20px; border-radius: 8px; margin: 20px 0; color: ${summaryText};">`;
+            output += `<h3 style="color: ${summaryText}; margin-top: 0;">📊 Summary</h3>`;
             output += '<table style="width: 100%; border-collapse: collapse;">';
-            output += '<thead><tr style="border-bottom: 2px solid #ddd;"><th style="text-align: left; padding: 8px;">Module</th><th style="text-align: right; padding: 8px;">Passed</th><th style="text-align: right; padding: 8px;">Total</th><th style="text-align: right; padding: 8px;">Status</th></tr></thead>';
+            output += `<thead><tr style="border-bottom: 2px solid ${headerBorder};"><th style="text-align: left; padding: 8px;">Module</th><th style="text-align: right; padding: 8px;">Passed</th><th style="text-align: right; padding: 8px;">Total</th><th style="text-align: right; padding: 8px;">Status</th></tr></thead>`;
             output += '<tbody>';
 
             for (const result of allResults) {
                 const passRate = result.total > 0 ? (result.passed / result.total * 100).toFixed(0) : 0;
                 const statusEmoji = result.passed === result.total ? '✅' : '❌';
-                const rowColor = result.passed === result.total ? '#d4edda' : '#f8d7da';
+                const rowBg = result.passed === result.total ? passRowBg : failRowBg;
+                const rowText = result.passed === result.total ? passRowText : failRowText;
 
-                output += `<tr style="border-bottom: 1px solid #eee; background: ${rowColor};">`;
+                output += `<tr style="border-bottom: 1px solid ${rowBorder}; background: ${rowBg}; color: ${rowText};">`;
                 output += `<td style="padding: 8px; font-weight: 600;">${result.name}</td>`;
                 output += `<td style="text-align: right; padding: 8px;">${result.passed}</td>`;
                 output += `<td style="text-align: right; padding: 8px;">${result.total}</td>`;
@@ -1486,7 +1464,7 @@
             }
 
             output += '</tbody>';
-            output += '<tfoot><tr style="border-top: 2px solid #333; font-weight: bold; background: #e9ecef;"><td style="padding: 8px;">TOTAL</td><td style="text-align: right; padding: 8px;">' + totalPassed + '</td><td style="text-align: right; padding: 8px;">' + totalTests + '</td><td style="text-align: right; padding: 8px;">' + (totalPassed === totalTests ? '✅' : '❌') + ' ' + (totalTests > 0 ? (totalPassed / totalTests * 100).toFixed(0) : 0) + '%</td></tr></tfoot>';
+            output += `<tfoot><tr style="border-top: 2px solid ${summaryText}; font-weight: bold; background: ${footerBg}; color: ${summaryText};"><td style="padding: 8px;">TOTAL</td><td style="text-align: right; padding: 8px;">${totalPassed}</td><td style="text-align: right; padding: 8px;">${totalTests}</td><td style="text-align: right; padding: 8px;">${totalPassed === totalTests ? '✅' : '❌'} ${totalTests > 0 ? (totalPassed / totalTests * 100).toFixed(0) : 0}%</td></tr></tfoot>`;
             output += '</table>';
             output += '</div>';
 
