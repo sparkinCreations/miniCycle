@@ -1,7 +1,7 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** November 30, 2025
+> **Updated:** December 3, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
@@ -12,12 +12,12 @@ The miniCycle codebase has **43 modules** across **11 directories**. Communicati
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
 | Total modules | 43 | 43 | 43 |
-| `window.*` globals created | ~68 | ~60 | <20 |
-| `window.*` references consumed | ~748 | ~700 | <100 |
-| Modules with true DI | 0 | 6 | 15+ |
-| `deps.*` container usage | 0 | ~45 | 100+ |
+| `window.*` globals created | ~68 | ~55 | <20 |
+| `window.*` references consumed | ~748 | ~650 | <100 |
+| Modules with true DI | 0 | 9 | 15+ |
+| `deps.*` container usage | 0 | ~60 | 100+ |
 
-> **Note:** Modular overhaul in progress (~15-20% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+> **Note:** Modular overhaul in progress (~25-30% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
 ---
 
@@ -117,10 +117,15 @@ Exports:    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETT
 #### `modules/cycle/cycleManager.js`
 ```
 Creates:    window.cycleManager
-Consumes:   window.AppState, window.showPromptModal, window.sanitizeInput,
-            window.loadMiniCycleData, window.completeInitialSetup,
-            window.hideMainMenu, window.autoSave
 Imports:    none
+Dependencies (constructor injection with validation):
+  - AppState, showPromptModal, sanitizeInput
+  - loadMiniCycleData, completeInitialSetup, hideMainMenu, autoSave
+  - safeLocalStorageGet, safeLocalStorageSet (storage utilities)
+  - safeJSONParse, safeJSONStringify (JSON utilities)
+  - DEFAULT_TASK_OPTION_BUTTONS (constant)
+  - onCycleCreated (optional callback)
+Note:       Has _validateDependencies() method, uses deps.* pattern
 ```
 
 #### `modules/cycle/cycleLoader.js`
@@ -168,9 +173,17 @@ Dependencies (injected):
 ```
 Creates:    window.__taskDOMManager, window.__TaskValidator,
             window.__TaskUtils, window.__TaskRenderer, window.__TaskEvents
-Consumes:   window.AppState, window.showNotification
 Imports:    appInit, constants.js
 Note:       Uses double-underscore globals for versioning workaround
+
+TaskRenderer Dependencies (constructor injection with validation):
+  - AppState, addTask, loadMiniCycle
+  - updateProgressBar, checkCompleteAllButton, updateArrowsInDOM
+  - checkOverdueTasks, enableDragAndDropOnTask
+  - recurringPanel (via deferred getter for late-bound lookup)
+  - updateRecurringPanelButtonVisibility
+Note:       Has _validateDependencies() that warns (not throws) for missing deps
+            Uses deferred getters for dependencies not available at init time
 ```
 
 ---
@@ -220,9 +233,13 @@ Dependencies (strict injection via setUndoRedoManagerDependencies):
 #### `modules/ui/modalManager.js`
 ```
 Creates:    window.modalManager
-Consumes:   window.showNotification, window.hideMainMenu,
-            window.sanitizeInput, window.safeAddEventListener
-Imports:    appInit
+Imports:    none (removed appInit direct import)
+Dependencies (via setModalManagerDependencies + initModalManager):
+  - waitForCore (for initialization timing)
+  - showNotification, hideMainMenu
+  - sanitizeInput, safeAddEventListener
+Note:       Uses explicit initialization via initModalManager()
+            Must call initModalManager(deps) instead of auto-init on import
 ```
 
 #### `modules/ui/settingsManager.js`
@@ -352,7 +369,8 @@ const Deps = {};
 export function setDependencies(overrides) {
     Object.assign(Deps, overrides);
 }
-// Used by: recurringCore, undoRedoManager, migrationManager
+// Used by: recurringCore, undoRedoManager, migrationManager, themeManager,
+//          dataValidator, modalManager, cycleManager, taskRenderer
 ```
 **Reality:** Actually enforced. Must call setter before use.
 
@@ -363,6 +381,27 @@ this.deps = {
 };
 ```
 **Reality:** Defers resolution to call time. Still usually gets from `window`.
+
+### Pattern 4: Deferred getter objects (late-bound dependencies)
+```javascript
+// For dependencies not available at initialization time
+recurringPanel: this.dependencies.recurringPanel || {
+    get updateRecurringPanel() { return window.recurringPanel?.updateRecurringPanel; },
+    get updateRecurringPanelButtonVisibility() { return window.recurringPanel?.updateRecurringPanelButtonVisibility; }
+}
+```
+**Used by:** TaskRenderer (for recurringPanel which initializes after taskDOM)
+
+### Pattern 5: Explicit initialization function
+```javascript
+export async function initModalManager(dependencies = {}) {
+    setModalManagerDependencies(dependencies);
+    modalManager = new ModalManager(dependencies);
+    await modalManager.init();
+    return modalManager;
+}
+```
+**Used by:** modalManager (removes auto-init on import, allows DI of waitForCore)
 
 ---
 

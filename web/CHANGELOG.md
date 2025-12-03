@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.389] - 2025-12-03
+
+### Added
+- **Form Accessibility**: Added `name` attributes to all form inputs for improved accessibility and screen reader support
+  - 55+ form inputs in miniCycle.html now have both `id` and `name` attributes
+  - Includes recurring panel options (specific dates, time pickers, frequency options)
+  - Includes settings modal checkboxes (toggles, dark mode, reminders)
+  - Dynamically created inputs (taskOptionsCustomizer, notifications, themeManager, testing-modal)
+
+### Changed
+- **Dependency Injection**: Improved DI patterns in cycleManager, taskRenderer, and modalManager
+  - Added storage functions to cycleManager deps
+  - Added validation and deferred dependency loading to taskRenderer
+  - modalManager now uses explicit initialization via `initModalManager()`
+
+### Documentation
+- **ACCESSIBILITY.md**: Updated to v2.1 - documented form attribute improvements
+  - Added "Form input accessibility" to well-implemented features
+  - Updated testing checklist with form attributes item
+  - Updated version to 1.389
+
+---
+
 ## [1.374] - 2025-11-30
 
 ### Changed

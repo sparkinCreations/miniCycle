@@ -2,8 +2,8 @@
 
 > **Making miniCycle accessible to everyone**
 
-**Version:** 1.352
-**Last Updated:** November 13, 2025
+**Version:** 1.389
+**Last Updated:** December 3, 2025
 **WCAG Target:** 2.1 Level AA (In Progress)
 **Current Status:** Partial Implementation
 
@@ -19,6 +19,7 @@ miniCycle has **partial accessibility implementation** with strong ARIA support 
 - Screen reader live regions
 - High contrast mode support
 - Touch interaction optimization
+- Form input accessibility (id + name attributes on all form elements)
 
 ### ⚠️ Partially Implemented (40-70%)
 - Some focus management (good indicators, partial trapping)
@@ -110,6 +111,7 @@ miniCycle uses proper semantic structure:
 - `<footer role="contentinfo">` for footer
 - `<button>` for all clickable actions
 - `<label>` for all form inputs
+- `<input>` elements with both `id` and `name` attributes for proper form accessibility
 
 ### Screen Reader Announcements ✅
 
@@ -438,6 +440,7 @@ All interactive elements show clear 2px focus outlines:
 - [x] Basic keyboard navigation (Tab/Shift+Tab)
 - [x] Focus indicators visible
 - [x] Forms have labels
+- [x] Form inputs have id and name attributes
 - [ ] Color contrast verified (WCAG AA)
 - [ ] Reduced motion support
 - [ ] Skip links present
@@ -571,6 +574,7 @@ If you encounter accessibility barriers:
 3. **Semantic HTML** - Proper landmarks and structure (100%)
 4. **High contrast mode** - Media query support (100%)
 5. **Touch optimization** - Device detection and touch-action (100%)
+6. **Form accessibility** - All inputs have id and name attributes (100%)
 
 ### Priority Improvements Needed ⚠️
 1. **Keyboard shortcuts** - Most not implemented (18%)
@@ -583,9 +587,9 @@ If you encounter accessibility barriers:
 
 ---
 
-**Accessibility Documentation Version:** 2.0 (Accurate Assessment)
-**Last Updated:** November 13, 2025
-**miniCycle Version:** 1.352
+**Accessibility Documentation Version:** 2.1 (Form Attributes Update)
+**Last Updated:** December 3, 2025
+**miniCycle Version:** 1.389
 **WCAG Compliance:** Partial (In Progress)
 
 *We're committed to making miniCycle accessible to all users. This document honestly reflects our current progress and roadmap.*

@@ -176,14 +176,36 @@ export class TaskDOMManager {
                     showNotification: this.dependencies.showNotification || this.fallbackNotification
                 });
 
-                // Initialize renderer module - no window.* fallbacks (Phase 2)
+                // Initialize renderer module - Phase 3: pass all dependencies
                 this.renderer = this.dependencies.renderer || new TaskRenderer({
+                    // Core state
                     AppState: this.dependencies.AppState,  // Required - must be injected
+
+                    // Task management (deferred - available after full init)
+                    addTask: this.dependencies.addTask || ((...args) => window.addTask?.(...args)),
+                    loadMiniCycle: this.dependencies.loadMiniCycle || (() => window.loadMiniCycle?.()),
+
+                    // UI update functions
                     updateProgressBar: this.dependencies.updateProgressBar || this.fallbackUpdate,
                     checkCompleteAllButton: this.dependencies.checkCompleteAllButton || this.fallbackUpdate,
                     updateStatsPanel: this.dependencies.updateStatsPanel || this.fallbackUpdate,
-                    updateMainMenuHeader: this.dependencies.updateMainMenuHeader || this.fallbackUpdate,
-                    getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id))
+                    updateMainMenuHeader: this.dependencies.updateMainMenuHeader || ((...args) => window.updateMainMenuHeader?.(...args)),
+                    updateArrowsInDOM: this.dependencies.updateArrowsInDOM || ((visible) => window.updateArrowsInDOM?.(visible)),
+                    checkOverdueTasks: this.dependencies.checkOverdueTasks || ((...args) => window.checkOverdueTasks?.(...args)),
+
+                    // Drag-drop
+                    enableDragAndDropOnTask: this.dependencies.enableDragAndDropOnTask || ((task) => window.enableDragAndDropOnTask?.(task)),
+
+                    // Recurring panel (use getter for deferred lookup)
+                    recurringPanel: this.dependencies.recurringPanel || {
+                        get updateRecurringPanel() { return window.recurringPanel?.updateRecurringPanel; },
+                        get updateRecurringPanelButtonVisibility() { return window.recurringPanel?.updateRecurringPanelButtonVisibility; }
+                    },
+                    updateRecurringPanelButtonVisibility: this.dependencies.updateRecurringPanelButtonVisibility || (() => window.updateRecurringPanelButtonVisibility?.()),
+
+                    // DOM helpers
+                    getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
+                    querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
                 });
 
                 // Initialize events module - no window.* fallbacks (Phase 2)

@@ -432,6 +432,63 @@ window.ErrorHandler.reset();
 
 ---
 
+## 🏗️ Architectural Decision: No DI for ErrorHandler
+
+**Decision Date:** December 3, 2025
+**Status:** Intentional Exception
+
+### Why errorHandler.js Does NOT Use Dependency Injection
+
+Unlike other modules in miniCycle, `errorHandler.js` intentionally uses `window.showNotification` directly with runtime checks rather than constructor-based dependency injection.
+
+**Pattern Used:**
+```javascript
+// Late-binding check at call time (INTENTIONAL)
+if (typeof window.showNotification === 'function') {
+    window.showNotification(message, 'error');
+}
+```
+
+### Reasoning
+
+1. **Timing Problem**
+   - ErrorHandler loads early in the module initialization sequence
+   - Dependencies (like `showNotification`) may not exist yet when the constructor runs
+   - Late-binding ensures the check happens when the function is actually called, not at construction time
+
+2. **Circular Dependency Risk**
+   - If `notifications.js` has an error during load, ErrorHandler needs to catch it
+   - But if ErrorHandler depends on notifications via DI, it can't show the error
+   - Late-binding breaks this circular dependency
+
+3. **Error Handlers Are Special**
+   - They're the safety net when everything else fails
+   - They should have minimal dependencies
+   - Failing gracefully to `console.log` (which always exists) is the right fallback
+
+4. **Current Pattern Is Defensive**
+   - Checks `typeof window.showNotification === 'function'` before every call
+   - Falls back silently to console logging if notification unavailable
+   - Never crashes, even if dependencies are missing
+
+### When to Revisit
+
+Only change this pattern if:
+- You need to mock `showNotification` specifically for errorHandler tests
+- Errors during module loading need notification (currently just logged)
+- The late-binding pattern is actively causing bugs
+
+### Approved Patterns for Other Modules
+
+This exception does NOT apply to other modules. Standard modules should use:
+- Constructor DI (`constructor(dependencies = {})`)
+- Module-level setter (`setXDependencies()`)
+- Strict DI with validation (`assertInjected()`)
+
+See `migrationManager.js` and `recurringCore.js` for model examples.
+
+---
+
 ## 🎉 Success Metrics
 
 **Before Error Handling Improvements:**

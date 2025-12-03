@@ -1109,7 +1109,7 @@ async setDefaultPosition(notificationContainer) {
       <div class="miniCycle-prompt-box">
         <h2 class="miniCycle-prompt-title">${title}</h2>
         <p class="miniCycle-prompt-message">${message}</p>
-        <input type="text" class="miniCycle-prompt-input" placeholder="${placeholder}" value="${defaultValue}" />
+        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" placeholder="${placeholder}" value="${defaultValue}" />
         <div class="miniCycle-prompt-buttons">
           <button class="miniCycle-btn-cancel">${cancelText}</button>
           <button class="miniCycle-btn-confirm">${confirmText}</button>

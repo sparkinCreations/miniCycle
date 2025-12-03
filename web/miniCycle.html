@@ -831,7 +831,7 @@ window.installApp = () => {
             <div id="mode-description" class="mode-description" aria-live="polite"></div>
            <div class="toggle-container" id="autoResetContainer" style="display: none;">
             <label class="switch">
-                <input type="checkbox" id="toggleAutoReset" aria-label="Toggle auto reset" checked>
+                <input type="checkbox" id="toggleAutoReset" name="toggleAutoReset" aria-label="Toggle auto reset" checked>
                 <span class="slider round"></span>
               </label>              
             <span class="label-text">Auto Reset</span>
@@ -839,9 +839,10 @@ window.installApp = () => {
         
         <div class="checkbox-container" id="deleteCheckedTasksContainer" style="display: none;">
             <label class="custom-checkbox" for="deleteCheckedTasks">
-              <input 
-                type="checkbox" 
-                id="deleteCheckedTasks" 
+              <input
+                type="checkbox"
+                id="deleteCheckedTasks"
+                name="deleteCheckedTasks"
                 aria-labelledby="delete-label"
               />
               <span class="checkmark" aria-hidden="true"></span>
@@ -884,7 +885,7 @@ window.installApp = () => {
     </div>
     <div id="recurring-settings-panel" class="hidden" aria-live="polite">
       <label for="recur-specific-dates">
-        <input type="checkbox" id="recur-specific-dates" aria-describedby="specific-dates-desc">
+        <input type="checkbox" id="recur-specific-dates" name="recur-specific-dates" aria-describedby="specific-dates-desc">
         Specific date(s)
       </label>
       <div id="specific-dates-desc" class="visually-hidden">
@@ -900,7 +901,7 @@ window.installApp = () => {
       
       <div id="specific-date-time-options" class="hidden">
         <label>
-          <input type="checkbox" id="specific-date-specific-time">
+          <input type="checkbox" id="specific-date-specific-time" name="specific-date-specific-time">
           Choose specific time
         </label>
       
@@ -909,9 +910,9 @@ window.installApp = () => {
             <div class="time-picker-stack">
               <div class="time-picker-group">
                 <label for="specific-date-hour" class="visually-hidden">Hour</label>
-                <input type="number" id="specific-date-hour" min="1" max="12" placeholder="Hours"> :
+                <input type="number" id="specific-date-hour" name="specific-date-hour" min="1" max="12" placeholder="Hours"> :
                 <label for="specific-date-minute" class="visually-hidden">Minute</label>
-                <input type="number" id="specific-date-minute" min="0" max="59" placeholder="Minutes">
+                <input type="number" id="specific-date-minute" name="specific-date-minute" min="0" max="59" placeholder="Minutes">
       
                 <select id="specific-date-meridiem">
                   <option value="AM">AM</option>
@@ -920,7 +921,7 @@ window.installApp = () => {
               </div>
       
               <label class="time-format-toggle">
-                <input type="checkbox" id="specific-date-military">
+                <input type="checkbox" id="specific-date-military" name="specific-date-military">
                 Check box to use 24-hour format
               </label>
             </div>
@@ -928,7 +929,7 @@ window.installApp = () => {
         </div>
       </div>
       <label style="display: flex; align-items: center; margin: 10px 0;">
-        <input type="checkbox" id="recur-indefinitely" style="margin-right: 8px;" checked>
+        <input type="checkbox" id="recur-indefinitely" name="recur-indefinitely" style="margin-right: 8px;" checked>
         Recur indefinitely
       </label>
 
@@ -939,7 +940,7 @@ window.installApp = () => {
         </label>
         <div id="recur-count-container" class="hidden" style="margin-left: 24px;">
           <label for="recur-count-input" style="display: block; margin: 8px 0;">Number of occurrences:</label>
-          <input type="number" id="recur-count-input" min="1" value="1" style="width: 80px; padding: 4px;">
+          <input type="number" id="recur-count-input" name="recur-count-input" min="1" value="1" style="width: 80px; padding: 4px;">
         </div>
 
         <label style="display: block; margin: 6px 0;">
@@ -948,7 +949,7 @@ window.installApp = () => {
         </label>
         <div id="recur-until-container" class="hidden" style="margin-left: 24px;">
           <label for="recur-until-date" style="display: block; margin: 8px 0;">End date:</label>
-          <input type="date" id="recur-until-date" style="padding: 4px;">
+          <input type="date" id="recur-until-date" name="recur-until-date" style="padding: 4px;">
         </div>
       </div>
 
@@ -972,13 +973,13 @@ window.installApp = () => {
 
         <!-- Hourly options -->
         <div id="hourly-options" class="frequency-options hidden">
-          <label><input type="checkbox" id="hourly-specific-time"> Choose specific minute of each hour</label>
+          <label><input type="checkbox" id="hourly-specific-time" name="hourly-specific-time"> Choose specific minute of each hour</label>
           <div id="hourly-minute-container" class="hidden">
             <div class="time-picker-stack">
             <div class="time-picker-wrapper">
             <div class="time-picker-group">
               <label for="hourly-minute" class="visually-hidden">Minute</label>
-            <input type="number" id="hourly-minute" min="0" max="59" placeholder = "Minute">
+            <input type="number" id="hourly-minute" name="hourly-minute" min="0" max="59" placeholder="Minute">
           </div>
           </div>
           </div>
@@ -987,16 +988,16 @@ window.installApp = () => {
 
         <!-- Daily options -->
         <div id="daily-options" class="frequency-options">
-          <label><input type="checkbox" id="daily-specific-time"> Choose specific time of day</label>
+          <label><input type="checkbox" id="daily-specific-time" name="daily-specific-time"> Choose specific time of day</label>
           <div id="daily-time-container" class="hidden">
             <div class="time-picker-wrapper">
               <div class="time-picker-stack">
             <div class="time-picker-group">
               <label for="daily-hour" class="visually-hidden">Hour</label>
-              <input type="number" id="daily-hour" min="1" max="12" placeholder="Hours">
+              <input type="number" id="daily-hour" name="daily-hour" min="1" max="12" placeholder="Hours">
               :
               <label for="daily-minute" class="visually-hidden">Minute</label>
-              <input type="number"  id="daily-minute" min="0" max="59" placeholder="Minutes">
+              <input type="number" id="daily-minute" name="daily-minute" min="0" max="59" placeholder="Minutes">
               
               <select id="daily-meridiem">
                 <option value="AM">AM</option>
@@ -1004,7 +1005,7 @@ window.installApp = () => {
               </select>
             </div>
             <label class="time-format-toggle">
-              <input type="checkbox" id="daily-military"> Check box to use 24-hour format
+              <input type="checkbox" id="daily-military" name="daily-military"> Check box to use 24-hour format
             </label>
             </div>
             </div>
@@ -1013,7 +1014,7 @@ window.installApp = () => {
 
      <!-- Weekly options -->
 <div id="weekly-options" class="frequency-options hidden">
-  <label><input type="checkbox" id="weekly-specific-days"> Choose specific day(s) of the week</label>
+  <label><input type="checkbox" id="weekly-specific-days" name="weekly-specific-days"> Choose specific day(s) of the week</label>
   <div id="weekly-day-container" class="hidden">
     <p class="section-label">Select days:</p>
     <div class="weekly-days">
@@ -1027,16 +1028,16 @@ window.installApp = () => {
     </div>
   </div>
 
-  <label><input type="checkbox" id="weekly-specific-time"> Choose specific time</label>
+  <label><input type="checkbox" id="weekly-specific-time" name="weekly-specific-time"> Choose specific time</label>
   <div id="weekly-time-container" class="hidden">
     <div class="time-picker-wrapper">
       <div class="time-picker-stack">
       <div class="time-picker-group">
         <label for="weekly-hour" class="visually-hidden">Hour</label>
-        <input type="number" id="weekly-hour" min="1" max="12" placeholder="Hours">
+        <input type="number" id="weekly-hour" name="weekly-hour" min="1" max="12" placeholder="Hours">
         :
         <label for="weekly-minute" class="visually-hidden">Minute</label>
-        <input type="number" id="weekly-minute" min="0" max="59" placeholder="Minutes">
+        <input type="number" id="weekly-minute" name="weekly-minute" min="0" max="59" placeholder="Minutes">
 
         <select id="weekly-meridiem">
           <option value="AM">AM</option>
@@ -1044,7 +1045,7 @@ window.installApp = () => {
         </select>
       </div>
       <label class="time-format-toggle">
-        <input type="checkbox" id="weekly-military"> Check box to use 24-hour format
+        <input type="checkbox" id="weekly-military" name="weekly-military"> Check box to use 24-hour format
       </label>
     </div>
     </div>
@@ -1053,7 +1054,7 @@ window.installApp = () => {
 
  <!-- Biweekly options -->
  <div id="biweekly-options" class="frequency-options hidden">
-  <label><input type="checkbox" id="biweekly-specific-days"> Choose specific day(s) of the week</label>
+  <label><input type="checkbox" id="biweekly-specific-days" name="biweekly-specific-days"> Choose specific day(s) of the week</label>
   <div id="biweekly-day-container" class="hidden">
     <p class="section-label">Week 1:</p>
     <div class="biweekly-days">
@@ -1082,7 +1083,7 @@ window.installApp = () => {
 
 
   <label>
-    <input type="checkbox" id="biweekly-specific-time">
+    <input type="checkbox" id="biweekly-specific-time" name="biweekly-specific-time">
     Choose specific time
   </label>
 
@@ -1091,16 +1092,16 @@ window.installApp = () => {
       <div class="time-picker-stack">
         <div class="time-picker-group">
           <label for="biweekly-hour" class="visually-hidden">Hour</label>
-          <input type="number" id="biweekly-hour" min="1" max="12" placeholder="Hours"> :
+          <input type="number" id="biweekly-hour" name="biweekly-hour" min="1" max="12" placeholder="Hours"> :
           <label for="biweekly-minute" class="visually-hidden">Minute</label>
-          <input type="number" id="biweekly-minute" min="0" max="59" placeholder="Minutes">
+          <input type="number" id="biweekly-minute" name="biweekly-minute" min="0" max="59" placeholder="Minutes">
           <select id="biweekly-meridiem">
             <option value="AM">AM</option>
             <option value="PM">PM</option>
           </select>
         </div>
         <label class="time-format-toggle">
-          <input type="checkbox" id="biweekly-military">
+          <input type="checkbox" id="biweekly-military" name="biweekly-military">
          Check box to use 24-hour format
         </label>
       </div>
@@ -1110,18 +1111,18 @@ window.installApp = () => {
 
         <!-- Monthly options -->
         <div id="monthly-options" class="frequency-options hidden">
-          <label><input type="checkbox" id="monthly-specific-days"> Choose specific day(s) of the month</label>
+          <label><input type="checkbox" id="monthly-specific-days" name="monthly-specific-days"> Choose specific day(s) of the month</label>
           <div id="monthly-day-container" class="hidden">
             <p class="section-label">Select days (1-31):</p>
             <div class="monthly-days">
               <!-- Dynamically filled with JS (1 to 31) -->
             </div>
             <label style="margin-top: 10px;">
-              <input type="checkbox" id="monthly-last-day"> Last day of month
+              <input type="checkbox" id="monthly-last-day" name="monthly-last-day"> Last day of month
             </label>
           </div>
 
-          <label><input type="checkbox" id="monthly-week-of-month"> Use week of month pattern</label>
+          <label><input type="checkbox" id="monthly-week-of-month" name="monthly-week-of-month"> Use week of month pattern</label>
           <div id="monthly-week-container" class="hidden">
             <p class="section-label">Select pattern:</p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;">
@@ -1144,16 +1145,16 @@ window.installApp = () => {
             </div>
           </div>
 
-          <label><input type="checkbox" id="monthly-specific-time"> Choose specific time</label>
+          <label><input type="checkbox" id="monthly-specific-time" name="monthly-specific-time"> Choose specific time</label>
           <div id="monthly-time-container" class="hidden">
             <div class="time-picker-wrapper">
               <div class="time-picker-stack">
             <div class="time-picker-group">
               <label for="monthly-hour" class="visually-hidden">Hour</label>
-              <input type="number" id="monthly-hour" min="1" max="12" placeholder="Hours">
+              <input type="number" id="monthly-hour" name="monthly-hour" min="1" max="12" placeholder="Hours">
               :
               <label for="monthly-minute" class="visually-hidden">Minute</label>
-              <input type="number" id="monthly-minute" min="0" max="59" placeholder="Minutes">
+              <input type="number" id="monthly-minute" name="monthly-minute" min="0" max="59" placeholder="Minutes">
           
               <select id="monthly-meridiem">
                 <option value="AM">AM</option>
@@ -1161,7 +1162,7 @@ window.installApp = () => {
               </select>
             </div>
             <label class="time-format-toggle">
-              <input type="checkbox" id="monthly-military"> Check box to use 24-hour format
+              <input type="checkbox" id="monthly-military" name="monthly-military"> Check box to use 24-hour format
             </label>
             </div>
             </div>
@@ -1174,7 +1175,7 @@ window.installApp = () => {
         <h4 id="yearly-options-heading" class="visually-hidden">Yearly recurrence options</h4>
       
         <label>
-          <input type="checkbox" id="yearly-specific-months" aria-describedby="yearly-month-container">
+          <input type="checkbox" id="yearly-specific-months" name="yearly-specific-months" aria-describedby="yearly-month-container">
           Choose specific month(s)
         </label>
       
@@ -1186,7 +1187,7 @@ window.installApp = () => {
         </div>
       
         <label id="yearly-specific-days-label" class="hidden">
-          <input type="checkbox" id="yearly-specific-days" aria-describedby="yearly-day-container">
+          <input type="checkbox" id="yearly-specific-days" name="yearly-specific-days" aria-describedby="yearly-day-container">
           Choose specific day(s) of the month
         </label>
       
@@ -1209,7 +1210,7 @@ window.installApp = () => {
           </select>
       
           <label id="yearly-apply-all-label" class="apply-all-label">
-            <input type="checkbox" id="yearly-apply-days-to-all" aria-describedby="yearly-apply-description">
+            <input type="checkbox" id="yearly-apply-days-to-all" name="yearly-apply-days-to-all" aria-describedby="yearly-apply-description">
             Apply selected days to all selected months
           </label>
           <p id="yearly-apply-description" class="visually-hidden">When checked, all selected days will apply to every selected month.</p>
@@ -1220,7 +1221,7 @@ window.installApp = () => {
         </div>
       
         <label>
-          <input type="checkbox" id="yearly-specific-time" aria-controls="yearly-time-container">
+          <input type="checkbox" id="yearly-specific-time" name="yearly-specific-time" aria-controls="yearly-time-container">
           Choose specific time
         </label>
       
@@ -1229,10 +1230,10 @@ window.installApp = () => {
             <div class="time-picker-wrapper">
               <div class="time-picker-group" role="group" aria-label="Time of day">
                 <label for="yearly-hour" class="visually-hidden">Hour</label>
-                <input type="number" id="yearly-hour" min="1" max="12" placeholder="Hours">
+                <input type="number" id="yearly-hour" name="yearly-hour" min="1" max="12" placeholder="Hours">
                 :
                 <label for="yearly-minute" class="visually-hidden">Minute</label>
-                <input type="number" id="yearly-minute" min="0" max="59" placeholder="Minutes">
+                <input type="number" id="yearly-minute" name="yearly-minute" min="0" max="59" placeholder="Minutes">
                 <select id="yearly-meridiem" aria-label="AM or PM">
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
@@ -1240,7 +1241,7 @@ window.installApp = () => {
               </div>
       
               <label class="time-format-toggle">
-                <input type="checkbox" id="yearly-military" aria-label="Use 24-hour time format">
+                <input type="checkbox" id="yearly-military" name="yearly-military" aria-label="Use 24-hour time format">
                 Check box to use 24-hour format
               </label>
             </div>
@@ -1250,7 +1251,7 @@ window.installApp = () => {
 
       <div id="set-default-recurring-container">
         <label>
-          <input type="checkbox" id="set-default-recurring">
+          <input type="checkbox" id="set-default-recurring" name="set-default-recurring">
           Set these recurring settings as default
         </label>
       </div>
@@ -1289,12 +1290,12 @@ window.installApp = () => {
         
                 <!-- Toggle On/Off -->
                 <label class="settings-option">
-                    <input type="checkbox" id="enableReminders" />
+                    <input type="checkbox" id="enableReminders" name="enableReminders" />
                     Enable Reminders
                 </label>
                 <div>
                     <label class="settings-option">
-                        <input type="checkbox" id="dueDatesReminders" />
+                        <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
                         Enable Due Date Notifications
                     </label>
                     
@@ -1303,16 +1304,16 @@ window.installApp = () => {
                 <!-- Frequency Section (only show if enabled) -->
                 <div id="frequency-section">
                     <label>
-                        <input type="checkbox" id="indefiniteCheckbox" />
+                        <input type="checkbox" id="indefiniteCheckbox" name="indefiniteCheckbox" />
                         Remind Indefinitely?
                     </label>
                     <div id="repeat-count-row">
                         <label for="repeatCount">Number of Times:</label>
-                        <input type="number" id="repeatCount" min="1" value="1" />
+                        <input type="number" id="repeatCount" name="repeatCount" min="1" value="1" />
                     </div>
                     <div id="every-row">
                         <label for="frequencyValue">Every:</label>
-                        <input type="number" id="frequencyValue" min="1" value="1" />
+                        <input type="number" id="frequencyValue" name="frequencyValue" min="1" value="1" />
                         <select id="frequencyUnit">
                             <option value="minutes">Minutes</option>
                             <option value="hours">Hours</option>
@@ -1334,28 +1335,28 @@ window.installApp = () => {
                 <h2>Settings</h2>
 
                 <label class="settings-option">
-                    <input type="checkbox" id="toggle-move-arrows">
+                    <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows">
                     Show Move Arrows for Manual Rearranging
                 </label>
 
                 <label class="settings-option">
-                    <input type="checkbox" id="toggle-three-dots">
+                    <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots">
                     Show Three Dots Menu on Tasks
                 </label>
 
                 <label class="settings-option">
-              <input type="checkbox" id="always-show-recurring">
+              <input type="checkbox" id="always-show-recurring" name="always-show-recurring">
               Always Show Recurring Button in Task Options
           </label>
 
                 <label class="settings-option">
-                    <input type="checkbox" id="toggle-completed-dropdown">
+                    <input type="checkbox" id="toggle-completed-dropdown" name="toggle-completed-dropdown">
                     Show Completed Tasks in Dropdown
                 </label>
 
                 <!-- Dark Mode Toggle -->
                 <label class="settings-option">
-                    <input type="checkbox" id="darkModeToggle" />
+                    <input type="checkbox" id="darkModeToggle" name="darkModeToggle" />
                     Enable Dark Mode
                 </label>
 
@@ -1606,7 +1607,7 @@ window.installApp = () => {
     </div>
     <div class="storage-modal-buttons">
       <label style="margin-right: auto; display: flex; align-items: center; gap: 6px;">
-        <input type="checkbox" id="stay-open-toggle" />
+        <input type="checkbox" id="stay-open-toggle" name="stay-open-toggle" />
         Stay open when clicking outside
       </label>
       <button class="btn-confirm" onclick="closeStorageViewer()">Close</button>
@@ -1630,7 +1631,7 @@ window.installApp = () => {
       <!-- 🌙 Dark Mode Section -->
       <div id="dark-mode-section">
         <label class="custom-checkbox">
-          <input type="checkbox" id="darkModeToggleThemes">
+          <input type="checkbox" id="darkModeToggleThemes" name="darkModeToggleThemes">
           <span class="checkmark"></span>
           Dark Mode 🌙
         </label>
@@ -1743,7 +1744,7 @@ window.installApp = () => {
 
 <div id="task-view">
     <div class="task-input">
-  <input type="text" id="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
+  <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
   <button id="addTaskBtn" title="Add task">Add</button>
     </div>
     <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>

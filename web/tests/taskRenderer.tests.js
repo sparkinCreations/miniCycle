@@ -3,6 +3,30 @@
  * Tests for task rendering and UI refresh operations
  */
 
+// ============================================
+// 🧪 MOCK DEPENDENCIES FOR TASKRENDERER
+// (Phase 3 - all deps are now required)
+// ============================================
+function createMockDependencies(overrides = {}) {
+    return {
+        AppState: { isReady: () => true, get: () => ({}) },
+        addTask: async () => {},
+        loadMiniCycle: () => {},
+        updateProgressBar: () => {},
+        checkCompleteAllButton: () => {},
+        updateStatsPanel: () => {},
+        updateMainMenuHeader: () => {},
+        updateArrowsInDOM: () => {},
+        checkOverdueTasks: () => {},
+        enableDragAndDropOnTask: () => {},
+        recurringPanel: { updateRecurringPanel: () => {}, updateRecurringPanelButtonVisibility: () => {} },
+        updateRecurringPanelButtonVisibility: () => {},
+        getElementById: (id) => document.getElementById(id),
+        querySelectorAll: (sel) => document.querySelectorAll(sel),
+        ...overrides
+    };
+}
+
 export async function runTaskRendererTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎨 TaskRenderer Tests</h2><h3>Running tests...</h3>';
 
@@ -71,25 +95,45 @@ export async function runTaskRendererTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    await test('creates instance with no dependencies', () => {
-        const renderer = new TaskRenderer();
+    await test('creates instance with required dependencies', () => {
+        const renderer = new TaskRenderer(createMockDependencies());
         if (!renderer) throw new Error('Failed to create TaskRenderer instance');
         if (!renderer.deps) throw new Error('Dependencies not initialized');
     });
 
     await test('creates instance with custom dependencies', () => {
         const mockAppState = { isReady: () => true, get: () => ({}) };
-        const renderer = new TaskRenderer({ AppState: mockAppState });
+        const renderer = new TaskRenderer(createMockDependencies({ AppState: mockAppState }));
         if (renderer.deps.AppState !== mockAppState) {
             throw new Error('Custom AppState dependency not set');
         }
     });
 
     await test('has correct version property', () => {
-        const renderer = new TaskRenderer();
+        const renderer = new TaskRenderer(createMockDependencies());
         // Check version exists and is in semver format (X.Y or X.Y.Z)
         if (!renderer.version || !/^\d+\.\d+(\.\d+)?$/.test(renderer.version)) {
             throw new Error(`Expected valid semver version, got ${renderer.version}`);
+        }
+    });
+
+    await test('warns when missing dependencies', () => {
+        // Capture console.warn
+        const originalWarn = console.warn;
+        let warnCalled = false;
+        console.warn = (...args) => {
+            if (args[0]?.includes?.('missing dependencies')) {
+                warnCalled = true;
+            }
+        };
+
+        try {
+            new TaskRenderer({});  // Missing deps should warn, not throw
+            if (!warnCalled) {
+                throw new Error('Should have warned about missing dependencies');
+            }
+        } finally {
+            console.warn = originalWarn;
         }
     });
 
@@ -99,19 +143,18 @@ export async function runTaskRendererTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Rendering</h4>';
 
     await test('renderTasks requires taskList element', async () => {
-        const renderer = new TaskRenderer({ getElementById: () => null });
+        const renderer = new TaskRenderer(createMockDependencies({
+            getElementById: () => null
+        }));
         // Should not throw, just return early
         await renderer.renderTasks([]);
     });
 
     await test('renderTasks handles empty array', async () => {
         const taskList = document.createElement('ul');
-        const renderer = new TaskRenderer({
-            getElementById: (id) => id === 'taskList' ? taskList : null,
-            updateProgressBar: () => {},
-            checkCompleteAllButton: () => {},
-            updateStatsPanel: () => {}
-        });
+        const renderer = new TaskRenderer(createMockDependencies({
+            getElementById: (id) => id === 'taskList' ? taskList : null
+        }));
         await renderer.renderTasks([]);
         if (taskList.innerHTML !== '') {
             throw new Error('Should clear taskList for empty array');
@@ -119,7 +162,9 @@ export async function runTaskRendererTests(resultsDiv) {
     });
 
     await test('renderTasks validates array input', async () => {
-        const renderer = new TaskRenderer({ getElementById: () => document.createElement('ul') });
+        const renderer = new TaskRenderer(createMockDependencies({
+            getElementById: () => document.createElement('ul')
+        }));
         // Should not throw for non-array
         await renderer.renderTasks(null);
         await renderer.renderTasks(undefined);
@@ -132,14 +177,16 @@ export async function runTaskRendererTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔄 Refresh UI</h4>';
 
     await test('refreshUIFromState handles null state', async () => {
-        const renderer = new TaskRenderer({ AppState: { isReady: () => false } });
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: { isReady: () => false }
+        }));
         // Should not throw
         await renderer.refreshUIFromState(null);
     });
 
     await test('refreshUIFromState uses AppState when ready', async () => {
         let appStateCalled = false;
-        const renderer = new TaskRenderer({
+        const renderer = new TaskRenderer(createMockDependencies({
             AppState: {
                 isReady: () => true,
                 get: () => {
@@ -151,17 +198,15 @@ export async function runTaskRendererTests(resultsDiv) {
                     };
                 }
             },
-            getElementById: () => document.createElement('ul'),
-            updateProgressBar: () => {},
-            checkCompleteAllButton: () => {}
-        });
+            getElementById: () => document.createElement('ul')
+        }));
         await renderer.refreshUIFromState();
         if (!appStateCalled) throw new Error('Should call AppState.get() when ready');
     });
 
     await test('refreshTaskListUI delegates to refreshUIFromState', async () => {
         let refreshCalled = false;
-        const renderer = new TaskRenderer();
+        const renderer = new TaskRenderer(createMockDependencies());
         renderer.refreshUIFromState = async () => { refreshCalled = true; };
         await renderer.refreshTaskListUI();
         if (!refreshCalled) throw new Error('Should call refreshUIFromState');

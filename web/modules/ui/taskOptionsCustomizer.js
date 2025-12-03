@@ -314,6 +314,8 @@ export class TaskOptionsCustomizer {
                     <div class="option-checkbox-container">
                         <input
                             type="checkbox"
+                            id="option-${option.key}"
+                            name="option-${option.key}"
                             data-option="${option.key}"
                             ${isChecked ? 'checked' : ''}
                             ${isDisabled ? 'disabled' : ''}

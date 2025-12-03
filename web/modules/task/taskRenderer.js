@@ -31,17 +31,34 @@ export class TaskRenderer {
         // Store dependencies - no window.* fallbacks
         this.deps = {
             // Core data access (required)
-            AppState: mergedDeps.AppState || null,
+            AppState: mergedDeps.AppState,
 
-            // UI update functions (optional, fallback to no-op)
-            updateProgressBar: mergedDeps.updateProgressBar || this.fallbackUpdate,
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || this.fallbackUpdate,
-            updateStatsPanel: mergedDeps.updateStatsPanel || this.fallbackUpdate,
-            updateMainMenuHeader: mergedDeps.updateMainMenuHeader || this.fallbackUpdate,
+            // Task management functions (required)
+            addTask: mergedDeps.addTask,
+            loadMiniCycle: mergedDeps.loadMiniCycle,
+
+            // UI update functions (required)
+            updateProgressBar: mergedDeps.updateProgressBar,
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton,
+            updateStatsPanel: mergedDeps.updateStatsPanel,
+            updateMainMenuHeader: mergedDeps.updateMainMenuHeader,
+            updateArrowsInDOM: mergedDeps.updateArrowsInDOM,
+            checkOverdueTasks: mergedDeps.checkOverdueTasks,
+
+            // Drag-drop (required)
+            enableDragAndDropOnTask: mergedDeps.enableDragAndDropOnTask,
+
+            // Recurring panel (required)
+            recurringPanel: mergedDeps.recurringPanel,
+            updateRecurringPanelButtonVisibility: mergedDeps.updateRecurringPanelButtonVisibility,
 
             // DOM helpers
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id))
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
+
+        // Validate required dependencies
+        this._validateDependencies();
 
         // Instance version
         this.version = '1.389';
@@ -49,9 +66,30 @@ export class TaskRenderer {
         console.log('🎨 TaskRenderer created');
     }
 
-    // Fallback functions
-    fallbackUpdate() {
-        // Silent fallback - just a no-op
+    /**
+     * Validate dependencies and warn about missing ones
+     * Note: Dependencies are optional for backward compatibility with TaskDOMManager
+     * @private
+     */
+    _validateDependencies() {
+        const recommended = [
+            'AppState',
+            'addTask',
+            'loadMiniCycle',
+            'updateProgressBar',
+            'checkCompleteAllButton',
+            'updateArrowsInDOM',
+            'checkOverdueTasks',
+            'enableDragAndDropOnTask',
+            'recurringPanel',
+            'updateRecurringPanelButtonVisibility'
+        ];
+
+        const missing = recommended.filter(dep => !this.deps[dep]);
+
+        if (missing.length > 0) {
+            console.warn('⚠️ TaskRenderer missing dependencies (some features may not work):', missing);
+        }
     }
 
     /**
@@ -86,9 +124,10 @@ export class TaskRenderer {
                 continue;
             }
 
-            // Use window.addTask with batch mode
-            if (typeof window.addTask === 'function') {
-                await window.addTask(
+            // Use injected addTask with batch mode (fallback to window.addTask for backward compat)
+            const addTaskFn = this.deps.addTask || window.addTask;
+            if (addTaskFn) {
+                await addTaskFn(
                     task.text,
                     task.completed,
                     false,                     // shouldSave: false (don't save during render)
@@ -103,7 +142,7 @@ export class TaskRenderer {
                     fragment                   // ✅ FIX #6: targetContainer: append to fragment
                 );
             } else {
-                console.warn('⚠️ addTask function not available');
+                console.warn('⚠️ addTask function not available for task:', task.id);
             }
         }
 
@@ -116,23 +155,19 @@ export class TaskRenderer {
         this.deps.updateStatsPanel?.();
 
         // Update recurring panel
-        if (typeof window.updateRecurringPanelButtonVisibility === 'function') {
-            window.updateRecurringPanelButtonVisibility();
-        }
+        this.deps.updateRecurringPanelButtonVisibility?.();
 
         // Check overdue tasks after rendering
-        if (typeof window.checkOverdueTasks === 'function') {
-            setTimeout(() => {
-                window.checkOverdueTasks();
-            }, 500);
-        }
+        setTimeout(() => {
+            this.deps.checkOverdueTasks?.();
+        }, 500);
 
         // ✅ FIX: Re-initialize drag handlers on newly rendered tasks
         // This is needed after refreshUIFromState() recreates the DOM
-        if (typeof window.enableDragAndDropOnTask === 'function') {
-            const tasks = document.querySelectorAll('#taskList .task');
+        if (this.deps.enableDragAndDropOnTask) {
+            const tasks = this.deps.querySelectorAll('#taskList .task');
             tasks.forEach(task => {
-                window.enableDragAndDropOnTask(task);
+                this.deps.enableDragAndDropOnTask(task);
             });
             console.log(`🎯 Re-initialized drag handlers for ${tasks.length} tasks`);
         }
@@ -159,20 +194,16 @@ export class TaskRenderer {
 
                 // ✅ Restore UI state after rendering
                 const arrowsVisible = state.ui?.moveArrowsVisible || false;
-                if (typeof window.updateArrowsInDOM === 'function') {
-                    window.updateArrowsInDOM(arrowsVisible);
-                }
+                const updateArrows = this.deps.updateArrowsInDOM || window.updateArrowsInDOM;
+                updateArrows?.(arrowsVisible);
 
                 // Update other UI bits that don't depend on reloading storage
-                if (window.recurringPanel?.updateRecurringPanel) {
-                    window.recurringPanel.updateRecurringPanel();
-                }
-                if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-                    window.recurringPanel.updateRecurringPanelButtonVisibility();
-                }
-                if (typeof window.updateMainMenuHeader === 'function') {
-                    window.updateMainMenuHeader();
-                }
+                const recurringPanel = this.deps.recurringPanel || window.recurringPanel;
+                recurringPanel?.updateRecurringPanel?.();
+                recurringPanel?.updateRecurringPanelButtonVisibility?.();
+
+                const updateMainMenuHeader = this.deps.updateMainMenuHeader || window.updateMainMenuHeader;
+                updateMainMenuHeader?.();
 
                 this.deps.updateProgressBar?.();
                 this.deps.checkCompleteAllButton?.();
@@ -181,20 +212,18 @@ export class TaskRenderer {
         }
 
         // Fallback: load from localStorage
-        if (typeof window.loadMiniCycle === 'function') {
-            window.loadMiniCycle();
+        const loadMiniCycle = this.deps.loadMiniCycle || window.loadMiniCycle;
+        loadMiniCycle?.();
 
-            // ✅ Also restore arrow visibility after fallback load
-            setTimeout(() => {
-                if (this.deps.AppState?.isReady?.()) {
-                    const currentState = this.deps.AppState.get();
-                    const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-                    if (typeof window.updateArrowsInDOM === 'function') {
-                        window.updateArrowsInDOM(arrowsVisible);
-                    }
-                }
-            }, 50);
-        }
+        // ✅ Also restore arrow visibility after fallback load
+        setTimeout(() => {
+            if (this.deps.AppState?.isReady?.()) {
+                const currentState = this.deps.AppState.get();
+                const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
+                const updateArrows = this.deps.updateArrowsInDOM || window.updateArrowsInDOM;
+                updateArrows?.(arrowsVisible);
+            }
+        }, 50);
     }
 
     /**

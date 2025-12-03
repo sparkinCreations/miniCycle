@@ -472,19 +472,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.onboardingManager = onboardingManagerMod.onboardingManager;
     console.log('✅ Onboarding Manager loaded');
 
-    // ✅ Load Modal Manager
+    // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
     const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
-    window.modalManager = modalManagerMod.modalManager;
-    // ✅ Inject available deps early (hideMainMenu injected later after it's created)
-    if (modalManagerMod.setModalManagerDependencies) {
-        modalManagerMod.setModalManagerDependencies({
-            showNotification: deps.utils.showNotification,
-            sanitizeInput: deps.utils.sanitizeInput,
-            safeAddEventListener: deps.utils.safeAddEventListener
-            // hideMainMenu injected later
-        });
-    }
-    console.log('✅ Modal Manager loaded');
+    // Note: modalManager instance is null until initModalManager is called later
+    console.log('✅ Modal Manager module loaded (awaiting initialization)');
 
     // ✅ Load Migration Manager
     console.log('🔄 Loading migration manager (core system)...');
@@ -1167,7 +1158,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 autoSave: () => window.autoSave?.(),
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
-                querySelectorAll: (sel) => document.querySelectorAll(sel)
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+
+                // ✅ Storage functions (no global fallbacks in module)
+                safeLocalStorageGet: (key, def) => safeLocalStorageGet(key, def),
+                safeLocalStorageSet: (key, val) => safeLocalStorageSet(key, val),
+                safeJSONParse: (str, def) => safeJSONParse(str, def),
+                safeJSONStringify: (data, def) => safeJSONStringify(data, def),
+
+                // ✅ Constants (no global fallbacks in module)
+                DEFAULT_TASK_OPTION_BUTTONS: window.DEFAULT_TASK_OPTION_BUTTONS,
+
+                // ✅ Undo system callback (deferred - initialized later)
+                onCycleCreated: (cycleId) => window.onCycleCreated?.(cycleId)
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1293,14 +1296,25 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             });
         }
 
-        // ✅ Wire ModalManager dependencies
-        if (modalManagerMod.setModalManagerDependencies) {
-            modalManagerMod.setModalManagerDependencies({
+        // ✅ Initialize ModalManager (Phase 3 - no auto-init, explicit initialization)
+        console.log('🔄 Initializing modal manager module...');
+        try {
+            const modalManager = await modalManagerMod.initModalManager({
                 showNotification: deps.utils.showNotification,
                 hideMainMenu: () => window.hideMainMenu?.(),
                 sanitizeInput: deps.utils.sanitizeInput,
-                safeAddEventListener: deps.utils.safeAddEventListener
+                safeAddEventListener: deps.utils.safeAddEventListener,
+                waitForCore: () => deps.core.appInit.waitForCore()
             });
+
+            // ✅ Expose to window for backward compatibility
+            window.modalManager = modalManager;
+            window.closeAllModals = () => modalManager?.closeAllModals?.();
+
+            console.log('✅ Modal manager module initialized (Phase 3)');
+        } catch (error) {
+            console.error('❌ Failed to initialize modal manager:', error);
+            console.warn('⚠️ App will continue without modal manager functionality');
         }
 
         // ✅ Initialize Settings Manager (Phase 3 module - no window.* in module)

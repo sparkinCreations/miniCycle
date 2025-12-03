@@ -541,10 +541,11 @@ export class ThemeManager {
             
             toggleDiv.innerHTML = `
                 <label class="custom-checkbox" for="toggle${theme.id}Theme">
-                    <input 
-                        type="checkbox" 
-                        class="theme-toggle" 
-                        id="toggle${theme.id}Theme" 
+                    <input
+                        type="checkbox"
+                        class="theme-toggle"
+                        id="toggle${theme.id}Theme"
+                        name="toggle${theme.id}Theme"
                         ${isChecked ? 'checked' : ''}
                     />
                     <span class="checkmark" aria-hidden="true"></span>

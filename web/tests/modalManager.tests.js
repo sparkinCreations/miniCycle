@@ -18,6 +18,20 @@ export async function runModalManagerTests(resultsDiv) {
     // =====================================================
     const env = await setupTestEnvironment();
 
+    // =====================================================
+    // Phase 3: Initialize modalManager with test dependencies
+    // (No longer auto-initializes on import)
+    // =====================================================
+    if (window.initModalManager && !window.modalManager) {
+        await window.initModalManager({
+            showNotification: window.showNotification || (() => {}),
+            hideMainMenu: window.hideMainMenu || (() => {}),
+            sanitizeInput: window.sanitizeInput || ((text) => text),
+            safeAddEventListener: window.safeAddEventListener || ((el, ev, fn) => el?.addEventListener?.(ev, fn)),
+            waitForCore: () => Promise.resolve()
+        });
+    }
+
     resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };

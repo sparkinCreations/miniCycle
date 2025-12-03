@@ -14,20 +14,19 @@
  * - showNotification (notifications)
  * - sanitizeInput (input sanitization)
  * - safeAddEventListener (event listener helper)
- * - appInit (initialization system)
+ * - waitForCore (initialization wait function)
  *
  * @module modalManager
  * @version 1.389
  */
-
-import { appInit } from '../core/appInit.js';
 
 // Module-level dependencies - set via setModalManagerDependencies
 let _deps = {
     showNotification: null,
     hideMainMenu: null,
     sanitizeInput: null,
-    safeAddEventListener: null
+    safeAddEventListener: null,
+    waitForCore: null
 };
 
 /**
@@ -39,6 +38,7 @@ export function setModalManagerDependencies(deps) {
     if (deps.hideMainMenu) _deps.hideMainMenu = deps.hideMainMenu;
     if (deps.sanitizeInput) _deps.sanitizeInput = deps.sanitizeInput;
     if (deps.safeAddEventListener) _deps.safeAddEventListener = deps.safeAddEventListener;
+    if (deps.waitForCore) _deps.waitForCore = deps.waitForCore;
     console.log('🎭 ModalManager dependencies injected');
 }
 
@@ -51,13 +51,14 @@ export class ModalManager {
         this._injectedDeps = dependencies;
 
         // Dependency injection - no window.* fallbacks
-        // Priority: module-level _deps → instance _injectedDeps → graceful fallback
+        // Priority: module-level _deps → instance _injectedDeps
         Object.defineProperty(this, 'deps', {
             get: () => ({
                 showNotification: _deps.showNotification || this._injectedDeps.showNotification || this.fallbackNotification.bind(this),
                 hideMainMenu: _deps.hideMainMenu || this._injectedDeps.hideMainMenu || null,
                 sanitizeInput: _deps.sanitizeInput || this._injectedDeps.sanitizeInput || null,
-                safeAddEventListener: _deps.safeAddEventListener || this._injectedDeps.safeAddEventListener || null
+                safeAddEventListener: _deps.safeAddEventListener || this._injectedDeps.safeAddEventListener || null,
+                waitForCore: _deps.waitForCore || this._injectedDeps.waitForCore || (() => Promise.resolve())
             })
         });
     }
@@ -70,7 +71,7 @@ export class ModalManager {
     }
 
     async init() {
-        await appInit.waitForCore();
+        await this.deps.waitForCore();
 
         this.setupEventListeners();
 
@@ -403,14 +404,41 @@ export class ModalManager {
     }
 }
 
-// Create single instance
-const modalManager = new ModalManager();
+// Module-level instance (created but NOT auto-initialized)
+let modalManager = null;
 
-// Initialize automatically after import
-modalManager.init();
+/**
+ * Initialize the ModalManager module
+ * @param {Object} dependencies - Dependency injection object
+ * @returns {ModalManager} The initialized ModalManager instance
+ */
+export async function initModalManager(dependencies = {}) {
+    if (modalManager && modalManager.initialized) {
+        console.warn('⚠️ ModalManager already initialized');
+        return modalManager;
+    }
 
-// Phase 2 Step 3 - Clean exports (no window.* pollution)
-console.log('✅ Modal Manager module loaded (Phase 2 - no window.* exports)');
+    // Set dependencies first
+    setModalManagerDependencies(dependencies);
+
+    // Create instance and initialize
+    modalManager = new ModalManager(dependencies);
+    await modalManager.init();
+
+    console.log('✅ ModalManager instance created and initialized');
+    return modalManager;
+}
+
+/**
+ * Get the ModalManager instance (for access after initialization)
+ * @returns {ModalManager|null}
+ */
+export function getModalManager() {
+    return modalManager;
+}
+
+// Phase 3 - Clean exports (no window.* pollution, no auto-init)
+console.log('✅ Modal Manager module loaded (Phase 3 - no window.* exports, no auto-init)');
 
 export default ModalManager;
 export { modalManager };

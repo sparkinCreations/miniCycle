@@ -31,21 +31,33 @@ export class CycleManager {
         const mergedDeps = { ..._deps, ...dependencies };
 
         this.deps = {
-            // State management - no window.* fallbacks
-            AppState: mergedDeps.AppState || null,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || null,
+            // State management (required)
+            AppState: mergedDeps.AppState,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData,
 
-            // UI functions - no window.* fallbacks
-            showPromptModal: mergedDeps.showPromptModal || null,
+            // UI functions (required)
+            showPromptModal: mergedDeps.showPromptModal,
             showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this),
-            sanitizeInput: mergedDeps.sanitizeInput || ((input) => input),
+            sanitizeInput: mergedDeps.sanitizeInput,
 
-            // Lifecycle functions - no window.* fallbacks
-            completeInitialSetup: mergedDeps.completeInitialSetup || null,
-            hideMainMenu: mergedDeps.hideMainMenu || null,
+            // Lifecycle functions (required)
+            completeInitialSetup: mergedDeps.completeInitialSetup,
+            hideMainMenu: mergedDeps.hideMainMenu,
             updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
             checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
             autoSave: mergedDeps.autoSave || (() => {}),
+
+            // Storage functions (required) - no global fallbacks
+            safeLocalStorageGet: mergedDeps.safeLocalStorageGet,
+            safeLocalStorageSet: mergedDeps.safeLocalStorageSet,
+            safeJSONParse: mergedDeps.safeJSONParse,
+            safeJSONStringify: mergedDeps.safeJSONStringify,
+
+            // Undo system callback (optional)
+            onCycleCreated: mergedDeps.onCycleCreated || null,
+
+            // Constants (required)
+            DEFAULT_TASK_OPTION_BUTTONS: mergedDeps.DEFAULT_TASK_OPTION_BUTTONS,
 
             // DOM functions
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
@@ -53,8 +65,38 @@ export class CycleManager {
             querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
+        // Validate required dependencies
+        this._validateDependencies();
+
         this.version = '1.389';
         console.log('✅ CycleManager initialized');
+    }
+
+    /**
+     * Validate that required dependencies are provided
+     * @private
+     */
+    _validateDependencies() {
+        const required = [
+            'AppState',
+            'loadMiniCycleData',
+            'showPromptModal',
+            'sanitizeInput',
+            'completeInitialSetup',
+            'hideMainMenu',
+            'safeLocalStorageGet',
+            'safeLocalStorageSet',
+            'safeJSONParse',
+            'safeJSONStringify',
+            'DEFAULT_TASK_OPTION_BUTTONS'
+        ];
+
+        const missing = required.filter(dep => !this.deps[dep]);
+
+        if (missing.length > 0) {
+            console.error('❌ CycleManager missing required dependencies:', missing);
+            throw new Error(`CycleManager missing required dependencies: ${missing.join(', ')}`);
+        }
     }
 
     /**
@@ -90,7 +132,7 @@ export class CycleManager {
                     console.log('🔄 Creating new cycle:', newCycleName);
 
                     // Create new cycle in Schema 2.5 format
-                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                     if (!fullSchemaData) {
                         console.error('❌ Failed to load schema data');
                         return;
@@ -119,7 +161,7 @@ export class CycleManager {
                     fullSchemaData.metadata.lastModified = Date.now();
                     fullSchemaData.metadata.totalCyclesCreated++;
 
-                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                    this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
                     // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
                     if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
@@ -164,7 +206,7 @@ export class CycleManager {
                 throw new Error('Schema 2.5 data not found');
             }
 
-            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
             if (!fullSchemaData) {
                 console.error('❌ Failed to load schema data');
                 throw new Error('Failed to load schema data');
@@ -197,7 +239,7 @@ export class CycleManager {
             fullSchemaData.metadata.lastModified = Date.now();
             fullSchemaData.metadata.totalCyclesCreated++;
 
-            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+            this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
             // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
             if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
@@ -239,7 +281,7 @@ export class CycleManager {
     createBasicFallbackCycle() {
         console.log('🆘 Creating basic fallback cycle...');
 
-        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+        const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
         if (!fullSchemaData) {
             console.error('❌ Failed to load schema data for fallback cycle');
             return;
@@ -274,7 +316,7 @@ export class CycleManager {
         fullSchemaData.metadata.lastModified = Date.now();
         fullSchemaData.metadata.totalCyclesCreated++;
 
-        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
         // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
         if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
@@ -371,16 +413,7 @@ export class CycleManager {
                         cycleCount: 0,
                         createdAt: Date.now(),
                         recurringTemplates: {},
-                        taskOptionButtons: window.DEFAULT_TASK_OPTION_BUTTONS ? { ...window.DEFAULT_TASK_OPTION_BUTTONS } : {
-                            customize: true,
-                            moveArrows: false,
-                            highPriority: true,
-                            rename: true,
-                            delete: true,
-                            recurring: false,
-                            dueDate: false,
-                            reminders: false
-                        }
+                        taskOptionButtons: { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS }
                     };
 
                     // ✅ Set as active cycle using the storage key
@@ -418,8 +451,8 @@ export class CycleManager {
                 this.deps.autoSave();
 
                 // ✅ Notify undo system of new cycle
-                if (finalResult && typeof window.onCycleCreated === 'function') {
-                    window.onCycleCreated(finalResult.storageKey).catch(err => {
+                if (finalResult && typeof this.deps.onCycleCreated === 'function') {
+                    this.deps.onCycleCreated(finalResult.storageKey).catch(err => {
                         console.warn('⚠️ Undo system cycle creation notification failed:', err);
                     });
                 }

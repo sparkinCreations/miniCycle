@@ -2725,7 +2725,7 @@ function openTestResultsInModal() {
         flex-shrink: 0;
     `;
     searchBar.innerHTML = `
-        <input type="text" id="search-input" placeholder="Search in results..." style="
+        <input type="text" id="search-input" name="search-input" placeholder="Search in results..." style="
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #555;

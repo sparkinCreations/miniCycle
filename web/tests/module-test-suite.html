@@ -688,7 +688,9 @@
                 window.ModalManager = mod.ModalManager;
                 window.modalManager = mod.modalManager;
                 window.setModalManagerDependencies = mod.setModalManagerDependencies;
-                window.closeAllModals = () => mod.modalManager.closeAllModals();
+                window.initModalManager = mod.initModalManager;
+                window.getModalManager = mod.getModalManager;
+                window.closeAllModals = () => mod.modalManager?.closeAllModals?.();
             } else if (moduleKey === 'menuManager') {
                 const mod = await import(`../modules/ui/menuManager.js?v=${cacheBuster}`);
                 window.MenuManager = mod.MenuManager;
@@ -1002,8 +1004,10 @@
                     window.ModalManager = mod.ModalManager;
                     window.modalManager = mod.modalManager;
                     window.setModalManagerDependencies = mod.setModalManagerDependencies;
-                    // Expose instance methods as globals
-                    window.closeAllModals = () => mod.modalManager.closeAllModals();
+                    window.initModalManager = mod.initModalManager;
+                    window.getModalManager = mod.getModalManager;
+                    // Expose instance methods as globals (Phase 3 - uses optional chaining)
+                    window.closeAllModals = () => mod.modalManager?.closeAllModals?.();
                     currentModule = 'modalManager';
                     resultsDiv.innerHTML = '<p>✅ ModalManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'menuManager') {
