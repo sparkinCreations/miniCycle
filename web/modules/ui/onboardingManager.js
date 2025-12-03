@@ -132,18 +132,21 @@ export class OnboardingManager {
         const currentTheme = currentState.settings?.theme || 'default';
 
         const steps = [
-            `<h2>Welcome to miniCycle! 🎉</h2>
-             <p>miniCycle helps you manage tasks with a powerful task cycling system!</p>`,
-            `<ul>
-               <li>✅ Add tasks using the input box to create your cycle list.</li>
-               <li>🔄 When all tasks are completed, they reset automatically (if Auto-Cycle is enabled)</li>
-               <li>📊 Track your progress and unlock themes</li>
+            `<h2>Welcome to miniCycle!</h2>
+             <p>A routine manager for tasks you do repeatedly - whether that's once a day, once a week, or multiple times a day.</p>
+             <p>Build your routine, complete it, and watch your <strong>cycle count</strong> grow!</p>`,
+            `<h3>How Cycles Work</h3>
+             <ul>
+               <li>📝 Add tasks to build your routine</li>
+               <li>✅ Complete all tasks in your routine</li>
+               <li>🔄 Tasks reset and you complete a <strong>cycle</strong></li>
+               <li>📊 Track how many cycles you've completed</li>
              </ul>`,
-            `<ul>
-               <li>📱 On mobile, long press a task to open the menu</li>
-               <li>📱 Long press and move to rearrange tasks</li>
-               <li>📱 Swipe Left to access Stats Panel</li>
-               <li>📵 Use Settings to show task buttons on older phones</li>
+            `<h3>Tips</h3>
+             <ul>
+               <li>📱 On mobile, long press a task for options or to reorder</li>
+               <li>➕ Tap the <strong>-/+</strong> button to customize task options</li>
+               <li>📱 Swipe left for the Stats Panel</li>
              </ul>`
         ];
 

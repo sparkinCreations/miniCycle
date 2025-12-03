@@ -392,7 +392,7 @@ export function runOnboardingManagerTests(resultsDiv) {
         nextBtn.click();
 
         // Check if step content changed
-        if (!stepContent.innerHTML.includes('Add tasks using the input box')) {
+        if (!stepContent.innerHTML.includes('How Cycles Work')) {
             throw new Error('Did not advance to step 2');
         }
 
