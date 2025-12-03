@@ -17,6 +17,18 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for TaskOptionsCustomizer (call before creating instance)
+ * @param {Object} dependencies - { AppState, showNotification, etc. }
+ */
+export function setTaskOptionsCustomizerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('⚙️ TaskOptionsCustomizer dependencies set:', Object.keys(dependencies));
+}
+
 // ✅ Use window export to avoid cache-busting mismatch
 // globalUtils.js is loaded with version parameter in main script,
 // but ES6 imports don't support dynamic version parameters.
@@ -111,15 +123,34 @@ const BUTTON_CONFIG = [
 
 export class TaskOptionsCustomizer {
     constructor(deps = {}) {
+        // Merge module-level deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...deps };
+
         this.deps = {
-            AppState: deps.AppState || window.AppState,
-            showNotification: deps.showNotification || window.showNotification,
-            getElementById: deps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: deps.querySelector || ((sel) => document.querySelector(sel)),
-            renderTaskList: deps.renderTaskList || null // don't snapshot refreshTaskListUI here
+            AppState: mergedDeps.AppState,
+            showNotification: mergedDeps.showNotification,
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
+            renderTaskList: mergedDeps.renderTaskList || null // don't snapshot refreshTaskListUI here
         };
 
+        // Validate required dependencies
+        this._validateDependencies();
+
         console.log('✅ TaskOptionsCustomizer initialized');
+    }
+
+    /**
+     * Validate dependencies and warn about missing ones
+     * @private
+     */
+    _validateDependencies() {
+        const required = ['AppState', 'showNotification'];
+        const missing = required.filter(dep => !this.deps[dep]);
+
+        if (missing.length > 0) {
+            console.warn('⚠️ TaskOptionsCustomizer missing dependencies:', missing);
+        }
     }
 
     /**

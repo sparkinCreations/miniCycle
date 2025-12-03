@@ -124,10 +124,9 @@ export class TaskRenderer {
                 continue;
             }
 
-            // Use injected addTask with batch mode (fallback to window.addTask for backward compat)
-            const addTaskFn = this.deps.addTask || window.addTask;
-            if (addTaskFn) {
-                await addTaskFn(
+            // Use injected addTask with batch mode
+            if (this.deps.addTask) {
+                await this.deps.addTask(
                     task.text,
                     task.completed,
                     false,                     // shouldSave: false (don't save during render)
@@ -194,16 +193,13 @@ export class TaskRenderer {
 
                 // ✅ Restore UI state after rendering
                 const arrowsVisible = state.ui?.moveArrowsVisible || false;
-                const updateArrows = this.deps.updateArrowsInDOM || window.updateArrowsInDOM;
-                updateArrows?.(arrowsVisible);
+                this.deps.updateArrowsInDOM?.(arrowsVisible);
 
                 // Update other UI bits that don't depend on reloading storage
-                const recurringPanel = this.deps.recurringPanel || window.recurringPanel;
-                recurringPanel?.updateRecurringPanel?.();
-                recurringPanel?.updateRecurringPanelButtonVisibility?.();
+                this.deps.recurringPanel?.updateRecurringPanel?.();
+                this.deps.recurringPanel?.updateRecurringPanelButtonVisibility?.();
 
-                const updateMainMenuHeader = this.deps.updateMainMenuHeader || window.updateMainMenuHeader;
-                updateMainMenuHeader?.();
+                this.deps.updateMainMenuHeader?.();
 
                 this.deps.updateProgressBar?.();
                 this.deps.checkCompleteAllButton?.();
@@ -212,16 +208,14 @@ export class TaskRenderer {
         }
 
         // Fallback: load from localStorage
-        const loadMiniCycle = this.deps.loadMiniCycle || window.loadMiniCycle;
-        loadMiniCycle?.();
+        this.deps.loadMiniCycle?.();
 
         // ✅ Also restore arrow visibility after fallback load
         setTimeout(() => {
             if (this.deps.AppState?.isReady?.()) {
                 const currentState = this.deps.AppState.get();
                 const arrowsVisible = currentState?.ui?.moveArrowsVisible || false;
-                const updateArrows = this.deps.updateArrowsInDOM || window.updateArrowsInDOM;
-                updateArrows?.(arrowsVisible);
+                this.deps.updateArrowsInDOM?.(arrowsVisible);
             }
         }, 50);
     }

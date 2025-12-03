@@ -13,9 +13,9 @@ The miniCycle codebase has **43 modules** across **11 directories**. Communicati
 |--------|--------|---------|--------|
 | Total modules | 43 | 43 | 43 |
 | `window.*` globals created | ~68 | ~55 | <20 |
-| `window.*` references consumed | ~748 | ~650 | <100 |
-| Modules with true DI | 0 | 9 | 15+ |
-| `deps.*` container usage | 0 | ~60 | 100+ |
+| `window.*` references consumed | ~748 | ~620 | <100 |
+| Modules with true DI | 0 | 11 | 15+ |
+| `deps.*` container usage | 0 | ~75 | 100+ |
 
 > **Note:** Modular overhaul in progress (~25-30% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
@@ -250,6 +250,29 @@ Consumes:   window.DataValidator, window.recurringCore,
 Imports:    appInit
 ```
 
+#### `modules/ui/onboardingManager.js`
+```
+Creates:    window.onboardingManager, window.OnboardingManager
+Imports:    appInit
+Dependencies (via setOnboardingManagerDependencies + constructor):
+  - AppState, showNotification
+  - showCycleCreationModal, completeInitialSetup
+  - safeAddEventListenerById
+Note:       Uses layered fallback: constructor > module deps > window.*
+            Supports both DI and legacy window.* patterns for test compatibility
+```
+
+#### `modules/ui/pullToRefresh.js`
+```
+Creates:    window.pullToRefresh, window.PullToRefresh
+Imports:    none (standalone)
+Dependencies (via setPullToRefreshDependencies + constructor):
+  - refreshUIFromState, checkRecurringTasksNow, watchRecurringTasks
+  - promptServiceWorkerUpdate, showNotification
+Note:       Uses layered fallback: constructor > module deps > window.*
+            Mobile PWA pull-to-refresh with SW update checking
+```
+
 #### `modules/utils/globalUtils.js`
 ```
 Creates:    window.GlobalUtils (class reference)
@@ -370,7 +393,8 @@ export function setDependencies(overrides) {
     Object.assign(Deps, overrides);
 }
 // Used by: recurringCore, undoRedoManager, migrationManager, themeManager,
-//          dataValidator, modalManager, cycleManager, taskRenderer
+//          dataValidator, modalManager, cycleManager, taskRenderer,
+//          taskOptionsCustomizer, onboardingManager, pullToRefresh
 ```
 **Reality:** Actually enforced. Must call setter before use.
 
@@ -402,6 +426,25 @@ export async function initModalManager(dependencies = {}) {
 }
 ```
 **Used by:** modalManager (removes auto-init on import, allows DI of waitForCore)
+
+### Pattern 6: Layered fallback (DI with test compatibility)
+```javascript
+// Module-level deps for late injection
+let _deps = {};
+export function setXxxDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+}
+
+constructor(options = {}) {
+    // Priority: constructor injection > module deps > window.* (test fallback)
+    this.deps = {
+        AppState: options.AppState || _deps.AppState || window.AppState,
+        showNotification: options.showNotification || _deps.showNotification || window.showNotification
+    };
+}
+```
+**Used by:** onboardingManager, pullToRefresh
+**Benefit:** Full DI support while preserving backward compatibility with tests that mock `window.*`
 
 ---
 

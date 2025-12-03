@@ -9,18 +9,30 @@
  * - Reset onboarding capability
  * - AppState integration for persistence
  *
- * Dependencies (accessed via window.*):
- * - window.AppState (state manager)
- * - window.showCycleCreationModal (post-onboarding transition)
- * - window.completeInitialSetup (alternative transition)
- * - window.showNotification (reset confirmation)
- * - appInit (initialization system)
+ * Dependencies (injected via setOnboardingManagerDependencies):
+ * - AppState (state manager)
+ * - showCycleCreationModal (post-onboarding transition)
+ * - completeInitialSetup (alternative transition)
+ * - showNotification (reset confirmation)
+ * - safeAddEventListenerById (event helper)
  *
  * @module onboardingManager
  * @version 1.390
  */
 
 import { appInit } from '../core/appInit.js';
+
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for OnboardingManager (call before initOnboardingManager)
+ * @param {Object} dependencies - { AppState, showNotification, showCycleCreationModal, completeInitialSetup, safeAddEventListenerById }
+ */
+export function setOnboardingManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎓 OnboardingManager dependencies set:', Object.keys(dependencies));
+}
 
 export class OnboardingManager {
     constructor(dependencies = {}) {
@@ -30,15 +42,15 @@ export class OnboardingManager {
         // Store injected dependencies
         this._injectedDeps = dependencies;
 
-        // Dependency injection with runtime fallbacks for testability
-        // Using getters so tests can mock window.AppState after construction
+        // Dependency injection with module-level fallbacks and window.* backward compatibility
+        // Priority: constructor injection > module deps > window.* (for test compatibility)
         Object.defineProperty(this, 'deps', {
             get: () => ({
-                showNotification: this._injectedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
-                AppState: this._injectedDeps.AppState || window.AppState,
-                showCycleCreationModal: this._injectedDeps.showCycleCreationModal || window.showCycleCreationModal,
-                completeInitialSetup: this._injectedDeps.completeInitialSetup || window.completeInitialSetup,
-                safeAddEventListenerById: this._injectedDeps.safeAddEventListenerById || window.safeAddEventListenerById
+                showNotification: this._injectedDeps.showNotification || _deps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
+                AppState: this._injectedDeps.AppState || _deps.AppState || window.AppState,
+                showCycleCreationModal: this._injectedDeps.showCycleCreationModal || _deps.showCycleCreationModal || window.showCycleCreationModal,
+                completeInitialSetup: this._injectedDeps.completeInitialSetup || _deps.completeInitialSetup || window.completeInitialSetup,
+                safeAddEventListenerById: this._injectedDeps.safeAddEventListenerById || _deps.safeAddEventListenerById || window.safeAddEventListenerById
             })
         });
     }
@@ -78,17 +90,17 @@ export class OnboardingManager {
      * @returns {boolean} True if onboarding should be shown
      */
     shouldShowOnboarding() {
-        if (!window.AppState?.isReady?.()) {
+        if (!this.deps.AppState?.isReady?.()) {
             console.warn('⚠️ AppState not ready for shouldShowOnboarding');
             return false;
         }
 
-        if (typeof window.AppState.get !== 'function') {
+        if (typeof this.deps.AppState.get !== 'function') {
             console.warn('⚠️ AppState.get not available');
             return false;
         }
 
-        const currentState = window.AppState.get();
+        const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.warn('⚠️ No state data for shouldShowOnboarding');
             return false;
@@ -106,12 +118,12 @@ export class OnboardingManager {
     showOnboarding(cycles, activeCycle) {
         console.log('🎯 Starting onboarding flow...');
 
-        if (!window.AppState?.isReady?.()) {
+        if (!this.deps.AppState?.isReady?.()) {
             console.warn('⚠️ AppState not ready for showOnboarding');
             return;
         }
 
-        const currentState = window.AppState.get();
+        const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.warn('⚠️ No state data for showOnboarding');
             return;
@@ -233,14 +245,14 @@ export class OnboardingManager {
     completeOnboarding(modal, cycles, activeCycle) {
         console.log('✅ Onboarding completed, transitioning...');
 
-        if (!window.AppState?.isReady?.()) {
+        if (!this.deps.AppState?.isReady?.()) {
             console.warn('⚠️ AppState not ready for completeOnboarding');
             modal.remove();
             return;
         }
 
         // Mark onboarding as complete using AppState
-        window.AppState.update(state => {
+        this.deps.AppState.update(state => {
             state.settings.onboardingCompleted = true;
         }, true);
 
@@ -252,17 +264,17 @@ export class OnboardingManager {
         if (!activeCycle || !cycles[activeCycle]) {
             // No active cycle - show cycle creation modal
             setTimeout(() => {
-                if (window.showCycleCreationModal) {
-                    window.showCycleCreationModal();
+                if (this.deps.showCycleCreationModal) {
+                    this.deps.showCycleCreationModal();
                 } else {
                     console.warn('⚠️ showCycleCreationModal not available');
                 }
             }, 300); // Small delay for smooth transition
         } else {
             // Already have a cycle - complete setup
-            if (window.completeInitialSetup) {
-                const updatedState = window.AppState.get();
-                window.completeInitialSetup(activeCycle, null, updatedState);
+            if (this.deps.completeInitialSetup) {
+                const updatedState = this.deps.AppState.get();
+                this.deps.completeInitialSetup(activeCycle, null, updatedState);
             } else {
                 console.warn('⚠️ completeInitialSetup not available');
             }

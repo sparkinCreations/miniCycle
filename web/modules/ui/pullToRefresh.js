@@ -10,17 +10,42 @@
  * @module pullToRefresh
  */
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for PullToRefresh (call before initPullToRefresh)
+ * @param {Object} dependencies - { refreshUIFromState, checkRecurringTasksNow, promptServiceWorkerUpdate, showNotification }
+ */
+export function setPullToRefreshDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔄 PullToRefresh dependencies set:', Object.keys(dependencies));
+}
+
 export class PullToRefresh {
     constructor(options = {}) {
+        // Merge module-level deps with constructor options
+        const mergedDeps = { ..._deps, ...options };
+
         // Configuration
         this.threshold = options.threshold || 80; // pixels to pull before triggering
         this.maxPull = options.maxPull || 120; // max pull distance
         this.resistance = options.resistance || 2.5; // pull resistance factor
         this.activationDistance = options.activationDistance || 15; // min distance before activating (prevents accidental triggers)
 
+        // Store injected dependencies with window.* backward compatibility for tests
+        // Priority: constructor options > module deps > window.* (for test compatibility)
+        this.deps = {
+            refreshUIFromState: mergedDeps.refreshUIFromState || window.refreshUIFromState,
+            checkRecurringTasksNow: mergedDeps.checkRecurringTasksNow || window.checkRecurringTasksNow,
+            watchRecurringTasks: mergedDeps.watchRecurringTasks || window.watchRecurringTasks,
+            promptServiceWorkerUpdate: mergedDeps.promptServiceWorkerUpdate || window.promptServiceWorkerUpdate,
+            showNotification: mergedDeps.showNotification || window.showNotification || console.log
+        };
+
         // Callbacks (injected dependencies)
         this.onRefresh = options.onRefresh || this.defaultRefresh.bind(this);
-        this.showNotification = options.showNotification || console.log;
+        this.showNotification = this.deps.showNotification;
 
         // State
         this.startY = 0;
@@ -270,8 +295,8 @@ export class PullToRefresh {
                         results.swUpdate = true;
 
                         // Prompt user about update
-                        if (typeof window.promptServiceWorkerUpdate === 'function') {
-                            window.promptServiceWorkerUpdate();
+                        if (this.deps.promptServiceWorkerUpdate) {
+                            this.deps.promptServiceWorkerUpdate();
                         } else {
                             this.showNotification('App update available! Reload to update.', 'info', 5000);
                         }
@@ -283,9 +308,9 @@ export class PullToRefresh {
         }
 
         // 2. Refresh UI from state
-        if (typeof window.refreshUIFromState === 'function') {
+        if (this.deps.refreshUIFromState) {
             try {
-                window.refreshUIFromState();
+                this.deps.refreshUIFromState();
                 results.uiRefreshed = true;
             } catch (err) {
                 console.warn('UI refresh failed:', err);
@@ -293,16 +318,16 @@ export class PullToRefresh {
         }
 
         // 3. Check recurring tasks
-        if (typeof window.checkRecurringTasksNow === 'function') {
+        if (this.deps.checkRecurringTasksNow) {
             try {
-                await window.checkRecurringTasksNow();
+                await this.deps.checkRecurringTasksNow();
                 results.recurringChecked = true;
             } catch (err) {
                 console.warn('Recurring check failed:', err);
             }
-        } else if (typeof window.watchRecurringTasks === 'function') {
+        } else if (this.deps.watchRecurringTasks) {
             try {
-                await window.watchRecurringTasks();
+                await this.deps.watchRecurringTasks();
                 results.recurringChecked = true;
             } catch (err) {
                 console.warn('Recurring check failed:', err);
@@ -357,11 +382,10 @@ export function initPullToRefresh(options = {}) {
         return pullToRefreshInstance;
     }
 
-    pullToRefreshInstance = new PullToRefresh({
-        showNotification: options.showNotification || window.showNotification,
-        onRefresh: options.onRefresh,
-        ...options
-    });
+    // Merge module-level deps with options
+    const mergedOptions = { ..._deps, ...options };
+
+    pullToRefreshInstance = new PullToRefresh(mergedOptions);
 
     // Expose globally for debugging
     window.pullToRefresh = pullToRefreshInstance;
@@ -376,12 +400,12 @@ export function getPullToRefresh() {
     return pullToRefreshInstance;
 }
 
-// Auto-init when DOM is ready (if showNotification is available)
+// Auto-init when DOM is ready (if dependencies are available)
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
         // Wait a bit for other modules to load
         setTimeout(() => {
-            if (window.showNotification && !pullToRefreshInstance) {
+            if (_deps.showNotification && !pullToRefreshInstance) {
                 initPullToRefresh();
             }
         }, 1000);
