@@ -36,18 +36,17 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: The Honest Assessment
 
-### Current State (November 2025 → Updated December 4, 2025)
+### Current State (December 4, 2025 - Verified)
 
-| Metric | Before | Current | Target |
-|--------|--------|---------|--------|
-| Main script | ~3,700 lines | ~3,800 lines | ~3,500 lines |
-| Modules | 43 files | 43 files | 43 files |
-| `window.*` globals created | ~68 | ~55 | <20 |
-| `window.*` references consumed | ~748 | ~650 | <100 |
-| Test coverage | 1011 tests | 1111 tests | 1123+ |
-| `deps.*` container usage | 0 | ~85 | 100+ |
-| Modules with `set*Dependencies()` | 0 | 10+ | All stateful |
-| Modules with Phase 3 pattern | 0 | 18+ | All |
+| Metric | Before | Current | Target | Progress |
+|--------|--------|---------|--------|----------|
+| Main script | ~3,700 lines | ~3,800 lines | ~3,500 lines | — |
+| Modules | 43 files | 44 files | — | — |
+| `window.*` globals created (modules/) | ~68 | **27** | <20 | **85%** |
+| `window.*` references (modules/) | ~748 | **562** | <100 | **29%** |
+| Modules with `set*Dependencies()` | 0 | **27** | All stateful | **Exceeded** |
+| `this.deps.*` usage | 0 | **934** | 100+ | **Exceeded** |
+| Modules still exporting to `window.*` | ~40 | **13** | 0 | **70%** |
 
 ### The Reality (Being Improved)
 
@@ -72,13 +71,13 @@ constructor(dependencies = {}) {
 }
 ```
 
-**Progress:** 10+ modules now use `set*Dependencies()` pattern with `deps` container. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+**Progress:** 27 modules now use `set*Dependencies()` pattern with `deps` container. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
 ### Module Communication
 
-- **~85%** via `window.*` globals (down from ~96%)
-- **~15%** via `deps` container + ES6 imports (up from ~4%)
-- **18+** modules can accept injected deps with deferred lookup pattern
+- **~60%** via `window.*` globals (down from ~96%)
+- **~40%** via `deps` container + ES6 imports (up from ~4%)
+- **27** modules can accept injected deps with `set*Dependencies()` pattern
 
 ### What Works Well
 
@@ -187,21 +186,23 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ## Future Direction
 
-### In Progress: True Modular Overhaul (~85% complete)
+### In Progress: True Modular Overhaul (~50-60% complete)
 
 See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full tracking.
 
 **Done:**
 - `deps` container created in miniCycle-scripts.js
-- 18+ modules with Phase 3 pattern (no window.* exports)
-- 10+ modules with `set*Dependencies()` pattern: taskValidation, dataValidator, themeManager, modalManager, taskDOM, undoRedoManager, gamesManager, dragDropManager, taskEvents, appState
+- 31 modules no longer export to `window.*` (70% of modules)
+- 27 modules with `set*Dependencies()` pattern
+- 934 `this.deps.*` usages across codebase
+- Only 27 `window.*` globals created in modules (85% toward goal)
 - Deferred lookup pattern (`_getAppState()` helper) for circular deps
 - Tests updated for DI patterns (ModalManager, PullToRefresh, GlobalUtils)
 
-**Remaining:**
+**Remaining (main bottleneck):**
+- Reduce 562 `window.*` references in modules to <100 (29% complete)
 - Remove remaining `|| window.*` constructor fallbacks
 - Audit window.* exposure for minimization
-- Fix remaining pre-existing test failures (~12 tests)
 
 ### Not Planned
 

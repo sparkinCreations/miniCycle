@@ -9,15 +9,18 @@
 The miniCycle codebase has **43 modules** across **11 directories**. Communication is transitioning from `window.*` globals to a `deps` container pattern.
 
 ### Key Numbers
-| Metric | Before | Current | Target |
-|--------|--------|---------|--------|
-| Total modules | 43 | 43 | 43 |
-| `window.*` globals created | ~68 | ~55 | <20 |
-| `window.*` references consumed | ~748 | ~620 | <100 |
-| Modules with true DI | 0 | 11 | 15+ |
-| `deps.*` container usage | 0 | ~75 | 100+ |
+| Metric | Before | Current | Target | Progress |
+|--------|--------|---------|--------|----------|
+| Total modules | 43 | 44 | — | — |
+| `window.*` globals created (in modules/) | ~68 | **27** | <20 | **85%** |
+| `window.*` references consumed (in modules/) | ~748 | **562** | <100 | **29%** |
+| Modules with DI setters (`set*Dependencies`) | 0 | **27** | 15+ | **Exceeded** |
+| `this.deps.*` usage | 0 | **934** | 100+ | **Exceeded** |
+| Modules still exporting to `window.*` | ~40 | **13** | 0 | **70%** |
 
-> **Note:** Modular overhaul in progress (~25-30% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+> **Note:** Modular overhaul in progress (~50-60% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+>
+> **Last verified:** December 4, 2025
 
 ---
 
