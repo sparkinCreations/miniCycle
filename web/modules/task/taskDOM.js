@@ -98,6 +98,24 @@ export class TaskDOMManager {
             autoSave: mergedDeps.autoSave || window.autoSave || this.fallbackAutoSave,
             captureStateSnapshot: mergedDeps.captureStateSnapshot || window.captureStateSnapshot || this.fallbackCapture,
 
+            // Task completion handlers (for createTaskCheckbox)
+            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || window.enableUndoSystemOnFirstInteraction || null,
+            handleTaskCompletionChange: mergedDeps.handleTaskCompletionChange || window.handleTaskCompletionChange || null,
+            checkMiniCycle: mergedDeps.checkMiniCycle || window.checkMiniCycle || null,
+            triggerLogoBackground: mergedDeps.triggerLogoBackground || window.triggerLogoBackground || null,
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || window.updateUndoRedoButtons || null,
+
+            // Due dates module
+            createDueDateInput: mergedDeps.createDueDateInput || window.createDueDateInput || null,
+
+            // Task options customizer
+            taskOptionsCustomizer: mergedDeps.taskOptionsCustomizer || window.taskOptionsCustomizer || null,
+
+            // Recurring handlers
+            handleRecurringTaskActivation: mergedDeps.handleRecurringTaskActivation || window.handleRecurringTaskActivation || null,
+            handleRecurringTaskDeactivation: mergedDeps.handleRecurringTaskDeactivation || window.handleRecurringTaskDeactivation || null,
+            updateRecurringPanelButtonVisibility: mergedDeps.updateRecurringPanelButtonVisibility || window.updateRecurringPanelButtonVisibility || null,
+
             // Global utils with window.* fallback for test compatibility
             GlobalUtils: mergedDeps.GlobalUtils || window.GlobalUtils || null,
             sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || null,
@@ -686,16 +704,17 @@ export class TaskDOMManager {
         button.setAttribute("tabindex", "0");
         button.setAttribute("aria-label", "Customize which task option buttons are visible");
 
-        // Click handler
+        // Click handler - use deferred lookup since taskOptionsCustomizer initializes after TaskDOMManager
         button.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (window.taskOptionsCustomizer) {
+            const customizer = this.deps.taskOptionsCustomizer || window.taskOptionsCustomizer;
+            if (customizer) {
                 // ✅ Always use the active cycle ID from AppState
-                const state = window.AppState?.get?.();
+                const state = this.deps.AppState?.get?.() || window.AppState?.get?.();
                 const activeCycleId = state?.appState?.activeCycleId;
 
                 if (activeCycleId) {
-                    window.taskOptionsCustomizer.showCustomizationModal(activeCycleId);
+                    customizer.showCustomizationModal(activeCycleId);
                 } else {
                     console.warn('⚠️ No active cycle ID found');
                 }
@@ -1089,8 +1108,8 @@ export class TaskDOMManager {
 
         // Create due date input (from dueDates module)
         let dueDateInput;
-        if (typeof window.createDueDateInput === 'function') {
-            dueDateInput = window.createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
+        if (typeof this.deps.createDueDateInput === 'function') {
+            dueDateInput = this.deps.createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
         } else {
             // Fallback: create basic input
             dueDateInput = document.createElement("input");
@@ -1121,27 +1140,27 @@ export class TaskDOMManager {
 
         addListener(checkbox, "change", () => {
             // ✅ Enable undo system on first user interaction
-            if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
-                window.enableUndoSystemOnFirstInteraction();
+            if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
+                this.deps.enableUndoSystemOnFirstInteraction();
             }
 
-            if (typeof window.handleTaskCompletionChange === 'function') {
-                window.handleTaskCompletionChange(checkbox);
+            if (typeof this.deps.handleTaskCompletionChange === 'function') {
+                this.deps.handleTaskCompletionChange(checkbox);
             }
 
-            if (typeof window.checkMiniCycle === 'function') {
-                window.checkMiniCycle();
+            if (typeof this.deps.checkMiniCycle === 'function') {
+                this.deps.checkMiniCycle();
             }
 
             this.deps.autoSave?.(null, true);  // ✅ Force immediate save on task completion
 
-            if (typeof window.triggerLogoBackground === 'function') {
-                window.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+            if (typeof this.deps.triggerLogoBackground === 'function') {
+                this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
             }
 
             // ✅ Update undo/redo button states
-            if (typeof window.updateUndoRedoButtons === 'function') {
-                window.updateUndoRedoButtons();
+            if (typeof this.deps.updateUndoRedoButtons === 'function') {
+                this.deps.updateUndoRedoButtons();
             }
 
             console.log("✅ Task completion toggled — undo snapshot pushed.");
@@ -1261,8 +1280,8 @@ export class TaskDOMManager {
             };
 
             if (isNowRecurring) {
-                if (window.handleRecurringTaskActivation) {
-                    window.handleRecurringTaskActivation(task, freshTaskContext, button);
+                if (this.deps.handleRecurringTaskActivation) {
+                    this.deps.handleRecurringTaskActivation(task, freshTaskContext, button);
                 }
                 // ✅ Immediately sync delete-on-complete button to show active (recurring = delete on complete)
                 const deleteBtn = taskItem?.querySelector('.delete-when-complete-btn');
@@ -1276,8 +1295,8 @@ export class TaskDOMManager {
                     taskItem.classList.remove('kept-task', 'show-delete-indicator');
                 }
             } else {
-                if (window.handleRecurringTaskDeactivation) {
-                    window.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
+                if (this.deps.handleRecurringTaskDeactivation) {
+                    this.deps.handleRecurringTaskDeactivation(task, freshTaskContext, assignedTaskId);
                 }
                 // ✅ Immediately sync delete-on-complete button to mode defaults
                 const isToDoMode = freshCycle?.deleteCheckedTasks === true;
@@ -1303,12 +1322,12 @@ export class TaskDOMManager {
             }
 
             // ✅ Update panel visibility
-            if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-                window.recurringPanel.updateRecurringPanelButtonVisibility();
+            if (this.deps.recurringPanel?.updateRecurringPanelButtonVisibility) {
+                this.deps.recurringPanel.updateRecurringPanelButtonVisibility();
             }
 
-            if (window.recurringPanel?.updateRecurringPanel) {
-                window.recurringPanel.updateRecurringPanel();
+            if (this.deps.recurringPanel?.updateRecurringPanel) {
+                this.deps.recurringPanel.updateRecurringPanel();
             }
         });
     }
@@ -1373,8 +1392,14 @@ export class TaskDOMManager {
         this.deps.updateStatsPanel?.();
 
         // ✅ Update recurring panel button visibility when tasks are added
-        if (typeof window.updateRecurringPanelButtonVisibility === 'function') {
-            window.updateRecurringPanelButtonVisibility();
+        if (typeof this.deps.updateRecurringPanelButtonVisibility === 'function') {
+            this.deps.updateRecurringPanelButtonVisibility();
+        }
+
+        // ✅ Update move arrows (first/last task may have changed)
+        const updateArrows = window.updateMoveArrowsVisibility;
+        if (typeof updateArrows === 'function') {
+            updateArrows();
         }
 
         if (shouldSave) this.deps.autoSave?.();

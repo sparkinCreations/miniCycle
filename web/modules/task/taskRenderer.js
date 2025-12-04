@@ -124,7 +124,7 @@ export class TaskRenderer {
                 continue;
             }
 
-            // Use injected addTask with batch mode
+            // Use injected addTask
             if (this.deps.addTask) {
                 await this.deps.addTask(
                     task.text,
@@ -137,8 +137,8 @@ export class TaskRenderer {
                     task.recurring,
                     task.id,
                     task.recurringSettings,
-                    true,                      // ✅ FIX #6: deferAppend: batch mode
-                    fragment                   // ✅ FIX #6: targetContainer: append to fragment
+                    task.deleteWhenComplete,   // ✅ FIX: Pass actual deleteWhenComplete value
+                    task.deleteWhenCompleteSettings  // ✅ FIX: Pass actual deleteWhenCompleteSettings
                 );
             } else {
                 console.warn('⚠️ addTask function not available for task:', task.id);

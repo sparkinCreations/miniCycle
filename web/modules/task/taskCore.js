@@ -79,7 +79,26 @@ export class TaskCore {
             finalizeTaskCreation: mergedDeps.finalizeTaskCreation || window.finalizeTaskCreation || null,
 
             // Auto-save
-            autoSave: mergedDeps.autoSave || window.autoSave || (() => console.log('⏭️ autoSave not available'))
+            autoSave: mergedDeps.autoSave || window.autoSave || (() => console.log('⏭️ autoSave not available')),
+
+            // Cycle completion (used in resetTasks)
+            incrementCycleCount: mergedDeps.incrementCycleCount || window.incrementCycleCount || null,
+            helpWindowManager: mergedDeps.helpWindowManager || window.helpWindowManager || null,
+            showCompletionAnimation: mergedDeps.showCompletionAnimation || window.showCompletionAnimation || null,
+            updateCompletedTasksCount: mergedDeps.updateCompletedTasksCount || window.updateCompletedTasksCount || null,
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || window.updateUndoRedoButtons || null,
+
+            // Task operations
+            checkOverdueTasks: mergedDeps.checkOverdueTasks || window.checkOverdueTasks || null,
+            handleTaskListMovement: mergedDeps.handleTaskListMovement || window.handleTaskListMovement || null,
+            removeRecurringTasksFromCycle: mergedDeps.removeRecurringTasksFromCycle || window.removeRecurringTasksFromCycle || null,
+            checkMiniCycle: mergedDeps.checkMiniCycle || window.checkMiniCycle || null,
+
+            // Recurring system
+            recurringCore: mergedDeps.recurringCore || window.recurringCore || null,
+
+            // Move arrows
+            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility || null
         };
 
         console.log('🎯 TaskCore module initialized');
@@ -132,9 +151,14 @@ export class TaskCore {
         const checkInterval = 50; // Check every 50ms
 
         while (Date.now() - startTime < maxWaitMs) {
-            const hasIncrementCycleCount = typeof window.incrementCycleCount === 'function';
-            const hasHelpWindowManager = window.helpWindowManager && typeof window.helpWindowManager.showCycleCompleteMessage === 'function';
-            const hasShowCompletionAnimation = typeof window.showCompletionAnimation === 'function';
+            // Use deferred lookup for dependencies that initialize after TaskCore
+            const incrementCycleCount = this.deps.incrementCycleCount || window.incrementCycleCount;
+            const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
+            const showCompletionAnimation = this.deps.showCompletionAnimation || window.showCompletionAnimation;
+
+            const hasIncrementCycleCount = typeof incrementCycleCount === 'function';
+            const hasHelpWindowManager = helpWindowManager && typeof helpWindowManager.showCycleCompleteMessage === 'function';
+            const hasShowCompletionAnimation = typeof showCompletionAnimation === 'function';
 
             if (hasIncrementCycleCount && hasHelpWindowManager && hasShowCompletionAnimation) {
                 console.log('✅ All UI functions available for resetTasks');
@@ -145,10 +169,15 @@ export class TaskCore {
             await new Promise(resolve => setTimeout(resolve, checkInterval));
         }
 
+        // Final deferred lookup for logging
+        const incrementCycleCount = this.deps.incrementCycleCount || window.incrementCycleCount;
+        const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
+        const showCompletionAnimation = this.deps.showCompletionAnimation || window.showCompletionAnimation;
+
         console.warn('⚠️ Timeout waiting for UI functions:', {
-            incrementCycleCount: typeof window.incrementCycleCount === 'function',
-            helpWindowManager: window.helpWindowManager && typeof window.helpWindowManager.showCycleCompleteMessage === 'function',
-            showCompletionAnimation: typeof window.showCompletionAnimation === 'function'
+            incrementCycleCount: typeof incrementCycleCount === 'function',
+            helpWindowManager: helpWindowManager && typeof helpWindowManager.showCycleCompleteMessage === 'function',
+            showCompletionAnimation: typeof showCompletionAnimation === 'function'
         });
         return false;
     }
@@ -409,6 +438,12 @@ export class TaskCore {
                         this.deps.updateProgressBar();
                         this.deps.checkCompleteAllButton();
 
+                        // Update move arrows (first/last task may have changed)
+                        const updateArrows = this.deps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility;
+                        if (typeof updateArrows === 'function') {
+                            updateArrows();
+                        }
+
                     } else {
                         // Fallback to localStorage
                         const schemaData = this.deps.loadMiniCycleData();
@@ -431,6 +466,12 @@ export class TaskCore {
                                     this.deps.updateStatsPanel();
                                     this.deps.updateProgressBar();
                                     this.deps.checkCompleteAllButton();
+
+                                    // Update move arrows (first/last task may have changed)
+                                    const updateArrows = this.deps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility;
+                                    if (typeof updateArrows === 'function') {
+                                        updateArrows();
+                                    }
                                 }
                             }
                         }
@@ -556,10 +597,10 @@ export class TaskCore {
             const isCompleted = checkbox.checked;
 
             // ✅ Capture state snapshot BEFORE making changes (for undo)
-            if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+            if (typeof this.deps.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
-                    window.captureStateSnapshot(currentState);
+                    this.deps.captureStateSnapshot(currentState);
                     console.log('📸 Captured snapshot before task completion change');
                 }
             }
@@ -612,21 +653,22 @@ export class TaskCore {
                     taskItem.classList.remove("overdue-task");
                 } else {
                     // Check if task is overdue
-                    if (typeof window.checkOverdueTasks === 'function') {
-                        window.checkOverdueTasks(taskItem);
+                    if (typeof this.deps.checkOverdueTasks === 'function') {
+                        this.deps.checkOverdueTasks(taskItem);
                     }
                 }
 
                 // Move task between active and completed lists
-                if (typeof window.handleTaskListMovement === 'function') {
-                    window.handleTaskListMovement(taskItem, isCompleted);
+                if (typeof this.deps.handleTaskListMovement === 'function') {
+                    this.deps.handleTaskListMovement(taskItem, isCompleted);
                 }
             }
 
-            // Update help window if available
-            if (window.helpWindowManager && typeof window.helpWindowManager.updateConstantMessage === 'function') {
+            // Update help window if available - use deferred lookup
+            const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
+            if (helpWindowManager && typeof helpWindowManager.updateConstantMessage === 'function') {
                 setTimeout(() => {
-                    window.helpWindowManager.updateConstantMessage();
+                    helpWindowManager.updateConstantMessage();
                 }, 100);
             }
         } catch (error) {
@@ -699,9 +741,9 @@ export class TaskCore {
      */
     saveTaskToSchema25(activeCycle, currentCycle) {
         // Use AppState if available, otherwise fallback to localStorage
-        if (window.AppState && window.AppState.isReady()) {
+        if (this.deps.AppState && this.deps.AppState.isReady()) {
             try {
-                window.AppState.update(state => {
+                this.deps.AppState.update(state => {
                     if (state && state.data && state.data.cycles) {
                         state.data.cycles[activeCycle] = currentCycle;
                         state.metadata.lastModified = Date.now();
@@ -793,10 +835,10 @@ export class TaskCore {
             console.log('📊 Resetting tasks for cycle:', activeCycle);
 
             // ✅ CAPTURE UNDO SNAPSHOT BEFORE ANY MODIFICATIONS
-            if (typeof window.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+            if (typeof this.deps.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
-                    window.captureStateSnapshot(currentState);
+                    this.deps.captureStateSnapshot(currentState);
                     console.log('📸 Undo snapshot captured BEFORE task reset (includes current cycle count and task states)');
                 }
             }
@@ -812,8 +854,8 @@ export class TaskCore {
                 console.log('🧹 Removing recurring tasks and resetting non-recurring tasks');
 
                 // Remove recurring tasks
-                if (typeof window.removeRecurringTasksFromCycle === 'function') {
-                    window.removeRecurringTasksFromCycle(taskElements, cycleData);
+                if (typeof this.deps.removeRecurringTasksFromCycle === 'function') {
+                    this.deps.removeRecurringTasksFromCycle(taskElements, cycleData);
                 }
 
                 // ✅ Update task data AND DOM for non-recurring tasks
@@ -893,13 +935,17 @@ export class TaskCore {
                     }
 
                     // Update completed tasks count
-                    if (typeof window.updateCompletedTasksCount === 'function') {
-                        window.updateCompletedTasksCount();
+                    if (typeof this.deps.updateCompletedTasksCount === 'function') {
+                        this.deps.updateCompletedTasksCount();
                     }
                 }
 
                 // Increment cycle count (this calls showCompletionAnimation internally)
-                window.incrementCycleCount(activeCycle, cycles);
+                // Use deferred lookup since these initialize after TaskCore
+                const incrementCycleCount = this.deps.incrementCycleCount || window.incrementCycleCount;
+                if (typeof incrementCycleCount === 'function') {
+                    incrementCycleCount(activeCycle, cycles);
+                }
 
                 // Animate progress bar reset
                 if (progressBar) {
@@ -911,12 +957,15 @@ export class TaskCore {
                     }, 50);
                 }
 
-                // Show cycle completion message
-                window.helpWindowManager.showCycleCompleteMessage();
+                // Show cycle completion message - use deferred lookup
+                const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
+                if (helpWindowManager?.showCycleCompleteMessage) {
+                    helpWindowManager.showCycleCompleteMessage();
+                }
 
                 // ✅ Update undo/redo buttons to reflect the new snapshot
-                if (typeof window.updateUndoRedoButtons === 'function') {
-                    window.updateUndoRedoButtons();
+                if (typeof this.deps.updateUndoRedoButtons === 'function') {
+                    this.deps.updateUndoRedoButtons();
                     console.log('✅ Undo/redo buttons updated after cycle completion');
                 }
 
@@ -933,8 +982,8 @@ export class TaskCore {
             // Post-reset cleanup
             setTimeout(() => {
                 console.log('🔄 Running post-reset cleanup tasks');
-                if (window.recurringCore?.watchRecurringTasks) {
-                    window.recurringCore.watchRecurringTasks();
+                if (this.deps.recurringCore?.watchRecurringTasks) {
+                    this.deps.recurringCore.watchRecurringTasks();
                 }
                 this.deps.autoSave();
                 this.deps.updateStatsPanel();
@@ -1035,8 +1084,8 @@ export class TaskCore {
 
                             } else {
                                 taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-                                if (typeof window.checkMiniCycle === 'function') {
-                                    window.checkMiniCycle();
+                                if (typeof this.deps.checkMiniCycle === 'function') {
+                                    this.deps.checkMiniCycle();
                                 }
 
                                 if (!cycleData.autoReset) {
@@ -1112,8 +1161,8 @@ export class TaskCore {
                 console.log('✔️ Marking all tasks as complete');
 
                 taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-                if (typeof window.checkMiniCycle === 'function') {
-                    window.checkMiniCycle();
+                if (typeof this.deps.checkMiniCycle === 'function') {
+                    this.deps.checkMiniCycle();
                 }
 
                 // Only call resetTasks() if autoReset is OFF

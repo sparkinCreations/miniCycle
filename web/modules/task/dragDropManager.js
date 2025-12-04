@@ -115,6 +115,9 @@ export class DragDropManager {
                     this.deps.checkCompleteAllButton();
                     this.deps.updateUndoRedoButtons();
 
+                    // Update move arrows (first/last task may have changed)
+                    this.updateMoveArrowsVisibility();
+
                     console.log("🔁 Drag reorder completed and saved with undo snapshot.");
                 }
 
