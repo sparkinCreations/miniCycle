@@ -18,52 +18,68 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for TaskCore (call before initTaskCore)
+ * @param {Object} dependencies - Late-injected dependencies
+ */
+export function setTaskCoreDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎯 TaskCore dependencies set:', Object.keys(dependencies));
+}
+
 export class TaskCore {
     constructor(dependencies = {}) {
+        // Merge module-level deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         this.version = '1.391';
 
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();
 
-        // Store dependencies with intelligent fallbacks
+        // Store dependencies with module-level fallbacks and window.* for test compatibility
+        // Priority: constructor > module deps > window.* (for test compatibility)
         this.deps = {
             // State management
-            AppState: dependencies.AppState || null,
+            AppState: mergedDeps.AppState || window.AppState || null,
 
             // Data operations
-            loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
-            sanitizeInput: dependencies.sanitizeInput || ((text) => text),
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || window.loadMiniCycleData || this.fallbackLoadData,
+            sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || ((text) => text),
 
             // UI updates
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            updateStatsPanel: dependencies.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: dependencies.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
-            refreshUIFromState: dependencies.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
+            showNotification: mergedDeps.showNotification || window.showNotification || this.fallbackNotification,
+            updateStatsPanel: mergedDeps.updateStatsPanel || window.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
+            updateProgressBar: mergedDeps.updateProgressBar || window.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || window.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
+            refreshUIFromState: mergedDeps.refreshUIFromState || window.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
 
             // Undo system
-            captureStateSnapshot: dependencies.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
-            enableUndoSystemOnFirstInteraction: dependencies.enableUndoSystemOnFirstInteraction || (() => {}),
+            captureStateSnapshot: mergedDeps.captureStateSnapshot || window.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
+            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || window.enableUndoSystemOnFirstInteraction || (() => {}),
 
             // Modal system
-            showPromptModal: dependencies.showPromptModal || this.fallbackPromptModal,
-            showConfirmationModal: dependencies.showConfirmationModal || this.fallbackConfirmModal,
+            showPromptModal: mergedDeps.showPromptModal || window.showPromptModal || this.fallbackPromptModal,
+            showConfirmationModal: mergedDeps.showConfirmationModal || window.showConfirmationModal || this.fallbackConfirmModal,
 
             // DOM helpers
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((selector) => document.querySelector(selector)),
-            querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((selector) => document.querySelector(selector)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
 
             // Task DOM creation (will be injected from taskDOM.js later)
-            validateAndSanitizeTaskInput: dependencies.validateAndSanitizeTaskInput || null,
-            loadTaskContext: dependencies.loadTaskContext || null,
-            createOrUpdateTaskData: dependencies.createOrUpdateTaskData || null,
-            createTaskDOMElements: dependencies.createTaskDOMElements || null,
-            setupTaskInteractions: dependencies.setupTaskInteractions || null,
-            finalizeTaskCreation: dependencies.finalizeTaskCreation || null,
+            validateAndSanitizeTaskInput: mergedDeps.validateAndSanitizeTaskInput || window.validateAndSanitizeTaskInput || null,
+            loadTaskContext: mergedDeps.loadTaskContext || window.loadTaskContext || null,
+            createOrUpdateTaskData: mergedDeps.createOrUpdateTaskData || window.createOrUpdateTaskData || null,
+            createTaskDOMElements: mergedDeps.createTaskDOMElements || window.createTaskDOMElements || null,
+            setupTaskInteractions: mergedDeps.setupTaskInteractions || window.setupTaskInteractions || null,
+            finalizeTaskCreation: mergedDeps.finalizeTaskCreation || window.finalizeTaskCreation || null,
 
             // Auto-save
-            autoSave: dependencies.autoSave || (() => console.log('⏭️ autoSave not available'))
+            autoSave: mergedDeps.autoSave || window.autoSave || (() => console.log('⏭️ autoSave not available'))
         };
 
         console.log('🎯 TaskCore module initialized');

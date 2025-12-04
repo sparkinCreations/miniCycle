@@ -35,14 +35,29 @@ import {
     DEFAULT_RECURRING_DELETE_SETTINGS
 } from '../core/constants.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for TaskDOMManager (call before initTaskDOMManager)
+ * @param {Object} dependencies - Late-injected dependencies
+ */
+export function setTaskDOMManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎨 TaskDOMManager dependencies set:', Object.keys(dependencies));
+}
+
 // ✅ Module classes will be loaded dynamically with versioning
 // ✅ Also stored globally to handle multiple module instances (see note above)
 let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;
 
 export class TaskDOMManager {
     constructor(dependencies = {}) {
-        // Store dependencies first
-        this.dependencies = dependencies;
+        // Merge module-level deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Store merged dependencies
+        this.dependencies = mergedDeps;
 
         // Modules will be initialized in init() after dynamic import
         this.validator = null;
@@ -50,52 +65,53 @@ export class TaskDOMManager {
         this.events = null;
         this.modulesLoaded = false;
 
-        // Store dependencies - no window.* fallbacks (Phase 2)
+        // Store dependencies with module-level fallbacks and window.* for test compatibility
+        // Priority: constructor > module deps > window.* (for test compatibility)
         this.deps = {
             // Core data access (critical - will verify in methods)
-            AppState: dependencies.AppState || null,  // Required - must be injected
-            loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
-            saveTaskToSchema25: dependencies.saveTaskToSchema25 || this.fallbackSave,
+            AppState: mergedDeps.AppState || window.AppState || null,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || window.loadMiniCycleData || this.fallbackLoadData,
+            saveTaskToSchema25: mergedDeps.saveTaskToSchema25 || window.saveTaskToSchema25 || this.fallbackSave,
 
             // Task operations (from taskCore)
-            taskCore: dependencies.taskCore || {},
+            taskCore: mergedDeps.taskCore || window.taskCore || {},
 
             // Optional UI updates (safe with ?.() chaining)
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            updateProgressBar: dependencies.updateProgressBar || this.fallbackUpdate,
-            updateStatsPanel: dependencies.updateStatsPanel || this.fallbackUpdate,
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || this.fallbackUpdate,
-            updateMainMenuHeader: dependencies.updateMainMenuHeader || this.fallbackUpdate,
+            showNotification: mergedDeps.showNotification || window.showNotification || this.fallbackNotification,
+            updateProgressBar: mergedDeps.updateProgressBar || window.updateProgressBar || this.fallbackUpdate,
+            updateStatsPanel: mergedDeps.updateStatsPanel || window.updateStatsPanel || this.fallbackUpdate,
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || window.checkCompleteAllButton || this.fallbackUpdate,
+            updateMainMenuHeader: mergedDeps.updateMainMenuHeader || window.updateMainMenuHeader || this.fallbackUpdate,
 
             // Mode management (optional)
-            getCurrentMode: dependencies.getCurrentMode || this.fallbackGetMode,
+            getCurrentMode: mergedDeps.getCurrentMode || window.getCurrentMode || this.fallbackGetMode,
 
             // Feature modules (all optional)
-            dueDates: dependencies.dueDates || {},
-            reminders: dependencies.reminders || {},
-            recurringPanel: dependencies.recurringPanel || {},
+            dueDates: mergedDeps.dueDates || window.dueDates || {},
+            reminders: mergedDeps.reminders || window.reminders || {},
+            recurringPanel: mergedDeps.recurringPanel || window.recurringPanel || {},
 
             // Helper functions (optional)
-            incrementCycleCount: dependencies.incrementCycleCount || this.fallbackIncrement,
-            showCompletionAnimation: dependencies.showCompletionAnimation || this.fallbackAnimation,
-            helpWindowManager: dependencies.helpWindowManager,
-            autoSave: dependencies.autoSave || this.fallbackAutoSave,
-            captureStateSnapshot: dependencies.captureStateSnapshot || this.fallbackCapture,
+            incrementCycleCount: mergedDeps.incrementCycleCount || window.incrementCycleCount || this.fallbackIncrement,
+            showCompletionAnimation: mergedDeps.showCompletionAnimation || window.showCompletionAnimation || this.fallbackAnimation,
+            helpWindowManager: mergedDeps.helpWindowManager || window.helpWindowManager,
+            autoSave: mergedDeps.autoSave || window.autoSave || this.fallbackAutoSave,
+            captureStateSnapshot: mergedDeps.captureStateSnapshot || window.captureStateSnapshot || this.fallbackCapture,
 
-            // Global utils - no window.* fallbacks
-            GlobalUtils: dependencies.GlobalUtils || null,
-            sanitizeInput: dependencies.sanitizeInput || null,  // Required - must be injected
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
-            safeGetElement: dependencies.safeGetElement || this.fallbackGetElement,
-            generateId: dependencies.generateId || this.fallbackGenerateId,
+            // Global utils with window.* fallback for test compatibility
+            GlobalUtils: mergedDeps.GlobalUtils || window.GlobalUtils || null,
+            sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || null,
+            safeAddEventListener: mergedDeps.safeAddEventListener || window.safeAddEventListener || this.fallbackAddListener,
+            safeGetElement: mergedDeps.safeGetElement || window.safeGetElement || this.fallbackGetElement,
+            generateId: mergedDeps.generateId || window.generateId || this.fallbackGenerateId,
 
             // DOM helpers (fallback to native)
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
 
             // Constants (optional)
-            DEFAULT_TASK_OPTION_BUTTONS: dependencies.DEFAULT_TASK_OPTION_BUTTONS || {}
+            DEFAULT_TASK_OPTION_BUTTONS: mergedDeps.DEFAULT_TASK_OPTION_BUTTONS || window.DEFAULT_TASK_OPTION_BUTTONS || {}
         };
 
         // Internal state
@@ -1785,6 +1801,7 @@ async function refreshTaskListUI() {
 // Export for ES6 modules
 export {
     initTaskDOMManager,
+    // setTaskDOMManagerDependencies is already exported inline above
     // Group 1: Validation
     validateAndSanitizeTaskInput,
     // Group 2: Utilities
