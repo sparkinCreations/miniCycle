@@ -2,14 +2,26 @@
  * ==========================================
  * 🛠️ GLOBAL UTILITIES MODULE
  * ==========================================
- * 
+ *
  * Core utility functions used throughout the miniCycle application.
  * These are foundational utilities that need to be available globally
  * without import overhead for frequently called functions.
- * 
+ *
  * @version 1.391
  * @author miniCycle Development Team
  */
+
+// Module-level deps for late injection (static class pattern)
+let _deps = {};
+
+/**
+ * Set dependencies for GlobalUtils static methods
+ * @param {Object} dependencies - { showNotification }
+ */
+export function setGlobalUtilsDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🛠️ GlobalUtils dependencies set:', Object.keys(dependencies));
+}
 
 export class GlobalUtils {
     /**
@@ -392,8 +404,9 @@ export class GlobalUtils {
             return value;
         } catch (error) {
             console.error(`[GlobalUtils] Failed to read localStorage key "${key}":`, error);
-            if (typeof window.showNotification === 'function') {
-                window.showNotification('Storage access error. Some data may not load.', 'error');
+            const notify = _deps.showNotification || window.showNotification;
+            if (typeof notify === 'function') {
+                notify('Storage access error. Some data may not load.', 'error');
             }
             return defaultValue;
         }
@@ -415,11 +428,12 @@ export class GlobalUtils {
         } catch (error) {
             console.error(`[GlobalUtils] Failed to write localStorage key "${key}":`, error);
 
-            if (!silent && typeof window.showNotification === 'function') {
+            const notify = _deps.showNotification || window.showNotification;
+            if (!silent && typeof notify === 'function') {
                 if (error.name === 'QuotaExceededError') {
-                    window.showNotification('Storage quota exceeded. Please export your data and clear some space.', 'error');
+                    notify('Storage quota exceeded. Please export your data and clear some space.', 'error');
                 } else {
-                    window.showNotification('Failed to save data. Your changes may not be preserved.', 'error');
+                    notify('Failed to save data. Your changes may not be preserved.', 'error');
                 }
             }
             return false;

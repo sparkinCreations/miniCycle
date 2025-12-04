@@ -6,27 +6,43 @@
  * @version 1.391
  */
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for CycleSwitcher (call before creating instance)
+ * @param {Object} dependencies - Late-injected dependencies
+ */
+export function setCycleSwitcherDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔄 CycleSwitcher dependencies set:', Object.keys(dependencies));
+}
+
 export class CycleSwitcher {
     constructor(dependencies = {}) {
-        // Store dependencies with fallbacks
+        // Merge module-level deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Store dependencies with module-level fallbacks and window.* for test compatibility
+        // Priority: constructor > module deps > window.* (for test compatibility)
         this.deps = {
-            AppState: dependencies.AppState || window.AppState,
-            loadMiniCycleData: dependencies.loadMiniCycleData || (() => null),
-            showNotification: dependencies.showNotification || this.fallbackNotification.bind(this),
-            hideMainMenu: dependencies.hideMainMenu || (() => {}),
-            showPromptModal: dependencies.showPromptModal || this.fallbackPrompt.bind(this),
-            showConfirmationModal: dependencies.showConfirmationModal || this.fallbackConfirm.bind(this),
-            sanitizeInput: dependencies.sanitizeInput || ((str) => str),
-            loadMiniCycle: dependencies.loadMiniCycle || null,
-            updateProgressBar: dependencies.updateProgressBar || (() => {}),
-            updateStatsPanel: dependencies.updateStatsPanel || (() => {}),
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || (() => {}),
-            updateReminderButtons: dependencies.updateReminderButtons || (() => {}),
-            updateUndoRedoButtons: dependencies.updateUndoRedoButtons || (() => {}),
-            initialSetup: dependencies.initialSetup || (() => {}),
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            AppState: mergedDeps.AppState || window.AppState,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || window.loadMiniCycleData || (() => null),
+            showNotification: mergedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
+            hideMainMenu: mergedDeps.hideMainMenu || window.hideMainMenu || (() => {}),
+            showPromptModal: mergedDeps.showPromptModal || window.showPromptModal || this.fallbackPrompt.bind(this),
+            showConfirmationModal: mergedDeps.showConfirmationModal || window.showConfirmationModal || this.fallbackConfirm.bind(this),
+            sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || ((str) => str),
+            loadMiniCycle: mergedDeps.loadMiniCycle || window.loadMiniCycle || null,
+            updateProgressBar: mergedDeps.updateProgressBar || window.updateProgressBar || (() => {}),
+            updateStatsPanel: mergedDeps.updateStatsPanel || window.updateStatsPanel || (() => {}),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || window.checkCompleteAllButton || (() => {}),
+            updateReminderButtons: mergedDeps.updateReminderButtons || window.updateReminderButtons || (() => {}),
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || window.updateUndoRedoButtons || (() => {}),
+            initialSetup: mergedDeps.initialSetup || window.initialSetup || (() => {}),
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
         this.loadMiniCycleListTimeout = null;
