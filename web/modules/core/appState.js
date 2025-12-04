@@ -5,7 +5,7 @@
  * It also provides a way to subscribe to state changes.
  *
  * @module state
- * @version 1.391
+ * @version 1.392
  */
 
 // Import constants
@@ -46,7 +46,7 @@ class MiniCycleState {
         this.saveTimeout = null;
         this.listeners = new Map();
         this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
-        this.version = '1.391';
+        this.version = '1.392';
         this.isInitialized = false; // ✅ Add this flag
         this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
     }

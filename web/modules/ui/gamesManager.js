@@ -13,7 +13,7 @@
  * - DOM elements (games-panel, games-menu-option)
  *
  * @module gamesManager
- * @version 1.391
+ * @version 1.392
  */
 
 import { appInit } from '../core/appInit.js';
@@ -41,7 +41,7 @@ class GamesManager {
             safeAddEventListener: mergedDeps.safeAddEventListener
         };
 
-        this.version = '1.391';
+        this.version = '1.392';
         this.initialized = false;
     }
 

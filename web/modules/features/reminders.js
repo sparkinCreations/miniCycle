@@ -11,7 +11,7 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module reminders
- * @version 1.391
+ * @version 1.392
  */
 
 import { appInit } from '../core/appInit.js';
@@ -30,7 +30,7 @@ export function setRemindersDependencies(dependencies) {
 
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
-        this.version = '1.391';
+        this.version = '1.392';
 
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };

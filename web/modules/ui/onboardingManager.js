@@ -17,7 +17,7 @@
  * - safeAddEventListenerById (event helper)
  *
  * @module onboardingManager
- * @version 1.391
+ * @version 1.392
  */
 
 import { appInit } from '../core/appInit.js';
@@ -36,7 +36,7 @@ export function setOnboardingManagerDependencies(dependencies) {
 
 export class OnboardingManager {
     constructor(dependencies = {}) {
-        this.version = '1.391';
+        this.version = '1.392';
         this.initialized = false;
 
         // Store injected dependencies

@@ -13,7 +13,7 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module task/taskCore
- * @version 1.391
+ * @version 1.392
  */
 
 import { appInit } from '../core/appInit.js';
@@ -35,7 +35,7 @@ export class TaskCore {
         // Merge module-level deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
 
-        this.version = '1.391';
+        this.version = '1.392';
 
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();

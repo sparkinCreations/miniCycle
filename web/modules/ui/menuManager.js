@@ -3,7 +3,7 @@
  * Handles main menu operations and interactions
  *
  * @module menuManager
- * @version 1.391
+ * @version 1.392
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -23,7 +23,7 @@ export function setMenuManagerDependencies(dependencies) {
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        this.version = '1.391';
+        this.version = '1.392';
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
