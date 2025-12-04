@@ -21,7 +21,8 @@ const Deps = {
   updateProgressBar: null,
   checkCompleteAllButton: null,
   updateMainMenuHeader: null,
-  updateStatsPanel: null
+  updateStatsPanel: null,
+  syncAllTasksWithMode: null  // ✅ For syncing delete-when-complete visual indicators
 };
 
 function setCycleLoaderDependencies(overrides = {}) {
@@ -90,14 +91,15 @@ async function loadMiniCycle() {
 
   // 2.5) Sync visual indicators with current mode
   // ✅ After rendering tasks, sync all delete-when-complete visual indicators
-  if (currentCycle.tasks && window.syncAllTasksWithMode) {
+  const syncFn = Deps.syncAllTasksWithMode || window.syncAllTasksWithMode;
+  if (currentCycle.tasks && syncFn) {
     const currentMode = currentCycle.deleteCheckedTasks === true ? 'todo' : 'cycle';
     const tasksDataMap = {};
     currentCycle.tasks.forEach(task => {
       tasksDataMap[task.id] = task;
     });
 
-    window.syncAllTasksWithMode(currentMode, tasksDataMap, {
+    syncFn(currentMode, tasksDataMap, {
       DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
     });
     console.log(`✅ Synced all task visual indicators with ${currentMode} mode`);

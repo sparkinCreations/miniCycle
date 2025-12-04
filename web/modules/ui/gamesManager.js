@@ -18,10 +18,39 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for GamesManager (call before init)
+ * @param {Object} dependencies - { AppState, safeAddEventListener }
+ */
+export function setGamesManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎮 GamesManager dependencies set:', Object.keys(dependencies));
+}
+
 class GamesManager {
-    constructor() {
+    constructor(dependencies = {}) {
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Store dependencies
+        this.deps = {
+            AppState: mergedDeps.AppState,
+            safeAddEventListener: mergedDeps.safeAddEventListener
+        };
+
         this.version = '1.391';
         this.initialized = false;
+    }
+
+    /**
+     * Get AppState (deferred lookup for late binding)
+     * @private
+     */
+    _getAppState() {
+        return this.deps.AppState || window.AppState;
     }
 
     async init() {
@@ -47,7 +76,8 @@ class GamesManager {
         const checkInterval = setInterval(() => {
             attempts++;
 
-            if (window.AppState?.isReady?.()) {
+            const AppState = this._getAppState();
+            if (AppState?.isReady?.()) {
                 clearInterval(checkInterval);
                 this.checkGamesUnlock();
             } else if (attempts >= maxAttempts) {
@@ -61,14 +91,16 @@ class GamesManager {
      * Check if games are unlocked and show/hide menu accordingly
      */
     checkGamesUnlock() {
+        const AppState = this._getAppState();
+
         // Silently return if AppState isn't ready yet (deferred check will retry)
-        if (!window.AppState?.isReady?.()) {
+        if (!AppState?.isReady?.()) {
             return;
         }
 
         console.log('🎮 Checking games unlock (Schema 2.5 only)...');
 
-        const currentState = window.AppState.get();
+        const currentState = AppState.get();
         if (!currentState) {
             console.warn('⚠️ No state data for checkGamesUnlock');
             return;
@@ -92,12 +124,14 @@ class GamesManager {
     unlockMiniGame() {
         console.log('🎮 Unlocking mini game (state-based)...');
 
-        if (!window.AppState?.isReady?.()) {
+        const AppState = this._getAppState();
+
+        if (!AppState?.isReady?.()) {
             console.warn('⚠️ AppState not ready for unlockMiniGame');
             return;
         }
 
-        const currentState = window.AppState.get();
+        const currentState = AppState.get();
         if (!currentState) {
             console.warn('⚠️ No state data for unlockMiniGame');
             return;
@@ -105,7 +139,7 @@ class GamesManager {
 
         const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
         if (!unlockedFeatures.includes("task-order-game")) {
-            window.AppState.update(state => {
+            AppState.update(state => {
                 if (!state.settings.unlockedFeatures) {
                     state.settings.unlockedFeatures = [];
                 }
@@ -145,9 +179,10 @@ class GamesManager {
             }
         };
 
-        // Use window.safeAddEventListener if available, fallback to regular
-        if (window.safeAddEventListener) {
-            window.safeAddEventListener(document, "click", handleClickOutside);
+        // Use safeAddEventListener if available, fallback to regular
+        const safeAddEventListener = this.deps.safeAddEventListener || window.safeAddEventListener;
+        if (safeAddEventListener) {
+            safeAddEventListener(document, "click", handleClickOutside);
         } else {
             document.addEventListener("click", handleClickOutside);
         }

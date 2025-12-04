@@ -9,23 +9,40 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for DragDropManager (call before init)
+ * @param {Object} dependencies - { AppState, saveCurrentTaskOrder, etc. }
+ */
+export function setDragDropManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔄 DragDropManager dependencies set:', Object.keys(dependencies));
+}
+
 export class DragDropManager {
     constructor(dependencies = {}) {
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // Store dependencies with intelligent fallbacks
         this.deps = {
-            saveCurrentTaskOrder: dependencies.saveCurrentTaskOrder || this.fallbackSave,
-            autoSave: dependencies.autoSave || this.fallbackAutoSave,
-            updateProgressBar: dependencies.updateProgressBar || this.fallbackUpdate,
-            updateStatsPanel: dependencies.updateStatsPanel || this.fallbackUpdate,
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || this.fallbackUpdate,
-            updateUndoRedoButtons: dependencies.updateUndoRedoButtons || this.fallbackUpdate,
-            captureStateSnapshot: dependencies.captureStateSnapshot || this.fallbackCapture,
-            refreshUIFromState: dependencies.refreshUIFromState || this.fallbackRefresh,
-            revealTaskButtons: dependencies.revealTaskButtons || this.fallbackReveal,
-            hideTaskButtons: dependencies.hideTaskButtons || this.fallbackHide,
-            isTouchDevice: dependencies.isTouchDevice || this.fallbackIsTouchDevice,
-            enableUndoSystemOnFirstInteraction: dependencies.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
-            showNotification: dependencies.showNotification || this.fallbackNotification
+            // Core state access
+            AppState: mergedDeps.AppState,
+            saveCurrentTaskOrder: mergedDeps.saveCurrentTaskOrder || this.fallbackSave,
+            autoSave: mergedDeps.autoSave || this.fallbackAutoSave,
+            updateProgressBar: mergedDeps.updateProgressBar || this.fallbackUpdate,
+            updateStatsPanel: mergedDeps.updateStatsPanel || this.fallbackUpdate,
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || this.fallbackUpdate,
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || this.fallbackUpdate,
+            captureStateSnapshot: mergedDeps.captureStateSnapshot || this.fallbackCapture,
+            refreshUIFromState: mergedDeps.refreshUIFromState || this.fallbackRefresh,
+            revealTaskButtons: mergedDeps.revealTaskButtons || this.fallbackReveal,
+            hideTaskButtons: mergedDeps.hideTaskButtons || this.fallbackHide,
+            isTouchDevice: mergedDeps.isTouchDevice || this.fallbackIsTouchDevice,
+            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
+            showNotification: mergedDeps.showNotification || this.fallbackNotification
         };
 
         // Internal state
@@ -37,6 +54,14 @@ export class DragDropManager {
         this.initialized = false;
 
         console.log('🔄 DragDropManager created with dependencies');
+    }
+
+    /**
+     * Get AppState (deferred lookup for late binding)
+     * @private
+     */
+    _getAppState() {
+        return this.deps.AppState || window.AppState;
     }
 
     /**
@@ -422,12 +447,13 @@ export class DragDropManager {
             if (newIndex === currentIndex) return; // No movement needed
 
             // Reorder via state system (splice in array)
-            if (window.AppState?.isReady?.()) {
+            const AppState = this._getAppState();
+            if (AppState?.isReady?.()) {
                 // Capture undo snapshot BEFORE reordering
-                const currentState = window.AppState.get();
+                const currentState = AppState.get();
                 if (currentState) this.deps.captureStateSnapshot(currentState);
 
-                window.AppState.update(state => {
+                AppState.update(state => {
                     const activeCycleId = state.appState.activeCycleId;
                     if (activeCycleId && state.data.cycles[activeCycleId]) {
                         const tasks = state.data.cycles[activeCycleId].tasks;
@@ -499,9 +525,10 @@ export class DragDropManager {
             console.log('🔄 Updating move arrows visibility (state-based)...');
 
             let showArrows = false;
+            const AppState = this._getAppState();
 
-            if (window.AppState?.isReady?.()) {
-                const currentState = window.AppState.get();
+            if (AppState?.isReady?.()) {
+                const currentState = AppState.get();
                 showArrows = currentState?.ui?.moveArrowsVisible || false;
                 console.log('📊 Arrow visibility from AppState:', showArrows);
             } else {
@@ -532,10 +559,13 @@ export class DragDropManager {
         try {
             console.log('🔄 Toggling arrow visibility (state-based)...');
 
-            if (!window.AppState?.isReady?.()) {
+            const AppState = this._getAppState();
+
+            if (!AppState?.isReady?.()) {
                 console.log('⚠️ AppState not ready yet, deferring toggle until ready');
                 setTimeout(() => {
-                    if (window.AppState?.isReady?.()) {
+                    const AppStateRetry = this._getAppState();
+                    if (AppStateRetry?.isReady?.()) {
                         this.toggleArrowVisibility();
                     } else {
                         console.warn('❌ AppState still not ready after timeout');
@@ -544,7 +574,7 @@ export class DragDropManager {
                 return;
             }
 
-            const currentState = window.AppState.get();
+            const currentState = AppState.get();
             if (!currentState) {
                 console.error('❌ No state data available for toggleArrowVisibility');
                 return;
@@ -554,7 +584,7 @@ export class DragDropManager {
             const newVisibility = !currentlyVisible;
 
             // Update through state system
-            window.AppState.update(state => {
+            AppState.update(state => {
                 if (!state.ui) state.ui = {};
                 state.ui.moveArrowsVisible = newVisibility;
                 state.metadata.lastModified = Date.now();

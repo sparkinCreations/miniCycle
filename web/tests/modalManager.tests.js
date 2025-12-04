@@ -23,7 +23,8 @@ export async function runModalManagerTests(resultsDiv) {
     // (No longer auto-initializes on import)
     // =====================================================
     if (window.initModalManager && !window.modalManager) {
-        await window.initModalManager({
+        // ✅ FIX: Save returned instance to window.modalManager for tests
+        window.modalManager = await window.initModalManager({
             showNotification: window.showNotification || (() => {}),
             hideMainMenu: window.hideMainMenu || (() => {}),
             sanitizeInput: window.sanitizeInput || ((text) => text),
@@ -519,21 +520,29 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Global Key Handlers</h4>';
 
     test('setupGlobalKeyHandlers attaches ESC key handler', () => {
-        // Mock safeAddEventListener as a dependency
-        let handlerAttached = false;
-        const mockSafeAddEventListener = (element, event, handler) => {
-            if (element === document && event === 'keydown') {
-                handlerAttached = true;
-            }
-        };
+        // ✅ FIX: Module-level deps take precedence, so verify handler works via ESC key test
+        // The handler is attached during initialization, so verify it closes modals on ESC
+        const mm = new window.ModalManager();
 
-        const mm = new window.ModalManager({
-            safeAddEventListener: mockSafeAddEventListener
-        });
+        // Create test modal
+        const modal = document.createElement('div');
+        modal.id = 'feedback-modal';
+        modal.style.display = 'flex';
+        document.body.appendChild(modal);
 
+        // Call setupGlobalKeyHandlers (uses module-level deps)
         mm.setupGlobalKeyHandlers();
 
-        if (!handlerAttached) {
+        // Simulate ESC key press to verify handler is attached
+        const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+        document.dispatchEvent(escEvent);
+
+        const handlerWorks = modal.style.display === 'none';
+
+        // Cleanup
+        modal.remove();
+
+        if (!handlerWorks) {
             throw new Error('ESC key handler should be attached');
         }
     });

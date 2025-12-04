@@ -11,17 +11,32 @@
  * @version 1.391
  */
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for TaskValidator (call before initTaskValidator)
+ * @param {Object} dependencies - { sanitizeInput, showNotification }
+ */
+export function setTaskValidationDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔒 TaskValidation dependencies set:', Object.keys(dependencies));
+}
+
 export class TaskValidator {
     constructor(dependencies = {}) {
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // Require sanitizeInput - no fallback to window
-        if (typeof dependencies.sanitizeInput !== 'function') {
+        if (typeof mergedDeps.sanitizeInput !== 'function') {
             throw new Error('TaskValidator requires sanitizeInput function');
         }
 
         // Store dependencies - showNotification is optional
         this.deps = {
-            sanitizeInput: dependencies.sanitizeInput,
-            showNotification: dependencies.showNotification || ((msg) => console.log(msg))
+            sanitizeInput: mergedDeps.sanitizeInput,
+            showNotification: mergedDeps.showNotification || ((msg) => console.log(msg))
         };
 
         // Constants

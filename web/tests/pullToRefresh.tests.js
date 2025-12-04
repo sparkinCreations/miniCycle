@@ -17,6 +17,13 @@ export async function runPullToRefreshTests(resultsDiv) {
     // Use shared testHelpers for comprehensive mock setup
     const env = await setupTestEnvironment();
 
+    // ✅ Initialize pullToRefresh if not already done
+    if (window.initPullToRefresh && !window.pullToRefresh) {
+        window.initPullToRefresh({
+            showNotification: window.showNotification || (() => {})
+        });
+    }
+
     resultsDiv.innerHTML = '<h2>Pull-to-Refresh Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };

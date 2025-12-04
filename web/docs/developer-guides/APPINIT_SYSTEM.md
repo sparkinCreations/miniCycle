@@ -1,7 +1,7 @@
 # AppInit - 2-Phase Initialization System
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.391
+**Last Updated**: December 4, 2025
 
 ---
 

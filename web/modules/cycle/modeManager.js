@@ -42,6 +42,7 @@ export class ModeManager {
             checkCompleteAllButton: mergedDeps.checkCompleteAllButton,
             showNotification: mergedDeps.showNotification,
             helpWindowManager: mergedDeps.helpWindowManager,
+            recurringCore: mergedDeps.recurringCore || null,  // ✅ For updating recurring button visibility
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
@@ -485,8 +486,9 @@ export class ModeManager {
             }
 
             // ✅ Update recurring button visibility via module
-            if (window.recurringCore?.updateRecurringButtonVisibility) {
-                window.recurringCore.updateRecurringButtonVisibility();
+            const recurringCore = this.deps.recurringCore || window.recurringCore;
+            if (recurringCore?.updateRecurringButtonVisibility) {
+                recurringCore.updateRecurringButtonVisibility();
             }
 
             // ✅ Show mode description in help window
@@ -514,10 +516,11 @@ export class ModeManager {
             this.refreshTaskButtonsForModeChange();
 
             // ✅ Update recurring button visibility for mode change
-            if (window.recurringCore?.updateRecurringButtonVisibility) {
+            const recurringCoreDesktop = this.deps.recurringCore || window.recurringCore;
+            if (recurringCoreDesktop?.updateRecurringButtonVisibility) {
                 console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
-                    window.recurringCore.updateRecurringButtonVisibility();
+                    recurringCoreDesktop.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
             }
@@ -542,10 +545,11 @@ export class ModeManager {
             this.refreshTaskButtonsForModeChange();
 
             // ✅ Update recurring button visibility for mode change
-            if (window.recurringCore?.updateRecurringButtonVisibility) {
+            const recurringCoreMobile = this.deps.recurringCore || window.recurringCore;
+            if (recurringCoreMobile?.updateRecurringButtonVisibility) {
                 console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
-                    window.recurringCore.updateRecurringButtonVisibility();
+                    recurringCoreMobile.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
             }
@@ -583,10 +587,11 @@ export class ModeManager {
             this.refreshTaskButtonsForModeChange();
 
             // ✅ Update recurring button visibility when switching to/from to-do mode
-            if (window.recurringCore?.updateRecurringButtonVisibility) {
+            const recurringCoreToggle = this.deps.recurringCore || window.recurringCore;
+            if (recurringCoreToggle?.updateRecurringButtonVisibility) {
                 console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
-                    window.recurringCore.updateRecurringButtonVisibility();
+                    recurringCoreToggle.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100); // Small delay to ensure DOM updates complete
             }

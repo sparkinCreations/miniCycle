@@ -11,21 +11,47 @@
  * @version 1.391
  */
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for TaskEvents (call before init)
+ * @param {Object} dependencies - { AppState, taskCore, showNotification, etc. }
+ */
+export function setTaskEventsDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎮 TaskEvents dependencies set:', Object.keys(dependencies));
+}
+
 export class TaskEvents {
     constructor(dependencies = {}) {
-        // Store dependencies with fallbacks
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Store dependencies (no window.* fallbacks in constructor - use deferred lookup)
         this.deps = {
-            // Core modules
-            AppState: dependencies.AppState || window.AppState,
+            // Core modules (deferred lookup in methods)
+            AppState: mergedDeps.AppState,
+            taskCore: mergedDeps.taskCore,
 
             // UI update functions
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            autoSave: dependencies.autoSave || this.fallbackAutoSave,
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            autoSave: mergedDeps.autoSave || this.fallbackAutoSave,
+
+            // Task interaction functions (deferred lookup in methods)
+            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction,
+            checkMiniCycle: mergedDeps.checkMiniCycle,
+            triggerLogoBackground: mergedDeps.triggerLogoBackground,
+            showTaskOptions: mergedDeps.showTaskOptions,
+            hideTaskOptions: mergedDeps.hideTaskOptions,
+            TaskOptionsVisibilityController: mergedDeps.TaskOptionsVisibilityController,
+            setupDueDateButtonInteraction: mergedDeps.setupDueDateButtonInteraction,
+            attachKeyboardTaskOptionToggle: mergedDeps.attachKeyboardTaskOptionToggle,
 
             // DOM helpers
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener
         };
 
         // Instance version
@@ -87,9 +113,10 @@ export class TaskEvents {
 
             console.log('🟢 Task delegation: Processing task click (will toggle checkbox)');
 
-            // ✅ Enable undo system on first user interaction
-            if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
-                window.enableUndoSystemOnFirstInteraction();
+            // ✅ Enable undo system on first user interaction (deferred lookup)
+            const enableUndoSystemOnFirstInteraction = this.deps.enableUndoSystemOnFirstInteraction || window.enableUndoSystemOnFirstInteraction;
+            if (typeof enableUndoSystemOnFirstInteraction === 'function') {
+                enableUndoSystemOnFirstInteraction();
             }
 
             // Toggle checkbox
@@ -97,17 +124,19 @@ export class TaskEvents {
             checkbox.dispatchEvent(new Event("change"));
             checkbox.setAttribute("aria-checked", checkbox.checked);
 
-            // Trigger mini cycle check
-            if (typeof window.checkMiniCycle === 'function') {
-                window.checkMiniCycle();
+            // Trigger mini cycle check (deferred lookup)
+            const checkMiniCycle = this.deps.checkMiniCycle || window.checkMiniCycle;
+            if (typeof checkMiniCycle === 'function') {
+                checkMiniCycle();
             }
 
             // Auto-save
             this.deps.autoSave?.();
 
-            // Logo background animation
-            if (typeof window.triggerLogoBackground === 'function') {
-                window.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+            // Logo background animation (deferred lookup)
+            const triggerLogoBackground = this.deps.triggerLogoBackground || window.triggerLogoBackground;
+            if (typeof triggerLogoBackground === 'function') {
+                triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
             }
         });
 
@@ -149,25 +178,30 @@ export class TaskEvents {
         if (button.classList.contains("move-up") || button.classList.contains("move-down")) {
             console.log('⚠️ Arrow click handled by legacy handler - should use event delegation instead');
             return;
-        } else if (button.classList.contains("edit-btn")) {
-            if (window.taskCore) {
-                window.taskCore.editTask(taskItem);
+        }
+
+        // Deferred lookup for taskCore
+        const taskCore = this.deps.taskCore || window.taskCore;
+
+        if (button.classList.contains("edit-btn")) {
+            if (taskCore) {
+                taskCore.editTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not available, edit operation skipped');
                 this.deps.showNotification?.('Edit feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("delete-btn")) {
-            if (window.taskCore) {
-                window.taskCore.deleteTask(taskItem);
+            if (taskCore) {
+                taskCore.deleteTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not available, delete operation skipped');
                 this.deps.showNotification?.('Delete feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("priority-btn")) {
-            if (window.taskCore) {
-                window.taskCore.toggleTaskPriority(taskItem);
+            if (taskCore) {
+                taskCore.toggleTaskPriority(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not available, priority toggle skipped');
                 this.deps.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
@@ -184,17 +218,21 @@ export class TaskEvents {
      * @param {boolean} enableHover - Whether to enable hover
      */
     toggleHoverTaskOptions(enableHover) {
+        // Deferred lookup for showTaskOptions/hideTaskOptions
+        const showTaskOptions = this.deps.showTaskOptions || window.showTaskOptions;
+        const hideTaskOptions = this.deps.hideTaskOptions || window.hideTaskOptions;
+
         this.deps.querySelectorAll(".task").forEach(taskItem => {
             if (enableHover) {
                 if (!taskItem.classList.contains("hover-enabled")) {
-                    taskItem.addEventListener("mouseenter", window.showTaskOptions);
-                    taskItem.addEventListener("mouseleave", window.hideTaskOptions);
+                    taskItem.addEventListener("mouseenter", showTaskOptions);
+                    taskItem.addEventListener("mouseleave", hideTaskOptions);
                     taskItem.classList.add("hover-enabled");
                 }
             } else {
                 if (taskItem.classList.contains("hover-enabled")) {
-                    taskItem.removeEventListener("mouseenter", window.showTaskOptions);
-                    taskItem.removeEventListener("mouseleave", window.hideTaskOptions);
+                    taskItem.removeEventListener("mouseenter", showTaskOptions);
+                    taskItem.removeEventListener("mouseleave", hideTaskOptions);
                     taskItem.classList.remove("hover-enabled");
                 }
             }
@@ -224,6 +262,9 @@ export class TaskEvents {
             willToggle: isCurrentlyVisible ? 'OFF' : 'ON'
         });
 
+        // Deferred lookup for TaskOptionsVisibilityController
+        const controller = this.deps.TaskOptionsVisibilityController || window.TaskOptionsVisibilityController;
+
         // 🧹 Hide all other task option menus FIRST
         let hiddenCount = 0;
         // ✅ FIX: Query .task elements directly instead of using .closest()
@@ -231,7 +272,7 @@ export class TaskEvents {
         document.querySelectorAll(".task").forEach(task => {
             if (task !== taskItem) {
                 // Use controller for consistency (use same caller for hide)
-                window.TaskOptionsVisibilityController?.hide(task, caller);
+                controller?.hide(task, caller);
                 hiddenCount++;
             }
         });
@@ -244,11 +285,11 @@ export class TaskEvents {
         if (isCurrentlyVisible) {
             // Hide if already visible (clicking same task again)
             console.log('👆 TOGGLING OFF (same task clicked twice)');
-            window.TaskOptionsVisibilityController?.hide(taskItem, caller);
+            controller?.hide(taskItem, caller);
         } else {
             // Show if hidden (first click or switching tasks)
             console.log('✨ TOGGLING ON (first click or switching tasks)');
-            window.TaskOptionsVisibilityController?.show(taskItem, caller);
+            controller?.show(taskItem, caller);
         }
     }
 
@@ -301,9 +342,10 @@ export class TaskEvents {
         // Setup focus interactions
         this.setupTaskFocusInteractions(taskItem);
 
-        // Setup due date button interaction (from dueDates module)
-        if (typeof window.setupDueDateButtonInteraction === 'function') {
-            window.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
+        // Setup due date button interaction (from dueDates module) (deferred lookup)
+        const setupDueDateButtonInteraction = this.deps.setupDueDateButtonInteraction || window.setupDueDateButtonInteraction;
+        if (typeof setupDueDateButtonInteraction === 'function') {
+            setupDueDateButtonInteraction(buttonContainer, dueDateInput);
         }
     }
 
@@ -345,9 +387,12 @@ export class TaskEvents {
     setupTaskHoverInteractions(taskItem, settings) {
         const threeDotsEnabled = settings.showThreeDots || false;
         if (!threeDotsEnabled) {
-            if (typeof window.showTaskOptions === 'function' && typeof window.hideTaskOptions === 'function') {
-                taskItem.addEventListener("mouseenter", window.showTaskOptions);
-                taskItem.addEventListener("mouseleave", window.hideTaskOptions);
+            // Deferred lookup for showTaskOptions/hideTaskOptions
+            const showTaskOptions = this.deps.showTaskOptions || window.showTaskOptions;
+            const hideTaskOptions = this.deps.hideTaskOptions || window.hideTaskOptions;
+            if (typeof showTaskOptions === 'function' && typeof hideTaskOptions === 'function') {
+                taskItem.addEventListener("mouseenter", showTaskOptions);
+                taskItem.addEventListener("mouseleave", hideTaskOptions);
             }
         }
     }
@@ -359,14 +404,18 @@ export class TaskEvents {
     setupTaskFocusInteractions(taskItem) {
         const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
 
+        // Deferred lookup for TaskOptionsVisibilityController
+        const controller = this.deps.TaskOptionsVisibilityController || window.TaskOptionsVisibilityController;
+
         addListener(taskItem, "focus", () => {
             // ✅ Use centralized controller (handles mode checking automatically)
-            window.TaskOptionsVisibilityController?.show(taskItem, 'focusin');
+            controller?.show(taskItem, 'focusin');
         });
 
-        // Keyboard task option toggle (handles focusin/focusout with better bubbling)
-        if (typeof window.attachKeyboardTaskOptionToggle === 'function') {
-            window.attachKeyboardTaskOptionToggle(taskItem);
+        // Keyboard task option toggle (handles focusin/focusout with better bubbling) (deferred lookup)
+        const attachKeyboardTaskOptionToggle = this.deps.attachKeyboardTaskOptionToggle || window.attachKeyboardTaskOptionToggle;
+        if (typeof attachKeyboardTaskOptionToggle === 'function') {
+            attachKeyboardTaskOptionToggle(taskItem);
         }
     }
 }

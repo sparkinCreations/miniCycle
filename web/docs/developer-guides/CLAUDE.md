@@ -36,17 +36,18 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: The Honest Assessment
 
-### Current State (November 2025 → Updated November 30, 2025)
+### Current State (November 2025 → Updated December 4, 2025)
 
 | Metric | Before | Current | Target |
 |--------|--------|---------|--------|
 | Main script | ~3,700 lines | ~3,800 lines | ~3,500 lines |
 | Modules | 43 files | 43 files | 43 files |
-| `window.*` globals created | ~68 | ~60 | <20 |
-| `window.*` references consumed | ~748 | ~700 | <100 |
-| Test coverage | 1011 tests | 1011+ tests | 1100+ tests |
-| `deps.*` container usage | 0 | ~45 | 100+ |
-| Modules with true DI | 0 | 6 | 15+ |
+| `window.*` globals created | ~68 | ~55 | <20 |
+| `window.*` references consumed | ~748 | ~650 | <100 |
+| Test coverage | 1011 tests | 1111 tests | 1123+ |
+| `deps.*` container usage | 0 | ~85 | 100+ |
+| Modules with `set*Dependencies()` | 0 | 10+ | All stateful |
+| Modules with Phase 3 pattern | 0 | 18+ | All |
 
 ### The Reality (Being Improved)
 
@@ -61,7 +62,7 @@ constructor(dependencies = {}) {
     };
 }
 
-// AFTER: True DI (implemented in taskValidation, modalManager, themeManager, taskDOM)
+// AFTER: True DI (implemented in taskValidation, modalManager, themeManager, taskDOM, gamesManager, appState, etc.)
 constructor(dependencies = {}) {
     if (!dependencies.sanitizeInput) throw new Error('sanitizeInput required');  // ✅ fail fast
     this.deps = {
@@ -71,13 +72,13 @@ constructor(dependencies = {}) {
 }
 ```
 
-**Progress:** 6 modules now use `set*Dependencies()` pattern with `deps` container. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+**Progress:** 10+ modules now use `set*Dependencies()` pattern with `deps` container. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
 ### Module Communication
 
-- **~90%** via `window.*` globals (down from ~96%)
-- **~10%** via `deps` container + ES6 imports (up from ~4%)
-- **6** modules can accept injected deps without window.* fallbacks
+- **~85%** via `window.*` globals (down from ~96%)
+- **~15%** via `deps` container + ES6 imports (up from ~4%)
+- **18+** modules can accept injected deps with deferred lookup pattern
 
 ### What Works Well
 
@@ -186,20 +187,21 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ## Future Direction
 
-### In Progress: True Modular Overhaul (~15-20% complete)
+### In Progress: True Modular Overhaul (~85% complete)
 
 See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full tracking.
 
 **Done:**
 - `deps` container created in miniCycle-scripts.js
-- 6 modules converted: taskValidation, dataValidator, themeManager, modalManager, taskDOM, undoRedoManager
-- window.* fallbacks removed from converted modules
-- Tests updated for Phase 2 patterns
+- 18+ modules with Phase 3 pattern (no window.* exports)
+- 10+ modules with `set*Dependencies()` pattern: taskValidation, dataValidator, themeManager, modalManager, taskDOM, undoRedoManager, gamesManager, dragDropManager, taskEvents, appState
+- Deferred lookup pattern (`_getAppState()` helper) for circular deps
+- Tests updated for DI patterns (ModalManager, PullToRefresh, GlobalUtils)
 
 **Remaining:**
-- Wire remaining Tier 2/3 modules
-- Remove window.* exports from modules
-- Minimize window.* to HTML-only needs
+- Remove remaining `|| window.*` constructor fallbacks
+- Audit window.* exposure for minimization
+- Fix remaining pre-existing test failures (~12 tests)
 
 ### Not Planned
 

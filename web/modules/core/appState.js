@@ -14,15 +14,30 @@ import {
     DEFAULT_RECURRING_DELETE_SETTINGS
 } from './constants.js';
 
+// Module-level deps for late injection (must be set before createStateManager)
+let _deps = {};
+
+/**
+ * Set dependencies for AppState (call before createStateManager)
+ * @param {Object} dependencies - { showNotification, storage, loadInitialData, createInitialData }
+ */
+export function setAppStateDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🏗️ AppState dependencies set:', Object.keys(dependencies));
+}
+
 // MiniCycleState class definition
 class MiniCycleState {
     constructor(dependencies = {}) {
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // ✅ Add dependency injection with fallbacks
         this.deps = {
-            showNotification: dependencies.showNotification || console.log.bind(console),
-            storage: dependencies.storage || localStorage,
-            loadInitialData: dependencies.loadInitialData || (() => null),
-            createInitialData: dependencies.createInitialData || (() => this.createInitialState())
+            showNotification: mergedDeps.showNotification || console.log.bind(console),
+            storage: mergedDeps.storage || localStorage,
+            loadInitialData: mergedDeps.loadInitialData || (() => null),
+            createInitialData: mergedDeps.createInitialData || (() => this.createInitialState())
         };
 
         // Your existing properties

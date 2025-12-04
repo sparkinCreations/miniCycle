@@ -7,8 +7,8 @@
 
 ## Progress Tracker
 
-**Last Updated:** December 1, 2025
-**Status:** ~75-80% Complete ✅
+**Last Updated:** December 4, 2025
+**Status:** ~85% Complete ✅
 
 ### What's Done ✅
 
@@ -35,7 +35,10 @@
 | cycleManager.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
 | cycleSwitcher.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
 | undoRedoManager.js | ✅ Done | Wired with deps.utils.* |
-| Tests updated | ✅ Done | ThemeManager, GlobalUtils tests fixed for Phase 3 |
+| gamesManager.js | ✅ Done | `setGamesManagerDependencies()`, `_getAppState()` deferred lookup |
+| appState.js | ✅ Done | `setAppStateDependencies()` for late injection |
+| taskUtils.js | ✅ Done | `setupFinalTaskInteractions()` accepts deps parameter |
+| Tests updated | ✅ Done | ThemeManager, GlobalUtils, ModalManager, PullToRefresh tests fixed for Phase 3 |
 
 ### What Remains 🔄
 
@@ -50,11 +53,13 @@
 
 | Metric | Before (Nov 2025) | Current | Target |
 |--------|-------------------|---------|--------|
-| `deps.*` usage in main script | 0 | ~80+ | 100+ |
-| Modules with Phase 3 pattern | 0 | 15+ | All |
-| Modules with window.* exports removed | 0 | 15+ | All |
+| `deps.*` usage in main script | 0 | ~85+ | 100+ |
+| Modules with Phase 3 pattern | 0 | 18+ | All |
+| Modules with `set*Dependencies()` | 0 | 10+ | All stateful |
+| Modules with window.* exports removed | 0 | 18+ | All |
 | window.* exports from modules | ~125 | ~5 (internal only) | 0 |
 | window.* managed by main script | 0 | 100+ | All needed |
+| Test coverage | 1011 | 1111 | 1123+ |
 
 ---
 

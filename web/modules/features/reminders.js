@@ -16,20 +16,36 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for MiniCycleReminders (call before creating instance)
+ * @param {Object} dependencies - { AppState, showNotification, loadMiniCycleData, etc. }
+ */
+export function setRemindersDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔔 Reminders dependencies set:', Object.keys(dependencies));
+}
+
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
         this.version = '1.391';
 
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // Store dependencies with intelligent fallbacks
         this.deps = {
-            AppState: dependencies.AppState || window.AppState,
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            updateUndoRedoButtons: dependencies.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener,
-            autoSave: dependencies.autoSave || (() => console.warn('⚠️ autoSave not available'))
+            AppState: mergedDeps.AppState || (() => window.AppState),  // ✅ AppState getter function
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddEventListener,
+            autoSave: mergedDeps.autoSave || (() => console.warn('⚠️ autoSave not available')),
+            refreshTaskListUI: mergedDeps.refreshTaskListUI || null  // ✅ Added for DI
         };
 
         // Internal state (accessed via AppGlobalState)
@@ -151,11 +167,12 @@ export class MiniCycleReminders {
         }
 
         // ✅ Update cycle's taskOptionButtons.reminders setting
-        if (this.deps.AppState?.update && this.deps.AppState?.get) {
-            const state = this.deps.AppState.get();
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (AppState?.update && AppState?.get) {
+            const state = AppState.get();
             const activeCycleId = state.appState?.activeCycleId;
             if (activeCycleId && state.data?.cycles?.[activeCycleId]) {
-                this.deps.AppState.update(s => {
+                AppState.update(s => {
                     if (!s.data.cycles[activeCycleId].taskOptionButtons) {
                         s.data.cycles[activeCycleId].taskOptionButtons = {};
                     }
@@ -168,9 +185,10 @@ export class MiniCycleReminders {
         // Update the 🔔 task buttons
         this.updateReminderButtons();
 
-        // ✅ Refresh task list to show/hide reminder buttons
-        if (typeof window.refreshTaskListUI === 'function') {
-            window.refreshTaskListUI();
+        // ✅ Refresh task list to show/hide reminder buttons (deferred lookup)
+        const refreshTaskListUI = this.deps.refreshTaskListUI || window.refreshTaskListUI;
+        if (typeof refreshTaskListUI === 'function') {
+            refreshTaskListUI();
             console.log('🔄 Refreshed task list to update button visibility');
         }
 
@@ -303,8 +321,9 @@ export class MiniCycleReminders {
         }
 
         // ✅ Use AppState only (no localStorage fallback)
-        if (this.deps.AppState?.isReady?.()) {
-            await this.deps.AppState.update(state => {
+        const AppStateSave = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (AppStateSave?.isReady?.()) {
+            await AppStateSave.update(state => {
                 state.customReminders = remindersToSave;
             }, true); // immediate save for reminders
         } else {
@@ -418,8 +437,9 @@ export class MiniCycleReminders {
         task.remindersEnabled = isEnabled;
 
         // ✅ Use AppState only (no localStorage fallback)
-        if (this.deps.AppState?.isReady?.()) {
-            await this.deps.AppState.update(state => {
+        const AppStateTask = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (AppStateTask?.isReady?.()) {
+            await AppStateTask.update(state => {
                 if (state?.data?.cycles?.[activeCycle]) {
                     state.data.cycles[activeCycle] = cycles[activeCycle];
                 }
@@ -487,8 +507,9 @@ export class MiniCycleReminders {
         const now = Date.now();
 
         // ✅ Use AppState only (no localStorage fallback)
-        if (this.deps.AppState?.isReady?.()) {
-            await this.deps.AppState.update(state => {
+        const AppStateNotify = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (AppStateNotify?.isReady?.()) {
+            await AppStateNotify.update(state => {
                 const activeCycleId = state?.appState?.activeCycleId;
                 if (activeCycleId && state?.data?.cycles?.[activeCycleId]?.reminders) {
                     state.data.cycles[activeCycleId].reminders.timesReminded = timesReminded + 1;
@@ -805,8 +826,9 @@ export class MiniCycleReminders {
                 }
 
                 // ✅ Use AppState instead of direct localStorage - Save per-cycle
-                if (this.deps.AppState?.update) {
-                    this.deps.AppState.update(state => {
+                const AppStateDueDates = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+                if (AppStateDueDates?.update) {
+                    AppStateDueDates.update(state => {
                         const activeCycleId = state.appState.activeCycleId;
                         if (activeCycleId && state.data.cycles[activeCycleId]?.reminders) {
                             state.data.cycles[activeCycleId].reminders.dueDatesReminders = dueDatesReminders.checked;

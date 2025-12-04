@@ -201,27 +201,33 @@ export class TaskUtils {
      * Setup final task interactions (drag/drop, arrows)
      * @param {HTMLElement} taskItem - Task DOM element
      * @param {boolean} isLoading - Whether task is being loaded
+     * @param {Object} deps - Optional dependencies object { remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility }
      */
-    static setupFinalTaskInteractions(taskItem, isLoading) {
+    static setupFinalTaskInteractions(taskItem, isLoading, deps = {}) {
+        // Deferred lookup for dependencies (deps parameter or window fallback)
+        const remindOverdueTasks = deps.remindOverdueTasks || window.remindOverdueTasks;
+        const enableDragAndDropOnTask = deps.enableDragAndDropOnTask || window.enableDragAndDropOnTask;
+        const updateMoveArrowsVisibility = deps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility;
+
         // Remind overdue tasks after a delay (only if not loading)
         if (!isLoading) {
             setTimeout(() => {
-                if (typeof window.remindOverdueTasks === 'function') {
-                    window.remindOverdueTasks();
+                if (typeof remindOverdueTasks === 'function') {
+                    remindOverdueTasks();
                 }
             }, 1000);
         }
 
         // Enable drag and drop
-        if (typeof window.enableDragAndDropOnTask === 'function') {
-            window.enableDragAndDropOnTask(taskItem);
+        if (typeof enableDragAndDropOnTask === 'function') {
+            enableDragAndDropOnTask(taskItem);
         } else {
             console.warn('⚠️ enableDragAndDropOnTask function not available');
         }
 
         // Update move arrows visibility
-        if (typeof window.updateMoveArrowsVisibility === 'function') {
-            window.updateMoveArrowsVisibility();
+        if (typeof updateMoveArrowsVisibility === 'function') {
+            updateMoveArrowsVisibility();
         }
     }
 }

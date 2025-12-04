@@ -9,34 +9,50 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for MenuManager (call before creating instance)
+ * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ */
+export function setMenuManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🎛️ MenuManager dependencies set:', Object.keys(dependencies));
+}
+
 export class MenuManager {
     constructor(dependencies = {}) {
         this.version = '1.391';
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // Store dependencies with resilient fallbacks
         this.deps = {
-            loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
-            AppState: dependencies.AppState || (() => null),
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            showPromptModal: dependencies.showPromptModal || this.fallbackPromptModal,
-            showConfirmationModal: dependencies.showConfirmationModal || this.fallbackConfirmationModal,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
-            switchMiniCycle: dependencies.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
-            createNewMiniCycle: dependencies.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
-            loadMiniCycle: dependencies.loadMiniCycle || (() => console.warn('loadMiniCycle not available')),
-            updateCycleModeDescription: dependencies.updateCycleModeDescription || (() => {}),
-            checkGamesUnlock: dependencies.checkGamesUnlock || (() => {}),
-            sanitizeInput: dependencies.sanitizeInput || ((input) => input),
-            updateCycleData: dependencies.updateCycleData || (() => false),
-            updateProgressBar: dependencies.updateProgressBar || (() => {}),
-            updateStatsPanel: dependencies.updateStatsPanel || (() => {}),
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || (() => {}),
-            updateUndoRedoButtons: dependencies.updateUndoRedoButtons || (() => {})
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
+            AppState: mergedDeps.AppState || (() => null),
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            showPromptModal: mergedDeps.showPromptModal || this.fallbackPromptModal,
+            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirmationModal,
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener,
+            switchMiniCycle: mergedDeps.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
+            createNewMiniCycle: mergedDeps.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
+            loadMiniCycle: mergedDeps.loadMiniCycle || (() => console.warn('loadMiniCycle not available')),
+            updateCycleModeDescription: mergedDeps.updateCycleModeDescription || null,  // ✅ Deferred lookup
+            checkGamesUnlock: mergedDeps.checkGamesUnlock || (() => {}),
+            sanitizeInput: mergedDeps.sanitizeInput || ((input) => input),
+            updateCycleData: mergedDeps.updateCycleData || (() => false),
+            updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
+            updateStatsPanel: mergedDeps.updateStatsPanel || (() => {}),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || (() => {}),
+            recurringPanel: mergedDeps.recurringPanel || null  // ✅ Added for DI
         };
 
         // Cache DOM elements (will be set in init)
@@ -191,9 +207,10 @@ export class MenuManager {
             console.warn('⚠️ Date element not found');
         }
 
-        // ✅ Update mode description
-        if (typeof window.updateCycleModeDescription === 'function') {
-            window.updateCycleModeDescription();
+        // ✅ Update mode description (deferred lookup)
+        const updateCycleModeDescription = this.deps.updateCycleModeDescription || window.updateCycleModeDescription;
+        if (typeof updateCycleModeDescription === 'function') {
+            updateCycleModeDescription();
             console.log('🎯 Mode description updated');
         }
 
@@ -395,8 +412,10 @@ export class MenuManager {
         this.deps.updateProgressBar();
         this.deps.updateStatsPanel();
         this.deps.checkCompleteAllButton();
-        if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-            window.recurringPanel.updateRecurringPanelButtonVisibility();
+        // ✅ Deferred lookup for recurringPanel
+        const recurringPanel = this.deps.recurringPanel || window.recurringPanel;
+        if (recurringPanel?.updateRecurringPanelButtonVisibility) {
+            recurringPanel.updateRecurringPanelButtonVisibility();
         }
         this.hideMainMenu();
 
@@ -477,8 +496,10 @@ export class MenuManager {
                 this.deps.updateProgressBar();
                 this.deps.updateStatsPanel();
                 this.deps.checkCompleteAllButton();
-                if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-                    window.recurringPanel.updateRecurringPanelButtonVisibility();
+                // ✅ Deferred lookup for recurringPanel
+                const recurringPanelDel = this.deps.recurringPanel || window.recurringPanel;
+                if (recurringPanelDel?.updateRecurringPanelButtonVisibility) {
+                    recurringPanelDel.updateRecurringPanelButtonVisibility();
                 }
 
                 // ✅ Update undo/redo button states

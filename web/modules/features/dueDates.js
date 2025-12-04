@@ -16,22 +16,37 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for MiniCycleDueDates (call before creating instance)
+ * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ */
+export function setDueDatesDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('📅 DueDates dependencies set:', Object.keys(dependencies));
+}
+
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
         this.version = '1.391';
 
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // Store dependencies with intelligent fallbacks
         this.deps = {
-            loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            updateStatsPanel: dependencies.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: dependencies.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: dependencies.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
-            saveTaskToSchema25: dependencies.saveTaskToSchema25 || this.fallbackSave,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener,
-            AppState: dependencies.AppState || (() => window.AppState)  // ✅ AppState getter function
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            updateStatsPanel: mergedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
+            updateProgressBar: mergedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
+            saveTaskToSchema25: mergedDeps.saveTaskToSchema25 || this.fallbackSave,
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddEventListener,
+            AppState: mergedDeps.AppState || (() => window.AppState)  // ✅ AppState getter function
         };
 
         // Store reference to auto reset toggle element (will be set in init)

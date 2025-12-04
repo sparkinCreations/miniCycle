@@ -17,29 +17,45 @@ import { appInit } from '../core/appInit.js';
 const getDataValidator = () => window.DataValidator;
 const getCalculateNextOccurrence = () => window.recurringCore?.calculateNextOccurrence || window.calculateNextOccurrence;
 
+// Module-level deps for late injection
+let _deps = {};
+
+/**
+ * Set dependencies for SettingsManager (call before creating instance)
+ * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ */
+export function setSettingsManagerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('⚙️ SettingsManager dependencies set:', Object.keys(dependencies));
+}
+
 export class SettingsManager {
     constructor(dependencies = {}) {
         this.version = '1.391';
         this.initialized = false;
 
+        // Merge injected deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
         // Store dependencies with resilient fallbacks
         this.deps = {
-            loadMiniCycleData: dependencies.loadMiniCycleData || this.fallbackLoadData,
-            AppState: dependencies.AppState || (() => null),
-            showNotification: dependencies.showNotification || this.fallbackNotification,
-            showConfirmationModal: dependencies.showConfirmationModal || this.fallbackConfirmationModal,
-            hideMainMenu: dependencies.hideMainMenu || (() => {}),
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
-            setupDarkModeToggle: dependencies.setupDarkModeToggle || (() => console.warn('Dark mode toggle not available')),
-            setupQuickDarkToggle: dependencies.setupQuickDarkToggle || (() => console.warn('Quick dark toggle not available')),
-            updateMoveArrowsVisibility: dependencies.updateMoveArrowsVisibility || (() => {}),
-            toggleHoverTaskOptions: dependencies.toggleHoverTaskOptions || (() => {}),
-            refreshTaskListUI: dependencies.refreshTaskListUI || (() => {}),
-            performSchema25Migration: dependencies.performSchema25Migration || (() => ({ success: false })),
-            resetDefaultRecurringSettings: dependencies.resetDefaultRecurringSettings || (() => {})
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
+            AppState: mergedDeps.AppState || (() => null),
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirmationModal,
+            hideMainMenu: mergedDeps.hideMainMenu || (() => {}),
+            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener,
+            setupDarkModeToggle: mergedDeps.setupDarkModeToggle || (() => console.warn('Dark mode toggle not available')),
+            setupQuickDarkToggle: mergedDeps.setupQuickDarkToggle || (() => console.warn('Quick dark toggle not available')),
+            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || (() => {}),
+            toggleHoverTaskOptions: mergedDeps.toggleHoverTaskOptions || (() => {}),
+            refreshTaskListUI: mergedDeps.refreshTaskListUI || null,  // ✅ Deferred lookup
+            performSchema25Migration: mergedDeps.performSchema25Migration || (() => ({ success: false })),
+            resetDefaultRecurringSettings: mergedDeps.resetDefaultRecurringSettings || (() => {}),
+            organizeCompletedTasks: mergedDeps.organizeCompletedTasks || null  // ✅ Added for DI
         };
     }
 
@@ -261,11 +277,10 @@ export class SettingsManager {
                 // ✅ Disable/enable hover behavior for current tasks
                 this.deps.toggleHoverTaskOptions(!enabled);
 
-                // ✅ Update task list UI to add/remove three-dots buttons
-                if (typeof this.deps.refreshTaskListUI === 'function') {
-                    this.deps.refreshTaskListUI();
-                } else if (typeof window.refreshTaskListUI === 'function') {
-                    window.refreshTaskListUI();
+                // ✅ Update task list UI to add/remove three-dots buttons (deferred lookup)
+                const refreshTaskListUI = this.deps.refreshTaskListUI || window.refreshTaskListUI;
+                if (typeof refreshTaskListUI === 'function') {
+                    refreshTaskListUI();
                 }
             });
 
@@ -311,9 +326,10 @@ export class SettingsManager {
                     return;
                 }
 
-                // ✅ If enabling, organize existing completed tasks
-                if (enabled && typeof window.organizeCompletedTasks === 'function') {
-                    window.organizeCompletedTasks();
+                // ✅ If enabling, organize existing completed tasks (deferred lookup)
+                const organizeCompletedTasks = this.deps.organizeCompletedTasks || window.organizeCompletedTasks;
+                if (enabled && typeof organizeCompletedTasks === 'function') {
+                    organizeCompletedTasks();
                 }
 
                 // ✅ If disabling, move completed tasks back to main list
