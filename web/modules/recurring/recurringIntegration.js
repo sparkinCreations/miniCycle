@@ -8,7 +8,7 @@
  * Copy this code into miniCycle-scripts.js DOMContentLoaded handler.
  *
  * @module recurringIntegration
- * @version 1.394
+ * @version 1.395
  * @requires AppInit (for initialization coordination)
  */
 
@@ -18,9 +18,11 @@ import { appInit } from '../core/appInit.js';
  * Initialize recurring task modules
  * Automatically waits for core systems (AppState + data) to be ready
  *
+ * @param {Object} options - Configuration options
+ * @param {Object} options.AppMeta - App metadata containing version
  * @returns {Promise<Object>} Object containing core and panel instances
  */
-export async function initializeRecurringModules() {
+export async function initializeRecurringModules(options = {}) {
     console.log('🔄 Initializing recurring task modules...');
 
     // ✅ Wait for core systems to be ready (AppState + data)
@@ -32,7 +34,11 @@ export async function initializeRecurringModules() {
         // STEP 1: Import both modules (with version for cache-busting)
         // ============================================
 
-        const version = window.APP_VERSION || '1.331';
+        // Use injected AppMeta version only (DI-pure)
+        if (!options.AppMeta?.version) {
+            console.warn('⚠️ recurringIntegration: AppMeta.version not provided');
+        }
+        const version = options.AppMeta?.version || 'dev-local';
         const recurringCore = await import(`./recurringCore.js?v=${version}`);
         const { RecurringPanelManager, buildRecurringSummaryFromSettings } = await import(`./recurringPanel.js?v=${version}`);
 

@@ -6,7 +6,7 @@
  * 2. Refreshes UI from state
  * 3. Triggers recurring task check
  *
- * @version 1.394
+ * @version 1.395
  * @module pullToRefresh
  */
 

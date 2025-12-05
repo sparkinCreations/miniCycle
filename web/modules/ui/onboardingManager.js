@@ -17,7 +17,7 @@
  * - safeAddEventListenerById (event helper)
  *
  * @module onboardingManager
- * @version 1.394
+ * @version 1.395
  */
 
 import { appInit } from '../core/appInit.js';

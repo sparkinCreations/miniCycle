@@ -8,7 +8,7 @@
  * - Updates UI components
  *
  * @module modules/task/taskRenderer
- * @version 1.394
+ * @version 1.395
  */
 
 // Module-level deps for late injection

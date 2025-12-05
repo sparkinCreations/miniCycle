@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.394
+ * @version 1.395
  * @pattern Resilient Constructor 🛡️
  */
 

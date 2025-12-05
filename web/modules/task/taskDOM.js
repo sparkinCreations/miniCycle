@@ -12,7 +12,7 @@
  * Dependency Pattern:
  * - this._rawDeps: Raw input from constructor (used only for sub-module pre-injection)
  * - this.deps: Normalized dependency bag with fallbacks (used for all runtime access)
- * - this.version: Uses injected appVersion (no window.APP_VERSION in modules)
+ * - this.version: Uses injected AppMeta.version (no window.APP_VERSION in modules)
  * - Use this.deps.* everywhere except when checking for pre-injected sub-modules
  *
  * ⚠️ IMPORTANT: Multiple Module Instance Handling
@@ -27,7 +27,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.394
+ * @version 1.395
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -207,10 +207,11 @@ export class TaskDOMManager {
             if (!this.modulesLoaded) {
                 console.log('📦 Loading task sub-modules with versioning...');
 
-                // Get version for cache busting
-                const version = typeof self !== 'undefined' && self.APP_VERSION
-                    ? self.APP_VERSION
-                    : window.APP_VERSION || '1.371';
+                // Get version for cache busting - use injected version only (DI-pure)
+                if (!this.version) {
+                    console.warn('⚠️ TaskDOMManager: AppMeta.version not provided');
+                }
+                const version = this.version || 'dev-local';
                 console.log(`📦 Using version ${version} for sub-module imports`);
 
                 // Load all 4 sub-modules with versioned imports

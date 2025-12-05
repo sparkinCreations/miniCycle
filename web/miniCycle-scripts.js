@@ -1025,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log('🔄 Initializing recurring task modules...');
         try {
             const { initializeRecurringModules, testRecurringIntegration } = await import(withV('./modules/recurring/recurringIntegration.js'));
-            const recurringModules = await initializeRecurringModules();
+            const recurringModules = await initializeRecurringModules({ AppMeta: window.AppMeta });
 
             // Phase 3: Main script handles window.* exposure
             window._recurringModules = recurringModules;
