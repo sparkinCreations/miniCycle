@@ -1411,13 +1411,21 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const taskCore = await initTaskCore({
                 // State management
                 AppState: window.AppState,
+                AppGlobalState: window.AppGlobalState,
+                AppMeta: window.AppMeta,
 
                 // Data operations
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),  // ✅ Use direct function
+                sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),
+
+                // Safe storage utilities (DI-pure)
+                safeJSONParse: GlobalUtils.safeJSONParse,
+                safeJSONStringify: GlobalUtils.safeJSONStringify,
+                safeLocalStorageGet: GlobalUtils.safeLocalStorageGet,
+                safeLocalStorageSet: GlobalUtils.safeLocalStorageSet,
 
                 // UI updates
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 updateProgressBar: () => window.updateProgressBar?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
@@ -1436,7 +1444,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
 
-                // Task DOM creation (temporary - these will be extracted to taskDOM.js later)
+                // Task DOM creation (from taskDOM.js)
                 validateAndSanitizeTaskInput: (text) => window.validateAndSanitizeTaskInput?.(text),
                 loadTaskContext: (...args) => window.loadTaskContext?.(...args),
                 createOrUpdateTaskData: (ctx) => window.createOrUpdateTaskData?.(ctx),
@@ -1445,8 +1453,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 finalizeTaskCreation: (els, ctx, opts) => window.finalizeTaskCreation?.(els, ctx, opts),
 
                 // Auto-save
-                autoSave: () => window.autoSave?.(),
-                AppMeta: window.AppMeta
+                autoSave: () => window.autoSave?.()
             });
 
             // Phase 3: Main script handles window.* exposure

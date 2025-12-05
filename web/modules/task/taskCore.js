@@ -40,65 +40,74 @@ export class TaskCore {
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();
 
-        // Store dependencies with module-level fallbacks and window.* for test compatibility
-        // Priority: constructor > module deps > window.* (for test compatibility)
+        // Store dependencies - NO window.* fallbacks (DI-pure)
+        // Priority: constructor > module deps > local fallback
         this.deps = {
             // State management
-            AppState: mergedDeps.AppState || window.AppState || null,
+            AppState: mergedDeps.AppState || null,
 
             // Data operations
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || window.loadMiniCycleData || this.fallbackLoadData,
-            sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || ((text) => text),
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
+            sanitizeInput: mergedDeps.sanitizeInput || ((text) => text),
+
+            // Safe storage utilities (injected, no globals)
+            safeJSONParse: mergedDeps.safeJSONParse || ((str, fallback) => { try { return JSON.parse(str); } catch { return fallback; } }),
+            safeJSONStringify: mergedDeps.safeJSONStringify || ((obj, fallback) => { try { return JSON.stringify(obj); } catch { return fallback; } }),
+            safeLocalStorageGet: mergedDeps.safeLocalStorageGet || ((key, fallback) => { try { return localStorage.getItem(key); } catch { return fallback; } }),
+            safeLocalStorageSet: mergedDeps.safeLocalStorageSet || ((key, value) => { try { localStorage.setItem(key, value); } catch { console.warn('localStorage unavailable'); } }),
+
+            // Global state (injected, no window.AppGlobalState)
+            AppGlobalState: mergedDeps.AppGlobalState || null,
 
             // UI updates
-            showNotification: mergedDeps.showNotification || window.showNotification || this.fallbackNotification,
-            updateStatsPanel: mergedDeps.updateStatsPanel || window.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: mergedDeps.updateProgressBar || window.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || window.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
-            refreshUIFromState: mergedDeps.refreshUIFromState || window.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            updateStatsPanel: mergedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
+            updateProgressBar: mergedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
+            refreshUIFromState: mergedDeps.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
 
             // Undo system
-            captureStateSnapshot: mergedDeps.captureStateSnapshot || window.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
-            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || window.enableUndoSystemOnFirstInteraction || (() => {}),
+            captureStateSnapshot: mergedDeps.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
+            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || (() => {}),
 
             // Modal system
-            showPromptModal: mergedDeps.showPromptModal || window.showPromptModal || this.fallbackPromptModal,
-            showConfirmationModal: mergedDeps.showConfirmationModal || window.showConfirmationModal || this.fallbackConfirmModal,
+            showPromptModal: mergedDeps.showPromptModal || this.fallbackPromptModal,
+            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirmModal,
 
             // DOM helpers
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelector: mergedDeps.querySelector || ((selector) => document.querySelector(selector)),
             querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
 
-            // Task DOM creation (will be injected from taskDOM.js later)
-            validateAndSanitizeTaskInput: mergedDeps.validateAndSanitizeTaskInput || window.validateAndSanitizeTaskInput || null,
-            loadTaskContext: mergedDeps.loadTaskContext || window.loadTaskContext || null,
-            createOrUpdateTaskData: mergedDeps.createOrUpdateTaskData || window.createOrUpdateTaskData || null,
-            createTaskDOMElements: mergedDeps.createTaskDOMElements || window.createTaskDOMElements || null,
-            setupTaskInteractions: mergedDeps.setupTaskInteractions || window.setupTaskInteractions || null,
-            finalizeTaskCreation: mergedDeps.finalizeTaskCreation || window.finalizeTaskCreation || null,
+            // Task DOM creation (injected from taskDOM.js)
+            validateAndSanitizeTaskInput: mergedDeps.validateAndSanitizeTaskInput || null,
+            loadTaskContext: mergedDeps.loadTaskContext || null,
+            createOrUpdateTaskData: mergedDeps.createOrUpdateTaskData || null,
+            createTaskDOMElements: mergedDeps.createTaskDOMElements || null,
+            setupTaskInteractions: mergedDeps.setupTaskInteractions || null,
+            finalizeTaskCreation: mergedDeps.finalizeTaskCreation || null,
 
             // Auto-save
-            autoSave: mergedDeps.autoSave || window.autoSave || (() => console.log('⏭️ autoSave not available')),
+            autoSave: mergedDeps.autoSave || (() => console.log('⏭️ autoSave not available')),
 
             // Cycle completion (used in resetTasks)
-            incrementCycleCount: mergedDeps.incrementCycleCount || window.incrementCycleCount || null,
-            helpWindowManager: mergedDeps.helpWindowManager || window.helpWindowManager || null,
-            showCompletionAnimation: mergedDeps.showCompletionAnimation || window.showCompletionAnimation || null,
-            updateCompletedTasksCount: mergedDeps.updateCompletedTasksCount || window.updateCompletedTasksCount || null,
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || window.updateUndoRedoButtons || null,
+            incrementCycleCount: mergedDeps.incrementCycleCount || null,
+            helpWindowManager: mergedDeps.helpWindowManager || null,
+            showCompletionAnimation: mergedDeps.showCompletionAnimation || null,
+            updateCompletedTasksCount: mergedDeps.updateCompletedTasksCount || null,
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || null,
 
             // Task operations
-            checkOverdueTasks: mergedDeps.checkOverdueTasks || window.checkOverdueTasks || null,
-            handleTaskListMovement: mergedDeps.handleTaskListMovement || window.handleTaskListMovement || null,
-            removeRecurringTasksFromCycle: mergedDeps.removeRecurringTasksFromCycle || window.removeRecurringTasksFromCycle || null,
-            checkMiniCycle: mergedDeps.checkMiniCycle || window.checkMiniCycle || null,
+            checkOverdueTasks: mergedDeps.checkOverdueTasks || null,
+            handleTaskListMovement: mergedDeps.handleTaskListMovement || null,
+            removeRecurringTasksFromCycle: mergedDeps.removeRecurringTasksFromCycle || null,
+            checkMiniCycle: mergedDeps.checkMiniCycle || null,
 
             // Recurring system
-            recurringCore: mergedDeps.recurringCore || window.recurringCore || null,
+            recurringCore: mergedDeps.recurringCore || null,
 
             // Move arrows
-            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility || null
+            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || null
         };
 
         console.log('🎯 TaskCore module initialized');
@@ -151,14 +160,10 @@ export class TaskCore {
         const checkInterval = 50; // Check every 50ms
 
         while (Date.now() - startTime < maxWaitMs) {
-            // Use deferred lookup for dependencies that initialize after TaskCore
-            const incrementCycleCount = this.deps.incrementCycleCount || window.incrementCycleCount;
-            const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
-            const showCompletionAnimation = this.deps.showCompletionAnimation || window.showCompletionAnimation;
-
-            const hasIncrementCycleCount = typeof incrementCycleCount === 'function';
-            const hasHelpWindowManager = helpWindowManager && typeof helpWindowManager.showCycleCompleteMessage === 'function';
-            const hasShowCompletionAnimation = typeof showCompletionAnimation === 'function';
+            // Check injected deps only (DI-pure, no window.* fallback)
+            const hasIncrementCycleCount = typeof this.deps.incrementCycleCount === 'function';
+            const hasHelpWindowManager = this.deps.helpWindowManager && typeof this.deps.helpWindowManager.showCycleCompleteMessage === 'function';
+            const hasShowCompletionAnimation = typeof this.deps.showCompletionAnimation === 'function';
 
             if (hasIncrementCycleCount && hasHelpWindowManager && hasShowCompletionAnimation) {
                 console.log('✅ All UI functions available for resetTasks');
@@ -169,15 +174,10 @@ export class TaskCore {
             await new Promise(resolve => setTimeout(resolve, checkInterval));
         }
 
-        // Final deferred lookup for logging
-        const incrementCycleCount = this.deps.incrementCycleCount || window.incrementCycleCount;
-        const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
-        const showCompletionAnimation = this.deps.showCompletionAnimation || window.showCompletionAnimation;
-
         console.warn('⚠️ Timeout waiting for UI functions:', {
-            incrementCycleCount: typeof incrementCycleCount === 'function',
-            helpWindowManager: helpWindowManager && typeof helpWindowManager.showCycleCompleteMessage === 'function',
-            showCompletionAnimation: typeof showCompletionAnimation === 'function'
+            incrementCycleCount: typeof this.deps.incrementCycleCount === 'function',
+            helpWindowManager: this.deps.helpWindowManager && typeof this.deps.helpWindowManager.showCycleCompleteMessage === 'function',
+            showCompletionAnimation: typeof this.deps.showCompletionAnimation === 'function'
         });
         return false;
     }
@@ -362,11 +362,11 @@ export class TaskCore {
                                 const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
                                 if (task) {
                                     task.text = cleanText;
-                                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                                     if (fullSchemaData) {
                                         fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
                                         fullSchemaData.metadata.lastModified = Date.now();
-                                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                                        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
                                     }
                                 }
                             }
@@ -439,9 +439,8 @@ export class TaskCore {
                         this.deps.checkCompleteAllButton();
 
                         // Update move arrows (first/last task may have changed)
-                        const updateArrows = this.deps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility;
-                        if (typeof updateArrows === 'function') {
-                            updateArrows();
+                        if (typeof this.deps.updateMoveArrowsVisibility === 'function') {
+                            this.deps.updateMoveArrowsVisibility();
                         }
 
                     } else {
@@ -455,11 +454,11 @@ export class TaskCore {
 
                             if (index !== -1) {
                                 tasks.splice(index, 1);
-                                const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                                const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                                 if (fullSchemaData) {
                                     fullSchemaData.data.cycles[activeCycle].tasks = tasks;
                                     fullSchemaData.metadata.lastModified = Date.now();
-                                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                                    this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
                                     taskItem.remove();
                                     this.deps.showNotification(`Task "${taskName}" deleted.`, "show", 2500);
@@ -468,9 +467,8 @@ export class TaskCore {
                                     this.deps.checkCompleteAllButton();
 
                                     // Update move arrows (first/last task may have changed)
-                                    const updateArrows = this.deps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility;
-                                    if (typeof updateArrows === 'function') {
-                                        updateArrows();
+                                    if (typeof this.deps.updateMoveArrowsVisibility === 'function') {
+                                        this.deps.updateMoveArrowsVisibility();
                                     }
                                 }
                             }
@@ -561,11 +559,11 @@ export class TaskCore {
                     const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
                     if (task) {
                         task.highPriority = taskItem.classList.contains("high-priority");
-                        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                        const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                         if (fullSchemaData) {
                             fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
                             fullSchemaData.metadata.lastModified = Date.now();
-                            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                            this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
                             this.deps.showNotification(
                                 `Priority ${task.highPriority ? "enabled" : "removed"}.`,
                                 task.highPriority ? "error" : "info",
@@ -597,7 +595,7 @@ export class TaskCore {
             const isCompleted = checkbox.checked;
 
             // ✅ Capture state snapshot BEFORE making changes (for undo)
-            if (typeof this.deps.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.AppGlobalState?.isPerformingUndoRedo) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
                     this.deps.captureStateSnapshot(currentState);
@@ -630,13 +628,13 @@ export class TaskCore {
                             task.completed = isCompleted;
 
                             // Save to localStorage
-                            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                             if (fullSchemaData?.data?.cycles?.[activeCycle]) {
                                 const taskIndex = fullSchemaData.data.cycles[activeCycle].tasks.findIndex(t => t.id === taskId);
                                 if (taskIndex !== -1) {
                                     fullSchemaData.data.cycles[activeCycle].tasks[taskIndex].completed = isCompleted;
                                     fullSchemaData.metadata.lastModified = Date.now();
-                                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                                    this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
                                     console.log(`✅ Task completion saved to localStorage: ${task.text} = ${isCompleted}`);
                                 }
                             }
@@ -664,11 +662,10 @@ export class TaskCore {
                 }
             }
 
-            // Update help window if available - use deferred lookup
-            const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
-            if (helpWindowManager && typeof helpWindowManager.updateConstantMessage === 'function') {
+            // Update help window if available (DI-pure, no window.* fallback)
+            if (this.deps.helpWindowManager && typeof this.deps.helpWindowManager.updateConstantMessage === 'function') {
                 setTimeout(() => {
-                    helpWindowManager.updateConstantMessage();
+                    this.deps.helpWindowManager.updateConstantMessage();
                 }, 100);
             }
         } catch (error) {
@@ -720,11 +717,11 @@ export class TaskCore {
 
             currentCycle.tasks = reorderedTasks;
 
-            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
             if (fullSchemaData) {
                 fullSchemaData.data.cycles[activeCycle] = currentCycle;
                 fullSchemaData.metadata.lastModified = Date.now();
-                safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
             }
 
         } catch (error) {
@@ -758,11 +755,11 @@ export class TaskCore {
 
         // Fallback to localStorage if AppState not ready or failed
         try {
-            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
             if (fullSchemaData && fullSchemaData.data && fullSchemaData.data.cycles) {
                 fullSchemaData.data.cycles[activeCycle] = currentCycle;
                 fullSchemaData.metadata.lastModified = Date.now();
-                safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
             } else {
                 console.error('❌ Invalid schema data structure in localStorage');
             }
@@ -776,8 +773,8 @@ export class TaskCore {
      */
     async resetTasks() {
         try {
-            if (window.AppGlobalState?.isResetting) return;
-            window.AppGlobalState.isResetting = true;
+            if (this.deps.AppGlobalState?.isResetting) return;
+            if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = true;
 
             console.log('🔄 Resetting tasks (Schema 2.5 only)...');
 
@@ -803,7 +800,7 @@ export class TaskCore {
             // Validate DOM elements
             if (!taskList) {
                 console.error('❌ Task list element not found');
-                window.AppGlobalState.isResetting = false;
+                if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
                 return;
             }
 
@@ -818,7 +815,7 @@ export class TaskCore {
                 const schemaData = this.deps.loadMiniCycleData();
                 if (!schemaData) {
                     console.error('❌ Schema 2.5 data required for resetTasks');
-                    window.AppGlobalState.isResetting = false;
+                    if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
                     throw new Error('Schema 2.5 data not found');
                 }
                 cycles = schemaData.data?.cycles || {};
@@ -828,14 +825,14 @@ export class TaskCore {
 
             if (!activeCycle || !cycleData) {
                 console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
-                window.AppGlobalState.isResetting = false;
+                if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
                 return;
             }
 
             console.log('📊 Resetting tasks for cycle:', activeCycle);
 
             // ✅ CAPTURE UNDO SNAPSHOT BEFORE ANY MODIFICATIONS
-            if (typeof this.deps.captureStateSnapshot === 'function' && !window.AppGlobalState?.isPerformingUndoRedo) {
+            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.AppGlobalState?.isPerformingUndoRedo) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
                     this.deps.captureStateSnapshot(currentState);
@@ -912,11 +909,11 @@ export class TaskCore {
                     console.log('✅ Reset task data saved to AppState (will persist to localStorage)');
                 } else {
                     // Fallback: Save directly to localStorage if AppState not available
-                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                     if (fullSchemaData?.data?.cycles?.[activeCycle]) {
                         fullSchemaData.data.cycles[activeCycle] = cycleData;
                         fullSchemaData.metadata.lastModified = Date.now();
-                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
                         console.log('✅ Reset task data saved to localStorage (AppState fallback)');
                     }
                 }
@@ -941,10 +938,9 @@ export class TaskCore {
                 }
 
                 // Increment cycle count (this calls showCompletionAnimation internally)
-                // Use deferred lookup since these initialize after TaskCore
-                const incrementCycleCount = this.deps.incrementCycleCount || window.incrementCycleCount;
-                if (typeof incrementCycleCount === 'function') {
-                    incrementCycleCount(activeCycle, cycles);
+                // DI-pure: use injected dep only
+                if (typeof this.deps.incrementCycleCount === 'function') {
+                    this.deps.incrementCycleCount(activeCycle, cycles);
                 }
 
                 // Animate progress bar reset
@@ -957,10 +953,9 @@ export class TaskCore {
                     }, 50);
                 }
 
-                // Show cycle completion message - use deferred lookup
-                const helpWindowManager = this.deps.helpWindowManager || window.helpWindowManager;
-                if (helpWindowManager?.showCycleCompleteMessage) {
-                    helpWindowManager.showCycleCompleteMessage();
+                // Show cycle completion message (DI-pure, no window.* fallback)
+                if (this.deps.helpWindowManager?.showCycleCompleteMessage) {
+                    this.deps.helpWindowManager.showCycleCompleteMessage();
                 }
 
                 // ✅ Update undo/redo buttons to reflect the new snapshot
@@ -975,7 +970,7 @@ export class TaskCore {
 
             // Release reset lock
             setTimeout(() => {
-                window.AppGlobalState.isResetting = false;
+                if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
                 console.log('🔓 Reset lock released');
             }, 2000);
 
@@ -992,7 +987,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Reset tasks failed:', error);
-            window.AppGlobalState.isResetting = false;
+            if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
             this.deps.showNotification('Could not reset tasks', 'warning');
         }
     }
@@ -1144,11 +1139,11 @@ export class TaskCore {
                 } else {
                     // Fallback to localStorage
                     cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
+                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
                     if (fullSchemaData) {
                         fullSchemaData.data.cycles[activeCycle] = cycleData;
                         fullSchemaData.metadata.lastModified = Date.now();
-                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+                        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
                     }
                 }
 
@@ -1282,8 +1277,8 @@ function handleCompleteAllTasks() {
 // EXPORTS
 // ============================================================================
 
-// Phase 3 Step 1 - Clean exports (no window.* pollution)
-console.log('🎯 TaskCore module loaded (Phase 3 - no window.* exports)');
+// Phase 3 - Clean exports (no new window.* globals; legacy reads only)
+console.log('🎯 TaskCore module loaded (Phase 3 - DI-pure)');
 
 export {
     // TaskCore class already exported at line 21
