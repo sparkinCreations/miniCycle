@@ -885,11 +885,15 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 showTaskOptions: (taskItem) => window.showTaskOptions?.(taskItem),
                 hideTaskOptions: (taskItem) => window.hideTaskOptions?.(taskItem),
                 attachKeyboardTaskOptionToggle: (taskItem, threeDotsBtn) => window.attachKeyboardTaskOptionToggle?.(taskItem, threeDotsBtn),
+                revealTaskButtons: (taskItem) => window.revealTaskButtons?.(taskItem),
+                handleTaskButtonClick: (event) => window.handleTaskButtonClick?.(event),
+                // taskOptionsCustomizer: injected later via afterApp hook (initialized after TaskDOMManager)
 
                 // Drag and drop / arrows
                 DragAndDrop: window.DragAndDrop,
-                updateArrowsInDOM: (taskItem) => window.updateArrowsInDOM?.(taskItem),
-                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+                enableDragAndDropOnTask,
+                updateArrowsInDOM,
+                updateMoveArrowsVisibility,
 
                 // Cycle operations
                 checkMiniCycle: () => window.checkMiniCycle?.(),
@@ -902,6 +906,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // Phase 3: Main script handles window.* exposure
             window.__taskDOMManager = taskDOMManager;
             window.taskEvents = taskDOMManager.events;
+
+            // Expose sub-module classes globally (for multiple module instance fallback)
+            window.__TaskValidator = taskDOMManager.TaskValidator;
+            window.__TaskUtils = taskDOMManager.TaskUtils;
+            window.__TaskRenderer = taskDOMManager.TaskRenderer;
+            window.__TaskEvents = taskDOMManager.TaskEvents;
 
             console.log('✅ Task DOM module initialized (Phase 3)');
             console.log('⏱️ CHECKPOINT: initTaskDOMManager completed successfully');
@@ -938,6 +948,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // Phase 3: Main script handles window.* exposure
             window.taskOptionsCustomizer = taskOptionsCustomizer;
             window.TaskOptionsCustomizer = TaskOptionsCustomizer;
+
+            // Inject into TaskDOMManager (late-bound dependency)
+            if (window.__taskDOMManager) {
+                window.__taskDOMManager.injectDependency('taskOptionsCustomizer', taskOptionsCustomizer);
+            }
 
             console.log('✅ Task options customizer initialized (Phase 3)');
         } catch (error) {

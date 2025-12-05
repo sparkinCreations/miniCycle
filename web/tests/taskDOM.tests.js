@@ -99,8 +99,29 @@ export async function runTaskDOMTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    await test('creates instance with no dependencies', () => {
-        const manager = new TaskDOMManager();
+    await test('throws error when required dependencies are missing', () => {
+        let threwError = false;
+        let errorMessage = '';
+
+        try {
+            // Intentionally NOT providing required deps to test validation
+            const manager = new TaskDOMManager({});
+        } catch (error) {
+            threwError = true;
+            errorMessage = error.message;
+        }
+
+        if (!threwError) {
+            throw new Error('Should throw error when required dependencies are missing');
+        }
+
+        if (!errorMessage.includes('Missing required dependencies')) {
+            throw new Error(`Expected error about missing deps, got: ${errorMessage}`);
+        }
+    });
+
+    await test('creates instance with required dependencies', () => {
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         if (!manager) {
             throw new Error('Failed to create TaskDOMManager instance');
@@ -288,7 +309,7 @@ export async function runTaskDOMTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Creation</h4>';
 
     await test('createTaskCheckbox creates checkbox element', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const checkbox = manager.createTaskCheckbox('test-id', 'Test task', false);
 
@@ -306,7 +327,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createTaskCheckbox sets checked state', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const checked = manager.createTaskCheckbox('test-id', 'Test', true);
         const unchecked = manager.createTaskCheckbox('test-id', 'Test', false);
@@ -321,7 +342,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createTaskCheckbox adds ARIA attributes', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const checkbox = manager.createTaskCheckbox('test-id', 'Test task', false);
 
@@ -335,7 +356,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createTaskLabel creates span element', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const label = manager.createTaskLabel('Test task', 'test-id', false);
 
@@ -353,7 +374,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createTaskLabel adds recurring indicator when recurring=true', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const label = manager.createTaskLabel('Test task', 'test-id', true);
 
@@ -365,7 +386,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createTaskLabel does not add indicator when recurring=false', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const label = manager.createTaskLabel('Test task', 'test-id', false);
 
@@ -377,7 +398,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement creates list item', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const taskItem = manager.createMainTaskElement('test-id', false, false, {}, {});
 
@@ -395,7 +416,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement makes element draggable', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const taskItem = manager.createMainTaskElement('test-id', false, false, {}, {});
 
@@ -405,7 +426,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement adds high-priority class when highPriority=true', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const taskItem = manager.createMainTaskElement('test-id', true, false, {}, {});
 
@@ -415,7 +436,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement adds recurring class when has template', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const currentCycle = {
             recurringTemplates: {
@@ -433,7 +454,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement preserves recurringSettings in DOM when recurring=false', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const recurringSettings = {
             frequency: 'weekly',
@@ -462,7 +483,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement sets data-recurring-settings when recurring=true', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         const recurringSettings = {
             frequency: 'daily',
@@ -483,7 +504,7 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('createMainTaskElement does not set data-recurring-settings when no settings exist', () => {
-        const manager = new TaskDOMManager();
+        const manager = new TaskDOMManager(getDefaultDeps());
 
         // No settings provided
         const taskItem = manager.createMainTaskElement('test-id', false, false, {}, {});
@@ -818,21 +839,23 @@ export async function runTaskDOMTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">📊 Integration</h4>';
 
-    await test('integrates with window.addTask when available', async () => {
+    await test('integrates with addTask when injected as dependency', async () => {
         const taskList = document.createElement('ul');
         taskList.id = 'taskList';
 
         let addTaskCalled = false;
-        window.addTask = () => {
+        const mockAddTask = () => {
             addTaskCalled = true;
         };
 
+        // Phase 3 DI: inject addTask as a dependency instead of relying on window.*
         const manager = new TaskDOMManager({
             ...getDefaultDeps(),
             getElementById: (id) => id === 'taskList' ? taskList : null,
             updateProgressBar: () => {},
             checkCompleteAllButton: () => {},
-            updateStatsPanel: () => {}
+            updateStatsPanel: () => {},
+            addTask: mockAddTask  // ✅ Inject as dependency
         });
 
         await manager.init();
@@ -842,10 +865,8 @@ export async function runTaskDOMTests(resultsDiv) {
         ]);
 
         if (!addTaskCalled) {
-            throw new Error('Should call window.addTask for rendering');
+            throw new Error('Should call injected addTask for rendering');
         }
-
-        delete window.addTask;
     });
 
     await test('revealTaskButtons shows options without manipulating arrows', async () => {

@@ -9,18 +9,19 @@
  * - Shows user-friendly error messages
  * - Falls back to basic task display
  *
+ * Dependency Pattern:
+ * - this._rawDeps: Raw input from constructor (used only for sub-module pre-injection)
+ * - this.deps: Normalized dependency bag with fallbacks (used for all runtime access)
+ * - Use this.deps.* everywhere except when checking for pre-injected sub-modules
+ *
  * ⚠️ IMPORTANT: Multiple Module Instance Handling
  * Due to ES6 module versioning (?v=1.371), the same module can be loaded
  * multiple times, creating separate instances with separate module-level variables.
  *
- * Solution: All critical state is stored BOTH locally AND globally:
+ * Solution: Manager instance exposed globally from main script (miniCycle-scripts.js):
  * - taskDOMManager → window.__taskDOMManager
- * - TaskValidator → window.__TaskValidator
- * - TaskUtils → window.__TaskUtils
- * - TaskRenderer → window.__TaskRenderer
- * - TaskEvents → window.__TaskEvents
  *
- * All wrapper functions check: `const utils = TaskUtils || window.__TaskUtils;`
+ * All wrapper functions check: `const manager = taskDOMManager || window.__taskDOMManager;`
  *
  * Based on dragDropManager.js + statsPanel.js patterns
  *
@@ -30,10 +31,7 @@
  */
 
 import { appInit } from '../core/appInit.js';
-import {
-    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS
-} from '../core/constants.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 // Module-level deps for late injection
 let _deps = {};
@@ -56,8 +54,9 @@ export class TaskDOMManager {
         // Merge module-level deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
 
-        // Store merged dependencies
-        this.dependencies = mergedDeps;
+        // Store raw dependencies only for sub-module pre-injection (validator, renderer, events)
+        // Use this.deps for all runtime access (normalized with fallbacks)
+        this._rawDeps = mergedDeps;
 
         // Modules will be initialized in init() after dynamic import
         this.validator = null;
@@ -65,71 +64,100 @@ export class TaskDOMManager {
         this.events = null;
         this.modulesLoaded = false;
 
-        // Store dependencies with module-level fallbacks and window.* for test compatibility
-        // Priority: constructor > module deps > window.* (for test compatibility)
+        // ============================================
+        // REQUIRED DEPENDENCIES - fail fast if missing
+        // ============================================
+        const requiredDeps = ['AppState', 'sanitizeInput'];
+        const missingDeps = requiredDeps.filter(dep => !mergedDeps[dep]);
+
+        if (missingDeps.length > 0) {
+            const error = new Error(`TaskDOMManager: Missing required dependencies: ${missingDeps.join(', ')}`);
+            console.error('❌', error.message);
+            throw error;
+        }
+
+        // Store dependencies - NO window.* fallbacks (Phase 3 DI)
+        // All dependencies must be injected via setTaskDOMManagerDependencies() or constructor
         this.deps = {
-            // Core data access (critical - will verify in methods)
-            AppState: mergedDeps.AppState || window.AppState || null,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || window.loadMiniCycleData || this.fallbackLoadData,
-            saveTaskToSchema25: mergedDeps.saveTaskToSchema25 || window.saveTaskToSchema25 || this.fallbackSave,
+            // ============================================
+            // REQUIRED - guaranteed to exist (validated above)
+            // ============================================
+            AppState: mergedDeps.AppState,
+            sanitizeInput: mergedDeps.sanitizeInput,
 
-            // Task operations (from taskCore)
-            taskCore: mergedDeps.taskCore || window.taskCore || {},
+            // ============================================
+            // IMPORTANT - warn if missing but don't fail
+            // ============================================
+            GlobalUtils: mergedDeps.GlobalUtils || this._warnMissing('GlobalUtils'),
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || this._warnMissingWithFallback('loadMiniCycleData', this.fallbackLoadData),
+            saveTaskToSchema25: mergedDeps.saveTaskToSchema25 || this.fallbackSave,
+            generateId: mergedDeps.generateId || this._warnMissingWithFallback('generateId', this.fallbackGenerateId),
 
-            // Optional UI updates (safe with ?.() chaining)
-            showNotification: mergedDeps.showNotification || window.showNotification || this.fallbackNotification,
-            updateProgressBar: mergedDeps.updateProgressBar || window.updateProgressBar || this.fallbackUpdate,
-            updateStatsPanel: mergedDeps.updateStatsPanel || window.updateStatsPanel || this.fallbackUpdate,
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || window.checkCompleteAllButton || this.fallbackUpdate,
-            updateMainMenuHeader: mergedDeps.updateMainMenuHeader || window.updateMainMenuHeader || this.fallbackUpdate,
+            // ============================================
+            // OPTIONAL - safe to omit (use fallbacks)
+            // ============================================
 
-            // Mode management (optional)
-            getCurrentMode: mergedDeps.getCurrentMode || window.getCurrentMode || this.fallbackGetMode,
+            // Task operations
+            taskCore: mergedDeps.taskCore || {},
 
-            // Feature modules (all optional)
-            dueDates: mergedDeps.dueDates || window.dueDates || {},
-            reminders: mergedDeps.reminders || window.reminders || {},
-            recurringPanel: mergedDeps.recurringPanel || window.recurringPanel || {},
+            // UI updates (safe with ?.() chaining)
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            updateProgressBar: mergedDeps.updateProgressBar || this.fallbackUpdate,
+            updateStatsPanel: mergedDeps.updateStatsPanel || this.fallbackUpdate,
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || this.fallbackUpdate,
+            updateMainMenuHeader: mergedDeps.updateMainMenuHeader || this.fallbackUpdate,
 
-            // Helper functions (optional)
-            incrementCycleCount: mergedDeps.incrementCycleCount || window.incrementCycleCount || this.fallbackIncrement,
-            showCompletionAnimation: mergedDeps.showCompletionAnimation || window.showCompletionAnimation || this.fallbackAnimation,
-            helpWindowManager: mergedDeps.helpWindowManager || window.helpWindowManager,
-            autoSave: mergedDeps.autoSave || window.autoSave || this.fallbackAutoSave,
-            captureStateSnapshot: mergedDeps.captureStateSnapshot || window.captureStateSnapshot || this.fallbackCapture,
+            // Mode management
+            getCurrentMode: mergedDeps.getCurrentMode || this.fallbackGetMode,
 
-            // Task completion handlers (for createTaskCheckbox)
-            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || window.enableUndoSystemOnFirstInteraction || null,
-            handleTaskCompletionChange: mergedDeps.handleTaskCompletionChange || window.handleTaskCompletionChange || null,
-            checkMiniCycle: mergedDeps.checkMiniCycle || window.checkMiniCycle || null,
-            triggerLogoBackground: mergedDeps.triggerLogoBackground || window.triggerLogoBackground || null,
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || window.updateUndoRedoButtons || null,
+            // Feature modules
+            dueDates: mergedDeps.dueDates || {},
+            reminders: mergedDeps.reminders || {},
+            recurringPanel: mergedDeps.recurringPanel || {},
+
+            // Helper functions
+            incrementCycleCount: mergedDeps.incrementCycleCount || this.fallbackIncrement,
+            showCompletionAnimation: mergedDeps.showCompletionAnimation || this.fallbackAnimation,
+            helpWindowManager: mergedDeps.helpWindowManager || null,
+            autoSave: mergedDeps.autoSave || this.fallbackAutoSave,
+            captureStateSnapshot: mergedDeps.captureStateSnapshot || this.fallbackCapture,
+
+            // Task completion handlers
+            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || null,
+            handleTaskCompletionChange: mergedDeps.handleTaskCompletionChange || null,
+            checkMiniCycle: mergedDeps.checkMiniCycle || null,
+            triggerLogoBackground: mergedDeps.triggerLogoBackground || null,
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || null,
 
             // Due dates module
-            createDueDateInput: mergedDeps.createDueDateInput || window.createDueDateInput || null,
+            createDueDateInput: mergedDeps.createDueDateInput || null,
 
             // Task options customizer
-            taskOptionsCustomizer: mergedDeps.taskOptionsCustomizer || window.taskOptionsCustomizer || null,
+            taskOptionsCustomizer: mergedDeps.taskOptionsCustomizer || null,
 
             // Recurring handlers
-            handleRecurringTaskActivation: mergedDeps.handleRecurringTaskActivation || window.handleRecurringTaskActivation || null,
-            handleRecurringTaskDeactivation: mergedDeps.handleRecurringTaskDeactivation || window.handleRecurringTaskDeactivation || null,
-            updateRecurringPanelButtonVisibility: mergedDeps.updateRecurringPanelButtonVisibility || window.updateRecurringPanelButtonVisibility || null,
-
-            // Global utils with window.* fallback for test compatibility
-            GlobalUtils: mergedDeps.GlobalUtils || window.GlobalUtils || null,
-            sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || null,
-            safeAddEventListener: mergedDeps.safeAddEventListener || window.safeAddEventListener || this.fallbackAddListener,
-            safeGetElement: mergedDeps.safeGetElement || window.safeGetElement || this.fallbackGetElement,
-            generateId: mergedDeps.generateId || window.generateId || this.fallbackGenerateId,
+            handleRecurringTaskActivation: mergedDeps.handleRecurringTaskActivation || null,
+            handleRecurringTaskDeactivation: mergedDeps.handleRecurringTaskDeactivation || null,
+            updateRecurringPanelButtonVisibility: mergedDeps.updateRecurringPanelButtonVisibility || null,
 
             // DOM helpers (fallback to native)
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener,
+            safeGetElement: mergedDeps.safeGetElement || this.fallbackGetElement,
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
             querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
 
-            // Constants (optional)
-            DEFAULT_TASK_OPTION_BUTTONS: mergedDeps.DEFAULT_TASK_OPTION_BUTTONS || window.DEFAULT_TASK_OPTION_BUTTONS || {}
+            // Constants
+            DEFAULT_TASK_OPTION_BUTTONS: mergedDeps.DEFAULT_TASK_OPTION_BUTTONS || {},
+
+            // Task option UI functions
+            revealTaskButtons: mergedDeps.revealTaskButtons || null,
+            showTaskOptions: mergedDeps.showTaskOptions || null,
+            hideTaskOptions: mergedDeps.hideTaskOptions || null,
+            setupRecurringButtonHandler: mergedDeps.setupRecurringButtonHandler || null,
+            setupReminderButtonHandler: mergedDeps.setupReminderButtonHandler || null,
+            handleTaskButtonClick: mergedDeps.handleTaskButtonClick || null,
+            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || null
         };
 
         // Internal state
@@ -150,6 +178,16 @@ export class TaskDOMManager {
         this.version = '1.392';
 
         console.log('🎨 TaskDOMManager created with dependencies');
+    }
+
+    /**
+     * Inject a dependency after construction (for late-bound dependencies)
+     * @param {string} name - The dependency name
+     * @param {*} value - The dependency value
+     */
+    injectDependency(name, value) {
+        this.deps[name] = value;
+        console.log(`💉 TaskDOMManager: Injected dependency '${name}'`);
     }
 
     /**
@@ -205,51 +243,48 @@ export class TaskDOMManager {
 
                 // Initialize validator module - no window.* fallbacks (Phase 2)
                 // window.validateAndSanitizeTaskInput uses this validator via manager
-                this.validator = this.dependencies.validator || new TaskValidator({
-                    sanitizeInput: this.dependencies.sanitizeInput,  // Required - must be injected
-                    showNotification: this.dependencies.showNotification || this.fallbackNotification
+                this.validator = this._rawDeps.validator || new TaskValidator({
+                    sanitizeInput: this.deps.sanitizeInput,  // Required - already validated
+                    showNotification: this.deps.showNotification
                 });
 
-                // Initialize renderer module - Phase 3: pass all dependencies
-                this.renderer = this.dependencies.renderer || new TaskRenderer({
+                // Initialize renderer module - Phase 3: pass all dependencies (no window.* fallbacks)
+                this.renderer = this._rawDeps.renderer || new TaskRenderer({
                     // Core state
-                    AppState: this.dependencies.AppState,  // Required - must be injected
+                    AppState: this.deps.AppState,
 
-                    // Task management (deferred - available after full init)
-                    addTask: this.dependencies.addTask || ((...args) => window.addTask?.(...args)),
-                    loadMiniCycle: this.dependencies.loadMiniCycle || (() => window.loadMiniCycle?.()),
+                    // Task management (from raw deps - may not be in normalized deps)
+                    addTask: this._rawDeps.addTask || null,
+                    loadMiniCycle: this._rawDeps.loadMiniCycle || null,
 
-                    // UI update functions
-                    updateProgressBar: this.dependencies.updateProgressBar || this.fallbackUpdate,
-                    checkCompleteAllButton: this.dependencies.checkCompleteAllButton || this.fallbackUpdate,
-                    updateStatsPanel: this.dependencies.updateStatsPanel || this.fallbackUpdate,
-                    updateMainMenuHeader: this.dependencies.updateMainMenuHeader || ((...args) => window.updateMainMenuHeader?.(...args)),
-                    updateArrowsInDOM: this.dependencies.updateArrowsInDOM || ((visible) => window.updateArrowsInDOM?.(visible)),
-                    checkOverdueTasks: this.dependencies.checkOverdueTasks || ((...args) => window.checkOverdueTasks?.(...args)),
+                    // UI update functions (all normalized in this.deps)
+                    updateProgressBar: this.deps.updateProgressBar,
+                    checkCompleteAllButton: this.deps.checkCompleteAllButton,
+                    updateStatsPanel: this.deps.updateStatsPanel,
+                    updateMainMenuHeader: this.deps.updateMainMenuHeader,
+                    updateArrowsInDOM: this._rawDeps.updateArrowsInDOM || null,
+                    checkOverdueTasks: this._rawDeps.checkOverdueTasks || null,
 
                     // Drag-drop
-                    enableDragAndDropOnTask: this.dependencies.enableDragAndDropOnTask || ((task) => window.enableDragAndDropOnTask?.(task)),
+                    enableDragAndDropOnTask: this._rawDeps.enableDragAndDropOnTask || null,
 
-                    // Recurring panel (use getter for deferred lookup)
-                    recurringPanel: this.dependencies.recurringPanel || {
-                        get updateRecurringPanel() { return window.recurringPanel?.updateRecurringPanel; },
-                        get updateRecurringPanelButtonVisibility() { return window.recurringPanel?.updateRecurringPanelButtonVisibility; }
-                    },
-                    updateRecurringPanelButtonVisibility: this.dependencies.updateRecurringPanelButtonVisibility || (() => window.updateRecurringPanelButtonVisibility?.()),
+                    // Recurring panel
+                    recurringPanel: this.deps.recurringPanel,
+                    updateRecurringPanelButtonVisibility: this.deps.updateRecurringPanelButtonVisibility,
 
                     // DOM helpers
-                    getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
-                    querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+                    getElementById: this.deps.getElementById,
+                    querySelectorAll: this.deps.querySelectorAll
                 });
 
                 // Initialize events module - no window.* fallbacks (Phase 2)
-                this.events = this.dependencies.events || new TaskEvents({
-                    AppState: this.dependencies.AppState,  // Required - must be injected
-                    showNotification: this.dependencies.showNotification || this.fallbackNotification,
-                    autoSave: this.dependencies.autoSave || this.fallbackAutoSave,
-                    getElementById: this.dependencies.getElementById || ((id) => document.getElementById(id)),
-                    querySelectorAll: this.dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-                    safeAddEventListener: this.dependencies.safeAddEventListener || this.fallbackAddListener
+                this.events = this._rawDeps.events || new TaskEvents({
+                    AppState: this.deps.AppState,  // Required - already validated
+                    showNotification: this.deps.showNotification,
+                    autoSave: this.deps.autoSave,
+                    getElementById: this.deps.getElementById,
+                    querySelectorAll: this.deps.querySelectorAll,
+                    safeAddEventListener: this.deps.safeAddEventListener
                 });
 
                 // ✅ CRITICAL: Initialize event delegation for task clicks
@@ -260,6 +295,11 @@ export class TaskDOMManager {
                 }
 
                 // Phase 3 - No window.* exports (main script handles exposure)
+                // Expose classes on instance so main script can assign to window.__*
+                this.TaskValidator = TaskValidator;
+                this.TaskUtils = TaskUtils;
+                this.TaskRenderer = TaskRenderer;
+                this.TaskEvents = TaskEvents;
 
                 this.modulesLoaded = true;
                 console.log('✅ Task sub-modules loaded successfully (versioned)');
@@ -293,9 +333,9 @@ export class TaskDOMManager {
             // Remove hover event listeners from all tasks
             const tasks = this.deps.querySelectorAll?.('.task.hover-enabled') || [];
             tasks.forEach(taskItem => {
-                if (typeof window.showTaskOptions === 'function' && typeof window.hideTaskOptions === 'function') {
-                    taskItem.removeEventListener('mouseenter', window.showTaskOptions);
-                    taskItem.removeEventListener('mouseleave', window.hideTaskOptions);
+                if (typeof this.deps.showTaskOptions === 'function' && typeof this.deps.hideTaskOptions === 'function') {
+                    taskItem.removeEventListener('mouseenter', this.deps.showTaskOptions);
+                    taskItem.removeEventListener('mouseleave', this.deps.hideTaskOptions);
                     taskItem.classList.remove('hover-enabled');
                 }
             });
@@ -314,6 +354,28 @@ export class TaskDOMManager {
         } catch (error) {
             console.warn('⚠️ TaskDOMManager cleanup failed:', error);
         }
+    }
+
+    // ============================================
+    // Warning Helpers (for important but non-critical deps)
+    // ============================================
+
+    /**
+     * Warn about missing dependency but return null
+     * Used for important deps that won't crash but should be provided
+     */
+    _warnMissing(depName) {
+        console.warn(`⚠️ TaskDOMManager: ${depName} not injected - some features may not work correctly`);
+        return null;
+    }
+
+    /**
+     * Warn about missing dependency and return a fallback function
+     * Used for deps that have reasonable fallback behavior
+     */
+    _warnMissingWithFallback(depName, fallbackFn) {
+        console.warn(`⚠️ TaskDOMManager: ${depName} not injected - using fallback`);
+        return fallbackFn;
     }
 
     // ============================================
@@ -557,11 +619,11 @@ export class TaskDOMManager {
 
         event.stopPropagation();
 
-        // Use revealTaskButtons from window (will be available)
-        if (typeof window.revealTaskButtons === 'function') {
-            window.revealTaskButtons(taskItem);
+        // Use revealTaskButtons from injected deps
+        if (typeof this.deps.revealTaskButtons === 'function') {
+            this.deps.revealTaskButtons(taskItem);
         } else {
-            console.warn('⚠️ window.revealTaskButtons not available');
+            console.warn('⚠️ revealTaskButtons not injected');
         }
     }
 
@@ -704,13 +766,13 @@ export class TaskDOMManager {
         button.setAttribute("tabindex", "0");
         button.setAttribute("aria-label", "Customize which task option buttons are visible");
 
-        // Click handler - use deferred lookup since taskOptionsCustomizer initializes after TaskDOMManager
+        // Click handler - use deps (injected via setTaskDOMManagerDependencies)
         button.addEventListener("click", (e) => {
             e.stopPropagation();
-            const customizer = this.deps.taskOptionsCustomizer || window.taskOptionsCustomizer;
+            const customizer = this.deps.taskOptionsCustomizer;
             if (customizer) {
                 // ✅ Always use the active cycle ID from AppState
-                const state = this.deps.AppState?.get?.() || window.AppState?.get?.();
+                const state = this.deps.AppState?.get?.();
                 const activeCycleId = state?.appState?.activeCycleId;
 
                 if (activeCycleId) {
@@ -719,7 +781,7 @@ export class TaskDOMManager {
                     console.warn('⚠️ No active cycle ID found');
                 }
             } else {
-                console.warn('⚠️ TaskOptionsCustomizer not initialized');
+                console.warn('⚠️ TaskOptionsCustomizer not injected');
             }
         });
 
@@ -851,16 +913,19 @@ export class TaskDOMManager {
      */
     setupButtonEventHandlers(button, btnClass, taskContext) {
         if (btnClass === "recurring-btn") {
-            // ✅ Setup recurring button handler (from Group 4, but referenced here)
-            if (typeof window.setupRecurringButtonHandler === 'function') {
-                window.setupRecurringButtonHandler(button, taskContext);
+            // ✅ Setup recurring button handler (from injected deps)
+            if (typeof this.deps.setupRecurringButtonHandler === 'function') {
+                this.deps.setupRecurringButtonHandler(button, taskContext);
+            } else {
+                // Fallback to internal method if not injected
+                this.setupRecurringButtonHandler(button, taskContext);
             }
         } else if (btnClass === "enable-task-reminders") {
-            // ✅ Use window.setupReminderButtonHandler from reminders module
-            if (typeof window.setupReminderButtonHandler === 'function') {
-                window.setupReminderButtonHandler(button, taskContext);
+            // ✅ Use setupReminderButtonHandler from injected deps
+            if (typeof this.deps.setupReminderButtonHandler === 'function') {
+                this.deps.setupReminderButtonHandler(button, taskContext);
             } else {
-                console.warn('⚠️ setupReminderButtonHandler not available - reminders module failed to load');
+                console.warn('⚠️ setupReminderButtonHandler not injected - reminders module may not be loaded');
             }
         } else if (btnClass === "delete-when-complete-btn") {
             // ✅ Setup delete-when-complete button handler
@@ -869,9 +934,9 @@ export class TaskDOMManager {
             // ✅ Skip attaching old handlers to move buttons - using event delegation
             console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
         } else {
-            // Use handleTaskButtonClick from window
-            if (typeof window.handleTaskButtonClick === 'function') {
-                button.addEventListener("click", window.handleTaskButtonClick);
+            // Use handleTaskButtonClick from injected deps
+            if (typeof this.deps.handleTaskButtonClick === 'function') {
+                button.addEventListener("click", this.deps.handleTaskButtonClick);
             }
         }
     }
@@ -1397,9 +1462,8 @@ export class TaskDOMManager {
         }
 
         // ✅ Update move arrows (first/last task may have changed)
-        const updateArrows = window.updateMoveArrowsVisibility;
-        if (typeof updateArrows === 'function') {
-            updateArrows();
+        if (typeof this.deps.updateMoveArrowsVisibility === 'function') {
+            this.deps.updateMoveArrowsVisibility();
         }
 
         if (shouldSave) this.deps.autoSave?.();
@@ -1473,7 +1537,17 @@ async function initTaskDOMManager(dependencies = {}) {
 }
 
 // ============================================
-// Wrapper Functions
+// Wrapper Functions (Legacy Compatibility Layer)
+//
+// These functions exist so older code that expects
+// global functions and window.* can still work.
+//
+// - Core class: TaskDOMManager (pure DI via this.deps.*)
+// - New code: import from this module and go through manager
+// - Old code: still calls these functions and uses window.*
+//
+// Long-term: callers should migrate to direct manager usage
+// and this layer can be safely removed.
 // ============================================
 
 // ============================================
