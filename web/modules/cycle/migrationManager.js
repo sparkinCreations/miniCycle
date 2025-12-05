@@ -18,7 +18,6 @@
  * Risk: Medium (critical data operations)
  *
  * @module modules/cycle/migrationManager
- * @version 1.395
  */
 
 // ==========================================

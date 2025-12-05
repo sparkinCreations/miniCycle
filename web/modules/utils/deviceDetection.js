@@ -11,7 +11,6 @@
  * - Automatic lite version routing
  *
  * @module deviceDetection
- * @version 1.395
  */
 
 import { appInit } from '../core/appInit.js';

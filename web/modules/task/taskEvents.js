@@ -8,7 +8,6 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.395
  */
 
 // Module-level deps for late injection

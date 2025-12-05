@@ -11,7 +11,6 @@
  * - Navigation dot updates
  * - Collapsible section preferences (stored in AppState.settings.statsPanel)
  *
- * @version 1.395
  * @author miniCycle Development Team
  */
 

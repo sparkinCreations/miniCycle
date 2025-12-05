@@ -7,7 +7,6 @@
  * These are foundational utilities that need to be available globally
  * without import overhead for frequently called functions.
  *
- * @version 1.395
  * @author miniCycle Development Team
  */
 

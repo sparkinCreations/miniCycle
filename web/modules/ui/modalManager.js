@@ -17,7 +17,6 @@
  * - waitForCore (initialization wait function)
  *
  * @module modalManager
- * @version 1.395
  */
 
 // Module-level dependencies - set via setModalManagerDependencies

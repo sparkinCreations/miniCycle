@@ -8,7 +8,6 @@
  * - Pure input validation logic
  *
  * @module modules/task/taskValidation
- * @version 1.395
  */
 
 // Module-level deps for late injection

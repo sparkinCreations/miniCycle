@@ -5,7 +5,6 @@
  * It also provides a way to subscribe to state changes.
  *
  * @module state
- * @version 1.395
  */
 
 // Import constants

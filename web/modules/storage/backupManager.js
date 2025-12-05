@@ -5,7 +5,6 @@
  * non-blocking storage that doesn't compete with localStorage quota.
  *
  * @module storage/backupManager
- * @version 1.395
  */
 
 // ==========================================

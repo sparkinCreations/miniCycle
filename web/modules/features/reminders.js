@@ -11,7 +11,6 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module reminders
- * @version 1.395
  */
 
 import { appInit } from '../core/appInit.js';

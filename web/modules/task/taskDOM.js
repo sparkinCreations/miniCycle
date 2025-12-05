@@ -27,7 +27,6 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.395
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
@@ -1568,11 +1567,8 @@ function validateAndSanitizeTaskInput(taskText) {
     // ✅ Get manager from global if not in this module instance
     const manager = taskDOMManager || window.__taskDOMManager;
 
-    if (!manager) {
-        console.error('❌ CRITICAL: TaskDOMManager not found in module OR global!');
-        console.error('❌ This means initTaskDOMManager() never ran');
-        console.trace('❌ Call stack:');
-        // Fallback validation
+    if (!manager?.validator?.validateAndSanitizeTaskInput) {
+        console.warn('⚠️ Validator not ready, using fallback');
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
         return taskText.trim();
     }
@@ -1945,7 +1941,7 @@ export {
 };
 
 // ============================================
-// Phase 2 Step 13 - Clean exports (no window.* pollution)
+// Phase 2 Step 13 - Clean exports (no new window.* globals; legacy reads only)
 // ============================================
 
 console.log('🎨 TaskDOM module loaded (Phase 2 - no window.* exports - FINAL MIGRATION!)');

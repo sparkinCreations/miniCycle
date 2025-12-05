@@ -1,15 +1,23 @@
 #!/bin/bash
+# ============================================
+# ARCHIVED: 2024-12 - Superseded by v4.0 (DI-pure versioning)
+# ============================================
+# This version auto-discovers module files with @version, this.version, etc.
+# and updates them. Kept for reference on the auto-discovery pattern.
+#
+# Current approach: Modules get version via DI (AppMeta.version), no hardcoded versions.
+# ============================================
+#
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 4.0 - DI-pure module versioning
+# Version: 3.0 - Auto-discovery + Multi-mode support
 #
 # Features:
-#  - Generates version.js as single source of truth
+#  - Auto-discovers utility modules with version numbers
 #  - Multi-mode: Update all, one-by-one, or custom selection
 #  - Automatic backup with restore scripts
 #  - macOS and Linux compatible
-#  - Modules get version via DI (no hardcoded versions in modules)
 
-echo "🎯 miniCycle Version Updater v4.0"
+echo "🎯 miniCycle Version Updater v3.0"
 echo "=============================="
 echo ""
 
@@ -39,12 +47,39 @@ PACKAGE_FILES=(
 )
 
 # ============================================
-# NOTE: Module files no longer need version updates
+# AUTO-DISCOVERY: Utility files with versions
 # ============================================
-# Modules now receive version via DI (AppMeta.version) from version.js
-# No hardcoded versions in module files - they're fully DI-pure
-echo "ℹ️  Module files use DI for versioning (no updates needed)"
+
+echo "🔍 Auto-discovering utility modules with version numbers..."
+
+UTILITY_FILES=()
+UTILITY_FILES_SKIPPED=0
+
+# Find all .js files in modules/ and subdirectories
+while IFS= read -r file; do
+    # Check if file contains version patterns
+    # Looks for: @version X.XXX, version: 'X.XXX', this.version = 'X.XXX', currentVersion: 'X.XXX'
+    if grep -qE '@version [0-9.]+|version: ['\''"][0-9.]+|this\.version = ['\''"][0-9.]+|currentVersion: ['\''"][0-9.]+'\'']' "$file" 2>/dev/null; then
+        UTILITY_FILES+=("$file")
+    else
+        UTILITY_FILES_SKIPPED=$((UTILITY_FILES_SKIPPED + 1))
+    fi
+done < <(find modules -name "*.js" -type f 2>/dev/null | sort)
+
+echo "✅ Found ${#UTILITY_FILES[@]} utility modules with version numbers"
+if [ $UTILITY_FILES_SKIPPED -gt 0 ]; then
+    echo "⏭️  Skipped $UTILITY_FILES_SKIPPED utilities without version numbers"
+fi
 echo ""
+
+# Show discovered files in compact format
+if [ ${#UTILITY_FILES[@]} -gt 0 ]; then
+    echo "📦 Discovered modules:"
+    for file in "${UTILITY_FILES[@]}"; do
+        echo "   • $file"
+    done
+    echo ""
+fi
 
 # ============================================
 # SETUP & CONFIGURATION
@@ -57,8 +92,10 @@ if [ ! -d "$BACKUP_DIR" ]; then
     echo "📁 Created backup directory: $BACKUP_DIR"
 fi
 
-# ✅ Create backup folder structure
+# ✅ Create modules backup folder structure (including subdirectories)
+mkdir -p "$BACKUP_DIR/modules" 2>/dev/null
 mkdir -p "$BACKUP_DIR/lite" 2>/dev/null
+mkdir -p "$BACKUP_DIR/legal" 2>/dev/null
 mkdir -p "$BACKUP_DIR/pages" 2>/dev/null
 
 # ✅ Clean up old backups (keep only last 3)
@@ -89,6 +126,11 @@ cleanup_old_backups
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FOLDER="$BACKUP_DIR/version_update_$TIMESTAMP"
 mkdir -p "$BACKUP_FOLDER"
+
+# Create all necessary subdirectories based on discovered utility files
+for file in "${UTILITY_FILES[@]}"; do
+    mkdir -p "$BACKUP_FOLDER/$(dirname "$file")" 2>/dev/null
+done
 
 echo "📂 New backup folder: $BACKUP_FOLDER"
 echo ""
@@ -162,6 +204,9 @@ if [ "$UPDATE_MODE" == "1" ]; then
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
     for file in "${PACKAGE_FILES[@]}"; do
+        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+    done
+    for file in "${UTILITY_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
 
@@ -239,6 +284,22 @@ elif [ "$UPDATE_MODE" == "2" ]; then
     done
     echo ""
 
+    # Utility files
+    echo "--- Utility Modules ---"
+    for file in "${UTILITY_FILES[@]}"; do
+        if [ -f "$file" ]; then
+            read -p "Update $file? (Y/n): " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+                echo "✅ Will update $file"
+            else
+                echo "⏭️  Skipping $file"
+            fi
+        fi
+    done
+    echo ""
+
 # ============================================
 # MODE 3: CUSTOM FILE SELECTION
 # ============================================
@@ -273,12 +334,12 @@ elif [ "$UPDATE_MODE" == "3" ]; then
 elif [ "$UPDATE_MODE" == "4" ]; then
     echo ""
     echo "❌ Update cancelled."
-    rm -rf "$BACKUP_FOLDER" 2>/dev/null
+    rmdir "$BACKUP_FOLDER/utilities" "$BACKUP_FOLDER" 2>/dev/null
     exit 0
 
 else
     echo "❌ Invalid choice. Exiting."
-    rm -rf "$BACKUP_FOLDER" 2>/dev/null
+    rmdir "$BACKUP_FOLDER/utilities" "$BACKUP_FOLDER" 2>/dev/null
     exit 1
 fi
 
@@ -301,37 +362,13 @@ read -p "🤔 Continue? (Y/N): " -n 1 -r
 echo ""
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "❌ Update cancelled."
-    rm -rf "$BACKUP_FOLDER" 2>/dev/null
+    rmdir "$BACKUP_FOLDER/utilities" "$BACKUP_FOLDER" 2>/dev/null
     exit 1
 fi
 
 echo ""
 echo "🔄 Updating files..."
 echo ""
-
-# ============================================
-# HELPER FUNCTIONS (must be defined before use)
-# ============================================
-
-# Helper function to check if file should be updated (bash 3 compatible)
-should_update() {
-    local file=$1
-    [[ "$FILES_TO_UPDATE" == *"|$file|"* ]]
-}
-
-# Backup helper
-backup_file() {
-    local file=$1
-    if [ -f "$file" ]; then
-        # Create parent directory structure in backup folder
-        local backup_path="$BACKUP_FOLDER/$file"
-        mkdir -p "$(dirname "$backup_path")"
-        cp "$file" "$backup_path"
-        echo "💾 Backed up: $file"
-        return 0
-    fi
-    return 1
-}
 
 # ============================================
 # GENERATE: version.js (FIRST - Single Source of Truth)
@@ -359,6 +396,30 @@ EOF
 
 echo "✅ Generated version.js (v$NEW_VERSION)"
 echo ""
+
+# ============================================
+# UPDATE FUNCTIONS
+# ============================================
+
+# Helper function to check if file should be updated (bash 3 compatible)
+should_update() {
+    local file=$1
+    [[ "$FILES_TO_UPDATE" == *"|$file|"* ]]
+}
+
+# Backup helper
+backup_file() {
+    local file=$1
+    if [ -f "$file" ]; then
+        # Create parent directory structure in backup folder
+        local backup_path="$BACKUP_FOLDER/$file"
+        mkdir -p "$(dirname "$backup_path")"
+        cp "$file" "$backup_path"
+        echo "💾 Backed up: $file"
+        return 0
+    fi
+    return 1
+}
 
 # ============================================
 # UPDATE: miniCycle.html
@@ -471,6 +532,32 @@ if should_update "package.json"; then
 fi
 
 # ============================================
+# UPDATE: UTILITY MODULES (AUTO-DISCOVERED)
+# ============================================
+
+# Generic update function for utility modules
+update_utility_file() {
+    local file=$1
+
+    if should_update "$file"; then
+        if backup_file "$file"; then
+            # Apply all common version patterns
+            "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" "$file"
+            "${SED_INPLACE[@]}" "s/version: '[0-9.]*'/version: '$NEW_VERSION'/g" "$file"
+            "${SED_INPLACE[@]}" "s/this\.version = '[0-9.]*'/this.version = '$NEW_VERSION'/g" "$file"
+            "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" "$file"
+            "${SED_INPLACE[@]}" "s/currentVersion = '[0-9.]*'/currentVersion = '$NEW_VERSION'/g" "$file"
+            echo "✅ Updated $file"
+        fi
+    fi
+}
+
+# Update all discovered utility files
+for utility_file in "${UTILITY_FILES[@]}"; do
+    update_utility_file "$utility_file"
+done
+
+# ============================================
 # RESTORE SCRIPT GENERATION
 # ============================================
 
@@ -527,6 +614,13 @@ done
 
 # Add package files
 for file in "${PACKAGE_FILES[@]}"; do
+    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+done
+
+# Add utility files (auto-discovered)
+echo "" >> "$BACKUP_FOLDER/restore.sh"
+echo "# Restore utility modules (auto-discovered)" >> "$BACKUP_FOLDER/restore.sh"
+for file in "${UTILITY_FILES[@]}"; do
     echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
 done
 
@@ -667,16 +761,16 @@ echo "✅ All done!"
 # 🚀 HOW TO USE THIS SCRIPT:
 #
 # 1️⃣ First time setup (make it executable):
-#    chmod +x scripts/update-version.sh
+#    chmod +x update-version.sh
 #
-# 2️⃣ Run from web/ directory:
-#    ./scripts/update-version.sh
+# 2️⃣ Run the script:
+#    ./update-version.sh
 #
 # 3️⃣ Follow the prompts to enter new version numbers
 #
 # 📝 PLATFORM NOTES:
-# • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled
-# • Linux: Uses sed -i (no quotes) ✅ Already handled
+# • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled in script
+# • Linux: Uses sed -i (no quotes) ✅ Already handled in script
 # • Windows: Use Git Bash or WSL ✅ Cross-platform compatible
 #
 # 🛡️ SAFETY FEATURES:
@@ -695,65 +789,15 @@ echo "✅ All done!"
 #    cd backup/version_update_YYYYMMDD_HHMMSS
 #    ./restore.sh
 #
-# ============================================
-# 🎯 FILES UPDATED BY THIS SCRIPT:
-# ============================================
-#
-# Core files (version parameters + meta tags):
-# • version.js          - Single source of truth (auto-generated)
-# • miniCycle.html      - ?v= params, currentVersion, meta tags
-# • miniCycle-scripts.js - currentVersion variable
-# • service-worker.js   - CACHE_VERSION + APP_VERSION
-#
-# Lite version:
-# • lite/miniCycle-lite.html
-# • lite/miniCycle-lite-scripts.js
-#
-# Other pages:
-# • pages/product.html
-#
-# Manifests & package:
-# • manifest.json
-# • manifest-lite.json
-# • package.json
-#
-# ============================================
-# 📦 MODULE VERSIONING (DI-PURE) - v4.0
-# ============================================
-#
-# Modules do NOT have hardcoded versions. The version flows via DI:
-#
-#   version.js (this script generates it)
-#       ↓
-#   window.APP_VERSION (set by version.js)
-#       ↓
-#   miniCycle-scripts.js builds: window.AppMeta = { version: window.APP_VERSION }
-#       ↓
-#   initModule({ AppMeta: window.AppMeta, ... })
-#       ↓
-#   this.version = mergedDeps.AppMeta?.version
-#       ↓
-#   const version = this.version || 'dev-local'
-#       ↓
-#   import(`./submodule.js?v=${version}`)
-#
-# Benefits:
-# • No hardcoded versions in 40+ module files
-# • Single source of truth (version.js)
-# • Modules are fully DI-pure (no window.* version access)
-# • Cache-busting via dynamic imports works automatically
-#
-# Notes:
-# • @version JSDoc tags removed from modules (version in URL)
-# • Modules use 'dev-local' fallback if AppMeta not provided
-# • AppMeta object is built in miniCycle-scripts.js, not version.js
-# • See docs/developer-guides/TASKDOM_DI_GUIDE.md for patterns
-#
-# ============================================
-# 📚 ARCHIVED VERSIONS
-# ============================================
-#
-# • v3.0 (auto-discovery): archive/update-version-v3-autodiscovery.sh
-#   - Had auto-discovery of utility files with @version tags
-#   - Kept for reference on regex patterns and discovery logic
-#
+# 🎯 WHAT GETS UPDATED:
+# • miniCycle.html (version parameters + currentVersion variable + meta tags)
+# • lite/miniCycle-lite.html (version parameters + meta tags)
+# • pages/product.html (version parameters + meta tags)
+# • miniCycle-scripts.js (currentVersion variable for auto-detection)
+# • lite/miniCycle-lite-scripts.js (currentVersion variable)
+# • service-worker.js (CACHE_VERSION + APP_VERSION)
+# • manifest.json (version field)
+# • manifest-lite.json (version field)
+# • package.json (version field)
+# • version.js (single source of truth - auto-generated)
+# • modules/*.js (auto-discovered files with @version, this.version, etc.)
