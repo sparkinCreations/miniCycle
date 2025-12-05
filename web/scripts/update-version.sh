@@ -93,16 +93,17 @@ mkdir -p "$BACKUP_DIR/pages" 2>/dev/null
 cleanup_old_backups() {
     echo "🧹 Checking for old backups to clean up..."
     BACKUP_COUNT=$(find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" | wc -l | tr -d ' ')
-    if [ "$BACKUP_COUNT" -gt 2 ]; then
-        echo "📊 Found $BACKUP_COUNT existing backups (keeping last 3)"
+    if [ "$BACKUP_COUNT" -gt 3 ]; then
+        echo "📊 Found $BACKUP_COUNT existing backups (keeping newest 3)"
+        # ls -td sorts newest first, tail -n +4 skips first 3 (keeps them), outputs rest for deletion
         find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" -print0 \
           | xargs -0 ls -td \
-          | tail -n +3 \
+          | tail -n +4 \
           | while read -r old_backup; do
                 echo "🗑️  Removing old backup: $(basename "$old_backup")"
                 rm -rf "$old_backup"
             done
-        echo "✅ Cleanup completed - will keep last 3 backups"
+        echo "✅ Cleanup completed - kept newest 3 backups"
     else
         echo "📦 Found $BACKUP_COUNT existing backups (no cleanup needed)"
     fi
