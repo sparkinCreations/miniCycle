@@ -744,3 +744,51 @@ echo "🔄 To restore previous versions:"
 echo "   cd $BACKUP_FOLDER && ./restore.sh"
 echo ""
 echo "✅ All done!"
+
+# ============================================
+# INSTRUCTIONS & DOCUMENTATION
+# ============================================
+#
+# 🚀 HOW TO USE THIS SCRIPT:
+#
+# 1️⃣ First time setup (make it executable):
+#    chmod +x update-version.sh
+#
+# 2️⃣ Run the script:
+#    ./update-version.sh
+#
+# 3️⃣ Follow the prompts to enter new version numbers
+#
+# 📝 PLATFORM NOTES:
+# • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled in script
+# • Linux: Uses sed -i (no quotes) ✅ Already handled in script
+# • Windows: Use Git Bash or WSL ✅ Cross-platform compatible
+#
+# 🛡️ SAFETY FEATURES:
+# • ✅ Automatic backups created in backup/ folder with timestamps
+# • ✅ Auto-generated restore.sh script in each backup folder
+# • ✅ Automatic cleanup of old backups (keeps only newest 3)
+# • ✅ No manual backups needed - script handles everything!
+#
+# 🧹 BACKUP CLEANUP:
+# • ✅ Automatically removes backups older than the newest 3
+# • ✅ Runs cleanup before creating new backup
+# • ✅ Shows backup status after completion
+# • ✅ Always maintains restore capability for recent versions
+#
+# 🔄 TO RESTORE PREVIOUS VERSION:
+#    cd backup/version_update_YYYYMMDD_HHMMSS
+#    ./restore.sh
+#
+# 🎯 WHAT GETS UPDATED:
+# • miniCycle.html (version parameters + currentVersion variable + meta tags)
+# • lite/miniCycle-lite.html (version parameters + meta tags)
+# • pages/product.html (version parameters + meta tags)
+# • miniCycle-scripts.js (currentVersion variable for auto-detection)
+# • lite/miniCycle-lite-scripts.js (currentVersion variable)
+# • service-worker.js (CACHE_VERSION + APP_VERSION)
+# • manifest.json (version field)
+# • manifest-lite.json (version field)
+# • package.json (version field)
+# • version.js (single source of truth - auto-generated)
+# • modules/*.js (auto-discovered files with @version, this.version, etc.)
