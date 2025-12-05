@@ -1,19 +1,21 @@
 # Module System Guide
 
-**Version**: 1.284
-**Last Updated**: November 2025
+**Last Updated**: December 2025
 
 ---
 
 ## Current State: Honest Assessment
 
-The codebase uses 4 module patterns. However, there's an important caveat:
+The codebase uses 5 module patterns:
 
-**All patterns fall back to `window.*` globals.** The DI structure exists but doesn't provide true decoupling. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the plan to fix this.
+- **4 legacy patterns** - Fall back to `window.*` globals (DI structure but not true decoupling)
+- **1 new pattern** - **DI-Pure** (no `window.*` fallbacks, fully testable)
+
+**Progress:** 2 modules are now DI-pure (taskDOM, taskCore). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
 
 ---
 
-## The 4 Module Patterns
+## The 5 Module Patterns
 
 ### 1. Static Utilities (Pure Functions)
 
@@ -147,7 +149,53 @@ setCycleLoaderDependencies({
 
 ---
 
-## The Problem
+### 5. DI-Pure (NEW - Target Pattern) ✅
+
+**NO `window.*` fallbacks. Dependencies are injected or use local fallbacks.**
+
+```javascript
+// modules/task/taskCore.js
+export class TaskCore {
+    constructor(dependencies = {}) {
+        const mergedDeps = { ...moduleDeps, ...dependencies };
+
+        // Version via DI, not window.APP_VERSION
+        this.version = mergedDeps.AppMeta?.version;
+
+        // NO window.* fallbacks - only injected deps or null
+        this.deps = {
+            AppState: mergedDeps.AppState || null,
+            AppGlobalState: mergedDeps.AppGlobalState || null,
+            safeJSONParse: mergedDeps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } }),
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            // ... etc
+        };
+    }
+}
+
+// In main script - wiring hub (window.* OK here)
+const taskCore = await initTaskCore({
+    AppState: window.AppState,
+    AppGlobalState: window.AppGlobalState,
+    AppMeta: window.AppMeta,
+    safeJSONParse: GlobalUtils.safeJSONParse,
+    showNotification: deps.utils.showNotification,
+});
+```
+
+**Status:** ✅ Fully testable in isolation. No window mocking needed.
+
+**Key Difference:** Local fallbacks (like inline JSON.parse) instead of `|| window.*`.
+
+**Current DI-Pure Modules:**
+- `modules/task/taskDOM.js` - TaskDOMManager
+- `modules/task/taskCore.js` - TaskCore
+
+See [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) for usage patterns.
+
+---
+
+## The Problem (Legacy Patterns)
 
 Every pattern eventually resolves to `window.*`:
 
@@ -181,6 +229,7 @@ new Module({
 | Simple Instance | Self-contained UI components | ⚠️ Need to mock DOM |
 | Resilient Constructor | Complex features needing graceful degradation | ❌ Must mock `window` |
 | Strict Injection | Critical business logic | ❌ Must mock `window` |
+| **DI-Pure** ✅ | **New code - target pattern** | **✅ Yes - mock deps only** |
 
 ---
 
@@ -209,6 +258,10 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 
 ## Existing Modules by Pattern
 
+### DI-Pure ✅ (Target Pattern)
+- `modules/task/taskDOM.js` - TaskDOMManager (Dec 2025)
+- `modules/task/taskCore.js` - TaskCore (Dec 2025)
+
 ### Static Utilities
 - `modules/utils/globalUtils.js` - DOM utilities
 - `modules/task/taskValidation.js` - Task validation
@@ -218,13 +271,13 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 - `modules/utils/notifications.js` - Notification system
 - `modules/utils/deviceDetection.js` - Device detection
 
-### Resilient Constructor
+### Resilient Constructor (Legacy)
 - `modules/ui/statsPanel.js` - Statistics panel
 - `modules/ui/settingsManager.js` - Settings UI
 - `modules/ui/modalManager.js` - Modal coordination
 - Most UI modules
 
-### Strict Injection
+### Strict Injection (Legacy)
 - `modules/cycle/cycleLoader.js` - Cycle loading
 - `modules/recurring/recurringCore.js` - Recurring logic
 - `modules/ui/undoRedoManager.js` - Undo/redo system
@@ -233,6 +286,7 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 
 ## Next Steps
 
+- **[TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md)** - How to use DI-pure modules
 - **[DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)** - See actual dependencies
 - **[MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)** - Plan for true decoupling
 - **[DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)** - How to work with current code

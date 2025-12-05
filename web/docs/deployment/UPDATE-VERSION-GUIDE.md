@@ -1,21 +1,22 @@
 # miniCycle Version Updater Guide
 
-> **Developer-friendly documentation for `update-version.sh`**
+> **Developer-friendly documentation for `update-version.sh` v4.0**
 > Complete guide with real examples, macOS specifics, and troubleshooting tips
 
 ---
 
 ## Table of Contents
 
-1. [Version.js Overview](#versionjs-overview) ⭐ NEW
-2. [What It Does](#what-it-does)
-3. [Quick Start](#quick-start)
-4. [Usage Modes](#usage-modes)
-5. [macOS-Specific Intricacies](#macos-specific-intricacies)
-6. [File Update Patterns](#file-update-patterns)
-7. [Backup System](#backup-system)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Usage](#advanced-usage)
+1. [Version.js Overview](#versionjs-overview)
+2. [DI-Pure Module Versioning](#di-pure-module-versioning) ⭐ NEW in v4.0
+3. [What It Does](#what-it-does)
+4. [Quick Start](#quick-start)
+5. [Usage Modes](#usage-modes)
+6. [macOS-Specific Intricacies](#macos-specific-intricacies)
+7. [File Update Patterns](#file-update-patterns)
+8. [Backup System](#backup-system)
+9. [Troubleshooting](#troubleshooting)
+10. [Advanced Usage](#advanced-usage)
 
 ---
 
@@ -134,13 +135,54 @@ const { appInit } = await import('./utilities/appInitialization.js');
 
 ---
 
+## DI-Pure Module Versioning
+
+### What Changed in v4.0
+
+**Before v4.0:** The script updated 40+ module files with hardcoded version numbers (`@version` JSDoc tags, `this.version = 'X.XXX'`).
+
+**After v4.0:** Modules receive their version via dependency injection. The script only updates ~10 core files.
+
+### How It Works
+
+```
+version.js (this script generates it)
+    ↓
+window.APP_VERSION (set by version.js)
+    ↓
+miniCycle-scripts.js builds: window.AppMeta = { version: window.APP_VERSION }
+    ↓
+initModule({ AppMeta: window.AppMeta, ... })
+    ↓
+this.version = mergedDeps.AppMeta?.version
+    ↓
+const version = this.version || 'dev-local'
+    ↓
+import(`./submodule.js?v=${version}`)
+```
+
+### Benefits
+
+- **No hardcoded versions** in 40+ module files
+- **Single source of truth** (version.js)
+- **Modules are DI-pure** (no window.* version access)
+- **Cache-busting** via dynamic imports works automatically
+- **Faster updates** - fewer files to modify
+
+### Legacy Reference
+
+The v3.0 script with module auto-discovery is archived at:
+`archive/update-version-v3-autodiscovery.sh`
+
+---
+
 ## What It Does
 
-The `update-version.sh` script automates version number updates across **all miniCycle files** while maintaining backups and validating changes. It prevents manual version sync errors and ensures PWA cache invalidation.
+The `update-version.sh` script automates version number updates across **core miniCycle files** while maintaining backups and validating changes. It prevents manual version sync errors and ensures PWA cache invalidation.
 
 **Key Features:**
-- **Auto-generates version.js** as single source of truth (v1.330+)
-- Updates version numbers in 24 files simultaneously (including version.js)
+- **Auto-generates version.js** as single source of truth
+- Updates version numbers in ~10 core files (v4.0 - modules use DI)
 - Creates timestamped backups with auto-restore scripts
 - Validates changes after updating
 - Supports 3 update modes (all, selective, custom)
@@ -148,15 +190,22 @@ The `update-version.sh` script automates version number updates across **all min
 - Maintains only last 3 backups automatically
 
 **Version Types:**
-1. **App Version** (e.g., `1.330`) - User-facing version in version.js, HTML meta tags, manifests, and JS
-2. **Service Worker Cache Version** (e.g., `v106`) - Forces PWA cache invalidation
+1. **App Version** (e.g., `1.392`) - User-facing version in version.js, HTML meta tags, manifests, and JS
+2. **Service Worker Cache Version** (e.g., `v212`) - Forces PWA cache invalidation
 
-**Files Updated:**
-- **version.js** ⭐ (NEW) - Single source of truth
-- 3 HTML files
-- 3 Core JS files (including service-worker.js)
-- 2 Manifests
-- 15 Utility modules
+**Files Updated (v4.0):**
+- **version.js** - Single source of truth (auto-generated)
+- **miniCycle.html** - ?v= params, currentVersion, meta tags
+- **miniCycle-scripts.js** - currentVersion variable
+- **service-worker.js** - CACHE_VERSION + APP_VERSION
+- **lite/miniCycle-lite.html**
+- **lite/miniCycle-lite-scripts.js**
+- **pages/product.html**
+- **manifest.json**
+- **manifest-lite.json**
+- **package.json**
+
+> **Note:** Module files (modules/*.js) are NO LONGER updated by this script. They receive version via DI.
 
 ---
 
@@ -1208,13 +1257,25 @@ cd backup/version_update_[timestamp]
 
 ## Changelog
 
-**v2.1** - Current (v1.330+)
+**v4.0** - Current (December 2025)
+- **DI-pure module versioning** - Modules receive version via `AppMeta.version` injection
+- **Removed module file updates** - No longer updates 40+ utility module files
+- **@version JSDoc tags removed** - Modules don't have hardcoded versions
+- Archived v3.0 script with auto-discovery: `archive/update-version-v3-autodiscovery.sh`
+- Updated file count: 24 → ~10 core files
+- Simplified script (removed UTILITY_FILES auto-discovery)
+
+**v3.0** - Previous (Archived)
+- Auto-discovery of utility files with @version tags
+- Updated 24+ files including all modules
+- Complex regex patterns for module versioning
+
+**v2.1** - (v1.330+)
 - **Added version.js generation** - Single source of truth for APP_VERSION
 - version.js generated FIRST, before all other files
 - Fixes module cache duplication issue
 - All dynamic imports now use consistent versioned URLs
 - Service worker imports version.js via importScripts()
-- Updated file count: 23 → 24 files
 
 **v2.0** - Previous
 - Added 3 update modes (all, selective, custom)

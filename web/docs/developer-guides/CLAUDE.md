@@ -36,17 +36,18 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: The Honest Assessment
 
-### Current State (December 4, 2025 - Verified)
+### Current State (December 5, 2025 - Verified)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Main script | ~3,700 lines | ~3,800 lines | ~3,500 lines | — |
 | Modules | 43 files | 44 files | — | — |
 | `window.*` globals created (modules/) | ~68 | **27** | <20 | **85%** |
-| `window.*` references (modules/) | ~748 | **562** | <100 | **29%** |
+| `window.*` references (modules/) | ~748 | **~540** | <100 | **32%** |
 | Modules with `set*Dependencies()` | 0 | **27** | All stateful | **Exceeded** |
-| `this.deps.*` usage | 0 | **934** | 100+ | **Exceeded** |
+| `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
 | Modules still exporting to `window.*` | ~40 | **13** | 0 | **70%** |
+| **DI-pure modules** | 0 | **2** | All | **5%** |
 
 ### The Reality (Being Improved)
 
@@ -61,17 +62,21 @@ constructor(dependencies = {}) {
     };
 }
 
-// AFTER: True DI (implemented in taskValidation, modalManager, themeManager, taskDOM, gamesManager, appState, etc.)
+// AFTER: DI-pure (taskDOM, taskCore - NO window.* fallbacks)
 constructor(dependencies = {}) {
-    if (!dependencies.sanitizeInput) throw new Error('sanitizeInput required');  // ✅ fail fast
+    const mergedDeps = { ...moduleDeps, ...dependencies };
+    this.version = mergedDeps.AppMeta?.version;  // ✅ DI-pure versioning
     this.deps = {
-        sanitizeInput: dependencies.sanitizeInput,  // ✅ no fallback
-        showNotification: dependencies.showNotification || this.fallback
+        AppState: mergedDeps.AppState || null,     // ✅ no window.* fallback
+        sanitizeInput: mergedDeps.sanitizeInput,   // ✅ no window.* fallback
+        showNotification: mergedDeps.showNotification || this.fallback
     };
 }
 ```
 
-**Progress:** 27 modules now use `set*Dependencies()` pattern with `deps` container. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+**Progress:** 27 modules use `set*Dependencies()` pattern. **2 modules (taskDOM, taskCore) are fully DI-pure** with no window.* fallbacks.
+
+**DI-Pure Versioning (NEW):** Modules receive version via `AppMeta.version` injection instead of accessing `window.APP_VERSION`. See [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) for patterns.
 
 ### Module Communication
 
@@ -186,7 +191,7 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ## Future Direction
 
-### In Progress: True Modular Overhaul (~50-60% complete)
+### In Progress: True Modular Overhaul (~60-70% complete)
 
 See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full tracking.
 
@@ -194,14 +199,18 @@ See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full
 - `deps` container created in miniCycle-scripts.js
 - 31 modules no longer export to `window.*` (70% of modules)
 - 27 modules with `set*Dependencies()` pattern
-- 934 `this.deps.*` usages across codebase
+- 950+ `this.deps.*` usages across codebase
 - Only 27 `window.*` globals created in modules (85% toward goal)
 - Deferred lookup pattern (`_getAppState()` helper) for circular deps
 - Tests updated for DI patterns (ModalManager, PullToRefresh, GlobalUtils)
+- **DI-pure versioning** - `AppMeta.version` injected, no `window.APP_VERSION` in modules
+- **taskDOM.js & taskCore.js** - Fully DI-pure (no window.* fallbacks)
+- **update-version.sh v4.0** - No longer updates module files
+- **@version JSDoc tags removed** from all modules
 
 **Remaining (main bottleneck):**
-- Reduce 562 `window.*` references in modules to <100 (29% complete)
-- Remove remaining `|| window.*` constructor fallbacks
+- Reduce ~540 `window.*` references in modules to <100 (32% complete)
+- Remove remaining `|| window.*` constructor fallbacks in other modules
 - Audit window.* exposure for minimization
 
 ### Not Planned
@@ -229,5 +238,7 @@ See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full
 
 - **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
 - **Architecture**: [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)
+- **DI-pure patterns**: [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md)
 - **Future plans**: [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)
+- **Version management**: [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)
 - **All docs**: [README.md](../README.md)

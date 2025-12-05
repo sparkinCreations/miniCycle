@@ -7,8 +7,8 @@
 
 ## Progress Tracker
 
-**Last Updated:** December 4, 2025
-**Status:** ~50-60% Complete 🔄
+**Last Updated:** December 5, 2025
+**Status:** ~60-70% Complete 🔄
 
 ### What's Done ✅
 
@@ -17,15 +17,16 @@
 | `deps` container created | ✅ Done | Central wiring hub in miniCycle-scripts.js |
 | `deps.core.AppState` | ✅ Done | Stored after creation |
 | `deps.utils.*` populated | ✅ Done | showNotification, sanitizeInput, generateId, safeAddEventListener, syncAllTasksWithMode, etc. |
+| **DI-pure versioning** | ✅ Done | `AppMeta.version` injected, no `window.APP_VERSION` in modules |
 | taskValidation.js | ✅ Done | `sanitizeInput` required (throws if missing), no window.* fallback |
 | dataValidator.js | ✅ Done | `setDataValidatorDependencies()` added |
 | themeManager.js | ✅ Done | `setThemeManagerDependencies()`, window.* fallbacks removed |
 | modalManager.js | ✅ Done | `setModalManagerDependencies()`, window.* fallbacks removed |
-| taskDOM.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
-| taskCore.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
+| **taskDOM.js** | ✅ **DI-Pure** | No window.* fallbacks in constructor, `this.version = mergedDeps.AppMeta?.version` |
+| **taskCore.js** | ✅ **DI-Pure** | No window.* fallbacks, `AppGlobalState` + `safe*` utils injected |
 | taskEvents.js | ✅ Done | Phase 3 - no window.* exports |
 | dueDates.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
-| recurringIntegration.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
+| recurringIntegration.js | ✅ Done | Phase 3 - no window.* exports, `AppMeta.version` for dynamic imports |
 | settingsManager.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
 | taskOptionsCustomizer.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
 | dragDropManager.js | ✅ Done | Phase 3 - no window.* exports, main script handles exposure |
@@ -39,6 +40,8 @@
 | appState.js | ✅ Done | `setAppStateDependencies()` for late injection |
 | taskUtils.js | ✅ Done | `setupFinalTaskInteractions()` accepts deps parameter |
 | Tests updated | ✅ Done | ThemeManager, GlobalUtils, ModalManager, PullToRefresh tests fixed for Phase 3 |
+| **@version JSDoc removed** | ✅ Done | Modules no longer have hardcoded versions (DI handles it) |
+| **update-version.sh v4.0** | ✅ Done | No longer updates module files (DI-pure) |
 
 ### What Remains 🔄
 
@@ -53,15 +56,45 @@
 
 | Metric | Before (Nov 2025) | Current | Target | Progress |
 |--------|-------------------|---------|--------|----------|
-| `deps.*` usage in main script | 0 | ~46 | 100+ | 46% |
+| `deps.*` usage in main script | 0 | ~50 | 100+ | 50% |
 | Modules with `set*Dependencies()` | 0 | **27** | All stateful | **Exceeded** |
-| `this.deps.*` usage across codebase | 0 | **934** | 100+ | **Exceeded** |
+| `this.deps.*` usage across codebase | 0 | **950+** | 100+ | **Exceeded** |
 | Modules still exporting to `window.*` | ~40 | **13** | 0 | 70% |
 | `window.*` globals created (modules/) | ~68 | **27** | <20 | 85% |
-| `window.*` references (modules/) | ~748 | **562** | <100 | 29% |
+| `window.*` references (modules/) | ~748 | **~540** | <100 | 32% |
+| DI-pure modules (no window.* fallbacks) | 0 | **2** (taskDOM, taskCore) | All | 5% |
 | Total module files | 43 | 44 | — | — |
 
-> **Last verified:** December 4, 2025
+> **Last verified:** December 5, 2025
+
+### DI-Pure Versioning Pattern (NEW)
+
+Modules receive version via dependency injection instead of accessing `window.APP_VERSION`:
+
+```javascript
+// version.js (single source of truth)
+window.APP_VERSION = '1.392';
+
+// miniCycle-scripts.js builds AppMeta
+window.AppMeta = { version: window.APP_VERSION };
+
+// Module receives via DI
+const module = await initModule({
+    AppMeta: window.AppMeta,
+    // ...other deps
+});
+
+// Inside module (DI-pure)
+this.version = mergedDeps.AppMeta?.version;
+const version = this.version || 'dev-local';  // No window.* fallback
+await import(`./submodule.js?v=${version}`);
+```
+
+**Benefits:**
+- Modules are fully testable without window mocking
+- Single source of truth for version (version.js)
+- update-version.sh no longer needs to update 40+ module files
+- @version JSDoc tags removed from modules (version in URL anyway)
 
 ---
 
