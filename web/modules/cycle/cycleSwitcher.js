@@ -3,7 +3,7 @@
  * Manages cycle switching UI and operations
  *
  * @module cycleSwitcher
- * @version 1.393
+ * @version 1.394
  */
 
 // Module-level deps for late injection

@@ -27,7 +27,7 @@
  * Based on dragDropManager.js + statsPanel.js patterns
  *
  * @module modules/task/taskDOM
- * @version 1.393
+ * @version 1.394
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 

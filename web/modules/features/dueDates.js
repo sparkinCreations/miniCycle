@@ -11,7 +11,7 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module dueDates
- * @version 1.393
+ * @version 1.394
  */
 
 import { appInit } from '../core/appInit.js';

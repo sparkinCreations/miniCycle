@@ -3,7 +3,7 @@
  * Handles main menu operations and interactions
  *
  * @module menuManager
- * @version 1.393
+ * @version 1.394
  * @pattern Resilient Constructor 🛡️
  */
 

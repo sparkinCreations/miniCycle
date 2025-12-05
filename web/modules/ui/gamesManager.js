@@ -13,7 +13,7 @@
  * - DOM elements (games-panel, games-menu-option)
  *
  * @module gamesManager
- * @version 1.393
+ * @version 1.394
  */
 
 import { appInit } from '../core/appInit.js';
