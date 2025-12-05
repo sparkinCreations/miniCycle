@@ -15,15 +15,24 @@
   * [Accessibility](project-info/ACCESSIBILITY.md)
 
 * **Developer Guides**
+  * [Getting Started](developer-guides/GETTING_STARTED.md)
   * [Developer Documentation](developer-guides/DEVELOPER_DOCUMENTATION.md)
   * [Documentation Index](developer-guides/INDEX.md)
+  * [Architecture Overview](developer-guides/ARCHITECTURE_OVERVIEW.md)
   * [Folder Structure](developer-guides/FOLDER_STRUCTURE.md)
+  * [Development Workflow](developer-guides/DEVELOPMENT_WORKFLOW.md)
+  * [Module System Guide](developer-guides/MODULE_SYSTEM_GUIDE.md)
+  * [AppInit System](developer-guides/APPINIT_SYSTEM.md)
+  * [API Reference](developer-guides/API_REFERENCE.md)
+  * [Data Schema Guide](developer-guides/DATA_SCHEMA_GUIDE.md)
   * [Async UI Patterns](developer-guides/ASYNC_UI_PATTERNS.md)
+  * [Security Guide](developer-guides/SECURITY_GUIDE.md)
+  * [Testing Guide](developer-guides/TESTING_GUIDE.md)
   * [Claude AI Guide](developer-guides/CLAUDE.md)
-  * [Testing Quick Reference](testing/TESTING_QUICK_REFERENCE.md)
+  * [Dev Server](DEV_SERVER.md)
 
 * **Architecture**
-  * [No-Build Module System](architecture/NO_BUILD_MODULE_SYSTEM.md)
+  * [Dependency Map](architecture/DEPENDENCY_MAP.md)
   * [AppInit Explained](architecture/APPINIT_EXPLAINED.md)
   * [Event Flow Patterns](architecture/EVENT_FLOW_PATTERNS.md)
   * [Undo/Redo Architecture](architecture/UNDO_REDO_ARCHITECTURE.md)
@@ -38,12 +47,18 @@
 
 * **Features**
   * [Completed Tasks Dropdown](features/COMPLETED_TASKS_DROPDOWN.md)
+  * [Task Options Customizer](features/TASK_OPTIONS_CUSTOMIZER.md)
   * [Recurring Tasks Guide](features/minicycle-recurring-guide.md)
   * [Recurring Watch Function](features/RECURRING_WATCH_FUNCTION.md)
+
+* **Guides**
+  * [Confirmation & Notification Modal](guides/confirmation-and-notification-modal.md)
+  * [Module Notifications Guide](guides/miniCycle-module-notifications-guide.md)
 
 * **Testing & Performance**
   * [Testing Architecture](testing/TESTING_ARCHITECTURE.md)
   * [Testing README](testing/TESTING_README.md)
+  * [Testing Quick Reference](testing/TESTING_QUICK_REFERENCE.md)
   * [Performance Testing Guide](performance/PERFORMANCE_TESTING_GUIDE.md)
   * [Performance Setup](performance/PERFORMANCE_SETUP.md)
   * [Performance Summary](performance/PERFORMANCE_SUMMARY.md)
@@ -63,11 +78,15 @@
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
+  * [Modular Overhaul Plan](future-work/MODULAR_OVERHAUL_PLAN.md)
+  * [Module Independence Refactor](future-work/MODULE_INDEPENDENCE_REFACTOR_PLAN.md)
   * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
+  * [Delete When Complete Plan](future-work/DELETE_WHEN_COMPLETE_PLAN.md)
   * [Folder Structure Refactor Plan](future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)
   * [Task Options Customizer Plan](future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
   * [Remaining Extractions Analysis](future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)
+  * [Code Review Findings 2025](future-work/CODE_REVIEW_FINDINGS_2025.md)
 
 * **Links**
   * [📱 Launch App](https://minicycle.app/miniCycle.html)
