@@ -12,6 +12,7 @@
  * Dependency Pattern:
  * - this._rawDeps: Raw input from constructor (used only for sub-module pre-injection)
  * - this.deps: Normalized dependency bag with fallbacks (used for all runtime access)
+ * - this.version: Uses injected appVersion (no window.APP_VERSION in modules)
  * - Use this.deps.* everywhere except when checking for pre-injected sub-modules
  *
  * ⚠️ IMPORTANT: Multiple Module Instance Handling
@@ -175,7 +176,8 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        this.version = '1.392';
+        // Uses injected appVersion (no window.* in modules)
+        this.version = mergedDeps.appVersion || '1.392';
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }

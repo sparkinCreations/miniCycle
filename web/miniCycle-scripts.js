@@ -834,6 +834,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const taskDOMManager = await initTaskDOMManager({
                 // State management - use deps container
                 AppState: window.AppState,  // Will be deps.core.AppState once wired
+                appVersion: window.APP_VERSION,  // ✅ Injected version (no window.* in modules)
 
                 // Data operations - use deps.utils
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
