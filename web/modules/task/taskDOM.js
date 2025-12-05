@@ -176,8 +176,8 @@ export class TaskDOMManager {
         this.initialized = false;
 
         // Instance version for runtime checks and debugging
-        // Uses injected appVersion (no window.* in modules, no hardcoded fallback)
-        this.version = mergedDeps.appVersion;
+        // Uses injected AppMeta (no window.* in modules, no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
 
         console.log('🎨 TaskDOMManager created with dependencies');
     }
@@ -246,6 +246,7 @@ export class TaskDOMManager {
                 // Initialize validator module - no window.* fallbacks (Phase 2)
                 // window.validateAndSanitizeTaskInput uses this validator via manager
                 this.validator = this._rawDeps.validator || new TaskValidator({
+                    appVersion: this.version,  // Pass injected version
                     sanitizeInput: this.deps.sanitizeInput,  // Required - already validated
                     showNotification: this.deps.showNotification
                 });
@@ -253,6 +254,7 @@ export class TaskDOMManager {
                 // Initialize renderer module - Phase 3: pass all dependencies (no window.* fallbacks)
                 this.renderer = this._rawDeps.renderer || new TaskRenderer({
                     // Core state
+                    appVersion: this.version,  // Pass injected version
                     AppState: this.deps.AppState,
 
                     // Task management (from raw deps - may not be in normalized deps)
@@ -281,6 +283,7 @@ export class TaskDOMManager {
 
                 // Initialize events module - no window.* fallbacks (Phase 2)
                 this.events = this._rawDeps.events || new TaskEvents({
+                    appVersion: this.version,  // Pass injected version
                     AppState: this.deps.AppState,  // Required - already validated
                     showNotification: this.deps.showNotification,
                     autoSave: this.deps.autoSave,

@@ -30,10 +30,11 @@ export function setDueDatesDependencies(dependencies) {
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        this.version = '1.393';
-
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
+
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
 
         // Store dependencies with intelligent fallbacks
         this.deps = {

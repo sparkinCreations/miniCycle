@@ -41,7 +41,8 @@ class GamesManager {
             safeAddEventListener: mergedDeps.safeAddEventListener
         };
 
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
         this.initialized = false;
     }
 

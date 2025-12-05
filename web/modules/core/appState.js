@@ -46,7 +46,8 @@ class MiniCycleState {
         this.saveTimeout = null;
         this.listeners = new Map();
         this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
         this.isInitialized = false; // ✅ Add this flag
         this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
     }

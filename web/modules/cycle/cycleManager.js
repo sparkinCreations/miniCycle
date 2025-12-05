@@ -68,7 +68,8 @@ export class CycleManager {
         // Validate required dependencies
         this._validateDependencies();
 
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
         console.log('✅ CycleManager initialized');
     }
 

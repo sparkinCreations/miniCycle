@@ -42,8 +42,8 @@ export class TaskValidator {
         // Constants
         this.TASK_LIMIT = 100; // Character limit for tasks
 
-        // Instance version
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
 
         console.log('🔒 TaskValidator created');
     }

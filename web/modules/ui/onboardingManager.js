@@ -36,7 +36,11 @@ export function setOnboardingManagerDependencies(dependencies) {
 
 export class OnboardingManager {
     constructor(dependencies = {}) {
-        this.version = '1.393';
+        // Merge module-level deps with constructor deps (constructor takes precedence)
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
         this.initialized = false;
 
         // Store injected dependencies

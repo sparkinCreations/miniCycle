@@ -54,8 +54,8 @@ export class TaskEvents {
             safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener
         };
 
-        // Instance version
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;

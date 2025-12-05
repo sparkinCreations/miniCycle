@@ -46,7 +46,8 @@ export class CycleSwitcher {
         };
 
         this.loadMiniCycleListTimeout = null;
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
 
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();

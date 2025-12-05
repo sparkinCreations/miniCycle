@@ -21,14 +21,10 @@ export class DeviceDetectionManager {
     // Dependency injection for testability
     this.loadMiniCycleData = dependencies.loadMiniCycleData || this.getGlobalFunction('loadMiniCycleData');
     this.showNotification = dependencies.showNotification || this.getGlobalFunction('showNotification');
-    // Explicitly handle currentVersion with proper dependency injection
-    if (dependencies && typeof dependencies === 'object' && dependencies.hasOwnProperty('currentVersion')) {
-      this.currentVersion = dependencies.currentVersion;
-    } else {
-      this.currentVersion = '1.393';
-    }
-    // Debug logging (can be removed after fix is confirmed)
-    console.log('[DeviceDetection] Constructor: received version =', dependencies.currentVersion, 'set version =', this.currentVersion);
+    // Instance version - uses injected AppMeta (no hardcoded fallback)
+    // Note: uses AppMeta.version for consistency, maps to currentVersion for this module's API
+    this.currentVersion = dependencies.AppMeta?.version;
+    console.log('[DeviceDetection] Constructor: set version =', this.currentVersion);
   }
 
   // Safe global function access

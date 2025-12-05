@@ -35,7 +35,8 @@ export class TaskCore {
         // Merge module-level deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
 
-        this.version = '1.393';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
 
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();

@@ -31,11 +31,12 @@ export function setSettingsManagerDependencies(dependencies) {
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.393';
-        this.initialized = false;
-
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
+
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
+        this.initialized = false;
 
         // Store dependencies with resilient fallbacks
         this.deps = {

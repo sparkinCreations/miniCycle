@@ -299,6 +299,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // ✅ NOW create version helper for all OTHER dynamic imports (not appInit or constants)
   const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
+  // ✅ Create AppMeta object for DI-friendly version access
+  window.AppMeta = {
+    version: window.APP_VERSION
+  };
+
   // ✅ Set backward compatibility alias
   window.AppInit = appInit;
 
@@ -460,6 +465,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Games Manager
     const gamesManagerMod = await import(withV('./modules/ui/gamesManager.js'));
+    // Inject appVersion via dependency setter
+    if (gamesManagerMod.setGamesManagerDependencies) {
+        gamesManagerMod.setGamesManagerDependencies({
+            AppMeta: window.AppMeta
+        });
+    }
     // Expose to window immediately
     window.GamesManager = gamesManagerMod.default;
     window.gamesManager = gamesManagerMod.gamesManager;
@@ -469,6 +480,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Load Onboarding Manager
     const onboardingManagerMod = await import(withV('./modules/ui/onboardingManager.js'));
+    // Inject appVersion via dependency setter
+    if (onboardingManagerMod.setOnboardingManagerDependencies) {
+        onboardingManagerMod.setOnboardingManagerDependencies({
+            AppMeta: window.AppMeta
+        });
+    }
     window.onboardingManager = onboardingManagerMod.onboardingManager;
     console.log('✅ Onboarding Manager loaded');
 
@@ -704,7 +721,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.AppState = createStateManager({
       showNotification: deps.utils.showNotification || console.log.bind(console),  // ✅ Use direct function
       storage: localStorage,
-      createInitialData: createInitialSchema25Data
+      createInitialData: createInitialSchema25Data,
+      AppMeta: window.AppMeta
     });
 
     // ✅ Store in deps container for DI
@@ -742,7 +760,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
           hideTaskButtons: (task) => hideTaskButtons?.(task),
           isTouchDevice: () => isTouchDevice?.() || false,
           enableUndoSystemOnFirstInteraction: () => enableUndoSystemOnFirstInteraction?.(),
-          showNotification: (msg, type, duration) => showNotification?.(msg, type, duration)
+          showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
+          AppMeta: window.AppMeta
         });
 
         // Phase 3: Main script handles window.* exposure
@@ -758,7 +777,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         const deviceDetectionManager = new DeviceDetectionManager({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: deps.utils.showNotification,  // ✅ Use direct function
-            currentVersion: '1.393'
+            AppMeta: window.AppMeta
         });
 
         window.deviceDetectionManager = deviceDetectionManager;
@@ -785,7 +804,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                     return null;
                 }
             },
-            isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false
+            isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false,
+            AppMeta: window.AppMeta
         });
 
         // Expose stats panel functions globally
@@ -834,7 +854,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const taskDOMManager = await initTaskDOMManager({
                 // State management - use deps container
                 AppState: window.AppState,  // Will be deps.core.AppState once wired
-                appVersion: window.APP_VERSION,  // ✅ Injected version (no window.* in modules)
+                AppMeta: window.AppMeta,  // ✅ Injected version (no window.* in modules)
 
                 // Data operations - use deps.utils
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
@@ -977,7 +997,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
                 safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
-                autoSave: () => window.autoSave?.()
+                autoSave: () => window.autoSave?.(),
+                AppMeta: window.AppMeta
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1058,7 +1079,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
                 safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
-                AppState: () => window.AppState  // ✅ Inject AppState getter
+                AppState: () => window.AppState,  // ✅ Inject AppState getter
+                AppMeta: window.AppMeta
             });
 
             // Phase 3: Main script handles window.* exposure
@@ -1094,7 +1116,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 showNotification: deps.utils.showNotification,
                 helpWindowManager: () => window.helpWindowManager,
                 getElementById: (id) => document.getElementById(id),
-                querySelectorAll: (sel) => document.querySelectorAll(sel)
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                AppMeta: window.AppMeta
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1138,7 +1161,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 initialSetup: () => initialSetup?.(),
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
-                querySelectorAll: (sel) => document.querySelectorAll(sel)
+                querySelectorAll: (sel) => document.querySelectorAll(sel),
+                AppMeta: window.AppMeta
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1186,7 +1210,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 DEFAULT_TASK_OPTION_BUTTONS: window.DEFAULT_TASK_OPTION_BUTTONS,
 
                 // ✅ Undo system callback (deferred - initialized later)
-                onCycleCreated: (cycleId) => window.onCycleCreated?.(cycleId)
+                onCycleCreated: (cycleId) => window.onCycleCreated?.(cycleId),
+                AppMeta: window.AppMeta
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1279,7 +1304,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateProgressBar: () => window.updateProgressBar?.(),
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
-                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.()
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+                AppMeta: window.AppMeta
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1320,7 +1346,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 hideMainMenu: () => window.hideMainMenu?.(),
                 sanitizeInput: deps.utils.sanitizeInput,
                 safeAddEventListener: deps.utils.safeAddEventListener,
-                waitForCore: () => deps.core.appInit.waitForCore()
+                waitForCore: () => deps.core.appInit.waitForCore(),
+                AppMeta: window.AppMeta
             });
 
             // ✅ Expose to window for backward compatibility
@@ -1353,7 +1380,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
                 toggleHoverTaskOptions: (enabled) => window.toggleHoverTaskOptions?.(enabled),
                 refreshTaskListUI: () => window.refreshTaskListUI?.(),
-                performSchema25Migration: () => window.performSchema25Migration?.()
+                performSchema25Migration: () => window.performSchema25Migration?.(),
+                AppMeta: window.AppMeta
             });
 
             // Phase 3: Main script handles window.* exposure
@@ -1417,7 +1445,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 finalizeTaskCreation: (els, ctx, opts) => window.finalizeTaskCreation?.(els, ctx, opts),
 
                 // Auto-save
-                autoSave: () => window.autoSave?.()
+                autoSave: () => window.autoSave?.(),
+                AppMeta: window.AppMeta
             });
 
             // Phase 3: Main script handles window.* exposure

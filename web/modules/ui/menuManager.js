@@ -23,12 +23,13 @@ export function setMenuManagerDependencies(dependencies) {
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        this.version = '1.393';
-        this.initialized = false;
-        this.hasRun = false; // Track if setupMainMenu has run
-
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
+
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = mergedDeps.AppMeta?.version;
+        this.initialized = false;
+        this.hasRun = false; // Track if setupMainMenu has run
 
         // Store dependencies with resilient fallbacks
         this.deps = {
