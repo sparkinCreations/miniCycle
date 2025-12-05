@@ -3,7 +3,7 @@
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
- * @version 1.392
+ * @version 1.393
  * @pattern Resilient Constructor 🛡️
  */
 
@@ -31,7 +31,7 @@ export function setSettingsManagerDependencies(dependencies) {
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = '1.392';
+        this.version = '1.393';
         this.initialized = false;
 
         // Merge injected deps with constructor deps (constructor takes precedence)

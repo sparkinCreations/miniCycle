@@ -3,7 +3,7 @@
  * Manages cycle switching UI and operations
  *
  * @module cycleSwitcher
- * @version 1.392
+ * @version 1.393
  */
 
 // Module-level deps for late injection
@@ -46,7 +46,7 @@ export class CycleSwitcher {
         };
 
         this.loadMiniCycleListTimeout = null;
-        this.version = '1.392';
+        this.version = '1.393';
 
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();

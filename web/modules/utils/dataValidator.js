@@ -6,7 +6,7 @@
  * preventing malicious/invalid data from import/export bypass
  *
  * @module utils/dataValidator
- * @version 1.392
+ * @version 1.393
  * @pattern Static Utilities (with injected sanitizer)
  */
 

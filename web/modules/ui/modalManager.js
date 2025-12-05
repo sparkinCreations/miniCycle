@@ -17,7 +17,7 @@
  * - waitForCore (initialization wait function)
  *
  * @module modalManager
- * @version 1.392
+ * @version 1.393
  */
 
 // Module-level dependencies - set via setModalManagerDependencies
@@ -44,7 +44,7 @@ export function setModalManagerDependencies(deps) {
 
 export class ModalManager {
     constructor(dependencies = {}) {
-        this.version = '1.392';
+        this.version = '1.393';
         this.initialized = false;
 
         // Store injected dependencies

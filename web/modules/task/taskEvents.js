@@ -8,7 +8,7 @@
  * - Delegates to other modules (taskCore)
  *
  * @module modules/task/taskEvents
- * @version 1.392
+ * @version 1.393
  */
 
 // Module-level deps for late injection
@@ -55,7 +55,7 @@ export class TaskEvents {
         };
 
         // Instance version
-        this.version = '1.392';
+        this.version = '1.393';
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;

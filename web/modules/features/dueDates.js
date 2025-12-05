@@ -11,7 +11,7 @@
  * - Integration with Schema 2.5 data structure
  *
  * @module dueDates
- * @version 1.392
+ * @version 1.393
  */
 
 import { appInit } from '../core/appInit.js';
@@ -30,7 +30,7 @@ export function setDueDatesDependencies(dependencies) {
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        this.version = '1.392';
+        this.version = '1.393';
 
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
