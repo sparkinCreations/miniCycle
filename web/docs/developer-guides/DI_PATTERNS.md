@@ -182,9 +182,12 @@ A module is "DI-pure" when:
 - `settingsManager.js` - Settings management
 - `taskOptionsCustomizer.js` - Task button customization
 - `recurringPanel.js` - Recurring task UI panel
-
-**Class DI-Pure, Wrapper Functions Have Fallbacks (transitional):**
-- `taskDOM.js` - Core class is DI-pure, legacy wrapper functions use `|| window.__taskDOMManager` for backward compatibility
+- `taskDOM.js` - Task DOM manipulation
+- `errorHandler.js` - Global error handling
+- `deviceDetection.js` - Device capability detection
+- `reminders.js` - Task reminder system
+- `pullToRefresh.js` - Mobile pull-to-refresh
+- `taskUtils.js` - Task utility functions
 
 **Intentionally Uses `window.*` (wiring layer):**
 - `orchestrator.js` - This is the bridge between DI-pure modules and legacy code. It's *supposed* to expose modules to `window.*`
@@ -251,3 +254,11 @@ setMyModuleDependencies({
 - [CLAUDE.md](./CLAUDE.md) - Main developer guide
 - [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) - DI-pure implementation example
 - [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) - Progress tracking
+
+
+
+  - errorHandler.js (9)
+  - deviceDetection.js (8)
+  - reminders.js (7)
+  - pullToRefresh.js (6)
+  - taskUtils.js (6)

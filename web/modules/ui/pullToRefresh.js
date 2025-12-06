@@ -1,20 +1,29 @@
 /**
- * Pull-to-Refresh Module for miniCycle PWA
+ * Pull-to-Refresh Module for miniCycle PWA (DI-Pure)
  *
  * Provides mobile pull-to-refresh functionality that:
  * 1. Checks for service worker updates
  * 2. Refreshes UI from state
  * 3. Triggers recurring task check
  *
+ * Note: document.*, window.scrollY, navigator.serviceWorker are browser APIs,
+ * not dependencies - they cannot be injected.
+ *
  * @module pullToRefresh
  */
 
-// Module-level deps for late injection
-let _deps = {};
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    refreshUIFromState: null,
+    checkRecurringTasksNow: null,
+    watchRecurringTasks: null,
+    promptServiceWorkerUpdate: null,
+    showNotification: null
+};
 
 /**
  * Set dependencies for PullToRefresh (call before initPullToRefresh)
- * @param {Object} dependencies - { refreshUIFromState, checkRecurringTasksNow, promptServiceWorkerUpdate, showNotification }
+ * @param {Object} dependencies - { refreshUIFromState, checkRecurringTasksNow, watchRecurringTasks, promptServiceWorkerUpdate, showNotification }
  */
 export function setPullToRefreshDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
@@ -23,28 +32,14 @@ export function setPullToRefreshDependencies(dependencies) {
 
 export class PullToRefresh {
     constructor(options = {}) {
-        // Merge module-level deps with constructor options
-        const mergedDeps = { ..._deps, ...options };
-
         // Configuration
         this.threshold = options.threshold || 80; // pixels to pull before triggering
         this.maxPull = options.maxPull || 120; // max pull distance
         this.resistance = options.resistance || 2.5; // pull resistance factor
         this.activationDistance = options.activationDistance || 15; // min distance before activating (prevents accidental triggers)
 
-        // Store injected dependencies with window.* backward compatibility for tests
-        // Priority: constructor options > module deps > window.* (for test compatibility)
-        this.deps = {
-            refreshUIFromState: mergedDeps.refreshUIFromState || window.refreshUIFromState,
-            checkRecurringTasksNow: mergedDeps.checkRecurringTasksNow || window.checkRecurringTasksNow,
-            watchRecurringTasks: mergedDeps.watchRecurringTasks || window.watchRecurringTasks,
-            promptServiceWorkerUpdate: mergedDeps.promptServiceWorkerUpdate || window.promptServiceWorkerUpdate,
-            showNotification: mergedDeps.showNotification || window.showNotification || console.log
-        };
-
-        // Callbacks (injected dependencies)
+        // Callbacks (can be overridden via constructor)
         this.onRefresh = options.onRefresh || this.defaultRefresh.bind(this);
-        this.showNotification = this.deps.showNotification;
 
         // State
         this.startY = 0;
@@ -69,6 +64,27 @@ export class PullToRefresh {
         this.attachEventListeners();
 
         console.log('Pull-to-refresh initialized');
+    }
+
+    /**
+     * Getter for dependencies - always reads from current module-level _deps
+     * This ensures late-injected dependencies are available
+     */
+    get deps() {
+        return {
+            refreshUIFromState: _deps.refreshUIFromState,
+            checkRecurringTasksNow: _deps.checkRecurringTasksNow,
+            watchRecurringTasks: _deps.watchRecurringTasks,
+            promptServiceWorkerUpdate: _deps.promptServiceWorkerUpdate,
+            showNotification: _deps.showNotification || this.fallbackNotification
+        };
+    }
+
+    /**
+     * Fallback notification (console log)
+     */
+    fallbackNotification(message, type, duration) {
+        console.log(`[PullToRefresh - ${type}] ${message}`);
     }
 
     /**
@@ -260,7 +276,7 @@ export class PullToRefresh {
             await this.onRefresh();
         } catch (error) {
             console.error('Pull-to-refresh error:', error);
-            this.showNotification('Refresh failed', 'error', 3000);
+            this.deps.showNotification('Refresh failed', 'error', 3000);
         } finally {
             // Small delay for visual feedback
             setTimeout(() => {
@@ -297,7 +313,7 @@ export class PullToRefresh {
                         if (this.deps.promptServiceWorkerUpdate) {
                             this.deps.promptServiceWorkerUpdate();
                         } else {
-                            this.showNotification('App update available! Reload to update.', 'info', 5000);
+                            this.deps.showNotification('App update available! Reload to update.', 'info', 5000);
                         }
                     }
                 }
@@ -337,7 +353,7 @@ export class PullToRefresh {
         if (results.swUpdate) {
             // Already showed update notification
         } else if (results.uiRefreshed || results.recurringChecked) {
-            this.showNotification('Refreshed', 'success', 2000);
+            this.deps.showNotification('Refreshed', 'success', 2000);
         }
 
         return results;
@@ -374,6 +390,7 @@ let pullToRefreshInstance = null;
 
 /**
  * Initialize pull-to-refresh with miniCycle dependencies
+ * @param {Object} options - Configuration options (threshold, maxPull, etc.)
  */
 export function initPullToRefresh(options = {}) {
     if (pullToRefreshInstance) {
@@ -381,13 +398,7 @@ export function initPullToRefresh(options = {}) {
         return pullToRefreshInstance;
     }
 
-    // Merge module-level deps with options
-    const mergedOptions = { ..._deps, ...options };
-
-    pullToRefreshInstance = new PullToRefresh(mergedOptions);
-
-    // Expose globally for debugging
-    window.pullToRefresh = pullToRefreshInstance;
+    pullToRefreshInstance = new PullToRefresh(options);
 
     return pullToRefreshInstance;
 }
@@ -399,14 +410,5 @@ export function getPullToRefresh() {
     return pullToRefreshInstance;
 }
 
-// Auto-init when DOM is ready (if dependencies are available)
-if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', () => {
-        // Wait a bit for other modules to load
-        setTimeout(() => {
-            if (_deps.showNotification && !pullToRefreshInstance) {
-                initPullToRefresh();
-            }
-        }, 1000);
-    });
-}
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🔄 PullToRefresh module loaded (DI-pure, no window.* exports)');

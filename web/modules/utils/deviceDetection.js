@@ -1,5 +1,5 @@
 /**
- * 📱 miniCycle Device Detection Module
+ * 📱 miniCycle Device Detection Module (DI-Pure)
  *
  * Handles device capability detection and app version routing
  *
@@ -10,27 +10,56 @@
  * - Schema 2.5 compatibility data storage
  * - Automatic lite version routing
  *
+ * Note: window.screen, window.location, navigator.* are browser APIs,
+ * not dependencies - they cannot be injected.
+ *
  * @module deviceDetection
  */
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    loadMiniCycleData: null,
+    showNotification: null,
+    AppState: null,
+    appInit: null,
+    AppMeta: null
+};
+
+/**
+ * Set dependencies for DeviceDetectionManager
+ * @param {Object} dependencies - { loadMiniCycleData, showNotification, AppState, appInit, AppMeta }
+ */
+export function setDeviceDetectionDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('📱 DeviceDetection dependencies set:', Object.keys(dependencies));
+}
+
 export class DeviceDetectionManager {
   constructor(dependencies = {}) {
-    // Dependency injection for testability
-    this.loadMiniCycleData = dependencies.loadMiniCycleData || this.getGlobalFunction('loadMiniCycleData');
-    this.showNotification = dependencies.showNotification || this.getGlobalFunction('showNotification');
-    // Instance version - uses injected AppMeta (no hardcoded fallback)
-    // Note: uses AppMeta.version for consistency, maps to currentVersion for this module's API
-    this.currentVersion = dependencies.AppMeta?.version;
-    console.log('[DeviceDetection] Constructor: set version =', this.currentVersion);
+    // Store constructor-provided version (can be overridden by _deps.AppMeta)
+    this._constructorVersion = dependencies.AppMeta?.version;
+    console.log('[DeviceDetection] Constructor: set version =', this._constructorVersion);
   }
 
-  // Safe global function access
-  getGlobalFunction(name) {
-    return typeof window !== 'undefined' && typeof window[name] === 'function' 
-      ? window[name] 
-      : () => console.warn(`Function ${name} not available`);
+  /**
+   * Getter for dependencies - always reads from current module-level _deps
+   */
+  get deps() {
+    return {
+      loadMiniCycleData: _deps.loadMiniCycleData || (() => { console.warn('loadMiniCycleData not available'); return null; }),
+      showNotification: _deps.showNotification || ((msg) => console.warn('showNotification not available:', msg)),
+      AppState: _deps.AppState,
+      appInit: _deps.appInit || appInit
+    };
+  }
+
+  /**
+   * Get current version from deps or constructor
+   */
+  get currentVersion() {
+    return _deps.AppMeta?.version || this._constructorVersion;
   }
 
   // Main detection function
@@ -53,10 +82,13 @@ export class DeviceDetectionManager {
     if (manualOverride === 'true') {
       console.log('🚀 Manual override detected - user chose full version');
 
-      // ✅ Wait for core systems to be ready (AppState + data)
-      await appInit.waitForCore();
+      // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
+      const appInitModule = this.deps.appInit;
+      if (appInitModule?.waitForCore) {
+        await appInitModule.waitForCore();
+      }
 
-      const schemaData = this.loadMiniCycleData();
+      const schemaData = this.deps.loadMiniCycleData();
       if (!schemaData) {
         console.error('❌ Schema 2.5 data required for device detection');
         return false;
@@ -69,7 +101,7 @@ export class DeviceDetectionManager {
       });
 
       console.log('✅ Manual override saved to Schema 2.5');
-      this.showNotification('✅ Device detection complete - using full version by user choice', 'success', 3000);
+      this.deps.showNotification('✅ Device detection complete - using full version by user choice', 'success', 3000);
       return true;
     }
     return false;
@@ -124,17 +156,21 @@ export class DeviceDetectionManager {
   }
 
   async saveCompatibilityData(compatibilityData) {
-    // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
+    const appInitModule = this.deps.appInit;
+    if (appInitModule?.waitForCore) {
+      await appInitModule.waitForCore();
+    }
 
-    // ✅ Use AppState only (no localStorage fallback)
-    if (!window.AppState?.isReady?.()) {
+    // ✅ Use AppState only (no localStorage fallback) - DI-pure
+    const AppState = this.deps.AppState;
+    if (!AppState?.isReady?.()) {
       console.error('❌ AppState not ready for saveCompatibilityData');
       return;
     }
 
     try {
-      await window.AppState.update(state => {
+      await AppState.update(state => {
         if (!state.settings) state.settings = {};
 
         state.settings.deviceCompatibility = {
@@ -154,7 +190,7 @@ export class DeviceDetectionManager {
     const cacheBuster = `?redirect=auto&v=${this.currentVersion}&t=${Date.now()}`;
     console.log('📱 Redirecting to lite version:', 'lite/miniCycle-lite.html' + cacheBuster);
 
-    this.showNotification('📱 Redirecting to optimized lite version...', 'info', 2000);
+    this.deps.showNotification('📱 Redirecting to optimized lite version...', 'info', 2000);
     setTimeout(() => {
       window.location.href = 'lite/miniCycle-lite.html' + cacheBuster;
     }, 1000);
@@ -164,10 +200,13 @@ export class DeviceDetectionManager {
   async autoRedetectOnVersionChange() {
     console.log('🔄 Checking version change (Schema 2.5 only)...');
 
-    // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
+    const appInitModule = this.deps.appInit;
+    if (appInitModule?.waitForCore) {
+      await appInitModule.waitForCore();
+    }
 
-    const schemaData = this.loadMiniCycleData();
+    const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for version detection');
       return;
@@ -198,13 +237,16 @@ export class DeviceDetectionManager {
   async reportDeviceCompatibility() {
     console.log('📊 Generating device compatibility report (Schema 2.5 only)...');
 
-    // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
+    const appInitModule = this.deps.appInit;
+    if (appInitModule?.waitForCore) {
+      await appInitModule.waitForCore();
+    }
 
-    const schemaData = this.loadMiniCycleData();
+    const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for compatibility report');
-      this.showNotification('❌ Cannot generate report - Schema 2.5 data required', 'error', 3000);
+      this.deps.showNotification('❌ Cannot generate report - Schema 2.5 data required', 'error', 3000);
       return null;
     }
     
@@ -244,19 +286,19 @@ export class DeviceDetectionManager {
   displayCompatibilityReport(deviceInfo, storedDecision) {
     let statusMessage = '';
     let statusType = 'info';
-    
+
     if (storedDecision === true) {
       statusMessage = '📱 Device configured for lite version';
       statusType = 'info';
     } else if (storedDecision === false) {
-      statusMessage = '💻 Device configured for full version';  
+      statusMessage = '💻 Device configured for full version';
       statusType = 'success';
     } else {
       statusMessage = '❓ No device preference stored';
       statusType = 'warning';
     }
-    
-    this.showNotification(
+
+    this.deps.showNotification(
       `${statusMessage}<br>` +
       `Version: ${deviceInfo.version}<br>` +
       `Schema: ${deviceInfo.schema}<br>` +
@@ -268,18 +310,21 @@ export class DeviceDetectionManager {
 
   // Test function for manual testing
   async testDeviceDetection() {
-    this.showNotification('🧪 Starting manual device detection test (Schema 2.5 only)...', 'info', 2000);
+    this.deps.showNotification('🧪 Starting manual device detection test (Schema 2.5 only)...', 'info', 2000);
 
-    // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
+    const appInitModule = this.deps.appInit;
+    if (appInitModule?.waitForCore) {
+      await appInitModule.waitForCore();
+    }
 
-    const schemaData = this.loadMiniCycleData();
+    const schemaData = this.deps.loadMiniCycleData();
     if (!schemaData) {
       console.error('❌ Schema 2.5 data required for device detection test');
-      this.showNotification('❌ Cannot test - Schema 2.5 data required', 'error', 3000);
+      this.deps.showNotification('❌ Cannot test - Schema 2.5 data required', 'error', 3000);
       return;
     }
-    
+
     // Clear detection data for fresh test
     this.clearDetectionData();
 
@@ -289,10 +334,11 @@ export class DeviceDetectionManager {
   }
 
   async clearDetectionData() {
-    // ✅ Use AppState only (no localStorage fallback)
-    if (window.AppState?.isReady?.()) {
+    // ✅ Use AppState only (no localStorage fallback) - DI-pure
+    const AppState = this.deps.AppState;
+    if (AppState?.isReady?.()) {
       try {
-        await window.AppState.update(state => {
+        await AppState.update(state => {
           if (state?.settings?.deviceCompatibility) {
             delete state.settings.deviceCompatibility;
             console.log('🧹 Cleared device compatibility from Schema 2.5');
@@ -336,8 +382,8 @@ function testDeviceDetection() {
   return initializeDeviceDetectionManager().testDeviceDetection();
 }
 
-// Phase 4 Step 1 - Clean exports (no window.* pollution)
-console.log('📱 DeviceDetection module loaded (Phase 4 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('📱 DeviceDetection module loaded (DI-pure, no window.* exports)');
 
 // ES6 exports (DeviceDetectionManager class already exported at line 19)
 export {

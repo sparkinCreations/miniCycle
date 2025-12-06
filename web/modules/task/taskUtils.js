@@ -1,11 +1,15 @@
 /**
- * 🛠️ miniCycle Task Utilities
+ * 🛠️ miniCycle Task Utilities (DI-Pure)
  * Utility functions for task operations (context building, DOM extraction, scrolling, etc.)
  *
  * Pattern: Static Utilities 🔧
  * - Pure utility functions
  * - No instance state
- * - Dependencies passed as parameters
+ * - Dependencies passed as parameters (class methods)
+ * - Module-level deps for wrapper functions
+ *
+ * Note: document.querySelector, document.getElementById are browser APIs,
+ * not dependencies - they cannot be injected (but can be overridden for testing).
  *
  * @module modules/task/taskUtils
  */
@@ -15,6 +19,25 @@ import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS
 } from '../core/constants.js';
+
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    AppState: null,
+    loadMiniCycleData: null,
+    generateId: null,
+    remindOverdueTasks: null,
+    enableDragAndDropOnTask: null,
+    updateMoveArrowsVisibility: null
+};
+
+/**
+ * Set dependencies for TaskUtils wrapper functions
+ * @param {Object} dependencies - { AppState, loadMiniCycleData, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility }
+ */
+export function setTaskUtilsDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🛠️ TaskUtils dependencies set:', Object.keys(dependencies));
+}
 
 export class TaskUtils {
     /**
@@ -200,13 +223,11 @@ export class TaskUtils {
      * Setup final task interactions (drag/drop, arrows)
      * @param {HTMLElement} taskItem - Task DOM element
      * @param {boolean} isLoading - Whether task is being loaded
-     * @param {Object} deps - Optional dependencies object { remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility }
+     * @param {Object} deps - Dependencies object { remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility }
      */
     static setupFinalTaskInteractions(taskItem, isLoading, deps = {}) {
-        // Deferred lookup for dependencies (deps parameter or window fallback)
-        const remindOverdueTasks = deps.remindOverdueTasks || window.remindOverdueTasks;
-        const enableDragAndDropOnTask = deps.enableDragAndDropOnTask || window.enableDragAndDropOnTask;
-        const updateMoveArrowsVisibility = deps.updateMoveArrowsVisibility || window.updateMoveArrowsVisibility;
+        // Use provided deps (DI-pure - no window.* fallbacks)
+        const { remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility } = deps;
 
         // Remind overdue tasks after a delay (only if not loading)
         if (!isLoading) {
@@ -232,11 +253,16 @@ export class TaskUtils {
 }
 
 // ============================================
-// Wrapper Functions for Global Access
+// Wrapper Functions (use module-level _deps)
 // ============================================
 
 function buildTaskContext(taskItem, taskId) {
-    return TaskUtils.buildTaskContext(taskItem, taskId, window.AppState);
+    const AppState = _deps.AppState;
+    if (!AppState) {
+        console.warn('⚠️ AppState not injected for buildTaskContext');
+        return null;
+    }
+    return TaskUtils.buildTaskContext(taskItem, taskId, AppState);
 }
 
 function extractTaskDataFromDOM() {
@@ -244,13 +270,19 @@ function extractTaskDataFromDOM() {
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
+    const loadMiniCycleData = _deps.loadMiniCycleData;
+    const generateId = _deps.generateId;
+    if (!loadMiniCycleData) {
+        console.warn('⚠️ loadMiniCycleData not injected for loadTaskContext');
+        throw new Error('loadMiniCycleData dependency not available');
+    }
     return TaskUtils.loadTaskContext(
         taskTextTrimmed,
         taskId,
         taskOptions,
         isLoading,
-        window.loadMiniCycleData,
-        window.generateId
+        loadMiniCycleData,
+        generateId
     );
 }
 
@@ -263,15 +295,19 @@ function handleOverdueStyling(taskItem, completed) {
 }
 
 function setupFinalTaskInteractions(taskItem, isLoading) {
-    TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
+    TaskUtils.setupFinalTaskInteractions(taskItem, isLoading, {
+        remindOverdueTasks: _deps.remindOverdueTasks,
+        enableDragAndDropOnTask: _deps.enableDragAndDropOnTask,
+        updateMoveArrowsVisibility: _deps.updateMoveArrowsVisibility
+    });
 }
 
 // ============================================
 // Exports
 // ============================================
 
-// Phase 2 Step 9 - Clean exports (no window.* pollution)
-console.log('🛠️ TaskUtils module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🛠️ TaskUtils module loaded (DI-pure, no window.* exports)');
 
 // ES6 exports
 export {

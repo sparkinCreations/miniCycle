@@ -1,5 +1,5 @@
 /**
- * 🔔 miniCycle Reminders Module
+ * 🔔 miniCycle Reminders Module (DI-Pure)
  * Handles reminder scheduling, notifications, and task-level reminder management
  *
  * Features:
@@ -10,17 +10,26 @@
  * - Persistence across sessions
  * - Integration with Schema 2.5 data structure
  *
+ * Note: document.getElementById, document.querySelectorAll are browser APIs,
+ * not dependencies - they cannot be injected (but can be overridden for testing).
+ *
  * @module reminders
  */
 
-import { appInit } from '../core/appInit.js';
-
-// Module-level deps for late injection
-let _deps = {};
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    AppState: null,
+    showNotification: null,
+    loadMiniCycleData: null,
+    appInit: null,
+    refreshTaskListUI: null,
+    AppGlobalState: null,
+    AppMeta: null
+};
 
 /**
  * Set dependencies for MiniCycleReminders (call before creating instance)
- * @param {Object} dependencies - { AppState, showNotification, loadMiniCycleData, etc. }
+ * @param {Object} dependencies - { AppState, showNotification, loadMiniCycleData, appInit, refreshTaskListUI, AppGlobalState, AppMeta }
  */
 export function setRemindersDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
@@ -29,40 +38,69 @@ export function setRemindersDependencies(dependencies) {
 
 export class MiniCycleReminders {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
-
-        // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
-
-        // Store dependencies with intelligent fallbacks
-        this.deps = {
-            AppState: mergedDeps.AppState || (() => window.AppState),  // ✅ AppState getter function
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddEventListener,
-            autoSave: mergedDeps.autoSave || (() => console.warn('⚠️ autoSave not available')),
-            refreshTaskListUI: mergedDeps.refreshTaskListUI || null  // ✅ Added for DI
+        // Store constructor-provided deps that won't change (browser API overrides for testing)
+        this._constructorDeps = {
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener
         };
 
-        // Internal state (accessed via AppGlobalState)
-        this.state = {
-            get reminderTimeoutId() { return window.AppGlobalState?.reminderTimeoutId || null; },
-            set reminderTimeoutId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderTimeoutId = value; },
-
-            // Alias for tests compatibility (tests use reminderIntervalId)
-            get reminderIntervalId() { return window.AppGlobalState?.reminderTimeoutId || null; },
-            set reminderIntervalId(value) { if (window.AppGlobalState) window.AppGlobalState.reminderTimeoutId = value; },
-
-            // Track how many times reminders have been shown
-            get timesReminded() { return window.AppGlobalState?.timesReminded || 0; },
-            set timesReminded(value) { if (window.AppGlobalState) window.AppGlobalState.timesReminded = value; }
-        };
+        // Store constructor-provided version (can be overridden by _deps.AppMeta)
+        this._constructorVersion = dependencies.AppMeta?.version;
 
         console.log('🔔 MiniCycle Reminders module initialized');
+    }
+
+    /**
+     * Getter for dependencies - always reads from current module-level _deps
+     * This ensures late-injected dependencies are available
+     */
+    get deps() {
+        return {
+            // Core dependencies (from _deps, resolved at access time)
+            AppState: _deps.AppState,
+            showNotification: _deps.showNotification || this.fallbackNotification,
+            loadMiniCycleData: _deps.loadMiniCycleData || this.fallbackLoadData,
+            appInit: _deps.appInit,
+            refreshTaskListUI: _deps.refreshTaskListUI,
+            updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
+            autoSave: _deps.autoSave || (() => console.warn('⚠️ autoSave not available')),
+            // Browser API overrides (from constructor, for testing)
+            ...this._constructorDeps
+        };
+    }
+
+    /**
+     * Get current version from deps or constructor
+     */
+    get currentVersion() {
+        return _deps.AppMeta?.version || this._constructorVersion;
+    }
+
+    /**
+     * Get AppGlobalState from deps (DI-pure)
+     */
+    get appGlobalState() {
+        return _deps.AppGlobalState;
+    }
+
+    /**
+     * Internal state accessor (uses injected AppGlobalState)
+     */
+    get state() {
+        const globalState = this.appGlobalState;
+        return {
+            get reminderTimeoutId() { return globalState?.reminderTimeoutId || null; },
+            set reminderTimeoutId(value) { if (globalState) globalState.reminderTimeoutId = value; },
+
+            // Alias for tests compatibility (tests use reminderIntervalId)
+            get reminderIntervalId() { return globalState?.reminderTimeoutId || null; },
+            set reminderIntervalId(value) { if (globalState) globalState.reminderTimeoutId = value; },
+
+            // Track how many times reminders have been shown
+            get timesReminded() { return globalState?.timesReminded || 0; },
+            set timesReminded(value) { if (globalState) globalState.timesReminded = value; }
+        };
     }
 
     /**
@@ -72,15 +110,19 @@ export class MiniCycleReminders {
     async init() {
         console.log('🔄 Initializing reminder system...');
 
-        // Wait for core systems to be ready
-        await appInit.waitForCore();
+        // Wait for core systems to be ready (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         try {
             this.setupReminderToggle();
             this.setupReminderInputListeners();
 
-            // ✅ Add hook to update reminder buttons after app is fully ready
-            appInit.addHook('afterApp', async () => {
+            // ✅ Add hook to update reminder buttons after app is fully ready (DI-pure)
+            if (appInitModule?.addHook) {
+                appInitModule.addHook('afterApp', async () => {
                 console.log('🔄 Updating reminder buttons after app ready (hook)...');
 
                 // Check if tasks exist in DOM before proceeding
@@ -106,7 +148,8 @@ export class MiniCycleReminders {
                 }
 
                 console.log('✅ Reminder buttons updated on page load (hook)');
-            });
+                });
+            }
 
             console.log('✅ Reminder system initialized successfully');
         } catch (error) {
@@ -121,7 +164,11 @@ export class MiniCycleReminders {
     async handleReminderToggle() {
         console.log('🔔 Handling reminder toggle (Schema 2.5 only)...');
 
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         const enableReminders = this.deps.getElementById('enableReminders');
         if (!enableReminders) {
@@ -185,8 +232,8 @@ export class MiniCycleReminders {
         // Update the 🔔 task buttons
         this.updateReminderButtons();
 
-        // ✅ Refresh task list to show/hide reminder buttons (deferred lookup)
-        const refreshTaskListUI = this.deps.refreshTaskListUI || window.refreshTaskListUI;
+        // ✅ Refresh task list to show/hide reminder buttons (DI-pure)
+        const refreshTaskListUI = this.deps.refreshTaskListUI;
         if (typeof refreshTaskListUI === 'function') {
             refreshTaskListUI();
             console.log('🔄 Refreshed task list to update button visibility');
@@ -341,7 +388,11 @@ export class MiniCycleReminders {
     async loadRemindersSettings() {
         console.log('📥 Loading reminders settings (Schema 2.5 only)...');
 
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -400,7 +451,11 @@ export class MiniCycleReminders {
     async saveTaskReminderState(taskId, isEnabled) {
         console.log('🔔 Saving task reminder state (Schema 2.5 only)...');
 
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -458,7 +513,11 @@ export class MiniCycleReminders {
     async sendReminderNotificationIfNeeded() {
         console.log('🔔 Sending reminder notification if needed (Schema 2.5 only)...');
 
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         // Schema 2.5 only
         const schemaData = this.deps.loadMiniCycleData();
@@ -536,7 +595,11 @@ export class MiniCycleReminders {
     async startReminders() {
         console.log("🔄 Starting Reminder System (Schema 2.5 only)...");
 
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         // Clear any existing timeout
         if (this.state.reminderTimeoutId) {
@@ -596,7 +659,11 @@ export class MiniCycleReminders {
      * Schedule the next reminder timeout
      */
     async scheduleNextReminder() {
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -652,7 +719,11 @@ export class MiniCycleReminders {
         const { assignedTaskId } = taskContext;
 
         button.addEventListener("click", async () => {
-            await appInit.waitForCore();
+            // Wait for core systems (DI-pure)
+            const appInitModule = this.deps.appInit;
+            if (appInitModule?.waitForCore) {
+                await appInitModule.waitForCore();
+            }
 
             // ✅ Read fresh state from localStorage (source of truth)
             const schemaData = this.deps.loadMiniCycleData();
@@ -741,7 +812,11 @@ export class MiniCycleReminders {
     async updateReminderButtons() {
         console.log("🔍 Running updateReminderButtons() (Schema 2.5 only)...");
 
-        await appInit.waitForCore();
+        // Wait for core systems (DI-pure)
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         // Schema 2.5 only
         const schemaData = this.deps.loadMiniCycleData();
@@ -894,8 +969,8 @@ export class MiniCycleReminders {
 // MODULE INITIALIZATION & GLOBAL EXPORTS
 // ============================================
 
-// Phase 2 Step 5 - Clean exports (no window.* pollution)
-console.log('🔔 Reminders module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🔔 Reminders module loaded (DI-pure, no window.* exports)');
 
 let reminderManager = null;
 

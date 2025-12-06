@@ -1,12 +1,29 @@
 /**
- * Global Error Handler
+ * Global Error Handler (DI-Pure)
  *
  * Catches and handles all unhandled errors and promise rejections.
  * Provides user-friendly notifications and debug logging.
  *
+ * Note: window.onerror and window.addEventListener are browser APIs,
+ * not dependencies - they cannot be injected.
+ *
  * @module modules/utils/errorHandler
  * @created November 13, 2025
  */
+
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    showNotification: null
+};
+
+/**
+ * Set dependencies for ErrorHandler (call after notifications module loads)
+ * @param {Object} dependencies - { showNotification }
+ */
+export function setErrorHandlerDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🛡️ ErrorHandler dependencies set:', Object.keys(dependencies));
+}
 
 class ErrorHandler {
     constructor() {
@@ -16,6 +33,15 @@ class ErrorHandler {
         this.maxLogSize = 50;
 
         this.setupGlobalHandlers();
+    }
+
+    /**
+     * Getter for dependencies - always reads from current module-level _deps
+     */
+    get deps() {
+        return {
+            showNotification: _deps.showNotification
+        };
     }
 
     /**
@@ -70,9 +96,10 @@ class ErrorHandler {
         if (this.errorCount <= this.maxErrorsBeforeSilence) {
             this.showUserNotification(errorInfo);
         } else if (this.errorCount === this.maxErrorsBeforeSilence + 1) {
-            // Show final warning
-            if (typeof window.showNotification === 'function') {
-                window.showNotification(
+            // Show final warning (DI-pure)
+            const showNotification = this.deps.showNotification;
+            if (typeof showNotification === 'function') {
+                showNotification(
                     'Multiple errors detected. Further error notifications will be suppressed. Check the console for details.',
                     'error'
                 );
@@ -104,7 +131,8 @@ class ErrorHandler {
      * Show user-friendly notification
      */
     showUserNotification(errorInfo) {
-        if (typeof window.showNotification !== 'function') {
+        const showNotification = this.deps.showNotification;
+        if (typeof showNotification !== 'function') {
             return;
         }
 
@@ -128,7 +156,7 @@ class ErrorHandler {
             }
         }
 
-        window.showNotification(message, 'error');
+        showNotification(message, 'error');
     }
 
     /**
@@ -150,8 +178,9 @@ class ErrorHandler {
      */
     suggestDataExport(errorInfo) {
         setTimeout(() => {
-            if (typeof window.showNotification === 'function') {
-                window.showNotification(
+            const showNotification = this.deps.showNotification;
+            if (typeof showNotification === 'function') {
+                showNotification(
                     'Critical error detected. We recommend exporting your data as backup. Go to Settings → Import/Export.',
                     'warning'
                 );
@@ -191,7 +220,7 @@ class ErrorHandler {
 // Create singleton instance
 const errorHandler = new ErrorHandler();
 
-// Phase 2 Step 5 - Clean exports (no window.* pollution)
-console.log('🛡️ ErrorHandler module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🛡️ ErrorHandler module loaded (DI-pure, no window.* exports)');
 
 export default errorHandler;

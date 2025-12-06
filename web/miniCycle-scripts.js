@@ -449,8 +449,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
     console.log('🛠️ Global utilities loaded');
 
-    // ✅ Load Error Handler
+    // ✅ Load Error Handler (DI-pure - wiring done after notifications load)
     const errorHandlerMod = await import(withV('./modules/utils/errorHandler.js'));
+    deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
     console.log('🛡️ Global error handlers initialized');
 
     // ✅ Load Data Validator (needed before settingsManager)
@@ -495,6 +496,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         return notifications.show(message, type, duration);
     };
     console.log('✅ Notifications loaded');
+
+    // ✅ Wire ErrorHandler now that showNotification is available
+    deps.utils.setErrorHandlerDependencies({
+        showNotification: deps.utils.showNotification
+    });
 
     // ✅ Load Theme Manager
     const themeManagerMod = await import(withV('./modules/features/themeManager.js'));
@@ -836,20 +842,24 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         console.log('✅ DragDropManager initialized and ready (Phase 3)');
 
-        // ✅ Initialize Device Detection (Phase 2 module)
+        // ✅ Initialize Device Detection (DI-pure module)
         console.log('📱 Initializing device detection module...');
-        const { DeviceDetectionManager } = await import(withV('./modules/utils/deviceDetection.js'));
+        const { DeviceDetectionManager, setDeviceDetectionDependencies } = await import(withV('./modules/utils/deviceDetection.js'));
 
-        const deviceDetectionManager = new DeviceDetectionManager({
+        // Wire dependencies before creating instance (DI-pure pattern)
+        setDeviceDetectionDependencies({
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
-            showNotification: deps.utils.showNotification,  // ✅ Use direct function
+            showNotification: deps.utils.showNotification,
+            get AppState() { return window.AppState; },
+            get appInit() { return window.appInit; },
             AppMeta: window.AppMeta
         });
 
+        const deviceDetectionManager = new DeviceDetectionManager();
+
         window.deviceDetectionManager = deviceDetectionManager;
 
-
-        console.log('✅ DeviceDetectionManager initialized (Phase 2)');
+        console.log('✅ DeviceDetectionManager initialized (DI-pure)');
 
         // ✅ Initialize Stats Panel (DI-pure module)
         console.log('📊 Initializing stats panel module...');
@@ -914,6 +924,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.log('✅ taskDOM.js imported successfully');
 
             // ✅ Set module-level deps for wrapper functions (DI-pure)
+            // Note: TaskUtils deps flow through taskDOM instance deps (set in initTaskDOMManager below)
             setTaskDOMManagerDependencies({
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
@@ -1074,21 +1085,31 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without task customization functionality');
         }
 
-        // ✅ Initialize Reminders Module (Phase 3 module - no window.* in module)
+        // ✅ Initialize Reminders Module (DI-pure)
         // IMPORTANT: Load BEFORE recurring modules because recurring task rendering needs reminder button handlers
         console.log('🔔 Initializing reminders module...');
         try {
-            const { initReminderManager } = await import(withV('./modules/features/reminders.js'));
+            const { initReminderManager, setRemindersDependencies } = await import(withV('./modules/features/reminders.js'));
+
+            // Wire dependencies BEFORE creating instance (DI-pure pattern)
+            setRemindersDependencies({
+                showNotification: deps.utils.showNotification,
+                loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
+                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
+                autoSave: () => window.autoSave?.(),
+                // Use lazy getters for deps that don't exist at wiring time
+                get AppState() { return window.AppState; },
+                get appInit() { return window.appInit; },
+                get refreshTaskListUI() { return window.refreshTaskListUI; },
+                get AppGlobalState() { return window.AppGlobalState; },
+                AppMeta: window.AppMeta
+            });
 
             const reminderManager = await initReminderManager({
-                showNotification: deps.utils.showNotification,
-                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                // Browser API overrides (for testing) - these go via constructor
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (selector) => document.querySelectorAll(selector),
-                updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
-                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler),
-                autoSave: () => window.autoSave?.(),
-                AppMeta: window.AppMeta
+                safeAddEventListener: (element, event, handler) => window.safeAddEventListener?.(element, event, handler)
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1102,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.updateReminderButtons = () => reminderManager.updateReminderButtons();
             window.setupReminderButtonHandler = (button, taskContext) => reminderManager.setupReminderButtonHandler(button, taskContext);
 
-            console.log('✅ Reminders module initialized (Phase 3)');
+            console.log('✅ Reminders module initialized (DI-pure)');
         } catch (error) {
             console.error('❌ Failed to initialize reminders module:', error);
             if (typeof showNotification === 'function') {
@@ -1717,19 +1738,27 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             throw new Error('Cycle loader initialization failed - cannot load cycles');
         }
 
-        // ✅ Initialize Pull-to-Refresh (Phase 2 module - mobile only)
+        // ✅ Initialize Pull-to-Refresh (DI-pure - mobile only)
         console.log('📱 Initializing pull-to-refresh module...');
         try {
-            const { initPullToRefresh } = await import(withV('./modules/ui/pullToRefresh.js'));
+            const { initPullToRefresh, setPullToRefreshDependencies } = await import(withV('./modules/ui/pullToRefresh.js'));
 
-            const pullToRefresh = initPullToRefresh({
-                showNotification: deps.utils.showNotification
+            // Wire dependencies BEFORE creating instance (DI-pure pattern)
+            setPullToRefreshDependencies({
+                showNotification: deps.utils.showNotification,
+                // Use lazy getters for deps that don't exist at wiring time
+                get refreshUIFromState() { return window.refreshUIFromState; },
+                get checkRecurringTasksNow() { return window.checkRecurringTasksNow; },
+                get watchRecurringTasks() { return window.watchRecurringTasks; },
+                get promptServiceWorkerUpdate() { return window.promptServiceWorkerUpdate; }
             });
 
-            // Phase 2: Main script handles window.* exposure
+            const pullToRefresh = initPullToRefresh();
+
+            // DI-pure: Main script handles window.* exposure
             window.pullToRefresh = pullToRefresh;
 
-            console.log('✅ Pull-to-refresh module initialized (Phase 2)');
+            console.log('✅ Pull-to-refresh module initialized (DI-pure)');
         } catch (error) {
             console.error('⚠️ Failed to initialize pull-to-refresh module:', error);
             console.warn('⚠️ App will continue without pull-to-refresh functionality');

@@ -154,7 +154,11 @@ export class TaskDOMManager {
             setupRecurringButtonHandler: mergedDeps.setupRecurringButtonHandler || null,
             setupReminderButtonHandler: mergedDeps.setupReminderButtonHandler || null,
             handleTaskButtonClick: mergedDeps.handleTaskButtonClick || null,
-            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || null
+            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || null,
+
+            // Drag and drop / task interactions (for TaskUtils)
+            enableDragAndDropOnTask: mergedDeps.enableDragAndDropOnTask || null,
+            remindOverdueTasks: mergedDeps.remindOverdueTasks || null
         };
 
         // Internal state
@@ -214,7 +218,7 @@ export class TaskDOMManager {
                 console.log('📦 Starting Promise.all for sub-module imports...');
                 const [
                     { TaskValidator: ValidatorClass },
-                    { TaskUtils: UtilsClass },
+                    { TaskUtils: UtilsClass, setTaskUtilsDependencies },
                     { TaskRenderer: RendererClass },
                     { TaskEvents: EventsClass }
                 ] = await Promise.all([
@@ -231,7 +235,17 @@ export class TaskDOMManager {
                 TaskRenderer = RendererClass;
                 TaskEvents = EventsClass;
 
-                // Phase 3 - No window.* exports (main script handles exposure)
+                // Wire TaskUtils dependencies for wrapper functions (DI-pure)
+                // Use this.deps (instance deps from constructor) - these have the actual injected functions
+                const instanceDeps = this.deps;
+                setTaskUtilsDependencies({
+                    get AppState() { return instanceDeps.AppState; },
+                    get loadMiniCycleData() { return instanceDeps.loadMiniCycleData; },
+                    get generateId() { return instanceDeps.generateId; },
+                    get remindOverdueTasks() { return instanceDeps.remindOverdueTasks; },
+                    get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
+                    get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; }
+                });
 
                 console.log('✅ Module-level classes stored:', {
                     TaskValidator: !!TaskValidator,
@@ -1445,7 +1459,11 @@ export class TaskDOMManager {
         this.updateUIAfterTaskCreation(shouldSave);
 
         // Setup final interactions (delegated to TaskUtils)
-        TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
+        TaskUtils.setupFinalTaskInteractions(taskItem, isLoading, {
+            remindOverdueTasks: this.deps.remindOverdueTasks,
+            enableDragAndDropOnTask: this.deps.enableDragAndDropOnTask,
+            updateMoveArrowsVisibility: this.deps.updateMoveArrowsVisibility
+        });
 
         return taskItem;
     }
