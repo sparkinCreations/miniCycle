@@ -6,9 +6,10 @@
  * @module ui/helpWindowManager
  */
 
-// Module-level dependencies
+// Module-level dependencies (DI-pure, no window.* fallbacks)
 let deps = {
-    loadMiniCycleData: null
+    loadMiniCycleData: null,
+    AppState: null
 };
 
 /**
@@ -211,13 +212,19 @@ export class HelpWindowManager {
         const completedTasks = document.querySelectorAll('.task input:checked').length;
         const remaining = totalTasks - completedTasks;
 
-        // Get cycle count from Schema 2.5
+        // Get cycle count from Schema 2.5 (DI-pure, no window.* fallbacks)
         let cycleCount = 0;
-        const loadData = deps.loadMiniCycleData || window.loadMiniCycleData;
 
-        if (typeof loadData === 'function') {
-            const schemaData = window.miniCycle?.state?.load() || loadData();
-
+        // Prefer AppState if available, fall back to loadMiniCycleData
+        if (deps.AppState?.isReady?.()) {
+            const state = deps.AppState.get();
+            if (state) {
+                const activeCycle = state.appState?.activeCycleId;
+                const currentCycle = state.data?.cycles?.[activeCycle];
+                cycleCount = currentCycle?.cycleCount || 0;
+            }
+        } else if (typeof deps.loadMiniCycleData === 'function') {
+            const schemaData = deps.loadMiniCycleData();
             if (schemaData) {
                 const { cycles, activeCycle } = schemaData;
                 const currentCycle = cycles[activeCycle];

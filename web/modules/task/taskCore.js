@@ -69,8 +69,8 @@ export class TaskCore {
             safeLocalStorageGet: mergedDeps.safeLocalStorageGet || ((key, fallback) => { try { return localStorage.getItem(key); } catch { return fallback; } }),
             safeLocalStorageSet: mergedDeps.safeLocalStorageSet || ((key, value) => { try { localStorage.setItem(key, value); } catch { console.warn('localStorage unavailable'); } }),
 
-            // Global state (injected, no window.AppGlobalState)
-            AppGlobalState: mergedDeps.AppGlobalState || null,
+            // Undo system state check (injected function, no AppGlobalState)
+            isPerformingUndoRedo: mergedDeps.isPerformingUndoRedo || (() => false),
 
             // UI updates
             showNotification: mergedDeps.showNotification || this.fallbackNotification,
@@ -122,6 +122,9 @@ export class TaskCore {
             // Move arrows
             updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || null
         };
+
+        // Local instance state (previously on AppGlobalState)
+        this.isResetting = false;
 
         console.log('🎯 TaskCore module initialized');
     }
@@ -648,7 +651,7 @@ export class TaskCore {
             const isCompleted = checkbox.checked;
 
             // ✅ Capture state snapshot BEFORE making changes (for undo)
-            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.AppGlobalState?.isPerformingUndoRedo) {
+            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.isPerformingUndoRedo()) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
                     this.deps.captureStateSnapshot(currentState);
@@ -828,8 +831,8 @@ export class TaskCore {
      */
     async resetTasks() {
         try {
-            if (this.deps.AppGlobalState?.isResetting) return;
-            if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = true;
+            if (this.isResetting) return;
+            this.isResetting = true;
 
             console.log('🔄 Resetting tasks (Schema 2.5 only)...');
 
@@ -855,7 +858,7 @@ export class TaskCore {
             // Validate DOM elements
             if (!taskList) {
                 console.error('❌ Task list element not found');
-                if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
+                this.isResetting = false;
                 return;
             }
 
@@ -870,7 +873,7 @@ export class TaskCore {
                 const schemaData = this.deps.loadMiniCycleData();
                 if (!schemaData) {
                     console.error('❌ Schema 2.5 data required for resetTasks');
-                    if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
+                    this.isResetting = false;
                     throw new Error('Schema 2.5 data not found');
                 }
                 cycles = schemaData.data?.cycles || {};
@@ -880,14 +883,14 @@ export class TaskCore {
 
             if (!activeCycle || !cycleData) {
                 console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
-                if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
+                this.isResetting = false;
                 return;
             }
 
             console.log('📊 Resetting tasks for cycle:', activeCycle);
 
             // ✅ CAPTURE UNDO SNAPSHOT BEFORE ANY MODIFICATIONS
-            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.AppGlobalState?.isPerformingUndoRedo) {
+            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.isPerformingUndoRedo()) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
                     this.deps.captureStateSnapshot(currentState);
@@ -1027,7 +1030,7 @@ export class TaskCore {
 
             // Release reset lock
             setTimeout(() => {
-                if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
+                this.isResetting = false;
                 console.log('🔓 Reset lock released');
             }, 2000);
 
@@ -1044,7 +1047,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Reset tasks failed:', error);
-            if (this.deps.AppGlobalState) this.deps.AppGlobalState.isResetting = false;
+            this.isResetting = false;
             this.deps.showNotification('Could not reset tasks', 'warning');
         }
     }

@@ -792,6 +792,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         window.updateArrowsInDOM = updateArrowsInDOM;
 
         const dragDropManager = await initDragDropManager({
+          // Core state (DI-pure, no AppGlobalState - uses local instance state)
+          AppState: window.AppState,
+          AppMeta: window.AppMeta,
+          // Task operations
           saveCurrentTaskOrder: () => window.saveCurrentTaskOrder?.(),
           autoSave: () => autoSave?.(),
           updateProgressBar: () => updateProgressBar?.(),
@@ -804,8 +808,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
           hideTaskButtons: (task) => hideTaskButtons?.(task),
           isTouchDevice: () => isTouchDevice?.() || false,
           enableUndoSystemOnFirstInteraction: () => enableUndoSystemOnFirstInteraction?.(),
-          showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
-          AppMeta: window.AppMeta
+          showNotification: (msg, type, duration) => showNotification?.(msg, type, duration)
         });
 
         // Phase 3: Main script handles window.* exposure
@@ -867,6 +870,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         try {
             const {
                 initTaskDOMManager,
+                setTaskDOMManagerDependencies,
                 extractTaskDataFromDOM,
                 createTaskDOMElements,
                 createThreeDotsButton,
@@ -880,6 +884,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 refreshUIFromState
             } = await import(withV('./modules/task/taskDOM.js'));
             console.log('✅ taskDOM.js imported successfully');
+
+            // ✅ Set module-level deps for wrapper functions (DI-pure)
+            setTaskDOMManagerDependencies({
+                AppState: window.AppState,
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                generateId: deps.utils.generateId
+            });
 
             // ✅ Expose taskDOM functions to window (needed by addTask and other modules)
             window.extractTaskDataFromDOM = extractTaskDataFromDOM;
@@ -1469,8 +1480,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log('🎯 Initializing help window manager...');
         const { initHelpWindowManager, setHelpWindowManagerDependencies } = await import(withV('./modules/ui/helpWindowManager.js'));
 
-        // Wire help window dependencies
+        // Wire help window dependencies (DI-pure)
         setHelpWindowManagerDependencies({
+            AppState: window.AppState,
             loadMiniCycleData: () => window.loadMiniCycleData?.()
         });
 
@@ -1498,9 +1510,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.saveTaskToSchema25 = saveTaskToSchema25;
 
             const taskCore = await initTaskCore({
-                // State management
+                // State management (no AppGlobalState - uses local instance state)
                 AppState: window.AppState,
-                AppGlobalState: window.AppGlobalState,
                 AppMeta: window.AppMeta,
 
                 // Data operations
@@ -1523,6 +1534,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 // Undo system
                 captureStateSnapshot: (state) => window.captureStateSnapshot?.(state),
                 enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+                isPerformingUndoRedo: () => window.AppGlobalState?.isPerformingUndoRedo || false,
 
                 // Modal system
                 showPromptModal: (config) => window.showPromptModal?.(config),

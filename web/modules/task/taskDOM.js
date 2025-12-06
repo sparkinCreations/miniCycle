@@ -1583,11 +1583,12 @@ function validateAndSanitizeTaskInput(taskText) {
 
 function buildTaskContext(taskItem, taskId) {
     const utils = TaskUtils || window.__TaskUtils;
+    const AppState = _deps.AppState; // Use injected AppState from module deps
     if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
-        return window.TaskUtils?.buildTaskContext?.(taskItem, taskId, window.AppState) || {};
+        console.warn('⚠️ TaskUtils not initialized yet, using fallback');
+        return window.TaskUtils?.buildTaskContext?.(taskItem, taskId, AppState) || {};
     }
-    return utils.buildTaskContext(taskItem, taskId, window.AppState);
+    return utils.buildTaskContext(taskItem, taskId, AppState);
 }
 
 function extractTaskDataFromDOM() {
@@ -1661,15 +1662,18 @@ function extractTaskDataFromDOM() {
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     const utils = TaskUtils || window.__TaskUtils;
+    // Use module deps for DI-pure pattern
+    const loadMiniCycleData = _deps.loadMiniCycleData;
+    const generateId = _deps.generateId;
     if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
+        console.warn('⚠️ TaskUtils not initialized yet, using fallback');
         return window.TaskUtils?.loadTaskContext?.(
             taskTextTrimmed,
             taskId,
             taskOptions,
             isLoading,
-            window.loadMiniCycleData,
-            window.generateId
+            loadMiniCycleData,
+            generateId
         ) || null;
     }
     return utils.loadTaskContext(
@@ -1677,8 +1681,8 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false
         taskId,
         taskOptions,
         isLoading,
-        window.loadMiniCycleData,
-        window.generateId
+        loadMiniCycleData,
+        generateId
     );
 }
 

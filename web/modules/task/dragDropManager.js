@@ -25,7 +25,7 @@ export class DragDropManager {
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
 
-        // Store dependencies with intelligent fallbacks
+        // Store dependencies - DI-pure pattern (no window.* fallbacks, no AppGlobalState)
         this.deps = {
             // Core state access
             AppState: mergedDeps.AppState,
@@ -44,10 +44,17 @@ export class DragDropManager {
             showNotification: mergedDeps.showNotification || this.fallbackNotification
         };
 
-        // Internal state
+        // Internal state (local to this instance, not global)
         this.rearrangeTimeout = null;
         this.REARRANGE_DELAY = 75; // ms delay to smooth reordering
         this.REORDER_SNAPSHOT_INTERVAL = 500; // ms between undo snapshots
+
+        // Drag state (previously on AppGlobalState, now local)
+        this.draggedTask = null;
+        this.rearrangeInitialized = false;
+        this.didDragReorderOccur = false;
+        this.lastReorderTime = 0;
+        this.lastRearrangeTarget = null;
 
         // Initialization flag
         this.initialized = false;
@@ -56,11 +63,11 @@ export class DragDropManager {
     }
 
     /**
-     * Get AppState (deferred lookup for late binding)
+     * Get AppState (DI-pure, no window.* fallback)
      * @private
      */
     _getAppState() {
-        return this.deps.AppState || window.AppState;
+        return this.deps.AppState;
     }
 
     /**
@@ -92,16 +99,14 @@ export class DragDropManager {
      * Setup drag and drop event handling
      */
     setupRearrange() {
-        if (window.AppGlobalState?.rearrangeInitialized) {
+        if (this.rearrangeInitialized) {
             console.log('ℹ️ Rearrange already initialized');
             return;
         }
 
         try {
-            // Mark as initialized
-            if (window.AppGlobalState) {
-                window.AppGlobalState.rearrangeInitialized = true;
-            }
+            // Mark as initialized (instance state)
+            this.rearrangeInitialized = true;
 
             // Add event delegation for arrow clicks (survives DOM re-renders)
             const taskList = document.getElementById("taskList");
@@ -129,9 +134,9 @@ export class DragDropManager {
             // Setup drop handler
             document.addEventListener("drop", (event) => {
                 event.preventDefault();
-                if (!window.AppGlobalState?.draggedTask) return;
+                if (!this.draggedTask) return;
 
-                if (window.AppGlobalState.didDragReorderOccur) {
+                if (this.didDragReorderOccur) {
                     this.deps.saveCurrentTaskOrder();
                     this.deps.autoSave();
                     this.deps.updateProgressBar();
@@ -146,10 +151,8 @@ export class DragDropManager {
                 }
 
                 this.cleanupDragState();
-                if (window.AppGlobalState) {
-                    window.AppGlobalState.lastReorderTime = 0;
-                    window.AppGlobalState.didDragReorderOccur = false;
-                }
+                this.lastReorderTime = 0;
+                this.didDragReorderOccur = false;
             });
 
             console.log('✅ Rearrange event handlers setup complete');
@@ -217,9 +220,7 @@ export class DragDropManager {
                 holdTimeout = setTimeout(() => {
                     isLongPress = true;
                     isTap = false;
-                    if (window.AppGlobalState) {
-                        window.AppGlobalState.draggedTask = taskElement;
-                    }
+                    this.draggedTask = taskElement;
                     isDragging = true;
                     taskElement.classList.add("dragging", "long-pressed");
 
@@ -263,7 +264,7 @@ export class DragDropManager {
                     }
                 }
 
-                if (isDragging && window.AppGlobalState?.draggedTask) {
+                if (isDragging && this.draggedTask) {
                     if (event.cancelable) {
                         event.preventDefault();
                     }
@@ -284,9 +285,9 @@ export class DragDropManager {
                     }, 100);
                 }
 
-                if (window.AppGlobalState?.draggedTask) {
-                    window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
-                    window.AppGlobalState.draggedTask = null;
+                if (this.draggedTask) {
+                    this.draggedTask.classList.remove("dragging", "rearranging");
+                    this.draggedTask = null;
                 }
 
                 isDragging = false;
@@ -307,9 +308,7 @@ export class DragDropManager {
                 // Enable undo system on first user interaction
                 this.deps.enableUndoSystemOnFirstInteraction();
 
-                if (window.AppGlobalState) {
-                    window.AppGlobalState.draggedTask = taskElement;
-                }
+                this.draggedTask = taskElement;
                 event.dataTransfer.setData("text/plain", "");
 
                 // Add dragging class for desktop as well
@@ -333,29 +332,29 @@ export class DragDropManager {
      * @param {DragEvent | TouchEvent} event - The event triggering the rearrangement
      */
     handleRearrange(target, event) {
-        if (!target || !window.AppGlobalState?.draggedTask || target === window.AppGlobalState.draggedTask) return;
+        if (!target || !this.draggedTask || target === this.draggedTask) return;
 
         clearTimeout(this.rearrangeTimeout);
 
         this.rearrangeTimeout = setTimeout(() => {
-            if (!document.contains(target) || !document.contains(window.AppGlobalState.draggedTask)) return;
+            if (!document.contains(target) || !document.contains(this.draggedTask)) return;
 
-            const parent = window.AppGlobalState.draggedTask.parentNode;
+            const parent = this.draggedTask.parentNode;
             if (!parent || !target.parentNode) return;
 
             const bounding = target.getBoundingClientRect();
             const offset = event.clientY - bounding.top;
 
             // ✅ ALWAYS mark that a reorder occurred (for save on drop)
-            window.AppGlobalState.didDragReorderOccur = true;
+            this.didDragReorderOccur = true;
 
             // Snapshot only if enough time has passed (for undo system)
             const now = Date.now();
-            if (window.AppGlobalState.lastReorderTime &&
-                now - window.AppGlobalState.lastReorderTime > this.REORDER_SNAPSHOT_INTERVAL) {
-                window.AppGlobalState.lastReorderTime = now;
-            } else if (!window.AppGlobalState.lastReorderTime) {
-                window.AppGlobalState.lastReorderTime = now;
+            if (this.lastReorderTime &&
+                now - this.lastReorderTime > this.REORDER_SNAPSHOT_INTERVAL) {
+                this.lastReorderTime = now;
+            } else if (!this.lastReorderTime) {
+                this.lastReorderTime = now;
             }
 
             const isLastTask = !target.nextElementSibling;
@@ -365,58 +364,58 @@ export class DragDropManager {
 
             // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
             try {
-                if (isLastTask && target.nextSibling !== window.AppGlobalState.draggedTask) {
+                if (isLastTask && target.nextSibling !== this.draggedTask) {
                     // ✅ Verify nodes are still valid before DOM manipulation
-                    if (!document.contains(window.AppGlobalState.draggedTask) || !parent.contains) {
+                    if (!document.contains(this.draggedTask) || !parent.contains) {
                         console.warn('⚠️ DOM nodes became invalid before appendChild');
                         return;
                     }
-                    parent.appendChild(window.AppGlobalState.draggedTask);
-                    window.AppGlobalState.draggedTask.classList.add("drop-target");
+                    parent.appendChild(this.draggedTask);
+                    this.draggedTask.classList.add("drop-target");
                     return;
                 }
 
-                if (isFirstTask && target.previousSibling !== window.AppGlobalState.draggedTask) {
+                if (isFirstTask && target.previousSibling !== this.draggedTask) {
                     // ✅ Verify nodes are still valid before DOM manipulation
-                    if (!document.contains(window.AppGlobalState.draggedTask) || !parent.firstChild) {
+                    if (!document.contains(this.draggedTask) || !parent.firstChild) {
                         console.warn('⚠️ DOM nodes became invalid before insertBefore (first child)');
                         return;
                     }
-                    parent.insertBefore(window.AppGlobalState.draggedTask, parent.firstChild);
-                    window.AppGlobalState.draggedTask.classList.add("drop-target");
+                    parent.insertBefore(this.draggedTask, parent.firstChild);
+                    this.draggedTask.classList.add("drop-target");
                     return;
                 }
 
                 if (offset > bounding.height / 3) {
-                    if (target.nextSibling !== window.AppGlobalState.draggedTask) {
+                    if (target.nextSibling !== this.draggedTask) {
                         // ✅ Verify nodes are still valid before DOM manipulation
-                        if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
+                        if (!document.contains(this.draggedTask) || !document.contains(target)) {
                             console.warn('⚠️ DOM nodes became invalid before insertBefore (next sibling)');
                             return;
                         }
-                        parent.insertBefore(window.AppGlobalState.draggedTask, target.nextSibling);
+                        parent.insertBefore(this.draggedTask, target.nextSibling);
                     }
                 } else {
-                    if (target.previousSibling !== window.AppGlobalState.draggedTask) {
+                    if (target.previousSibling !== this.draggedTask) {
                         // ✅ Verify nodes are still valid before DOM manipulation (line 357 fix)
-                        if (!document.contains(window.AppGlobalState.draggedTask) || !document.contains(target)) {
+                        if (!document.contains(this.draggedTask) || !document.contains(target)) {
                             console.warn('⚠️ DOM nodes became invalid before insertBefore (target)');
                             return;
                         }
-                        parent.insertBefore(window.AppGlobalState.draggedTask, target);
+                        parent.insertBefore(this.draggedTask, target);
                     }
                 }
 
                 // ✅ Final verification before adding class
-                if (window.AppGlobalState.draggedTask && document.contains(window.AppGlobalState.draggedTask)) {
-                    window.AppGlobalState.draggedTask.classList.add("drop-target");
+                if (this.draggedTask && document.contains(this.draggedTask)) {
+                    this.draggedTask.classList.add("drop-target");
                 }
             } catch (error) {
                 // ✅ Gracefully handle DOM manipulation errors (e.g., NotFoundError during race conditions)
                 console.warn('⚠️ DOM manipulation failed during rearrange (likely race condition):', error.message);
                 // Clear dragging state to prevent stuck UI
-                if (window.AppGlobalState.draggedTask) {
-                    window.AppGlobalState.draggedTask.classList.remove("dragging", "drop-target");
+                if (this.draggedTask) {
+                    this.draggedTask.classList.remove("dragging", "drop-target");
                 }
                 return;
             }
@@ -487,14 +486,12 @@ export class DragDropManager {
      */
     cleanupDragState() {
         try {
-            if (window.AppGlobalState?.draggedTask) {
-                window.AppGlobalState.draggedTask.classList.remove("dragging", "rearranging");
-                window.AppGlobalState.draggedTask = null;
+            if (this.draggedTask) {
+                this.draggedTask.classList.remove("dragging", "rearranging");
+                this.draggedTask = null;
             }
 
-            if (window.AppGlobalState) {
-                window.AppGlobalState.lastRearrangeTarget = null;
-            }
+            this.lastRearrangeTarget = null;
 
             document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
         } catch (error) {
@@ -716,39 +713,35 @@ async function initDragDropManager(dependencies = {}) {
 /**
  * Enable drag and drop on a task element
  * @param {HTMLElement} taskElement - The task element
- * Note: Uses window.dragDropManager as fallback for cross-module instance access
  */
 function enableDragAndDropOnTask(taskElement) {
-    const manager = dragDropManager || window.dragDropManager;
-    if (!manager) {
+    if (!dragDropManager) {
         console.warn('⚠️ DragDropManager not initialized - call initDragDropManager() first');
         return;
     }
-    manager.enableDragAndDrop(taskElement);
+    dragDropManager.enableDragAndDrop(taskElement);
 }
 
 /**
  * Update move arrows visibility
  */
 function updateMoveArrowsVisibility() {
-    const manager = dragDropManager || window.dragDropManager;
-    if (!manager) {
+    if (!dragDropManager) {
         console.warn('⚠️ DragDropManager not initialized');
         return;
     }
-    manager.updateMoveArrowsVisibility();
+    dragDropManager.updateMoveArrowsVisibility();
 }
 
 /**
  * Toggle arrow visibility
  */
 function toggleArrowVisibility() {
-    const manager = dragDropManager || window.dragDropManager;
-    if (!manager) {
+    if (!dragDropManager) {
         console.warn('⚠️ DragDropManager not initialized');
         return;
     }
-    manager.toggleArrowVisibility();
+    dragDropManager.toggleArrowVisibility();
 }
 
 /**
@@ -756,16 +749,15 @@ function toggleArrowVisibility() {
  * @param {boolean} showArrows - Whether to show arrows
  */
 function updateArrowsInDOM(showArrows) {
-    const manager = dragDropManager || window.dragDropManager;
-    if (!manager) {
+    if (!dragDropManager) {
         console.warn('⚠️ DragDropManager not initialized');
         return;
     }
-    manager.updateArrowsInDOM(showArrows);
+    dragDropManager.updateArrowsInDOM(showArrows);
 }
 
-// Phase 2 Step 9 - Clean exports (no window.* pollution)
-console.log('🔄 DragDropManager module loaded (Phase 2 - no window.* exports)');
+// Phase 3 - DI-pure pattern (no window.* in module code)
+console.log('🔄 DragDropManager module loaded (Phase 3 - DI-pure)');
 
 // Export for ES6 modules
 export { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM };
