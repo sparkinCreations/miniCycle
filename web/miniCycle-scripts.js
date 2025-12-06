@@ -1086,6 +1086,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // ✅ Expose removeRecurringTasksFromCycle for taskCore.js reset logic
             window.removeRecurringTasksFromCycle = (taskElements, cycleData) => recurringModules.coreAPI.removeTasksFromCycle(taskElements, cycleData);
 
+            // ✅ Store in deps for DI-pure injection into taskCore
+            deps.core.recurringModules = recurringModules;
+            deps.core.removeRecurringTasksFromCycle = recurringModules.coreAPI.removeTasksFromCycle;
+
             console.log('✅ Recurring modules initialized (Phase 3)');
 
             // Optional: Run integration test in development
@@ -1441,10 +1445,51 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without settings manager functionality');
         }
 
+        // ✅ Initialize Cycle Completion Module (needed by taskCore)
+        console.log('🎯 Initializing cycle completion module...');
+        const { setCycleCompletionDependencies, incrementCycleCount, showCompletionAnimation } = await import(withV('./modules/progress/cycleCompletion.js'));
+
+        // Wire cycle completion dependencies
+        setCycleCompletionDependencies({
+            AppState: window.AppState,
+            showNotification: deps.utils.showNotification,
+            updateStatsPanel: () => window.updateStatsPanel?.(),
+            unlockDarkOceanTheme: () => window.unlockDarkOceanTheme?.(),
+            unlockGoldenGlowTheme: () => window.unlockGoldenGlowTheme?.(),
+            unlockMiniGame: () => window.unlockMiniGame?.()
+        });
+
+        // Expose to window for backward compatibility
+        window.incrementCycleCount = incrementCycleCount;
+        window.showCompletionAnimation = showCompletionAnimation;
+
+        console.log('✅ Cycle completion module initialized');
+
+        // ✅ Initialize Help Window Manager (needed by taskCore)
+        console.log('🎯 Initializing help window manager...');
+        const { initHelpWindowManager, setHelpWindowManagerDependencies } = await import(withV('./modules/ui/helpWindowManager.js'));
+
+        // Wire help window dependencies
+        setHelpWindowManagerDependencies({
+            loadMiniCycleData: () => window.loadMiniCycleData?.()
+        });
+
+        // Initialize after a delay (DOM needs to be ready)
+        setTimeout(() => {
+            const helpWindowManager = initHelpWindowManager();
+            window.helpWindowManager = helpWindowManager;
+            console.log('✅ Help window manager initialized');
+        }, 500);
+
+        console.log('✅ Help window manager module loaded');
+
         // ✅ Initialize Task Core (Phase 2 module)
         console.log('🎯 Initializing task core module...');
         try {
-            const { initTaskCore, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore, saveTaskToSchema25 } = await import(withV('./modules/task/taskCore.js'));
+            const { initTaskCore, setTaskCoreDependencies, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore, saveTaskToSchema25 } = await import(withV('./modules/task/taskCore.js'));
+
+            // Expose setTaskCoreDependencies for late injection
+            window.setTaskCoreDependencies = setTaskCoreDependencies;
 
             // ✅ Expose taskCore functions to window (needed by various modules)
             window.handleTaskCompletionChange = handleTaskCompletionChange;
@@ -1498,10 +1543,37 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
                 // Auto-save
                 autoSave: () => window.autoSave?.()
+
+                // Note: Cycle completion deps (incrementCycleCount, helpWindowManager,
+                // showCompletionAnimation) are injected via setTaskCoreDependencies
+                // immediately after init (see below) using deferred getters.
             });
 
             // Phase 3: Main script handles window.* exposure
             window.taskCore = taskCore;
+
+            // ✅ Inject cycle completion deps directly (from modules, no window.* getters)
+            setTaskCoreDependencies({
+                incrementCycleCount: incrementCycleCount,
+                showCompletionAnimation: showCompletionAnimation,
+                // helpWindowManager initialized async, use getter for now
+                helpWindowManager: {
+                    get showCycleCompleteMessage() {
+                        return window.helpWindowManager?.showCycleCompleteMessage?.bind(window.helpWindowManager);
+                    },
+                    get updateConstantMessage() {
+                        return window.helpWindowManager?.updateConstantMessage?.bind(window.helpWindowManager);
+                    }
+                },
+                // ✅ Recurring task removal (DI-pure from deps.core)
+                removeRecurringTasksFromCycle: deps.core.removeRecurringTasksFromCycle,
+                // ✅ Recurring core API for post-reset handling
+                recurringCore: deps.core.recurringModules?.coreAPI,
+                // ✅ Cycle check (for auto-reset) - still window.* as defined later in script
+                checkMiniCycle: () => window.checkMiniCycle?.(),
+                // ✅ Completed tasks dropdown - still window.* as defined later in script
+                updateCompletedTasksCount: () => window.updateCompletedTasksCount?.()
+            });
 
             console.log('✅ Task core module initialized (Phase 3)');
         } catch (error) {
@@ -2809,174 +2881,12 @@ function checkMiniCycle() {
 // ✅ Export checkMiniCycle globally for taskDOM module
 window.checkMiniCycle = checkMiniCycle;
 
-/**
- * Incrementcyclecount function.
- *
- * @param {any} miniCycleName - Description.
- * @param {any} savedMiniCycles - Description. * @returns {void}
- */
-
-function incrementCycleCount(miniCycleName, savedMiniCycles) {
-    console.log('🔢 Incrementing cycle count (Schema 2.5 state-based)...');
-
-    // ✅ Use state module instead of legacy direct data access
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for incrementCycleCount');
-        return;
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for incrementCycleCount');
-        return;
-    }
-
-    const { data, appState } = currentState;
-    const activeCycle = appState.activeCycleId;
-    const cycleData = data.cycles[activeCycle];
-
-    if (!activeCycle || !cycleData) {
-        console.error('❌ No active cycle found for incrementCycleCount');
-        return;
-    }
-
-    console.log('📊 Current cycle count:', cycleData.cycleCount || 0);
-
-    // ✅ NOTE: Undo snapshot is captured by resetTasks() before the entire cycle completion flow
-    // We don't capture it here to avoid duplicate snapshots
-
-    // ✅ Update through state module and get the actual new count
-    let actualNewCount;
-    window.AppState.update(state => {
-        const cycle = state.data.cycles[activeCycle];
-        if (cycle) {
-            cycle.cycleCount = (cycle.cycleCount || 0) + 1;
-            actualNewCount = cycle.cycleCount; // ✅ Get the actual updated count
-            
-            // Update user progress
-            state.userProgress.cyclesCompleted = (state.userProgress.cyclesCompleted || 0) + 1;
-        }
-    }, true); // immediate save
-    
-    console.log(`✅ Cycle count updated (state-based) for "${activeCycle}": ${actualNewCount}`);
-
-    // ✅ Handle milestone rewards with the global cycle count
-    const globalCyclesCompleted = currentState.userProgress.cyclesCompleted;
-    handleMilestoneUnlocks(activeCycle, globalCyclesCompleted);
-    
-    // ✅ Show animation + update stats
-    showCompletionAnimation();
-    updateStatsPanel();
-}
-
-// Export to window for taskCore module
-window.incrementCycleCount = incrementCycleCount;
-
-function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
-    console.log('🏆 Handling milestone unlocks (global cycles)...', globalCyclesCompleted);
-
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for milestone unlocks');
-        return;
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data for milestone unlocks');
-        return;
-    }
-
-    // ✅ Show milestone achievement message based on global cycles
-    checkForMilestone(miniCycleName, globalCyclesCompleted);
-
-    // ✅ Theme unlocks based on GLOBAL cycle count across all cycles
-    if (globalCyclesCompleted >= 5) {
-        unlockDarkOceanTheme();
-    }
-    if (globalCyclesCompleted >= 50) {
-        unlockGoldenGlowTheme();
-    }
-
-    // ✅ Game unlock based on GLOBAL cycle count
-    if (globalCyclesCompleted >= 100) {
-        const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
-        const hasGameUnlock = unlockedFeatures.includes("task-order-game");
-
-        if (!hasGameUnlock) {
-            showNotification("🎮 Game Unlocked! 'Task Order' is now available in the Games menu.", "success", 6000);
-            unlockMiniGame();
-        }
-    }
-
-    console.log('✅ Milestone unlocks processed (global cycles)');
-}
-
-
-
-// ✅ Rebuild toggles based on unlocked themes (Schema 2.5 only)
-
-// ✅ Close Themes Modal when clicking outside of the modal content
-
-/**
- * Showcompletionanimation function.
- *
- * @returns {void}
- */
-
-function showCompletionAnimation() {
-    const animation = document.createElement("div");
-    animation.classList.add("mini-cycle-complete-animation");
-  //  animation.innerHTML = "✅ miniCycle Completed!";
-  animation.innerHTML = "✔";
-
-    document.body.appendChild(animation);
-
-    // ✅ Remove the animation after 1.5 seconds
-    setTimeout(() => {
-        animation.remove();
-    }, 1500);
-}
-
-// Export to window for taskCore module
-window.showCompletionAnimation = showCompletionAnimation;
-
-/**
- * Checkformilestone function.
- *
- * @param {any} miniCycleName - Description.
- * @param {any} cycleCount - Description. * @returns {void}
- */
-
-function checkForMilestone(miniCycleName, cycleCount) {
-    const milestoneLevels = [10, 25, 50, 100, 200, 500, 1000];
-
-    if (milestoneLevels.includes(cycleCount)) {
-        showMilestoneMessage(miniCycleName, cycleCount);
-    }
-}
-
-/**
- * Displays a milestone achievement message when a user reaches a specific cycle count.
- *
- * @param {string} miniCycleName - The name of the miniCycle.
- * @param {number} cycleCount - The number of cycles completed.
- */
-
-function showMilestoneMessage(miniCycleName, cycleCount) {
-    const message = `🎉 You've completed ${cycleCount} cycles for "${miniCycleName}"! Keep going! 🚀`;
-
-    // ✅ Create a notification-like popup
-    const milestonePopup = document.createElement("div");
-    milestonePopup.classList.add("mini-cycle-milestone");
-    milestonePopup.textContent = message;
-
-    document.body.appendChild(milestonePopup);
-
-    // ✅ Automatically remove the message after 3 seconds
-    setTimeout(() => {
-        milestonePopup.remove();
-    }, 3000);
-}
+// ✅ MOVED TO MODULE: modules/progress/cycleCompletion.js
+// - incrementCycleCount
+// - handleMilestoneUnlocks
+// - showCompletionAnimation
+// - checkForMilestone
+// - showMilestoneMessage
 
     /***********************
  *
@@ -4380,279 +4290,9 @@ safeAddEventListener(document, "click", (event) => {
 // ✅ REMOVED: closeAllModals() - Now handled by modalManager module
 // ✅ REMOVED: ESC key listener - Now handled by modalManager module
 
-// Update your existing HelpWindowManager class to show mode descriptions:
-class HelpWindowManager {
-    constructor() {
-        this.helpWindow = document.getElementById('help-window');
-        this.isVisible = false;
-        this.currentMessage = null;
-        this.isShowingCycleComplete = false;
-        this.isShowingModeDescription = false;
-        this.modeDescriptionTimeout = null;
-        this.initialized = false; // ✅ Prevent double initialization
-        
-        this.init();
-    }
-    
-    init() {
-        if (!this.helpWindow || this.initialized) {
-            if (this.initialized) console.warn('⚠️ HelpWindowManager already initialized');
-            return;
-        }
-        
-        this.initialized = true;
-        
-        // Start showing initial message after a delay
-        setTimeout(() => {
-            this.showConstantMessage();
-        }, 3000);
-        
-        // ✅ IMPROVED: Multiple event listeners for better coverage
-        this.setupEventListeners();
-    }
-    
-    setupEventListeners() {
-    // ✅ More aggressive event listening
-    document.addEventListener('change', (e) => {
-        console.log("📡 Change event detected:", e.target); // Debug log
-        if (e.target.type === 'checkbox' && e.target.closest('.task')) {
-            console.log("📋 Task checkbox change detected"); // Debug log
-            setTimeout(() => {
-                this.updateConstantMessage();
-            }, 50);
-        }
-    });
-    
-    // ✅ ADDITIONAL: Listen for click events on tasks
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('.task')) {
-            console.log("📋 Task click detected"); // Debug log
-            setTimeout(() => {
-                this.updateConstantMessage();
-            }, 100);
-        }
-    });
-        
-        // ✅ ADDITIONAL: Listen for task list mutations (task additions/deletions)
-        const taskList = document.getElementById('taskList');
-        if (taskList) {
-            const observer = new MutationObserver((mutations) => {
-                let shouldUpdate = false;
-                
-                mutations.forEach(mutation => {
-                    // Check if tasks were added or removed
-                    if (mutation.type === 'childList' && 
-                        (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)) {
-                        shouldUpdate = true;
-                    }
-                });
-                
-                if (shouldUpdate) {
-                    console.log('📝 Help window: Task list changed');
-                    setTimeout(() => {
-                        this.updateConstantMessage();
-                    }, 200);
-                }
-            });
-            
-            observer.observe(taskList, { 
-                childList: true, 
-                subtree: true // ✅ Also watch for changes in child elements
-            });
-        }
-        
-        // ✅ ADDITIONAL: Listen for custom events that might affect task status
-        document.addEventListener('taskCompleted', () => {
-            console.log('📝 Help window: Custom taskCompleted event');
-            this.updateConstantMessage();
-        });
-        
-        document.addEventListener('tasksReset', () => {
-            console.log('📝 Help window: Custom tasksReset event');
-            this.updateConstantMessage();
-        });
-    }
- 
-    
-    showConstantMessage() {
-        this.updateConstantMessage();
-        this.show();
-    }
-    
-    updateConstantMessage() {
-        // Don't update if showing cycle completion message or mode description
-        if (this.isShowingCycleComplete || this.isShowingModeDescription) return;
-        
-        const message = this.getCurrentStatusMessage();
-        
-        if (message !== this.currentMessage) {
-            this.currentMessage = message;
-            if (this.isVisible) {
-                this.updateContent(message);
-            }
-        }
-    }
-    
-    // ✅ New method to show mode description temporarily
-    showModeDescription(mode) {
-        if (!this.helpWindow) return;
-        
-        // Clear any existing timeout
-        if (this.modeDescriptionTimeout) {
-            clearTimeout(this.modeDescriptionTimeout);
-            this.modeDescriptionTimeout = null;
-        }
-        
-        this.isShowingModeDescription = true;
-        
-        const modeDescriptions = {
-            'auto-cycle': {
-                title: "🔄 Auto Cycle Mode",
-                description: "Tasks automatically reset when all are completed."
-            },
-            'manual-cycle': {
-                title: "✔️ Manual Cycle Mode", 
-                description: "Tasks only reset when you click the Complete button."
-            },
-            'todo-mode': {
-                title: "✓ To-Do Mode",
-                description: "Completed tasks are removed when you click Complete."
-            }
-        };
-        
-        const modeInfo = modeDescriptions[mode] || modeDescriptions['auto-cycle'];
-        
-        this.helpWindow.innerHTML = `
-            <div class="mode-help-content">
-                <h4 style="margin: 0 0 8px 0; color: var(--accent-color, #007bff);">${modeInfo.title}</h4>
-                <p style="margin: 0; line-height: 1.4;">${modeInfo.description}</p>
-            </div>
-        `;
-        
-        // Show the help window if it's not already visible
-        if (!this.isVisible) {
-            this.show();
-        }
-        
-        // Auto-hide after 30 seconds and return to normal message
-        this.modeDescriptionTimeout = setTimeout(() => {
-            this.isShowingModeDescription = false;
-            this.modeDescriptionTimeout = null;
-            this.updateConstantMessage();
-        }, 30000); // 30 seconds
-        
-        console.log(`📖 Showing mode description for: ${mode}`);
-    }
-    
-    // ✅ Method to show cycle completion message (keep existing)
-    showCycleCompleteMessage() {
-        if (!this.helpWindow) return;
-        
-        // Clear mode description if showing
-        if (this.modeDescriptionTimeout) {
-            clearTimeout(this.modeDescriptionTimeout);
-            this.modeDescriptionTimeout = null;
-            this.isShowingModeDescription = false;
-        }
-        
-        this.isShowingCycleComplete = true;
-        this.helpWindow.innerHTML = `
-            <p>✅ Cycle Complete! Tasks reset.</p>
-        `;
-        
-        // Auto-hide after 2 seconds and return to normal message
-        setTimeout(() => {
-            this.isShowingCycleComplete = false;
-            this.updateConstantMessage();
-        }, 2000);
-    }
-    
- // In the getCurrentStatusMessage() method, around line 4400:
-getCurrentStatusMessage() {
-    const totalTasks = document.querySelectorAll('.task').length;
-    const completedTasks = document.querySelectorAll('.task input:checked').length;
-    const remaining = totalTasks - completedTasks;
-    
-    // ✅ Get cycle count from Schema 2.5 only
-    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-    let cycleCount = 0;
-    
-    if (schemaData) {
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
-        cycleCount = currentCycle?.cycleCount || 0;
-    }
-    
-    // Return different constant messages based on state
-    if (totalTasks === 0) {
-        return `📝 Add your first task to get started! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
-    }
-    
-    if (remaining === 0 && totalTasks > 0) {
-        return `🎉 All tasks complete! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
-    }
-    
-    if (cycleCount === 0) {
-        return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Complete your first cycle!`;
-    }
-    
-    // Show progress and cycle count
-    return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
-}
-    
-    updateContent(message) {
-        if (!this.helpWindow) return;
-        
-        this.helpWindow.innerHTML = `
-            <p>${message}</p>
-        `;
-    }
-    
-    show() {
-        if (!this.helpWindow || this.isVisible) return;
-        
-        const message = this.currentMessage || this.getCurrentStatusMessage();
-        
-        if (!this.isShowingModeDescription && !this.isShowingCycleComplete) {
-            this.helpWindow.innerHTML = `
-                <p>${message}</p>
-            `;
-        }
-        
-        this.helpWindow.classList.remove('hide');
-        this.helpWindow.classList.add('show');
-        this.helpWindow.style.display = 'flex';
-        this.isVisible = true;
-    }
-    
-    hide() {
-        if (!this.helpWindow || !this.isVisible) return;
-        
-        this.helpWindow.classList.remove('show');
-        this.helpWindow.classList.add('hide');
-        this.isVisible = false;
-        
-        setTimeout(() => {
-            this.helpWindow.style.display = 'none';
-        }, 300);
-    }
-    
-    destroy() {
-        // Clear any active timeouts
-        if (this.modeDescriptionTimeout) {
-            clearTimeout(this.modeDescriptionTimeout);
-            this.modeDescriptionTimeout = null;
-        }
-    }
-}
-
-// Initialize help window manager and export to window for taskCore module
-let helpWindowManager;
-
-setTimeout(() => {
-    helpWindowManager = new HelpWindowManager();
-    window.helpWindowManager = helpWindowManager; // Export to window
-}, 500);
+// ✅ MOVED TO MODULE: modules/ui/helpWindowManager.js
+// - HelpWindowManager class
+// - helpWindowManager initialization
 
 /**
  * Refresh task buttons when mode changes to show/hide recurring button

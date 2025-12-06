@@ -20,13 +20,26 @@ import { appInit } from '../core/appInit.js';
 // Module-level deps for late injection
 let _deps = {};
 
+// Singleton instance (initialized by initTaskCore)
+let taskCoreInstance = null;
+
 /**
- * Set dependencies for TaskCore (call before initTaskCore)
- * @param {Object} dependencies - Late-injected dependencies
+ * Set dependencies for TaskCore.
+ * Can be called before OR after initTaskCore - updates both module-level
+ * deps and the existing instance if one exists.
+ *
+ * @param {Object} dependencies - Dependencies to inject
  */
 export function setTaskCoreDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
-    console.log('🎯 TaskCore dependencies set:', Object.keys(dependencies));
+
+    // Also update existing instance if initialized
+    if (taskCoreInstance && taskCoreInstance.deps) {
+        Object.assign(taskCoreInstance.deps, dependencies);
+        console.log('🎯 TaskCore instance deps updated:', Object.keys(dependencies));
+    } else {
+        console.log('🎯 TaskCore module deps set (pre-init):', Object.keys(dependencies));
+    }
 }
 
 export class TaskCore {
@@ -114,6 +127,26 @@ export class TaskCore {
     }
 
     /**
+     * Helper to resolve getter functions for late-initialized dependencies.
+     * Some deps (like helpWindowManager) are passed as getter functions
+     * because they don't exist at initialization time.
+     *
+     * @param {*} dep - The dependency (may be a getter function or direct value)
+     * @returns {*} The resolved value
+     */
+    _resolveGetter(dep) {
+        if (typeof dep === 'function' && dep.length === 0) {
+            // It's a no-arg function (getter), call it to get the actual value
+            try {
+                return dep();
+            } catch {
+                return null;
+            }
+        }
+        return dep;
+    }
+
+    /**
      * Initialize task core system
      * Must be called after DOM is ready and appInit core is ready
      */
@@ -154,15 +187,33 @@ export class TaskCore {
     /**
      * Wait for specific global functions to be available
      * Used by resetTasks to ensure UI functions exist before calling them
+     *
+     * Note: Dependencies may be passed as getter functions (e.g., () => window.helpWindowManager)
+     * to handle late initialization. This method resolves getters before checking.
      */
     async waitForUIFunctions(maxWaitMs = 2000) {
         const startTime = Date.now();
         const checkInterval = 50; // Check every 50ms
 
+        // Helper to resolve getter functions
+        const resolveGetter = (dep) => {
+            if (typeof dep === 'function' && dep.length === 0) {
+                // It's a getter function (no args), call it to get the actual value
+                try {
+                    return dep();
+                } catch {
+                    return null;
+                }
+            }
+            return dep;
+        };
+
         while (Date.now() - startTime < maxWaitMs) {
             // Check injected deps only (DI-pure, no window.* fallback)
+            // Resolve getters for deps that may be late-initialized
             const hasIncrementCycleCount = typeof this.deps.incrementCycleCount === 'function';
-            const hasHelpWindowManager = this.deps.helpWindowManager && typeof this.deps.helpWindowManager.showCycleCompleteMessage === 'function';
+            const helpWindowMgr = resolveGetter(this.deps.helpWindowManager);
+            const hasHelpWindowManager = helpWindowMgr && typeof helpWindowMgr.showCycleCompleteMessage === 'function';
             const hasShowCompletionAnimation = typeof this.deps.showCompletionAnimation === 'function';
 
             if (hasIncrementCycleCount && hasHelpWindowManager && hasShowCompletionAnimation) {
@@ -174,9 +225,11 @@ export class TaskCore {
             await new Promise(resolve => setTimeout(resolve, checkInterval));
         }
 
+        // Final check for logging
+        const helpWindowMgr = resolveGetter(this.deps.helpWindowManager);
         console.warn('⚠️ Timeout waiting for UI functions:', {
             incrementCycleCount: typeof this.deps.incrementCycleCount === 'function',
-            helpWindowManager: this.deps.helpWindowManager && typeof this.deps.helpWindowManager.showCycleCompleteMessage === 'function',
+            helpWindowManager: helpWindowMgr && typeof helpWindowMgr.showCycleCompleteMessage === 'function',
             showCompletionAnimation: typeof this.deps.showCompletionAnimation === 'function'
         });
         return false;
@@ -663,9 +716,11 @@ export class TaskCore {
             }
 
             // Update help window if available (DI-pure, no window.* fallback)
-            if (this.deps.helpWindowManager && typeof this.deps.helpWindowManager.updateConstantMessage === 'function') {
+            // Note: helpWindowManager may be a getter function
+            const helpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
+            if (helpWindowMgr && typeof helpWindowMgr.updateConstantMessage === 'function') {
                 setTimeout(() => {
-                    this.deps.helpWindowManager.updateConstantMessage();
+                    helpWindowMgr.updateConstantMessage();
                 }, 100);
             }
         } catch (error) {
@@ -954,8 +1009,10 @@ export class TaskCore {
                 }
 
                 // Show cycle completion message (DI-pure, no window.* fallback)
-                if (this.deps.helpWindowManager?.showCycleCompleteMessage) {
-                    this.deps.helpWindowManager.showCycleCompleteMessage();
+                // Note: helpWindowManager may be a getter function
+                const helpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
+                if (helpWindowMgr?.showCycleCompleteMessage) {
+                    helpWindowMgr.showCycleCompleteMessage();
                 }
 
                 // ✅ Update undo/redo buttons to reflect the new snapshot
@@ -1176,10 +1233,8 @@ export class TaskCore {
 }
 
 // ============================================================================
-// GLOBAL INSTANCE & INITIALIZATION
+// INITIALIZATION
 // ============================================================================
-
-let taskCoreInstance = null;
 
 /**
  * Initialize the task core module with dependencies
