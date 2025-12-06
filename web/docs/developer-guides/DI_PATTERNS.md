@@ -199,8 +199,8 @@ A module is "DI-pure" when:
 - `onboardingManager.js` - First-time user onboarding
 - `modeManager.js` - Cycle mode management (Auto/Manual/To-Do)
 
-**Intentionally Uses `window.*` (wiring layer):**
-- `orchestrator.js` - This is the bridge between DI-pure modules and legacy code. It's *supposed* to expose modules to `window.*`
+**Wiring Layer:**
+- `miniCycle-scripts.js` - The main script handles all DI wiring and `window.*` exposure for backward compatibility
 
 ---
 
