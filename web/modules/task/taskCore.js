@@ -1272,60 +1272,51 @@ export async function initTaskCore(dependencies = {}) {
 // ============================================================================
 
 function addTask(...args) {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) {
+    if (!taskCoreInstance) {
         console.warn('⚠️ TaskCore not initialized');
         return Promise.reject(new Error('TaskCore not initialized'));
     }
-    return instance.addTask(...args);
+    return taskCoreInstance.addTask(...args);
 }
 
 function editTaskFromCore(taskItem) {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.editTask(taskItem);
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.editTask(taskItem);
 }
 
 function deleteTaskFromCore(taskItem) {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.deleteTask(taskItem);
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.deleteTask(taskItem);
 }
 
 function toggleTaskPriorityFromCore(taskItem) {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.toggleTaskPriority(taskItem);
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.toggleTaskPriority(taskItem);
 }
 
 function handleTaskCompletionChange(checkbox) {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.handleTaskCompletionChange(checkbox);
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.handleTaskCompletionChange(checkbox);
 }
 
 function saveCurrentTaskOrder() {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.saveCurrentTaskOrder();
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.saveCurrentTaskOrder();
 }
 
 function saveTaskToSchema25(cycleId, cycleData) {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.saveTaskToSchema25(cycleId, cycleData);
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
 }
 
 function resetTasks() {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.resetTasks();
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.resetTasks();
 }
 
 function handleCompleteAllTasks() {
-    const instance = taskCoreInstance || window.taskCore;
-    if (!instance) return;
-    return instance.handleCompleteAllTasks();
+    if (!taskCoreInstance) return;
+    return taskCoreInstance.handleCompleteAllTasks();
 }
 
 // ============================================================================

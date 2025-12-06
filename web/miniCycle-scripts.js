@@ -1729,27 +1729,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Testing Modal modules (Phase 3)
         console.log('🔬 Loading testing modal modules...');
+        let testingModalMod = null;
         try {
-            const testingModalMod = await import(withV('./modules/testing/testing-modal.js'));
+            testingModalMod = await import(withV('./modules/testing/testing-modal.js'));
             console.log('✅ Testing modal loaded');
 
-            // ✅ Setup testing modal button handlers (call directly from module export)
-            if (typeof testingModalMod.setupTestingModal === 'function') {
-                testingModalMod.setupTestingModal();
-                window.setupTestingModal = testingModalMod.setupTestingModal; // Expose for compatibility
-                console.log('✅ Testing modal initialized');
-            } else {
-                console.warn('⚠️ setupTestingModal function not found in module');
-            }
-
-            // ✅ Initialize testing modal enhancements (keyboard shortcuts, etc.)
-            if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
-                testingModalMod.initializeTestingModalEnhancements();
-                window.initializeTestingModalEnhancements = testingModalMod.initializeTestingModalEnhancements;
-                console.log('✅ Testing modal enhancements initialized');
-            }
-
-            // Expose other testing modal functions to window
+            // Expose testing modal functions to window (before setup, for compatibility)
             if (testingModalMod.openStorageViewer) window.openStorageViewer = testingModalMod.openStorageViewer;
             if (testingModalMod.closeStorageViewer) window.closeStorageViewer = testingModalMod.closeStorageViewer;
             if (testingModalMod.appendToTestResults) window.appendToTestResults = testingModalMod.appendToTestResults;
@@ -1788,6 +1773,51 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         } catch (error) {
             console.error('❌ Failed to load backup manager:', error);
             console.warn('⚠️ App will continue without auto-backup functionality');
+        }
+
+        // ✅ Inject dependencies into Testing Modal (DI-pure)
+        // Done after BackupManager is loaded since testing modal uses it
+        if (testingModalMod?.setTestingModalDependencies) {
+            testingModalMod.setTestingModalDependencies({
+                // State management
+                AppState: window.AppState,
+
+                // Backup system
+                BackupManager: window.BackupManager,
+
+                // Notifications
+                notifications: deps.utils.notifications,
+                showNotification: deps.utils.showNotification,
+
+                // Utility functions
+                deleteStorageItem: (key, storageType) => {
+                    const storage = storageType === 'local' ? localStorage : sessionStorage;
+                    storage.removeItem(key);
+                },
+                safeAddEventListener: GlobalUtils.safeAddEventListener,
+                safeAddEventListenerById: GlobalUtils.safeAddEventListenerById,
+
+                // Testing utilities
+                setupAutomatedTestingFunctions: () => window.setupAutomatedTestingFunctions?.(),
+
+                // Console capture
+                startAutoConsoleCapture: () => window.startAutoConsoleCapture?.(),
+                isConsoleCapturing: () => window.consoleCapturing || false
+            });
+
+            // ✅ NOW setup testing modal (after deps are injected)
+            if (typeof testingModalMod.setupTestingModal === 'function') {
+                testingModalMod.setupTestingModal();
+                window.setupTestingModal = testingModalMod.setupTestingModal;
+                console.log('✅ Testing modal initialized');
+            }
+
+            // ✅ Initialize testing modal enhancements
+            if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
+                testingModalMod.initializeTestingModalEnhancements();
+                window.initializeTestingModalEnhancements = testingModalMod.initializeTestingModalEnhancements;
+                console.log('✅ Testing modal enhancements initialized');
+            }
         }
 
         // Optional debug subscribe

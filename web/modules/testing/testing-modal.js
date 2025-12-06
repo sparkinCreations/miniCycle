@@ -8,21 +8,51 @@
  */
 
 // ==========================================
-// 📦 MODULE IMPORTS
+// 📦 DEPENDENCY INJECTION (DI-Pure Pattern)
 // ==========================================
 
-// ✅ REMOVED: Static import creates duplicate without version parameter
-// import { MiniCycleNotifications } from './notifications.js';
-// Instead, use window.notifications (loaded with version in miniCycle-scripts.js)
+// Module-level dependencies (set via setTestingModalDependencies)
+let deps = {
+    // State management
+    AppState: null,
+
+    // Backup system
+    BackupManager: null,
+
+    // Notifications
+    notifications: null,
+    showNotification: null,
+
+    // Utility functions
+    deleteStorageItem: null,
+    safeAddEventListener: null,
+    safeAddEventListenerById: null,
+
+    // Testing utilities
+    setupAutomatedTestingFunctions: null,
+
+    // Console capture
+    startAutoConsoleCapture: null,
+    isConsoleCapturing: () => false
+};
+
+/**
+ * Set dependencies for Testing Modal (DI-pure pattern).
+ * @param {Object} dependencies - Injected dependencies
+ */
+export function setTestingModalDependencies(dependencies) {
+    deps = { ...deps, ...dependencies };
+    console.log('🎯 TestingModal dependencies set:', Object.keys(dependencies));
+}
 
 // ==========================================
-// � DEPENDENCY HELPERS (Safe Global Access)
+// 🔧 DEPENDENCY HELPERS (Use injected deps)
 // ==========================================
 
-// ✅ Use globally available notifications instance
-const getNotifications = () => window.notifications || null;
+// Get notifications instance from deps
+const getNotifications = () => deps.notifications || null;
 
-// Safe access to notification functions (uses global instance)
+// Safe access to notification functions (uses injected deps)
 // ✅ FIXED: Removed duration = 2000 default to avoid overriding notification.show's duration = null default
 function safeShowNotification(message, type = "info", duration) {
     try {
@@ -30,9 +60,9 @@ function safeShowNotification(message, type = "info", duration) {
         if (notifications && typeof notifications.show === 'function') {
             return notifications.show(message, type, duration);
         }
-        // Fallback to window.showNotification if available
-        if (typeof window.showNotification === 'function') {
-            return window.showNotification(message, type, duration);
+        // Fallback to deps.showNotification if available
+        if (typeof deps.showNotification === 'function') {
+            return deps.showNotification(message, type, duration);
         }
         console.log(`[Notification Fallback] ${message}`);
     } catch (error) {
@@ -64,8 +94,8 @@ function safeShowPromptModal(options) {
 }
 
 function safeDeleteStorageItem(key, storageType) {
-    if (typeof window.deleteStorageItem === 'function') {
-        window.deleteStorageItem(key, storageType);
+    if (typeof deps.deleteStorageItem === 'function') {
+        deps.deleteStorageItem(key, storageType);
     } else {
         // Fallback implementation
         const storage = storageType === 'local' ? localStorage : sessionStorage;
@@ -83,15 +113,22 @@ const showNotification = safeShowNotification;
 // 🛠️ UTILITY FUNCTIONS (Using Global Utils)
 // ==========================================
 
-// Note: safeAddEventListener functions are now available globally
-// from the GlobalUtils module imported in the main script.
-// For backward compatibility within this module, we'll use the global functions
-const safeAddEventListener = window.safeAddEventListener || function(element, event, handler) {
+// Note: safeAddEventListener functions are injected via deps
+// Fallback implementations if deps not set
+const safeAddEventListener = (element, event, handler) => {
+    if (typeof deps.safeAddEventListener === 'function') {
+        return deps.safeAddEventListener(element, event, handler);
+    }
+    // Fallback
     if (!element) return;
     element.addEventListener(event, handler);
 };
 
-const safeAddEventListenerById = window.safeAddEventListenerById || function(id, event, handler) {
+const safeAddEventListenerById = (id, event, handler) => {
+    if (typeof deps.safeAddEventListenerById === 'function') {
+        return deps.safeAddEventListenerById(id, event, handler);
+    }
+    // Fallback
     const element = document.getElementById(id);
     if (element) {
         element.addEventListener(event, handler);
@@ -132,8 +169,8 @@ function setupTestingModal() {
             setupResultsControls();
             
             // Setup automated testing integration
-            if (typeof window.setupAutomatedTestingFunctions === 'function') {
-                window.setupAutomatedTestingFunctions();
+            if (typeof deps.setupAutomatedTestingFunctions === 'function') {
+                deps.setupAutomatedTestingFunctions();
             }
         }, 150);
     });
@@ -639,8 +676,8 @@ function setupTestButtons() {
     // Console capture buttons
     safeAddEventListenerById("enable-auto-capture", "click", () => {
         safeLocalStorageSet("miniCycle_enableAutoConsoleCapture", "true");
-        if (typeof startAutoConsoleCapture === 'function' && !window.consoleCapturing) {
-            startAutoConsoleCapture();
+        if (typeof deps.startAutoConsoleCapture === 'function' && !deps.isConsoleCapturing()) {
+            deps.startAutoConsoleCapture();
         }
         appendToTestResults("🔄 Auto console capture enabled - will start automatically on next refresh\n\n");
         showNotification("🔄 Auto-capture enabled for migrations", "success", 3000);
@@ -757,13 +794,13 @@ function runHealthCheck() {
 
     setTimeout(() => {
         // ✅ Use Schema 2.5 AppState access
-        if (!window.AppState?.isReady?.()) {
+        if (!deps.AppState?.isReady?.()) {
             appendToTestResults("❌ AppState not ready\n\n");
             showNotification("❌ AppState not available", "error", 3000);
             return;
         }
 
-        const currentState = window.AppState.get();
+        const currentState = deps.AppState.get();
         if (!currentState) {
             appendToTestResults("❌ No state data available\n\n");
             showNotification("❌ No data available", "error", 3000);
@@ -795,13 +832,13 @@ function checkDataIntegrity() {
 
     setTimeout(() => {
         // ✅ Use Schema 2.5 AppState access
-        if (!window.AppState?.isReady?.()) {
+        if (!deps.AppState?.isReady?.()) {
             appendToTestResults("❌ AppState not ready\n\n");
             showNotification("❌ AppState not available", "error", 3000);
             return;
         }
 
-        const currentState = window.AppState.get();
+        const currentState = deps.AppState.get();
         if (!currentState) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -854,13 +891,13 @@ function validateSchema() {
 
     setTimeout(() => {
         // ✅ Use Schema 2.5 AppState access
-        if (!window.AppState?.isReady?.()) {
+        if (!deps.AppState?.isReady?.()) {
             appendToTestResults("❌ AppState not ready\n\n");
             showNotification("❌ AppState not available", "error", 3000);
             return;
         }
 
-        const currentState = window.AppState.get();
+        const currentState = deps.AppState.get();
         if (!currentState) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -900,7 +937,7 @@ function showAppInfo() {
     appendToTestResults("ℹ️ Application Information:\n");
 
     // ✅ Get actual version from AppState metadata
-    const state = window.AppState?.get();
+    const state = deps.AppState?.get();
     const metadata = state?.metadata || {};
     const version = metadata.version || metadata.schemaVersion || "1.371";
     const buildDate = metadata.lastModified
@@ -1263,9 +1300,9 @@ async function listAvailableBackups() {
     let totalBackups = 0;
 
     // ✅ IndexedDB backups (new system)
-    if (window.BackupManager) {
+    if (deps.BackupManager) {
         try {
-            const { auto, manual } = await window.BackupManager.listAllBackups();
+            const { auto, manual } = await deps.BackupManager.listAllBackups();
 
             if (auto.length > 0) {
                 appendToTestResults("💾 Auto-Backups (IndexedDB):\n");
@@ -1290,7 +1327,7 @@ async function listAvailableBackups() {
             }
 
             // Show stats
-            const stats = await window.BackupManager.getStats();
+            const stats = await deps.BackupManager.getStats();
             if (stats) {
                 appendToTestResults(`📊 Total: ${stats.totalBackups} backups (${stats.totalSizeMB} MB)\n\n`);
             }
@@ -1341,9 +1378,9 @@ async function restoreFromBackup() {
     let allBackups = [];
 
     // Load IndexedDB backups
-    if (window.BackupManager) {
+    if (deps.BackupManager) {
         try {
-            const { auto, manual } = await window.BackupManager.listAllBackups();
+            const { auto, manual } = await deps.BackupManager.listAllBackups();
 
             // Add auto-backups
             auto.forEach(backup => {
@@ -1609,14 +1646,14 @@ async function restoreFromBackup() {
                     // ✅ Handle IndexedDB backups
                     if (selectedBackup.type.includes('indexeddb')) {
                         const backupType = selectedBackup.type === 'indexeddb-auto' ? 'auto' : 'manual';
-                        restoredData = await window.BackupManager.restoreBackup(selectedBackup.id, backupType);
+                        restoredData = await deps.BackupManager.restoreBackup(selectedBackup.id, backupType);
 
                         if (!restoredData) {
                             throw new Error('Failed to load backup from IndexedDB');
                         }
 
                         // ✅ Restore using AppState (Schema 2.5)
-                        if (window.AppState?.isReady?.()) {
+                        if (deps.AppState?.isReady?.()) {
                             // Replace entire state
                             localStorage.setItem('miniCycleData', JSON.stringify(restoredData));
                             appendToTestResults(`✅ Restored to AppState (Schema 2.5)\n`);
@@ -1713,7 +1750,7 @@ async function createManualBackup() {
     appendToTestResults("💾 Creating Manual Backup...\n");
 
     // Check if BackupManager is available
-    if (!window.BackupManager) {
+    if (!deps.BackupManager) {
         appendToTestResults("❌ BackupManager not available\n\n");
         showNotification("❌ Backup system not loaded", "error", 3000);
         return;
@@ -1730,11 +1767,11 @@ async function createManualBackup() {
     }
 
     try {
-        const success = await window.BackupManager.createManualBackup(backupName);
+        const success = await deps.BackupManager.createManualBackup(backupName);
 
         if (success) {
             // Get stats to show user
-            const stats = await window.BackupManager.getStats();
+            const stats = await deps.BackupManager.getStats();
             const totalBackups = stats ? stats.totalBackups : '?';
 
             appendToTestResults(`✅ Manual backup created successfully!\n`);
@@ -1782,7 +1819,7 @@ function analyzeCycles() {
     showNotification("Analyzing your routines...", "info", 2000);
 
     setTimeout(() => {
-        const state = window.AppState?.get();
+        const state = deps.AppState?.get();
         if (!state) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -1825,7 +1862,7 @@ function analyzeTasks() {
     showNotification("Analyzing task patterns...", "info", 2000);
 
     setTimeout(() => {
-        const state = window.AppState?.get();
+        const state = deps.AppState?.get();
         if (!state) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -1870,7 +1907,7 @@ function findDataIssues() {
     showNotification("Scanning for potential data issues...", "warning", 3000);
 
     setTimeout(() => {
-        const state = window.AppState?.get();
+        const state = deps.AppState?.get();
         if (!state) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -1975,7 +2012,7 @@ function repairData() {
     showNotification("⚠️ Attempting to repair data issues...", "warning", 3000);
 
     setTimeout(() => {
-        const state = window.AppState?.get();
+        const state = deps.AppState?.get();
         if (!state) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -1984,7 +2021,7 @@ function repairData() {
         let repaired = 0;
 
         // ✅ Update via AppState to ensure proper save
-        window.AppState.update(appState => {
+        deps.AppState.update(appState => {
             Object.entries(appState.data.cycles).forEach(([cycleId, cycle]) => {
                 // Ensure tasks array exists
                 if (!cycle.tasks) {
@@ -2035,7 +2072,7 @@ function generateDebugReport() {
     showNotification("Generating comprehensive debug report...", "info", 3000);
 
     setTimeout(() => {
-        const state = window.AppState?.get();
+        const state = deps.AppState?.get();
         if (!state) {
             appendToTestResults("❌ No state data available\n\n");
             return;
@@ -3164,10 +3201,11 @@ function getServiceWorkerInfo() {
 // Exports
 // ============================================
 
-// Phase 2 Step 12 - Clean exports (no window.* pollution)
-console.log('🧪 Testing Modal module loaded (Phase 2 - no window.* exports)');
+// Phase 3 - DI-pure pattern (no window.* in module code)
+console.log('🧪 Testing Modal module loaded (Phase 3 - DI-pure)');
 
 // ES6 exports
+// Note: setTestingModalDependencies is exported at line 43
 export {
     setupTestingModal,
     initializeTestingModalEnhancements,
