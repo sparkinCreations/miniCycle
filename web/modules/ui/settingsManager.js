@@ -12,16 +12,30 @@ import { appInit } from '../core/appInit.js';
 // import { calculateNextOccurrence } from '../recurring/recurringCore.js';
 // import { DataValidator } from '../utils/dataValidator.js';
 
-// Lazy accessors - use window.* which are populated by miniCycle-scripts.js
-const getDataValidator = () => window.DataValidator;
-const getCalculateNextOccurrence = () => window.recurringCore?.calculateNextOccurrence || window.calculateNextOccurrence;
-
-// Module-level deps for late injection
-let _deps = {};
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    loadMiniCycleData: null,
+    AppState: null,
+    showNotification: null,
+    showConfirmationModal: null,
+    hideMainMenu: null,
+    setupDarkModeToggle: null,
+    setupQuickDarkToggle: null,
+    updateMoveArrowsVisibility: null,
+    toggleHoverTaskOptions: null,
+    refreshTaskListUI: null,
+    performSchema25Migration: null,
+    resetDefaultRecurringSettings: null,
+    organizeCompletedTasks: null,
+    DataValidator: null,
+    calculateNextOccurrence: null,
+    sanitizeInput: null,
+    AppMeta: null
+};
 
 /**
  * Set dependencies for SettingsManager (call before creating instance)
- * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ * @param {Object} dependencies - { loadMiniCycleData, showNotification, AppState, DataValidator, etc. }
  */
 export function setSettingsManagerDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
@@ -30,32 +44,47 @@ export function setSettingsManagerDependencies(dependencies) {
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Store constructor-only deps (DOM helpers that don't change)
+        this._constructorDeps = {
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener.bind(this),
+            // Fallback functions bound to this instance
+            fallbackLoadData: this.fallbackLoadData.bind(this),
+            fallbackNotification: this.fallbackNotification.bind(this),
+            fallbackConfirmationModal: this.fallbackConfirmationModal.bind(this)
+        };
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version;
         this.initialized = false;
+    }
 
-        // Store dependencies with resilient fallbacks
-        this.deps = {
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
-            AppState: mergedDeps.AppState || (() => null),
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirmationModal,
-            hideMainMenu: mergedDeps.hideMainMenu || (() => {}),
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener,
-            setupDarkModeToggle: mergedDeps.setupDarkModeToggle || (() => console.warn('Dark mode toggle not available')),
-            setupQuickDarkToggle: mergedDeps.setupQuickDarkToggle || (() => console.warn('Quick dark toggle not available')),
-            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || (() => {}),
-            toggleHoverTaskOptions: mergedDeps.toggleHoverTaskOptions || (() => {}),
-            refreshTaskListUI: mergedDeps.refreshTaskListUI || null,  // ✅ Deferred lookup
-            performSchema25Migration: mergedDeps.performSchema25Migration || (() => ({ success: false })),
-            resetDefaultRecurringSettings: mergedDeps.resetDefaultRecurringSettings || (() => {}),
-            organizeCompletedTasks: mergedDeps.organizeCompletedTasks || null  // ✅ Added for DI
+    /**
+     * Getter for dependencies - always reads from current module-level _deps
+     * This allows late injection via setSettingsManagerDependencies() to work
+     */
+    get deps() {
+        return {
+            loadMiniCycleData: _deps.loadMiniCycleData || this._constructorDeps.fallbackLoadData,
+            AppState: _deps.AppState || (() => null),
+            showNotification: _deps.showNotification || this._constructorDeps.fallbackNotification,
+            showConfirmationModal: _deps.showConfirmationModal || this._constructorDeps.fallbackConfirmationModal,
+            hideMainMenu: _deps.hideMainMenu || (() => {}),
+            setupDarkModeToggle: _deps.setupDarkModeToggle || (() => console.warn('Dark mode toggle not available')),
+            setupQuickDarkToggle: _deps.setupQuickDarkToggle || (() => console.warn('Quick dark toggle not available')),
+            updateMoveArrowsVisibility: _deps.updateMoveArrowsVisibility || (() => {}),
+            toggleHoverTaskOptions: _deps.toggleHoverTaskOptions || (() => {}),
+            refreshTaskListUI: _deps.refreshTaskListUI,
+            performSchema25Migration: _deps.performSchema25Migration || (() => ({ success: false })),
+            resetDefaultRecurringSettings: _deps.resetDefaultRecurringSettings || (() => {}),
+            organizeCompletedTasks: _deps.organizeCompletedTasks,
+            DataValidator: _deps.DataValidator,
+            calculateNextOccurrence: _deps.calculateNextOccurrence,
+            sanitizeInput: _deps.sanitizeInput,
+            // DOM helpers from constructor
+            ...this._constructorDeps
         };
     }
 
@@ -277,8 +306,8 @@ export class SettingsManager {
                 // ✅ Disable/enable hover behavior for current tasks
                 this.deps.toggleHoverTaskOptions(!enabled);
 
-                // ✅ Update task list UI to add/remove three-dots buttons (deferred lookup)
-                const refreshTaskListUI = this.deps.refreshTaskListUI || window.refreshTaskListUI;
+                // ✅ Update task list UI to add/remove three-dots buttons (DI-pure)
+                const refreshTaskListUI = this.deps.refreshTaskListUI;
                 if (typeof refreshTaskListUI === 'function') {
                     refreshTaskListUI();
                 }
@@ -326,8 +355,8 @@ export class SettingsManager {
                     return;
                 }
 
-                // ✅ If enabling, organize existing completed tasks (deferred lookup)
-                const organizeCompletedTasks = this.deps.organizeCompletedTasks || window.organizeCompletedTasks;
+                // ✅ If enabling, organize existing completed tasks (DI-pure)
+                const organizeCompletedTasks = this.deps.organizeCompletedTasks;
                 if (enabled && typeof organizeCompletedTasks === 'function') {
                     organizeCompletedTasks();
                 }
@@ -946,20 +975,29 @@ export class SettingsManager {
                   schemaVersion: task.schemaVersion || 2
                 };
 
-                // Validate task structure and sanitize text
+                // Validate task structure and sanitize text (DI-pure)
                 try {
-                  return getDataValidator().validateTask(taskData);
+                  const DataValidator = this.deps.DataValidator;
+                  if (DataValidator?.validateTask) {
+                    return DataValidator.validateTask(taskData);
+                  }
+                  return taskData; // Return unvalidated if validator not available
                 } catch (error) {
                   console.warn(`⚠️ Skipping invalid task during import:`, error.message);
                   return null;
                 }
               }).filter(task => task !== null);
 
-              // ✅ Create recurring templates for tasks with recurring: true
+              // ✅ Create recurring templates for tasks with recurring: true (DI-pure)
               const recurringTemplates = {};
+              const calculateNextOccurrence = this.deps.calculateNextOccurrence;
               mappedTasks.forEach(task => {
                 if (task.recurring && task.recurringSettings) {
                   try {
+                    let nextOccurrence = null;
+                    if (typeof calculateNextOccurrence === 'function') {
+                      nextOccurrence = calculateNextOccurrence(task.recurringSettings, Date.now());
+                    }
                     recurringTemplates[task.id] = {
                       id: task.id,
                       text: task.text,
@@ -968,7 +1006,7 @@ export class SettingsManager {
                       remindersEnabled: task.remindersEnabled || false,
                       recurring: true,
                       recurringSettings: structuredClone(task.recurringSettings),
-                      nextScheduledOccurrence: getCalculateNextOccurrence()(task.recurringSettings, Date.now()),
+                      nextScheduledOccurrence: nextOccurrence,
                       schemaVersion: 2
                     };
                     console.log(`✅ Created recurring template for imported task: ${task.id}`);
@@ -978,10 +1016,13 @@ export class SettingsManager {
                 }
               });
 
-              // ✅ FIX #12: Validate and sanitize cycle title
+              // ✅ FIX #12: Validate and sanitize cycle title (DI-pure)
               let cycleTitle = importedData.title || importedData.name || 'Imported Cycle';
               try {
-                cycleTitle = getDataValidator().validateCycleName(cycleTitle);
+                const DataValidator = this.deps.DataValidator;
+                if (DataValidator?.validateCycleName) {
+                  cycleTitle = DataValidator.validateCycleName(cycleTitle);
+                }
               } catch (error) {
                 console.warn(`⚠️ Invalid cycle title, using default:`, error.message);
                 cycleTitle = 'Imported Cycle';
@@ -1135,9 +1176,10 @@ export class SettingsManager {
     sanitizeImportedData(backupData) {
         console.log('🔒 Sanitizing imported data for XSS protection...');
 
-        // Get sanitization function (with fallback)
-        const sanitize = typeof window.sanitizeInput === 'function'
-            ? window.sanitizeInput
+        // Get sanitization function (DI-pure with inline fallback)
+        const injectedSanitize = this.deps.sanitizeInput;
+        const sanitize = typeof injectedSanitize === 'function'
+            ? injectedSanitize
             : (text, maxLength) => {
                 if (typeof text !== 'string') return '';
                 const temp = document.createElement('div');
@@ -1230,5 +1272,5 @@ export function initSettingsManager(dependencies) {
     return settingsManager.init().then(() => settingsManager);
 }
 
-// Phase 3 - No window.* exports (main script handles exposure)
-console.log('⚙️ Settings Manager v1.330 loaded (Phase 3 - no window.* exports)');
+// DI-pure module (no window.* fallbacks)
+console.log('⚙️ Settings Manager loaded (DI-pure, no window.* exports)');

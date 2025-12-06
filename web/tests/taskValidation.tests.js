@@ -43,10 +43,10 @@ export async function runTaskValidationTests(resultsDiv) {
         }
     });
 
-    await test('TaskValidator class is available via taskDOM (Phase 2)', () => {
-        // Phase 2: TaskValidator is no longer on window directly
-        // It's available via window.__TaskValidator after taskDOM initializes
-        if (typeof window.__TaskValidator === 'undefined' && typeof TaskValidator === 'undefined') {
+    await test('TaskValidator class is available via taskDOM', () => {
+        // TaskValidator is available in global scope after taskDOM initializes
+        // No longer checking window.__TaskValidator (removed for DI-pure)
+        if (typeof TaskValidator === 'undefined') {
             throw new Error('TaskValidator not available (check taskDOM initialization)');
         }
     });

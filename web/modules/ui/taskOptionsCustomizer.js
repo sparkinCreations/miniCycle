@@ -16,24 +16,30 @@
 
 import { appInit } from '../core/appInit.js';
 
-// Module-level deps for late injection
-let _deps = {};
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    AppState: null,
+    showNotification: null,
+    renderTaskList: null,
+    updateMoveArrowsVisibility: null,
+    startReminders: null,
+    stopReminders: null,
+    modeManager: null,
+    appInit: null,
+    DEFAULT_TASK_OPTION_BUTTONS: null
+};
 
 /**
  * Set dependencies for TaskOptionsCustomizer (call before creating instance)
- * @param {Object} dependencies - { AppState, showNotification, etc. }
+ * @param {Object} dependencies - { AppState, showNotification, renderTaskList, etc. }
  */
 export function setTaskOptionsCustomizerDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
     console.log('⚙️ TaskOptionsCustomizer dependencies set:', Object.keys(dependencies));
 }
 
-// ✅ Use window export to avoid cache-busting mismatch
-// globalUtils.js is loaded with version parameter in main script,
-// but ES6 imports don't support dynamic version parameters.
-// Using window.DEFAULT_TASK_OPTION_BUTTONS ensures we get the
-// versioned copy that was loaded by the main script.
-const DEFAULT_TASK_OPTION_BUTTONS = window.DEFAULT_TASK_OPTION_BUTTONS || {
+// Inline fallback for DEFAULT_TASK_OPTION_BUTTONS (used if not injected)
+const FALLBACK_TASK_OPTION_BUTTONS = {
     customize: true,
     moveArrows: false,
     highPriority: true,
@@ -122,21 +128,36 @@ const BUTTON_CONFIG = [
 
 export class TaskOptionsCustomizer {
     constructor(deps = {}) {
-        // Merge module-level deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...deps };
-
-        this.deps = {
-            AppState: mergedDeps.AppState,
-            showNotification: mergedDeps.showNotification,
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            renderTaskList: mergedDeps.renderTaskList || null // don't snapshot refreshTaskListUI here
+        // Store constructor-only deps (DOM helpers that don't change)
+        this._constructorDeps = {
+            getElementById: deps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: deps.querySelector || ((sel) => document.querySelector(sel))
         };
 
         // Validate required dependencies
         this._validateDependencies();
 
         console.log('✅ TaskOptionsCustomizer initialized');
+    }
+
+    /**
+     * Getter for dependencies - always reads from current module-level _deps
+     * This allows late injection via setTaskOptionsCustomizerDependencies() to work
+     */
+    get deps() {
+        return {
+            AppState: _deps.AppState,
+            showNotification: _deps.showNotification,
+            renderTaskList: _deps.renderTaskList,
+            updateMoveArrowsVisibility: _deps.updateMoveArrowsVisibility,
+            startReminders: _deps.startReminders,
+            stopReminders: _deps.stopReminders,
+            modeManager: _deps.modeManager,
+            appInit: _deps.appInit || appInit,
+            DEFAULT_TASK_OPTION_BUTTONS: _deps.DEFAULT_TASK_OPTION_BUTTONS || FALLBACK_TASK_OPTION_BUTTONS,
+            // DOM helpers from constructor
+            ...this._constructorDeps
+        };
     }
 
     /**
@@ -223,7 +244,11 @@ export class TaskOptionsCustomizer {
      * @param {string} cycleId - The cycle ID to customize
      */
     async showCustomizationModal(cycleId) {
-        await appInit.waitForCore();
+        // DI-pure: use injected appInit
+        const appInitModule = this.deps.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready');
@@ -238,7 +263,7 @@ export class TaskOptionsCustomizer {
             return;
         }
 
-        const currentOptions = cycle.taskOptionButtons || { ...DEFAULT_TASK_OPTION_BUTTONS };
+        const currentOptions = cycle.taskOptionButtons || { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS };
 
         // ✅ Sync move arrows with global setting
         // Move arrows should always reflect the global state.ui.moveArrowsVisible setting
@@ -328,8 +353,9 @@ export class TaskOptionsCustomizer {
         const globalOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'global');
         const cycleOptions = BUTTON_CONFIG.filter(opt => opt.scope === 'cycle');
 
+        const defaultButtons = this.deps.DEFAULT_TASK_OPTION_BUTTONS;
         const buildOption = (option) => {
-            const isChecked = currentOptions[option.key] ?? DEFAULT_TASK_OPTION_BUTTONS[option.key];
+            const isChecked = currentOptions[option.key] ?? defaultButtons[option.key];
             const isDisabled = option.disabled || false;
 
             // Store the icon index instead of HTML to avoid escaping issues
@@ -498,9 +524,12 @@ export class TaskOptionsCustomizer {
             }
         });
 
-        // ✅ Update move arrows visibility in DOM if changed
-        if (newMoveArrows !== currentGlobalMoveArrows && typeof window.updateMoveArrowsVisibility === 'function') {
-            window.updateMoveArrowsVisibility();
+        // ✅ Update move arrows visibility in DOM if changed (DI-pure)
+        if (newMoveArrows !== currentGlobalMoveArrows) {
+            const updateMoveArrowsVisibility = this.deps.updateMoveArrowsVisibility;
+            if (typeof updateMoveArrowsVisibility === 'function') {
+                updateMoveArrowsVisibility();
+            }
         }
 
         // ✅ Sync with settings panel checkbox
@@ -566,15 +595,17 @@ export class TaskOptionsCustomizer {
                 }
             }
 
-            // Trigger the reminders system to start/stop
+            // Trigger the reminders system to start/stop (DI-pure)
             if (newRemindersEnabled) {
-                if (typeof window.startReminders === 'function') {
-                    setTimeout(() => window.startReminders(), 200);
+                const startReminders = this.deps.startReminders;
+                if (typeof startReminders === 'function') {
+                    setTimeout(() => startReminders(), 200);
                     console.log('🔔 Started reminders for cycle');
                 }
             } else {
-                if (typeof window.stopReminders === 'function') {
-                    window.stopReminders();
+                const stopReminders = this.deps.stopReminders;
+                if (typeof stopReminders === 'function') {
+                    stopReminders();
                     console.log('🔕 Stopped reminders for cycle');
                 }
             }
@@ -593,8 +624,9 @@ export class TaskOptionsCustomizer {
      * @param {NodeList} checkboxes - Checkbox elements
      */
     resetToDefaults(checkboxes) {
+        const defaultButtons = this.deps.DEFAULT_TASK_OPTION_BUTTONS;
         checkboxes.forEach(cb => {
-            const defaultValue = DEFAULT_TASK_OPTION_BUTTONS[cb.dataset.option];
+            const defaultValue = defaultButtons[cb.dataset.option];
             cb.checked = defaultValue ?? false;
         });
 
@@ -620,9 +652,8 @@ export class TaskOptionsCustomizer {
         // allow checkbox event + AppState listeners to finish
         await Promise.resolve();
 
-        const renderFn =
-            this.deps.renderTaskList ||
-            window.refreshTaskListUI;
+        // DI-pure: use injected renderTaskList
+        const renderFn = this.deps.renderTaskList;
 
         if (typeof renderFn === "function") {
             await renderFn();
@@ -630,9 +661,10 @@ export class TaskOptionsCustomizer {
             return;
         }
 
-        // Fallback: rebuild just the option buttons if renderer not found
-        if (window.modeManager?.refreshTaskButtonsForModeChange) {
-            window.modeManager.refreshTaskButtonsForModeChange();
+        // Fallback: rebuild just the option buttons if renderer not found (DI-pure)
+        const modeManager = this.deps.modeManager;
+        if (modeManager?.refreshTaskButtonsForModeChange) {
+            modeManager.refreshTaskButtonsForModeChange();
             console.log("✅ ModeManager button refresh triggered");
             return;
         }
@@ -688,11 +720,12 @@ export class TaskOptionsCustomizer {
      * @returns {Object} Button visibility settings
      */
     getButtonVisibility(cycleId) {
+        const defaultButtons = this.deps.DEFAULT_TASK_OPTION_BUTTONS;
         const state = this.deps.AppState?.get?.();
-        if (!state) return { ...DEFAULT_TASK_OPTION_BUTTONS };
+        if (!state) return { ...defaultButtons };
 
         const cycle = state.data.cycles[cycleId];
-        return cycle?.taskOptionButtons || { ...DEFAULT_TASK_OPTION_BUTTONS };
+        return cycle?.taskOptionButtons || { ...defaultButtons };
     }
 }
 
@@ -724,4 +757,5 @@ export function initTaskOptionsCustomizer(dependencies = {}) {
 
 export { taskOptionsCustomizer };
 
-console.log('✅ TaskOptionsCustomizer module loaded (Phase 3)');
+// DI-pure module (no window.* fallbacks)
+console.log('✅ TaskOptionsCustomizer module loaded (DI-pure, no window.* exports)');

@@ -16,12 +16,22 @@
 
 import { appInit } from '../core/appInit.js';
 
-// Module-level deps for late injection
-let _deps = {};
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    showNotification: null,
+    loadMiniCycleData: null,
+    isOverlayActive: null,
+    isDraggingNotification: null,
+    updateThemeColor: null,
+    hideMainMenu: null,
+    setupDarkModeToggle: null,
+    AppState: null,
+    appInit: null
+};
 
 /**
  * Set dependencies for StatsPanelManager (call before creating instance)
- * @param {Object} dependencies - { showNotification, loadMiniCycleData, etc. }
+ * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
  */
 export function setStatsPanelDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
@@ -30,8 +40,13 @@ export function setStatsPanelDependencies(dependencies) {
 
 export class StatsPanelManager {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Store constructor-only deps (these don't change after construction)
+        this._constructorDeps = {
+            // Fallback functions bound to this instance
+            fallbackNotification: this.fallbackNotification.bind(this),
+            fallbackLoadData: this.fallbackLoadData.bind(this),
+            fallbackOverlayCheck: this.fallbackOverlayCheck.bind(this)
+        };
 
         // State management
         this.state = {
@@ -54,23 +69,12 @@ export class StatsPanelManager {
             MOUSE_DRAG_START_THRESHOLD: 20
         };
 
-        // Dependencies - no window.* fallbacks
-        this.dependencies = {
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
-            isOverlayActive: mergedDeps.isOverlayActive || this.fallbackOverlayCheck,
-            isDraggingNotification: mergedDeps.isDraggingNotification || (() => false),
-            updateThemeColor: mergedDeps.updateThemeColor || (() => {}),
-            hideMainMenu: mergedDeps.hideMainMenu || (() => {}),
-            setupDarkModeToggle: mergedDeps.setupDarkModeToggle || (() => {})
-        };
-        
         // DOM elements cache
         this.elements = {};
-        
+
         // Timers
         this.wheelTimeout = null;
-        
+
         // Event handler bindings (for proper removal)
         this.boundHandlers = {};
 
@@ -84,11 +88,32 @@ export class StatsPanelManager {
     }
 
     /**
+     * Getter for dependencies - always reads from current module-level _deps
+     * This allows late injection via setStatsPanelDependencies() to work
+     */
+    get dependencies() {
+        return {
+            showNotification: _deps.showNotification || this._constructorDeps.fallbackNotification,
+            loadMiniCycleData: _deps.loadMiniCycleData || this._constructorDeps.fallbackLoadData,
+            isOverlayActive: _deps.isOverlayActive || this._constructorDeps.fallbackOverlayCheck,
+            isDraggingNotification: _deps.isDraggingNotification || (() => false),
+            updateThemeColor: _deps.updateThemeColor || (() => {}),
+            hideMainMenu: _deps.hideMainMenu || (() => {}),
+            setupDarkModeToggle: _deps.setupDarkModeToggle || (() => {}),
+            AppState: _deps.AppState,
+            appInit: _deps.appInit || appInit
+        };
+    }
+
+    /**
      * Initialize the stats panel manager
      */
     async init() {
-        // ✅ Wait for core systems to be ready (AppState + data)
-        await appInit.waitForCore();
+        // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
+        const appInitModule = this.dependencies.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
         this.setupEventListeners();
         this.initializeView();
@@ -289,9 +314,10 @@ export class StatsPanelManager {
             setTimeout(() => this.updateStatsPanel(), 100);
         });
 
-        // Also listen for AppInit ready if available
-        if (window.AppInit && typeof window.AppInit.onReady === 'function') {
-            window.AppInit.onReady(() => {
+        // Also listen for AppInit ready if available (DI-pure)
+        const appInitModule = this.dependencies.appInit;
+        if (appInitModule && typeof appInitModule.onReady === 'function') {
+            appInitModule.onReady(() => {
                 console.log('📊 Stats panel detected AppInit ready - updating stats...');
                 setTimeout(() => this.updateStatsPanel(), 100);
             });
@@ -584,11 +610,15 @@ export class StatsPanelManager {
     async updateStatsPanel() {
         console.log('📊 Updating stats panel...');
 
-        // ✅ Wait for core systems (AppState + data) to be ready
-        await appInit.waitForCore();
+        // ✅ Wait for core systems (AppState + data) to be ready - DI-pure
+        const appInitModule = this.dependencies.appInit;
+        if (appInitModule?.waitForCore) {
+            await appInitModule.waitForCore();
+        }
 
-        // ✅ Defensive check for test environment (AppState may be deleted during cleanup)
-        if (!window.AppState) {
+        // ✅ Defensive check for test environment (AppState may be deleted during cleanup) - DI-pure
+        const AppState = this.dependencies.AppState;
+        if (!AppState) {
             console.warn('⚠️ AppState not available (test cleanup race condition)');
             return;
         }
@@ -601,8 +631,8 @@ export class StatsPanelManager {
         let perCycleCount = 0;
         let globalCyclesCompleted = 0;
 
-        // ✅ Safe to access AppState - core is guaranteed ready
-        const currentState = window.AppState.get();
+        // ✅ Safe to access AppState - core is guaranteed ready - DI-pure
+        const currentState = AppState.get();
         if (currentState) {
             const { data, appState, userProgress } = currentState;
             const activeCycle = appState.activeCycleId;
@@ -789,9 +819,10 @@ export class StatsPanelManager {
         let unlockedThemes = [];
         let unlockedFeatures = [];
 
-        // ✅ Use state-based data access
-        if (window.AppState?.isReady?.()) {
-            const currentState = window.AppState.get();
+        // ✅ Use state-based data access - DI-pure
+        const AppState = this.dependencies.AppState;
+        if (AppState?.isReady?.()) {
+            const currentState = AppState.get();
             if (currentState) {
                 unlockedThemes = currentState.settings.unlockedThemes || [];
                 unlockedFeatures = currentState.settings.unlockedFeatures || [];
@@ -884,15 +915,16 @@ export class StatsPanelManager {
      * @param {Object} milestoneUnlocks - Current unlock status
      */
     async unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks) {
-        // ✅ Use AppState only (no localStorage fallback)
-        if (!window.AppState?.isReady?.()) {
+        // ✅ Use AppState only (no localStorage fallback) - DI-pure
+        const AppState = this.dependencies.AppState;
+        if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for unlockThemesIfEligible');
             return;
         }
 
         let needsUpdate = false;
 
-        await window.AppState.update(state => {
+        await AppState.update(state => {
             // Ensure arrays exist
             if (!state.settings) state.settings = {};
             if (!state.settings.unlockedThemes) state.settings.unlockedThemes = [];
@@ -932,20 +964,21 @@ export class StatsPanelManager {
         if (!themeUnlockMessage) return;
 
         console.log('🎨 Handling theme toggle (state-based)...');
-        
+
         let unlockedThemes = [];
         let unlockedFeatures = [];
-        
-        // ✅ Use state-based data access
-        if (window.AppState?.isReady?.()) {
-            const currentState = window.AppState.get();
+
+        // ✅ Use state-based data access - DI-pure
+        const AppState = this.dependencies.AppState;
+        if (AppState?.isReady?.()) {
+            const currentState = AppState.get();
             if (currentState) {
                 unlockedThemes = currentState.settings.unlockedThemes || [];
                 unlockedFeatures = currentState.settings.unlockedFeatures || [];
             }
         } else {
             console.warn('⚠️ AppState not ready - using fallback data access');
-            
+
             // Fallback to old method if state not ready
             const schemaData = this.dependencies.loadMiniCycleData();
             if (schemaData) {
@@ -1027,9 +1060,10 @@ export class StatsPanelManager {
      */
     saveCollapsiblePreference(key, value) {
         try {
-            // ✅ Save to AppState instead of separate localStorage key
-            if (window.AppState?.isReady?.()) {
-                window.AppState.update(state => {
+            // ✅ Save to AppState instead of separate localStorage key - DI-pure
+            const AppState = this.dependencies.AppState;
+            if (AppState?.isReady?.()) {
+                AppState.update(state => {
                     // Initialize statsPanel preferences object if it doesn't exist
                     if (!state.settings.statsPanel) {
                         state.settings.statsPanel = {};
@@ -1058,9 +1092,10 @@ export class StatsPanelManager {
         try {
             let preferences = {};
 
-            // ✅ Read from AppState first
-            if (window.AppState?.isReady?.()) {
-                const currentState = window.AppState.get();
+            // ✅ Read from AppState first - DI-pure
+            const AppState = this.dependencies.AppState;
+            if (AppState?.isReady?.()) {
+                const currentState = AppState.get();
                 if (currentState?.settings?.statsPanel) {
                     preferences = currentState.settings.statsPanel;
                     console.log('🔄 Reading preferences from AppState');
@@ -1077,9 +1112,9 @@ export class StatsPanelManager {
                     preferences = oldPreferences;
                 }
 
-                // Migrate to AppState
-                if (window.AppState?.isReady?.()) {
-                    window.AppState.update(state => {
+                // Migrate to AppState - DI-pure
+                if (AppState?.isReady?.()) {
+                    AppState.update(state => {
                         if (!state.settings.statsPanel) {
                             state.settings.statsPanel = {};
                         }
@@ -1137,14 +1172,15 @@ export class StatsPanelManager {
 
         console.log('🌙 Quick dark toggle (Schema 2.5 only)...');
 
-        // ✅ Use AppState only (no localStorage fallback)
-        if (!window.AppState?.isReady?.()) {
+        // ✅ Use AppState only (no localStorage fallback) - DI-pure
+        const AppState = this.dependencies.AppState;
+        if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for quick dark toggle');
             document.body.classList.toggle("dark-mode"); // Revert
             return;
         }
 
-        await window.AppState.update(state => {
+        await AppState.update(state => {
             if (!state.settings) state.settings = {};
             state.settings.darkMode = isDark;
         }, true);
@@ -1268,7 +1304,7 @@ export class StatsPanelManager {
     }
 }
 
-// Phase 2 Step 5 - Clean exports (no window.* pollution)
-console.log('📊 Stats Panel module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks)
+console.log('📊 Stats Panel module loaded (DI-pure, no window.* exports)');
 
 export default StatsPanelManager;

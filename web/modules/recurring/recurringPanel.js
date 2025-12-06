@@ -2589,4 +2589,5 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
 // EXPORTS
 // ============================================
 
-console.log('🛡️ RecurringPanel module loaded (Resilient Constructor Pattern)');
+// DI-pure module (no window.* fallbacks)
+console.log('🛡️ RecurringPanel module loaded (DI-pure, no window.* exports)');

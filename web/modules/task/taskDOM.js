@@ -1,5 +1,5 @@
 /**
- * 🎨 miniCycle Task DOM Manager
+ * 🎨 miniCycle Task DOM Manager (DI-Pure)
  *
  * Manages all task DOM creation, rendering, and interaction setup.
  * Handles 30+ functions for creating task elements, buttons, and event listeners.
@@ -9,20 +9,17 @@
  * - Shows user-friendly error messages
  * - Falls back to basic task display
  *
- * Dependency Pattern:
+ * Dependency Pattern (DI-Pure):
  * - this._rawDeps: Raw input from constructor (used only for sub-module pre-injection)
  * - this.deps: Normalized dependency bag with fallbacks (used for all runtime access)
  * - this.version: Uses injected AppMeta.version (no window.APP_VERSION in modules)
  * - Use this.deps.* everywhere except when checking for pre-injected sub-modules
+ * - NO window.* fallbacks - module-level instances only
  *
- * ⚠️ IMPORTANT: Multiple Module Instance Handling
- * Due to ES6 module versioning (?v=1.371), the same module can be loaded
- * multiple times, creating separate instances with separate module-level variables.
- *
- * Solution: Manager instance exposed globally from main script (miniCycle-scripts.js):
- * - taskDOMManager → window.__taskDOMManager
- *
- * All wrapper functions check: `const manager = taskDOMManager || window.__taskDOMManager;`
+ * Module Instance:
+ * - Single instance stored in module-level `taskDOMManager` variable
+ * - Main script (miniCycle-scripts.js) exposes to window.__taskDOMManager for backward compat
+ * - Wrapper functions use module-level instance directly (no window.* fallbacks)
  *
  * Based on dragDropManager.js + statsPanel.js patterns
  *
@@ -1490,20 +1487,7 @@ let taskDOMManager = null;
  * @param {Object} dependencies - Required dependencies
  */
 async function initTaskDOMManager(dependencies = {}) {
-    // ✅ Check global instance first (handles multiple module instances)
-    if (window.__taskDOMManager) {
-        console.warn('⚠️ TaskDOMManager already initialized (using global instance)');
-        taskDOMManager = window.__taskDOMManager;
-
-        // ✅ Also restore module-level class references from global
-        if (!TaskUtils && window.__TaskUtils) TaskUtils = window.__TaskUtils;
-        if (!TaskValidator && window.__TaskValidator) TaskValidator = window.__TaskValidator;
-        if (!TaskRenderer && window.__TaskRenderer) TaskRenderer = window.__TaskRenderer;
-        if (!TaskEvents && window.__TaskEvents) TaskEvents = window.__TaskEvents;
-
-        return taskDOMManager;
-    }
-
+    // ✅ DI-pure: Only check module-level instance
     if (taskDOMManager) {
         console.warn('⚠️ TaskDOMManager already initialized');
         return taskDOMManager;
@@ -1519,24 +1503,19 @@ async function initTaskDOMManager(dependencies = {}) {
         throw error;
     }
 
-    // ✅ Verify sub-module classes are available (check both local and global)
-    const utils = TaskUtils || window.__TaskUtils;
-    const validator = TaskValidator || window.__TaskValidator;
-    const renderer = TaskRenderer || window.__TaskRenderer;
-    const events = TaskEvents || window.__TaskEvents;
-
-    if (!utils || !validator || !renderer || !events) {
+    // ✅ Verify sub-module classes are available (DI-pure: module-level only)
+    if (!TaskUtils || !TaskValidator || !TaskRenderer || !TaskEvents) {
         const error = new Error('TaskDOMManager sub-modules not loaded properly');
         console.error('❌', error.message, {
-            TaskUtils: !!utils,
-            TaskValidator: !!validator,
-            TaskRenderer: !!renderer,
-            TaskEvents: !!events
+            TaskUtils: !!TaskUtils,
+            TaskValidator: !!TaskValidator,
+            TaskRenderer: !!TaskRenderer,
+            TaskEvents: !!TaskEvents
         });
         throw error;
     }
 
-    // Phase 3 - No window.* exports (main script handles exposure)
+    // DI-pure - No window.* exports (main script handles exposure)
     console.log('✅ TaskDOMManager initialization verified - all sub-modules loaded');
     return taskDOMManager;
 }
@@ -1545,14 +1524,13 @@ async function initTaskDOMManager(dependencies = {}) {
 // Wrapper Functions (Legacy Compatibility Layer)
 //
 // These functions exist so older code that expects
-// global functions and window.* can still work.
+// global functions can still work.
 //
-// - Core class: TaskDOMManager (pure DI via this.deps.*)
+// - Core class: TaskDOMManager (DI-pure via this.deps.*)
 // - New code: import from this module and go through manager
-// - Old code: still calls these functions and uses window.*
+// - Old code: still calls these wrapper functions
 //
-// Long-term: callers should migrate to direct manager usage
-// and this layer can be safely removed.
+// DI-pure: No window.* fallbacks - module-level instances only
 // ============================================
 
 // ============================================
@@ -1564,16 +1542,13 @@ async function initTaskDOMManager(dependencies = {}) {
  * ✅ DELEGATES TO: taskValidation.js module
  */
 function validateAndSanitizeTaskInput(taskText) {
-    // ✅ Get manager from global if not in this module instance
-    const manager = taskDOMManager || window.__taskDOMManager;
-
-    if (!manager?.validator?.validateAndSanitizeTaskInput) {
+    if (!taskDOMManager?.validator?.validateAndSanitizeTaskInput) {
         console.warn('⚠️ Validator not ready, using fallback');
         if (typeof taskText !== 'string' || !taskText.trim()) return null;
         return taskText.trim();
     }
     // Delegate to validator module
-    return manager.validator.validateAndSanitizeTaskInput(taskText);
+    return taskDOMManager.validator.validateAndSanitizeTaskInput(taskText);
 }
 
 // ============================================
@@ -1582,24 +1557,21 @@ function validateAndSanitizeTaskInput(taskText) {
 // ✅ DELEGATES TO: taskUtils.js
 
 function buildTaskContext(taskItem, taskId) {
-    const utils = TaskUtils || window.__TaskUtils;
     const AppState = _deps.AppState; // Use injected AppState from module deps
-    if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using fallback');
-        return window.TaskUtils?.buildTaskContext?.(taskItem, taskId, AppState) || {};
+    if (!TaskUtils) {
+        console.warn('⚠️ TaskUtils not initialized yet');
+        return {};
     }
-    return utils.buildTaskContext(taskItem, taskId, AppState);
+    return TaskUtils.buildTaskContext(taskItem, taskId, AppState);
 }
 
 function extractTaskDataFromDOM() {
-    // ✅ Prefer the TaskUtils implementation when it's ready (check both local and global)
-    const utils = TaskUtils || window.__TaskUtils;
-    if (typeof utils?.extractTaskDataFromDOM === 'function') {
-        return utils.extractTaskDataFromDOM();
+    if (typeof TaskUtils?.extractTaskDataFromDOM === 'function') {
+        return TaskUtils.extractTaskDataFromDOM();
     }
 
     // 🔁 Fallback: local DOM extraction so autosave/directSave still works
-    console.warn('⚠️ TaskUtils not initialized yet, using fallback extractTaskDataFromDOM');
+    console.warn('⚠️ TaskUtils not initialized yet, using inline fallback');
 
     const taskListElement = document.getElementById('taskList');
     if (!taskListElement) {
@@ -1661,22 +1633,14 @@ function extractTaskDataFromDOM() {
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
-    const utils = TaskUtils || window.__TaskUtils;
     // Use module deps for DI-pure pattern
     const loadMiniCycleData = _deps.loadMiniCycleData;
     const generateId = _deps.generateId;
-    if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using fallback');
-        return window.TaskUtils?.loadTaskContext?.(
-            taskTextTrimmed,
-            taskId,
-            taskOptions,
-            isLoading,
-            loadMiniCycleData,
-            generateId
-        ) || null;
+    if (!TaskUtils) {
+        console.warn('⚠️ TaskUtils not initialized yet');
+        return null;
     }
-    return utils.loadTaskContext(
+    return TaskUtils.loadTaskContext(
         taskTextTrimmed,
         taskId,
         taskOptions,
@@ -1687,30 +1651,27 @@ function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false
 }
 
 function scrollToNewTask(taskList) {
-    const utils = TaskUtils || window.__TaskUtils;
-    if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
-        return window.TaskUtils?.scrollToNewTask?.(taskList);
+    if (!TaskUtils) {
+        console.warn('⚠️ TaskUtils not initialized yet');
+        return;
     }
-    utils.scrollToNewTask(taskList);
+    TaskUtils.scrollToNewTask(taskList);
 }
 
 function handleOverdueStyling(taskItem, completed) {
-    const utils = TaskUtils || window.__TaskUtils;
-    if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
-        return window.TaskUtils?.handleOverdueStyling?.(taskItem, completed);
+    if (!TaskUtils) {
+        console.warn('⚠️ TaskUtils not initialized yet');
+        return;
     }
-    utils.handleOverdueStyling(taskItem, completed);
+    TaskUtils.handleOverdueStyling(taskItem, completed);
 }
 
 function setupFinalTaskInteractions(taskItem, isLoading) {
-    const utils = TaskUtils || window.__TaskUtils;
-    if (!utils) {
-        console.warn('⚠️ TaskUtils not initialized yet, using window fallback');
-        return window.TaskUtils?.setupFinalTaskInteractions?.(taskItem, isLoading);
+    if (!TaskUtils) {
+        console.warn('⚠️ TaskUtils not initialized yet');
+        return;
     }
-    utils.setupFinalTaskInteractions(taskItem, isLoading);
+    TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
 }
 
 // ============================================
@@ -1718,47 +1679,41 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 // ============================================
 
 function createTaskDOMElements(taskContext, taskData) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) {
+    if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return null;
     }
-    return manager.createTaskDOMElements(taskContext, taskData);
+    return taskDOMManager.createTaskDOMElements(taskContext, taskData);
 }
 
 function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) {
+    if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return document.createElement('li');
     }
-    return manager.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
+    return taskDOMManager.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
 }
 
 function createThreeDotsButton(taskItem, settings) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) return null;
-    return manager.createThreeDotsButton(taskItem, settings);
+    if (!taskDOMManager) return null;
+    return taskDOMManager.createThreeDotsButton(taskItem, settings);
 }
 
 function createTaskButtonContainer(taskContext) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) {
+    if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return document.createElement('div');
     }
-    return manager.createTaskButtonContainer(taskContext);
+    return taskDOMManager.createTaskButtonContainer(taskContext);
 }
 
 function createTaskButton(buttonConfig, taskContext, buttonContainer) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) return document.createElement('button');
-    return manager.createTaskButton(buttonConfig, taskContext, buttonContainer);
+    if (!taskDOMManager) return document.createElement('button');
+    return taskDOMManager.createTaskButton(buttonConfig, taskContext, buttonContainer);
 }
 
 function createTaskContentElements(taskContext) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) {
+    if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         const fallbackId = `fallback-${Date.now()}`;
         const checkbox = document.createElement('input');
@@ -1773,24 +1728,22 @@ function createTaskContentElements(taskContext) {
             dueDateInput: dueDateInput
         };
     }
-    return manager.createTaskContentElements(taskContext);
+    return taskDOMManager.createTaskContentElements(taskContext);
 }
 
 function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) {
+    if (!taskDOMManager) {
         const fallbackCheckbox = document.createElement('input');
         fallbackCheckbox.id = `checkbox-fallback-${Date.now()}`;
         fallbackCheckbox.name = `task-fallback-${Date.now()}`;
         return fallbackCheckbox;
     }
-    return manager.createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
+    return taskDOMManager.createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed);
 }
 
 function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) return document.createElement('span');
-    return manager.createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
+    if (!taskDOMManager) return document.createElement('span');
+    return taskDOMManager.createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
 }
 
 // ============================================
@@ -1798,34 +1751,29 @@ function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
 // ============================================
 
 function setupRecurringButtonHandler(button, taskContext) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) return;
-    manager.setupRecurringButtonHandler(button, taskContext);
+    if (!taskDOMManager) return;
+    taskDOMManager.setupRecurringButtonHandler(button, taskContext);
 }
 
 // ✅ DELEGATES TO: taskEvents.js
 function handleTaskButtonClick(event) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.handleTaskButtonClick(event);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.handleTaskButtonClick(event);
 }
 
 function toggleHoverTaskOptions(enableHover) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.toggleHoverTaskOptions(enableHover);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.toggleHoverTaskOptions(enableHover);
 }
 
 function revealTaskButtons(taskItem, caller = 'three-dots-button') {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.revealTaskButtons(taskItem, caller);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.revealTaskButtons(taskItem, caller);
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.syncRecurringStateToDOM(taskEl, recurringSettings);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.syncRecurringStateToDOM(taskEl, recurringSettings);
 }
 
 // ============================================
@@ -1834,43 +1782,37 @@ function syncRecurringStateToDOM(taskEl, recurringSettings) {
 // ✅ DELEGATES TO: taskEvents.js
 
 function setupTaskInteractions(taskElements, taskContext) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.setupTaskInteractions(taskElements, taskContext);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskInteractions(taskElements, taskContext);
 }
 
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
 }
 
 function setupTaskHoverInteractions(taskItem, settings) {
     // This method was removed from TaskEvents as it's integrated into setupTaskInteractions
     // Kept for backward compatibility
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.setupTaskHoverInteractions?.(taskItem, settings);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskHoverInteractions?.(taskItem, settings);
 }
 
 function setupTaskFocusInteractions(taskItem) {
     // This method was removed from TaskEvents as it's integrated into setupTaskInteractions
     // Kept for backward compatibility
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager?.events) return;
-    manager.events.setupTaskFocusInteractions?.(taskItem);
+    if (!taskDOMManager?.events) return;
+    taskDOMManager.events.setupTaskFocusInteractions?.(taskItem);
 }
 
 function finalizeTaskCreation(taskElements, taskContext, options) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) return;
-    manager.finalizeTaskCreation(taskElements, taskContext, options);
+    if (!taskDOMManager) return;
+    taskDOMManager.finalizeTaskCreation(taskElements, taskContext, options);
 }
 
 function updateUIAfterTaskCreation(shouldSave) {
-    const manager = taskDOMManager || window.__taskDOMManager;
-    if (!manager) return;
-    manager.updateUIAfterTaskCreation(shouldSave);
+    if (!taskDOMManager) return;
+    taskDOMManager.updateUIAfterTaskCreation(shouldSave);
 }
 
 // ============================================
@@ -1944,8 +1886,5 @@ export {
     refreshTaskListUI
 };
 
-// ============================================
-// Phase 2 Step 13 - Clean exports (no new window.* globals; legacy reads only)
-// ============================================
-
-console.log('🎨 TaskDOM module loaded (Phase 2 - no window.* exports - FINAL MIGRATION!)');
+// DI-pure module (no window.* fallbacks in wrappers)
+console.log('🎨 TaskDOM module loaded (DI-pure, no window.* exports)');

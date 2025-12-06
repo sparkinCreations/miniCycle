@@ -97,19 +97,60 @@ Use the getter pattern when **ALL** of these are true:
 
 ---
 
-## Lazy Getter Pattern for Circular Dependencies
+## Wiring in miniCycle-scripts.js (Critical Step)
 
-When two modules need each other, use lazy getters to defer resolution:
+Making a module DI-pure requires **two steps**:
+
+1. **Module changes** - Add `_deps`, getter pattern, remove `window.*` fallbacks
+2. **Main script wiring** - Call `set*Dependencies()` before instantiation
+
+**Forgetting step 2 causes all dependencies to be null/undefined**, resulting in warnings like:
+- `"Dark mode toggle not available"`
+- `"AppState not available"`
+- `"Data loading not available"`
+
+### Wiring Pattern
 
 ```javascript
 // In miniCycle-scripts.js
-setTaskEventsDependencies({
-    get taskCore() { return taskCore; },  // Resolved when accessed, not when passed
-    // ...
+
+// 1. Import the setter along with the module
+const { MyModule, setMyModuleDependencies } = await import(withV('./modules/path/myModule.js'));
+
+// 2. Wire dependencies BEFORE creating instance
+setMyModuleDependencies({
+    showNotification: deps.utils.showNotification,
+    loadData: () => window.loadMiniCycleData?.(),
+
+    // Use lazy getters for deps that don't exist yet at wiring time
+    get AppState() { return window.AppState; },
+    get taskCore() { return window.taskCore; },
+
+    AppMeta: window.AppMeta
 });
+
+// 3. NOW create the instance (it will read from _deps via getter)
+const myModule = new MyModule();
 ```
 
-This allows passing a reference to something that doesn't exist yet.
+### Lazy Getters in Wiring
+
+Use lazy getters (`get X() { return window.X; }`) when:
+- The dependency doesn't exist yet at wiring time
+- The dependency may be replaced/updated later
+- You need circular dependency resolution
+
+```javascript
+// BAD: Captures undefined if AppState isn't ready yet
+setMyModuleDependencies({
+    AppState: window.AppState,  // undefined at this point!
+});
+
+// GOOD: Resolves when actually accessed
+setMyModuleDependencies({
+    get AppState() { return window.AppState; },  // Works!
+});
+```
 
 ---
 
@@ -117,11 +158,36 @@ This allows passing a reference to something that doesn't exist yet.
 
 A module is "DI-pure" when:
 
+**Module side:**
 - [ ] No `|| window.*` fallbacks in constructor or methods
 - [ ] Has `set*Dependencies()` function for late injection
 - [ ] Uses getter pattern if instance is created before deps are available
 - [ ] All external dependencies come through `_deps` or constructor
 - [ ] Console log confirms: `'Module loaded (DI-pure, no window.* exports)'`
+
+**Wiring side (miniCycle-scripts.js):**
+- [ ] Imports `set*Dependencies` along with the module
+- [ ] Calls `set*Dependencies({...})` BEFORE creating instance
+- [ ] Uses lazy getters for deps that don't exist at wiring time
+
+### DI-Pure Modules (as of Dec 2025)
+
+**Fully DI-Pure (no `window.*` fallbacks):**
+- `taskCore.js` - Task state management
+- `taskEvents.js` - Task event handling
+- `notifications.js` - Notification system
+- `basicPluginSystem.js` - Plugin architecture
+- `pluginIntegrationGuide.js` - Plugin docs/helpers
+- `statsPanel.js` - Stats panel UI
+- `settingsManager.js` - Settings management
+- `taskOptionsCustomizer.js` - Task button customization
+- `recurringPanel.js` - Recurring task UI panel
+
+**Class DI-Pure, Wrapper Functions Have Fallbacks (transitional):**
+- `taskDOM.js` - Core class is DI-pure, legacy wrapper functions use `|| window.__taskDOMManager` for backward compatibility
+
+**Intentionally Uses `window.*` (wiring layer):**
+- `orchestrator.js` - This is the bridge between DI-pure modules and legacy code. It's *supposed* to expose modules to `window.*`
 
 ---
 
@@ -151,6 +217,31 @@ get deps() {
 get deps() {
     return { ..._deps, ...this._constructorDeps };
 }
+```
+
+### 4. Forgetting to wire in miniCycle-scripts.js
+```javascript
+// BAD: Module is DI-pure but dependencies never injected
+const { MyModule } = await import('./myModule.js');
+const instance = new MyModule();  // All deps are null!
+
+// GOOD: Wire before instantiation
+const { MyModule, setMyModuleDependencies } = await import('./myModule.js');
+setMyModuleDependencies({ /* deps */ });
+const instance = new MyModule();  // Deps available via getter
+```
+
+### 5. Not using lazy getters for late-available deps
+```javascript
+// BAD: window.AppState doesn't exist yet
+setMyModuleDependencies({
+    AppState: window.AppState  // undefined!
+});
+
+// GOOD: Defer resolution
+setMyModuleDependencies({
+    get AppState() { return window.AppState; }
+});
 ```
 
 ---

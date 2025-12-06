@@ -851,12 +851,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         console.log('✅ DeviceDetectionManager initialized (Phase 2)');
 
-        // ✅ Initialize Stats Panel (Phase 2 module)
+        // ✅ Initialize Stats Panel (DI-pure module)
         console.log('📊 Initializing stats panel module...');
-        const { StatsPanelManager } = await import(withV('./modules/features/statsPanel.js'));
+        const { StatsPanelManager, setStatsPanelDependencies } = await import(withV('./modules/features/statsPanel.js'));
 
-        const statsPanelManager = new StatsPanelManager({
-            showNotification: deps.utils.showNotification,  // ✅ Use direct function
+        // Wire dependencies before creating instance (DI-pure pattern)
+        setStatsPanelDependencies({
+            showNotification: deps.utils.showNotification,
             loadMiniCycleData: () => {
                 // Defensive data loading with error handling
                 try {
@@ -871,8 +872,16 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 }
             },
             isOverlayActive: () => window.isOverlayActive ? window.isOverlayActive() : false,
+            isDraggingNotification: () => window.isDraggingNotification?.() || false,
+            updateThemeColor: () => window.updateThemeColor?.(),
+            hideMainMenu: () => window.hideMainMenu?.(),
+            setupDarkModeToggle: (id, syncIds) => window.setupDarkModeToggle?.(id, syncIds),
+            get AppState() { return window.AppState; },
+            get appInit() { return window.appInit; },
             AppMeta: window.AppMeta
         });
+
+        const statsPanelManager = new StatsPanelManager();
 
         // Expose stats panel functions globally
         window.statsPanelManager = statsPanelManager;
@@ -1027,18 +1036,25 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             throw new Error('TaskDOM initialization failed - cannot render tasks');
         }
 
-        // ✅ Initialize Task Options Customizer (Phase 3 module - no window.* in module)
+        // ✅ Initialize Task Options Customizer (DI-pure module)
         console.log('⚙️ Initializing task options customizer...');
         try {
-            const { initTaskOptionsCustomizer, TaskOptionsCustomizer } = await import(withV('./modules/ui/taskOptionsCustomizer.js'));
+            const { initTaskOptionsCustomizer, TaskOptionsCustomizer, setTaskOptionsCustomizerDependencies } = await import(withV('./modules/ui/taskOptionsCustomizer.js'));
 
-            const taskOptionsCustomizer = await initTaskOptionsCustomizer({
-                AppState: window.AppState,
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
-                getElementById: (id) => document.getElementById(id),
-                querySelector: (sel) => document.querySelector(sel),
-                renderTaskList: () => window.refreshTaskListUI?.()
+            // Wire dependencies before creating instance (DI-pure pattern)
+            setTaskOptionsCustomizerDependencies({
+                get AppState() { return window.AppState; },
+                showNotification: deps.utils.showNotification,
+                renderTaskList: () => window.refreshTaskListUI?.(),
+                updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
+                startReminders: () => window.startReminders?.(),
+                stopReminders: () => window.stopReminders?.(),
+                get modeManager() { return window.modeManager; },
+                get appInit() { return window.appInit; },
+                get DEFAULT_TASK_OPTION_BUTTONS() { return window.DEFAULT_TASK_OPTION_BUTTONS; }
             });
+
+            const taskOptionsCustomizer = await initTaskOptionsCustomizer();
 
             // Phase 3: Main script handles window.* exposure
             window.taskOptionsCustomizer = taskOptionsCustomizer;
@@ -1473,29 +1489,32 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without modal manager functionality');
         }
 
-        // ✅ Initialize Settings Manager (Phase 3 module - no window.* in module)
+        // ✅ Initialize Settings Manager (DI-pure module)
         console.log('⚙️ Initializing settings manager module...');
         try {
-            const { initSettingsManager } = await import(withV('./modules/ui/settingsManager.js'));
+            const { initSettingsManager, setSettingsManagerDependencies } = await import(withV('./modules/ui/settingsManager.js'));
 
-            const settingsManager = await initSettingsManager({
+            // Wire dependencies before creating instance (DI-pure pattern)
+            setSettingsManagerDependencies({
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
-                showNotification: deps.utils.showNotification,  // ✅ Use direct function
+                showNotification: deps.utils.showNotification,
                 showConfirmationModal: (opts) => window.showConfirmationModal?.(opts),
                 hideMainMenu: () => window.hideMainMenu?.(),
-                getElementById: (id) => document.getElementById(id),
-                querySelector: (sel) => document.querySelector(sel),
-                querySelectorAll: (sel) => document.querySelectorAll(sel),
-                safeAddEventListener: (el, ev, handler) => window.safeAddEventListener?.(el, ev, handler),
                 setupDarkModeToggle: (id, syncIds) => window.setupDarkModeToggle?.(id, syncIds),
                 setupQuickDarkToggle: () => window.setupQuickDarkToggle?.(),
                 updateMoveArrowsVisibility: () => window.updateMoveArrowsVisibility?.(),
                 toggleHoverTaskOptions: (enabled) => window.toggleHoverTaskOptions?.(enabled),
                 refreshTaskListUI: () => window.refreshTaskListUI?.(),
                 performSchema25Migration: () => window.performSchema25Migration?.(),
+                organizeCompletedTasks: () => window.organizeCompletedTasks?.(),
+                get DataValidator() { return window.DataValidator; },
+                get calculateNextOccurrence() { return window.recurringCore?.calculateNextOccurrence || window.calculateNextOccurrence; },
+                sanitizeInput: (text, maxLen) => window.sanitizeInput?.(text, maxLen),
                 AppMeta: window.AppMeta
             });
+
+            const settingsManager = await initSettingsManager();
 
             // Phase 3: Main script handles window.* exposure
             window.settingsManager = settingsManager;
