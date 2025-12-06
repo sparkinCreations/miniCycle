@@ -46,7 +46,7 @@ export class MiniCycleDueDates {
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
             safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddEventListener,
-            AppState: mergedDeps.AppState || (() => window.AppState)  // ✅ AppState getter function
+            AppState: mergedDeps.AppState || null  // ✅ DI-pure (no window.* fallback)
         };
 
         // Store reference to auto reset toggle element (will be set in init)
@@ -555,8 +555,8 @@ export class MiniCycleDueDates {
 // MODULE INITIALIZATION & GLOBAL EXPORTS
 // ============================================
 
-// Phase 2 Step 5 - Clean exports (no window.* pollution)
-console.log('📅 DueDates module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('📅 DueDates module loaded (DI-pure, no window.* exports)');
 
 let dueDatesManager = null;
 

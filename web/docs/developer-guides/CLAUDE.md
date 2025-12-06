@@ -47,7 +47,7 @@ npm run test:coverage        # Coverage report
 | Modules with `set*Dependencies()` | 0 | **27** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
 | Modules still exporting to `window.*` | ~40 | **13** | 0 | **70%** |
-| **DI-pure modules** | 0 | **16** | All | **~36%** |
+| **DI-pure modules** | 0 | **26** | All | **~59%** |
 
 ### The Reality (Being Improved)
 
@@ -74,7 +74,7 @@ constructor(dependencies = {}) {
 }
 ```
 
-**Progress:** 27 modules use `set*Dependencies()` pattern. **16 modules are fully DI-pure** with no window.* fallbacks (taskCore, taskEvents, notifications, basicPluginSystem, pluginIntegrationGuide, statsPanel, settingsManager, taskOptionsCustomizer, recurringPanel, taskDOM, errorHandler, deviceDetection, reminders, pullToRefresh, taskUtils).
+**Progress:** 27 modules use `set*Dependencies()` pattern. **26 modules are fully DI-pure** with no window.* fallbacks (taskCore, taskEvents, notifications, basicPluginSystem, pluginIntegrationGuide, statsPanel, settingsManager, taskOptionsCustomizer, recurringPanel, taskDOM, errorHandler, deviceDetection, reminders, pullToRefresh, taskUtils, testing-modal-integration, dueDates, consoleCapture, cycleLoader, gamesManager, globalUtils, backupManager, menuManager, onboardingManager, modeManager).
 
 **DI-Pure Versioning (NEW):** Modules receive version via `AppMeta.version` injection instead of accessing `window.APP_VERSION`. See [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) for patterns.
 
@@ -205,7 +205,7 @@ See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full
 - Deferred lookup pattern (`_getAppState()` helper) for circular deps
 - Tests updated for DI patterns (ModalManager, PullToRefresh, GlobalUtils)
 - **DI-pure versioning** - `AppMeta.version` injected, no `window.APP_VERSION` in modules
-- **16 DI-pure modules** - taskCore, taskEvents, notifications, basicPluginSystem, pluginIntegrationGuide, statsPanel, settingsManager, taskOptionsCustomizer, recurringPanel, taskDOM, errorHandler, deviceDetection, reminders, pullToRefresh, taskUtils
+- **26 DI-pure modules** - taskCore, taskEvents, notifications, basicPluginSystem, pluginIntegrationGuide, statsPanel, settingsManager, taskOptionsCustomizer, recurringPanel, taskDOM, errorHandler, deviceDetection, reminders, pullToRefresh, taskUtils, testing-modal-integration, dueDates, consoleCapture, cycleLoader, gamesManager, globalUtils, backupManager, menuManager, onboardingManager, modeManager
 - **update-version.sh v4.0** - No longer updates module files
 - **@version JSDoc tags removed** from all modules
 

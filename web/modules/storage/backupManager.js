@@ -1,11 +1,29 @@
 /**
- * 💾 Backup Manager Module
+ * 💾 Backup Manager Module (DI-Pure)
  *
  * Manages automatic and manual backups using IndexedDB for efficient,
  * non-blocking storage that doesn't compete with localStorage quota.
  *
+ * Note: indexedDB, document.* are browser APIs, not dependencies.
+ *
  * @module storage/backupManager
  */
+
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    AppState: null
+};
+
+/**
+ * Set dependencies for BackupManager
+ * @param {Object} dependencies - { AppState }
+ */
+export function setBackupManagerDependencies(dependencies) {
+    // Use Object.defineProperties to preserve getters (for lazy binding)
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+    console.log('💾 BackupManager dependencies set:', Object.keys(dependencies));
+}
 
 // ==========================================
 // 📦 DATABASE CONFIGURATION
@@ -23,6 +41,14 @@ class BackupManager {
         this.db = null;
         this.isInitialized = false;
         this.initPromise = null;
+    }
+
+    /**
+     * Get AppState (DI-pure, no window.* fallback)
+     * @private
+     */
+    _getAppState() {
+        return _deps.AppState;
     }
 
     /**
@@ -94,13 +120,14 @@ class BackupManager {
                 }
             }
 
-            // Get current app state
-            if (!window.AppState?.isReady?.()) {
+            // Get current app state (DI-pure)
+            const AppState = this._getAppState();
+            if (!AppState?.isReady?.()) {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping auto-backup');
                 return false;
             }
 
-            const currentState = window.AppState.get();
+            const currentState = AppState.get();
             if (!currentState) {
                 console.warn('⚠️ BackupManager: No state data available for backup');
                 return false;
@@ -143,11 +170,13 @@ class BackupManager {
         try {
             await this.init();
 
-            if (!window.AppState?.isReady?.()) {
+            // DI-pure (no window.* fallback)
+            const AppState = this._getAppState();
+            if (!AppState?.isReady?.()) {
                 throw new Error('AppState not ready');
             }
 
-            const currentState = window.AppState.get();
+            const currentState = AppState.get();
             if (!currentState) {
                 throw new Error('No state data available');
             }
@@ -424,7 +453,7 @@ class BackupManager {
 // Create singleton instance
 const backupManager = new BackupManager();
 
-// Phase 2 Step 5 - Clean exports (no window.* pollution)
-console.log('💾 BackupManager module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('💾 BackupManager module loaded (DI-pure, no window.* exports)');
 
 export default backupManager;

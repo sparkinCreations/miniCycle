@@ -1,11 +1,13 @@
 /**
  * ==========================================
- * 🛠️ GLOBAL UTILITIES MODULE
+ * 🛠️ GLOBAL UTILITIES MODULE (DI-Pure)
  * ==========================================
  *
  * Core utility functions used throughout the miniCycle application.
  * These are foundational utilities that need to be available globally
  * without import overhead for frequently called functions.
+ *
+ * Note: document.*, localStorage are browser APIs, not dependencies.
  *
  * @author miniCycle Development Team
  */
@@ -403,9 +405,9 @@ export class GlobalUtils {
             return value;
         } catch (error) {
             console.error(`[GlobalUtils] Failed to read localStorage key "${key}":`, error);
-            const notify = _deps.showNotification || window.showNotification;
-            if (typeof notify === 'function') {
-                notify('Storage access error. Some data may not load.', 'error');
+            // DI-pure (no window.* fallback)
+            if (typeof _deps.showNotification === 'function') {
+                _deps.showNotification('Storage access error. Some data may not load.', 'error');
             }
             return defaultValue;
         }
@@ -427,12 +429,12 @@ export class GlobalUtils {
         } catch (error) {
             console.error(`[GlobalUtils] Failed to write localStorage key "${key}":`, error);
 
-            const notify = _deps.showNotification || window.showNotification;
-            if (!silent && typeof notify === 'function') {
+            // DI-pure (no window.* fallback)
+            if (!silent && typeof _deps.showNotification === 'function') {
                 if (error.name === 'QuotaExceededError') {
-                    notify('Storage quota exceeded. Please export your data and clear some space.', 'error');
+                    _deps.showNotification('Storage quota exceeded. Please export your data and clear some space.', 'error');
                 } else {
-                    notify('Failed to save data. Your changes may not be preserved.', 'error');
+                    _deps.showNotification('Failed to save data. Your changes may not be preserved.', 'error');
                 }
             }
             return false;
@@ -685,7 +687,8 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
 // GlobalUtils methods are exposed to window.* by miniCycle-scripts.js
 // ===========================================
 
-console.log('🛠️ GlobalUtils module loaded');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🛠️ GlobalUtils module loaded (DI-pure, no window.* exports)');
 
 export default GlobalUtils;
 

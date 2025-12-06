@@ -1,12 +1,60 @@
 // ==========================================
-// 🧪 AUTOMATED TESTING INTEGRATION
+// 🧪 AUTOMATED TESTING INTEGRATION (DI-Pure)
 // ==========================================
 // This file integrates the comprehensive test suite into the testing modal
 
 /**
- * Automated Testing Integration for Testing Modal
+ * Automated Testing Integration for Testing Modal (DI-Pure)
  * Leverages the existing 11-module test suite with 253 tests
+ *
+ * Note: document.*, localStorage, window.location.reload() are browser APIs,
+ * not dependencies - they cannot be injected.
+ *
+ * @module testing-modal-integration
  */
+
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    safeAddEventListenerById: null,
+    showNotification: null,
+    ConsoleCapture: null
+};
+
+/**
+ * Set dependencies for testing modal integration
+ * @param {Object} dependencies - { safeAddEventListenerById, showNotification, ConsoleCapture }
+ */
+export function setTestingModalDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🧪 TestingModal dependencies set:', Object.keys(dependencies));
+}
+
+// Fallback functions for when deps aren't available
+function fallbackAddEventListenerById(id, event, handler) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.addEventListener(event, handler);
+    } else {
+        console.warn(`⚠️ Cannot attach event listener: #${id} not found.`);
+    }
+}
+
+function fallbackShowNotification(message, type, duration) {
+    console.log(`[Notification ${type}] ${message}`);
+}
+
+// Getter functions for deps (resolved at call time)
+function getSafeAddEventListenerById() {
+    return _deps.safeAddEventListenerById || fallbackAddEventListenerById;
+}
+
+function getShowNotification() {
+    return _deps.showNotification || fallbackShowNotification;
+}
+
+function getConsoleCapture() {
+    return _deps.ConsoleCapture;
+}
 
 // Test module mapping for easier management
 const TEST_MODULES = {
@@ -56,7 +104,9 @@ async function loadTestModules() {
 // Setup automated testing event listeners
 function setupAutomatedTestingFunctions() {
     console.log('🔧 Setting up automated testing functions...');
-    
+
+    const safeAddEventListenerById = getSafeAddEventListenerById();
+
     // Individual module test buttons
     Object.keys(TEST_MODULES).forEach(moduleKey => {
         const buttonId = `test-${moduleKey}`;
@@ -82,7 +132,7 @@ function setupAutomatedTestingFunctions() {
 
     // Setup tab switching to show initial message
     setupAutomatedTestsTabSwitching();
-    
+
     console.log('✅ Automated testing functions ready');
 }
 
@@ -138,7 +188,7 @@ function checkAndRestoreSavedResults() {
                             const output = getAutomatedTestOutput();
                             if (output) {
                                 output.textContent = savedResults;
-                                showNotification('📊 Test results restored after page reload', 'success', 3000);
+                                getShowNotification()('📊 Test results restored after page reload', 'success', 3000);
                             }
 
                             // Clear the saved results so they don't show up again
@@ -172,7 +222,7 @@ function clearAutomatedTestResults() {
     const output = getAutomatedTestOutput();
     if (output) {
         output.textContent = "";
-        showNotification("🧹 Automated test results cleared", "info", 1500);
+        getShowNotification()("🧹 Automated test results cleared", "info", 1500);
     }
 }
 
@@ -180,7 +230,7 @@ function clearAutomatedTestResults() {
 function exportAutomatedTestResults() {
     const output = getAutomatedTestOutput();
     if (!output || !output.textContent.trim()) {
-        showNotification("❌ No automated test results to export", "warning", 2000);
+        getShowNotification()("❌ No automated test results to export", "warning", 2000);
         return;
     }
     
@@ -197,7 +247,7 @@ function exportAutomatedTestResults() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showNotification("📄 Automated test results exported", "success", 3000);
+    getShowNotification()("📄 Automated test results exported", "success", 3000);
 }
 
 // Run individual module test
@@ -213,14 +263,14 @@ async function runIndividualModuleTest(moduleKey) {
 
     appendToAutomatedTestResults(`🧪 Running ${config.name} Tests...\n`);
     appendToAutomatedTestResults(`Expected: ${config.count} tests\n\n`);
-    showNotification(`🔬 Running ${config.name} tests`, "info", 2000);
+    getShowNotification()(`🔬 Running ${config.name} tests`, "info", 2000);
 
     const testModules = await loadTestModules();
     const testFunction = testModules[moduleKey];
 
     if (!testFunction) {
         appendToAutomatedTestResults(`❌ Could not load ${config.name} tests\n\n`);
-        showNotification(`❌ Failed to load ${config.name} tests`, "error", 3000);
+        getShowNotification()(`❌ Failed to load ${config.name} tests`, "error", 3000);
         return;
     }
 
@@ -282,7 +332,7 @@ async function runIndividualModuleTest(moduleKey) {
         appendToAutomatedTestResults(`   • Status: ${passCount === totalCount ? '✅ ALL PASSED' : `⚠️ ${totalCount - passCount} FAILED`}\n\n`);
 
         const status = passCount === totalCount ? "success" : "warning";
-        showNotification(`${config.name}: ${passCount}/${totalCount} tests passed`, status, 3000);
+        getShowNotification()(`${config.name}: ${passCount}/${totalCount} tests passed`, status, 3000);
 
         // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
         await new Promise(resolve => setTimeout(resolve, 700));
@@ -302,14 +352,15 @@ async function runIndividualModuleTest(moduleKey) {
         }
 
         // 🛑 STOP console capture before reload (prevent capturing normal app logs)
-        if (window.ConsoleCapture && typeof window.ConsoleCapture.stop === 'function') {
-            window.ConsoleCapture.stop();
+        const ConsoleCapture = getConsoleCapture();
+        if (ConsoleCapture && typeof ConsoleCapture.stop === 'function') {
+            ConsoleCapture.stop();
             console.log('🛑 Console capture stopped before reload');
         }
 
         // 🔄 AUTO-RELOAD to restore clean app environment
         appendToAutomatedTestResults("\n🔄 Reloading page to restore clean app environment...\n");
-        showNotification("🔄 Reloading to restore clean app state...", "info", 2000);
+        getShowNotification()("🔄 Reloading to restore clean app state...", "info", 2000);
 
         setTimeout(() => {
             window.location.reload();
@@ -317,7 +368,7 @@ async function runIndividualModuleTest(moduleKey) {
 
     } catch (error) {
         appendToAutomatedTestResults(`❌ Error running ${config.name} tests: ${error.message}\n\n`);
-        showNotification(`❌ ${config.name} test error`, "error", 3000);
+        getShowNotification()(`❌ ${config.name} test error`, "error", 3000);
         console.error(`Error in ${config.name} tests:`, error);
 
         // 🔒 RESTORE REAL APP DATA even on error
@@ -335,13 +386,14 @@ async function runIndividualModuleTest(moduleKey) {
         }
 
         // 🛑 STOP console capture before reload
-        if (window.ConsoleCapture && typeof window.ConsoleCapture.stop === 'function') {
-            window.ConsoleCapture.stop();
+        const ConsoleCaptureErr = getConsoleCapture();
+        if (ConsoleCaptureErr && typeof ConsoleCaptureErr.stop === 'function') {
+            ConsoleCaptureErr.stop();
         }
 
         // 🔄 AUTO-RELOAD to restore clean app environment
         appendToAutomatedTestResults("\n🔄 Reloading page to restore clean app environment...\n");
-        showNotification("🔄 Reloading to restore clean app state...", "info", 2000);
+        getShowNotification()("🔄 Reloading to restore clean app state...", "info", 2000);
 
         setTimeout(() => {
             window.location.reload();
@@ -356,7 +408,7 @@ async function runAllAutomatedTests() {
 
     appendToAutomatedTestResults("🚀 RUNNING ALL AUTOMATED TESTS\n");
     appendToAutomatedTestResults("═".repeat(50) + "\n\n");
-    showNotification("🔬 Running complete automated test suite - this may take a moment", "info", 4000);
+    getShowNotification()("🔬 Running complete automated test suite - this may take a moment", "info", 4000);
 
     // 🔒 SAVE REAL APP DATA ONCE before all tests run
     const savedRealData = {};
@@ -374,7 +426,7 @@ async function runAllAutomatedTests() {
 
     if (Object.keys(testModules).length === 0) {
         appendToAutomatedTestResults("❌ Could not load any test modules\n\n");
-        showNotification("❌ Failed to load test modules", "error", 3000);
+        getShowNotification()("❌ Failed to load test modules", "error", 3000);
 
         // 🔒 RESTORE REAL APP DATA even on early failure
         localStorage.clear();
@@ -476,7 +528,7 @@ async function runAllAutomatedTests() {
     // Final notification
     const notifType = successRate >= 90 ? "success" : successRate >= 70 ? "warning" : "error";
     const notifMsg = `🏁 Automated tests complete: ${successRate}% pass rate (${totalPassed}/${totalTests})`;
-    showNotification(notifMsg, notifType, 5000);
+    getShowNotification()(notifMsg, notifType, 5000);
 
     // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
     await new Promise(resolve => setTimeout(resolve, 700));
@@ -496,22 +548,23 @@ async function runAllAutomatedTests() {
     }
 
     // 🛑 STOP console capture before reload (prevent capturing normal app logs)
-    if (window.ConsoleCapture && typeof window.ConsoleCapture.stop === 'function') {
-        window.ConsoleCapture.stop();
+    const ConsoleCaptureAll = getConsoleCapture();
+    if (ConsoleCaptureAll && typeof ConsoleCaptureAll.stop === 'function') {
+        ConsoleCaptureAll.stop();
         console.log('🛑 Console capture stopped before reload');
     }
 
     // 🔄 AUTO-RELOAD to restore clean app environment
     appendToAutomatedTestResults("\n🔄 Reloading page to restore clean app environment...\n");
-    showNotification("🔄 Reloading to restore clean app state...", "info", 2000);
+    getShowNotification()("🔄 Reloading to restore clean app state...", "info", 2000);
 
     setTimeout(() => {
         window.location.reload();
     }, 2000);
 }
 
-// Phase 2 Step 7 - Clean exports (no window.* pollution)
-console.log('🧪 Testing modal integration loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🧪 Testing modal integration loaded (DI-pure, no window.* exports)');
 
 // Export functions for module use
 export {
@@ -519,20 +572,6 @@ export {
     runIndividualModuleTest,
     runAllAutomatedTests,
     loadTestModules
-};
-
-// Safe function accessors
-const safeAddEventListenerById = window.safeAddEventListenerById || function(id, event, handler) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.addEventListener(event, handler);
-    } else {
-        console.warn(`⚠️ Cannot attach event listener: #${id} not found.`);
-    }
-};
-
-const showNotification = window.showNotification || function(message, type, duration) {
-    console.log(`[Notification ${type}] ${message}`);
 };
 
 // Auto-setup when this script loads

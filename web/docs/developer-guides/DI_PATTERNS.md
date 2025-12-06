@@ -188,6 +188,16 @@ A module is "DI-pure" when:
 - `reminders.js` - Task reminder system
 - `pullToRefresh.js` - Mobile pull-to-refresh
 - `taskUtils.js` - Task utility functions
+- `testing-modal-integration.js` - Automated testing integration
+- `dueDates.js` - Due date management
+- `consoleCapture.js` - Console capture for debugging
+- `cycleLoader.js` - Cycle loading and rendering
+- `gamesManager.js` - Mini-game unlocking and panel
+- `globalUtils.js` - Core utility functions
+- `backupManager.js` - IndexedDB backup system
+- `menuManager.js` - Main menu operations
+- `onboardingManager.js` - First-time user onboarding
+- `modeManager.js` - Cycle mode management (Auto/Manual/To-Do)
 
 **Intentionally Uses `window.*` (wiring layer):**
 - `orchestrator.js` - This is the bridge between DI-pure modules and legacy code. It's *supposed* to expose modules to `window.*`
@@ -247,6 +257,25 @@ setMyModuleDependencies({
 });
 ```
 
+### 6. Using spread operator destroys getters
+
+When using lazy getters, the `set*Dependencies()` function must preserve them:
+
+```javascript
+// BAD: Spread operator evaluates getters immediately
+export function setMyModuleDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };  // Getters evaluated! Values captured!
+}
+
+// GOOD: Use Object.defineProperties to preserve getters
+export function setMyModuleDependencies(dependencies) {
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);  // Getters preserved!
+}
+```
+
+**Why this matters:** If you pass `{ get AppState() { return window.AppState; } }` and use spread, the getter is invoked at that moment (returning `undefined` if AppState isn't ready yet) and the value `undefined` is stored. With `Object.defineProperties`, the getter is preserved and will be invoked each time `_deps.AppState` is accessed.
+
 ---
 
 ## Related Documentation
@@ -262,3 +291,13 @@ setMyModuleDependencies({
   - reminders.js (7)
   - pullToRefresh.js (6)
   - taskUtils.js (6)
+
+    - modeManager.js (4 instances)
+  - onboardingManager.js (5 instances)
+  - menuManager.js (3 instances)
+  - backupManager.js (4 instances)
+  - globalUtils.js (2 instances)
+  - gamesManager.js (2 instances)
+  - cycleLoader.js (1 instance)
+  - consoleCapture.js (1 instance)
+  - dueDates.js (1 instance)

@@ -1,6 +1,8 @@
 /**
- * 🎛️ miniCycle Menu Manager
+ * 🎛️ miniCycle Menu Manager (DI-Pure)
  * Handles main menu operations and interactions
+ *
+ * Note: document.*, window.location are browser APIs, not dependencies.
  *
  * @module menuManager
  * @pattern Resilient Constructor 🛡️
@@ -16,7 +18,9 @@ let _deps = {};
  * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
  */
 export function setMenuManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    // Use Object.defineProperties to preserve getters (for lazy binding)
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
     console.log('🎛️ MenuManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -207,10 +211,9 @@ export class MenuManager {
             console.warn('⚠️ Date element not found');
         }
 
-        // ✅ Update mode description (deferred lookup)
-        const updateCycleModeDescription = this.deps.updateCycleModeDescription || window.updateCycleModeDescription;
-        if (typeof updateCycleModeDescription === 'function') {
-            updateCycleModeDescription();
+        // ✅ Update mode description (DI-pure, no window.* fallback)
+        if (typeof this.deps.updateCycleModeDescription === 'function') {
+            this.deps.updateCycleModeDescription();
             console.log('🎯 Mode description updated');
         }
 
@@ -412,10 +415,9 @@ export class MenuManager {
         this.deps.updateProgressBar();
         this.deps.updateStatsPanel();
         this.deps.checkCompleteAllButton();
-        // ✅ Deferred lookup for recurringPanel
-        const recurringPanel = this.deps.recurringPanel || window.recurringPanel;
-        if (recurringPanel?.updateRecurringPanelButtonVisibility) {
-            recurringPanel.updateRecurringPanelButtonVisibility();
+        // ✅ DI-pure (no window.* fallback)
+        if (this.deps.recurringPanel?.updateRecurringPanelButtonVisibility) {
+            this.deps.recurringPanel.updateRecurringPanelButtonVisibility();
         }
         this.hideMainMenu();
 
@@ -496,10 +498,9 @@ export class MenuManager {
                 this.deps.updateProgressBar();
                 this.deps.updateStatsPanel();
                 this.deps.checkCompleteAllButton();
-                // ✅ Deferred lookup for recurringPanel
-                const recurringPanelDel = this.deps.recurringPanel || window.recurringPanel;
-                if (recurringPanelDel?.updateRecurringPanelButtonVisibility) {
-                    recurringPanelDel.updateRecurringPanelButtonVisibility();
+                // ✅ DI-pure (no window.* fallback)
+                if (this.deps.recurringPanel?.updateRecurringPanelButtonVisibility) {
+                    this.deps.recurringPanel.updateRecurringPanelButtonVisibility();
                 }
 
                 // ✅ Update undo/redo button states
@@ -551,5 +552,5 @@ export function initMenuManager(dependencies) {
     return menuManager.init().then(() => menuManager);
 }
 
-// Phase 3 - No window.* exports (main script handles exposure)
-console.log('🎛️ Menu Manager v1.330 loaded (Phase 3 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🎛️ Menu Manager loaded (DI-pure, no window.* exports)');

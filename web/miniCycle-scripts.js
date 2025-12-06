@@ -465,9 +465,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.DataValidator = dataValidatorMod.DataValidator;
     console.log('🛡️ Data Validator loaded');
 
-    // ✅ Load Console Capture
+    // ✅ Load Console Capture (DI-pure)
     const consoleCaptureMod = await import(withV('./modules/utils/consoleCapture.js'));
+
+    // Wire dependencies for ConsoleCapture (DI-pure)
+    if (consoleCaptureMod.setConsoleCaptureDependencies) {
+        consoleCaptureMod.setConsoleCaptureDependencies({
+            showNotification: deps.utils.showNotification,
+            get appendToTestResults() { return window.appendToTestResults; }
+        });
+    }
+
     window.consoleCapture = consoleCaptureMod.default;
+    window.ConsoleCapture = consoleCaptureMod.default;  // Alias for testing-modal-integration
 
     // ✅ Load Notifications (DI-pure)
     const notificationsMod = await import(withV('./modules/utils/notifications.js'));
@@ -502,6 +512,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         showNotification: deps.utils.showNotification
     });
 
+    // ✅ Wire GlobalUtils now that showNotification is available (DI-pure)
+    if (globalUtilsModule.setGlobalUtilsDependencies) {
+        globalUtilsModule.setGlobalUtilsDependencies({
+            showNotification: deps.utils.showNotification
+        });
+    }
+
     // ✅ Load Theme Manager
     const themeManagerMod = await import(withV('./modules/features/themeManager.js'));
     window.ThemeManager = themeManagerMod.default;
@@ -525,12 +542,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
     console.log('✅ Theme Manager loaded');
 
-    // ✅ Load Games Manager
+    // ✅ Load Games Manager (DI-pure)
     const gamesManagerMod = await import(withV('./modules/ui/gamesManager.js'));
-    // Inject appVersion via dependency setter
+    // Inject dependencies (DI-pure)
     if (gamesManagerMod.setGamesManagerDependencies) {
         gamesManagerMod.setGamesManagerDependencies({
-            AppMeta: window.AppMeta
+            AppMeta: window.AppMeta,
+            get AppState() { return window.AppState; },  // Lazy getter for late binding
+            safeAddEventListener: deps.utils.safeAddEventListener
         });
     }
     // Expose to window immediately
@@ -540,12 +559,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.checkGamesUnlock = (...args) => gamesManagerMod.gamesManager?.checkGamesUnlock?.(...args);
     console.log('✅ Games Manager loaded');
 
-    // ✅ Load Onboarding Manager
+    // ✅ Load Onboarding Manager (DI-pure)
     const onboardingManagerMod = await import(withV('./modules/ui/onboardingManager.js'));
-    // Inject appVersion via dependency setter
+    // Inject dependencies (DI-pure, use lazy getters for late-available deps)
     if (onboardingManagerMod.setOnboardingManagerDependencies) {
         onboardingManagerMod.setOnboardingManagerDependencies({
-            AppMeta: window.AppMeta
+            AppMeta: window.AppMeta,
+            showNotification: deps.utils.showNotification,
+            get AppState() { return window.AppState; },
+            get showCycleCreationModal() { return window.showCycleCreationModal; },
+            get completeInitialSetup() { return window.completeInitialSetup; },
+            safeAddEventListenerById: deps.utils.GlobalUtils?.safeAddEventListenerById
         });
     }
     window.onboardingManager = onboardingManagerMod.onboardingManager;
@@ -1263,7 +1287,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 helpWindowManager: () => window.helpWindowManager,
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
-                AppMeta: window.AppMeta
+                AppMeta: window.AppMeta,
+                get recurringCore() { return window.recurringCore; }  // Lazy getter for late binding (DI-pure)
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1455,7 +1480,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateStatsPanel: () => window.updateStatsPanel?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
-                AppMeta: window.AppMeta
+                AppMeta: window.AppMeta,
+                get recurringPanel() { return window.recurringPanel; }  // Lazy getter for late binding
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1723,7 +1749,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateProgressBar: () => window.updateProgressBar?.(),
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
                 updateMainMenuHeader: () => window.updateMainMenuHeader?.(),
-                updateStatsPanel: () => window.updateStatsPanel?.()
+                updateStatsPanel: () => window.updateStatsPanel?.(),
+                syncAllTasksWithMode: (...args) => window.syncAllTasksWithMode?.(...args)  // ✅ DI-pure
             });
 
             // ✅ Expose globally
@@ -1878,23 +1905,43 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             if (testingModalMod.exportTestResults) window.exportTestResults = testingModalMod.exportTestResults;
             if (testingModalMod.copyTestResults) window.copyTestResults = testingModalMod.copyTestResults;
 
-            await import(withV('./modules/testing/testing-modal-integration.js'));
-            console.log('✅ Testing modal integration loaded');
+            const testingIntegrationMod = await import(withV('./modules/testing/testing-modal-integration.js'));
+
+            // Wire dependencies for testing-modal-integration (DI-pure)
+            if (testingIntegrationMod.setTestingModalDependencies) {
+                testingIntegrationMod.setTestingModalDependencies({
+                    safeAddEventListenerById: deps.utils.safeAddEventListenerById,
+                    showNotification: deps.utils.showNotification,
+                    get ConsoleCapture() { return window.ConsoleCapture; }
+                });
+            }
+            console.log('✅ Testing modal integration loaded (DI-pure)');
         } catch (error) {
             console.error('❌ Failed to load testing modal modules:', error);
             console.warn('⚠️ App will continue without testing modal functionality');
         }
 
-        // ✅ Initialize Backup Manager (Phase 3)
+        // ✅ Initialize Backup Manager (DI-pure)
         console.log('💾 Loading backup manager...');
+        let backupManagerInstance = null;
         try {
-            await import(withV('./modules/storage/backupManager.js'));
+            const backupManagerMod = await import(withV('./modules/storage/backupManager.js'));
+
+            // Wire dependencies (DI-pure)
+            if (backupManagerMod.setBackupManagerDependencies) {
+                backupManagerMod.setBackupManagerDependencies({
+                    get AppState() { return window.AppState; }  // Lazy getter for late binding
+                });
+            }
+
+            backupManagerInstance = backupManagerMod.default;
+            window.BackupManager = backupManagerInstance;  // Expose for backward compat
             console.log('✅ Backup manager loaded');
 
             // ✅ Create auto-backup in background (non-blocking)
-            if (window.BackupManager) {
+            if (backupManagerInstance) {
                 // Don't await - run in background
-                window.BackupManager.createAutoBackup()
+                backupManagerInstance.createAutoBackup()
                     .then(created => {
                         if (created) {
                             console.log('✅ Auto-backup created successfully');

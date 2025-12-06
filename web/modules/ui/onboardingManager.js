@@ -1,5 +1,5 @@
 /**
- * 🎓 miniCycle Onboarding Manager
+ * 🎓 miniCycle Onboarding Manager (DI-Pure)
  * Manages first-time user onboarding flow and modal interactions
  *
  * Features:
@@ -9,12 +9,7 @@
  * - Reset onboarding capability
  * - AppState integration for persistence
  *
- * Dependencies (injected via setOnboardingManagerDependencies):
- * - AppState (state manager)
- * - showCycleCreationModal (post-onboarding transition)
- * - completeInitialSetup (alternative transition)
- * - showNotification (reset confirmation)
- * - safeAddEventListenerById (event helper)
+ * Note: document.* is a browser API, not a dependency.
  *
  * @module onboardingManager
  */
@@ -29,7 +24,9 @@ let _deps = {};
  * @param {Object} dependencies - { AppState, showNotification, showCycleCreationModal, completeInitialSetup, safeAddEventListenerById }
  */
 export function setOnboardingManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    // Use Object.defineProperties to preserve getters (for lazy binding)
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
     console.log('🎓 OnboardingManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -45,15 +42,15 @@ export class OnboardingManager {
         // Store injected dependencies
         this._injectedDeps = dependencies;
 
-        // Dependency injection with module-level fallbacks and window.* backward compatibility
-        // Priority: constructor injection > module deps > window.* (for test compatibility)
+        // Dependency injection - DI-pure (no window.* fallbacks)
+        // Priority: constructor injection > module deps > fallback method
         Object.defineProperty(this, 'deps', {
             get: () => ({
-                showNotification: this._injectedDeps.showNotification || _deps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
-                AppState: this._injectedDeps.AppState || _deps.AppState || window.AppState,
-                showCycleCreationModal: this._injectedDeps.showCycleCreationModal || _deps.showCycleCreationModal || window.showCycleCreationModal,
-                completeInitialSetup: this._injectedDeps.completeInitialSetup || _deps.completeInitialSetup || window.completeInitialSetup,
-                safeAddEventListenerById: this._injectedDeps.safeAddEventListenerById || _deps.safeAddEventListenerById || window.safeAddEventListenerById
+                showNotification: this._injectedDeps.showNotification || _deps.showNotification || this.fallbackNotification.bind(this),
+                AppState: this._injectedDeps.AppState || _deps.AppState || null,
+                showCycleCreationModal: this._injectedDeps.showCycleCreationModal || _deps.showCycleCreationModal || null,
+                completeInitialSetup: this._injectedDeps.completeInitialSetup || _deps.completeInitialSetup || null,
+                safeAddEventListenerById: this._injectedDeps.safeAddEventListenerById || _deps.safeAddEventListenerById || null
             })
         });
     }
@@ -320,8 +317,8 @@ const onboardingManager = new OnboardingManager();
 // Initialize automatically after import
 onboardingManager.init();
 
-// Phase 2 Step 4 - Clean exports (no window.* pollution)
-console.log('✅ Onboarding Manager module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🎓 Onboarding Manager module loaded (DI-pure, no window.* exports)');
 
 export default OnboardingManager;
 export { onboardingManager };

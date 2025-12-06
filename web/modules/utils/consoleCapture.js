@@ -1,13 +1,32 @@
 /**
  * ==========================================
- * 🎯 CONSOLE CAPTURE MODULE FOR MIGRATIONS
+ * 🎯 CONSOLE CAPTURE MODULE FOR MIGRATIONS (DI-Pure)
  * ==========================================
  *
  * Provides enhanced console logging and capture functionality
  * specifically designed for debugging migration processes.
  *
+ * Note: localStorage, sessionStorage are browser APIs, not dependencies.
+ *
  * @module consoleCapture
  */
+
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    showNotification: null,
+    appendToTestResults: null
+};
+
+/**
+ * Set dependencies for ConsoleCapture
+ * @param {Object} dependencies - { showNotification, appendToTestResults }
+ */
+export function setConsoleCaptureDependencies(dependencies) {
+    // Use Object.defineProperties to preserve getters (for lazy binding)
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+    console.log('🔍 ConsoleCapture dependencies set:', Object.keys(dependencies));
+}
 
 export class MiniCycleConsoleCapture {
     constructor(dependencies = {}) {
@@ -20,11 +39,12 @@ export class MiniCycleConsoleCapture {
         // Store injected dependencies
         this._injectedDeps = dependencies;
 
-        // Dependency injection with runtime fallbacks for testability
-        // Using getters so tests can mock window functions after construction
+        // Dependency injection - getter pattern for late injection (DI-pure)
+        // Reads from _deps at access time, not construction time
         Object.defineProperty(this, 'deps', {
             get: () => ({
-                showNotification: this._injectedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this)
+                showNotification: this._injectedDeps.showNotification || _deps.showNotification || this.fallbackNotification.bind(this),
+                appendToTestResults: this._injectedDeps.appendToTestResults || _deps.appendToTestResults || null
             })
         });
 
@@ -388,10 +408,10 @@ export class MiniCycleConsoleCapture {
         }
     }
 
-    // Helper to interact with testing modal
+    // Helper to interact with testing modal (DI-pure)
     appendToTestResults(text) {
-        if (typeof window.appendToTestResults === 'function') {
-            window.appendToTestResults(text);
+        if (this.deps.appendToTestResults) {
+            this.deps.appendToTestResults(text);
         } else {
             console.log('Testing Results:', text);
         }
@@ -411,7 +431,7 @@ export class MiniCycleConsoleCapture {
 // Auto-create instance and make globally accessible
 const consoleCapture = new MiniCycleConsoleCapture();
 
-// Phase 2 Step 4 - Clean exports (no window.* pollution)
+// DI-pure module (no window.* fallbacks for dependencies)
 export const {
     showAllCapturedLogs,
     clearAllConsoleLogs,
@@ -421,6 +441,6 @@ export const {
     startAutoConsoleCapture
 } = consoleCapture;
 
-console.log('🔍 Console Capture module loaded (Phase 2 - no window.* exports)');
+console.log('🔍 Console Capture module loaded (DI-pure, no window.* exports)');
 
 export default consoleCapture;

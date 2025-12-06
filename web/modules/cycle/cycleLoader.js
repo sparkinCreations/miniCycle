@@ -1,7 +1,8 @@
 /**
- * miniCycle Cycle Loader Module (Schema 2.5)
+ * miniCycle Cycle Loader Module (Schema 2.5, DI-Pure)
  * - Pure module with explicit dependency injection
  * - No window probing, no stubs, no retry loops
+ * - No window.* fallbacks (DI-pure)
  *
  * @module cycleLoader
  */
@@ -89,8 +90,8 @@ async function loadMiniCycle() {
   renderTasksToDOM(currentCycle.tasks || []);
 
   // 2.5) Sync visual indicators with current mode
-  // ✅ After rendering tasks, sync all delete-when-complete visual indicators
-  const syncFn = Deps.syncAllTasksWithMode || window.syncAllTasksWithMode;
+  // ✅ After rendering tasks, sync all delete-when-complete visual indicators (DI-pure)
+  const syncFn = Deps.syncAllTasksWithMode;
   if (currentCycle.tasks && syncFn) {
     const currentMode = currentCycle.deleteCheckedTasks === true ? 'todo' : 'cycle';
     const tasksDataMap = {};

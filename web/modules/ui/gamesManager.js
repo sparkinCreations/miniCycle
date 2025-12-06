@@ -1,5 +1,5 @@
 /**
- * 🎮 miniCycle Games Manager
+ * 🎮 miniCycle Games Manager (DI-Pure)
  * Manages mini-game unlocking and panel interactions
  *
  * Features:
@@ -7,10 +7,7 @@
  * - Unlock games and update AppState
  * - Modal panel interactions with click-outside-to-close
  *
- * Dependencies:
- * - window.AppState (state manager)
- * - appInit (initialization system)
- * - DOM elements (games-panel, games-menu-option)
+ * Note: document.*, window.location are browser APIs, not dependencies.
  *
  * @module gamesManager
  */
@@ -25,7 +22,9 @@ let _deps = {};
  * @param {Object} dependencies - { AppState, safeAddEventListener }
  */
 export function setGamesManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    // Use Object.defineProperties to preserve getters (for lazy binding)
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
     console.log('🎮 GamesManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -46,11 +45,12 @@ class GamesManager {
     }
 
     /**
-     * Get AppState (deferred lookup for late binding)
+     * Get AppState (deferred lookup for late binding, DI-pure)
+     * Reads from _deps directly to preserve lazy getter resolution
      * @private
      */
     _getAppState() {
-        return this.deps.AppState || window.AppState;
+        return _deps.AppState;  // Read from module-level _deps to preserve lazy getter
     }
 
     async init() {
@@ -179,10 +179,9 @@ class GamesManager {
             }
         };
 
-        // Use safeAddEventListener if available, fallback to regular
-        const safeAddEventListener = this.deps.safeAddEventListener || window.safeAddEventListener;
-        if (safeAddEventListener) {
-            safeAddEventListener(document, "click", handleClickOutside);
+        // Use safeAddEventListener if available (DI-pure, no window.* fallback)
+        if (this.deps.safeAddEventListener) {
+            this.deps.safeAddEventListener(document, "click", handleClickOutside);
         } else {
             document.addEventListener("click", handleClickOutside);
         }
@@ -233,8 +232,8 @@ const gamesManager = new GamesManager();
 // Initialize automatically after import
 gamesManager.init();
 
-// Phase 2 Step 4 - Clean exports (no window.* pollution)
-console.log('✅ Games Manager module loaded (Phase 2 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🎮 Games Manager module loaded (DI-pure, no window.* exports)');
 
 export default GamesManager;
 export { gamesManager };

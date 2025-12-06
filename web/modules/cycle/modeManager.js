@@ -1,5 +1,5 @@
 /**
- * Mode Manager - Manages Auto Cycle, Manual Cycle, and To-Do Mode
+ * Mode Manager - Manages Auto Cycle, Manual Cycle, and To-Do Mode (DI-Pure)
  * @module modules/cycle/modeManager
  * @pattern Resilient Constructor 🛡️
  *
@@ -9,6 +9,8 @@
  * - To-Do Mode ✓: Tasks are deleted instead of reset
  *
  * Mode changes refresh UI in-place without page reload.
+ *
+ * Note: document.*, sessionStorage are browser APIs, not dependencies.
  */
 
 import { appInit } from '../core/appInit.js';
@@ -21,7 +23,9 @@ let _deps = {};
  * @param {Object} dependencies - { getAppState, showNotification, etc. }
  */
 export function setModeManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    // Use Object.defineProperties to preserve getters (for lazy binding)
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
     console.log('🎯 ModeManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -484,10 +488,9 @@ export class ModeManager {
                 this.deps.checkCompleteAllButton();
             }
 
-            // ✅ Update recurring button visibility via module
-            const recurringCore = this.deps.recurringCore || window.recurringCore;
-            if (recurringCore?.updateRecurringButtonVisibility) {
-                recurringCore.updateRecurringButtonVisibility();
+            // ✅ Update recurring button visibility via module (DI-pure)
+            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
+                this.deps.recurringCore.updateRecurringButtonVisibility();
             }
 
             // ✅ Show mode description in help window
@@ -514,12 +517,11 @@ export class ModeManager {
             // ✅ Refresh task buttons to apply mode-specific button visibility
             this.refreshTaskButtonsForModeChange();
 
-            // ✅ Update recurring button visibility for mode change
-            const recurringCoreDesktop = this.deps.recurringCore || window.recurringCore;
-            if (recurringCoreDesktop?.updateRecurringButtonVisibility) {
+            // ✅ Update recurring button visibility for mode change (DI-pure)
+            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
                 console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
-                    recurringCoreDesktop.updateRecurringButtonVisibility();
+                    this.deps.recurringCore.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
             }
@@ -543,12 +545,11 @@ export class ModeManager {
             // ✅ Refresh task buttons to apply mode-specific button visibility
             this.refreshTaskButtonsForModeChange();
 
-            // ✅ Update recurring button visibility for mode change
-            const recurringCoreMobile = this.deps.recurringCore || window.recurringCore;
-            if (recurringCoreMobile?.updateRecurringButtonVisibility) {
+            // ✅ Update recurring button visibility for mode change (DI-pure)
+            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
                 console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
-                    recurringCoreMobile.updateRecurringButtonVisibility();
+                    this.deps.recurringCore.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
             }
@@ -585,12 +586,11 @@ export class ModeManager {
             // ✅ Refresh task buttons to show/hide recurring button based on new mode
             this.refreshTaskButtonsForModeChange();
 
-            // ✅ Update recurring button visibility when switching to/from to-do mode
-            const recurringCoreToggle = this.deps.recurringCore || window.recurringCore;
-            if (recurringCoreToggle?.updateRecurringButtonVisibility) {
+            // ✅ Update recurring button visibility when switching to/from to-do mode (DI-pure)
+            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
                 console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
                 setTimeout(() => {
-                    recurringCoreToggle.updateRecurringButtonVisibility();
+                    this.deps.recurringCore.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100); // Small delay to ensure DOM updates complete
             }
@@ -623,8 +623,8 @@ export class ModeManager {
     }
 }
 
-// Phase 3 - No window.* exports (main script handles exposure)
-console.log('🎯 ModeManager module loaded (Phase 3 - no window.* exports)');
+// DI-pure module (no window.* fallbacks for dependencies)
+console.log('🎯 ModeManager module loaded (DI-pure, no window.* exports)');
 
 /**
  * Initialize and configure the mode manager
