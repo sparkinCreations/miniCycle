@@ -1,5 +1,5 @@
 /**
- * 🎮 miniCycle Task Events
+ * 🎮 miniCycle Task Events (DI-Pure)
  * Handles all task event interactions (clicks, hover, focus, buttons)
  *
  * Pattern: Simple Instance 🎯
@@ -10,8 +10,22 @@
  * @module modules/task/taskEvents
  */
 
-// Module-level deps for late injection
-let _deps = {};
+// Module-level deps for late injection (DI-pure, no window.* fallbacks)
+let _deps = {
+    AppState: null,
+    taskCore: null,
+    showNotification: null,
+    autoSave: null,
+    enableUndoSystemOnFirstInteraction: null,
+    checkMiniCycle: null,
+    triggerLogoBackground: null,
+    showTaskOptions: null,
+    hideTaskOptions: null,
+    TaskOptionsVisibilityController: null,
+    setupDueDateButtonInteraction: null,
+    attachKeyboardTaskOptionToggle: null,
+    AppMeta: null
+};
 
 /**
  * Set dependencies for TaskEvents (call before init)
@@ -24,42 +38,50 @@ export function setTaskEventsDependencies(dependencies) {
 
 export class TaskEvents {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
-
-        // Store dependencies (no window.* fallbacks in constructor - use deferred lookup)
-        this.deps = {
-            // Core modules (deferred lookup in methods)
-            AppState: mergedDeps.AppState,
-            taskCore: mergedDeps.taskCore,
-
-            // UI update functions
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            autoSave: mergedDeps.autoSave || this.fallbackAutoSave,
-
-            // Task interaction functions (deferred lookup in methods)
-            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction,
-            checkMiniCycle: mergedDeps.checkMiniCycle,
-            triggerLogoBackground: mergedDeps.triggerLogoBackground,
-            showTaskOptions: mergedDeps.showTaskOptions,
-            hideTaskOptions: mergedDeps.hideTaskOptions,
-            TaskOptionsVisibilityController: mergedDeps.TaskOptionsVisibilityController,
-            setupDueDateButtonInteraction: mergedDeps.setupDueDateButtonInteraction,
-            attachKeyboardTaskOptionToggle: mergedDeps.attachKeyboardTaskOptionToggle,
-
-            // DOM helpers
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener
+        // Store constructor-only deps (these don't change after construction)
+        this._constructorDeps = {
+            // DOM helpers with defaults
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener
         };
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version;
 
         // Track if event delegation is initialized
         this._eventDelegationInitialized = false;
 
         console.log('🎮 TaskEvents created');
+    }
+
+    /**
+     * Getter for dependencies - always reads from current module-level _deps
+     * This allows late injection via setTaskEventsDependencies() to work
+     */
+    get deps() {
+        return {
+            // Core modules (read from _deps at access time, not construction time)
+            AppState: _deps.AppState,
+            taskCore: _deps.taskCore,
+
+            // UI update functions
+            showNotification: _deps.showNotification || this.fallbackNotification,
+            autoSave: _deps.autoSave || this.fallbackAutoSave,
+
+            // Task interaction functions
+            enableUndoSystemOnFirstInteraction: _deps.enableUndoSystemOnFirstInteraction,
+            checkMiniCycle: _deps.checkMiniCycle,
+            triggerLogoBackground: _deps.triggerLogoBackground,
+            showTaskOptions: _deps.showTaskOptions,
+            hideTaskOptions: _deps.hideTaskOptions,
+            TaskOptionsVisibilityController: _deps.TaskOptionsVisibilityController,
+            setupDueDateButtonInteraction: _deps.setupDueDateButtonInteraction,
+            attachKeyboardTaskOptionToggle: _deps.attachKeyboardTaskOptionToggle,
+
+            // DOM helpers (from constructor)
+            ...this._constructorDeps
+        };
     }
 
     /**
@@ -112,10 +134,9 @@ export class TaskEvents {
 
             console.log('🟢 Task delegation: Processing task click (will toggle checkbox)');
 
-            // ✅ Enable undo system on first user interaction (deferred lookup)
-            const enableUndoSystemOnFirstInteraction = this.deps.enableUndoSystemOnFirstInteraction || window.enableUndoSystemOnFirstInteraction;
-            if (typeof enableUndoSystemOnFirstInteraction === 'function') {
-                enableUndoSystemOnFirstInteraction();
+            // ✅ Enable undo system on first user interaction (DI-pure)
+            if (typeof this.deps.enableUndoSystemOnFirstInteraction === 'function') {
+                this.deps.enableUndoSystemOnFirstInteraction();
             }
 
             // Toggle checkbox
@@ -123,19 +144,17 @@ export class TaskEvents {
             checkbox.dispatchEvent(new Event("change"));
             checkbox.setAttribute("aria-checked", checkbox.checked);
 
-            // Trigger mini cycle check (deferred lookup)
-            const checkMiniCycle = this.deps.checkMiniCycle || window.checkMiniCycle;
-            if (typeof checkMiniCycle === 'function') {
-                checkMiniCycle();
+            // Trigger mini cycle check (DI-pure)
+            if (typeof this.deps.checkMiniCycle === 'function') {
+                this.deps.checkMiniCycle();
             }
 
             // Auto-save
             this.deps.autoSave?.();
 
-            // Logo background animation (deferred lookup)
-            const triggerLogoBackground = this.deps.triggerLogoBackground || window.triggerLogoBackground;
-            if (typeof triggerLogoBackground === 'function') {
-                triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
+            // Logo background animation (DI-pure)
+            if (typeof this.deps.triggerLogoBackground === 'function') {
+                this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
             }
         });
 
@@ -179,30 +198,28 @@ export class TaskEvents {
             return;
         }
 
-        // Deferred lookup for taskCore
-        const taskCore = this.deps.taskCore || window.taskCore;
-
+        // DI-pure: use injected taskCore
         if (button.classList.contains("edit-btn")) {
-            if (taskCore) {
-                taskCore.editTask(taskItem);
+            if (this.deps.taskCore) {
+                this.deps.taskCore.editTask(taskItem);
             } else {
-                console.warn('⚠️ TaskCore not available, edit operation skipped');
+                console.warn('⚠️ TaskCore not injected, edit operation skipped');
                 this.deps.showNotification?.('Edit feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("delete-btn")) {
-            if (taskCore) {
-                taskCore.deleteTask(taskItem);
+            if (this.deps.taskCore) {
+                this.deps.taskCore.deleteTask(taskItem);
             } else {
-                console.warn('⚠️ TaskCore not available, delete operation skipped');
+                console.warn('⚠️ TaskCore not injected, delete operation skipped');
                 this.deps.showNotification?.('Delete feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("priority-btn")) {
-            if (taskCore) {
-                taskCore.toggleTaskPriority(taskItem);
+            if (this.deps.taskCore) {
+                this.deps.taskCore.toggleTaskPriority(taskItem);
             } else {
-                console.warn('⚠️ TaskCore not available, priority toggle skipped');
+                console.warn('⚠️ TaskCore not injected, priority toggle skipped');
                 this.deps.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
@@ -217,9 +234,9 @@ export class TaskEvents {
      * @param {boolean} enableHover - Whether to enable hover
      */
     toggleHoverTaskOptions(enableHover) {
-        // Deferred lookup for showTaskOptions/hideTaskOptions
-        const showTaskOptions = this.deps.showTaskOptions || window.showTaskOptions;
-        const hideTaskOptions = this.deps.hideTaskOptions || window.hideTaskOptions;
+        // DI-pure: use injected showTaskOptions/hideTaskOptions
+        const showTaskOptions = this.deps.showTaskOptions;
+        const hideTaskOptions = this.deps.hideTaskOptions;
 
         this.deps.querySelectorAll(".task").forEach(taskItem => {
             if (enableHover) {
@@ -261,8 +278,8 @@ export class TaskEvents {
             willToggle: isCurrentlyVisible ? 'OFF' : 'ON'
         });
 
-        // Deferred lookup for TaskOptionsVisibilityController
-        const controller = this.deps.TaskOptionsVisibilityController || window.TaskOptionsVisibilityController;
+        // DI-pure: use injected TaskOptionsVisibilityController
+        const controller = this.deps.TaskOptionsVisibilityController;
 
         // 🧹 Hide all other task option menus FIRST
         let hiddenCount = 0;
@@ -341,10 +358,9 @@ export class TaskEvents {
         // Setup focus interactions
         this.setupTaskFocusInteractions(taskItem);
 
-        // Setup due date button interaction (from dueDates module) (deferred lookup)
-        const setupDueDateButtonInteraction = this.deps.setupDueDateButtonInteraction || window.setupDueDateButtonInteraction;
-        if (typeof setupDueDateButtonInteraction === 'function') {
-            setupDueDateButtonInteraction(buttonContainer, dueDateInput);
+        // Setup due date button interaction (DI-pure)
+        if (typeof this.deps.setupDueDateButtonInteraction === 'function') {
+            this.deps.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
         }
     }
 
@@ -386,12 +402,10 @@ export class TaskEvents {
     setupTaskHoverInteractions(taskItem, settings) {
         const threeDotsEnabled = settings.showThreeDots || false;
         if (!threeDotsEnabled) {
-            // Deferred lookup for showTaskOptions/hideTaskOptions
-            const showTaskOptions = this.deps.showTaskOptions || window.showTaskOptions;
-            const hideTaskOptions = this.deps.hideTaskOptions || window.hideTaskOptions;
-            if (typeof showTaskOptions === 'function' && typeof hideTaskOptions === 'function') {
-                taskItem.addEventListener("mouseenter", showTaskOptions);
-                taskItem.addEventListener("mouseleave", hideTaskOptions);
+            // DI-pure: use injected showTaskOptions/hideTaskOptions
+            if (typeof this.deps.showTaskOptions === 'function' && typeof this.deps.hideTaskOptions === 'function') {
+                taskItem.addEventListener("mouseenter", this.deps.showTaskOptions);
+                taskItem.addEventListener("mouseleave", this.deps.hideTaskOptions);
             }
         }
     }
@@ -403,18 +417,17 @@ export class TaskEvents {
     setupTaskFocusInteractions(taskItem) {
         const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
 
-        // Deferred lookup for TaskOptionsVisibilityController
-        const controller = this.deps.TaskOptionsVisibilityController || window.TaskOptionsVisibilityController;
+        // DI-pure: use injected TaskOptionsVisibilityController
+        const controller = this.deps.TaskOptionsVisibilityController;
 
         addListener(taskItem, "focus", () => {
             // ✅ Use centralized controller (handles mode checking automatically)
             controller?.show(taskItem, 'focusin');
         });
 
-        // Keyboard task option toggle (handles focusin/focusout with better bubbling) (deferred lookup)
-        const attachKeyboardTaskOptionToggle = this.deps.attachKeyboardTaskOptionToggle || window.attachKeyboardTaskOptionToggle;
-        if (typeof attachKeyboardTaskOptionToggle === 'function') {
-            attachKeyboardTaskOptionToggle(taskItem);
+        // Keyboard task option toggle (DI-pure)
+        if (typeof this.deps.attachKeyboardTaskOptionToggle === 'function') {
+            this.deps.attachKeyboardTaskOptionToggle(taskItem);
         }
     }
 }
@@ -446,55 +459,47 @@ export function initTaskEvents(dependencies = {}) {
 }
 
 // ============================================
-// Wrapper Functions
-// Note: Uses window.taskEvents as fallback for cross-module instance access
+// Wrapper Functions (DI-pure, no window.* fallbacks)
 // ============================================
 
 function handleTaskButtonClick(event) {
-    const events = taskEvents || window.taskEvents;
-    if (!events) {
+    if (!taskEvents) {
         console.warn('⚠️ TaskEvents not initialized');
         return;
     }
-    return events.handleTaskButtonClick(event);
+    return taskEvents.handleTaskButtonClick(event);
 }
 
 function toggleHoverTaskOptions(enableHover) {
-    const events = taskEvents || window.taskEvents;
-    if (!events) return;
-    events.toggleHoverTaskOptions(enableHover);
+    if (!taskEvents) return;
+    taskEvents.toggleHoverTaskOptions(enableHover);
 }
 
 function revealTaskButtons(taskItem, caller = 'three-dots-button') {
-    const events = taskEvents || window.taskEvents;
-    if (!events) return;
-    events.revealTaskButtons(taskItem, caller);
+    if (!taskEvents) return;
+    taskEvents.revealTaskButtons(taskItem, caller);
 }
 
 function syncRecurringStateToDOM(taskEl, recurringSettings) {
-    const events = taskEvents || window.taskEvents;
-    if (!events) return;
-    events.syncRecurringStateToDOM(taskEl, recurringSettings);
+    if (!taskEvents) return;
+    taskEvents.syncRecurringStateToDOM(taskEl, recurringSettings);
 }
 
 function setupTaskInteractions(taskElements, taskContext) {
-    const events = taskEvents || window.taskEvents;
-    if (!events) return;
-    events.setupTaskInteractions(taskElements, taskContext);
+    if (!taskEvents) return;
+    taskEvents.setupTaskInteractions(taskElements, taskContext);
 }
 
 function setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput) {
-    const events = taskEvents || window.taskEvents;
-    if (!events) return;
-    events.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
+    if (!taskEvents) return;
+    taskEvents.setupTaskClickInteraction(taskItem, checkbox, buttonContainer, dueDateInput);
 }
 
 // ============================================
 // Exports
 // ============================================
 
-// Phase 2 Step 10 - Clean exports (no window.* pollution)
-console.log('🎮 TaskEvents module loaded (Phase 2 - no window.* exports)');
+console.log('🎮 TaskEvents module loaded (DI-pure, no window.* exports)');
 
 // ES6 exports
 export {

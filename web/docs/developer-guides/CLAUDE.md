@@ -168,6 +168,7 @@ window.AppState.update(state => {
 1. **Assuming it's a todo app** - It's a routine manager. Tasks persist and cycle.
 2. **Adding features without understanding the vision** - Check if it serves routine management.
 3. **Proposing architecture changes without reading existing docs** - We've tried namespace consolidation already.
+4. **Capturing deps at construction time** - When using late injection with `set*Dependencies()`, use a getter for `this.deps` so values resolve at access time, not construction time. See [DI_PATTERNS.md](./DI_PATTERNS.md#lesson-learned-instance-getter-pattern).
 
 ---
 
@@ -238,7 +239,8 @@ See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full
 
 - **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
 - **Architecture**: [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)
-- **DI-pure patterns**: [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md)
+- **DI patterns & pitfalls**: [DI_PATTERNS.md](./DI_PATTERNS.md)
+- **DI-pure example**: [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md)
 - **Future plans**: [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)
 - **Version management**: [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)
 - **All docs**: [README.md](../README.md)

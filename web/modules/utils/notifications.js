@@ -462,28 +462,13 @@ export class MiniCycleNotifications {
   async resetPosition() {
     console.log("🔄 Resetting notification position (Schema 2.5 only)...");
 
-    // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
-
-    // ✅ Check if AppState is available (DI-pure)
-    if (!this.deps.AppState?.update) {
-      console.warn('⚠️ AppState not available for resetPosition');
-      return;
-    }
-
-    // ✅ Mark as not modified so setDefaultPosition will save the calculated default
-    this.deps.AppState.update((state) => {
-      if (!state.settings) {
-        console.error('❌ Invalid state structure');
-        throw new Error('Invalid state structure');
-      }
-      state.settings.notificationPositionModified = false;
-    }, true); // Immediate save
-
     // Apply the calculated default position (top-right, below logo)
+    // setDefaultPosition handles waitForCore + saves position with modified=false
     const container = document.getElementById("notification-container");
     if (container) {
       await this.setDefaultPosition(container);
+    } else {
+      console.warn('⚠️ Notification container not found for resetPosition');
     }
 
     console.log("✅ Notification position reset completed (Schema 2.5)");
@@ -537,9 +522,8 @@ restoreNotificationPosition(notificationContainer) {
  * 📍 Set smart default notification position
  */
 async setDefaultPosition(notificationContainer) {
-    // Get viewport dimensions
+    // Get viewport width for responsive positioning
     const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
 
     // Smart positioning: top-right, below logo
     let defaultX, defaultY;
@@ -842,6 +826,11 @@ async setDefaultPosition(notificationContainer) {
     // ✅ FIX #2: Watch for notification removal and cleanup listeners
     const cleanup = () => {
       console.log('🧹 Cleaning up notification listeners');
+      // Clear any pending throttled save
+      if (pendingSave) {
+        clearTimeout(pendingSave);
+        pendingSave = null;
+      }
       cleanupFunctions.forEach(fn => fn());
       this._activeListeners.delete(notificationContainer);
     };

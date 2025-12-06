@@ -1,13 +1,31 @@
 /**
  * ==========================================
- * 🔌 BASIC PLUGIN SYSTEM FOR MINICYCLE
+ * 🔌 BASIC PLUGIN SYSTEM FOR MINICYCLE (DI-Pure)
  * ==========================================
- * 
+ *
  * A lightweight plugin architecture that works with your existing modular structure.
  * This provides the foundation for extending miniCycle functionality.
- * 
- * @author miniCycle Development Team
+ *
+ * @module basicPluginSystem
  */
+
+// Module-level dependencies (DI-pure, no window.* fallbacks)
+let _deps = {
+    appInit: null,
+    showNotification: null,
+    getTaskList: null,
+    getCurrentCycle: null,
+    AppState: null
+};
+
+/**
+ * Set dependencies for BasicPluginSystem module
+ * @param {Object} dependencies - Injected dependencies
+ */
+export function setBasicPluginSystemDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔌 BasicPluginSystem dependencies set:', Object.keys(dependencies));
+}
 
 /**
  * Simple Event Bus for Plugin Communication
@@ -48,10 +66,11 @@ class EventBus {
 }
 
 /**
- * Base Plugin Class
+ * Base Plugin Class (DI-Pure)
  *
  * Integrated with AppInit for proper initialization timing.
  * All plugins automatically wait for core systems before loading.
+ * Uses module-level _deps for dependency access.
  */
 class MiniCyclePlugin {
     constructor(name, version = '1.0.0') {
@@ -61,15 +80,20 @@ class MiniCyclePlugin {
         this.initialized = false;
     }
 
+    // Getter for accessing module-level deps
+    get deps() {
+        return _deps;
+    }
+
     /**
      * Wait for core systems to be ready (AppState + cycle data)
      * Plugins should call this before accessing AppState or cycle data
      */
     async waitForCore() {
-        if (window.appInit) {
-            await window.appInit.waitForCore();
+        if (this.deps.appInit) {
+            await this.deps.appInit.waitForCore();
         } else {
-            console.warn(`⚠️ AppInit not available for plugin ${this.name}, may load before dependencies ready`);
+            console.warn(`⚠️ AppInit not injected for plugin ${this.name}, may load before dependencies ready`);
         }
     }
 
@@ -77,10 +101,10 @@ class MiniCyclePlugin {
      * Wait for full miniCycle app to be ready (all modules initialized)
      */
     async waitForApp() {
-        if (window.appInit) {
-            await window.appInit.waitForApp();
+        if (this.deps.appInit) {
+            await this.deps.appInit.waitForApp();
         } else {
-            console.warn(`⚠️ AppInit not available for plugin ${this.name}`);
+            console.warn(`⚠️ AppInit not injected for plugin ${this.name}`);
         }
     }
 
@@ -102,20 +126,37 @@ class MiniCyclePlugin {
     onCycleCompleted(cycle) {}
     onCycleReset(cycle) {}
 
-    // Helper methods for plugins
+    // Helper methods for plugins (DI-pure)
     addNotification(message, type = 'info') {
-        if (window.showNotification) {
-            window.showNotification(message, type);
+        if (this.deps.showNotification) {
+            this.deps.showNotification(message, type);
+        } else {
+            console.log(`[Plugin ${this.name}] ${type}: ${message}`);
         }
     }
 
     getCurrentTasks() {
-        return window.taskList || [];
+        if (typeof this.deps.getTaskList === 'function') {
+            return this.deps.getTaskList();
+        }
+        // Fallback: try to get from AppState if available
+        if (this.deps.AppState?.get) {
+            const state = this.deps.AppState.get();
+            const activeCycleId = state?.appState?.activeCycleId;
+            return state?.data?.cycles?.[activeCycleId]?.tasks || [];
+        }
+        return [];
     }
 
     getCurrentCycle() {
-        if (window.getCurrentCycle) {
-            return window.getCurrentCycle();
+        if (typeof this.deps.getCurrentCycle === 'function') {
+            return this.deps.getCurrentCycle();
+        }
+        // Fallback: try to get from AppState if available
+        if (this.deps.AppState?.get) {
+            const state = this.deps.AppState.get();
+            const activeCycleId = state?.appState?.activeCycleId;
+            return state?.data?.cycles?.[activeCycleId] || null;
         }
         return null;
     }
@@ -277,14 +318,13 @@ class PluginManager {
 }
 
 // ===========================================
-// 🌐 GLOBAL INITIALIZATION
+// 🌐 MODULE INITIALIZATION (DI-Pure)
 // ===========================================
 
 // Create plugin manager instance
 const pluginManager = new PluginManager();
 
-// Phase 2 Step 7 - Clean exports (no window.* pollution)
-console.log('🔌 Basic Plugin System loaded (Phase 2 - no window.* exports)');
+console.log('🔌 Basic Plugin System loaded (DI-pure, no window.* exports)');
 
 // Export for module use
 export { PluginManager, MiniCyclePlugin, EventBus, pluginManager };

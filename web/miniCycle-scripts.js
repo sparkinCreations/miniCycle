@@ -1641,6 +1641,21 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 updateCompletedTasksCount: () => window.updateCompletedTasksCount?.()
             });
 
+            // ✅ Inject taskCore into taskEvents immediately (can't wait for afterApp hook)
+            // Using lazy getters so timing doesn't matter
+            const { setTaskEventsDependencies } = await import(withV('./modules/task/taskEvents.js'));
+            setTaskEventsDependencies({
+                get taskCore() { return taskCore; },  // Direct reference, not window
+                enableUndoSystemOnFirstInteraction: () => window.enableUndoSystemOnFirstInteraction?.(),
+                checkMiniCycle: () => window.checkMiniCycle?.(),
+                triggerLogoBackground: (type, dur) => window.triggerLogoBackground?.(type, dur),
+                showTaskOptions: (e) => window.showTaskOptions?.(e),
+                hideTaskOptions: (e) => window.hideTaskOptions?.(e),
+                get TaskOptionsVisibilityController() { return window.TaskOptionsVisibilityController; },
+                setupDueDateButtonInteraction: (btn, input) => window.setupDueDateButtonInteraction?.(btn, input),
+                attachKeyboardTaskOptionToggle: (taskItem) => window.attachKeyboardTaskOptionToggle?.(taskItem)
+            });
+
             console.log('✅ Task core module initialized (Phase 3)');
         } catch (error) {
             console.error('❌ Failed to initialize task core module:', error);
@@ -1703,6 +1718,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
+
+        // ============================================
+        // 🪝 AFTERAPP HOOKS (for future late DI wiring)
+        // ============================================
+        // Note: taskEvents deps are wired immediately after taskCore creation
+        // (can't wait for afterApp - user may interact before then)
+        // Add other late DI wiring hooks here if needed.
 
         await appInit.markAppReady();
 
