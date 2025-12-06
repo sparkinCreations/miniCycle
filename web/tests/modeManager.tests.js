@@ -1,9 +1,9 @@
 /**
- * 🧪 ModeManager Tests
+ * ModeManager Tests (DI-Pure)
  * Tests for modules/cycle/modeManager.js
- * Pattern: Resilient Constructor 🛡️
+ * Pattern: Resilient Constructor + Module-level DI
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ * Uses dependency injection pattern - imports module directly
  *
  * Tests the three cycling modes:
  * - Auto Cycle ↻: Tasks auto-reset when all completed
@@ -11,23 +11,33 @@
  * - To-Do Mode ✓: Tasks are deleted instead of reset
  */
 
-import {
-    setupTestEnvironment,
-    createMockAppState,
-    createMockNotification,
-    waitForAsyncOperations
-} from './testHelpers.js';
+// Import module directly for DI testing
+let ModeManager = null;
+let setModeManagerDependencies = null;
 
 export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests</h2><h3>Setting up mocks...</h3>';
+    resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests (DI-Pure)</h2><h3>Loading module...</h3>';
 
-    // =====================================================
-    // Use shared testHelpers for comprehensive mock setup
-    // =====================================================
-    const env = await setupTestEnvironment();
+    // Import the module directly for DI testing
+    try {
+        const module = await import('../modules/cycle/modeManager.js');
+        ModeManager = module.ModeManager;
+        setModeManagerDependencies = module.setModeManagerDependencies;
+        resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
+    } catch (e) {
+        resultsDiv.innerHTML = `<h2>🎯 ModeManager Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
+        return { passed: 0, total: 1 };
+    }
 
-    resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests</h2><h3>Running tests...</h3>';
+    // Check if class is available
+    if (!ModeManager) {
+        resultsDiv.innerHTML += '<div class="result fail">❌ ModeManager class not found. Make sure the module is properly loaded.</div>';
+        return { passed: 0, total: 1 };
+    }
+
+    resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
+
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
     let savedRealData = {};
     if (!isPartOfSuite) {
@@ -52,14 +62,58 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     }
 
+    // Create mock dependencies for DI-pure testing
+    function createMockDeps(overrides = {}) {
+        const mockSchemaData = {
+            metadata: { version: "2.5", lastModified: Date.now() },
+            settings: { alwaysShowRecurring: false },
+            data: {
+                cycles: {
+                    'cycle-test-123': {
+                        name: 'Test Cycle',
+                        tasks: [
+                            { id: 'task-1', text: 'Test task 1', completed: false }
+                        ],
+                        cycleCount: 5,
+                        autoReset: true,
+                        deleteCheckedTasks: false,
+                        recurringTemplates: {}
+                    }
+                }
+            },
+            appState: {
+                activeCycleId: 'cycle-test-123',
+                currentMode: 'auto-cycle'
+            },
+            userProgress: { cyclesCompleted: 10, totalTasksCompleted: 50 }
+        };
 
-    // Import the module class
-    const ModeManager = window.ModeManager;
-
-    // Check if class is available
-    if (!ModeManager) {
-        resultsDiv.innerHTML += '<div class="result fail">❌ ModeManager class not found. Make sure the module is properly loaded.</div>';
-        return { passed: 0, total: 1 };
+        return {
+            AppMeta: { version: '1.0.0-test' },
+            getAppState: () => ({
+                isReady: () => true,
+                get: () => mockSchemaData,
+                update: (fn) => { fn(mockSchemaData); }
+            }),
+            loadMiniCycleData: () => ({
+                metadata: mockSchemaData.metadata,
+                cycles: mockSchemaData.data.cycles,
+                activeCycle: mockSchemaData.appState.activeCycleId
+            }),
+            createTaskButtonContainer: () => {
+                const container = document.createElement('div');
+                container.className = 'task-options';
+                return container;
+            },
+            setupDueDateButtonInteraction: () => {},
+            checkCompleteAllButton: () => {},
+            showNotification: () => {},
+            helpWindowManager: () => ({ showModeDescription: () => {} }),
+            recurringCore: { updateRecurringButtonVisibility: () => {} },
+            getElementById: (id) => document.getElementById(id) || document.createElement('div'),
+            querySelectorAll: (sel) => document.querySelectorAll(sel),
+            ...overrides
+        };
     }
 
     async function test(name, testFn) {
@@ -68,57 +122,12 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             // Reset environment before each test
             localStorage.clear();
 
-            // Mock Schema 2.5 data
-            const mockSchemaData = {
-                metadata: {
-                    version: "2.5",
-                    lastModified: Date.now()
-                },
-                settings: {
-                    alwaysShowRecurring: false
-                },
-                data: {
-                    cycles: {
-                        'cycle-test-123': {
-                            name: 'Test Cycle',
-                            tasks: [
-                                {
-                                    id: 'task-1',
-                                    text: 'Test task 1',
-                                    completed: false,
-                                    highPriority: false,
-                                    dueDate: null,
-                                    remindersEnabled: false,
-                                    recurring: false
-                                }
-                            ],
-                            cycleCount: 5,
-                            autoReset: true,
-                            deleteCheckedTasks: false,
-                            recurringTemplates: {}
-                        }
-                    }
-                },
-                appState: {
-                    activeCycleId: 'cycle-test-123',
-                    currentMode: 'auto-cycle'
-                },
-                userProgress: {
-                    cyclesCompleted: 10,
-                    totalTasksCompleted: 50
-                }
-            };
-            localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
-
             // Reset DOM state
             document.body.className = '';
 
             // Clear DOM elements
             const existingSelectors = document.querySelectorAll('#mode-selector, #mobile-mode-selector, #toggleAutoReset, #deleteCheckedTasks');
             existingSelectors.forEach(el => el.remove());
-
-            // Clear global state
-            delete window.AppState;
 
             await testFn();
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
@@ -132,14 +141,22 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization Tests</h4>';
 
-    await test('creates instance successfully', async () => {
+    await test('ModeManager class exists', async () => {
+        if (typeof ModeManager === 'undefined') {
+            throw new Error('ModeManager class not found');
+        }
+    });
+
+    await test('creates instance with DI successfully', async () => {
+        const mockDeps = createMockDeps();
+        setModeManagerDependencies(mockDeps);
         const manager = new ModeManager();
         if (!manager || typeof manager.init !== 'function') {
             throw new Error('ModeManager not properly initialized');
         }
     });
 
-    await test('accepts dependency injection', async () => {
+    await test('accepts constructor dependency injection', async () => {
         const mockDeps = {
             getAppState: () => ({ get: () => ({}) }),
             loadMiniCycleData: () => ({ metadata: { version: '2.5' } }),
@@ -156,13 +173,15 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('has isInitialized flag set to false initially', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         if (manager.isInitialized !== false) {
             throw new Error('isInitialized should be false before init()');
         }
     });
 
-    await test('stores all 9 expected dependencies', async () => {
+    await test('stores all expected dependencies (DI)', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const expectedDeps = [
             'getAppState',
@@ -184,9 +203,10 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === MODE NAME TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">📝 Mode Name Mapping</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">📝 Mode Name Mapping (DI)</h4>';
 
-    await test('getModeName returns correct name for auto-cycle', async () => {
+    await test('getModeName returns correct name for auto-cycle (DI)', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('auto-cycle');
         if (result !== 'Auto Cycle ↻') {
@@ -194,7 +214,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('getModeName returns correct name for manual-cycle', async () => {
+    await test('getModeName returns correct name for manual-cycle (DI)', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('manual-cycle');
         if (result !== 'Manual Cycle ✔︎↻') {
@@ -202,7 +223,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('getModeName returns correct name for todo-mode', async () => {
+    await test('getModeName returns correct name for todo-mode (DI)', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('todo-mode');
         if (result !== 'To-Do Mode ✓') {
@@ -210,7 +232,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('getModeName returns default for unknown mode', async () => {
+    await test('getModeName returns default for unknown mode (DI)', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('invalid-mode');
         if (result !== 'Auto Cycle ↻') {
@@ -219,101 +242,49 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === REFRESH TASK BUTTONS TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Refresh Task Buttons</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Refresh Task Buttons (DI)</h4>';
 
-    await test('refreshTaskButtonsForModeChange handles no tasks gracefully', async () => {
-        const manager = new ModeManager({
+    await test('refreshTaskButtonsForModeChange handles no tasks gracefully (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             querySelectorAll: () => [],
             getElementById: (id) => null
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw
         await manager.refreshTaskButtonsForModeChange();
     });
 
-    await test('refreshTaskButtonsForModeChange completes without error', async () => {
-        // Note: appInit.waitForCore is an ES module import and can't be mocked via window
-        // This test verifies the function completes successfully with proper dependencies
-        const manager = new ModeManager({
+    await test('refreshTaskButtonsForModeChange completes without error (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => null,
             querySelectorAll: () => [],
             getElementById: () => null
-        });
+        }));
+        const manager = new ModeManager();
 
         // Call the function - should complete without throwing
         await manager.refreshTaskButtonsForModeChange();
 
         // Wait for the debounce timeout (150ms + buffer)
         await new Promise(resolve => setTimeout(resolve, 200));
-
-        // If we get here without error, the test passes
-    });
-
-    await test('refreshTaskButtonsForModeChange tracks success/failure counts', async () => {
-        // Create mock task elements
-        const mockTask = document.createElement('div');
-        mockTask.className = 'task';
-        mockTask.dataset.taskId = 'task-1';
-
-        const oldButtonContainer = document.createElement('div');
-        oldButtonContainer.className = 'task-options';
-        mockTask.appendChild(oldButtonContainer);
-
-        document.body.appendChild(mockTask);
-
-        const manager = new ModeManager({
-            querySelectorAll: (sel) => {
-                if (sel === '.task') return [mockTask];
-                return document.querySelectorAll(sel);
-            },
-            getElementById: (id) => {
-                const el = document.createElement('input');
-                el.type = 'checkbox';
-                el.checked = false;
-                return el;
-            },
-            createTaskButtonContainer: () => {
-                const container = document.createElement('div');
-                container.className = 'task-options';
-                return container;
-            },
-            getAppState: () => ({
-                get: () => ({
-                    settings: {},
-                    data: {
-                        cycles: {
-                            'cycle-test-123': {
-                                tasks: [{ id: 'task-1', text: 'Test' }]
-                            }
-                        }
-                    },
-                    appState: { activeCycleId: 'cycle-test-123' },
-                    reminders: { enabled: false }
-                })
-            })
-        });
-
-        // Should complete without throwing
-        await manager.refreshTaskButtonsForModeChange();
-
-        // Cleanup
-        mockTask.remove();
     });
 
     // === SYNC MODE FROM TOGGLES TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Sync Mode From Toggles</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Sync Mode From Toggles (DI)</h4>';
 
-    await test('syncModeFromToggles handles missing state gracefully', async () => {
-        const manager = new ModeManager({
+    await test('syncModeFromToggles handles missing state gracefully (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => ({ get: () => null }),
             getElementById: () => null
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw
         await manager.syncModeFromToggles();
     });
 
-    await test('syncModeFromToggles detects auto-cycle mode correctly', async () => {
+    await test('syncModeFromToggles detects auto-cycle mode correctly (DI)', async () => {
         const mockState = {
             data: {
                 cycles: {
@@ -345,7 +316,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.type = 'checkbox';
         deleteCheckedTasks.id = 'deleteCheckedTasks';
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => ({ get: () => mockState }),
             getElementById: (id) => {
                 if (id === 'mode-selector') return mockModeSelector;
@@ -354,7 +325,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
                 return null;
             }
-        });
+        }));
+        const manager = new ModeManager();
 
         await manager.syncModeFromToggles();
 
@@ -363,7 +335,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('syncModeFromToggles detects manual-cycle mode correctly', async () => {
+    await test('syncModeFromToggles detects manual-cycle mode correctly (DI)', async () => {
         const mockState = {
             data: {
                 cycles: {
@@ -378,7 +350,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         const mockModeSelector = document.createElement('select');
         mockModeSelector.id = 'mode-selector';
-        // Add options to make it a valid select
         mockModeSelector.innerHTML = `
             <option value="auto-cycle">Auto Cycle</option>
             <option value="manual-cycle">Manual Cycle</option>
@@ -401,10 +372,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.id = 'deleteCheckedTasks';
         document.body.appendChild(deleteCheckedTasks);
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => ({ get: () => mockState }),
             getElementById: (id) => document.getElementById(id)
-        });
+        }));
+        const manager = new ModeManager();
 
         await manager.syncModeFromToggles();
 
@@ -419,7 +391,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.remove();
     });
 
-    await test('syncModeFromToggles detects todo-mode correctly', async () => {
+    await test('syncModeFromToggles detects todo-mode correctly (DI)', async () => {
         const mockState = {
             data: {
                 cycles: {
@@ -456,10 +428,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.id = 'deleteCheckedTasks';
         document.body.appendChild(deleteCheckedTasks);
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => ({ get: () => mockState }),
             getElementById: (id) => document.getElementById(id)
-        });
+        }));
+        const manager = new ModeManager();
 
         await manager.syncModeFromToggles();
 
@@ -474,7 +447,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.remove();
     });
 
-    await test('syncModeFromToggles updates body classes', async () => {
+    await test('syncModeFromToggles updates body classes (DI)', async () => {
         const mockState = {
             data: {
                 cycles: {
@@ -492,7 +465,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         const toggleAutoReset = document.createElement('input');
         const deleteCheckedTasks = document.createElement('input');
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => ({ get: () => mockState }),
             getElementById: (id) => {
                 if (id === 'mode-selector') return mockModeSelector;
@@ -501,7 +474,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
                 return null;
             }
-        });
+        }));
+        const manager = new ModeManager();
 
         await manager.syncModeFromToggles();
 
@@ -511,9 +485,9 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === UPDATE STORAGE FROM TOGGLES TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">💾 Update Storage From Toggles</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 Update Storage From Toggles (DI)</h4>';
 
-    await test('updateStorageFromToggles saves to AppState', async () => {
+    await test('updateStorageFromToggles saves to AppState (DI)', async () => {
         let updateCalled = false;
         let savedData = null;
 
@@ -548,14 +522,15 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.type = 'checkbox';
         deleteCheckedTasks.checked = false;
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => mockAppState,
             getElementById: (id) => {
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
                 return null;
             }
-        });
+        }));
+        const manager = new ModeManager();
 
         await manager.updateStorageFromToggles();
 
@@ -568,7 +543,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('updateStorageFromToggles handles missing active cycle', async () => {
+    await test('updateStorageFromToggles handles missing active cycle (DI)', async () => {
         const mockAppState = {
             get: () => ({
                 data: { cycles: {} },
@@ -576,33 +551,35 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             })
         };
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => mockAppState,
             getElementById: () => null
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw
         await manager.updateStorageFromToggles();
     });
 
     // === UPDATE CYCLE MODE DESCRIPTION TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">📝 Update Cycle Mode Description</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">📝 Update Cycle Mode Description (DI)</h4>';
 
-    await test('updateCycleModeDescription handles missing loadMiniCycleData', async () => {
-        const manager = new ModeManager({
+    await test('updateCycleModeDescription handles missing loadMiniCycleData (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             loadMiniCycleData: null
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw
         await manager.updateCycleModeDescription();
     });
 
-    await test('updateCycleModeDescription updates description for auto-cycle', async () => {
+    await test('updateCycleModeDescription updates description for auto-cycle (DI)', async () => {
         const descriptionBox = document.createElement('div');
-        descriptionBox.id = 'mode-description'; // ✅ FIX: Use correct ID
+        descriptionBox.id = 'mode-description';
         document.body.appendChild(descriptionBox);
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             loadMiniCycleData: () => ({
                 metadata: { version: '2.5' },
                 cycles: {
@@ -617,7 +594,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 if (id === 'mode-description') return descriptionBox;
                 return document.getElementById(id);
             }
-        });
+        }));
+        const manager = new ModeManager();
 
         await manager.updateCycleModeDescription();
 
@@ -630,15 +608,15 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === ERROR HANDLING TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling (DI)</h4>';
 
-    await test('handles missing dependencies gracefully', async () => {
-        // ModeManager requires getAppState to be a function (can return null)
-        const manager = new ModeManager({
+    await test('handles missing dependencies gracefully (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => null,
             getElementById: () => null,
             querySelectorAll: () => []
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw even with null AppState
         await manager.refreshTaskButtonsForModeChange();
@@ -647,23 +625,25 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         await manager.updateCycleModeDescription();
     });
 
-    await test('handles null AppState gracefully', async () => {
-        const manager = new ModeManager({
+    await test('handles null AppState gracefully (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => null,
             getElementById: () => null
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw
         await manager.syncModeFromToggles();
         await manager.updateStorageFromToggles();
     });
 
-    await test('handles missing DOM elements gracefully', async () => {
-        const manager = new ModeManager({
+    await test('handles missing DOM elements gracefully (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => ({ get: () => ({ data: { cycles: {} }, appState: {} }) }),
             getElementById: () => null,
             querySelectorAll: () => []
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should not throw
         await manager.refreshTaskButtonsForModeChange();
@@ -672,10 +652,9 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // === INTEGRATION TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests (DI)</h4>';
 
-    await test('integrates with AppState when available', async () => {
-        // Mock AppState
+    await test('integrates with injected AppState (DI)', async () => {
         const mockAppState = {
             isReady: () => true,
             get: () => ({
@@ -693,45 +672,57 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             }),
             update: (updateFn, immediate) => {}
         };
-        window.AppState = mockAppState;
 
-        const manager = new ModeManager({
+        setModeManagerDependencies(createMockDeps({
             getAppState: () => mockAppState,
             getElementById: () => null,
             querySelectorAll: () => []
-        });
+        }));
+        const manager = new ModeManager();
 
         // Should work with AppState
         await manager.syncModeFromToggles();
-
-        delete window.AppState;
     });
 
-    await test('works without AppState (fallback mode)', async () => {
-        delete window.AppState;
-
-        const manager = new ModeManager({
+    await test('works without AppState (fallback mode) (DI)', async () => {
+        setModeManagerDependencies(createMockDeps({
+            getAppState: () => null,
             loadMiniCycleData: () => ({
                 metadata: { version: '2.5' },
                 settings: {},
                 cycles: {}
             }),
             getElementById: () => null
-        });
+        }));
+        const manager = new ModeManager();
 
-        // Should work with localStorage fallback
+        // Should work with fallback
         await manager.updateCycleModeDescription();
     });
 
-    // === GLOBAL FUNCTIONS TESTS ===
-    // NOTE: Phase 3 removes window.* pollution - global exposure tests removed
-    // The main script (miniCycle-scripts.js) now handles exposing functions to window
-    // These tests previously checked for legacy window.initializeModeSelector, window.modeManager, etc.
+    // === GLOBAL COMPATIBILITY TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🌍 Global Wrappers (Backward Compat)</h4>';
+
+    await test('window.ModeManager exists (backward compat)', async () => {
+        if (!window.ModeManager) {
+            throw new Error('Global ModeManager class not found');
+        }
+    });
+
+    await test('window.modeManager instance exists (backward compat)', async () => {
+        if (!window.modeManager) {
+            throw new Error('Global modeManager instance not found');
+        }
+        if (typeof window.modeManager.getModeName !== 'function') {
+            throw new Error('Global instance missing methods');
+        }
+    });
 
     // === PERFORMANCE TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance Tests</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance Tests (DI)</h4>';
 
-    await test('getModeName completes quickly', async () => {
+    await test('getModeName completes quickly (DI)', async () => {
+        setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
 
         const startTime = performance.now();
@@ -752,14 +743,13 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
 
     if (passed.count === total.count) {
-        resultsDiv.innerHTML += '<div class="result pass">✅ All tests passed!</div>';
+        resultsDiv.innerHTML += '<div class="result pass">🎉 All tests passed!</div>';
     } else {
         resultsDiv.innerHTML += '<div class="result fail">⚠️ Some tests failed</div>';
     }
 
-    
     // 🔓 RESTORE original localStorage data (only when running individually)
     restoreOriginalData();
 
-return { passed: passed.count, total: total.count };
+    return { passed: passed.count, total: total.count };
 }

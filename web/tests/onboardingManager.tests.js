@@ -1,13 +1,52 @@
 /**
- * OnboardingManager Browser Tests
+ * OnboardingManager Browser Tests (DI-Pure)
  * Test functions for module-test-suite.html
+ *
+ * Uses dependency injection pattern - no reliance on window.* globals
  */
 
-export function runOnboardingManagerTests(resultsDiv) {
-    resultsDiv.innerHTML = '<h2>🎓 OnboardingManager Tests</h2><h3>Running tests...</h3>';
+// Import the module and its DI setter
+let OnboardingManager = null;
+let setOnboardingManagerDependencies = null;
+let onboardingManagerInstance = null;
+
+export async function runOnboardingManagerTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎓 OnboardingManager Tests (DI-Pure)</h2><h3>Loading module...</h3>';
+
+    // Import the module directly for DI testing
+    try {
+        const module = await import('../modules/ui/onboardingManager.js');
+        OnboardingManager = module.default;
+        setOnboardingManagerDependencies = module.setOnboardingManagerDependencies;
+        onboardingManagerInstance = module.onboardingManager;
+        resultsDiv.innerHTML = '<h2>🎓 OnboardingManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
+    } catch (e) {
+        resultsDiv.innerHTML = `<h2>🎓 OnboardingManager Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
+        return { passed: 0, total: 1 };
+    }
 
     let passed = { count: 0 };
     let total = { count: 0 };
+
+    // Create mock dependencies for DI-pure testing
+    function createMockDeps(overrides = {}) {
+        const mockState = {
+            settings: { onboardingCompleted: false, theme: 'default' }
+        };
+        return {
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { fn(mockState); return mockState; }
+            },
+            AppMeta: { version: '1.0.0-test' },
+            showNotification: () => {},
+            showCycleCreationModal: () => {},
+            completeInitialSetup: () => {},
+            safeAddEventListenerById: () => {},
+            ...overrides
+        };
+    }
 
     async function test(name, testFn) {
         total.count++;
@@ -53,19 +92,21 @@ export function runOnboardingManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
     test('OnboardingManager class exists', () => {
-        if (typeof window.OnboardingManager === 'undefined') {
+        if (typeof OnboardingManager === 'undefined') {
             throw new Error('OnboardingManager class not found');
         }
     });
 
-    test('creates instance successfully', () => {
-        const om = new window.OnboardingManager();
+    test('creates instance with DI successfully', () => {
+        const mockDeps = createMockDeps();
+        setOnboardingManagerDependencies(mockDeps);
+        const om = new OnboardingManager();
         if (!om || typeof om.showOnboarding !== 'function') {
             throw new Error('OnboardingManager not properly initialized');
         }
     });
 
-    test('has global instance', () => {
+    test('has global instance (backward compat)', () => {
         if (!window.onboardingManager) {
             throw new Error('Global onboardingManager instance not found');
         }
@@ -74,25 +115,29 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('has version property', () => {
-        const om = new window.OnboardingManager();
+    test('has version property via DI', () => {
+        const mockDeps = createMockDeps();
+        setOnboardingManagerDependencies(mockDeps);
+        const om = new OnboardingManager();
         if (!om.version) {
             throw new Error('Version property missing');
         }
-        if (typeof om.version !== 'string') {
-            throw new Error('Version should be a string');
+        if (om.version !== '1.0.0-test') {
+            throw new Error('Version should come from injected AppMeta');
         }
     });
 
-    // ===== APPSTATE INTEGRATION TESTS =====
+    // ===== APPSTATE INTEGRATION TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration (DI)</h4>';
 
-    test('shouldShowOnboarding handles AppState not ready', () => {
-        const om = new window.OnboardingManager();
-
-        // Clear AppState
-        delete window.AppState;
+    test('shouldShowOnboarding handles AppState not ready (DI)', () => {
+        // Inject deps with AppState that's not ready
+        setOnboardingManagerDependencies({
+            AppState: { isReady: () => false, get: () => null },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         // Should return false when AppState not ready
         const result = om.shouldShowOnboarding();
@@ -101,18 +146,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('shouldShowOnboarding reads from AppState', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState with onboarding not completed
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    onboardingCompleted: false
-                }
-            })
+    test('shouldShowOnboarding reads from injected AppState', () => {
+        const mockState = {
+            settings: { onboardingCompleted: false }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         const result = om.shouldShowOnboarding();
         if (result !== true) {
@@ -120,18 +165,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('shouldShowOnboarding returns false when already completed', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState with onboarding completed
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    onboardingCompleted: true
-                }
-            })
+    test('shouldShowOnboarding returns false when already completed (DI)', () => {
+        const mockState = {
+            settings: { onboardingCompleted: true }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         const result = om.shouldShowOnboarding();
         if (result !== false) {
@@ -139,25 +184,24 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('completeOnboarding updates AppState', () => {
-        const om = new window.OnboardingManager();
-
+    test('completeOnboarding updates AppState (DI)', () => {
         let updateCalled = false;
         const mockState = {
-            settings: {
-                onboardingCompleted: false
-            }
+            settings: { onboardingCompleted: false }
         };
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn, save) => {
-                updateCalled = true;
-                updateFn(mockState);
-            }
-        };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn, save) => {
+                    updateCalled = true;
+                    updateFn(mockState);
+                }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         // Create mock modal
         const modal = document.createElement('div');
@@ -173,28 +217,26 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('resetOnboarding clears flag in AppState', () => {
-        const om = new window.OnboardingManager();
-
+    test('resetOnboarding clears flag in AppState (DI)', () => {
         let updateCalled = false;
+        let notificationShown = false;
         const mockState = {
-            settings: {
-                onboardingCompleted: true
-            }
+            settings: { onboardingCompleted: true }
         };
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn, save) => {
-                updateCalled = true;
-                updateFn(mockState);
-            }
-        };
-
-        // Mock showNotification
-        window.showNotification = () => {};
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn, save) => {
+                    updateCalled = true;
+                    updateFn(mockState);
+                }
+            },
+            AppMeta: { version: '1.0.0' },
+            showNotification: () => { notificationShown = true; }
+        });
+        const om = new OnboardingManager();
 
         om.resetOnboarding();
 
@@ -206,17 +248,15 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('resetOnboarding handles AppState not ready', () => {
-        const om = new window.OnboardingManager();
-
-        // Clear AppState
-        delete window.AppState;
-
-        // Mock showNotification
+    test('resetOnboarding handles AppState not ready (DI)', () => {
         let notificationShown = false;
-        window.showNotification = () => {
-            notificationShown = true;
-        };
+
+        setOnboardingManagerDependencies({
+            AppState: { isReady: () => false, get: () => null },
+            AppMeta: { version: '1.0.0' },
+            showNotification: () => { notificationShown = true; }
+        });
+        const om = new OnboardingManager();
 
         // Should not throw
         om.resetOnboarding();
@@ -226,12 +266,13 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    // ===== DOM MANIPULATION TESTS =====
+    // ===== DOM MANIPULATION TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation (DI)</h4>';
 
-    test('createOnboardingModal creates modal with correct structure', () => {
-        const om = new window.OnboardingManager();
+    test('createOnboardingModal creates modal with correct structure (DI)', () => {
+        setOnboardingManagerDependencies(createMockDeps());
+        const om = new OnboardingManager();
 
         const modal = om.createOnboardingModal('default');
 
@@ -255,8 +296,9 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('createOnboardingModal applies theme correctly', () => {
-        const om = new window.OnboardingManager();
+    test('createOnboardingModal applies theme correctly (DI)', () => {
+        setOnboardingManagerDependencies(createMockDeps());
+        const om = new OnboardingManager();
 
         const modal = om.createOnboardingModal('ocean');
 
@@ -269,19 +311,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('showOnboarding creates modal in DOM', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    theme: 'default',
-                    onboardingCompleted: false
-                }
-            })
+    test('showOnboarding creates modal in DOM (DI)', () => {
+        const mockState = {
+            settings: { theme: 'default', onboardingCompleted: false }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -294,11 +335,12 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('showOnboarding handles AppState not ready', () => {
-        const om = new window.OnboardingManager();
-
-        // Clear AppState
-        delete window.AppState;
+    test('showOnboarding handles AppState not ready (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: { isReady: () => false, get: () => null },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         // Should not throw
         om.showOnboarding({}, null);
@@ -311,16 +353,15 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('showOnboarding handles missing settings object', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState with no settings
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                // Missing settings
-            })
-        };
+    test('showOnboarding handles missing settings object (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({}) // Missing settings
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         // Should not throw, should use default theme
         om.showOnboarding({}, null);
@@ -335,19 +376,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('modal contains 3 steps of content', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    theme: 'default',
-                    onboardingCompleted: false
-                }
-            })
+    test('modal contains 3 steps of content (DI)', () => {
+        const mockState = {
+            settings: { theme: 'default', onboardingCompleted: false }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -365,22 +405,22 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    // ===== MODAL CONTROLS TESTS =====
+    // ===== MODAL CONTROLS TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🎮 Modal Controls</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🎮 Modal Controls (DI)</h4>';
 
-    test('next button advances to step 2', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    theme: 'default'
-                }
-            })
+    test('next button advances to step 2 (DI)', () => {
+        const mockState = {
+            settings: { theme: 'default' }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -400,18 +440,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('prev button goes back to step 1', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    theme: 'default'
-                }
-            })
+    test('prev button goes back to step 1 (DI)', () => {
+        const mockState = {
+            settings: { theme: 'default' }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -435,18 +475,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('prev button hidden on first step', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    theme: 'default'
-                }
-            })
+    test('prev button hidden on first step (DI)', () => {
+        const mockState = {
+            settings: { theme: 'default' }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -461,18 +501,18 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('next button shows "Start" on last step', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    theme: 'default'
-                }
-            })
+    test('next button shows "Start" on last step (DI)', () => {
+        const mockState = {
+            settings: { theme: 'default' }
         };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -491,26 +531,24 @@ export function runOnboardingManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    test('skip button completes onboarding', () => {
-        const om = new window.OnboardingManager();
-
+    test('skip button completes onboarding (DI)', () => {
         let updateCalled = false;
         const mockState = {
-            settings: {
-                theme: 'default',
-                onboardingCompleted: false
-            }
+            settings: { theme: 'default', onboardingCompleted: false }
         };
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn) => {
-                updateCalled = true;
-                updateFn(mockState);
-            }
-        };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn) => {
+                    updateCalled = true;
+                    updateFn(mockState);
+                }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -528,26 +566,24 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('clicking outside modal completes onboarding', () => {
-        const om = new window.OnboardingManager();
-
+    test('clicking outside modal completes onboarding (DI)', () => {
         let updateCalled = false;
         const mockState = {
-            settings: {
-                theme: 'default',
-                onboardingCompleted: false
-            }
+            settings: { theme: 'default', onboardingCompleted: false }
         };
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn) => {
-                updateCalled = true;
-                updateFn(mockState);
-            }
-        };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn) => {
+                    updateCalled = true;
+                    updateFn(mockState);
+                }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         om.showOnboarding({}, null);
 
@@ -563,28 +599,23 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    // ===== FLOW INTEGRATION TESTS =====
+    // ===== FLOW INTEGRATION TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Flow Integration</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Flow Integration (DI)</h4>';
 
-    test('completeOnboarding calls showCycleCreationModal when no cycle', () => {
-        const om = new window.OnboardingManager();
-
+    test('completeOnboarding calls showCycleCreationModal when no cycle (DI)', async () => {
         let modalCalled = false;
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ settings: {} }),
-            update: (updateFn) => {
-                updateFn({ settings: {} });
-            }
-        };
-
-        // Mock showCycleCreationModal
-        window.showCycleCreationModal = () => {
-            modalCalled = true;
-        };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }),
+                update: (updateFn) => { updateFn({ settings: {} }); }
+            },
+            AppMeta: { version: '1.0.0' },
+            showCycleCreationModal: () => { modalCalled = true; }
+        });
+        const om = new OnboardingManager();
 
         const modal = document.createElement('div');
         modal.id = 'onboarding-modal';
@@ -593,31 +624,26 @@ export function runOnboardingManagerTests(resultsDiv) {
         om.completeOnboarding(modal, {}, null);
 
         // Wait for setTimeout
-        setTimeout(() => {
-            if (!modalCalled) {
-                throw new Error('showCycleCreationModal should be called when no active cycle');
-            }
-        }, 400);
+        await new Promise(resolve => setTimeout(resolve, 400));
+
+        if (!modalCalled) {
+            throw new Error('showCycleCreationModal should be called when no active cycle');
+        }
     });
 
-    test('completeOnboarding calls completeInitialSetup when has cycle', () => {
-        const om = new window.OnboardingManager();
-
+    test('completeOnboarding calls completeInitialSetup when has cycle (DI)', () => {
         let setupCalled = false;
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ settings: {} }),
-            update: (updateFn) => {
-                updateFn({ settings: {} });
-            }
-        };
-
-        // Mock completeInitialSetup
-        window.completeInitialSetup = () => {
-            setupCalled = true;
-        };
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }),
+                update: (updateFn) => { updateFn({ settings: {} }); }
+            },
+            AppMeta: { version: '1.0.0' },
+            completeInitialSetup: () => { setupCalled = true; }
+        });
+        const om = new OnboardingManager();
 
         const modal = document.createElement('div');
         modal.id = 'onboarding-modal';
@@ -632,17 +658,16 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('completeOnboarding removes modal from DOM', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ settings: {} }),
-            update: (updateFn) => {
-                updateFn({ settings: {} });
-            }
-        };
+    test('completeOnboarding removes modal from DOM (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }),
+                update: (updateFn) => { updateFn({ settings: {} }); }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         const modal = document.createElement('div');
         modal.id = 'onboarding-modal';
@@ -657,21 +682,17 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('completeOnboarding handles missing dependencies gracefully', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ settings: {} }),
-            update: (updateFn) => {
-                updateFn({ settings: {} });
-            }
-        };
-
-        // No showCycleCreationModal or completeInitialSetup available
-        delete window.showCycleCreationModal;
-        delete window.completeInitialSetup;
+    test('completeOnboarding handles missing dependencies gracefully (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }),
+                update: (updateFn) => { updateFn({ settings: {} }); }
+            },
+            AppMeta: { version: '1.0.0' }
+            // No showCycleCreationModal or completeInitialSetup
+        });
+        const om = new OnboardingManager();
 
         const modal = document.createElement('div');
         modal.id = 'onboarding-modal';
@@ -680,9 +701,9 @@ export function runOnboardingManagerTests(resultsDiv) {
         om.completeOnboarding(modal, {}, null);
     });
 
-    // ===== GLOBAL WRAPPERS TESTS =====
+    // ===== GLOBAL WRAPPER TESTS (Backward Compat) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (Backward Compat)</h4>';
 
     test('window.showOnboarding exists', () => {
         if (typeof window.showOnboarding !== 'function') {
@@ -718,14 +739,17 @@ export function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    // ===== ERROR HANDLING TESTS =====
+    // ===== ERROR HANDLING TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling (DI)</h4>';
 
-    test('handles null AppState gracefully', () => {
-        const om = new window.OnboardingManager();
-
-        window.AppState = null;
+    test('handles null AppState gracefully (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: null,
+            AppMeta: { version: '1.0.0' },
+            showNotification: () => {}
+        });
+        const om = new OnboardingManager();
 
         // Should not throw
         om.shouldShowOnboarding();
@@ -733,29 +757,30 @@ export function runOnboardingManagerTests(resultsDiv) {
         om.resetOnboarding();
     });
 
-    test('handles missing AppState.get gracefully', () => {
-        const om = new window.OnboardingManager();
-
-        window.AppState = {
-            isReady: () => true
-            // Missing get method
-        };
+    test('handles missing AppState.get gracefully (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true
+                // Missing get method
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         // Should not throw
         om.shouldShowOnboarding();
     });
 
-    test('handles null cycles and activeCycle', () => {
-        const om = new window.OnboardingManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ settings: {} }),
-            update: (updateFn) => {
-                updateFn({ settings: {} });
-            }
-        };
+    test('handles null cycles and activeCycle (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }),
+                update: (updateFn) => { updateFn({ settings: {} }); }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const om = new OnboardingManager();
 
         const modal = document.createElement('div');
 
@@ -764,22 +789,19 @@ export function runOnboardingManagerTests(resultsDiv) {
         om.completeOnboarding(modal, undefined, undefined);
     });
 
-    test('resetOnboarding handles missing showNotification', () => {
-        const om = new window.OnboardingManager();
+    test('resetOnboarding handles missing showNotification (DI)', () => {
+        setOnboardingManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }),
+                update: (updateFn) => { updateFn({ settings: {} }); }
+            },
+            AppMeta: { version: '1.0.0' }
+            // No showNotification - falls back to console
+        });
+        const om = new OnboardingManager();
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ settings: {} }),
-            update: (updateFn) => {
-                updateFn({ settings: {} });
-            }
-        };
-
-        // Clear showNotification
-        delete window.showNotification;
-
-        // Should not throw
+        // Should not throw (uses fallback notification)
         om.resetOnboarding();
     });
 

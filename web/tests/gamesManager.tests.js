@@ -1,13 +1,50 @@
 /**
- * GamesManager Browser Tests
+ * GamesManager Browser Tests (DI-Pure)
  * Test functions for module-test-suite.html
+ *
+ * Uses dependency injection pattern - no reliance on window.* globals
  */
 
-export function runGamesManagerTests(resultsDiv) {
-    resultsDiv.innerHTML = '<h2>🎮 GamesManager Tests</h2><h3>Running tests...</h3>';
+// Import the module and its DI setter
+let GamesManager = null;
+let setGamesManagerDependencies = null;
+let gamesManagerInstance = null;
+
+export async function runGamesManagerTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🎮 GamesManager Tests (DI-Pure)</h2><h3>Loading module...</h3>';
+
+    // Import the module directly for DI testing
+    try {
+        const module = await import('../modules/ui/gamesManager.js');
+        GamesManager = module.default;
+        setGamesManagerDependencies = module.setGamesManagerDependencies;
+        gamesManagerInstance = module.gamesManager;
+        resultsDiv.innerHTML = '<h2>🎮 GamesManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
+    } catch (e) {
+        resultsDiv.innerHTML = `<h2>🎮 GamesManager Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
+        return { passed: 0, total: 1 };
+    }
 
     let passed = { count: 0 };
     let total = { count: 0 };
+
+    // Create mock dependencies for DI-pure testing
+    function createMockDeps(overrides = {}) {
+        const mockState = {
+            settings: { unlockedFeatures: [] },
+            userProgress: { rewardMilestones: [] }
+        };
+        return {
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { fn(mockState); return mockState; }
+            },
+            AppMeta: { version: '1.0.0-test' },
+            safeAddEventListener: () => {},
+            ...overrides
+        };
+    }
 
     async function test(name, testFn) {
         total.count++;
@@ -47,19 +84,21 @@ export function runGamesManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
     test('GamesManager class exists', () => {
-        if (typeof window.GamesManager === 'undefined') {
+        if (typeof GamesManager === 'undefined') {
             throw new Error('GamesManager class not found');
         }
     });
 
-    test('creates instance successfully', () => {
-        const gm = new window.GamesManager();
+    test('creates instance with DI successfully', () => {
+        const mockDeps = createMockDeps();
+        setGamesManagerDependencies(mockDeps);
+        const gm = new GamesManager();
         if (!gm || typeof gm.checkGamesUnlock !== 'function') {
             throw new Error('GamesManager not properly initialized');
         }
     });
 
-    test('has global instance', () => {
+    test('has global instance (backward compat)', () => {
         if (!window.gamesManager) {
             throw new Error('Global gamesManager instance not found');
         }
@@ -68,79 +107,81 @@ export function runGamesManagerTests(resultsDiv) {
         }
     });
 
-    test('has version property', () => {
-        const gm = new window.GamesManager();
+    test('has version property via DI', () => {
+        const mockDeps = createMockDeps();
+        setGamesManagerDependencies(mockDeps);
+        const gm = new GamesManager();
         if (!gm.version) {
             throw new Error('Version property missing');
         }
-        if (typeof gm.version !== 'string') {
-            throw new Error('Version should be a string');
+        if (gm.version !== '1.0.0-test') {
+            throw new Error('Version should come from injected AppMeta');
         }
     });
 
-    // ===== APPSTATE INTEGRATION TESTS =====
+    // ===== APPSTATE INTEGRATION TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration (DI)</h4>';
 
-    test('checkGamesUnlock handles AppState not ready', () => {
-        const gm = new window.GamesManager();
-
-        // Clear AppState
-        delete window.AppState;
+    test('checkGamesUnlock handles AppState not ready (DI)', () => {
+        // Inject deps with AppState that's not ready
+        setGamesManagerDependencies({
+            AppState: { isReady: () => false, get: () => null },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw, just warn
         gm.checkGamesUnlock();
     });
 
-    test('checkGamesUnlock reads from AppState', () => {
-        const gm = new window.GamesManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    unlockedFeatures: ['task-order-game']
-                }
-            })
+    test('checkGamesUnlock reads from injected AppState', () => {
+        const mockState = {
+            settings: { unlockedFeatures: ['task-order-game'] }
         };
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw
         gm.checkGamesUnlock();
     });
 
-    test('unlockMiniGame handles AppState not ready', () => {
-        const gm = new window.GamesManager();
-
-        // Clear AppState
-        delete window.AppState;
+    test('unlockMiniGame handles AppState not ready (DI)', () => {
+        setGamesManagerDependencies({
+            AppState: { isReady: () => false, get: () => null },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw, just warn
         gm.unlockMiniGame();
     });
 
-    test('unlockMiniGame adds to unlockedFeatures', () => {
-        const gm = new window.GamesManager();
-
+    test('unlockMiniGame adds to unlockedFeatures (DI)', () => {
         let updateCalled = false;
         const mockState = {
-            settings: {
-                unlockedFeatures: []
-            },
-            userProgress: {
-                rewardMilestones: []
-            }
+            settings: { unlockedFeatures: [] },
+            userProgress: { rewardMilestones: [] }
         };
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn, save) => {
-                updateCalled = true;
-                updateFn(mockState);
-            }
-        };
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn, save) => {
+                    updateCalled = true;
+                    updateFn(mockState);
+                }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         gm.unlockMiniGame();
 
@@ -155,27 +196,22 @@ export function runGamesManagerTests(resultsDiv) {
         }
     });
 
-    test('unlockMiniGame does not duplicate if already unlocked', () => {
-        const gm = new window.GamesManager();
-
+    test('unlockMiniGame does not duplicate if already unlocked (DI)', () => {
         let updateCalled = false;
         const mockState = {
-            settings: {
-                unlockedFeatures: ['task-order-game']
-            },
-            userProgress: {
-                rewardMilestones: ['task-order-game-100']
-            }
+            settings: { unlockedFeatures: ['task-order-game'] },
+            userProgress: { rewardMilestones: ['task-order-game-100'] }
         };
 
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn, save) => {
-                updateCalled = true;
-            }
-        };
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn, save) => { updateCalled = true; }
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         gm.unlockMiniGame();
 
@@ -184,32 +220,30 @@ export function runGamesManagerTests(resultsDiv) {
         }
     });
 
-    // ===== DOM MANIPULATION TESTS =====
+    // ===== DOM MANIPULATION TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🎨 DOM Manipulation (DI)</h4>';
 
-    test('checkGamesUnlock shows menu when unlocked', () => {
-        const gm = new window.GamesManager();
-
+    test('checkGamesUnlock shows menu when unlocked (DI)', () => {
         // Create mock DOM element
         const mockElement = document.createElement('div');
         mockElement.id = 'games-menu-option';
         mockElement.style.display = 'none';
         document.body.appendChild(mockElement);
 
-        // Mock AppState with unlocked game
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    unlockedFeatures: ['task-order-game']
-                }
-            })
-        };
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: { unlockedFeatures: ['task-order-game'] } })
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         gm.checkGamesUnlock();
 
         if (mockElement.style.display !== 'block') {
+            document.body.removeChild(mockElement);
             throw new Error('Menu should be visible when unlocked');
         }
 
@@ -217,28 +251,26 @@ export function runGamesManagerTests(resultsDiv) {
         document.body.removeChild(mockElement);
     });
 
-    test('checkGamesUnlock hides menu when locked', () => {
-        const gm = new window.GamesManager();
-
+    test('checkGamesUnlock hides menu when locked (DI)', () => {
         // Create mock DOM element
         const mockElement = document.createElement('div');
         mockElement.id = 'games-menu-option';
         mockElement.style.display = 'block';
         document.body.appendChild(mockElement);
 
-        // Mock AppState with no unlocked games
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    unlockedFeatures: []
-                }
-            })
-        };
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: { unlockedFeatures: [] } })
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         gm.checkGamesUnlock();
 
         if (mockElement.style.display !== 'none') {
+            document.body.removeChild(mockElement);
             throw new Error('Menu should be hidden when locked');
         }
 
@@ -246,26 +278,23 @@ export function runGamesManagerTests(resultsDiv) {
         document.body.removeChild(mockElement);
     });
 
-    test('checkGamesUnlock handles missing DOM element', () => {
-        const gm = new window.GamesManager();
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    unlockedFeatures: ['task-order-game']
-                }
-            })
-        };
+    test('checkGamesUnlock handles missing DOM element (DI)', () => {
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: { unlockedFeatures: ['task-order-game'] } })
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw even if element doesn't exist
         gm.checkGamesUnlock();
     });
 
-    // ===== GLOBAL WRAPPER TESTS =====
+    // ===== GLOBAL WRAPPER TESTS (Backward Compat) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (Backward Compat)</h4>';
 
     test('window.checkGamesUnlock exists', () => {
         if (typeof window.checkGamesUnlock !== 'function') {
@@ -317,77 +346,73 @@ export function runGamesManagerTests(resultsDiv) {
         window.gamesManager.unlockMiniGame = originalMethod;
     });
 
-    // ===== ERROR HANDLING TESTS =====
+    // ===== ERROR HANDLING TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling (DI)</h4>';
 
-    test('handles null AppState gracefully', () => {
-        const gm = new window.GamesManager();
-
-        window.AppState = null;
+    test('handles null AppState gracefully (DI)', () => {
+        setGamesManagerDependencies({
+            AppState: null,
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw
         gm.checkGamesUnlock();
         gm.unlockMiniGame();
     });
 
-    test('handles missing settings object', () => {
-        const gm = new window.GamesManager();
-
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                // Missing settings
-            })
-        };
+    test('handles missing settings object (DI)', () => {
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({}) // Missing settings
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw
         gm.checkGamesUnlock();
     });
 
-    test('handles missing unlockedFeatures array', () => {
-        const gm = new window.GamesManager();
-
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                settings: {
-                    // Missing unlockedFeatures
-                }
-            })
-        };
+    test('handles missing unlockedFeatures array (DI)', () => {
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ settings: {} }) // Missing unlockedFeatures
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Should not throw and treat as empty array
         gm.checkGamesUnlock();
     });
 
-    // ===== UNLOCK FLOW TESTS =====
+    // ===== UNLOCK FLOW TESTS (DI-Pure) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🔓 Unlock Flow</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🔓 Unlock Flow (DI)</h4>';
 
-    test('unlockMiniGame calls checkGamesUnlock', () => {
-        const gm = new window.GamesManager();
+    test('unlockMiniGame calls checkGamesUnlock (DI)', () => {
+        const mockState = {
+            settings: { unlockedFeatures: [] },
+            userProgress: { rewardMilestones: [] }
+        };
+
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn) => updateFn(mockState)
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         let checkCalled = false;
         const originalCheck = gm.checkGamesUnlock;
-        gm.checkGamesUnlock = () => {
-            checkCalled = true;
-        };
-
-        const mockState = {
-            settings: {
-                unlockedFeatures: []
-            },
-            userProgress: {
-                rewardMilestones: []
-            }
-        };
-
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn) => updateFn(mockState)
-        };
+        gm.checkGamesUnlock = () => { checkCalled = true; };
 
         gm.unlockMiniGame();
 
@@ -399,9 +424,7 @@ export function runGamesManagerTests(resultsDiv) {
         gm.checkGamesUnlock = originalCheck;
     });
 
-    test('complete unlock flow updates UI', () => {
-        const gm = new window.GamesManager();
-
+    test('complete unlock flow updates UI (DI)', () => {
         // Create mock DOM element
         const mockElement = document.createElement('div');
         mockElement.id = 'games-menu-option';
@@ -409,25 +432,26 @@ export function runGamesManagerTests(resultsDiv) {
         document.body.appendChild(mockElement);
 
         const mockState = {
-            settings: {
-                unlockedFeatures: []
-            },
-            userProgress: {
-                rewardMilestones: []
-            }
+            settings: { unlockedFeatures: [] },
+            userProgress: { rewardMilestones: [] }
         };
 
-        window.AppState = {
-            isReady: () => true,
-            get: () => mockState,
-            update: (updateFn) => updateFn(mockState)
-        };
+        setGamesManagerDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => mockState,
+                update: (updateFn) => updateFn(mockState)
+            },
+            AppMeta: { version: '1.0.0' }
+        });
+        const gm = new GamesManager();
 
         // Unlock the game
         gm.unlockMiniGame();
 
         // UI should be updated (menu visible)
         if (mockElement.style.display !== 'block') {
+            document.body.removeChild(mockElement);
             throw new Error('Menu should be visible after unlock');
         }
 
