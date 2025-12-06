@@ -1,29 +1,68 @@
 /**
- * Welcome to miniCycle!
+ * ============================================================================
+ * MINI-CYCLE MAIN ENTRY POINT & APPLICATION ORCHESTRATOR
+ * ============================================================================
  *
- * Hi, I'm MJ, the developer of miniCycle. Thanks for exploring the code!
- * This file (miniCycle-scripts.js) serves as the main entry point for the miniCycle web app.
- * It manages the loading and initialization of all modules and utilities that power the app.
+ * Welcome to miniCycle! - MJ, Developer
+ * Website: https://sparkincreations.com | App: https://minicycleapp.com
  *
- * The codebase has evolved with both manual improvements and AI-assisted refactoring to enhance structure, readability, and maintainability.
- * If you're new here, start by reading the comments and following the initialization flow.
+ * ============================================================================
+ * WHY THIS FILE IS LARGE (~4,700 lines) - READ THIS FIRST
+ * ============================================================================
  *
- * Note: This file is intentionally comprehensive due to miniCycle's modular design.
- * I've included detailed comments throughout to clarify each section and its role.
- * If you have questions or suggestions, feel free to reach out!
+ * This file is the APPLICATION WIRING HUB and is INTENTIONALLY comprehensive.
+ * It should NOT be arbitrarily split - doing so creates circular dependencies.
  *
- * You can visit my website at https://sparkincreations.com
+ * WHAT THIS FILE DOES:
+ * --------------------
+ * 1. GLOBAL STATE SETUP (Lines 1-262)
+ *    - AppGlobalState, FeatureFlags, property getters
+ *    - Must exist before any module loads
  *
- * or the official miniCycle product page at https://minicycleapp.com
+ * 2. DEPENDENCY INJECTION WIRING (Lines 263-1850)
+ *    - Creates `deps` container for true DI
+ *    - Loads all modules with version cache-busting
+ *    - Wires dependencies between 44+ modules
+ *    - Phase 1 (Core) → Phase 2 (Features) → Phase 3 (UI)
+ *
+ * 3. RUNTIME FUNCTIONS (Lines 1851-4692)
+ *    - Core task operations (addTask, createTaskLabel, etc.)
+ *    - Settings management (saveToggleAutoReset - 758 lines)
+ *    - Progress tracking (updateProgressBar, checkMiniCycle, etc.)
+ *    - UI utilities and helpers
+ *
+ * WHY NOT SPLIT FURTHER:
+ * ----------------------
+ * - DI wiring MUST happen in one place to avoid circular deps
+ * - Functions share closure-scoped variables (deps, uiRefs)
+ * - Splitting creates more files without true decoupling
+ * - See: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
+ *
+ * EXTRACTION CANDIDATES (When Ready):
+ * ------------------------------------
+ * - saveToggleAutoReset (758 lines) → settingsManager.js
+ * - createTaskLabel (350 lines) → taskLabelManager.js
+ * - Completed Tasks section (214 lines) → completedTasksManager.js
+ * - Progress system (270 lines) → progressManager.js
+ *
+ * ARCHITECTURE DOCS:
+ * ------------------
+ * - Module patterns: docs/developer-guides/MODULE_SYSTEM_GUIDE.md
+ * - DI-pure modules: docs/developer-guides/TASKDOM_DI_GUIDE.md
+ * - Extraction plan: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
+ *
+ * ============================================================================
  */
 
 
 
 
 
-// 🌍 Global State: Because sometimes you need variables that survive the apocalypse of module imports
+// ============================================================================
+// SECTION 1: GLOBAL STATE SETUP (Lines ~60-262)
+// ============================================================================
 // This houses all the app's critical state that needs to be accessible everywhere.
-// Think of it as the app's memory bank, storing everything from drag states to undo history.
+// Must exist BEFORE any module loads - these are the foundation variables.
 
 // ✅ Phase C: Feature Flags for recurring system
 window.FeatureFlags = {
@@ -258,7 +297,12 @@ window.AppInit = null; // Will be replaced with appInit below
 
 
 
-//Main application initialization sequence
+// ============================================================================
+// SECTION 2: DEPENDENCY INJECTION WIRING HUB (Lines ~263-1850)
+// ============================================================================
+// Main application initialization sequence.
+// This section loads all modules and wires their dependencies together.
+// The `deps` container enables true DI - modules receive deps, not window.*
 
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
@@ -1840,14 +1884,26 @@ document.addEventListener("keydown", (e) => {
 });
 
 
-// ✅ Note: generateNotificationId and generateHashId are now in modules/utils/globalUtils.js
-// They are automatically available globally via window.generateNotificationId and window.generateHashId
+// ============================================================================
+// SECTION 3: RUNTIME FUNCTIONS (Lines ~1885-4692)
+// ============================================================================
+// Core task operations, settings management, progress tracking, and UI helpers.
+// These functions share closure-scoped variables with the DI wiring above.
+//
+// EXTRACTION CANDIDATES (42% of this section can be extracted when ready):
+// - saveToggleAutoReset (758 lines @ ~3934) → settingsManager.js
+// - createTaskLabel (350 lines @ ~3286) → taskLabelManager.js
+// - Completed Tasks (214 lines @ ~3636) → completedTasksManager.js
+// - Progress system (270 lines @ ~2684) → progressManager.js
+// See: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
+// ============================================================================
+
+// Note: generateNotificationId and generateHashId are in modules/utils/globalUtils.js
 
 /**
  * Detects the device type and applies the appropriate class to the body.
  * Determines if the device has touch capabilities or a fine pointer (mouse).
  */
-
 function detectDeviceType() {
     let hasTouchEvents = "ontouchstart" in window;
     let touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;

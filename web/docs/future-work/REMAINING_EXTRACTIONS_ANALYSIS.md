@@ -287,15 +287,35 @@ triggerLogoBackground()      - Line 3894 (~40 lines) - Simple animation
 
 ---
 
+## Code Organization (December 2025)
+
+The main script now has clear section markers for AI/human reviewers:
+
+```
+miniCycle-scripts.js Structure:
+├── Header comment explaining WHY file is large
+├── SECTION 1: Global State Setup (Lines ~60-262)
+│   └── FeatureFlags, AppGlobalState, property getters
+├── SECTION 2: DI Wiring Hub (Lines ~263-1850)
+│   └── Module loading, dependency injection, initialization phases
+└── SECTION 3: Runtime Functions (Lines ~1885-4692)
+    └── Task operations, settings, progress, UI helpers
+```
+
+**Future Target:** `modules/core/orchestrator.js` contains a scaffold for when
+Section 2 can be extracted (after Section 3 functions are modularized).
+
+---
+
 ## Notes
 
 - Line numbers shift as code changes - verify before extraction
-- The DI wiring section (1-1850) is expected to be large - don't extract
+- Section 2 (DI wiring) is expected to be large - don't extract until Section 3 is modularized
 - Test thoroughly after each extraction
 - Commit after each successful extraction
 - Update version number after major changes
 
 ---
 
-**Last Updated:** December 5, 2025
-**Version:** 3.0 (Complete reassessment with December 2025 codebase)
+**Last Updated:** December 6, 2025
+**Version:** 3.1 (Added section markers and orchestrator scaffold)
