@@ -13,6 +13,35 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level dependencies (DI-pure, no window.* fallbacks)
+let deps = {
+    AppState: null,
+    loadMiniCycleData: null,
+    showNotification: null,
+    showNotificationWithTip: null,
+    refreshUIFromState: null,
+    updateProgressBar: null,
+    FeatureFlags: null,
+    notifications: null,
+    isOverlayActive: null,
+    getDeferredRecurringSetup: null,  // For deferred setup queue
+    clearDeferredRecurringSetup: null, // For clearing the queue after processing
+    // Utilities for recurringCore and recurringPanel
+    GlobalUtils: null,
+    escapeHtml: null,
+    syncRecurringStateToDOM: null,
+    refreshTaskButtonsForModeChange: null
+};
+
+/**
+ * Set dependencies for RecurringIntegration module.
+ * @param {Object} dependencies - Injected dependencies
+ */
+export function setRecurringIntegrationDependencies(dependencies) {
+    deps = { ...deps, ...dependencies };
+    console.log('🎯 RecurringIntegration dependencies set:', Object.keys(dependencies));
+}
+
 /**
  * Initialize recurring task modules
  * Automatically waits for core systems (AppState + data) to be ready
@@ -50,36 +79,36 @@ export async function initializeRecurringModules(options = {}) {
         console.log('🔧 Configuring recurringCore dependencies...');
 
         recurringCore.setRecurringCoreDependencies({
-            // State management (required)
+            // State management (required) - DI-pure
             getAppState: () => {
-                if (!window.AppState) {
+                if (!deps.AppState) {
                     throw new Error('AppState not available');
                 }
-                return window.AppState.get();
+                return deps.AppState.get();
             },
             updateAppState: (updateFn, immediate = false) => {
-                if (!window.AppState) {
+                if (!deps.AppState) {
                     throw new Error('AppState not available');
                 }
-                return window.AppState.update(updateFn, immediate);
+                return deps.AppState.update(updateFn, immediate);
             },
             isAppStateReady: () => {
-                return window.AppState && window.AppState.isReady();
+                return deps.AppState && deps.AppState.isReady();
             },
 
             // Data operations (legacy - for backwards compatibility)
             loadData: () => {
-                if (typeof window.loadMiniCycleData !== 'function') {
+                if (typeof deps.loadMiniCycleData !== 'function') {
                     console.warn('⚠️ loadMiniCycleData not available');
                     return null;
                 }
-                return window.loadMiniCycleData();
+                return deps.loadMiniCycleData();
             },
 
-            // Notifications (required)
+            // Notifications (required) - DI-pure
             showNotification: (message, type, duration) => {
-                if (typeof window.showNotification === 'function') {
-                    return window.showNotification(message, type, duration);
+                if (typeof deps.showNotification === 'function') {
+                    return deps.showNotification(message, type, duration);
                 }
                 console.log(`[Notification] ${message}`);
             },
@@ -92,14 +121,14 @@ export async function initializeRecurringModules(options = {}) {
             updateRecurringSummary: null,      // Set later
             updatePanelButtonVisibility: null, // Set later
             refreshUIFromState: () => {
-                if (typeof window.refreshUIFromState === 'function') {
-                    return window.refreshUIFromState();
+                if (typeof deps.refreshUIFromState === 'function') {
+                    return deps.refreshUIFromState();
                 }
                 console.warn('⚠️ refreshUIFromState not available');
             },
             updateProgressBar: () => {
-                if (typeof window.updateProgressBar === 'function') {
-                    return window.updateProgressBar();
+                if (typeof deps.updateProgressBar === 'function') {
+                    return deps.updateProgressBar();
                 }
                 console.warn('⚠️ updateProgressBar not available');
             },
@@ -108,10 +137,15 @@ export async function initializeRecurringModules(options = {}) {
             now: () => Date.now(),
             setInterval: (fn, ms) => setInterval(fn, ms),
 
-            // Feature flags (required)
+            // Feature flags (required) - DI-pure
             isEnabled: () => {
-                return window.FeatureFlags?.recurringEnabled !== false;
-            }
+                return deps.FeatureFlags?.recurringEnabled !== false;
+            },
+
+            // Utilities (DI-pure)
+            GlobalUtils: deps.GlobalUtils,
+            notifications: deps.notifications,
+            showNotificationWithTip: deps.showNotificationWithTip
         });
 
         console.log('✅ recurringCore dependencies configured');
@@ -131,21 +165,22 @@ export async function initializeRecurringModules(options = {}) {
             formatNextOccurrence: recurringCore.formatNextOccurrence,
             calculateNextOccurrence: recurringCore.calculateNextOccurrence,
 
-            // State management
-            getAppState: () => window.AppState?.get(),
-            isAppStateReady: () => window.AppState?.isReady(),
-            loadData: () => window.loadMiniCycleData?.(),
+            // State management - DI-pure
+            getAppState: () => deps.AppState?.get(),
+            updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
+            isAppStateReady: () => deps.AppState?.isReady(),
+            loadData: () => deps.loadMiniCycleData?.(),
 
-            // UI dependencies
+            // UI dependencies - DI-pure
             showNotification: (message, type, duration) => {
-                if (typeof window.showNotification === 'function') {
-                    return window.showNotification(message, type, duration);
+                if (typeof deps.showNotification === 'function') {
+                    return deps.showNotification(message, type, duration);
                 }
                 console.log(`[Panel Notification] ${message}`);
             },
             showConfirmationModal: (options) => {
-                if (typeof window.notifications?.showConfirmationModal === 'function') {
-                    return window.notifications.showConfirmationModal(options);
+                if (typeof deps.notifications?.showConfirmationModal === 'function') {
+                    return deps.notifications.showConfirmationModal(options);
                 }
                 // Fallback to browser confirm
                 const confirmed = confirm(options.message);
@@ -155,13 +190,18 @@ export async function initializeRecurringModules(options = {}) {
             querySelector: (selector) => document.querySelector(selector),
             querySelectorAll: (selector) => document.querySelectorAll(selector),
 
-            // Advanced panel dependencies (optional)
+            // Advanced panel dependencies (optional) - DI-pure
             isOverlayActive: () => {
-                if (typeof window.isOverlayActive === 'function') {
-                    return window.isOverlayActive();
+                if (typeof deps.isOverlayActive === 'function') {
+                    return deps.isOverlayActive();
                 }
                 return false;
-            }
+            },
+
+            // Utilities - DI-pure
+            escapeHtml: deps.escapeHtml,
+            syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
+            refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange
         });
 
         console.log('✅ RecurringPanelManager initialized');
@@ -253,11 +293,12 @@ export async function initializeRecurringModules(options = {}) {
         // STEP 8: Process deferred setups
         // ============================================
 
-        // If there were any deferred recurring setups, run them now
-        if (window._deferredRecurringSetup && window._deferredRecurringSetup.length > 0) {
-            console.log('📊 Processing', window._deferredRecurringSetup.length, 'deferred recurring setups');
-            window._deferredRecurringSetup.forEach(setupFn => setupFn());
-            delete window._deferredRecurringSetup;
+        // If there were any deferred recurring setups, run them now (DI-pure)
+        const deferredSetups = deps.getDeferredRecurringSetup?.() || [];
+        if (deferredSetups.length > 0) {
+            console.log('📊 Processing', deferredSetups.length, 'deferred recurring setups');
+            deferredSetups.forEach(setupFn => setupFn());
+            deps.clearDeferredRecurringSetup?.();
         }
 
         console.log('✅ Recurring modules initialized (Phase 3)');
@@ -274,9 +315,9 @@ export async function initializeRecurringModules(options = {}) {
     } catch (error) {
         console.error('❌ Failed to initialize recurring modules:', error);
 
-        // Show user-facing error
-        if (typeof window.showNotification === 'function') {
-            window.showNotification('Recurring feature initialization failed', 'error', 5000);
+        // Show user-facing error - DI-pure
+        if (typeof deps.showNotification === 'function') {
+            deps.showNotification('Recurring feature initialization failed', 'error', 5000);
         }
 
         throw error;
@@ -284,23 +325,24 @@ export async function initializeRecurringModules(options = {}) {
 }
 
 /**
- * Test function to verify recurring modules are working
- * Call this from browser console after initialization
+ * Test function to verify recurring modules are working (DI-pure)
+ * @param {Object} recurringModules - The modules object returned from initializeRecurringModules
+ * @returns {Object} Test results
  */
-export function testRecurringIntegration() {
-    console.log('🧪 Testing recurring integration...');
+export function testRecurringIntegration(recurringModules = null) {
+    console.log('🧪 Testing recurring integration (DI-pure)...');
 
     const tests = {
         appStateReady: false,
         coreLoaded: false,
         panelLoaded: false,
-        watcherActive: false,
-        globalFunctionsAvailable: false
+        coreAPIComplete: false,
+        panelAPIComplete: false
     };
 
-    // Test 1: AppState ready
+    // Test 1: AppState ready (via deps)
     try {
-        tests.appStateReady = window.AppState && window.AppState.isReady();
+        tests.appStateReady = deps.AppState && deps.AppState.isReady();
         console.log(tests.appStateReady ? '✅' : '❌', 'AppState ready:', tests.appStateReady);
     } catch (e) {
         console.log('❌ AppState check failed:', e.message);
@@ -308,7 +350,7 @@ export function testRecurringIntegration() {
 
     // Test 2: Core module loaded
     try {
-        tests.coreLoaded = window.recurringCore && typeof window.recurringCore.applyRecurringSettings === 'function';
+        tests.coreLoaded = recurringModules?.core && typeof recurringModules.core.applyRecurringToTaskSchema25 === 'function';
         console.log(tests.coreLoaded ? '✅' : '❌', 'Core module loaded:', tests.coreLoaded);
     } catch (e) {
         console.log('❌ Core module check failed:', e.message);
@@ -316,35 +358,43 @@ export function testRecurringIntegration() {
 
     // Test 3: Panel loaded
     try {
-        tests.panelLoaded = window.recurringPanel && typeof window.recurringPanel.updatePanel === 'function';
+        tests.panelLoaded = recurringModules?.panel && typeof recurringModules.panel.updateRecurringPanel === 'function';
         console.log(tests.panelLoaded ? '✅' : '❌', 'Panel module loaded:', tests.panelLoaded);
     } catch (e) {
         console.log('❌ Panel module check failed:', e.message);
     }
 
-    // Test 4: Watcher active
+    // Test 4: Core API complete
     try {
-        tests.watcherActive = typeof window.watchRecurringTasks === 'function';
-        console.log(tests.watcherActive ? '✅' : '❌', 'Watcher available:', tests.watcherActive);
+        const requiredCoreFunctions = [
+            'applyRecurringSettings',
+            'handleActivation',
+            'handleDeactivation',
+            'deleteTemplate',
+            'removeTasksFromCycle'
+        ];
+        tests.coreAPIComplete = recurringModules?.coreAPI &&
+            requiredCoreFunctions.every(fn => typeof recurringModules.coreAPI[fn] === 'function');
+        console.log(tests.coreAPIComplete ? '✅' : '❌', 'Core API complete:', tests.coreAPIComplete);
     } catch (e) {
-        console.log('❌ Watcher check failed:', e.message);
+        console.log('❌ Core API check failed:', e.message);
     }
 
-    // Test 5: Global functions
+    // Test 5: Panel API complete
     try {
-        const requiredFunctions = [
-            'applyRecurringToTaskSchema25',
-            'handleRecurringTaskActivation',
-            'handleRecurringTaskDeactivation',
-            'updateRecurringPanel',
-            'updateRecurringSummary',
-            'openRecurringSettingsPanelForTask'
+        const requiredPanelFunctions = [
+            'updatePanel',
+            'updateSummary',
+            'updateButtonVisibility',
+            'openPanel',
+            'closePanel',
+            'openForTask'
         ];
-
-        tests.globalFunctionsAvailable = requiredFunctions.every(fn => typeof window[fn] === 'function');
-        console.log(tests.globalFunctionsAvailable ? '✅' : '❌', 'Global functions available:', tests.globalFunctionsAvailable);
+        tests.panelAPIComplete = recurringModules?.panelAPI &&
+            requiredPanelFunctions.every(fn => typeof recurringModules.panelAPI[fn] === 'function');
+        console.log(tests.panelAPIComplete ? '✅' : '❌', 'Panel API complete:', tests.panelAPIComplete);
     } catch (e) {
-        console.log('❌ Global functions check failed:', e.message);
+        console.log('❌ Panel API check failed:', e.message);
     }
 
     // Summary
@@ -356,7 +406,6 @@ export function testRecurringIntegration() {
     return tests;
 }
 
-// Phase 3 - testRecurringIntegration exported via ES modules, not window
-// Main script can expose to window if needed
+// Phase 3 - testRecurringIntegration exported via ES modules, DI-pure
 
 console.log('🔗 Recurring integration module loaded (Phase 3)');

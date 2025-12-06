@@ -40,6 +40,8 @@ const Deps = {
 
     // Notifications
     showNotification: null,   // (msg, type, duration) => showNotification()
+    showNotificationWithTip: null, // (content, type, duration, tipKey) => showNotificationWithTip()
+    notifications: null,      // notifications module object
 
     // DOM operations
     querySelector: null,      // (selector) => document.querySelector(selector)
@@ -50,6 +52,9 @@ const Deps = {
     updatePanelButtonVisibility: null, // () => updateRecurringPanelButtonVisibility()
     refreshUIFromState: null,          // () => refreshUIFromState() - refresh DOM after data changes
     updateProgressBar: null,           // () => updateProgressBar() - update progress bar
+
+    // Utilities
+    GlobalUtils: null,        // GlobalUtils module (syncTaskDeleteWhenCompleteDOM, etc.)
 
     // Time/scheduling
     now: null,                // () => Date.now()
@@ -1604,10 +1609,10 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
         };
     }, true); // ✅ Immediate save to prevent data loss on quick refresh
 
-    // ✅ Sync DOM to reflect delete-on-complete state for recurring task
-    if (taskItem && window.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
+    // ✅ Sync DOM to reflect delete-on-complete state for recurring task (DI-pure)
+    if (taskItem && Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
         const currentMode = currentCycle?.deleteCheckedTasks ? 'todo' : 'cycle';
-        window.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+        Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
             taskItem,
             {
                 deleteWhenComplete: true,
@@ -1630,22 +1635,22 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
 
     console.log('📢 Attempting to show notification:', { frequency, pattern, assignedTaskId });
 
-    // Use notifications module if available
-    if (window.notifications?.createRecurringNotificationWithTip) {
+    // Use notifications module if available (DI-pure)
+    if (Deps.notifications?.createRecurringNotificationWithTip) {
         console.log('📝 Creating notification content...');
-        const notificationContent = window.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, task.text);
+        const notificationContent = Deps.notifications.createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, task.text);
         console.log('📝 Notification content created:', notificationContent.substring(0, 100) + '...');
 
         // Use showNotificationWithTip if available
-        if (window.showNotificationWithTip) {
+        if (Deps.showNotificationWithTip) {
             console.log('📤 Showing notification with tip...');
-            const notification = window.showNotificationWithTip(notificationContent, "recurring", 10000, 'recurring-cycle-explanation');
+            const notification = Deps.showNotificationWithTip(notificationContent, "recurring", 10000, 'recurring-cycle-explanation');
             console.log('📤 Notification result:', notification);
 
             // Initialize listeners if notification was created
-            if (notification && window.notifications.initializeRecurringNotificationListeners) {
+            if (notification && Deps.notifications.initializeRecurringNotificationListeners) {
                 console.log('🎧 Initializing notification listeners...');
-                window.notifications.initializeRecurringNotificationListeners(notification);
+                Deps.notifications.initializeRecurringNotificationListeners(notification);
             }
         } else {
             console.log('📤 Falling back to regular showNotification...');
@@ -1653,8 +1658,8 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
             assertInjected('showNotification', Deps.showNotification);
             const notification = Deps.showNotification(notificationContent, "recurring", 10000);
 
-            if (notification && window.notifications.initializeRecurringNotificationListeners) {
-                window.notifications.initializeRecurringNotificationListeners(notification);
+            if (notification && Deps.notifications.initializeRecurringNotificationListeners) {
+                Deps.notifications.initializeRecurringNotificationListeners(notification);
             }
         }
     } else {
@@ -1747,9 +1752,9 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
         taskItem.removeAttribute("data-recurring-settings");
         taskItem.classList.remove("recurring");
 
-        // ✅ Sync delete-on-complete DOM state
-        if (window.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
-            window.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
+        // ✅ Sync delete-on-complete DOM state (DI-pure)
+        if (Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
+            Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
                 taskItem,
                 {
                     deleteWhenComplete: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS[currentMode],

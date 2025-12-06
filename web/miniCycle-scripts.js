@@ -468,13 +468,25 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const consoleCaptureMod = await import(withV('./modules/utils/consoleCapture.js'));
     window.consoleCapture = consoleCaptureMod.default;
 
-    // ✅ Load Notifications
+    // ✅ Load Notifications (DI-pure)
     const notificationsMod = await import(withV('./modules/utils/notifications.js'));
+
+    // Set early dependencies (others set later when available)
+    notificationsMod.setNotificationsDependencies({
+        // These will be available later - use deferred getters
+        AppState: null, // Set after AppState is created
+        loadMiniCycleData: () => window.loadMiniCycleData?.(),
+        generateHashId: (...args) => window.generateHashId?.(...args),
+        GlobalUtils: window.GlobalUtils,
+        escapeHtml: (...args) => window.escapeHtml?.(...args)
+    });
+
     const notifications = new notificationsMod.MiniCycleNotifications();
 
     // Store in deps container - this is the canonical reference
     deps.utils.notifications = notifications;
     deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+    deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
 
     // Still expose to window for backward compat
     window.notifications = notifications;
@@ -771,6 +783,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Store in deps container for DI
     deps.core.AppState = window.AppState;
+
+    // ✅ Update notifications with AppState now that it's available
+    if (deps.utils.setNotificationsDependencies) {
+        deps.utils.setNotificationsDependencies({
+            AppState: window.AppState
+        });
+    }
 
     await window.AppState.init();
     console.log('✅ State module initialized successfully after data setup');
@@ -1076,17 +1095,37 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             console.warn('⚠️ App will continue without reminders functionality');
         }
 
-        // ✅ Initialize Recurring Modules (Phase 3 module - no window.* in module)
+        // ✅ Initialize Recurring Modules (Phase 3 module - DI-pure)
         console.log('🔄 Initializing recurring task modules...');
         try {
-            const { initializeRecurringModules, testRecurringIntegration } = await import(withV('./modules/recurring/recurringIntegration.js'));
+            const { initializeRecurringModules, setRecurringIntegrationDependencies, testRecurringIntegration } = await import(withV('./modules/recurring/recurringIntegration.js'));
+
+            // ✅ Set dependencies for DI-pure (before initialization)
+            setRecurringIntegrationDependencies({
+                AppState: window.AppState,
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                showNotification: (...args) => window.showNotification?.(...args),
+                showNotificationWithTip: (...args) => window.showNotificationWithTip?.(...args),
+                refreshUIFromState: () => window.refreshUIFromState?.(),
+                updateProgressBar: () => window.updateProgressBar?.(),
+                FeatureFlags: window.FeatureFlags,
+                notifications: window.notifications,
+                isOverlayActive: () => window.isOverlayActive?.(),
+                getDeferredRecurringSetup: () => window._deferredRecurringSetup || [],
+                clearDeferredRecurringSetup: () => { delete window._deferredRecurringSetup; },
+                // Utilities for recurringCore and recurringPanel
+                GlobalUtils: window.GlobalUtils,
+                escapeHtml: (...args) => window.escapeHtml?.(...args),
+                syncRecurringStateToDOM: (...args) => window.syncRecurringStateToDOM?.(...args),
+                refreshTaskButtonsForModeChange: () => window.refreshTaskButtonsForModeChange?.()
+            });
+
             const recurringModules = await initializeRecurringModules({ AppMeta: window.AppMeta });
 
             // Phase 3: Main script handles window.* exposure
             window._recurringModules = recurringModules;
             window.recurringCore = recurringModules.coreAPI;
             window.recurringPanel = recurringModules.panelAPI;
-            window.testRecurringIntegration = testRecurringIntegration;
             // Direct function exposure for backward compatibility
             window.openRecurringSettingsPanelForTask = (taskId) => recurringModules.panelAPI.openForTask(taskId);
             window.updateRecurringPanelButtonVisibility = () => recurringModules.panelAPI.updateButtonVisibility();
@@ -1101,20 +1140,31 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             deps.core.recurringModules = recurringModules;
             deps.core.removeRecurringTasksFromCycle = recurringModules.coreAPI.removeTasksFromCycle;
 
+            // ✅ Update notifications with recurring deps now that they're available
+            if (deps.utils.setNotificationsDependencies) {
+                deps.utils.setNotificationsDependencies({
+                    applyRecurringToTaskSchema25: (...args) => recurringModules.coreAPI.applyRecurringSettings(...args),
+                    updateRecurringPanel: () => recurringModules.panelAPI.updatePanel(),
+                    openRecurringSettingsPanelForTask: (taskId) => recurringModules.panelAPI.openForTask(taskId)
+                });
+            }
+
             console.log('✅ Recurring modules initialized (Phase 3)');
 
-            // Optional: Run integration test in development
+            // Optional: Run integration test in development (DI-pure - pass modules)
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 console.log('🧪 Running recurring integration test...');
                 setTimeout(() => {
-                    const results = testRecurringIntegration();
+                    const results = testRecurringIntegration(recurringModules);
                     if (Object.values(results).every(r => r === true)) {
                         console.log('✅ Recurring integration test PASSED:', results);
                     } else {
-                        console.log('ℹ️ Recurring integration test results (run window.testRecurringIntegration() to retest):', results);
+                        console.log('ℹ️ Recurring integration test results:', results);
                     }
                 }, 2000);
             }
+            // Expose test function with modules bound (for console testing)
+            window.testRecurringIntegration = () => testRecurringIntegration(recurringModules);
         } catch (error) {
             console.error('❌ Failed to initialize recurring modules:', error);
             if (typeof showNotification === 'function') {
@@ -1221,7 +1271,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
-                AppMeta: window.AppMeta
+                AppMeta: window.AppMeta,
+                // Undo system callbacks (DI-pure)
+                onCycleRenamed: (...args) => window.onCycleRenamed?.(...args),
+                onCycleDeleted: (...args) => window.onCycleDeleted?.(...args),
+                onCycleSwitched: (...args) => window.onCycleSwitched?.(...args)
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)

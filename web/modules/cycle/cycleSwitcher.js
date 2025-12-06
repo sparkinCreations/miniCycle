@@ -22,27 +22,34 @@ export class CycleSwitcher {
         // Merge module-level deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
 
-        // Store dependencies with module-level fallbacks and window.* for test compatibility
-        // Priority: constructor > module deps > window.* (for test compatibility)
+        // Store dependencies (DI-pure, no window.* fallbacks)
+        // Priority: constructor > module deps > graceful fallbacks
         this.deps = {
-            AppState: mergedDeps.AppState || window.AppState,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || window.loadMiniCycleData || (() => null),
-            showNotification: mergedDeps.showNotification || window.showNotification || this.fallbackNotification.bind(this),
-            hideMainMenu: mergedDeps.hideMainMenu || window.hideMainMenu || (() => {}),
-            showPromptModal: mergedDeps.showPromptModal || window.showPromptModal || this.fallbackPrompt.bind(this),
-            showConfirmationModal: mergedDeps.showConfirmationModal || window.showConfirmationModal || this.fallbackConfirm.bind(this),
-            sanitizeInput: mergedDeps.sanitizeInput || window.sanitizeInput || ((str) => str),
-            loadMiniCycle: mergedDeps.loadMiniCycle || window.loadMiniCycle || null,
-            updateProgressBar: mergedDeps.updateProgressBar || window.updateProgressBar || (() => {}),
-            updateStatsPanel: mergedDeps.updateStatsPanel || window.updateStatsPanel || (() => {}),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || window.checkCompleteAllButton || (() => {}),
-            updateReminderButtons: mergedDeps.updateReminderButtons || window.updateReminderButtons || (() => {}),
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || window.updateUndoRedoButtons || (() => {}),
-            initialSetup: mergedDeps.initialSetup || window.initialSetup || (() => {}),
+            AppState: mergedDeps.AppState || null,
+            loadMiniCycleData: mergedDeps.loadMiniCycleData || (() => null),
+            showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this),
+            hideMainMenu: mergedDeps.hideMainMenu || (() => {}),
+            showPromptModal: mergedDeps.showPromptModal || this.fallbackPrompt.bind(this),
+            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirm.bind(this),
+            sanitizeInput: mergedDeps.sanitizeInput || ((str) => str),
+            loadMiniCycle: mergedDeps.loadMiniCycle || null,
+            updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
+            updateStatsPanel: mergedDeps.updateStatsPanel || (() => {}),
+            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
+            updateReminderButtons: mergedDeps.updateReminderButtons || (() => {}),
+            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || (() => {}),
+            initialSetup: mergedDeps.initialSetup || (() => {}),
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            // Undo system callbacks (DI-pure)
+            onCycleRenamed: mergedDeps.onCycleRenamed || null,
+            onCycleDeleted: mergedDeps.onCycleDeleted || null,
+            onCycleSwitched: mergedDeps.onCycleSwitched || null
         };
+
+        // Instance state for temporary data (replaces window._tempRenameData)
+        this._tempRenameData = null;
 
         this.loadMiniCycleListTimeout = null;
         // Instance version - uses injected AppMeta (no hardcoded fallback)
@@ -218,18 +225,18 @@ export class CycleSwitcher {
 
                     console.log('💾 Rename saved through state system');
 
-                    // Store clean name for UI updates
-                    window._tempRenameData = { oldKey: cycleKey, newKey: cleanName, newName: cleanName };
+                    // Store clean name for UI updates (instance state, not window.*)
+                    this._tempRenameData = { oldKey: cycleKey, newKey: cleanName, newName: cleanName };
 
                 }, true); // immediate save
 
-                // ✅ Get the rename data for UI updates
-                const renameData = window._tempRenameData || {};
-                delete window._tempRenameData; // cleanup
+                // ✅ Get the rename data for UI updates (from instance state)
+                const renameData = this._tempRenameData || {};
+                this._tempRenameData = null; // cleanup
 
-                // ✅ Notify undo system of cycle rename
-                if (typeof window.onCycleRenamed === 'function') {
-                    window.onCycleRenamed(cycleKey, cleanName).catch(err => {
+                // ✅ Notify undo system of cycle rename (DI-pure)
+                if (typeof this.deps.onCycleRenamed === 'function') {
+                    this.deps.onCycleRenamed(cycleKey, cleanName).catch(err => {
                         console.warn('⚠️ Undo system cycle rename notification failed:', err);
                     });
                 }
@@ -349,9 +356,9 @@ export class CycleSwitcher {
 
                 console.log('💾 Deletion saved through state system');
 
-                // ✅ Notify undo system of cycle deletion
-                if (typeof window.onCycleDeleted === 'function') {
-                    window.onCycleDeleted(cycleKey).catch(err => {
+                // ✅ Notify undo system of cycle deletion (DI-pure)
+                if (typeof this.deps.onCycleDeleted === 'function') {
+                    this.deps.onCycleDeleted(cycleKey).catch(err => {
                         console.warn('⚠️ Undo system cycle deletion notification failed:', err);
                     });
                 }
@@ -475,9 +482,9 @@ export class CycleSwitcher {
 
         console.log(`✅ Switched to cycle (state-based): ${cycleKey}`);
 
-        // ✅ Notify undo system of cycle switch
-        if (typeof window.onCycleSwitched === 'function') {
-            window.onCycleSwitched(cycleKey).catch(err => {
+        // ✅ Notify undo system of cycle switch (DI-pure)
+        if (typeof this.deps.onCycleSwitched === 'function') {
+            this.deps.onCycleSwitched(cycleKey).catch(err => {
                 console.warn('⚠️ Undo context switch failed:', err);
             });
         }
@@ -724,56 +731,47 @@ export function initializeCycleSwitcher(dependencies) {
 }
 
 // ============================================
-// Wrapper Functions
-// Note: Uses window.cycleSwitcher as fallback for cross-module instance access
+// Wrapper Functions (DI-pure, no window.* fallbacks)
 // ============================================
 
 function switchMiniCycle() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.switchMiniCycle();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.switchMiniCycle();
 }
 
 function renameMiniCycle() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.renameMiniCycle();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.renameMiniCycle();
 }
 
 function deleteMiniCycle() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.deleteMiniCycle();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.deleteMiniCycle();
 }
 
 function hideSwitchMiniCycleModal() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.hideSwitchMiniCycleModal();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.hideSwitchMiniCycleModal();
 }
 
 function confirmMiniCycle() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.confirmMiniCycle();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.confirmMiniCycle();
 }
 
 function updatePreview(cycleName) {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.updatePreview(cycleName);
+    if (!cycleSwitcher) return;
+    cycleSwitcher.updatePreview(cycleName);
 }
 
 function loadMiniCycleList() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.loadMiniCycleList();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.loadMiniCycleList();
 }
 
 function setupModalClickOutside() {
-    const switcher = cycleSwitcher || window.cycleSwitcher;
-    if (!switcher) return;
-    switcher.setupModalClickOutside();
+    if (!cycleSwitcher) return;
+    cycleSwitcher.setupModalClickOutside();
 }
 
 // ============================================

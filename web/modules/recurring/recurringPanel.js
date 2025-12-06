@@ -33,7 +33,7 @@ export class RecurringPanelManager {
     constructor(dependencies = {}) {
         console.log('🎛️ Initializing RecurringPanelManager...');
 
-        // Store dependencies with intelligent fallbacks
+        // Store dependencies (DI-pure, no window.* fallbacks for state management)
         this.deps = {
             // From recurringCore module
             applyRecurringSettings: dependencies.applyRecurringSettings || this.fallbackApplySettings.bind(this),
@@ -43,11 +43,11 @@ export class RecurringPanelManager {
             formatNextOccurrence: dependencies.formatNextOccurrence || this.fallbackFormatNext.bind(this),
             calculateNextOccurrence: dependencies.calculateNextOccurrence || this.fallbackCalculateNext.bind(this),
 
-            // State management
-            getAppState: dependencies.getAppState || (() => window.AppState?.get()),
-            updateAppState: dependencies.updateAppState || ((updateFn) => window.AppState?.update(updateFn)),
-            isAppStateReady: dependencies.isAppStateReady || (() => window.AppState?.isReady()),
-            loadData: dependencies.loadData || (() => window.loadMiniCycleData?.()),
+            // State management (DI-pure, must be injected)
+            getAppState: dependencies.getAppState || null,
+            updateAppState: dependencies.updateAppState || null,
+            isAppStateReady: dependencies.isAppStateReady || null,
+            loadData: dependencies.loadData || null,
 
             // UI dependencies
             showNotification: dependencies.showNotification || this.fallbackNotification.bind(this),
@@ -57,7 +57,12 @@ export class RecurringPanelManager {
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
 
             // Advanced panel dependencies (optional)
-            isOverlayActive: dependencies.isOverlayActive || (() => false)
+            isOverlayActive: dependencies.isOverlayActive || (() => false),
+
+            // Utilities (optional)
+            escapeHtml: dependencies.escapeHtml || null,
+            syncRecurringStateToDOM: dependencies.syncRecurringStateToDOM || null,
+            refreshTaskButtonsForModeChange: dependencies.refreshTaskButtonsForModeChange || null
         };
 
         // Internal state
@@ -1104,10 +1109,10 @@ export class RecurringPanelManager {
                 settings.defaultRecurTime = new Date().toISOString();
             }
 
-            // Batch all updates in one AppState operation
+            // Batch all updates in one AppState operation (DI-pure)
             // ✅ CRITICAL: Await the update to ensure state is saved before re-rendering
-            if (window.AppState && window.AppState.update) {
-                await window.AppState.update(draft => {
+            if (this.deps.updateAppState) {
+                await this.deps.updateAppState(draft => {
                     // Save default recurring settings if requested
                     if (this.deps.getElementById("set-default-recurring")?.checked) {
                         if (!draft.settings) draft.settings = {};
@@ -1159,8 +1164,8 @@ export class RecurringPanelManager {
                 }, true); // ✅ Immediate save to prevent data loss on browser crash
             }
 
-            // Update DOM after state changes
-            if (window.syncRecurringStateToDOM) {
+            // Update DOM after state changes (DI-pure)
+            if (this.deps.syncRecurringStateToDOM) {
                 checkedEls.forEach(checkbox => {
                     const taskEl = checkbox.closest("[data-task-id]");
                     if (!taskEl) return;
@@ -1174,7 +1179,7 @@ export class RecurringPanelManager {
                         recurringBtn.setAttribute("aria-pressed", "true");
                     }
 
-                    window.syncRecurringStateToDOM(taskEl, settings);
+                    this.deps.syncRecurringStateToDOM(taskEl, settings);
                 });
             }
 
@@ -1614,9 +1619,9 @@ export class RecurringPanelManager {
         item.className = "recurring-task-item";
         item.setAttribute("data-task-id", task.id);
 
-        // ✅ XSS PROTECTION: Escape HTML in task text
-        const escapedTaskText = typeof window.escapeHtml === 'function'
-            ? window.escapeHtml(task.text)
+        // ✅ XSS PROTECTION: Escape HTML in task text (DI-pure)
+        const escapedTaskText = typeof this.deps.escapeHtml === 'function'
+            ? this.deps.escapeHtml(task.text)
             : task.text;
 
         item.innerHTML = `
@@ -1840,9 +1845,9 @@ export class RecurringPanelManager {
                 return;
             }
 
-            // ✅ XSS PROTECTION: Escape HTML in task text
-            const escapedTaskText = typeof window.escapeHtml === 'function'
-                ? window.escapeHtml(task.text)
+            // ✅ XSS PROTECTION: Escape HTML in task text (DI-pure)
+            const escapedTaskText = typeof this.deps.escapeHtml === 'function'
+                ? this.deps.escapeHtml(task.text)
                 : task.text;
 
             if (!recurringSettings) {
@@ -2287,12 +2292,12 @@ export class RecurringPanelManager {
 
             console.log('✅ Always show recurring setting saved via AppState:', alwaysShow);
 
-            // ✅ Trigger button refresh to show/hide recurring buttons after small delay
+            // ✅ Trigger button refresh to show/hide recurring buttons after small delay (DI-pure)
             // This ensures AppState changes have fully propagated
             setTimeout(() => {
-                if (typeof window.refreshTaskButtonsForModeChange === 'function') {
+                if (typeof this.deps.refreshTaskButtonsForModeChange === 'function') {
                     console.log('🔄 Refreshing task buttons for always-show-recurring change...');
-                    window.refreshTaskButtonsForModeChange();
+                    this.deps.refreshTaskButtonsForModeChange();
                 }
             }, 50);
 

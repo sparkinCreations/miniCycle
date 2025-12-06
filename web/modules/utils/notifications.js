@@ -19,32 +19,60 @@
 
 import { appInit } from '../core/appInit.js';
 
+// Module-level dependencies (DI-pure for app logic; legacy global flag kept for drag state sync)
+let _deps = {
+  AppState: null,
+  loadMiniCycleData: null,
+  generateHashId: null,
+  GlobalUtils: null,
+  escapeHtml: null,
+  applyRecurringToTaskSchema25: null,
+  updateRecurringPanel: null,
+  openRecurringSettingsPanelForTask: null
+};
+
+/**
+ * Set dependencies for Notifications module (call before creating instance)
+ * @param {Object} dependencies - Late-injected dependencies
+ */
+export function setNotificationsDependencies(dependencies) {
+  _deps = { ..._deps, ...dependencies };
+  console.log('🔔 Notifications dependencies set:', Object.keys(dependencies));
+}
+
 /**
  * 🎓 Educational Tips Manager Class
  */
 class EducationalTipManager {
-  constructor() {
+  constructor(getDeps) {
+    // Store getter function for live deps access
+    this._getDeps = typeof getDeps === 'function' ? getDeps : () => getDeps;
     this.dismissedTips = null; // Will be loaded lazily
+  }
+
+  // Getter that always returns current deps
+  get deps() {
+    return this._getDeps();
   }
 
   loadDismissedTips() {
     console.log('📚 Loading dismissed tips (Schema 2.5 only)...');
-    
+
     try {
-      // Check if loadMiniCycleData is available in global scope
-      if (typeof window.loadMiniCycleData !== 'function') {
+      // Check if loadMiniCycleData is available (DI-pure)
+      if (typeof this.deps.loadMiniCycleData !== 'function') {
         console.warn('⚠️ loadMiniCycleData not yet available, using fallback');
         return {};
       }
 
-      const schemaData = window.loadMiniCycleData();
-      if (!schemaData) {
+      const schemaData = this.deps.loadMiniCycleData();
+      if (!schemaData || !schemaData.settings) {
         console.error('❌ Schema 2.5 data required for loadDismissedTips');
         return {};
       }
 
-      const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
-      return fullSchemaData.settings.dismissedEducationalTips || {};
+      // ✅ DI-pure: Use schemaData directly, no localStorage access
+      return schemaData.settings.dismissedEducationalTips || {};
     } catch (e) {
       console.warn('⚠️ Error loading dismissed tips from Schema 2.5:', e);
       return {};
@@ -62,13 +90,13 @@ class EducationalTipManager {
     console.log('💾 Saving dismissed tips (Schema 2.5 only)...');
 
     try {
-      // ✅ Use AppState only (no localStorage fallback)
-      if (!window.AppState?.isReady?.()) {
+      // ✅ Use AppState only (DI-pure, no localStorage fallback)
+      if (!this.deps.AppState?.isReady?.()) {
         console.error('❌ AppState not ready for saveDismissedTips');
         return;
       }
 
-      await window.AppState.update(state => {
+      await this.deps.AppState.update(state => {
         if (!state.settings) state.settings = {};
         state.settings.dismissedEducationalTips = this.getDismissedTips();
       }, true);
@@ -197,11 +225,26 @@ class EducationalTipManager {
 /**
  * 🔔 Main MiniCycle Notifications Class
  */
+// Store instance reference for late dep updates
+let _notificationsInstance = null;
+
 export class MiniCycleNotifications {
-  constructor() {
-    this.educationalTips = new EducationalTipManager();
+  constructor(dependencies = {}) {
+    // Store constructor-provided deps separately
+    this._constructorDeps = dependencies;
+
+    // Pass getter function to EducationalTipManager for live deps access
+    this.educationalTips = new EducationalTipManager(() => this.deps);
     this.isDraggingNotification = false;
     this._activeListeners = new WeakMap(); // ✅ FIX #2: Track cleanup functions per notification
+
+    // Store instance reference for late dep updates
+    _notificationsInstance = this;
+  }
+
+  // Getter that always returns merged deps (live reference to _deps)
+  get deps() {
+    return { ..._deps, ...this._constructorDeps };
   }
 
   // Helper method to sync with global variable
@@ -239,8 +282,8 @@ export class MiniCycleNotifications {
         message = "⚠️ Unknown notification";
       }
 
-      // Note: generateHashId() must be available in global scope
-      const newId = window.generateHashId(message);
+      // Generate unique ID (DI-pure)
+      const newId = this.deps.generateHashId?.(message) || `notif-${Date.now()}`;
       if ([...notificationContainer.querySelectorAll(".notification")]
           .some(n => n.dataset.id === newId)) {
         console.log("🔄 Notification already exists, skipping duplicate.");
@@ -255,12 +298,11 @@ export class MiniCycleNotifications {
         notification.classList.add(type);
       }
 
-      // ✅ XSS PROTECTION: Always escape HTML in message content
+      // ✅ XSS PROTECTION: Always escape HTML in message content (DI-pure)
       // Security fix (v1.353): Remove bypass condition to prevent XSS
-      // ✅ Use GlobalUtils.escapeHtml directly to avoid deprecated window.escapeHtml wrapper
-      const escapedMessage = window.GlobalUtils?.escapeHtml
-        ? window.GlobalUtils.escapeHtml(message)
-        : (typeof window.escapeHtml === 'function' ? window.escapeHtml(message) : message);
+      const escapedMessage = this.deps.GlobalUtils?.escapeHtml
+        ? this.deps.GlobalUtils.escapeHtml(message)
+        : (typeof this.deps.escapeHtml === 'function' ? this.deps.escapeHtml(message) : message);
 
       // Always escape user content, regardless of structure
       notification.innerHTML = `
@@ -338,7 +380,7 @@ export class MiniCycleNotifications {
         content = "⚠️ Unknown notification";
       }
 
-      const newId = window.generateHashId(content);
+      const newId = this.deps.generateHashId?.(content) || `notif-${Date.now()}`;
       const existing = [...notificationContainer.querySelectorAll(".notification")];
 
       // Prevent duplicates
@@ -423,22 +465,25 @@ export class MiniCycleNotifications {
     // ✅ Wait for core systems to be ready (AppState + data)
     await appInit.waitForCore();
 
-    // ✅ AppState.update() expects a function, not an object
-    window.AppState.update((state) => {
+    // ✅ Check if AppState is available (DI-pure)
+    if (!this.deps.AppState?.update) {
+      console.warn('⚠️ AppState not available for resetPosition');
+      return;
+    }
+
+    // ✅ Mark as not modified so setDefaultPosition will save the calculated default
+    this.deps.AppState.update((state) => {
       if (!state.settings) {
         console.error('❌ Invalid state structure');
         throw new Error('Invalid state structure');
       }
-      state.settings.notificationPosition = { x: 0, y: 0 };
       state.settings.notificationPositionModified = false;
     }, true); // Immediate save
 
-    // Reset DOM position
+    // Apply the calculated default position (top-right, below logo)
     const container = document.getElementById("notification-container");
     if (container) {
-      container.style.top = "";
-      container.style.left = "";
-      container.style.right = "";
+      await this.setDefaultPosition(container);
     }
 
     console.log("✅ Notification position reset completed (Schema 2.5)");
@@ -449,27 +494,36 @@ export class MiniCycleNotifications {
    */
 restoreNotificationPosition(notificationContainer) {
     try {
-        // ✅ Check if loadMiniCycleData is available (may not be during early initialization)
-        if (typeof window.loadMiniCycleData !== 'function') {
+        // ✅ Check if loadMiniCycleData is available (DI-pure)
+        if (typeof this.deps.loadMiniCycleData !== 'function') {
             console.log('⏳ loadMiniCycleData not yet available, using default position');
             this.setDefaultPosition(notificationContainer);
             return;
         }
 
-        const schemaData = window.loadMiniCycleData();
+        const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.log('📋 No schema data available, using default position');
             this.setDefaultPosition(notificationContainer);
             return;
         }
 
-        const savedPosition = schemaData.settings.notificationPosition;
-        if (savedPosition?.x && savedPosition?.y) {
+        const savedPosition = schemaData.settings?.notificationPosition;
+        const positionModified = schemaData.settings?.notificationPositionModified;
+
+        // ✅ Only use saved position if user has actually modified it
+        // Initial state has {x:0, y:0} with modified=false, which should use calculated default
+        if (
+            positionModified === true &&
+            savedPosition &&
+            typeof savedPosition.x === 'number' &&
+            typeof savedPosition.y === 'number'
+        ) {
             notificationContainer.style.top = `${savedPosition.y}px`;
             notificationContainer.style.left = `${savedPosition.x}px`;
             notificationContainer.style.right = "auto";
         } else {
-            // No saved position - set a smart default
+            // No user-modified position - set a smart default
             this.setDefaultPosition(notificationContainer);
         }
     } catch (posError) {
@@ -487,17 +541,19 @@ async setDefaultPosition(notificationContainer) {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // Smart positioning based on screen size
+    // Smart positioning: top-right, below logo
     let defaultX, defaultY;
+    const notificationWidth = 320; // Approximate notification width
+    const rightMargin = 20; // Gap from right edge
 
     if (viewportWidth <= 768) {
-        // Mobile: Center horizontally, avoid top menu area
-        defaultX = Math.max(20, (viewportWidth - 320) / 2); // Assume 320px notification width
-        defaultY = 15; // Below menu area
+        // Mobile: Right side, below logo area
+        defaultX = Math.max(20, viewportWidth - notificationWidth - rightMargin);
+        defaultY = 70; // Below logo
     } else {
-        // Desktop: Right side, avoid menu button (typically top-left)
-        defaultX = viewportWidth - 350; // 350px from right edge
-        defaultY = 15; // Below potential menu area
+        // Desktop: Right side, below logo area
+        defaultX = viewportWidth - notificationWidth - rightMargin;
+        defaultY = 70; // Below logo
     }
 
     // Apply the position immediately (synchronous)
@@ -507,8 +563,8 @@ async setDefaultPosition(notificationContainer) {
 
     // Save this default position to Schema 2.5 so it persists (asynchronous, non-blocking)
     try {
-        // ✅ Only save if AppState is available
-        if (!window.AppState || typeof window.AppState.update !== 'function') {
+        // ✅ Only save if AppState is available (DI-pure)
+        if (!this.deps.AppState || typeof this.deps.AppState.update !== 'function') {
             console.log('⏳ AppState not ready, position not saved (will use default next time)');
             return;
         }
@@ -516,7 +572,7 @@ async setDefaultPosition(notificationContainer) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await appInit.waitForCore();
 
-        window.AppState.update((state) => {
+        this.deps.AppState.update((state) => {
             if (state.settings) {
                 state.settings.notificationPosition = { x: defaultX, y: defaultY };
                 state.settings.notificationPositionModified = false; // Mark as default
@@ -588,14 +644,41 @@ async setDefaultPosition(notificationContainer) {
       'button', 'input', 'select', 'textarea', 'a[href]'
     ];
 
-    // Save position to Schema 2.5 via AppState
+    // ✅ Throttle helper: limit saves to every 100ms during drag
+    let lastSaveTime = 0;
+    let pendingSave = null;
+    const THROTTLE_MS = 100;
+
+    // Save position to Schema 2.5 via AppState (DI-pure, throttled)
     const savePositionToSchema25 = async (x, y) => {
+      const now = Date.now();
+
+      // Throttle: skip if called too recently
+      if (now - lastSaveTime < THROTTLE_MS) {
+        // Schedule a final save for the last position
+        if (pendingSave) clearTimeout(pendingSave);
+        pendingSave = setTimeout(() => savePositionToSchema25(x, y), THROTTLE_MS);
+        return;
+      }
+
+      lastSaveTime = now;
+      if (pendingSave) {
+        clearTimeout(pendingSave);
+        pendingSave = null;
+      }
+
       try {
+        // ✅ Check if AppState is available before waiting
+        if (!this.deps.AppState?.update) {
+          // Silently skip if AppState not ready - not critical
+          return;
+        }
+
         // ✅ Wait for core systems to be ready (AppState + data)
         await appInit.waitForCore();
 
-        // ✅ AppState.update() expects a function, not an object
-        window.AppState.update((state) => {
+        // ✅ AppState.update() expects a function, not an object (DI-pure)
+        this.deps.AppState.update((state) => {
           if (!state.settings) {
             console.error('❌ Invalid state structure for notification position');
             return;
@@ -803,8 +886,11 @@ async setDefaultPosition(notificationContainer) {
       </div>
     `;
 
-    // Escape HTML in task text to prevent XSS
-    const escapedTaskText = taskText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // ✅ XSS PROTECTION: Use DI-based escape for consistency (DI-pure)
+    const escape = this.deps.GlobalUtils?.escapeHtml
+      || this.deps.escapeHtml
+      || ((s) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+    const escapedTaskText = escape(taskText);
 
     return `
       <div class="main-notification-content"
@@ -934,11 +1020,13 @@ async setDefaultPosition(notificationContainer) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await appInit.waitForCore();
 
-        const state = window.AppState.get();
+        const state = this.deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
 
-        // Note: applyRecurringToTaskSchema25 must be available in global scope
-        window.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
+        // Apply recurring settings (DI-pure)
+        if (this.deps.applyRecurringToTaskSchema25) {
+          this.deps.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
+        }
 
         const targetTask = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
         const pattern = targetTask?.recurringSettings?.indefinitely ? "Indefinitely" : "Limited";
@@ -952,7 +1040,7 @@ async setDefaultPosition(notificationContainer) {
 
         e.target.style.display = "none";
         this.showApplyConfirmation(currentSettingsText);
-        if (window.updateRecurringPanel) window.updateRecurringPanel();
+        if (this.deps.updateRecurringPanel) this.deps.updateRecurringPanel();
       }
 
       // Handle advanced settings button
@@ -960,7 +1048,7 @@ async setDefaultPosition(notificationContainer) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await appInit.waitForCore();
 
-        const state = window.AppState.get();
+        const state = this.deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
         const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
 
@@ -980,9 +1068,9 @@ async setDefaultPosition(notificationContainer) {
           }
         }
 
-        // Note: openRecurringSettingsPanelForTask must be available in global scope
-        if (window.openRecurringSettingsPanelForTask) {
-          window.openRecurringSettingsPanelForTask(taskId);
+        // Open recurring settings panel (DI-pure)
+        if (this.deps.openRecurringSettingsPanelForTask) {
+          this.deps.openRecurringSettingsPanelForTask(taskId);
         }
 
         const notificationEl = e.target.closest(".notification");

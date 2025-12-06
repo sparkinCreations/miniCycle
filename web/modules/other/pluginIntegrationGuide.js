@@ -1,150 +1,114 @@
 /**
  * ==========================================
- * 🔌 PLUGIN INTEGRATION GUIDE
+ * 🔌 PLUGIN INTEGRATION GUIDE (DI-Pure)
  * ==========================================
- * 
- * Instructions for integrating the plugin system with your existing miniCycle app.
+ *
+ * Instructions for integrating the plugin system with miniCycle using
+ * dependency injection patterns. No window.* globals.
+ *
+ * @module pluginIntegrationGuide
  */
 
-// STEP 1: Add to your main script imports (miniCycle-scripts.js)
-/*
-// Add this near your other imports
-import './other/basicPluginSystem.js';
+// Module-level dependencies (DI-pure, no window.* fallbacks)
+let _deps = {
+    pluginManager: null,
+    TimeTrackerPlugin: null,
+    showNotification: null
+};
 
-// Optional: Import example plugin
-import './other/exampleTimeTrackerPlugin.js';
-*/
-
-// STEP 2: Add plugin hooks to your existing functions
-/*
-// In your addTask function, add this at the end:
-function addTask(taskText, completed = false, shouldSave = true, ...) {
-    // ... existing addTask logic ...
-    
-    // NEW: Trigger plugin hook
-    if (window.pluginManager) {
-        window.pluginManager.triggerHook('taskadded', task);
-    }
-    
-    return task;
+/**
+ * Set dependencies for PluginIntegrationGuide module
+ * @param {Object} dependencies - Injected dependencies
+ */
+export function setPluginIntegrationDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    console.log('🔌 PluginIntegrationGuide dependencies set:', Object.keys(dependencies));
 }
 
-// In your task completion handler:
-function handleTaskCompletionChange(checkbox) {
-    // ... existing logic ...
-    
-    // NEW: Trigger plugin hook
-    if (window.pluginManager && task.completed) {
-        window.pluginManager.triggerHook('taskcompleted', task);
-    }
-}
-
-// In your deleteTask function:
-function deleteTask(taskId) {
-    const task = findTaskById(taskId);
-    
-    // NEW: Trigger plugin hook before deletion
-    if (window.pluginManager && task) {
-        window.pluginManager.triggerHook('taskdeleted', task);
-    }
-    
-    // ... existing deletion logic ...
-}
-
-// In your cycle completion/reset functions:
-function completeCycle() {
-    // ... existing logic ...
-    
-    // NEW: Trigger plugin hook
-    if (window.pluginManager) {
-        window.pluginManager.triggerHook('cyclecompleted', getCurrentCycle());
-    }
-}
-*/
-
-// STEP 3: Initialize plugins after your app loads
 /*
-// Add this to your DOMContentLoaded or after your main initialization:
-document.addEventListener('DOMContentLoaded', async () => {
-    // ... your existing initialization ...
-    
-    // NEW: Initialize plugin system
-    if (window.pluginManager) {
-        console.log('🔌 Plugin system ready');
-        
-        // Register example plugin
-        if (window.TimeTrackerPlugin) {
-            const timeTracker = new TimeTrackerPlugin();
-            await window.pluginManager.register(timeTracker);
-            await window.pluginManager.enable('TimeTracker');
-        }
-    }
-});
-*/
+ * ==========================================
+ * INTEGRATION STEPS (DI Pattern)
+ * ==========================================
+ *
+ * STEP 1: Import and wire in miniCycle-scripts.js
+ * ------------------------------------------------
+ * import { setPluginIntegrationDependencies, pluginIntegrationHelpers } from './modules/other/pluginIntegrationGuide.js';
+ * import { pluginManager } from './modules/other/basicPluginSystem.js';
+ * import { TimeTrackerPlugin } from './modules/other/exampleTimeTrackerPlugin.js';
+ *
+ * // Inject dependencies
+ * setPluginIntegrationDependencies({
+ *     pluginManager,
+ *     TimeTrackerPlugin,
+ *     showNotification: (msg, type) => notifications.show(msg, type)
+ * });
+ *
+ *
+ * STEP 2: Add plugin hooks via DI in task modules
+ * ------------------------------------------------
+ * // In taskCore.js constructor deps:
+ * this.deps = {
+ *     pluginManager: mergedDeps.pluginManager || null,
+ *     // ... other deps
+ * };
+ *
+ * // In addTask method:
+ * addTask(taskText) {
+ *     // ... task creation logic ...
+ *     this.deps.pluginManager?.triggerHook('taskadded', task);
+ *     return task;
+ * }
+ *
+ * // In task completion:
+ * if (task.completed) {
+ *     this.deps.pluginManager?.triggerHook('taskcompleted', task);
+ * }
+ *
+ * // In deleteTask:
+ * this.deps.pluginManager?.triggerHook('taskdeleted', task);
+ *
+ *
+ * STEP 3: Initialize plugins after app loads
+ * -------------------------------------------
+ * // In miniCycle-scripts.js after core init:
+ * await pluginIntegrationHelpers.setupBasicPlugins();
+ *
+ *
+ * STEP 4: Plugin management UI (optional)
+ * ----------------------------------------
+ * // Get status:
+ * const status = pluginIntegrationHelpers.getPluginStatus();
+ *
+ * // Toggle plugin:
+ * await deps.pluginManager.disable('TimeTracker');
+ * await deps.pluginManager.enable('TimeTracker');
+ *
+ *
+ * STEP 5: Testing via console
+ * ---------------------------
+ * // Status check:
+ * console.table(pluginIntegrationHelpers.getPluginStatus());
+ *
+ * // Manual hook trigger:
+ * pluginIntegrationHelpers.triggerHook('taskadded', { id: 'test', text: 'Test task' });
+ */
 
-// STEP 4: Add plugin management to your settings modal (optional)
-/*
-// Add this HTML to your settings modal:
-<div class="settings-section">
-    <h3>🔌 Plugins</h3>
-    <div id="plugin-controls">
-        <button id="show-plugin-status">Show Plugin Status</button>
-        <button id="toggle-time-tracker">Toggle Time Tracker</button>
-    </div>
-</div>
-
-// Add these event listeners:
-document.getElementById('show-plugin-status').addEventListener('click', () => {
-    const status = window.pluginManager.getPluginStatus();
-    console.table(status);
-    showNotification('Plugin status logged to console', 'info');
-});
-
-document.getElementById('toggle-time-tracker').addEventListener('click', async () => {
-    const plugin = window.pluginManager.plugins.get('TimeTracker');
-    if (plugin && plugin.enabled) {
-        await window.pluginManager.disable('TimeTracker');
-        showNotification('Time Tracker disabled', 'info');
-    } else if (plugin) {
-        await window.pluginManager.enable('TimeTracker');
-        showNotification('Time Tracker enabled', 'success');
-    }
-});
-*/
-
-// STEP 5: Test your plugin system
-/*
-// In your browser console, you can test:
-
-// Check plugin manager
-console.log(window.pluginManager);
-
-// Get plugin status
-console.table(window.pluginManager.getPluginStatus());
-
-// Manually trigger hooks
-window.pluginManager.triggerHook('taskadded', { id: 'test', text: 'Test task' });
-
-// Enable/disable plugins
-await window.pluginManager.disable('TimeTracker');
-await window.pluginManager.enable('TimeTracker');
-*/
-
-export default {
-    // Helper functions for integration
-    
-    // Quick setup function
+/**
+ * Helper functions for plugin integration (DI-pure)
+ */
+export const pluginIntegrationHelpers = {
+    // Quick setup function (DI-pure)
     async setupBasicPlugins() {
-        if (!window.pluginManager) {
-            console.error('Plugin manager not loaded');
+        if (!_deps.pluginManager) {
+            console.error('❌ Plugin manager not injected via setPluginIntegrationDependencies');
             return false;
         }
 
         // Register time tracker if available
-        if (window.TimeTrackerPlugin) {
-            const timeTracker = new TimeTrackerPlugin();
-            await window.pluginManager.register(timeTracker);
-            await window.pluginManager.enable('TimeTracker');
+        if (_deps.TimeTrackerPlugin) {
+            const timeTracker = new _deps.TimeTrackerPlugin();
+            await _deps.pluginManager.register(timeTracker);
+            await _deps.pluginManager.enable('TimeTracker');
             console.log('✅ Time Tracker plugin enabled');
         }
 
@@ -155,5 +119,26 @@ export default {
     addPluginHooks() {
         // This would wrap your existing functions with plugin hooks
         console.log('🔌 Plugin hooks would be added here');
+    },
+
+    // Get plugin status (DI-pure)
+    getPluginStatus() {
+        if (!_deps.pluginManager) {
+            console.warn('⚠️ Plugin manager not available');
+            return [];
+        }
+        return _deps.pluginManager.getPluginStatus();
+    },
+
+    // Trigger a plugin hook (DI-pure)
+    triggerHook(hookName, data) {
+        if (!_deps.pluginManager) {
+            return;
+        }
+        _deps.pluginManager.triggerHook(hookName, data);
     }
 };
+
+export default pluginIntegrationHelpers;
+
+console.log('🔌 PluginIntegrationGuide loaded (DI-pure, no window.* exports)');
