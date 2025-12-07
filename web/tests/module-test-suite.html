@@ -386,12 +386,15 @@
             <option value="backupManager">💾 Backup Manager</option>
             <option value="cycleCompletion">🎯 Cycle Completion</option>
             <option value="dataValidator">🛡️ Data Validator</option>
+            <option value="appInit">🚀 AppInit</option>
+            <option value="appState">💾 AppState</option>
+            <option value="helpWindowManager">❓ Help Window Manager</option>
         </select>
             </div>
         </div>
 
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (36 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (42 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -459,6 +462,9 @@
         const { runBackupManagerTests } = await import(`./backupManager.tests.js?v=${cacheBuster}`);
         const { runCycleCompletionTests } = await import(`./cycleCompletion.tests.js?v=${cacheBuster}`);
         const { runDataValidatorTests } = await import(`./dataValidator.tests.js?v=${cacheBuster}`);
+        const { runAppInitTests } = await import(`./appInit.tests.js?v=${cacheBuster}`);
+        const { runAppStateTests } = await import(`./appState.tests.js?v=${cacheBuster}`);
+        const { runHelpWindowManagerTests } = await import(`./helpWindowManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -830,6 +836,21 @@
                 await import(`../modules/progress/cycleCompletion.js?v=${cacheBuster}`);
             } else if (moduleKey === 'dataValidator') {
                 await import(`../modules/utils/dataValidator.js?v=${cacheBuster}`);
+            } else if (moduleKey === 'appInit') {
+                const mod = await import(`../modules/core/appInit.js?v=${cacheBuster}`);
+                window.appInit = mod.appInit;
+            } else if (moduleKey === 'appState') {
+                const mod = await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                window.setAppStateDependencies = mod.setAppStateDependencies;
+                window.createStateManager = mod.createStateManager;
+                window.resetStateManager = mod.resetStateManager;
+                window.getStateManager = mod.default;
+            } else if (moduleKey === 'helpWindowManager') {
+                const mod = await import(`../modules/ui/helpWindowManager.js?v=${cacheBuster}`);
+                window.setHelpWindowManagerDependencies = mod.setHelpWindowManagerDependencies;
+                window.HelpWindowManager = mod.HelpWindowManager;
+                window.initHelpWindowManager = mod.initHelpWindowManager;
+                window.getHelpWindowManager = mod.getHelpWindowManager;
             }
         }
 
@@ -1209,6 +1230,27 @@
                     await import(`../modules/utils/dataValidator.js?v=${cacheBuster}`);
                     currentModule = 'dataValidator';
                     resultsDiv.innerHTML = '<p>✅ DataValidator loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'appInit') {
+                    const mod = await import(`../modules/core/appInit.js?v=${cacheBuster}`);
+                    window.appInit = mod.appInit;
+                    currentModule = 'appInit';
+                    resultsDiv.innerHTML = '<p>✅ AppInit loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'appState') {
+                    const mod = await import(`../modules/core/appState.js?v=${cacheBuster}`);
+                    window.setAppStateDependencies = mod.setAppStateDependencies;
+                    window.createStateManager = mod.createStateManager;
+                    window.resetStateManager = mod.resetStateManager;
+                    window.getStateManager = mod.default;
+                    currentModule = 'appState';
+                    resultsDiv.innerHTML = '<p>✅ AppState loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'helpWindowManager') {
+                    const mod = await import(`../modules/ui/helpWindowManager.js?v=${cacheBuster}`);
+                    window.setHelpWindowManagerDependencies = mod.setHelpWindowManagerDependencies;
+                    window.HelpWindowManager = mod.HelpWindowManager;
+                    window.initHelpWindowManager = mod.initHelpWindowManager;
+                    window.getHelpWindowManager = mod.getHelpWindowManager;
+                    currentModule = 'helpWindowManager';
+                    resultsDiv.innerHTML = '<p>✅ HelpWindowManager loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -1302,6 +1344,12 @@
                 await runCycleCompletionTests(resultsDiv);
             } else if (currentModule === 'dataValidator') {
                 await runDataValidatorTests(resultsDiv);
+            } else if (currentModule === 'appInit') {
+                await runAppInitTests(resultsDiv);
+            } else if (currentModule === 'appState') {
+                await runAppStateTests(resultsDiv);
+            } else if (currentModule === 'helpWindowManager') {
+                await runHelpWindowManagerTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -1452,7 +1500,10 @@
                 { name: 'Testing Modal', key: 'testingModal', runFn: runTestingModalTests, importPath: '../modules/testing/testing-modal.js', secondaryImport: '../modules/storage/backupManager.js' },
                 { name: 'Backup Manager', key: 'backupManager', runFn: runBackupManagerTests, importPath: '../modules/storage/backupManager.js' },
                 { name: 'Cycle Completion', key: 'cycleCompletion', runFn: runCycleCompletionTests, importPath: '../modules/progress/cycleCompletion.js' },
-                { name: 'Data Validator', key: 'dataValidator', runFn: runDataValidatorTests, importPath: '../modules/utils/dataValidator.js' }
+                { name: 'Data Validator', key: 'dataValidator', runFn: runDataValidatorTests, importPath: '../modules/utils/dataValidator.js' },
+                { name: 'AppInit', key: 'appInit', runFn: runAppInitTests, importPath: '../modules/core/appInit.js' },
+                { name: 'AppState', key: 'appState', runFn: runAppStateTests, importPath: '../modules/core/appState.js' },
+                { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' }
             ];
 
             let allResults = [];
