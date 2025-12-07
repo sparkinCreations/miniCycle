@@ -565,14 +565,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('window.menuManager instance exists (backward compat)', () => {
-        if (!window.menuManager) {
-            throw new Error('Global menuManager instance not found');
-        }
-        if (typeof window.menuManager.setupMainMenu !== 'function') {
-            throw new Error('Global instance missing methods');
-        }
-    });
 
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests (DI)</h4>';

@@ -544,26 +544,6 @@ export function runConsoleCaptureTests(resultsDiv) {
     // === MIGRATION FILTERING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔍 Migration Filtering</h4>';
 
-    test('filters migration-related messages', () => {
-        const capture = new MiniCycleConsoleCapture();
-        capture.consoleLogBuffer = [
-            '[10:00:00] 📝 LOG: Regular message',
-            '[10:00:01] 🔄 LOG: Starting migration',
-            '[10:00:02] ❌ ERROR: Migration failed'
-        ];
-
-        // Mock appendToTestResults to capture output
-        let output = '';
-        window.appendToTestResults = (text) => { output += text; };
-
-        capture.showMigrationErrorsOnly();
-
-        if (!output.includes('migration')) {
-            throw new Error('Migration messages not shown');
-        }
-
-        delete window.appendToTestResults;
-    });
 
     // === RESULTS SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);

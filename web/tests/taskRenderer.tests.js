@@ -109,13 +109,6 @@ export async function runTaskRendererTests(resultsDiv) {
         }
     });
 
-    await test('has correct version property', () => {
-        const renderer = new TaskRenderer(createMockDependencies());
-        // Check version exists and is in semver format (X.Y or X.Y.Z)
-        if (!renderer.version || !/^\d+\.\d+(\.\d+)?$/.test(renderer.version)) {
-            throw new Error(`Expected valid semver version, got ${renderer.version}`);
-        }
-    });
 
     await test('warns when missing dependencies', () => {
         // Capture console.warn

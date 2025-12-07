@@ -1,111 +1,162 @@
-# 🧪 Testing Template Quick Start
+# Testing Template Quick Start
 
-**Fast track to adding tests for new modules**
+**Fast track to adding tests for new modules using Strict DI pattern**
 
-## 📋 Copy & Replace Checklist
+## 5-Step Process
 
-### 1️⃣ Copy Template
+### Step 1: Copy Template
+
 ```bash
 cp tests/MODULE_TEMPLATE.tests.js tests/yourModule.tests.js
 ```
 
-### 2️⃣ Find & Replace (Use your editor's find/replace)
+### Step 2: Find & Replace Placeholders
+
 ```
-MODULE_NAME        → YourModule        (display name)
-CLASS_NAME         → YourClass         (class name)
-PRIMARY_METHOD     → yourMainMethod    (main method)
-SAVE_METHOD        → yourSaveMethod    (storage method)
-DATA_METHOD        → yourDataMethod    (data processing)
-MODULE_DATA_KEY    → yourDataKey       (Schema 2.5 key)
-APPSTATE_METHOD    → yourAppStateMethod
-GLOBAL_FUNCTION1   → yourGlobalFunc1
-GLOBAL_FUNCTION2   → yourGlobalFunc2  
+MODULE_NAME            → YourModule         (display name)
+CLASS_NAME             → YourClass          (class name)
+PRIMARY_METHOD         → yourMainMethod     (main method)
 MODULE_INSTANCE_GLOBAL → yourManagerInstance
+GLOBAL_FUNCTION        → yourGlobalFunction
 ```
 
-### 3️⃣ Add to Test Suite UI (module-test-suite.html)
+### Step 3: Update Import Path
+
+In your test file, update the DI setter import:
+
+```javascript
+// Change this:
+// import { setMODULE_NAMEDependencies } from '../modules/path/to/MODULE_NAME.js';
+
+// To your actual module:
+import { setYourModuleDependencies } from '../modules/ui/yourModule.js';
+```
+
+### Step 4: Add to Test Suite (module-test-suite.html)
+
 ```html
-<!-- Add to dropdown options -->
+<!-- 1. Add to dropdown options -->
 <option value="yourModule">YourModule</option>
 
-<!-- Add to imports -->
+<!-- 2. Add to imports -->
 import { runYourModuleTests } from './yourModule.tests.js';
 
-<!-- Add to module loader -->
+<!-- 3. Add to module loader -->
 } else if (moduleName === 'yourModule') {
-    await import('../utilities/yourModule.js');
+    await import('../modules/ui/yourModule.js');
     currentModule = 'yourModule';
-    resultsDiv.innerHTML = '<p>✅ YourModule loaded. Click "Run Tests" to begin.</p>';
+    resultsDiv.innerHTML = '<p>✅ YourModule loaded.</p>';
 
-<!-- Add to test runner -->  
+<!-- 4. Add to test runner -->
 } else if (currentModule === 'yourModule') {
-    runYourModuleTests(resultsDiv);
+    await runYourModuleTests(resultsDiv);
 ```
 
-### 4️⃣ Add to Automation (automated/run-browser-tests.js)
+### Step 5: Add to Automation
+
+Edit `automated/run-browser-tests.js`:
+
 ```javascript
-const modules = ['themeManager', 'deviceDetection', 'globalUtils', 'notifications', 'yourModule'];
+const modules = [
+    'integration', 'themeManager', /* ... existing modules ... */,
+    'yourModule'  // ← Add here
+];
 ```
 
-### 5️⃣ Test!
+### Step 6: Test!
+
 ```bash
 # Manual browser test
-open tests/module-test-suite.html
+python3 -m http.server 8080
+# Open: http://localhost:8080/tests/module-test-suite.html
 
-# Automated test  
+# Automated test
 npm test
 ```
 
-## 🎯 Example: TaskUtils Module
+## Key Pattern: testHelpers.js
 
-If creating tests for a TaskManager class:
+**Always use testHelpers.js** - it provides:
 
 ```javascript
-// Template placeholders → Actual values
-MODULE_NAME → TaskUtils
-CLASS_NAME → TaskManager
-PRIMARY_METHOD → processTask
-SAVE_METHOD → saveTaskData
-GLOBAL_FUNCTION1 → processTask
-MODULE_INSTANCE_GLOBAL → taskManager
+import {
+    setupTestEnvironment,  // Sets up mocks, appInit, localStorage
+    createProtectedTest    // Auto-saves/restores localStorage
+} from './testHelpers.js';
+
+export async function runYourModuleTests(resultsDiv) {
+    const env = await setupTestEnvironment();
+    const test = createProtectedTest(resultsDiv, passed, total);
+
+    await test('your test', () => {
+        // Test code here
+    });
+}
 ```
 
-## ✅ Success Indicators
+## Example: TaskEvents Module
 
-- ✅ Browser test loads module without errors
-- ✅ All test categories show results
-- ✅ Summary shows "Results: X/X tests passed"
-- ✅ `npm test` includes your module
-- ✅ Automated tests complete without timeout
+```javascript
+// Placeholders → Actual values
+MODULE_NAME            → TaskEvents
+CLASS_NAME             → TaskEvents
+PRIMARY_METHOD         → handleTaskButtonClick
+MODULE_INSTANCE_GLOBAL → taskEvents
+GLOBAL_FUNCTION        → handleTaskButtonClick
+```
 
-## 🚨 Common Issues
+## Success Indicators
 
-**"Class not found"** → Module not loading, check import path  
-**"Tests timeout"** → Missing Summary format, check template  
-**"Tests skip"** → Not added to modules array in automation  
-**"Syntax errors"** → Placeholder not replaced, check CAPS words  
+- Browser test loads module without errors
+- All test categories show results
+- Summary shows "Results: X/X tests passed (100%)"
+- `npm test` includes your module and passes
 
-## 📊 Template Provides
+## Common Issues
 
-- **25+ test categories** covering all common scenarios
-- **localStorage Protection** 🔒 - Automatically backs up and restores user data
-- **Schema 2.5 integration** with proper data structure
-- **Error handling tests** for graceful degradation
-- **Performance tests** with timing checks
-- **Global function tests** for backward compatibility
-- **Integration tests** for AppState and DOM
-- **Automation compatibility** with proper Summary format
-- **`isPartOfSuite` parameter** - Works with both individual and automated test runs
+| Issue | Solution |
+|-------|----------|
+| "Class not found" | Check module import path |
+| "Tests timeout" | Ensure Summary format is correct |
+| "Tests skip" | Add to modules array in run-browser-tests.js |
+| "Syntax errors" | Verify all CAPS placeholders replaced |
 
-**Total setup time: ~5 minutes per module** 🚀
+## Playwright Limitations
 
-## 🔒 Built-in Data Protection
+Some tests don't work in automated Playwright environment:
 
-The template now includes localStorage backup/restore:
+| Pattern | Problem | Solution |
+|---------|---------|----------|
+| `Object.defineProperty(window, 'scrollY')` | Doesn't work | Skip or run manually |
+| Async setTimeout tests | Timing flaky | Increase timeout or skip |
+| `appInit.markCoreSystemsReady()` | Not available | Exclude from automation |
 
-- ✅ **Safe to run individually** - Your real app data is protected
-- ✅ **Automated suite compatible** - Passes `isPartOfSuite = true` for efficiency
-- ✅ **No configuration needed** - Protection is automatic
-- ✅ **Used by 30+ modules** - Battle-tested pattern
+Add comment when skipping:
+```javascript
+// NOTE: Test removed - scrollY mocking fails in Playwright. Run manually.
+```
 
-You don't need to add this manually - it's already in the template!
+## Template Features
+
+- **testHelpers.js integration** - Comprehensive mock setup
+- **createProtectedTest()** - localStorage safety
+- **DI pattern support** - Inject dependencies via setter
+- **AppState testing** - Both ready and not-ready scenarios
+- **Error handling tests** - Graceful degradation
+- **Global wrapper tests** - Backward compatibility
+
+## Checklist
+
+- [ ] Copied MODULE_TEMPLATE.tests.js
+- [ ] Replaced all CAPS placeholders
+- [ ] Updated DI setter import path
+- [ ] Added to module-test-suite.html (4 locations)
+- [ ] Added to automated/run-browser-tests.js
+- [ ] Tests pass in browser
+- [ ] Tests pass with `npm test`
+
+---
+
+**Total setup time: ~5 minutes per module**
+
+**Last Updated:** December 2024

@@ -1,452 +1,328 @@
 /**
- * MODULE_NAME Tests Template
+ * MODULE_NAME Tests Template (DI Pattern)
  *
- * Copy this template when creating tests for new modules
- * Replace placeholders in CAPS with your actual values
+ * Copy this template when creating tests for new modules.
+ * Replace placeholders in CAPS with your actual values.
  *
- * This template follows miniCycle browser testing patterns
- * Compatible with both manual browser testing and automated CI/CD
+ * This template follows the miniCycle Strict DI testing pattern:
+ * - Uses testHelpers.js for mock setup
+ * - Uses createProtectedTest for localStorage safety
+ * - Uses setModuleDependencies() for DI injection
  *
- * IMPORTANT: If your tests require async operations, make test() async:
- * async function test(name, testFn) { ... }
- * And call with: await test('test name', async () => { ... });
+ * Compatible with both manual browser testing and Playwright automation.
+ *
+ * @version 2.0.0 - Updated for Strict DI architecture
  */
 
-export function runMODULE_NAMETests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>MODULE_NAME Tests</h2>';
-    let passed = { count: 0 }, total = { count: 0 };
-    // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
-    let savedRealData = {};
-    if (!isPartOfSuite) {
-        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
-        protectedKeys.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) {
-                savedRealData[key] = value;
-            }
-        });
-        console.log('🔒 Saved original localStorage for individual MODULE_TEMPLATE test');
-    }
+import {
+    setupTestEnvironment,
+    createProtectedTest
+} from './testHelpers.js';
 
-    // Helper to restore original data after all tests (only when running individually)
-    function restoreOriginalData() {
-        if (!isPartOfSuite) {
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-            console.log('✅ Individual MODULE_TEMPLATE test completed - original localStorage restored');
-        }
-    }
+// Import the module's DI setter (update path for your module)
+// import { setMODULE_NAMEDependencies } from '../modules/path/to/MODULE_NAME.js';
 
+export async function runMODULE_NAMETests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>MODULE_NAME Tests</h2><h3>Setting up mocks...</h3>';
 
-    // Import the module class (replace CLASS_NAME with your actual class)
-    const CLASS_NAME = window.CLASS_NAME;
-    
-    // Check if class is available
-    if (!CLASS_NAME) {
-        resultsDiv.innerHTML += '<div class="result fail">CLASS_NAME class not found. Make sure the module is properly loaded.</div>';
-        return { passed: 0, total: 1 };
-    }
+    // =====================================================
+    // Use shared testHelpers for comprehensive mock setup
+    // =====================================================
+    const env = await setupTestEnvironment();
 
-    function test(name, testFn) {
-        total.count++;
-        try {
-            // Reset environment before each test
-            localStorage.clear();
-            
-            // Mock Schema 2.5 data (customize as needed)
-            const mockSchemaData = {
-                metadata: {
-                    version: "2.5",
-                    lastModified: Date.now()
-                },
-                settings: {
-                    // Add module-specific settings here
-                },
-                cycles: {},
-                userProgress: {}
-            };
-            localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
-            
-            // Reset DOM state
-            document.body.className = '';
-            
-            // Clear any global state
-            delete window.AppState;
-            delete window.showNotification;
-            delete window.hideMainMenu;
-            
-            testFn();
-            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-            passed.count++;
-        } catch (error) {
-            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-        }
-    }
+    resultsDiv.innerHTML = '<h2>MODULE_NAME Tests</h2><h3>Running tests...</h3>';
 
-    // === INITIALIZATION TESTS ===
-    resultsDiv.innerHTML += '<h4>🔧 Initialization Tests</h4>';
-    
-    test('creates instance successfully', () => {
-        const instance = new CLASS_NAME();
-        if (!instance || typeof instance.PRIMARY_METHOD !== 'function') {
-            throw new Error('CLASS_NAME not properly initialized');
-        }
-    });
-    
-    test('accepts dependency injection', () => {
-        const mockDependency = () => ({ test: 'data' });
-        
-        const instance = new CLASS_NAME({
-            mockDependency: mockDependency,
-            testParam: 'test-value'
-        });
-        
-        // Customize this check based on your constructor
-        if (!instance) {
-            throw new Error('Dependency injection failed');
-        }
-    });
-    
-    test('has safe global function access', () => {
-        const instance = new CLASS_NAME();
-        // Only test if your class has getGlobalFunction method
-        const fn = instance.getGlobalFunction?.('nonExistentFunction');
-        
-        if (fn && typeof fn !== 'function') {
-            throw new Error('Should return function even for missing globals');
-        }
-    });
+    let passed = { count: 0 };
+    let total = { count: 0 };
 
-    // === CORE FUNCTIONALITY TESTS ===
-    resultsDiv.innerHTML += '<h4>⚡ Core Functionality</h4>';
-    
-    test('PRIMARY_METHOD works correctly', () => {
-        const instance = new CLASS_NAME({
+    // Use shared test helper with data protection
+    const test = createProtectedTest(resultsDiv, passed, total);
+
+    // ============================================
+    // Test Utilities (customize for your module)
+    // ============================================
+    function createMockDependencies(overrides = {}) {
+        return {
+            AppState: {
+                isReady: () => true,
+                get: () => ({
+                    metadata: { version: '2.5' },
+                    settings: {},
+                    data: { cycles: {} },
+                    appState: { activeCycleId: 'cycle1' }
+                }),
+                update: (fn) => { fn({}); }
+            },
+            showNotification: () => {},
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            showNotification: () => {}
-        });
-        
-        // Test primary functionality (replace PRIMARY_METHOD)
+            ...overrides
+        };
+    }
+
+    // ============================================
+    // 📦 MODULE LOADING TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
+
+    await test('MODULE_NAME class exists', () => {
+        if (typeof CLASS_NAME !== 'function') {
+            throw new Error('CLASS_NAME class not found');
+        }
+    });
+
+    await test('initMODULE_NAME function exists', () => {
+        if (typeof initMODULE_NAME !== 'function') {
+            throw new Error('initMODULE_NAME function not found');
+        }
+    });
+
+    await test('Window exports exist', () => {
+        if (typeof window.CLASS_NAME !== 'function') {
+            throw new Error('window.CLASS_NAME not exported');
+        }
+    });
+
+    // ============================================
+    // 🏗️ INITIALIZATION TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🏗️ Initialization</h4>';
+
+    await test('Constructor creates instance', () => {
+        const deps = createMockDependencies();
+        // setMODULE_NAMEDependencies(deps);  // Uncomment when using DI setter
+        const instance = new CLASS_NAME(deps);
+        if (!(instance instanceof CLASS_NAME)) {
+            throw new Error('Instance not created correctly');
+        }
+    });
+
+    await test('Dependencies are stored correctly', () => {
+        const deps = createMockDependencies();
+        const instance = new CLASS_NAME(deps);
+        if (typeof instance.deps.showNotification !== 'function') {
+            throw new Error('showNotification dependency not stored');
+        }
+    });
+
+    await test('Accepts dependency injection', () => {
+        const customNotify = () => 'custom';
+        const deps = createMockDependencies({ showNotification: customNotify });
+        const instance = new CLASS_NAME(deps);
+        if (instance.deps.showNotification !== customNotify) {
+            throw new Error('Custom dependency not injected');
+        }
+    });
+
+    // ============================================
+    // ⚡ CORE FUNCTIONALITY TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">⚡ Core Functionality</h4>';
+
+    await test('PRIMARY_METHOD works correctly', () => {
+        const deps = createMockDependencies();
+        const instance = new CLASS_NAME(deps);
+
+        // Replace PRIMARY_METHOD with your actual method
         const result = instance.PRIMARY_METHOD();
-        
+
+        // Add appropriate assertions
         if (result === undefined) {
-            throw new Error('Primary method should return a value or not throw');
+            throw new Error('PRIMARY_METHOD should return a value');
         }
     });
-    
-    test('handles valid input correctly', () => {
-        const instance = new CLASS_NAME();
-        
-        // Test with valid input (replace PRIMARY_METHOD and adjust input)
+
+    await test('Handles valid input correctly', () => {
+        const deps = createMockDependencies();
+        const instance = new CLASS_NAME(deps);
+
+        // Test with valid input
         instance.PRIMARY_METHOD('valid-input');
-        
-        // Add specific assertions based on expected behavior
-        // Example: check localStorage, DOM changes, etc.
-    });
-    
-    test('processes data transformation', () => {
-        const instance = new CLASS_NAME();
-        
-        const inputData = {
-            // Define test input data specific to your module
-            testProperty: 'test-value'
-        };
-        
-        // Replace DATA_METHOD with your actual data processing method
-        const result = instance.DATA_METHOD?.(inputData);
-        
-        if (!result) {
-            throw new Error('Data transformation should return result');
-        }
-        
-        // Add specific assertions for transformed data
+
+        // Add assertions for expected behavior
     });
 
-    // === SCHEMA 2.5 STORAGE TESTS ===
-    resultsDiv.innerHTML += '<h4>💾 Schema 2.5 Storage</h4>';
-    
-    test('saves data to Schema 2.5', () => {
-        const instance = new CLASS_NAME({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
-        });
-        
-        const testData = {
-            testProperty: 'test-value',
-            timestamp: Date.now()
-        };
-        
-        // Replace SAVE_METHOD with your actual save method
-        instance.SAVE_METHOD?.(testData);
-        
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        
-        // Replace MODULE_DATA_KEY with your actual storage key
-        if (!savedData.settings.MODULE_DATA_KEY) {
-            throw new Error('Data not properly saved to Schema 2.5');
-        }
-    });
-    
-    test('updates Schema 2.5 metadata timestamp', () => {
-        const originalData = JSON.parse(localStorage.getItem('miniCycleData'));
-        const originalTimestamp = originalData.metadata.lastModified;
-        
-        const instance = new CLASS_NAME({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
-        });
-        
-        // Replace SAVE_METHOD with your actual save method
-        instance.SAVE_METHOD?.({ test: 'data' });
-        
-        const updatedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        
-        if (updatedData.metadata.lastModified <= originalTimestamp) {
-            throw new Error('Schema 2.5 timestamp not updated');
-        }
-    });
-    
-    test('handles missing Schema 2.5 data gracefully', () => {
-        localStorage.clear();
-        
-        const instance = new CLASS_NAME({
-            loadMiniCycleData: () => null,
-            showNotification: () => {}
-        });
-        
-        // Should not throw even with missing Schema data
-        expect(() => {
-            instance.PRIMARY_METHOD();
-        }).not.toThrow();
-    });
+    // ============================================
+    // 💾 APPSTATE INTEGRATION TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 AppState Integration</h4>';
 
-    // === ERROR HANDLING TESTS ===
-    resultsDiv.innerHTML += '<h4>Error Handling</h4>';
-    
-    test('handles corrupted localStorage gracefully', () => {
-        localStorage.setItem('miniCycleData', 'invalid-json');
-        
-        const instance = new CLASS_NAME({
-            loadMiniCycleData: () => null
-        });
-        
-        // Should not throw
-        expect(() => {
-            instance.PRIMARY_METHOD();
-        }).not.toThrow();
-    });
-    
-    test('handles missing dependencies gracefully', () => {
-        const instance = new CLASS_NAME();
-        
-        // Should not throw even with missing dependencies
-        expect(() => {
-            instance.PRIMARY_METHOD();
-        }).not.toThrow();
-    });
-    
-    test('handles invalid input gracefully', () => {
-        const instance = new CLASS_NAME();
-        
-        // Test with invalid inputs
-        expect(() => {
-            instance.PRIMARY_METHOD(null);
-            instance.PRIMARY_METHOD(undefined);
-            instance.PRIMARY_METHOD('');
-        }).not.toThrow();
-    });
-
-    // === INTEGRATION TESTS ===
-    resultsDiv.innerHTML += '<h4>🔗 Integration Tests</h4>';
-    
-    test('integrates with AppState when available', () => {
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            update: (updateFn) => {
-                const state = { metadata: { version: '2.5' }, settings: {} };
-                updateFn(state);
-                return state;
+    await test('Uses AppState when available', () => {
+        let appStateUsed = false;
+        const deps = createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => {
+                    appStateUsed = true;
+                    return { settings: {} };
+                },
+                update: (fn) => { fn({}); }
             }
-        };
-        
-        const instance = new CLASS_NAME();
-        
-        // Test AppState integration (replace APPSTATE_METHOD)
-        instance.APPSTATE_METHOD?.();
-        
-        // Verify integration worked
-        if (typeof window.AppState.get !== 'function') {
-            throw new Error('AppState integration failed');
-        }
-    });
-    
-    test('works without AppState (fallback mode)', () => {
-        delete window.AppState;
-        
-        const instance = new CLASS_NAME({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
         });
-        
-        // Should work with localStorage fallback
-        instance.PRIMARY_METHOD();
-        
-        // Add assertions for fallback behavior
-    });
 
-    // === GLOBAL FUNCTIONS TESTS ===
-    resultsDiv.innerHTML += '<h4>🌐 Global Functions</h4>';
-    
-    test('exposes global compatibility functions', () => {
-        // Check that module exposes expected global functions
-        // Replace GLOBAL_FUNCTION1, GLOBAL_FUNCTION2 with your actual globals
-        if (typeof window.GLOBAL_FUNCTION1 !== 'function' ||
-            typeof window.GLOBAL_FUNCTION2 !== 'function') {
-            throw new Error('Global functions not properly exposed');
+        const instance = new CLASS_NAME(deps);
+        instance.PRIMARY_METHOD();
+
+        if (!appStateUsed) {
+            throw new Error('AppState.get should be called');
         }
     });
-    
-    test('global functions work correctly', () => {
-        // Test global function calls (replace GLOBAL_FUNCTION1)
-        window.GLOBAL_FUNCTION1();
-        
-        // Add assertions for global function behavior
-        // Replace MODULE_INSTANCE_GLOBAL with your global instance name
+
+    await test('Handles AppState not ready', () => {
+        const deps = createMockDependencies({
+            AppState: {
+                isReady: () => false,
+                get: () => null
+            }
+        });
+
+        const instance = new CLASS_NAME(deps);
+
+        // Should not throw
+        instance.PRIMARY_METHOD();
+    });
+
+    // ============================================
+    // ⚠️ ERROR HANDLING TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
+
+    await test('Handles null input gracefully', () => {
+        const deps = createMockDependencies();
+        const instance = new CLASS_NAME(deps);
+
+        // Should not throw
+        instance.PRIMARY_METHOD(null);
+    });
+
+    await test('Handles missing dependencies gracefully', () => {
+        // Create instance with minimal deps
+        const instance = new CLASS_NAME({});
+
+        // Should not throw
+        instance.PRIMARY_METHOD();
+    });
+
+    // ============================================
+    // 🌐 GLOBAL WRAPPER TESTS
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
+
+    await test('Global instance is accessible', () => {
         if (!window.MODULE_INSTANCE_GLOBAL) {
-            throw new Error('Global instance not created');
+            throw new Error('Global instance not found');
         }
     });
 
-    // === PERFORMANCE TESTS ===
-    resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
-    
-    test('completes operations within reasonable time', () => {
-        const instance = new CLASS_NAME();
-        
-        const startTime = performance.now();
-        instance.PRIMARY_METHOD();
-        const endTime = performance.now();
-        
-        const duration = endTime - startTime;
-        
-        if (duration > 1000) { // 1 second threshold
-            throw new Error(`Operation took too long: ${duration.toFixed(2)}ms`);
+    await test('Global wrapper function works', () => {
+        // Replace GLOBAL_FUNCTION with your actual global function
+        if (typeof window.GLOBAL_FUNCTION !== 'function') {
+            throw new Error('Global function not found');
         }
+
+        // Should not throw
+        window.GLOBAL_FUNCTION();
     });
 
-    // === SUMMARY ===
+    // ============================================
+    // 📊 RESULTS
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
 
     if (passed.count === total.count) {
-        resultsDiv.innerHTML += '<div class="result pass">All tests passed!</div>';
+        resultsDiv.innerHTML += '<div class="result pass">✅ All tests passed!</div>';
     } else {
-        resultsDiv.innerHTML += '<div class="result fail">WARNING: Some tests failed</div>';
+        resultsDiv.innerHTML += '<div class="result fail">⚠️ Some tests failed</div>';
     }
 
-    
-    // 🔓 RESTORE original localStorage data (only when running individually)
-    restoreOriginalData();
-
-return { passed: passed.count, total: total.count };
-}
-
-// Helper function for exception testing
-function expect(fn) {
-    return {
-        not: {
-            toThrow: () => {
-                try {
-                    fn();
-                } catch (error) {
-                    throw new Error('Expected function not to throw, but it threw: ' + error.message);
-                }
-            }
-        },
-        toThrow: () => {
-            let threw = false;
-            try {
-                fn();
-            } catch (error) {
-                threw = true;
-            }
-            if (!threw) {
-                throw new Error('Expected function to throw, but it did not');
-            }
-        }
-    };
+    return { passed: passed.count, total: total.count };
 }
 
 /*
-TEMPLATE USAGE INSTRUCTIONS:
-============================
+================================================================================
+TEMPLATE USAGE INSTRUCTIONS (Strict DI Pattern)
+================================================================================
 
 1. COPY THIS FILE
-   - Copy to: tests/yourModuleName.tests.js
-   - Example: tests/taskUtils.tests.js
+   cp tests/MODULE_TEMPLATE.tests.js tests/yourModule.tests.js
 
-2. FIND & REPLACE PLACEHOLDERS (use your editor's find/replace):
+2. FIND & REPLACE PLACEHOLDERS:
    - MODULE_NAME → Your module display name (e.g., "TaskUtils")
    - CLASS_NAME → Your class name (e.g., "TaskManager")
    - PRIMARY_METHOD → Main method to test (e.g., "processTask")
-   - SAVE_METHOD → Method that saves to storage (e.g., "saveTaskData")
-   - DATA_METHOD → Data processing method (e.g., "transformTaskData")
-   - MODULE_DATA_KEY → Schema 2.5 storage key (e.g., "taskData")
-   - APPSTATE_METHOD → AppState integration method (e.g., "updateTaskState")
-   - GLOBAL_FUNCTION1 → Global function name (e.g., "processTask")
-   - GLOBAL_FUNCTION2 → Second global function (e.g., "clearTasks")
    - MODULE_INSTANCE_GLOBAL → Global instance name (e.g., "taskManager")
+   - GLOBAL_FUNCTION → Global wrapper function (e.g., "processTask")
 
-3. CUSTOMIZE FOR YOUR MODULE
-   - Update mockSchemaData settings section
-   - Add module-specific test cases
-   - Adjust assertions based on your module's behavior
-   - Remove test sections that don't apply
+3. UPDATE THE IMPORT:
+   // Change this line to import your module's DI setter:
+   import { setYourModuleDependencies } from '../modules/path/to/yourModule.js';
 
-4. ADD TO TEST SUITE
-   - Add option to tests/module-test-suite.html dropdown:
-     <option value="yourModule">YourModule</option>
-   
-   - Add import to tests/module-test-suite.html:
-     import { runYourModuleTests } from './yourModule.tests.js';
-   
-   - Add case to module loader:
-     } else if (moduleName === 'yourModule') {
-         await import('../modules/yourModule.js');
-         currentModule = 'yourModule';
-         resultsDiv.innerHTML = '<p>✅ YourModule loaded. Click "Run Tests" to begin.</p>';
-   
-   - Add case to test runner:
-     } else if (currentModule === 'yourModule') {
-         runYourModuleTests(resultsDiv);
-   
-   - Add to automated testing array in tests/automated/run-browser-tests.js:
-     const modules = ['themeManager', 'deviceDetection', 'globalUtils', 'notifications', 'yourModule'];
+4. ADD TO TEST SUITE (module-test-suite.html):
+   // Import
+   import { runYourModuleTests } from './yourModule.tests.js';
 
-5. EXAMPLE REPLACEMENTS
-   For a "TaskUtils" module with "TaskManager" class:
-   - MODULE_NAME → TaskUtils
-   - CLASS_NAME → TaskManager  
-   - PRIMARY_METHOD → processTask
-   - SAVE_METHOD → saveTaskData
-   - GLOBAL_FUNCTION1 → processTask
-   - MODULE_INSTANCE_GLOBAL → taskManager
+   // Dropdown
+   <option value="yourModule">YourModule</option>
 
-TESTING CHECKLIST:
-✅ All placeholders replaced
-✅ Module-specific test data added
-✅ Added to dropdown and imports
-✅ Added to automated testing
+   // Loader
+   } else if (moduleName === 'yourModule') {
+       await import('../modules/path/to/yourModule.js');
+       currentModule = 'yourModule';
+       resultsDiv.innerHTML = '<p>✅ YourModule loaded.</p>';
+
+   // Runner
+   } else if (currentModule === 'yourModule') {
+       await runYourModuleTests(resultsDiv);
+
+5. ADD TO AUTOMATED TESTS (automated/run-browser-tests.js):
+   const modules = [..., 'yourModule'];
+
+================================================================================
+KEY PATTERNS FOR STRICT DI TESTING
+================================================================================
+
+1. ALWAYS use testHelpers.js:
+   import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+
+2. ALWAYS use createProtectedTest() for localStorage safety:
+   const test = createProtectedTest(resultsDiv, passed, total);
+
+3. INJECT dependencies via the module's setter:
+   setYourModuleDependencies({ AppState: mockAppState });
+
+4. Mock AppState properly:
+   AppState: {
+       isReady: () => true,
+       get: () => ({ settings: {}, data: { cycles: {} } }),
+       update: (fn) => { fn({}); }
+   }
+
+5. Test both "AppState ready" and "AppState not ready" scenarios.
+
+================================================================================
+PLAYWRIGHT LIMITATIONS - Tests to Avoid
+================================================================================
+
+The following patterns DO NOT work reliably in Playwright automated tests:
+
+1. Object.defineProperty(window, 'scrollY', ...) - scrollY mocking fails
+2. Async tests with precise setTimeout timing - use longer waits or skip
+3. Tests requiring appInit.markCoreSystemsReady() - excluded from automation
+
+If your test needs these, add a comment:
+   // NOTE: Test removed - [reason]. Run manually in browser test suite.
+
+================================================================================
+CHECKLIST
+================================================================================
+
+✅ Imported testHelpers.js functions
+✅ Used createProtectedTest() for all tests
+✅ Added DI setter import (commented or active)
+✅ Created createMockDependencies() helper
+✅ Tested initialization, core functionality, error handling
+✅ Added to module-test-suite.html (dropdown, loader, runner)
+✅ Added to automated/run-browser-tests.js modules array
 ✅ Tests pass in browser
-✅ Tests pass in automation (npm test)
-
-BEST PRACTICES:
-- Keep tests fast (<100ms each)
-- Test both success and error cases
-- Always reset state between tests
-- Use Schema 2.5 data structure
-- Follow the exact Summary format for automation
-- Include performance checks for critical operations
-- Test error handling and edge cases
+✅ Tests pass with npm test
 */

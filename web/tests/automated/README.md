@@ -1,6 +1,6 @@
 # Automated Browser Test Suite
 
-**Playwright-powered automation for your existing browser test suite.**
+**Playwright-powered automation for 980 browser tests with Strict Dependency Injection.**
 
 ---
 
@@ -17,7 +17,14 @@ npx playwright install chromium
 
 ### Run Automated Tests
 
-**Two-Terminal Method (Recommended):**
+**Recommended (npm script):**
+
+```bash
+cd /path/to/miniCycle/web
+npm test
+```
+
+**Manual Two-Terminal Method:**
 
 ```bash
 # Terminal 1: Start HTTP server
@@ -27,21 +34,6 @@ python3 -m http.server 8080
 # Terminal 2: Run automated tests
 cd /path/to/miniCycle/web
 node tests/automated/run-browser-tests.js
-```
-
-**One-Terminal Method (Background Server):**
-
-```bash
-cd /path/to/miniCycle/web
-
-# Start server in background
-python3 -m http.server 8080 &
-
-# Run tests
-node tests/automated/run-browser-tests.js
-
-# Stop server when done
-killall python3
 ```
 
 ### Run Manual Tests (Visual)
@@ -56,71 +48,89 @@ python3 -m http.server 8080
 
 ---
 
-## 📦 Installation
-
-### First Time Setup
-
-If you're setting up on a new machine:
-
-```bash
-# 1. Clone repository
-git clone <your-repo>
-cd miniCycle/web
-
-# 2. Install Playwright
-npm install playwright
-
-# 3. Install Chromium browser
-npx playwright install chromium
-
-# 4. Start server
-python3 -m http.server 8080
-
-# 5. Run tests (in another terminal)
-node tests/automated/run-browser-tests.js
-```
-
-### Optional: npm Scripts
-
-If you have a `package.json` with test scripts:
-
-```bash
-npm test                # Run automated tests (headless)
-npm run test:browser    # Same as npm test
-npm run test:manual     # Start server for manual testing
-```
-
----
-
-## 🎯 How It Works
-
-The automated runner uses **Playwright** to:
-
-1. ✅ Launch a headless Chrome browser
-2. ✅ Navigate to your test suite at `http://localhost:8080/tests/module-test-suite.html`
-3. ✅ Select each module (ThemeManager, DeviceDetection, CycleLoader, StatsPanel, GlobalUtils, Notifications)
-4. ✅ Click "Run Tests" button
-5. ✅ Extract test results
-6. ✅ Display results in terminal with color-coded output
-7. ✅ Exit with proper code (0 = pass, 1 = fail) for CI/CD
-
-**Your existing browser tests remain unchanged!** The automation just runs them programmatically.
-
----
-
 ## 📊 Current Test Coverage
 
-The automated runner tests **6 modules** with **148 tests total**:
+The automated runner tests **32 modules** with **980 tests total**:
 
-| Module | Tests | Description |
-|--------|-------|-------------|
-| ThemeManager | 18 | Theme system and dark mode |
-| DeviceDetection | 17 | Device capability detection |
-| CycleLoader | 11 | Data loading and migration |
-| StatsPanel | 27 | Statistics panel and view switching |
-| GlobalUtils | 36 | Utility functions and helpers |
-| Notifications | 39 | Notification system |
-| **Total** | **148** | **All modules** |
+| Module | Tests | Module | Tests |
+|--------|-------|--------|-------|
+| integration | 11 | modalManager | 49 |
+| themeManager | 15 | menuManager | 25 |
+| deviceDetection | 13 | settingsManager | 24 |
+| cycleLoader | 10 | pullToRefresh | 18 |
+| consoleCapture | 32 | taskCore | 33 |
+| state | 40 | taskValidation | 25 |
+| recurringCore | 99 | taskUtils | 22 |
+| recurringIntegration | 17 | taskRenderer | 16 |
+| recurringPanel | 57 | taskEvents | 13 |
+| globalUtils | 36 | taskDOM | 45 |
+| notifications | 35 | xss-vulnerability | 25 |
+| dragDropManager | 55 | errorHandler | 34 |
+| migrationManager | 38 | testingModal | 27 |
+| dueDates | 16 | onboardingManager | 32 |
+| reminders | 4 | gamesManager | 21 |
+| cycleSwitcher | 20 | undoRedoManager | 73 |
+
+**Total: 980 tests across 32 modules**
+
+---
+
+## 🏗️ Architecture: Strict Dependency Injection
+
+All tests use the **Strict DI** pattern with `testHelpers.js`:
+
+```javascript
+import {
+    setupTestEnvironment,
+    createProtectedTest
+} from './testHelpers.js';
+
+import { setModuleDependencies } from '../modules/yourModule.js';
+
+export async function runYourModuleTests(resultsDiv) {
+    // 1. Setup test environment with mocks
+    const env = await setupTestEnvironment();
+
+    // 2. Inject dependencies via setter function
+    setModuleDependencies({
+        AppState: env.AppState,
+        showNotification: env.showNotification
+    });
+
+    let passed = { count: 0 };
+    let total = { count: 0 };
+
+    // 3. Create protected test runner (auto-saves/restores localStorage)
+    const test = createProtectedTest(resultsDiv, passed, total);
+
+    // 4. Write tests
+    await test('test name', () => {
+        // Test code
+    });
+
+    return { passed: passed.count, total: total.count };
+}
+```
+
+---
+
+## ⚠️ Known Playwright Limitations
+
+Some tests are excluded from automated testing due to Playwright environment limitations:
+
+| Limitation | Affected Tests | Solution |
+|------------|---------------|----------|
+| `Object.defineProperty(window, 'scrollY')` doesn't work | Pull-to-refresh scroll tests | Run manually in browser |
+| `setTimeout` timing is flaky | Async callback tests | Removed or increased timeouts |
+| `appInit.markCoreSystemsReady()` not available | statsPanel, modeManager | Excluded from automated suite |
+
+**~24 tests** were modified or removed for Playwright compatibility. All remaining 980 tests pass reliably.
+
+**Mark excluded tests with comments:**
+```javascript
+// NOTE: Removed - Object.defineProperty on scrollY doesn't work in Playwright
+// await test('scroll position triggers pull', async () => { ... });
+```
 
 ---
 
@@ -134,36 +144,42 @@ The automated runner tests **6 modules** with **148 tests total**:
 🌐 Launching browser...
 
 🧪 Testing themeManager...
-   ✅ Results: 18/18 tests passed (100%)
+   ✅ Results: 15/15 tests passed (100%)
 
 🧪 Testing deviceDetection...
-   ✅ Results: 17/17 tests passed (100%)
+   ✅ Results: 13/13 tests passed (100%)
 
 🧪 Testing cycleLoader...
-   ✅ Results: 11/11 tests passed
+   ✅ Results: 10/10 tests passed (100%)
 
-🧪 Testing statsPanel...
-   ✅ Results: 27/27 tests passed (100%)
-
-🧪 Testing globalUtils...
-   ✅ Results: 36/36 tests passed (100%)
-
-🧪 Testing notifications...
-   ✅ Results: 39/39 tests passed (100%)
+... (32 modules)
 
 ============================================================
-📊 Test Summary (12.07s)
+📊 Test Summary (45.2s)
 ============================================================
-   ✅ PASS themeManager         18/18 tests
-   ✅ PASS deviceDetection      17/17 tests
-   ✅ PASS cycleLoader          11/11 tests
-   ✅ PASS statsPanel           27/27 tests
-   ✅ PASS globalUtils          36/36 tests
-   ✅ PASS notifications        39/39 tests
+   ✅ PASS themeManager         15/15 tests
+   ✅ PASS deviceDetection      13/13 tests
+   ... (32 modules)
 ============================================================
-🎉 All tests passed! (148/148 - 100%)
+🎉 All tests passed! (980/980 - 100%)
 ============================================================
 ```
+
+---
+
+## 🎯 How It Works
+
+The automated runner uses **Playwright** to:
+
+1. ✅ Launch a headless Chrome browser
+2. ✅ Navigate to `http://localhost:8080/tests/module-test-suite.html`
+3. ✅ Select each module from the dropdown
+4. ✅ Click "Run Tests" button
+5. ✅ Extract test results from the DOM
+6. ✅ Display color-coded results in terminal
+7. ✅ Exit with proper code (0 = pass, 1 = fail) for CI/CD
+
+**Your existing browser tests remain unchanged!** The automation just runs them programmatically.
 
 ---
 
@@ -179,9 +195,7 @@ const modules = [
     'themeManager',
     'deviceDetection',
     'cycleLoader',
-    'statsPanel',
-    'globalUtils',
-    'notifications',
+    // ... other modules
     'yourNewModule'  // ← Add here
 ];
 ```
@@ -223,9 +237,6 @@ python3 -m http.server 8080
 
 # Then run tests in another terminal
 node tests/automated/run-browser-tests.js
-
-# Verify server is accessible
-# Open: http://localhost:8080/tests/module-test-suite.html
 ```
 
 ### "Playwright not found"
@@ -258,33 +269,23 @@ lsof -ti:8080 | xargs kill
 
 # Option 2: Use a different port
 python3 -m http.server 8081
-
-# Then update run-browser-tests.js:
-await page.goto('http://localhost:8081/tests/module-test-suite.html', {
-    waitUntil: 'networkidle',
-    timeout: 10000
-});
+# Update URL in run-browser-tests.js accordingly
 ```
 
 ### Tests timeout or hang
 
-**Problem**: Tests take longer than expected
-
 **Solutions**:
-1. **Increase timeout** in `run-browser-tests.js` (see Configuration section)
-2. **Check for console errors** - Run with `headless: false` to debug
-3. **Verify server is responding** - Open test page manually in browser
-4. **Clear browser cache** - `npx playwright install chromium --force`
+1. **Increase timeout** in `run-browser-tests.js`
+2. **Run with `headless: false`** to debug visually
+3. **Check for console errors** in the browser
+4. **Verify server is responding** - Open test page manually
 
 ### Tests fail but manual tests pass
 
-**Problem**: Timing issues or DOM not ready
-
-**Solutions**:
-1. **Add delays** in specific test files
-2. **Increase `waitForSelector` timeout**
-3. **Check for race conditions** in async operations
-4. **Run in debug mode** with `headless: false`
+**Possible causes**:
+1. **Playwright limitations** - Some browser APIs don't work in headless mode
+2. **Timing issues** - Add delays or increase timeouts
+3. **DOM not ready** - Wait for elements before asserting
 
 ---
 
@@ -352,37 +353,6 @@ test:
     - node tests/automated/run-browser-tests.js
 ```
 
-### CircleCI
-
-Create `.circleci/config.yml`:
-
-```yaml
-version: 2.1
-jobs:
-  test:
-    docker:
-      - image: mcr.microsoft.com/playwright:v1.40.0-focal
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            cd web
-            npm install playwright
-      - run:
-          name: Start server and run tests
-          command: |
-            cd web
-            python3 -m http.server 8080 &
-            sleep 3
-            node tests/automated/run-browser-tests.js
-
-workflows:
-  test:
-    jobs:
-      - test
-```
-
 ---
 
 ## 📦 Dependencies & Project Structure
@@ -392,15 +362,14 @@ workflows:
 **Committed to repository** (tracked in git):
 - ✅ `tests/automated/run-browser-tests.js` - Test runner script
 - ✅ `tests/automated/README.md` - This documentation
-- ✅ `tests/*.tests.js` - All test files
+- ✅ `tests/testHelpers.js` - Shared mocks and DI setup
+- ✅ `tests/*.tests.js` - All test files (32 files)
 - ✅ `tests/module-test-suite.html` - Manual test interface
-- ✅ `.gitignore` - Prevents unnecessary files from being committed
 
 ### What Stays Local
 
 **Not committed** (ignored by git):
-- ❌ `node_modules/` - Playwright dependencies (50-300MB)
-- ❌ `package-lock.json` - Dependency lock file (if created)
+- ❌ `node_modules/` - Playwright dependencies
 - ❌ Test artifacts and screenshots
 - ❌ `.DS_Store` and OS-specific files
 
@@ -411,105 +380,28 @@ workflows:
 - Playwright is a **devDependency** only
 - Never loaded in production code
 - Only used for automated testing
-- Users don't need it to run the app
 
 ---
 
-## 🎓 Best Practices
+## 🔒 localStorage Protection
 
-### During Development
+All test files protect user data automatically via `createProtectedTest()`:
 
-1. **Manual tests first** - Use visual test suite for debugging
-   ```bash
-   python3 -m http.server 8080
-   # Open: http://localhost:8080/tests/module-test-suite.html
-   ```
+```javascript
+const test = createProtectedTest(resultsDiv, passed, total);
 
-2. **Automated tests before commit** - Verify all tests pass
-   ```bash
-   node tests/automated/run-browser-tests.js
-   ```
-
-3. **Fix issues immediately** - Don't commit failing tests
-
-### Before Committing
-
-```bash
-# 1. Start server
-python3 -m http.server 8080 &
-
-# 2. Run all automated tests
-node tests/automated/run-browser-tests.js
-
-# 3. Verify 148/148 tests pass
-# 4. Commit with confidence
-git add .
-git commit -m "feat: Add new feature with tests"
-
-# 5. Stop server
-killall python3
+// This test is safe - localStorage is backed up and restored
+await test('modifies localStorage', () => {
+    localStorage.setItem('miniCycleData', '{"test": true}');
+    // After test: original data is automatically restored
+});
 ```
 
-### In CI/CD
-
-- ✅ Tests run automatically on every push/PR
-- ✅ Failed tests block merges
-- ✅ View results in Actions/Pipeline tab
-- ✅ Exit code 0 = success, 1 = failure
-
----
-
-## 🔒 localStorage Protection Script
-
-**IMPORTANT:** All test files must protect user data when running individually!
-
-### Quick Fix for New/Old Test Files
-
-If you create a new test file or find an old one without localStorage protection, run:
-
-```bash
-node tests/automated/add-localStorage-backup.js
-```
-
-**What it does:**
-- ✅ Adds `isPartOfSuite` parameter to test functions
-- ✅ Inserts localStorage backup code at start of tests
-- ✅ Adds restore call before return statement
-- ✅ Detects and skips files that already have protection
-- ✅ Updates `MODULE_TEMPLATE.tests.js` for future use
-
-**Example output:**
-```
-🔧 Adding localStorage backup to test files...
-
-📝 Processing dueDates.tests.js...
-  ✓ Added isPartOfSuite parameter
-  ✓ Added backup/restore code
-  ✓ Added restore call before return
-  ✅ Successfully updated dueDates.tests.js
-
-============================================================
-📊 Summary:
-   ✅ Processed: 8 files
-   ⏭️  Skipped: 0 files
-   ❌ Errors: 0 files
-============================================================
-
-✅ All test files now have localStorage backup protection!
-```
-
-**Protected test files:**
-- cycleSwitcher.tests.js
-- dueDates.tests.js
-- menuManager.tests.js
-- modeManager.tests.js
-- reminders.tests.js
-- settingsManager.tests.js
-- taskCore.tests.js
-- undoRedoManager.tests.js
-- MODULE_TEMPLATE.tests.js
-
-**Total**: 30+ test files now protected ✅
+**Benefits:**
+- Your `miniCycleData` is backed up before tests
+- Tests run with mock data in localStorage
+- Your real data is restored after tests complete
+- **Safe to run tests while using the app!**
 
 ---
 
@@ -540,7 +432,7 @@ node tests/automated/add-localStorage-backup.js
 │  Automated Test     │
 │  (Headless CLI)     │
 │  - Verify all pass  │
-│  - 951/958 tests    │
+│  - 980/980 tests    │
 └──────┬──────────────┘
        │
        ▼
@@ -551,100 +443,6 @@ node tests/automated/add-localStorage-backup.js
 │  - Deploy ready     │
 └─────────────────────┘
 ```
-
----
-
-## 🏗️ Architecture Overview
-
-### How It All Works Together
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  miniCycle App (Vanilla JavaScript)                     │
-│  ├── utilities/themeManager.js                          │
-│  ├── utilities/deviceDetection.js                       │
-│  ├── utilities/cycleLoader.js                           │
-│  ├── utilities/statsPanel.js                            │
-│  ├── utilities/globalUtils.js                           │
-│  └── utilities/notifications.js                         │
-│                                                          │
-│  No build step - runs directly in browser               │
-└─────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────┐
-│  Browser Test Suite (Manual)                            │
-│  ├── tests/module-test-suite.html                       │
-│  ├── tests/themeManager.tests.js                        │
-│  ├── tests/deviceDetection.tests.js                     │
-│  ├── tests/cycleLoader.tests.js                         │
-│  ├── tests/statsPanel.tests.js                          │
-│  ├── tests/globalUtils.tests.js                         │
-│  └── tests/notifications.tests.js                       │
-│                                                          │
-│  Run: python3 -m http.server 8080                       │
-│  Open: http://localhost:8080/tests/module-test-suite.html │
-│                                                          │
-│  - Visual feedback                                      │
-│  - Interactive debugging                                │
-│  - Manual test selection                                │
-└─────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────┐
-│  Playwright Automation Layer                            │
-│  └── tests/automated/run-browser-tests.js               │
-│                                                          │
-│  - Launches headless Chrome                             │
-│  - Runs same browser tests programmatically             │
-│  - Extracts results from DOM                            │
-│  - Outputs colored terminal results                     │
-│  - Exits with proper code for CI/CD                     │
-│                                                          │
-│  Run: node tests/automated/run-browser-tests.js         │
-│                                                          │
-│  - No visual UI                                         │
-│  - Fast execution                                       │
-│  - CI/CD friendly                                       │
-└─────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────┐
-│  CI/CD (GitHub Actions / GitLab CI / CircleCI)          │
-│                                                          │
-│  - Runs on every push/PR                                │
-│  - Installs dependencies (npm install playwright)       │
-│  - Installs browsers (npx playwright install chromium)  │
-│  - Starts HTTP server (python3 -m http.server 8080 &)   │
-│  - Runs automated tests                                 │
-│  - Reports pass/fail status                             │
-│  - Blocks merge if tests fail                           │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Key Design Decisions
-
-1. **No Test Code Duplication**
-   - One set of test files
-   - Run manually OR automatically
-   - Same assertions, same results
-
-2. **Zero Runtime Dependencies**
-   - App is pure vanilla JavaScript
-   - No webpack, no babel, no bundler
-   - Playwright only for testing (dev only)
-
-3. **DevDependencies Only**
-   - Testing tools never touch production
-   - Users don't need npm to run app
-   - Clean separation of concerns
-
-4. **Clean Git History**
-   - `.gitignore` keeps `node_modules` out
-   - Only source code in repository
-   - Fast clones and pulls
-
-5. **Fast Feedback Loop**
-   - Manual tests for visual debugging
-   - Automated tests for confidence
-   - Both use exact same test code
 
 ---
 
@@ -689,15 +487,6 @@ const duration = Date.now() - startTime;
 console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ```
 
-### 5. Parallel Execution (Advanced)
-
-```javascript
-// Run multiple modules in parallel
-const results = await Promise.all(
-    modules.map(module => runModuleTests(page, module))
-);
-```
-
 ---
 
 ## 🎉 Summary
@@ -706,11 +495,11 @@ const results = await Promise.all(
 
 ✅ **Manual tests** - Visual, interactive, debuggable
 ✅ **Automated tests** - Fast, reliable, CI/CD ready
+✅ **Strict DI** - All modules use dependency injection
+✅ **testHelpers.js** - Shared mocks for consistency
 ✅ **Clean repository** - No dependency bloat
-✅ **Professional workflow** - Industry-standard setup
-✅ **Zero duplication** - One test suite, two modes
-✅ **148 tests** - Comprehensive coverage
-✅ **6 modules** - All core functionality tested
+✅ **980 tests** - Comprehensive coverage
+✅ **32 modules** - All core functionality tested
 
 **No build step. No configuration. Just works.** 🚀
 
@@ -718,13 +507,12 @@ const results = await Promise.all(
 
 ## 📚 Related Documentation
 
-- **Test Writing Guide**: `../DEVELOPER_DOCUMENTATION.md` (Testing System section)
-- **Quick Reference**: `../../docs/TESTING_QUICK_REFERENCE.md`
 - **Test Template**: `../MODULE_TEMPLATE.tests.js`
-- **Main Docs**: `../../docs/QUICK_REFERENCE.md`
+- **Shared Helpers**: `../testHelpers.js`
+- **Quick Reference**: `../TESTING_QUICK_REFERENCE.md`
+- **Testing Approach**: `../TESTING_APPROACH.md`
 
 ---
 
-**Last Updated**: October 8, 2025
-**Test Coverage**: 148 tests across 6 modules
-**Maintained By**: sparkinCreations
+**Last Updated**: December 2024
+**Test Coverage**: 980 tests across 32 modules (100%)

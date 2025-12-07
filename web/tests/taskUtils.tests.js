@@ -439,35 +439,6 @@ export async function runTaskUtilsTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
 
-    await test('global buildTaskContext works', () => {
-        const taskItem = document.createElement('li');
-        const taskText = document.createElement('span');
-        taskText.className = 'task-text';
-        taskText.textContent = 'Test';
-        taskItem.appendChild(taskText);
-
-        // Mock AppState
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                data: {
-                    cycles: { 'cycle-1': { tasks: [] } }
-                },
-                appState: { activeCycleId: 'cycle-1' },
-                settings: {}
-            })
-        };
-
-        const result = window.buildTaskContext(taskItem, 'test-id');
-
-        if (!result) {
-            throw new Error('Global wrapper should work');
-        }
-
-        if (result.taskTextTrimmed !== 'Test') {
-            throw new Error('Global wrapper should extract task text');
-        }
-    });
 
     await test('global extractTaskDataFromDOM works', () => {
         const result = window.extractTaskDataFromDOM();

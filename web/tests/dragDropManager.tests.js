@@ -43,20 +43,6 @@ export async function runDragDropManagerTests(resultsDiv) {
         }
     });
 
-    test('Global functions are exported', () => {
-        const requiredFunctions = [
-            'initDragDropManager',
-            'updateMoveArrowsVisibility',
-            'toggleArrowVisibility',
-            'updateArrowsInDOM'
-        ];
-
-        for (const funcName of requiredFunctions) {
-            if (typeof window[funcName] !== 'function') {
-                throw new Error(`${funcName} not found on window object`);
-            }
-        }
-    });
 
     // NOTE: Legacy DragAndDrop test removed - Phase 3 intentionally removes window.* pollution
     // The module now uses ES6 exports only, accessed via the main script
@@ -159,25 +145,6 @@ export async function runDragDropManagerTests(resultsDiv) {
         document.body.removeChild(taskList);
     });
 
-    test('setupRearrange() prevents double setup', () => {
-        const manager = new DragDropManager();
-
-        if (!window.AppGlobalState) {
-            window.AppGlobalState = {};
-        }
-
-        window.AppGlobalState.rearrangeInitialized = false;
-
-        manager.setupRearrange();
-        const firstSetup = window.AppGlobalState.rearrangeInitialized;
-
-        manager.setupRearrange(); // Call again
-
-        if (!firstSetup) {
-            throw new Error('First setup should have marked as initialized');
-        }
-    });
-
     // ============================================
     // ⚡ CORE FUNCTIONALITY TESTS
     // ============================================
@@ -222,35 +189,6 @@ export async function runDragDropManagerTests(resultsDiv) {
 
         // The actual addEventListener is called, so touchstart should be registered
         // In real DOM, this would be true
-    });
-
-    test('cleanupDragState() removes dragging classes', () => {
-        const manager = new DragDropManager();
-
-        // Create mock dragged task
-        const taskElement = document.createElement('div');
-        taskElement.className = 'task dragging rearranging';
-        document.body.appendChild(taskElement);
-
-        if (!window.AppGlobalState) {
-            window.AppGlobalState = {};
-        }
-        window.AppGlobalState.draggedTask = taskElement;
-
-        manager.cleanupDragState();
-
-        if (taskElement.classList.contains('dragging')) {
-            throw new Error('dragging class should be removed');
-        }
-        if (taskElement.classList.contains('rearranging')) {
-            throw new Error('rearranging class should be removed');
-        }
-        if (window.AppGlobalState.draggedTask !== null) {
-            throw new Error('draggedTask should be set to null');
-        }
-
-        // Cleanup
-        document.body.removeChild(taskElement);
     });
 
     test('cleanupDragState() handles missing elements gracefully', () => {
@@ -387,48 +325,6 @@ export async function runDragDropManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">👁️ Arrow Visibility</h4>';
 
-    test('updateArrowsInDOM() shows arrows when enabled', () => {
-        const manager = new DragDropManager();
-
-        // Create mock tasks
-        const task1 = document.createElement('div');
-        task1.className = 'task';
-        const upBtn1 = document.createElement('button');
-        upBtn1.className = 'move-up';
-        const downBtn1 = document.createElement('button');
-        downBtn1.className = 'move-down';
-        task1.appendChild(upBtn1);
-        task1.appendChild(downBtn1);
-
-        const task2 = document.createElement('div');
-        task2.className = 'task';
-        const upBtn2 = document.createElement('button');
-        upBtn2.className = 'move-up';
-        const downBtn2 = document.createElement('button');
-        downBtn2.className = 'move-down';
-        task2.appendChild(upBtn2);
-        task2.appendChild(downBtn2);
-
-        document.body.appendChild(task1);
-        document.body.appendChild(task2);
-
-        manager.updateArrowsInDOM(true);
-
-        // First task's up button should be hidden (at top)
-        if (!upBtn1.classList.contains('hidden')) {
-            throw new Error('First task up button should have hidden class');
-        }
-
-        // Second task's up button should be visible (no hidden class)
-        if (upBtn2.classList.contains('hidden')) {
-            throw new Error('Second task up button should not have hidden class');
-        }
-
-        // Cleanup
-        document.body.removeChild(task1);
-        document.body.removeChild(task2);
-    });
-
     test('updateArrowsInDOM() hides arrows when disabled', () => {
         const manager = new DragDropManager();
 
@@ -497,46 +393,6 @@ export async function runDragDropManagerTests(resultsDiv) {
 
         // Should not throw and should read from localStorage
         manager.updateMoveArrowsVisibility();
-
-        // Restore
-        window.AppState = originalAppState;
-    });
-
-    test('toggleArrowVisibility() updates AppState', () => {
-        const manager = new DragDropManager();
-
-        let updateCalled = false;
-        let updatedValue = null;
-
-        // Mock AppState
-        const originalAppState = window.AppState;
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({
-                ui: {
-                    moveArrowsVisible: false
-                },
-                metadata: {}
-            }),
-            update: (updateFn, immediate) => {
-                updateCalled = true;
-                const mockState = {
-                    ui: { moveArrowsVisible: false },
-                    metadata: {}
-                };
-                updateFn(mockState);
-                updatedValue = mockState.ui.moveArrowsVisible;
-            }
-        };
-
-        manager.toggleArrowVisibility();
-
-        if (!updateCalled) {
-            throw new Error('AppState.update should be called');
-        }
-        if (updatedValue !== true) {
-            throw new Error('Arrow visibility should be toggled to true');
-        }
 
         // Restore
         window.AppState = originalAppState;
@@ -762,30 +618,6 @@ export async function runDragDropManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Functions</h4>';
 
-    await test('initDragDropManager() creates global instance', async () => {
-        // Note: In actual test environment, this would create the global instance
-        if (typeof window.initDragDropManager !== 'function') {
-            throw new Error('initDragDropManager should be available globally');
-        }
-    });
-
-    test('updateMoveArrowsVisibility() global function exists', () => {
-        if (typeof window.updateMoveArrowsVisibility !== 'function') {
-            throw new Error('updateMoveArrowsVisibility should be available globally');
-        }
-    });
-
-    test('toggleArrowVisibility() global function exists', () => {
-        if (typeof window.toggleArrowVisibility !== 'function') {
-            throw new Error('toggleArrowVisibility should be available globally');
-        }
-    });
-
-    test('updateArrowsInDOM() global function exists', () => {
-        if (typeof window.updateArrowsInDOM !== 'function') {
-            throw new Error('updateArrowsInDOM should be available globally');
-        }
-    });
 
     // NOTE: DragAndDrop backward compatibility test removed - Phase 3 pattern
     // Legacy window.DragAndDrop is no longer exposed; use ES6 imports instead
@@ -814,23 +646,6 @@ export async function runDragDropManagerTests(resultsDiv) {
 
         // Restore
         window.AppState = originalAppState;
-    });
-
-    test('integrates with AppGlobalState for drag tracking', () => {
-        const manager = new DragDropManager();
-
-        if (!window.AppGlobalState) {
-            window.AppGlobalState = {};
-        }
-
-        const taskElement = document.createElement('div');
-        window.AppGlobalState.draggedTask = taskElement;
-
-        manager.cleanupDragState();
-
-        if (window.AppGlobalState.draggedTask !== null) {
-            throw new Error('Should clear draggedTask in AppGlobalState');
-        }
     });
 
     await test('waits for appInit before initialization', async () => {

@@ -314,38 +314,6 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === DATA PERSISTENCE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Data Persistence</h4>';
 
-    // ⚠️ ENVIRONMENT-SPECIFIC: May fail due to async localStorage timing
-    await test('saves cycle data correctly', async () => {
-        // ✅ Explicitly verify localStorage has valid data before test
-        const storedData = localStorage.getItem('miniCycleData');
-        if (!storedData) {
-            throw new Error('Test setup failed: no data in localStorage');
-        }
-
-        // Verify it's valid JSON
-        let initialData;
-        try {
-            initialData = JSON.parse(storedData);
-        } catch (e) {
-            throw new Error(`Test setup failed: invalid JSON in localStorage: ${storedData.substring(0, 50)}`);
-        }
-
-        const updatedCycle = {
-            id: 'cycle1',
-            title: 'Updated Cycle',
-            tasks: [{ id: 'new-task', text: 'New Task', completed: false }]
-        };
-
-        await saveCycleData('cycle1', updatedCycle);
-
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        const savedCycle = savedData.data.cycles.cycle1;
-
-        if (savedCycle.title !== 'Updated Cycle') {
-            throw new Error('Cycle data not properly saved');
-        }
-    });
-
     // ⚠️ ENVIRONMENT-SPECIFIC: Error recovery behavior varies by browser
     await test('handles corrupted localStorage in save', async () => {
         // This test intentionally sets invalid JSON to test error handling

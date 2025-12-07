@@ -1,162 +1,179 @@
 # miniCycle Testing Suite
 
-**Zero-dependency browser testing for ES6 modules**
+**Zero-dependency browser testing for ES6 modules with Strict Dependency Injection (DI)**
 
-## 🚀 Quick Start
+## Current Status
 
-1. **Open the test suite:**
+**980 tests | 32 modules | 100% pass rate**
+
+```bash
+npm test
+```
+
+## Quick Start
+
+1. **Start the server:**
    ```bash
-   cd tests
-   open module-test-suite.html
-   # Or serve with: python3 -m http.server 8080
+   cd web
+   python3 -m http.server 8080
    ```
 
-2. **Select a module** from the dropdown (e.g., ThemeManager)
+2. **Run automated tests:**
+   ```bash
+   npm test
+   ```
 
-3. **Click "Run Tests"** to see instant results
+3. **Or run manual browser tests:**
+   ```
+   Open: http://localhost:8080/tests/module-test-suite.html
+   ```
 
-## 📚 Documentation
+## Documentation
 
-- **[TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)** - Complete reference guide with advanced patterns
-- **[TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md)** - Quick template workflow for new modules
-- **[module-test-suite.html](./module-test-suite.html)** - Test runner (open in browser)
+| Document | Purpose |
+|----------|---------|
+| [TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md) | Complete patterns, examples, and best practices |
+| [TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md) | Step-by-step guide for new test files |
+| [TESTING_APPROACH.md](./TESTING_APPROACH.md) | Why Playwright browser tests (not Jest) |
+| [automated/README.md](./automated/README.md) | CI/CD integration and automation details |
 
-## 📁 Structure
+## Architecture: Strict Dependency Injection
+
+All modules use **strict DI** with no `|| window.*` fallbacks:
+
+```javascript
+// Modern DI Pattern (used by all modules)
+import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+
+export async function runYourModuleTests(resultsDiv) {
+    // 1. Setup test environment with mocks
+    const env = await setupTestEnvironment();
+
+    // 2. Create protected test runner (auto-saves/restores localStorage)
+    const test = createProtectedTest(resultsDiv, passed, total);
+
+    // 3. Inject dependencies via setter function
+    setYourModuleDependencies({
+        AppState: env.AppState,
+        showNotification: env.showNotification
+    });
+
+    // 4. Test the module
+    await test('creates instance', () => {
+        const instance = new YourModule();
+        // assertions...
+    });
+}
+```
+
+## Test Files Structure
 
 ```
 tests/
-├── TESTING_QUICK_REFERENCE.md # 📖 Complete reference guide
-├── TEMPLATE_QUICK_START.md    # 🚀 Template workflow guide
-├── README.md                   # 📄 This file (quick start)
-├── module-test-suite.html      # 🧪 Browser test runner
-├── MODULE_TEMPLATE.tests.js    # 📋 Copy this for new modules
-├── themeManager.tests.js       # ✅ ThemeManager tests
-├── globalUtils.tests.js        # ✅ GlobalUtils tests
-└── [yourModule].tests.js       # ➕ Add your tests here
+├── testHelpers.js              # Shared mocks and DI setup (REQUIRED)
+├── MODULE_TEMPLATE.tests.js    # Template for new modules
+├── module-test-suite.html      # Browser test runner UI
+├── automated/
+│   ├── run-browser-tests.js    # Playwright automation
+│   └── README.md               # CI/CD documentation
+└── *.tests.js                  # Individual module tests (32 files)
 ```
 
-## ➕ Adding a New Module
+## Key Patterns
 
-### Quick Checklist
-
-1. Create `tests/yourModule.tests.js`:
-   ```javascript
-   export function runYourModuleTests(resultsDiv) {
-       // Your tests here
-   }
-   ```
-
-2. Edit `module-test-suite.html`:
-   - Add dropdown option
-   - Import test file
-   - Add loading logic
-   - Add runner logic
-
-3. Open in browser and test!
-
-**[See complete reference →](./TESTING_QUICK_REFERENCE.md)** | **[Use template →](./TEMPLATE_QUICK_START.md)**
-
-## ✅ Test Patterns
-
-### Basic Test Structure
+### 1. Use testHelpers.js (Required)
 
 ```javascript
-function test(name, testFn) {
-    total.count++;
-    try {
-        testFn();
-        resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-        passed.count++;
-    } catch (error) {
-        resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-    }
-}
+import {
+    setupTestEnvironment,
+    createProtectedTest,
+    createMockAppState
+} from './testHelpers.js';
+```
 
-test('module loads successfully', () => {
-    if (typeof YourModule === 'undefined') {
-        throw new Error('Module not found');
-    }
+### 2. Protected Tests (localStorage safe)
+
+```javascript
+const test = createProtectedTest(resultsDiv, passed, total);
+
+await test('your test name', async () => {
+    // Test code - localStorage is auto-saved/restored
 });
 ```
 
-### Organize by Section
+### 3. Dependency Injection
 
 ```javascript
-resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
-// Initialization tests...
+// Import the module's DI setter
+import { setYourModuleDependencies } from '../modules/yourModule.js';
 
-resultsDiv.innerHTML += '<h4 class="test-section">✨ Features</h4>';
-// Feature tests...
-
-resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
-// Error tests...
+// Inject mocks before creating instances
+setYourModuleDependencies({
+    AppState: createMockAppState(),
+    showNotification: () => {}
+});
 ```
 
-## 📊 Test Coverage by Pattern
+## Known Playwright Limitations
 
-| Pattern | Coverage Target |
-|---------|----------------|
-| ⚡ Static Utility | 90%+ |
-| 🎯 Simple Instance | 85%+ |
-| 🛡️ Resilient Constructor | 80%+ |
-| 🔧 Strict Injection | 85%+ |
+Some tests are skipped in automated testing due to Playwright environment limitations:
 
-## 🎯 Current Test Suites (413+ Tests)
+| Limitation | Affected Tests | Solution |
+|------------|---------------|----------|
+| `Object.defineProperty(window, 'scrollY')` doesn't work | Pull-to-refresh scroll tests | Run manually in browser |
+| `setTimeout` timing is flaky | Async callback tests | Removed or increased timeouts |
+| `appInit.markCoreSystemsReady()` not available | statsPanel, modeManager | Excluded from automated suite |
 
-- ✅ **GlobalUtils** (36 tests) - DOM helpers, event listeners, utilities
-- ✅ **ThemeManager** (18 tests) - Theme application, dark mode, storage
-- ✅ **DeviceDetection** (17 tests) - Device info, timestamps, performance
-- ✅ **CycleLoader** (11 tests) - Data loading, schema validation
-- ✅ **StatsPanel** (27 tests) - Statistics tracking, UI updates
-- ✅ **Notifications** (39 tests) - Show/hide, tips, dragging, modals
-- ✅ **ConsoleCapture** (41 tests) - Console interception, logging
-- ✅ **State** (58 tests) - State management, persistence, listeners
-- ✅ **RecurringCore** (69 tests) - Recurring tasks, date/time logic
-- ✅ **RecurringIntegration** (27 tests) - Module integration, initialization
-- ✅ **MigrationManager** (56 tests) - Schema migration, data validation, backup/restore
+See comments in test files marked with `// NOTE:` for specific exclusions.
 
-## 💡 Tips
+## Module Coverage (32 modules, 980 tests)
+
+| Module | Tests | Module | Tests |
+|--------|-------|--------|-------|
+| integration | 11 | modalManager | 49 |
+| themeManager | 15 | menuManager | 25 |
+| deviceDetection | 13 | settingsManager | 24 |
+| cycleLoader | 10 | pullToRefresh | 18 |
+| consoleCapture | 32 | taskCore | 33 |
+| state | 40 | taskValidation | 25 |
+| recurringCore | 99 | taskUtils | 22 |
+| recurringIntegration | 17 | taskRenderer | 16 |
+| recurringPanel | 57 | taskEvents | 13 |
+| globalUtils | 36 | taskDOM | 45 |
+| notifications | 35 | xss-vulnerability | 25 |
+| dragDropManager | 55 | errorHandler | 34 |
+| migrationManager | 38 | testingModal | 27 |
+| dueDates | 16 | onboardingManager | 32 |
+| reminders | 4 | gamesManager | 21 |
+| cycleSwitcher | 20 | undoRedoManager | 73 |
+
+## Adding New Tests
+
+1. Copy `MODULE_TEMPLATE.tests.js`
+2. Use `testHelpers.js` for DI setup
+3. Add to `module-test-suite.html`
+4. Add to `automated/run-browser-tests.js` modules array
+
+See [TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md) for detailed steps.
+
+## localStorage Protection
+
+All test files protect your real app data:
+
+- Your `miniCycleData` is backed up before tests
+- Tests run with mock data in localStorage
+- Your real data is restored after tests complete
+- **Safe to run tests while using the app!**
+
+## Tips
 
 - **No build tools needed** - runs directly in browser
-- **Visual feedback** - green/red results
-- **Instant testing** - reload page to retest
-- **Real environment** - tests actual browser behavior
-- **🔒 Data protected** - All tests include localStorage backup/restore (safe to run while app is open!)
-
-## 🔒 localStorage Protection
-
-**All test files now protect your real app data!**
-
-When you run tests individually (not as part of automated suite):
-- ✅ Your `miniCycleData` is backed up before tests
-- ✅ Tests run with mock data in localStorage
-- ✅ Your real data is restored after tests complete
-- ✅ **You can safely run tests while using the app!**
-
-This means you can:
-- Run individual module tests without losing work
-- Debug tests in browser DevTools safely
-- Develop new tests without risk
-
-**Pattern used:** `isPartOfSuite` parameter with automatic backup/restore
-
-## 🐛 Debugging
-
-1. Open browser DevTools (F12)
-2. Check Console for errors
-3. Use `console.log()` in test functions
-4. Test module functions directly in console
-
-## 📖 Full Documentation
-
-**For complete reference with advanced patterns:**
-
-👉 **[Read TESTING_QUICK_REFERENCE.md](./TESTING_QUICK_REFERENCE.md)**
-
-**For template-based workflow:**
-
-👉 **[Read TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md)**
+- **Visual feedback** - green/red results in browser
+- **Data protected** - All tests backup/restore localStorage
+- **Real environment** - Tests actual browser behavior
+- **DI throughout** - No global state pollution
 
 ---
 
-**Happy Testing!** 🎉
+**Last Updated:** December 2024
+**Test Coverage:** 980 tests across 32 modules (100%)

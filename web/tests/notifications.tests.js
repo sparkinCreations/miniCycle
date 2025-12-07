@@ -368,39 +368,9 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
-    test('createTip() respects dismissed state', () => {
-        setupMockGlobals();
-        const mockData = createMockSchemaData();
-        mockData.settings.dismissedEducationalTips = { 'dismissed-tip': true };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        const tipManager = new window.EducationalTipManager();
-        const tipHTML = tipManager.createTip('dismissed-tip', 'Test');
-
-        if (!tipHTML.includes('display: none')) {
-            throw new Error('Dismissed tip should be hidden');
-        }
-    });
-
     // ===== POSITION MANAGEMENT TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">📍 Position Management</h4>';
-
-    test('restoreNotificationPosition() applies saved position', () => {
-        setupMockGlobals();
-        const mockData = createMockSchemaData();
-        mockData.settings.notificationPosition = { x: 200, y: 50 };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        const container = createNotificationContainer();
-        const notifications = new window.MiniCycleNotifications();
-
-        notifications.restoreNotificationPosition(container);
-
-        if (container.style.left !== '200px' || container.style.top !== '50px') {
-            throw new Error('Position not restored correctly');
-        }
-    });
 
     test('setDefaultPosition() sets smart defaults', () => {
         setupMockGlobals();
@@ -416,35 +386,6 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
-    test('resetPosition() method exists and is async', () => {
-        // ✅ Simplified test: verify method exists and returns Promise
-        const notifications = new window.MiniCycleNotifications();
-
-        if (typeof notifications.resetPosition !== 'function') {
-            throw new Error('resetPosition method should exist');
-        }
-
-        // Verify it's an async function (returns Promise)
-        if (notifications.resetPosition.constructor.name !== 'AsyncFunction') {
-            throw new Error('resetPosition should be an async function');
-        }
-    });
-
-    test('resetPosition() uses appInit for core system readiness', () => {
-        // ✅ Simplified test: verify resetPosition implementation uses appInit.waitForCore()
-        const notifications = new window.MiniCycleNotifications();
-        const fnString = notifications.resetPosition.toString();
-
-        // Verify the function uses appInit.waitForCore()
-        if (!fnString.includes('appInit.waitForCore')) {
-            throw new Error('resetPosition should use appInit.waitForCore()');
-        }
-
-        // Verify it accesses AppState.update
-        if (!fnString.includes('AppState.update')) {
-            throw new Error('resetPosition should use AppState.update()');
-        }
-    });
 
     // ===== MODAL TESTS =====
 

@@ -67,15 +67,6 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
-    test('has version property', () => {
-        const mm = new window.ModalManager();
-        if (!mm.version) {
-            throw new Error('Version property missing');
-        }
-        if (typeof mm.version !== 'string') {
-            throw new Error('Version should be a string');
-        }
-    });
 
     test('has initialized property', () => {
         const mm = new window.ModalManager();

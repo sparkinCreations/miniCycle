@@ -1,10 +1,18 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: October 8, 2025
+**Last Updated**: December 2024
+**Test Coverage**: 980 tests across 32 modules (100%)
 
 ---
 
 ## 🚀 Quick Start
+
+### Run Tests Automatically (Recommended)
+
+```bash
+cd miniCycle/web
+npm test
+```
 
 ### Run Tests Manually (Browser)
 
@@ -17,36 +25,24 @@ python3 -m http.server 8080
 # http://localhost:8080/tests/module-test-suite.html
 ```
 
-### Run Tests Automatically
-
-```bash
-# Install (one-time)
-npm install playwright
-
-# Run tests
-python3 -m http.server 8080  # Terminal 1
-node tests/automated/run-browser-tests.js  # Terminal 2
-```
-
 ---
 
-## 📁 Test Files
+## 📁 Test Files Structure
 
 ```
 tests/
-├── module-test-suite.html          # Main test UI
-├── automated/run-browser-tests.js  # Automation runner
-├── MODULE_TEMPLATE.tests.js        # Copy this for new tests
-├── globalUtils.tests.js            # GlobalUtils tests
-├── themeManager.tests.js           # ThemeManager tests
-├── deviceDetection.tests.js        # DeviceDetection tests
-├── cycleLoader.tests.js            # CycleLoader tests
-└── notifications.tests.js          # Notifications tests
+├── testHelpers.js              # Shared mocks and DI setup (REQUIRED)
+├── module-test-suite.html      # Browser test runner UI
+├── MODULE_TEMPLATE.tests.js    # Template for new tests
+├── automated/
+│   ├── run-browser-tests.js    # Playwright automation
+│   └── README.md               # CI/CD documentation
+└── *.tests.js                  # Individual module tests (32 files)
 ```
 
 ---
 
-## ✍️ Create New Test (4 Steps)
+## ✍️ Create New Test (5 Steps)
 
 ### 1. Copy Template
 
@@ -54,33 +50,48 @@ tests/
 cp tests/MODULE_TEMPLATE.tests.js tests/myModule.tests.js
 ```
 
-### 2. Write Tests
+### 2. Write Tests with DI Pattern
 
 ```javascript
-export function runMyModuleTests(resultsDiv) {
+import {
+    setupTestEnvironment,
+    createProtectedTest
+} from './testHelpers.js';
+
+import { setMyModuleDependencies } from '../modules/myModule.js';
+
+export async function runMyModuleTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎯 MyModule Tests</h2>';
-    let passed = { count: 0 }, total = { count: 0 };
 
-    function test(name, testFn) {
-        total.count++;
-        try {
-            testFn();
-            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-            passed.count++;
-        } catch (error) {
-            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-        }
-    }
+    // 1. Setup test environment with mocks
+    const env = await setupTestEnvironment();
 
+    // 2. Inject dependencies via setter
+    setMyModuleDependencies({
+        AppState: env.AppState,
+        showNotification: env.showNotification
+    });
+
+    let passed = { count: 0 };
+    let total = { count: 0 };
+
+    // 3. Create protected test runner
+    const test = createProtectedTest(resultsDiv, passed, total);
+
+    // 4. Write tests
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
-    test('module class is defined', () => {
+    await test('module class is defined', () => {
         if (typeof MyModule === 'undefined') {
             throw new Error('MyModule not found');
         }
     });
 
-    resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
+    // 5. Return results
+    const percentage = Math.round((passed.count / total.count) * 100);
+    resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
+
+    return { passed: passed.count, total: total.count };
 }
 ```
 
@@ -99,13 +110,13 @@ export function runMyModuleTests(resultsDiv) {
 ```javascript
 // Loader
 if (moduleName === 'myModule') {
-    await import('../utilities/myModule.js');
+    await import('../modules/myModule.js');
     currentModule = 'myModule';
 }
 
 // Runner
 if (currentModule === 'myModule') {
-    runMyModuleTests(resultsDiv);
+    await runMyModuleTests(resultsDiv);
 }
 ```
 
@@ -115,11 +126,15 @@ if (currentModule === 'myModule') {
 const modules = [
     'themeManager',
     'deviceDetection',
-    'cycleLoader',
-    'globalUtils',
-    'notifications',
+    // ... other modules
     'myModule'  // ← Add here
 ];
+```
+
+### 5. Test It
+
+```bash
+npm test  # Verify all tests pass
 ```
 
 ---
@@ -129,7 +144,7 @@ const modules = [
 ### Basic Test
 
 ```javascript
-test('descriptive test name', () => {
+await test('descriptive test name', () => {
     const result = myFunction();
     if (result !== expected) {
         throw new Error(`Expected ${expected}, got ${result}`);
@@ -137,14 +152,28 @@ test('descriptive test name', () => {
 });
 ```
 
-### Test with Mock Data
+### Async Test
 
 ```javascript
-test('processes data correctly', () => {
+await test('async operation', async () => {
+    const result = await myAsyncFunction();
+    if (!result) throw new Error('Async operation failed');
+});
+```
+
+### Test with Mock Data (Schema 2.5)
+
+```javascript
+await test('processes data correctly', () => {
     const mockData = {
-        metadata: { version: '2.5' },
-        settings: { theme: 'default' },
-        cycles: {}
+        metadata: { version: '2.5', lastModified: Date.now() },
+        settings: { theme: 'default', darkMode: false },
+        data: {
+            cycles: {
+                'cycle1': { id: 'cycle1', name: 'Test', tasks: [] }
+            }
+        },
+        appState: { activeCycleId: 'cycle1' }
     };
 
     const result = MyModule.processData(mockData);
@@ -155,24 +184,28 @@ test('processes data correctly', () => {
 ### Test DOM Manipulation
 
 ```javascript
-test('updates element', () => {
-    const el = document.getElementById('test-element');
+await test('updates element', () => {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+
     MyModule.update(el, 'new value');
 
     if (el.textContent !== 'new value') {
         throw new Error('Element not updated');
     }
+
+    document.body.removeChild(el);  // Cleanup
 });
 ```
 
 ### Test Error Handling
 
 ```javascript
-test('handles null gracefully', () => {
+await test('handles null gracefully', () => {
     MyModule.process(null); // Should not throw
 });
 
-test('throws on invalid input', () => {
+await test('throws on invalid input', () => {
     let thrown = false;
     try {
         MyModule.validate('invalid');
@@ -183,15 +216,16 @@ test('throws on invalid input', () => {
 });
 ```
 
-### Test with Dependencies
+### Test with Dependency Injection
 
 ```javascript
-test('accepts dependency injection', () => {
-    const instance = new MyModule({
+await test('accepts dependency injection', () => {
+    setMyModuleDependencies({
         showNotification: () => {},
-        loadData: () => ({ data: 'test' })
+        AppState: createMockAppState()
     });
 
+    const instance = new MyModule();
     if (!instance) throw new Error('DI failed');
 });
 ```
@@ -217,46 +251,81 @@ resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 
 ---
 
-## 🔧 Mock Data Helper
+## 🔧 testHelpers.js Functions
+
+| Function | Purpose |
+|----------|---------|
+| `setupTestEnvironment()` | Creates complete mock environment with AppState, notifications, etc. |
+| `createProtectedTest(resultsDiv, passed, total)` | Returns test runner with localStorage backup/restore |
+| `createMockAppState()` | Creates Schema 2.5 compliant AppState mock |
+| `createMockSchemaData()` | Returns complete Schema 2.5 data structure |
+
+### Usage Example
 
 ```javascript
-function createMockData() {
-    return {
-        metadata: {
-            version: "2.5",
-            lastModified: Date.now()
-        },
-        settings: {
-            theme: 'default',
-            darkMode: false
-        },
-        data: {
-            cycles: {
-                'cycle-123': {
-                    name: 'Test Cycle',
-                    tasks: [],
-                    cycleCount: 5,
-                    autoReset: true
-                }
-            }
-        },
-        appState: {
-            activeCycleId: 'cycle-123',
-            currentMode: 'auto-cycle'
-        },
-        userProgress: {
-            cyclesCompleted: 10
-        }
-    };
-}
+import {
+    setupTestEnvironment,
+    createProtectedTest,
+    createMockAppState
+} from './testHelpers.js';
 
-// Use in tests
-test('loads data', () => {
-    const mockData = createMockData();
-    localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-    // ... test
-});
+export async function runMyTests(resultsDiv) {
+    const env = await setupTestEnvironment();
+
+    let passed = { count: 0 };
+    let total = { count: 0 };
+    const test = createProtectedTest(resultsDiv, passed, total);
+
+    // Tests automatically backup/restore localStorage
+    await test('my test', () => {
+        localStorage.setItem('test', 'value');  // Safe - will be restored
+        // ... test code
+    });
+
+    return { passed: passed.count, total: total.count };
+}
 ```
+
+---
+
+## ⚠️ Known Playwright Limitations
+
+Some tests don't work in Playwright's automated environment:
+
+| Limitation | Affected Tests | Solution |
+|------------|---------------|----------|
+| `Object.defineProperty(window, 'scrollY')` doesn't work | Pull-to-refresh scroll tests | Run manually in browser |
+| `setTimeout` timing is flaky | Async callback tests | Remove or increase timeouts |
+| `appInit.markCoreSystemsReady()` not available | statsPanel, modeManager | Exclude from automated suite |
+
+**Mark excluded tests with comments:**
+```javascript
+// NOTE: Removed - Object.defineProperty on scrollY doesn't work in Playwright
+// await test('scroll position triggers pull', async () => { ... });
+```
+
+---
+
+## 📊 Current Test Coverage (32 modules, 980 tests)
+
+| Module | Tests | Module | Tests |
+|--------|-------|--------|-------|
+| integration | 11 | modalManager | 49 |
+| themeManager | 15 | menuManager | 25 |
+| deviceDetection | 13 | settingsManager | 24 |
+| cycleLoader | 10 | pullToRefresh | 18 |
+| consoleCapture | 32 | taskCore | 33 |
+| state | 40 | taskValidation | 25 |
+| recurringCore | 99 | taskUtils | 22 |
+| recurringIntegration | 17 | taskRenderer | 16 |
+| recurringPanel | 57 | taskEvents | 13 |
+| globalUtils | 36 | taskDOM | 45 |
+| notifications | 35 | xss-vulnerability | 25 |
+| dragDropManager | 55 | errorHandler | 34 |
+| migrationManager | 38 | testingModal | 27 |
+| dueDates | 16 | onboardingManager | 32 |
+| reminders | 4 | gamesManager | 21 |
+| cycleSwitcher | 20 | undoRedoManager | 73 |
 
 ---
 
@@ -265,7 +334,7 @@ test('loads data', () => {
 ### Console Logging
 
 ```javascript
-test('debug test', () => {
+await test('debug test', () => {
     const result = myFunction();
     console.log('Result:', result);
 
@@ -282,67 +351,36 @@ test('debug test', () => {
 ```javascript
 import { runGlobalUtilsTests } from './globalUtils.tests.js';
 const resultsDiv = document.getElementById('results');
-runGlobalUtilsTests(resultsDiv);
+await runGlobalUtilsTests(resultsDiv);
 ```
 
-### Reset Test Environment
+### Debug in Headless Mode
 
+Edit `tests/automated/run-browser-tests.js`:
 ```javascript
-function test(name, testFn) {
-    total.count++;
-    try {
-        // Reset before each test
-        localStorage.clear();
-        document.body.className = '';
-        delete window.AppState;
-        delete window.showNotification;
-
-        testFn();
-        // ...
-    } catch (error) {
-        // ...
-    }
-}
+const browser = await chromium.launch({
+    headless: false  // ← Watch the browser
+});
 ```
-
----
-
-## 📊 Current Test Coverage
-
-| Module | Tests | Status |
-|--------|-------|--------|
-| GlobalUtils | 36 | ✅ |
-| ThemeManager | 18 | ✅ |
-| DeviceDetection | 17 | ✅ |
-| CycleLoader | 11 | ✅ |
-| StatsPanel | 27 | ✅ |
-| Notifications | 39 | ✅ |
-| DragDropManager | 67 | ✅ |
-| MigrationManager | 38 | ✅ |
-| DueDates | 17 | ✅ |
-| Reminders | 20 | ✅ |
-| ModeManager | 28 | ✅ |
-| CycleSwitcher | 22 | ✅ |
-| **Total** | **340** | **✅** |
 
 ---
 
 ## ✅ Best Practices (Top 10)
 
-1. **Test one thing per test** - Easier debugging
-2. **Use descriptive names** - "calculates total correctly" not "test1"
-3. **Reset state before each test** - Clear localStorage, DOM, globals
-4. **Test edge cases** - null, empty, missing properties
-5. **Test error handling** - Not just happy paths
-6. **Keep tests independent** - Don't rely on execution order
-7. **Mock external dependencies** - AppState, notifications, etc.
-8. **Test public APIs only** - Not internal implementation
-9. **Meaningful assertions** - Clear error messages
-10. **Document complex tests** - Add comments for tricky logic
+1. **Use testHelpers.js** - Never recreate mock patterns manually
+2. **Test one thing per test** - Easier debugging
+3. **Use descriptive names** - "calculates total correctly" not "test1"
+4. **State is auto-protected** - createProtectedTest saves/restores localStorage
+5. **Test edge cases** - null, empty, missing properties
+6. **Test error handling** - Not just happy paths
+7. **Keep tests independent** - Don't rely on execution order
+8. **Inject all dependencies** - Use set*Dependencies() functions
+9. **Use complete Schema 2.5 mocks** - Partial mocks cause false failures
+10. **Clean up DOM elements** - Remove elements you create
 
 ---
 
-## 🎓 Advanced Patterns & Lessons Learned
+## 🎓 Advanced Patterns
 
 ### Critical: The DOM innerHTML Bug 🐛
 
@@ -363,161 +401,9 @@ function createTestDOM() {
 }
 ```
 
-**Why it happens:**
-- Modifying `innerHTML` causes browser to **destroy and recreate** the entire DOM tree
-- All existing element references become **orphaned** (point to detached nodes)
-- Your test results appear nowhere because `resultsDiv` is disconnected
-
-**Discovery:**
-- Tests completed successfully (console showed results)
-- But page stayed on "Running tests..." forever
-- Automation timed out waiting for results that never appeared on page
-
----
-
-### Advanced Cleanup Pattern
-
-**Always use `finally` blocks for complete state restoration:**
+### Complete Schema 2.5 Mock Pattern
 
 ```javascript
-function test(name, testFn) {
-    total.count++;
-
-    // ✅ Save ALL state before test
-    const savedLocalStorage = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('miniCycle')) {
-            savedLocalStorage[key] = localStorage.getItem(key);
-        }
-    }
-
-    const savedGlobals = {
-        AppState: window.AppState,
-        showNotification: window.showNotification
-        // ... save all globals your test might touch
-    };
-
-    try {
-        // Clear state before test
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('miniCycle')) {
-                localStorage.removeItem(key);
-            }
-        });
-
-        testFn();
-
-        resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-        passed.count++;
-    } catch (error) {
-        resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-    } finally {
-        // ✅ ALWAYS restore (even if test throws)
-        Object.keys(savedLocalStorage).forEach(key => {
-            localStorage.setItem(key, savedLocalStorage[key]);
-        });
-
-        Object.keys(savedGlobals).forEach(key => {
-            if (savedGlobals[key] === undefined) {
-                delete window[key];
-            } else {
-                window[key] = savedGlobals[key];
-            }
-        });
-    }
-}
-```
-
-**Benefits:**
-- Tests never interfere with each other
-- State always restored (even on error)
-- Clean slate for every test
-
----
-
-### Console Method Protection
-
-**For tests that override console methods (like ConsoleCapture):**
-
-```javascript
-// ✅ Save at test SUITE level (not per-test)
-const originalConsole = {
-    log: console.log,
-    error: console.error,
-    warn: console.warn,
-    info: console.info
-};
-
-function test(name, testFn) {
-    try {
-        testFn();
-    } finally {
-        // ✅ ALWAYS restore console methods
-        console.log = originalConsole.log;
-        console.error = originalConsole.error;
-        console.warn = originalConsole.warn;
-        console.info = originalConsole.info;
-    }
-}
-```
-
-**Why it matters:**
-- If console stays captured after tests, debugging becomes impossible
-- Other tests can't log properly
-- Automated tests might capture their own output incorrectly
-
----
-
-### Async Testing Pattern
-
-**Properly handle async operations:**
-
-```javascript
-test('async operation', async () => {  // ✅ async function
-    const state = createStateManager();
-
-    await state.init();  // ✅ Wait for completion
-
-    await state.update(data => {  // ✅ Wait for update
-        data.value = 'changed';
-    });
-
-    // Now safe to assert
-    if (state.data.value !== 'changed') {
-        throw new Error('Update failed');
-    }
-});
-```
-
-**Common mistakes:**
-```javascript
-// ❌ Forgot async keyword
-test('async operation', () => {
-    const state = createStateManager();
-    state.init();  // ❌ Not awaited - race condition!
-    // Assertion runs before init completes
-});
-
-// ❌ Forgot await
-test('async operation', async () => {
-    const state = createStateManager();
-    state.init();  // ❌ Not awaited
-    // Still a race condition!
-});
-```
-
----
-
-### Complete Mock Data Pattern
-
-**Create full Schema 2.5 structures (not partial):**
-
-```javascript
-// ❌ Incomplete mock - tests might fail unexpectedly
-const mockData = { cycles: {} };
-
-// ✅ Complete Schema 2.5 mock
 const mockSchemaData = {
     metadata: {
         version: "2.5",
@@ -553,160 +439,6 @@ const mockSchemaData = {
 };
 ```
 
-**Why complete mocks matter:**
-- Code might access nested properties you didn't mock
-- Prevents "Cannot read property 'x' of undefined" errors
-- Makes tests more robust to code changes
-
----
-
-### Error Rollback Testing
-
-**Test that errors don't corrupt state:**
-
-```javascript
-test('rolls back on update error', async () => {
-    const state = createStateManager();
-    await state.init();
-
-    const originalValue = state.data.appState.activeCycleId;
-
-    try {
-        await state.update(data => {
-            data.appState.activeCycleId = 'changed';
-            throw new Error('Simulated error');
-        });
-    } catch (error) {
-        // Expected error
-    }
-
-    // ✅ Verify rollback happened
-    if (state.data.appState.activeCycleId !== originalValue) {
-        throw new Error('State not rolled back after error!');
-    }
-});
-```
-
----
-
-### Test Evolution: By The Numbers 📊
-
-**Early Tests (First Modules):**
-- Simple structure
-- Basic cleanup
-- Happy path focused
-- ~15-20 tests per module
-
-**Later Tests (After Lessons Learned):**
-- Complete state save/restore
-- Finally blocks everywhere
-- Error path testing
-- ~40-70 tests per module
-
-**Result:**
-- Started: 148 tests (some bugs)
-- Current: 340+ tests (reliable)
-- **130% increase** in coverage
-- **0 known bugs** in test infrastructure
-
----
-
-### Schema 2.5 Testing Pattern 🗄️
-
-**Critical lesson from CycleSwitcher tests: Always test data access paths**
-
-```javascript
-// ❌ WRONG - This test would pass with incorrect code!
-test('updatePreview works', async () => {
-    const instance = new CycleSwitcher({
-        loadMiniCycleData: () => ({ cycles: {} })  // Wrong structure!
-    });
-
-    // Test might not catch the bug if it doesn't actually use the data
-    instance.updatePreview('Morning Routine');
-    // No assertion - passes even though implementation is broken
-});
-
-// ✅ CORRECT - Complete test with real Schema 2.5 structure
-test('updatePreview generates task preview', async () => {
-    // Use COMPLETE Schema 2.5 mock
-    const schemaData = {
-        metadata: { version: "2.5", lastModified: Date.now() },
-        data: {  // ← Critical: data wrapper
-            cycles: {  // ← Cycles nested under data
-                'Morning Routine': {
-                    title: 'Morning Routine',
-                    tasks: [
-                        { id: 'task-1', text: 'Wake up', completed: false }
-                    ]
-                }
-            }
-        },
-        appState: { activeCycleId: 'Morning Routine' }
-    };
-
-    localStorage.setItem('miniCycleData', JSON.stringify(schemaData));
-
-    const previewWindow = document.createElement('div');
-    previewWindow.id = 'switch-preview-window';
-    document.body.appendChild(previewWindow);
-
-    const instance = new CycleSwitcher({
-        loadMiniCycleData: () => schemaData,
-        getElementById: (id) => document.getElementById(id)
-    });
-
-    instance.updatePreview('Morning Routine');
-
-    // ✅ Actually verify the output
-    if (!previewWindow.innerHTML.includes('Tasks:')) {
-        throw new Error('Preview should contain task list');
-    }
-    if (!previewWindow.innerHTML.includes('Wake up')) {
-        throw new Error('Preview should show task text');
-    }
-});
-```
-
-**Key Testing Principles:**
-1. **Use complete Schema 2.5 structures** - Don't mock partial data
-2. **Test actual data paths** - Verify `schemaData.data.cycles`, not shortcuts
-3. **Assert meaningful output** - Don't just check that code runs
-4. **Test with real DOM** - Create actual elements, not mocks
-5. **Verify all branches** - Test success AND error paths
-
-**Real Impact:**
-- CycleSwitcher tests found Schema 2.5 bug in first run (4/22 tests failed)
-- Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.cycles`
-- Single fix: `const cycles = schemaData.data?.cycles || {};`
-- All 22 tests passed after fix - **100% success rate**
-
----
-
-### Common Pitfalls to Avoid ⚠️
-
-1. **Modifying parent innerHTML** - Use createElement() instead
-2. **Forgetting finally blocks** - State won't restore on error
-3. **Partial cleanup** - Save/restore EVERYTHING that might change
-4. **Missing await** - Race conditions in async tests
-5. **Incomplete mocks** - Tests fail when code accesses unmocked properties
-6. **Not testing errors** - Error paths need tests too
-7. **Test interdependence** - Each test must work in isolation
-
----
-
-### When to Use Each Pattern
-
-| Situation | Pattern |
-|-----------|---------|
-| Creating test DOM | `createElement()` + `appendChild()` |
-| Testing async code | `async test() { await ... }` |
-| Modifying global state | Save in `try`, restore in `finally` |
-| Testing console capture | Save console methods at suite level |
-| Mocking data | Use complete Schema 2.5 structure |
-| Testing errors | Verify rollback and error handling |
-| localStorage tests | Save all keys, clear, restore in finally |
-
 ---
 
 ## 🎯 CI/CD Example
@@ -720,10 +452,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
 
@@ -744,13 +476,12 @@ jobs:
 
 ## 🔗 Resources
 
-- **Full Documentation**: `docs/DEVELOPER_DOCUMENTATION.md` (Testing System section)
 - **Test Template**: `tests/MODULE_TEMPLATE.tests.js`
-- **Example Tests**: `tests/globalUtils.tests.js`
+- **Shared Helpers**: `tests/testHelpers.js`
+- **Automation**: `tests/automated/README.md`
 - **Test UI**: `http://localhost:8080/tests/module-test-suite.html`
 
 ---
 
-**Version**: 2.0 (Updated with Advanced Patterns & Lessons Learned)
-**Last Updated**: October 9, 2025
-**Maintained By**: sparkinCreations
+**Version**: 3.0 (Strict DI Architecture)
+**Last Updated**: December 2024

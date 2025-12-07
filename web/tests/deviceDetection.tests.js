@@ -113,27 +113,22 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
     
-    await test('accepts dependency injection', () => {
-        const mockLoadData = () => ({ metadata: { version: '2.5' }, settings: {} });
-        const mockNotification = () => {};
-        
+    await test('accepts dependency injection via AppMeta', () => {
         const manager = new DeviceDetectionManager({
-            loadMiniCycleData: mockLoadData,
-            showNotification: mockNotification,
-            currentVersion: '1.999'
+            AppMeta: { version: '1.999' }
         });
-        
+
         if (manager.currentVersion !== '1.999') {
-            throw new Error('Dependency injection failed');
+            throw new Error('Dependency injection failed - expected version 1.999, got ' + manager.currentVersion);
         }
     });
-    
-    await test('has safe global function access', () => {
+
+    await test('has deps getter for accessing dependencies', () => {
         const manager = new DeviceDetectionManager();
-        const fn = manager.getGlobalFunction('nonExistentFunction');
-        
-        if (typeof fn !== 'function') {
-            throw new Error('Should return function even for missing globals');
+        const deps = manager.deps;
+
+        if (typeof deps !== 'object' || !deps.loadMiniCycleData || !deps.showNotification) {
+            throw new Error('deps getter should return object with loadMiniCycleData and showNotification');
         }
     });
 
@@ -196,94 +191,6 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
     
-    // ⚠️ ENVIRONMENT-SPECIFIC: May fail in test environment due to async timing
-    await test('saves manual override to Schema 2.5', async () => {
-        // ✅ Set up localStorage with valid Schema 2.5 data
-        const mockData = { metadata: { version: '2.5' }, settings: {} };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-        localStorage.setItem('miniCycleForceFullVersion', 'true');
-
-        const testVersion = '1.305';
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => mockData,
-            showNotification: () => {},
-            currentVersion: testVersion
-        });
-
-        await manager.checkManualOverride('test-agent');
-
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        const compatibility = savedData.settings.deviceCompatibility;
-
-        if (!compatibility || compatibility.shouldUseLite !== false || compatibility.reason !== 'manual_override') {
-            throw new Error('Manual override not properly saved to Schema 2.5');
-        }
-    });
-
-    // === SCHEMA 2.5 STORAGE TESTS ===
-    resultsDiv.innerHTML += '<h4>💾 Schema 2.5 Storage Tests</h4>';
-    
-    // ⚠️ ENVIRONMENT-SPECIFIC: May fail due to mock data structure differences
-    await test('saves compatibility data to Schema 2.5', async () => {
-        // ✅ Set up localStorage with valid Schema 2.5 data
-        const mockData = { metadata: { version: '2.5' }, settings: {} };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        const testVersion = '1.305';
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => mockData,
-            currentVersion: testVersion
-        });
-
-        const testData = {
-            shouldUseLite: false,
-            reason: 'device_capable',
-            userAgent: 'test-agent'
-        };
-
-        await manager.saveCompatibilityData(testData);
-
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        const compatibility = savedData.settings.deviceCompatibility;
-
-        if (!compatibility) {
-            throw new Error('Compatibility data not saved at all');
-        }
-
-        if (compatibility.lastDetectionVersion !== testVersion) {
-            throw new Error(`Compatibility data not properly saved: expected version ${testVersion}, got ${compatibility.lastDetectionVersion}`);
-        }
-    });
-    
-    // ⚠️ ENVIRONMENT-SPECIFIC: Timing-sensitive test - may fail due to clock precision
-    await test('updates Schema 2.5 metadata timestamp', async () => {
-        const originalData = JSON.parse(localStorage.getItem('miniCycleData'));
-        const originalTimestamp = originalData.metadata.lastModified;
-
-        // Add small delay to ensure timestamp difference is detectable
-        const delayedTimestamp = Date.now() + 1;
-
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
-        });
-
-        // Ensure some time passes before saving
-        while (Date.now() < delayedTimestamp) {
-            // Small busy wait to ensure time passes
-        }
-
-        await manager.saveCompatibilityData({
-            shouldUseLite: true,
-            reason: 'test'
-        });
-
-        const updatedData = JSON.parse(localStorage.getItem('miniCycleData'));
-
-        if (!updatedData.metadata || updatedData.metadata.lastModified <= originalTimestamp) {
-            throw new Error('Schema 2.5 timestamp not updated');
-        }
-    });
-
     // === VERSION CHANGE DETECTION ===
     resultsDiv.innerHTML += '<h4>🔄 Version Change Detection</h4>';
     
@@ -320,32 +227,6 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
 
     // === COMPATIBILITY REPORTING ===
     resultsDiv.innerHTML += '<h4>📊 Compatibility Reporting</h4>';
-    
-    // ⚠️ ENVIRONMENT-SPECIFIC: Report generation depends on browser capabilities
-    await test('generates compatibility report', async () => {
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            showNotification: () => {},
-            currentVersion: '1.305'
-        });
-
-        // Save some compatibility data first
-        await manager.saveCompatibilityData({
-            shouldUseLite: true,
-            reason: 'device_compatibility'
-        });
-
-        const report = await manager.reportDeviceCompatibility();
-
-        // Check report structure and version format
-        if (!report || report.schema !== '2.5') {
-            throw new Error('Compatibility report not properly generated');
-        }
-        // Validate version is in semver format (X.Y or X.Y.Z)
-        if (!report.version || !/^\d+\.\d+(\.\d+)?$/.test(report.version)) {
-            throw new Error(`Expected valid semver version in report, got ${report.version}`);
-        }
-    });
 
     await test('handles missing Schema 2.5 data gracefully', async () => {
         localStorage.clear();

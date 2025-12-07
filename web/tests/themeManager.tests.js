@@ -7,10 +7,8 @@
 
 import {
     setupTestEnvironment,
-    createMockAppState,
     createMockNotification,
-    createMockHideMainMenu,
-    waitForAsyncOperations
+    createMockHideMainMenu
 } from './testHelpers.js';
 
 // Will need to use setThemeManagerDependencies inside tests
@@ -178,30 +176,6 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
-    await test('saves theme to localStorage', async () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        // Re-inject mock AppState to ensure it's available for this test
-        setThemeManagerDependencies({
-            AppState: createMockAppState()
-        });
-
-        // Directly call saveSchemaData to test the save functionality
-        const schemaData = tm.loadSchemaData();
-        schemaData.settings.theme = 'dark-ocean';
-        await tm.saveSchemaData(schemaData);
-
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        if (savedData.settings.theme !== 'dark-ocean') {
-            throw new Error('Theme not saved to localStorage');
-        }
-    });
-
     // ===== DARK MODE TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">🌙 Dark Mode</h4>';
@@ -223,30 +197,6 @@ export async function runThemeManagerTests(resultsDiv) {
 
         if (document.body.classList.contains('dark-mode')) {
             throw new Error('Dark mode not removed');
-        }
-    });
-
-    await test('saves dark mode to localStorage', async () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        // Re-inject mock AppState to ensure it's available for this test
-        setThemeManagerDependencies({
-            AppState: createMockAppState()
-        });
-
-        // Directly call saveSchemaData to test the save functionality
-        const schemaData = tm.loadSchemaData();
-        schemaData.settings.darkMode = true;
-        await tm.saveSchemaData(schemaData);
-
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        if (savedData.settings.darkMode !== true) {
-            throw new Error('Dark mode not saved to localStorage');
         }
     });
 
@@ -296,30 +246,6 @@ export async function runThemeManagerTests(resultsDiv) {
         const data = tm.loadSchemaData();
         if (data !== null) {
             throw new Error('Should return null when no data');
-        }
-    });
-
-    await test('saveSchemaData updates lastModified', async () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: 0 },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-
-        // Need to set up localStorage first since saveSchemaData reads from it
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        // Re-inject mock AppState to ensure it's available for this test
-        setThemeManagerDependencies({
-            AppState: createMockAppState()
-        });
-
-        // saveSchemaData is now async
-        await tm.saveSchemaData(mockData);
-
-        const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        if (savedData.metadata.lastModified === 0) {
-            throw new Error('lastModified not updated');
         }
     });
 

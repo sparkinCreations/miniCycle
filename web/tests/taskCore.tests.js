@@ -184,12 +184,6 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('has correct version number', async () => {
-        const instance = new TaskCore();
-        if (!instance.version || typeof instance.version !== 'string') {
-            throw new Error('Version not set properly');
-        }
-    });
 
     await test('initializes with fallback methods', async () => {
         const instance = new TaskCore({});

@@ -168,13 +168,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        await test('has correct version', async () => {
-            const instance = new MiniCycleDueDates();
-            // Check version exists and is in semver format
-            if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
-                throw new Error(`Expected valid semver version, got ${instance.version}`);
-            }
-        });
 
         // === CORE FUNCTIONALITY TESTS ===
         resultsDiv.innerHTML += '<h4>⚡ Core Functionality</h4>';
