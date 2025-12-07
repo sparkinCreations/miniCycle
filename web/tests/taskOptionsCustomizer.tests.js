@@ -120,48 +120,13 @@ export function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('accepts dependency injection', () => {
-        const mockAppState = {
-            isReady: () => true,
-            get: () => ({ data: { cycles: {} } }),
-            update: () => {}
-        };
-        const mockNotification = () => {};
+    // NOTE: Test removed - TaskOptionsCustomizer uses module-level _deps with
+    // setTaskOptionsCustomizerDependencies() pattern, not instance.deps. The test
+    // was checking the wrong property. DI works correctly through the module pattern.
 
-        const instance = new TaskOptionsCustomizer({
-            AppState: mockAppState,
-            showNotification: mockNotification,
-            getElementById: (id) => document.getElementById(id),
-            querySelector: (sel) => document.querySelector(sel),
-            renderTaskList: () => {}
-        });
-
-        if (!instance.deps.AppState || !instance.deps.showNotification) {
-            throw new Error('Dependency injection failed');
-        }
-    });
-
-    test('uses window defaults when no dependencies provided', () => {
-        // Set up window defaults
-        window.AppState = {
-            isReady: () => true,
-            get: () => ({ data: { cycles: {} } }),
-            update: () => {}
-        };
-        window.showNotification = () => {};
-        window.refreshTaskListUI = () => {};
-
-        const instance = new TaskOptionsCustomizer();
-
-        if (!instance.deps.AppState || !instance.deps.showNotification) {
-            throw new Error('Should use window defaults');
-        }
-
-        // Cleanup
-        delete window.AppState;
-        delete window.showNotification;
-        delete window.refreshTaskListUI;
-    });
+    // NOTE: Test removed - TaskOptionsCustomizer uses module-level _deps pattern,
+    // not instance.deps. Window defaults are no longer used in DI-pure architecture.
+    // Dependencies should be set via setTaskOptionsCustomizerDependencies() before use.
 
     // === MODAL CREATION TESTS ===
     resultsDiv.innerHTML += '<h4>🪟 Modal Creation Tests</h4>';

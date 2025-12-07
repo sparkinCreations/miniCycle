@@ -333,7 +333,7 @@
             <h1 style="margin: 0;">🧪 miniCycle Module Test Suite</h1>
             <button id="dark-mode-toggle" title="Toggle Dark Mode">🌙</button>
         </div>
-        <p class="subtitle">Simple browser tests for miniCycle modules.</p>
+        <p class="subtitle">Browser tests with Strict DI architecture. Run npm test for Playwright automation.</p>
 
     <div class="module-selector">
         <div style="margin-bottom: 15px;">
@@ -821,6 +821,9 @@
             resultsDiv.innerHTML = '<p>Loading module...</p>';
 
             try {
+                // ✅ Ensure appInit is ready before loading any module that might import it
+                await ensureAppInitReady();
+
                 // Use cache buster for module imports to force fresh loads
                 if (moduleName === 'performance') {
                     // Performance benchmarks don't need to import modules
