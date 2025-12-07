@@ -22,7 +22,7 @@ const colors = {
     magenta: '\x1b[35m'
 };
 
-// All available test modules (42 modules - matches browser "Run All Tests")
+// All available test modules (44 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
@@ -32,7 +32,7 @@ const ALL_MODULES = [
     'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler',
     'testingModal', 'backupManager', 'cycleCompletion', 'dataValidator', 'appInit', 'appState',
-    'helpWindowManager'
+    'helpWindowManager', 'constants', 'basicPluginSystem'
 ];
 
 // Parse command line arguments

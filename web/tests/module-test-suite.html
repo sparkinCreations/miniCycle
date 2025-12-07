@@ -389,12 +389,14 @@
             <option value="appInit">🚀 AppInit</option>
             <option value="appState">💾 AppState</option>
             <option value="helpWindowManager">❓ Help Window Manager</option>
+            <option value="constants">🔧 Constants</option>
+            <option value="basicPluginSystem">🔌 Basic Plugin System</option>
         </select>
             </div>
         </div>
 
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (42 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (44 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -465,6 +467,8 @@
         const { runAppInitTests } = await import(`./appInit.tests.js?v=${cacheBuster}`);
         const { runAppStateTests } = await import(`./appState.tests.js?v=${cacheBuster}`);
         const { runHelpWindowManagerTests } = await import(`./helpWindowManager.tests.js?v=${cacheBuster}`);
+        const { runConstantsTests } = await import(`./constants.tests.js?v=${cacheBuster}`);
+        const { runBasicPluginSystemTests } = await import(`./basicPluginSystem.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -851,6 +855,17 @@
                 window.HelpWindowManager = mod.HelpWindowManager;
                 window.initHelpWindowManager = mod.initHelpWindowManager;
                 window.getHelpWindowManager = mod.getHelpWindowManager;
+            } else if (moduleKey === 'constants') {
+                const mod = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+                window.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = mod.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+                window.DEFAULT_RECURRING_DELETE_SETTINGS = mod.DEFAULT_RECURRING_DELETE_SETTINGS;
+            } else if (moduleKey === 'basicPluginSystem') {
+                const mod = await import(`../modules/other/basicPluginSystem.js?v=${cacheBuster}`);
+                window.setBasicPluginSystemDependencies = mod.setBasicPluginSystemDependencies;
+                window.PluginManager = mod.PluginManager;
+                window.MiniCyclePlugin = mod.MiniCyclePlugin;
+                window.EventBus = mod.EventBus;
+                window.pluginManager = mod.pluginManager;
             }
         }
 
@@ -1251,6 +1266,21 @@
                     window.getHelpWindowManager = mod.getHelpWindowManager;
                     currentModule = 'helpWindowManager';
                     resultsDiv.innerHTML = '<p>✅ HelpWindowManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'constants') {
+                    const mod = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+                    window.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = mod.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+                    window.DEFAULT_RECURRING_DELETE_SETTINGS = mod.DEFAULT_RECURRING_DELETE_SETTINGS;
+                    currentModule = 'constants';
+                    resultsDiv.innerHTML = '<p>✅ Constants loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'basicPluginSystem') {
+                    const mod = await import(`../modules/other/basicPluginSystem.js?v=${cacheBuster}`);
+                    window.setBasicPluginSystemDependencies = mod.setBasicPluginSystemDependencies;
+                    window.PluginManager = mod.PluginManager;
+                    window.MiniCyclePlugin = mod.MiniCyclePlugin;
+                    window.EventBus = mod.EventBus;
+                    window.pluginManager = mod.pluginManager;
+                    currentModule = 'basicPluginSystem';
+                    resultsDiv.innerHTML = '<p>✅ BasicPluginSystem loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -1350,6 +1380,10 @@
                 await runAppStateTests(resultsDiv);
             } else if (currentModule === 'helpWindowManager') {
                 await runHelpWindowManagerTests(resultsDiv);
+            } else if (currentModule === 'constants') {
+                await runConstantsTests(resultsDiv);
+            } else if (currentModule === 'basicPluginSystem') {
+                await runBasicPluginSystemTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -1503,7 +1537,9 @@
                 { name: 'Data Validator', key: 'dataValidator', runFn: runDataValidatorTests, importPath: '../modules/utils/dataValidator.js' },
                 { name: 'AppInit', key: 'appInit', runFn: runAppInitTests, importPath: '../modules/core/appInit.js' },
                 { name: 'AppState', key: 'appState', runFn: runAppStateTests, importPath: '../modules/core/appState.js' },
-                { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' }
+                { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' },
+                { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
+                { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' }
             ];
 
             let allResults = [];

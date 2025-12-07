@@ -57,7 +57,7 @@ npm run test:manual
 
 ## 📊 Current Test Coverage
 
-The automated runner tests **42 modules** with **1354 tests total**:
+The automated runner tests **44 modules** with **1417 tests total**:
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -82,8 +82,9 @@ The automated runner tests **42 modules** with **1354 tests total**:
 | backupManager | 31 | cycleCompletion | 25 |
 | dataValidator | 54 | appInit | 37 |
 | appState | 60 | helpWindowManager | 54 |
+| constants | 21 | basicPluginSystem | 42 |
 
-**Total: 1354 tests across 42 modules**
+**Total: 1417 tests across 44 modules**
 
 ---
 
@@ -513,8 +514,8 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ✅ **Strict DI** - All modules use dependency injection
 ✅ **testHelpers.js** - Shared mocks for consistency
 ✅ **Clean repository** - No dependency bloat
-✅ **1354 tests** - Comprehensive coverage
-✅ **42 modules** - All core functionality tested
+✅ **1417 tests** - Comprehensive coverage
+✅ **44 modules** - All core functionality tested
 ✅ **CLI filtering** - Test single modules or patterns
 
 **No build step. No configuration. Just works.** 🚀
@@ -531,4 +532,4 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ---
 
 **Last Updated**: December 2024
-**Test Coverage**: 1354 tests across 42 modules (100%)
+**Test Coverage**: 1417 tests across 44 modules (100%)
