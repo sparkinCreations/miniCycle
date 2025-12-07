@@ -251,9 +251,11 @@ class PluginManager {
     registerPluginHooks(plugin) {
         // Register all hook methods from the plugin
         const hookMethods = ['onTaskAdded', 'onTaskCompleted', 'onTaskDeleted', 'onCycleCompleted', 'onCycleReset'];
-        
+
         hookMethods.forEach(hookName => {
-            const eventName = hookName.replace('on', '').toLowerCase();
+            // Convert 'onTaskAdded' to 'taskAdded' (camelCase, not lowercase)
+            const withoutOn = hookName.replace('on', '');
+            const eventName = withoutOn.charAt(0).toLowerCase() + withoutOn.slice(1);
             if (this.hooks.has(eventName)) {
                 this.hooks.get(eventName).push({
                     plugin: plugin.name,

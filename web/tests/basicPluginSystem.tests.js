@@ -513,14 +513,7 @@ export async function runBasicPluginSystemTests(resultsDiv, isPartOfSuite = fals
         await manager.register(plugin);
         await manager.enable('hook-test');
 
-        // Note: Due to case mismatch in registerPluginHooks (uses lowercase 'taskadded')
-        // vs initializeEventHooks (uses camelCase 'taskAdded'), we need to manually
-        // test the triggerHook mechanism by adding a hook directly
-        manager.hooks.get('taskAdded').push({
-            plugin: 'hook-test',
-            method: plugin.onTaskAdded.bind(plugin)
-        });
-
+        // Hooks are now auto-registered when plugin is enabled
         manager.triggerHook('taskAdded', { id: '123' });
 
         if (!hookCalled) {
@@ -550,25 +543,12 @@ export async function runBasicPluginSystemTests(resultsDiv, isPartOfSuite = fals
             }
         }
 
-        const errorPlugin = new ErrorPlugin();
-        const goodPlugin = new GoodPlugin();
-
-        await manager.register(errorPlugin);
-        await manager.register(goodPlugin);
+        await manager.register(new ErrorPlugin());
+        await manager.register(new GoodPlugin());
         await manager.enable('error-plugin');
         await manager.enable('good-plugin');
 
-        // Manually add hooks due to case mismatch issue (see previous test)
-        manager.hooks.get('taskAdded').push({
-            plugin: 'error-plugin',
-            method: errorPlugin.onTaskAdded.bind(errorPlugin)
-        });
-        manager.hooks.get('taskAdded').push({
-            plugin: 'good-plugin',
-            method: goodPlugin.onTaskAdded.bind(goodPlugin)
-        });
-
-        // Should not throw
+        // Should not throw - hooks are auto-registered on enable
         manager.triggerHook('taskAdded', {});
 
         if (!secondCalled) {
