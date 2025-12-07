@@ -391,6 +391,7 @@
             <option value="helpWindowManager">❓ Help Window Manager</option>
             <option value="constants">🔧 Constants</option>
             <option value="basicPluginSystem">🔌 Basic Plugin System</option>
+            <option value="accessibility">♿ Accessibility</option>
         </select>
             </div>
         </div>
@@ -469,6 +470,7 @@
         const { runHelpWindowManagerTests } = await import(`./helpWindowManager.tests.js?v=${cacheBuster}`);
         const { runConstantsTests } = await import(`./constants.tests.js?v=${cacheBuster}`);
         const { runBasicPluginSystemTests } = await import(`./basicPluginSystem.tests.js?v=${cacheBuster}`);
+        const { runAccessibilityTests } = await import(`./accessibility.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -866,6 +868,9 @@
                 window.MiniCyclePlugin = mod.MiniCyclePlugin;
                 window.EventBus = mod.EventBus;
                 window.pluginManager = mod.pluginManager;
+            } else if (moduleKey === 'accessibility') {
+                // Accessibility tests don't need module imports - they test DOM/ARIA patterns
+                console.log('Accessibility tests loaded (no module dependencies)');
             }
         }
 
@@ -1281,6 +1286,10 @@
                     window.pluginManager = mod.pluginManager;
                     currentModule = 'basicPluginSystem';
                     resultsDiv.innerHTML = '<p>✅ BasicPluginSystem loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'accessibility') {
+                    // Accessibility tests don't need module imports
+                    currentModule = 'accessibility';
+                    resultsDiv.innerHTML = '<p>✅ Accessibility tests ready. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -1384,6 +1393,8 @@
                 await runConstantsTests(resultsDiv);
             } else if (currentModule === 'basicPluginSystem') {
                 await runBasicPluginSystemTests(resultsDiv);
+            } else if (currentModule === 'accessibility') {
+                await runAccessibilityTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -1539,7 +1550,8 @@
                 { name: 'AppState', key: 'appState', runFn: runAppStateTests, importPath: '../modules/core/appState.js' },
                 { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' },
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
-                { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' }
+                { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
+                { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null }
             ];
 
             let allResults = [];
