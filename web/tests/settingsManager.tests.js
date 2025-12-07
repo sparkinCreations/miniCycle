@@ -138,6 +138,15 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    test('has correct version', () => {
+        const instance = new SettingsManager({
+            AppMeta: { version: '1.0.0' }
+        });
+        // Check version exists and is in semver format (X.Y or X.Y.Z)
+        if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
+            throw new Error(`Expected valid semver version, got ${instance.version}`);
+        }
+    });
 
     test('accepts dependency injection', () => {
         const mockLoad = () => ({ cycles: {}, activeCycle: null });
@@ -645,6 +654,57 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         if (modal.style.display !== 'none') {
             throw new Error('Modal should be hidden after close click');
+        }
+    });
+
+    // === INTEGRATION TESTS ===
+    resultsDiv.innerHTML += '<h4>🔗 Integration Tests</h4>';
+
+    test('integrates with AppState when available', (mockFlattenedData, mockFullSchema) => {
+        const mockAppState = {
+            isReady: () => true,
+            get: () => mockFullSchema
+        };
+
+        const instance = new SettingsManager({
+            AppState: () => mockAppState
+        });
+
+        // Should be able to access AppState
+        const state = instance.deps.AppState();
+        if (!state || typeof state.isReady !== 'function') {
+            throw new Error('AppState integration failed');
+        }
+    });
+
+    test('works without AppState (fallback mode)', (mockFlattenedData) => {
+        delete window.AppState;
+
+        const instance = new SettingsManager({
+            loadMiniCycleData: () => mockFlattenedData
+        });
+
+        // Should work with localStorage fallback
+        expect(() => {
+            instance.syncCurrentSettingsToStorage();
+        }).not.toThrow();
+    });
+
+    test('integrates with dark mode toggle', () => {
+        let darkModeSetup = false;
+
+        const instance = new SettingsManager({
+            querySelector: () => null,
+            getElementById: () => null,
+            setupDarkModeToggle: () => { darkModeSetup = true; },
+            setupQuickDarkToggle: () => {},
+            loadMiniCycleData: () => null
+        });
+
+        instance.setupSettingsMenu();
+
+        if (!darkModeSetup) {
+            throw new Error('Dark mode toggle should be set up');
         }
     });
 

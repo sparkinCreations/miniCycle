@@ -98,15 +98,6 @@ export async function runGamesManagerTests(resultsDiv) {
         }
     });
 
-    test('has global instance (backward compat)', () => {
-        if (!window.gamesManager) {
-            throw new Error('Global gamesManager instance not found');
-        }
-        if (typeof window.gamesManager.checkGamesUnlock !== 'function') {
-            throw new Error('Global instance missing methods');
-        }
-    });
-
     test('has version property via DI', () => {
         const mockDeps = createMockDeps();
         setGamesManagerDependencies(mockDeps);
@@ -290,60 +281,6 @@ export async function runGamesManagerTests(resultsDiv) {
 
         // Should not throw even if element doesn't exist
         gm.checkGamesUnlock();
-    });
-
-    // ===== GLOBAL WRAPPER TESTS (Backward Compat) =====
-
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (Backward Compat)</h4>';
-
-    test('window.checkGamesUnlock exists', () => {
-        if (typeof window.checkGamesUnlock !== 'function') {
-            throw new Error('Global checkGamesUnlock not found');
-        }
-    });
-
-    test('window.unlockMiniGame exists', () => {
-        if (typeof window.unlockMiniGame !== 'function') {
-            throw new Error('Global unlockMiniGame not found');
-        }
-    });
-
-    test('global checkGamesUnlock calls instance method', () => {
-        let called = false;
-
-        // Mock the instance method
-        const originalMethod = window.gamesManager.checkGamesUnlock;
-        window.gamesManager.checkGamesUnlock = () => {
-            called = true;
-        };
-
-        window.checkGamesUnlock();
-
-        if (!called) {
-            throw new Error('Global wrapper did not call instance method');
-        }
-
-        // Restore
-        window.gamesManager.checkGamesUnlock = originalMethod;
-    });
-
-    test('global unlockMiniGame calls instance method', () => {
-        let called = false;
-
-        // Mock the instance method
-        const originalMethod = window.gamesManager.unlockMiniGame;
-        window.gamesManager.unlockMiniGame = () => {
-            called = true;
-        };
-
-        window.unlockMiniGame();
-
-        if (!called) {
-            throw new Error('Global wrapper did not call instance method');
-        }
-
-        // Restore
-        window.gamesManager.unlockMiniGame = originalMethod;
     });
 
     // ===== ERROR HANDLING TESTS (DI-Pure) =====

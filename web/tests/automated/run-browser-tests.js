@@ -15,8 +15,13 @@ const colors = {
     cyan: '\x1b[36m'
 };
 
+<<<<<<< HEAD
 // Test modules to run (36 modules - matches browser "Run All Tests")
 const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'cycleSwitcher', 'cycleManager', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'xss-vulnerability', 'errorHandler', 'testingModal', 'taskOptionsCustomizer', 'statsPanel', 'modeManager'];
+=======
+// Test modules to run (36 modules - includes cycleManager from main)
+const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'cycleManager', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler', 'testingModal'];
+>>>>>>> 8efdcf05d8eb37f721a8988a44c9ad2fc3b6b346
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);

@@ -13,6 +13,9 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
+// Import setRemindersDependencies for DI-pure testing
+import { setRemindersDependencies } from '../modules/features/reminders.js';
+
 export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Reminders Module Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -134,26 +137,29 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                 // Clear test container
                 testContainer.innerHTML = '';
 
-                // Mock AppState for tests that need it
-                window.AppState = {
-                    isReady: () => true,
-                    get: () => mockSchemaData,
-                    update: (fn) => {
-                        fn(mockSchemaData);
-                        localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
-                    }
+                // DI-pure: inject dependencies via setRemindersDependencies
+                const mockAppGlobalState = {
+                    reminderTimeoutId: null,
+                    timesReminded: 0,
+                    lastReminderTime: null
                 };
+
+                // createMockAppState expects a storage key string, not the data object
+                // Data is already in localStorage from line 135
+                const mockAppState = createMockAppState('miniCycleData');
+
+                setRemindersDependencies({
+                    AppState: mockAppState,
+                    AppGlobalState: mockAppGlobalState,
+                    showNotification: () => {},
+                    loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+                });
+
+                // Keep window.AppGlobalState for tests that access it directly
+                window.AppGlobalState = mockAppGlobalState;
 
                 // Clear reminder manager instance
                 delete window.reminderManager;
-
-                // Ensure AppGlobalState exists and is reset
-                if (!window.AppGlobalState) {
-                    window.AppGlobalState = {};
-                }
-                window.AppGlobalState.reminderIntervalId = null;
-                window.AppGlobalState.timesReminded = 0;
-                window.AppGlobalState.lastReminderTime = null;
 
                 await testFn();
                 resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
@@ -187,12 +193,71 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        await test('has correct version', async () => {
+            const instance = new MiniCycleReminders({
+                AppMeta: { version: '1.0.0' }
+            });
+            // Check version exists and is in semver format (reminders uses currentVersion getter)
+            if (!instance.currentVersion || !/^\d+\.\d+(\.\d+)?$/.test(instance.currentVersion)) {
+                throw new Error(`Expected valid semver version, got ${instance.currentVersion}`);
+            }
+        });
 
+        await test('initializes with AppGlobalState integration', async () => {
+            const instance = new MiniCycleReminders();
+
+            // Test state getters/setters
+            instance.state.timesReminded = 5;
+
+            if (window.AppGlobalState.timesReminded !== 5) {
+                throw new Error('AppGlobalState integration not working');
+            }
+        });
 
         // === CORE FUNCTIONALITY TESTS ===
         resultsDiv.innerHTML += '<h4>⚡ Core Functionality</h4>';
 
+        await test('autoSaveReminders saves to customReminders in Schema 2.5', async () => {
+            const enableReminders = document.createElement('input');
+            enableReminders.type = 'checkbox';
+            enableReminders.id = 'enableReminders';
+            enableReminders.checked = true;
 
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders({
+                getElementById: (id) => {
+                    if (id === 'enableReminders') return enableReminders;
+                    return null;
+                }
+            });
+
+            const enabled = await instance.autoSaveReminders();
+
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+            // Saves to customReminders
+            if (!savedData.customReminders || savedData.customReminders.enabled !== true) {
+                throw new Error('Reminder settings not saved to customReminders');
+            }
+
+            if (enabled !== true) {
+                throw new Error('autoSaveReminders should return enabled state');
+            }
+        });
+
+        await test('saveTaskReminderState updates task in Schema 2.5', async () => {
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders();
+
+            await instance.saveTaskReminderState('task-1', true);
+
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+            const task = savedData.data.cycles['test-cycle'].tasks.find(t => t.id === 'task-1');
+
+            if (task.remindersEnabled !== true) {
+                throw new Error('Reminder state not saved correctly');
+            }
+        });
 
         await test('stopReminders clears interval', async () => {
             const instance = new MiniCycleReminders();
@@ -206,9 +271,183 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        await test('startReminders sets up interval when enabled', async () => {
+            // DI-pure: update the module-level deps with custom loadMiniCycleData
+            // Test wrapper already set basic deps, now override loadMiniCycleData for this test
+            setRemindersDependencies({
+                loadMiniCycleData: () => ({
+                    reminders: {
+                        enabled: true,
+                        indefinite: true,
+                        frequencyValue: 1,
+                        frequencyUnit: 'minutes'
+                    }
+                })
+            });
+
+            const instance = new MiniCycleReminders({
+                querySelectorAll: () => []
+            });
+
+            await instance.startReminders();
+
+            if (!instance.state.reminderIntervalId) {
+                throw new Error('Reminder interval not created');
+            }
+
+            // Clean up
+            instance.stopReminders();
+        });
+
+        await test('startReminders does not start when disabled', async () => {
+            // DI-pure: update the module-level deps with custom loadMiniCycleData
+            setRemindersDependencies({
+                loadMiniCycleData: () => ({
+                    reminders: {
+                        enabled: false,
+                        frequencyValue: 1,
+                        frequencyUnit: 'hours'
+                    }
+                })
+            });
+
+            const instance = new MiniCycleReminders();
+
+            await instance.startReminders();
+
+            if (instance.state.reminderIntervalId !== null) {
+                throw new Error('Interval should not be created when disabled');
+            }
+        });
+
+        // === SCHEMA 2.5 STORAGE TESTS ===
+        resultsDiv.innerHTML += '<h4>💾 Schema 2.5 Storage</h4>';
+
+        await test('saves reminder settings to customReminders location', async () => {
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders({
+                getElementById: (id) => {
+                    if (id === 'enableReminders') {
+                        const checkbox = document.createElement('input');
+                        checkbox.checked = true;
+                        return checkbox;
+                    }
+                    if (id === 'frequencyValue') {
+                        const input = document.createElement('input');
+                        input.value = '2';
+                        return input;
+                    }
+                    if (id === 'frequencyUnit') {
+                        const select = document.createElement('select');
+                        select.value = 'hours';
+                        return select;
+                    }
+                    return null;
+                }
+            });
+
+            await instance.autoSaveReminders();
+
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+            if (!savedData.customReminders) {
+                throw new Error('customReminders not created in Schema 2.5');
+            }
+
+            if (savedData.customReminders.frequencyValue !== 2) {
+                throw new Error('Frequency value not saved correctly');
+            }
+        });
+
+        await test('updates metadata timestamp on save', async () => {
+            const originalData = JSON.parse(localStorage.getItem('miniCycleData'));
+            const originalTimestamp = originalData.metadata.lastModified;
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders({
+                getElementById: () => {
+                    const checkbox = document.createElement('input');
+                    checkbox.checked = true;
+                    return checkbox;
+                }
+            });
+
+            await instance.autoSaveReminders();
+
+            const updatedData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+            if (updatedData.metadata.lastModified <= originalTimestamp) {
+                throw new Error('Metadata timestamp not updated');
+            }
+        });
+
+        await test('stores reminder start time when enabling', async () => {
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders({
+                getElementById: () => {
+                    const checkbox = document.createElement('input');
+                    checkbox.checked = true;
+                    return checkbox;
+                }
+            });
+
+            await instance.autoSaveReminders();
+
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+            if (!savedData.customReminders.reminderStartTime) {
+                throw new Error('Reminder start time not saved');
+            }
+
+            const timeDiff = Date.now() - savedData.customReminders.reminderStartTime;
+            if (timeDiff > 100) {
+                throw new Error('Reminder start time not set to current time');
+            }
+        });
+
         // === ERROR HANDLING TESTS ===
         resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
 
+        await test('handles missing task gracefully', async () => {
+            const instance = new MiniCycleReminders({
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
+                showNotification: () => {}
+            });
+
+            // Should not throw when task doesn't exist
+            await instance.saveTaskReminderState('non-existent-task', true);
+
+            // Task should not be created
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+            const task = savedData.data.cycles['test-cycle'].tasks.find(t => t.id === 'non-existent-task');
+
+            if (task) {
+                throw new Error('Non-existent task should not be created');
+            }
+        });
+
+        await test('handles missing Schema 2.5 data', async () => {
+            localStorage.clear();
+
+            const instance = new MiniCycleReminders({
+                loadMiniCycleData: () => null,
+                showNotification: () => {}
+            });
+
+            // Should throw error when Schema 2.5 data is missing
+            let errorThrown = false;
+            try {
+                await instance.saveTaskReminderState('task-1', true);
+            } catch (error) {
+                errorThrown = true;
+            }
+
+            if (!errorThrown) {
+                throw new Error('Should throw error when Schema 2.5 data is missing');
+            }
+        });
 
         await test('stopReminders handles null interval gracefully', async () => {
             const instance = new MiniCycleReminders();
@@ -225,10 +464,129 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         // === INTEGRATION TESTS ===
         resultsDiv.innerHTML += '<h4>🔗 Integration Tests</h4>';
 
+        await test('setupReminderButtonHandler attaches event listener', async () => {
+            const instance = new MiniCycleReminders({
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+            });
+
+            const button = document.createElement('button');
+            const taskContext = { assignedTaskId: 'task-1' };
+
+            instance.setupReminderButtonHandler(button, taskContext);
+
+            // Should not throw
+            if (!button) {
+                throw new Error('Button should still exist after setup');
+            }
+        });
+
+        await test('handleReminderToggle updates UI and saves state', async () => {
+            const enableReminders = document.createElement('input');
+            enableReminders.type = 'checkbox';
+            enableReminders.id = 'enableReminders';
+            enableReminders.checked = true;
+
+            const frequencySection = document.createElement('div');
+            frequencySection.id = 'frequency-section';
+            frequencySection.classList.add('hidden');
+
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders({
+                getElementById: (id) => {
+                    if (id === 'enableReminders') return enableReminders;
+                    if (id === 'frequency-section') return frequencySection;
+                    return null;
+                },
+                querySelectorAll: () => []
+            });
+
+            await instance.handleReminderToggle();
+
+            if (frequencySection.classList.contains('hidden')) {
+                throw new Error('Frequency section should be visible when enabled');
+            }
+
+            const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
+            if (!savedData.customReminders.enabled) {
+                throw new Error('Enabled state not saved');
+            }
+        });
+
+        await test('sendReminderNotificationIfNeeded stops when all tasks complete', async () => {
+            // Create mock completed task
+            const taskDiv = document.createElement('div');
+            taskDiv.classList.add('task');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true; // Completed
+            const taskText = document.createElement('span');
+            taskText.classList.add('task-text');
+            taskText.textContent = 'Test Task';
+            const reminderBtn = document.createElement('button');
+            reminderBtn.classList.add('enable-task-reminders', 'reminder-active');
+            taskDiv.appendChild(checkbox);
+            taskDiv.appendChild(taskText);
+            taskDiv.appendChild(reminderBtn);
+
+            const instance = new MiniCycleReminders({
+                loadMiniCycleData: () => ({
+                    reminders: { enabled: true, indefinite: true }
+                }),
+                querySelectorAll: (selector) => {
+                    if (selector === '.task') return [taskDiv];
+                    return [];
+                },
+                showNotification: () => {}
+            });
+
+            instance.state.reminderIntervalId = 123; // Fake interval ID
+
+            await instance.sendReminderNotificationIfNeeded();
+
+            // Should clear interval when all tasks complete
+            if (instance.state.reminderIntervalId !== null) {
+                throw new Error('Interval should be cleared when all tasks complete');
+            }
+        });
 
         // === PERFORMANCE TESTS ===
         resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
 
+        await test('saveTaskReminderState completes within reasonable time', async () => {
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders();
+
+            const startTime = performance.now();
+            await instance.saveTaskReminderState('task-1', true);
+            const endTime = performance.now();
+
+            const duration = endTime - startTime;
+
+            if (duration > 100) {
+                throw new Error(`Operation took too long: ${duration.toFixed(2)}ms`);
+            }
+        });
+
+        await test('autoSaveReminders completes within reasonable time', async () => {
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders({
+                getElementById: () => {
+                    const checkbox = document.createElement('input');
+                    checkbox.checked = true;
+                    return checkbox;
+                }
+            });
+
+            const startTime = performance.now();
+            await instance.autoSaveReminders();
+            const endTime = performance.now();
+
+            const duration = endTime - startTime;
+
+            if (duration > 100) {
+                throw new Error(`Operation took too long: ${duration.toFixed(2)}ms`);
+            }
+        });
 
         // === SUMMARY ===
         const percentage = Math.round((passed.count / total.count) * 100);
