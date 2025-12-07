@@ -90,13 +90,21 @@ class EducationalTipManager {
     console.log('💾 Saving dismissed tips (Schema 2.5 only)...');
 
     try {
-      // ✅ Use AppState only (DI-pure, no localStorage fallback)
-      if (!this.deps.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for saveDismissedTips');
+      // ✅ DEFENSIVE CHECK: Ensure deps and AppState exist before accessing
+      // Node.js 20.x timing differences can cause AppState to be undefined
+      const deps = this.deps;
+      if (!deps || !deps.AppState) {
+        console.warn('⚠️ AppState not available for saveDismissedTips (deps not ready)');
         return;
       }
 
-      await this.deps.AppState.update(state => {
+      // ✅ Use AppState only (DI-pure, no localStorage fallback)
+      if (typeof deps.AppState.isReady !== 'function' || !deps.AppState.isReady()) {
+        console.warn('⚠️ AppState not ready for saveDismissedTips');
+        return;
+      }
+
+      await deps.AppState.update(state => {
         if (!state.settings) state.settings = {};
         state.settings.dismissedEducationalTips = this.getDismissedTips();
       }, true);
