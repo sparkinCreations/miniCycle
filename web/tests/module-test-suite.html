@@ -372,6 +372,7 @@
             <option value="modalManager">ModalManager</option>
             <option value="menuManager">MenuManager</option>
             <option value="settingsManager">SettingsManager</option>
+            <option value="completedTasksManager">CompletedTasksManager</option>
             <option value="pullToRefresh">PullToRefresh</option>
             <option value="taskCore">TaskCore</option>
             <option value="taskValidation">TaskValidation</option>
@@ -452,6 +453,7 @@
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
         const { runSettingsManagerTests } = await import(`./settingsManager.tests.js?v=${cacheBuster}`);
+        const { runCompletedTasksManagerTests } = await import(`./completedTasksManager.tests.js?v=${cacheBuster}`);
         const { runPullToRefreshTests } = await import(`./pullToRefresh.tests.js?v=${cacheBuster}`);
         const { runTaskCoreTests } = await import(`./taskCore.tests.js?v=${cacheBuster}`);
         const { runTaskValidationTests } = await import(`./taskValidation.tests.js?v=${cacheBuster}`);
@@ -729,6 +731,11 @@
                 window.initSettingsManager = mod.initSettingsManager;
                 // Don't await initSettingsManager - it hangs waiting for DOM/appInit
                 // Tests should create instances directly with mocked dependencies
+            } else if (moduleKey === 'completedTasksManager') {
+                const mod = await import(`../modules/ui/completedTasksManager.js?v=${cacheBuster}`);
+                window.CompletedTasksManager = mod.CompletedTasksManager;
+                window.setCompletedTasksManagerDependencies = mod.setCompletedTasksManagerDependencies;
+                window.initCompletedTasksManager = mod.initCompletedTasksManager;
             } else if (moduleKey === 'pullToRefresh') {
                 const mod = await import(`../modules/ui/pullToRefresh.js?v=${cacheBuster}`);
                 window.PullToRefresh = mod.PullToRefresh;
@@ -1101,6 +1108,13 @@
                     // Tests should create instances directly with mocked dependencies
                     currentModule = 'settingsManager';
                     resultsDiv.innerHTML = '<p>✅ SettingsManager loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'completedTasksManager') {
+                    const mod = await import(`../modules/ui/completedTasksManager.js?v=${cacheBuster}`);
+                    window.CompletedTasksManager = mod.CompletedTasksManager;
+                    window.setCompletedTasksManagerDependencies = mod.setCompletedTasksManagerDependencies;
+                    window.initCompletedTasksManager = mod.initCompletedTasksManager;
+                    currentModule = 'completedTasksManager';
+                    resultsDiv.innerHTML = '<p>✅ CompletedTasksManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'pullToRefresh') {
                     const mod = await import(`../modules/ui/pullToRefresh.js?v=${cacheBuster}`);
                     window.PullToRefresh = mod.PullToRefresh;
@@ -1364,6 +1378,8 @@
                 await runMenuManagerTests(resultsDiv);
             } else if (currentModule === 'settingsManager') {
                 await runSettingsManagerTests(resultsDiv);
+            } else if (currentModule === 'completedTasksManager') {
+                await runCompletedTasksManagerTests(resultsDiv);
             } else if (currentModule === 'pullToRefresh') {
                 await runPullToRefreshTests(resultsDiv);
             } else if (currentModule === 'taskCore') {
@@ -1536,6 +1552,7 @@
                 { name: 'Reminders', key: 'reminders', runFn: runRemindersTests, importPath: '../modules/features/reminders.js' },
                 { name: 'MenuManager', key: 'menuManager', runFn: runMenuManagerTests, importPath: '../modules/ui/menuManager.js' },
                 { name: 'SettingsManager', key: 'settingsManager', runFn: runSettingsManagerTests, importPath: '../modules/ui/settingsManager.js' },
+                { name: 'CompletedTasksManager', key: 'completedTasksManager', runFn: runCompletedTasksManagerTests, importPath: '../modules/ui/completedTasksManager.js' },
                 { name: 'PullToRefresh', key: 'pullToRefresh', runFn: runPullToRefreshTests, importPath: '../modules/ui/pullToRefresh.js' },
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../modules/cycle/modeManager.js' },
                 { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../modules/cycle/cycleSwitcher.js' },

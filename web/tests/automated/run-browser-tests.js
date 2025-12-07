@@ -22,14 +22,14 @@ const colors = {
     magenta: '\x1b[35m'
 };
 
-// All available test modules (46 modules - matches browser "Run All Tests")
+// All available test modules (47 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
     'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates',
     'reminders', 'modeManager', 'cycleSwitcher', 'cycleManager', 'undoRedoManager',
     'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager',
-    'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
+    'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler',
     'testingModal', 'backupManager', 'cycleCompletion', 'dataValidator', 'appInit', 'appState',
     'helpWindowManager', 'constants', 'basicPluginSystem', 'accessibility', 'stress'
