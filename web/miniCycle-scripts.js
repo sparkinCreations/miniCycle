@@ -3384,25 +3384,7 @@ function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
     return checkbox;
 }
 
-// ✅ 19. Task Label Creation
-function createTaskLabel(taskTextTrimmed, assignedTaskId, recurring) {
-    const taskLabel = document.createElement("span");
-    taskLabel.classList.add("task-text");
-    taskLabel.textContent = taskTextTrimmed;
-    taskLabel.setAttribute("tabindex", "0");
-    taskLabel.setAttribute("role", "text");
-    taskLabel.id = `task-desc-${assignedTaskId}`;
-    
-    // Add recurring icon if needed
-    if (recurring) {
-        const icon = document.createElement("span");
-        icon.className = "recurring-indicator";
-        icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
-        taskLabel.appendChild(icon);
-    }
-
-    return taskLabel;
-}
+// ✅ REMOVED: createTaskLabel - now in modules/task/taskDOM.js
 
 
 
