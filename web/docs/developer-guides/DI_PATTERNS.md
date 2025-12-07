@@ -1,30 +1,112 @@
 # DI Patterns Guide
 
-This document covers dependency injection patterns used in miniCycle, including common pitfalls and lessons learned.
+**Last Updated:** December 6, 2025
+**Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
+
+This document covers the dependency injection patterns used in miniCycle. All 46 modules follow these patterns.
+
+---
+
+## Table of Contents
+
+1. [Core Pattern](#core-pattern-module-level-_deps-with-late-injection)
+2. [Object.defineProperties (Critical)](#objectdefineproperties-critical)
+3. [Instance Getter Pattern](#instance-getter-pattern)
+4. [Wiring in miniCycle-scripts.js](#wiring-in-minicycle-scriptsjs)
+5. [Complete Module Template](#complete-module-template)
+6. [Common Mistakes](#common-mistakes)
+7. [All DI Modules](#all-di-modules)
+
+---
 
 ## Core Pattern: Module-Level `_deps` with Late Injection
 
-```javascript
-// Module-level deps for late injection
-let _deps = {
-    AppState: null,
-    taskCore: null,
-    showNotification: null
-};
+Every module follows this structure:
 
-// Called from miniCycle-scripts.js after dependencies are available
+```javascript
+// Module-level deps container
+let _deps = {};
+
+// Called from miniCycle-scripts.js BEFORE creating instances
 export function setModuleDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    // CRITICAL: Use Object.defineProperties to preserve lazy getters
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+}
+
+export class MyModule {
+    constructor(dependencies = {}) {
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Required deps - fail fast
+        if (!mergedDeps.AppState) {
+            throw new Error('MyModule requires AppState');
+        }
+
+        this.deps = {
+            AppState: mergedDeps.AppState,
+            showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this)
+        };
+    }
+
+    fallbackNotification(msg, type) {
+        console.log(`[MyModule] ${type}: ${msg}`);
+    }
 }
 ```
 
 ---
 
-## Lesson Learned: Instance Getter Pattern
+## Object.defineProperties (Critical)
+
+**This is the most important pattern in our DI system.**
+
+### The Problem with Spread Operator
+
+```javascript
+// BAD: Spread operator evaluates getters immediately
+export function setModuleDependencies(dependencies) {
+    _deps = { ..._deps, ...dependencies };
+    // If dependencies had: { get AppState() { return window.AppState; } }
+    // The getter is invoked NOW, returning undefined if AppState isn't ready
+}
+```
+
+### The Solution
+
+```javascript
+// GOOD: Object.defineProperties preserves getters
+export function setModuleDependencies(dependencies) {
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+    // Getters remain as getters, invoked only when accessed
+}
+```
+
+### Why This Matters
+
+When wiring dependencies in `miniCycle-scripts.js`:
+
+```javascript
+// Wiring happens BEFORE AppState is created
+setModuleDependencies({
+    get AppState() { return window.AppState; },  // Lazy getter
+    showNotification: deps.utils.showNotification
+});
+
+// Later, when module code runs:
+this.deps.AppState.get();  // Getter invoked NOW, AppState exists!
+```
+
+**All 40 modules with `set*Dependencies()` use this pattern.**
+
+---
+
+## Instance Getter Pattern
+
+Use when an instance is created **before** all dependencies are available.
 
 ### The Problem
-
-When a class instance is created **before** dependencies are injected, capturing `_deps` values at construction time causes them to be permanently `null`:
 
 ```javascript
 // BAD: Captures values at construction time
@@ -35,277 +117,309 @@ class MyModule {
             taskCore: mergedDeps.taskCore,  // Captured as null!
         };
     }
-
-    doSomething() {
-        // this.deps.taskCore is still null even after setModuleDependencies() was called
-        this.deps.taskCore.doThing();  // ERROR: Cannot read property 'doThing' of null
-    }
 }
-```
 
-**Timeline of failure:**
-1. `initMyModule()` creates instance → `this.deps.taskCore = null`
-2. `setModuleDependencies({ taskCore })` updates `_deps.taskCore`
-3. User clicks button → `this.deps.taskCore` is still `null`
+// Timeline:
+// 1. Instance created → this.deps.taskCore = null
+// 2. setModuleDependencies({ taskCore }) called
+// 3. User action → this.deps.taskCore is STILL null
+```
 
 ### The Solution
 
-Use a **getter** so `this.deps` reads from `_deps` at access time, not construction time:
-
 ```javascript
-// GOOD: Reads current _deps values at access time
+// GOOD: Getter resolves at access time
 class MyModule {
     constructor(dependencies = {}) {
-        // Only store constructor-specific deps that won't change
         this._constructorDeps = {
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id))
         };
     }
 
-    // Getter resolves _deps at access time
     get deps() {
         return {
-            taskCore: _deps.taskCore,  // Reads current value!
+            taskCore: _deps.taskCore,  // Reads CURRENT value
             showNotification: _deps.showNotification || this.fallbackNotification,
             ...this._constructorDeps
         };
     }
-
-    doSomething() {
-        // this.deps.taskCore now resolves to current _deps.taskCore
-        this.deps.taskCore.doThing();  // Works!
-    }
 }
+
+// Timeline:
+// 1. Instance created
+// 2. setModuleDependencies({ taskCore }) called
+// 3. User action → this.deps.taskCore getter returns current _deps.taskCore ✅
 ```
-
-**Timeline of success:**
-1. `initMyModule()` creates instance
-2. `setModuleDependencies({ taskCore })` updates `_deps.taskCore`
-3. User clicks button → `this.deps.taskCore` getter reads current `_deps.taskCore` → Works!
-
-### When to Use This Pattern
-
-Use the getter pattern when **ALL** of these are true:
-- Module uses `set*Dependencies()` for late injection
-- Instance is created before all dependencies are available
-- Instance needs to access dependencies that are injected after construction
 
 ### Modules Using This Pattern
 
 - `taskEvents.js` - Instance created before `taskCore` exists
-- `basicPluginSystem.js` - `MiniCyclePlugin` base class uses getter for `deps`
+- `statsPanel.js` - Uses `get dependencies()` pattern
+- `basicPluginSystem.js` - `MiniCyclePlugin` base class uses getter
 
 ---
 
-## Wiring in miniCycle-scripts.js (Critical Step)
+## Wiring in miniCycle-scripts.js
 
-Making a module DI-pure requires **two steps**:
+`miniCycle-scripts.js` is the **only place** where dependencies are connected.
 
-1. **Module changes** - Add `_deps`, getter pattern, remove `window.*` fallbacks
-2. **Main script wiring** - Call `set*Dependencies()` before instantiation
-
-**Forgetting step 2 causes all dependencies to be null/undefined**, resulting in warnings like:
-- `"Dark mode toggle not available"`
-- `"AppState not available"`
-- `"Data loading not available"`
-
-### Wiring Pattern
+### Complete Wiring Example
 
 ```javascript
 // In miniCycle-scripts.js
 
-// 1. Import the setter along with the module
-const { MyModule, setMyModuleDependencies } = await import(withV('./modules/path/myModule.js'));
+// 1. Import setter and module
+const { MyModule, setModuleDependencies } = await import(withV('./modules/path/myModule.js'));
 
 // 2. Wire dependencies BEFORE creating instance
-setMyModuleDependencies({
+setModuleDependencies({
+    // Direct values for deps that exist now
     showNotification: deps.utils.showNotification,
-    loadData: () => window.loadMiniCycleData?.(),
+    AppMeta: window.AppMeta,
 
-    // Use lazy getters for deps that don't exist yet at wiring time
+    // Lazy getters for deps that may not exist yet
     get AppState() { return window.AppState; },
     get taskCore() { return window.taskCore; },
 
-    AppMeta: window.AppMeta
+    // Function wrappers for defensive access
+    loadData: () => window.loadMiniCycleData?.()
 });
 
-// 3. NOW create the instance (it will read from _deps via getter)
+// 3. Create instance (reads from _deps)
 const myModule = new MyModule();
+
+// 4. Optionally expose for backward compatibility
+window.myModule = myModule;
 ```
 
-### Lazy Getters in Wiring
+### When to Use Lazy Getters
 
-Use lazy getters (`get X() { return window.X; }`) when:
+Use `get X() { return window.X; }` when:
 - The dependency doesn't exist yet at wiring time
 - The dependency may be replaced/updated later
 - You need circular dependency resolution
 
 ```javascript
-// BAD: Captures undefined if AppState isn't ready yet
-setMyModuleDependencies({
-    AppState: window.AppState,  // undefined at this point!
-});
-
-// GOOD: Resolves when actually accessed
-setMyModuleDependencies({
-    get AppState() { return window.AppState; },  // Works!
+// AppState created after this wiring code runs
+setModuleDependencies({
+    get AppState() { return window.AppState; },  // ✅ Deferred
+    AppMeta: window.AppMeta  // ✅ Already exists
 });
 ```
 
 ---
 
-## DI-Pure Checklist
+## Complete Module Template
 
-A module is "DI-pure" when:
+```javascript
+/**
+ * MyModule - Description of what this module does
+ *
+ * Dependencies:
+ * - AppState: State management (required)
+ * - showNotification: Toast notifications (optional, has fallback)
+ * - AppMeta: Version info (optional)
+ */
 
-**Module side:**
-- [ ] No `|| window.*` fallbacks in constructor or methods
-- [ ] Has `set*Dependencies()` function for late injection
-- [ ] Uses getter pattern if instance is created before deps are available
-- [ ] All external dependencies come through `_deps` or constructor
-- [ ] Console log confirms: `'Module loaded (DI-pure, no window.* exports)'`
+let _deps = {};
 
-**Wiring side (miniCycle-scripts.js):**
-- [ ] Imports `set*Dependencies` along with the module
-- [ ] Calls `set*Dependencies({...})` BEFORE creating instance
-- [ ] Uses lazy getters for deps that don't exist at wiring time
+/**
+ * Set module dependencies. Called from miniCycle-scripts.js.
+ * Uses Object.defineProperties to preserve lazy getters.
+ */
+export function setMyModuleDependencies(dependencies) {
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+    console.log('🔧 MyModule dependencies set:', Object.keys(dependencies));
+}
 
-### DI-Pure Modules (as of Dec 2025)
+export class MyModule {
+    constructor(dependencies = {}) {
+        const mergedDeps = { ..._deps, ...dependencies };
 
-**Fully DI-Pure (no `window.*` fallbacks):**
-- `taskCore.js` - Task state management
-- `taskEvents.js` - Task event handling
-- `notifications.js` - Notification system
-- `basicPluginSystem.js` - Plugin architecture
-- `pluginIntegrationGuide.js` - Plugin docs/helpers
-- `statsPanel.js` - Stats panel UI
-- `settingsManager.js` - Settings management
-- `taskOptionsCustomizer.js` - Task button customization
-- `recurringPanel.js` - Recurring task UI panel
-- `taskDOM.js` - Task DOM manipulation
-- `errorHandler.js` - Global error handling
-- `deviceDetection.js` - Device capability detection
-- `reminders.js` - Task reminder system
-- `pullToRefresh.js` - Mobile pull-to-refresh
-- `taskUtils.js` - Task utility functions
-- `testing-modal-integration.js` - Automated testing integration
-- `dueDates.js` - Due date management
-- `consoleCapture.js` - Console capture for debugging
-- `cycleLoader.js` - Cycle loading and rendering
-- `gamesManager.js` - Mini-game unlocking and panel
-- `globalUtils.js` - Core utility functions
-- `backupManager.js` - IndexedDB backup system
-- `menuManager.js` - Main menu operations
-- `onboardingManager.js` - First-time user onboarding
-- `modeManager.js` - Cycle mode management (Auto/Manual/To-Do)
+        // Validate required dependencies
+        const required = ['AppState'];
+        const missing = required.filter(dep => !mergedDeps[dep]);
+        if (missing.length > 0) {
+            throw new Error(`MyModule: Missing required dependencies: ${missing.join(', ')}`);
+        }
 
-**Wiring Layer:**
-- `miniCycle-scripts.js` - The main script handles all DI wiring and `window.*` exposure for backward compatibility
+        // Store dependencies
+        this.deps = {
+            AppState: mergedDeps.AppState,
+            showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this),
+            version: mergedDeps.AppMeta?.version || 'dev'
+        };
+
+        this.initialized = false;
+    }
+
+    fallbackNotification(message, type = 'info') {
+        console.log(`[MyModule] ${type.toUpperCase()}: ${message}`);
+    }
+
+    async init() {
+        if (this.initialized) return;
+
+        // Safe to access AppState now
+        const state = this.deps.AppState.get();
+        console.log('MyModule initialized with state:', !!state);
+
+        this.initialized = true;
+    }
+
+    doSomething() {
+        this.deps.AppState.update(state => {
+            // Modify state
+        }, true);
+
+        this.deps.showNotification('Action completed', 'success');
+    }
+}
+
+// No window.* exports - main script handles exposure if needed
+console.log('📦 MyModule loaded (strict DI)');
+```
 
 ---
 
 ## Common Mistakes
 
-### 1. Forgetting the getter when needed
-```javascript
-// Instance created at module load, deps injected later
-const instance = new MyClass();  // deps are null
-export function setDeps(d) { _deps = d; }  // Too late for instance.deps
-```
+### 1. Using spread instead of Object.defineProperties
 
-### 2. Using `this.deps = _deps` directly
 ```javascript
-// BAD: Still captures reference at construction time
-this.deps = _deps;  // If _deps is reassigned, this.deps won't update
-```
-
-### 3. Not merging constructor deps with module deps
-```javascript
-// BAD: Ignores constructor-passed deps
-get deps() {
-    return { ..._deps };  // Missing constructor overrides
+// ❌ WRONG: Getters evaluated immediately
+export function setDeps(dependencies) {
+    _deps = { ..._deps, ...dependencies };
 }
 
-// GOOD: Merge both
-get deps() {
-    return { ..._deps, ...this._constructorDeps };
-}
-```
-
-### 4. Forgetting to wire in miniCycle-scripts.js
-```javascript
-// BAD: Module is DI-pure but dependencies never injected
-const { MyModule } = await import('./myModule.js');
-const instance = new MyModule();  // All deps are null!
-
-// GOOD: Wire before instantiation
-const { MyModule, setMyModuleDependencies } = await import('./myModule.js');
-setMyModuleDependencies({ /* deps */ });
-const instance = new MyModule();  // Deps available via getter
-```
-
-### 5. Not using lazy getters for late-available deps
-```javascript
-// BAD: window.AppState doesn't exist yet
-setMyModuleDependencies({
-    AppState: window.AppState  // undefined!
-});
-
-// GOOD: Defer resolution
-setMyModuleDependencies({
-    get AppState() { return window.AppState; }
-});
-```
-
-### 6. Using spread operator destroys getters
-
-When using lazy getters, the `set*Dependencies()` function must preserve them:
-
-```javascript
-// BAD: Spread operator evaluates getters immediately
-export function setMyModuleDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };  // Getters evaluated! Values captured!
-}
-
-// GOOD: Use Object.defineProperties to preserve getters
-export function setMyModuleDependencies(dependencies) {
+// ✅ RIGHT: Getters preserved
+export function setDeps(dependencies) {
     const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);  // Getters preserved!
+    Object.defineProperties(_deps, descriptors);
 }
 ```
 
-**Why this matters:** If you pass `{ get AppState() { return window.AppState; } }` and use spread, the getter is invoked at that moment (returning `undefined` if AppState isn't ready yet) and the value `undefined` is stored. With `Object.defineProperties`, the getter is preserved and will be invoked each time `_deps.AppState` is accessed.
+### 2. Adding `|| window.*` fallbacks
+
+```javascript
+// ❌ WRONG: Reintroduces global coupling
+this.deps = {
+    AppState: mergedDeps.AppState || window.AppState
+};
+
+// ✅ RIGHT: Fail fast or use safe fallback
+this.deps = {
+    AppState: mergedDeps.AppState  // Will be undefined if not wired
+};
+if (!this.deps.AppState) {
+    throw new Error('AppState required');
+}
+```
+
+### 3. Forgetting to wire before instantiation
+
+```javascript
+// ❌ WRONG: Instance created before wiring
+const { MyModule } = await import('./myModule.js');
+const instance = new MyModule();  // deps are undefined!
+setMyModuleDependencies({ ... });  // Too late!
+
+// ✅ RIGHT: Wire first, then instantiate
+const { MyModule, setMyModuleDependencies } = await import('./myModule.js');
+setMyModuleDependencies({ ... });
+const instance = new MyModule();
+```
+
+### 4. Capturing deps at construction when using late injection
+
+```javascript
+// ❌ WRONG: Captures null values
+constructor() {
+    this.taskCore = _deps.taskCore;  // null at construction time
+}
+
+// ✅ RIGHT: Use getter for late-available deps
+get deps() {
+    return { taskCore: _deps.taskCore };  // Resolved at access time
+}
+```
+
+### 5. Not using function wrappers for optional deps
+
+```javascript
+// ❌ WRONG: Throws if loadMiniCycleData doesn't exist
+loadData: window.loadMiniCycleData
+
+// ✅ RIGHT: Safe access with optional chaining
+loadData: () => window.loadMiniCycleData?.()
+```
+
+---
+
+## All DI Modules
+
+**All 46 modules use strict dependency injection with no `|| window.*` fallbacks.**
+
+### Modules with `set*Dependencies()` (40 modules)
+
+| Module | Setter Function |
+|--------|-----------------|
+| `appState.js` | `setAppStateDependencies` |
+| `backupManager.js` | `setBackupManagerDependencies` |
+| `basicPluginSystem.js` | `setBasicPluginSystemDependencies` |
+| `consoleCapture.js` | `setConsoleCaptureDependencies` |
+| `cycleLoader.js` | `setCycleLoaderDependencies` |
+| `cycleManager.js` | `setCycleManagerDependencies` |
+| `cycleSwitcher.js` | `setCycleSwitcherDependencies` |
+| `dataValidator.js` | `setDataValidatorDependencies` |
+| `deviceDetection.js` | `setDeviceDetectionDependencies` |
+| `dragDropManager.js` | `setDragDropManagerDependencies` |
+| `dueDates.js` | `setDueDatesDependencies` |
+| `errorHandler.js` | `setErrorHandlerDependencies` |
+| `gamesManager.js` | `setGamesManagerDependencies` |
+| `globalUtils.js` | `setGlobalUtilsDependencies` |
+| `helpWindowManager.js` | `setHelpWindowManagerDependencies` |
+| `menuManager.js` | `setMenuManagerDependencies` |
+| `migrationManager.js` | `setMigrationManagerDependencies` |
+| `modalManager.js` | `setModalManagerDependencies` |
+| `modeManager.js` | `setModeManagerDependencies` |
+| `notifications.js` | `setNotificationsDependencies` |
+| `onboardingManager.js` | `setOnboardingManagerDependencies` |
+| `pluginIntegrationGuide.js` | `setPluginIntegrationGuideDependencies` |
+| `pullToRefresh.js` | `setPullToRefreshDependencies` |
+| `recurringCore.js` | `setRecurringCoreDependencies` |
+| `recurringIntegration.js` | `setRecurringIntegrationDependencies` |
+| `reminders.js` | `setRemindersDependencies` |
+| `settingsManager.js` | `setSettingsManagerDependencies` |
+| `statsPanel.js` | `setStatsPanelDependencies` |
+| `taskCore.js` | `setTaskCoreDependencies` |
+| `taskDOM.js` | `setTaskDOMManagerDependencies` |
+| `taskEvents.js` | `setTaskEventsDependencies` |
+| `taskOptionsCustomizer.js` | `setTaskOptionsCustomizerDependencies` |
+| `taskRenderer.js` | `setTaskRendererDependencies` |
+| `taskUtils.js` | `setTaskUtilsDependencies` |
+| `taskValidation.js` | `setTaskValidationDependencies` |
+| `testing-modal.js` | `setTestingModalDependencies` |
+| `testing-modal-integration.js` | `setTestingModalIntegrationDependencies` |
+| `themeManager.js` | `setThemeManagerDependencies` |
+| `undoRedoManager.js` | `setUndoRedoManagerDependencies` |
+| `cycleCompletion.js` | `setCycleCompletionDependencies` |
+
+### Modules Without Setter (6 modules)
+
+These are pure utilities or static configuration with no dependencies:
+
+- `appInit.js` - Singleton initialization coordinator
+- `constants.js` - Static constants
+- `testing-modal-modifications.js` - Test modifications
+- `exampleTimeTrackerPlugin.js` - Example plugin
+- `recurringPanel.js` - Uses constructor DI only
 
 ---
 
 ## Related Documentation
 
 - [CLAUDE.md](./CLAUDE.md) - Main developer guide
-- [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) - DI-pure implementation example
-- [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) - Progress tracking
-
-
-
-  - errorHandler.js (9)
-  - deviceDetection.js (8)
-  - reminders.js (7)
-  - pullToRefresh.js (6)
-  - taskUtils.js (6)
-
-    - modeManager.js (4 instances)
-  - onboardingManager.js (5 instances)
-  - menuManager.js (3 instances)
-  - backupManager.js (4 instances)
-  - globalUtils.js (2 instances)
-  - gamesManager.js (2 instances)
-  - cycleLoader.js (1 instance)
-  - consoleCapture.js (1 instance)
-  - dueDates.js (1 instance)
-
-   Priority candidates for new tests:
-  1. cycleManager.js - Core cycle logic
-  2. cycleCompletion.js - Progress tracking
-  3. backupManager.js - Data backup/restore
-  4. dataValidator.js - Data validation
-  5. helpWindowManager.js - UI component
-
+- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) - System architecture
+- [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) - Detailed DI implementation example

@@ -9,7 +9,6 @@
 // ============================================
 function createMockDependencies(overrides = {}) {
     return {
-        AppMeta: { version: '1.0.0' },
         AppState: { isReady: () => true, get: () => ({}) },
         addTask: async () => {},
         loadMiniCycle: () => {},

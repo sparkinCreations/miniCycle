@@ -453,7 +453,6 @@
         const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
         const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
         const { runTestingModalTests } = await import(`./testingModal.tests.js?v=${cacheBuster}`);
-        const { runCycleManagerTests } = await import(`./cycleManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -664,7 +663,8 @@
                 const mod = await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
                 window.CycleManager = mod.CycleManager;
                 window.setCycleManagerDependencies = mod.setCycleManagerDependencies;
-                window.initCycleManager = mod.initCycleManager;
+                window.initializeCycleManager = mod.initializeCycleManager;
+                window.getCycleManager = mod.getCycleManager;
             } else if (moduleKey === 'undoRedoManager') {
                 const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
                 window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
@@ -818,12 +818,6 @@
             } else if (moduleKey === 'testingModal') {
                 await import(`../modules/testing/testing-modal.js?v=${cacheBuster}`);
                 await import(`../modules/storage/backupManager.js?v=${cacheBuster}`);
-            } else if (moduleKey === 'cycleManager') {
-                const mod = await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
-                window.CycleManager = mod.CycleManager;
-                window.setCycleManagerDependencies = mod.setCycleManagerDependencies;
-                window.initializeCycleManager = mod.initializeCycleManager;
-                window.getCycleManager = mod.getCycleManager;
             }
         }
 
@@ -986,7 +980,8 @@
                     const mod = await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
                     window.CycleManager = mod.CycleManager;
                     window.setCycleManagerDependencies = mod.setCycleManagerDependencies;
-                    window.initCycleManager = mod.initCycleManager;
+                    window.initializeCycleManager = mod.initializeCycleManager;
+                    window.getCycleManager = mod.getCycleManager;
                     currentModule = 'cycleManager';
                     resultsDiv.innerHTML = '<p>✅ CycleManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'undoRedoManager') {
@@ -1190,14 +1185,6 @@
                     await import(`../modules/storage/backupManager.js?v=${cacheBuster}`);
                     currentModule = 'testingModal';
                     resultsDiv.innerHTML = '<p>✅ Testing Modal Tests ready (with testing-modal and backupManager). Click "Run Tests" to begin.</p>';
-                } else if (moduleName === 'cycleManager') {
-                    const mod = await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
-                    window.CycleManager = mod.CycleManager;
-                    window.setCycleManagerDependencies = mod.setCycleManagerDependencies;
-                    window.initializeCycleManager = mod.initializeCycleManager;
-                    window.getCycleManager = mod.getCycleManager;
-                    currentModule = 'cycleManager';
-                    resultsDiv.innerHTML = '<p>✅ CycleManager loaded. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -1285,8 +1272,6 @@
                 await runErrorHandlerTests(resultsDiv);
             } else if (currentModule === 'testingModal') {
                 await runTestingModalTests(resultsDiv);
-            } else if (currentModule === 'cycleManager') {
-                await runCycleManagerTests(resultsDiv);
             }
 
             // Show copy button after tests run

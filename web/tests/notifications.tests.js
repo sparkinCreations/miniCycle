@@ -3,19 +3,8 @@
  * Test functions for module-test-suite.html
  */
 
-import {
-    setupTestEnvironment,
-    createMockAppState
-} from './testHelpers.js';
-
-// Import setNotificationsDependencies for DI-pure testing
-import { setNotificationsDependencies } from '../modules/utils/notifications.js';
-
 export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔔 MiniCycleNotifications Tests</h2><h3>Running tests...</h3>';
-
-    // Setup test environment
-    await setupTestEnvironment();
 
     let passed = { count: 0 };
     let total = { count: 0 };
@@ -128,14 +117,13 @@ export async function runNotificationsTests(resultsDiv) {
 
     function setupMockGlobals() {
         // Mock loadMiniCycleData
-        const loadMiniCycleData = () => {
+        window.loadMiniCycleData = () => {
             const data = localStorage.getItem('miniCycleData');
             return data ? JSON.parse(data) : null;
         };
-        window.loadMiniCycleData = loadMiniCycleData;
 
         // Mock generateHashId
-        const generateHashId = (str) => {
+        window.generateHashId = (str) => {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 hash = ((hash << 5) - hash) + str.charCodeAt(i);
@@ -143,10 +131,9 @@ export async function runNotificationsTests(resultsDiv) {
             }
             return 'hash-' + Math.abs(hash).toString(36);
         };
-        window.generateHashId = generateHashId;
 
         // Mock AppState - improved to not rely on window.loadMiniCycleData during update
-        const AppState = {
+        window.AppState = {
             isReady: () => true,
             get: () => {
                 const data = localStorage.getItem('miniCycleData');
@@ -168,14 +155,6 @@ export async function runNotificationsTests(resultsDiv) {
                 }
             }
         };
-        window.AppState = AppState;
-
-        // DI-pure: inject dependencies via setNotificationsDependencies
-        setNotificationsDependencies({
-            AppState: AppState,
-            loadMiniCycleData: loadMiniCycleData,
-            generateHashId: generateHashId
-        });
     }
 
     // ===== INITIALIZATION TESTS =====

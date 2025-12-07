@@ -11,33 +11,18 @@ import {
     createProtectedTest
 } from './testHelpers.js';
 
-// Import PullToRefresh class and DI setter directly
-import {
-    PullToRefresh,
-    initPullToRefresh,
-    setPullToRefreshDependencies
-} from '../modules/ui/pullToRefresh.js';
-
 export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>Pull-to-Refresh Tests</h2><h3>Setting up mocks...</h3>';
 
     // Use shared testHelpers for comprehensive mock setup
     const env = await setupTestEnvironment();
 
-    // DI-pure: inject dependencies
-    setPullToRefreshDependencies({
-        refreshUIFromState: () => {},
-        showNotification: () => {}
-    });
-
-    // Expose to window for tests that expect global access
-    window.PullToRefresh = PullToRefresh;
-    window.initPullToRefresh = initPullToRefresh;
-
-    // Initialize pullToRefresh instance
-    window.pullToRefresh = initPullToRefresh({
-        showNotification: () => {}
-    });
+    // ✅ Initialize pullToRefresh if not already done
+    if (window.initPullToRefresh && !window.pullToRefresh) {
+        window.initPullToRefresh({
+            showNotification: window.showNotification || (() => {})
+        });
+    }
 
     resultsDiv.innerHTML = '<h2>Pull-to-Refresh Tests</h2><h3>Running tests...</h3>';
 

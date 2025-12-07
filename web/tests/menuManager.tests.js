@@ -556,6 +556,16 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         instance.clearAllTasks().catch(() => {}); // clearAllTasks is async and may fail, that's ok
     });
 
+    // === GLOBAL COMPATIBILITY TESTS ===
+    resultsDiv.innerHTML += '<h4>🌍 Global Wrappers (Backward Compat)</h4>';
+
+    test('window.MenuManager exists (backward compat)', () => {
+        if (!window.MenuManager) {
+            throw new Error('Global MenuManager class not found');
+        }
+    });
+
+
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests (DI)</h4>';
 

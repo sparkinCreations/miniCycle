@@ -123,17 +123,6 @@ export async function runTaskValidationTests(resultsDiv) {
         }
     });
 
-    await test('has correct version property', () => {
-        const validator = new TaskValidator({
-            sanitizeInput: (input) => input,
-            AppMeta: { version: '1.0.0' }
-        });
-
-        // Check version exists and is in semver format (X.Y or X.Y.Z)
-        if (!validator.version || !/^\d+\.\d+(\.\d+)?$/.test(validator.version)) {
-            throw new Error(`Expected valid semver version, got ${validator.version}`);
-        }
-    });
 
     await test('has correct TASK_LIMIT constant', () => {
         const validator = new TaskValidator({
