@@ -365,6 +365,7 @@
             <option value="reminders">Reminders</option>
             <option value="modeManager">ModeManager</option>
             <option value="cycleSwitcher">CycleSwitcher</option>
+            <option value="cycleManager">CycleManager</option>
             <option value="undoRedoManager">UndoRedoManager</option>
             <option value="gamesManager">GamesManager</option>
             <option value="onboardingManager">OnboardingManager</option>
@@ -387,7 +388,7 @@
         </div>
 
         <button id="run-tests-btn">Run Tests</button>
-        <button id="run-all-tests-btn">▶️ Run All Tests (35 modules)</button>
+        <button id="run-all-tests-btn">▶️ Run All Tests (36 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
     </div>
 
@@ -434,6 +435,7 @@
         const { runRemindersTests } = await import(`./reminders.tests.js?v=${cacheBuster}`);
         const { runModeManagerTests } = await import(`./modeManager.tests.js?v=${cacheBuster}`);
         const { runCycleSwitcherTests } = await import(`./cycleSwitcher.tests.js?v=${cacheBuster}`);
+        const { runCycleManagerTests } = await import(`./cycleManager.tests.js?v=${cacheBuster}`);
         const { runUndoRedoManagerTests } = await import(`./undoRedoManager.tests.js?v=${cacheBuster}`);
         const { runGamesManagerTests } = await import(`./gamesManager.tests.js?v=${cacheBuster}`);
         const { runOnboardingManagerTests } = await import(`./onboardingManager.tests.js?v=${cacheBuster}`);
@@ -657,6 +659,11 @@
                 window.updatePreview = mod.updatePreview;
                 window.loadMiniCycleList = mod.loadMiniCycleList;
                 window.setupModalClickOutside = mod.setupModalClickOutside;
+            } else if (moduleKey === 'cycleManager') {
+                const mod = await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
+                window.CycleManager = mod.CycleManager;
+                window.setCycleManagerDependencies = mod.setCycleManagerDependencies;
+                window.initCycleManager = mod.initCycleManager;
             } else if (moduleKey === 'undoRedoManager') {
                 const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
                 window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
@@ -968,6 +975,13 @@
                     window.setupModalClickOutside = mod.setupModalClickOutside;
                     currentModule = 'cycleSwitcher';
                     resultsDiv.innerHTML = '<p>✅ CycleSwitcher loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'cycleManager') {
+                    const mod = await import(`../modules/cycle/cycleManager.js?v=${cacheBuster}`);
+                    window.CycleManager = mod.CycleManager;
+                    window.setCycleManagerDependencies = mod.setCycleManagerDependencies;
+                    window.initCycleManager = mod.initCycleManager;
+                    currentModule = 'cycleManager';
+                    resultsDiv.innerHTML = '<p>✅ CycleManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'undoRedoManager') {
                     const mod = await import(`../modules/ui/undoRedoManager.js?v=${cacheBuster}`);
                     window.setUndoRedoManagerDependencies = mod.setUndoRedoManagerDependencies;
@@ -1220,6 +1234,8 @@
                 await runModeManagerTests(resultsDiv);
             } else if (currentModule === 'cycleSwitcher') {
                 await runCycleSwitcherTests(resultsDiv);
+            } else if (currentModule === 'cycleManager') {
+                await runCycleManagerTests(resultsDiv);
             } else if (currentModule === 'undoRedoManager') {
                 await runUndoRedoManagerTests(resultsDiv);
             } else if (currentModule === 'gamesManager') {
@@ -1387,6 +1403,7 @@
                 { name: 'PullToRefresh', key: 'pullToRefresh', runFn: runPullToRefreshTests, importPath: '../modules/ui/pullToRefresh.js' },
                 { name: 'ModeManager', key: 'modeManager', runFn: runModeManagerTests, importPath: '../modules/cycle/modeManager.js' },
                 { name: 'CycleSwitcher', key: 'cycleSwitcher', runFn: runCycleSwitcherTests, importPath: '../modules/cycle/cycleSwitcher.js' },
+                { name: 'CycleManager', key: 'cycleManager', runFn: runCycleManagerTests, importPath: '../modules/cycle/cycleManager.js' },
                 { name: 'UndoRedoManager', key: 'undoRedoManager', runFn: runUndoRedoManagerTests, importPath: '../modules/ui/undoRedoManager.js' },
                 { name: 'GamesManager', key: 'gamesManager', runFn: runGamesManagerTests, importPath: '../modules/ui/gamesManager.js' },
                 { name: 'OnboardingManager', key: 'onboardingManager', runFn: runOnboardingManagerTests, importPath: '../modules/ui/onboardingManager.js' },
