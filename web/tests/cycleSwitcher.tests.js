@@ -173,6 +173,15 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('has version property', async () => {
+        const instance = new CycleSwitcher({
+            AppMeta: { version: '1.0.0' }
+        });
+        // Check version exists and is in semver format (X.Y or X.Y.Z)
+        if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
+            throw new Error(`Expected valid semver version, got ${instance.version}`);
+        }
+    });
 
     await test('initializes with empty dependencies object', async () => {
         const instance = new CycleSwitcher({});
@@ -492,6 +501,25 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
     // === INTEGRATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests</h4>';
 
+    await test('integrates with AppState when available', async () => {
+        const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
+
+        window.AppState = {
+            isReady: () => true,
+            get: () => schemaData,
+            update: (updateFn) => {
+                const state = JSON.parse(JSON.stringify(schemaData));
+                updateFn(state);
+                return state;
+            }
+        };
+
+        const instance = new CycleSwitcher();
+
+        if (!instance.deps.AppState) {
+            throw new Error('Should use window.AppState when available');
+        }
+    });
 
     await test('works without AppState (fallback mode)', async () => {
         const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
