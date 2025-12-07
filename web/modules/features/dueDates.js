@@ -478,6 +478,58 @@ export class MiniCycleDueDates {
     }
 
     /**
+     * Show notification for overdue tasks
+     * Checks reminder settings and displays notification if due date reminders are enabled
+     */
+    remindOverdueTasks() {
+        console.log('⚠️ Checking for overdue tasks (Schema 2.5 only)...');
+
+        let autoReset = this.toggleAutoReset?.checked || false;
+        if (autoReset) {
+            console.log('🔄 Auto-reset enabled, skipping overdue reminders');
+            return;
+        }
+
+        const schemaData = this.deps.loadMiniCycleData();
+        if (!schemaData) {
+            console.error('❌ Schema 2.5 data required for remindOverdueTasks');
+            return;
+        }
+
+        const { reminders } = schemaData;
+        const remindersSettings = reminders || {};
+
+        console.log('📊 Reminder settings:', {
+            enabled: remindersSettings.enabled,
+            dueDatesReminders: remindersSettings.dueDatesReminders
+        });
+
+        const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
+
+        // Only proceed if due date notifications are enabled
+        if (!dueDatesRemindersEnabled) {
+            console.log("❌ Due date notifications are disabled. Exiting remindOverdueTasks().");
+            return;
+        }
+
+        console.log('🔍 Scanning for overdue tasks...');
+
+        let overdueTasks = [...this.deps.querySelectorAll(".task")]
+            .filter(task => task.classList.contains("overdue-task"))
+            .map(task => task.querySelector(".task-text")?.textContent)
+            .filter(Boolean);
+
+        console.log('📋 Found overdue tasks:', overdueTasks.length);
+
+        if (overdueTasks.length > 0) {
+            console.log('⚠️ Showing overdue notification for tasks:', overdueTasks);
+            this.deps.showNotification(`⚠️ Overdue Tasks:<br>- ${overdueTasks.join("<br>- ")}`, "error");
+        } else {
+            console.log('✅ No overdue tasks found');
+        }
+    }
+
+    /**
      * Update visibility of due date fields and related UI elements
      * @param {boolean} autoReset - Whether Auto Reset is enabled
      */

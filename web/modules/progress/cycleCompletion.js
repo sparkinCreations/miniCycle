@@ -1,7 +1,8 @@
 /**
- * Cycle Completion Module
+ * Cycle Completion Module (DI-Pure)
  *
- * Handles cycle completion animations, milestone tracking, and rewards.
+ * Handles cycle completion animations, milestone tracking, rewards,
+ * progress bar updates, and cycle completion checking.
  *
  * @module progress/cycleCompletion
  */
@@ -13,7 +14,12 @@ let deps = {
     updateStatsPanel: null,
     unlockDarkOceanTheme: null,
     unlockGoldenGlowTheme: null,
-    unlockMiniGame: null
+    unlockMiniGame: null,
+    // For updateProgressBar and checkMiniCycle
+    getTaskList: null,           // () => taskList element
+    getProgressBar: null,        // () => progressBar element
+    assignCycleVariables: null,  // () => { lastUsedMiniCycle, savedMiniCycles }
+    resetTasks: null             // () => void
 };
 
 /**
@@ -179,4 +185,92 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
     if (typeof deps.updateStatsPanel === 'function') {
         deps.updateStatsPanel();
     }
+}
+
+/**
+ * Updates the progress bar to reflect current task completion.
+ * Animates the width transition smoothly.
+ */
+export function updateProgressBar() {
+    const taskList = deps.getTaskList?.();
+    const progressBar = deps.getProgressBar?.();
+
+    if (!taskList || !progressBar) {
+        console.warn('⚠️ updateProgressBar: taskList or progressBar not available');
+        return;
+    }
+
+    const totalTasks = taskList.children.length;
+    const completedTasks = [...taskList.children].filter(task => task.querySelector("input")?.checked).length;
+    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+    // Add consistent animation for all progress updates
+    progressBar.style.transition = "width 0.2s ease-out";
+    progressBar.style.width = `${progress}%`;
+
+    // Clear transition after animation
+    setTimeout(() => {
+        progressBar.style.transition = "";
+    }, 200);
+}
+
+/**
+ * Checks if all tasks in the miniCycle are completed.
+ * If auto-reset is enabled, resets tasks after completion.
+ * Updates progress bar and stats panel.
+ */
+export function checkMiniCycle() {
+    // Early return if AppState not ready to prevent initialization race conditions
+    if (!deps.AppState?.isReady?.()) {
+        console.log('⏳ checkMiniCycle deferred - AppState not ready');
+        return;
+    }
+
+    const taskList = deps.getTaskList?.();
+    if (!taskList) {
+        console.warn('⚠️ checkMiniCycle: taskList not available');
+        return;
+    }
+
+    const allCompleted = [...taskList.children].every(task => task.querySelector("input")?.checked);
+
+    // Retrieve miniCycle variables
+    const cycleVars = deps.assignCycleVariables?.();
+    if (!cycleVars) {
+        console.warn("⚠️ No cycle variables available.");
+        return;
+    }
+
+    const { lastUsedMiniCycle, savedMiniCycles } = cycleVars;
+    let cycleData = savedMiniCycles[lastUsedMiniCycle];
+
+    if (!lastUsedMiniCycle || !cycleData) {
+        console.warn("⚠️ No active miniCycle found.");
+        return;
+    }
+
+    updateProgressBar();
+
+    // Only trigger reset if ALL tasks are completed AND autoReset is enabled
+    if (allCompleted && taskList.children.length > 0) {
+        console.log(`✅ All tasks completed for "${lastUsedMiniCycle}"`);
+
+        // Auto-reset: Only reset if AutoReset is enabled
+        if (cycleData.autoReset) {
+            console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
+            setTimeout(() => {
+                deps.resetTasks?.();
+            }, 1000);
+            return;
+        }
+    }
+
+    console.log("ran check MiniCycle function");
+    updateProgressBar();
+
+    if (typeof deps.updateStatsPanel === 'function') {
+        deps.updateStatsPanel();
+    }
+
+    console.log("ran check MiniCycle function2");
 }

@@ -9,6 +9,7 @@
  * - Plugin system
  * - Hook system
  * - Status and debugging
+ * - Initial setup methods (runInitialSetup, runCompleteInitialSetup)
  */
 
 import {
@@ -16,8 +17,8 @@ import {
     createMockData
 } from './testHelpers.js';
 
-// Import the appInit singleton
-import { appInit } from '../modules/core/appInit.js';
+// Import the appInit singleton and setAppInitDependencies
+import { appInit, setAppInitDependencies } from '../modules/core/appInit.js';
 
 export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>AppInit Tests</h2><h3>Setting up mocks...</h3>';
@@ -476,6 +477,390 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
     await test('phaseTimings is an object', () => {
         if (!appInit.phaseTimings || typeof appInit.phaseTimings !== 'object') {
             throw new Error('phaseTimings should be an object');
+        }
+    });
+
+    // === INITIAL SETUP METHODS (Extracted from main script) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🚀 Initial Setup Methods</h4>';
+
+    // Ensure appReady is true for setup method tests (singleton may need initialization)
+    // This is needed because runInitialSetup waits for waitForApp() to resolve
+    if (!appInit.appReady) {
+        appInit.appReady = true;
+        if (appInit._appResolve) appInit._appResolve();
+    }
+
+    await test('setAppInitDependencies function exists', () => {
+        if (typeof setAppInitDependencies !== 'function') {
+            throw new Error('setAppInitDependencies should be exported as a function');
+        }
+    });
+
+    await test('setAppInitDependencies accepts dependencies object', () => {
+        // Should not throw when called with valid dependencies
+        setAppInitDependencies({
+            loadMiniCycleData: () => null,
+            getElementById: (id) => document.getElementById(id)
+        });
+    });
+
+    await test('runInitialSetup method exists', () => {
+        if (typeof appInit.runInitialSetup !== 'function') {
+            throw new Error('runInitialSetup should be a method on appInit');
+        }
+    });
+
+    await test('runInitialSetup returns a Promise', () => {
+        // Set up minimal dependencies to prevent errors
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({ cycles: {}, activeCycle: null, reminders: {}, settings: {} }),
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => {},
+            getOnboardingManager: () => ({ shouldShowOnboarding: () => false }),
+            getMiniCycleState: () => null
+        });
+
+        const result = appInit.runInitialSetup();
+        if (!(result instanceof Promise)) {
+            throw new Error('runInitialSetup should return a Promise');
+        }
+    });
+
+    await test('runCompleteInitialSetup method exists', () => {
+        if (typeof appInit.runCompleteInitialSetup !== 'function') {
+            throw new Error('runCompleteInitialSetup should be a method on appInit');
+        }
+    });
+
+    await test('runCompleteInitialSetup returns a Promise', () => {
+        const result = appInit.runCompleteInitialSetup('test-cycle', null, null);
+        if (!(result instanceof Promise)) {
+            throw new Error('runCompleteInitialSetup should return a Promise');
+        }
+    });
+
+    await test('runCompleteInitialSetup accepts activeCycle parameter', async () => {
+        // Set up mock dependencies
+        let capturedCycleId = null;
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'test-123': { title: 'Test', autoReset: false, deleteCheckedTasks: false, tasks: [] } },
+                activeCycle: 'test-123',
+                reminders: { enabled: false },
+                settings: { darkMode: false }
+            }),
+            loadMiniCycle: () => async () => { capturedCycleId = 'loaded'; },
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: () => null,
+            addBodyClass: () => {},
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runCompleteInitialSetup('test-123', null, {
+            cycles: { 'test-123': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: { darkMode: false }
+        });
+
+        // Should complete without error
+    });
+
+    await test('runCompleteInitialSetup applies cycle title to DOM', async () => {
+        let appliedTitle = null;
+        const mockTitleElement = { textContent: '' };
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'title-test': { title: 'My Test Cycle', autoReset: false, deleteCheckedTasks: false } },
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: (id) => {
+                if (id === 'mini-cycle-title') return mockTitleElement;
+                return null;
+            },
+            addBodyClass: () => {},
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runCompleteInitialSetup('title-test', null, {
+            cycles: { 'title-test': { title: 'My Test Cycle', autoReset: false, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: {}
+        });
+
+        if (mockTitleElement.textContent !== 'My Test Cycle') {
+            throw new Error(`Expected title to be set. Got: ${mockTitleElement.textContent}`);
+        }
+    });
+
+    await test('runCompleteInitialSetup applies autoReset setting', async () => {
+        const mockToggle = { checked: false };
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'auto-test': { title: 'Test', autoReset: true, deleteCheckedTasks: false } },
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: (id) => {
+                if (id === 'toggleAutoReset') return mockToggle;
+                return null;
+            },
+            addBodyClass: () => {},
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runCompleteInitialSetup('auto-test', null, {
+            cycles: { 'auto-test': { title: 'Test', autoReset: true, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: {}
+        });
+
+        if (mockToggle.checked !== true) {
+            throw new Error('autoReset toggle should be set to true');
+        }
+    });
+
+    await test('runCompleteInitialSetup applies dark mode from settings', async () => {
+        let darkModeApplied = false;
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'dark-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+                reminders: { enabled: false },
+                settings: { darkMode: true }
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: () => null,
+            addBodyClass: (cls) => {
+                if (cls === 'dark-mode') darkModeApplied = true;
+            },
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runCompleteInitialSetup('dark-test', null, {
+            cycles: { 'dark-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: { darkMode: true }
+        });
+
+        if (!darkModeApplied) {
+            throw new Error('Dark mode class should be applied when settings.darkMode is true');
+        }
+    });
+
+    await test('runCompleteInitialSetup applies theme from settings', async () => {
+        let themeApplied = null;
+        let themesRemoved = [];
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'theme-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+                reminders: { enabled: false },
+                settings: { theme: 'dark-ocean' }
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: () => null,
+            addBodyClass: (cls) => {
+                if (cls.startsWith('theme-')) themeApplied = cls;
+            },
+            removeBodyClass: (cls) => {
+                themesRemoved.push(cls);
+            },
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runCompleteInitialSetup('theme-test', null, {
+            cycles: { 'theme-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: { theme: 'dark-ocean' }
+        });
+
+        if (themeApplied !== 'theme-dark-ocean') {
+            throw new Error(`Expected theme-dark-ocean, got: ${themeApplied}`);
+        }
+    });
+
+    await test('runCompleteInitialSetup calls updateThemeColor', async () => {
+        let themeColorCalled = false;
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'color-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => { themeColorCalled = true; },
+            getElementById: () => null,
+            addBodyClass: () => {},
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runCompleteInitialSetup('color-test', null, {
+            cycles: { 'color-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: {}
+        });
+
+        if (!themeColorCalled) {
+            throw new Error('updateThemeColor should be called');
+        }
+    });
+
+    await test('runCompleteInitialSetup returns true on success', async () => {
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'success-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: () => null,
+            addBodyClass: () => {},
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        const result = await appInit.runCompleteInitialSetup('success-test', null, {
+            cycles: { 'success-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
+            reminders: { enabled: false },
+            settings: {}
+        });
+
+        if (result !== true) {
+            throw new Error('runCompleteInitialSetup should return true on success');
+        }
+    });
+
+    await test('runCompleteInitialSetup handles missing cycle gracefully', async () => {
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: {},
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            loadMiniCycle: () => async () => {},
+            updateReminderButtons: () => null,
+            updateDueDateVisibility: () => null,
+            checkOverdueTasks: () => null,
+            organizeCompletedTasks: () => null,
+            startReminders: () => {},
+            updateThemeColor: () => {},
+            getElementById: () => null,
+            addBodyClass: () => {},
+            removeBodyClass: () => {},
+            getMiniCycleState: () => null
+        });
+
+        // Should not throw, just return undefined
+        const result = await appInit.runCompleteInitialSetup('non-existent', null, {
+            cycles: {},
+            reminders: { enabled: false },
+            settings: {}
+        });
+
+        if (result === true) {
+            throw new Error('Should not return true for missing cycle');
+        }
+    });
+
+    await test('runInitialSetup shows onboarding for new users', async () => {
+        let onboardingShown = false;
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: {},
+                activeCycle: null,
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => {},
+            getOnboardingManager: () => ({
+                shouldShowOnboarding: () => true,
+                showOnboarding: () => { onboardingShown = true; }
+            }),
+            getMiniCycleState: () => ({ load: () => null })
+        });
+
+        await appInit.runInitialSetup();
+
+        if (!onboardingShown) {
+            throw new Error('Onboarding should be shown for new users');
+        }
+    });
+
+    await test('runInitialSetup shows cycle creation for existing users without active cycle', async () => {
+        let cycleModalShown = false;
+
+        setAppInitDependencies({
+            loadMiniCycleData: () => ({
+                cycles: { 'old-cycle': { title: 'Old' } },
+                activeCycle: null, // No active cycle
+                reminders: { enabled: false },
+                settings: {}
+            }),
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => { cycleModalShown = true; },
+            getOnboardingManager: () => ({
+                shouldShowOnboarding: () => false // Not a new user
+            }),
+            getMiniCycleState: () => null
+        });
+
+        await appInit.runInitialSetup();
+
+        if (!cycleModalShown) {
+            throw new Error('Cycle creation modal should be shown for users without active cycle');
         }
     });
 

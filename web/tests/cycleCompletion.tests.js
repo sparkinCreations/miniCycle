@@ -20,7 +20,9 @@ import {
 import {
     setCycleCompletionDependencies,
     showCompletionAnimation,
-    incrementCycleCount
+    incrementCycleCount,
+    updateProgressBar,
+    checkMiniCycle
 } from '../modules/progress/cycleCompletion.js';
 
 export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false) {
@@ -596,6 +598,330 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         // Should not throw
         incrementCycleCount('default', {});
+    });
+
+    // === PROGRESS BAR TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">📊 Progress Bar</h4>';
+
+    await test('updateProgressBar function exists', () => {
+        if (typeof updateProgressBar !== 'function') {
+            throw new Error('updateProgressBar should be exported');
+        }
+    });
+
+    await test('updateProgressBar handles missing taskList gracefully', () => {
+        setCycleCompletionDependencies({
+            getTaskList: () => null,
+            getProgressBar: () => document.createElement('div')
+        });
+
+        // Should not throw
+        updateProgressBar();
+    });
+
+    await test('updateProgressBar handles missing progressBar gracefully', () => {
+        const mockTaskList = document.createElement('ul');
+        setCycleCompletionDependencies({
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => null
+        });
+
+        // Should not throw
+        updateProgressBar();
+    });
+
+    await test('updateProgressBar sets width to 0% for empty task list', () => {
+        const mockTaskList = document.createElement('ul');
+        const mockProgressBar = document.createElement('div');
+
+        setCycleCompletionDependencies({
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => mockProgressBar
+        });
+
+        updateProgressBar();
+
+        if (mockProgressBar.style.width !== '0%') {
+            throw new Error(`Expected 0%, got ${mockProgressBar.style.width}`);
+        }
+    });
+
+    await test('updateProgressBar calculates correct percentage', () => {
+        const mockTaskList = document.createElement('ul');
+        // Add 4 tasks, 2 completed
+        for (let i = 0; i < 4; i++) {
+            const task = document.createElement('li');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = i < 2; // First 2 checked
+            task.appendChild(checkbox);
+            mockTaskList.appendChild(task);
+        }
+
+        const mockProgressBar = document.createElement('div');
+
+        setCycleCompletionDependencies({
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => mockProgressBar
+        });
+
+        updateProgressBar();
+
+        if (mockProgressBar.style.width !== '50%') {
+            throw new Error(`Expected 50%, got ${mockProgressBar.style.width}`);
+        }
+    });
+
+    await test('updateProgressBar sets 100% when all tasks complete', () => {
+        const mockTaskList = document.createElement('ul');
+        for (let i = 0; i < 3; i++) {
+            const task = document.createElement('li');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            task.appendChild(checkbox);
+            mockTaskList.appendChild(task);
+        }
+
+        const mockProgressBar = document.createElement('div');
+
+        setCycleCompletionDependencies({
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => mockProgressBar
+        });
+
+        updateProgressBar();
+
+        if (mockProgressBar.style.width !== '100%') {
+            throw new Error(`Expected 100%, got ${mockProgressBar.style.width}`);
+        }
+    });
+
+    await test('updateProgressBar adds transition for animation', () => {
+        const mockTaskList = document.createElement('ul');
+        const mockProgressBar = document.createElement('div');
+
+        setCycleCompletionDependencies({
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => mockProgressBar
+        });
+
+        updateProgressBar();
+
+        if (!mockProgressBar.style.transition.includes('width')) {
+            throw new Error('Should set transition for smooth animation');
+        }
+    });
+
+    // === CHECK MINICYCLE TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Check MiniCycle</h4>';
+
+    await test('checkMiniCycle function exists', () => {
+        if (typeof checkMiniCycle !== 'function') {
+            throw new Error('checkMiniCycle should be exported');
+        }
+    });
+
+    await test('checkMiniCycle defers when AppState not ready', () => {
+        const mockAppState = {
+            isReady: () => false
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState
+        });
+
+        // Should not throw, just defer
+        checkMiniCycle();
+    });
+
+    await test('checkMiniCycle handles missing taskList', () => {
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => null
+        });
+
+        // Should not throw
+        checkMiniCycle();
+    });
+
+    await test('checkMiniCycle handles missing cycle variables', () => {
+        const mockTaskList = document.createElement('ul');
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => mockTaskList,
+            assignCycleVariables: () => null
+        });
+
+        // Should not throw
+        checkMiniCycle();
+    });
+
+    await test('checkMiniCycle handles missing active cycle', () => {
+        const mockTaskList = document.createElement('ul');
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => mockTaskList,
+            assignCycleVariables: () => ({
+                lastUsedMiniCycle: null,
+                savedMiniCycles: {}
+            }),
+            getProgressBar: () => document.createElement('div')
+        });
+
+        // Should not throw
+        checkMiniCycle();
+    });
+
+    await test('checkMiniCycle updates progress bar', () => {
+        const mockTaskList = document.createElement('ul');
+        const task = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        task.appendChild(checkbox);
+        mockTaskList.appendChild(task);
+
+        const mockProgressBar = document.createElement('div');
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => mockProgressBar,
+            assignCycleVariables: () => ({
+                lastUsedMiniCycle: 'test-cycle',
+                savedMiniCycles: {
+                    'test-cycle': { title: 'Test', autoReset: false }
+                }
+            }),
+            updateStatsPanel: () => {}
+        });
+
+        checkMiniCycle();
+
+        if (mockProgressBar.style.width !== '0%') {
+            throw new Error('Should update progress bar');
+        }
+    });
+
+    await test('checkMiniCycle triggers auto-reset when enabled and all complete', async () => {
+        const mockTaskList = document.createElement('ul');
+        const task = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true; // All complete
+        task.appendChild(checkbox);
+        mockTaskList.appendChild(task);
+
+        let resetCalled = false;
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => document.createElement('div'),
+            assignCycleVariables: () => ({
+                lastUsedMiniCycle: 'test-cycle',
+                savedMiniCycles: {
+                    'test-cycle': { title: 'Test', autoReset: true }
+                }
+            }),
+            resetTasks: () => { resetCalled = true; },
+            updateStatsPanel: () => {}
+        });
+
+        checkMiniCycle();
+
+        // Wait for setTimeout (1 second)
+        await new Promise(resolve => setTimeout(resolve, 1100));
+
+        if (!resetCalled) {
+            throw new Error('Should trigger reset when autoReset enabled and all tasks complete');
+        }
+    });
+
+    await test('checkMiniCycle does not reset when autoReset disabled', () => {
+        const mockTaskList = document.createElement('ul');
+        const task = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        task.appendChild(checkbox);
+        mockTaskList.appendChild(task);
+
+        let resetCalled = false;
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => document.createElement('div'),
+            assignCycleVariables: () => ({
+                lastUsedMiniCycle: 'test-cycle',
+                savedMiniCycles: {
+                    'test-cycle': { title: 'Test', autoReset: false }
+                }
+            }),
+            resetTasks: () => { resetCalled = true; },
+            updateStatsPanel: () => {}
+        });
+
+        checkMiniCycle();
+
+        if (resetCalled) {
+            throw new Error('Should not reset when autoReset is disabled');
+        }
+    });
+
+    await test('checkMiniCycle calls updateStatsPanel', () => {
+        const mockTaskList = document.createElement('ul');
+        const task = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        task.appendChild(checkbox);
+        mockTaskList.appendChild(task);
+
+        let statsPanelUpdated = false;
+        const mockAppState = {
+            isReady: () => true
+        };
+
+        setCycleCompletionDependencies({
+            AppState: mockAppState,
+            getTaskList: () => mockTaskList,
+            getProgressBar: () => document.createElement('div'),
+            assignCycleVariables: () => ({
+                lastUsedMiniCycle: 'test-cycle',
+                savedMiniCycles: {
+                    'test-cycle': { title: 'Test', autoReset: false }
+                }
+            }),
+            updateStatsPanel: () => { statsPanelUpdated = true; }
+        });
+
+        checkMiniCycle();
+
+        if (!statsPanelUpdated) {
+            throw new Error('Should call updateStatsPanel');
+        }
     });
 
     // === SUMMARY ===

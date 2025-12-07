@@ -448,6 +448,112 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        // === REMIND OVERDUE TASKS TESTS ===
+        resultsDiv.innerHTML += '<h4>⏰ Remind Overdue Tasks</h4>';
+
+        await test('remindOverdueTasks method exists', () => {
+            const instance = new MiniCycleDueDates();
+            if (typeof instance.remindOverdueTasks !== 'function') {
+                throw new Error('remindOverdueTasks method should exist');
+            }
+        });
+
+        await test('remindOverdueTasks skips when autoReset is enabled', () => {
+            const mockToggle = { checked: true };
+            const instance = new MiniCycleDueDates({
+                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: true } }),
+                querySelectorAll: () => []
+            });
+            instance.toggleAutoReset = mockToggle;
+
+            // Should not throw and should return early
+            instance.remindOverdueTasks();
+        });
+
+        await test('remindOverdueTasks skips when dueDatesReminders disabled', () => {
+            const mockToggle = { checked: false };
+            let notificationShown = false;
+
+            const instance = new MiniCycleDueDates({
+                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: false } }),
+                querySelectorAll: () => [],
+                showNotification: () => { notificationShown = true; }
+            });
+            instance.toggleAutoReset = mockToggle;
+
+            instance.remindOverdueTasks();
+
+            if (notificationShown) {
+                throw new Error('Should not show notification when dueDatesReminders is disabled');
+            }
+        });
+
+        await test('remindOverdueTasks shows notification for overdue tasks', () => {
+            const mockToggle = { checked: false };
+            let notificationMessage = null;
+
+            // Create mock overdue task
+            const mockTask = document.createElement('div');
+            mockTask.classList.add('task', 'overdue-task');
+            const taskText = document.createElement('span');
+            taskText.classList.add('task-text');
+            taskText.textContent = 'Overdue Task 1';
+            mockTask.appendChild(taskText);
+
+            const instance = new MiniCycleDueDates({
+                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: true } }),
+                querySelectorAll: (selector) => {
+                    if (selector === '.task') return [mockTask];
+                    return [];
+                },
+                showNotification: (msg) => { notificationMessage = msg; }
+            });
+            instance.toggleAutoReset = mockToggle;
+
+            instance.remindOverdueTasks();
+
+            if (!notificationMessage || !notificationMessage.includes('Overdue Task 1')) {
+                throw new Error('Should show notification with overdue task name');
+            }
+        });
+
+        await test('remindOverdueTasks does not show notification when no overdue tasks', () => {
+            const mockToggle = { checked: false };
+            let notificationShown = false;
+
+            // Create mock non-overdue task
+            const mockTask = document.createElement('div');
+            mockTask.classList.add('task'); // Not overdue
+
+            const instance = new MiniCycleDueDates({
+                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: true } }),
+                querySelectorAll: (selector) => {
+                    if (selector === '.task') return [mockTask];
+                    return [];
+                },
+                showNotification: () => { notificationShown = true; }
+            });
+            instance.toggleAutoReset = mockToggle;
+
+            instance.remindOverdueTasks();
+
+            if (notificationShown) {
+                throw new Error('Should not show notification when no overdue tasks');
+            }
+        });
+
+        await test('remindOverdueTasks handles missing schema data gracefully', () => {
+            const mockToggle = { checked: false };
+            const instance = new MiniCycleDueDates({
+                loadMiniCycleData: () => null,
+                querySelectorAll: () => []
+            });
+            instance.toggleAutoReset = mockToggle;
+
+            // Should not throw
+            instance.remindOverdueTasks();
+        });
+
         // === SUMMARY ===
         const percentage = Math.round((passed.count / total.count) * 100);
         resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

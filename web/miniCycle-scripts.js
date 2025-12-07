@@ -331,8 +331,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // ✅ Load appInit FIRST without version (so all static imports in modules share this singleton)
   // This is critical: utility modules use static imports like `import { appInit } from './appInitialization.js'`
   // If we version this import, we create separate instances and break the shared state
-  const { appInit } = await import('./modules/core/appInit.js');
+  const { appInit, setAppInitDependencies } = await import('./modules/core/appInit.js');
   deps.core.appInit = appInit;
+  deps.core.setAppInitDependencies = setAppInitDependencies;
 
   // ✅ Load core constants (without version for consistency)
   const {
@@ -587,11 +588,34 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🔄 Loading migration manager (core system)...');
     const migrationMod = await import(withV('./modules/cycle/migrationManager.js'));
 
+    // ✅ Wire appInit setup dependencies (uses closures for late-binding)
+    setAppInitDependencies({
+      // For initialSetup
+      loadMiniCycleData: () => loadMiniCycleData?.(),
+      createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
+      showCycleCreationModal: () => window.showCycleCreationModal?.(),
+      getOnboardingManager: () => window.onboardingManager,
+      getMiniCycleState: () => window.miniCycle?.state,
+
+      // For completeInitialSetup
+      loadMiniCycle: () => window.loadMiniCycle,
+      updateReminderButtons: () => window.updateReminderButtons,
+      updateDueDateVisibility: () => window.updateDueDateVisibility,
+      checkOverdueTasks: () => window.checkOverdueTasks,
+      organizeCompletedTasks: () => window.organizeCompletedTasks,
+      startReminders: () => window.startReminders?.(),
+      updateThemeColor: () => window.updateThemeColor?.(),
+      getElementById: (id) => document.getElementById(id),
+      addBodyClass: (cls) => document.body.classList.add(cls),
+      removeBodyClass: (cls) => document.body.classList.remove(cls)
+    });
+    console.log('✅ AppInit setup dependencies configured');
+
     migrationMod.setMigrationManagerDependencies({
       storage: localStorage,
       sessionStorage: sessionStorage,
       showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
-      initialSetup: () => initialSetup?.(),
+      initialSetup: () => appInit.runInitialSetup(),  // ✅ Now uses appInit method
       now: () => Date.now(),
       document: document
     });
@@ -789,7 +813,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     // ✅ Expose functions needed by cycleLoader and cycleManager
     // Note: updateMainMenuHeader now exported by menuManager module
-    window.completeInitialSetup = completeInitialSetup;
+    // ✅ completeInitialSetup now delegates to appInit method (extracted from main script)
+    window.completeInitialSetup = (activeCycle, fullSchemaData, schemaData) =>
+        appInit.runCompleteInitialSetup(activeCycle, fullSchemaData, schemaData);
 
 
 
@@ -1265,6 +1291,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.setupDueDateButtonInteraction = (buttonContainer, dueDateInput) =>
                 dueDatesManager.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
             window.updateDueDateVisibility = (autoReset) => dueDatesManager.updateDueDateVisibility(autoReset);
+            window.remindOverdueTasks = () => dueDatesManager.remindOverdueTasks();
 
             console.log('✅ Due dates module initialized (Phase 3)');
         } catch (error) {
@@ -1339,7 +1366,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 checkCompleteAllButton: () => window.checkCompleteAllButton?.(),
                 updateReminderButtons: () => window.updateReminderButtons?.(),
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
-                initialSetup: () => initialSetup?.(),
+                initialSetup: () => appInit.runInitialSetup(),  // ✅ Uses appInit method
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
@@ -1620,7 +1647,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // ✅ Initialize Cycle Completion Module (needed by taskCore)
         console.log('🎯 Initializing cycle completion module...');
-        const { setCycleCompletionDependencies, incrementCycleCount, showCompletionAnimation } = await import(withV('./modules/progress/cycleCompletion.js'));
+        const { setCycleCompletionDependencies, incrementCycleCount, showCompletionAnimation, updateProgressBar, checkMiniCycle } = await import(withV('./modules/progress/cycleCompletion.js'));
 
         // Wire cycle completion dependencies
         setCycleCompletionDependencies({
@@ -1629,14 +1656,21 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             updateStatsPanel: () => window.updateStatsPanel?.(),
             unlockDarkOceanTheme: () => window.unlockDarkOceanTheme?.(),
             unlockGoldenGlowTheme: () => window.unlockGoldenGlowTheme?.(),
-            unlockMiniGame: () => window.unlockMiniGame?.()
+            unlockMiniGame: () => window.unlockMiniGame?.(),
+            // For updateProgressBar and checkMiniCycle
+            getTaskList: () => document.getElementById('taskList'),
+            getProgressBar: () => document.getElementById('progressBar'),
+            assignCycleVariables: () => assignCycleVariables?.(),
+            resetTasks: () => (window.resetTasks || window.miniCycle?.tasks?.reset)?.()
         });
 
         // Expose to window for backward compatibility
         window.incrementCycleCount = incrementCycleCount;
         window.showCompletionAnimation = showCompletionAnimation;
+        window.updateProgressBar = updateProgressBar;
+        window.checkMiniCycle = checkMiniCycle;
 
-        console.log('✅ Cycle completion module initialized');
+        console.log('✅ Cycle completion module initialized (with progress functions)');
 
         // ✅ Initialize Help Window Manager (needed by taskCore)
         console.log('🎯 Initializing help window manager...');
@@ -2307,181 +2341,9 @@ window.refreshTaskListUI = refreshTaskListUI;
 // Helper function to get readable mode name (keep this)
 
 
-// ...existing code...
-/**
-
-/**
- * Initializes the miniCycle app by loading or creating a saved miniCycle.
- * Ensures a valid miniCycle is always available in localStorage.
- */
-// ✅ UPDATED: Check onboarding first, then handle cycle creation
-// ✅ IMPORTANT: async to wait for Phase 2 modules before creating tasks
-async function initialSetup() {
-    console.log('🚀 Initializing app (Schema 2.5 only)...');
-
-    // ✅ Wait for all Phase 2 modules to be ready before creating tasks
-    if (window.appInit && !window.appInit.isAppReady()) {
-        console.log('⏳ Waiting for Phase 2 modules to finish loading...');
-        await window.appInit.waitForApp();
-        console.log('✅ Phase 2 modules ready, proceeding with initialSetup');
-    }
-
-    let schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-    
-    // ✅ CREATE SCHEMA 2.5 DATA IF IT DOESN'T EXIST
-    if (!schemaData) {
-        console.log('🆕 No Schema 2.5 data found - creating initial structure...');
-        createInitialSchema25Data();
-        schemaData = window.miniCycle?.state?.load() || loadMiniCycleData(); // Load the newly created data
-    }
-
-    const { cycles, activeCycle, reminders, settings } = schemaData;
-    
-    console.log("📦 Loaded Schema 2.5 data:", {
-        activeCycle,
-        cycleCount: Object.keys(cycles).length,
-        hasReminders: !!reminders,
-        hasSettings: !!settings
-    });
-    
-    // ✅ CHECK ONBOARDING FIRST - before checking for cycles
-    if (window.onboardingManager?.shouldShowOnboarding()) {
-        console.log('👋 First time user - showing onboarding first...');
-        window.onboardingManager.showOnboarding(cycles, activeCycle);
-        return;
-    }
-    
-    // Check if we have a valid active cycle (existing users)
-    if (!activeCycle || !cycles[activeCycle]) {
-        console.log('🆕 Existing user, no active cycle found, prompting for new cycle creation...');
-        showCycleCreationModal();
-        return;
-    }
-    
-    // ✅ Complete setup for existing cycles
-    await completeInitialSetup(activeCycle, null, schemaData);
-}
-
-// ✅ Keep the same completeInitialSetup and createInitialSchema25Data functions
-async function completeInitialSetup(activeCycle, fullSchemaData = null, schemaData = null) {
-  console.log('✅ Completing initial setup for cycle:', activeCycle);
-
-  // ✅ CRITICAL: Wait for TaskDOM to be fully initialized before loading tasks
-  console.log('⏳ Waiting for TaskDOM to be ready...');
-  await appInit.waitForApp(); // Ensures all Phase 2 modules (including TaskDOM) are initialized
-  console.log('✅ TaskDOM ready, proceeding with task loading');
-
-  // Call the loader only via the global (attached by cycleLoader import)
-  console.log('🎯 Loading miniCycle...');
-  if (typeof window.loadMiniCycle === 'function') {
-    await window.loadMiniCycle();
-
-    // ✅ Now that tasks are rendered, update reminder buttons, due date visibility, and check overdue tasks
-    console.log('📋 Tasks rendered, updating reminder buttons, due date visibility, and checking overdue tasks...');
-    if (typeof window.updateReminderButtons === 'function') {
-      await window.updateReminderButtons();
-      console.log('✅ Reminder buttons updated after task rendering');
-    }
-    if (typeof window.updateDueDateVisibility === 'function') {
-      const toggleAutoReset = document.getElementById('toggleAutoReset');
-      const autoReset = toggleAutoReset?.checked || false;
-      await window.updateDueDateVisibility(autoReset);
-      console.log('✅ Due date visibility updated after task rendering');
-    }
-    if (typeof window.checkOverdueTasks === 'function') {
-      await window.checkOverdueTasks();
-      console.log('✅ Overdue tasks checked after task rendering');
-    }
-
-    // ✅ Organize completed tasks into completed section
-    if (typeof window.organizeCompletedTasks === 'function') {
-      window.organizeCompletedTasks();
-      console.log('✅ Completed tasks organized after task rendering');
-    }
-  } else {
-    console.log('⏳ Loader not ready yet, flagging pending load');
-    window.__pendingCycleLoad = true;
-  }
-    
-    // Get fresh data if not provided (read-only, safe to use loadMiniCycleData)
-    if (!schemaData) {
-        schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-    }
-
-    // ✅ REMOVED: fullSchemaData was loaded but never used (dead code)
-
-    const { cycles, reminders, settings } = schemaData;
-    const currentCycle = cycles[activeCycle];
-    
-    if (!currentCycle) {
-        console.error('❌ Cycle not found after setup:', activeCycle);
-        return;
-    }
-    
-    console.log('✅ Loading existing cycle from Schema 2.5:', activeCycle);
-    
-    // Load UI from Schema 2.5
-    const titleElement = document.getElementById("mini-cycle-title");
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
-    const enableReminders = document.getElementById("enableReminders");
-    const frequencySection = document.getElementById("frequency-section");
-    
-    if (titleElement) {
-        titleElement.textContent = currentCycle.title;
-    }
-    
-    if (toggleAutoReset) {
-        toggleAutoReset.checked = currentCycle.autoReset || false;
-    }
-    
-    if (deleteCheckedTasks) {
-        deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
-    }
-    
-    console.log('⚙️ Applied cycle settings:', {
-        autoReset: currentCycle.autoReset,
-        deleteCheckedTasks: currentCycle.deleteCheckedTasks
-    });
-    
-    // Load reminders from Schema 2.5
-    if (enableReminders) {
-        enableReminders.checked = reminders.enabled === true;
-        
-        if (reminders.enabled && frequencySection) {
-            console.log('🔔 Starting reminders...');
-            frequencySection.classList.remove("hidden");
-            startReminders();
-        }
-    }
-
-    // Apply dark mode and theme from settings
-    if (settings.darkMode) {
-        console.log('🌙 Applying dark mode...');
-        document.body.classList.add("dark-mode");
-    }
-    
-    if (settings.theme && settings.theme !== 'default') {
-        console.log('🎨 Applying theme:', settings.theme);
-        // Apply theme without calling updateThemeColor() to avoid double call
-        const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
-        allThemes.forEach(theme => document.body.classList.remove(theme));
-        document.body.classList.add(`theme-${settings.theme}`);
-    }
-    
-    // Update theme color after applying all settings
-    if (typeof updateThemeColor === 'function') {
-        updateThemeColor();
-    }
-    
-
-    // ✅ Mark app as ready here (after data-ready)
-    // Note: signalReady was removed - appInit.markAppReady() is called in Phase 2
-  window.AppReady = true;
-  console.log("✅ miniCycle app is fully initialized and ready (Schema 2.5).");
-  console.log('🎉 Initialization sequence completed successfully!');
-  console.log('✅ Initial setup completed successfully');
-}
+// ✅ EXTRACTED: initialSetup() and completeInitialSetup() moved to modules/core/appInit.js
+// Now accessed via appInit.runInitialSetup() and appInit.runCompleteInitialSetup()
+// window.completeInitialSetup is a wrapper that delegates to appInit method
 
 
 
@@ -2788,60 +2650,8 @@ window.updateCycleData = updateCycleData;
 
 
 
-/**
- * Remindoverduetasks function.
- *
- * @returns {void}
- */
-
-function remindOverdueTasks() {
-    console.log('⚠️ Checking for overdue tasks (Schema 2.5 only)...');
-    
-    let autoReset = toggleAutoReset.checked;
-    if (autoReset) {
-        console.log('🔄 Auto-reset enabled, skipping overdue reminders');
-        return;
-    }
-
-    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for remindOverdueTasks');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { reminders } = schemaData;
-    const remindersSettings = reminders || {};
-    
-    console.log('📊 Reminder settings:', {
-        enabled: remindersSettings.enabled,
-        dueDatesReminders: remindersSettings.dueDatesReminders
-    });
-    
-    const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
-
-    // ✅ Only proceed if due date notifications are enabled
-    if (!dueDatesRemindersEnabled) {
-        console.log("❌ Due date notifications are disabled. Exiting remindOverdueTasks().");
-        return;
-    }
-
-    console.log('🔍 Scanning for overdue tasks...');
-    
-    let overdueTasks = [...document.querySelectorAll(".task")]
-        .filter(task => task.classList.contains("overdue-task"))
-        .map(task => task.querySelector(".task-text").textContent);
-
-    console.log('📋 Found overdue tasks:', overdueTasks.length);
-
-    if (overdueTasks.length > 0) {
-        console.log('⚠️ Showing overdue notification for tasks:', overdueTasks);
-        showNotification(`⚠️ Overdue Tasks:<br>- ${overdueTasks.join("<br>- ")}`, "error");
-    } else {
-        console.log('✅ No overdue tasks found');
-    }
-}
-// ✅ Expose for taskUtils module
-window.remindOverdueTasks = remindOverdueTasks;
+// ✅ EXTRACTED: remindOverdueTasks moved to modules/features/dueDates.js
+// Now accessed via window.remindOverdueTasks (set during dueDates module init)
 
 
 
@@ -2971,86 +2781,13 @@ function assignCycleVariables() {
     };
 }
 
-/**
- * Updateprogressbar function.
- *
- * @returns {void}
- */
-
-function updateProgressBar() {
-    const totalTasks = taskList.children.length;
-    const completedTasks = [...taskList.children].filter(task => task.querySelector("input").checked).length;
-    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
-    // ✅ Add consistent animation for all progress updates
-    progressBar.style.transition = "width 0.2s ease-out";
-    progressBar.style.width = `${progress}%`;
-
-    // ✅ Clear transition after animation
-    setTimeout(() => {
-        progressBar.style.transition = "";
-    }, 200);
-
-    // ✅ REMOVED: autoSave() here - causes race condition during initialization
-    // Task completion saves explicitly via autoSave(null, true) in checkbox handler
-    // This prevents empty task list from being saved before tasks are loaded
-}
-// ✅ Expose for cycleSwitcher module
-window.updateProgressBar = updateProgressBar;
-
-
-/**
- * Checkminicycle function.
- *
- * @returns {void}
- */
-
-function checkMiniCycle() {
-    // ✅ Early return if AppState not ready to prevent initialization race conditions
-    if (!window.AppState?.isReady?.()) {
-        console.log('⏳ checkMiniCycle deferred - AppState not ready');
-        return;
-    }
-    
-    const allCompleted = [...taskList.children].every(task => task.querySelector("input").checked);
-
-    // ✅ Retrieve miniCycle variables
-    const { lastUsedMiniCycle, savedMiniCycles } = assignCycleVariables();
-    let cycleData = savedMiniCycles[lastUsedMiniCycle];
-
-    if (!lastUsedMiniCycle || !cycleData) {
-        console.warn("⚠ No active miniCycle found.");
-        return;
-    }
-
-     (window.miniCycle?.ui?.progress?.update || updateProgressBar)();
-
-    // ✅ Only trigger reset if ALL tasks are completed AND autoReset is enabled
-    if (allCompleted && taskList.children.length > 0) {
-        console.log(`✅ All tasks completed for "${lastUsedMiniCycle}"`);
-
-        // ✅ Auto-reset: Only reset if AutoReset is enabled
-        if (cycleData.autoReset) {
-            console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
-            setTimeout(() => {
-                (window.resetTasks || window.miniCycle?.tasks?.reset)?.();
-            }, 1000);
-            return;
-        }
-    }
-    console.log("ran check MiniCyle function");
-    (window.miniCycle?.ui?.progress?.update || updateProgressBar)();
-    updateStatsPanel();
-    // ✅ REMOVED: autoSave() here - task completion now saves directly via AppState.update()
-    // This prevents duplicate saves and potential race conditions
-    console.log("ran check MiniCyle function2");
-}
-
-// ✅ Export checkMiniCycle globally for taskDOM module
-window.checkMiniCycle = checkMiniCycle;
+// ✅ EXTRACTED: updateProgressBar and checkMiniCycle moved to modules/progress/cycleCompletion.js
+// Now accessed via window.updateProgressBar and window.checkMiniCycle (set during module init)
 
 // ✅ MOVED TO MODULE: modules/progress/cycleCompletion.js
 // - incrementCycleCount
+// - updateProgressBar
+// - checkMiniCycle
 // - handleMilestoneUnlocks
 // - showCompletionAnimation
 // - checkForMilestone
