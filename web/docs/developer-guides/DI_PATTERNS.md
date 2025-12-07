@@ -301,3 +301,11 @@ export function setMyModuleDependencies(dependencies) {
   - cycleLoader.js (1 instance)
   - consoleCapture.js (1 instance)
   - dueDates.js (1 instance)
+
+   Priority candidates for new tests:
+  1. cycleManager.js - Core cycle logic
+  2. cycleCompletion.js - Progress tracking
+  3. backupManager.js - Data backup/restore
+  4. dataValidator.js - Data validation
+  5. helpWindowManager.js - UI component
+
