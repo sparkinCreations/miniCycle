@@ -499,12 +499,15 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
 
-    // Still expose to window for backward compat
+    // Still expose to window for backward compat - all notification functions point directly to module
     window.notifications = notifications;
-    window.showNotification = function(message, type, duration) {
-        console.log(`🔍 WRAPPER received - Type: "${type}", Duration: ${duration} (type: ${typeof duration}), arguments.length: ${arguments.length}`);
-        return notifications.show(message, type, duration);
-    };
+    window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+    window.showNotificationWithTip = (content, type, duration, tipId) => notifications.showWithTip(content, type, duration, tipId);
+    window.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
+    window.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
+    window.showPromptModal = (options) => notifications.showPromptModal(options);
+    window.setupNotificationDragging = (container) => notifications.setupNotificationDragging(container);
+    window.resetNotificationPosition = () => notifications.resetPosition();
     console.log('✅ Notifications loaded');
 
     // ✅ Wire ErrorHandler now that showNotification is available
@@ -1288,7 +1291,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 getElementById: (id) => document.getElementById(id),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
                 AppMeta: window.AppMeta,
-                get recurringCore() { return window.recurringCore; }  // Lazy getter for late binding (DI-pure)
+                get recurringCore() { return window.recurringCore; },  // Lazy getter for late binding (DI-pure)
+                // For setupToggleAutoReset
+                checkMiniCycle: () => window.checkMiniCycle?.(),
+                refreshTaskListUI: () => window.refreshTaskListUI?.(),
+                updateRecurringButtonVisibility: () => (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))(),
+                syncAllTasksWithMode: (mode, tasksDataMap, opts) => window.syncAllTasksWithMode?.(mode, tasksDataMap, opts),
+                DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: { cycle: false, todo: true }
             });
 
             // ✅ Phase 3: Main script handles window.* exposure (not the module)
@@ -1300,6 +1309,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             window.refreshTaskButtonsForModeChange = () => modeManager.refreshTaskButtonsForModeChange();
             window.updateCycleModeDescription = () => modeManager.updateCycleModeDescription();
             window.getModeName = (mode) => modeManager.getModeName(mode);
+            window.saveToggleAutoReset = () => modeManager.setupToggleAutoReset();
 
             console.log('✅ Mode manager module initialized (Phase 3)');
         } catch (error) {
@@ -2848,95 +2858,8 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
 });
 
 
-/********
- * 
- * Show Notification function (Schema 2.5 only) - Modular Wrapper
- * 
- */
-  
-function showNotification(message, type = "default", duration = null) {
-  if (!window.notifications || typeof window.notifications.show !== 'function') {
-    return null;
-  }
-  return window.notifications.show(message, type, duration);
-}
-
-function setupNotificationDragging(notificationContainer) {
-  return window.notifications.setupNotificationDragging(notificationContainer);
-}
-
-  
-function resetNotificationPosition() {
-  return window.notifications.resetPosition();
-}
-
-
-// � Access educational tips from the notification module
-const educationalTips = notifications.educationalTips;
-
-/**
- * 🚀 Enhanced Recurring Notification with Educational Tip
- * Updated implementation for your recurring feature
- */
-// ✅ REMOVED: createRecurringNotificationWithTip - now handled by notifications module
-
-
-/**
- * ✅ Enhanced recurring notification listeners with proper event handling (Schema 2.5 only)
- */
-// ✅ REMOVED: initializeRecurringNotificationListeners - now handled by notifications module
-
-/**
- * Show confirmation message after applying changes
- */
-function showApplyConfirmation(targetElement) {
-  return notifications.showApplyConfirmation(targetElement);
-}
-
-// 🛠 Unified recurring update helper (Schema 2.5 only)
-// ✅ REMOVED: applyRecurringToTaskSchema25 - now handled by recurringCore module
-
-// ✅ REMOVED: Old window.applyRecurringToTaskSchema25 assignment - now handled by recurringIntegration module
-
-/**
- * 🔧 Enhanced showNotification function with educational tips support (Schema 2.5 only)
- */
-function showNotificationWithTip(content, type = "default", duration = null, tipId = null) {
-  if (!window.notifications || typeof window.notifications.showWithTip !== 'function') {
-    return showNotification(content, type, duration);
-  }
-  return notifications.showWithTip(content, type, duration, tipId);
-}
-
-// ✅ Expose globally for recurring module
-window.showNotificationWithTip = showNotificationWithTip;
-
-/**
- * Show a confirmation modal and call callback with boolean result
- */
-function showConfirmationModal(options) {
-  // Call notifications directly via window to access the instance
-  return window.notifications?.showConfirmationModal?.(options);
-}
-
-function showPromptModal(options) {
-  // Call notifications directly directly
-  return window.notifications?.showPromptModal?.(options);
-}
-
-/**
- * Close all modals - delegated to modalManager directly
- */
-function closeAllModals() {
-  // Call modalManager directly directly
-  return window.modalManager?.closeAllModals?.();
-}
-
-// ✅ Expose globally
-window.showConfirmationModal = showConfirmationModal;
-window.showPromptModal = showPromptModal;
-window.closeAllModals = closeAllModals;
-
+// ✅ REMOVED: Notification wrapper functions (showNotification, showConfirmationModal, showPromptModal, etc.)
+// Now exposed directly on window from notifications module initialization (see line ~504)
 
   // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in modules/features/reminders.js
   // Use window.sendReminderNotificationIfNeeded() and window.startReminders() which are globally exported
@@ -4105,227 +4028,8 @@ function triggerLogoBackground(color = 'green', duration = 300) {
 // ✅ Export triggerLogoBackground globally for taskDOM module
 window.triggerLogoBackground = triggerLogoBackground;
 
-/**
- * Savetoggleautoreset function.
- *
- * @returns {void}
- */
-function saveToggleAutoReset() {
-    console.log('⚙️ Setting up toggle auto reset (state-based)...');
-    
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const deleteCheckedTasksContainer = document.getElementById("deleteCheckedTasksContainer");
-    const deleteCheckedTasks = document.getElementById("deleteCheckedTasks");
-    
-    // ✅ Use state-based data access
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for saveToggleAutoReset');
-        return;
-    }
-    
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for saveToggleAutoReset');
-        return;
-    }
-    
-    const { data, appState } = currentState;
-    const activeCycle = appState.activeCycleId;
-    const currentCycle = data.cycles[activeCycle];
-    
-    console.log('📊 Setting up toggles for cycle:', activeCycle);
-    
-    // ✅ Ensure AutoReset reflects the correct state from state system
-    if (activeCycle && currentCycle) {
-        toggleAutoReset.checked = currentCycle.autoReset || false;
-        deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
-        console.log('🔄 Auto reset state:', currentCycle.autoReset);
-        console.log('🗑️ Delete checked tasks state:', currentCycle.deleteCheckedTasks);
-    } else {
-        console.warn('⚠️ No active cycle found, defaulting to false');
-        toggleAutoReset.checked = false;
-        deleteCheckedTasks.checked = false;
-    }
-    
-    // ✅ Hide "Delete Checked Tasks" - always hidden regardless of Auto Reset state
-    deleteCheckedTasksContainer.style.display = "none";
-
-    // ✅ Remove previous event listeners before adding new ones to prevent stacking
-    toggleAutoReset.removeEventListener("change", handleAutoResetChange);
-    deleteCheckedTasks.removeEventListener("change", handleDeleteCheckedTasksChange);
-
-    // ✅ Define event listener functions for state-based system
-    function handleAutoResetChange(event) {
-        console.log('🔄 Auto reset toggle changed (state-based):', event.target.checked);
-        
-        if (!activeCycle || !currentCycle) {
-            console.warn('⚠️ No active cycle available for auto reset change');
-            return;
-        }
-
-        // ✅ Update through state system
-        window.AppState.update(state => {
-            const cycle = state.data.cycles[activeCycle];
-            if (cycle) {
-                cycle.autoReset = event.target.checked;
-                
-                // ✅ If Auto Reset is turned ON, automatically uncheck "Delete Checked Tasks"
-                if (event.target.checked) {
-                    cycle.deleteCheckedTasks = false;
-                    deleteCheckedTasks.checked = false; // ✅ Update UI
-                    console.log('🔄 Auto reset ON - disabling delete checked tasks');
-                }
-            }
-        }, true); // immediate save
-
-        // ✅ Keep "Delete Checked Tasks" always hidden regardless of Auto Reset state
-        deleteCheckedTasksContainer.style.display = "none";
-
-        // ✅ Only trigger miniCycle reset if AutoReset is enabled
-        if (event.target.checked) {
-            console.log('🔄 Auto reset enabled - checking cycle state');
-            checkMiniCycle();
-        }
-
-        (window.miniCycle?.tasks?.refresh || refreshTaskListUI)();
-        (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
-
-        console.log('✅ Auto reset settings saved (state-based)');
-    }
-
-    function handleDeleteCheckedTasksChange(event) {
-        console.log('🗑️ Delete checked tasks toggle changed (state-based):', event.target.checked);
-        
-        if (!activeCycle || !currentCycle) {
-            console.warn('⚠️ No active cycle available for delete checked tasks change');
-            return;
-        }
-
-        // ✅ Update through state system
-        window.AppState.update(state => {
-            const cycle = state.data.cycles[activeCycle];
-            if (cycle) {
-                cycle.deleteCheckedTasks = event.target.checked;
-            }
-        }, true); // immediate save
-
-        // ✅ Update recurring button visibility when setting changes
-        (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
-
-        console.log('✅ Delete checked tasks setting saved (state-based)');
-    }
-
-    // ✅ Add new event listeners
-    toggleAutoReset.addEventListener("change", handleAutoResetChange);
-    deleteCheckedTasks.addEventListener("change", handleDeleteCheckedTasksChange);
-    
-    console.log('✅ Toggle auto reset setup completed (state-based)');
-}
-
-
-/**
- * Checkduedates function.
- *
- * @returns {void}
- */
-    
-    
-
-// ✅ updateDueDateVisibility moved to modules/features/dueDates.js
-    
-    
-    
-
-
- if (!deleteCheckedTasks.dataset.listenerAdded) {
-    deleteCheckedTasks.addEventListener("change", async (event) => {
-        // ✅ Schema 2.5 only
-        console.log('🗑️ Delete checked tasks toggle changed (Schema 2.5 only)...');
-
-        const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
-        if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
-            throw new Error('Schema 2.5 data not found');
-        }
-
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
-
-        if (!activeCycle || !currentCycle) {
-            console.warn('⚠️ No active cycle found for delete checked tasks toggle');
-            return;
-        }
-
-        const isToDoMode = event.target.checked;
-        const currentMode = isToDoMode ? 'todo' : 'cycle';
-
-        // ✅ Update via AppState instead of direct localStorage manipulation
-        if (window.AppState?.isReady?.()) {
-            // Store updated state to avoid race condition
-            let updatedCycle = null;
-
-            await window.AppState.update(state => {
-                const cycle = state.data.cycles[activeCycle];
-
-                // Update mode
-                cycle.deleteCheckedTasks = isToDoMode;
-
-                // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings
-                if (cycle.tasks) {
-                    cycle.tasks.forEach(task => {
-                        // Initialize settings if missing (for existing tasks)
-                        if (!task.deleteWhenCompleteSettings) {
-                            task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                        }
-
-                        // Sync active value from mode-specific setting
-                        task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
-                    });
-                    console.log(`✅ Synced deleteWhenComplete for all tasks to ${currentMode} mode settings`);
-                }
-
-                // ✅ Capture updated cycle to avoid race condition
-                updatedCycle = cycle;
-            }, true); // Immediate save
-
-            // ✅ Update UI using centralized DOM sync with captured state
-            if (updatedCycle?.tasks && window.syncAllTasksWithMode) {
-                // Create task data map for batch sync
-                const tasksDataMap = {};
-                updatedCycle.tasks.forEach(task => {
-                    tasksDataMap[task.id] = task;
-                });
-
-                console.log(`🔄 Mode switch: Syncing ${Object.keys(tasksDataMap).length} tasks to ${currentMode} mode`);
-
-                // Sync immediately AND after a small delay to catch any late DOM updates
-                window.syncAllTasksWithMode(currentMode, tasksDataMap, {
-                    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
-                });
-
-                // Second sync after delay to catch any stragglers
-                setTimeout(() => {
-                    window.syncAllTasksWithMode(currentMode, tasksDataMap, {
-                        DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
-                    });
-                }, 100);
-            } else if (!window.syncAllTasksWithMode) {
-                console.error('❌ syncAllTasksWithMode not available - GlobalUtils may not be loaded');
-            } else if (!updatedCycle?.tasks) {
-                console.warn('⚠️ No tasks to sync');
-            }
-        }
-
-        // ✅ Update recurring button visibility in real-time
-        (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
-
-        console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
-    });
-
-    deleteCheckedTasks.dataset.listenerAdded = true;
-}
-
-
+// ✅ MOVED: saveToggleAutoReset() to modules/cycle/modeManager.js
+// Now accessed via window.saveToggleAutoReset() which calls modeManager.setupToggleAutoReset()
 
 // ✅ Function to complete all tasks and handle reset
 // ✅ REMOVED: handleCompleteAllTasks - now in modules/task/taskCore.js

@@ -1145,6 +1145,9 @@ export class SettingsManager {
         }
     }
 
+    // ✅ MOVED: setupToggleAutoReset() and setupDeleteCheckedTasksModeListener() to modeManager.js
+    // These are mode management functions, not settings management
+
     // Fallback methods
     fallbackLoadData() {
         console.warn('⚠️ Data loading not available');

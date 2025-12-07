@@ -47,7 +47,13 @@ export class ModeManager {
             helpWindowManager: mergedDeps.helpWindowManager,
             recurringCore: mergedDeps.recurringCore || null,  // ✅ For updating recurring button visibility
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            // For setupToggleAutoReset
+            checkMiniCycle: mergedDeps.checkMiniCycle || (() => {}),
+            refreshTaskListUI: mergedDeps.refreshTaskListUI,
+            updateRecurringButtonVisibility: mergedDeps.updateRecurringButtonVisibility || (() => {}),
+            syncAllTasksWithMode: mergedDeps.syncAllTasksWithMode,
+            DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: mergedDeps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS || { cycle: false, todo: true }
         };
 
         // Debounce timer for refresh operations
@@ -620,6 +626,251 @@ export class ModeManager {
         }
 
         console.log('✅ ModeManager: Mode selectors setup complete');
+    }
+
+    /**
+     * Setup toggle auto reset functionality
+     * Handles auto-reset toggle, delete-checked-tasks toggle, and their event handlers
+     */
+    setupToggleAutoReset() {
+        console.log('⚙️ ModeManager: Setting up toggle auto reset (state-based)...');
+
+        const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
+        const deleteCheckedTasksContainer = this.deps.getElementById("deleteCheckedTasksContainer");
+        const deleteCheckedTasks = this.deps.getElementById("deleteCheckedTasks");
+
+        if (!toggleAutoReset || !deleteCheckedTasks) {
+            console.warn('⚠️ ModeManager: Toggle elements not found for setupToggleAutoReset');
+            return;
+        }
+
+        // ✅ Use state-based data access
+        const AppState = this.deps.getAppState();
+        if (!AppState?.isReady?.()) {
+            console.error('❌ ModeManager: AppState not ready for setupToggleAutoReset');
+            return;
+        }
+
+        const currentState = AppState.get();
+        if (!currentState) {
+            console.error('❌ ModeManager: No state data available for setupToggleAutoReset');
+            return;
+        }
+
+        const { data, appState } = currentState;
+        const activeCycle = appState.activeCycleId;
+        const currentCycle = data.cycles[activeCycle];
+
+        console.log('📊 ModeManager: Setting up toggles for cycle:', activeCycle);
+
+        // ✅ Ensure AutoReset reflects the correct state from state system
+        if (activeCycle && currentCycle) {
+            toggleAutoReset.checked = currentCycle.autoReset || false;
+            deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
+            console.log('🔄 Auto reset state:', currentCycle.autoReset);
+            console.log('🗑️ Delete checked tasks state:', currentCycle.deleteCheckedTasks);
+        } else {
+            console.warn('⚠️ No active cycle found, defaulting to false');
+            toggleAutoReset.checked = false;
+            deleteCheckedTasks.checked = false;
+        }
+
+        // ✅ Hide "Delete Checked Tasks" - always hidden regardless of Auto Reset state
+        if (deleteCheckedTasksContainer) {
+            deleteCheckedTasksContainer.style.display = "none";
+        }
+
+        // Store references for event handlers
+        const self = this;
+
+        // ✅ Define event listener functions for state-based system
+        function handleAutoResetChange(event) {
+            console.log('🔄 Auto reset toggle changed (state-based):', event.target.checked);
+
+            if (!activeCycle || !currentCycle) {
+                console.warn('⚠️ No active cycle available for auto reset change');
+                return;
+            }
+
+            // ✅ Update through state system
+            AppState.update(state => {
+                const cycle = state.data.cycles[activeCycle];
+                if (cycle) {
+                    cycle.autoReset = event.target.checked;
+
+                    // ✅ If Auto Reset is turned ON, automatically uncheck "Delete Checked Tasks"
+                    if (event.target.checked) {
+                        cycle.deleteCheckedTasks = false;
+                        deleteCheckedTasks.checked = false; // ✅ Update UI
+                        console.log('🔄 Auto reset ON - disabling delete checked tasks');
+                    }
+                }
+            }, true); // immediate save
+
+            // ✅ Keep "Delete Checked Tasks" always hidden regardless of Auto Reset state
+            if (deleteCheckedTasksContainer) {
+                deleteCheckedTasksContainer.style.display = "none";
+            }
+
+            // ✅ Only trigger miniCycle reset if AutoReset is enabled
+            if (event.target.checked) {
+                console.log('🔄 Auto reset enabled - checking cycle state');
+                self.deps.checkMiniCycle();
+            }
+
+            // Refresh UI
+            const refreshTaskListUI = self.deps.refreshTaskListUI;
+            if (typeof refreshTaskListUI === 'function') {
+                refreshTaskListUI();
+            }
+            self.deps.updateRecurringButtonVisibility();
+
+            console.log('✅ Auto reset settings saved (state-based)');
+        }
+
+        function handleDeleteCheckedTasksChange(event) {
+            console.log('🗑️ Delete checked tasks toggle changed (state-based):', event.target.checked);
+
+            if (!activeCycle || !currentCycle) {
+                console.warn('⚠️ No active cycle available for delete checked tasks change');
+                return;
+            }
+
+            // ✅ Update through state system
+            AppState.update(state => {
+                const cycle = state.data.cycles[activeCycle];
+                if (cycle) {
+                    cycle.deleteCheckedTasks = event.target.checked;
+                }
+            }, true); // immediate save
+
+            // ✅ Update recurring button visibility when setting changes
+            self.deps.updateRecurringButtonVisibility();
+
+            console.log('✅ Delete checked tasks setting saved (state-based)');
+        }
+
+        // ✅ Remove previous event listeners before adding new ones to prevent stacking
+        toggleAutoReset.removeEventListener("change", toggleAutoReset._handleAutoResetChange);
+        deleteCheckedTasks.removeEventListener("change", deleteCheckedTasks._handleDeleteCheckedTasksChange);
+
+        // Store references to handlers for removal
+        toggleAutoReset._handleAutoResetChange = handleAutoResetChange;
+        deleteCheckedTasks._handleDeleteCheckedTasksChange = handleDeleteCheckedTasksChange;
+
+        // ✅ Add new event listeners
+        toggleAutoReset.addEventListener("change", handleAutoResetChange);
+        deleteCheckedTasks.addEventListener("change", handleDeleteCheckedTasksChange);
+
+        console.log('✅ ModeManager: Toggle auto reset setup completed (state-based)');
+    }
+
+    /**
+     * Setup delete checked tasks mode change listener
+     * Handles mode-specific behavior when toggling between cycle and todo mode
+     */
+    setupDeleteCheckedTasksModeListener() {
+        const deleteCheckedTasks = this.deps.getElementById("deleteCheckedTasks");
+        if (!deleteCheckedTasks) {
+            console.warn('⚠️ ModeManager: deleteCheckedTasks element not found');
+            return;
+        }
+
+        // Prevent duplicate listeners
+        if (deleteCheckedTasks.dataset.modeListenerAdded) {
+            return;
+        }
+
+        const self = this;
+
+        deleteCheckedTasks.addEventListener("change", async (event) => {
+            // ✅ Schema 2.5 only
+            console.log('🗑️ Delete checked tasks toggle changed (Schema 2.5 only)...');
+
+            const schemaData = self.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Schema 2.5 data required for deleteCheckedTasks toggle');
+                throw new Error('Schema 2.5 data not found');
+            }
+
+            const { cycles, activeCycle } = schemaData;
+            const currentCycle = cycles[activeCycle];
+
+            if (!activeCycle || !currentCycle) {
+                console.warn('⚠️ No active cycle found for delete checked tasks toggle');
+                return;
+            }
+
+            const isToDoMode = event.target.checked;
+            const currentMode = isToDoMode ? 'todo' : 'cycle';
+            const DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = self.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
+
+            // ✅ Update via AppState instead of direct localStorage manipulation
+            const AppState = self.deps.getAppState();
+            if (AppState?.isReady?.()) {
+                // Store updated state to avoid race condition
+                let updatedCycle = null;
+
+                await AppState.update(state => {
+                    const cycle = state.data.cycles[activeCycle];
+
+                    // Update mode
+                    cycle.deleteCheckedTasks = isToDoMode;
+
+                    // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings
+                    if (cycle.tasks) {
+                        cycle.tasks.forEach(task => {
+                            // Initialize settings if missing (for existing tasks)
+                            if (!task.deleteWhenCompleteSettings) {
+                                task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+                            }
+
+                            // Sync active value from mode-specific setting
+                            task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+                        });
+                        console.log(`✅ Synced deleteWhenComplete for all tasks to ${currentMode} mode settings`);
+                    }
+
+                    // ✅ Capture updated cycle to avoid race condition
+                    updatedCycle = cycle;
+                }, true); // Immediate save
+
+                // ✅ Update UI using centralized DOM sync with captured state
+                const syncAllTasksWithMode = self.deps.syncAllTasksWithMode;
+                if (updatedCycle?.tasks && typeof syncAllTasksWithMode === 'function') {
+                    // Create task data map for batch sync
+                    const tasksDataMap = {};
+                    updatedCycle.tasks.forEach(task => {
+                        tasksDataMap[task.id] = task;
+                    });
+
+                    console.log(`🔄 Mode switch: Syncing ${Object.keys(tasksDataMap).length} tasks to ${currentMode} mode`);
+
+                    // Sync immediately AND after a small delay to catch any late DOM updates
+                    syncAllTasksWithMode(currentMode, tasksDataMap, {
+                        DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+                    });
+
+                    // Second sync after delay to catch any stragglers
+                    setTimeout(() => {
+                        syncAllTasksWithMode(currentMode, tasksDataMap, {
+                            DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+                        });
+                    }, 100);
+                } else if (typeof syncAllTasksWithMode !== 'function') {
+                    console.error('❌ syncAllTasksWithMode not available - GlobalUtils may not be loaded');
+                } else if (!updatedCycle?.tasks) {
+                    console.warn('⚠️ No tasks to sync');
+                }
+            }
+
+            // ✅ Update recurring button visibility in real-time
+            self.deps.updateRecurringButtonVisibility();
+
+            console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
+        });
+
+        deleteCheckedTasks.dataset.modeListenerAdded = 'true';
     }
 }
 

@@ -713,6 +713,141 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     // test environments because the module's initialization is skipped when appInit is not ready.
     // The global instance depends on production app initialization flow that doesn't run in tests.
 
+    // === SETUP TOGGLE AUTO RESET TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">⚙️ Setup Toggle Auto Reset (DI)</h4>';
+
+    await test('setupToggleAutoReset handles missing toggle elements gracefully', async () => {
+        setModeManagerDependencies(createMockDeps({
+            getElementById: () => null
+        }));
+        const manager = new ModeManager();
+
+        // Should not throw when toggles don't exist
+        manager.setupToggleAutoReset();
+    });
+
+    await test('setupToggleAutoReset handles AppState not ready', async () => {
+        const toggleAutoReset = document.createElement('input');
+        toggleAutoReset.type = 'checkbox';
+        toggleAutoReset.id = 'toggleAutoReset';
+
+        const deleteCheckedTasks = document.createElement('input');
+        deleteCheckedTasks.type = 'checkbox';
+        deleteCheckedTasks.id = 'deleteCheckedTasks';
+
+        setModeManagerDependencies(createMockDeps({
+            getAppState: () => ({ isReady: () => false }),
+            getElementById: (id) => {
+                if (id === 'toggleAutoReset') return toggleAutoReset;
+                if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
+                return null;
+            }
+        }));
+        const manager = new ModeManager();
+
+        // Should not throw when AppState not ready
+        manager.setupToggleAutoReset();
+    });
+
+    await test('setupToggleAutoReset sets up toggles from state', async () => {
+        const mockState = {
+            data: {
+                cycles: {
+                    'cycle-1': {
+                        autoReset: true,
+                        deleteCheckedTasks: false
+                    }
+                }
+            },
+            appState: { activeCycleId: 'cycle-1' }
+        };
+
+        const toggleAutoReset = document.createElement('input');
+        toggleAutoReset.type = 'checkbox';
+        toggleAutoReset.checked = false; // Start unchecked
+
+        const deleteCheckedTasks = document.createElement('input');
+        deleteCheckedTasks.type = 'checkbox';
+        deleteCheckedTasks.checked = true; // Start checked
+
+        const deleteCheckedTasksContainer = document.createElement('div');
+        deleteCheckedTasksContainer.id = 'deleteCheckedTasksContainer';
+        deleteCheckedTasksContainer.style.display = 'block';
+
+        setModeManagerDependencies(createMockDeps({
+            getAppState: () => ({
+                isReady: () => true,
+                get: () => mockState,
+                update: () => {}
+            }),
+            getElementById: (id) => {
+                if (id === 'toggleAutoReset') return toggleAutoReset;
+                if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
+                if (id === 'deleteCheckedTasksContainer') return deleteCheckedTasksContainer;
+                return null;
+            }
+        }));
+        const manager = new ModeManager();
+
+        manager.setupToggleAutoReset();
+
+        // Should sync from state
+        if (toggleAutoReset.checked !== true) {
+            throw new Error('toggleAutoReset should be checked (from state)');
+        }
+        if (deleteCheckedTasks.checked !== false) {
+            throw new Error('deleteCheckedTasks should be unchecked (from state)');
+        }
+        if (deleteCheckedTasksContainer.style.display !== 'none') {
+            throw new Error('deleteCheckedTasksContainer should be hidden');
+        }
+    });
+
+    await test('setupToggleAutoReset attaches change event listeners', async () => {
+        const mockState = {
+            data: {
+                cycles: {
+                    'cycle-1': { autoReset: false, deleteCheckedTasks: false }
+                }
+            },
+            appState: { activeCycleId: 'cycle-1' }
+        };
+
+        let updateCalled = false;
+        const toggleAutoReset = document.createElement('input');
+        toggleAutoReset.type = 'checkbox';
+
+        const deleteCheckedTasks = document.createElement('input');
+        deleteCheckedTasks.type = 'checkbox';
+
+        setModeManagerDependencies(createMockDeps({
+            getAppState: () => ({
+                isReady: () => true,
+                get: () => mockState,
+                update: (fn) => { updateCalled = true; fn(mockState); }
+            }),
+            getElementById: (id) => {
+                if (id === 'toggleAutoReset') return toggleAutoReset;
+                if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
+                return null;
+            },
+            checkMiniCycle: () => {},
+            refreshTaskListUI: () => {},
+            updateRecurringButtonVisibility: () => {}
+        }));
+        const manager = new ModeManager();
+
+        manager.setupToggleAutoReset();
+
+        // Trigger change event
+        toggleAutoReset.checked = true;
+        toggleAutoReset.dispatchEvent(new Event('change'));
+
+        if (!updateCalled) {
+            throw new Error('AppState.update should be called on toggle change');
+        }
+    });
+
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance Tests (DI)</h4>';
 

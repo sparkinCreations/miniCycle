@@ -426,9 +426,12 @@ These are pure utilities or static configuration with no dependencies:
 
 
   ---
-  Priority candidates for new tests:
-  1. backupManager - Critical for data safety
-  2. cycleCompletion - Core cycle logic
-  3. dataValidator - Data integrity
-  4. appInit - App initialization
-  5. helpWindowManager - UI component
+  | Priority | Target                    | Lines | Target Module                        | Status              |
+  |----------|---------------------------|-------|--------------------------------------|---------------------|
+  | P4       | Notification Wrappers     | 80    | Delete                               | ✅ DONE (-175 lines) |
+  | P0       | saveToggleAutoReset()     | ~758  | settingsManager.js (exists)          | Pending             |
+  | P1       | createTaskLabel()         | ~350  | taskDOM.js or new module             | Pending             |
+  | P2       | Completed Tasks (9 funcs) | ~214  | completedTasksManager.js (NEW)       | Pending             |
+  | P3       | Initial Setup (2 funcs)   | ~190  | appInit.js (exists)                  | Pending             |
+  | P5       | Progress System (7 funcs) | ~270  | progressManager.js (NEW)             | Pending             |
+  | P6       | remindOverdueTasks()      | ~102  | notifications.js or taskReminders.js | Pending             |
