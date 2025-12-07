@@ -22,7 +22,7 @@ const colors = {
     magenta: '\x1b[35m'
 };
 
-// All available test modules (45 modules - matches browser "Run All Tests")
+// All available test modules (46 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
@@ -32,7 +32,7 @@ const ALL_MODULES = [
     'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler',
     'testingModal', 'backupManager', 'cycleCompletion', 'dataValidator', 'appInit', 'appState',
-    'helpWindowManager', 'constants', 'basicPluginSystem', 'accessibility'
+    'helpWindowManager', 'constants', 'basicPluginSystem', 'accessibility', 'stress'
 ];
 
 // Parse command line arguments
@@ -103,8 +103,8 @@ async function runModuleTests(page, moduleName) {
         // Wait a bit for tests to start
         await page.waitForTimeout(500);
 
-        // Wait for results (increased timeout for statsPanel with 27 tests, taskCore with 34 tests)
-        const timeout = moduleName === 'taskCore' ? 60000 : 45000;
+        // Wait for results (increased timeout for heavy test modules)
+        const timeout = moduleName === 'stress' ? 180000 : moduleName === 'taskCore' ? 60000 : 45000;
         await page.waitForSelector('h3:has-text("Results:")', { timeout });
 
         // Extract summary (h3 with "Results:" text)

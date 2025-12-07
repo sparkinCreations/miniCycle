@@ -392,6 +392,7 @@
             <option value="constants">🔧 Constants</option>
             <option value="basicPluginSystem">🔌 Basic Plugin System</option>
             <option value="accessibility">♿ Accessibility</option>
+            <option value="stress">🔥 Stress Tests</option>
         </select>
             </div>
         </div>
@@ -471,6 +472,7 @@
         const { runConstantsTests } = await import(`./constants.tests.js?v=${cacheBuster}`);
         const { runBasicPluginSystemTests } = await import(`./basicPluginSystem.tests.js?v=${cacheBuster}`);
         const { runAccessibilityTests } = await import(`./accessibility.tests.js?v=${cacheBuster}`);
+        const { runStressTests } = await import(`./stress.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -871,6 +873,9 @@
             } else if (moduleKey === 'accessibility') {
                 // Accessibility tests don't need module imports - they test DOM/ARIA patterns
                 console.log('Accessibility tests loaded (no module dependencies)');
+            } else if (moduleKey === 'stress') {
+                // Stress tests don't need module imports - they test system limits
+                console.log('Stress tests loaded (no module dependencies)');
             }
         }
 
@@ -1290,6 +1295,10 @@
                     // Accessibility tests don't need module imports
                     currentModule = 'accessibility';
                     resultsDiv.innerHTML = '<p>✅ Accessibility tests ready. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'stress') {
+                    // Stress tests don't need module imports
+                    currentModule = 'stress';
+                    resultsDiv.innerHTML = '<p>✅ Stress tests ready. Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;
@@ -1395,6 +1404,8 @@
                 await runBasicPluginSystemTests(resultsDiv);
             } else if (currentModule === 'accessibility') {
                 await runAccessibilityTests(resultsDiv);
+            } else if (currentModule === 'stress') {
+                await runStressTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -1551,7 +1562,8 @@
                 { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' },
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
                 { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
-                { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null }
+                { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null },
+                { name: 'Stress', key: 'stress', runFn: runStressTests, importPath: null }
             ];
 
             let allResults = [];
