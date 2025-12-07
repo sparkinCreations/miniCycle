@@ -36,17 +36,17 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 6, 2025 - Verified)
+### Current State (December 7, 2025 - Verified)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Main script | ~3,700 lines | ~3,800 lines | — | DI wiring hub |
-| Modules | 43 files | **46 files** | — | — |
+| Modules | 43 files | **45+ files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | `window.*` references (modules/) | ~748 | **~205** | <50 | **73%** |
-| Modules with `set*Dependencies()` | 0 | **40** | All stateful | **Exceeded** |
+| Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **46** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **45+** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -111,7 +111,7 @@ The ~205 `window.*` references in modules are:
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1011 tests, 100% passing
+- **Test coverage** - 1458 tests across 45 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -233,7 +233,7 @@ const instance = new MyModule();         // Then create
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1011 tests)
+npm test                    # All tests (1458 tests across 45 modules)
 npm run test:watch          # Watch mode
 ```
 

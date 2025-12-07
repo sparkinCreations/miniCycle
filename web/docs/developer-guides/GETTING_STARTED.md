@@ -1,7 +1,7 @@
 # Getting Started with miniCycle
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.402
+**Last Updated**: December 7, 2025
 
 ---
 
@@ -30,7 +30,7 @@ npx serve .                         # Node.js
 # Lite version: http://localhost:8080/lite/miniCycle-lite.html
 
 # 4. Run tests (optional)
-npm test                            # Automated tests (1011/1011 passing)
+npm test                            # Automated tests (1458/1458 passing)
 open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 

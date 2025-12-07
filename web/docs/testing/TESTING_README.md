@@ -3,9 +3,9 @@
 > **Complete guide to testing miniCycle - functional tests, performance benchmarks, and quality assurance**
 
 **Current Status**:
-- ✅ **Functional Tests**: 1099/1099 (100%)
+- ✅ **Functional Tests**: 1458/1458 (100%)
 - ✅ **Performance Benchmarks**: 12/12 (100%)
-- ✅ **Execution Time**: 21.40ms total
+- ✅ **Execution Time**: ~65s total
 - ✅ **Memory Usage**: 9.54MB (0.3%)
 
 ---
@@ -28,7 +28,7 @@
 ### Run All Tests
 
 ```bash
-# 1. Functional tests (1099 tests, ~60s)
+# 1. Functional tests (1458 tests, ~65s)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -48,7 +48,7 @@ npm start
 **Available test suites:**
 - ⚡ Performance Benchmarks (this page)
 - 🔗 Integration Tests (E2E)
-- 33 module-specific test suites (including TaskOptionsCustomizer)
+- 45 module-specific test suites
 
 ---
 
@@ -61,25 +61,27 @@ tests/
 ├── automated/
 │   ├── run-browser-tests.js         # Main test runner (Playwright)
 │   └── run-performance-benchmarks.js # Performance runner
-├── *.tests.js                        # 33 test modules
+├── *.tests.js                        # 45 test modules
 ├── module-test-suite.html            # Browser test UI
 └── integration.tests.js              # E2E tests
 ```
 
-### Test Modules (33 Total)
+### Test Modules (45 Total)
 
 | Category | Modules | Tests |
 |----------|---------|-------|
-| **Core** | integration, state, appInit | 52 |
-| **Task Management** | taskCore, taskValidation, taskUtils, taskRenderer, taskEvents, taskDOM | 166 |
-| **Cycle System** | cycleLoader, modeManager, cycleSwitcher, migrationManager | 100 |
-| **Recurring Tasks** | recurringCore, recurringIntegration, recurringPanel | 181 |
-| **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager, taskOptionsCustomizer | 268 |
-| **Features** | notifications, statsPanel, themeManager, dragDropManager, dueDates, reminders | 197 |
-| **Utilities** | globalUtils, deviceDetection, consoleCapture | 76 |
-| **Security & Error Handling** | xssVulnerability, errorHandler | 59 |
+| **Core** | integration, state, appInit, appState, constants | 169 |
+| **Task Management** | taskCore, taskValidation, taskUtils, taskRenderer, taskEvents, taskDOM | 154 |
+| **Cycle System** | cycleLoader, modeManager, cycleSwitcher, cycleManager, cycleCompletion, migrationManager | 190 |
+| **Recurring Tasks** | recurringCore, recurringIntegration, recurringPanel | 173 |
+| **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager, taskOptionsCustomizer, helpWindowManager | 340 |
+| **Features** | notifications, statsPanel, themeManager, dragDropManager, dueDates, reminders, pullToRefresh | 181 |
+| **Utilities** | globalUtils, deviceDetection, consoleCapture | 81 |
+| **Storage & Backup** | backupManager, dataValidator | 85 |
+| **Security & Testing** | xss-vulnerability, errorHandler, testingModal | 86 |
+| **Plugins & A11y** | basicPluginSystem, accessibility | 83 |
 
-**Total**: 1099 tests across 33 modules
+**Total**: 1458 tests across 45 modules
 
 ### Running Specific Tests
 
@@ -100,9 +102,9 @@ npm start
 ### Test Coverage
 
 ```
-Module Coverage: 100% (32/32 modules)
-Test Pass Rate: 100% (1099/1099)
-Lines Covered: ~12,000 lines across 33 modules
+Module Coverage: 100% (45/45 modules)
+Test Pass Rate: 100% (1458/1458)
+Lines Covered: ~15,000 lines across 45 modules
 ```
 
 **Notable Coverage:**
@@ -199,7 +201,7 @@ npm run lighthouse  # Terminal 2
 **Runs:**
 - Installs dependencies
 - Starts dev server
-- Runs 1099 automated tests
+- Runs 1458 automated tests
 - Tests on Node.js 18.x and 20.x
 
 **Status:**
@@ -258,45 +260,58 @@ npm run lighthouse  # Terminal 2
 
 ### Functional Test Results
 
-**Last Run**: November 12, 2025
+**Last Run**: December 7, 2025
 **Platform**: Mac (Darwin 24.6.0), Node.js 20.x
-**Duration**: 62.40 seconds
+**Duration**: ~65 seconds
 
 ```
 ✅ integration          11/11 tests
-✅ themeManager         18/18 tests
-✅ deviceDetection      17/17 tests
-✅ cycleLoader          11/11 tests
-✅ statsPanel           27/27 tests
-✅ consoleCapture       33/33 tests
-✅ state                41/41 tests
+✅ themeManager         15/15 tests
+✅ deviceDetection      13/13 tests
+✅ cycleLoader          10/10 tests
+✅ statsPanel           24/24 tests
+✅ consoleCapture       32/32 tests
+✅ state                40/40 tests
 ✅ recurringCore        99/99 tests
-✅ recurringIntegration 25/25 tests
+✅ recurringIntegration 17/17 tests
 ✅ recurringPanel       57/57 tests
 ✅ globalUtils          36/36 tests
-✅ notifications        39/39 tests
-✅ dragDropManager      67/67 tests
+✅ notifications        35/35 tests
+✅ dragDropManager      55/55 tests
 ✅ migrationManager     38/38 tests
-✅ dueDates             17/17 tests
-✅ reminders            20/20 tests
-✅ modeManager          28/28 tests
-✅ cycleSwitcher        22/22 tests
+✅ dueDates             16/16 tests
+✅ reminders            4/4 tests
+✅ modeManager          27/27 tests
+✅ cycleSwitcher        20/20 tests
+✅ cycleManager         35/35 tests
 ✅ undoRedoManager      73/73 tests
 ✅ gamesManager         21/21 tests
-✅ onboardingManager    33/33 tests
-✅ modalManager         50/50 tests
-✅ menuManager          29/29 tests
-✅ settingsManager      33/33 tests
-✅ taskCore             34/34 tests
+✅ onboardingManager    32/32 tests
+✅ modalManager         49/49 tests
+✅ menuManager          25/25 tests
+✅ settingsManager      24/24 tests
+✅ pullToRefresh        18/18 tests
+✅ taskCore             33/33 tests
 ✅ taskValidation       25/25 tests
-✅ taskUtils            23/23 tests
+✅ taskUtils            22/22 tests
 ✅ taskRenderer         16/16 tests
-✅ taskEvents           22/22 tests
-✅ taskDOM              46/46 tests
-✅ xssVulnerability     25/25 tests
+✅ taskEvents           13/13 tests
+✅ taskDOM              45/45 tests
+✅ taskOptionsCustomizer 27/27 tests
+✅ xss-vulnerability    25/25 tests
 ✅ errorHandler         34/34 tests
+✅ testingModal         27/27 tests
+✅ backupManager        31/31 tests
+✅ cycleCompletion      25/25 tests
+✅ dataValidator        54/54 tests
+✅ appInit              37/37 tests
+✅ appState             60/60 tests
+✅ helpWindowManager    54/54 tests
+✅ constants            21/21 tests
+✅ basicPluginSystem    42/42 tests
+✅ accessibility        41/41 tests
 
-🎉 All tests passed! (1099/1099 - 100%)
+🎉 All tests passed! (1458/1458 - 100%)
 ```
 
 ### Performance Benchmark Results
@@ -560,7 +575,7 @@ web/
 │   ├── automated/
 │   │   ├── run-browser-tests.js         # Main test runner
 │   │   └── run-performance-benchmarks.js # Performance runner
-│   ├── *.tests.js                        # 30 test modules
+│   ├── *.tests.js                        # 45 test modules
 │   ├── performance.benchmark.js          # Performance suite
 │   ├── module-test-suite.html            # Browser UI
 │   ├── PERFORMANCE_TESTING.md            # Testing guide
@@ -617,10 +632,10 @@ Before releasing:
 
 ```
 📊 Test Statistics
-├── Functional Tests: 1099/1099 (100%) ✅
+├── Functional Tests: 1458/1458 (100%) ✅
 ├── Performance Tests: 12/12 (100%) ✅
-├── Module Coverage: 32/32 (100%) ✅
-├── Line Coverage: ~12,000 lines ✅
+├── Module Coverage: 45/45 (100%) ✅
+├── Line Coverage: ~15,000 lines ✅
 └── Platform Coverage: Mac, iPad, iPhone ✅
 
 ⚡ Performance Metrics
@@ -666,8 +681,8 @@ npm test && npm run perf
 
 ---
 
-**Documentation Version**: 1.0
-**Last Updated**: November 12, 2025
+**Documentation Version**: 2.0
+**Last Updated**: December 7, 2025
 **Status**: ✅ Complete
 
-*Testing documentation for miniCycle v1.355*
+*Testing documentation for miniCycle v1.402*

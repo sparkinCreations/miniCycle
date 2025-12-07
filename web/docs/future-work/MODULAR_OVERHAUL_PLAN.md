@@ -28,7 +28,7 @@
 4. **Instance getter pattern** - For modules created before deps are available
 5. **DI-pure versioning** - `AppMeta.version` injected, no `window.APP_VERSION` in modules
 6. **Single wiring hub** - `miniCycle-scripts.js` is the only place dependencies connect
-7. **1011 tests passing** - All tests updated for DI patterns
+7. **1458 tests passing** - All tests updated for DI patterns
 
 ### Remaining `window.*` References (~205)
 

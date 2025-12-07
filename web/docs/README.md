@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.284 | **Test Coverage**: 1011/1011 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.402 | **Test Coverage**: 1458/1458 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -42,7 +42,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (33 modules, 1011/1011 tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (45 modules, 1458/1458 tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -68,15 +68,15 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 ## 📊 Architecture Status
 
-### Current State (November 2025)
+### Current State (December 2025)
 
 | Metric | Value |
 |--------|-------|
-| Main script | ~3,700 lines |
-| Modules | 43 files |
+| Main script | ~3,800 lines |
+| Modules | 45 files |
 | `window.*` globals created | ~68 |
-| `window.*` globals consumed | ~748 |
-| Test coverage | 1011 tests (100%) |
+| `window.*` globals consumed | ~205 |
+| Test coverage | 1458 tests (100%) |
 
 ### The Reality
 

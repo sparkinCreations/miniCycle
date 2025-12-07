@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 6, 2025
+**Last Updated**: December 7, 2025
 
 ---
 
@@ -25,12 +25,12 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Main Script** | ~3,800 lines | DI wiring hub |
-| **Modules** | 46 modules | All using strict DI |
+| **Modules** | 45+ modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1011 tests across 46 modules |
+| **Test Coverage** | 100% ✅ | 1458 tests across 45 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
-| **Modules with setters** | 40 | `set*Dependencies()` functions |
+| **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
 **Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. The main script (`miniCycle-scripts.js`) is the sole wiring hub.
 

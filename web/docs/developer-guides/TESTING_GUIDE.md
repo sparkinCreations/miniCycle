@@ -1,6 +1,6 @@
 # Testing Guide
 
-**Last Updated**: December 6, 2025
+**Last Updated**: December 7, 2025
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## Overview
 
-miniCycle has **100% test coverage** with **1011 tests passing** across 46 modules. The testing system runs:
+miniCycle has **100% test coverage** with **1458 tests passing** across 45 modules. The testing system runs:
 - ✅ **Locally** - Browser-based manual testing via web interface
 - ✅ **Automated** - Playwright-based automated testing
 - ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
@@ -87,20 +87,20 @@ node tests/automated/run-browser-tests.js
 
 🌐 Launching browser...
 
-Running 46 test modules across all systems...
+Running 45 test modules across all systems...
 
 ============================================================
 📊 Test Summary
 ============================================================
-   ✅ PASS themeManager           27/27 tests
-   ✅ PASS deviceDetection        31/31 tests
-   ✅ PASS cycleLoader            11/11 tests
+   ✅ PASS themeManager           15/15 tests
+   ✅ PASS deviceDetection        13/13 tests
+   ✅ PASS cycleLoader            10/10 tests
    ✅ PASS globalUtils            36/36 tests
-   ✅ PASS notifications          39/39 tests
-   ✅ PASS state                  41/41 tests
-   ... (46 modules total)
+   ✅ PASS notifications          35/35 tests
+   ✅ PASS state                  40/40 tests
+   ... (45 modules total)
 ============================================================
-🎉 All tests passed! (1011/1011 - 100%) ✅
+🎉 All tests passed! (1458/1458 - 100%) ✅
 ============================================================
 ```
 
@@ -128,10 +128,10 @@ miniCycle has **automated testing** that runs on every push and pull request via
 2. Setup Node.js environment
 3. Install dependencies (Playwright)
 4. Start HTTP server on port 8080
-5. Run all 1011 tests via Playwright
+5. Run all 1458 tests via Playwright
 6. Report results (pass/fail)
 
-**Current Status:** 1011/1011 tests passing (100%) ✅
+**Current Status:** 1458/1458 tests passing (100%) ✅
 
 ---
 
@@ -339,29 +339,37 @@ export function runOnboardingManagerTests(resultsDiv) {
 
 ## Test Coverage
 
-Current module test coverage:
+Current module test coverage (45 modules, 1458 tests):
 
-| Module | Test File | Tests | Status |
-|--------|-----------|-------|--------|
-| Integration (E2E) | `integration.tests.js` | 11 | ✅ 100% |
-| ThemeManager | `themeManager.tests.js` | 18 | ✅ 100% |
-| DeviceDetection | `deviceDetection.tests.js` | 17 | ✅ 100% |
-| StatsPanel | `statsPanel.tests.js` | 27 | ✅ 100% |
-| State | `state.tests.js` | 41 | ✅ 100% |
-| RecurringCore | `recurringCore.tests.js` | 72 | ✅ 100% |
-| GlobalUtils | `globalUtils.tests.js` | 36 | ✅ 100% |
-| Notifications | `notifications.tests.js` | 39 | ✅ 100% |
-| DragDropManager | `dragDropManager.tests.js` | 67 | ✅ 100% |
-| UndoRedoManager | `undoRedoManager.tests.js` | 52 | ✅ 100% |
-| TaskDOM | `taskDOM.tests.js` | 43 | ✅ 100% |
-| OnboardingManager | `onboardingManager.tests.js` | 25 | ✅ 100% |
-| MenuManager | `menuManager.tests.js` | 18 | ✅ 100% |
-| ModeManager | `modeManager.tests.js` | 22 | ✅ 100% |
-| ... | ... | ... | ... |
+| Module | Tests | Module | Tests |
+|--------|-------|--------|-------|
+| integration | 11 | modalManager | 49 |
+| themeManager | 15 | menuManager | 25 |
+| deviceDetection | 13 | settingsManager | 24 |
+| cycleLoader | 10 | pullToRefresh | 18 |
+| statsPanel | 24 | taskCore | 33 |
+| consoleCapture | 32 | taskValidation | 25 |
+| state | 40 | taskUtils | 22 |
+| recurringCore | 99 | taskRenderer | 16 |
+| recurringIntegration | 17 | taskEvents | 13 |
+| recurringPanel | 57 | taskDOM | 45 |
+| globalUtils | 36 | taskOptionsCustomizer | 27 |
+| notifications | 35 | xss-vulnerability | 25 |
+| dragDropManager | 55 | errorHandler | 34 |
+| migrationManager | 38 | testingModal | 27 |
+| dueDates | 16 | onboardingManager | 32 |
+| reminders | 4 | gamesManager | 21 |
+| modeManager | 27 | undoRedoManager | 73 |
+| cycleSwitcher | 20 | cycleManager | 35 |
+| backupManager | 31 | cycleCompletion | 25 |
+| dataValidator | 54 | appInit | 37 |
+| appState | 60 | helpWindowManager | 54 |
+| constants | 21 | basicPluginSystem | 42 |
+| accessibility | 41 | | |
 
-**Total: 1011 tests across 46 modules**
+**Total: 1458 tests across 45 modules**
 
-**Overall Pass Rate: 100% ✅ (1011/1011 tests passing)**
+**Overall Pass Rate: 100% ✅ (1458/1458 tests passing)**
 
 ---
 

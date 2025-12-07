@@ -1,7 +1,7 @@
 # Development Workflow
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.402
+**Last Updated**: December 7, 2025
 
 ---
 
@@ -161,7 +161,7 @@ console.log(cycle.recurringTemplates);
 ./update-version.sh
 
 # 2. Run tests
-npm test  # Ensure all 1011 tests pass
+npm test  # Ensure all 1458 tests pass
 
 # 3. Commit changes
 git add .

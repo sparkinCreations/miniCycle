@@ -57,7 +57,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 1011/1011 tests passing ✅
+- 1458/1458 tests passing ✅
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -123,7 +123,7 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (1011 tests, 100% passing)
+├── 📁 tests/                            # Test suite (1458 tests, 100% passing)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
 │   ├── [33 module test files]
@@ -171,7 +171,7 @@ web/
 **Why this matters:** GitHub renders Markdown beautifully, Docsify adds navigation
 
 ### `/tests/` - Test Suite
-**Purpose:** 1099 automated tests mirroring module structure
+**Purpose:** 1458 automated tests mirroring module structure
 **Philosophy:** Tests are first-class citizens, not afterthoughts
 **Why this matters:** 100% passing tests = confidence to refactor fearlessly
 

@@ -1,8 +1,8 @@
 # miniCycle - Developer Documentation Hub
 
-**Version**: 1.284
-**Last Updated**: November 2025
-**Test Status**: 1011/1011 tests passing (100%)
+**Version**: 1.402
+**Last Updated**: December 2025
+**Test Status**: 1458/1458 tests passing (100%)
 
 ---
 
@@ -43,10 +43,10 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Main Script | ~3,700 lines | Orchestration + some business logic |
-| Modules | 43 files | Organized by feature |
-| `window.*` globals | ~68 created, ~748 consumed | High global coupling |
-| Test Coverage | 100% | 1011 tests passing |
+| Main Script | ~3,800 lines | Orchestration + some business logic |
+| Modules | 45 files | Organized by feature |
+| `window.*` globals | ~68 created, ~205 consumed | Reduced via strict DI |
+| Test Coverage | 100% | 1458 tests passing |
 
 ### The Truth About the Architecture
 
