@@ -3104,55 +3104,7 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
 
 
 
-// ✅ 18. Task Checkbox Creation
-function createTaskCheckbox(assignedTaskId, taskTextTrimmed, completed) {
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.setAttribute("id", `checkbox-${assignedTaskId}`);
-    checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
-    checkbox.checked = completed;
-    checkbox.setAttribute("aria-label", `Mark task "${taskTextTrimmed}" as complete`);
-    checkbox.setAttribute("role", "checkbox");
-    checkbox.setAttribute("aria-checked", checkbox.checked);
-    
-    safeAddEventListener(checkbox, "change", () => {
-        // ✅ Enable undo system on first user interaction
-        if (typeof window.enableUndoSystemOnFirstInteraction === 'function') {
-            window.enableUndoSystemOnFirstInteraction();
-        }
-
-        // ✅ FIX: Use window. prefix to ensure function is found
-        if (typeof window.handleTaskCompletionChange === 'function') {
-            window.handleTaskCompletionChange(checkbox);
-        } else {
-            console.warn('⚠️ handleTaskCompletionChange not available');
-        }
-
-        if (typeof checkMiniCycle === 'function') {
-            checkMiniCycle();
-        }
-        autoSave(null, true);  // ✅ FIX: Force immediate save on task completion
-        triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
-
-        // ✅ Update undo/redo button states
-        if (typeof window.updateUndoRedoButtons === 'function') {
-            window.updateUndoRedoButtons();
-        }
-
-        console.log("✅ Task completion toggled — undo snapshot pushed.");
-    });
-    
-    safeAddEventListener(checkbox, "keydown", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change"));
-        }
-    });
-
-    return checkbox;
-}
-
+// ✅ REMOVED: createTaskCheckbox - now in modules/task/taskDOM.js
 // ✅ REMOVED: createTaskLabel - now in modules/task/taskDOM.js
 
 
