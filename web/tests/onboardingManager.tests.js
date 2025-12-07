@@ -106,15 +106,6 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('has global instance (backward compat)', () => {
-        if (!window.onboardingManager) {
-            throw new Error('Global onboardingManager instance not found');
-        }
-        if (typeof window.onboardingManager.showOnboarding !== 'function') {
-            throw new Error('Global instance missing methods');
-        }
-    });
-
     test('has version property via DI', () => {
         const mockDeps = createMockDeps();
         setOnboardingManagerDependencies(mockDeps);
@@ -699,44 +690,6 @@ export async function runOnboardingManagerTests(resultsDiv) {
 
         // Should not throw
         om.completeOnboarding(modal, {}, null);
-    });
-
-    // ===== GLOBAL WRAPPER TESTS (Backward Compat) =====
-
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (Backward Compat)</h4>';
-
-    test('window.showOnboarding exists', () => {
-        if (typeof window.showOnboarding !== 'function') {
-            throw new Error('Global showOnboarding not found');
-        }
-    });
-
-    test('global showOnboarding calls instance method', () => {
-        let called = false;
-
-        // Mock the instance method
-        const originalMethod = window.onboardingManager.showOnboarding;
-        window.onboardingManager.showOnboarding = () => {
-            called = true;
-        };
-
-        window.showOnboarding({}, null);
-
-        if (!called) {
-            throw new Error('Global wrapper did not call instance method');
-        }
-
-        // Restore
-        window.onboardingManager.showOnboarding = originalMethod;
-    });
-
-    test('onboardingManager instance is accessible globally', () => {
-        if (!window.onboardingManager) {
-            throw new Error('onboardingManager instance not accessible globally');
-        }
-        if (!(window.onboardingManager instanceof window.OnboardingManager)) {
-            throw new Error('Global instance is not OnboardingManager instance');
-        }
     });
 
     // ===== ERROR HANDLING TESTS (DI-Pure) =====

@@ -556,24 +556,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         instance.clearAllTasks().catch(() => {}); // clearAllTasks is async and may fail, that's ok
     });
 
-    // === GLOBAL COMPATIBILITY TESTS ===
-    resultsDiv.innerHTML += '<h4>🌍 Global Wrappers (Backward Compat)</h4>';
-
-    test('window.MenuManager exists (backward compat)', () => {
-        if (!window.MenuManager) {
-            throw new Error('Global MenuManager class not found');
-        }
-    });
-
-    test('window.menuManager instance exists (backward compat)', () => {
-        if (!window.menuManager) {
-            throw new Error('Global menuManager instance not found');
-        }
-        if (typeof window.menuManager.setupMainMenu !== 'function') {
-            throw new Error('Global instance missing methods');
-        }
-    });
-
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests (DI)</h4>';
 

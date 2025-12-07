@@ -174,7 +174,9 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('has version property', async () => {
-        const instance = new CycleSwitcher();
+        const instance = new CycleSwitcher({
+            AppMeta: { version: '1.0.0' }
+        });
         // Check version exists and is in semver format (X.Y or X.Y.Z)
         if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
             throw new Error(`Expected valid semver version, got ${instance.version}`);

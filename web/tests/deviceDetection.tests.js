@@ -25,6 +25,14 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
+// Import DI-pure functions for testing
+import {
+    setDeviceDetectionDependencies,
+    runDeviceDetection,
+    reportDeviceCompatibility,
+    testDeviceDetection
+} from '../modules/utils/deviceDetection.js';
+
 export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -120,23 +128,14 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: mockLoadData,
             showNotification: mockNotification,
-            currentVersion: '1.999'
+            AppMeta: { version: '1.999' }
         });
-        
+
         if (manager.currentVersion !== '1.999') {
             throw new Error('Dependency injection failed');
         }
     });
     
-    await test('has safe global function access', () => {
-        const manager = new DeviceDetectionManager();
-        const fn = manager.getGlobalFunction('nonExistentFunction');
-        
-        if (typeof fn !== 'function') {
-            throw new Error('Should return function even for missing globals');
-        }
-    });
-
     // === DEVICE DETECTION LOGIC TESTS ===
     resultsDiv.innerHTML += '<h4>🔍 Device Detection Logic</h4>';
 
@@ -204,10 +203,18 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         localStorage.setItem('miniCycleForceFullVersion', 'true');
 
         const testVersion = '1.305';
+
+        // DI-pure: inject AppState via setDeviceDetectionDependencies
+        const mockAppState = createMockAppState();
+        setDeviceDetectionDependencies({
+            AppState: mockAppState,
+            AppMeta: { version: testVersion },
+            showNotification: () => {}
+        });
+
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => mockData,
-            showNotification: () => {},
-            currentVersion: testVersion
+            AppMeta: { version: testVersion }
         });
 
         await manager.checkManualOverride('test-agent');
@@ -222,7 +229,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
 
     // === SCHEMA 2.5 STORAGE TESTS ===
     resultsDiv.innerHTML += '<h4>💾 Schema 2.5 Storage Tests</h4>';
-    
+
     // ⚠️ ENVIRONMENT-SPECIFIC: May fail due to mock data structure differences
     await test('saves compatibility data to Schema 2.5', async () => {
         // ✅ Set up localStorage with valid Schema 2.5 data
@@ -230,9 +237,17 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
         const testVersion = '1.305';
+
+        // DI-pure: inject AppState via setDeviceDetectionDependencies
+        const mockAppState = createMockAppState();
+        setDeviceDetectionDependencies({
+            AppState: mockAppState,
+            AppMeta: { version: testVersion }
+        });
+
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => mockData,
-            currentVersion: testVersion
+            AppMeta: { version: testVersion }
         });
 
         const testData = {
@@ -254,23 +269,24 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
             throw new Error(`Compatibility data not properly saved: expected version ${testVersion}, got ${compatibility.lastDetectionVersion}`);
         }
     });
-    
+
     // ⚠️ ENVIRONMENT-SPECIFIC: Timing-sensitive test - may fail due to clock precision
     await test('updates Schema 2.5 metadata timestamp', async () => {
-        const originalData = JSON.parse(localStorage.getItem('miniCycleData'));
-        const originalTimestamp = originalData.metadata.lastModified;
+        // ✅ Set up localStorage with valid Schema 2.5 data
+        const mockData = { metadata: { version: '2.5', lastModified: 0 }, settings: {} };
+        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // Add small delay to ensure timestamp difference is detectable
-        const delayedTimestamp = Date.now() + 1;
-
-        const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} })
+        // DI-pure: inject AppState via setDeviceDetectionDependencies
+        const mockAppState = createMockAppState();
+        setDeviceDetectionDependencies({
+            AppState: mockAppState,
+            AppMeta: { version: '1.305' }
         });
 
-        // Ensure some time passes before saving
-        while (Date.now() < delayedTimestamp) {
-            // Small busy wait to ensure time passes
-        }
+        const manager = new DeviceDetectionManager({
+            loadMiniCycleData: () => mockData,
+            AppMeta: { version: '1.305' }
+        });
 
         await manager.saveCompatibilityData({
             shouldUseLite: true,
@@ -279,7 +295,8 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
 
         const updatedData = JSON.parse(localStorage.getItem('miniCycleData'));
 
-        if (!updatedData.metadata || updatedData.metadata.lastModified <= originalTimestamp) {
+        // The mock AppState updates lastModified to Date.now() on save
+        if (!updatedData.metadata || updatedData.metadata.lastModified === 0) {
             throw new Error('Schema 2.5 timestamp not updated');
         }
     });
@@ -290,19 +307,19 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     await test('detects version changes', () => {
         const manager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            currentVersion: '1.999'
+            AppMeta: { version: '1.999' }
         });
-        
+
         // Save old version data
         manager.saveCompatibilityData({
             shouldUseLite: false,
             reason: 'test'
         });
-        
+
         // Create new manager with different version
         const newManager = new DeviceDetectionManager({
             loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            currentVersion: '2.000'
+            AppMeta: { version: '2.000' }
         });
         
         // Mock the runDeviceDetection to track if it was called
@@ -323,10 +340,21 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     
     // ⚠️ ENVIRONMENT-SPECIFIC: Report generation depends on browser capabilities
     await test('generates compatibility report', async () => {
+        // ✅ Set up localStorage with valid Schema 2.5 data
+        const mockData = { metadata: { version: '2.5' }, settings: {} };
+        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
+
+        // DI-pure: inject AppState via setDeviceDetectionDependencies
+        const mockAppState = createMockAppState();
+        setDeviceDetectionDependencies({
+            AppState: mockAppState,
+            AppMeta: { version: '1.305' },
+            showNotification: () => {}
+        });
+
         const manager = new DeviceDetectionManager({
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
-            showNotification: () => {},
-            currentVersion: '1.305'
+            loadMiniCycleData: () => mockData,
+            AppMeta: { version: '1.305' }
         });
 
         // Save some compatibility data first
@@ -417,15 +445,15 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    // === GLOBAL FUNCTIONS ===
-    resultsDiv.innerHTML += '<h4>🌐 Global Functions</h4>';
-    
-    await test('exposes global compatibility functions', () => {
-        // Import should have set up globals
-        if (typeof window.runDeviceDetection !== 'function' ||
-            typeof window.reportDeviceCompatibility !== 'function' ||
-            typeof window.testDeviceDetection !== 'function') {
-            throw new Error('Global functions not properly exposed');
+    // === MODULE FUNCTIONS ===
+    resultsDiv.innerHTML += '<h4>🔌 Module Functions</h4>';
+
+    await test('exports DI-pure module functions', () => {
+        // DI-pure: check imported functions instead of window globals
+        if (typeof runDeviceDetection !== 'function' ||
+            typeof reportDeviceCompatibility !== 'function' ||
+            typeof testDeviceDetection !== 'function') {
+            throw new Error('DI-pure module functions not properly exported');
         }
     });
 

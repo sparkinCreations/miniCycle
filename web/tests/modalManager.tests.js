@@ -68,7 +68,9 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('has version property', () => {
-        const mm = new window.ModalManager();
+        const mm = new window.ModalManager({
+            AppMeta: { version: '1.0.0' }
+        });
         if (!mm.version) {
             throw new Error('Version property missing');
         }

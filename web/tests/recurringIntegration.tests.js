@@ -5,16 +5,25 @@
 
 import {
     initializeRecurringModules,
-    testRecurringIntegration
+    testRecurringIntegration,
+    setRecurringIntegrationDependencies
 } from '../modules/recurring/recurringIntegration.js';
 
-export function runRecurringIntegrationTests(resultsDiv) {
+import {
+    setupTestEnvironment,
+    createMockAppState
+} from './testHelpers.js';
+
+export async function runRecurringIntegrationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔗 RecurringIntegration Tests</h2><h3>Running tests...</h3>';
+
+    // Setup test environment
+    await setupTestEnvironment();
 
     let passed = { count: 0 };
     let total = { count: 0 };
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
 
         // 🔒 SAVE REAL APP DATA before test runs
@@ -40,7 +49,10 @@ export function runRecurringIntegrationTests(resultsDiv) {
         };
 
         try {
-            testFn();
+            const result = testFn();
+            if (result instanceof Promise) {
+                await result;
+            }
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -89,6 +101,31 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     }
 
+    // Helper to inject DI dependencies for tests that use initializeRecurringModules
+    // IMPORTANT: mockSchemaData should be saved to localStorage BEFORE calling this
+    function injectDependencies(mockSchemaData) {
+        // Save mock data to localStorage first
+        localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
+
+        // Create mock AppState with default storage key (reads from localStorage)
+        const mockAppState = createMockAppState();
+
+        setRecurringIntegrationDependencies({
+            AppState: mockAppState,
+            showNotification: (msg) => msg,
+            loadMiniCycleData: () => mockAppState.get(),
+            refreshUIFromState: () => {},
+            updateProgressBar: () => {},
+            FeatureFlags: { recurringEnabled: true }
+        });
+        // Also set window.AppState for backward compat tests
+        window.AppState = mockAppState;
+        window.showNotification = (msg) => msg;
+        window.FeatureFlags = { recurringEnabled: true };
+
+        return mockAppState;
+    }
+
     // === MOCK SETUP TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Mock Setup</h4>';
 
@@ -131,20 +168,14 @@ export function runRecurringIntegrationTests(resultsDiv) {
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🚀 Initialization</h4>';
 
-    test('initializes with valid dependencies', async () => {
-        // Setup mocks
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('initializes with valid dependencies', async () => {
+        // DI-pure: inject dependencies via setRecurringIntegrationDependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
-
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        injectDependencies(mockSchemaData);
 
         const result = await initializeRecurringModules();
 
@@ -161,87 +192,78 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('exposes recurringCore globally', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('returns recurringCore from initialization', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
+        injectDependencies(mockSchemaData);
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const result = await initializeRecurringModules();
 
-        await initializeRecurringModules();
-
-        if (!window.recurringCore) {
-            throw new Error('recurringCore not exposed globally');
+        if (!result.core) {
+            throw new Error('recurringCore not returned from initialization');
         }
 
-        if (typeof window.recurringCore.applyRecurringSettings !== 'function') {
-            throw new Error('recurringCore.applyRecurringSettings not a function');
+        if (typeof result.core.applyRecurringToTaskSchema25 !== 'function') {
+            throw new Error('recurringCore.applyRecurringToTaskSchema25 not a function');
         }
     });
 
-    test('exposes recurringPanel globally', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('returns recurringPanel from initialization', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
+        injectDependencies(mockSchemaData);
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const result = await initializeRecurringModules();
 
-        await initializeRecurringModules();
-
-        if (!window.recurringPanel) {
-            throw new Error('recurringPanel not exposed globally');
+        if (!result.panel) {
+            throw new Error('recurringPanel not returned from initialization');
         }
 
-        if (typeof window.recurringPanel.updatePanel !== 'function') {
+        if (typeof result.panel.updatePanel !== 'function') {
             throw new Error('recurringPanel.updatePanel not a function');
         }
     });
 
-    test('exposes backward compatible functions', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('returns core functions from initialization', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
+        injectDependencies(mockSchemaData);
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const result = await initializeRecurringModules();
 
-        await initializeRecurringModules();
-
+        // Check that core module has required functions
         const requiredFunctions = [
             'applyRecurringToTaskSchema25',
             'handleRecurringTaskActivation',
-            'handleRecurringTaskDeactivation',
-            'updateRecurringPanel'
+            'handleRecurringTaskDeactivation'
         ];
 
         requiredFunctions.forEach(fn => {
-            if (typeof window[fn] !== 'function') {
-                throw new Error(`${fn} not exposed globally`);
+            if (typeof result.core[fn] !== 'function') {
+                throw new Error(`${fn} not available on core module`);
             }
         });
     });
 
-    test('handles missing AppState gracefully', async () => {
+    await test('handles missing AppState gracefully', async () => {
+        // DI-pure: inject null AppState
+        setRecurringIntegrationDependencies({
+            AppState: null,
+            showNotification: (msg) => msg,
+            FeatureFlags: { recurringEnabled: true }
+        });
         window.AppState = null;
         window.showNotification = (msg) => msg;
         window.FeatureFlags = { recurringEnabled: true };
@@ -256,24 +278,31 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('processes deferred setups', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('processes deferred setups', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
-
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const mockAppState = createMockAppState(mockSchemaData);
 
         let deferredCalled = false;
         window._deferredRecurringSetup = [
             () => { deferredCalled = true; }
         ];
+
+        setRecurringIntegrationDependencies({
+            AppState: mockAppState,
+            showNotification: (msg) => msg,
+            loadMiniCycleData: () => mockAppState.get(),
+            FeatureFlags: { recurringEnabled: true },
+            getDeferredRecurringSetup: () => window._deferredRecurringSetup,
+            clearDeferredRecurringSetup: () => { window._deferredRecurringSetup = []; }
+        });
+        window.AppState = mockAppState;
+        window.showNotification = (msg) => msg;
+        window.FeatureFlags = { recurringEnabled: true };
 
         await initializeRecurringModules();
 
@@ -295,10 +324,9 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('testRecurringIntegration checks AppState', () => {
-        window.AppState = {
-            isReady: () => true
-        };
+    await test('testRecurringIntegration checks AppState via DI', async () => {
+        // DI-pure: inject AppState via dependencies
+        injectDependencies({ schemaVersion: "2.5" });
 
         const result = testRecurringIntegration();
 
@@ -311,69 +339,104 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('testRecurringIntegration checks core module', () => {
-        window.recurringCore = {
-            applyRecurringSettings: () => {}
+    await test('testRecurringIntegration checks core module', async () => {
+        // DI-pure: pass recurringModules parameter with mock core
+        const mockRecurringModules = {
+            core: {
+                applyRecurringToTaskSchema25: () => {}
+            }
         };
 
-        const result = testRecurringIntegration();
+        const result = testRecurringIntegration(mockRecurringModules);
 
         if (typeof result.coreLoaded !== 'boolean') {
             throw new Error('coreLoaded not checked');
         }
     });
 
-    test('testRecurringIntegration checks panel module', () => {
-        window.recurringPanel = {
-            updatePanel: () => {}
+    await test('testRecurringIntegration checks panel module', async () => {
+        // DI-pure: pass recurringModules parameter with mock panel
+        const mockRecurringModules = {
+            panel: {
+                updateRecurringPanel: () => {}
+            }
         };
 
-        const result = testRecurringIntegration();
+        const result = testRecurringIntegration(mockRecurringModules);
 
         if (typeof result.panelLoaded !== 'boolean') {
             throw new Error('panelLoaded not checked');
         }
     });
 
-    test('testRecurringIntegration checks watcher', () => {
-        window.watchRecurringTasks = () => {};
+    await test('testRecurringIntegration checks coreAPI completeness', async () => {
+        // DI-pure: pass recurringModules with complete coreAPI
+        const mockRecurringModules = {
+            coreAPI: {
+                applyRecurringSettings: () => {},
+                handleActivation: () => {},
+                handleDeactivation: () => {},
+                deleteTemplate: () => {},
+                removeTasksFromCycle: () => {}
+            }
+        };
 
-        const result = testRecurringIntegration();
+        const result = testRecurringIntegration(mockRecurringModules);
 
-        if (typeof result.watcherActive !== 'boolean') {
-            throw new Error('watcherActive not checked');
+        if (typeof result.coreAPIComplete !== 'boolean') {
+            throw new Error('coreAPIComplete not checked');
         }
     });
 
-    test('testRecurringIntegration checks global functions', () => {
-        window.applyRecurringToTaskSchema25 = () => {};
-        window.handleRecurringTaskActivation = () => {};
-        window.handleRecurringTaskDeactivation = () => {};
-        window.updateRecurringPanel = () => {};
-        window.updateRecurringSummary = () => {};
-        window.openRecurringSettingsPanelForTask = () => {};
+    await test('testRecurringIntegration checks panelAPI completeness', async () => {
+        // DI-pure: pass recurringModules with complete panelAPI
+        const mockRecurringModules = {
+            panelAPI: {
+                updatePanel: () => {},
+                updateSummary: () => {},
+                updateButtonVisibility: () => {},
+                openPanel: () => {},
+                closePanel: () => {},
+                openForTask: () => {}
+            }
+        };
 
-        const result = testRecurringIntegration();
+        const result = testRecurringIntegration(mockRecurringModules);
 
-        if (typeof result.globalFunctionsAvailable !== 'boolean') {
-            throw new Error('globalFunctionsAvailable not checked');
+        if (typeof result.panelAPIComplete !== 'boolean') {
+            throw new Error('panelAPIComplete not checked');
         }
     });
 
-    test('testRecurringIntegration returns all tests passing', () => {
-        // Setup complete environment
-        window.AppState = { isReady: () => true };
-        window.recurringCore = { applyRecurringSettings: () => {} };
-        window.recurringPanel = { updatePanel: () => {} };
-        window.watchRecurringTasks = () => {};
-        window.applyRecurringToTaskSchema25 = () => {};
-        window.handleRecurringTaskActivation = () => {};
-        window.handleRecurringTaskDeactivation = () => {};
-        window.updateRecurringPanel = () => {};
-        window.updateRecurringSummary = () => {};
-        window.openRecurringSettingsPanelForTask = () => {};
+    await test('testRecurringIntegration returns all tests passing', async () => {
+        // DI-pure: inject AppState and pass complete recurringModules
+        injectDependencies({ schemaVersion: "2.5" });
 
-        const result = testRecurringIntegration();
+        const mockRecurringModules = {
+            core: {
+                applyRecurringToTaskSchema25: () => {}
+            },
+            panel: {
+                updateRecurringPanel: () => {}
+            },
+            coreAPI: {
+                applyRecurringSettings: () => {},
+                handleActivation: () => {},
+                handleDeactivation: () => {},
+                deleteTemplate: () => {},
+                removeTasksFromCycle: () => {}
+            },
+            panelAPI: {
+                updatePanel: () => {},
+                updateSummary: () => {},
+                updateButtonVisibility: () => {},
+                openPanel: () => {},
+                closePanel: () => {},
+                openForTask: () => {}
+            }
+        };
+
+        const result = testRecurringIntegration(mockRecurringModules);
 
         const allPassed = Object.values(result).every(t => t === true);
 
@@ -382,33 +445,22 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('testRecurringIntegration handles errors gracefully', () => {
-        // Clear all globals to trigger errors
-        delete window.AppState;
-        delete window.recurringCore;
-        delete window.recurringPanel;
-        delete window.watchRecurringTasks;
-
-        // Should not throw error
-        const result = testRecurringIntegration();
+    await test('testRecurringIntegration handles null recurringModules gracefully', async () => {
+        // Should not throw error when no recurringModules passed
+        const result = testRecurringIntegration(null);
 
         if (!result) {
-            throw new Error('Test function should return results even with errors');
+            throw new Error('Test function should return results even with null input');
         }
     });
 
     // === DEPENDENCY CONFIGURATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔌 Dependency Configuration</h4>';
 
-    test('configures state management dependencies', async () => {
-        window.AppState = {
-            get: () => ({ test: 'data' }),
-            update: (fn) => {},
-            isReady: () => true
-        };
-
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+    await test('configures state management dependencies', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = { test: 'data' };
+        injectDependencies(mockSchemaData);
 
         const result = await initializeRecurringModules();
 
@@ -418,22 +470,14 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('configures notification dependencies', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('configures notification dependencies', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
-
-        let notificationCalled = false;
-        window.showNotification = (msg) => { notificationCalled = true; };
-        window.FeatureFlags = { recurringEnabled: true };
-
-        await initializeRecurringModules();
+        injectDependencies(mockSchemaData);
 
         // Verify notification dependency works
         if (typeof window.showNotification !== 'function') {
@@ -441,17 +485,21 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('configures feature flag dependencies', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('configures feature flag dependencies', async () => {
+        // DI-pure: inject dependencies with feature disabled
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
-
+        const mockAppState = createMockAppState(mockSchemaData);
+        setRecurringIntegrationDependencies({
+            AppState: mockAppState,
+            showNotification: (msg) => msg,
+            loadMiniCycleData: () => mockAppState.get(),
+            FeatureFlags: { recurringEnabled: false }
+        });
+        window.AppState = mockAppState;
         window.showNotification = (msg) => msg;
         window.FeatureFlags = { recurringEnabled: false };
 
@@ -466,8 +514,12 @@ export function runRecurringIntegrationTests(resultsDiv) {
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
-    test('catches and reports initialization errors', async () => {
-        // Force an error by providing invalid state
+    await test('catches and reports initialization errors', async () => {
+        // DI-pure: inject null AppState to force error
+        setRecurringIntegrationDependencies({
+            AppState: null,
+            showNotification: (msg) => msg
+        });
         window.AppState = null;
         window.showNotification = (msg) => msg;
 
@@ -482,14 +534,20 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    test('shows notification on initialization failure', async () => {
-        window.AppState = null;
-
+    await test('shows notification on initialization failure', async () => {
         let notificationMessage = null;
-        window.showNotification = (msg, type) => {
+        const mockNotification = (msg, type) => {
             notificationMessage = msg;
             return { message: msg, type };
         };
+
+        // DI-pure: inject null AppState to force error
+        setRecurringIntegrationDependencies({
+            AppState: null,
+            showNotification: mockNotification
+        });
+        window.AppState = null;
+        window.showNotification = mockNotification;
 
         try {
             await initializeRecurringModules();
@@ -502,78 +560,55 @@ export function runRecurringIntegrationTests(resultsDiv) {
         }
     });
 
-    // === GLOBAL FUNCTION AVAILABILITY TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Functions</h4>';
+    // === MODULE FUNCTION AVAILABILITY TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Module Functions</h4>';
 
-    test('exposes applyRecurringToTaskSchema25', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('core has applyRecurringToTaskSchema25', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
+        injectDependencies(mockSchemaData);
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const result = await initializeRecurringModules();
 
-        await initializeRecurringModules();
-
-        if (typeof window.applyRecurringToTaskSchema25 !== 'function') {
-            throw new Error('applyRecurringToTaskSchema25 not exposed');
+        if (typeof result.core.applyRecurringToTaskSchema25 !== 'function') {
+            throw new Error('applyRecurringToTaskSchema25 not available on core');
         }
     });
 
-    test('exposes handleRecurringTaskActivation', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('core has handleRecurringTaskActivation', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
+        injectDependencies(mockSchemaData);
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const result = await initializeRecurringModules();
 
-        await initializeRecurringModules();
-
-        if (typeof window.handleRecurringTaskActivation !== 'function') {
-            throw new Error('handleRecurringTaskActivation not exposed');
+        if (typeof result.core.handleRecurringTaskActivation !== 'function') {
+            throw new Error('handleRecurringTaskActivation not available on core');
         }
     });
 
-    test('exposes panel update functions', async () => {
-        window.AppState = {
-            get: () => ({
-                schemaVersion: "2.5",
-                data: { cycles: {} },
-                appState: { activeCycleId: null }
-            }),
-            update: (fn) => {},
-            isReady: () => true
+    await test('panel has update functions', async () => {
+        // DI-pure: inject dependencies
+        const mockSchemaData = {
+            schemaVersion: "2.5",
+            data: { cycles: {} },
+            appState: { activeCycleId: null }
         };
+        injectDependencies(mockSchemaData);
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        const result = await initializeRecurringModules();
 
-        await initializeRecurringModules();
-
-        const panelFunctions = [
-            'updateRecurringPanel',
-            'updateRecurringSummary',
-            'updateRecurringPanelButtonVisibility'
-        ];
-
-        panelFunctions.forEach(fn => {
-            if (typeof window[fn] !== 'function') {
-                throw new Error(`${fn} not exposed`);
-            }
-        });
+        if (typeof result.panel.updatePanel !== 'function') {
+            throw new Error('updatePanel not available on panel');
+        }
     });
 
     // === RESULTS SUMMARY ===

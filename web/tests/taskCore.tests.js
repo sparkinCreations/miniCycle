@@ -185,7 +185,9 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('has correct version number', async () => {
-        const instance = new TaskCore();
+        const instance = new TaskCore({
+            AppMeta: { version: '1.0.0' }
+        });
         if (!instance.version || typeof instance.version !== 'string') {
             throw new Error('Version not set properly');
         }

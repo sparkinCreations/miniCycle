@@ -125,7 +125,8 @@ export async function runTaskValidationTests(resultsDiv) {
 
     await test('has correct version property', () => {
         const validator = new TaskValidator({
-            sanitizeInput: (input) => input
+            sanitizeInput: (input) => input,
+            AppMeta: { version: '1.0.0' }
         });
 
         // Check version exists and is in semver format (X.Y or X.Y.Z)

@@ -3,7 +3,7 @@
  * Tests for the stats panel manager and view switching functionality
  */
 
-import { StatsPanelManager } from '../modules/features/statsPanel.js';
+import { StatsPanelManager, setStatsPanelDependencies } from '../modules/features/statsPanel.js';
 
 // Helper to create complete AppState mock (outside function scope)
 function createMockAppState(mockData) {
@@ -80,8 +80,16 @@ export async function runStatsPanelTests(resultsDiv) {
             };
             localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
 
-            // Mock AppState globally for all tests to prevent errors
-            window.AppState = createMockAppState(mockSchemaData);
+            // DI-pure: inject AppState via setStatsPanelDependencies
+            const mockAppState = createMockAppState(mockSchemaData);
+            setStatsPanelDependencies({
+                AppState: mockAppState,
+                showNotification: () => {},
+                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+            });
+
+            // Also set on window for backward compat tests that use window.AppState
+            window.AppState = mockAppState;
 
             // Create minimal DOM structure for tests
             createTestDOM();
@@ -220,10 +228,14 @@ export async function runStatsPanelTests(resultsDiv) {
             <div class="task"><input type="checkbox" checked /></div>
         `;
 
-        const statsPanel = new StatsPanelManager({
+        // DI-pure: Re-inject AppState with fresh mock to use updated localStorage
+        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+        setStatsPanelDependencies({
+            AppState: createMockAppState(mockData),
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
         });
 
+        const statsPanel = new StatsPanelManager();
         await statsPanel.updateStatsPanel();
 
         const totalTasks = document.getElementById('total-tasks');
@@ -245,10 +257,14 @@ export async function runStatsPanelTests(resultsDiv) {
             <div class="task"><input type="checkbox" /></div>
         `;
 
-        const statsPanel = new StatsPanelManager({
+        // DI-pure: Re-inject AppState with fresh mock
+        const mockData = JSON.parse(localStorage.getItem('miniCycleData'));
+        setStatsPanelDependencies({
+            AppState: createMockAppState(mockData),
             loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
         });
 
+        const statsPanel = new StatsPanelManager();
         await statsPanel.updateStatsPanel();
 
         const completionRate = document.getElementById('completion-rate');
@@ -263,8 +279,11 @@ export async function runStatsPanelTests(resultsDiv) {
         mockData.userProgress.cyclesCompleted = 25;
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // Update the global AppState mock with new cycle count
-        window.AppState = createMockAppState(mockData);
+        // DI-pure: Re-inject AppState with updated cycle count data
+        setStatsPanelDependencies({
+            AppState: createMockAppState(mockData),
+            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+        });
 
         const statsPanel = new StatsPanelManager();
 

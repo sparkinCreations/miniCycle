@@ -17,6 +17,9 @@ import {
     createProtectedTest
 } from './testHelpers.js';
 
+// Import setTaskEventsDependencies for DI-pure testing
+import { setTaskEventsDependencies } from '../modules/task/taskEvents.js';
+
 export async function runTaskEventsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎮 TaskEvents Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -38,6 +41,7 @@ export async function runTaskEventsTests(resultsDiv) {
     // ============================================
     function createMockDependencies() {
         return {
+            AppMeta: { version: '1.0.0' },
             AppState: {
                 isReady: () => true,
                 get: () => ({
@@ -156,18 +160,18 @@ export async function runTaskEventsTests(resultsDiv) {
         }
     });
 
-    await test('Dependencies are stored correctly', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-        if (!events.deps.AppState) {
-            throw new Error('AppState dependency not stored');
-        }
+    await test('deps getter returns functions with fallbacks', () => {
+        // DI-pure pattern: deps getter returns fallback functions when no deps set
+        const events = new TaskEvents({});
+        // Should have fallback functions even without dependencies set
         if (typeof events.deps.showNotification !== 'function') {
-            throw new Error('showNotification dependency not stored');
+            throw new Error('showNotification fallback not available');
         }
         if (typeof events.deps.autoSave !== 'function') {
-            throw new Error('autoSave dependency not stored');
+            throw new Error('autoSave fallback not available');
         }
+        // AppState will be null until set via setTaskEventsDependencies
+        // This is expected behavior for DI-pure pattern
     });
 
     await test('Fallback functions work when dependencies missing', () => {
@@ -189,20 +193,21 @@ export async function runTaskEventsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🖱️ Event Handling</h4>';
 
     await test('handleTaskButtonClick processes edit button', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
 
         const editBtn = taskItem.querySelector('.edit-btn');
 
-        // Mock taskCore
-        window.taskCore = {
-            editTask: (item) => {
-                item.setAttribute('data-edited', 'true');
+        // DI-pure: inject taskCore via setTaskEventsDependencies
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            taskCore: {
+                editTask: (item) => {
+                    item.setAttribute('data-edited', 'true');
+                }
             }
-        };
+        });
+        const events = new TaskEvents({});
 
         const event = new MouseEvent('click', { bubbles: true });
         Object.defineProperty(event, 'currentTarget', { value: editBtn });
@@ -212,7 +217,6 @@ export async function runTaskEventsTests(resultsDiv) {
 
         // Clean up
         document.body.removeChild(taskItem);
-        delete window.taskCore;
 
         if (taskItem.getAttribute('data-edited') !== 'true') {
             throw new Error('Edit button not processed correctly');
@@ -220,20 +224,21 @@ export async function runTaskEventsTests(resultsDiv) {
     });
 
     await test('handleTaskButtonClick processes delete button', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
 
         const deleteBtn = taskItem.querySelector('.delete-btn');
 
-        // Mock taskCore
-        window.taskCore = {
-            deleteTask: (item) => {
-                item.setAttribute('data-deleted', 'true');
+        // DI-pure: inject taskCore via setTaskEventsDependencies
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            taskCore: {
+                deleteTask: (item) => {
+                    item.setAttribute('data-deleted', 'true');
+                }
             }
-        };
+        });
+        const events = new TaskEvents({});
 
         const event = new MouseEvent('click', { bubbles: true });
         Object.defineProperty(event, 'currentTarget', { value: deleteBtn });
@@ -243,7 +248,6 @@ export async function runTaskEventsTests(resultsDiv) {
 
         // Clean up
         document.body.removeChild(taskItem);
-        delete window.taskCore;
 
         if (taskItem.getAttribute('data-deleted') !== 'true') {
             throw new Error('Delete button not processed correctly');
@@ -251,20 +255,21 @@ export async function runTaskEventsTests(resultsDiv) {
     });
 
     await test('handleTaskButtonClick processes priority button', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
 
         const priorityBtn = taskItem.querySelector('.priority-btn');
 
-        // Mock taskCore
-        window.taskCore = {
-            toggleTaskPriority: (item) => {
-                item.setAttribute('data-priority-toggled', 'true');
+        // DI-pure: inject taskCore via setTaskEventsDependencies
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            taskCore: {
+                toggleTaskPriority: (item) => {
+                    item.setAttribute('data-priority-toggled', 'true');
+                }
             }
-        };
+        });
+        const events = new TaskEvents({});
 
         const event = new MouseEvent('click', { bubbles: true });
         Object.defineProperty(event, 'currentTarget', { value: priorityBtn });
@@ -274,7 +279,6 @@ export async function runTaskEventsTests(resultsDiv) {
 
         // Clean up
         document.body.removeChild(taskItem);
-        delete window.taskCore;
 
         if (taskItem.getAttribute('data-priority-toggled') !== 'true') {
             throw new Error('Priority button not processed correctly');
@@ -329,14 +333,11 @@ export async function runTaskEventsTests(resultsDiv) {
     });
 
     await test('revealTaskButtons shows task options', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
         // Enable three-dots mode so 'three-dots-button' caller is allowed
         document.body.classList.add('show-three-dots-enabled');
 
-        // Mock the TaskOptionsVisibilityController
-        window.TaskOptionsVisibilityController = {
+        // DI-pure: inject TaskOptionsVisibilityController via setTaskEventsDependencies
+        const mockController = {
             show: (item, caller) => {
                 const opts = item.querySelector('.task-options');
                 if (opts) {
@@ -352,6 +353,12 @@ export async function runTaskEventsTests(resultsDiv) {
                 }
             }
         };
+
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            TaskOptionsVisibilityController: mockController
+        });
+        const events = new TaskEvents({});
 
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
@@ -367,20 +374,16 @@ export async function runTaskEventsTests(resultsDiv) {
         }
 
         // Clean up
-        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem);
         document.body.classList.remove('show-three-dots-enabled');
     });
 
     await test('revealTaskButtons toggles options visibility', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
         // Enable three-dots mode so 'three-dots-button' caller is allowed
         document.body.classList.add('show-three-dots-enabled');
 
-        // Mock the TaskOptionsVisibilityController
-        window.TaskOptionsVisibilityController = {
+        // DI-pure: inject TaskOptionsVisibilityController via setTaskEventsDependencies
+        const mockController = {
             show: (item, caller) => {
                 const opts = item.querySelector('.task-options');
                 if (opts) {
@@ -396,6 +399,12 @@ export async function runTaskEventsTests(resultsDiv) {
                 }
             }
         };
+
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            TaskOptionsVisibilityController: mockController
+        });
+        const events = new TaskEvents({});
 
         const taskItem1 = createMockTaskItem({ id: 'task-1' });
         const taskItem2 = createMockTaskItem({ id: 'task-2' });
@@ -433,7 +442,6 @@ export async function runTaskEventsTests(resultsDiv) {
         // So we don't check arrow visibility here
 
         // Clean up
-        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem1);
         document.body.removeChild(taskItem2);
         document.body.classList.remove('show-three-dots-enabled');
@@ -547,21 +555,22 @@ export async function runTaskEventsTests(resultsDiv) {
     });
 
     await test('setupTaskFocusInteractions attaches focus handler', () => {
-        const deps = createMockDependencies();
-        const events = new TaskEvents(deps);
-
         const taskItem = createMockTaskItem();
         taskItem.setAttribute('tabindex', '0');
         document.body.appendChild(taskItem);
 
-        // Mock the TaskOptionsVisibilityController
-        window.TaskOptionsVisibilityController = {
-            show: (item, caller) => {
-                const opts = item.querySelector('.task-options');
-                opts.style.visibility = 'visible';
-                opts.style.opacity = '1';
+        // DI-pure: inject TaskOptionsVisibilityController via setTaskEventsDependencies
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            TaskOptionsVisibilityController: {
+                show: (item, caller) => {
+                    const opts = item.querySelector('.task-options');
+                    opts.style.visibility = 'visible';
+                    opts.style.opacity = '1';
+                }
             }
-        };
+        });
+        const events = new TaskEvents({});
 
         events.setupTaskFocusInteractions(taskItem);
 
@@ -575,7 +584,6 @@ export async function runTaskEventsTests(resultsDiv) {
         }
 
         // Clean up
-        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem);
     });
 
@@ -619,20 +627,21 @@ export async function runTaskEventsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
 
     await test('Global handleTaskButtonClick wrapper works', () => {
-        const deps = createMockDependencies();
-        const events = initTaskEvents(deps);
-
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
 
         const editBtn = taskItem.querySelector('.edit-btn');
 
-        // Mock taskCore
-        window.taskCore = {
-            editTask: (item) => {
-                item.setAttribute('data-edited', 'true');
+        // DI-pure: inject taskCore via setTaskEventsDependencies
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            taskCore: {
+                editTask: (item) => {
+                    item.setAttribute('data-edited', 'true');
+                }
             }
-        };
+        });
+        initTaskEvents({});
 
         const event = new MouseEvent('click', { bubbles: true });
         Object.defineProperty(event, 'currentTarget', { value: editBtn });
@@ -642,7 +651,6 @@ export async function runTaskEventsTests(resultsDiv) {
 
         // Clean up
         document.body.removeChild(taskItem);
-        delete window.taskCore;
 
         if (taskItem.getAttribute('data-edited') !== 'true') {
             throw new Error('Global wrapper did not call handleTaskButtonClick');
@@ -650,29 +658,30 @@ export async function runTaskEventsTests(resultsDiv) {
     });
 
     await test('Global revealTaskButtons wrapper works', () => {
-        const deps = createMockDependencies();
-        const events = initTaskEvents(deps);
-
         // Enable three-dots mode so 'three-dots-button' caller is allowed
         document.body.classList.add('show-three-dots-enabled');
 
-        // Mock the TaskOptionsVisibilityController
-        window.TaskOptionsVisibilityController = {
-            show: (item, caller) => {
-                const opts = item.querySelector('.task-options');
-                if (opts) {
-                    opts.style.visibility = 'visible';
-                    opts.style.opacity = '1';
-                }
-            },
-            hide: (item, caller) => {
-                const opts = item.querySelector('.task-options');
-                if (opts) {
-                    opts.style.visibility = 'hidden';
-                    opts.style.opacity = '0';
+        // DI-pure: inject TaskOptionsVisibilityController via setTaskEventsDependencies
+        setTaskEventsDependencies({
+            ...createMockDependencies(),
+            TaskOptionsVisibilityController: {
+                show: (item, caller) => {
+                    const opts = item.querySelector('.task-options');
+                    if (opts) {
+                        opts.style.visibility = 'visible';
+                        opts.style.opacity = '1';
+                    }
+                },
+                hide: (item, caller) => {
+                    const opts = item.querySelector('.task-options');
+                    if (opts) {
+                        opts.style.visibility = 'hidden';
+                        opts.style.opacity = '0';
+                    }
                 }
             }
-        };
+        });
+        initTaskEvents({});
 
         const taskItem = createMockTaskItem();
         document.body.appendChild(taskItem);
@@ -685,7 +694,6 @@ export async function runTaskEventsTests(resultsDiv) {
         }
 
         // Clean up
-        delete window.TaskOptionsVisibilityController;
         document.body.removeChild(taskItem);
         document.body.classList.remove('show-three-dots-enabled');
     });

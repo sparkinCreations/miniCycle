@@ -700,24 +700,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         await manager.updateCycleModeDescription();
     });
 
-    // === GLOBAL COMPATIBILITY TESTS ===
-    resultsDiv.innerHTML += '<h4 class="test-section">🌍 Global Wrappers (Backward Compat)</h4>';
-
-    await test('window.ModeManager exists (backward compat)', async () => {
-        if (!window.ModeManager) {
-            throw new Error('Global ModeManager class not found');
-        }
-    });
-
-    await test('window.modeManager instance exists (backward compat)', async () => {
-        if (!window.modeManager) {
-            throw new Error('Global modeManager instance not found');
-        }
-        if (typeof window.modeManager.getModeName !== 'function') {
-            throw new Error('Global instance missing methods');
-        }
-    });
-
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance Tests (DI)</h4>';
 

@@ -13,6 +13,9 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
+// Import setRemindersDependencies for DI-pure testing
+import { setRemindersDependencies } from '../modules/features/reminders.js';
+
 export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Reminders Module Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -134,26 +137,29 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                 // Clear test container
                 testContainer.innerHTML = '';
 
-                // Mock AppState for tests that need it
-                window.AppState = {
-                    isReady: () => true,
-                    get: () => mockSchemaData,
-                    update: (fn) => {
-                        fn(mockSchemaData);
-                        localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
-                    }
+                // DI-pure: inject dependencies via setRemindersDependencies
+                const mockAppGlobalState = {
+                    reminderTimeoutId: null,
+                    timesReminded: 0,
+                    lastReminderTime: null
                 };
+
+                // createMockAppState expects a storage key string, not the data object
+                // Data is already in localStorage from line 135
+                const mockAppState = createMockAppState('miniCycleData');
+
+                setRemindersDependencies({
+                    AppState: mockAppState,
+                    AppGlobalState: mockAppGlobalState,
+                    showNotification: () => {},
+                    loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
+                });
+
+                // Keep window.AppGlobalState for tests that access it directly
+                window.AppGlobalState = mockAppGlobalState;
 
                 // Clear reminder manager instance
                 delete window.reminderManager;
-
-                // Ensure AppGlobalState exists and is reset
-                if (!window.AppGlobalState) {
-                    window.AppGlobalState = {};
-                }
-                window.AppGlobalState.reminderIntervalId = null;
-                window.AppGlobalState.timesReminded = 0;
-                window.AppGlobalState.lastReminderTime = null;
 
                 await testFn();
                 resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
@@ -188,10 +194,12 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('has correct version', async () => {
-            const instance = new MiniCycleReminders();
-            // Check version exists and is in semver format
-            if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
-                throw new Error(`Expected valid semver version, got ${instance.version}`);
+            const instance = new MiniCycleReminders({
+                AppMeta: { version: '1.0.0' }
+            });
+            // Check version exists and is in semver format (reminders uses currentVersion getter)
+            if (!instance.currentVersion || !/^\d+\.\d+(\.\d+)?$/.test(instance.currentVersion)) {
+                throw new Error(`Expected valid semver version, got ${instance.currentVersion}`);
             }
         });
 
@@ -215,25 +223,12 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             enableReminders.id = 'enableReminders';
             enableReminders.checked = true;
 
-            // Create mock AppState that works with DI
-            const mockAppState = {
-                isReady: () => true,
-                get: () => JSON.parse(localStorage.getItem('miniCycleData')),
-                update: async (fn, shouldSave) => {
-                    const data = JSON.parse(localStorage.getItem('miniCycleData'));
-                    fn(data);
-                    data.metadata.lastModified = Date.now();
-                    localStorage.setItem('miniCycleData', JSON.stringify(data));
-                }
-            };
-
+            // Test wrapper already injected DI dependencies
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 getElementById: (id) => {
                     if (id === 'enableReminders') return enableReminders;
                     return null;
-                },
-                AppState: mockAppState
+                }
             });
 
             const enabled = await instance.autoSaveReminders();
@@ -251,9 +246,8 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('saveTaskReminderState updates task in Schema 2.5', async () => {
-            const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
-            });
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders();
 
             await instance.saveTaskReminderState('task-1', true);
 
@@ -278,7 +272,9 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('startReminders sets up interval when enabled', async () => {
-            const instance = new MiniCycleReminders({
+            // DI-pure: update the module-level deps with custom loadMiniCycleData
+            // Test wrapper already set basic deps, now override loadMiniCycleData for this test
+            setRemindersDependencies({
                 loadMiniCycleData: () => ({
                     reminders: {
                         enabled: true,
@@ -286,7 +282,10 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                         frequencyValue: 1,
                         frequencyUnit: 'minutes'
                     }
-                }),
+                })
+            });
+
+            const instance = new MiniCycleReminders({
                 querySelectorAll: () => []
             });
 
@@ -301,7 +300,8 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('startReminders does not start when disabled', async () => {
-            const instance = new MiniCycleReminders({
+            // DI-pure: update the module-level deps with custom loadMiniCycleData
+            setRemindersDependencies({
                 loadMiniCycleData: () => ({
                     reminders: {
                         enabled: false,
@@ -310,6 +310,8 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                     }
                 })
             });
+
+            const instance = new MiniCycleReminders();
 
             await instance.startReminders();
 
@@ -322,8 +324,8 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         resultsDiv.innerHTML += '<h4>💾 Schema 2.5 Storage</h4>';
 
         await test('saves reminder settings to customReminders location', async () => {
+            // Test wrapper already injected DI dependencies
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 getElementById: (id) => {
                     if (id === 'enableReminders') {
                         const checkbox = document.createElement('input');
@@ -344,7 +346,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
                 }
             });
 
-            instance.autoSaveReminders();
+            await instance.autoSaveReminders();
 
             const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
 
@@ -363,26 +365,13 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            // Create mock AppState that works with DI
-            const mockAppState = {
-                isReady: () => true,
-                get: () => JSON.parse(localStorage.getItem('miniCycleData')),
-                update: async (fn, shouldSave) => {
-                    const data = JSON.parse(localStorage.getItem('miniCycleData'));
-                    fn(data);
-                    data.metadata.lastModified = Date.now();
-                    localStorage.setItem('miniCycleData', JSON.stringify(data));
-                }
-            };
-
+            // Test wrapper already injected DI dependencies
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 getElementById: () => {
                     const checkbox = document.createElement('input');
                     checkbox.checked = true;
                     return checkbox;
-                },
-                AppState: mockAppState
+                }
             });
 
             await instance.autoSaveReminders();
@@ -395,26 +384,13 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('stores reminder start time when enabling', async () => {
-            // Create mock AppState that works with DI
-            const mockAppState = {
-                isReady: () => true,
-                get: () => JSON.parse(localStorage.getItem('miniCycleData')),
-                update: async (fn, shouldSave) => {
-                    const data = JSON.parse(localStorage.getItem('miniCycleData'));
-                    fn(data);
-                    data.metadata.lastModified = Date.now();
-                    localStorage.setItem('miniCycleData', JSON.stringify(data));
-                }
-            };
-
+            // Test wrapper already injected DI dependencies
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 getElementById: () => {
                     const checkbox = document.createElement('input');
                     checkbox.checked = true;
                     return checkbox;
-                },
-                AppState: mockAppState
+                }
             });
 
             await instance.autoSaveReminders();
@@ -514,15 +490,14 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             frequencySection.id = 'frequency-section';
             frequencySection.classList.add('hidden');
 
+            // Test wrapper already injected DI dependencies
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 getElementById: (id) => {
                     if (id === 'enableReminders') return enableReminders;
                     if (id === 'frequency-section') return frequencySection;
                     return null;
                 },
-                querySelectorAll: () => [],
-                showNotification: () => {}
+                querySelectorAll: () => []
             });
 
             await instance.handleReminderToggle();
@@ -578,9 +553,8 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
 
         await test('saveTaskReminderState completes within reasonable time', async () => {
-            const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData'))
-            });
+            // Test wrapper already injected DI dependencies
+            const instance = new MiniCycleReminders();
 
             const startTime = performance.now();
             await instance.saveTaskReminderState('task-1', true);
@@ -594,25 +568,13 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         });
 
         await test('autoSaveReminders completes within reasonable time', async () => {
-            // Create mock AppState that works with DI
-            const mockAppState = {
-                isReady: () => true,
-                get: () => JSON.parse(localStorage.getItem('miniCycleData')),
-                update: async (fn, shouldSave) => {
-                    const data = JSON.parse(localStorage.getItem('miniCycleData'));
-                    fn(data);
-                    localStorage.setItem('miniCycleData', JSON.stringify(data));
-                }
-            };
-
+            // Test wrapper already injected DI dependencies
             const instance = new MiniCycleReminders({
-                loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
                 getElementById: () => {
                     const checkbox = document.createElement('input');
                     checkbox.checked = true;
                     return checkbox;
-                },
-                AppState: mockAppState
+                }
             });
 
             const startTime = performance.now();

@@ -179,17 +179,22 @@ export async function runThemeManagerTests(resultsDiv) {
     });
 
     await test('saves theme to localStorage', async () => {
-        const tm = new ThemeManager();
+        // Set up localStorage first
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
             settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // Re-inject mock AppState to ensure it's available for this test
+        // Create mock AppState that reads/writes to localStorage
+        const mockAppState = createMockAppState();
+
+        // Inject mock AppState before creating ThemeManager
         setThemeManagerDependencies({
-            AppState: createMockAppState()
+            AppState: mockAppState
         });
+
+        const tm = new ThemeManager();
 
         // Directly call saveSchemaData to test the save functionality
         const schemaData = tm.loadSchemaData();
@@ -227,17 +232,22 @@ export async function runThemeManagerTests(resultsDiv) {
     });
 
     await test('saves dark mode to localStorage', async () => {
-        const tm = new ThemeManager();
+        // Set up localStorage first
         const mockData = {
             metadata: { version: "2.5", lastModified: Date.now() },
             settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
         };
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // Re-inject mock AppState to ensure it's available for this test
+        // Create mock AppState that reads/writes to localStorage
+        const mockAppState = createMockAppState();
+
+        // Inject mock AppState before creating ThemeManager
         setThemeManagerDependencies({
-            AppState: createMockAppState()
+            AppState: mockAppState
         });
+
+        const tm = new ThemeManager();
 
         // Directly call saveSchemaData to test the save functionality
         const schemaData = tm.loadSchemaData();
@@ -300,19 +310,22 @@ export async function runThemeManagerTests(resultsDiv) {
     });
 
     await test('saveSchemaData updates lastModified', async () => {
-        const tm = new ThemeManager();
+        // Set up localStorage first
         const mockData = {
             metadata: { version: "2.5", lastModified: 0 },
             settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
         };
-
-        // Need to set up localStorage first since saveSchemaData reads from it
         localStorage.setItem('miniCycleData', JSON.stringify(mockData));
 
-        // Re-inject mock AppState to ensure it's available for this test
+        // Create mock AppState that reads/writes to localStorage
+        const mockAppState = createMockAppState();
+
+        // Inject mock AppState before creating ThemeManager
         setThemeManagerDependencies({
-            AppState: createMockAppState()
+            AppState: mockAppState
         });
+
+        const tm = new ThemeManager();
 
         // saveSchemaData is now async
         await tm.saveSchemaData(mockData);

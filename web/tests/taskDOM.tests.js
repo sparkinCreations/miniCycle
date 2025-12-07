@@ -37,7 +37,8 @@ export async function runTaskDOMTests(resultsDiv) {
     const getDefaultDeps = () => ({
         sanitizeInput: window.sanitizeInput || createMockSanitizeInput(),
         showNotification: () => {},
-        AppState: createMockAppState()
+        AppState: createMockAppState(),
+        AppMeta: { version: '1.0.0' }
     });
 
     resultsDiv.innerHTML = '<h2>🎨 TaskDOM Tests</h2><h3>Running tests...</h3>';

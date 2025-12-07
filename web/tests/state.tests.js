@@ -102,7 +102,9 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('sets correct version', () => {
-        const state = createStateManager();
+        const state = createStateManager({
+            AppMeta: { version: '1.0.0' }
+        });
 
         // Check version exists and is in semver format (X.Y or X.Y.Z)
         if (!state.version || !/^\d+\.\d+(\.\d+)?$/.test(state.version)) {

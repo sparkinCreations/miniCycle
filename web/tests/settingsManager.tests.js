@@ -139,7 +139,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     test('has correct version', () => {
-        const instance = new SettingsManager();
+        const instance = new SettingsManager({
+            AppMeta: { version: '1.0.0' }
+        });
         // Check version exists and is in semver format (X.Y or X.Y.Z)
         if (!instance.version || !/^\d+\.\d+(\.\d+)?$/.test(instance.version)) {
             throw new Error(`Expected valid semver version, got ${instance.version}`);
