@@ -1,6 +1,12 @@
 /**
  * Automated Browser Test Runner
  * Uses Playwright to run the existing browser test suite
+ *
+ * Usage:
+ *   npm test                     # Run all tests
+ *   npm test -- cycleManager     # Run single module
+ *   npm test -- task             # Run all modules matching "task"
+ *   npm test -- --list           # List all available modules
  */
 
 const { chromium } = require('playwright');
@@ -12,11 +18,65 @@ const colors = {
     red: '\x1b[31m',
     yellow: '\x1b[33m',
     blue: '\x1b[34m',
-    cyan: '\x1b[36m'
+    cyan: '\x1b[36m',
+    magenta: '\x1b[35m'
 };
 
-// Test modules to run (36 modules - matches browser "Run All Tests")
-const modules = ['integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel', 'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel', 'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates', 'reminders', 'modeManager', 'cycleSwitcher', 'cycleManager', 'undoRedoManager', 'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer', 'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler', 'testingModal'];
+// All available test modules (36 modules - matches browser "Run All Tests")
+const ALL_MODULES = [
+    'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
+    'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
+    'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates',
+    'reminders', 'modeManager', 'cycleSwitcher', 'cycleManager', 'undoRedoManager',
+    'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager',
+    'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
+    'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler',
+    'testingModal'
+];
+
+// Parse command line arguments
+function parseArgs() {
+    const args = process.argv.slice(2);
+
+    // Check for --list flag
+    if (args.includes('--list') || args.includes('-l')) {
+        console.log(`\n${colors.blue}Available test modules (${ALL_MODULES.length}):${colors.reset}\n`);
+        ALL_MODULES.forEach((mod, i) => {
+            console.log(`  ${colors.cyan}${(i + 1).toString().padStart(2)}.${colors.reset} ${mod}`);
+        });
+        console.log(`\n${colors.yellow}Usage:${colors.reset}`);
+        console.log(`  npm test                     ${colors.cyan}# Run all tests${colors.reset}`);
+        console.log(`  npm test -- cycleManager     ${colors.cyan}# Run single module${colors.reset}`);
+        console.log(`  npm test -- task             ${colors.cyan}# Run all modules matching "task"${colors.reset}`);
+        console.log(`  npm test -- --list           ${colors.cyan}# Show this list${colors.reset}\n`);
+        process.exit(0);
+    }
+
+    // Filter out flags, get module filter
+    const moduleFilter = args.filter(arg => !arg.startsWith('-'))[0];
+
+    if (!moduleFilter) {
+        return ALL_MODULES; // Run all
+    }
+
+    // Find matching modules (case-insensitive partial match)
+    const lowerFilter = moduleFilter.toLowerCase();
+    const matchingModules = ALL_MODULES.filter(mod =>
+        mod.toLowerCase().includes(lowerFilter)
+    );
+
+    if (matchingModules.length === 0) {
+        console.error(`${colors.red}❌ No modules match "${moduleFilter}"${colors.reset}`);
+        console.log(`\n${colors.yellow}Available modules:${colors.reset} ${ALL_MODULES.join(', ')}`);
+        console.log(`\nRun ${colors.cyan}npm test -- --list${colors.reset} to see all modules.\n`);
+        process.exit(1);
+    }
+
+    return matchingModules;
+}
+
+// Get modules to test based on CLI args
+const modules = parseArgs();
 
 async function runModuleTests(page, moduleName) {
     console.log(`\n${colors.cyan}🧪 Testing ${moduleName}...${colors.reset}`);
@@ -100,8 +160,13 @@ async function runModuleTests(page, moduleName) {
 }
 
 async function runAllTests() {
+    const isFiltered = modules.length < ALL_MODULES.length;
+    const headerText = isFiltered
+        ? `🧪 Testing ${modules.length} module${modules.length > 1 ? 's' : ''}: ${modules.join(', ')}`
+        : '🚀 miniCycle Automated Test Suite';
+
     console.log(`${colors.blue}${'='.repeat(60)}${colors.reset}`);
-    console.log(`${colors.blue}🚀 miniCycle Automated Test Suite${colors.reset}`);
+    console.log(`${colors.blue}${headerText}${colors.reset}`);
     console.log(`${colors.blue}${'='.repeat(60)}${colors.reset}`);
 
     const startTime = Date.now();

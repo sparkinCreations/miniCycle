@@ -1,6 +1,6 @@
 # Automated Browser Test Suite
 
-**Playwright-powered automation for 980 browser tests with Strict Dependency Injection.**
+**Playwright-powered automation for 1093 browser tests with Strict Dependency Injection.**
 
 ---
 
@@ -17,30 +17,37 @@ npx playwright install chromium
 
 ### Run Automated Tests
 
-**Recommended (npm script):**
+**Run all tests:**
 
 ```bash
-cd /path/to/miniCycle/web
 npm test
 ```
 
-**Manual Two-Terminal Method:**
+**Run a single module:**
 
 ```bash
-# Terminal 1: Start HTTP server
-cd /path/to/miniCycle/web
-python3 -m http.server 8080
+npm test -- cycleManager        # Run only cycleManager tests
+npm test -- taskCore            # Run only taskCore tests
+```
 
-# Terminal 2: Run automated tests
-cd /path/to/miniCycle/web
-node tests/automated/run-browser-tests.js
+**Run multiple matching modules:**
+
+```bash
+npm test -- task                # Runs taskCore, taskValidation, taskUtils, etc.
+npm test -- recurring           # Runs recurringCore, recurringIntegration, recurringPanel
+```
+
+**List all available modules:**
+
+```bash
+npm test -- --list
 ```
 
 ### Run Manual Tests (Visual)
 
 ```bash
 # Start server
-python3 -m http.server 8080
+npm run test:manual
 
 # Open in browser
 # http://localhost:8080/tests/module-test-suite.html
@@ -50,7 +57,7 @@ python3 -m http.server 8080
 
 ## 📊 Current Test Coverage
 
-The automated runner tests **32 modules** with **980 tests total**:
+The automated runner tests **36 modules** with **1093 tests total**:
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -58,20 +65,22 @@ The automated runner tests **32 modules** with **980 tests total**:
 | themeManager | 15 | menuManager | 25 |
 | deviceDetection | 13 | settingsManager | 24 |
 | cycleLoader | 10 | pullToRefresh | 18 |
-| consoleCapture | 32 | taskCore | 33 |
-| state | 40 | taskValidation | 25 |
-| recurringCore | 99 | taskUtils | 22 |
-| recurringIntegration | 17 | taskRenderer | 16 |
-| recurringPanel | 57 | taskEvents | 13 |
-| globalUtils | 36 | taskDOM | 45 |
+| statsPanel | 24 | taskCore | 33 |
+| consoleCapture | 32 | taskValidation | 25 |
+| state | 40 | taskUtils | 22 |
+| recurringCore | 99 | taskRenderer | 16 |
+| recurringIntegration | 17 | taskEvents | 13 |
+| recurringPanel | 57 | taskDOM | 45 |
+| globalUtils | 36 | taskOptionsCustomizer | 27 |
 | notifications | 35 | xss-vulnerability | 25 |
 | dragDropManager | 55 | errorHandler | 34 |
 | migrationManager | 38 | testingModal | 27 |
 | dueDates | 16 | onboardingManager | 32 |
 | reminders | 4 | gamesManager | 21 |
-| cycleSwitcher | 20 | undoRedoManager | 73 |
+| modeManager | 27 | undoRedoManager | 73 |
+| cycleSwitcher | 20 | cycleManager | 35 |
 
-**Total: 980 tests across 32 modules**
+**Total: 1093 tests across 36 modules**
 
 ---
 
@@ -472,9 +481,12 @@ if (failedTests > 0) {
 
 ### 3. Test Single Module
 
-```javascript
-// Temporarily modify modules array
-const modules = ['statsPanel'];  // Test only statsPanel
+```bash
+# Use command line argument (recommended)
+npm test -- statsPanel
+
+# Or test multiple matching modules
+npm test -- task    # All task* modules
 ```
 
 ### 4. Add Test Timing
@@ -498,8 +510,9 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ✅ **Strict DI** - All modules use dependency injection
 ✅ **testHelpers.js** - Shared mocks for consistency
 ✅ **Clean repository** - No dependency bloat
-✅ **980 tests** - Comprehensive coverage
-✅ **32 modules** - All core functionality tested
+✅ **1093 tests** - Comprehensive coverage
+✅ **36 modules** - All core functionality tested
+✅ **CLI filtering** - Test single modules or patterns
 
 **No build step. No configuration. Just works.** 🚀
 
@@ -515,4 +528,4 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ---
 
 **Last Updated**: December 2024
-**Test Coverage**: 980 tests across 32 modules (100%)
+**Test Coverage**: 1093 tests across 36 modules (100%)

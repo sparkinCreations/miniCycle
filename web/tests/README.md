@@ -4,29 +4,37 @@
 
 ## Current Status
 
-**980 tests | 32 modules | 100% pass rate**
+**1093 tests | 36 modules | 100% pass rate**
 
+## Quick Start
+
+### Run All Tests
 ```bash
 npm test
 ```
 
-## Quick Start
+### Run Single Module (Fast!)
+```bash
+npm test -- cycleManager        # Test only cycleManager
+npm test -- taskCore            # Test only taskCore
+```
 
-1. **Start the server:**
-   ```bash
-   cd web
-   python3 -m http.server 8080
-   ```
+### Run Pattern Match
+```bash
+npm test -- task                # All task* modules (taskCore, taskDOM, etc.)
+npm test -- recurring           # All recurring* modules
+```
 
-2. **Run automated tests:**
-   ```bash
-   npm test
-   ```
+### List Available Modules
+```bash
+npm test -- --list
+```
 
-3. **Or run manual browser tests:**
-   ```
-   Open: http://localhost:8080/tests/module-test-suite.html
-   ```
+### Manual Browser Tests
+```bash
+npm run test:manual
+# Then open: http://localhost:8080/tests/module-test-suite.html
+```
 
 ## Documentation
 
@@ -126,7 +134,7 @@ Some tests are skipped in automated testing due to Playwright environment limita
 
 See comments in test files marked with `// NOTE:` for specific exclusions.
 
-## Module Coverage (32 modules, 980 tests)
+## Module Coverage (36 modules, 1093 tests)
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -134,18 +142,20 @@ See comments in test files marked with `// NOTE:` for specific exclusions.
 | themeManager | 15 | menuManager | 25 |
 | deviceDetection | 13 | settingsManager | 24 |
 | cycleLoader | 10 | pullToRefresh | 18 |
-| consoleCapture | 32 | taskCore | 33 |
-| state | 40 | taskValidation | 25 |
-| recurringCore | 99 | taskUtils | 22 |
-| recurringIntegration | 17 | taskRenderer | 16 |
-| recurringPanel | 57 | taskEvents | 13 |
-| globalUtils | 36 | taskDOM | 45 |
+| statsPanel | 24 | taskCore | 33 |
+| consoleCapture | 32 | taskValidation | 25 |
+| state | 40 | taskUtils | 22 |
+| recurringCore | 99 | taskRenderer | 16 |
+| recurringIntegration | 17 | taskEvents | 13 |
+| recurringPanel | 57 | taskDOM | 45 |
+| globalUtils | 36 | taskOptionsCustomizer | 27 |
 | notifications | 35 | xss-vulnerability | 25 |
 | dragDropManager | 55 | errorHandler | 34 |
 | migrationManager | 38 | testingModal | 27 |
 | dueDates | 16 | onboardingManager | 32 |
 | reminders | 4 | gamesManager | 21 |
-| cycleSwitcher | 20 | undoRedoManager | 73 |
+| modeManager | 27 | undoRedoManager | 73 |
+| cycleSwitcher | 20 | cycleManager | 35 |
 
 ## Adding New Tests
 
@@ -176,4 +186,4 @@ All test files protect your real app data:
 ---
 
 **Last Updated:** December 2024
-**Test Coverage:** 980 tests across 32 modules (100%)
+**Test Coverage:** 1093 tests across 36 modules (100%)
