@@ -4,7 +4,7 @@
 
 ## Current Status
 
-**1093 tests | 36 modules | 100% pass rate**
+**1203 tests | 39 modules | 100% pass rate**
 
 ## Quick Start
 
@@ -134,7 +134,7 @@ Some tests are skipped in automated testing due to Playwright environment limita
 
 See comments in test files marked with `// NOTE:` for specific exclusions.
 
-## Module Coverage (36 modules, 1093 tests)
+## Module Coverage (39 modules, 1203 tests)
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -156,6 +156,8 @@ See comments in test files marked with `// NOTE:` for specific exclusions.
 | reminders | 4 | gamesManager | 21 |
 | modeManager | 27 | undoRedoManager | 73 |
 | cycleSwitcher | 20 | cycleManager | 35 |
+| backupManager | 31 | cycleCompletion | 25 |
+| dataValidator | 54 | | |
 
 ## Adding New Tests
 
@@ -186,4 +188,4 @@ All test files protect your real app data:
 ---
 
 **Last Updated:** December 2024
-**Test Coverage:** 1093 tests across 36 modules (100%)
+**Test Coverage:** 1203 tests across 39 modules (100%)

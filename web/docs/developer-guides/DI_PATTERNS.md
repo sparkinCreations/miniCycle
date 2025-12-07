@@ -423,3 +423,12 @@ These are pure utilities or static configuration with no dependencies:
 - [CLAUDE.md](./CLAUDE.md) - Main developer guide
 - [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) - System architecture
 - [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) - Detailed DI implementation example
+
+
+  ---
+  Priority candidates for new tests:
+  1. backupManager - Critical for data safety
+  2. cycleCompletion - Core cycle logic
+  3. dataValidator - Data integrity
+  4. appInit - App initialization
+  5. helpWindowManager - UI component

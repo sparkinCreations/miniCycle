@@ -22,7 +22,7 @@ const colors = {
     magenta: '\x1b[35m'
 };
 
-// All available test modules (36 modules - matches browser "Run All Tests")
+// All available test modules (39 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
@@ -31,7 +31,7 @@ const ALL_MODULES = [
     'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager',
     'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler',
-    'testingModal'
+    'testingModal', 'backupManager', 'cycleCompletion', 'dataValidator'
 ];
 
 // Parse command line arguments
@@ -200,6 +200,15 @@ async function runAllTests() {
     // Run tests for each module
     for (const module of modules) {
         const page = await context.newPage();
+        // Log console errors for debugging
+        page.on('console', msg => {
+            if (msg.type() === 'error') {
+                console.log(`   ${colors.red}Console error: ${msg.text()}${colors.reset}`);
+            }
+        });
+        page.on('pageerror', error => {
+            console.log(`   ${colors.red}Page error: ${error.message}${colors.reset}`);
+        });
         // Disable cache for this page to ensure fresh module loads
         await page.route('**/*', async (route) => {
             await route.continue({ headers: { ...route.request().headers(), 'Cache-Control': 'no-cache' } });
