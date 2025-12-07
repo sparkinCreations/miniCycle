@@ -34,69 +34,85 @@ npm run test:coverage        # Coverage report
 
 ---
 
-## Architecture: The Honest Assessment
+## Architecture: Strict Dependency Injection
 
-### Current State (December 5, 2025 - Verified)
+### Current State (December 6, 2025 - Verified)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
-| Main script | ~3,700 lines | ~3,800 lines | ~3,500 lines | — |
-| Modules | 43 files | 44 files | — | — |
-| `window.*` globals created (modules/) | ~68 | **27** | <20 | **85%** |
-| `window.*` references (modules/) | ~748 | **~540** | <100 | **32%** |
-| Modules with `set*Dependencies()` | 0 | **27** | All stateful | **Exceeded** |
+| Main script | ~3,700 lines | ~3,800 lines | — | DI wiring hub |
+| Modules | 43 files | **46 files** | — | — |
+| `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
+| `window.*` references (modules/) | ~748 | **~205** | <50 | **73%** |
+| Modules with `set*Dependencies()` | 0 | **40** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| Modules still exporting to `window.*` | ~40 | **13** | 0 | **70%** |
-| **DI-pure modules** | 0 | **26** | All | **~59%** |
+| **All modules use strict DI** | 0 | **46** | All | **100%** ✅ |
 
-### The Reality (Being Improved)
+### Architecture Philosophy
 
-**The codebase HAD DI structure but global coupling. Now transitioning:**
+**All modules use strict dependency injection. No `|| window.*` fallbacks exist in the codebase.**
 
 ```javascript
-// BEFORE: DI pattern with window.* fallbacks
-constructor(dependencies = {}) {
-    this.deps = {
-        AppState: dependencies.AppState || window.AppState,  // ❌ fallback = coupling
-        showNotification: dependencies.showNotification || this.fallback
-    };
+// THE PATTERN: All modules follow this structure
+let _deps = {};
+
+export function setModuleDependencies(dependencies) {
+    // Preserve lazy getters using Object.defineProperties
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
 }
 
-// AFTER: DI-pure (taskDOM, taskCore - NO window.* fallbacks)
-constructor(dependencies = {}) {
-    const mergedDeps = { ...moduleDeps, ...dependencies };
-    this.version = mergedDeps.AppMeta?.version;  // ✅ DI-pure versioning
-    this.deps = {
-        AppState: mergedDeps.AppState || null,     // ✅ no window.* fallback
-        sanitizeInput: mergedDeps.sanitizeInput,   // ✅ no window.* fallback
-        showNotification: mergedDeps.showNotification || this.fallback
-    };
+export class MyModule {
+    constructor(dependencies = {}) {
+        const mergedDeps = { ..._deps, ...dependencies };
+
+        // Required deps - fail fast if missing
+        if (!mergedDeps.AppState) {
+            throw new Error('MyModule requires AppState');
+        }
+
+        this.deps = {
+            AppState: mergedDeps.AppState,           // ✅ No fallback
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            AppMeta: mergedDeps.AppMeta              // ✅ DI-pure versioning
+        };
+    }
 }
 ```
 
-**Progress:** 27 modules use `set*Dependencies()` pattern. **26 modules are fully DI-pure** with no window.* fallbacks (taskCore, taskEvents, notifications, basicPluginSystem, pluginIntegrationGuide, statsPanel, settingsManager, taskOptionsCustomizer, recurringPanel, taskDOM, errorHandler, deviceDetection, reminders, pullToRefresh, taskUtils, testing-modal-integration, dueDates, consoleCapture, cycleLoader, gamesManager, globalUtils, backupManager, menuManager, onboardingManager, modeManager).
+### The Wiring Layer
 
-**DI-Pure Versioning (NEW):** Modules receive version via `AppMeta.version` injection instead of accessing `window.APP_VERSION`. See [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) for patterns.
+`miniCycle-scripts.js` is the **only place** where dependencies are wired:
 
-### Module Communication
+```javascript
+// In miniCycle-scripts.js - THE wiring hub
+const { MyModule, setModuleDependencies } = await import('./modules/path/myModule.js');
 
-- **~60%** via `window.*` globals (down from ~96%)
-- **~40%** via `deps` container + ES6 imports (up from ~4%)
-- **27** modules can accept injected deps with `set*Dependencies()` pattern
+// Wire BEFORE creating instance
+setModuleDependencies({
+    get AppState() { return window.AppState; },  // Lazy getter for late-available deps
+    showNotification: deps.utils.showNotification,
+    AppMeta: window.AppMeta
+});
+
+const myModule = new MyModule();
+```
+
+### Remaining `window.*` Usage
+
+The ~205 `window.*` references in modules are:
+1. **Intentional backward-compat wrappers** in main script (for HTML onclick handlers)
+2. **DOM APIs** like `window.innerWidth`, `window.addEventListener`
+3. **Console/debugging** references being phased out
 
 ### What Works Well
 
+- **Strict DI** - All modules receive dependencies via injection
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - Comprehensive browser-based tests
-
-### What Needs Work
-
-- **Global coupling** - Modules reach for `window.*` everywhere
-- **Invisible dependencies** - Can't see what a module needs from its imports
-- **Untestable in isolation** - Must mock entire `window` object
-- **DI theater** - Pattern exists but doesn't function as true DI
+- **Test coverage** - 1011 tests, 100% passing
+- **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
 
@@ -107,6 +123,7 @@ constructor(dependencies = {}) {
 - Subscriber system for reactive updates
 - 600ms debounced saves to localStorage
 - Schema 2.5 data format
+- **Accessed via injected dependency, not window.AppState**
 
 ### Initialization (`modules/core/appInit.js`)
 - **Phase 1**: Core systems ready (AppState loaded)
@@ -117,18 +134,23 @@ constructor(dependencies = {}) {
 ```javascript
 {
   schemaVersion: 2.5,
-  cycles: {
-    [cycleId]: {
-      name: string,
-      tasks: Task[],
-      cycleCount: number,
-      autoReset: boolean,
-      deleteCheckedTasks: boolean,
-      taskOptionButtons: { /* per-cycle button visibility */ }
+  metadata: { createdAt, lastModified, schemaVersion },
+  settings: { theme, darkMode, onboardingCompleted },
+  data: {
+    cycles: {
+      [cycleId]: {
+        name: string,
+        tasks: Task[],
+        cycleCount: number,
+        autoReset: boolean,
+        deleteCheckedTasks: boolean,
+        taskOptionButtons: { /* per-cycle button visibility */ },
+        recurringTemplates: []
+      }
     }
   },
   appState: { activeCycleId: string },
-  settings: { /* user preferences */ }
+  userProgress: { cyclesCompleted, rewardMilestones }
 }
 ```
 
@@ -147,28 +169,63 @@ constructor(dependencies = {}) {
 ```javascript
 import { appInit } from '../core/appInit.js';
 await appInit.waitForCore();
-// Now safe to access AppState
+// Now safe to use AppState
 ```
 
-**Access state:**
+**Access state (via injected dependency):**
 ```javascript
-const state = window.AppState.get();
+// In a module that receives AppState via DI
+const state = this.deps.AppState.get();
 const activeCycle = state.data.cycles[state.appState.activeCycleId];
 ```
 
 **Update state:**
 ```javascript
-window.AppState.update(state => {
+this.deps.AppState.update(state => {
     state.data.cycles[cycleId].tasks.push(newTask);
 }, true); // true = immediate save
+```
+
+### DI Patterns (Critical)
+
+**1. Use `Object.defineProperties` to preserve lazy getters:**
+```javascript
+export function setModuleDependencies(dependencies) {
+    // WRONG: Spread evaluates getters immediately
+    // _deps = { ..._deps, ...dependencies };
+
+    // RIGHT: Preserves getters for late resolution
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+}
+```
+
+**2. Use instance getter when created before deps available:**
+```javascript
+class MyModule {
+    get deps() {
+        return {
+            AppState: _deps.AppState,  // Reads current value at access time
+            taskCore: _deps.taskCore
+        };
+    }
+}
+```
+
+**3. Wire dependencies BEFORE creating instances:**
+```javascript
+// In miniCycle-scripts.js
+setModuleDependencies({ /* deps */ });  // First!
+const instance = new MyModule();         // Then create
 ```
 
 ### Common Mistakes
 
 1. **Assuming it's a todo app** - It's a routine manager. Tasks persist and cycle.
-2. **Adding features without understanding the vision** - Check if it serves routine management.
-3. **Proposing architecture changes without reading existing docs** - We've tried namespace consolidation already.
-4. **Capturing deps at construction time** - When using late injection with `set*Dependencies()`, use a getter for `this.deps` so values resolve at access time, not construction time. See [DI_PATTERNS.md](./DI_PATTERNS.md#lesson-learned-instance-getter-pattern).
+2. **Adding `|| window.*` fallbacks** - Never add these. Use strict DI.
+3. **Capturing deps at construction time** - Use getter pattern for late-injected deps.
+4. **Using spread operator on deps with getters** - Use `Object.defineProperties` instead.
+5. **Creating instances before wiring deps** - Always wire first, then instantiate.
 
 ---
 
@@ -176,7 +233,7 @@ window.AppState.update(state => {
 
 ### Run Tests
 ```bash
-npm test                    # All tests
+npm test                    # All tests (1011 tests)
 npm run test:watch          # Watch mode
 ```
 
@@ -190,34 +247,31 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ---
 
-## Future Direction
+## Module Organization
 
-### In Progress: True Modular Overhaul (~60-70% complete)
+### Folder Structure (`web/modules/`)
 
-See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full tracking.
+| Folder | Purpose | Modules |
+|--------|---------|---------|
+| `core/` | AppState, appInit (frozen) | 3 |
+| `task/` | Task CRUD, DOM, events, drag-drop | 7 |
+| `cycle/` | Cycle management, switching, migration | 5 |
+| `recurring/` | Recurring task templates and panel | 3 |
+| `ui/` | Modals, menus, settings, onboarding | 9 |
+| `features/` | Themes, stats, reminders, due dates | 4 |
+| `utils/` | Notifications, device detection, utilities | 5 |
+| `storage/` | Backup manager | 1 |
+| `progress/` | Cycle completion tracking | 1 |
+| `testing/` | Test infrastructure | 5 |
+| `other/` | Plugins, experimental | 3 |
 
-**Done:**
-- `deps` container created in miniCycle-scripts.js
-- 31 modules no longer export to `window.*` (70% of modules)
-- 27 modules with `set*Dependencies()` pattern
-- 950+ `this.deps.*` usages across codebase
-- Only 27 `window.*` globals created in modules (85% toward goal)
-- Deferred lookup pattern (`_getAppState()` helper) for circular deps
-- Tests updated for DI patterns (ModalManager, PullToRefresh, GlobalUtils)
-- **DI-pure versioning** - `AppMeta.version` injected, no `window.APP_VERSION` in modules
-- **26 DI-pure modules** - taskCore, taskEvents, notifications, basicPluginSystem, pluginIntegrationGuide, statsPanel, settingsManager, taskOptionsCustomizer, recurringPanel, taskDOM, errorHandler, deviceDetection, reminders, pullToRefresh, taskUtils, testing-modal-integration, dueDates, consoleCapture, cycleLoader, gamesManager, globalUtils, backupManager, menuManager, onboardingManager, modeManager
-- **update-version.sh v4.0** - No longer updates module files
-- **@version JSDoc tags removed** from all modules
+### All Modules Use Strict DI
 
-**Remaining (main bottleneck):**
-- Reduce ~540 `window.*` references in modules to <100 (32% complete)
-- Remove remaining `|| window.*` constructor fallbacks in other modules
-- Audit window.* exposure for minimization
-
-### Not Planned
-
-- ~~Namespace consolidation~~ - Attempted and reverted (Nov 2025)
-- ~~More file splitting without decoupling~~ - Creates more coupled files
+Every module follows this pattern:
+1. Exports `set*Dependencies()` function
+2. Uses `Object.defineProperties` to preserve lazy getters
+3. Receives all dependencies via injection
+4. No `|| window.*` fallbacks
 
 ---
 
@@ -232,15 +286,16 @@ See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for full
 | Lite version | `lite/miniCycle-lite.html` |
 | State management | `modules/core/appState.js` |
 | Initialization | `modules/core/appInit.js` |
+| DI wiring hub | `miniCycle-scripts.js` |
 
 ---
 
 ## Documentation
 
 - **Product vision**: [WHAT_IS_MINICYCLE.md](../user-guides/WHAT_IS_MINICYCLE.md)
-- **Architecture**: [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md)
 - **DI patterns & pitfalls**: [DI_PATTERNS.md](./DI_PATTERNS.md)
-- **DI-pure example**: [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md)
-- **Future plans**: [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md)
+- **Architecture overview**: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
+- **Folder structure**: [FOLDER_STRUCTURE.md](./FOLDER_STRUCTURE.md)
+- **Testing guide**: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 - **Version management**: [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)
 - **All docs**: [README.md](../README.md)

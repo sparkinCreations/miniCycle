@@ -1,16 +1,16 @@
 # Architecture Overview
 
-**Version**: 1.284
-**Last Updated**: November 2025
+**Last Updated**: December 6, 2025
 
 ---
 
 ## Table of Contents
 
-1. [Current Stats](#current-stats-november-2025)
+1. [Current Stats](#current-stats-december-2025)
 2. [Technology Stack](#technology-stack)
-3. [Project Structure](#project-structure-simplified)
-4. [Core Concepts with Real Examples](#core-concepts-with-real-examples)
+3. [Dependency Injection Architecture](#dependency-injection-architecture)
+4. [Project Structure](#project-structure-simplified)
+5. [Core Concepts with Real Examples](#core-concepts-with-real-examples)
    - [Task Cycling System](#1-task-cycling-system)
    - [Centralized State Management](#2-centralized-state-management-appstate)
    - [Recurring Tasks System](#3-recurring-tasks-system)
@@ -20,19 +20,19 @@
 
 ---
 
-## Current Stats (November 2025) - MODULARIZATION COMPLETE!
+## Current Stats (December 2025)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Main Script** | 3,674 lines | Down from 15,677 (74.8% reduction) ✅ |
-| **Modules** | 33 modules | All major systems modularized! |
+| **Main Script** | ~3,800 lines | DI wiring hub |
+| **Modules** | 46 modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
-| **App Version** | 1.284 | Stable production release |
-| **SW Cache** | v82 | Service worker version |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1011 tests across 33 modules |
+| **Test Coverage** | 100% ✅ | 1011 tests across 46 modules |
+| **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
+| **Modules with setters** | 40 | `set*Dependencies()` functions |
 
-**Modularization Complete:** The main script has been reduced by 74.8% (15,677 → 3,674 lines). Optional further optimizations documented in [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) could reduce it an additional 31.8% to ~2,500 lines.
+**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. The main script (`miniCycle-scripts.js`) is the sole wiring hub.
 
 ---
 
@@ -52,11 +52,64 @@ Data:
 └─ Automatic migration system
 
 PWA:
-├─ Service Worker v82
+├─ Service Worker
 ├─ Cache-first strategy
 ├─ Offline functionality
 └─ Install prompts
+
+Architecture:
+├─ Strict Dependency Injection
+├─ Object.defineProperties for lazy getters
+├─ 2-phase initialization (appInit)
+└─ Single wiring hub (miniCycle-scripts.js)
 ```
+
+---
+
+## Dependency Injection Architecture
+
+All modules use strict dependency injection. No `|| window.*` fallbacks exist.
+
+### The Pattern
+
+```javascript
+// Every module follows this structure
+let _deps = {};
+
+export function setModuleDependencies(dependencies) {
+    // Preserve lazy getters
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+}
+
+export class MyModule {
+    constructor(dependencies = {}) {
+        const mergedDeps = { ..._deps, ...dependencies };
+        this.deps = {
+            AppState: mergedDeps.AppState,  // No || window.AppState
+            showNotification: mergedDeps.showNotification || this.fallback
+        };
+    }
+}
+```
+
+### Wiring Hub
+
+`miniCycle-scripts.js` is the **only place** where modules are connected:
+
+```javascript
+// In miniCycle-scripts.js
+const { MyModule, setModuleDependencies } = await import('./modules/myModule.js');
+
+setModuleDependencies({
+    get AppState() { return window.AppState; },  // Lazy getter
+    showNotification: deps.utils.showNotification
+});
+
+const myModule = new MyModule();
+```
+
+See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
 
 ---
 
@@ -65,52 +118,79 @@ PWA:
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-scripts.js             # Core app (3,674 lines) - 74.8% reduction! ✅
+├── miniCycle-scripts.js             # DI wiring hub (~3,800 lines)
 ├── miniCycle-styles.css             # Styles
-├── service-worker.js                # PWA service worker (v82)
+├── service-worker.js                # PWA service worker
 │
-├── utilities/                        # 33 modular components (12,003 lines extracted)
-│   ├── state.js                     # ✅ Centralized state (415 lines)
-│   ├── notifications.js             # ✅ Notifications (1,036 lines)
-│   ├── statsPanel.js                # ✅ Stats panel (1,047 lines)
-│   ├── recurringCore.js             # ✅ Recurring logic (927 lines)
-│   ├── recurringPanel.js            # ✅ Recurring UI (2,219 lines)
-│   ├── recurringIntegration.js      # ✅ Recurring coordination (361 lines)
-│   ├── globalUtils.js               # ✅ Utilities (490 lines)
-│   ├── deviceDetection.js           # ✅ Device detection (353 lines)
-│   ├── consoleCapture.js            # ✅ Debug logging (415 lines)
-│   ├── testing-modal.js             # ✅ Testing UI (2,852 lines)
-│   ├── task/
-│   │   ├── taskCore.js              # ✅ Task CRUD & batch ops (778 lines)
-│   │   ├── taskValidation.js        # ✅ Input validation & sanitization (215 lines)
-│   │   ├── taskUtils.js             # ✅ Task utilities & transformations (370 lines)
-│   │   ├── taskRenderer.js          # ✅ Task rendering & DOM creation (333 lines)
-│   │   ├── taskEvents.js            # ✅ Event handling & interactions (427 lines)
-│   │   ├── taskDOM.js               # ✅ Task DOM coordination (1,108 lines)
-│   │   └── dragDropManager.js       # ✅ Drag & drop (695 lines)
-│   ├── cycle/
-│   │   ├── cycleLoader.js           # ✅ Data loading (273 lines)
-│   │   ├── cycleManager.js          # ✅ Cycle CRUD (431 lines)
-│   │   ├── cycleSwitcher.js         # ✅ Cycle switching (677 lines)
-│   │   ├── modeManager.js           # ✅ Mode management (633 lines)
-│   │   └── migrationManager.js      # ✅ Data migration (850 lines)
-│   ├── ui/
-│   │   ├── settingsManager.js       # ✅ Settings, import/export (952 lines)
-│   │   ├── menuManager.js           # ✅ Main menu operations (546 lines)
-│   │   ├── undoRedoManager.js       # ✅ Undo/redo system (463 lines)
-│   │   ├── modalManager.js          # ✅ Modal management (383 lines)
-│   │   ├── onboardingManager.js     # ✅ First-time setup (291 lines)
-│   │   ├── gamesManager.js          # ✅ Mini-games (195 lines)
-│   │   └── taskOptionsCustomizer.js # ✅ Per-cycle button customization (703 lines)
-│   ├── themeManager.js              # ✅ Theme management (856 lines)
-│   ├── dueDates.js                  # ✅ Due date management (233 lines)
-│   └── reminders.js                 # ✅ Reminder system (621 lines)
+├── modules/                          # 46 ES6 modules (all strict DI)
+│   ├── core/                        # Core systems (3 modules)
+│   │   ├── appState.js              # Centralized state management
+│   │   ├── appInit.js               # 2-phase initialization
+│   │   └── constants.js             # App constants
+│   │
+│   ├── task/                        # Task system (7 modules)
+│   │   ├── taskCore.js              # Task CRUD & business logic
+│   │   ├── taskDOM.js               # Task DOM coordination
+│   │   ├── taskRenderer.js          # Task element creation
+│   │   ├── taskEvents.js            # Event handling
+│   │   ├── taskValidation.js        # Input validation
+│   │   ├── taskUtils.js             # Task utilities
+│   │   └── dragDropManager.js       # Drag & drop
+│   │
+│   ├── cycle/                       # Cycle system (5 modules)
+│   │   ├── cycleLoader.js           # Data loading
+│   │   ├── cycleManager.js          # Cycle CRUD
+│   │   ├── cycleSwitcher.js         # Cycle switching
+│   │   ├── modeManager.js           # Auto/Manual/To-Do modes
+│   │   └── migrationManager.js      # Schema migration
+│   │
+│   ├── recurring/                   # Recurring tasks (3 modules)
+│   │   ├── recurringCore.js         # Recurring logic
+│   │   ├── recurringPanel.js        # Recurring UI
+│   │   └── recurringIntegration.js  # Integration layer
+│   │
+│   ├── ui/                          # UI modules (9 modules)
+│   │   ├── modalManager.js          # Modal management
+│   │   ├── menuManager.js           # Main menu
+│   │   ├── settingsManager.js       # Settings panel
+│   │   ├── onboardingManager.js     # First-time setup
+│   │   ├── undoRedoManager.js       # Undo/redo system
+│   │   ├── gamesManager.js          # Mini-games
+│   │   ├── taskOptionsCustomizer.js # Per-cycle buttons
+│   │   ├── pullToRefresh.js         # Mobile refresh
+│   │   └── helpWindowManager.js     # Help system
+│   │
+│   ├── features/                    # Optional features (4 modules)
+│   │   ├── themeManager.js          # Theme management
+│   │   ├── statsPanel.js            # Statistics
+│   │   ├── reminders.js             # Reminder system
+│   │   └── dueDates.js              # Due date management
+│   │
+│   ├── utils/                       # Utilities (5 modules)
+│   │   ├── globalUtils.js           # Core utilities
+│   │   ├── notifications.js         # Toast notifications
+│   │   ├── deviceDetection.js       # Platform detection
+│   │   ├── consoleCapture.js        # Console logging
+│   │   └── errorHandler.js          # Error handling
+│   │
+│   ├── storage/                     # Storage (1 module)
+│   │   └── backupManager.js         # IndexedDB backups
+│   │
+│   ├── progress/                    # Progress (1 module)
+│   │   └── cycleCompletion.js       # Completion tracking
+│   │
+│   ├── testing/                     # Testing (5 modules)
+│   │   ├── testing-modal.js         # Test runner UI
+│   │   └── ...
+│   │
+│   └── other/                       # Plugins (3 modules)
+│       ├── basicPluginSystem.js     # Plugin architecture
+│       └── ...
 │
 └── docs/                             # Documentation
-    ├── developer-guides/             # This guide!
+    ├── developer-guides/             # Developer docs
     ├── architecture/                 # Architecture docs
-    ├── features/                     # Feature documentation
-    └── future-work/                  # Optional optimizations
+    └── user-guides/                  # User documentation
 ```
 
 ---
@@ -165,27 +245,29 @@ function checkForAutoReset() {
 
 ### 2. Centralized State Management (AppState)
 
-**The Brain of the App**
+**The Brain of the App - Accessed via Dependency Injection**
 
 ```javascript
-// From utilities/state.js (real code)
+// From modules/core/appState.js
 
 class MiniCycleState {
-    constructor() {
-        this.data = null;              // Current app data
-        this.isDirty = false;          // Has data changed?
-        this.saveTimeout = null;       // Debounced save timer
-        this.listeners = new Map();    // Event subscribers
-        this.SAVE_DELAY = 600;         // Save after 600ms of inactivity
-        this.isInitialized = false;
+    constructor(dependencies = {}) {
+        this.deps = {
+            showNotification: dependencies.showNotification || console.log,
+            storage: dependencies.storage || localStorage,
+            createInitialData: dependencies.createInitialData
+        };
+        this.data = null;
+        this.isDirty = false;
+        this.saveTimeout = null;
+        this.listeners = new Map();
+        this.SAVE_DELAY = 600;
     }
 
-    // Get current state
     get() {
         return this.data;
     }
 
-    // Update state with a function
     async update(updateFn, immediate = false) {
         if (!this.data) {
             console.warn('⚠️ State not ready');
@@ -195,72 +277,79 @@ class MiniCycleState {
         const oldData = structuredClone(this.data);
 
         try {
-            // Call the update function with current state
             updateFn(this.data);
-
             this.isDirty = true;
             this.data.metadata.lastModified = Date.now();
-
-            // Save with debounce (or immediately if requested)
             this.scheduleSave(immediate);
             this.notifyListeners(oldData, this.data);
-
         } catch (error) {
             console.error('❌ State update failed:', error);
-            this.data = oldData;  // Rollback on error
+            this.data = oldData;
             throw error;
         }
     }
 
-    // Debounced save to localStorage
     scheduleSave(immediate = false) {
-        if (this.saveTimeout) {
-            clearTimeout(this.saveTimeout);
-        }
-
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
         if (immediate) {
-            this.save();  // Save right now
+            this.save();
         } else {
-            // Wait 600ms of inactivity before saving
             this.saveTimeout = setTimeout(() => this.save(), this.SAVE_DELAY);
         }
     }
 
     save() {
         if (!this.isDirty) return;
-
         try {
-            localStorage.setItem("miniCycleData", JSON.stringify(this.data));
+            this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
             this.isDirty = false;
-            console.log('✅ State saved to localStorage');
         } catch (error) {
             console.error('❌ Save failed:', error);
         }
     }
 }
-
-// Global instance
-window.AppState = new MiniCycleState();
 ```
 
-**How to use AppState in your code:**
+**How to use AppState via DI:**
 
 ```javascript
-// Reading state
-const currentState = window.AppState.get();
-const activeCycleId = currentState.appState.activeCycleId;
-const tasks = currentState.data.cycles[activeCycleId].tasks;
+// In a module that receives AppState via dependency injection
+class MyModule {
+    constructor(dependencies = {}) {
+        this.deps = {
+            AppState: dependencies.AppState  // Injected, not window.AppState
+        };
+    }
 
-// Updating state
-window.AppState.update((state) => {
-    // Modify state directly
-    state.data.cycles[activeCycleId].tasks.push(newTask);
-}, true);  // true = save immediately
+    doSomething() {
+        // Reading state
+        const currentState = this.deps.AppState.get();
+        const activeCycleId = currentState.appState.activeCycleId;
+        const tasks = currentState.data.cycles[activeCycleId].tasks;
 
-// Checking if ready
-if (window.AppState?.isReady()) {
-    // Safe to use AppState
+        // Updating state
+        this.deps.AppState.update((state) => {
+            state.data.cycles[activeCycleId].tasks.push(newTask);
+        }, true);  // true = save immediately
+    }
 }
+```
+
+**Wiring in miniCycle-scripts.js:**
+
+```javascript
+// AppState is created and wired in the main script
+const { createStateManager } = await import('./modules/core/appState.js');
+window.AppState = createStateManager({
+    showNotification: deps.utils.showNotification,
+    storage: localStorage,
+    createInitialData: createInitialSchema25Data
+});
+
+// Passed to modules via DI
+setMyModuleDependencies({
+    get AppState() { return window.AppState; }  // Lazy getter
+});
 ```
 
 ---

@@ -1,7 +1,6 @@
 # Testing Guide
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Last Updated**: December 6, 2025
 
 ---
 
@@ -13,18 +12,19 @@
 4. [GitHub Actions CI/CD](#github-actions-cicd)
 5. [Creating New Tests](#creating-new-tests)
 6. [Test Patterns and Best Practices](#test-patterns-and-best-practices)
-7. [Test Coverage](#test-coverage)
+7. [Testing with Dependency Injection](#testing-with-dependency-injection)
+8. [Test Coverage](#test-coverage)
 
 ---
 
 ## Overview
 
-miniCycle has **100% test coverage** with **1011 tests passing** across 33 modules. The testing system runs:
+miniCycle has **100% test coverage** with **1011 tests passing** across 46 modules. The testing system runs:
 - ✅ **Locally** - Browser-based manual testing via web interface
 - ✅ **Automated** - Playwright-based automated testing
 - ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
 
-Tests are written as ES6 modules and can be run manually via a web interface or automatically via Playwright. All tests validate the dependency injection architecture and module isolation.
+Tests are written as ES6 modules and can be run manually via a web interface or automatically via Playwright. All tests validate the strict dependency injection architecture - modules are tested with mock dependencies, not `window.*` globals.
 
 ---
 
@@ -87,7 +87,7 @@ node tests/automated/run-browser-tests.js
 
 🌐 Launching browser...
 
-Running 33 test modules across all systems...
+Running 46 test modules across all systems...
 
 ============================================================
 📊 Test Summary
@@ -98,7 +98,7 @@ Running 33 test modules across all systems...
    ✅ PASS globalUtils            36/36 tests
    ✅ PASS notifications          39/39 tests
    ✅ PASS state                  41/41 tests
-   ... (33 modules total)
+   ... (46 modules total)
 ============================================================
 🎉 All tests passed! (1011/1011 - 100%) ✅
 ============================================================
@@ -288,6 +288,55 @@ test('throws error for invalid input', () => {
 
 ---
 
+## Testing with Dependency Injection
+
+All modules use strict DI, making them easy to test in isolation with mock dependencies.
+
+### Testing a DI Module
+
+```javascript
+// Example: Testing OnboardingManager
+export function runOnboardingManagerTests(resultsDiv) {
+    // Create mock dependencies
+    const mockAppState = {
+        get: () => ({
+            settings: { onboardingCompleted: false },
+            data: { cycles: {} }
+        }),
+        update: jest.fn()
+    };
+
+    const mockNotification = jest.fn();
+
+    // Wire dependencies before testing
+    setOnboardingManagerDependencies({
+        AppState: mockAppState,
+        showNotification: mockNotification,
+        loadMiniCycleData: () => mockAppState.get()
+    });
+
+    // Create instance with mocked deps
+    const manager = new OnboardingManager();
+
+    // Test behavior
+    test('shows notification on init', () => {
+        manager.init();
+        if (!mockNotification.mock.calls.length) {
+            throw new Error('Expected notification to be called');
+        }
+    });
+}
+```
+
+### Key Testing Patterns
+
+1. **Mock all dependencies** - Don't rely on `window.*` globals
+2. **Use `set*Dependencies()` before creating instances**
+3. **Test in isolation** - Each module should be testable without others
+4. **Verify dependency calls** - Check that mocked functions were called correctly
+
+---
+
 ## Test Coverage
 
 Current module test coverage:
@@ -305,9 +354,12 @@ Current module test coverage:
 | DragDropManager | `dragDropManager.tests.js` | 67 | ✅ 100% |
 | UndoRedoManager | `undoRedoManager.tests.js` | 52 | ✅ 100% |
 | TaskDOM | `taskDOM.tests.js` | 43 | ✅ 100% |
+| OnboardingManager | `onboardingManager.tests.js` | 25 | ✅ 100% |
+| MenuManager | `menuManager.tests.js` | 18 | ✅ 100% |
+| ModeManager | `modeManager.tests.js` | 22 | ✅ 100% |
 | ... | ... | ... | ... |
 
-**Total: 1011 tests across 33 modules**
+**Total: 1011 tests across 46 modules**
 
 **Overall Pass Rate: 100% ✅ (1011/1011 tests passing)**
 

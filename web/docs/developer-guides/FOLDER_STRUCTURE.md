@@ -1,8 +1,7 @@
 # miniCycle Folder Structure
 
-**Version:** 1.284
-**Last Updated:** November 2025
-**Status:** Current production structure
+**Last Updated:** December 6, 2025
+**Status:** All 46 modules use strict DI
 
 ---
 
@@ -58,7 +57,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 1099/1099 tests passing ✅
+- 1011/1011 tests passing ✅
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -74,7 +73,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 web/
 │
 ├── 📄 miniCycle.html                    # Main PWA entry point
-├── 📄 miniCycle-scripts.js              # Main orchestrator (3,674 lines)
+├── 📄 miniCycle-scripts.js              # DI wiring hub (~3,800 lines)
 ├── 📄 miniCycle-styles.css              # Application styles
 ├── 📄 service-worker.js                 # PWA service worker
 ├── 📄 version.js                        # Single source of truth for versions
@@ -83,7 +82,7 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (33 modules)
+├── 📁 modules/                          # ES6 application modules (46 modules, all strict DI)
 │   ├── core/                            # Essential system modules
 │   ├── task/                            # Task management system (7 modules)
 │   ├── cycle/                           # Cycle management system (5 modules)
@@ -124,7 +123,7 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (1099 tests, 100% passing)
+├── 📁 tests/                            # Test suite (1011 tests, 100% passing)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
 │   ├── [33 module test files]
@@ -230,7 +229,7 @@ web/
 
 ## Modules Organization
 
-The `/modules/` directory contains 33 ES6 modules organized into 9 logical groups:
+The `/modules/` directory contains 46 ES6 modules organized into 11 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
 
 ### `core/` - Essential System Modules
 **Purpose:** Foundation modules required for app initialization
