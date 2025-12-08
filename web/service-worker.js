@@ -48,6 +48,12 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
+  // Skip non-http(s) requests (chrome-extension://, data:, etc.)
+  var url = new URL(request.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then(function(response) {
       if (response) {
@@ -55,10 +61,13 @@ self.addEventListener('fetch', function(event) {
       }
 
       return fetch(request).then(function(networkResponse) {
-        var copy = networkResponse.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(request, copy);
-        });
+        // Only cache successful responses from same origin or trusted CDNs
+        if (networkResponse.status === 200) {
+          var copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(request, copy);
+          });
+        }
         return networkResponse;
       });
     })
