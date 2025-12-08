@@ -1,27 +1,39 @@
-// ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
-// TEMPORARY: Minimal no-op service worker to disable caching behavior
-// while we debug stubborn module caching. Original implementation is
-// backed up in `backup/service-worker.js.backup-before-temporary-disable`.
+// Restored original service worker logic from backup.
+// NOTE: Ensure this matches the previous behavior you relied on.
 
 importScripts('./version.js');
-var APP_VERSION = self.APP_VERSION;
-var CACHE_VERSION = 'v253';
 
-// On install, immediately take control
+var APP_VERSION = self.APP_VERSION;
+var CACHE_VERSION = 'v230';
+var CACHE_NAME = 'miniCycle-' + CACHE_VERSION + '-v' + APP_VERSION;
+
+var CORE_ASSETS = [
+  '/',
+  '/miniCycle.html',
+  '/miniCycle-styles.css',
+  '/miniCycle-scripts.js?v=' + APP_VERSION,
+  '/version.js?v=' + APP_VERSION
+];
+
 self.addEventListener('install', function(event) {
-  console.log('🔧 [TEMP SW] Installing no-op Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ')');
-  event.waitUntil(self.skipWaiting());
+  console.log('[SW] Installing miniCycle service worker', CACHE_NAME);
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(CORE_ASSETS);
+    }).then(function() {
+      return self.skipWaiting();
+    })
+  );
 });
 
-// On activate, clear all miniCycle caches and claim clients
 self.addEventListener('activate', function(event) {
-  console.log('🚀 [TEMP SW] Activating no-op Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ')');
+  console.log('[SW] Activating miniCycle service worker', CACHE_NAME);
   event.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(keys.map(function(k) {
-        if (k.indexOf('miniCycle-') === 0) {
-          console.log('🗑️ [TEMP SW] Deleting cache:', k);
-          return caches.delete(k);
+      return Promise.all(keys.map(function(key) {
+        if (key.indexOf('miniCycle-') === 0 && key !== CACHE_NAME) {
+          console.log('[SW] Deleting old cache', key);
+          return caches.delete(key);
         }
       }));
     }).then(function() {
@@ -30,13 +42,29 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// Fetch: do nothing, let network (and browser HTTP cache) handle it directly
 self.addEventListener('fetch', function(event) {
-  // Intentionally no respondWith: this SW does not intercept
-  return;
+  var request = event.request;
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  event.respondWith(
+    caches.match(request).then(function(response) {
+      if (response) {
+        return response;
+      }
+
+      return fetch(request).then(function(networkResponse) {
+        var copy = networkResponse.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(request, copy);
+        });
+        return networkResponse;
+      });
+    })
+  );
 });
 
-// Minimal message handler for version queries
 self.addEventListener('message', function(event) {
   var data = event.data || {};
   if (data.type === 'GET_VERSION' && event.ports && event.ports[0]) {
@@ -48,4 +76,4 @@ self.addEventListener('message', function(event) {
   }
 });
 
-console.log('🎯 [TEMP SW] No-op Service Worker script loaded - v' + CACHE_VERSION + ' (App v' + APP_VERSION + ')');
+console.log('[SW] miniCycle Service Worker loaded', CACHE_NAME);
