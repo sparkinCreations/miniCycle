@@ -438,6 +438,18 @@ if should_update "service-worker.js"; then
 fi
 
 # ============================================
+# UPDATE: modules/core/appInit.js (JSDoc @version for cache debugging)
+# ============================================
+
+APPINIT_FILE="modules/core/appInit.js"
+if [ -f "$APPINIT_FILE" ]; then
+    backup_file "$APPINIT_FILE"
+    # Update @version in JSDoc comment (helps identify stale cached versions)
+    "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" "$APPINIT_FILE"
+    echo "✅ Updated $APPINIT_FILE @version tag"
+fi
+
+# ============================================
 # UPDATE: manifest.json
 # ============================================
 
@@ -509,6 +521,9 @@ EOF
 
 # Add version.js first (single source of truth)
 echo "restore_file \"version.js\"" >> "$BACKUP_FOLDER/restore.sh"
+
+# Add appInit.js (critical for cache debugging)
+echo "restore_file \"modules/core/appInit.js\"" >> "$BACKUP_FOLDER/restore.sh"
 
 # Add core HTML files
 for file in "${CORE_HTML_FILES[@]}"; do

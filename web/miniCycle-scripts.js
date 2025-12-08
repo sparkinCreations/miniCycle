@@ -381,10 +381,47 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             return;
         }
 
-        // If we've tried twice and still stale, give up gracefully for this browser
+        // If we've tried twice and still stale, show user-friendly instructions
         sessionStorage.removeItem('_staleCacheReload');
         sessionStorage.setItem('_staleAppInitForgiven', 'true');
-        console.error('⚠️ Cache clearing failed after 2 attempts. Forgiving stale appInit for this session and continuing.');
+        console.error('⚠️ Cache clearing failed after 2 attempts. Showing manual refresh instructions.');
+
+        // Show a persistent notification with refresh instructions
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isAndroid = /Android/.test(navigator.userAgent);
+
+        let refreshInstructions;
+        if (isIOS) {
+            refreshInstructions = 'Scroll down and release to refresh, or close and reopen the app.';
+        } else if (isAndroid) {
+            refreshInstructions = 'Pull down to refresh, or clear browser data in Settings.';
+        } else if (isMac) {
+            refreshInstructions = 'Press Cmd+Shift+R to hard refresh.';
+        } else {
+            refreshInstructions = 'Press Ctrl+Shift+R to hard refresh.';
+        }
+
+        // Create a dismissible banner at top of page
+        const banner = document.createElement('div');
+        banner.id = 'stale-cache-banner';
+        banner.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; z-index: 999999;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white;
+            padding: 12px 16px; font-family: -apple-system, system-ui, sans-serif;
+            font-size: 14px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        `;
+        banner.innerHTML = `
+            <div style="max-width: 600px; margin: 0 auto;">
+                <strong>Update Available!</strong> Your browser has an old cached version.
+                <br>${refreshInstructions}
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    margin-left: 12px; padding: 4px 12px; border: none; border-radius: 4px;
+                    background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 12px;
+                ">Dismiss</button>
+            </div>
+        `;
+        document.body.insertBefore(banner, document.body.firstChild);
         // Don't throw - let the app try to continue (may partially work)
     }
 
