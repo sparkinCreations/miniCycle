@@ -419,35 +419,21 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     deps.utils.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
     deps.utils.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
 
-    // Still expose to window for backward compat (will be removed incrementally)
+    // Still expose to window for backward compat (minimal set - others removed as unused)
     window.GlobalUtils = GlobalUtils;
     window.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
-    // Expose individual utility functions to window
-    window.safeAddEventListener = GlobalUtils.safeAddEventListener;
-    window.safeAddEventListenerById = GlobalUtils.safeAddEventListenerById;
-    window.safeRemoveEventListener = GlobalUtils.safeRemoveEventListener;
-    window.safeGetElementById = GlobalUtils.safeGetElementById;
-    window.safeQuerySelector = GlobalUtils.safeQuerySelector;
-    window.safeQuerySelectorAll = GlobalUtils.safeQuerySelectorAll;
-    window.safeSetInnerHTML = GlobalUtils.safeSetInnerHTML;
-    window.safeSetTextContent = GlobalUtils.safeSetTextContent;
-    window.safeToggleClass = GlobalUtils.safeToggleClass;
-    window.safeAddClass = GlobalUtils.safeAddClass;
-    window.safeRemoveClass = GlobalUtils.safeRemoveClass;
+    // Essential utilities used in DI wiring or direct calls
+    window.sanitizeInput = GlobalUtils.sanitizeInput;
+    window.escapeHtml = GlobalUtils.escapeHtml;
+    window.generateHashId = GlobalUtils.generateHashId;
+    window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
+    // Test-only utilities (kept for test compatibility)
     window.safeLocalStorageGet = GlobalUtils.safeLocalStorageGet;
     window.safeLocalStorageSet = GlobalUtils.safeLocalStorageSet;
     window.safeLocalStorageRemove = GlobalUtils.safeLocalStorageRemove;
     window.safeJSONParse = GlobalUtils.safeJSONParse;
     window.safeJSONStringify = GlobalUtils.safeJSONStringify;
-    window.sanitizeInput = GlobalUtils.sanitizeInput;
-    window.escapeHtml = GlobalUtils.escapeHtml;
-    window.debounce = GlobalUtils.debounce;
-    window.throttle = GlobalUtils.throttle;
     window.generateId = GlobalUtils.generateId;
-    window.generateHashId = GlobalUtils.generateHashId;
-    window.generateNotificationId = GlobalUtils.generateNotificationId;
-    window.isElementInViewport = GlobalUtils.isElementInViewport;
-    window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
     console.log('🛠️ Global utilities loaded');
 
     // ✅ Load Error Handler (DI-pure - wiring done after notifications load)
@@ -595,7 +581,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
       showCycleCreationModal: () => window.showCycleCreationModal?.(),
       getOnboardingManager: () => window.onboardingManager,
-      getMiniCycleState: () => window.miniCycle?.state,
+      getMiniCycleState: () => null, // window.miniCycle namespace was never implemented
 
       // For completeInitialSetup
       loadMiniCycle: () => window.loadMiniCycle,
@@ -1322,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 // For setupToggleAutoReset
                 checkMiniCycle: () => window.checkMiniCycle?.(),
                 refreshTaskListUI: () => window.refreshTaskListUI?.(),
-                updateRecurringButtonVisibility: () => (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))(),
+                updateRecurringButtonVisibility: () => window.updateRecurringButtonVisibility?.(),
                 syncAllTasksWithMode: (mode, tasksDataMap, opts) => window.syncAllTasksWithMode?.(mode, tasksDataMap, opts),
                 DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: { cycle: false, todo: true }
             });
@@ -1623,7 +1609,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 getAppState: () => window.AppState,
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
-                safeAddEventListener: safeAddEventListener
+                safeAddEventListener: GlobalUtils.safeAddEventListener
             });
 
             const completedTasksManager = await initCompletedTasksManager();
@@ -1661,7 +1647,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             getTaskList: () => document.getElementById('taskList'),
             getProgressBar: () => document.getElementById('progressBar'),
             assignCycleVariables: () => assignCycleVariables?.(),
-            resetTasks: () => (window.resetTasks || window.miniCycle?.tasks?.reset)?.()
+            resetTasks: () => window.resetTasks?.()
         });
 
         // Expose to window for backward compatibility
@@ -1900,7 +1886,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         try {
           const completeAllButton = document.getElementById("completeAll");
           if (completeAllButton && typeof window.handleCompleteAllTasks === 'function') {
-            safeAddEventListener(completeAllButton, "click", window.handleCompleteAllTasks);
+            GlobalUtils.safeAddEventListener(completeAllButton, "click", window.handleCompleteAllTasks);
             console.log('✅ Complete All button listener attached');
           }
         } catch (eventErr) {
@@ -2286,7 +2272,7 @@ if (!window.deviceDetectionManager) {
         function refreshTaskListUI() {
           console.log('🔄 Refreshing task list UI (Schema 2.5 only)...');
 
-          const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
+          const schemaData = loadMiniCycleData();
           if (!schemaData) {
               console.error('❌ Schema 2.5 data required for refreshTaskListUI');
               throw new Error('Schema 2.5 data not found');
@@ -2324,7 +2310,7 @@ if (!window.deviceDetectionManager) {
               );
           });
 
-          (window.miniCycle?.tasks?.recurring?.update || window.updateRecurringButtonVisibility || (() => {}))();
+          window.updateRecurringButtonVisibility?.();
           console.log("✅ Task list UI refreshed from Schema 2.5");
       }
 
@@ -2397,7 +2383,7 @@ function setupMiniCycleTitleListener() {
             }
 
              console.log('📝 Updating title (Schema 2.5 only)...');
-            const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
+            const schemaData = loadMiniCycleData();
             if (!schemaData) {
                 console.error('❌ Schema 2.5 data required for setupMiniCycleTitleListener');
                 return;
@@ -2827,7 +2813,7 @@ function addTask(taskText, completed = false, shouldSave = true, dueDate = null,
     // ✅ Use NEW taskDOM module functions via window.* (not old inline functions)
 
     // Input validation and sanitization
-    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || (window.miniCycle?.tasks?.validate || validateAndSanitizeTaskInput)(taskText);
+    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || validateAndSanitizeTaskInput(taskText);
     if (!validatedInput) return;
 
     // Load and validate data context
@@ -2890,7 +2876,7 @@ function validateAndSanitizeTaskInput(taskText) {
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     console.log('📝 Adding task (Schema 2.5 only)...');
 
-    const schemaData = window.miniCycle?.state?.load() || loadMiniCycleData();
+    const schemaData = loadMiniCycleData();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for addTask');
         throw new Error('Schema 2.5 data not found');
@@ -3280,7 +3266,7 @@ window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
        * ⌨️ Show task buttons only when focus is inside a real action element.
        * Prevent buttons from appearing when clicking the checkbox or task text.
        */
-      safeAddEventListener(taskItem, "focusin", (e) => {
+      GlobalUtils.safeAddEventListener(taskItem, "focusin", (e) => {
         const target = e.target;
 
         // ✅ Skip if focusing on safe elements that shouldn't trigger button reveal
@@ -3299,7 +3285,7 @@ window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
       /**
        * ⌨️ Hide task buttons when focus moves outside the entire task
        */
-      safeAddEventListener(taskItem, "focusout", (e) => {
+      GlobalUtils.safeAddEventListener(taskItem, "focusout", (e) => {
         if (taskItem.contains(e.relatedTarget)) return;
 
         // ✅ Use centralized controller (handles mode checking automatically)
@@ -3539,7 +3525,7 @@ window.triggerLogoBackground = triggerLogoBackground;
  * 
  ************************/
 // 🟢 Add Task Button (Click)
-safeAddEventListener(addTaskButton, "click", () => {
+GlobalUtils.safeAddEventListener(addTaskButton, "click", () => {
     // ✅ Enable undo system on first user interaction
     enableUndoSystemOnFirstInteraction();
 
@@ -3555,7 +3541,7 @@ safeAddEventListener(addTaskButton, "click", () => {
 });
 
 // 🟢 Task Input (Enter Key)
-safeAddEventListener(taskInput, "keypress", function (event) {
+GlobalUtils.safeAddEventListener(taskInput, "keypress", function (event) {
     if (event.key === "Enter") {
         // ✅ Enable undo system on first user interaction
         enableUndoSystemOnFirstInteraction();
@@ -3576,7 +3562,7 @@ safeAddEventListener(taskInput, "keypress", function (event) {
 
 
 // 🟢 Menu Button (Click) - ✅ FIXED: ES5 compatible function expression
-safeAddEventListener(menuButton, "click", function(event) {
+GlobalUtils.safeAddEventListener(menuButton, "click", function(event) {
     event.stopPropagation();
     syncCurrentSettingsToStorage(); // ✅ Now supports both schemas
     saveToggleAutoReset(); // ✅ Already updated with Schema 2.5 support
@@ -3589,7 +3575,7 @@ safeAddEventListener(menuButton, "click", function(event) {
 
 
 
-safeAddEventListenerById("reset-notification-position", "click", async () => {
+GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", async () => {
     console.log('🔄 Resetting notification position (Schema 2.5 only)...');
 
     // ✅ Use AppState only (no direct localStorage writes)
@@ -3632,7 +3618,7 @@ document.getElementById("open-reminders-modal")?.addEventListener("click", () =>
 });
 
 // 🟢 Safe Global Click for Hiding Task Buttons
-safeAddEventListener(document, "click", (event) => {
+GlobalUtils.safeAddEventListener(document, "click", (event) => {
     let isTaskOrOptionsClick = event.target.closest(".task, .task-options");
     let isModalClick = event.target.closest(".modal, .mini-modal-overlay, .settings-modal, .notification");
 
@@ -3672,7 +3658,7 @@ safeAddEventListener(document, "click", (event) => {
 });
 
 // 🟢 Safe Global Click for Deselecting miniCycle in Switch Modal
-safeAddEventListener(document, "click", (event) => {
+GlobalUtils.safeAddEventListener(document, "click", (event) => {
     const switchModalContent = document.querySelector(".mini-cycle-switch-modal-content");
     const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
     const switchItemsRow = document.getElementById("switch-items-row");

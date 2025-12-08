@@ -66,11 +66,32 @@ class ErrorHandler {
 
         // Catch all unhandled promise rejections
         window.addEventListener('unhandledrejection', (event) => {
+            const reason = event.reason;
+            let message = 'Unknown rejection';
+
+            // Debug: log the raw reason to help identify source
+            console.warn('🔍 Unhandled rejection raw reason:', reason);
+            console.warn('🔍 Rejection type:', typeof reason, reason?.constructor?.name);
+            if (reason instanceof Error) {
+                console.warn('🔍 Error message:', reason.message);
+                console.warn('🔍 Error stack:', reason.stack);
+            }
+
+            if (reason instanceof Error) {
+                message = reason.message;
+            } else if (typeof reason === 'string') {
+                message = reason;
+            } else if (reason && typeof reason === 'object') {
+                // Try to extract useful info from object
+                message = reason.message || reason.error || reason.reason ||
+                          (Object.keys(reason).length > 0 ? JSON.stringify(reason) : 'Empty object rejection');
+            }
+
             this.handleError({
                 type: 'unhandledrejection',
-                message: event.reason?.message || event.reason,
-                error: event.reason,
-                stack: event.reason?.stack
+                message,
+                error: reason,
+                stack: reason?.stack
             });
 
             // Prevent default handling (we've logged it)
