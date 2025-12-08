@@ -336,6 +336,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
   // ⚠️ Cache validation: ensure setAppInitDependencies was exported (added in v1.409)
   // If users have stale cached appInit.js, this export will be undefined
+  let _cacheWasStale = false;
   if (typeof setAppInitDependencies !== 'function') {
     console.warn('⚠️ Stale appInit.js cache detected - fetching fresh version...');
     // Force fresh fetch with cache-busting timestamp
@@ -348,7 +349,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       throw new Error('appInit.js missing setAppInitDependencies export. Please update all files and clear browser cache.');
     }
     console.log('✅ Fresh appInit.js loaded successfully');
+    _cacheWasStale = true;
   }
+  // Store flag for deferred notification (showNotification not available yet)
+  window._pendingCacheNotification = _cacheWasStale;
 
   deps.core.appInit = appInit;
   deps.core.setAppInitDependencies = setAppInitDependencies;
@@ -515,6 +519,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.setupNotificationDragging = (container) => notifications.setupNotificationDragging(container);
     window.resetNotificationPosition = () => notifications.resetPosition();
     console.log('✅ Notifications loaded');
+
+    // Show deferred cache notification if we had to fetch fresh appInit.js
+    if (window._pendingCacheNotification) {
+      notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
+      delete window._pendingCacheNotification;
+    }
 
     // ✅ Wire ErrorHandler now that showNotification is available
     deps.utils.setErrorHandlerDependencies({
