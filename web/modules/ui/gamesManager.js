@@ -191,35 +191,40 @@ class GamesManager {
      * Set up all event listeners for games panel
      */
     setupEventListeners() {
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+
         // Open games panel
         const openButton = document.getElementById("open-games-panel");
         if (openButton) {
-            openButton.addEventListener("click", () => {
+            openButton._clickHandler = () => {
                 const gamesPanel = document.getElementById("games-panel");
                 if (gamesPanel) {
                     gamesPanel.style.display = "flex";
                     this.setupGamesModalOutsideClick();
                 }
-            });
+            };
+            safeAdd(openButton, "click", openButton._clickHandler);
         }
 
         // Close games panel
         const closeButton = document.getElementById("close-games-panel");
         if (closeButton) {
-            closeButton.addEventListener("click", () => {
+            closeButton._clickHandler = () => {
                 const gamesPanel = document.getElementById("games-panel");
                 if (gamesPanel) {
                     gamesPanel.style.display = "none";
                 }
-            });
+            };
+            safeAdd(closeButton, "click", closeButton._clickHandler);
         }
 
         // Open task order game (redirect to game HTML)
         const gameButton = document.getElementById("open-task-order-game");
         if (gameButton) {
-            gameButton.addEventListener("click", () => {
+            gameButton._clickHandler = () => {
                 window.location.href = "games/miniCycle-taskOrder.html";
-            });
+            };
+            safeAdd(gameButton, "click", gameButton._clickHandler);
         }
 
         console.log('✅ Games event listeners attached');

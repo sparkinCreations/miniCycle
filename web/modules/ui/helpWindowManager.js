@@ -54,23 +54,27 @@ export class HelpWindowManager {
     }
 
     setupEventListeners() {
+        const safeAdd = (el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); };
+
         // Listen for checkbox changes on tasks
-        document.addEventListener('change', (e) => {
+        document._helpWindowChangeHandler = (e) => {
             if (e.target.type === 'checkbox' && e.target.closest('.task')) {
                 setTimeout(() => {
                     this.updateConstantMessage();
                 }, 50);
             }
-        });
+        };
+        safeAdd(document, 'change', document._helpWindowChangeHandler);
 
         // Listen for click events on tasks
-        document.addEventListener('click', (e) => {
+        document._helpWindowClickHandler = (e) => {
             if (e.target.closest('.task')) {
                 setTimeout(() => {
                     this.updateConstantMessage();
                 }, 100);
             }
-        });
+        };
+        safeAdd(document, 'click', document._helpWindowClickHandler);
 
         // Listen for task list mutations (task additions/deletions)
         const taskList = document.getElementById('taskList');
@@ -100,13 +104,15 @@ export class HelpWindowManager {
         }
 
         // Listen for custom events
-        document.addEventListener('taskCompleted', () => {
+        document._helpWindowTaskCompletedHandler = () => {
             this.updateConstantMessage();
-        });
+        };
+        safeAdd(document, 'taskCompleted', document._helpWindowTaskCompletedHandler);
 
-        document.addEventListener('tasksReset', () => {
+        document._helpWindowTasksResetHandler = () => {
             this.updateConstantMessage();
-        });
+        };
+        safeAdd(document, 'tasksReset', document._helpWindowTasksResetHandler);
     }
 
     showConstantMessage() {

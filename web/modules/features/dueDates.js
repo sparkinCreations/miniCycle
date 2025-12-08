@@ -268,7 +268,8 @@ export class MiniCycleDueDates {
             dueDateInput.classList.add("hidden");
         }
 
-        dueDateInput.addEventListener("change", async () => {
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        dueDateInput._changeHandler = async () => {
             // ✅ Read fresh state from localStorage (source of truth)
             await appInit.waitForCore();
 
@@ -292,7 +293,8 @@ export class MiniCycleDueDates {
             this.deps.checkCompleteAllButton();
 
             this.deps.showNotification("📅 Due date updated", "info", 1500);
-        });
+        };
+        safeAdd(dueDateInput, "change", dueDateInput._changeHandler);
 
         return dueDateInput;
     }
@@ -314,11 +316,13 @@ export class MiniCycleDueDates {
             return; // Already has listener
         }
 
-        dueDateButton.addEventListener("click", () => {
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        dueDateButton._clickHandler = () => {
             dueDateInput.classList.toggle("hidden");
             dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
             console.log('📅 Due date button clicked:', buttonContainer.closest('.task')?.dataset.taskId);
-        });
+        };
+        safeAdd(dueDateButton, "click", dueDateButton._clickHandler);
 
         dueDateButton.dataset.listenerAttached = 'true';
     }
@@ -336,10 +340,12 @@ export class MiniCycleDueDates {
         }
 
         // Make sure we only attach the listener once
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+
         if (!this.toggleAutoReset.dataset.dueDateListenerAdded) {
             this.toggleAutoReset.dataset.dueDateListenerAdded = true;
 
-            this.toggleAutoReset.addEventListener("change", async () => {
+            this.toggleAutoReset._dueDateChangeHandler = async () => {
                 console.log('🔄 Auto reset toggle changed for due dates:', this.toggleAutoReset.checked);
 
                 let autoReset = this.toggleAutoReset.checked;
@@ -376,12 +382,12 @@ export class MiniCycleDueDates {
                 } else {
                     console.warn('⚠️ No active cycle found for due date settings');
                 }
-            });
+            };
+            safeAdd(this.toggleAutoReset, "change", this.toggleAutoReset._dueDateChangeHandler);
         }
 
-        // ✅ Prevent duplicate event listeners before adding a new one
-        document.removeEventListener("change", this.handleDueDateChange);
-        document.addEventListener("change", this.handleDueDateChange);
+        // ✅ Use safeAddEventListener for document change handler
+        safeAdd(document, "change", this.handleDueDateChange);
 
         // ✅ Apply initial visibility state on load
         let autoReset = this.toggleAutoReset.checked;

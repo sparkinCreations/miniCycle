@@ -717,8 +717,9 @@ export class MiniCycleReminders {
      */
     setupReminderButtonHandler(button, taskContext) {
         const { assignedTaskId } = taskContext;
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
 
-        button.addEventListener("click", async () => {
+        button._reminderClickHandler = async () => {
             // Wait for core systems (DI-pure)
             const appInitModule = this.deps.appInit;
             if (appInitModule?.waitForCore) {
@@ -790,7 +791,8 @@ export class MiniCycleReminders {
                         notificationElement.remove();
                     };
 
-                    notificationElement.addEventListener('click', clickHandler);
+                    notificationElement._clickHandler = clickHandler;
+                    safeAdd(notificationElement, 'click', notificationElement._clickHandler);
                     notificationElement.style.cursor = 'pointer';
                     notificationElement.title = 'Click to configure reminder settings';
 
@@ -803,7 +805,8 @@ export class MiniCycleReminders {
             } else {
                 this.deps.showNotification('🔕 Reminder disabled for task.', 'info', 1500);
             }
-        });
+        };
+        safeAdd(button, "click", button._reminderClickHandler);
     }
 
     /**

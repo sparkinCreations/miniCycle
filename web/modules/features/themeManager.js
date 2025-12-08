@@ -32,8 +32,12 @@ import { appInit } from '../core/appInit.js';
 let _deps = {
     AppState: null,
     showNotification: null,
-    hideMainMenu: null
+    hideMainMenu: null,
+    safeAddEventListener: null
 };
+
+// Fallback for safeAddEventListener
+const fallbackAddListener = (el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); };
 
 /**
  * Set dependencies for ThemeManager
@@ -209,12 +213,14 @@ export class ThemeManager {
             this.updateThemeColor();
             this.updateQuickToggleIcon(isDark);
 
-            // Event handler
-            thisToggle.addEventListener("change", (e) => {
+            // Event handler with safeAddEventListener
+            const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+            thisToggle._darkModeChangeHandler = (e) => {
                 const enabled = e.target.checked;
                 this.toggleDarkMode(enabled, allToggleIds, thisToggle);
-            });
-            
+            };
+            safeAdd(thisToggle, "change", thisToggle._darkModeChangeHandler);
+
             console.log('✅ Dark mode toggle setup completed');
         } catch (error) {
             console.warn('⚠️ Dark mode toggle setup failed:', error.message);
@@ -245,27 +251,29 @@ export class ThemeManager {
             // Set correct initial icon state
             newQuickToggle.textContent = isDark ? "☀️" : "🌙";
             
-            newQuickToggle.addEventListener("click", (e) => {
+            const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+            newQuickToggle._clickHandler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 console.log('🌙 Quick dark toggle clicked');
-                
+
                 // Find primary toggle and simulate change
                 const primaryToggle = document.getElementById("darkModeToggle");
                 if (primaryToggle) {
                     console.log('🔄 Triggering primary toggle, current state:', primaryToggle.checked);
                     primaryToggle.checked = !primaryToggle.checked;
-                    
+
                     const changeEvent = new Event("change", { bubbles: true, cancelable: true });
                     primaryToggle.dispatchEvent(changeEvent);
-                    
+
                     console.log('🔄 Primary toggle new state:', primaryToggle.checked);
                 } else {
                     console.warn('⚠️ Primary dark mode toggle not found');
                 }
-            });
-            
+            };
+            safeAdd(newQuickToggle, "click", newQuickToggle._clickHandler);
+
             console.log('✅ Quick dark toggle setup completed');
         } catch (error) {
             console.warn('⚠️ Quick dark toggle setup failed:', error.message);
@@ -553,12 +561,16 @@ export class ThemeManager {
             `;
             
             const checkbox = toggleDiv.querySelector('input');
-            checkbox?.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    this.applyTheme(theme.class === 'default' ? 'default' : theme.class);
-                }
-            });
-            
+            if (checkbox) {
+                const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+                checkbox._themeChangeHandler = (e) => {
+                    if (e.target.checked) {
+                        this.applyTheme(theme.class === 'default' ? 'default' : theme.class);
+                    }
+                };
+                safeAdd(checkbox, 'change', checkbox._themeChangeHandler);
+            }
+
             container.appendChild(toggleDiv);
         } catch (error) {
             console.warn('⚠️ Theme toggle creation failed:', error.message);
@@ -612,22 +624,25 @@ export class ThemeManager {
             }
           
             // Open modal
+            const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
             if (themeButton) {
-                themeButton.addEventListener("click", () => {
+                themeButton._clickHandler = () => {
                     if (themesModal) {
                         themesModal.style.display = "flex";
                         _deps.hideMainMenu?.();
                     }
-                });
+                };
+                safeAdd(themeButton, "click", themeButton._clickHandler);
             }
-          
+
             // Close modal
             if (closeThemesBtn) {
-                closeThemesBtn.addEventListener("click", () => {
+                closeThemesBtn._clickHandler = () => {
                     if (themesModal) {
                         themesModal.style.display = "none";
                     }
-                });
+                };
+                safeAdd(closeThemesBtn, "click", closeThemesBtn._clickHandler);
             }
           
             // Setup dark mode toggle inside themes modal

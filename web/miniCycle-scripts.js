@@ -1583,7 +1583,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 get DataValidator() { return window.DataValidator; },
                 get calculateNextOccurrence() { return window.recurringCore?.calculateNextOccurrence || window.calculateNextOccurrence; },
                 sanitizeInput: (text, maxLen) => window.sanitizeInput?.(text, maxLen),
-                AppMeta: window.AppMeta
+                AppMeta: window.AppMeta,
+                safeAddEventListener: GlobalUtils.safeAddEventListener
             });
 
             const settingsManager = await initSettingsManager();

@@ -171,8 +171,11 @@ export class ModalManager {
             return;
         }
 
+        // Use safeAddEventListener to prevent duplicate listeners
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+
         // Open Modal
-        openFeedbackBtn.addEventListener("click", () => {
+        openFeedbackBtn._clickHandler = () => {
             feedbackModal.style.display = "flex";
             if (this.deps.hideMainMenu) {
                 this.deps.hideMainMenu();
@@ -180,23 +183,26 @@ export class ModalManager {
             if (thankYouMessage) {
                 thankYouMessage.style.display = "none";
             }
-        });
+        };
+        safeAdd(openFeedbackBtn, "click", openFeedbackBtn._clickHandler);
 
         // Close Modal
-        closeFeedbackBtn.addEventListener("click", () => {
+        closeFeedbackBtn._clickHandler = () => {
             feedbackModal.style.display = "none";
-        });
+        };
+        safeAdd(closeFeedbackBtn, "click", closeFeedbackBtn._clickHandler);
 
         // Close Modal on Outside Click
-        window.addEventListener("click", (event) => {
+        feedbackModal._outsideClickHandler = (event) => {
             if (event.target === feedbackModal) {
                 feedbackModal.style.display = "none";
             }
-        });
+        };
+        safeAdd(window, "click", feedbackModal._outsideClickHandler);
 
         // Handle Form Submission via AJAX (Prevent Page Refresh)
         if (feedbackForm) {
-            feedbackForm.addEventListener("submit", (event) => {
+            feedbackForm._submitHandler = (event) => {
                 event.preventDefault(); // Prevent default form submission
 
                 // Disable button while sending
@@ -246,7 +252,8 @@ export class ModalManager {
                         submitButton.textContent = "Submit";
                     }
                 });
-            });
+            };
+            safeAdd(feedbackForm, "submit", feedbackForm._submitHandler);
         }
 
         // Setup footer feedback button
@@ -262,12 +269,14 @@ export class ModalManager {
         const thankYouMessage = document.getElementById("thank-you-message");
 
         if (openFeedbackFooter && feedbackModal) {
-            openFeedbackFooter.addEventListener("click", () => {
+            const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+            openFeedbackFooter._clickHandler = () => {
                 feedbackModal.style.display = "flex";
                 if (thankYouMessage) {
                     thankYouMessage.style.display = "none";
                 }
-            });
+            };
+            safeAdd(openFeedbackFooter, "click", openFeedbackFooter._clickHandler);
         }
     }
 
@@ -283,26 +292,30 @@ export class ModalManager {
             return;
         }
 
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
         const closeAboutBtn = aboutModal.querySelector(".close-modal");
 
         // Open Modal
-        openAboutBtn.addEventListener("click", () => {
+        openAboutBtn._clickHandler = () => {
             aboutModal.style.display = "flex";
-        });
+        };
+        safeAdd(openAboutBtn, "click", openAboutBtn._clickHandler);
 
         // Close Modal
         if (closeAboutBtn) {
-            closeAboutBtn.addEventListener("click", () => {
+            closeAboutBtn._clickHandler = () => {
                 aboutModal.style.display = "none";
-            });
+            };
+            safeAdd(closeAboutBtn, "click", closeAboutBtn._clickHandler);
         }
 
         // Close Modal on Outside Click
-        window.addEventListener("click", (event) => {
+        aboutModal._outsideClickHandler = (event) => {
             if (event.target === aboutModal) {
                 aboutModal.style.display = "none";
             }
-        });
+        };
+        safeAdd(window, "click", aboutModal._outsideClickHandler);
     }
 
     /**
@@ -336,17 +349,21 @@ export class ModalManager {
             return;
         }
 
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+
         // Close button
-        closeRemindersBtn.addEventListener("click", () => {
+        closeRemindersBtn._clickHandler = () => {
             remindersModal.style.display = "none";
-        });
+        };
+        safeAdd(closeRemindersBtn, "click", closeRemindersBtn._clickHandler);
 
         // Click outside to close
-        window.addEventListener("click", (event) => {
+        remindersModal._outsideClickHandler = (event) => {
             if (event.target === remindersModal) {
                 remindersModal.style.display = "none";
             }
-        });
+        };
+        safeAdd(window, "click", remindersModal._outsideClickHandler);
     }
 
     /**

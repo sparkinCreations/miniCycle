@@ -42,6 +42,7 @@ export class CycleSwitcher {
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
             querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener.bind(this),
             // Undo system callbacks (DI-pure)
             onCycleRenamed: mergedDeps.onCycleRenamed || null,
             onCycleDeleted: mergedDeps.onCycleDeleted || null,
@@ -106,23 +107,23 @@ export class CycleSwitcher {
 
         console.log('🔗 Setting up event listeners...');
 
-        // ✅ Event listeners - use arrow functions to preserve context
-        const renameFn = () => this.renameMiniCycle();
-        const deleteFn = () => this.deleteMiniCycle();
-        const confirmFn = () => this.confirmMiniCycle();
-        const cancelFn = () => this.hideSwitchMiniCycleModal();
+        // ✅ Use safeAddEventListener to prevent duplicate handlers
+        const safeAdd = this.deps.safeAddEventListener;
 
-        renameButton.removeEventListener("click", renameFn);
-        renameButton.addEventListener("click", renameFn);
+        // ✅ Event listeners - store handlers on elements for proper cleanup
+        renameButton._clickHandler = () => this.renameMiniCycle();
+        safeAdd(renameButton, "click", renameButton._clickHandler);
 
-        deleteButton.removeEventListener("click", deleteFn);
-        deleteButton.addEventListener("click", deleteFn);
+        deleteButton._clickHandler = () => this.deleteMiniCycle();
+        safeAdd(deleteButton, "click", deleteButton._clickHandler);
 
-        this.deps.getElementById("miniCycleSwitchConfirm").removeEventListener("click", confirmFn);
-        this.deps.getElementById("miniCycleSwitchConfirm").addEventListener("click", confirmFn);
+        const confirmBtn = this.deps.getElementById("miniCycleSwitchConfirm");
+        confirmBtn._clickHandler = () => this.confirmMiniCycle();
+        safeAdd(confirmBtn, "click", confirmBtn._clickHandler);
 
-        this.deps.getElementById("miniCycleSwitchCancel").removeEventListener("click", cancelFn);
-        this.deps.getElementById("miniCycleSwitchCancel").addEventListener("click", cancelFn);
+        const cancelBtn = this.deps.getElementById("miniCycleSwitchCancel");
+        cancelBtn._clickHandler = () => this.hideSwitchMiniCycleModal();
+        safeAdd(cancelBtn, "click", cancelBtn._clickHandler);
 
         console.log('✅ Switch miniCycle modal setup completed');
     }
@@ -517,7 +518,8 @@ export class CycleSwitcher {
      * Setup click outside handler for modal
      */
     setupModalClickOutside() {
-        document.addEventListener("click", (event) => {
+        const safeAdd = this.deps.safeAddEventListener;
+        document._cycleSwitcherClickOutsideHandler = (event) => {
             const switchModalContent = this.deps.querySelector(".mini-cycle-switch-modal-content");
             const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
             const mainMenu = this.deps.querySelector(".menu-container");
@@ -536,7 +538,8 @@ export class CycleSwitcher {
             ) {
                 switchModal.style.display = "none";
             }
-        });
+        };
+        safeAdd(document, "click", document._cycleSwitcherClickOutsideHandler);
     }
 
     /**
@@ -669,8 +672,9 @@ export class CycleSwitcher {
             nameSpan.textContent = cycleData.title || cycleKey;
             listItem.appendChild(nameSpan);
 
-            // 🖱️ Handle selection
-            listItem.addEventListener("click", () => {
+            // 🖱️ Handle selection with safeAddEventListener
+            const safeAdd = this.deps.safeAddEventListener;
+            listItem._clickHandler = () => {
                 console.log('🎯 Cycle selected:', cycleData.title || cycleKey, 'Key:', cycleKey);
 
                 this.deps.querySelectorAll(".mini-cycle-switch-item").forEach(item => item.classList.remove("selected"));
@@ -684,7 +688,8 @@ export class CycleSwitcher {
 
                 // ✅ Pass the cycle key for Schema 2.5
                 this.updatePreview(cycleKey);
-            });
+            };
+            safeAdd(listItem, "click", listItem._clickHandler);
 
             miniCycleList.appendChild(listItem);
         });
@@ -710,6 +715,13 @@ export class CycleSwitcher {
         const confirmed = confirm(options.message);
         if (options.callback) {
             options.callback(confirmed);
+        }
+    }
+
+    fallbackAddListener(element, event, handler, options) {
+        if (element) {
+            element.removeEventListener(event, handler, options);
+            element.addEventListener(event, handler, options);
         }
     }
 }

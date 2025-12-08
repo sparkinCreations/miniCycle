@@ -119,10 +119,13 @@ export class PullToRefresh {
      * Attaches touch event listeners
      */
     attachEventListeners() {
+        // Use safeAddEventListener to prevent duplicates
+        const safeAdd = (el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); };
+
         // Use passive: false for touchmove to allow preventDefault
-        document.addEventListener('touchstart', this.handleTouchStart, { passive: true });
-        document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
-        document.addEventListener('touchend', this.handleTouchEnd, { passive: true });
+        safeAdd(document, 'touchstart', this.handleTouchStart, { passive: true });
+        safeAdd(document, 'touchmove', this.handleTouchMove, { passive: false });
+        safeAdd(document, 'touchend', this.handleTouchEnd, { passive: true });
     }
 
     /**

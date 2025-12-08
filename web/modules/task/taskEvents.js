@@ -102,7 +102,8 @@ export class TaskEvents {
         }
 
         // ✅ ONE listener for ALL tasks (current and future)
-        taskList.addEventListener("click", (event) => {
+        const safeAdd = this.deps.safeAddEventListener;
+        taskList._taskClickHandler = (event) => {
             // Find the closest .task element
             const taskItem = event.target.closest(".task");
             if (!taskItem) return;
@@ -156,7 +157,8 @@ export class TaskEvents {
             if (typeof this.deps.triggerLogoBackground === 'function') {
                 this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
             }
-        });
+        };
+        safeAdd(taskList, "click", taskList._taskClickHandler);
 
         this._eventDelegationInitialized = true;
         console.log('✅ Task click event delegation initialized (memory leak fix applied)');
@@ -171,9 +173,10 @@ export class TaskEvents {
         // Silent fallback
     }
 
-    fallbackAddListener(el, event, handler) {
+    fallbackAddListener(el, event, handler, options) {
         if (el && typeof el.addEventListener === 'function') {
-            el.addEventListener(event, handler);
+            el.removeEventListener(event, handler, options);
+            el.addEventListener(event, handler, options);
         }
     }
 
@@ -237,18 +240,21 @@ export class TaskEvents {
         // DI-pure: use injected showTaskOptions/hideTaskOptions
         const showTaskOptions = this.deps.showTaskOptions;
         const hideTaskOptions = this.deps.hideTaskOptions;
+        const safeAdd = this.deps.safeAddEventListener;
 
         this.deps.querySelectorAll(".task").forEach(taskItem => {
             if (enableHover) {
                 if (!taskItem.classList.contains("hover-enabled")) {
-                    taskItem.addEventListener("mouseenter", showTaskOptions);
-                    taskItem.addEventListener("mouseleave", hideTaskOptions);
+                    taskItem._hoverShowHandler = showTaskOptions;
+                    taskItem._hoverHideHandler = hideTaskOptions;
+                    safeAdd(taskItem, "mouseenter", taskItem._hoverShowHandler);
+                    safeAdd(taskItem, "mouseleave", taskItem._hoverHideHandler);
                     taskItem.classList.add("hover-enabled");
                 }
             } else {
                 if (taskItem.classList.contains("hover-enabled")) {
-                    taskItem.removeEventListener("mouseenter", showTaskOptions);
-                    taskItem.removeEventListener("mouseleave", hideTaskOptions);
+                    taskItem.removeEventListener("mouseenter", taskItem._hoverShowHandler);
+                    taskItem.removeEventListener("mouseleave", taskItem._hoverHideHandler);
                     taskItem.classList.remove("hover-enabled");
                 }
             }
@@ -402,10 +408,13 @@ export class TaskEvents {
     setupTaskHoverInteractions(taskItem, settings) {
         const threeDotsEnabled = settings.showThreeDots || false;
         if (!threeDotsEnabled) {
-            // DI-pure: use injected showTaskOptions/hideTaskOptions
+            // DI-pure: use injected showTaskOptions/hideTaskOptions with safeAdd
             if (typeof this.deps.showTaskOptions === 'function' && typeof this.deps.hideTaskOptions === 'function') {
-                taskItem.addEventListener("mouseenter", this.deps.showTaskOptions);
-                taskItem.addEventListener("mouseleave", this.deps.hideTaskOptions);
+                const safeAdd = this.deps.safeAddEventListener;
+                taskItem._hoverShowHandler = this.deps.showTaskOptions;
+                taskItem._hoverHideHandler = this.deps.hideTaskOptions;
+                safeAdd(taskItem, "mouseenter", taskItem._hoverShowHandler);
+                safeAdd(taskItem, "mouseleave", taskItem._hoverHideHandler);
             }
         }
     }

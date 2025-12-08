@@ -26,7 +26,8 @@ let _deps = {
     stopReminders: null,
     modeManager: null,
     appInit: null,
-    DEFAULT_TASK_OPTION_BUTTONS: null
+    DEFAULT_TASK_OPTION_BUTTONS: null,
+    safeAddEventListener: null
 };
 
 /**
@@ -177,11 +178,14 @@ export class TaskOptionsCustomizer {
      * Setup event listeners for opening customizer from settings
      */
     setupEventListeners() {
+        // Use safeAddEventListener
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
+
         // Wait for DOM to be ready, then attach listener
         const attachListener = () => {
             const openButton = document.getElementById('open-task-options-customizer');
             if (openButton) {
-                openButton.addEventListener('click', () => {
+                openButton._clickHandler = () => {
                     const state = this.deps.AppState?.get();
                     const currentCycleId = state?.appState?.activeCycleId;
 
@@ -197,7 +201,8 @@ export class TaskOptionsCustomizer {
                     } else {
                         this.deps.showNotification?.('Please select a cycle first', 'warning');
                     }
-                });
+                };
+                safeAdd(openButton, 'click', openButton._clickHandler);
                 console.log('✅ Task options customizer event listeners attached');
             } else {
                 console.warn('⚠️ open-task-options-customizer button not found');
@@ -209,7 +214,8 @@ export class TaskOptionsCustomizer {
 
         // Try immediately, and also on DOMContentLoaded
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', attachListener);
+            document._taskCustomizerDOMContentLoaded = attachListener;
+            safeAdd(document, 'DOMContentLoaded', document._taskCustomizerDOMContentLoaded);
         } else {
             attachListener();
         }
@@ -420,11 +426,15 @@ export class TaskOptionsCustomizer {
         const optionItems = modal.querySelectorAll('.task-option-item');
         const previewContent = modal.querySelector('#option-preview-content');
 
+        // Use safeAddEventListener
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
+
         // ✅ Real-time saving: Save immediately when any checkbox changes
         checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => {
+            checkbox._changeHandler = () => {
                 this.saveCustomization(cycleId, checkboxes);
-            });
+            };
+            safeAdd(checkbox, 'change', checkbox._changeHandler);
         });
 
         // ✅ Preview panel: Update on hover/tap
@@ -449,45 +459,51 @@ export class TaskOptionsCustomizer {
 
         optionItems.forEach(item => {
             // Desktop: hover
-            item.addEventListener('mouseenter', () => showPreview(item));
-            item.addEventListener('mouseleave', hidePreview);
+            item._mouseenterHandler = () => showPreview(item);
+            item._mouseleaveHandler = hidePreview;
+            safeAdd(item, 'mouseenter', item._mouseenterHandler);
+            safeAdd(item, 'mouseleave', item._mouseleaveHandler);
 
             // Mobile: tap
-            item.addEventListener('click', (e) => {
+            item._clickHandler = (e) => {
                 // Only show preview on tap, don't prevent checkbox toggle
                 if (!e.target.classList.contains('option-checkbox')) {
                     showPreview(item);
                 }
-            });
+            };
+            safeAdd(item, 'click', item._clickHandler);
         });
 
         // Close button
-        closeBtn.addEventListener('click', () => {
+        closeBtn._clickHandler = () => {
             this.closeModal(modal);
-        });
+        };
+        safeAdd(closeBtn, 'click', closeBtn._clickHandler);
 
         // Reset button - now applies immediately
-        resetBtn.addEventListener('click', () => {
+        resetBtn._clickHandler = () => {
             this.resetToDefaults(checkboxes);
             // Save after resetting
             this.saveCustomization(cycleId, checkboxes);
-        });
+        };
+        safeAdd(resetBtn, 'click', resetBtn._clickHandler);
 
         // Close on overlay click
-        modal.addEventListener('click', (e) => {
+        modal._overlayClickHandler = (e) => {
             if (e.target === modal) {
                 this.closeModal(modal);
             }
-        });
+        };
+        safeAdd(modal, 'click', modal._overlayClickHandler);
 
         // Close on ESC key
-        const escHandler = (e) => {
+        modal._escHandler = (e) => {
             if (e.key === 'Escape') {
                 this.closeModal(modal);
-                document.removeEventListener('keydown', escHandler);
+                document.removeEventListener('keydown', modal._escHandler);
             }
         };
-        document.addEventListener('keydown', escHandler);
+        safeAdd(document, 'keydown', modal._escHandler);
     }
 
     /**

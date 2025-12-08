@@ -48,6 +48,7 @@ export class ModeManager {
             recurringCore: mergedDeps.recurringCore || null,  // ✅ For updating recurring button visibility
             getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener.bind(this),
             // For setupToggleAutoReset
             checkMiniCycle: mergedDeps.checkMiniCycle || (() => {}),
             refreshTaskListUI: mergedDeps.refreshTaskListUI,
@@ -508,10 +509,11 @@ export class ModeManager {
             console.log('✅ ModeManager: Toggles synced from mode selector');
         };
 
-        // ✅ Set up event listeners for both selectors
+        // ✅ Set up event listeners for both selectors using safeAddEventListener
         console.log('📡 ModeManager: Setting up event listeners for both selectors...');
+        const safeAdd = this.deps.safeAddEventListener;
 
-        modeSelector.addEventListener('change', (e) => {
+        modeSelector._changeHandler = (e) => {
             console.log('🎯 ModeManager: Desktop mode selector changed:', e.target.value);
             syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
@@ -537,9 +539,10 @@ export class ModeManager {
             }
 
             console.log('✅ ModeManager: Mode change applied without reload');
-        });
+        };
+        safeAdd(modeSelector, 'change', modeSelector._changeHandler);
 
-        mobileModeSelector.addEventListener('change', (e) => {
+        mobileModeSelector._changeHandler = (e) => {
             console.log('📱 ModeManager: Mobile mode selector changed:', e.target.value);
             syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
@@ -565,9 +568,10 @@ export class ModeManager {
             }
 
             console.log('✅ ModeManager: Mode change applied without reload');
-        });
+        };
+        safeAdd(mobileModeSelector, 'change', mobileModeSelector._changeHandler);
 
-        toggleAutoReset.addEventListener('change', (e) => {
+        toggleAutoReset._modeChangeHandler = (e) => {
             console.log('🔘 ModeManager: Auto Reset toggle changed:', e.target.checked);
             this.syncModeFromToggles();
             this.updateCycleModeDescription();
@@ -578,9 +582,10 @@ export class ModeManager {
 
             // ✅ Refresh task buttons to show/hide buttons based on new mode
             this.refreshTaskButtonsForModeChange();
-        });
+        };
+        safeAdd(toggleAutoReset, 'change', toggleAutoReset._modeChangeHandler);
 
-        deleteCheckedTasks.addEventListener('change', (e) => {
+        deleteCheckedTasks._modeChangeHandler = (e) => {
             console.log('🗑️ ModeManager: Delete Checked Tasks toggle changed:', e.target.checked);
             this.syncModeFromToggles();
             this.updateCycleModeDescription();
@@ -600,7 +605,8 @@ export class ModeManager {
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100); // Small delay to ensure DOM updates complete
             }
-        });
+        };
+        safeAdd(deleteCheckedTasks, 'change', deleteCheckedTasks._modeChangeHandler);
 
         // ✅ Initialize on load
         console.log('🚀 ModeManager: Initializing mode selectors...');
@@ -750,17 +756,16 @@ export class ModeManager {
             console.log('✅ Delete checked tasks setting saved (state-based)');
         }
 
-        // ✅ Remove previous event listeners before adding new ones to prevent stacking
-        toggleAutoReset.removeEventListener("change", toggleAutoReset._handleAutoResetChange);
-        deleteCheckedTasks.removeEventListener("change", deleteCheckedTasks._handleDeleteCheckedTasksChange);
+        // ✅ Use safeAddEventListener to prevent duplicate listeners
+        const safeAdd = this.deps.safeAddEventListener;
 
-        // Store references to handlers for removal
+        // Store references to handlers
         toggleAutoReset._handleAutoResetChange = handleAutoResetChange;
         deleteCheckedTasks._handleDeleteCheckedTasksChange = handleDeleteCheckedTasksChange;
 
-        // ✅ Add new event listeners
-        toggleAutoReset.addEventListener("change", handleAutoResetChange);
-        deleteCheckedTasks.addEventListener("change", handleDeleteCheckedTasksChange);
+        // ✅ Add event listeners using safeAdd
+        safeAdd(toggleAutoReset, "change", handleAutoResetChange);
+        safeAdd(deleteCheckedTasks, "change", handleDeleteCheckedTasksChange);
 
         console.log('✅ ModeManager: Toggle auto reset setup completed (state-based)');
     }
@@ -782,8 +787,9 @@ export class ModeManager {
         }
 
         const self = this;
+        const safeAdd = this.deps.safeAddEventListener;
 
-        deleteCheckedTasks.addEventListener("change", async (event) => {
+        deleteCheckedTasks._deleteCheckedTasksModeHandler = async (event) => {
             // ✅ Schema 2.5 only
             console.log('🗑️ Delete checked tasks toggle changed (Schema 2.5 only)...');
 
@@ -868,9 +874,20 @@ export class ModeManager {
             self.deps.updateRecurringButtonVisibility();
 
             console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
-        });
+        };
+        safeAdd(deleteCheckedTasks, "change", deleteCheckedTasks._deleteCheckedTasksModeHandler);
 
         deleteCheckedTasks.dataset.modeListenerAdded = 'true';
+    }
+
+    /**
+     * Fallback for safeAddEventListener
+     */
+    fallbackAddListener(element, event, handler, options) {
+        if (element) {
+            element.removeEventListener(event, handler, options);
+            element.addEventListener(event, handler, options);
+        }
     }
 }
 

@@ -160,30 +160,41 @@ class EducationalTipManager {
   }
 
   initializeTipListeners(container) {
-    // Handle tip close buttons
-    container.addEventListener('click', (e) => {
-      if (e.target.classList.contains('tip-close')) {
-        e.stopPropagation();
-        const tipElement = e.target.closest('.educational-tip');
-        const tipId = tipElement.dataset.tipId;
-        this.hideTip(tipId, container);
-      }
-    });
+    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
 
-    // Handle tip toggle buttons
-    container.addEventListener('click', (e) => {
-     if (e.target.classList.contains('tip-toggle') || e.target.classList.contains('tip-toggle-btn')) {
-        e.stopPropagation();
-        const tipId = e.target.dataset.tipId;
-        const tipElement = container.querySelector(`#tip-${tipId}`);
-        
-        if (tipElement.style.display === 'none') {
-          this.showTipElement(tipId, container);
-        } else {
+    // Create bound handlers for this container (stored on container to enable removal)
+    if (!container._tipCloseHandler) {
+      container._tipCloseHandler = (e) => {
+        if (e.target.classList.contains('tip-close')) {
+          e.stopPropagation();
+          const tipElement = e.target.closest('.educational-tip');
+          const tipId = tipElement.dataset.tipId;
           this.hideTip(tipId, container);
         }
-      }
-    });
+      };
+    }
+
+    if (!container._tipToggleHandler) {
+      container._tipToggleHandler = (e) => {
+        if (e.target.classList.contains('tip-toggle') || e.target.classList.contains('tip-toggle-btn')) {
+          e.stopPropagation();
+          const tipId = e.target.dataset.tipId;
+          const tipElement = container.querySelector(`#tip-${tipId}`);
+
+          if (tipElement.style.display === 'none') {
+            this.showTipElement(tipId, container);
+          } else {
+            this.hideTip(tipId, container);
+          }
+        }
+      };
+    }
+
+    // Handle tip close buttons
+    safeAdd(container, 'click', container._tipCloseHandler);
+
+    // Handle tip toggle buttons
+    safeAdd(container, 'click', container._tipToggleHandler);
   }
 
   hideTip(tipId, container) {
@@ -325,6 +336,8 @@ export class MiniCycleNotifications {
       // Style and handler for any close button
       const closeBtn = notification.querySelector(".close-btn");
       if (closeBtn) {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+
         Object.assign(closeBtn.style, {
           position: "absolute",
           top: "6px",
@@ -338,15 +351,17 @@ export class MiniCycleNotifications {
           padding: "0"
         });
 
-        closeBtn.addEventListener("click", (e) => {
+        // Store handler on element for safeAddEventListener
+        closeBtn._clickHandler = (e) => {
           e.stopPropagation();
 
-          // ✅ FIX #7: Clean up any active timeouts before removing
+          // FIX #7: Clean up any active timeouts before removing
           if (cleanupTimeouts) cleanupTimeouts();
 
           notification.classList.remove("show");
           setTimeout(() => notification.remove(), 300);
-        });
+        };
+        safeAdd(closeBtn, "click", closeBtn._clickHandler);
       }
 
       notificationContainer.appendChild(notification);
@@ -431,15 +446,17 @@ export class MiniCycleNotifications {
       // Close button click
       const closeBtn = notification.querySelector(".close-btn, .notification-close");
       if (closeBtn) {
-        closeBtn.addEventListener("click", (e) => {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+        closeBtn._clickHandler = (e) => {
           e.stopPropagation();
 
-          // ✅ FIX #7: Clean up any active timeouts before removing
+          // FIX #7: Clean up any active timeouts before removing
           if (cleanupTimeouts) cleanupTimeouts();
 
           notification.classList.remove("show");
           setTimeout(() => notification.remove(), 300);
-        });
+        };
+        safeAdd(closeBtn, "click", closeBtn._clickHandler);
       }
 
       // Initialize tip listeners if this notification has tips
@@ -612,8 +629,9 @@ async setDefaultPosition(notificationContainer) {
     };
 
     startTimer();
-    notification.addEventListener("mouseenter", pauseTimer);
-    notification.addEventListener("mouseleave", resumeTimer);
+    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    safeAdd(notification, "mouseenter", pauseTimer);
+    safeAdd(notification, "mouseleave", resumeTimer);
 
     // ✅ FIX #7: Return cleanup function to clear all timeouts
     return () => {
@@ -744,17 +762,19 @@ async setDefaultPosition(notificationContainer) {
         document.removeEventListener("mouseup", onMouseUp);
       };
 
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
+      const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+      safeAdd(document, "mousemove", onMouseMove);
+      safeAdd(document, "mouseup", onMouseUp);
 
-      // ✅ FIX #2: Store cleanup for forced cleanup on notification removal
+      // FIX #2: Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
       });
     };
 
-    notificationContainer.addEventListener("mousedown", mouseDownHandler);
+    const safeAddOuter = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    safeAddOuter(notificationContainer, "mousedown", mouseDownHandler);
     cleanupFunctions.push(() => {
       notificationContainer.removeEventListener("mousedown", mouseDownHandler);
     });
@@ -817,17 +837,19 @@ async setDefaultPosition(notificationContainer) {
         document.removeEventListener("touchend", onTouchEnd);
       };
 
-      document.addEventListener("touchmove", onTouchMove, { passive: false });
-      document.addEventListener("touchend", onTouchEnd, { passive: false });
+      const safeAddTouch = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+      safeAddTouch(document, "touchmove", onTouchMove, { passive: false });
+      safeAddTouch(document, "touchend", onTouchEnd, { passive: false });
 
-      // ✅ FIX #2: Store cleanup for forced cleanup on notification removal
+      // FIX #2: Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
         document.removeEventListener("touchmove", onTouchMove);
         document.removeEventListener("touchend", onTouchEnd);
       });
     };
 
-    notificationContainer.addEventListener("touchstart", touchStartHandler, { passive: true });
+    const safeAddTouchOuter = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+    safeAddTouchOuter(notificationContainer, "touchstart", touchStartHandler, { passive: true });
     cleanupFunctions.push(() => {
       notificationContainer.removeEventListener("touchstart", touchStartHandler);
     });
@@ -951,21 +973,24 @@ async setDefaultPosition(notificationContainer) {
   }
 
   /**
-   * 🎛️ Initialize recurring notification listeners (with expand/collapse support)
+   * Initialize recurring notification listeners (with expand/collapse support)
    */
   initializeRecurringNotificationListeners(notification) {
+    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+
     // Close button handler
     const closeBtn = notification.querySelector(".close-btn");
     if (closeBtn) {
-      closeBtn.addEventListener("click", (e) => {
+      closeBtn._clickHandler = (e) => {
         e.stopPropagation();
         notification.classList.remove("show");
         setTimeout(() => notification.remove(), 300);
-      });
+      };
+      safeAdd(closeBtn, "click", closeBtn._clickHandler);
     }
 
     // Delegate clicks inside notification
-    notification.addEventListener("click", async (e) => {
+    notification._clickHandler = async (e) => {
       e.stopPropagation();
 
       const taskId = e.target.dataset.taskId ||
@@ -1077,7 +1102,8 @@ async setDefaultPosition(notificationContainer) {
           setTimeout(() => notificationEl.remove(), 300);
         }
       }
-    });
+    };
+    safeAdd(notification, "click", notification._clickHandler);
   }
 
   /**
@@ -1161,7 +1187,8 @@ async setDefaultPosition(notificationContainer) {
       }
     };
 
-    document.addEventListener("keydown", handleKeydown);
+    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    safeAdd(document, "keydown", handleKeydown);
 
     confirmBtn.onclick = () => {
       cleanup();
@@ -1210,12 +1237,15 @@ async setDefaultPosition(notificationContainer) {
 
     setTimeout(() => input.focus(), 50);
 
-    cancelBtn.addEventListener("click", () => {
+    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+
+    cancelBtn._clickHandler = () => {
       document.body.removeChild(overlay);
       callback(null);
-    });
+    };
+    safeAdd(cancelBtn, "click", cancelBtn._clickHandler);
 
-    confirmBtn.addEventListener("click", () => {
+    confirmBtn._clickHandler = () => {
       const value = input.value.trim();
       if (required && !value) {
         input.classList.add("miniCycle-input-error");
@@ -1224,12 +1254,14 @@ async setDefaultPosition(notificationContainer) {
       }
       document.body.removeChild(overlay);
       callback(value);
-    });
+    };
+    safeAdd(confirmBtn, "click", confirmBtn._clickHandler);
 
-    overlay.addEventListener("keydown", e => {
+    overlay._keydownHandler = (e) => {
       if (e.key === "Enter") confirmBtn.click();
       if (e.key === "Escape") cancelBtn.click();
-    });
+    };
+    safeAdd(overlay, "keydown", overlay._keydownHandler);
   }
 }
 

@@ -212,29 +212,35 @@ export class OnboardingManager {
             this.completeOnboarding(modal, cycles, activeCycle);
         };
 
-        nextBtn.addEventListener("click", () => {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+
+        nextBtn._clickHandler = () => {
             if (currentStep < steps.length - 1) {
                 currentStep++;
                 renderStep(currentStep);
             } else {
                 completeOnboardingHandler();
             }
-        });
+        };
+        safeAdd(nextBtn, "click", nextBtn._clickHandler);
 
-        prevBtn.addEventListener("click", () => {
+        prevBtn._clickHandler = () => {
             if (currentStep > 0) {
                 currentStep--;
                 renderStep(currentStep);
             }
-        });
+        };
+        safeAdd(prevBtn, "click", prevBtn._clickHandler);
 
-        skipBtn.addEventListener("click", completeOnboardingHandler);
+        skipBtn._clickHandler = completeOnboardingHandler;
+        safeAdd(skipBtn, "click", skipBtn._clickHandler);
 
-        modal.addEventListener("click", (e) => {
+        modal._clickHandler = (e) => {
             if (e.target === modal) {
                 completeOnboardingHandler();
             }
-        });
+        };
+        safeAdd(modal, "click", modal._clickHandler);
 
         renderStep(currentStep);
     }

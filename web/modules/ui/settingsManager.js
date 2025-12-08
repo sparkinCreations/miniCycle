@@ -30,7 +30,8 @@ let _deps = {
     DataValidator: null,
     calculateNextOccurrence: null,
     sanitizeInput: null,
-    AppMeta: null
+    AppMeta: null,
+    safeAddEventListener: null
 };
 
 /**
@@ -178,19 +179,17 @@ export class SettingsManager {
             }
         };
 
-        // ✅ Remove previous listeners before adding new ones
+        // Use safeAddEventListener (removes then adds to prevent duplicates)
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
         if (openSettingsBtn) {
-            openSettingsBtn.removeEventListener("click", openSettings);
-            openSettingsBtn.addEventListener("click", openSettings);
+            safeAdd(openSettingsBtn, "click", openSettings);
         }
 
         if (closeSettingsBtn) {
-            closeSettingsBtn.removeEventListener("click", closeSettings);
-            closeSettingsBtn.addEventListener("click", closeSettings);
+            safeAdd(closeSettingsBtn, "click", closeSettings);
         }
 
-        document.removeEventListener("click", closeOnClickOutside);
-        document.addEventListener("click", closeOnClickOutside);
+        safeAdd(document, "click", closeOnClickOutside);
 
         // ✅ Dark Mode Toggle
         this.deps.setupDarkModeToggle("darkModeToggle", ["darkModeToggle", "darkModeToggleThemes"]);
@@ -226,12 +225,12 @@ export class SettingsManager {
 
             moveArrowsToggle.checked = moveArrowsEnabled;
 
-            moveArrowsToggle.addEventListener("change", async () => {
+            moveArrowsToggle._changeHandler = async () => {
                 const enabled = moveArrowsToggle.checked;
 
-                console.log('🔄 Move arrows toggle changed:', enabled);
+                console.log('Move arrows toggle changed:', enabled);
 
-                // ✅ Use AppState only (no localStorage fallback)
+                // Use AppState only (no localStorage fallback)
                 const AppState = this.deps.AppState();
                 if (AppState?.isReady?.()) {
                     await AppState.update(state => {
@@ -239,9 +238,9 @@ export class SettingsManager {
                         state.ui.moveArrowsVisible = enabled;
                     }, true); // immediate save
 
-                    console.log('✅ Move arrows setting saved to state:', enabled);
+                    console.log('Move arrows setting saved to state:', enabled);
                 } else {
-                    console.error('❌ AppState not ready - setting not saved');
+                    console.error('AppState not ready - setting not saved');
                     this.deps.showNotification?.('Failed to save setting', 'error');
                     moveArrowsToggle.checked = !enabled; // Revert UI
                     return;
@@ -249,16 +248,17 @@ export class SettingsManager {
 
                 this.deps.updateMoveArrowsVisibility();
 
-                // ✅ Sync with customizer modal if it's open
+                // Sync with customizer modal if it's open
                 const customizerModal = document.getElementById('task-options-customizer-modal');
                 if (customizerModal) {
                     const moveArrowsCheckbox = customizerModal.querySelector('[data-option="moveArrows"]');
                     if (moveArrowsCheckbox) {
                         moveArrowsCheckbox.checked = enabled;
-                        console.log('🔄 Synced customizer modal checkbox:', enabled);
+                        console.log('Synced customizer modal checkbox:', enabled);
                     }
                 }
-            });
+            };
+            safeAdd(moveArrowsToggle, "change", moveArrowsToggle._changeHandler);
 
             console.log('✅ Move arrows toggle setup completed');
         }
@@ -281,21 +281,21 @@ export class SettingsManager {
             threeDotsToggle.checked = threeDotsEnabled;
             document.body.classList.toggle("show-three-dots-enabled", threeDotsEnabled);
 
-            threeDotsToggle.addEventListener("change", async () => {
+            threeDotsToggle._changeHandler = async () => {
                 const enabled = threeDotsToggle.checked;
 
-                console.log('🔄 Three dots toggle changed:', enabled);
+                console.log('Three dots toggle changed:', enabled);
 
-                // ✅ Use AppState only (no localStorage fallback)
+                // Use AppState only (no localStorage fallback)
                 const AppState = this.deps.AppState();
                 if (AppState?.isReady?.()) {
                     await AppState.update(state => {
                         if (!state.settings) state.settings = {};
                         state.settings.showThreeDots = enabled;
                     }, true); // immediate save
-                    console.log('✅ Three dots setting saved to AppState:', enabled);
+                    console.log('Three dots setting saved to AppState:', enabled);
                 } else {
-                    console.error('❌ AppState not ready - setting not saved');
+                    console.error('AppState not ready - setting not saved');
                     this.deps.showNotification?.('Failed to save setting', 'error');
                     threeDotsToggle.checked = !enabled; // Revert UI
                     return;
@@ -303,15 +303,16 @@ export class SettingsManager {
 
                 document.body.classList.toggle("show-three-dots-enabled", enabled);
 
-                // ✅ Disable/enable hover behavior for current tasks
+                // Disable/enable hover behavior for current tasks
                 this.deps.toggleHoverTaskOptions(!enabled);
 
-                // ✅ Update task list UI to add/remove three-dots buttons (DI-pure)
+                // Update task list UI to add/remove three-dots buttons (DI-pure)
                 const refreshTaskListUI = this.deps.refreshTaskListUI;
                 if (typeof refreshTaskListUI === 'function') {
                     refreshTaskListUI();
                 }
-            });
+            };
+            safeAdd(threeDotsToggle, "change", threeDotsToggle._changeHandler);
 
             console.log('✅ Three dots toggle setup completed');
         }
@@ -334,12 +335,12 @@ export class SettingsManager {
 
             completedDropdownToggle.checked = completedDropdownEnabled;
 
-            completedDropdownToggle.addEventListener("change", async () => {
+            completedDropdownToggle._changeHandler = async () => {
                 const enabled = completedDropdownToggle.checked;
 
-                console.log('🔄 Completed dropdown toggle changed:', enabled);
+                console.log('Completed dropdown toggle changed:', enabled);
 
-                // ✅ Use AppState only (no localStorage fallback)
+                // Use AppState only (no localStorage fallback)
                 const AppState = this.deps.AppState();
                 if (AppState?.isReady?.()) {
                     await AppState.update(state => {
@@ -347,21 +348,21 @@ export class SettingsManager {
                         state.settings.showCompletedDropdown = enabled;
                     }, true); // immediate save
 
-                    console.log('✅ Completed dropdown setting saved to state:', enabled);
+                    console.log('Completed dropdown setting saved to state:', enabled);
                 } else {
-                    console.error('❌ AppState not ready - setting not saved');
+                    console.error('AppState not ready - setting not saved');
                     this.deps.showNotification?.('Failed to save setting', 'error');
                     completedDropdownToggle.checked = !enabled; // Revert UI
                     return;
                 }
 
-                // ✅ If enabling, organize existing completed tasks (DI-pure)
+                // If enabling, organize existing completed tasks (DI-pure)
                 const organizeCompletedTasks = this.deps.organizeCompletedTasks;
                 if (enabled && typeof organizeCompletedTasks === 'function') {
                     organizeCompletedTasks();
                 }
 
-                // ✅ If disabling, move completed tasks back to main list
+                // If disabling, move completed tasks back to main list
                 if (!enabled) {
                     const completedList = document.getElementById('completedTaskList');
                     const taskList = document.getElementById('taskList');
@@ -377,16 +378,17 @@ export class SettingsManager {
                         }
                     }
                 }
-            });
+            };
+            safeAdd(completedDropdownToggle, "change", completedDropdownToggle._changeHandler);
 
             console.log('✅ Completed dropdown toggle setup completed');
         }
 
-        // ✅ Update backup function to be Schema 2.5 only
+        // Update backup function to be Schema 2.5 only
         const backupBtn = this.deps.getElementById("backup-mini-cycles");
         if (backupBtn) {
-            backupBtn.addEventListener("click", () => {
-                console.log('📤 Creating backup (Schema 2.5 only)...');
+            backupBtn._clickHandler = () => {
+                console.log('Creating backup (Schema 2.5 only)...');
 
                 const schemaData = localStorage.getItem("miniCycleData");
                 if (!schemaData) {
@@ -414,8 +416,9 @@ export class SettingsManager {
                 a.click();
                 URL.revokeObjectURL(backupUrl);
 
-                this.deps.showNotification("✅ Schema 2.5 backup created successfully!", "success", 3000);
-            });
+                this.deps.showNotification("Schema 2.5 backup created successfully!", "success", 3000);
+            };
+            safeAdd(backupBtn, "click", backupBtn._clickHandler);
         }
 
         // ✅ Update restore function to convert legacy backups to Schema 2.5 (idempotent + cancel-safe)
@@ -457,9 +460,10 @@ export class SettingsManager {
                 fileInput = null;
               }
             };
-            window.addEventListener("focus", onFocusAfterPicker, { once: true });
+            const safeAddLocal = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+            safeAddLocal(window, "focus", onFocusAfterPicker, { once: true });
 
-            fileInput.addEventListener("change", (event) => {
+            fileInput._changeHandler = (event) => {
               const file = event.target.files[0];
               if (!file) {
                 if (fileInput) {
@@ -569,23 +573,22 @@ export class SettingsManager {
               };
 
               reader.readAsText(file);
-            }, { once: true });
+            };
+            safeAddLocal(fileInput, "change", fileInput._changeHandler, { once: true });
 
             fileInput.click();
           };
 
-          // Idempotent listener attachment
-          if (restoreBtn._restoreHandler) {
-            restoreBtn.removeEventListener("click", restoreBtn._restoreHandler);
-          }
+          // Idempotent listener attachment using safeAddEventListener
           restoreBtn._restoreHandler = handleRestore;
-          restoreBtn.addEventListener("click", restoreBtn._restoreHandler);
+          safeAdd(restoreBtn, "click", restoreBtn._restoreHandler);
         }).bind(this)();
 
 
         const resetRecurringBtn = this.deps.getElementById("reset-recurring-default");
         if (resetRecurringBtn) {
-            resetRecurringBtn.addEventListener("click", () => this.resetDefaultRecurringSettings());
+            resetRecurringBtn._clickHandler = () => this.resetDefaultRecurringSettings();
+            safeAdd(resetRecurringBtn, "click", resetRecurringBtn._clickHandler);
         }
 
         // ✅ Update Factory Reset for Schema 2.5 only (awaits all cleanup; no IndexedDB used)
@@ -713,15 +716,15 @@ export class SettingsManager {
             };
 
             // Attach click with confirmation, guard against double-activation
-            resetBtn.addEventListener("click", () => {
+            resetBtn._clickHandler = () => {
                 this.deps.showConfirmationModal({
                     title: "Factory Reset",
-                    message: "⚠️ This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
+                    message: "This will DELETE ALL miniCycle data, settings, and progress. Are you sure?",
                     confirmText: "Delete Everything",
                     cancelText: "Cancel",
                     callback: async (confirmed) => {
                         if (!confirmed) {
-                            this.deps.showNotification("❌ Factory reset cancelled.", "info", 2000);
+                            this.deps.showNotification("Factory reset cancelled.", "info", 2000);
                             return;
                         }
 
@@ -736,7 +739,8 @@ export class SettingsManager {
                         }
                     }
                 });
-            });
+            };
+            safeAdd(resetBtn, "click", resetBtn._clickHandler);
         }).bind(this)();
     }
 
@@ -778,8 +782,9 @@ export class SettingsManager {
       const exportBtn = this.deps.getElementById("export-mini-cycle");
       if (!exportBtn) return;
 
-      exportBtn.addEventListener("click", () => {
-        console.log('📤 Exporting miniCycle (Schema 2.5 only)...');
+      const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+      exportBtn._clickHandler = () => {
+        console.log('Exporting miniCycle (Schema 2.5 only)...');
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -832,9 +837,10 @@ export class SettingsManager {
           createdAt: cycle.createdAt || null
         };
 
-        console.log('✅ Export data prepared');
+        console.log('Export data prepared');
         this.exportMiniCycleData(miniCycleData, cycle.title || activeCycle);
-      });
+      };
+      safeAdd(exportBtn, "click", exportBtn._clickHandler);
     }
 
     /**
@@ -910,9 +916,10 @@ export class SettingsManager {
             fileInput = null;
           }
         };
-        window.addEventListener("focus", onFocusAfterPicker, { once: true });
+        const safeAddLocal = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        safeAddLocal(window, "focus", onFocusAfterPicker, { once: true });
 
-        fileInput.addEventListener("change", (event) => {
+        fileInput._changeHandler = (event) => {
           const file = event.target.files[0];
           if (!file) {
             fileInput.remove();
@@ -1079,21 +1086,20 @@ export class SettingsManager {
           };
 
           reader.readAsText(file);
-        }, { once: true });
+        };
+        safeAddLocal(fileInput, "change", fileInput._changeHandler, { once: true });
 
         fileInput.click();
       };
 
-      // Attach listeners idempotently
+      // Attach listeners idempotently using safeAddEventListener
+      const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
       importButtons.forEach((buttonId) => {
         const button = this.deps.getElementById(buttonId);
         if (!button) return;
 
-        if (button._importHandler) {
-          button.removeEventListener("click", button._importHandler);
-        }
         button._importHandler = handleImport;
-        button.addEventListener("click", button._importHandler);
+        safeAdd(button, "click", button._importHandler);
       });
     }
 

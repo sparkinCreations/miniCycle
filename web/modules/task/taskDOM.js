@@ -783,7 +783,8 @@ export class TaskDOMManager {
         button.setAttribute("aria-label", "Customize which task option buttons are visible");
 
         // Click handler - use deps (injected via setTaskDOMManagerDependencies)
-        button.addEventListener("click", (e) => {
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        button._clickHandler = (e) => {
             e.stopPropagation();
             const customizer = this.deps.taskOptionsCustomizer;
             if (customizer) {
@@ -799,15 +800,17 @@ export class TaskDOMManager {
             } else {
                 console.warn('⚠️ TaskOptionsCustomizer not injected');
             }
-        });
+        };
+        safeAdd(button, "click", button._clickHandler);
 
         // Keyboard handler
-        button.addEventListener("keydown", (e) => {
+        button._keydownHandler = (e) => {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 button.click();
             }
-        });
+        };
+        safeAdd(button, "keydown", button._keydownHandler);
 
         return button;
     }
@@ -851,8 +854,9 @@ export class TaskDOMManager {
     setupButtonAccessibility(button, btnClass, buttonContainer) {
         button.setAttribute("tabindex", "0");
 
-        // Keyboard navigation
-        button.addEventListener("keydown", (e) => {
+        // Keyboard navigation with safeAddEventListener
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        button._accessibilityKeydownHandler = (e) => {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 button.click();
@@ -867,7 +871,8 @@ export class TaskDOMManager {
                 focusable[nextIndex].focus();
                 e.preventDefault();
             }
-        });
+        };
+        safeAdd(button, "keydown", button._accessibilityKeydownHandler);
 
         // ARIA labels and tooltips
         const ariaLabels = {
@@ -950,9 +955,10 @@ export class TaskDOMManager {
             // ✅ Skip attaching old handlers to move buttons - using event delegation
             console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
         } else {
-            // Use handleTaskButtonClick from injected deps
+            // Use handleTaskButtonClick from injected deps with safeAddEventListener
             if (typeof this.deps.handleTaskButtonClick === 'function') {
-                button.addEventListener("click", this.deps.handleTaskButtonClick);
+                const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+                safeAdd(button, "click", this.deps.handleTaskButtonClick);
             }
         }
     }
@@ -965,7 +971,8 @@ export class TaskDOMManager {
     setupDeleteWhenCompleteButtonHandler(button, taskContext) {
         const { assignedTaskId } = taskContext;
 
-        button.addEventListener("click", async (e) => {
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        button._deleteWhenCompleteClickHandler = async (e) => {
             e.stopPropagation();
 
             const taskItem = button.closest(".task");
@@ -1089,7 +1096,8 @@ export class TaskDOMManager {
                     : "Task will remain in list on auto-reset";
             }
             this.deps.showNotification?.(message, "info", 2000);
-        });
+        };
+        safeAdd(button, "click", button._deleteWhenCompleteClickHandler);
     }
 
     /**
@@ -1290,7 +1298,8 @@ export class TaskDOMManager {
         // ✅ Mark that handler is attached to prevent double-attachment
         button.dataset.handlerAttached = 'true';
 
-        button.addEventListener("click", (event) => {
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        button._recurringClickHandler = (event) => {
             // ✅ Prevent event from bubbling to checkbox
             event.stopPropagation();
             event.preventDefault();
@@ -1410,7 +1419,8 @@ export class TaskDOMManager {
             if (this.deps.recurringPanel?.updateRecurringPanel) {
                 this.deps.recurringPanel.updateRecurringPanel();
             }
-        });
+        };
+        safeAdd(button, "click", button._recurringClickHandler);
     }
 
     /**

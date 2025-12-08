@@ -41,7 +41,8 @@ export class DragDropManager {
             hideTaskButtons: mergedDeps.hideTaskButtons || this.fallbackHide,
             isTouchDevice: mergedDeps.isTouchDevice || this.fallbackIsTouchDevice,
             enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
-            showNotification: mergedDeps.showNotification || this.fallbackNotification
+            showNotification: mergedDeps.showNotification || this.fallbackNotification,
+            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener
         };
 
         // Internal state (local to this instance, not global)
@@ -108,20 +109,24 @@ export class DragDropManager {
             // Mark as initialized (instance state)
             this.rearrangeInitialized = true;
 
+            // Use safeAddEventListener to prevent duplicate handlers
+            const safeAdd = this.deps.safeAddEventListener;
+
             // Add event delegation for arrow clicks (survives DOM re-renders)
             const taskList = document.getElementById("taskList");
             if (taskList) {
-                taskList.addEventListener("click", (event) => {
+                taskList._arrowClickHandler = (event) => {
                     if (event.target.matches('.move-up, .move-down')) {
                         event.preventDefault();
                         event.stopPropagation();
                         this.handleArrowClick(event.target);
                     }
-                });
+                };
+                safeAdd(taskList, "click", taskList._arrowClickHandler);
             }
 
             // Setup dragover handler
-            document.addEventListener("dragover", (event) => {
+            document._dragoverHandler = (event) => {
                 event.preventDefault();
                 requestAnimationFrame(() => {
                     const movingTask = event.target.closest(".task");
@@ -129,10 +134,11 @@ export class DragDropManager {
                         this.handleRearrange(movingTask, event);
                     }
                 });
-            });
+            };
+            safeAdd(document, "dragover", document._dragoverHandler);
 
             // Setup drop handler
-            document.addEventListener("drop", (event) => {
+            document._dropHandler = (event) => {
                 event.preventDefault();
                 if (!this.draggedTask) return;
 
@@ -153,7 +159,8 @@ export class DragDropManager {
                 this.cleanupDragState();
                 this.lastReorderTime = 0;
                 this.didDragReorderOccur = false;
-            });
+            };
+            safeAdd(document, "drop", document._dropHandler);
 
             console.log('✅ Rearrange event handlers setup complete');
         } catch (error) {
@@ -198,8 +205,11 @@ export class DragDropManager {
             let preventClick = false;
             const moveThreshold = 15; // Movement threshold for long press
 
+            // Use safeAddEventListener
+            const safeAdd = this.deps.safeAddEventListener;
+
             // 📱 **Touch-based Drag for Mobile**
-            taskElement.addEventListener("touchstart", (event) => {
+            taskElement._touchstartHandler = (event) => {
                 if (event.target.closest(".task-options")) return;
                 isLongPress = false;
                 isDragging = false;
@@ -232,9 +242,10 @@ export class DragDropManager {
                     // Pass 'long-press' as caller so controller allows it in both modes
                     this.deps.revealTaskButtons(taskElement, 'long-press');
                 }, 500); // Long-press delay (500ms)
-            }, { passive: false }); // Must be non-passive - calls preventDefault() on line 199
+            };
+            safeAdd(taskElement, "touchstart", taskElement._touchstartHandler, { passive: false }); // Must be non-passive - calls preventDefault()
 
-            taskElement.addEventListener("touchmove", (event) => {
+            taskElement._touchmoveHandler = (event) => {
                 const touchMoveX = event.touches[0].clientX;
                 const touchMoveY = event.touches[0].clientY;
                 const deltaX = Math.abs(touchMoveX - touchStartX);
@@ -273,9 +284,10 @@ export class DragDropManager {
                         this.handleRearrange(movingTask, event);
                     }
                 }
-            }, { passive: false }); // Must be non-passive - calls preventDefault() on lines 234, 240
+            };
+            safeAdd(taskElement, "touchmove", taskElement._touchmoveHandler, { passive: false }); // Must be non-passive - calls preventDefault()
 
-            taskElement.addEventListener("touchend", () => {
+            taskElement._touchendHandler = () => {
                 clearTimeout(holdTimeout);
 
                 if (isTap) {
@@ -299,10 +311,11 @@ export class DragDropManager {
                 }
 
                 taskElement.classList.remove("long-pressed");
-            }, { passive: true });
+            };
+            safeAdd(taskElement, "touchend", taskElement._touchendHandler, { passive: true });
 
             // 🖱️ **Mouse-based Drag for Desktop**
-            taskElement.addEventListener("dragstart", (event) => {
+            taskElement._dragstartHandler = (event) => {
                 if (event.target.closest(".task-options")) return;
 
                 // Enable undo system on first user interaction
@@ -318,7 +331,8 @@ export class DragDropManager {
                 if (!this.deps.isTouchDevice()) {
                     event.dataTransfer.setDragImage(transparentPixel, 0, 0);
                 }
-            });
+            };
+            safeAdd(taskElement, "dragstart", taskElement._dragstartHandler);
 
             console.log('✅ Drag and drop enabled on task element');
         } catch (error) {
@@ -504,10 +518,13 @@ export class DragDropManager {
      */
     setupDragEndCleanup() {
         try {
-            document.addEventListener("drop", () => this.cleanupDragState());
-            document.addEventListener("dragover", () => {
+            const safeAdd = this.deps.safeAddEventListener;
+            document._dragEndDropHandler = () => this.cleanupDragState();
+            safeAdd(document, "drop", document._dragEndDropHandler);
+            document._dragEndDragoverHandler = () => {
                 document.querySelectorAll(".rearranging").forEach(task => task.classList.remove("rearranging"));
-            });
+            };
+            safeAdd(document, "dragover", document._dragEndDragoverHandler);
         } catch (error) {
             console.warn('⚠️ Failed to setup drag end cleanup:', error);
         }
@@ -684,6 +701,13 @@ export class DragDropManager {
 
     fallbackNotification(message, type) {
         console.log(`[DragDrop] ${message}`);
+    }
+
+    fallbackAddListener(element, event, handler, options) {
+        if (element) {
+            element.removeEventListener(event, handler, options);
+            element.addEventListener(event, handler, options);
+        }
     }
 }
 
