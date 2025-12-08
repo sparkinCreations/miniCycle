@@ -497,5 +497,8 @@ class AppInit {
 // Create singleton instance
 export const appInit = new AppInit();
 
+// Simple version marker so callers can detect stale appInit.js
+export const APPINIT_VERSION = '2.0.0';
+
 // Phase 2 Step 6 - Clean exports (no window.* pollution)
 console.log('🚀 miniCycle AppInit loaded (Phase 2 - no window.* exports)');
