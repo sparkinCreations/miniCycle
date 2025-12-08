@@ -22,7 +22,7 @@ const colors = {
     magenta: '\x1b[35m'
 };
 
-// All available test modules (47 modules - matches browser "Run All Tests")
+// All available test modules (50 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
     'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
@@ -30,9 +30,10 @@ const ALL_MODULES = [
     'reminders', 'modeManager', 'cycleSwitcher', 'cycleManager', 'undoRedoManager',
     'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager',
     'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
-    'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'xss-vulnerability', 'errorHandler',
-    'testingModal', 'backupManager', 'cycleCompletion', 'dataValidator', 'appInit', 'appState',
-    'helpWindowManager', 'constants', 'basicPluginSystem', 'accessibility', 'stress'
+    'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
+    'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'cycleCompletion',
+    'dataValidator', 'appInit', 'appState', 'helpWindowManager', 'constants', 'basicPluginSystem',
+    'accessibility', 'stress'
 ];
 
 // Parse command line arguments

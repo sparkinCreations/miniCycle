@@ -476,7 +476,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         loadMiniCycleData: () => window.loadMiniCycleData?.(),
         generateHashId: (...args) => window.generateHashId?.(...args),
         GlobalUtils: window.GlobalUtils,
-        escapeHtml: (...args) => window.escapeHtml?.(...args)
+        escapeHtml: (...args) => window.escapeHtml?.(...args),
+        safeAddEventListener: GlobalUtils.safeAddEventListener
     });
 
     const notifications = new notificationsMod.MiniCycleNotifications();
@@ -927,7 +928,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             setupDarkModeToggle: (id, syncIds) => window.setupDarkModeToggle?.(id, syncIds),
             get AppState() { return window.AppState; },
             get appInit() { return window.appInit; },
-            AppMeta: window.AppMeta
+            AppMeta: window.AppMeta,
+            safeAddEventListener: GlobalUtils.safeAddEventListener
         });
 
         const statsPanelManager = new StatsPanelManager();
@@ -1491,7 +1493,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 getElementById: (id) => document.getElementById(id),
                 querySelector: (sel) => document.querySelector(sel),
                 querySelectorAll: (sel) => document.querySelectorAll(sel),
-                safeAddEventListener: (el, ev, handler) => window.safeAddEventListener?.(el, ev, handler),
+                safeAddEventListener: GlobalUtils.safeAddEventListener,
                 switchMiniCycle: () => window.switchMiniCycle?.(),
                 createNewMiniCycle: () => window.createNewMiniCycle?.(),
                 loadMiniCycle: () => window.loadMiniCycle?.(),
@@ -1657,6 +1659,76 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         window.checkMiniCycle = checkMiniCycle;
 
         console.log('✅ Cycle completion module initialized (with progress functions)');
+
+        // ✅ Initialize Task UI Module (DI-pure)
+        console.log('🎯 Initializing task UI module...');
+        try {
+            const { setTaskUIDependencies, TaskOptionsVisibilityController, refreshTaskListUI, showTaskOptions, hideTaskOptions, hideTaskButtons, checkCompleteAllButton } = await import(withV('./modules/ui/taskUI.js'));
+
+            // Wire dependencies (DI-pure pattern)
+            setTaskUIDependencies({
+                loadMiniCycleData: () => window.loadMiniCycleData?.(),
+                addTask: (...args) => window.addTask?.(...args),
+                updateRecurringButtonVisibility: () => window.updateRecurringButtonVisibility?.(),
+                getElementById: (id) => document.getElementById(id),
+                getTaskList: () => document.getElementById('taskList'),
+                getCompleteAllButton: () => document.getElementById('completeAll'),
+                isTouchDevice: () => window.isTouchDevice?.()
+            });
+
+            // Phase 3: Main script handles window.* exposure
+            window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
+            window.refreshTaskListUI = refreshTaskListUI;
+            window.showTaskOptions = showTaskOptions;
+            window.hideTaskOptions = hideTaskOptions;
+            window.hideTaskButtons = hideTaskButtons;
+            window.checkCompleteAllButton = checkCompleteAllButton;
+
+            console.log('✅ Task UI module initialized (Phase 3)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task UI module:', error);
+            console.warn('⚠️ App will continue without task UI module functionality');
+        }
+
+        // ✅ Initialize Task Interactions Module (DI-pure)
+        console.log('🎯 Initializing task interactions module...');
+        try {
+            const { setTaskInteractionsDependencies, attachKeyboardTaskOptionToggle } = await import(withV('./modules/ui/taskInteractions.js'));
+
+            // Wire dependencies (DI-pure pattern)
+            setTaskInteractionsDependencies({
+                safeAddEventListener: GlobalUtils.safeAddEventListener
+            });
+
+            // Phase 3: Main script handles window.* exposure
+            window.attachKeyboardTaskOptionToggle = attachKeyboardTaskOptionToggle;
+
+            console.log('✅ Task interactions module initialized (Phase 3)');
+        } catch (error) {
+            console.error('❌ Failed to initialize task interactions module:', error);
+            console.warn('⚠️ App will continue without task interactions module functionality');
+        }
+
+        // ✅ Initialize UI Effects Module (DI-pure)
+        console.log('🎯 Initializing UI effects module...');
+        try {
+            const { setUIEffectsDependencies, triggerLogoBackground } = await import(withV('./modules/ui/uiEffects.js'));
+
+            // Wire dependencies (DI-pure pattern)
+            setUIEffectsDependencies({
+                querySelector: (sel) => document.querySelector(sel),
+                getLogoTimeoutId: () => window.AppGlobalState?.logoTimeoutId,
+                setLogoTimeoutId: (val) => { if (window.AppGlobalState) window.AppGlobalState.logoTimeoutId = val; }
+            });
+
+            // Phase 3: Main script handles window.* exposure
+            window.triggerLogoBackground = triggerLogoBackground;
+
+            console.log('✅ UI effects module initialized (Phase 3)');
+        } catch (error) {
+            console.error('❌ Failed to initialize UI effects module:', error);
+            console.warn('⚠️ App will continue without UI effects module functionality');
+        }
 
         // ✅ Initialize Help Window Manager (needed by taskCore)
         console.log('🎯 Initializing help window manager...');
@@ -2220,7 +2292,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
 
 // Undo "Z" and Redo "Y" keyboard shortcuts (state-based)
-document.addEventListener("keydown", (e) => {
+function handleUndoRedoKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         window.performStateBasedUndo?.();
@@ -2228,7 +2300,8 @@ document.addEventListener("keydown", (e) => {
         e.preventDefault();
         window.performStateBasedRedo?.();
     }
-});
+}
+GlobalUtils.safeAddEventListener(document, "keydown", handleUndoRedoKeydown);
 
 
 // ============================================================================
@@ -2269,53 +2342,7 @@ if (!window.deviceDetectionManager) {
 }
 
 
-        function refreshTaskListUI() {
-          console.log('🔄 Refreshing task list UI (Schema 2.5 only)...');
-
-          const schemaData = loadMiniCycleData();
-          if (!schemaData) {
-              console.error('❌ Schema 2.5 data required for refreshTaskListUI');
-              throw new Error('Schema 2.5 data not found');
-          }
-
-          const { cycles, activeCycle } = schemaData;
-          const cycleData = cycles[activeCycle];
-
-          if (!cycleData) {
-              console.warn("⚠️ No active cycle found for UI refresh");
-              return;
-          }
-
-          // Clear current list
-          const taskListContainer = document.getElementById("taskList");
-          if (!taskListContainer) return;
-          taskListContainer.innerHTML = "";
-
-          // Re-render each task from Schema 2.5
-          (cycleData.tasks || []).forEach(task => {
-              // ✅ Use window.addTask to ensure we get the correctly initialized function
-              (window.addTask || addTask)(
-                  task.text,
-                  task.completed,
-                  false, // Don't double save
-                  task.dueDate,
-                  task.highPriority,
-                  true,  // isLoading (skip overdue reminder immediately)
-                  task.remindersEnabled,
-                  task.recurring,
-                  task.id,
-                  task.recurringSettings,
-                  task.deleteWhenComplete,
-                  task.deleteWhenCompleteSettings
-              );
-          });
-
-          window.updateRecurringButtonVisibility?.();
-          console.log("✅ Task list UI refreshed from Schema 2.5");
-      }
-
-// Export for module use
-window.refreshTaskListUI = refreshTaskListUI;
+// ✅ MOVED: refreshTaskListUI to modules/ui/taskUI.js
 
 
 // ✅ REMOVED: initializeDefaultRecurringSettings - now handled by recurringCore module
@@ -2354,75 +2381,77 @@ window.refreshTaskListUI = refreshTaskListUI;
  * Prevents empty titles and restores the previous title if an invalid entry is made.
  */
 
+// Named handler for title blur - defined at module level for safeAddEventListener
+async function handleMiniCycleTitleBlur() {
+    const titleElement = document.getElementById("mini-cycle-title");
+    if (!titleElement) return;
+
+    let newTitle = window.sanitizeInput(titleElement.textContent.trim());
+
+    if (newTitle === "") {
+        console.log('Empty title detected, reverting (Schema 2.5 only)...');
+
+        const schemaData = loadMiniCycleData();
+        if (!schemaData) {
+            console.error('Schema 2.5 data required for title revert');
+            return;
+        }
+
+        const { cycles, activeCycle } = schemaData;
+        const oldTitle = cycles[activeCycle]?.title || "Untitled miniCycle";
+
+        showNotification("Title cannot be empty. Reverting to previous title.");
+        titleElement.textContent = oldTitle;
+        return;
+    }
+
+    console.log('Updating title (Schema 2.5 only)...');
+    const schemaData = loadMiniCycleData();
+    if (!schemaData) {
+        console.error('Schema 2.5 data required for setupMiniCycleTitleListener');
+        return;
+    }
+
+    const { cycles, activeCycle } = schemaData;
+    const miniCycleData = cycles[activeCycle];
+    if (!activeCycle || !miniCycleData) {
+        console.warn("No active miniCycle found. Title update aborted.");
+        return;
+    }
+
+    const oldTitle = miniCycleData.title;
+    if (newTitle !== oldTitle) {
+        console.log(`Title change detected: "${oldTitle}" → "${newTitle}"`);
+
+        // Update via AppState only (no direct localStorage fallback)
+        if (window.AppState?.isReady?.()) {
+            await window.AppState.update(state => {
+                const cid = state?.appState?.activeCycleId;
+                const cycle = state?.data?.cycles?.[cid];
+                if (cycle) cycle.title = newTitle;
+            }, true);
+        } else {
+            // AppState should always be ready by this point
+            console.error('Title update failed: AppState not ready');
+            showNotification('Failed to save title change', 'error');
+            titleElement.textContent = oldTitle; // Revert UI
+            return;
+        }
+
+        // Refresh UI
+        updateMainMenuHeader();
+        updateUndoRedoButtons();
+    }
+}
+
 function setupMiniCycleTitleListener() {
     const titleElement = document.getElementById("mini-cycle-title");
     if (!titleElement) return;
 
     titleElement.contentEditable = true;
 
-    if (!titleElement.dataset.listenerAdded) {
-        titleElement.addEventListener("blur", async () => { // <= make async
-            let newTitle = window.sanitizeInput(titleElement.textContent.trim());
-
-
-            if (newTitle === "") {
-                console.log('🔍 Empty title detected, reverting (Schema 2.5 only)...');
-                
-                const schemaData = loadMiniCycleData();
-                if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for title revert');
-                    return;
-                }
-
-                const { cycles, activeCycle } = schemaData;
-                const oldTitle = cycles[activeCycle]?.title || "Untitled miniCycle";
-
-                showNotification("⚠ Title cannot be empty. Reverting to previous title.");
-                titleElement.textContent = oldTitle;
-                return;
-            }
-
-             console.log('📝 Updating title (Schema 2.5 only)...');
-            const schemaData = loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for setupMiniCycleTitleListener');
-                return;
-            }
-
-            const { cycles, activeCycle } = schemaData;
-            const miniCycleData = cycles[activeCycle];
-            if (!activeCycle || !miniCycleData) {
-                console.warn("⚠ No active miniCycle found. Title update aborted.");
-                return;
-            }
-
-            const oldTitle = miniCycleData.title;
-            if (newTitle !== oldTitle) {
-                console.log(`🔄 Title change detected: "${oldTitle}" → "${newTitle}"`);
-
-                // ✅ Update via AppState only (no direct localStorage fallback)
-                if (window.AppState?.isReady?.()) {
-                    await window.AppState.update(state => {
-                        const cid = state?.appState?.activeCycleId;
-                        const cycle = state?.data?.cycles?.[cid];
-                        if (cycle) cycle.title = newTitle;
-                    }, true);
-                } else {
-                    // ✅ AppState should always be ready by this point
-                    console.error('❌ Title update failed: AppState not ready');
-                    showNotification('Failed to save title change', 'error');
-                    titleElement.textContent = oldTitle; // Revert UI
-                    return;
-                }
-
-                // 🔄 Refresh UI
-                updateMainMenuHeader();
-                updateUndoRedoButtons(); // ✅ Use centralized button management
-            }
-        });
-
-        titleElement.dataset.listenerAdded = true;
-    }
+    // safeAddEventListener handles duplicate prevention - no dataset flag needed
+    GlobalUtils.safeAddEventListener(titleElement, "blur", handleMiniCycleTitleBlur);
 }
 
 /**
@@ -2649,10 +2678,11 @@ window.updateCycleData = updateCycleData;
 
 
 
-indefiniteCheckbox.addEventListener("change", () => {
+function handleIndefiniteCheckboxChange() {
   // If indefinite, hide the repeatCount row
   repeatCountRow.style.display = indefiniteCheckbox.checked ? "none" : "block";
-});
+}
+GlobalUtils.safeAddEventListener(indefiniteCheckbox, "change", handleIndefiniteCheckboxChange);
 
 
 
@@ -2661,17 +2691,20 @@ indefiniteCheckbox.addEventListener("change", () => {
 // - window.startReminders(), window.stopReminders(), etc. (individual functions)
 //
 // Modal event listeners remain here for backward compatibility:
-closeRemindersBtn.addEventListener("click", () => {
+function handleCloseRemindersBtnClick() {
     remindersModal.style.display = "none";
-});
+}
+GlobalUtils.safeAddEventListener(closeRemindersBtn, "click", handleCloseRemindersBtnClick);
 
-window.addEventListener("click", (event) => {
+function handleWindowClickForRemindersModal(event) {
     if (event.target === remindersModal) {
         remindersModal.style.display = "none";
     }
-});
+}
+GlobalUtils.safeAddEventListener(window, "click", handleWindowClickForRemindersModal);
 
-document.getElementById('try-lite-version')?.addEventListener('click', function() {
+// Named handler for safeAddEventListener duplicate prevention
+function handleTryLiteVersionClick() {
   showConfirmationModal({
     title: "Switch to Lite Version",
     message: "Try the Lite version? It works great on older devices and slower connections.",
@@ -2683,7 +2716,8 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
       }
     }
   });
-});
+}
+GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', handleTryLiteVersionClick);
 
 
 // ✅ REMOVED: Notification wrapper functions (showNotification, showConfirmationModal, showPromptModal, etc.)
@@ -2698,11 +2732,13 @@ document.getElementById('try-lite-version')?.addEventListener('click', function(
   }
 
 
-document.getElementById("always-show-recurring")?.addEventListener("change", () => {
+// Named handler for safeAddEventListener duplicate prevention
+function handleAlwaysShowRecurringChange() {
     if (window.recurringPanel?.saveAlwaysShowRecurringSetting) {
         window.recurringPanel.saveAlwaysShowRecurringSetting();
     }
-});
+}
+GlobalUtils.safeAddEventListenerById("always-show-recurring", "change", handleAlwaysShowRecurringChange);
 
 
 
@@ -2712,21 +2748,23 @@ document.getElementById("always-show-recurring")?.addEventListener("change", () 
  * @returns {void}
  */
 
+function handleOpenUserManualClick() {
+    hideMainMenu(); // Hide the menu when clicking
+
+    // Disable button briefly to prevent multiple clicks
+    openUserManual.disabled = true;
+
+    // Redirect to the User Manual page after a short delay
+    setTimeout(() => {
+        window.location.href = "legal/user-manual.html"; // ✅ Opens the manual page
+
+        // Re-enable button after navigation (won't matter much since page changes)
+        openUserManual.disabled = false;
+    }, 200);
+}
+
 function setupUserManual() {
-    openUserManual.addEventListener("click", () => {
-        hideMainMenu(); // Hide the menu when clicking
-
-        // Disable button briefly to prevent multiple clicks
-        openUserManual.disabled = true;
-
-        // Redirect to the User Manual page after a short delay
-        setTimeout(() => {
-            window.location.href = "legal/user-manual.html"; // ✅ Opens the manual page
-
-            // Re-enable button after navigation (won't matter much since page changes)
-            openUserManual.disabled = false;
-        }, 200);
-    });
+    GlobalUtils.safeAddEventListener(openUserManual, "click", handleOpenUserManualClick);
 }
 
 
@@ -3132,7 +3170,7 @@ if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
 
 // ✅ toggleHoverTaskOptions removed - now using module version from taskDOM.js
 
-document.addEventListener("click", (e) => {
+function handleRecurringSettingsClick(e) {
   const target = e.target.closest(".open-recurring-settings");
   if (!target) return;
 
@@ -3141,7 +3179,8 @@ document.addEventListener("click", (e) => {
 
   // 🎯 Use your centralized panel-opening logic
   openRecurringSettingsPanelForTask(taskId);
-});
+}
+GlobalUtils.safeAddEventListener(document, "click", handleRecurringSettingsClick);
 
 /**
  * ✅ Sanitize user input to prevent XSS attacks or malformed content.
@@ -3150,268 +3189,11 @@ document.addEventListener("click", (e) => {
  */
 // ✅ sanitizeInput removed - now using module version from globalUtils.js
 
-    /**
- * ═══════════════════════════════════════════════════════════════════
- * TASK OPTIONS VISIBILITY CONTROLLER
- * ═══════════════════════════════════════════════════════════════════
- *
- * Centralized controller for task options visibility state.
- * Coordinates between multiple interaction modes (hover, three-dots, focus)
- * to prevent race conditions and conflicting behavior.
- *
- * MODES:
- * - HOVER MODE: Options show on mouseenter/focusin, hide on mouseleave/focusout
- * - THREE-DOTS MODE: Options show ONLY on three-dots button click (manual toggle)
- *
- * See: docs/architecture/EVENT_FLOW_PATTERNS.md for complete documentation
- * ═══════════════════════════════════════════════════════════════════
- */
-class TaskOptionsVisibilityController {
-    /**
-     * Get the current visibility mode
-     * @returns {'hover' | 'three-dots'} Current mode
-     */
-    static getMode() {
-        return document.body.classList.contains("show-three-dots-enabled") ? 'three-dots' : 'hover';
-    }
-
-    /**
-     * Check if a caller is allowed to change visibility in the current mode
-     * @param {string} caller - Identifier for the event handler calling this
-     * @returns {boolean} Whether the caller can modify visibility
-     */
-    static canHandle(caller) {
-        const mode = this.getMode();
-
-        // 🟣 Always allow long-press, regardless of mode
-        // This guarantees mobile long-press can reveal options
-        // whether three-dots is enabled or not.
-        if (caller === 'long-press') {
-            return true;
-        }
-
-        const permissions = {
-            'hover': ['mouseenter', 'mouseleave', 'focusin', 'focusout', 'hideTaskButtons'],
-            'three-dots': ['three-dots-button', 'focusout']
-        };
-
-        return permissions[mode]?.includes(caller) || false;
-    }
-
-    /**
-     * Set task options visibility with mode-aware coordination
-     * @param {HTMLElement} taskItem - The task element
-     * @param {boolean} visible - Desired visibility state
-     * @param {string} caller - Identifier for the event handler (for logging/permissions)
-     * @returns {boolean} Whether the visibility was changed
-     */
-    static setVisibility(taskItem, visible, caller = 'unknown') {
-        const taskOptions = taskItem.querySelector('.task-options');
-        if (!taskOptions) {
-            console.warn(`⚠️ TaskOptionsVisibilityController: No .task-options found for ${caller}`);
-            return false;
-        }
-
-        // Check if this caller is allowed to change visibility in current mode
-        if (!this.canHandle(caller)) {
-            console.log(`⏭️ ${caller}: Skipping visibility change in ${this.getMode()} mode`);
-            return false;
-        }
-
-        // Apply visibility state
-        taskOptions.style.visibility = visible ? "visible" : "hidden";
-        taskOptions.style.opacity = visible ? "1" : "0";
-        taskOptions.style.pointerEvents = visible ? "auto" : "none";
-
-        console.log(`👁️ ${caller}: visibility → ${visible ? 'visible' : 'hidden'} (mode: ${this.getMode()})`);
-        return true;
-    }
-
-    /**
-     * Show task options (convenience method)
-     * @param {HTMLElement} taskItem - The task element
-     * @param {string} caller - Identifier for the event handler
-     * @returns {boolean} Whether the visibility was changed
-     */
-    static show(taskItem, caller) {
-        return this.setVisibility(taskItem, true, caller);
-    }
-
-    /**
-     * Hide task options (convenience method)
-     * @param {HTMLElement} taskItem - The task element
-     * @param {string} caller - Identifier for the event handler
-     * @returns {boolean} Whether the visibility was changed
-     */
-    static hide(taskItem, caller) {
-        return this.setVisibility(taskItem, false, caller);
-    }
-}
-
-// Export for global access
-window.TaskOptionsVisibilityController = TaskOptionsVisibilityController;
-
-    /**
- * ⌨️ Accessibility Helper: Toggles visibility of task buttons when task item is focused or blurred.
- *
- * When navigating with the keyboard (e.g., using Tab), this ensures that the task option buttons
- * (edit, delete, reminders, etc.) are shown while the task is focused and hidden when it loses focus.
- *
- * This provides a keyboard-accessible experience similar to mouse hover.
- *
- * @param {HTMLElement} taskItem - The task <li> element to attach listeners to.
- */
-    function attachKeyboardTaskOptionToggle(taskItem) {
-      /**
-       * ⌨️ Show task buttons only when focus is inside a real action element.
-       * Prevent buttons from appearing when clicking the checkbox or task text.
-       */
-      GlobalUtils.safeAddEventListener(taskItem, "focusin", (e) => {
-        const target = e.target;
-
-        // ✅ Skip if focusing on safe elements that shouldn't trigger button reveal
-        if (
-          target.classList.contains("task-text") ||
-          target.type === "checkbox" ||
-          target.closest(".focus-safe")
-        ) {
-          return;
-        }
-
-        // ✅ Use centralized controller (handles mode checking automatically)
-        TaskOptionsVisibilityController.show(taskItem, 'focusin');
-      });
-
-      /**
-       * ⌨️ Hide task buttons when focus moves outside the entire task
-       */
-      GlobalUtils.safeAddEventListener(taskItem, "focusout", (e) => {
-        if (taskItem.contains(e.relatedTarget)) return;
-
-        // ✅ Use centralized controller (handles mode checking automatically)
-        TaskOptionsVisibilityController.hide(taskItem, 'focusout');
-      });
-    }
-
-    // ✅ Export for taskDOM module
-    window.attachKeyboardTaskOptionToggle = attachKeyboardTaskOptionToggle;
-
-
-    // ✅ REMOVED: updateReminderButtons() - Now in modules/features/reminders.js
-    // Use window.updateReminderButtons() which is globally exported from the module
-
-
-
-
-    /**
- * Showtaskoptions function.
- *
- * @param {any} event - Description. * @returns {void}
- */
-
-
-
-    function hideTaskButtons(taskItem) {
-
-      if (taskItem.classList.contains("rearranging")) {
-        console.log("⏳ Skipping hide during task rearrangement");
-        return;
-      }
-
-      // ✅ Don't hide if task is long-pressed (mobile long-press in progress)
-      if (taskItem.classList.contains("long-pressed")) {
-        console.log("⏳ Skipping hide during long-press");
-        return;
-      }
-
-        // ✅ Use centralized controller instead of direct manipulation
-        // Controller will check permissions and skip if not allowed in current mode
-        // In three-dots mode: hideTaskButtons is NOT in the permissions list,
-        // so it won't be able to override the three-dots button's visibility control
-        const wasHidden = TaskOptionsVisibilityController.hide(taskItem, 'hideTaskButtons');
-
-        if (!wasHidden) {
-            console.log('⏭️ hideTaskButtons: Skipped by controller (three-dots mode protection)');
-            return;
-        }
-
-        // Clear individual button inline styles if we successfully hid
-        const taskOptions = taskItem.querySelector(".task-options");
-        if (taskOptions) {
-            const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
-
-            if (threeDotsEnabled) {
-                // Three-dots mode: use inline styles to explicitly hide individual buttons
-                taskItem.querySelectorAll(".task-btn").forEach(btn => {
-                    btn.style.visibility = "hidden";
-                    btn.style.opacity = "0";
-                    btn.style.pointerEvents = "none";
-                });
-            } else {
-                // Regular hover mode: clear inline styles to let CSS handle it
-                taskItem.querySelectorAll(".task-btn").forEach(btn => {
-                    btn.style.visibility = "";
-                    btn.style.opacity = "";
-                    btn.style.pointerEvents = "";
-                });
-            }
-        }
-
-        // ✅ REMOVED: updateMoveArrowsVisibility() - was causing performance issues
-        // Arrow visibility is now controlled by taskOptionButtons customization
-        // and should only update when settings change, not on every hide event
-    }
-
-
-
-
-    function showTaskOptions(event) {
-        const taskElement = event.currentTarget;
-
-        // ✅ Only allow on desktop or if long-pressed on mobile
-        const isMobile = isTouchDevice();
-        const allowShow = !isMobile || taskElement.classList.contains("long-pressed");
-
-        console.log('🟣 showTaskOptions (hover handler) called:', {
-            taskId: taskElement.dataset.id || 'unknown',
-            eventType: event.type,
-            isMobile,
-            isLongPressed: taskElement.classList.contains("long-pressed"),
-            allowShow
-        });
-
-        if (allowShow) {
-            // ✅ Use centralized controller (handles mode checking automatically)
-            TaskOptionsVisibilityController.show(taskElement, 'mouseenter');
-        }
-    }
-
-    // ✅ Export for taskDOM module
-    window.showTaskOptions = showTaskOptions;
-
-    function hideTaskOptions(event) {
-        const taskElement = event.currentTarget;
-
-        // ✅ Only hide if not long-pressed on mobile (so buttons stay open during drag)
-        const isMobile = isTouchDevice();
-        const allowHide = !isMobile || !taskElement.classList.contains("long-pressed");
-
-        console.log('🔴 hideTaskOptions (mouseleave handler) called:', {
-            taskId: taskElement.dataset.id || 'unknown',
-            eventType: event.type,
-            isMobile,
-            isLongPressed: taskElement.classList.contains("long-pressed"),
-            allowHide
-        });
-
-        if (allowHide) {
-            // ✅ Use centralized controller (handles mode checking automatically)
-            TaskOptionsVisibilityController.hide(taskElement, 'mouseleave');
-        }
-    }
-
-    // ✅ Export for taskDOM module
-    window.hideTaskOptions = hideTaskOptions;
+// ✅ MOVED: TaskOptionsVisibilityController to modules/ui/taskUI.js
+// ✅ MOVED: attachKeyboardTaskOptionToggle to modules/ui/taskInteractions.js
+// ✅ MOVED: hideTaskButtons to modules/ui/taskUI.js
+// ✅ MOVED: showTaskOptions to modules/ui/taskUI.js
+// ✅ MOVED: hideTaskOptions to modules/ui/taskUI.js
 
 
 // ✅ REMOVED: handleTaskCompletionChange - now in modules/task/taskCore.js
@@ -3449,65 +3231,8 @@ function isTouchDevice() {
 
 
 
-/**
- * Checkcompleteallbutton function.
- *
- * @returns {void}
- */
-
-function checkCompleteAllButton() {
-    const isAutoMode = document.body.classList.contains('auto-cycle-mode');
-
-    if (taskList.children.length > 0 && !isAutoMode) {
-        completeAllButton.style.display = "block";
-    } else {
-        completeAllButton.style.display = "none";
-    }
-}
-// ✅ Expose for cycleSwitcher module
-window.checkCompleteAllButton = checkCompleteAllButton;
-
-/**
- * Temporarily changes the logo background color to indicate an action, then resets it.
- *
- * @param {string} [color='green'] - The temporary background color for the logo.
- * @param {number} [duration=300] - The duration (in milliseconds) before resetting the background.
- */
-
-function triggerLogoBackground(color = 'green', duration = 300) {
-    // Target the specific logo image (not the app name)
-    const logo = document.querySelector('.header-branding .header-logo');
-
-    console.log('🔍 Logo element found:', logo); // Debug log
-    console.log('🎨 Applying color:', color); // Debug log
-
-    if (logo) {
-        // Clear any existing timeout
-        if (logoTimeoutId) {
-            clearTimeout(logoTimeoutId);
-            logoTimeoutId = null;
-        }
-
-        // Apply background color
-        logo.style.setProperty('background-color', color, 'important');
-        logo.style.setProperty('border-radius', '6px', 'important');
-        
-        console.log('✅ Background applied:', logo.style.backgroundColor); // Debug log
-        
-        // Remove background after duration
-        logoTimeoutId = setTimeout(() => {
-            logo.style.backgroundColor = '';
-            logo.style.borderRadius = '';
-            logoTimeoutId = null; 
-            console.log('🔄 Background cleared'); // Debug log
-        }, duration);
-    } else {
-        console.error('❌ Logo element not found!');
-    }
-}
-
-// ✅ Export triggerLogoBackground globally for taskDOM module
-window.triggerLogoBackground = triggerLogoBackground;
+// ✅ MOVED: checkCompleteAllButton to modules/ui/taskUI.js
+// ✅ MOVED: triggerLogoBackground to modules/ui/uiEffects.js
 
 // ✅ MOVED: saveToggleAutoReset() to modules/cycle/modeManager.js
 // Now accessed via window.saveToggleAutoReset() which calls modeManager.setupToggleAutoReset()
@@ -3569,7 +3294,7 @@ GlobalUtils.safeAddEventListener(menuButton, "click", function(event) {
     menu.classList.toggle("visible");
 
     if (menu.classList.contains("visible")) {
-        document.addEventListener("click", closeMenuOnClickOutside);
+        GlobalUtils.safeAddEventListener(document, "click", closeMenuOnClickOutside);
     }
 });
 
@@ -3606,16 +3331,18 @@ GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", asy
     }
 });
 
-document.getElementById("open-reminders-modal")?.addEventListener("click", () => {
+// Named handler for safeAddEventListener duplicate prevention
+function handleOpenRemindersModalClick() {
     console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
-    
+
     // Load current settings from Schema 2.5 before opening
     loadRemindersSettings(); // This function already has Schema 2.5 support
     document.getElementById("reminders-modal").style.display = "flex";
     hideMainMenu();
 
     console.log('✅ Reminders modal opened');
-});
+}
+GlobalUtils.safeAddEventListenerById("open-reminders-modal", "click", handleOpenRemindersModalClick);
 
 // 🟢 Safe Global Click for Hiding Task Buttons
 GlobalUtils.safeAddEventListener(document, "click", (event) => {
@@ -3709,13 +3436,15 @@ GlobalUtils.safeAddEventListener(document, "click", (event) => {
 /*****SPEACIAL EVENT LISTENERS *****/
 
 // ✅ REMOVED: dragover event listener - now handled by dragDropManager module via setupRearrange()
-document.addEventListener("touchstart", () => {
+// Named handler for safeAddEventListener duplicate prevention
+function handleFirstTouchInteraction() {
     hasInteracted = true;
-}, { once: true, passive: true });
+}
+GlobalUtils.safeAddEventListener(document, "touchstart", handleFirstTouchInteraction, { once: true, passive: true });
 
-
-
-document.addEventListener("touchstart", () => {}, { passive: true });
+// Passive touchstart to prevent scroll jank
+function handlePassiveTouchstart() {}
+GlobalUtils.safeAddEventListener(document, "touchstart", handlePassiveTouchstart, { passive: true });
 
   // Hide initial app loader when app is ready
   setTimeout(() => {

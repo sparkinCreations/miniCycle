@@ -28,7 +28,8 @@ let _deps = {
   escapeHtml: null,
   applyRecurringToTaskSchema25: null,
   updateRecurringPanel: null,
-  openRecurringSettingsPanelForTask: null
+  openRecurringSettingsPanelForTask: null,
+  safeAddEventListener: null
 };
 
 /**

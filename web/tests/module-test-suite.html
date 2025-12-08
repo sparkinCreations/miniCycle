@@ -381,6 +381,9 @@
             <option value="taskEvents">TaskEvents</option>
             <option value="taskDOM">TaskDOM</option>
             <option value="taskOptionsCustomizer">TaskOptionsCustomizer</option>
+            <option value="taskUI">TaskUI</option>
+            <option value="taskInteractions">TaskInteractions</option>
+            <option value="uiEffects">UIEffects</option>
             <option value="xss-vulnerability">🔒 XSS Vulnerability Tests</option>
             <option value="errorHandler">🛡️ Error Handler Tests</option>
             <option value="testingModal">🧪 Testing Modal</option>
@@ -462,6 +465,9 @@
         const { runTaskEventsTests } = await import(`./taskEvents.tests.js?v=${cacheBuster}`);
         const { runTaskDOMTests } = await import(`./taskDOM.tests.js?v=${cacheBuster}`);
         const { runTaskOptionsCustomizerTests } = await import(`./taskOptionsCustomizer.tests.js?v=${cacheBuster}`);
+        const { runTaskUITests } = await import(`./taskUI.tests.js?v=${cacheBuster}`);
+        const { runTaskInteractionsTests } = await import(`./taskInteractions.tests.js?v=${cacheBuster}`);
+        const { runUIEffectsTests } = await import(`./uiEffects.tests.js?v=${cacheBuster}`);
         const { runAllXSSTests } = await import(`./security/xss-vulnerability.tests.js?v=${cacheBuster}`);
         const { runErrorHandlerTests } = await import(`./errorHandler.tests.js?v=${cacheBuster}`);
         const { runTestingModalTests } = await import(`./testingModal.tests.js?v=${cacheBuster}`);
@@ -1230,6 +1236,18 @@
                     window.taskOptionsCustomizer = mod.taskOptionsCustomizer;
                     currentModule = 'taskOptionsCustomizer';
                     resultsDiv.innerHTML = '<p>✅ TaskOptionsCustomizer loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskUI') {
+                    // TaskUI module - DI-pure, tests inject their own dependencies
+                    currentModule = 'taskUI';
+                    resultsDiv.innerHTML = '<p>✅ TaskUI tests ready. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'taskInteractions') {
+                    // TaskInteractions module - DI-pure, tests inject their own dependencies
+                    currentModule = 'taskInteractions';
+                    resultsDiv.innerHTML = '<p>✅ TaskInteractions tests ready. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'uiEffects') {
+                    // UIEffects module - DI-pure, tests inject their own dependencies
+                    currentModule = 'uiEffects';
+                    resultsDiv.innerHTML = '<p>✅ UIEffects tests ready. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'xss-vulnerability') {
                     // Load globalUtils first (provides window.sanitizeInput and escapeHtml)
                     const globalMod = await import(`../modules/utils/globalUtils.js?v=${cacheBuster}`);
@@ -1396,6 +1414,12 @@
                 await runTaskDOMTests(resultsDiv);
             } else if (currentModule === 'taskOptionsCustomizer') {
                 await runTaskOptionsCustomizerTests(resultsDiv);
+            } else if (currentModule === 'taskUI') {
+                await runTaskUITests(resultsDiv);
+            } else if (currentModule === 'taskInteractions') {
+                await runTaskInteractionsTests(resultsDiv);
+            } else if (currentModule === 'uiEffects') {
+                await runUIEffectsTests(resultsDiv);
             } else if (currentModule === 'xss-vulnerability') {
                 await runAllXSSTests(resultsDiv);
             } else if (currentModule === 'errorHandler') {
@@ -1568,6 +1592,9 @@
                 { name: 'TaskEvents', key: 'taskEvents', runFn: runTaskEventsTests, importPath: '../modules/task/taskEvents.js' },
                 { name: 'TaskDOM', key: 'taskDOM', runFn: runTaskDOMTests, importPath: '../modules/task/taskDOM.js' },
                 { name: 'TaskOptionsCustomizer', key: 'taskOptionsCustomizer', runFn: runTaskOptionsCustomizerTests, importPath: '../modules/ui/taskOptionsCustomizer.js' },
+                { name: 'TaskUI', key: 'taskUI', runFn: runTaskUITests, importPath: '../modules/ui/taskUI.js' },
+                { name: 'TaskInteractions', key: 'taskInteractions', runFn: runTaskInteractionsTests, importPath: '../modules/ui/taskInteractions.js' },
+                { name: 'UIEffects', key: 'uiEffects', runFn: runUIEffectsTests, importPath: '../modules/ui/uiEffects.js' },
                 { name: 'XSS Vulnerability', key: 'xss-vulnerability', runFn: runAllXSSTests, importPath: null },
                 { name: 'Error Handler', key: 'errorHandler', runFn: runErrorHandlerTests, importPath: '../modules/utils/errorHandler.js' },
                 { name: 'Testing Modal', key: 'testingModal', runFn: runTestingModalTests, importPath: '../modules/testing/testing-modal.js', secondaryImport: '../modules/storage/backupManager.js' },

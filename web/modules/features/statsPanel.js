@@ -26,7 +26,8 @@ let _deps = {
     hideMainMenu: null,
     setupDarkModeToggle: null,
     AppState: null,
-    appInit: null
+    appInit: null,
+    safeAddEventListener: null
 };
 
 /**
@@ -195,7 +196,16 @@ export class StatsPanelManager {
             handleKeydown: this.handleKeydown.bind(this),
             handleTaskListChange: this.handleTaskListChange.bind(this),
             handleAddTaskClick: this.handleAddTaskClick.bind(this),
-            handleDotClick: this.handleDotClick.bind(this)
+            handleDotClick: this.handleDotClick.bind(this),
+            // UI event handlers
+            handleSlideLeftClick: () => this.showTaskView(),
+            handleSlideRightClick: () => this.showStatsPanel(),
+            // Theme event handlers
+            handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
+            handleThemeToggleClick: () => this.handleThemeToggleClick(),
+            handleQuickDarkToggle: () => this.handleQuickDarkToggle(),
+            handleOpenThemesPanel: () => this.openThemesPanel(),
+            handleCloseThemesPanel: () => this.closeThemesPanel()
         };
 
         this.setupTouchEvents();
@@ -211,66 +221,77 @@ export class StatsPanelManager {
      * Setup touch event listeners for mobile devices
      */
     setupTouchEvents() {
-        document.addEventListener("touchstart", this.boundHandlers.handleTouchStart, { passive: true });
-        document.addEventListener("touchmove", this.boundHandlers.handleTouchMove, { passive: true });
-        document.addEventListener("touchend", this.boundHandlers.handleTouchEnd, { passive: true });
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        safeAdd(document, "touchstart", this.boundHandlers.handleTouchStart, { passive: true });
+        safeAdd(document, "touchmove", this.boundHandlers.handleTouchMove, { passive: true });
+        safeAdd(document, "touchend", this.boundHandlers.handleTouchEnd, { passive: true });
     }
 
     /**
      * Setup mouse event listeners for desktop
      */
     setupMouseEvents() {
-        document.addEventListener("mousedown", this.boundHandlers.handleMouseDown);
-        document.addEventListener("mousemove", this.boundHandlers.handleMouseMove);
-        document.addEventListener("mouseup", this.boundHandlers.handleMouseUp);
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        safeAdd(document, "mousedown", this.boundHandlers.handleMouseDown);
+        safeAdd(document, "mousemove", this.boundHandlers.handleMouseMove);
+        safeAdd(document, "mouseup", this.boundHandlers.handleMouseUp);
     }
 
     /**
      * Setup wheel event listeners for trackpad/mouse wheel
      */
     setupWheelEvents() {
-        document.addEventListener("wheel", this.boundHandlers.handleWheel, { passive: false });
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        safeAdd(document, "wheel", this.boundHandlers.handleWheel, { passive: false });
     }
 
     /**
      * Setup pointer event listeners for modern devices
      */
     setupPointerEvents() {
-        document.addEventListener("pointerdown", this.boundHandlers.handlePointerDown);
-        document.addEventListener("pointermove", this.boundHandlers.handlePointerMove);
-        document.addEventListener("pointerup", this.boundHandlers.handlePointerUp);
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        safeAdd(document, "pointerdown", this.boundHandlers.handlePointerDown);
+        safeAdd(document, "pointermove", this.boundHandlers.handlePointerMove);
+        safeAdd(document, "pointerup", this.boundHandlers.handlePointerUp);
     }
 
     /**
      * Setup keyboard event listeners
      */
     setupKeyboardEvents() {
-        document.addEventListener("keydown", this.boundHandlers.handleKeydown);
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        safeAdd(document, "keydown", this.boundHandlers.handleKeydown);
     }
 
     /**
      * Setup UI interaction event listeners
      */
     setupUIEvents() {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+
         // Slide buttons
         if (this.elements.slideLeft) {
-            this.elements.slideLeft.addEventListener("click", () => this.showTaskView());
+            safeAdd(this.elements.slideLeft, "click", this.boundHandlers.handleSlideLeftClick);
         }
         if (this.elements.slideRight) {
-            this.elements.slideRight.addEventListener("click", () => this.showStatsPanel());
+            safeAdd(this.elements.slideRight, "click", this.boundHandlers.handleSlideRightClick);
         }
 
-        // Navigation dots
+        // Navigation dots - create indexed handlers
         this.elements.dots.forEach((dot, index) => {
-            dot.addEventListener("click", () => this.handleDotClick(index));
+            // Create a stable reference for each dot's click handler
+            if (!this.boundHandlers[`handleDotClick_${index}`]) {
+                this.boundHandlers[`handleDotClick_${index}`] = () => this.handleDotClick(index);
+            }
+            safeAdd(dot, "click", this.boundHandlers[`handleDotClick_${index}`]);
         });
 
         // Task list changes
         if (this.elements.taskList) {
-            this.elements.taskList.addEventListener("change", this.boundHandlers.handleTaskListChange);
+            safeAdd(this.elements.taskList, "change", this.boundHandlers.handleTaskListChange);
         }
         if (this.elements.addTaskButton) {
-            this.elements.addTaskButton.addEventListener("click", this.boundHandlers.handleAddTaskClick);
+            safeAdd(this.elements.addTaskButton, "click", this.boundHandlers.handleAddTaskClick);
         }
     }
 
@@ -278,41 +299,50 @@ export class StatsPanelManager {
      * Setup theme-related event listeners
      */
     setupThemeEvents() {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+
         // Current Routine status click
         if (this.elements.currentRoutineStatus) {
-            this.elements.currentRoutineStatus.addEventListener("click", () => this.handleCurrentRoutineToggle());
+            safeAdd(this.elements.currentRoutineStatus, "click", this.boundHandlers.handleCurrentRoutineToggle);
         }
 
         // Theme unlock status click
         if (this.elements.themeUnlockStatus) {
-            this.elements.themeUnlockStatus.addEventListener("click", () => this.handleThemeToggleClick());
+            safeAdd(this.elements.themeUnlockStatus, "click", this.boundHandlers.handleThemeToggleClick);
         }
 
         /* Quick dark toggle
         if (this.elements.quickDarkToggle) {
-            this.elements.quickDarkToggle.addEventListener("click", () => this.handleQuickDarkToggle());
+            safeAdd(this.elements.quickDarkToggle, "click", this.boundHandlers.handleQuickDarkToggle);
         }
             */
 
         // Theme panel buttons
         if (this.elements.openThemesPanel) {
-            this.elements.openThemesPanel.addEventListener("click", () => this.openThemesPanel());
+            safeAdd(this.elements.openThemesPanel, "click", this.boundHandlers.handleOpenThemesPanel);
         }
         if (this.elements.closeThemesBtn) {
-            this.elements.closeThemesBtn.addEventListener("click", () => this.closeThemesPanel());
+            safeAdd(this.elements.closeThemesBtn, "click", this.boundHandlers.handleCloseThemesPanel);
         }
     }
 
     /**
-     * ✅ FIX: Setup data-ready listener to update stats when session loads
+     * FIX: Setup data-ready listener to update stats when session loads
      */
     setupDataReadyListener() {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+
+        // Create bound handler for cycle:ready if not already created
+        if (!this.boundHandlers.handleCycleReady) {
+            this.boundHandlers.handleCycleReady = () => {
+                console.log('Stats panel detected data ready - updating stats...');
+                // Delay slightly to ensure DOM is fully updated
+                setTimeout(() => this.updateStatsPanel(), 100);
+            };
+        }
+
         // Listen for the cycle:ready event
-        document.addEventListener('cycle:ready', () => {
-            console.log('📊 Stats panel detected data ready - updating stats...');
-            // Delay slightly to ensure DOM is fully updated
-            setTimeout(() => this.updateStatsPanel(), 100);
-        });
+        safeAdd(document, 'cycle:ready', this.boundHandlers.handleCycleReady);
 
         // Also listen for AppInit ready if available (DI-pure)
         const appInitModule = this.dependencies.appInit;

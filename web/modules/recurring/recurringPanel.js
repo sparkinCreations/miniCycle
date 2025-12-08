@@ -62,7 +62,14 @@ export class RecurringPanelManager {
             // Utilities (optional)
             escapeHtml: dependencies.escapeHtml || null,
             syncRecurringStateToDOM: dependencies.syncRecurringStateToDOM || null,
-            refreshTaskButtonsForModeChange: dependencies.refreshTaskButtonsForModeChange || null
+            refreshTaskButtonsForModeChange: dependencies.refreshTaskButtonsForModeChange || null,
+
+            // Event listener utility (prevents duplicates)
+            safeAddEventListener: dependencies.safeAddEventListener || ((el, ev, handler) => {
+                if (!el) return;
+                el.removeEventListener(ev, handler);
+                el.addEventListener(ev, handler);
+            })
         };
 
         // Internal state
@@ -120,7 +127,7 @@ export class RecurringPanelManager {
         const container = this.deps.querySelector(".monthly-days");
         if (!container) return;
 
-        container.addEventListener("click", (event) => {
+        this.deps.safeAddEventListener(container, "click", (event) => {
             const dayBox = event.target.closest(".monthly-day-box");
             if (!dayBox) return;
 
@@ -136,7 +143,7 @@ export class RecurringPanelManager {
         const container = this.deps.querySelector(".weekly-days");
         if (!container) return;
 
-        container.addEventListener("click", (event) => {
+        this.deps.safeAddEventListener(container, "click", (event) => {
             const dayBox = event.target.closest(".weekly-day-box");
             if (!dayBox) return;
 
@@ -152,7 +159,7 @@ export class RecurringPanelManager {
         const container = this.deps.querySelector(".yearly-months");
         if (!container) return;
 
-        container.addEventListener("click", (event) => {
+        this.deps.safeAddEventListener(container, "click", (event) => {
             const monthBox = event.target.closest(".yearly-month-box");
             if (!monthBox) return;
 
@@ -205,7 +212,7 @@ export class RecurringPanelManager {
         const container = this.deps.getElementById("yearly-day-container");
         if (!container) return;
 
-        container.addEventListener("click", (event) => {
+        this.deps.safeAddEventListener(container, "click", (event) => {
             const dayBox = event.target.closest(".yearly-day-box");
             if (!dayBox) return;
 
@@ -258,7 +265,7 @@ export class RecurringPanelManager {
         const container = this.deps.getElementById("recurring-task-list");
         if (!container) return;
 
-        container.addEventListener("click", (event) => {
+        this.deps.safeAddEventListener(container, "click", (event) => {
             const item = event.target.closest(".recurring-task-item");
             if (!item) return;
 
@@ -384,13 +391,13 @@ export class RecurringPanelManager {
             }
 
             // Open panel button
-            openBtn.addEventListener("click", () => this.openPanel());
+            this.deps.safeAddEventListener(openBtn, "click", () => this.openPanel());
 
             // Close panel button
-            closeBtn.addEventListener("click", () => this.closePanel());
+            this.deps.safeAddEventListener(closeBtn, "click", () => this.closePanel());
 
             // Close on overlay click
-            overlay.addEventListener("click", (e) => {
+            this.deps.safeAddEventListener(overlay, "click", (e) => {
                 if (e.target === overlay) {
                     this.closePanel();
                 }
@@ -399,7 +406,7 @@ export class RecurringPanelManager {
             // Setup change recurring settings button
             const changeSettingsBtn = this.deps.getElementById("change-recurring-settings");
             if (changeSettingsBtn) {
-                changeSettingsBtn.addEventListener("click", () => {
+                this.deps.safeAddEventListener(changeSettingsBtn, "click", () => {
                     console.log('🔧 Change recurring settings clicked');
                     if (this.state.selectedTaskId) {
                         this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
@@ -474,7 +481,7 @@ export class RecurringPanelManager {
             // Setup yearly options
             const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
             if (yearlyMonthSelect) {
-                yearlyMonthSelect.addEventListener("change", (e) => {
+                this.deps.safeAddEventListener(yearlyMonthSelect, "change", (e) => {
                     const selectedMonth = parseInt(e.target.value);
                     this.generateYearlyDayGrid(selectedMonth);
                 });
@@ -483,7 +490,7 @@ export class RecurringPanelManager {
 
             const yearlyApplyToAllCheckbox = this.deps.getElementById("yearly-apply-days-to-all");
             if (yearlyApplyToAllCheckbox) {
-                yearlyApplyToAllCheckbox.addEventListener("change", () => {
+                this.deps.safeAddEventListener(yearlyApplyToAllCheckbox, "change", () => {
                     this.handleYearlyApplyToAllChange();
                 });
             }
@@ -491,7 +498,7 @@ export class RecurringPanelManager {
             const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
             const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
             if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
-                yearlySpecificDaysCheckbox.addEventListener("change", () => {
+                this.deps.safeAddEventListener(yearlySpecificDaysCheckbox, "change", () => {
                     const hasMonthSelected = this.getSelectedYearlyMonths().length > 0;
                     yearlyDayContainer.classList.toggle("hidden", !yearlySpecificDaysCheckbox.checked || !hasMonthSelected);
                 });
@@ -531,7 +538,7 @@ export class RecurringPanelManager {
         const frequencySelect = this.deps.getElementById("recur-frequency");
         if (!frequencySelect) return;
 
-        frequencySelect.addEventListener("change", () => {
+        this.deps.safeAddEventListener(frequencySelect, "change", () => {
             const selectedFrequency = frequencySelect.value;
             const frequencyMap = {
                 hourly: this.deps.getElementById("hourly-options"),
@@ -564,7 +571,7 @@ export class RecurringPanelManager {
             const trigger = this.deps.getElementById(triggerId);
             const content = this.deps.getElementById(contentId);
             if (trigger && content) {
-                trigger.addEventListener("change", () => {
+                this.deps.safeAddEventListener(trigger, "change", () => {
                     content.classList.toggle("hidden", !trigger.checked);
                 });
             }
@@ -596,7 +603,7 @@ export class RecurringPanelManager {
         const toggleBtn = this.deps.getElementById("toggle-check-all");
         if (!toggleBtn) return;
 
-        toggleBtn.addEventListener("click", () => {
+        this.deps.safeAddEventListener(toggleBtn, "click", () => {
             const checkboxes = this.deps.querySelectorAll(".recurring-check:not(.hidden)");
             const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
 
@@ -660,7 +667,7 @@ export class RecurringPanelManager {
 
         setAdvancedVisibility(advancedVisible);
 
-        toggleBtn.addEventListener("click", () => {
+        this.deps.safeAddEventListener(toggleBtn, "click", () => {
             advancedVisible = !advancedVisible;
             setAdvancedVisibility(advancedVisible);
         });
@@ -677,7 +684,7 @@ export class RecurringPanelManager {
 
         if (!hourInput || !minuteInput || !meridiemSelect || !militaryToggle) return;
 
-        militaryToggle.addEventListener("change", () => {
+        this.deps.safeAddEventListener(militaryToggle, "change", () => {
             const is24Hour = militaryToggle.checked;
             let hour = parseInt(hourInput.value) || 0;
             let meridiem = meridiemSelect.value;
@@ -724,7 +731,7 @@ export class RecurringPanelManager {
             return;
         }
 
-        toggle.addEventListener("change", () => {
+        this.deps.safeAddEventListener(toggle, "change", () => {
             const is24Hour = toggle.checked;
 
             try {
@@ -910,7 +917,7 @@ export class RecurringPanelManager {
                 input.classList.add("first-specific-date");
             }
 
-            input.addEventListener("change", () => {
+            this.deps.safeAddEventListener(input, "change", () => {
                 if (isFirst && !input.value) {
                     try {
                         input.valueAsDate = this.getTomorrow();
@@ -930,7 +937,7 @@ export class RecurringPanelManager {
                 trash.innerHTML = "<i class='fas fa-trash recurring-date-trash-icon'></i>";
                 trash.title = "Remove this date";
 
-                trash.addEventListener("click", () => {
+                this.deps.safeAddEventListener(trash, "click", () => {
                     wrapper.remove();
                     this.updateRecurCountVisibility();
                     this.updateRecurringSummary();
@@ -942,7 +949,7 @@ export class RecurringPanelManager {
             this.updateRecurringSummary();
         };
 
-        checkbox.addEventListener("change", () => {
+        this.deps.safeAddEventListener(checkbox, "change", () => {
             const shouldShow = checkbox.checked;
 
             panel.classList.toggle("hidden", !shouldShow);
@@ -979,7 +986,7 @@ export class RecurringPanelManager {
             this.updateRecurringSummary();
         });
 
-        addBtn.addEventListener("click", () => {
+        this.deps.safeAddEventListener(addBtn, "click", () => {
             createDateInput(false);
         });
 
@@ -1063,11 +1070,11 @@ export class RecurringPanelManager {
         const cancelBtn = this.deps.getElementById("cancel-recurring-settings");
 
         if (applyBtn) {
-            applyBtn.addEventListener("click", () => this.handleApplySettings());
+            this.deps.safeAddEventListener(applyBtn, "click", () => this.handleApplySettings());
         }
 
         if (cancelBtn) {
-            cancelBtn.addEventListener("click", () => this.handleCancelSettings());
+            this.deps.safeAddEventListener(cancelBtn, "click", () => this.handleCancelSettings());
         }
     }
 
@@ -1311,7 +1318,7 @@ export class RecurringPanelManager {
      */
     setupBiweeklyDayToggle() {
         this.deps.querySelectorAll(".biweekly-day-box").forEach(box => {
-            box.addEventListener("click", () => {
+            this.deps.safeAddEventListener(box, "click", () => {
                 box.classList.toggle("selected");
             });
         });
@@ -1351,9 +1358,9 @@ export class RecurringPanelManager {
             }
         };
 
-        indefinitelyCheckbox.addEventListener("change", updateLimitedVisibility);
-        if (countRadio) countRadio.addEventListener("change", updateDurationContainers);
-        if (untilRadio) untilRadio.addEventListener("change", updateDurationContainers);
+        this.deps.safeAddEventListener(indefinitelyCheckbox, "change", updateLimitedVisibility);
+        if (countRadio) this.deps.safeAddEventListener(countRadio, "change", updateDurationContainers);
+        if (untilRadio) this.deps.safeAddEventListener(untilRadio, "change", updateDurationContainers);
 
         // Initialize visibility on load
         updateLimitedVisibility();
@@ -1368,7 +1375,7 @@ export class RecurringPanelManager {
 
         if (!specificDays || !weekOfMonth) return;
 
-        specificDays.addEventListener("change", () => {
+        this.deps.safeAddEventListener(specificDays, "change", () => {
             if (specificDays.checked && weekOfMonth.checked) {
                 weekOfMonth.checked = false;
                 const weekContainer = this.deps.getElementById("monthly-week-container");
@@ -1376,7 +1383,7 @@ export class RecurringPanelManager {
             }
         });
 
-        weekOfMonth.addEventListener("change", () => {
+        this.deps.safeAddEventListener(weekOfMonth, "change", () => {
             if (weekOfMonth.checked && specificDays.checked) {
                 specificDays.checked = false;
                 const dayContainer = this.deps.getElementById("monthly-day-container");
@@ -1392,7 +1399,7 @@ export class RecurringPanelManager {
         // Specific date time checkbox
         const specificDateTime = this.deps.getElementById("specific-date-specific-time");
         if (specificDateTime) {
-            specificDateTime.addEventListener("change", (e) => {
+            this.deps.safeAddEventListener(specificDateTime, "change", (e) => {
                 const timeContainer = this.deps.getElementById("specific-date-time-container");
                 if (timeContainer) {
                     timeContainer.classList.toggle("hidden", !e.target.checked);
@@ -1405,7 +1412,7 @@ export class RecurringPanelManager {
         ['recur-indefinitely', 'recur-count-radio', 'recur-until-radio'].forEach(id => {
             const radio = this.deps.getElementById(id);
             if (radio) {
-                radio.addEventListener("change", () => {
+                this.deps.safeAddEventListener(radio, "change", () => {
                     this.updateRecurCountVisibility();
                     this.updateRecurringSummary();
                 });
@@ -1413,7 +1420,7 @@ export class RecurringPanelManager {
         });
 
         // Document click handler for hiding preview when clicking outside
-        document.addEventListener("click", (e) => {
+        this.deps.safeAddEventListener(document, "click", (e) => {
             const overlay = this.deps.getElementById("recurring-panel-overlay");
             if (!overlay || overlay.classList.contains("hidden")) return;
 
@@ -1916,7 +1923,7 @@ export class RecurringPanelManager {
         changeBtn.textContent = 'Change Recurring Settings';
 
         // Attach click listener to button
-        changeBtn.addEventListener('click', () => {
+        this.deps.safeAddEventListener(changeBtn, 'click', () => {
             console.log('🔧 Change recurring settings clicked');
             if (this.state.selectedTaskId) {
                 this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
@@ -2351,8 +2358,8 @@ export class RecurringPanelManager {
             }
 
             // Listen for changes in the panel
-            panel.addEventListener("change", () => this.updateRecurringSummary());
-            panel.addEventListener("click", () => this.updateRecurringSummary());
+            this.deps.safeAddEventListener(panel, "change", () => this.updateRecurringSummary());
+            this.deps.safeAddEventListener(panel, "click", () => this.updateRecurringSummary());
 
             console.log('✅ Recurring summary listeners attached successfully');
 

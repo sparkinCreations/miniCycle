@@ -32,11 +32,12 @@ export class GlobalUtils {
      * @param {HTMLElement} element - The element to attach the event listener to.
      * @param {string} event - The event type (e.g., "click", "input").
      * @param {Function} handler - The function that handles the event.
+     * @param {Object} [options] - Optional event listener options (e.g., { once: true, passive: true, capture: true }).
      */
-    static safeAddEventListener(element, event, handler) {
+    static safeAddEventListener(element, event, handler, options) {
         if (!element) return; // Prevent errors if element is null
-        element.removeEventListener(event, handler); // Clear old one
-        element.addEventListener(event, handler); // Add fresh
+        element.removeEventListener(event, handler, options); // Clear old one
+        element.addEventListener(event, handler, options); // Add fresh
     }
 
     /**
@@ -46,11 +47,12 @@ export class GlobalUtils {
      * @param {string} id - The ID of the element to attach the event listener to.
      * @param {string} event - The event type (e.g., "click", "input").
      * @param {Function} handler - The function that handles the event.
+     * @param {Object} [options] - Optional event listener options (e.g., { once: true, passive: true, capture: true }).
      */
-    static safeAddEventListenerById(id, event, handler) {
+    static safeAddEventListenerById(id, event, handler, options) {
         const element = document.getElementById(id);
         if (element) {
-            GlobalUtils.safeAddEventListener(element, event, handler);
+            GlobalUtils.safeAddEventListener(element, event, handler, options);
         } else {
             console.warn(`⚠ Cannot attach event listener: #${id} not found.`);
         }
@@ -63,18 +65,19 @@ export class GlobalUtils {
      * @param {string} selector - CSS selector for elements to attach listeners to.
      * @param {string} event - The event type (e.g., "click", "input").
      * @param {Function} handler - The function that handles the event.
+     * @param {Object} [options] - Optional event listener options (e.g., { once: true, passive: true, capture: true }).
      */
-    static safeAddEventListenerBySelector(selector, event, handler) {
+    static safeAddEventListenerBySelector(selector, event, handler, options) {
         const elements = document.querySelectorAll(selector);
         if (elements.length === 0) {
             console.warn(`⚠ Cannot attach event listener: No elements found for selector "${selector}".`);
             return;
         }
-        
+
         elements.forEach(element => {
-            GlobalUtils.safeAddEventListener(element, event, handler);
+            GlobalUtils.safeAddEventListener(element, event, handler, options);
         });
-        
+
         console.log(`✅ Attached ${event} listeners to ${elements.length} elements matching "${selector}"`);
     }
 
