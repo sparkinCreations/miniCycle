@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v243'; // Add unversioned singleton modules to precache
+var CACHE_VERSION = 'v244'; // Add unversioned singleton modules to precache
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -82,6 +82,12 @@ var UTILITIES_BASE = [
 var UTILITIES = UTILITIES_BASE.map(function(url) {
   return url + '?v=' + APP_VERSION;
 });
+
+// In-memory flag to allow a one-time network-only bypass for unversioned
+// singleton modules (like appInit.js, constants.js) right after a SW update.
+// This ensures we fetch a fresh copy at least once per SW lifecycle before
+// allowing them back into the normal JS/CSS caching flow.
+var _singletonBypassDone = false;
 
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
@@ -264,6 +270,35 @@ self.addEventListener('fetch', function (event) {
                         url.pathname.endsWith('.mjs');
 
   if (isScriptOrStyle) {
+    // Special handling for unversioned singleton modules to force a fresh
+    // network fetch at least once per SW lifecycle (e.g. appInit.js).
+    var isSingletonUnversioned = SINGLETON_MODULES_UNVERSIONED.some(function (relPath) {
+      // Normalize to absolute URL for comparison
+      return fromScope(relPath) === request.url;
+    });
+
+    if (isSingletonUnversioned && !_singletonBypassDone) {
+      // One-time network-only bypass for these critical modules so we break
+      // out of any stale cache state, then allow them back into normal flow.
+      _singletonBypassDone = true;
+      event.respondWith(
+        fetch(request).then(function (res) {
+          console.log('♻️ One-time network-only fetch for singleton module:', request.url);
+          return res;
+        }).catch(function (error) {
+          console.warn('❌ Singleton network fetch failed, falling back to cache:', request.url, error);
+          return caches.match(request).then(function (cached) {
+            return cached || new Response('// Offline - singleton not cached', {
+              status: 504,
+              statusText: 'Gateway Timeout',
+              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
+            });
+          });
+        })
+      );
+      return;
+    }
+
     // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
     event.respondWith(
       fetch(request)
