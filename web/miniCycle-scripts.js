@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     core: {}
   };
 
-  // ✅ Load appInit FIRST (now canonical at modules/core/appInit.js)
+    // ✅ Load appInit FIRST (now canonical at modules/core/appInit.js)
     // We still use APP_VERSION for query-busting, but no separate v2 file.
     let appInitModule = await import(`./modules/core/appInit.js?v=${window.APP_VERSION}`);
     let { appInit, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
