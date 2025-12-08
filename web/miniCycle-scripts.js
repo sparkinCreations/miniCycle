@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // HTTP cache, we also track a one-time "forgiven" flag so we only attempt heavy recovery
     // once per browser profile.
     let appInitModule = await import('./modules/core/appInit.js');
-    let { appInit, setAppInitDependencies } = appInitModule;
+    let { appInit, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
 
     const staleForgiven = sessionStorage.getItem('_staleAppInitForgiven') === 'true';
 
@@ -402,8 +402,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window._pendingCacheNotification = true;
   }
 
-  deps.core.appInit = appInit;
-  deps.core.setAppInitDependencies = setAppInitDependencies;
+    deps.core.appInit = appInit;
+    deps.core.setAppInitDependencies = setAppInitDependencies;
+    deps.core.appInitVersion = APPINIT_VERSION || null;
 
   // ✅ Load core constants (with reload fallback for stale cache)
   const constantsModule = await import('./modules/core/constants.js');
@@ -429,15 +430,43 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // ✅ NOW create version helper for all OTHER dynamic imports (not appInit or constants)
   const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
-  // ✅ Create AppMeta object for DI-friendly version access
-  window.AppMeta = {
-    version: window.APP_VERSION
-  };
+    // ✅ Create AppMeta object for DI-friendly version access
+    window.AppMeta = {
+        version: window.APP_VERSION,
+        appInitVersion: APPINIT_VERSION || null
+    };
 
-  // ✅ Set backward compatibility alias
-  window.AppInit = appInit;
+    // ✅ Set backward compatibility alias
+    window.AppInit = appInit;
 
-  console.log('🚀 appInit and constants loaded (2-phase initialization system)');
+    // ==========================================================
+    // appInit version/compat diagnostics + optional auto-refresh
+    // ==========================================================
+    if (APPINIT_VERSION) {
+        console.info(`🚀 appInit loaded (version ${APPINIT_VERSION})`);
+    } else {
+        console.warn('⚠️ appInit loaded in compat mode (no APPINIT_VERSION export)');
+
+        // One-time gentle self-heal: if this browser has never refreshed to
+        // recover from a stale appInit, trigger a single soft reload.
+        try {
+            const refreshKey = 'minicycle.appinitCompatRefreshed';
+            const alreadyRefreshed = window.localStorage.getItem(refreshKey) === '1';
+
+            if (!alreadyRefreshed) {
+                console.warn('♻️ Triggering one-time refresh to recover from stale appInit.js');
+                window.localStorage.setItem(refreshKey, '1');
+
+                // Use location.reload so SW/HTTP caching can serve the latest build.
+                // This preserves state as much as possible while updating code.
+                window.location.reload();
+            }
+        } catch (e) {
+            console.warn('⚠️ Failed to record compat refresh flag:', e);
+        }
+    }
+
+    console.log('🚀 appInit and constants loaded (2-phase initialization system)');
 
 // ======================================================================
 // 🚀 APPINIT-COMPLIANT INITIALIZATION SEQUENCE
