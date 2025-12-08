@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v232'; // Restored full service worker from backup
+var CACHE_VERSION = 'v233'; // Updated paths for current file structure
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -22,33 +22,40 @@ var FULL_SHELL = [
   './miniCycle.html',
   './miniCycle-styles.css',
   './miniCycle-scripts.js',
-  // ✅ ADDED: User manual files
-  './user-manual.html',
-  './user-manual-styles.css'
+  // User manual files (in legal/ subdirectory)
+  './legal/user-manual.html',
+  './legal/user-manual-styles.css'
 ];
 
 var LITE_SHELL = [
-  './miniCycle-lite.html',
-  './miniCycle-lite-styles.css',
-  './miniCycle-lite-scripts.js'
+  // Lite version files (in lite/ subdirectory)
+  './lite/miniCycle-lite.html',
+  './lite/miniCycle-lite-styles.css',
+  './lite/miniCycle-lite-scripts.js'
 ];
 
 var UTILITIES = [
+  // Core modules
   './modules/core/appInit.js',
   './modules/core/appState.js',
+  './modules/core/constants.js',
+  './modules/core/startupManager.js',
+  // Feature modules
   './modules/features/themeManager.js',
+  './modules/features/statsPanel.js',
+  './modules/features/reminders.js',
+  './modules/features/dueDates.js',
+  // Recurring modules
   './modules/recurring/recurringPanel.js',
   './modules/recurring/recurringIntegration.js',
   './modules/recurring/recurringCore.js',
+  // Utils modules
   './modules/utils/globalUtils.js',
   './modules/utils/deviceDetection.js',
   './modules/utils/notifications.js',
-  './modules/features/statsPanel.js',
   './modules/utils/consoleCapture.js',
-  './modules/basicPluginSystem.js',
-  './modules/testing-modal.js',
-  './modules/features/reminders.js',
-  './modules/features/dueDates.js',
+  './modules/utils/dataValidator.js',
+  './modules/utils/errorHandler.js',
   // Cycle modules
   './modules/cycle/cycleLoader.js',
   './modules/cycle/cycleManager.js',
@@ -57,13 +64,30 @@ var UTILITIES = [
   './modules/cycle/modeManager.js',
   // Task modules
   './modules/task/dragDropManager.js',
+  './modules/task/taskCore.js',
+  './modules/task/taskDOM.js',
+  './modules/task/taskEvents.js',
+  './modules/task/taskRenderer.js',
+  './modules/task/taskUtils.js',
+  './modules/task/taskValidation.js',
   // UI modules
   './modules/ui/gamesManager.js',
   './modules/ui/menuManager.js',
   './modules/ui/modalManager.js',
   './modules/ui/onboardingManager.js',
   './modules/ui/settingsManager.js',
-  './modules/ui/undoRedoManager.js'
+  './modules/ui/undoRedoManager.js',
+  './modules/ui/completedTasksManager.js',
+  './modules/ui/helpWindowManager.js',
+  './modules/ui/pullToRefresh.js',
+  './modules/ui/taskOptionsCustomizer.js',
+  './modules/ui/taskUI.js',
+  './modules/ui/taskInteractions.js',
+  './modules/ui/uiEffects.js',
+  // Other modules
+  './modules/other/basicPluginSystem.js',
+  // Testing modules (optional - only needed for dev)
+  './modules/testing/testing-modal.js'
 ];
 
 self.addEventListener('install', function (event) {
@@ -150,11 +174,12 @@ function pickShell(urlObj) {
 
   // Check pathname for specific version
   var p = urlObj.pathname || '';
-  if (p.indexOf('miniCycle-lite.html') !== -1 || p.indexOf('miniCycle-lite') !== -1) return 'lite';
+  // Lite version (now in /lite/ subdirectory)
+  if (p.indexOf('/lite/') !== -1 || p.indexOf('miniCycle-lite') !== -1) return 'lite';
+  // Full version
   if (p.indexOf('miniCycle.html') !== -1 || /\/$|\/index\.html$/.test(p)) return 'full';
-
-  // ✅ ADDED: User manual should use full shell
-  if (p.indexOf('user-manual.html') !== -1) return 'full';
+  // User manual (in /legal/ subdirectory) uses full shell
+  if (p.indexOf('/legal/') !== -1 || p.indexOf('user-manual') !== -1) return 'full';
 
   // Default to full
   return 'full';
@@ -202,7 +227,7 @@ self.addEventListener('fetch', function (event) {
           return caches.open(STATIC_CACHE).then(function (cache) {
 
             // ✅ Try the correct shell first
-            var shellPath = shell === 'lite' ? fromScope('miniCycle-lite.html')
+            var shellPath = shell === 'lite' ? fromScope('lite/miniCycle-lite.html')
                                             : fromScope('miniCycle.html');
             return cache.match(shellPath);
 
@@ -214,7 +239,7 @@ self.addEventListener('fetch', function (event) {
 
             // ✅ Last resort: try any available shell
             return caches.open(STATIC_CACHE).then(function (cache) {
-              return cache.match(fromScope('miniCycle-lite.html'));
+              return cache.match(fromScope('lite/miniCycle-lite.html'));
             }).then(function (anyLite) {
               if (anyLite) {
                 console.log('📱 Emergency fallback: serving lite shell');
