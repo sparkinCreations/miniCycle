@@ -5,7 +5,7 @@
 
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION;
-var CACHE_VERSION = 'v252';
+var CACHE_VERSION = 'v253';
 
 // On install, immediately take control
 self.addEventListener('install', function(event) {

@@ -338,6 +338,41 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     core: {}
   };
 
+    // ======================================================
+    // 🧹 Aggressive runtime cache + service worker cleanup
+    //
+    // Note: This can only clear programmable caches (CacheStorage)
+    // and unregister service workers. It CANNOT clear the browser's
+    // built-in HTTP cache or DevTools' internal source cache.
+    // ======================================================
+    (async () => {
+        // 1) Delete all SW-managed caches.
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                if (cacheNames.length) {
+                    console.log('🧹 Deleted CacheStorage caches:', cacheNames);
+                }
+            } catch (err) {
+                console.warn('🧹 Failed to clear CacheStorage', err);
+            }
+        }
+
+        // 2) Unregister all service workers for this origin.
+        if ('serviceWorker' in navigator) {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                if (regs.length) {
+                    await Promise.all(regs.map(r => r.unregister()));
+                    console.log('🧹 Unregistered service workers:', regs.length);
+                }
+            } catch (err) {
+                console.warn('🧹 Failed to unregister service workers', err);
+            }
+        }
+    })();
+
     // ✅ Load appInit FIRST from a versioned URL to escape stale HTTP caches
     // We use a dedicated v2 entry file so the URL changes (new cache key)
     // while keeping a single logical AppInit singleton for all modules.
