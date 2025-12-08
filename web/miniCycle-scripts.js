@@ -388,19 +388,40 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // Don't throw - let the app try to continue (may partially work)
     }
 
-    // Clear reload flag on successful load (normal or forgiven path)
-    sessionStorage.removeItem('_staleCacheReload');
+        // Clear reload flag on successful load (normal or forgiven path)
+        sessionStorage.removeItem('_staleCacheReload');
 
-  // Check if we just recovered from a cache issue (for notification)
-  const justReloaded = sessionStorage.getItem('_cacheRecoveryReload');
-  if (justReloaded) {
-    sessionStorage.removeItem('_cacheRecoveryReload');
-    window._pendingCacheNotification = true;
-  }
+        // Aggressively try to remove any cached copies of legacy appInit.js
+        // This is best-effort and may not affect HTTP cache, but will
+        // clean up any entries stored in Service Worker Cache Storage.
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                const appInitRequest = new Request('/modules/core/appInit.js');
 
-    deps.core.appInit = appInit;
-    deps.core.setAppInitDependencies = setAppInitDependencies;
-    deps.core.appInitVersion = APPINIT_VERSION || null;
+                for (const name of cacheNames) {
+                    const cache = await caches.open(name);
+                    const match = await cache.match(appInitRequest);
+                    if (match) {
+                        await cache.delete(appInitRequest);
+                        console.log(`🧹 Removed /modules/core/appInit.js from cache "${name}"`);
+                    }
+                }
+            } catch (err) {
+                console.warn('🧹 Failed to clean legacy appInit.js cache', err);
+            }
+        }
+
+    // Check if we just recovered from a cache issue (for notification)
+    const justReloaded = sessionStorage.getItem('_cacheRecoveryReload');
+    if (justReloaded) {
+        sessionStorage.removeItem('_cacheRecoveryReload');
+        window._pendingCacheNotification = true;
+    }
+
+        deps.core.appInit = appInit;
+        deps.core.setAppInitDependencies = setAppInitDependencies;
+        deps.core.appInitVersion = APPINIT_VERSION || null;
 
   // ✅ Load core constants (with reload fallback for stale cache)
   const constantsModule = await import('./modules/core/constants.js');
