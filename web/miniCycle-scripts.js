@@ -328,37 +328,27 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     core: {}
   };
 
-  // ✅ Load appInit FIRST without version (so all static imports in modules share this singleton)
-  // This is critical: utility modules use static imports like `import { appInit } from './appInitialization.js'`
-  // If we version this import, we create separate instances and break the shared state
-  const { appInit, setAppInitDependencies } = await import('./modules/core/appInit.js');
+  // ✅ Load appInit FIRST - try without version for singleton, fallback to versioned if stale cache
+  // This is critical: utility modules use static imports like `import { appInit } from './appInit.js'`
+  // If we version this import, we create separate instances - but we MUST handle stale caches
+  let appInitModule = await import('./modules/core/appInit.js');
+  let { appInit, setAppInitDependencies } = appInitModule;
 
   // ⚠️ Cache validation: ensure setAppInitDependencies was exported (added in v1.409)
   // If users have stale cached appInit.js, this export will be undefined
   if (typeof setAppInitDependencies !== 'function') {
-    console.error('❌ Cache issue: setAppInitDependencies not found in appInit.js - forcing cache clear');
-    // Force service worker update and hard reload
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) {
-        await reg.update();
-        // Clear caches
-        if ('caches' in window) {
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map(name => caches.delete(name)));
-        }
-      }
+    console.warn('⚠️ Stale appInit.js cache detected - fetching fresh version...');
+    // Force fresh fetch with cache-busting timestamp
+    const freshUrl = `./modules/core/appInit.js?_cb=${Date.now()}`;
+    appInitModule = await import(freshUrl);
+    ({ appInit, setAppInitDependencies } = appInitModule);
+
+    // If still not a function after fresh fetch, there's a real problem
+    if (typeof setAppInitDependencies !== 'function') {
+      throw new Error('appInit.js missing setAppInitDependencies export. Please update all files and clear browser cache.');
     }
-    // Hard reload to bypass cache (only once to prevent infinite loop)
-    if (!sessionStorage.getItem('_cacheReloadAttempted')) {
-      sessionStorage.setItem('_cacheReloadAttempted', 'true');
-      window.location.reload(true);
-      return;
-    }
-    throw new Error('Cache issue detected: setAppInitDependencies not found. Please clear browser cache manually and reload.');
+    console.log('✅ Fresh appInit.js loaded successfully');
   }
-  // Clear reload flag on successful load
-  sessionStorage.removeItem('_cacheReloadAttempted');
 
   deps.core.appInit = appInit;
   deps.core.setAppInitDependencies = setAppInitDependencies;
