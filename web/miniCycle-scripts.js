@@ -339,8 +339,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   };
 
     // ✅ Load appInit FIRST (now canonical at modules/core/appInit.js)
-    // We still use APP_VERSION for query-busting, but no separate v2 file.
-    let appInitModule = await import(`./modules/core/appInit.js?v=${window.APP_VERSION}`);
+    // NO version param - must match static imports in other modules for singleton pattern
+    // Service worker uses network-first for JS files, so fresh code is served automatically
+    let appInitModule = await import('./modules/core/appInit.js');
     let { appInit, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
 
     const staleForgiven = sessionStorage.getItem('_staleAppInitForgiven') === 'true';
