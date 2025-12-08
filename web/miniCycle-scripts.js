@@ -357,11 +357,19 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   deps.core.appInit = appInit;
   deps.core.setAppInitDependencies = setAppInitDependencies;
 
-  // ✅ Load core constants (without version for consistency)
-  const {
-    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS
-  } = await import('./modules/core/constants.js');
+  // ✅ Load core constants (with cache-busting fallback)
+  let constantsModule = await import('./modules/core/constants.js');
+  let { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS } = constantsModule;
+
+  // Cache validation for constants (check if expected export exists)
+  if (typeof DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS === 'undefined') {
+    console.warn('⚠️ Stale constants.js cache detected - fetching fresh version...');
+    constantsModule = await import(`./modules/core/constants.js?_cb=${Date.now()}`);
+    ({ DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS } = constantsModule);
+    if (window._pendingCacheNotification !== true) {
+      window._pendingCacheNotification = true; // Share notification with appInit fix
+    }
+  }
 
   // ✅ NOW create version helper for all OTHER dynamic imports (not appInit or constants)
   const withV = (path) => `${path}?v=${window.APP_VERSION}`;

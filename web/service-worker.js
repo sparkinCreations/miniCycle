@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v232'; // Add pull-to-refresh module
+var CACHE_VERSION = 'v234'; // Add unversioned singleton modules to precache
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -35,8 +35,16 @@ var LITE_SHELL = [
 
 // ✅ FIX: Add version parameters to utilities to prevent stale cache issues
 // Build versioned utility URLs dynamically using APP_VERSION
+// Note: appInit.js and constants.js are imported WITHOUT version in miniCycle-scripts.js
+// (to maintain singleton pattern) so we cache BOTH versioned and unversioned
+var SINGLETON_MODULES_UNVERSIONED = [
+  './modules/core/appInit.js',
+  './modules/core/constants.js'
+];
+
 var UTILITIES_BASE = [
   './modules/core/appInit.js',
+  './modules/core/constants.js',
   './modules/core/appState.js',
   './modules/features/themeManager.js',
   './modules/recurring/recurringPanel.js',
@@ -79,7 +87,8 @@ self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
 
   // Build the full pre-cache list once
-  var precacheList = CORE.concat(FULL_SHELL, LITE_SHELL, UTILITIES);
+  // Include SINGLETON_MODULES_UNVERSIONED for modules imported without version
+  var precacheList = CORE.concat(FULL_SHELL, LITE_SHELL, UTILITIES, SINGLETON_MODULES_UNVERSIONED);
 
   function addAllSafe(cache, urls) {
     // 1) Fast path: one shot addAll
