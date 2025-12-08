@@ -692,7 +692,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
       storage: localStorage,
       sessionStorage: sessionStorage,
       showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),
-      initialSetup: () => appInit.runInitialSetup(),  // ✅ Now uses appInit method
+      // Check if runInitialSetup exists (may not on stale cache)
+      initialSetup: () => {
+        if (typeof appInit.runInitialSetup === 'function') {
+          return appInit.runInitialSetup();
+        }
+        console.warn('⚠️ appInit.runInitialSetup not available (stale cache) - skipping initial setup');
+        return Promise.resolve(); // Return resolved promise for compatibility
+      },
       now: () => Date.now(),
       document: document
     });
