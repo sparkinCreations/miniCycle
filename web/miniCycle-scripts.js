@@ -335,40 +335,71 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   let { appInit, setAppInitDependencies } = appInitModule;
 
   // ⚠️ Cache validation: ensure setAppInitDependencies was exported (added in v1.409)
-  // If users have stale cached appInit.js, this export will be undefined
-  let _cacheWasStale = false;
+  // If users have stale cached appInit.js, we MUST reload - cache-busted imports create
+  // separate module instances, breaking the singleton pattern for static imports
   if (typeof setAppInitDependencies !== 'function') {
-    console.warn('⚠️ Stale appInit.js cache detected - fetching fresh version...');
-    // Force fresh fetch with cache-busting timestamp
-    const freshUrl = `./modules/core/appInit.js?_cb=${Date.now()}`;
-    appInitModule = await import(freshUrl);
-    ({ appInit, setAppInitDependencies } = appInitModule);
+    console.error('❌ Stale appInit.js cache detected - clearing caches and reloading...');
 
-    // If still not a function after fresh fetch, there's a real problem
-    if (typeof setAppInitDependencies !== 'function') {
-      throw new Error('appInit.js missing setAppInitDependencies export. Please update all files and clear browser cache.');
+    // Only attempt reload once to prevent infinite loop
+    if (!sessionStorage.getItem('_staleCacheReload')) {
+      sessionStorage.setItem('_staleCacheReload', Date.now().toString());
+      sessionStorage.setItem('_cacheRecoveryReload', 'true'); // For notification after reload
+
+      // Clear all service worker caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log('🗑️ Cleared', cacheNames.length, 'caches');
+      }
+
+      // Force SW update
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) await reg.update();
+      }
+
+      // Hard reload bypassing cache
+      window.location.reload(true);
+      return; // Stop execution, page will reload
     }
-    console.log('✅ Fresh appInit.js loaded successfully');
-    _cacheWasStale = true;
+
+    // If we already tried reloading, show error
+    sessionStorage.removeItem('_staleCacheReload');
+    throw new Error('Stale cache persists after reload. Please manually clear browser cache (Ctrl+Shift+Delete) and reload.');
   }
-  // Store flag for deferred notification (showNotification not available yet)
-  window._pendingCacheNotification = _cacheWasStale;
+
+  // Clear reload flag on successful load
+  sessionStorage.removeItem('_staleCacheReload');
+
+  // Check if we just recovered from a cache issue (for notification)
+  const justReloaded = sessionStorage.getItem('_cacheRecoveryReload');
+  if (justReloaded) {
+    sessionStorage.removeItem('_cacheRecoveryReload');
+    window._pendingCacheNotification = true;
+  }
 
   deps.core.appInit = appInit;
   deps.core.setAppInitDependencies = setAppInitDependencies;
 
-  // ✅ Load core constants (with cache-busting fallback)
-  let constantsModule = await import('./modules/core/constants.js');
-  let { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS } = constantsModule;
+  // ✅ Load core constants (with reload fallback for stale cache)
+  const constantsModule = await import('./modules/core/constants.js');
+  const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS } = constantsModule;
 
-  // Cache validation for constants (check if expected export exists)
+  // Cache validation for constants - if stale, reload like appInit (same singleton issue)
   if (typeof DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS === 'undefined') {
-    console.warn('⚠️ Stale constants.js cache detected - fetching fresh version...');
-    constantsModule = await import(`./modules/core/constants.js?_cb=${Date.now()}`);
-    ({ DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS } = constantsModule);
-    if (window._pendingCacheNotification !== true) {
-      window._pendingCacheNotification = true; // Share notification with appInit fix
+    console.error('❌ Stale constants.js cache detected - clearing caches and reloading...');
+    if (!sessionStorage.getItem('_staleCacheReload')) {
+      sessionStorage.setItem('_staleCacheReload', Date.now().toString());
+      sessionStorage.setItem('_cacheRecoveryReload', 'true');
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      window.location.reload(true);
+      return;
     }
+    sessionStorage.removeItem('_staleCacheReload');
+    throw new Error('Stale cache persists. Please clear browser cache manually.');
   }
 
   // ✅ NOW create version helper for all OTHER dynamic imports (not appInit or constants)
