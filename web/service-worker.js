@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v244'; // Add unversioned singleton modules to precache
+var CACHE_VERSION = 'v245'; // Add unversioned singleton modules to precache
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -83,11 +83,11 @@ var UTILITIES = UTILITIES_BASE.map(function(url) {
   return url + '?v=' + APP_VERSION;
 });
 
-// In-memory flag to allow a one-time network-only bypass for unversioned
+// In-memory counter to allow a limited network-only bypass for unversioned
 // singleton modules (like appInit.js, constants.js) right after a SW update.
-// This ensures we fetch a fresh copy at least once per SW lifecycle before
-// allowing them back into the normal JS/CSS caching flow.
-var _singletonBypassDone = false;
+// We fetch them fresh for the first TWO JS/CSS requests before letting
+// them fall back into the normal caching flow again.
+var _singletonBypassCount = 0;
 
 self.addEventListener('install', function (event) {
   console.log('🔧 Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
@@ -271,19 +271,19 @@ self.addEventListener('fetch', function (event) {
 
   if (isScriptOrStyle) {
     // Special handling for unversioned singleton modules to force a fresh
-    // network fetch at least once per SW lifecycle (e.g. appInit.js).
+    // network fetch a limited number of times per SW lifecycle (e.g. appInit.js).
     var isSingletonUnversioned = SINGLETON_MODULES_UNVERSIONED.some(function (relPath) {
       // Normalize to absolute URL for comparison
       return fromScope(relPath) === request.url;
     });
 
-    if (isSingletonUnversioned && !_singletonBypassDone) {
-      // One-time network-only bypass for these critical modules so we break
+    if (isSingletonUnversioned && _singletonBypassCount < 2) {
+      // Limited network-only bypass for these critical modules so we break
       // out of any stale cache state, then allow them back into normal flow.
-      _singletonBypassDone = true;
+      _singletonBypassCount++;
       event.respondWith(
         fetch(request).then(function (res) {
-          console.log('♻️ One-time network-only fetch for singleton module:', request.url);
+          console.log('♻️ Network-only fetch for singleton module (bypass ' + _singletonBypassCount + '/2):', request.url);
           return res;
         }).catch(function (error) {
           console.warn('❌ Singleton network fetch failed, falling back to cache:', request.url, error);
