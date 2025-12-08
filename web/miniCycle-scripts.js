@@ -338,56 +338,62 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     core: {}
   };
 
-  // ✅ Load appInit FIRST - try without version for singleton, fallback to versioned if stale cache
-  // This is critical: utility modules use static imports like `import { appInit } from './appInit.js'`
-  // If we version this import, we create separate instances - but we MUST handle stale caches
-  let appInitModule = await import('./modules/core/appInit.js');
-  let { appInit, setAppInitDependencies } = appInitModule;
+    // ✅ Load appInit FIRST - try without version for singleton, fallback behavior if stale cache
+    // This is critical: utility modules use static imports like `import { appInit } from './appInit.js'`
+    // If we version this import, we create separate instances - but we MUST handle stale caches.
+    //
+    // To avoid repeatedly hammering caches for users stuck with an old appInit.js in their
+    // HTTP cache, we also track a one-time "forgiven" flag so we only attempt heavy recovery
+    // once per browser profile.
+    let appInitModule = await import('./modules/core/appInit.js');
+    let { appInit, setAppInitDependencies } = appInitModule;
 
-  // ⚠️ Cache validation: ensure setAppInitDependencies was exported (added in v1.409)
-  // If users have stale cached appInit.js, we MUST reload - cache-busted imports create
-  // separate module instances, breaking the singleton pattern for static imports
-  if (typeof setAppInitDependencies !== 'function') {
-    console.error('❌ Stale appInit.js cache detected - clearing caches and reloading...');
+    const staleForgiven = sessionStorage.getItem('_staleAppInitForgiven') === 'true';
 
-    // Check how many reload attempts we've made
-    const reloadAttempts = parseInt(sessionStorage.getItem('_staleCacheReload') || '0', 10);
+    // ⚠️ Cache validation: ensure setAppInitDependencies was exported (added in v1.409)
+    // If users have stale cached appInit.js, we attempt recovery a limited number of times.
+    if (typeof setAppInitDependencies !== 'function' && !staleForgiven) {
+        console.error('❌ Stale appInit.js cache detected - clearing caches and reloading...');
 
-    if (reloadAttempts < 2) {
-      sessionStorage.setItem('_staleCacheReload', (reloadAttempts + 1).toString());
-      sessionStorage.setItem('_cacheRecoveryReload', 'true');
+        // Check how many reload attempts we've made
+        const reloadAttempts = parseInt(sessionStorage.getItem('_staleCacheReload') || '0', 10);
 
-      // Clear all service worker caches
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-        console.log('🗑️ Cleared', cacheNames.length, 'caches');
-      }
+        if (reloadAttempts < 2) {
+            sessionStorage.setItem('_staleCacheReload', (reloadAttempts + 1).toString());
+            sessionStorage.setItem('_cacheRecoveryReload', 'true');
 
-      // Unregister service worker completely to clear module cache association
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const reg of registrations) {
-          await reg.unregister();
-          console.log('🗑️ Unregistered service worker');
+            // Clear all service worker caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                console.log('🗑️ Cleared', cacheNames.length, 'caches');
+            }
+
+            // Unregister service worker completely to clear module cache association
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const reg of registrations) {
+                    await reg.unregister();
+                    console.log('🗑️ Unregistered service worker');
+                }
+            }
+
+            // Navigate to cache-busted URL (more effective than reload for ES modules)
+            const url = new URL(window.location.href);
+            url.searchParams.set('_cc', Date.now().toString());
+            window.location.href = url.toString();
+            return;
         }
-      }
 
-      // Navigate to cache-busted URL (more effective than reload for ES modules)
-      const url = new URL(window.location.href);
-      url.searchParams.set('_cc', Date.now().toString());
-      window.location.href = url.toString();
-      return;
+        // If we've tried twice and still stale, give up gracefully for this browser
+        sessionStorage.removeItem('_staleCacheReload');
+        sessionStorage.setItem('_staleAppInitForgiven', 'true');
+        console.error('⚠️ Cache clearing failed after 2 attempts. Forgiving stale appInit for this session and continuing.');
+        // Don't throw - let the app try to continue (may partially work)
     }
 
-    // If we've tried twice and still stale, give up gracefully
+    // Clear reload flag on successful load (normal or forgiven path)
     sessionStorage.removeItem('_staleCacheReload');
-    console.error('⚠️ Cache clearing failed after 2 attempts. Attempting to continue anyway...');
-    // Don't throw - let the app try to continue (may partially work)
-  }
-
-  // Clear reload flag on successful load
-  sessionStorage.removeItem('_staleCacheReload');
 
   // Check if we just recovered from a cache issue (for notification)
   const justReloaded = sessionStorage.getItem('_cacheRecoveryReload');
