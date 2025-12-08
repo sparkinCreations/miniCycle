@@ -4,7 +4,7 @@
 importScripts('./version.js');
 
 var APP_VERSION = self.APP_VERSION;
-var CACHE_VERSION = 'v230';
+var CACHE_VERSION = 'v231';
 var CACHE_NAME = 'miniCycle-' + CACHE_VERSION + '-v' + APP_VERSION;
 
 var CORE_ASSETS = [
