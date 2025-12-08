@@ -307,6 +307,16 @@ window.AppInit = null; // Will be replaced with appInit below
 document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
+  // Clean up cache-clearing URL parameter if present (from stale cache recovery)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('_cc')) {
+    urlParams.delete('_cc');
+    const cleanUrl = urlParams.toString()
+      ? `${window.location.pathname}?${urlParams.toString()}`
+      : window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+
   window.AppBootStarted = true;
   window.AppBootStartTime = Date.now(); // ✅ Track boot start time
 
@@ -340,10 +350,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   if (typeof setAppInitDependencies !== 'function') {
     console.error('❌ Stale appInit.js cache detected - clearing caches and reloading...');
 
-    // Only attempt reload once to prevent infinite loop
-    if (!sessionStorage.getItem('_staleCacheReload')) {
-      sessionStorage.setItem('_staleCacheReload', Date.now().toString());
-      sessionStorage.setItem('_cacheRecoveryReload', 'true'); // For notification after reload
+    // Check how many reload attempts we've made
+    const reloadAttempts = parseInt(sessionStorage.getItem('_staleCacheReload') || '0', 10);
+
+    if (reloadAttempts < 2) {
+      sessionStorage.setItem('_staleCacheReload', (reloadAttempts + 1).toString());
+      sessionStorage.setItem('_cacheRecoveryReload', 'true');
 
       // Clear all service worker caches
       if ('caches' in window) {
@@ -352,20 +364,26 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log('🗑️ Cleared', cacheNames.length, 'caches');
       }
 
-      // Force SW update
+      // Unregister service worker completely to clear module cache association
       if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) await reg.update();
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+          console.log('🗑️ Unregistered service worker');
+        }
       }
 
-      // Hard reload bypassing cache
-      window.location.reload(true);
-      return; // Stop execution, page will reload
+      // Navigate to cache-busted URL (more effective than reload for ES modules)
+      const url = new URL(window.location.href);
+      url.searchParams.set('_cc', Date.now().toString());
+      window.location.href = url.toString();
+      return;
     }
 
-    // If we already tried reloading, show error
+    // If we've tried twice and still stale, give up gracefully
     sessionStorage.removeItem('_staleCacheReload');
-    throw new Error('Stale cache persists after reload. Please manually clear browser cache (Ctrl+Shift+Delete) and reload.');
+    console.error('⚠️ Cache clearing failed after 2 attempts. Attempting to continue anyway...');
+    // Don't throw - let the app try to continue (may partially work)
   }
 
   // Clear reload flag on successful load
