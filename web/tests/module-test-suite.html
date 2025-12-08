@@ -393,10 +393,12 @@
             <option value="appInit">🚀 AppInit</option>
             <option value="appState">💾 AppState</option>
             <option value="helpWindowManager">❓ Help Window Manager</option>
+            <option value="startupManager">🚀 Startup Manager</option>
             <option value="constants">🔧 Constants</option>
             <option value="basicPluginSystem">🔌 Basic Plugin System</option>
             <option value="accessibility">♿ Accessibility</option>
             <option value="stress">🔥 Stress Tests</option>
+            <option value="startupManager">🚀 Startup Manager</option>
         </select>
             </div>
         </div>
@@ -481,6 +483,7 @@
         const { runBasicPluginSystemTests } = await import(`./basicPluginSystem.tests.js?v=${cacheBuster}`);
         const { runAccessibilityTests } = await import(`./accessibility.tests.js?v=${cacheBuster}`);
         const { runStressTests } = await import(`./stress.tests.js?v=${cacheBuster}`);
+        const { runStartupManagerTests } = await import(`./startupManager.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -613,6 +616,10 @@
                 const mod = await import(`../modules/core/appState.js?v=${cacheBuster}`);
                 window.MiniCycleState = mod.MiniCycleState;
                 window.createStateManager = mod.createStateManager;
+            } else if (moduleKey === 'startupManager') {
+                const mod = await import(`../modules/core/startupManager.js?v=${cacheBuster}`);
+                window.StartupManager = mod.StartupManager;
+                window.setStartupManagerDependencies = mod.setStartupManagerDependencies;
             } else if (moduleKey === 'recurringCore') {
                 const mod = await import(`../modules/recurring/recurringCore.js?v=${cacheBuster}`);
                 window.RecurringCore = mod.RecurringCore;
@@ -1300,6 +1307,12 @@
                     window.getStateManager = mod.default;
                     currentModule = 'appState';
                     resultsDiv.innerHTML = '<p>✅ AppState loaded. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'startupManager') {
+                    const mod = await import(`../modules/core/startupManager.js?v=${cacheBuster}`);
+                    window.StartupManager = mod.StartupManager;
+                    window.setStartupManagerDependencies = mod.setStartupManagerDependencies;
+                    currentModule = 'startupManager';
+                    resultsDiv.innerHTML = '<p>✅ StartupManager loaded. Click "Run Tests" to begin.</p>';
                 } else if (moduleName === 'helpWindowManager') {
                     const mod = await import(`../modules/ui/helpWindowManager.js?v=${cacheBuster}`);
                     window.setHelpWindowManagerDependencies = mod.setHelpWindowManagerDependencies;
@@ -1436,6 +1449,8 @@
                 await runAppInitTests(resultsDiv);
             } else if (currentModule === 'appState') {
                 await runAppStateTests(resultsDiv);
+            } else if (currentModule === 'startupManager') {
+                await runStartupManagerTests(resultsDiv);
             } else if (currentModule === 'helpWindowManager') {
                 await runHelpWindowManagerTests(resultsDiv);
             } else if (currentModule === 'constants') {
@@ -1603,6 +1618,7 @@
                 { name: 'Data Validator', key: 'dataValidator', runFn: runDataValidatorTests, importPath: '../modules/utils/dataValidator.js' },
                 { name: 'AppInit', key: 'appInit', runFn: runAppInitTests, importPath: '../modules/core/appInit.js' },
                 { name: 'AppState', key: 'appState', runFn: runAppStateTests, importPath: '../modules/core/appState.js' },
+                { name: 'StartupManager', key: 'startupManager', runFn: runStartupManagerTests, importPath: '../modules/core/startupManager.js' },
                 { name: 'HelpWindowManager', key: 'helpWindowManager', runFn: runHelpWindowManagerTests, importPath: '../modules/ui/helpWindowManager.js' },
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
                 { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
