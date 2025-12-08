@@ -661,27 +661,32 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const migrationMod = await import(withV('./modules/cycle/migrationManager.js'));
 
     // ✅ Wire appInit setup dependencies (uses closures for late-binding)
-    setAppInitDependencies({
-      // For initialSetup
-      loadMiniCycleData: () => loadMiniCycleData?.(),
-      createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
-      showCycleCreationModal: () => window.showCycleCreationModal?.(),
-      getOnboardingManager: () => window.onboardingManager,
-      getMiniCycleState: () => null, // window.miniCycle namespace was never implemented
+    // Skip if setAppInitDependencies is not available (stale cache scenario)
+    if (typeof setAppInitDependencies === 'function') {
+      setAppInitDependencies({
+        // For initialSetup
+        loadMiniCycleData: () => loadMiniCycleData?.(),
+        createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
+        showCycleCreationModal: () => window.showCycleCreationModal?.(),
+        getOnboardingManager: () => window.onboardingManager,
+        getMiniCycleState: () => null, // window.miniCycle namespace was never implemented
 
-      // For completeInitialSetup
-      loadMiniCycle: () => window.loadMiniCycle,
-      updateReminderButtons: () => window.updateReminderButtons,
-      updateDueDateVisibility: () => window.updateDueDateVisibility,
-      checkOverdueTasks: () => window.checkOverdueTasks,
-      organizeCompletedTasks: () => window.organizeCompletedTasks,
-      startReminders: () => window.startReminders?.(),
-      updateThemeColor: () => window.updateThemeColor?.(),
-      getElementById: (id) => document.getElementById(id),
-      addBodyClass: (cls) => document.body.classList.add(cls),
-      removeBodyClass: (cls) => document.body.classList.remove(cls)
-    });
-    console.log('✅ AppInit setup dependencies configured');
+        // For completeInitialSetup
+        loadMiniCycle: () => window.loadMiniCycle,
+        updateReminderButtons: () => window.updateReminderButtons,
+        updateDueDateVisibility: () => window.updateDueDateVisibility,
+        checkOverdueTasks: () => window.checkOverdueTasks,
+        organizeCompletedTasks: () => window.organizeCompletedTasks,
+        startReminders: () => window.startReminders?.(),
+        updateThemeColor: () => window.updateThemeColor?.(),
+        getElementById: (id) => document.getElementById(id),
+        addBodyClass: (cls) => document.body.classList.add(cls),
+        removeBodyClass: (cls) => document.body.classList.remove(cls)
+      });
+      console.log('✅ AppInit setup dependencies configured');
+    } else {
+      console.warn('⚠️ setAppInitDependencies not available (stale cache) - skipping dependency injection');
+    }
 
     migrationMod.setMigrationManagerDependencies({
       storage: localStorage,
