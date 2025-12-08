@@ -338,14 +338,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     core: {}
   };
 
-    // ✅ Load appInit FIRST - try without version for singleton, fallback behavior if stale cache
-    // This is critical: utility modules use static imports like `import { appInit } from './appInit.js'`
-    // If we version this import, we create separate instances - but we MUST handle stale caches.
-    //
-    // To avoid repeatedly hammering caches for users stuck with an old appInit.js in their
-    // HTTP cache, we also track a one-time "forgiven" flag so we only attempt heavy recovery
-    // once per browser profile.
-    let appInitModule = await import('./modules/core/appInit.js');
+    // ✅ Load appInit FIRST from a versioned URL to escape stale HTTP caches
+    // We use a dedicated v2 entry file so the URL changes (new cache key)
+    // while keeping a single logical AppInit singleton for all modules.
+    let appInitModule = await import(`./modules/core/appInit.v2.js?v=${window.APP_VERSION}`);
     let { appInit, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
 
     const staleForgiven = sessionStorage.getItem('_staleAppInitForgiven') === 'true';
