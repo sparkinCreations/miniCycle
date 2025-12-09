@@ -102,7 +102,14 @@ window.AppGlobalState = {
   isPerformingUndoRedo: false,
   lastSnapshotSignature: null,
   lastSnapshotTs: 0,
-  isInitializing: true  // ✅ Track if app is still initializing
+  isInitializing: true,  // ✅ Track if app is still initializing
+  // ✅ Consolidated internal flags (moved from scattered window.* properties)
+  pendingCacheNotification: false,
+  queuedAddTaskCalls: [],
+  wrappedAppStateUpdate: false,
+  useUpdateWrapper: false,
+  bootStartTime: null,
+  recurringModules: null  // ✅ Stores recurring module references
 };
 
 
@@ -317,8 +324,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.history.replaceState({}, '', cleanUrl);
   }
 
-  window.AppBootStarted = true;
-  window.AppBootStartTime = Date.now(); // ✅ Track boot start time
+  window.AppBootStarted = true;  // ✅ Keep on window - used by HTML fallback detection
+  window.AppGlobalState.bootStartTime = Date.now();
 
   // ============================================
   // 🎯 DEPENDENCY CONTAINER
@@ -453,7 +460,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     const justReloaded = sessionStorage.getItem('_cacheRecoveryReload');
     if (justReloaded) {
         sessionStorage.removeItem('_cacheRecoveryReload');
-        window._pendingCacheNotification = true;
+        window.AppGlobalState.pendingCacheNotification = true;
     }
 
         deps.core.appInit = appInit;
@@ -669,9 +676,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('✅ Notifications loaded');
 
     // Show deferred cache notification if we had to fetch fresh appInit.js
-    if (window._pendingCacheNotification) {
+    if (window.AppGlobalState.pendingCacheNotification) {
       notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
-      delete window._pendingCacheNotification;
+      window.AppGlobalState.pendingCacheNotification = false;
     }
 
     // ✅ Wire ErrorHandler now that showNotification is available
@@ -1452,8 +1459,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             const recurringModules = await initializeRecurringModules({ AppMeta: window.AppMeta });
 
-            // Phase 3: Main script handles window.* exposure
-            window._recurringModules = recurringModules;
+            // Phase 3: Store in AppGlobalState and expose APIs
+            window.AppGlobalState.recurringModules = recurringModules;
             window.recurringCore = recurringModules.coreAPI;
             window.recurringPanel = recurringModules.panelAPI;
             // Direct function exposure for backward compatibility
@@ -2230,7 +2237,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // 🧰 Centralize undo snapshots on AppState.update (wrap once)
         try {
-          if (!window.__wrappedAppStateUpdate) {
+          if (!window.AppGlobalState.wrappedAppStateUpdate) {
             // Bind methods to preserve `this`
             const boundUpdate = window.AppState.update.bind(window.AppState);
             const boundGet = typeof window.AppState.get === 'function'
@@ -2252,8 +2259,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
               return boundUpdate(producer, immediate);
             };
 
-            window.__wrappedAppStateUpdate = true;
-            window.__useUpdateWrapper = true; // ✅ wrapper becomes single snapshot source
+            window.AppGlobalState.wrappedAppStateUpdate = true;
+            window.AppGlobalState.useUpdateWrapper = true; // ✅ wrapper becomes single snapshot source
             console.log('🧰 Undo snapshots centralized on AppState.update (bound)');
           }
         } catch (e) {
@@ -2269,7 +2276,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
           }
 
           // Only capture initial snapshot if not using the update wrapper
-          if (!window.__useUpdateWrapper) {
+          if (!window.AppGlobalState.useUpdateWrapper) {
             setTimeout(() => {
               try {
                 const st = window.AppState.get?.();
@@ -3403,9 +3410,10 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
       if (typeof window.addTask !== 'function') {
         window.addTask = addTask;
       }
-      if (Array.isArray(window.__queuedAddTaskCalls) && window.__queuedAddTaskCalls.length) {
-        console.log(`🚚 Flushing ${window.__queuedAddTaskCalls.length} queued addTask calls`);
-        window.__queuedAddTaskCalls.splice(0).forEach(args => {
+      const queuedCalls = window.AppGlobalState.queuedAddTaskCalls;
+      if (Array.isArray(queuedCalls) && queuedCalls.length) {
+        console.log(`🚚 Flushing ${queuedCalls.length} queued addTask calls`);
+        queuedCalls.splice(0).forEach(args => {
           try { addTask(...args); } catch (e) { console.warn('addTask flush error:', e); }
         });
       }
