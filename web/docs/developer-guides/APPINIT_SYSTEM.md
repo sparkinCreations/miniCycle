@@ -355,12 +355,40 @@ if (appInit.isCoreReady()) { /* ... */ }
 
 ---
 
+## Timeout Safety
+
+Both wait functions include timeout protection to prevent the app from hanging indefinitely if initialization fails:
+
+```javascript
+await appInit.waitForCore();  // 10 second timeout
+await appInit.waitForApp();   // 15 second timeout
+```
+
+**What happens on timeout:**
+1. Error is logged: `❌ waitForCore timed out after 10000ms - core never became ready`
+2. Warning is logged: `⚠️ Continuing without core ready - some features may not work`
+3. App continues in degraded state (doesn't hang forever)
+
+**Custom timeout:**
+```javascript
+await appInit.waitForCore(5000);   // 5 second timeout
+await appInit.waitForApp(20000);   // 20 second timeout
+```
+
+**Why this exists:**
+If `init()` is awaited before `markCoreSystemsReady()` is called in the boot sequence, the app would deadlock. The timeout ensures the app eventually recovers and provides clear error messages for debugging.
+
+**Key rule:** Don't `await` module init calls that use `waitForCore()` if they're positioned before `markCoreSystemsReady()` in the boot sequence. Either move them later, or call them without `await`.
+
+---
+
 ## Performance Notes
 
 - ✅ **appInit.waitForCore()** resolves instantly if core is already ready (no performance cost)
 - ✅ Multiple modules can call `waitForCore()` simultaneously - they all unblock together
 - ✅ No race conditions - guaranteed safe data access
 - ✅ Timing information available via `appInit.getStatus()`
+- ✅ Timeout safety prevents indefinite hangs (10s for core, 15s for app)
 
 ---
 
