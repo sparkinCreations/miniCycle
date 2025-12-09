@@ -7,10 +7,11 @@
  * @module cycleLoader
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 const Deps = {
+  appInit: null,   // AppInit for initialization coordination
   AppState: null,  // ✅ Will be a GETTER FUNCTION: () => window.AppState
   loadMiniCycleData: null,
   createInitialSchema25Data: null,
@@ -312,7 +313,7 @@ function updateDependentComponents() {
 async function saveCycleData(activeCycle, currentCycle) {
   // ✅ Wait for core systems to be ready (AppState + data)
   // This prevents conflicts with AppState initialization
-  await appInit.waitForCore();
+  await Deps.appInit?.waitForCore();
 
   // ✅ Use AppState only (no localStorage fallback)
   const appState = getAppState();

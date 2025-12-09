@@ -27,11 +27,13 @@
  * @requires appInit, AppState, taskCore, globalUtils, taskValidation
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 /**
  * Set dependencies for TaskDOMManager (call before initTaskDOMManager)
@@ -323,7 +325,7 @@ export class TaskDOMManager {
 
             // ✅ STEP 2: Wait for core systems (AppState + data) to be ready
             console.log('⏳ TaskDOMManager waiting for core systems...');
-            await appInit.waitForCore();
+            await _deps.appInit?.waitForCore();
             console.log('✅ Core systems ready, TaskDOM ready for rendering');
 
             this.initialized = true;

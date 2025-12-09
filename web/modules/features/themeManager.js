@@ -26,10 +26,11 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level dependencies - set via setThemeManagerDependencies
 let _deps = {
+    appInit: null,  // AppInit for initialization coordination
     AppState: null,
     showNotification: null,
     hideMainMenu: null,
@@ -334,7 +335,7 @@ export class ThemeManager {
             console.log("🌊 Unlocking Dark Ocean theme (state-based)...");
 
             // ✅ Wait for core systems to be ready (AppState + data)
-            await appInit.waitForCore();
+            await _deps.appInit?.waitForCore();
 
             if (!_deps.AppState) {
                 console.warn('⚠️ AppState not injected - using fallback');
@@ -381,7 +382,7 @@ export class ThemeManager {
             console.log("🌟 Unlocking Golden Glow theme (state-based)...");
 
             // ✅ Wait for core systems to be ready (AppState + data)
-            await appInit.waitForCore();
+            await _deps.appInit?.waitForCore();
 
             if (!_deps.AppState) {
                 console.warn('⚠️ AppState not injected - using fallback');
@@ -728,7 +729,7 @@ export class ThemeManager {
      */
     async saveSchemaData(data) {
         // ✅ Wait for core systems to be ready before saving
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         // ✅ Use injected AppState only (no window.* fallback)
         if (!_deps.AppState?.isReady?.()) {

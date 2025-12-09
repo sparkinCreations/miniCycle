@@ -13,10 +13,12 @@
  * Note: document.*, sessionStorage are browser APIs, not dependencies.
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 /**
  * Set dependencies for ModeManager (call before creating instance)
@@ -71,7 +73,7 @@ export class ModeManager {
         console.log('🎯 ModeManager: Initializing...');
 
         // Wait for core systems to be ready
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         console.log('⏰ ModeManager: Initializing mode selector with 200ms delay...');
         setTimeout(() => {
@@ -116,7 +118,7 @@ export class ModeManager {
             console.log('🔄 ModeManager: Refreshing task buttons for mode change...');
 
             // Wait for core if needed
-            await appInit.waitForCore();
+            await _deps.appInit?.waitForCore();
 
             const tasks = this.deps.querySelectorAll('.task');
             if (tasks.length === 0) {
@@ -237,7 +239,7 @@ export class ModeManager {
         console.log('🔄 ModeManager: Syncing mode from toggles (state-based)...');
 
         // Wait for core
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const AppState = this.deps.getAppState();
         const currentState = AppState?.get();
@@ -330,7 +332,7 @@ export class ModeManager {
         console.log('💾 ModeManager: Updating storage from toggles (state-based)...');
 
         // Wait for core
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const AppState = this.deps.getAppState();
         const currentState = AppState?.get();
@@ -370,7 +372,7 @@ export class ModeManager {
         console.log('📝 ModeManager: Updating cycle mode description (Schema 2.5 only)...');
 
         // Wait for core
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         // ✅ Schema 2.5 only
         const loadMiniCycleData = this.deps.loadMiniCycleData;
@@ -437,7 +439,7 @@ export class ModeManager {
         console.log('🎯 ModeManager: Setting up mode selectors (state-based)...');
 
         // Wait for core
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const modeSelector = this.deps.getElementById('mode-selector');
         const mobileModeSelector = this.deps.getElementById('mobile-mode-selector');

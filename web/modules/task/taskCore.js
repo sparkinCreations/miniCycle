@@ -15,10 +15,12 @@
  * @module task/taskCore
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 // Singleton instance (initialized by initTaskCore)
 let taskCoreInstance = null;
@@ -159,7 +161,7 @@ export class TaskCore {
         // Wait for core systems to be ready (with timeout for test environments)
         try {
             await Promise.race([
-                appInit.waitForCore(),
+                _deps.appInit?.waitForCore(),
                 new Promise((resolve) => setTimeout(resolve, 1000)) // 1s timeout for tests
             ]);
             console.log('✅ Task core system initialized successfully');
@@ -179,7 +181,7 @@ export class TaskCore {
     async waitForCoreWithTimeout() {
         try {
             await Promise.race([
-                appInit.waitForCore(),
+                _deps.appInit?.waitForCore(),
                 new Promise((resolve) => setTimeout(resolve, 100)) // 100ms timeout for tests
             ]);
         } catch (error) {

@@ -16,7 +16,7 @@
  * @module deviceDetection
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
@@ -51,7 +51,7 @@ export class DeviceDetectionManager {
       loadMiniCycleData: _deps.loadMiniCycleData || (() => { console.warn('loadMiniCycleData not available'); return null; }),
       showNotification: _deps.showNotification || ((msg) => console.warn('showNotification not available:', msg)),
       AppState: _deps.AppState,
-      appInit: _deps.appInit || appInit
+      appInit: _deps.appInit  // DI-pure (no fallback)
     };
   }
 

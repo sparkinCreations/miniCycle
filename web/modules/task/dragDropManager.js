@@ -6,10 +6,12 @@
  * @module modules/task/dragDropManager
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 /**
  * Set dependencies for DragDropManager (call before init)
@@ -84,7 +86,7 @@ export class DragDropManager {
 
             // ✅ Wait for core systems (AppState + data) to be ready
             console.log('⏳ DragDropManager waiting for core systems...');
-            await appInit.waitForCore();
+            await _deps.appInit?.waitForCore();
             console.log('✅ Core systems ready, initializing drag & drop...');
 
             this.setupRearrange();

@@ -13,10 +13,12 @@
  * @module dueDates
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 /**
  * Set dependencies for MiniCycleDueDates (call before creating instance)
@@ -63,7 +65,7 @@ export class MiniCycleDueDates {
         console.log('🔄 Initializing due dates system...');
 
         // Wait for core systems to be ready
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         try {
             // Get reference to toggle element
@@ -76,7 +78,7 @@ export class MiniCycleDueDates {
             this.setupDueDateSystem();
 
             // ✅ Add hook to check overdue tasks after app is fully ready
-            appInit.addHook('afterApp', async () => {
+            _deps.appInit?.addHook?.('afterApp', async () => {
                 console.log('🔄 Checking overdue tasks after app ready (hook)...');
 
                 // Check if tasks exist in DOM before proceeding
@@ -108,7 +110,7 @@ export class MiniCycleDueDates {
     async saveTaskDueDate(taskId, newDueDate) {
         console.log('📅 Saving task due date (Schema 2.5 only)...');
 
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
@@ -169,7 +171,7 @@ export class MiniCycleDueDates {
      * @param {HTMLElement|null} taskToCheck - Specific task to check, or null to check all
      */
     async checkOverdueTasks(taskToCheck = null) {
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const tasks = taskToCheck ? [taskToCheck] : this.deps.querySelectorAll(".task");
         let autoReset = this.toggleAutoReset?.checked || false;
@@ -271,7 +273,7 @@ export class MiniCycleDueDates {
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
         dueDateInput._changeHandler = async () => {
             // ✅ Read fresh state from localStorage (source of truth)
-            await appInit.waitForCore();
+            await _deps.appInit?.waitForCore();
 
             const schemaData = this.deps.loadMiniCycleData();
             if (!schemaData) {

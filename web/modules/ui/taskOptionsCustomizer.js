@@ -14,7 +14,7 @@
  * - Sensible defaults for new cycles
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
@@ -154,7 +154,7 @@ export class TaskOptionsCustomizer {
             startReminders: _deps.startReminders,
             stopReminders: _deps.stopReminders,
             modeManager: _deps.modeManager,
-            appInit: _deps.appInit || appInit,
+            appInit: _deps.appInit,  // DI-pure (no fallback)
             DEFAULT_TASK_OPTION_BUTTONS: _deps.DEFAULT_TASK_OPTION_BUTTONS || FALLBACK_TASK_OPTION_BUTTONS,
             // DOM helpers from constructor
             ...this._constructorDeps

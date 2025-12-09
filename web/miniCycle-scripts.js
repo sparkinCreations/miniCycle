@@ -490,8 +490,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         appInitVersion: APPINIT_VERSION || null
     };
 
-    // ✅ Set backward compatibility alias
+    // ✅ Set backward compatibility aliases (both cases for DI lazy getters)
     window.AppInit = appInit;
+    window.appInit = appInit;
 
     // ==========================================================
     // appInit version/compat diagnostics + optional auto-refresh
@@ -641,6 +642,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     notificationsMod.setNotificationsDependencies({
         // These will be available later - use deferred getters
         AppState: null, // Set after AppState is created
+        appInit: appInit,  // ✅ DI-injected (no static import in module)
         loadMiniCycleData: () => window.loadMiniCycleData?.(),
         generateHashId: (...args) => window.generateHashId?.(...args),
         GlobalUtils: window.GlobalUtils,
@@ -701,6 +703,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // ✅ Inject available deps early (AppState injected later after it's created)
     if (themeManagerMod.setThemeManagerDependencies) {
         themeManagerMod.setThemeManagerDependencies({
+            appInit: appInit,  // ✅ DI-injected (no static import in module)
             showNotification: deps.utils.showNotification
             // AppState and hideMainMenu injected later
         });
@@ -712,6 +715,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Inject dependencies (DI-pure)
     if (gamesManagerMod.setGamesManagerDependencies) {
         gamesManagerMod.setGamesManagerDependencies({
+            appInit: appInit,  // ✅ DI-injected (no static import in module)
             AppMeta: window.AppMeta,
             get AppState() { return window.AppState; },  // Lazy getter for late binding
             safeAddEventListener: deps.utils.safeAddEventListener
@@ -729,6 +733,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Inject dependencies (DI-pure, use lazy getters for late-available deps)
     if (onboardingManagerMod.setOnboardingManagerDependencies) {
         onboardingManagerMod.setOnboardingManagerDependencies({
+            appInit: appInit,  // ✅ DI-injected (no static import in module)
             AppMeta: window.AppMeta,
             showNotification: deps.utils.showNotification,
             get AppState() { return window.AppState; },
@@ -786,47 +791,47 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         if (typeof appInit.runInitialSetup === 'function') {
           return appInit.runInitialSetup();
         }
-            // ========== BACKWARD COMPATIBILITY FALLBACK ==========
-    console.warn('⚠️ appInit.runInitialSetup not available - using fallback initialization');
-    
-    return (async () => {
-        try {
+
+        // ========== BACKWARD COMPATIBILITY FALLBACK ==========
+        console.warn('⚠️ appInit.runInitialSetup not available - using fallback initialization');
+
+        return (async () => {
+          try {
             // Use deps container or local scope functions
             const loadData = deps.core.loadMiniCycleData || loadMiniCycleData;
             const createData = deps.core.createInitialSchema25Data || createInitialSchema25Data;
             const loadCycle = deps.core.loadMiniCycle || loadMiniCycle;
             const showModal = deps.ui.showCycleCreationModal || showCycleCreationModal;
-            
+
             let schemaData = loadData?.();
-            
+
             if (!schemaData) {
-                console.log('🆕 No data found - creating initial structure...');
-                createData?.();
-                schemaData = loadData?.();
+              console.log('🆕 No data found - creating initial structure...');
+              createData?.();
+              schemaData = loadData?.();
             }
-            
+
             if (!schemaData) {
-                console.error('❌ Failed to load or create data');
-                return;
+              console.error('❌ Failed to load or create data');
+              return;
             }
-            
+
             const { cycles, activeCycle } = schemaData;
-            
+
             if (!activeCycle || !cycles?.[activeCycle]) {
-                console.log('🆕 No active cycle - showing cycle creation modal...');
-                showModal?.();
-                return;
+              console.log('🆕 No active cycle - showing cycle creation modal...');
+              showModal?.();
+              return;
             }
-            
+
             console.log('📦 Loading cycle:', activeCycle);
             await loadCycle?.(activeCycle);
-            
-            console.log('✅ Fallback initialization complete');
-        } catch (error) {
-            console.error('❌ Fallback initialization failed:', error);
-        }
-    })();
 
+            console.log('✅ Fallback initialization complete');
+          } catch (error) {
+            console.error('❌ Fallback initialization failed:', error);
+          }
+        })();
       },
       onInitialSetupComplete: () => appInit.markAppReady(), // Inject the Callback
       now: () => Date.now(),
@@ -1102,6 +1107,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         const dragDropManager = await initDragDropManager({
           // Core state (DI-pure, no AppGlobalState - uses local instance state)
+          appInit: appInit,  // ✅ DI-injected (no static import in module)
           AppState: window.AppState,
           AppMeta: window.AppMeta,
           // Task operations
@@ -1132,10 +1138,10 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
         // Wire dependencies before creating instance (DI-pure pattern)
         setDeviceDetectionDependencies({
+            appInit: appInit,  // ✅ DI-injected directly (no lazy getter needed)
             loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
             showNotification: deps.utils.showNotification,
             get AppState() { return window.AppState; },
-            get appInit() { return window.appInit; },
             AppMeta: window.AppMeta
         });
 
@@ -1171,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             hideMainMenu: () => window.hideMainMenu?.(),
             setupDarkModeToggle: (id, syncIds) => window.setupDarkModeToggle?.(id, syncIds),
             get AppState() { return window.AppState; },
-            get appInit() { return window.appInit; },
+            appInit: appInit,  // ✅ DI-injected directly (no lazy getter needed)
             AppMeta: window.AppMeta,
             safeAddEventListener: GlobalUtils.safeAddEventListener
         });
@@ -1211,6 +1217,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // ✅ Set module-level deps for wrapper functions (DI-pure)
             // Note: TaskUtils deps flow through taskDOM instance deps (set in initTaskDOMManager below)
             setTaskDOMManagerDependencies({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 generateId: deps.utils.generateId
@@ -1339,6 +1346,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             // Wire dependencies before creating instance (DI-pure pattern)
             setTaskOptionsCustomizerDependencies({
+                appInit: appInit,  // ✅ DI-injected directly (no lazy getter needed)
                 get AppState() { return window.AppState; },
                 showNotification: deps.utils.showNotification,
                 renderTaskList: () => window.refreshTaskListUI?.(),
@@ -1346,7 +1354,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
                 startReminders: () => window.startReminders?.(),
                 stopReminders: () => window.stopReminders?.(),
                 get modeManager() { return window.modeManager; },
-                get appInit() { return window.appInit; },
                 get DEFAULT_TASK_OPTION_BUTTONS() { return window.DEFAULT_TASK_OPTION_BUTTONS; }
             });
 
@@ -1378,13 +1385,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             // Wire dependencies BEFORE creating instance (DI-pure pattern)
             setRemindersDependencies({
+                appInit: appInit,  // ✅ DI-injected directly (no lazy getter needed)
                 showNotification: deps.utils.showNotification,
                 loadMiniCycleData: () => window.loadMiniCycleData ? window.loadMiniCycleData() : null,
                 updateUndoRedoButtons: () => window.updateUndoRedoButtons?.(),
                 autoSave: () => window.autoSave?.(),
                 // Use lazy getters for deps that don't exist at wiring time
                 get AppState() { return window.AppState; },
-                get appInit() { return window.appInit; },
                 get refreshTaskListUI() { return window.refreshTaskListUI; },
                 get AppGlobalState() { return window.AppGlobalState; },
                 AppMeta: window.AppMeta
@@ -1424,6 +1431,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             // ✅ Set dependencies for DI-pure (before initialization)
             setRecurringIntegrationDependencies({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 AppState: window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 showNotification: (...args) => window.showNotification?.(...args),
@@ -1501,6 +1509,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const { initDueDatesManager } = await import(withV('./modules/features/dueDates.js'));
 
             const dueDatesManager = await initDueDatesManager({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 showNotification: deps.utils.showNotification,  // ✅ Use direct function
                 updateStatsPanel: () => window.updateStatsPanel?.(),
@@ -1540,6 +1549,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const { initModeManager } = await import(withV('./modules/cycle/modeManager.js'));
 
             const modeManager = await initModeManager({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 getAppState: () => window.AppState,
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 createTaskButtonContainer: (ctx) => window.createTaskButtonContainer?.(ctx),
@@ -1678,6 +1688,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const undoRedoModule = await import(withV('./modules/ui/undoRedoManager.js'));
 
             undoRedoModule.setUndoRedoManagerDependencies({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 AppState: window.AppState,
                 refreshUIFromState: (state) => window.refreshUIFromState?.(state),
                 AppGlobalState: window.AppGlobalState,
@@ -1729,6 +1740,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const { initMenuManager, MenuManager } = await import(withV('./modules/ui/menuManager.js'));
 
             const menuManager = await initMenuManager({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
                 showNotification: deps.utils.showNotification,
@@ -1777,6 +1789,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ Wire ThemeManager dependencies now that AppState and hideMainMenu are available
         if (themeManagerMod.setThemeManagerDependencies) {
             themeManagerMod.setThemeManagerDependencies({
+                appInit: appInit,  // ✅ DI-injected (redundant but safe)
                 AppState: deps.core.AppState,  // ✅ From deps container
                 showNotification: deps.utils.showNotification,
                 hideMainMenu: () => window.hideMainMenu?.()
@@ -1812,6 +1825,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             // Wire dependencies before creating instance (DI-pure pattern)
             setSettingsManagerDependencies({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 AppState: () => window.AppState,
                 showNotification: deps.utils.showNotification,
@@ -2010,6 +2024,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
             const taskCore = await initTaskCore({
                 // State management (no AppGlobalState - uses local instance state)
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 AppState: window.AppState,
                 AppMeta: window.AppMeta,
 
@@ -2118,6 +2133,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             // ✅ CRITICAL FIX: Pass AppState as GETTER FUNCTION, not value
             // This prevents capturing null reference from early initialization
             setCycleLoaderDependencies({
+                appInit: appInit,  // ✅ DI-injected (no static import in module)
                 AppState: () => window.AppState,  // ✅ Lazy getter - always returns current value
                 loadMiniCycleData: () => window.loadMiniCycleData?.(),
                 createInitialSchema25Data: () => window.createInitialSchema25Data?.(),

@@ -14,7 +14,7 @@
  * @author miniCycle Development Team
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
@@ -102,7 +102,7 @@ export class StatsPanelManager {
             hideMainMenu: _deps.hideMainMenu || (() => {}),
             setupDarkModeToggle: _deps.setupDarkModeToggle || (() => {}),
             AppState: _deps.AppState,
-            appInit: _deps.appInit || appInit
+            appInit: _deps.appInit  // DI-pure (no fallback)
         };
     }
 

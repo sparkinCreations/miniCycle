@@ -8,10 +8,12 @@
  * @pattern Resilient Constructor 🛡️
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 /**
  * Set dependencies for MenuManager (call before creating instance)
@@ -74,7 +76,7 @@ export class MenuManager {
         if (this.initialized) return;
 
         // Wait for core systems before setup
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         try {
             // Cache DOM elements

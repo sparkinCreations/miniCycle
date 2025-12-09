@@ -8,7 +8,7 @@
  * @pattern Strict Injection 🔧
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // ============ CONSTANTS ============
 const UNDO_LIMIT = 20;
@@ -17,6 +17,7 @@ const UNDO_DB_WRITE_DEBOUNCE_MS = 3000;  // Batch IndexedDB writes every 3s
 
 // ============ DEPENDENCY INJECTION ============
 const Deps = {
+  appInit: null,   // AppInit for initialization coordination
   AppState: null,
   refreshUIFromState: null,
   AppGlobalState: null,

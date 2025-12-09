@@ -11,10 +11,11 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level dependencies (DI-pure, no window.* fallbacks)
 let deps = {
+    appInit: null,  // AppInit for initialization coordination
     AppState: null,
     loadMiniCycleData: null,
     showNotification: null,
@@ -54,7 +55,7 @@ export async function initializeRecurringModules(options = {}) {
     console.log('🔄 Initializing recurring task modules...');
 
     // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    await deps.appInit?.waitForCore();
     console.log('✅ Core systems ready - initializing recurring modules');
 
     try {

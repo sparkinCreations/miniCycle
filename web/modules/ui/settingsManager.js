@@ -6,7 +6,7 @@
  * @pattern Resilient Constructor 🛡️
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 // ❌ REMOVED: Static imports cause duplicate module instances
 // These are loaded via withV() in miniCycle-scripts.js and exposed to window.*
 // import { calculateNextOccurrence } from '../recurring/recurringCore.js';
@@ -14,6 +14,7 @@ import { appInit } from '../core/appInit.js';
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
 let _deps = {
+    appInit: null,  // AppInit for initialization coordination
     loadMiniCycleData: null,
     AppState: null,
     showNotification: null,
@@ -96,7 +97,7 @@ export class SettingsManager {
         if (this.initialized) return;
 
         // Wait for core systems
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         try {
             this.setupSettingsMenu();

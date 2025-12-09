@@ -15,7 +15,7 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS
@@ -30,6 +30,9 @@ import {
  * All dependencies MUST be injected before using this module
  */
 const Deps = {
+    // AppInit for initialization coordination (injected, not imported)
+    appInit: null,            // appInit singleton instance
+
     // State management
     getAppState: null,        // () => AppState.get()
     updateAppState: null,     // (updateFn) => AppState.update(updateFn)
@@ -1193,7 +1196,7 @@ export async function catchUpMissedRecurringTasks() {
     }
 
     // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    await Deps.appInit?.waitForCore();
 
     // ✅ Read from AppState
     assertInjected('getAppState', Deps.getAppState);
@@ -1352,7 +1355,7 @@ export async function watchRecurringTasks() {
     }
 
     // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    await Deps.appInit?.waitForCore();
 
     // ✅ Read from AppState
     assertInjected('getAppState', Deps.getAppState);
@@ -1475,7 +1478,7 @@ export async function setupRecurringWatcher() {
     }
 
     // ✅ Wait for core systems to be ready (AppState + data)
-    await appInit.waitForCore();
+    await Deps.appInit?.waitForCore();
     console.log('✅ Core systems ready - setting up recurring watcher');
 
     // ✅ Read from AppState

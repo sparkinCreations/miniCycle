@@ -12,10 +12,12 @@
  * @module gamesManager
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level deps for late injection
-let _deps = {};
+let _deps = {
+    appInit: null  // AppInit for initialization coordination
+};
 
 /**
  * Set dependencies for GamesManager (call before init)
@@ -54,7 +56,7 @@ class GamesManager {
     }
 
     async init() {
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         this.setupEventListeners();
 

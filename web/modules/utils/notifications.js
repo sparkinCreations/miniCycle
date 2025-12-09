@@ -17,10 +17,11 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level dependencies (DI-pure for app logic; legacy global flag kept for drag state sync)
 let _deps = {
+  appInit: null,  // AppInit for initialization coordination
   AppState: null,
   loadMiniCycleData: null,
   generateHashId: null,
@@ -580,7 +581,7 @@ async setDefaultPosition(notificationContainer) {
         }
 
         // ✅ Wait for core systems to be ready (AppState + data)
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         this.deps.AppState.update((state) => {
             if (state.settings) {
@@ -686,7 +687,7 @@ async setDefaultPosition(notificationContainer) {
         }
 
         // ✅ Wait for core systems to be ready (AppState + data)
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         // ✅ AppState.update() expects a function, not an object (DI-pure)
         this.deps.AppState.update((state) => {
@@ -1041,7 +1042,7 @@ async setDefaultPosition(notificationContainer) {
         const newFrequency = selectedCircle.dataset.freq;
 
         // ✅ Wait for core systems to be ready (AppState + data)
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const state = this.deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
@@ -1069,7 +1070,7 @@ async setDefaultPosition(notificationContainer) {
       // Handle advanced settings button
       if (e.target.classList.contains("open-recurring-settings") && taskId) {
         // ✅ Wait for core systems to be ready (AppState + data)
-        await appInit.waitForCore();
+        await _deps.appInit?.waitForCore();
 
         const state = this.deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;

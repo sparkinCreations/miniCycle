@@ -16,7 +16,7 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { appInit } from '../core/appInit.js';
+// ✅ appInit now injected via DI (no static import - enables versioning)
 // ✅ REMOVED: Static import creates duplicate without version parameter
 // import { formatNextOccurrence, calculateNextOccurrence } from './recurringCore.js';
 // These will be passed as dependencies instead
@@ -35,6 +35,9 @@ export class RecurringPanelManager {
 
         // Store dependencies (DI-pure, no window.* fallbacks for state management)
         this.deps = {
+            // AppInit for initialization coordination (injected, not imported)
+            appInit: dependencies.appInit || null,
+
             // From recurringCore module
             applyRecurringSettings: dependencies.applyRecurringSettings || this.fallbackApplySettings.bind(this),
             deleteTemplate: dependencies.deleteTemplate || this.fallbackDeleteTemplate.bind(this),
@@ -1086,7 +1089,7 @@ export class RecurringPanelManager {
 
         try {
             // ✅ Wait for core systems to be ready (AppState + data)
-            await appInit.waitForCore();
+            await this.deps.appInit?.waitForCore();
 
             const state = this.deps.getAppState();
             const activeCycleId = state.appState?.activeCycleId;
@@ -1452,7 +1455,7 @@ export class RecurringPanelManager {
 
         try {
             // ✅ Wait for core systems to be ready (AppState + data)
-            await appInit.waitForCore();
+            await this.deps.appInit?.waitForCore();
 
             // Update panel with current data
             await this.updateRecurringPanel();
@@ -1528,7 +1531,7 @@ export class RecurringPanelManager {
             }
 
             // ✅ Wait for core systems to be ready (AppState + data)
-            await appInit.waitForCore();
+            await this.deps.appInit?.waitForCore();
 
             const state = this.deps.getAppState();
             const activeCycleId = state.appState?.activeCycleId;
