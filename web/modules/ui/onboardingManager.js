@@ -322,11 +322,11 @@ export class OnboardingManager {
 // Create single instance
 const onboardingManager = new OnboardingManager();
 
-// Initialize automatically after import
-onboardingManager.init();
+// NOTE: Do NOT auto-init here. The main script must call init() AFTER setting dependencies.
+// onboardingManager.init(); // ❌ Removed - causes race condition with DI
 
 // DI-pure module (no window.* fallbacks for dependencies)
-console.log('🎓 Onboarding Manager module loaded (DI-pure, no window.* exports)');
+console.log('🎓 Onboarding Manager module loaded (DI-pure, awaiting init)');
 
 export default OnboardingManager;
 export { onboardingManager };

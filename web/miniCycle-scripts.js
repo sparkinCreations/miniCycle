@@ -746,11 +746,13 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             get AppState() { return window.AppState; },
             get showCycleCreationModal() { return window.showCycleCreationModal; },
             get completeInitialSetup() { return window.completeInitialSetup; },
-            safeAddEventListenerById: deps.utils.GlobalUtils?.safeAddEventListenerById
+            get safeAddEventListenerById() { return window.GlobalUtils?.safeAddEventListenerById; }
         });
     }
     window.onboardingManager = onboardingManagerMod.onboardingManager;
-    console.log('✅ Onboarding Manager loaded');
+    // Initialize AFTER dependencies are set (fixes race condition)
+    await window.onboardingManager.init();
+    console.log('✅ Onboarding Manager loaded and initialized');
 
     // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
     const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
