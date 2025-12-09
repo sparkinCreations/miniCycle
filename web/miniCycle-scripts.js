@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // One-time gentle self-heal: if this browser has never refreshed to
         // recover from a stale appInit, trigger a single soft reload.
         try {
-            const refreshKey = 'minicycle.appinitCompatRefreshed';
+            const refreshKey = 'minicycle.appinitCompatRefreshed_v2';
             const alreadyRefreshed = window.localStorage.getItem(refreshKey) === '1';
 
             if (!alreadyRefreshed) {
