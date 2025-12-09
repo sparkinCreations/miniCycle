@@ -786,8 +786,47 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         if (typeof appInit.runInitialSetup === 'function') {
           return appInit.runInitialSetup();
         }
-        console.warn('⚠️ appInit.runInitialSetup not available (stale cache) - skipping initial setup');
-        return Promise.resolve(); // Return resolved promise for compatibility
+            // ========== BACKWARD COMPATIBILITY FALLBACK ==========
+    console.warn('⚠️ appInit.runInitialSetup not available - using fallback initialization');
+    
+    return (async () => {
+        try {
+            // Use deps container or local scope functions
+            const loadData = deps.core.loadMiniCycleData || loadMiniCycleData;
+            const createData = deps.core.createInitialSchema25Data || createInitialSchema25Data;
+            const loadCycle = deps.core.loadMiniCycle || loadMiniCycle;
+            const showModal = deps.ui.showCycleCreationModal || showCycleCreationModal;
+            
+            let schemaData = loadData?.();
+            
+            if (!schemaData) {
+                console.log('🆕 No data found - creating initial structure...');
+                createData?.();
+                schemaData = loadData?.();
+            }
+            
+            if (!schemaData) {
+                console.error('❌ Failed to load or create data');
+                return;
+            }
+            
+            const { cycles, activeCycle } = schemaData;
+            
+            if (!activeCycle || !cycles?.[activeCycle]) {
+                console.log('🆕 No active cycle - showing cycle creation modal...');
+                showModal?.();
+                return;
+            }
+            
+            console.log('📦 Loading cycle:', activeCycle);
+            await loadCycle?.(activeCycle);
+            
+            console.log('✅ Fallback initialization complete');
+        } catch (error) {
+            console.error('❌ Fallback initialization failed:', error);
+        }
+    })();
+
       },
       onInitialSetupComplete: () => appInit.markAppReady(), // Inject the Callback
       now: () => Date.now(),
