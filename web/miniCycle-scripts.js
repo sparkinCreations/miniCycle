@@ -733,6 +733,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.gamesManager = gamesManagerMod.gamesManager;
     window.unlockMiniGame = (...args) => gamesManagerMod.gamesManager?.unlockMiniGame?.(...args);
     window.checkGamesUnlock = (...args) => gamesManagerMod.gamesManager?.checkGamesUnlock?.(...args);
+    // ✅ Initialize AFTER dependencies are set (DI-pure pattern)
+    await window.gamesManager.init();
     console.log('✅ Games Manager loaded');
 
     // ✅ Load Onboarding Manager (DI-pure)
