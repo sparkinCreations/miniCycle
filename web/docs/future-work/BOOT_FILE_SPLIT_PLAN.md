@@ -416,64 +416,22 @@ That document tracked line-by-line extractions. This plan supersedes it with a c
 
 ---
 
----
+## Timeout Safety for waitForCore/waitForApp
 
-## Future Improvement: Remove waitForCore() from UI Modules
+**Status:** Implemented (December 9, 2025)
 
-**Status:** Planned (low priority)
+The 2-phase initialization system (`waitForCore()` / `waitForApp()`) is a deliberate design choice that provides reliable coordination during refactoring and maintenance. Modules that need AppState call `await waitForCore()` to ensure it's ready.
 
-### Problem
+To prevent deadlocks from timing mistakes (e.g., awaiting init before `markCoreSystemsReady()` is called), both wait functions now have timeout safety:
 
-UI modules like `gamesManager.js` and `onboardingManager.js` currently call `await appInit.waitForCore()` in their `init()` methods. This creates fragile timing dependencies - if `init()` is awaited before `markCoreSystemsReady()` is called, the app deadlocks.
+- `waitForCore(timeoutMs = 10000)` - 10 second timeout
+- `waitForApp(timeoutMs = 15000)` - 15 second timeout
 
-We've added timeout safety to `waitForCore()` (10s) and `waitForApp()` (15s) so hangs eventually recover, but this is a band-aid.
+If timeout expires, the app logs an error and continues in degraded state rather than hanging forever. This preserves the coordination pattern while adding a safety net.
 
-### Better Solution
-
-UI modules don't truly need to block on core being ready. They only need AppState for certain operations (checking settings, persisting state). Instead:
-
-1. **Setup event listeners immediately** - DOM events don't require AppState
-2. **Check `isCoreReady()` at call time** - Guard individual methods that need AppState
-3. **Use lazy patterns** - Let operations fail gracefully if core isn't ready yet
-
-### Example Refactor
-
-```javascript
-// BEFORE (fragile)
-async init() {
-    await _deps.appInit?.waitForCore();  // Can deadlock if called too early
-    this.setupEventListeners();
-    this.checkGamesUnlock();
-}
-
-// AFTER (resilient)
-init() {
-    this.setupEventListeners();  // Always works - just DOM
-    // checkGamesUnlock will check isCoreReady() internally
-    this.deferredCheckGamesUnlock();  // Already does this correctly
-}
-
-checkGamesUnlock() {
-    if (!_deps.appInit?.isCoreReady()) {
-        return;  // Silently skip - deferred check will retry
-    }
-    // ... rest of method
-}
-```
-
-### Modules to Update
-
-- `gamesManager.js` - Remove `waitForCore()` from init
-- `onboardingManager.js` - Remove `waitForCore()` from init
-- Any other UI modules that block on core
-
-### Benefits
-
-- No more deadlock risk from init timing
-- Faster perceived startup (event listeners ready immediately)
-- Simpler mental model (UI modules don't wait, they check)
+**Key rule:** Don't `await` module init calls that use `waitForCore()` if they're positioned before `markCoreSystemsReady()` in the boot sequence. Either move them later, or don't await them.
 
 ---
 
 **Last Updated:** December 9, 2025
-**Version:** 1.2 (Added timeout safety note, future improvement for removing waitForCore from UI modules)
+**Version:** 1.2 (Added timeout safety documentation)
