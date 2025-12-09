@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   };
 
     // ✅ Load appInit FIRST (now canonical at modules/core/appInit.js)
-    // NO version param - must match static imports in other modules for singleton pattern
-    // Service worker uses network-first for JS files, so fresh code is served automatically
-    let appInitModule = await import('./modules/core/appInit.js');
+    // ✅ Version param now safe - DI refactor removed all static imports from other modules
+    // appInit is only imported HERE, so versioning works correctly for cache busting
+    let appInitModule = await import(`./modules/core/appInit.js?v=${window.APP_VERSION}`);
     let { appInit, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
 
     const staleForgiven = sessionStorage.getItem('_staleAppInitForgiven') === 'true';
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     throw new Error('Stale cache persists. Please clear browser cache manually.');
   }
 
-  // ✅ NOW create version helper for all OTHER dynamic imports (not appInit or constants)
+  // ✅ Version helper for dynamic imports (appInit now versioned too after DI refactor)
   const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
     // ✅ Create AppMeta object for DI-friendly version access
