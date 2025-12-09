@@ -435,3 +435,17 @@ These are pure utilities or static configuration with no dependencies:
   | P3       | Initial Setup (2 funcs)   | ~190  | appInit.js (exists)                  | Pending             |
   | P5       | Progress System (7 funcs) | ~270  | progressManager.js (NEW)             | Pending             |
   | P6       | remindOverdueTasks()      | ~102  | notifications.js or taskReminders.js | Pending             |
+
+   | Function                       | Lines | Worth Extracting?        |
+  |--------------------------------|-------|--------------------------|
+  | addTask()                      | ~40   | Keep - core orchestrator |
+  | validateAndSanitizeTaskInput() | ~25   | Keep - fallback          |
+  | loadTaskContext()              | ~45   | Keep - fallback          |
+  | createOrUpdateTaskData()       | ~90   | Keep - fallback          |
+  | createTaskDOMElements()        | ~124  | Could extract to taskDOM |
+  | autoSave()                     | ~47   | Keep - core              |
+  | loadMiniCycleData()            | ~111  | Keep - core              |
+  | updateCycleData()              | ~57   | Keep - core              |
+  | detectDeviceType()             | ~58   | Small utility            |
+  | setupMiniCycleTitleListener()  | ~19   | Small setup              |
+  | Various event handlers         | ~200  | Small handlers           |

@@ -7,7 +7,7 @@
  * Website: https://sparkincreations.com | App: https://minicycleapp.com
  *
  * ============================================================================
- * WHY THIS FILE IS LARGE (~4,700 lines) - READ THIS FIRST
+ * WHY THIS FILE IS LARGE (~3,800 lines) - READ THIS FIRST
  * ============================================================================
  *
  * This file is the APPLICATION WIRING HUB and is INTENTIONALLY comprehensive.
@@ -15,41 +15,41 @@
  *
  * WHAT THIS FILE DOES:
  * --------------------
- * 1. GLOBAL STATE SETUP (Lines 1-262)
+ * 1. GLOBAL STATE SETUP (Lines 60-262)
  *    - AppGlobalState, FeatureFlags, property getters
  *    - Must exist before any module loads
  *
- * 2. DEPENDENCY INJECTION WIRING (Lines 263-1850)
+ * 2. DEPENDENCY INJECTION WIRING (Lines 301-2555)
  *    - Creates `deps` container for true DI
  *    - Loads all modules with version cache-busting
- *    - Wires dependencies between 44+ modules
+ *    - Wires dependencies between 51 modules
  *    - Phase 1 (Core) → Phase 2 (Features) → Phase 3 (UI)
  *
- * 3. RUNTIME FUNCTIONS (Lines 1851-4692)
- *    - Core task operations (addTask, createTaskLabel, etc.)
- *    - Settings management (saveToggleAutoReset - 758 lines)
- *    - Progress tracking (updateProgressBar, checkMiniCycle, etc.)
- *    - UI utilities and helpers
+ * 3. RUNTIME FUNCTIONS (Lines 2556-3776)
+ *    - Core task orchestration (addTask, autoSave, loadMiniCycleData)
+ *    - Fallback functions for taskDOM module
+ *    - Small event handlers and utilities
  *
  * WHY NOT SPLIT FURTHER:
  * ----------------------
  * - DI wiring MUST happen in one place to avoid circular deps
- * - Functions share closure-scoped variables (deps, uiRefs)
- * - Splitting creates more files without true decoupling
+ * - Remaining functions are core orchestrators or small handlers
+ * - 42% of runtime section already extracted (Dec 2025)
  * - See: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
  *
- * EXTRACTION CANDIDATES (When Ready):
- * ------------------------------------
- * - saveToggleAutoReset (758 lines) → settingsManager.js
- * - createTaskLabel (350 lines) → taskLabelManager.js
- * - Completed Tasks section (214 lines) → completedTasksManager.js
- * - Progress system (270 lines) → progressManager.js
+ * EXTRACTIONS COMPLETED (Dec 2025):
+ * ----------------------------------
+ * ✅ saveToggleAutoReset (758 lines) → cycle/modeManager.js
+ * ✅ createTaskLabel (350 lines) → task/taskDOM.js
+ * ✅ Completed Tasks (214 lines) → ui/completedTasksManager.js
+ * ✅ Progress system (270 lines) → progress/cycleCompletion.js
+ * ✅ Notification wrappers → Deleted (modules handle directly)
  *
  * ARCHITECTURE DOCS:
  * ------------------
  * - Module patterns: docs/developer-guides/MODULE_SYSTEM_GUIDE.md
  * - DI-pure modules: docs/developer-guides/TASKDOM_DI_GUIDE.md
- * - Extraction plan: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
+ * - Extraction status: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
  *
  * ============================================================================
  */
@@ -2566,16 +2566,16 @@ GlobalUtils.safeAddEventListener(document, "keydown", handleUndoRedoKeydown);
 
 
 // ============================================================================
-// SECTION 3: RUNTIME FUNCTIONS (Lines ~1885-4692)
+// SECTION 3: RUNTIME FUNCTIONS (Lines 2556-3776)
 // ============================================================================
-// Core task operations, settings management, progress tracking, and UI helpers.
+// Core task orchestration, fallback functions, and small event handlers.
 // These functions share closure-scoped variables with the DI wiring above.
 //
-// EXTRACTION CANDIDATES (42% of this section can be extracted when ready):
-// - saveToggleAutoReset (758 lines @ ~3934) → settingsManager.js
-// - createTaskLabel (350 lines @ ~3286) → taskLabelManager.js
-// - Completed Tasks (214 lines @ ~3636) → completedTasksManager.js
-// - Progress system (270 lines @ ~2684) → progressManager.js
+// EXTRACTIONS COMPLETED (Dec 2025):
+// ✅ saveToggleAutoReset → cycle/modeManager.js
+// ✅ createTaskLabel/createTaskCheckbox → task/taskDOM.js
+// ✅ Completed Tasks (9 funcs) → ui/completedTasksManager.js
+// ✅ Progress system (7 funcs) → progress/cycleCompletion.js
 // See: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
 // ============================================================================
 
