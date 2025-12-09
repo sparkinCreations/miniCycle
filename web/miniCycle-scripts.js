@@ -2141,7 +2141,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // (can't wait for afterApp - user may interact before then)
         // Add other late DI wiring hooks here if needed.
 
-        await appInit.markAppReady();
+  
 
         // ============ PHASE 3: DATA LOADING ============
         console.log('📊 Phase 3: Loading app data...');
