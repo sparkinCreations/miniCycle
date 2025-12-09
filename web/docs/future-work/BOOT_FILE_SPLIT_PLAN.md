@@ -416,5 +416,64 @@ That document tracked line-by-line extractions. This plan supersedes it with a c
 
 ---
 
+---
+
+## Future Improvement: Remove waitForCore() from UI Modules
+
+**Status:** Planned (low priority)
+
+### Problem
+
+UI modules like `gamesManager.js` and `onboardingManager.js` currently call `await appInit.waitForCore()` in their `init()` methods. This creates fragile timing dependencies - if `init()` is awaited before `markCoreSystemsReady()` is called, the app deadlocks.
+
+We've added timeout safety to `waitForCore()` (10s) and `waitForApp()` (15s) so hangs eventually recover, but this is a band-aid.
+
+### Better Solution
+
+UI modules don't truly need to block on core being ready. They only need AppState for certain operations (checking settings, persisting state). Instead:
+
+1. **Setup event listeners immediately** - DOM events don't require AppState
+2. **Check `isCoreReady()` at call time** - Guard individual methods that need AppState
+3. **Use lazy patterns** - Let operations fail gracefully if core isn't ready yet
+
+### Example Refactor
+
+```javascript
+// BEFORE (fragile)
+async init() {
+    await _deps.appInit?.waitForCore();  // Can deadlock if called too early
+    this.setupEventListeners();
+    this.checkGamesUnlock();
+}
+
+// AFTER (resilient)
+init() {
+    this.setupEventListeners();  // Always works - just DOM
+    // checkGamesUnlock will check isCoreReady() internally
+    this.deferredCheckGamesUnlock();  // Already does this correctly
+}
+
+checkGamesUnlock() {
+    if (!_deps.appInit?.isCoreReady()) {
+        return;  // Silently skip - deferred check will retry
+    }
+    // ... rest of method
+}
+```
+
+### Modules to Update
+
+- `gamesManager.js` - Remove `waitForCore()` from init
+- `onboardingManager.js` - Remove `waitForCore()` from init
+- Any other UI modules that block on core
+
+### Benefits
+
+- No more deadlock risk from init timing
+- Faster perceived startup (event listeners ready immediately)
+- Simpler mental model (UI modules don't wait, they check)
+
+---
+
 **Last Updated:** December 9, 2025
-**Version:** 1.1 (Added import direction rules, window.* exposure clarification, skeleton file references)
+**Version:** 1.2 (Added timeout safety note, future improvement for removing waitForCore from UI modules)

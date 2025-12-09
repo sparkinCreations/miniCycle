@@ -10,7 +10,7 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.461
+ * @version 1.462
  */
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
@@ -88,7 +88,7 @@ class AppInit {
 		document.dispatchEvent(new Event('init:core-ready'));
 	}
 
-	async waitForCore() {
+	async waitForCore(timeoutMs = 10000) {
 		if (this.coreReady) {
 			return;
 		}
@@ -100,7 +100,21 @@ class AppInit {
 		}
 
 		console.log('⏳ Waiting for core systems...');
-		await this._corePromise;
+
+		// Timeout safety: don't hang forever if core never becomes ready
+		const timeoutPromise = new Promise((_, reject) => {
+			setTimeout(() => {
+				reject(new Error(`waitForCore timed out after ${timeoutMs}ms - core never became ready`));
+			}, timeoutMs);
+		});
+
+		try {
+			await Promise.race([this._corePromise, timeoutPromise]);
+		} catch (err) {
+			console.error('❌', err.message);
+			console.warn('⚠️ Continuing without core ready - some features may not work');
+			// Don't rethrow - allow app to continue in degraded state
+		}
 	}
 
 	isCoreReady() {
@@ -130,7 +144,7 @@ class AppInit {
 		document.dispatchEvent(new Event('init:app-ready'));
 	}
 
-	async waitForApp() {
+	async waitForApp(timeoutMs = 15000) {
 		if (this.appReady) {
 			return;
 		}
@@ -142,7 +156,20 @@ class AppInit {
 		}
 
 		console.log('⏳ Waiting for miniCycle app...');
-		await this._appPromise;
+
+		// Timeout safety: don't hang forever if app never becomes ready
+		const timeoutPromise = new Promise((_, reject) => {
+			setTimeout(() => {
+				reject(new Error(`waitForApp timed out after ${timeoutMs}ms - app never became ready`));
+			}, timeoutMs);
+		});
+
+		try {
+			await Promise.race([this._appPromise, timeoutPromise]);
+		} catch (err) {
+			console.error('❌', err.message);
+			console.warn('⚠️ Continuing without app ready - some features may not work');
+		}
 	}
 
 	isAppReady() {
