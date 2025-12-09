@@ -28,9 +28,11 @@ const Deps = {
     storage: null,              // window.localStorage
     sessionStorage: null,       // window.sessionStorage
     showNotification: null,     // (message, type, duration) => void
-    initialSetup: null,         // () => void (app initialization fallback)
+    initialSetup: null, 
+    onInitialSetupComplete: null,       // () => void (app initialization fallback)
     now: null,                  // () => Date.now()
     document: null              // document reference for DOM operations
+    
 };
 
 /**
