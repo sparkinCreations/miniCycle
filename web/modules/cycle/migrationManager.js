@@ -1669,12 +1669,12 @@ export async function initializeAppWithAutoMigration(options = {}) {
                 console.error('🚨 Critical failure details:', result);
                 // Critical error is already shown by handleMigrationFailure
             }
-        }catch(error) {
+        } catch(error) {
             console.error('❌ Unexpected error during auto-migration:', error);
             console.error('🔧 Promise rejection stack:', error.stack);
             console.error('📊 System state at promise failure:', {
                 localStorage: Object.keys(Deps.storage),
-                sessionStorage: Object.keys(Deps.sessionStorage)
+                sessionStorage: Object.keys(Deps.sessionStorage),
             
             showCriticalError('An unexpected error occurred. Please refresh the page.');
         });
