@@ -1594,7 +1594,7 @@ function showCriticalError(message) {
  *
  * @public
  */
-export function initializeAppWithAutoMigration(options = {}) {
+export async function initializeAppWithAutoMigration(options = {}) {
     assertInjected('storage', Deps.storage);
     assertInjected('sessionStorage', Deps.sessionStorage);
     assertInjected('showNotification', Deps.showNotification);
@@ -1637,6 +1637,8 @@ export function initializeAppWithAutoMigration(options = {}) {
     console.log('📋 Migration check complete:', migrationCheck);
 
     if (migrationCheck.needed) {
+        try{
+        const result = await performAutoMigration(options);
         console.log('📋 Migration needed - starting auto-migration process...');
         console.log('🔄 Auto-migration will be performed asynchronously...');
 
@@ -1667,13 +1669,13 @@ export function initializeAppWithAutoMigration(options = {}) {
                 console.error('🚨 Critical failure details:', result);
                 // Critical error is already shown by handleMigrationFailure
             }
-        }).catch(error => {
+        }catch(error) {
             console.error('❌ Unexpected error during auto-migration:', error);
             console.error('🔧 Promise rejection stack:', error.stack);
             console.error('📊 System state at promise failure:', {
                 localStorage: Object.keys(Deps.storage),
                 sessionStorage: Object.keys(Deps.sessionStorage)
-            });
+            
             showCriticalError('An unexpected error occurred. Please refresh the page.');
         });
     } else {
