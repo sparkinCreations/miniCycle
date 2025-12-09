@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.warn('⚠️ appInit.runInitialSetup not available (stale cache) - skipping initial setup');
         return Promise.resolve(); // Return resolved promise for compatibility
       },
-      inInitialSetupComplete: () => appInit.markAppReady(), // Inject the Callback
+      onInitialSetupComplete: () => appInit.markAppReady(), // Inject the Callback
       now: () => Date.now(),
       document: document
     });
