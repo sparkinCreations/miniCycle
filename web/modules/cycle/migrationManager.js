@@ -1672,12 +1672,7 @@ export async function initializeAppWithAutoMigration(options = {}) {
         } catch(error) {
             console.error('❌ Unexpected error during auto-migration:', error);
             console.error('🔧 Promise rejection stack:', error.stack);
-            console.error('📊 System state at promise failure:', {
-                localStorage: Object.keys(Deps.storage),
-                sessionStorage: Object.keys(Deps.sessionStorage),
-            
-            showCriticalError('An unexpected error occurred. Please refresh the page.');
-        });
+         showCriticalError('An unexpected error occurred. Please refresh the page.');
     } else {
         console.log('✅ No migration needed, loading app normally...');
         console.log('📦 Current schema status:', migrationCheck.currentVersion);
