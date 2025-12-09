@@ -734,7 +734,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.unlockMiniGame = (...args) => gamesManagerMod.gamesManager?.unlockMiniGame?.(...args);
     window.checkGamesUnlock = (...args) => gamesManagerMod.gamesManager?.checkGamesUnlock?.(...args);
     // ✅ Initialize AFTER dependencies are set (DI-pure pattern)
-    await window.gamesManager.init();
+    // NOTE: Don't await - init() waits for core internally, which hasn't been marked ready yet
+    window.gamesManager.init();
     console.log('✅ Games Manager loaded');
 
     // ✅ Load Onboarding Manager (DI-pure)
@@ -753,8 +754,9 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
     window.onboardingManager = onboardingManagerMod.onboardingManager;
     // Initialize AFTER dependencies are set (fixes race condition)
-    await window.onboardingManager.init();
-    console.log('✅ Onboarding Manager loaded and initialized');
+    // NOTE: Don't await - init() waits for core internally, which hasn't been marked ready yet
+    window.onboardingManager.init();
+    console.log('✅ Onboarding Manager loaded');
 
     // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
     const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
