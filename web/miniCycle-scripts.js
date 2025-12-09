@@ -2153,7 +2153,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
           console.log('🚀 Running initializeAppWithAutoMigration...');
           // ✅ IMPORTANT: initializeAppWithAutoMigration calls initialSetup() after Phase 2 modules are ready
-          initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup() async
+          await initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup() async
           console.log('✅ Data initialization sequence started');
         } catch (error) {
           console.error('❌ Critical initialization error:', error);
