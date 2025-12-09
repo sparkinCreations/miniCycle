@@ -1642,8 +1642,7 @@ export async function initializeAppWithAutoMigration(options = {}) {
         console.log('📋 Migration needed - starting auto-migration process...');
         console.log('🔄 Auto-migration will be performed asynchronously...');
 
-        // Pass through any options (like forceMode)
-        performAutoMigration(options).then(result => {
+
             console.log('🏁 Auto-migration promise resolved:', result);
 
             if (result.success) {
@@ -1673,6 +1672,7 @@ export async function initializeAppWithAutoMigration(options = {}) {
             console.error('❌ Unexpected error during auto-migration:', error);
             console.error('🔧 Promise rejection stack:', error.stack);
          showCriticalError('An unexpected error occurred. Please refresh the page.');
+        }
     } else {
         console.log('✅ No migration needed, loading app normally...');
         console.log('📦 Current schema status:', migrationCheck.currentVersion);
