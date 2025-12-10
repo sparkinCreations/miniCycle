@@ -503,6 +503,42 @@ class MiniCycleState {
     }
 }
 
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Get current cycle variables from AppState
+ * Used by cycleCompletion and other modules that need cycle info
+ * @returns {Object} { lastUsedMiniCycle, savedMiniCycles }
+ */
+export function assignCycleVariables() {
+    console.log('🔄 Assigning cycle variables (state-based)...');
+
+    if (!AppState?.isReady?.()) {
+        console.error('❌ AppState not ready for assignCycleVariables');
+        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
+    }
+
+    const currentState = AppState.get();
+    if (!currentState) {
+        console.error('❌ No state data available for assignCycleVariables');
+        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
+    }
+
+    const { data, appState } = currentState;
+
+    console.log('📊 Retrieved cycle data:', {
+        activeCycle: appState.activeCycleId,
+        cycleCount: Object.keys(data.cycles).length
+    });
+
+    return {
+        lastUsedMiniCycle: appState.activeCycleId,
+        savedMiniCycles: data.cycles
+    };
+}
+
 // ✅ Replace the bottom of your file with this:
 let AppState = null;
 

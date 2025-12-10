@@ -200,15 +200,10 @@ export class CycleManager {
                 taskCount: sample.tasks?.length || 0
             });
 
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for preloadGettingStartedCycle');
-                throw new Error('Schema 2.5 data not found');
-            }
-
+            // Load full schema data directly from localStorage (don't use loadMiniCycleData which may not have active cycle yet)
             const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
             if (!fullSchemaData) {
-                console.error('❌ Failed to load schema data');
+                console.error('❌ Failed to load schema data from localStorage');
                 throw new Error('Failed to load schema data');
             }
             const cycleId = `cycle_${Date.now()}`;
@@ -242,10 +237,11 @@ export class CycleManager {
             this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
             // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-            if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
-                this.deps.AppState.data = fullSchemaData;
-                this.deps.AppState.isInitialized = true;
-                this.deps.AppState.isDirty = false; // Mark as clean since we just saved
+            // Use window.AppState directly to ensure we're updating the global singleton
+            if (window.AppState && typeof window.AppState.init === 'function') {
+                window.AppState.data = fullSchemaData;
+                window.AppState.isInitialized = true;
+                window.AppState.isDirty = false; // Mark as clean since we just saved
                 console.log('✅ AppState synchronized with new cycle data');
             }
 
@@ -319,10 +315,11 @@ export class CycleManager {
         this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
         // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-        if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
-            this.deps.AppState.data = fullSchemaData;
-            this.deps.AppState.isInitialized = true;
-            this.deps.AppState.isDirty = false; // Mark as clean since we just saved
+        // Use window.AppState directly to ensure we're updating the global singleton
+        if (window.AppState && typeof window.AppState.init === 'function') {
+            window.AppState.data = fullSchemaData;
+            window.AppState.isInitialized = true;
+            window.AppState.isDirty = false; // Mark as clean since we just saved
             console.log('✅ AppState synchronized with new cycle data');
         }
 

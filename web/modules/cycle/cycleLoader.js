@@ -57,6 +57,7 @@ async function loadMiniCycle() {
   assertInjected('addTask', Deps.addTask);
 
   const schemaData = Deps.loadMiniCycleData();
+
   if (!schemaData) {
     console.error('❌ No Schema 2.5 data found');
     Deps.createInitialSchema25Data?.();
@@ -160,11 +161,13 @@ function repairAndCleanTasks(currentCycle) {
       console.warn('⚠️ Repaired task with missing deleteWhenCompleteSettings:', task.id);
     }
 
-    // ✅ Repair missing deleteWhenComplete (sync with current mode)
-    if (task.deleteWhenComplete === undefined || task.deleteWhenComplete === null) {
-      task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
+    // ✅ ALWAYS sync deleteWhenComplete with current mode's setting
+    // This ensures correct behavior when loading a cycle after mode switch
+    const expectedValue = task.deleteWhenCompleteSettings[currentMode];
+    if (task.deleteWhenComplete !== expectedValue) {
+      task.deleteWhenComplete = expectedValue;
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing deleteWhenComplete:', task.id, '- set to', task.deleteWhenComplete);
+      console.log(`🔄 Synced task ${task.id} deleteWhenComplete to ${currentMode} mode: ${expectedValue}`);
     }
   });
 

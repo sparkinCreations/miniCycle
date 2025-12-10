@@ -382,6 +382,24 @@ function testDeviceDetection() {
   return initializeDeviceDetectionManager().testDeviceDetection();
 }
 
+/**
+ * Detect if the current device is a touch device
+ * Used by taskDOM and drag/drop systems for input method detection
+ * @returns {boolean} True if device supports touch input as primary method
+ */
+function isTouchDevice() {
+  const hasTouchEvents = "ontouchstart" in window;
+  const touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
+  const isFinePointer = window.matchMedia("(pointer: fine)").matches;
+
+  console.log(`touch detected: hasTouchEvents=${hasTouchEvents}, maxTouchPoints=${touchPoints}, isFinePointer=${isFinePointer}`);
+
+  // Fine pointer (mouse/trackpad) means NOT primarily touch
+  if (isFinePointer) return false;
+
+  return hasTouchEvents || touchPoints > 0;
+}
+
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('📱 DeviceDetection module loaded (DI-pure, no window.* exports)');
 
@@ -392,5 +410,6 @@ export {
   runDeviceDetection,
   autoRedetectOnVersionChange,
   reportDeviceCompatibility,
-  testDeviceDetection
+  testDeviceDetection,
+  isTouchDevice
 };
