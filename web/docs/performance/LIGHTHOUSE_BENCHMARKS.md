@@ -3,7 +3,7 @@
 > Lighthouse audit results and Core Web Vitals for minicycle.app
 
 **Last Tested:** December 9, 2025  
-**App Version:** 1.391  
+**App Version:** 1.459 
 **Service Worker Cache:** v211  
 **Test Environment:** Microsoft Edge DevTools (Chromium)
 

@@ -1641,6 +1641,25 @@ async function restoreFromBackup() {
                 try {
                     appendToTestResults(`🔄 Restoring backup: ${selectedBackup.name}\n`);
 
+                    // ✅ SAFETY: Create pre-restore backup before making changes
+                    appendToTestResults(`💾 Creating safety backup before restore...\n`);
+                    try {
+                        if (deps.BackupManager) {
+                            await deps.BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
+                            appendToTestResults(`✅ Safety backup created\n`);
+                        }
+                    } catch (backupErr) {
+                        appendToTestResults(`⚠️ Could not create safety backup: ${backupErr.message}\n`);
+                        // Continue anyway - user already confirmed
+                    }
+
+                    // ✅ RACE CONDITION FIX: Prevent AppState from saving stale data during restore
+                    if (deps.AppState?.saveTimeout) {
+                        clearTimeout(deps.AppState.saveTimeout);
+                        deps.AppState.saveTimeout = null;
+                        appendToTestResults(`🛑 Cleared pending AppState save\n`);
+                    }
+
                     let restoredData = null;
 
                     // ✅ Handle IndexedDB backups
@@ -1652,13 +1671,35 @@ async function restoreFromBackup() {
                             throw new Error('Failed to load backup from IndexedDB');
                         }
 
-                        // ✅ Restore using AppState (Schema 2.5)
-                        if (deps.AppState?.isReady?.()) {
-                            // Replace entire state
+                        // ✅ Detect format: Schema 2.5 has schemaVersion field
+                        const isSchema25 = restoredData.schemaVersion === '2.5' || restoredData.schemaVersion === 2.5;
+
+                        if (isSchema25) {
+                            // Schema 2.5 format - restore directly to miniCycleData
                             localStorage.setItem('miniCycleData', JSON.stringify(restoredData));
-                            appendToTestResults(`✅ Restored to AppState (Schema 2.5)\n`);
+                            appendToTestResults(`✅ Restored Schema 2.5 data to localStorage\n`);
                         } else {
-                            throw new Error('AppState not available');
+                            // Legacy format from IndexedDB - restore to legacy keys and let migration handle it
+                            appendToTestResults(`📦 Detected legacy format backup\n`);
+
+                            // Clear Schema 2.5 data so migration will run
+                            localStorage.removeItem('miniCycleData');
+
+                            if (restoredData.cycles || restoredData.miniCycleStorage) {
+                                const cyclesData = restoredData.cycles || restoredData.miniCycleStorage;
+                                safeLocalStorageSet('miniCycleStorage', typeof cyclesData === 'string' ? cyclesData : JSON.stringify(cyclesData));
+                                appendToTestResults(`✅ Restored: miniCycleStorage\n`);
+                            }
+                            if (restoredData.lastUsedMiniCycle || restoredData.activeCycle) {
+                                safeLocalStorageSet('lastUsedMiniCycle', restoredData.lastUsedMiniCycle || restoredData.activeCycle);
+                                appendToTestResults(`✅ Restored: lastUsedMiniCycle\n`);
+                            }
+                            if (restoredData.reminders || restoredData.miniCycleReminders) {
+                                const remindersData = restoredData.reminders || restoredData.miniCycleReminders;
+                                safeLocalStorageSet('miniCycleReminders', typeof remindersData === 'string' ? remindersData : JSON.stringify(remindersData));
+                                appendToTestResults(`✅ Restored: miniCycleReminders\n`);
+                            }
+                            appendToTestResults(`ℹ️ Legacy data will be migrated to Schema 2.5 on reload\n`);
                         }
 
                     // ✅ Handle localStorage backups (legacy)
@@ -1669,36 +1710,52 @@ async function restoreFromBackup() {
                             throw new Error('Failed to parse backup data');
                         }
 
-                        const isAuto = selectedBackup.type === 'localstorage-auto';
+                        // ✅ Detect format: Check if it's Schema 2.5 or legacy
+                        const isSchema25 = parsed.schemaVersion === '2.5' || parsed.schemaVersion === 2.5;
 
-                        // Handle different legacy backup formats
-                        if (isAuto) {
-                            // Auto-migration backup format
-                            if (parsed.data?.miniCycleStorage) {
-                                safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
-                                appendToTestResults(`✅ Restored: miniCycleStorage\n`);
-                            }
-                            if (parsed.data?.miniCycleReminders) {
-                                safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
-                                appendToTestResults(`✅ Restored: miniCycleReminders\n`);
-                            }
-                            if (parsed.data?.settings) {
-                                Object.keys(parsed.data.settings).forEach(key => {
-                                    if (parsed.data.settings[key] !== null && parsed.data.settings[key] !== undefined) {
-                                        const storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
-                                        safeLocalStorageSet(storageKey, parsed.data.settings[key]);
-                                        appendToTestResults(`✅ Restored setting: ${storageKey}\n`);
+                        if (isSchema25) {
+                            // Schema 2.5 localStorage backup
+                            localStorage.setItem('miniCycleData', JSON.stringify(parsed));
+                            appendToTestResults(`✅ Restored Schema 2.5 data from localStorage backup\n`);
+                        } else {
+                            // Legacy format - clear Schema 2.5 and restore to legacy keys
+                            localStorage.removeItem('miniCycleData');
+
+                            const isAuto = selectedBackup.type === 'localstorage-auto';
+
+                            if (isAuto) {
+                                // Auto-migration backup format
+                                if (parsed.data?.miniCycleStorage) {
+                                    safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
+                                    appendToTestResults(`✅ Restored: miniCycleStorage\n`);
+                                }
+                                if (parsed.data?.miniCycleReminders) {
+                                    safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
+                                    appendToTestResults(`✅ Restored: miniCycleReminders\n`);
+                                }
+                                if (parsed.data?.lastUsedMiniCycle) {
+                                    safeLocalStorageSet('lastUsedMiniCycle', parsed.data.lastUsedMiniCycle);
+                                    appendToTestResults(`✅ Restored: lastUsedMiniCycle\n`);
+                                }
+                                if (parsed.data?.settings) {
+                                    Object.keys(parsed.data.settings).forEach(key => {
+                                        if (parsed.data.settings[key] !== null && parsed.data.settings[key] !== undefined) {
+                                            const storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
+                                            safeLocalStorageSet(storageKey, JSON.stringify(parsed.data.settings[key]));
+                                            appendToTestResults(`✅ Restored setting: ${storageKey}\n`);
+                                        }
+                                    });
+                                }
+                            } else {
+                                // Manual backup format - direct key restoration
+                                ['miniCycleStorage', 'lastUsedMiniCycle', 'miniCycleReminders'].forEach(key => {
+                                    if (parsed[key]) {
+                                        safeLocalStorageSet(key, typeof parsed[key] === 'string' ? parsed[key] : JSON.stringify(parsed[key]));
+                                        appendToTestResults(`✅ Restored: ${key}\n`);
                                     }
                                 });
                             }
-                        } else {
-                            // Manual backup format
-                            ['miniCycleStorage', 'lastUsedMiniCycle'].forEach(key => {
-                                if (parsed[key]) {
-                                    safeLocalStorageSet(key, parsed[key]);
-                                    appendToTestResults(`✅ Restored: ${key}\n`);
-                                }
-                            });
+                            appendToTestResults(`ℹ️ Legacy data will be migrated to Schema 2.5 on reload\n`);
                         }
                     }
 
@@ -1709,7 +1766,7 @@ async function restoreFromBackup() {
                     showNotification("✅ Backup restored successfully! Reloading...", "success", 3000);
 
                     setTimeout(() => location.reload(), 1500);
-                    
+
                 } catch (error) {
                     appendToTestResults(`❌ Restore failed: ${error.message}\n\n`);
                     showNotification("❌ Failed to restore backup", "error", 3000);
