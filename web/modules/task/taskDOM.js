@@ -47,6 +47,8 @@ export function setTaskDOMManagerDependencies(dependencies) {
 // ✅ Module classes will be loaded dynamically with versioning
 // ✅ Also stored globally to handle multiple module instances (see note above)
 let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;
+// ✅ Wrapper function from taskUtils.js (uses _deps for saveTaskToSchema25)
+let _createOrUpdateTaskDataFn = null;
 
 export class TaskDOMManager {
     constructor(dependencies = {}) {
@@ -220,7 +222,7 @@ export class TaskDOMManager {
                 console.log('📦 Starting Promise.all for sub-module imports...');
                 const [
                     { TaskValidator: ValidatorClass },
-                    { TaskUtils: UtilsClass, setTaskUtilsDependencies },
+                    { TaskUtils: UtilsClass, setTaskUtilsDependencies, createOrUpdateTaskData: createOrUpdateTaskDataWrapper },
                     { TaskRenderer: RendererClass },
                     { TaskEvents: EventsClass }
                 ] = await Promise.all([
@@ -236,6 +238,8 @@ export class TaskDOMManager {
                 TaskUtils = UtilsClass;
                 TaskRenderer = RendererClass;
                 TaskEvents = EventsClass;
+                // Store wrapper function that uses _deps (for saveTaskToSchema25)
+                _createOrUpdateTaskDataFn = createOrUpdateTaskDataWrapper;
 
                 // Wire TaskUtils dependencies for wrapper functions (DI-pure)
                 // Use this.deps (instance deps from constructor) - these have the actual injected functions
@@ -246,7 +250,8 @@ export class TaskDOMManager {
                     get generateId() { return instanceDeps.generateId; },
                     get remindOverdueTasks() { return instanceDeps.remindOverdueTasks; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
-                    get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; }
+                    get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
+                    get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; }
                 });
 
                 console.log('✅ Module-level classes stored:', {
@@ -1704,6 +1709,15 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
     TaskUtils.setupFinalTaskInteractions(taskItem, isLoading);
 }
 
+function createOrUpdateTaskData(taskContext) {
+    // Use the wrapper function from taskUtils.js that has _deps wired (includes saveTaskToSchema25)
+    if (!_createOrUpdateTaskDataFn) {
+        console.warn('⚠️ createOrUpdateTaskData wrapper not initialized yet');
+        return null;
+    }
+    return _createOrUpdateTaskDataFn(taskContext);
+}
+
 // ============================================
 // GROUP 3: DOM Creation Wrappers
 // ============================================
@@ -1885,6 +1899,7 @@ export {
     buildTaskContext,
     extractTaskDataFromDOM,
     loadTaskContext,
+    createOrUpdateTaskData,
     scrollToNewTask,
     handleOverdueStyling,
     setupFinalTaskInteractions,

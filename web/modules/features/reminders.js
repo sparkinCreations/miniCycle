@@ -275,8 +275,8 @@ export class MiniCycleReminders {
         // Load reminder settings from Schema 2.5
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for setupReminderToggle');
-            throw new Error('Schema 2.5 data not found');
+            console.warn('⚠️ No Schema 2.5 data yet - reminder toggle will initialize after cycle creation');
+            return; // Gracefully exit - settings will be loaded when data exists
         }
 
         const reminderSettings = schemaData.reminders || {
@@ -611,8 +611,8 @@ export class MiniCycleReminders {
         // Schema 2.5 only
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for startReminders');
-            throw new Error('Schema 2.5 data not found');
+            console.warn('⚠️ No Schema 2.5 data yet - reminders will start after cycle creation');
+            return; // Gracefully exit - reminders will start when data exists
         }
 
         const { reminders } = schemaData;

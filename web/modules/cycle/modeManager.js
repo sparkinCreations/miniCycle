@@ -79,6 +79,8 @@ export class ModeManager {
         setTimeout(() => {
             console.log('⏰ ModeManager: Delay complete, calling setupModeSelector...');
             this.setupModeSelector();
+            // ✅ Also set up the mode listener that syncs visual indicators
+            this.setupDeleteCheckedTasksModeListener();
         }, 200);
 
         this.isInitialized = true;
@@ -828,8 +830,10 @@ export class ModeManager {
                     // ✅ Sync all tasks' deleteWhenComplete with mode-specific settings
                     if (cycle.tasks) {
                         cycle.tasks.forEach(task => {
-                            // Initialize settings if missing (for existing tasks)
-                            if (!task.deleteWhenCompleteSettings) {
+                            // Initialize or repair settings if missing/incomplete
+                            if (!task.deleteWhenCompleteSettings ||
+                                typeof task.deleteWhenCompleteSettings !== 'object' ||
+                                typeof task.deleteWhenCompleteSettings[currentMode] !== 'boolean') {
                                 task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
                             }
 

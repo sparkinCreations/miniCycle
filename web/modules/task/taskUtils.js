@@ -27,15 +27,27 @@ let _deps = {
     generateId: null,
     remindOverdueTasks: null,
     enableDragAndDropOnTask: null,
-    updateMoveArrowsVisibility: null
+    updateMoveArrowsVisibility: null,
+    saveTaskToSchema25: null
 };
 
 /**
  * Set dependencies for TaskUtils wrapper functions
- * @param {Object} dependencies - { AppState, loadMiniCycleData, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility }
+ * Uses Object.defineProperties to preserve getter behavior for late-bound deps
+ * @param {Object} dependencies - { AppState, loadMiniCycleData, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility, saveTaskToSchema25 }
  */
 export function setTaskUtilsDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    // Copy getters properly instead of evaluating them
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+        if (descriptor.get) {
+            // It's a getter - define it as a getter on _deps
+            Object.defineProperty(_deps, key, descriptor);
+        } else {
+            // Regular value - just assign
+            _deps[key] = descriptor.value;
+        }
+    }
     console.log('🛠️ TaskUtils dependencies set:', Object.keys(dependencies));
 }
 
@@ -192,6 +204,96 @@ export class TaskUtils {
     }
 
     /**
+     * Create or update task data in the cycle
+     * @param {Object} taskContext - Task context from loadTaskContext
+     * @param {Function} saveTaskToSchema25 - Function to save task
+     * @returns {Object} - Task data object
+     */
+    static createOrUpdateTaskData(taskContext, saveTaskToSchema25) {
+        const {
+            cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
+            highPriority, remindersEnabled, recurring, recurringSettings,
+            currentCycle, cycles, activeCycle, isLoading, deleteWhenComplete,
+            deleteWhenCompleteSettings
+        } = taskContext;
+
+        let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
+
+        if (!existingTask) {
+            console.log('📋 Creating new task in Schema 2.5');
+
+            // Mode-specific deleteWhenComplete architecture:
+            // - Active value synced with current mode
+            // - Settings object stores preference per mode
+            const isToDoMode = currentCycle.deleteCheckedTasks === true;
+
+            // Use provided settings or defaults
+            const finalSettings = deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
+
+            // Active value based on current mode (unless explicitly provided)
+            const activeDeleteWhenComplete = deleteWhenComplete !== undefined ?
+                deleteWhenComplete :
+                (isToDoMode ? finalSettings.todo : finalSettings.cycle);
+
+            existingTask = {
+                id: assignedTaskId,
+                text: taskTextTrimmed,
+                completed,
+                dueDate,
+                highPriority,
+                remindersEnabled,
+                recurring,
+                recurringSettings,
+                deleteWhenComplete: activeDeleteWhenComplete,
+                deleteWhenCompleteSettings: finalSettings,
+                schemaVersion: 2
+            };
+
+            // Only push to cycle data if NOT loading (prevents duplicate tasks)
+            if (!isLoading) {
+                currentCycle.tasks.push(existingTask);
+            } else {
+                console.log('⏭️ Skipping push to currentCycle.tasks during load (task already in AppState)');
+            }
+
+            // Handle recurring template creation
+            if (recurring && recurringSettings) {
+                console.log('🔁 Saving recurring template');
+
+                if (!currentCycle.recurringTemplates) {
+                    currentCycle.recurringTemplates = {};
+                }
+
+                currentCycle.recurringTemplates[assignedTaskId] = {
+                    id: assignedTaskId,
+                    text: taskTextTrimmed,
+                    recurring: true,
+                    recurringSettings: structuredClone(recurringSettings),
+                    highPriority: highPriority || false,
+                    dueDate: dueDate || null,
+                    remindersEnabled: remindersEnabled || false,
+                    deleteWhenComplete: true, // Recurring tasks always auto-remove
+                    deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
+                    lastTriggeredTimestamp: null,
+                    schemaVersion: 2
+                };
+            }
+
+            // Only save to AppState if NOT loading from saved data
+            if (!isLoading && saveTaskToSchema25) {
+                saveTaskToSchema25(activeCycle, currentCycle);
+                console.log('💾 Task saved to Schema 2.5');
+            } else if (!isLoading) {
+                console.warn('⚠️ saveTaskToSchema25 not available - task not persisted');
+            } else {
+                console.log('⏭️ Skipping save during load (isLoading=true)');
+            }
+        }
+
+        return existingTask;
+    }
+
+    /**
      * Scroll to newly created task
      * @param {HTMLElement} taskList - Task list element
      * @param {Function} querySelector - Function to query DOM
@@ -302,6 +404,11 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
     });
 }
 
+function createOrUpdateTaskData(taskContext) {
+    const saveTaskToSchema25 = _deps.saveTaskToSchema25;
+    return TaskUtils.createOrUpdateTaskData(taskContext, saveTaskToSchema25);
+}
+
 // ============================================
 // Exports
 // ============================================
@@ -314,6 +421,7 @@ export {
     buildTaskContext,
     extractTaskDataFromDOM,
     loadTaskContext,
+    createOrUpdateTaskData,
     scrollToNewTask,
     handleOverdueStyling,
     setupFinalTaskInteractions

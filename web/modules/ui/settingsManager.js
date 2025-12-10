@@ -205,8 +205,8 @@ export class SettingsManager {
 
             const schemaData = this.deps.loadMiniCycleData();
             if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for move arrows toggle');
-                return;
+                console.warn('⚠️ No Schema 2.5 data yet - move arrows toggle will initialize after cycle creation');
+                // Continue with default settings - don't return early
             }
 
             // ✅ Use state-based approach for move arrows setting
