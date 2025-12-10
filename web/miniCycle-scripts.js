@@ -1087,23 +1087,8 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         // ✅ CRITICAL: Mark core systems as ready (unblocks all waiting modules)
         await appInit.markCoreSystemsReady();
 
-        // ✅ Restore last session (Schema 2.5) using DI-pure startup manager
-        try {
-            const startupManagerMod = await import(withV('./modules/core/startupManager.js'));
-            startupManagerMod.setStartupManagerDependencies({
-                AppState: () => window.AppState,
-                loadMiniCycleData: () => window.loadMiniCycleData?.(),
-                loadMiniCycle: (name) => window.loadMiniCycle?.(name),
-                refreshUIFromState: () => window.refreshUIFromState?.(),
-                showNotification: deps.utils.showNotification,
-                AppMeta: window.AppMeta
-            });
-
-            const startupManager = new startupManagerMod.StartupManager();
-            await startupManager.restoreLastSession();
-        } catch (err) {
-            console.error('StartupManager: Failed to restore last session', err);
-        }
+        // ✅ Session restore is handled by appInit.runInitialSetup() (called via migrationManager)
+        // StartupManager was removed - it was dead code with incorrect schema assumptions
 
         // ============ PHASE 2: MODULES ============
         console.log('🔌 Phase 2: Loading modules (appInit-compliant)...');

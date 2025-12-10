@@ -433,30 +433,39 @@ export class SettingsManager {
           const resetPicker = () => { isPickerOpen = false; };
 
           const handleRestore = () => {
-            if (isPickerOpen) return;
+            console.log('🔄 [Restore] Restore button clicked');
+            if (isPickerOpen) {
+              console.log('⚠️ [Restore] Picker already open, ignoring click');
+              return;
+            }
             isPickerOpen = true;
 
             // Clean previous input
             if (fileInput) {
+              console.log('🧹 [Restore] Cleaning up previous file input');
               fileInput.remove();
               fileInput = null;
             }
 
             // Fresh input
+            console.log('📂 [Restore] Creating file input element...');
             fileInput = document.createElement("input");
             fileInput.type = "file";
             fileInput.id = "import-cycle-file-input";
             fileInput.name = "cycleImport";
-            fileInput.accept = "application/json,.json";
+            fileInput.accept = "application/json,.json,.mcyc";
             fileInput.style.display = "none";
             document.body.appendChild(fileInput);
+            console.log('✅ [Restore] File input created and appended to body');
 
             // When picker closes (even on cancel), window regains focus
             const onFocusAfterPicker = () => {
+              console.log('👁️ [Restore] Window regained focus after picker');
               resetPicker();
               window.removeEventListener("focus", onFocusAfterPicker);
               // Cleanup dangling input on cancel
               if (fileInput && !fileInput.files?.length) {
+                console.log('🚫 [Restore] No file selected, cleaning up');
                 fileInput.remove();
                 fileInput = null;
               }
@@ -465,8 +474,10 @@ export class SettingsManager {
             safeAddLocal(window, "focus", onFocusAfterPicker, { once: true });
 
             fileInput._changeHandler = (event) => {
+              console.log('📄 [Restore] File input change event fired');
               const file = event.target.files[0];
               if (!file) {
+                console.log('⚠️ [Restore] No file in change event');
                 if (fileInput) {
                   fileInput.remove();
                   fileInput = null;
@@ -474,41 +485,76 @@ export class SettingsManager {
                 resetPicker();
                 return;
               }
+              console.log('📄 [Restore] File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
 
               const reader = new FileReader();
-              reader.onload = (e) => {
+              reader.onload = async (e) => {
                 try {
+                  console.log('🔄 [Restore] Starting backup restore process...');
+
                   // ✅ XSS PROTECTION: Validate file size (max 10MB)
                   const maxSize = 10 * 1024 * 1024; // 10MB
                   if (e.target.result.length > maxSize) {
+                    console.error('❌ [Restore] File too large:', e.target.result.length, 'bytes');
                     this.deps.showNotification("❌ File too large (max 10MB)", "error");
                     return;
                   }
+                  console.log('✅ [Restore] File size OK:', e.target.result.length, 'bytes');
 
                   const backupData = JSON.parse(e.target.result);
+                  console.log('✅ [Restore] JSON parsed successfully');
+                  console.log('📋 [Restore] Backup schema version:', backupData.schemaVersion || 'not specified');
 
                   // ✅ XSS PROTECTION: Validate backup data is an object
                   if (typeof backupData !== 'object' || backupData === null) {
+                    console.error('❌ [Restore] Invalid backup data type:', typeof backupData);
                     this.deps.showNotification("❌ Invalid backup file format", "error");
                     return;
                   }
 
                   // ✅ XSS PROTECTION: Sanitize all user-generated content in imported data
                   // Security fix (v1.353): Prevent XSS attacks via malicious .mcyc files
+                  console.log('🛡️ [Restore] Sanitizing imported data...');
                   this.sanitizeImportedData(backupData);
+                  console.log('✅ [Restore] Data sanitization complete');
 
                   // ✅ Check if user is currently on Schema 2.5 (should always be true now)
                   const currentSchemaData = localStorage.getItem("miniCycleData");
                   if (!currentSchemaData) {
+                    console.error('❌ [Restore] No Schema 2.5 data found in localStorage');
                     this.deps.showNotification("❌ Cannot restore - Schema 2.5 data structure required.", "error");
                     return;
                   }
+                  console.log('✅ [Restore] Current Schema 2.5 data exists');
+
+                  // ✅ SAFETY: Create pre-restore backup before making changes
+                  console.log('💾 [Restore] Creating safety backup before restore...');
+                  try {
+                    const BackupManager = this.deps.BackupManager?.();
+                    if (BackupManager) {
+                      await BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
+                      console.log('✅ [Restore] Safety backup created successfully');
+                    } else {
+                      console.warn('⚠️ [Restore] BackupManager not available, skipping safety backup');
+                    }
+                  } catch (backupErr) {
+                    console.warn('⚠️ [Restore] Could not create safety backup:', backupErr);
+                    // Continue anyway - user confirmed the restore
+                  }
+
+                  // ✅ RACE CONDITION FIX: Stop AppState from auto-saving over our restore
+                  console.log('🛑 [Restore] Neutralizing AppState to prevent auto-save...');
+                  this.neutralizeAppState();
 
                   // ✅ Handle Schema 2.5 backup
                   if (backupData.schemaVersion === "2.5" && backupData.miniCycleData) {
+                    console.log('📦 [Restore] Detected Schema 2.5 backup format');
+                    console.log('💾 [Restore] Writing Schema 2.5 data to localStorage...');
                     localStorage.setItem("miniCycleData", backupData.miniCycleData);
+                    console.log('✅ [Restore] Schema 2.5 data restored successfully');
                     this.deps.showNotification("✅ Schema 2.5 backup restored successfully!", "success", 4000);
 
+                    console.log('🔄 [Restore] Scheduling reload in 2.5 seconds...');
                     this.deps.showNotification("🔄 Reloading app to apply changes...", "info", 2000);
                     setTimeout(() => location.reload(), 2500);
                     return;
@@ -516,52 +562,70 @@ export class SettingsManager {
 
                   // ✅ Handle legacy backup - convert to Schema 2.5
                   if (backupData.schemaVersion === "legacy" || backupData.miniCycleStorage) {
+                    console.log('📦 [Restore] Detected legacy backup format');
                     this.deps.showNotification("🔄 Auto-converting legacy backup to Schema 2.5...", "info", 3000);
 
                     if (!backupData.miniCycleStorage) {
+                      console.error('❌ [Restore] Legacy backup missing miniCycleStorage key');
                       this.deps.showNotification("❌ Invalid legacy backup file format.", "error", 3000);
                       return;
                     }
 
-                    // ✅ CRITICAL: Stop AppState from auto-saving over our migration
-                    this.neutralizeAppState();
+                    // Note: neutralizeAppState() already called above for all restore types
+
+                    // ✅ CRITICAL: Remove existing Schema 2.5 data so migration will run
+                    console.log('🗑️ [Restore] Removing existing Schema 2.5 data to force migration...');
+                    localStorage.removeItem("miniCycleData");
 
                     // Temporarily restore legacy keys
+                    console.log('💾 [Restore] Writing legacy keys to localStorage...');
                     localStorage.setItem("miniCycleStorage", backupData.miniCycleStorage);
+                    console.log('  ✅ miniCycleStorage restored');
                     localStorage.setItem("lastUsedMiniCycle", backupData.lastUsedMiniCycle || "");
+                    console.log('  ✅ lastUsedMiniCycle restored:', backupData.lastUsedMiniCycle || '(empty)');
 
                     if (backupData.miniCycleReminders) {
                       localStorage.setItem("miniCycleReminders", backupData.miniCycleReminders);
+                      console.log('  ✅ miniCycleReminders restored');
                     }
                     if (backupData.milestoneUnlocks) {
                       localStorage.setItem("milestoneUnlocks", backupData.milestoneUnlocks);
+                      console.log('  ✅ milestoneUnlocks restored');
                     }
                     if (backupData.darkModeEnabled !== undefined) {
                       localStorage.setItem("darkModeEnabled", backupData.darkModeEnabled);
+                      console.log('  ✅ darkModeEnabled restored:', backupData.darkModeEnabled);
                     }
                     if (backupData.currentTheme) {
                       localStorage.setItem("currentTheme", backupData.currentTheme);
+                      console.log('  ✅ currentTheme restored:', backupData.currentTheme);
                     }
 
                     // Migrate to 2.5
+                    console.log('🔄 [Restore] Scheduling Schema 2.5 migration...');
                     setTimeout(() => {
+                      console.log('🔄 [Restore] Running Schema 2.5 migration...');
                       const migrationResults = this.deps.performSchema25Migration();
 
                       if (migrationResults.success) {
+                        console.log('✅ [Restore] Legacy backup migrated to Schema 2.5 successfully');
                         this.deps.showNotification("✅ Legacy backup restored and converted to Schema 2.5!", "success", 4000);
                       } else {
+                        console.error('❌ [Restore] Migration failed:', migrationResults);
                         this.deps.showNotification("❌ Migration failed during restore", "error", 4000);
                       }
 
+                      console.log('🔄 [Restore] Scheduling reload in 1 second...');
                       setTimeout(() => location.reload(), 1000);
                     }, 500);
 
                     return; // prevent double reload path
                   }
 
+                  console.error('❌ [Restore] Unrecognized backup format - missing schemaVersion or miniCycleStorage');
                   this.deps.showNotification("❌ Invalid backup file format.", "error", 3000);
                 } catch (error) {
-                  console.error("Backup restore error:", error);
+                  console.error("❌ [Restore] Backup restore error:", error);
                   this.deps.showNotification("❌ Error restoring backup - file may be corrupted.", "error", 4000);
                 } finally {
                   if (fileInput) {

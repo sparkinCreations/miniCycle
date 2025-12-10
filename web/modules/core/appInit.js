@@ -10,7 +10,7 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.462
+ * @version 1.463
  */
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
@@ -342,7 +342,13 @@ class AppInit {
 			schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
 		}
 
-		const { cycles, reminders, settings } = schemaData;
+		const { cycles, reminders, settings } = schemaData || {};
+
+		if (!cycles) {
+			console.warn('⚠️ No cycles data found in schema - legacy migration may still be in progress');
+			return;
+		}
+
 		const currentCycle = cycles[activeCycle];
 
 		if (!currentCycle) {
