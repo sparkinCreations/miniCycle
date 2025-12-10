@@ -1653,11 +1653,19 @@ async function restoreFromBackup() {
                         // Continue anyway - user already confirmed
                     }
 
-                    // ✅ RACE CONDITION FIX: Prevent AppState from saving stale data during restore
-                    if (deps.AppState?.saveTimeout) {
-                        clearTimeout(deps.AppState.saveTimeout);
-                        deps.AppState.saveTimeout = null;
-                        appendToTestResults(`🛑 Cleared pending AppState save\n`);
+                    // ✅ RACE CONDITION FIX: Fully neutralize AppState to prevent auto-save
+                    console.log('🛑 [Restore] Neutralizing AppState to prevent auto-save...');
+                    if (deps.AppState) {
+                        if (deps.AppState.saveTimeout) {
+                            clearTimeout(deps.AppState.saveTimeout);
+                            deps.AppState.saveTimeout = null;
+                            console.log('🛑 [Restore] Cleared pending AppState save timeout');
+                            appendToTestResults(`🛑 Cleared pending AppState save timeout\n`);
+                        }
+                        // ✅ CRITICAL: Also nullify in-memory data so it won't be saved
+                        deps.AppState.data = null;
+                        console.log('🛑 [Restore] Nullified AppState.data to prevent stale save');
+                        appendToTestResults(`🛑 Nullified AppState.data\n`);
                     }
 
                     let restoredData = null;
