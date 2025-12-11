@@ -1,7 +1,8 @@
 /**
  * ============================================================================
- * app-featureBoot.js - Feature Module DI Wiring
+ * featureBoot.js - Feature Module DI Wiring
  * ============================================================================
+ * Location: modules/boot/featureBoot.js
  *
  * This file handles ALL feature module loading and dependency injection.
  * It minimizes window.* exposures - modules communicate via deps container.
@@ -17,8 +18,8 @@
  * - See "WINDOW.* EXPOSURES" section at end of bootFeatures()
  *
  * IMPORT RULES:
- * - This file imports from app-coreBoot.js
- * - This file must NOT import from app-uiBoot.js
+ * - This file imports from coreBoot.js
+ * - This file must NOT import from uiBoot.js
  *
  * @module app-featureBoot
  * @version 1.0.0
@@ -28,7 +29,7 @@
  * Boot all feature modules with proper DI wiring
  *
  * @param {Object} deps - Dependency container from main script
- * @param {Object} coreResult - Results from app-coreBoot.js initCoreBoot()
+ * @param {Object} coreResult - Results from coreBoot.js initCoreBoot()
  * @returns {Object} Initialized feature module references
  */
 export async function bootFeatures(deps, coreResult) {
@@ -63,7 +64,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Error Handler ==========
   try {
-    const errorHandlerMod = await import(withV('./modules/utils/errorHandler.js'));
+    const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
     deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
     features.modules.errorHandler = errorHandlerMod;
     console.log('✅ ErrorHandler loaded');
@@ -73,7 +74,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Data Validator ==========
   try {
-    const dataValidatorMod = await import(withV('./modules/utils/dataValidator.js'));
+    const dataValidatorMod = await import(withV('../utils/dataValidator.js'));
     dataValidatorMod.setDataValidatorDependencies({
       sanitizeInput: deps.utils.sanitizeInput
     });
@@ -86,7 +87,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Console Capture ==========
   try {
-    const consoleCaptureMod = await import(withV('./modules/utils/consoleCapture.js'));
+    const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
     if (consoleCaptureMod.setConsoleCaptureDependencies) {
       consoleCaptureMod.setConsoleCaptureDependencies({
         showNotification: () => deps.utils.showNotification,
@@ -102,7 +103,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Notifications ==========
   try {
-    const notificationsMod = await import(withV('./modules/utils/notifications.js'));
+    const notificationsMod = await import(withV('../utils/notifications.js'));
 
     notificationsMod.setNotificationsDependencies({
       AppState: null, // Set later after AppState is created
@@ -162,7 +163,7 @@ export async function bootFeatures(deps, coreResult) {
   // ========== Theme Manager ==========
   let themeManagerMod = null;
   try {
-    themeManagerMod = await import(withV('./modules/features/themeManager.js'));
+    themeManagerMod = await import(withV('../features/themeManager.js'));
     if (themeManagerMod.setThemeManagerDependencies) {
       themeManagerMod.setThemeManagerDependencies({
         appInit: appInit,
@@ -189,7 +190,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Games Manager ==========
   try {
-    const gamesManagerMod = await import(withV('./modules/ui/gamesManager.js'));
+    const gamesManagerMod = await import(withV('../ui/gamesManager.js'));
     if (gamesManagerMod.setGamesManagerDependencies) {
       gamesManagerMod.setGamesManagerDependencies({
         appInit: appInit,
@@ -211,7 +212,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Onboarding Manager ==========
   try {
-    const onboardingManagerMod = await import(withV('./modules/ui/onboardingManager.js'));
+    const onboardingManagerMod = await import(withV('../ui/onboardingManager.js'));
     if (onboardingManagerMod.setOnboardingManagerDependencies) {
       onboardingManagerMod.setOnboardingManagerDependencies({
         appInit: appInit,
@@ -235,7 +236,7 @@ export async function bootFeatures(deps, coreResult) {
   // ========== Modal Manager (module load only, init later) ==========
   let modalManagerMod = null;
   try {
-    modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
+    modalManagerMod = await import(withV('../ui/modalManager.js'));
     features.modules.modalManager = modalManagerMod;
     console.log('✅ ModalManager module loaded (awaiting initialization)');
   } catch (error) {
@@ -275,7 +276,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Drag & Drop Manager ==========
   try {
-    const dragDropMod = await import(withV('./modules/task/dragDropManager.js'));
+    const dragDropMod = await import(withV('../task/dragDropManager.js'));
     const { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM } = dragDropMod;
 
     deps.task.updateMoveArrowsVisibility = updateMoveArrowsVisibility;
@@ -311,7 +312,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Device Detection ==========
   try {
-    const { DeviceDetectionManager, setDeviceDetectionDependencies } = await import(withV('./modules/utils/deviceDetection.js'));
+    const { DeviceDetectionManager, setDeviceDetectionDependencies } = await import(withV('../utils/deviceDetection.js'));
 
     setDeviceDetectionDependencies({
       appInit: appInit,
@@ -331,7 +332,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Stats Panel ==========
   try {
-    const { StatsPanelManager, setStatsPanelDependencies } = await import(withV('./modules/features/statsPanel.js'));
+    const { StatsPanelManager, setStatsPanelDependencies } = await import(withV('../features/statsPanel.js'));
 
     setStatsPanelDependencies({
       showNotification: deps.utils.showNotification,
@@ -360,7 +361,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Task DOM Manager ==========
   try {
-    const taskDOMMod = await import(withV('./modules/task/taskDOM.js'));
+    const taskDOMMod = await import(withV('../task/taskDOM.js'));
     const {
       initTaskDOMManager,
       setTaskDOMManagerDependencies,
@@ -456,7 +457,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Task Options Customizer ==========
   try {
-    const { initTaskOptionsCustomizer, TaskOptionsCustomizer, setTaskOptionsCustomizerDependencies } = await import(withV('./modules/ui/taskOptionsCustomizer.js'));
+    const { initTaskOptionsCustomizer, TaskOptionsCustomizer, setTaskOptionsCustomizerDependencies } = await import(withV('../ui/taskOptionsCustomizer.js'));
 
     setTaskOptionsCustomizerDependencies({
       appInit: appInit,
@@ -485,7 +486,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Reminders Module ==========
   try {
-    const { initReminderManager, setRemindersDependencies } = await import(withV('./modules/features/reminders.js'));
+    const { initReminderManager, setRemindersDependencies } = await import(withV('../features/reminders.js'));
 
     setRemindersDependencies({
       appInit: appInit,
@@ -526,7 +527,7 @@ export async function bootFeatures(deps, coreResult) {
   console.log('🔄 Phase 4: Loading recurring modules...');
 
   try {
-    const { initializeRecurringModules, setRecurringIntegrationDependencies, testRecurringIntegration } = await import(withV('./modules/recurring/recurringIntegration.js'));
+    const { initializeRecurringModules, setRecurringIntegrationDependencies, testRecurringIntegration } = await import(withV('../recurring/recurringIntegration.js'));
 
     setRecurringIntegrationDependencies({
       appInit: appInit,
@@ -578,7 +579,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Due Dates Module ==========
   try {
-    const { initDueDatesManager } = await import(withV('./modules/features/dueDates.js'));
+    const { initDueDatesManager } = await import(withV('../features/dueDates.js'));
 
     const dueDatesManager = await initDueDatesManager({
       appInit: appInit,
@@ -617,7 +618,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Mode Manager ==========
   try {
-    const { initModeManager } = await import(withV('./modules/cycle/modeManager.js'));
+    const { initModeManager } = await import(withV('../cycle/modeManager.js'));
 
     const modeManager = await initModeManager({
       appInit: appInit,
@@ -657,7 +658,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Cycle Switcher ==========
   try {
-    const { initializeCycleSwitcher, switchMiniCycle, renameMiniCycle, deleteMiniCycle } = await import(withV('./modules/cycle/cycleSwitcher.js'));
+    const { initializeCycleSwitcher, switchMiniCycle, renameMiniCycle, deleteMiniCycle } = await import(withV('../cycle/cycleSwitcher.js'));
 
     const cycleSwitcher = await initializeCycleSwitcher({
       AppState: deps.core.AppState,
@@ -695,7 +696,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Cycle Manager ==========
   try {
-    const { initializeCycleManager } = await import(withV('./modules/cycle/cycleManager.js'));
+    const { initializeCycleManager } = await import(withV('../cycle/cycleManager.js'));
 
     const cycleManager = await initializeCycleManager({
       AppState: deps.core.AppState,
@@ -736,7 +737,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Undo/Redo Manager ==========
   try {
-    const undoRedoModule = await import(withV('./modules/ui/undoRedoManager.js'));
+    const undoRedoModule = await import(withV('../ui/undoRedoManager.js'));
 
     undoRedoModule.setUndoRedoManagerDependencies({
       appInit: appInit,
@@ -777,7 +778,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Menu Manager ==========
   try {
-    const { initMenuManager, MenuManager } = await import(withV('./modules/ui/menuManager.js'));
+    const { initMenuManager, MenuManager } = await import(withV('../ui/menuManager.js'));
 
     const menuManager = await initMenuManager({
       appInit: appInit,
@@ -854,7 +855,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Settings Manager ==========
   try {
-    const { initSettingsManager, setSettingsManagerDependencies } = await import(withV('./modules/ui/settingsManager.js'));
+    const { initSettingsManager, setSettingsManagerDependencies } = await import(withV('../ui/settingsManager.js'));
 
     setSettingsManagerDependencies({
       appInit: appInit,
@@ -888,7 +889,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Completed Tasks Manager ==========
   try {
-    const { initCompletedTasksManager, setCompletedTasksManagerDependencies } = await import(withV('./modules/ui/completedTasksManager.js'));
+    const { initCompletedTasksManager, setCompletedTasksManagerDependencies } = await import(withV('../ui/completedTasksManager.js'));
 
     setCompletedTasksManagerDependencies({
       getAppState: () => deps.core.AppState,
@@ -915,7 +916,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Cycle Completion ==========
   try {
-    const { setCycleCompletionDependencies, incrementCycleCount, showCompletionAnimation, updateProgressBar, checkMiniCycle } = await import(withV('./modules/progress/cycleCompletion.js'));
+    const { setCycleCompletionDependencies, incrementCycleCount, showCompletionAnimation, updateProgressBar, checkMiniCycle } = await import(withV('../progress/cycleCompletion.js'));
 
     setCycleCompletionDependencies({
       AppState: deps.core.AppState,
@@ -942,7 +943,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Task UI ==========
   try {
-    const { setTaskUIDependencies, TaskOptionsVisibilityController, refreshTaskListUI, showTaskOptions, hideTaskOptions, hideTaskButtons, checkCompleteAllButton } = await import(withV('./modules/ui/taskUI.js'));
+    const { setTaskUIDependencies, TaskOptionsVisibilityController, refreshTaskListUI, showTaskOptions, hideTaskOptions, hideTaskButtons, checkCompleteAllButton } = await import(withV('../ui/taskUI.js'));
 
     setTaskUIDependencies({
       loadMiniCycleData: () => deps.core.loadMiniCycleData?.(),
@@ -969,7 +970,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Task Interactions ==========
   try {
-    const { setTaskInteractionsDependencies, attachKeyboardTaskOptionToggle } = await import(withV('./modules/ui/taskInteractions.js'));
+    const { setTaskInteractionsDependencies, attachKeyboardTaskOptionToggle } = await import(withV('../ui/taskInteractions.js'));
 
     setTaskInteractionsDependencies({
       safeAddEventListener: GlobalUtils.safeAddEventListener
@@ -983,7 +984,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== UI Effects ==========
   try {
-    const { setUIEffectsDependencies, triggerLogoBackground } = await import(withV('./modules/ui/uiEffects.js'));
+    const { setUIEffectsDependencies, triggerLogoBackground } = await import(withV('../ui/uiEffects.js'));
 
     setUIEffectsDependencies({
       querySelector: (sel) => document.querySelector(sel),
@@ -999,7 +1000,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Help Window Manager ==========
   try {
-    const { initHelpWindowManager, setHelpWindowManagerDependencies } = await import(withV('./modules/ui/helpWindowManager.js'));
+    const { initHelpWindowManager, setHelpWindowManagerDependencies } = await import(withV('../ui/helpWindowManager.js'));
 
     setHelpWindowManagerDependencies({
       AppState: deps.core.AppState,
@@ -1020,7 +1021,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Task Core ==========
   try {
-    const { initTaskCore, setTaskCoreDependencies, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore, saveTaskToSchema25 } = await import(withV('./modules/task/taskCore.js'));
+    const { initTaskCore, setTaskCoreDependencies, handleTaskCompletionChange, resetTasks, handleCompleteAllTasks, addTask, editTaskFromCore, deleteTaskFromCore, saveTaskToSchema25 } = await import(withV('../task/taskCore.js'));
 
     deps.task.handleTaskCompletionChange = handleTaskCompletionChange;
     deps.task.resetTasks = resetTasks;
@@ -1077,7 +1078,7 @@ export async function bootFeatures(deps, coreResult) {
     });
 
     // Inject into taskEvents
-    const { setTaskEventsDependencies } = await import(withV('./modules/task/taskEvents.js'));
+    const { setTaskEventsDependencies } = await import(withV('../task/taskEvents.js'));
     setTaskEventsDependencies({
       get taskCore() { return taskCore; },
       enableUndoSystemOnFirstInteraction: () => deps.ui.enableUndoSystemOnFirstInteraction?.(),
@@ -1098,7 +1099,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Cycle Loader ==========
   try {
-    const { loadMiniCycle, setCycleLoaderDependencies } = await import(withV('./modules/cycle/cycleLoader.js'));
+    const { loadMiniCycle, setCycleLoaderDependencies } = await import(withV('../cycle/cycleLoader.js'));
 
     setCycleLoaderDependencies({
       appInit: appInit,
@@ -1126,7 +1127,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Pull-to-Refresh ==========
   try {
-    const { initPullToRefresh, setPullToRefreshDependencies } = await import(withV('./modules/ui/pullToRefresh.js'));
+    const { initPullToRefresh, setPullToRefreshDependencies } = await import(withV('../ui/pullToRefresh.js'));
 
     setPullToRefreshDependencies({
       showNotification: deps.utils.showNotification,
@@ -1151,7 +1152,7 @@ export async function bootFeatures(deps, coreResult) {
   // ========== Testing Modal ==========
   let testingModalMod = null;
   try {
-    testingModalMod = await import(withV('./modules/testing/testing-modal.js'));
+    testingModalMod = await import(withV('../testing/testing-modal.js'));
     deps.testing = deps.testing || {};
     deps.testing.openStorageViewer = testingModalMod.openStorageViewer;
     deps.testing.closeStorageViewer = testingModalMod.closeStorageViewer;
@@ -1163,7 +1164,7 @@ export async function bootFeatures(deps, coreResult) {
     // HTML onclick needs this on window
     window.closeStorageViewer = testingModalMod.closeStorageViewer;
 
-    const testingIntegrationMod = await import(withV('./modules/testing/testing-modal-integration.js'));
+    const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
     if (testingIntegrationMod.setTestingModalDependencies) {
       testingIntegrationMod.setTestingModalDependencies({
         safeAddEventListenerById: deps.utils.safeAddEventListenerById,
@@ -1180,7 +1181,7 @@ export async function bootFeatures(deps, coreResult) {
 
   // ========== Backup Manager ==========
   try {
-    const backupManagerMod = await import(withV('./modules/storage/backupManager.js'));
+    const backupManagerMod = await import(withV('../storage/backupManager.js'));
 
     if (backupManagerMod.setBackupManagerDependencies) {
       backupManagerMod.setBackupManagerDependencies({

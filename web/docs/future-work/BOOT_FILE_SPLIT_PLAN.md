@@ -1,7 +1,7 @@
 # Boot File Split Plan
 
 **Date:** December 9, 2025
-**Status:** Planned
+**Status:** ✅ COMPLETE (Dec 11, 2025)
 **Goal:** Split `miniCycle-scripts.js` into 3 focused boot files for better debuggability and maintainability
 
 ---
@@ -433,5 +433,39 @@ If timeout expires, the app logs an error and continues in degraded state rather
 
 ---
 
-**Last Updated:** December 9, 2025
-**Version:** 1.2 (Added timeout safety documentation)
+## Progress Tracking
+
+| Phase | Description | Status | Lines |
+|-------|-------------|--------|-------|
+| 1 | Extract AppGlobalState | ✅ Complete | 266 |
+| 2 | Create coreBoot.js | ✅ Complete | 673 |
+| 3 | Create featureBoot.js | ✅ Complete | 1,470 |
+| 4 | Create uiBoot.js | ✅ Complete | 406 |
+| 5 | Finalize (entrypoint + HTML) | ✅ Complete | 133 |
+| 6 | Move to modules/boot/ | ✅ Complete | - |
+
+**Final File Structure:**
+```
+miniCycle-main.js              (133 lines)  - Entrypoint with error handling
+
+modules/boot/
+  ├── orchestrator.js          (1,883 lines) - Boot orchestration
+  ├── coreBoot.js              (673 lines)   - Core state + init
+  ├── featureBoot.js           (1,470 lines) - DI wiring + window.* exposure
+  └── uiBoot.js                (406 lines)   - UI event handlers + helpers
+```
+
+**Load Order:**
+```
+miniCycle.html
+  └── miniCycle-main.js (entrypoint)
+        └── modules/boot/orchestrator.js
+              ├── modules/boot/coreBoot.js (core systems)
+              ├── modules/boot/featureBoot.js (feature modules)
+              └── modules/boot/uiBoot.js (UI handlers)
+```
+
+---
+
+**Last Updated:** December 11, 2025
+**Version:** 1.5 (All boot files moved to modules/boot/)

@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 4.0 - DI-pure module versioning
+# Version: 4.1 - Updated for boot file split (Dec 2025)
 #
 # Features:
 #  - Generates version.js as single source of truth
@@ -9,7 +9,7 @@
 #  - macOS and Linux compatible
 #  - Modules get version via DI (no hardcoded versions in modules)
 
-echo "🎯 miniCycle Version Updater v4.0"
+echo "🎯 miniCycle Version Updater v4.1"
 echo "=============================="
 echo ""
 
@@ -24,7 +24,8 @@ CORE_HTML_FILES=(
 )
 
 CORE_JS_FILES=(
-    "miniCycle-scripts.js"
+    "miniCycle-main.js"
+    "modules/boot/orchestrator.js"
     "lite/miniCycle-lite-scripts.js"
     "service-worker.js"
 )
@@ -60,6 +61,7 @@ fi
 # ✅ Create backup folder structure
 mkdir -p "$BACKUP_DIR/lite" 2>/dev/null
 mkdir -p "$BACKUP_DIR/pages" 2>/dev/null
+mkdir -p "$BACKUP_DIR/modules/boot" 2>/dev/null
 
 # ✅ Clean up old backups (keep only last 3)
 cleanup_old_backups() {
@@ -401,15 +403,26 @@ if should_update "pages/product.html"; then
 fi
 
 # ============================================
-# UPDATE: miniCycle-scripts.js
+# UPDATE: miniCycle-main.js (entrypoint)
 # ============================================
 
-if should_update "miniCycle-scripts.js"; then
-    if backup_file "miniCycle-scripts.js"; then
-        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" miniCycle-scripts.js
-        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" miniCycle-scripts.js
-        "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" miniCycle-scripts.js
-        echo "✅ Updated miniCycle-scripts.js"
+if should_update "miniCycle-main.js"; then
+    if backup_file "miniCycle-main.js"; then
+        "${SED_INPLACE[@]}" "s/APP_VERSION = window.APP_VERSION || '[0-9.]*'/APP_VERSION = window.APP_VERSION || '$NEW_VERSION'/g" miniCycle-main.js
+        echo "✅ Updated miniCycle-main.js"
+    fi
+fi
+
+# ============================================
+# UPDATE: modules/boot/orchestrator.js
+# ============================================
+
+if should_update "modules/boot/orchestrator.js"; then
+    if backup_file "modules/boot/orchestrator.js"; then
+        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" modules/boot/orchestrator.js
+        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" modules/boot/orchestrator.js
+        "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" modules/boot/orchestrator.js
+        echo "✅ Updated modules/boot/orchestrator.js"
     fi
 fi
 
@@ -715,10 +728,11 @@ echo "✅ All done!"
 # ============================================
 #
 # Core files (version parameters + meta tags):
-# • version.js          - Single source of truth (auto-generated)
-# • miniCycle.html      - ?v= params, currentVersion, meta tags
-# • miniCycle-scripts.js - currentVersion variable
-# • service-worker.js   - CACHE_VERSION + APP_VERSION
+# • version.js                    - Single source of truth (auto-generated)
+# • miniCycle.html                - ?v= params, currentVersion, meta tags
+# • miniCycle-main.js             - Entrypoint, APP_VERSION fallback
+# • modules/boot/orchestrator.js  - Boot orchestration (was miniCycle-scripts.js)
+# • service-worker.js             - CACHE_VERSION + APP_VERSION
 #
 # Lite version:
 # • lite/miniCycle-lite.html
@@ -742,7 +756,7 @@ echo "✅ All done!"
 #       ↓
 #   window.APP_VERSION (set by version.js)
 #       ↓
-#   miniCycle-scripts.js builds: window.AppMeta = { version: window.APP_VERSION }
+#   modules/boot/orchestrator.js builds: window.AppMeta = { version: window.APP_VERSION }
 #       ↓
 #   initModule({ AppMeta: window.AppMeta, ... })
 #       ↓
@@ -761,7 +775,7 @@ echo "✅ All done!"
 # Notes:
 # • @version JSDoc tags removed from modules (version in URL)
 # • Modules use 'dev-local' fallback if AppMeta not provided
-# • AppMeta object is built in miniCycle-scripts.js, not version.js
+# • AppMeta object is built in modules/boot/orchestrator.js, not version.js
 # • See docs/developer-guides/TASKDOM_DI_GUIDE.md for patterns
 #
 # ============================================

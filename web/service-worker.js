@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v257'; // Feature boot module import
+var CACHE_VERSION = 'v259'; // Boot files moved to modules/boot/
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -21,9 +21,11 @@ var CORE = [
 var FULL_SHELL = [
   './miniCycle.html',
   './miniCycle-styles.css',
-  './miniCycle-scripts.js',
-  './app-coreBoot.js',      // Boot file split Phase 2
-  './app-featureBoot.js',   // Boot file split Phase 3
+  './miniCycle-main.js',              // Entrypoint
+  './modules/boot/orchestrator.js',   // Boot orchestration
+  './modules/boot/coreBoot.js',       // Core state + init
+  './modules/boot/featureBoot.js',    // DI wiring
+  './modules/boot/uiBoot.js',         // UI event handlers
   // User manual files (in legal/ subdirectory)
   './legal/user-manual.html',
   './legal/user-manual-styles.css'
