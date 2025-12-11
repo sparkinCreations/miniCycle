@@ -1,7 +1,8 @@
 /**
  * ============================================================================
- * app-coreBoot.js - Core State & Initialization
+ * coreBoot.js - Core State & Initialization
  * ============================================================================
+ * Location: modules/boot/coreBoot.js
  *
  * This is the FOUNDATION boot file. It:
  * - Sets window.AppBootStarted IMMEDIATELY (for HTML fallback detection)
@@ -12,8 +13,8 @@
  * - Provides core data functions (loadMiniCycleData, autoSave, updateCycleData)
  *
  * IMPORT RULES:
- * - This file must NOT import from app-featureBoot.js or app-uiBoot.js
- * - This file CAN import from modules/core/* and modules/utils/globalUtils.js
+ * - This file must NOT import from featureBoot.js or uiBoot.js
+ * - This file CAN import from ../core/* and ../utils/globalUtils.js
  *
  * @version 1.0.0
  * ============================================================================
@@ -55,11 +56,11 @@ let withV = (path) => `${path}?v=${window.APP_VERSION || '1.0'}`;
  * @returns {Promise<Object>} Core module references
  */
 export async function initCoreBoot(deps) {
-  console.log('🚀 app-coreBoot: Starting core initialization...');
+  console.log('🚀 coreBoot: Starting core initialization...');
 
   // ========== Load AppGlobalState ==========
   const appGlobalStateMod = await import(
-    `./modules/core/appGlobalState.js?v=${window.APP_VERSION || '1.0'}`
+    `../core/appGlobalState.js?v=${window.APP_VERSION || '1.0'}`
   );
   AppGlobalState = appGlobalStateMod.AppGlobalState;
   FeatureFlags = appGlobalStateMod.FeatureFlags;
@@ -89,7 +90,7 @@ export async function initCoreBoot(deps) {
   AppGlobalState.bootStartTime = Date.now();
 
   // ========== Load appInit ==========
-  const appInitModule = await import(`./modules/core/appInit.js?v=${window.APP_VERSION}`);
+  const appInitModule = await import(`../core/appInit.js?v=${window.APP_VERSION}`);
   const { appInit: appInitInstance, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
   appInit = appInitInstance;
 
@@ -132,7 +133,7 @@ export async function initCoreBoot(deps) {
   }
 
   // ========== Load Constants ==========
-  const constantsModule = await import('./modules/core/constants.js');
+  const constantsModule = await import('../core/constants.js');
   DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = constantsModule.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
   DEFAULT_RECURRING_DELETE_SETTINGS = constantsModule.DEFAULT_RECURRING_DELETE_SETTINGS;
   TASK_LIMIT = constantsModule.TASK_LIMIT || 500;
@@ -164,7 +165,7 @@ export async function initCoreBoot(deps) {
   console.log('🚀 appInit and constants loaded (2-phase initialization system)');
 
   // ========== Load GlobalUtils ==========
-  const globalUtilsModule = await import(withV('./modules/utils/globalUtils.js'));
+  const globalUtilsModule = await import(withV('../utils/globalUtils.js'));
   GlobalUtils = globalUtilsModule.default;
 
   // Store in deps container
@@ -199,7 +200,7 @@ export async function initCoreBoot(deps) {
 
   // ========== Load Migration Manager ==========
   console.log('🔄 Loading migration manager (core system)...');
-  const migrationMod = await import(withV('./modules/cycle/migrationManager.js'));
+  const migrationMod = await import(withV('../cycle/migrationManager.js'));
 
   deps.core.migrationMod = migrationMod;
   deps.core.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
@@ -231,7 +232,7 @@ export async function initCoreBoot(deps) {
     TASK_LIMIT,
     UNDO_LIMIT,
     UNDO_MIN_INTERVAL_MS,
-    // Function reference for app-featureBoot.js to call after notifications ready
+    // Function reference for featureBoot.js to call after notifications ready
     initAppState
   };
 }
@@ -292,7 +293,7 @@ export async function initAppState(deps, showNotification) {
   console.log('✅ Migration manager dependencies configured');
 
   // Load and create AppState
-  const { createStateManager, assignCycleVariables } = await import(withV('./modules/core/appState.js'));
+  const { createStateManager, assignCycleVariables } = await import(withV('../core/appState.js'));
 
   // Expose assignCycleVariables to window (needed by cycleCompletion and other modules)
   window.assignCycleVariables = assignCycleVariables;
@@ -308,7 +309,7 @@ export async function initAppState(deps, showNotification) {
   window.AppState = AppState;
   deps.core.AppState = AppState;
 
-  // ✅ Expose core data functions to deps.core for app-featureBoot.js
+  // ✅ Expose core data functions to deps.core for featureBoot.js
   deps.core.loadMiniCycleData = loadMiniCycleData;
   deps.core.autoSave = autoSave;
   deps.core.updateCycleData = updateCycleData;
@@ -670,4 +671,4 @@ export {
   UNDO_MIN_INTERVAL_MS
 };
 
-console.log('✅ app-coreBoot.js loaded');
+console.log('✅ coreBoot.js loaded');

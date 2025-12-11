@@ -1,48 +1,43 @@
 /**
  * ============================================================================
- * MINI-CYCLE APPLICATION ORCHESTRATOR
+ * orchestrator.js - Boot Orchestration
  * ============================================================================
+ * Location: modules/boot/orchestrator.js
  *
  * Welcome to miniCycle! - MJ, Developer
  * Website: https://sparkincreations.com | App: https://minicycleapp.com
  *
  * ============================================================================
- * BOOT FILE SPLIT (Dec 2025)
+ * BOOT FILE STRUCTURE (Dec 2025)
  * ============================================================================
  *
- * This file has been split into focused boot modules for better debuggability:
+ * All boot files are now in modules/boot/:
  *
- * 1. modules/core/appGlobalState.js (~266 lines)
- *    - AppGlobalState, FeatureFlags, property getters
- *    - UNDO_LIMIT, UNDO_MIN_INTERVAL_MS constants
- *    - debugAppState() helper
- *
- * 2. app-coreBoot.js (~662 lines)
+ * 1. modules/boot/coreBoot.js (~673 lines)
  *    - Core initialization (appInit, constants, GlobalUtils, migration)
  *    - AppState creation and initialization
  *    - Core data functions (loadMiniCycleData, autoSave, updateCycleData)
- *    - Cache recovery helpers
  *
- * 3. miniCycle-scripts.js (~3,059 lines) - THIS FILE
- *    - Dependency injection wiring for 50+ modules
- *    - Feature module loading (notifications, themes, reminders, etc.)
- *    - UI event handlers and runtime functions
+ * 2. modules/boot/featureBoot.js (~1,470 lines)
+ *    - Feature module loading and DI wiring
+ *    - Window.* exposures for backward compatibility
+ *
+ * 3. modules/boot/uiBoot.js (~406 lines)
+ *    - UI event handlers (keyboard, clicks, touch)
+ *    - Loader/spinner helpers
+ *
+ * 4. modules/boot/orchestrator.js - THIS FILE
+ *    - Coordinates boot sequence
+ *    - Early module loading (before AppState)
+ *    - UI setup and initialization
  *
  * LOAD ORDER:
  * -----------
- * HTML loads miniCycle-scripts.js
- *   → imports app-coreBoot.js (initCoreBoot)
- *     → imports modules/core/appGlobalState.js
- *   → calls initCoreBoot(deps) - loads core systems
- *   → loads notifications, themes, etc.
- *   → calls initAppState(deps, showNotification)
- *   → loads Phase 2/3 modules
- *
- * ARCHITECTURE DOCS:
- * ------------------
- * - Module patterns: docs/developer-guides/MODULE_SYSTEM_GUIDE.md
- * - DI-pure modules: docs/developer-guides/TASKDOM_DI_GUIDE.md
- * - Boot file split: docs/future-work/BOOT_FILE_SPLIT_PLAN.md
+ * miniCycle-main.js (entrypoint)
+ *   → modules/boot/orchestrator.js (this file)
+ *       → modules/boot/coreBoot.js
+ *       → modules/boot/featureBoot.js
+ *       → modules/boot/uiBoot.js
  *
  * ============================================================================
  */
@@ -86,7 +81,13 @@ let isDraggingNotification = false;
 // ✅ Backward compatibility alias - will be set after appInit loads
 window.AppInit = null; // Will be replaced with appInit below
 
-
+// ============================================================================
+// CRITICAL: Import coreBoot IMMEDIATELY to set window.AppBootStarted
+// This MUST happen before DOMContentLoaded to prevent lite fallback
+// ============================================================================
+import('./coreBoot.js').catch(err => {
+  console.error('❌ Failed to load coreBoot.js:', err);
+});
 
 
 
@@ -101,9 +102,10 @@ window.AppInit = null; // Will be replaced with appInit below
 // The `deps` container enables true DI - modules receive deps, not window.*
 //
 // Core initialization (AppGlobalState, appInit, constants, GlobalUtils, migration)
-// is now handled by app-coreBoot.js
+// is now handled by coreBoot.js
 
-document.addEventListener('DOMContentLoaded', async (event) => {
+// Handle case where DOMContentLoaded may have already fired
+async function initApp() {
     console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
 
   // ============================================
@@ -111,13 +113,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
   // coreBoot: AppGlobalState, appInit, constants, GlobalUtils, migration
   // featureBoot: All feature module loading and DI wiring
   // ============================================
-  const coreBoot = await import(`./app-coreBoot.js?v=${window.APP_VERSION || '1.469'}`);
+  const coreBoot = await import(`./coreBoot.js?v=${window.APP_VERSION || '1.470'}`);
   const { initCoreBoot, initAppState, loadMiniCycleData, autoSave, updateCycleData } = coreBoot;
 
   // Feature boot module - handles Phase 2 module loading
-  const featureBoot = await import(`./app-featureBoot.js?v=${window.APP_VERSION || '1.469'}`);
+  const featureBoot = await import(`./featureBoot.js?v=${window.APP_VERSION || '1.470'}`);
   const { bootFeatures } = featureBoot;
   console.log('📦 Feature boot module loaded');
+
+  // UI boot module - handles UI event listeners and helpers
+  const uiBoot = await import(`./uiBoot.js?v=${window.APP_VERSION || '1.470'}`);
+  const { attachGlobalEventListeners, attachTaskInputListeners, attachMenuButtonListener, hideAppLoader } = uiBoot;
+  console.log('📦 UI boot module loaded');
 
   // ============================================
   // 🎯 DEPENDENCY CONTAINER
@@ -218,12 +225,12 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🛠️ Global utilities already loaded by app-coreBoot.js');
 
     // ✅ Load Error Handler (DI-pure - wiring done after notifications load)
-    const errorHandlerMod = await import(withV('./modules/utils/errorHandler.js'));
+    const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
     deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
     console.log('🛡️ Global error handlers initialized');
 
     // ✅ Load Data Validator (needed before settingsManager)
-    const dataValidatorMod = await import(withV('./modules/utils/dataValidator.js'));
+    const dataValidatorMod = await import(withV('../utils/dataValidator.js'));
     // Wire dependency using deps container (true DI pattern)
     dataValidatorMod.setDataValidatorDependencies({
         sanitizeInput: deps.utils.sanitizeInput
@@ -234,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('🛡️ Data Validator loaded');
 
     // ✅ Load Console Capture (DI-pure)
-    const consoleCaptureMod = await import(withV('./modules/utils/consoleCapture.js'));
+    const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
 
     // Wire dependencies for ConsoleCapture (DI-pure)
     if (consoleCaptureMod.setConsoleCaptureDependencies) {
@@ -248,7 +255,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     window.ConsoleCapture = consoleCaptureMod.default;  // Alias for testing-modal-integration
 
     // ✅ Load Notifications (DI-pure)
-    const notificationsMod = await import(withV('./modules/utils/notifications.js'));
+    const notificationsMod = await import(withV('../utils/notifications.js'));
 
     // Set early dependencies (others set later when available)
     notificationsMod.setNotificationsDependencies({
@@ -300,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     }
 
     // ✅ Load Theme Manager
-    const themeManagerMod = await import(withV('./modules/features/themeManager.js'));
+    const themeManagerMod = await import(withV('../features/themeManager.js'));
     window.ThemeManager = themeManagerMod.default;
     window.themeManager = themeManagerMod.themeManager;
     window.applyTheme = themeManagerMod.applyTheme;
@@ -324,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('✅ Theme Manager loaded');
 
     // ✅ Load Games Manager (DI-pure)
-    const gamesManagerMod = await import(withV('./modules/ui/gamesManager.js'));
+    const gamesManagerMod = await import(withV('../ui/gamesManager.js'));
     // Inject dependencies (DI-pure)
     if (gamesManagerMod.setGamesManagerDependencies) {
         gamesManagerMod.setGamesManagerDependencies({
@@ -345,7 +352,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('✅ Games Manager loaded');
 
     // ✅ Load Onboarding Manager (DI-pure)
-    const onboardingManagerMod = await import(withV('./modules/ui/onboardingManager.js'));
+    const onboardingManagerMod = await import(withV('../ui/onboardingManager.js'));
     // Inject dependencies (DI-pure, use lazy getters for late-available deps)
     if (onboardingManagerMod.setOnboardingManagerDependencies) {
         onboardingManagerMod.setOnboardingManagerDependencies({
@@ -365,7 +372,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('✅ Onboarding Manager loaded');
 
     // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
-    const modalManagerMod = await import(withV('./modules/ui/modalManager.js'));
+    const modalManagerMod = await import(withV('../ui/modalManager.js'));
     // Note: modalManager instance is null until initModalManager is called later
     console.log('✅ Modal Manager module loaded (awaiting initialization)');
 
@@ -686,7 +693,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log('🔬 Loading testing modal modules...');
         let testingModalMod = null;
         try {
-            testingModalMod = await import(withV('./modules/testing/testing-modal.js'));
+            testingModalMod = await import(withV('../testing/testing-modal.js'));
             console.log('✅ Testing modal loaded');
 
             // Expose testing modal functions to window (before setup, for compatibility)
@@ -697,7 +704,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             if (testingModalMod.exportTestResults) window.exportTestResults = testingModalMod.exportTestResults;
             if (testingModalMod.copyTestResults) window.copyTestResults = testingModalMod.copyTestResults;
 
-            const testingIntegrationMod = await import(withV('./modules/testing/testing-modal-integration.js'));
+            const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
 
             // Wire dependencies for testing-modal-integration (DI-pure)
             if (testingIntegrationMod.setTestingModalDependencies) {
@@ -717,7 +724,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log('💾 Loading backup manager...');
         let backupManagerInstance = null;
         try {
-            const backupManagerMod = await import(withV('./modules/storage/backupManager.js'));
+            const backupManagerMod = await import(withV('../storage/backupManager.js'));
 
             // Wire dependencies (DI-pure)
             if (backupManagerMod.setBackupManagerDependencies) {
@@ -1709,63 +1716,22 @@ function isTouchDevice() {
 
 
 /***********************
- * 
- * 
- * Add Event Listeners
- * 
- * 
+ *
+ *
+ * Add Event Listeners (via app-uiBoot.js)
+ *
+ *
  ************************/
-// 🟢 Add Task Button (Click)
-GlobalUtils.safeAddEventListener(addTaskButton, "click", () => {
-    // ✅ Enable undo system on first user interaction
-    window.enableUndoSystemOnFirstInteraction?.();
+// ✅ Task input listeners now handled by app-uiBoot.js
+attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
 
-    const taskText = taskInput.value ? taskInput.value.trim() : "";
-    if (!taskText) {
-        console.warn("⚠ Cannot add an empty task.");
-        return;
-    }
+// ✅ Menu button listener now handled by app-uiBoot.js
+attachMenuButtonListener(GlobalUtils, menuButton, menu);
 
-    // ✅ Use window.addTask directly (modules.addTask may not be set)
-    (window.addTask || addTaskFallback)(taskText);
-    taskInput.value = "";
-});
+// ✅ Global event listeners (keyboard shortcuts, global clicks, touch events) now handled by app-uiBoot.js
+attachGlobalEventListeners(GlobalUtils);
 
-// 🟢 Task Input (Enter Key)
-GlobalUtils.safeAddEventListener(taskInput, "keypress", function (event) {
-    if (event.key === "Enter") {
-        // ✅ Enable undo system on first user interaction
-        window.enableUndoSystemOnFirstInteraction?.();
-
-        event.preventDefault();
-        const taskText = taskInput.value ? taskInput.value.trim() : "";
-        if (!taskText) {
-            console.warn("⚠ Cannot add an empty task.");
-            return;
-        }
-
-        // ✅ Use window.addTask directly (modules.addTask may not be set)
-        (window.addTask || addTaskFallback)(taskText);
-        taskInput.value = "";
-    }
-});
-
-
-
-// 🟢 Menu Button (Click) - ✅ FIXED: ES5 compatible function expression
-GlobalUtils.safeAddEventListener(menuButton, "click", function(event) {
-    event.stopPropagation();
-    window.syncCurrentSettingsToStorage?.(); // ✅ Now supports both schemas
-    window.saveToggleAutoReset?.(); // ✅ Already updated with Schema 2.5 support
-    menu.classList.toggle("visible");
-
-    if (menu.classList.contains("visible")) {
-        GlobalUtils.safeAddEventListener(document, "click", closeMenuOnClickOutside);
-    }
-});
-
-
-
+// ✅ LEGACY: Keep reset-notification-position handler inline for now (requires AppState access)
 GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", async () => {
     console.log('🔄 Resetting notification position (Schema 2.5 only)...');
 
@@ -1900,34 +1866,19 @@ GlobalUtils.safeAddEventListener(document, "click", (event) => {
 
 
 /*****SPEACIAL EVENT LISTENERS *****/
+// ✅ MOVED TO app-uiBoot.js: Touch event handlers (handleFirstTouchInteraction, handlePassiveTouchstart)
 
-// ✅ REMOVED: dragover event listener - now handled by dragDropManager module via setupRearrange()
-// Named handler for safeAddEventListener duplicate prevention
-function handleFirstTouchInteraction() {
-    hasInteracted = true;
+// ✅ Hide initial app loader when app is ready (now via app-uiBoot.js)
+hideAppLoader();
+
+} // End of initApp function
+
+// Run initApp when DOM is ready (or immediately if already ready)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
 }
-GlobalUtils.safeAddEventListener(document, "touchstart", handleFirstTouchInteraction, { once: true, passive: true });
-
-// Passive touchstart to prevent scroll jank
-function handlePassiveTouchstart() {}
-GlobalUtils.safeAddEventListener(document, "touchstart", handlePassiveTouchstart, { passive: true });
-
-  // Hide initial app loader when app is ready
-  setTimeout(() => {
-    const appLoader = document.getElementById('app-loader');
-    if (appLoader) {
-      appLoader.classList.add('fade-out');
-      setTimeout(() => {
-        appLoader.style.display = 'none';
-        // Cancel the load timeout failsafe since we loaded successfully
-        if (typeof window.__cancelLoadTimeout === 'function') {
-          window.__cancelLoadTimeout();
-        }
-      }, 500);
-    }
-  }, 500);
-
-});
 
   function supportsModern() {
     try { new Function('()=>{}'); } catch(_) { return false; }
@@ -1936,46 +1887,6 @@ GlobalUtils.safeAddEventListener(document, "touchstart", handlePassiveTouchstart
 
 // ============================================
 // LOADING SPINNER GLOBAL FUNCTIONS
+// ✅ MOVED TO app-uiBoot.js: showLoader, hideLoader, withLoader
+// These are now exported from app-uiBoot.js and exposed to window there
 // ============================================
-
-/**
- * Shows the loading overlay with optional custom message
- * @param {string} message - Custom loading message (optional)
- */
-window.showLoader = function(message = 'Processing...') {
-  const overlay = document.getElementById('loading-overlay');
-  const textElement = overlay?.querySelector('.loading-spinner-text');
-
-  if (overlay) {
-    if (textElement && message) {
-      textElement.textContent = message;
-    }
-    overlay.classList.add('active');
-  }
-};
-
-/**
- * Hides the loading overlay
- */
-window.hideLoader = function() {
-  const overlay = document.getElementById('loading-overlay');
-  if (overlay) {
-    overlay.classList.remove('active');
-  }
-};
-
-/**
- * Wraps an async operation with loading indicator
- * @param {Function} asyncFunction - Async function to execute
- * @param {string} message - Loading message to display
- * @returns {Promise} - Result of the async function
- */
-window.withLoader = async function(asyncFunction, message = 'Processing...') {
-  try {
-    window.showLoader?.(message);
-    const result = await asyncFunction();
-    return result;
-  } finally {
-    window.hideLoader?.();
-  }
-};
