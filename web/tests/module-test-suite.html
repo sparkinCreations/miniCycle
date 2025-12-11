@@ -397,6 +397,9 @@
             <option value="basicPluginSystem">🔌 Basic Plugin System</option>
             <option value="accessibility">♿ Accessibility</option>
             <option value="stress">🔥 Stress Tests</option>
+            <option value="coreBoot">🚀 Core Boot</option>
+            <option value="uiBoot">📱 UI Boot</option>
+            <option value="featureBoot">🔌 Feature Boot</option>
         </select>
             </div>
         </div>
@@ -481,6 +484,9 @@
         const { runBasicPluginSystemTests } = await import(`./basicPluginSystem.tests.js?v=${cacheBuster}`);
         const { runAccessibilityTests } = await import(`./accessibility.tests.js?v=${cacheBuster}`);
         const { runStressTests } = await import(`./stress.tests.js?v=${cacheBuster}`);
+        const { runCoreBootTests } = await import(`./coreBoot.tests.js?v=${cacheBuster}`);
+        const { runUIBootTests } = await import(`./uiBoot.tests.js?v=${cacheBuster}`);
+        const { runFeatureBootTests } = await import(`./featureBoot.tests.js?v=${cacheBuster}`);
 
         let currentModule = null;
 
@@ -889,6 +895,26 @@
             } else if (moduleKey === 'stress') {
                 // Stress tests don't need module imports - they test system limits
                 console.log('Stress tests loaded (no module dependencies)');
+            } else if (moduleKey === 'coreBoot') {
+                const mod = await import(`../modules/boot/coreBoot.js?v=${cacheBuster}`);
+                window.loadMiniCycleData = mod.loadMiniCycleData;
+                window.autoSave = mod.autoSave;
+                window.updateCycleData = mod.updateCycleData;
+                window.initCoreBoot = mod.initCoreBoot;
+                window.initAppState = mod.initAppState;
+            } else if (moduleKey === 'uiBoot') {
+                const mod = await import(`../modules/boot/uiBoot.js?v=${cacheBuster}`);
+                window.showLoader = mod.showLoader;
+                window.hideLoader = mod.hideLoader;
+                window.withLoader = mod.withLoader;
+                window.isTouchDevice = mod.isTouchDevice;
+                window.detectDeviceType = mod.detectDeviceType;
+                window.hideAppLoader = mod.hideAppLoader;
+                window.attachGlobalEventListeners = mod.attachGlobalEventListeners;
+            } else if (moduleKey === 'featureBoot') {
+                const mod = await import(`../modules/boot/featureBoot.js?v=${cacheBuster}`);
+                window.createDepsContainer = mod.createDepsContainer;
+                window.bootFeatures = mod.bootFeatures;
             }
         }
 
@@ -1446,6 +1472,12 @@
                 await runAccessibilityTests(resultsDiv);
             } else if (currentModule === 'stress') {
                 await runStressTests(resultsDiv);
+            } else if (currentModule === 'coreBoot') {
+                await runCoreBootTests(resultsDiv);
+            } else if (currentModule === 'uiBoot') {
+                await runUIBootTests(resultsDiv);
+            } else if (currentModule === 'featureBoot') {
+                await runFeatureBootTests(resultsDiv);
             }
 
             // Show copy button after tests run
@@ -1607,7 +1639,10 @@
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
                 { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
                 { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null },
-                { name: 'Stress', key: 'stress', runFn: runStressTests, importPath: null }
+                { name: 'Stress', key: 'stress', runFn: runStressTests, importPath: null },
+                { name: 'CoreBoot', key: 'coreBoot', runFn: runCoreBootTests, importPath: '../modules/boot/coreBoot.js' },
+                { name: 'UIBoot', key: 'uiBoot', runFn: runUIBootTests, importPath: '../modules/boot/uiBoot.js' },
+                { name: 'FeatureBoot', key: 'featureBoot', runFn: runFeatureBootTests, importPath: '../modules/boot/featureBoot.js' }
             ];
 
             let allResults = [];

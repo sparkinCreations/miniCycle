@@ -497,8 +497,12 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     await test('createBasicFallbackCycle syncs AppState', async () => {
-        let appStateSynced = false;
-        const mockAppState = {
+        // Note: createBasicFallbackCycle syncs with window.AppState (global), not deps.AppState
+        // This is intentional - it ensures the global singleton is updated
+        const originalAppState = window.AppState;
+
+        // Create a mock global AppState for this test
+        window.AppState = {
             isReady: () => true,
             get: () => createMockSchemaData(),
             update: () => {},
@@ -509,19 +513,24 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         const deps = createValidDeps({
-            AppState: mockAppState,
+            AppState: window.AppState,
             completeInitialSetup: () => {}
         });
 
-        const instance = new CycleManager(deps);
-        instance.createBasicFallbackCycle();
+        try {
+            const instance = new CycleManager(deps);
+            instance.createBasicFallbackCycle();
 
-        // Check AppState was synced
-        if (instance.deps.AppState.isInitialized !== true) {
-            throw new Error('AppState.isInitialized should be true');
-        }
-        if (instance.deps.AppState.isDirty !== false) {
-            throw new Error('AppState.isDirty should be false');
+            // Check global AppState was synced (function uses window.AppState directly)
+            if (window.AppState.isInitialized !== true) {
+                throw new Error('AppState.isInitialized should be true');
+            }
+            if (window.AppState.isDirty !== false) {
+                throw new Error('AppState.isDirty should be false');
+            }
+        } finally {
+            // Restore original AppState
+            window.AppState = originalAppState;
         }
     });
 
