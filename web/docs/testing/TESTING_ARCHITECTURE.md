@@ -13,7 +13,7 @@
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
 │  │ Functional │  │Performance │  │ Lighthouse │  │  Manual   │ │
 │  │   Tests    │  │ Benchmarks │  │     CI     │  │ Profiling │ │
-│  │ 1458 tests │  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
+│  │ 1458+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -39,19 +39,19 @@ Developer Makes Changes
     └────────────────────┘
          ↓
     ┌────────────────────────────────┐
-    │ Runs 32 Module Test Suites     │
+    │ Runs 50 Module Test Suites     │
     │ - Integration (11 tests)       │
-    │ - ThemeManager (18 tests)      │
+    │ - ThemeManager (15 tests)      │
     │ - RecurringCore (99 tests)     │
     │ - UndoRedoManager (73 tests)   │
     │ - XSS Vulnerability (25 tests) │
     │ - Error Handler (34 tests)     │
-    │ - ... (26 more modules)        │
+    │ - ... (44 more modules)        │
     └────────────────────────────────┘
          ↓
     ┌─────────────────┐
-    │ Results: 1458/  │
-    │ 1458 Passed ✅  │
+    │ Results: 1458+/ │
+    │ 1458+ Passed ✅ │
     └─────────────────┘
          ↓
     ┌────────────┐
@@ -165,7 +165,7 @@ Push to GitHub
 │ ✅ End-to-end workflows                           │
 └───────────────────────────────────────────────────┘
 
-Total: 1458 tests across all layers
+Total: 1458+ tests across all layers
 ```
 
 ---
@@ -468,7 +468,7 @@ setRecurringCoreDependencies({
 │ Notifications    │  39   │  100%  │   93%    │ ✅      │
 │ ... (22 more)    │ 618   │  100%  │   95%    │ ✅      │
 ├──────────────────┼───────┼────────┼──────────┼─────────┤
-│ TOTAL            │ 1458  │  100%  │   95%    │ ✅ 100% │
+│ TOTAL            │ 1458+ │  100%  │   95%    │ ✅ 100% │
 └──────────────────┴───────┴────────┴──────────┴─────────┘
 ```
 
@@ -569,11 +569,11 @@ Ideal Distribution (achieved!):
 ```
 Test Type          | Count  | Total Time | Avg Time
 -------------------|--------|------------|----------
-Functional Tests   | 1458   | 62.40s     | 61.7ms
+Functional Tests   | 1458+  | ~65s       | ~44ms
 Performance Tests  | 12     | 21.40ms    | 1.78ms
 Lighthouse (full)  | 10     | 180s       | 18s
 -------------------|--------|------------|----------
-Total              | 1033   | 242.42s    | 234.7ms
+Total              | 1480+  | ~245s      | ~165ms
 ```
 
 ### Coverage Breakdown
@@ -581,14 +581,18 @@ Total              | 1033   | 242.42s    | 234.7ms
 ```
 Category           | Tests | Percentage
 -------------------|-------|------------
-Core Systems       | 152   | 15.0%
-Business Logic     | 346   | 34.2%
-UI Components      | 315   | 31.2%
-Features           | 198   | 19.6%
-Integration        | 11    | 1.1%
-Performance        | 12    | 1.2%
+Core Systems       | 169   | 11.6%
+Task Management    | 189   | 13.0%
+UI Components      | 390   | 26.7%
+Business Logic     | 362   | 24.8%
+Features           | 181   | 12.4%
+Security & Testing | 86    | 5.9%
+Plugins & A11y     | 83    | 5.7%
+Stress Testing     | 50    | 3.4%
+Integration        | 11    | 0.8%
+Performance        | 12    | 0.8%
 -------------------|-------|------------
-Total              | 1034  | 100%
+Total              | 1458+ | 100%
 ```
 
 ### Performance Status
@@ -610,7 +614,7 @@ Storage Speed      | <100ms  | 0.80ms  | ✅ 125x
 ### Run Tests
 
 ```bash
-npm test           # Functional (1458 tests, 60s)
+npm test           # Functional (1458+ tests, ~65s)
 npm run perf       # Performance (12 tests, 20ms)
 npm run lighthouse # Lighthouse (full audit, 3min)
 npm start          # Manual testing (browser)
@@ -641,8 +645,8 @@ lighthouserc.json                        # Lighthouse
 
 ---
 
-**Architecture Version**: 1.1
-**Last Updated**: December 7, 2025
+**Architecture Version**: 1.2
+**Last Updated**: December 11, 2025
 **Status**: ✅ Production-ready
 
-*Testing architecture for miniCycle v1.402*
+*Testing architecture for miniCycle v1.459*

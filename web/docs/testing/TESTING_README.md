@@ -66,22 +66,23 @@ tests/
 └── integration.tests.js              # E2E tests
 ```
 
-### Test Modules (45 Total)
+### Test Modules (50 Total)
 
 | Category | Modules | Tests |
 |----------|---------|-------|
 | **Core** | integration, state, appInit, appState, constants | 169 |
-| **Task Management** | taskCore, taskValidation, taskUtils, taskRenderer, taskEvents, taskDOM | 154 |
+| **Task Management** | taskCore, taskValidation, taskUtils, taskRenderer, taskEvents, taskDOM, taskUI, taskInteractions | 189 |
 | **Cycle System** | cycleLoader, modeManager, cycleSwitcher, cycleManager, cycleCompletion, migrationManager | 190 |
 | **Recurring Tasks** | recurringCore, recurringIntegration, recurringPanel | 173 |
-| **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager, taskOptionsCustomizer, helpWindowManager | 340 |
+| **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager, taskOptionsCustomizer, helpWindowManager, completedTasksManager, uiEffects | 390 |
 | **Features** | notifications, statsPanel, themeManager, dragDropManager, dueDates, reminders, pullToRefresh | 181 |
 | **Utilities** | globalUtils, deviceDetection, consoleCapture | 81 |
 | **Storage & Backup** | backupManager, dataValidator | 85 |
 | **Security & Testing** | xss-vulnerability, errorHandler, testingModal | 86 |
 | **Plugins & A11y** | basicPluginSystem, accessibility | 83 |
+| **Stress Testing** | stress | 50 |
 
-**Total**: 1458 tests across 45 modules
+**Total**: 1458+ tests across 50 modules
 
 ### Running Specific Tests
 
@@ -102,9 +103,9 @@ npm start
 ### Test Coverage
 
 ```
-Module Coverage: 100% (45/45 modules)
-Test Pass Rate: 100% (1458/1458)
-Lines Covered: ~15,000 lines across 45 modules
+Module Coverage: 100% (50/50 modules)
+Test Pass Rate: 100% (1458+/1458+)
+Lines Covered: ~15,000 lines across 50 modules
 ```
 
 **Notable Coverage:**
@@ -681,8 +682,8 @@ npm test && npm run perf
 
 ---
 
-**Documentation Version**: 2.0
-**Last Updated**: December 7, 2025
+**Documentation Version**: 2.1
+**Last Updated**: December 11, 2025
 **Status**: ✅ Complete
 
-*Testing documentation for miniCycle v1.402*
+*Testing documentation for miniCycle v1.459*

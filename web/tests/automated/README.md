@@ -1,6 +1,6 @@
 # Automated Browser Test Suite
 
-**Playwright-powered automation for 1093 browser tests with Strict Dependency Injection.**
+**Playwright-powered automation for 1458+ browser tests with Strict Dependency Injection.**
 
 ---
 
@@ -57,35 +57,37 @@ npm run test:manual
 
 ## 📊 Current Test Coverage
 
-The automated runner tests **45 modules** with **1458 tests total**:
+The automated runner tests **50 modules** with **1458+ tests total**:
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
 | integration | 11 | modalManager | 49 |
 | themeManager | 15 | menuManager | 25 |
 | deviceDetection | 13 | settingsManager | 24 |
-| cycleLoader | 10 | pullToRefresh | 18 |
-| statsPanel | 24 | taskCore | 33 |
-| consoleCapture | 32 | taskValidation | 25 |
-| state | 40 | taskUtils | 22 |
-| recurringCore | 99 | taskRenderer | 16 |
-| recurringIntegration | 17 | taskEvents | 13 |
-| recurringPanel | 57 | taskDOM | 45 |
-| globalUtils | 36 | taskOptionsCustomizer | 27 |
-| notifications | 35 | xss-vulnerability | 25 |
-| dragDropManager | 55 | errorHandler | 34 |
-| migrationManager | 38 | testingModal | 27 |
-| dueDates | 16 | onboardingManager | 32 |
-| reminders | 4 | gamesManager | 21 |
-| modeManager | 27 | undoRedoManager | 73 |
-| cycleSwitcher | 20 | cycleManager | 35 |
+| cycleLoader | 10 | completedTasksManager | 18 |
+| statsPanel | 24 | pullToRefresh | 18 |
+| consoleCapture | 32 | taskCore | 33 |
+| state | 40 | taskValidation | 25 |
+| recurringCore | 99 | taskUtils | 22 |
+| recurringIntegration | 17 | taskRenderer | 16 |
+| recurringPanel | 57 | taskEvents | 13 |
+| globalUtils | 36 | taskDOM | 45 |
+| notifications | 35 | taskOptionsCustomizer | 27 |
+| dragDropManager | 55 | taskUI | 20 |
+| migrationManager | 38 | taskInteractions | 15 |
+| dueDates | 16 | uiEffects | 12 |
+| reminders | 4 | xss-vulnerability | 25 |
+| modeManager | 27 | errorHandler | 34 |
+| cycleSwitcher | 20 | testingModal | 27 |
+| cycleManager | 35 | onboardingManager | 32 |
+| undoRedoManager | 73 | gamesManager | 21 |
 | backupManager | 31 | cycleCompletion | 25 |
 | dataValidator | 54 | appInit | 37 |
 | appState | 60 | helpWindowManager | 54 |
 | constants | 21 | basicPluginSystem | 42 |
-| accessibility | 41 | | |
+| accessibility | 41 | stress | 50 |
 
-**Total: 1458 tests across 45 modules**
+**Total: 1458+ tests across 50 modules**
 
 ---
 
@@ -138,7 +140,7 @@ Some tests are excluded from automated testing due to Playwright environment lim
 | `setTimeout` timing is flaky | Async callback tests | Removed or increased timeouts |
 | `appInit.markCoreSystemsReady()` not available | statsPanel, modeManager | Excluded from automated suite |
 
-**~24 tests** were modified or removed for Playwright compatibility. All remaining 980 tests pass reliably.
+**~24 tests** were modified or removed for Playwright compatibility. All remaining tests pass reliably.
 
 **Mark excluded tests with comments:**
 ```javascript
@@ -175,7 +177,7 @@ Some tests are excluded from automated testing due to Playwright environment lim
    ✅ PASS deviceDetection      13/13 tests
    ... (32 modules)
 ============================================================
-🎉 All tests passed! (980/980 - 100%)
+🎉 All tests passed! (1458/1458 - 100%)
 ============================================================
 ```
 
@@ -515,8 +517,8 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 ✅ **Strict DI** - All modules use dependency injection
 ✅ **testHelpers.js** - Shared mocks for consistency
 ✅ **Clean repository** - No dependency bloat
-✅ **1458 tests** - Comprehensive coverage
-✅ **45 modules** - All core functionality tested
+✅ **1458+ tests** - Comprehensive coverage
+✅ **50 modules** - All core functionality tested
 ✅ **CLI filtering** - Test single modules or patterns
 
 **No build step. No configuration. Just works.** 🚀
@@ -532,5 +534,5 @@ console.log(`⏱️  ${moduleName} took ${duration}ms`);
 
 ---
 
-**Last Updated**: December 2024
-**Test Coverage**: 1458 tests across 45 modules (100%)
+**Last Updated**: December 2025
+**Test Coverage**: 1458+ tests across 50 modules (100%)

@@ -2,7 +2,7 @@
 
 ## Why Playwright Browser Tests (Not Jest)
 
-miniCycle uses **980 Playwright browser tests** with **Strict Dependency Injection** instead of Jest unit tests.
+miniCycle uses **1458+ Playwright browser tests** with **Strict Dependency Injection** instead of Jest unit tests.
 
 ### Decision Rationale
 
@@ -12,13 +12,13 @@ miniCycle uses **980 Playwright browser tests** with **Strict Dependency Injecti
 2. **DOM & Browser APIs** - All modules use `localStorage`, `DOM`, `window` - mocking these defeats the purpose
 3. **ES6 Modules** - Code uses native ES6 modules which Jest struggles with
 4. **Integration Testing** - User interactions, state management, and UI updates need real browser context
-5. **Already Comprehensive** - 980 tests across 32 modules = 100% coverage
+5. **Already Comprehensive** - 1458+ tests across 50 modules = 100% coverage
 
 ### What We Test
 
-**Current Coverage: 980 tests (100%)**
+**Current Coverage: 1458+ tests (100%)**
 
-- 32 modules fully tested in browser environment
+- 50 modules fully tested in browser environment
 - Real DOM manipulation and event handling
 - Actual localStorage persistence
 - Real async operations and timers
@@ -27,7 +27,7 @@ miniCycle uses **980 Playwright browser tests** with **Strict Dependency Injecti
 ### Test Execution
 
 ```bash
-# Run all 980 tests locally (~60 seconds)
+# Run all 1458+ tests locally (~60 seconds)
 npm test
 
 # Run in browser manually
@@ -38,7 +38,7 @@ npm run test:manual
 ### Why Jest Was Removed
 
 Jest was **experimental and broken**:
-- ❌ Only 2 test files vs 980 working browser tests
+- ❌ Only 2 test files vs 1458+ working browser tests
 - ❌ Couldn't handle ES6 module imports
 - ❌ Wrong file paths in test configuration
 - ❌ Required extensive mocking of browser APIs
@@ -51,7 +51,7 @@ Jest was **experimental and broken**:
 
 ## Architecture: Strict Dependency Injection
 
-All 32 modules use **Strict DI** with no `|| window.*` fallbacks:
+All 50 modules use **Strict DI** with no `|| window.*` fallbacks:
 
 ```javascript
 // Every module exports a setter function
@@ -102,10 +102,10 @@ Some tests are excluded from automated testing due to Playwright environment lim
 Tests run automatically on every push via GitHub Actions:
 - `.github/workflows/test.yml`
 - Runs on Node.js 18.x and 20.x
-- Installs Playwright, starts server, runs all 980 tests
+- Installs Playwright, starts server, runs all 1458+ tests
 - Results visible at: https://github.com/sparkinCreations/miniCycle/actions
 
 ---
 
-**Last Updated:** December 2024
-**Test Coverage:** 100% (980/980 tests passing across 32 modules)
+**Last Updated:** December 2025
+**Test Coverage:** 100% (1458+ tests passing across 50 modules)
