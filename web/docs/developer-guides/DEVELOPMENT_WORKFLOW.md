@@ -21,7 +21,7 @@
 ### 1. Edit JavaScript Files
 
 ```javascript
-// Example: Add a new feature to miniCycle-scripts.js
+// Example: Add a new feature to modules/boot/orchestrator.js
 
 function myNewFeature() {
     showNotification('New feature activated!', 'success');
@@ -64,7 +64,7 @@ window.myModule = myModule;
 **Import in main script:**
 
 ```javascript
-// miniCycle-scripts.js
+// modules/boot/orchestrator.js
 document.addEventListener('DOMContentLoaded', async () => {
     await import('./utilities/myModule.js');
     console.log('✅ MyModule loaded');
@@ -267,7 +267,7 @@ function applyTheme(themeName) {
 ### How to Add a Keyboard Shortcut
 
 ```javascript
-// Add to miniCycle-scripts.js
+// Add to modules/boot/orchestrator.js
 
 document.addEventListener('keydown', (e) => {
     // Ctrl/Cmd + Z = Undo

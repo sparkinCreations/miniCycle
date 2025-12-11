@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Last Updated:** December 6, 2025
-**Status:** All 46 modules use strict DI
+**Last Updated:** December 11, 2025
+**Status:** All 46 modules use strict DI | Boot files split (Dec 2025)
 
 ---
 
@@ -73,7 +73,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 web/
 │
 ├── 📄 miniCycle.html                    # Main PWA entry point
-├── 📄 miniCycle-scripts.js              # DI wiring hub (~3,800 lines)
+├── 📄 miniCycle-main.js                 # Entrypoint (~133 lines) - loads orchestrator
 ├── 📄 miniCycle-styles.css              # Application styles
 ├── 📄 service-worker.js                 # PWA service worker
 ├── 📄 version.js                        # Single source of truth for versions
@@ -83,6 +83,11 @@ web/
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
 ├── 📁 modules/                          # ES6 application modules (46 modules, all strict DI)
+│   ├── boot/                            # Boot sequence modules (Dec 2025 split)
+│   │   ├── orchestrator.js              # DI wiring hub (~1,883 lines)
+│   │   ├── coreBoot.js                  # Core state & init (~673 lines)
+│   │   ├── featureBoot.js               # Feature module loading (~1,470 lines)
+│   │   └── uiBoot.js                    # UI event handlers (~406 lines)
 │   ├── core/                            # Essential system modules
 │   ├── task/                            # Task management system (7 modules)
 │   ├── cycle/                           # Cycle management system (5 modules)
@@ -231,12 +236,36 @@ web/
 
 The `/modules/` directory contains 46 ES6 modules organized into 11 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
 
+### `boot/` - Boot Sequence Modules (Dec 2025)
+**Purpose:** Application boot orchestration split into focused files
+**When to add here:** Only boot-related code (initialization, DI wiring, UI setup)
+
+- `orchestrator.js` (1,883 lines) - DI wiring hub, coordinates boot sequence
+- `coreBoot.js` (673 lines) - Core state, AppState, migration, sets `window.AppBootStarted`
+- `featureBoot.js` (1,470 lines) - Feature module loading and DI wiring
+- `uiBoot.js` (406 lines) - UI event handlers, loader helpers, device detection
+
+**Philosophy:** Split from monolithic `miniCycle-scripts.js` for better debuggability. Each file can be uploaded independently for AI-assisted debugging.
+
+**Load Order:**
+```
+miniCycle-main.js (entrypoint)
+  → modules/boot/orchestrator.js
+      → modules/boot/coreBoot.js (sets AppBootStarted immediately)
+      → modules/boot/featureBoot.js (DI wiring)
+      → modules/boot/uiBoot.js (UI handlers)
+```
+
+---
+
 ### `core/` - Essential System Modules
 **Purpose:** Foundation modules required for app initialization
-**When to add here:** Never. Core is frozen - only appState and appInit belong here.
+**When to add here:** Never. Core is frozen - only appState, appInit, and constants belong here.
 
 - `appState.js` (415 lines) - Centralized state management with localStorage persistence
 - `appInit.js` (186 lines) - Two-phase initialization system
+- `appGlobalState.js` (266 lines) - Global runtime state and feature flags
+- `constants.js` - Application constants
 
 **Philosophy:** Core modules are special - they initialize before everything else and are dependency-injected into other modules.
 
@@ -391,7 +420,7 @@ The `/modules/` directory contains 46 ES6 modules organized into 11 logical grou
 **Reason:** "Show me an example routine" vs "Explain how recurring tasks work" are different needs.
 
 ### Why `miniCycleGames/` instead of `games/`?
-**Namespacing:** Consistent with `miniCycle.html`, `miniCycle-scripts.js`
+**Namespacing:** Consistent with `miniCycle.html`, `miniCycle-main.js`
 **Reason:** If we add other games or features, the naming convention is established.
 
 ---
@@ -421,6 +450,17 @@ The `/modules/` directory contains 46 ES6 modules organized into 11 logical grou
 - **After:** Active docs in `docs/`, completed work in `docs/archive/`
 - **Impact:** Easier to find current vs historical docs
 - **Key commits:** `ec40148`
+
+### Phase 5: Boot File Split (Dec 11, 2025)
+- **Before:** 3,800-line monolithic `miniCycle-scripts.js` in root
+- **After:** 4 focused boot files in `modules/boot/`:
+  - `orchestrator.js` (1,883 lines) - DI wiring coordination
+  - `coreBoot.js` (673 lines) - Core state & init
+  - `featureBoot.js` (1,470 lines) - Feature module loading
+  - `uiBoot.js` (406 lines) - UI event handlers
+- **Entrypoint:** `miniCycle-main.js` (133 lines) in root
+- **Impact:** Better debuggability, each file uploadable for AI debugging
+- **Key docs:** `docs/future-work/BOOT_FILE_SPLIT_PLAN.md`
 
 ---
 
@@ -577,7 +617,7 @@ If we add a build step (Vite, Rollup, etc.):
 ### Code Splitting
 To reduce initial bundle size:
 1. Features already isolated in `features/`
-2. Dynamic imports already used in `miniCycle-scripts.js`
+2. Dynamic imports already used in boot files (`modules/boot/`)
 3. Could load themes, stats, games on-demand
 4. Service worker already handles caching
 

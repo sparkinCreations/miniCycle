@@ -157,17 +157,17 @@ export class DeviceDetectionManager {
 }
 ```
 
-### Example 3: Main Script Integration
+### Example 3: Boot Orchestrator Integration
 
 ```javascript
-// miniCycle-scripts.js
+// modules/boot/orchestrator.js (DI wiring hub)
 
-document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Load appInit
-    const { appInit } = await import('./utilities/appInitialization.js');
+async function initApp() {
+    // 1. Load appInit (via coreBoot.js)
+    const { appInit } = await import('../core/appInit.js');
 
-    // 2. Initialize AppState and load data
-    const { createStateManager } = await import('./utilities/state.js');
+    // 2. Initialize AppState and load data (via coreBoot.js)
+    const { createStateManager } = await import('../core/appState.js');
     window.AppState = createStateManager({ /* deps */ });
     await window.AppState.init();
 

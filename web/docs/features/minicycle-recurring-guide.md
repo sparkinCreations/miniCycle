@@ -524,7 +524,7 @@ The recurring task system is organized across multiple files following miniCycle
 ```
 User Action (UI)
     ↓
-miniCycle-scripts.js (main app)
+modules/boot/orchestrator.js (main app)
     ↓
 recurringIntegration.js (wiring/setup)
     ↓                    ↓
@@ -535,7 +535,7 @@ AppState.update() ← Both write here
 ```
 
 **Initialization Flow:**
-1. **App starts** → `miniCycle-scripts.js` loads modules
+1. **App starts** → `modules/boot/orchestrator.js` loads modules
 2. **Integration loads** → `recurringIntegration.js` imports core and panel
 3. **Dependencies configured** → Core receives AppState functions via DI
 4. **Panel wired** → Panel callbacks connected to core functions
@@ -623,7 +623,7 @@ configureRecurringCoreDeps({
 
 **Module Loading:**
 ```javascript
-// miniCycle-scripts.js loads in order:
+// modules/boot/orchestrator.js loads in order:
 import { appInit } from './utilities/appInitialization.js';
 
 // After core systems ready:
@@ -655,7 +655,7 @@ await import('./utilities/recurringIntegration.js');
 - Calls `applyRecurringToTaskSchema25()` from recurringCore
 - Manages task options menu interactions
 
-**`/miniCycle-scripts.js`** - Main Application
+**`/modules/boot/orchestrator.js`** - Main Application
 - Orchestrates all modules
 - Calls `completeMiniCycle()` which triggers recurring task deletion
 - Loads recurring modules during Phase 2 initialization
@@ -671,7 +671,7 @@ await import('./utilities/recurringIntegration.js');
       ├── taskCore.js          - Task CRUD
       └── taskEvents.js        - UI event handling
 
-/miniCycle-scripts.js            - Main orchestrator
+/modules/boot/orchestrator.js            - Main orchestrator
 ```
 
 ### Storage Schema

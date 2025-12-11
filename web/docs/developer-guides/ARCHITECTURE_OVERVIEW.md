@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 7, 2025
+**Last Updated**: December 11, 2025
 
 ---
 
@@ -24,7 +24,7 @@
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Main Script** | ~3,800 lines | DI wiring hub |
+| **Boot Files** | 4 files | Split Dec 2025 for debuggability |
 | **Modules** | 45+ modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
@@ -32,7 +32,7 @@
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
-**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. The main script (`miniCycle-scripts.js`) is the sole wiring hub.
+**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. The boot orchestrator (`modules/boot/orchestrator.js`) is the DI wiring hub.
 
 ---
 
@@ -61,7 +61,7 @@ Architecture:
 ├─ Strict Dependency Injection
 ├─ Object.defineProperties for lazy getters
 ├─ 2-phase initialization (appInit)
-└─ Single wiring hub (miniCycle-scripts.js)
+└─ Boot file split (orchestrator.js is DI wiring hub)
 ```
 
 ---
@@ -95,11 +95,11 @@ export class MyModule {
 
 ### Wiring Hub
 
-`miniCycle-scripts.js` is the **only place** where modules are connected:
+`modules/boot/orchestrator.js` is the **only place** where modules are connected:
 
 ```javascript
-// In miniCycle-scripts.js
-const { MyModule, setModuleDependencies } = await import('./modules/myModule.js');
+// In modules/boot/orchestrator.js (DI wiring hub)
+const { MyModule, setModuleDependencies } = await import('../myModule.js');
 
 setModuleDependencies({
     get AppState() { return window.AppState; },  // Lazy getter
@@ -107,6 +107,15 @@ setModuleDependencies({
 });
 
 const myModule = new MyModule();
+```
+
+**Boot File Structure (Dec 2025):**
+```
+miniCycle-main.js (entrypoint, ~133 lines)
+  → modules/boot/orchestrator.js (DI wiring hub, ~1,883 lines)
+      → modules/boot/coreBoot.js (core state, ~673 lines)
+      → modules/boot/featureBoot.js (feature loading, ~1,470 lines)
+      → modules/boot/uiBoot.js (UI handlers, ~406 lines)
 ```
 
 See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
@@ -118,12 +127,18 @@ See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
 ```
 web/
 ├── miniCycle.html                   # Main entry point
-├── miniCycle-scripts.js             # DI wiring hub (~3,800 lines)
+├── miniCycle-main.js                # Entrypoint (~133 lines)
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker
 │
 ├── modules/                          # 46 ES6 modules (all strict DI)
-│   ├── core/                        # Core systems (3 modules)
+│   ├── boot/                        # Boot sequence (Dec 2025 split)
+│   │   ├── orchestrator.js          # DI wiring hub (~1,883 lines)
+│   │   ├── coreBoot.js              # Core state & init (~673 lines)
+│   │   ├── featureBoot.js           # Feature loading (~1,470 lines)
+│   │   └── uiBoot.js                # UI handlers (~406 lines)
+│   │
+│   ├── core/                        # Core systems (4 modules)
 │   │   ├── appState.js              # Centralized state management
 │   │   ├── appInit.js               # 2-phase initialization
 │   │   └── constants.js             # App constants
@@ -202,7 +217,7 @@ web/
 **The Heart of miniCycle**
 
 ```javascript
-// From miniCycle-scripts.js (real code)
+// From modules/boot/orchestrator.js (real code)
 
 // When user checks off the last task:
 function checkForAutoReset() {
@@ -335,11 +350,11 @@ class MyModule {
 }
 ```
 
-**Wiring in miniCycle-scripts.js:**
+**Wiring in modules/boot/orchestrator.js:**
 
 ```javascript
-// AppState is created and wired in the main script
-const { createStateManager } = await import('./modules/core/appState.js');
+// AppState is created and wired in the boot orchestrator
+const { createStateManager } = await import('../core/appState.js');
 window.AppState = createStateManager({
     showNotification: deps.utils.showNotification,
     storage: localStorage,

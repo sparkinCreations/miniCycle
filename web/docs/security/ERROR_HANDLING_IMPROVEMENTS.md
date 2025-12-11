@@ -30,7 +30,7 @@ Comprehensive error handling improvements implemented across miniCycle to preven
 - ✅ Error log export for debugging
 
 **Integration:**
-- Loaded in `miniCycle-scripts.js` at line 328 (immediately after GlobalUtils)
+- Loaded in `modules/boot/orchestrator.js` at line 328 (immediately after GlobalUtils)
 - Available globally as `window.ErrorHandler`
 
 **Smart Error Messages:**

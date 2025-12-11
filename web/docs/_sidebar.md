@@ -20,6 +20,7 @@
   * [Documentation Index](developer-guides/INDEX.md)
   * [Architecture Overview](developer-guides/ARCHITECTURE_OVERVIEW.md)
   * [Folder Structure](developer-guides/FOLDER_STRUCTURE.md)
+  * [DI Patterns](developer-guides/DI_PATTERNS.md)
   * [Development Workflow](developer-guides/DEVELOPMENT_WORKFLOW.md)
   * [Module System Guide](developer-guides/MODULE_SYSTEM_GUIDE.md)
   * [AppInit System](developer-guides/APPINIT_SYSTEM.md)

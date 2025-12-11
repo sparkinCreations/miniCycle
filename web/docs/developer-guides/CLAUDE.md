@@ -36,11 +36,11 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 7, 2025 - Verified)
+### Current State (December 11, 2025 - Verified)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
-| Main script | ~3,700 lines | ~3,800 lines | — | DI wiring hub |
+| Boot files | 1 monolithic | **4 focused files** | — | Split Dec 2025 |
 | Modules | 43 files | **45+ files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | `window.*` references (modules/) | ~748 | **~205** | <50 | **73%** |
@@ -82,11 +82,11 @@ export class MyModule {
 
 ### The Wiring Layer
 
-`miniCycle-scripts.js` is the **only place** where dependencies are wired:
+`modules/boot/orchestrator.js` is the **only place** where dependencies are wired:
 
 ```javascript
-// In miniCycle-scripts.js - THE wiring hub
-const { MyModule, setModuleDependencies } = await import('./modules/path/myModule.js');
+// In modules/boot/orchestrator.js - THE wiring hub
+const { MyModule, setModuleDependencies } = await import('../path/myModule.js');
 
 // Wire BEFORE creating instance
 setModuleDependencies({
@@ -98,10 +98,19 @@ setModuleDependencies({
 const myModule = new MyModule();
 ```
 
+**Boot File Structure (Dec 2025):**
+```
+miniCycle-main.js (entrypoint, ~133 lines)
+  → modules/boot/orchestrator.js (DI wiring hub, ~1,883 lines)
+      → modules/boot/coreBoot.js (core state, ~673 lines)
+      → modules/boot/featureBoot.js (feature loading, ~1,470 lines)
+      → modules/boot/uiBoot.js (UI handlers, ~406 lines)
+```
+
 ### Remaining `window.*` Usage
 
 The ~205 `window.*` references in modules are:
-1. **Intentional backward-compat wrappers** in main script (for HTML onclick handlers)
+1. **Intentional backward-compat wrappers** in boot orchestrator (for HTML onclick handlers)
 2. **DOM APIs** like `window.innerWidth`, `window.addEventListener`
 3. **Console/debugging** references being phased out
 
@@ -214,7 +223,7 @@ class MyModule {
 
 **3. Wire dependencies BEFORE creating instances:**
 ```javascript
-// In miniCycle-scripts.js
+// In modules/boot/orchestrator.js
 setModuleDependencies({ /* deps */ });  // First!
 const instance = new MyModule();         // Then create
 ```
@@ -253,7 +262,8 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 | Folder | Purpose | Modules |
 |--------|---------|---------|
-| `core/` | AppState, appInit (frozen) | 3 |
+| `boot/` | Boot sequence (Dec 2025 split) | 4 |
+| `core/` | AppState, appInit (frozen) | 4 |
 | `task/` | Task CRUD, DOM, events, drag-drop | 7 |
 | `cycle/` | Cycle management, switching, migration | 5 |
 | `recurring/` | Recurring task templates and panel | 3 |
@@ -286,7 +296,8 @@ Every module follows this pattern:
 | Lite version | `lite/miniCycle-lite.html` |
 | State management | `modules/core/appState.js` |
 | Initialization | `modules/core/appInit.js` |
-| DI wiring hub | `miniCycle-scripts.js` |
+| DI wiring hub | `modules/boot/orchestrator.js` |
+| Entrypoint | `miniCycle-main.js` |
 
 ---
 

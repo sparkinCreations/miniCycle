@@ -58,7 +58,7 @@ if (typeof window !== 'undefined') {
 
 ### **2. Versioned Module Imports with withV() Helper**
 ```javascript
-// miniCycle-scripts.js - Load version helper
+// modules/boot/orchestrator.js - Load version helper
 const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
 // Exception: appInit must stay un-versioned (singleton pattern)

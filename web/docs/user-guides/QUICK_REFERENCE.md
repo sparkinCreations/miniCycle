@@ -21,7 +21,7 @@ python3 -m http.server 8080
 
 **First code change:**
 ```javascript
-// Add to miniCycle-scripts.js
+// Add to modules/boot/orchestrator.js
 document.addEventListener('DOMContentLoaded', () => {
     showNotification('👋 Welcome!', 'success', 3000);
 });
@@ -57,14 +57,19 @@ const morningRoutine = {
 
 | Metric | Value |
 |--------|-------|
-| Main Script | 3,674 lines (down from 15,677) ✅ |
-| Reduction | 74.8% achieved! 🎉 |
-| Modules | 33 modules (12,003 lines extracted) |
-| Core Functions | 14 (orchestration only) |
+| Boot Files | 4 files (~4,400 lines total) |
+| Modules | 46+ modules (all strict DI) |
 | Schema Version | 2.5 |
-| App Version | 1.336 |
-| Test Coverage | 100% (958/958 tests) ✅ |
+| App Version | 1.470 |
+| Test Coverage | 100% (1458 tests) ✅ |
 | Browser Support | Modern + ES5 |
+
+**Boot File Structure (Dec 2025):**
+- `miniCycle-main.js` (133 lines) - Entrypoint
+- `modules/boot/orchestrator.js` (1,883 lines) - DI wiring
+- `modules/boot/coreBoot.js` (673 lines) - Core state
+- `modules/boot/featureBoot.js` (1,470 lines) - Feature loading
+- `modules/boot/uiBoot.js` (406 lines) - UI handlers
 
 ### Tech Stack
 
@@ -79,7 +84,7 @@ PWA: Service Worker v109, Cache-first, Offline
 ```
 web/
 ├── miniCycle.html              # Main entry
-├── miniCycle-scripts.js        # Core app (3,674 lines) - 74.8% reduction! ✅
+├── modules/boot/orchestrator.js        # Core app (3,674 lines) - 74.8% reduction! ✅
 ├── miniCycle-styles.css        # Styles
 ├── service-worker.js           # PWA (v82)
 ├── utilities/                  # 33 modules (12,003 lines extracted)
@@ -409,7 +414,7 @@ canRedo()  // boolean
 
 ```javascript
 // 1. Edit files directly (no build step!)
-// miniCycle-scripts.js, utilities/*.js, miniCycle-styles.css
+// modules/boot/orchestrator.js, utilities/*.js, miniCycle-styles.css
 
 // 2. Refresh browser to see changes
 
@@ -432,7 +437,7 @@ window.myModule = myModule;
 ```
 
 ```javascript
-// Import in miniCycle-scripts.js
+// Import in modules/boot/orchestrator.js
 document.addEventListener('DOMContentLoaded', async () => {
     await import('./utilities/myModule.js');
     console.log('✅ MyModule loaded');
@@ -776,7 +781,7 @@ window.exportDebugData()                 // Debug package
 - **user-manual.html** - End-user documentation
 
 ### Code Entry Points
-- **miniCycle-scripts.js** - Start here for main app logic (3,674 lines) ✅
+- **modules/boot/orchestrator.js** - Start here for main app logic (3,674 lines) ✅
 - **utilities/state.js** - AppState implementation (415 lines)
 - **utilities/notifications.js** - Notification system (1,036 lines)
 - **utilities/statsPanel.js** - Stats & achievements (1,047 lines)
@@ -807,15 +812,14 @@ window.exportDebugData()                 // Debug package
 
 ---
 
-**Version**: 1.336 | **Last Updated**: October 27, 2025
+**Version**: 1.470 | **Last Updated**: December 11, 2025
 **Maintained By**: sparkinCreations
 
-**✅ MODULARIZATION COMPLETE!**
-- Main script: 3,674 lines (74.8% reduction from 15,677)
-- 33 modules extracted (12,003 lines)
-- 14 core orchestration functions remain
-- 100% test coverage (958/958 tests passing) ✅
+**✅ MODULARIZATION & BOOT SPLIT COMPLETE!**
+- Boot files: 4 focused files (~4,400 lines total)
+- 46+ modules (all strict DI)
+- 100% test coverage (1458 tests passing) ✅
 
-**Optional Future Work:** See [REMAINING_EXTRACTIONS_ANALYSIS.md](../future-work/REMAINING_EXTRACTIONS_ANALYSIS.md) for 19 optional functions that could reduce main script to ~2,500 lines.
+**Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../future-work/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.
 
 **Questions?** Check console, use testing modal, review code comments!

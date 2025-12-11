@@ -1,6 +1,6 @@
 # DI Patterns Guide
 
-**Last Updated:** December 6, 2025
+**Last Updated:** December 11, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
 This document covers the dependency injection patterns used in miniCycle. All 46 modules follow these patterns.
@@ -12,7 +12,7 @@ This document covers the dependency injection patterns used in miniCycle. All 46
 1. [Core Pattern](#core-pattern-module-level-_deps-with-late-injection)
 2. [Object.defineProperties (Critical)](#objectdefineproperties-critical)
 3. [Instance Getter Pattern](#instance-getter-pattern)
-4. [Wiring in miniCycle-scripts.js](#wiring-in-minicycle-scriptsjs)
+4. [Wiring in orchestrator.js](#wiring-in-orchestratorjs)
 5. [Complete Module Template](#complete-module-template)
 6. [Common Mistakes](#common-mistakes)
 7. [All DI Modules](#all-di-modules)
@@ -27,7 +27,7 @@ Every module follows this structure:
 // Module-level deps container
 let _deps = {};
 
-// Called from miniCycle-scripts.js BEFORE creating instances
+// Called from modules/boot/orchestrator.js BEFORE creating instances
 export function setModuleDependencies(dependencies) {
     // CRITICAL: Use Object.defineProperties to preserve lazy getters
     const descriptors = Object.getOwnPropertyDescriptors(dependencies);
@@ -85,7 +85,7 @@ export function setModuleDependencies(dependencies) {
 
 ### Why This Matters
 
-When wiring dependencies in `miniCycle-scripts.js`:
+When wiring dependencies in `modules/boot/orchestrator.js`:
 
 ```javascript
 // Wiring happens BEFORE AppState is created
@@ -159,17 +159,17 @@ class MyModule {
 
 ---
 
-## Wiring in miniCycle-scripts.js
+## Wiring in orchestrator.js
 
-`miniCycle-scripts.js` is the **only place** where dependencies are connected.
+`modules/boot/orchestrator.js` is the **only place** where dependencies are connected.
 
 ### Complete Wiring Example
 
 ```javascript
-// In miniCycle-scripts.js
+// In modules/boot/orchestrator.js (DI wiring hub)
 
 // 1. Import setter and module
-const { MyModule, setModuleDependencies } = await import(withV('./modules/path/myModule.js'));
+const { MyModule, setModuleDependencies } = await import(withV('../path/myModule.js'));
 
 // 2. Wire dependencies BEFORE creating instance
 setModuleDependencies({
@@ -224,7 +224,7 @@ setModuleDependencies({
 let _deps = {};
 
 /**
- * Set module dependencies. Called from miniCycle-scripts.js.
+ * Set module dependencies. Called from modules/boot/orchestrator.js.
  * Uses Object.defineProperties to preserve lazy getters.
  */
 export function setMyModuleDependencies(dependencies) {

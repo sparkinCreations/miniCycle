@@ -133,7 +133,7 @@ Libraries focus on drag-and-drop but we needed:
 - Logs helpful warnings
 
 #### 2. **AppGlobalState (Runtime)**
-**Location:** `miniCycle-scripts.js`
+**Location:** `modules/boot/orchestrator.js`
 
 **Properties:**
 ```javascript
@@ -1482,7 +1482,7 @@ document.addEventListener("drop", (event) => {
 utilities/task/
 └── dragDropManager.js         Main implementation (707 lines)
 
-miniCycle-scripts.js            Integration point
+modules/boot/orchestrator.js            Integration point
   ├── initDragDropManager()     Initialize with dependencies
   ├── setupFinalTaskInteractions()  Enable drag on tasks
   └── renderTasks()             Restore arrow visibility
@@ -1544,7 +1544,7 @@ class DragDropManager {
 
 ```javascript
 // 1. App initialization starts
-miniCycle-scripts.js → init()
+modules/boot/orchestrator.js → init()
 
 // 2. Wait for core systems
 appInit.waitForCore() // AppState + data ready
