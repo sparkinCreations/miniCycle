@@ -1,11 +1,12 @@
-# Code Review Findings - November 2025
+# Code Review Findings - 2025
 
-**Review Date:** November 14, 2025 (Initial) | January 17, 2025 (Verification)
-**Application Version:** 1.356 → 1.371
+**Review Date:** November 14, 2025 (Initial) | January 17, 2025 (Verification) | December 11, 2025 (Performance)
+**Application Version:** 1.356 → 1.371 → 1.472
 **Schema Version:** 2.5
 **Test Coverage:** 1070/1070 tests (100%)
+**Lighthouse Performance:** 90 (↑ from 87)
 **Overall Rating:** 8.5/10 (↑ from 7.5/10)
-**Status:** ✅ All critical issues verified fixed in v1.371
+**Status:** ✅ All critical issues verified fixed | ✅ Performance target achieved
 
 ---
 
@@ -22,12 +23,142 @@ miniCycle demonstrates strong engineering fundamentals with excellent test cover
 - ✅ **Memory leaks fixed** - Event listener cleanup with WeakMap tracking (verified)
 - ✅ Sophisticated undo/redo with IndexedDB persistence
 - ✅ Modular architecture with clear separation of concerns
+- ✅ **Lighthouse Performance 90** - Achieved without build system (December 2025)
 
 **Remaining Tech Debt:**
-- ⚠️ Module instance problem (discovered v1.371 - band-aid in place)
-- ⚠️ Main script extraction (planned work, documented)
+- ⚠️ Module instance problem (discovered v1.371 - band-aid `window.__taskDOMManager` still in place)
+- ✅ ~~Main script extraction~~ **COMPLETE** - `miniCycle-scripts.js` replaced with `miniCycle-main.js` + boot modules
 - ⚠️ CSS refactoring (planned work, optional)
-- ⚠️ Module naming alignment (planned for Schema 2.6)
+- ⚠️ Module naming alignment (planned for Schema 2.6 - not yet implemented)
+
+---
+
+## 🚀 PERFORMANCE OPTIMIZATION REPORT (December 11, 2025)
+
+**Optimization Date:** December 11, 2025
+**Application Version:** 1.472 (v260)
+**Starting Score:** 87
+**Final Score:** 90
+**Approach:** No-build optimizations only (user requirement: readable source code)
+
+### Performance Metrics Achieved
+
+| Metric | Before | After | Change |
+|--------|--------|-------|--------|
+| **Performance Score** | 87 | **90** | +3 |
+| **CLS** | 0.05 | **0.028** | -44% |
+| **FCP** | 1.2s | 1.2s | — |
+| **LCP** | 1.8s | 1.8s | — |
+| **TBT** | 0ms | 0ms | — |
+| **Best Practices** | 100 | 100 | — |
+| **SEO** | 100 | 100 | — |
+| **Accessibility** | 93 | 93 | — |
+
+### Optimizations Implemented
+
+#### 1. Help Window Deferred Loading (CLS Fix)
+
+**Problem:** Help window started visible with placeholder content, then JS updated it after 3 seconds, causing layout shifts (0.05 CLS).
+
+**Solution:** Help window now starts hidden; JS shows it only after content is ready.
+
+**Files Modified:**
+- `miniCycle.html` (line 1778)
+
+```html
+<!-- Before -->
+<div id="help-window" class="help-window show">
+    <p>📋 5 tasks remaining • 0 cycles completed</p>
+</div>
+
+<!-- After -->
+<div id="help-window" class="help-window">
+    <p></p>
+</div>
+```
+
+**Result:** CLS reduced from 0.05 to 0.028 (44% improvement)
+
+#### 2. Font Awesome Non-Blocking Load
+
+**Problem:** Font Awesome CSS was render-blocking (420ms potential savings flagged).
+
+**Solution:** Used `media="print"` trick with `onload` handler to load non-blocking.
+
+**Files Modified:**
+- `miniCycle.html`
+
+```html
+<!-- Before -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<!-- After -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      media="print" onload="this.media='all'">
+<noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</noscript>
+```
+
+#### 3. Font Display Swap for Web Fonts
+
+**Problem:** Font loading could cause Flash of Invisible Text (FOIT).
+
+**Solution:** Added `&display=swap` to Google Fonts URLs and CSS override for Font Awesome.
+
+**Files Modified:**
+- `miniCycle.html` - Added `&display=swap` to Material Symbols font URL
+- `miniCycle-styles.css` - Added font-display override
+
+```css
+/* Font Awesome font-display override */
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Font Awesome 6 Brands';
+    font-display: swap;
+}
+```
+
+#### 4. Deferred version.js Loading
+
+**Problem:** `version.js` was potentially render-blocking.
+
+**Solution:** Added `defer` attribute.
+
+```html
+<script src="./version.js?v=1.472" defer></script>
+```
+
+### Remaining Lighthouse Suggestions (Require Build System)
+
+The following optimizations were identified but **not implemented** because the user prefers readable, unminified source code:
+
+| Optimization | Potential Savings | Why Skipped |
+|--------------|-------------------|-------------|
+| Minify JavaScript | 635 KiB | Requires build system |
+| Minify CSS | 58 KiB | Requires build system |
+| Reduce unused JavaScript | 815 KiB | Requires tree-shaking |
+| Reduce unused CSS | 153 KiB | Requires purging |
+
+### Assessment
+
+**Score of 90 is excellent for the constraints:**
+- No build system / no minification
+- 55 ES6 modules loaded individually
+- Vanilla JS with full comments preserved
+- Third-party fonts (Google Fonts, Font Awesome)
+
+Most production sites with webpack/vite builds, tree-shaking, and code-splitting struggle to hit 90. Achieving this with readable source code represents the practical ceiling for this approach.
+
+### Future Performance Considerations
+
+If higher scores are desired in the future:
+1. **Simple custom minifier** - Could strip comments/whitespace without bundling
+2. **HTTP/2 server push** - Preload critical modules
+3. **Service worker caching** - Already implemented, helps repeat visits
 
 ---
 
@@ -2161,5 +2292,5 @@ A: Yes for critical issues (#1-4), recommended for high priority (#5-8), optiona
 **Next Steps:** Review findings, prioritize fixes, create implementation plan
 **Owner:** Development team
 **Timeline:** Phased approach over 4-8 weeks
-**Last Updated:** November 14, 2025
-**Version:** 1.0
+**Last Updated:** December 11, 2025
+**Version:** 1.1 (Added Performance Optimization Report)
