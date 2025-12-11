@@ -237,11 +237,12 @@ export class CycleManager {
             this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
             // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-            // Use window.AppState directly to ensure we're updating the global singleton
-            if (window.AppState && typeof window.AppState.init === 'function') {
-                window.AppState.data = fullSchemaData;
-                window.AppState.isInitialized = true;
-                window.AppState.isDirty = false; // Mark as clean since we just saved
+            // Use injected AppState (DI pattern) with fallback to window.AppState
+            const appState = this.deps.AppState || window.AppState;
+            if (appState && typeof appState.init === 'function') {
+                appState.data = fullSchemaData;
+                appState.isInitialized = true;
+                appState.isDirty = false; // Mark as clean since we just saved
                 console.log('✅ AppState synchronized with new cycle data');
             }
 
@@ -315,11 +316,12 @@ export class CycleManager {
         this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
         // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-        // Use window.AppState directly to ensure we're updating the global singleton
-        if (window.AppState && typeof window.AppState.init === 'function') {
-            window.AppState.data = fullSchemaData;
-            window.AppState.isInitialized = true;
-            window.AppState.isDirty = false; // Mark as clean since we just saved
+        // Use injected AppState (DI pattern) with fallback to window.AppState
+        const appState = this.deps.AppState || window.AppState;
+        if (appState && typeof appState.init === 'function') {
+            appState.data = fullSchemaData;
+            appState.isInitialized = true;
+            appState.isDirty = false; // Mark as clean since we just saved
             console.log('✅ AppState synchronized with new cycle data');
         }
 
