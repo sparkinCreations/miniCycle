@@ -1,3 +1,13 @@
+/* Font Awesome font-display override to prevent CLS from icon font loading */
+@font-face {
+    font-family: 'Font Awesome 6 Free';
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Font Awesome 6 Brands';
+    font-display: swap;
+}
+
 /* Global Styles */
 body {
     background: linear-gradient(135deg, #4c79ff, #74c0fc);
@@ -695,10 +705,12 @@ display: block;
 }
 
 .progress-bar {
-    width: 0%;
+    width: 100%;
     min-height: 12px;
     background: #82db8c;
-    transition: width 0.3s ease-in-out;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease-in-out;
 }
 /*
 #cycleMessage {
@@ -748,26 +760,27 @@ border-radius: 5px;
     width: 100%;
     padding: 10px 10px;
     z-index: 1;
-    display: fixed; /* Always visible */
+    display: flex; /* Always flex - never toggle to prevent CLS */
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: 16px;
     color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    opacity: 1; 
+    transition: opacity 0.3s ease;
+    opacity: 1; /* Start visible since HTML has show class */
     margin-top: 20px;
 }
 
 .help-window.show {
     opacity: 1;
-    transform: scale(1);
+    visibility: visible;
 }
 
 .help-window.hide {
     opacity: 0;
-    transform: scale(0.95);
+    visibility: hidden; /* Use visibility instead of pointer-events for better CLS */
 }
 
 .help-window h4 {
@@ -7037,6 +7050,7 @@ body.dark-mode.theme-golden-glow {
     stroke-dasharray: 251.2; /* Circumference = 2 * π * r = 2 * π * 40 ≈ 251.2 */
     stroke-dashoffset: 251.2; /* Start with 0% filled */
     transition: stroke-dashoffset 0.6s ease;
+    will-change: stroke-dashoffset; /* Hint browser to optimize animation */
   }
 
   .doughnut-text {
@@ -7367,7 +7381,8 @@ body.dark-mode.theme-golden-glow {
 
 .loader-logo {
     width: 120px;
-    height: 120px;
+    height: 96px; /* Matches 1280x1024 aspect ratio (1.25:1) */
+    object-fit: contain; /* Preserve aspect ratio to prevent distortion */
     animation: spin 2s linear infinite;
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
 }

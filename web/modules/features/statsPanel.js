@@ -729,7 +729,7 @@ export class StatsPanelManager {
 
         // ✅ Progress bar now shows progress to next milestone, not task completion
         if (this.elements.statsProgressBar) {
-            this.elements.statsProgressBar.style.width = milestoneProgressPercent;
+            this.elements.statsProgressBar.style.transform = `scaleX(${milestoneProgress / 100})`;
             this.elements.statsProgressBar.setAttribute('aria-label',
                 `${globalCyclesCompleted} of ${nextMilestone} cycles to next milestone`);
         }

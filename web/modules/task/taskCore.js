@@ -902,8 +902,8 @@ export class TaskCore {
 
             // Animation: Show progress bar becoming full first
             if (progressBar) {
-                progressBar.style.width = "100%";
-                progressBar.style.transition = "width 0.2s ease-out";
+                progressBar.style.transform = "scaleX(1)";
+                progressBar.style.transition = "transform 0.2s ease-out";
             }
 
             // Wait for animation, then reset tasks
@@ -1005,8 +1005,8 @@ export class TaskCore {
 
                 // Animate progress bar reset
                 if (progressBar) {
-                    progressBar.style.transition = "width 0.3s ease-in";
-                    progressBar.style.width = "0%";
+                    progressBar.style.transition = "transform 0.3s ease-in";
+                    progressBar.style.transform = "scaleX(0)";
 
                     setTimeout(() => {
                         progressBar.style.transition = "";
