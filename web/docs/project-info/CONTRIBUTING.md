@@ -28,7 +28,7 @@ miniCycle is built with **vanilla JavaScript (ES6 modules)** and has **dependenc
 ```
 index.html
    ↓
-miniCycle-scripts.js
+modules/boot/orchestrator.js
    ↓
 appInitialization.js  →  appInit.waitForCore()
    ↓

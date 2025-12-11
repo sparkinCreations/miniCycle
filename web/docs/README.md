@@ -72,20 +72,26 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 | Metric | Value |
 |--------|-------|
-| Main script | ~3,800 lines |
-| Modules | 45 files |
-| `window.*` globals created | ~68 |
-| `window.*` globals consumed | ~205 |
+| Boot files | 4 files (~4,400 lines total) |
+| Modules | 46+ files |
+| DI completion | 100% (no `\|\| window.*` fallbacks) |
 | Test coverage | 1458 tests (100%) |
+
+**Boot File Structure:**
+- `miniCycle-main.js` (133 lines) - Entrypoint
+- `modules/boot/orchestrator.js` (1,883 lines) - DI wiring hub
+- `modules/boot/coreBoot.js` (673 lines) - Core state & init
+- `modules/boot/featureBoot.js` (1,470 lines) - Feature loading
+- `modules/boot/uiBoot.js` (406 lines) - UI handlers
 
 ### The Reality
 
-The codebase has **DI structure but global coupling**:
-- ✅ Code is organized into files
-- ✅ DI boilerplate exists in constructors
-- ❌ Modules can't be tested in isolation
-- ❌ Dependencies are invisible (not in imports)
-- ❌ Can't reuse modules elsewhere
+The codebase has **complete strict DI**:
+- ✅ Code is organized into 46+ focused modules
+- ✅ All modules use strict dependency injection
+- ✅ No `|| window.*` fallbacks remain
+- ✅ Modules can be tested in isolation
+- ✅ Boot files split for debuggability (Dec 2025)
 
 See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 

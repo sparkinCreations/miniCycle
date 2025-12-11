@@ -58,7 +58,7 @@ This is invaluable for testing touch interactions, Safari-specific behavior, and
 **Example: Add a custom notification**
 
 ```javascript
-// Open miniCycle-scripts.js and add this function anywhere
+// Open modules/boot/orchestrator.js and add this function anywhere
 
 function showWelcomeMessage() {
     showNotification('👋 Welcome to miniCycle!', 'success', 3000);

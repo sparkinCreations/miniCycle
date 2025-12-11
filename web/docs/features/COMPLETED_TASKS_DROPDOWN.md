@@ -83,9 +83,9 @@ handleTaskCompletionChange(checkbox)  [taskCore.js:487]
     ↓
 2. autoSave(null, true) → persist to localStorage
     ↓
-3. handleTaskListMovement(taskEl, true)  [miniCycle-scripts.js:3166]
+3. handleTaskListMovement(taskEl, true)  [modules/boot/orchestrator.js:3166]
     ↓
-4. moveTaskToCompleted(taskEl)  [miniCycle-scripts.js:3098]
+4. moveTaskToCompleted(taskEl)  [modules/boot/orchestrator.js:3098]
     ↓
 Task moved to #completedTaskList with fade animation
 ```
@@ -134,7 +134,7 @@ Task moved to #completedTaskList with fade animation
   - `resetTasks()` (lines 659-830)
 
 **UI Coordination:**
-- `miniCycle-scripts.js` - DOM manipulation and UI updates
+- `modules/boot/orchestrator.js` - DOM manipulation and UI updates
   - `initCompletedTasksSection()` (lines 3041-3062)
   - `organizeCompletedTasks()` (lines 3202-3226)
   - `handleTaskListMovement()` (lines 3166-3180)

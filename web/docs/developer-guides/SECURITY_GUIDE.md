@@ -288,7 +288,7 @@ taskItem.addEventListener("click", () => {
 ```
 
 **Implementation Details:**
-- **Controller Location**: `miniCycle-scripts.js:2974-3047`
+- **Controller Location**: `modules/boot/orchestrator.js:2974-3047`
 - **Handler Updates**: 7 event handlers now use the controller
 - **Permission System**: Mode-aware rules prevent conflicting handlers
 - **Benefits**: Single source of truth, consistent logging, easier debugging

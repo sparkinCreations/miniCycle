@@ -59,7 +59,7 @@ class MyNewModule {
     }
 }
 
-// In miniCycle-scripts.js
+// In modules/boot/orchestrator.js
 const myModule = new MyNewModule({
     taskDOMManager: window.__taskDOMManager,
     taskCore: window.taskCore
@@ -90,7 +90,7 @@ window.addTask(text);                        // Why import then?
 DI-pure modules receive their version via injection, not globals:
 
 ```javascript
-// In miniCycle-scripts.js (window.* OK here - it's the wiring hub)
+// In modules/boot/orchestrator.js (window.* OK here - it's the wiring hub)
 const taskCore = await initTaskCore({
     AppMeta: window.AppMeta,  // { version: '1.392' }
     // ...other deps

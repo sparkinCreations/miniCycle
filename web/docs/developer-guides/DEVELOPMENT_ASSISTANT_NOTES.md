@@ -6,7 +6,7 @@ These notes describe how the AI assistant should collaborate on this project.
 - Prefer structural solutions (DI patterns, import strategy, service worker design) over one-off patches.
 - Always ask: "What’s the root constraint here?" before suggesting cache clears, v2 files, or hard refreshes.
 
-## 2. Treat `miniCycle-scripts.js` as the Wiring Hub
+## 2. Treat `modules/boot/orchestrator.js` as the Wiring Hub
 - Single place for imports of core singletons like `appInit`.
 - Other modules should receive these via dependency injection, not import them directly.
 - When in doubt, propose "import once, pass via deps" as the default pattern.

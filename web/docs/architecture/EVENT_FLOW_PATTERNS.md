@@ -145,7 +145,7 @@ Instead of multiple handlers directly manipulating DOM, all visibility changes r
 
 ```javascript
 /**
- * ✅ ACTUAL IMPLEMENTATION (miniCycle-scripts.js:2974-3047)
+ * ✅ ACTUAL IMPLEMENTATION (modules/boot/orchestrator.js:2974-3047)
  * TaskOptionsVisibilityController - Centralized controller for task options visibility
  */
 class TaskOptionsVisibilityController {
@@ -244,9 +244,9 @@ threeDotsButton.addEventListener("click", () => {
 ```
 
 **Implementation Locations:**
-- **Controller Class**: `miniCycle-scripts.js:2974-3047`
-- **focusin/focusout**: `miniCycle-scripts.js:3080, 3090`
-- **mouseenter/mouseleave**: `miniCycle-scripts.js:3180, 3204`
+- **Controller Class**: `modules/boot/orchestrator.js:2974-3047`
+- **focusin/focusout**: `modules/boot/orchestrator.js:3080, 3090`
+- **mouseenter/mouseleave**: `modules/boot/orchestrator.js:3180, 3204`
 - **three-dots toggle**: `modules/task/taskEvents.js:243-247`
 - **focus handler**: `modules/task/taskEvents.js:360`
 
@@ -555,11 +555,11 @@ taskItem.addEventListener('focusin', () => {
  *
  * | Event            | Hover Mode | Three-Dots Mode | Location                      |
  * |------------------|------------|-----------------|-------------------------------|
- * | mouseenter       | ✅ Show    | ❌ Skip         | miniCycle-scripts.js:3180     |
- * | mouseleave       | ✅ Hide    | ❌ Skip         | miniCycle-scripts.js:3204     |
- * | focusin          | ✅ Show    | ❌ Skip (v1.359)| miniCycle-scripts.js:3080     |
- * | focusout         | ✅ Hide    | ✅ Hide         | miniCycle-scripts.js:3090     |
- * | hideTaskButtons  | ✅ Hide    | ❌ Blocked (v1.360) | miniCycle-scripts.js:3112     |
+ * | mouseenter       | ✅ Show    | ❌ Skip         | modules/boot/orchestrator.js:3180     |
+ * | mouseleave       | ✅ Hide    | ❌ Skip         | modules/boot/orchestrator.js:3204     |
+ * | focusin          | ✅ Show    | ❌ Skip (v1.359)| modules/boot/orchestrator.js:3080     |
+ * | focusout         | ✅ Hide    | ✅ Hide         | modules/boot/orchestrator.js:3090     |
+ * | hideTaskButtons  | ✅ Hide    | ❌ Blocked (v1.360) | modules/boot/orchestrator.js:3112     |
  * | three-dots       | N/A        | ✅ Toggle       | taskEvents.js:208-249         |
  *
  * ═══════════════════════════════════════════════════════════════════
@@ -1103,7 +1103,7 @@ class ModeManager {
 ✅ **TaskOptionsVisibilityController is now live in miniCycle v1.359+**
 
 All task options visibility changes now route through the centralized controller:
-- **Location**: `miniCycle-scripts.js:2974-3047`
+- **Location**: `modules/boot/orchestrator.js:2974-3047`
 - **Usage**: All 7 handlers (focusin, focusout, mouseenter, mouseleave, three-dots, focus, hideTaskButtons)
 - **Mobile Fix (v1.360)**: `hideTaskButtons()` now uses controller, preventing override of three-dots visibility on mobile
 - **Benefits**: Single source of truth, mode-aware permissions, consistent logging, no race conditions

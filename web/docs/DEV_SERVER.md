@@ -22,7 +22,7 @@ The development server sends `no-cache` headers with every response, which means
 Only logs actual requests (skips favicon spam):
 ```
 [14:23:45] GET /miniCycle.html HTTP/1.1
-[14:23:45] GET /miniCycle-scripts.js?v=1.383 HTTP/1.1
+[14:23:45] GET /modules/boot/orchestrator.js?v=1.383 HTTP/1.1
 [14:23:46] GET /modules/core/appState.js HTTP/1.1
 ```
 

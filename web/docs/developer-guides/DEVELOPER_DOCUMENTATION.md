@@ -39,41 +39,49 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 
 ## Architecture Overview
 
-### Current State (Honest Assessment)
+### Current State (December 2025)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Main Script | ~3,800 lines | Orchestration + some business logic |
-| Modules | 45 files | Organized by feature |
-| `window.*` globals | ~68 created, ~205 consumed | Reduced via strict DI |
+| Boot Files | 4 files (~4,400 lines) | Split Dec 2025 for debuggability |
+| Modules | 46+ files | Organized by feature |
+| DI Completion | 100% | No `\|\| window.*` fallbacks |
 | Test Coverage | 100% | 1458 tests passing |
 
-### The Truth About the Architecture
+**Boot File Structure:**
+- `miniCycle-main.js` (133 lines) - Entrypoint
+- `modules/boot/orchestrator.js` (1,883 lines) - DI wiring hub
+- `modules/boot/coreBoot.js` (673 lines) - Core state & init
+- `modules/boot/featureBoot.js` (1,470 lines) - Feature loading
+- `modules/boot/uiBoot.js` (406 lines) - UI handlers
 
-The codebase has **DI structure but global coupling**:
+### The Architecture
+
+The codebase uses **strict dependency injection**:
 
 ```javascript
-// Pattern EXISTS in every module:
+// All modules follow this pattern:
 constructor(dependencies = {}) {
+    const mergedDeps = { ..._deps, ...dependencies };
     this.deps = {
-        AppState: dependencies.AppState || window.AppState,
+        AppState: mergedDeps.AppState,  // No fallback!
     };
 }
 
-// But injected dependencies ARE globals:
-await initModule({
-    AppState: window.AppState,  // ← just a pointer to global
+// Wiring in modules/boot/orchestrator.js:
+setModuleDependencies({
+    get AppState() { return window.AppState; },  // Lazy getter
 });
 ```
 
 **Result:**
-- ✅ Code is organized into files
-- ✅ DI boilerplate exists
-- ❌ Modules can't be tested in isolation
-- ❌ Dependencies are invisible (not in imports)
-- ❌ Can't reuse modules elsewhere
+- ✅ Code organized into 46+ focused modules
+- ✅ All modules use strict DI
+- ✅ Modules can be tested in isolation
+- ✅ Dependencies are explicit and injected
+- ✅ Boot files split for AI-assisted debugging
 
-See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) for the full analysis.
+See [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) for detailed patterns.
 
 ---
 

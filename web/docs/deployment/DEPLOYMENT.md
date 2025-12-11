@@ -44,7 +44,7 @@ minicycle.app/
 ├── product.html                    # Landing page (redirect target)
 ├── miniCycle.html                  # Full PWA application
 ├── miniCycle-lite.html            # ES5 compatible version
-├── miniCycle-scripts.js           # Main application bundle
+├── modules/boot/orchestrator.js           # Main application bundle
 ├── miniCycle-lite-scripts.js      # Lite version bundle
 ├── service-worker.js              # PWA service worker
 ├── manifest.json                  # PWA manifest (full version)

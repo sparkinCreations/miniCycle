@@ -394,15 +394,12 @@ After each phase:
 
 ---
 
-## Skeleton Files
+## Skeleton Files (Archived)
 
-Skeleton code for each boot file is available in:
-- `docs/future-work/skeletons/app-coreBoot.skeleton.js`
-- `docs/future-work/skeletons/app-featureBoot.skeleton.js`
-- `docs/future-work/skeletons/app-uiBoot.skeleton.js`
-- `docs/future-work/skeletons/miniCycle-main.skeleton.js`
+The skeleton files that guided this implementation have been moved to:
+- `docs/archive/boot-file-skeletons/`
 
-These provide the structure and key patterns - fill in with actual code during migration.
+These were planning references that are no longer needed since the implementation is complete.
 
 ---
 

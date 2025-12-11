@@ -64,7 +64,7 @@ var APP_VERSION = self.APP_VERSION;  // ES5 compatible
 
 **3. All Dynamic Imports Use It**
 ```javascript
-// miniCycle-scripts.js
+// modules/boot/orchestrator.js
 const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
 // Every module gets versioned
@@ -150,7 +150,7 @@ version.js (this script generates it)
     ↓
 window.APP_VERSION (set by version.js)
     ↓
-miniCycle-scripts.js builds: window.AppMeta = { version: window.APP_VERSION }
+modules/boot/orchestrator.js builds: window.AppMeta = { version: window.APP_VERSION }
     ↓
 initModule({ AppMeta: window.AppMeta, ... })
     ↓
@@ -196,7 +196,7 @@ The `update-version.sh` script automates version number updates across **core mi
 **Files Updated (v4.0):**
 - **version.js** - Single source of truth (auto-generated)
 - **miniCycle.html** - ?v= params, currentVersion, meta tags
-- **miniCycle-scripts.js** - currentVersion variable
+- **modules/boot/orchestrator.js** - currentVersion variable
 - **service-worker.js** - CACHE_VERSION + APP_VERSION
 - **lite/miniCycle-lite.html**
 - **lite/miniCycle-lite-scripts.js**
@@ -293,7 +293,7 @@ Choice [1-4]: 1
 
 **Updates 23 files:**
 - 3 HTML files (miniCycle.html, lite/miniCycle-lite.html, pages/product.html)
-- 3 Core JS files (miniCycle-scripts.js, miniCycle-lite-scripts.js, service-worker.js)
+- 3 Core JS files (modules/boot/orchestrator.js, miniCycle-lite-scripts.js, service-worker.js)
 - 2 Manifests (manifest.json, manifest-lite.json)
 - 15 Utility modules (state.js, notifications.js, etc.)
 
@@ -322,8 +322,8 @@ Update pages/product.html? (Y/n): Y
 ✅ Will update pages/product.html
 
 --- Core JavaScript Files ---
-Update miniCycle-scripts.js? (Y/n): Y
-✅ Will update miniCycle-scripts.js
+Update modules/boot/orchestrator.js? (Y/n): Y
+✅ Will update modules/boot/orchestrator.js
 Update miniCycle-lite-scripts.js? (Y/n): n
 ⏭️  Skipping miniCycle-lite-scripts.js
 Update service-worker.js? (Y/n): Y
@@ -345,11 +345,11 @@ Update service-worker.js? (Y/n): Y
 
 **Example 1: Update only main app files**
 ```
-Files: miniCycle.html miniCycle-scripts.js service-worker.js
+Files: miniCycle.html modules/boot/orchestrator.js service-worker.js
 
 📋 Files to update:
   ✅ miniCycle.html
-  ✅ miniCycle-scripts.js
+  ✅ modules/boot/orchestrator.js
   ✅ service-worker.js
 ```
 
@@ -570,7 +570,7 @@ if (typeof window !== 'undefined') {
 
 ### JavaScript Files - Version Patterns
 
-**miniCycle-scripts.js (lines 381-388)**
+**modules/boot/orchestrator.js (lines 381-388)**
 
 **Before:**
 ```javascript
@@ -716,7 +716,7 @@ web/
 │   │   ├── miniCycle.html
 │   │   ├── lite/miniCycle-lite.html
 │   │   ├── pages/product.html
-│   │   ├── miniCycle-scripts.js
+│   │   ├── modules/boot/orchestrator.js
 │   │   ├── miniCycle-lite-scripts.js
 │   │   ├── service-worker.js
 │   │   ├── manifest.json
@@ -780,7 +780,7 @@ cd backup/version_update_20250115_143052
 
 ✅ Restored miniCycle.html
 ✅ Restored lite/miniCycle-lite.html
-✅ Restored miniCycle-scripts.js
+✅ Restored modules/boot/orchestrator.js
 ✅ Restored miniCycle-lite-scripts.js
 ✅ Restored service-worker.js
 ✅ Restored manifest.json
@@ -1075,7 +1075,7 @@ git diff
 git status
 
 # 4. Stage updated files
-git add miniCycle.html miniCycle-scripts.js service-worker.js manifest.json
+git add miniCycle.html modules/boot/orchestrator.js service-worker.js manifest.json
 
 # Or stage all version changes:
 git add -u
@@ -1103,7 +1103,7 @@ git push origin v1.321
 
 # Extract versions from different files
 HTML_VERSION=$(grep -oE 'app-version" content="[0-9.]*"' miniCycle.html | grep -oE '[0-9.]+')
-JS_VERSION=$(grep -oE "currentVersion = '[0-9.]*'" miniCycle-scripts.js | grep -oE '[0-9.]+')
+JS_VERSION=$(grep -oE "currentVersion = '[0-9.]*'" modules/boot/orchestrator.js | grep -oE '[0-9.]+')
 MANIFEST_VERSION=$(grep -oE '"version": "[0-9.]*"' manifest.json | grep -oE '[0-9.]+')
 
 # Check if they match
@@ -1206,7 +1206,7 @@ lite/miniCycle-lite.html
 pages/product.html
 
 # Core JavaScript (3 files)
-miniCycle-scripts.js
+modules/boot/orchestrator.js
 miniCycle-lite-scripts.js
 service-worker.js
 

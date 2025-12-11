@@ -45,7 +45,7 @@ This document summarizes the comprehensive error handling improvements and testi
 - Error log export for debugging
 
 **Integration:**
-- Loaded in `miniCycle-scripts.js` at line 328
+- Loaded in `modules/boot/orchestrator.js` at line 328
 - Available globally as `window.ErrorHandler`
 
 ### 2. Safe Utility Functions
@@ -294,7 +294,7 @@ This document summarizes the comprehensive error handling improvements and testi
 2. `modules/task/taskCore.js` - Added error handling to 8 methods
 3. `modules/cycle/cycleManager.js` - Added error handling to 3 methods
 4. `modules/testing/testing-modal.js` - Added error handling to 14 locations
-5. `miniCycle-scripts.js` - Integrated errorHandler module
+5. `modules/boot/orchestrator.js` - Integrated errorHandler module
 6. `tests/module-test-suite.html` - Added 2 new test modules
 7. `tests/automated/run-browser-tests.js` - Added 2 modules to runner
 8. `docs/TESTING_ARCHITECTURE.md` - Updated test counts
