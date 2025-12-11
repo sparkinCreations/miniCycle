@@ -33,7 +33,7 @@ const ALL_MODULES = [
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
     'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'cycleCompletion',
     'dataValidator', 'appInit', 'appState', 'helpWindowManager', 'constants', 'basicPluginSystem',
-    'accessibility', 'stress'
+    'accessibility', 'stress', 'coreBoot', 'uiBoot', 'featureBoot'
 ];
 
 // Parse command line arguments
