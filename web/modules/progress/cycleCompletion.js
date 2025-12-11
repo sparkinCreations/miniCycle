@@ -205,8 +205,8 @@ export function updateProgressBar() {
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
     // Add consistent animation for all progress updates
-    progressBar.style.transition = "width 0.2s ease-out";
-    progressBar.style.width = `${progress}%`;
+    progressBar.style.transition = "transform 0.2s ease-out";
+    progressBar.style.transform = `scaleX(${progress / 100})`;
 
     // Clear transition after animation
     setTimeout(() => {

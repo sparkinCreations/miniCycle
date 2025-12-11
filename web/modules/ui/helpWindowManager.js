@@ -276,7 +276,7 @@ export class HelpWindowManager {
 
         this.helpWindow.classList.remove('hide');
         this.helpWindow.classList.add('show');
-        this.helpWindow.style.display = 'flex';
+        // Don't toggle display - use opacity only to prevent CLS
         this.isVisible = true;
     }
 
@@ -286,10 +286,7 @@ export class HelpWindowManager {
         this.helpWindow.classList.remove('show');
         this.helpWindow.classList.add('hide');
         this.isVisible = false;
-
-        setTimeout(() => {
-            this.helpWindow.style.display = 'none';
-        }, 300);
+        // Don't toggle display - use opacity only to prevent CLS
     }
 
     destroy() {

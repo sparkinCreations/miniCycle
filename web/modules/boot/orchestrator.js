@@ -689,35 +689,89 @@ async function initApp() {
           console.warn('⚠️ Undo/redo UI init failed:', uiErr);
         }
 
-        // ✅ Initialize Testing Modal modules (Phase 3)
-        console.log('🔬 Loading testing modal modules...');
+        // ✅ LAZY LOAD Testing Modal - only loads when button is clicked
         let testingModalMod = null;
-        try {
-            testingModalMod = await import(withV('../testing/testing-modal.js'));
-            console.log('✅ Testing modal loaded');
+        let testingModalLoaded = false;
 
-            // Expose testing modal functions to window (before setup, for compatibility)
-            if (testingModalMod.openStorageViewer) window.openStorageViewer = testingModalMod.openStorageViewer;
-            if (testingModalMod.closeStorageViewer) window.closeStorageViewer = testingModalMod.closeStorageViewer;
-            if (testingModalMod.appendToTestResults) window.appendToTestResults = testingModalMod.appendToTestResults;
-            if (testingModalMod.clearTestResults) window.clearTestResults = testingModalMod.clearTestResults;
-            if (testingModalMod.exportTestResults) window.exportTestResults = testingModalMod.exportTestResults;
-            if (testingModalMod.copyTestResults) window.copyTestResults = testingModalMod.copyTestResults;
+        const openTestingBtn = document.getElementById('open-testing-modal');
+        if (openTestingBtn) {
+            openTestingBtn.addEventListener('click', async (e) => {
+                // If already loaded, the module's own click handler will open it
+                if (testingModalLoaded) return;
 
-            const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
+                e.stopPropagation();
+                console.log('🔬 Lazy loading testing modal...');
+                deps.utils.showNotification?.('🔬 Loading diagnostics...', 'info', 2000);
 
-            // Wire dependencies for testing-modal-integration (DI-pure)
-            if (testingIntegrationMod.setTestingModalDependencies) {
-                testingIntegrationMod.setTestingModalDependencies({
-                    safeAddEventListenerById: deps.utils.safeAddEventListenerById,
-                    showNotification: deps.utils.showNotification,
-                    get ConsoleCapture() { return window.ConsoleCapture; }
-                });
-            }
-            console.log('✅ Testing modal integration loaded (DI-pure)');
-        } catch (error) {
-            console.error('❌ Failed to load testing modal modules:', error);
-            console.warn('⚠️ App will continue without testing modal functionality');
+                try {
+                    // Load modules on-demand
+                    testingModalMod = await import(withV('../testing/testing-modal.js'));
+                    console.log('✅ Testing modal loaded (lazy)');
+
+                    // Expose testing modal functions to window
+                    if (testingModalMod.openStorageViewer) window.openStorageViewer = testingModalMod.openStorageViewer;
+                    if (testingModalMod.closeStorageViewer) window.closeStorageViewer = testingModalMod.closeStorageViewer;
+                    if (testingModalMod.appendToTestResults) window.appendToTestResults = testingModalMod.appendToTestResults;
+                    if (testingModalMod.clearTestResults) window.clearTestResults = testingModalMod.clearTestResults;
+                    if (testingModalMod.exportTestResults) window.exportTestResults = testingModalMod.exportTestResults;
+                    if (testingModalMod.copyTestResults) window.copyTestResults = testingModalMod.copyTestResults;
+
+                    const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
+
+                    // Wire dependencies for testing-modal-integration (DI-pure)
+                    if (testingIntegrationMod.setTestingModalDependencies) {
+                        testingIntegrationMod.setTestingModalDependencies({
+                            safeAddEventListenerById: deps.utils.safeAddEventListenerById,
+                            showNotification: deps.utils.showNotification,
+                            get ConsoleCapture() { return window.ConsoleCapture; }
+                        });
+                    }
+
+                    // Inject dependencies into Testing Modal
+                    if (testingModalMod.setTestingModalDependencies) {
+                        testingModalMod.setTestingModalDependencies({
+                            AppState: window.AppState,
+                            BackupManager: window.BackupManager,
+                            notifications: deps.utils.notifications,
+                            showNotification: deps.utils.showNotification,
+                            deleteStorageItem: (key, storageType) => {
+                                const storage = storageType === 'local' ? localStorage : sessionStorage;
+                                storage.removeItem(key);
+                            },
+                            safeAddEventListener: GlobalUtils.safeAddEventListener,
+                            safeAddEventListenerById: GlobalUtils.safeAddEventListenerById,
+                            setupAutomatedTestingFunctions: () => window.setupAutomatedTestingFunctions?.(),
+                            startAutoConsoleCapture: () => window.startAutoConsoleCapture?.(),
+                            isConsoleCapturing: () => window.consoleCapturing || false
+                        });
+                    }
+
+                    // Setup testing modal
+                    if (typeof testingModalMod.setupTestingModal === 'function') {
+                        testingModalMod.setupTestingModal();
+                        window.setupTestingModal = testingModalMod.setupTestingModal;
+                    }
+
+                    // Initialize enhancements
+                    if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
+                        testingModalMod.initializeTestingModalEnhancements();
+                        window.initializeTestingModalEnhancements = testingModalMod.initializeTestingModalEnhancements;
+                    }
+
+                    testingModalLoaded = true;
+                    console.log('✅ Testing modal initialized (lazy)');
+
+                    // Now open the modal
+                    const testingModal = document.getElementById('testing-modal');
+                    if (testingModal) {
+                        testingModal.style.display = 'flex';
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to load testing modal:', error);
+                    deps.utils.showNotification?.('❌ Failed to load diagnostics', 'error', 3000);
+                }
+            });
+            console.log('✅ Testing modal lazy loader attached');
         }
 
         // ✅ Initialize Backup Manager (DI-pure)
@@ -755,51 +809,6 @@ async function initApp() {
         } catch (error) {
             console.error('❌ Failed to load backup manager:', error);
             console.warn('⚠️ App will continue without auto-backup functionality');
-        }
-
-        // ✅ Inject dependencies into Testing Modal (DI-pure)
-        // Done after BackupManager is loaded since testing modal uses it
-        if (testingModalMod?.setTestingModalDependencies) {
-            testingModalMod.setTestingModalDependencies({
-                // State management
-                AppState: window.AppState,
-
-                // Backup system
-                BackupManager: window.BackupManager,
-
-                // Notifications
-                notifications: deps.utils.notifications,
-                showNotification: deps.utils.showNotification,
-
-                // Utility functions
-                deleteStorageItem: (key, storageType) => {
-                    const storage = storageType === 'local' ? localStorage : sessionStorage;
-                    storage.removeItem(key);
-                },
-                safeAddEventListener: GlobalUtils.safeAddEventListener,
-                safeAddEventListenerById: GlobalUtils.safeAddEventListenerById,
-
-                // Testing utilities
-                setupAutomatedTestingFunctions: () => window.setupAutomatedTestingFunctions?.(),
-
-                // Console capture
-                startAutoConsoleCapture: () => window.startAutoConsoleCapture?.(),
-                isConsoleCapturing: () => window.consoleCapturing || false
-            });
-
-            // ✅ NOW setup testing modal (after deps are injected)
-            if (typeof testingModalMod.setupTestingModal === 'function') {
-                testingModalMod.setupTestingModal();
-                window.setupTestingModal = testingModalMod.setupTestingModal;
-                console.log('✅ Testing modal initialized');
-            }
-
-            // ✅ Initialize testing modal enhancements
-            if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
-                testingModalMod.initializeTestingModalEnhancements();
-                window.initializeTestingModalEnhancements = testingModalMod.initializeTestingModalEnhancements;
-                console.log('✅ Testing modal enhancements initialized');
-            }
         }
 
         // Optional debug subscribe
