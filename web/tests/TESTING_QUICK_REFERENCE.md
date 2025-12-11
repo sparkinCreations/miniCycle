@@ -1,7 +1,7 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: December 2024
-**Test Coverage**: 980 tests across 32 modules (100%)
+**Last Updated**: December 2025
+**Test Coverage**: 1458+ tests across 50 modules (100%)
 
 ---
 
@@ -37,7 +37,7 @@ tests/
 ├── automated/
 │   ├── run-browser-tests.js    # Playwright automation
 │   └── README.md               # CI/CD documentation
-└── *.tests.js                  # Individual module tests (32 files)
+└── *.tests.js                  # Individual module tests (50 files)
 ```
 
 ---

@@ -4,7 +4,7 @@
 
 ## Current Status
 
-**1354 tests | 42 modules | 100% pass rate**
+**1458+ tests | 50 modules | 100% pass rate**
 
 ## Quick Start
 
@@ -134,31 +134,35 @@ Some tests are skipped in automated testing due to Playwright environment limita
 
 See comments in test files marked with `// NOTE:` for specific exclusions.
 
-## Module Coverage (42 modules, 1354 tests)
+## Module Coverage (50 modules, 1458+ tests)
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
 | integration | 11 | modalManager | 49 |
 | themeManager | 15 | menuManager | 25 |
 | deviceDetection | 13 | settingsManager | 24 |
-| cycleLoader | 10 | pullToRefresh | 18 |
-| statsPanel | 24 | taskCore | 33 |
-| consoleCapture | 32 | taskValidation | 25 |
-| state | 40 | taskUtils | 22 |
-| recurringCore | 99 | taskRenderer | 16 |
-| recurringIntegration | 17 | taskEvents | 13 |
-| recurringPanel | 57 | taskDOM | 45 |
-| globalUtils | 36 | taskOptionsCustomizer | 27 |
-| notifications | 35 | xss-vulnerability | 25 |
-| dragDropManager | 55 | errorHandler | 34 |
-| migrationManager | 38 | testingModal | 27 |
-| dueDates | 16 | onboardingManager | 32 |
-| reminders | 4 | gamesManager | 21 |
-| modeManager | 27 | undoRedoManager | 73 |
-| cycleSwitcher | 20 | cycleManager | 35 |
+| cycleLoader | 10 | completedTasksManager | 18 |
+| statsPanel | 24 | pullToRefresh | 18 |
+| consoleCapture | 32 | taskCore | 33 |
+| state | 40 | taskValidation | 25 |
+| recurringCore | 99 | taskUtils | 22 |
+| recurringIntegration | 17 | taskRenderer | 16 |
+| recurringPanel | 57 | taskEvents | 13 |
+| globalUtils | 36 | taskDOM | 45 |
+| notifications | 35 | taskOptionsCustomizer | 27 |
+| dragDropManager | 55 | taskUI | 20 |
+| migrationManager | 38 | taskInteractions | 15 |
+| dueDates | 16 | uiEffects | 12 |
+| reminders | 4 | xss-vulnerability | 25 |
+| modeManager | 27 | errorHandler | 34 |
+| cycleSwitcher | 20 | testingModal | 27 |
+| cycleManager | 35 | onboardingManager | 32 |
+| undoRedoManager | 73 | gamesManager | 21 |
 | backupManager | 31 | cycleCompletion | 25 |
 | dataValidator | 54 | appInit | 37 |
 | appState | 60 | helpWindowManager | 54 |
+| constants | 21 | basicPluginSystem | 42 |
+| accessibility | 41 | stress | 50 |
 
 ## Adding New Tests
 
@@ -188,5 +192,5 @@ All test files protect your real app data:
 
 ---
 
-**Last Updated:** December 2024
-**Test Coverage:** 1354 tests across 42 modules (100%)
+**Last Updated:** December 2025
+**Test Coverage:** 1458+ tests across 50 modules (100%)
