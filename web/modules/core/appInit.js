@@ -10,7 +10,7 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.475
+ * @version 1.476
  */
 
 // Module-level deps for late injection (DI-pure, no window.* fallbacks)
