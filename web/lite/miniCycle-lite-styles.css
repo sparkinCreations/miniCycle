@@ -523,9 +523,13 @@ body.dark-mode .complete-all-btn:hover {
     transition: opacity 0.2s ease;
 }
 
-.task:hover .task-options {
-    visibility: visible;
-    opacity: 1;
+/* Show task options on hover - DESKTOP ONLY */
+/* On mobile, task options should only show via long-press */
+@media (hover: hover) and (pointer: fine) {
+    .task:hover .task-options {
+        visibility: visible;
+        opacity: 1;
+    }
 }
 
 .task-btn {
