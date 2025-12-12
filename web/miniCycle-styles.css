@@ -698,7 +698,7 @@ display: block;
     max-width: 400px;
     background: white;
     border-radius: 10px;
-    min-height: 12px;
+    height: 12px; /* Fixed height prevents CLS */
     margin-top: 15px;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -706,7 +706,7 @@ display: block;
 
 .progress-bar {
     width: 100%;
-    min-height: 12px;
+    height: 12px; /* Fixed height prevents CLS */
     background: #82db8c;
     transform: scaleX(0);
     transform-origin: left;
@@ -760,7 +760,7 @@ border-radius: 5px;
     width: 100%;
     padding: 10px 10px;
     z-index: 1;
-    display: flex; /* Always flex - never toggle to prevent CLS */
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -769,7 +769,7 @@ border-radius: 5px;
     color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     transition: opacity 0.3s ease;
-    opacity: 1; /* Start visible since HTML has show class */
+    opacity: 1;
     margin-top: 20px;
 }
 
@@ -5904,25 +5904,29 @@ select.hidden {
 }
 
 .dot {
+  /* Visual dot size */
   width: 7px;
   height: 7px;
   background-color: #ccc;
   border-radius: 50%;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
   cursor: pointer;
-  
+
   /* Reset button styles */
   border: none;
-  padding: 0;
-  margin: 0;
   outline: none;
-  
-  /* Ensure proper focus styling for accessibility */
+
+  /* Touch target: 44x44px minimum for accessibility (WCAG 2.5.5) */
+  /* Padding creates larger tap area while keeping visual dot small */
+  padding: 18px;
+  margin: -18px;
+  background-clip: content-box;
+  box-sizing: content-box;
 }
 
 .dot:focus {
   outline: 2px solid #007BFF;
-  outline-offset: 2px;
+  outline-offset: -16px; /* Offset inward to focus around visible dot, not touch area */
 }
 
 .dot.active {
