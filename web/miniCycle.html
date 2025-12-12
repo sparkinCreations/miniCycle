@@ -89,23 +89,29 @@
 (function () {
   var needsLite = false;
   var reasons = [];
+  var w = window;
 
-  try { new Function('()=>{}'); } catch (e) { needsLite = true; reasons.push('no-arrow-fn'); }
+  // Check for arrow function support without using new Function (CSP-friendly)
+  // Simple heuristic: arrow functions appeared around when Promise & fetch did.
+  if (!w.Promise || !w.fetch) {
+    needsLite = true;
+    if (!w.Promise) reasons.push('no-promise');
+    if (!w.fetch)   reasons.push('no-fetch');
+  }
 
-  if (!needsLite) {
-    var w = window;
-    if (!w.Promise) { needsLite = true; reasons.push('no-promise'); }
-    if (!w.fetch)   { needsLite = true; reasons.push('no-fetch'); }
-    try {
-      localStorage.setItem('__t','1'); localStorage.removeItem('__t');
-    } catch (e) {
-      window.__LocalStorageBlocked = true;
-      reasons.push('localStorage-blocked'); // not fatal
-    }
+  // localStorage test
+  try {
+    localStorage.setItem('__t','1'); 
+    localStorage.removeItem('__t');
+  } catch (e) {
+    window.__LocalStorageBlocked = true;
+    reasons.push('localStorage-blocked'); // not fatal
   }
 
   var forcedFull = (location.search.indexOf('mode=full') !== -1);
-  try { forcedFull = forcedFull || localStorage.getItem('miniCycleForceFullVersion') === 'true'; } catch(e){}
+  try {
+    forcedFull = forcedFull || localStorage.getItem('miniCycleForceFullVersion') === 'true';
+  } catch(e){}
 
   window.__FeatureGateNeedsLite = needsLite;
   window.__FeatureGateReasons = reasons;
@@ -115,6 +121,7 @@
   }
 })();
 
+  
 // ✅ Loading timeout failsafe - redirect to lite if app doesn't load in 60 seconds
 (function() {
   var LOAD_TIMEOUT_MS = 60000; // 60 seconds
@@ -1946,6 +1953,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </body>
 
 </html>
+
 
 
 
