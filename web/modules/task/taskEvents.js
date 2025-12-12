@@ -406,6 +406,12 @@ export class TaskEvents {
      * @param {Object} settings - Settings object
      */
     setupTaskHoverInteractions(taskItem, settings) {
+        // Skip hover interactions on touch devices - they should use long-press only
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouchDevice) {
+            return;
+        }
+
         const threeDotsEnabled = settings.showThreeDots || false;
         if (!threeDotsEnabled) {
             // DI-pure: use injected showTaskOptions/hideTaskOptions with safeAdd
@@ -429,9 +435,19 @@ export class TaskEvents {
         // DI-pure: use injected TaskOptionsVisibilityController
         const controller = this.deps.TaskOptionsVisibilityController;
 
+        // Only show task options on KEYBOARD focus (not touch/mouse focus)
+        // This prevents task options from appearing on every tap on mobile
         addListener(taskItem, "focus", () => {
-            // ✅ Use centralized controller (handles mode checking automatically)
-            controller?.show(taskItem, 'focusin');
+            // Check if this focus event matches :focus-visible (keyboard navigation)
+            // If the element doesn't match :focus-visible, it was likely triggered by touch/mouse
+            try {
+                if (taskItem.matches(':focus-visible')) {
+                    controller?.show(taskItem, 'focusin');
+                }
+            } catch (e) {
+                // Fallback for browsers that don't support :focus-visible
+                // In this case, don't show options on focus at all (rely on keyboard toggle)
+            }
         });
 
         // Keyboard task option toggle (DI-pure)
