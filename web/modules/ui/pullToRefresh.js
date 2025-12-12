@@ -48,11 +48,15 @@ export class PullToRefresh {
         this.isActivated = false; // True once pull exceeds activationDistance
         this.isRefreshing = false;
         this.enabled = true;
+        this.touchStartTarget = null; // Track where touch started
 
         // DOM elements
         this.indicator = null;
         this.spinnerIcon = null;
         this.statusText = null;
+
+        // Scrollable containers to check (task list, etc.)
+        this.scrollableContainers = options.scrollableContainers || ['.task-list-container'];
 
         // Bind methods
         this.handleTouchStart = this.handleTouchStart.bind(this);
@@ -139,9 +143,27 @@ export class PullToRefresh {
 
     /**
      * Checks if page is scrolled to top
+     * Also checks if any scrollable container the touch started in is at the top
      */
     isAtTop() {
-        return window.scrollY <= 0;
+        // Window must be at top
+        if (window.scrollY > 0) return false;
+
+        // If touch started inside a scrollable container, that container must also be at top
+        if (this.touchStartTarget) {
+            for (const selector of this.scrollableContainers) {
+                const container = document.querySelector(selector);
+                if (container && container.contains(this.touchStartTarget)) {
+                    // Touch started inside this scrollable container
+                    // Only allow pull-to-refresh if container is scrolled to top
+                    if (container.scrollTop > 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -149,7 +171,14 @@ export class PullToRefresh {
      */
     handleTouchStart(e) {
         if (!this.enabled || this.isRefreshing) return;
-        if (!this.isAtTop()) return;
+
+        // Store the touch target to check scrollable containers
+        this.touchStartTarget = e.target;
+
+        if (!this.isAtTop()) {
+            this.touchStartTarget = null;
+            return;
+        }
 
         this.startY = e.touches[0].clientY;
         this.isPulling = true;
@@ -217,6 +246,7 @@ export class PullToRefresh {
         this.isActivated = false;
         this.startY = 0;
         this.currentY = 0;
+        this.touchStartTarget = null;
     }
 
     /**
@@ -258,6 +288,7 @@ export class PullToRefresh {
 
         // Reset activation state
         this.isActivated = false;
+        this.touchStartTarget = null;
     }
 
     /**
