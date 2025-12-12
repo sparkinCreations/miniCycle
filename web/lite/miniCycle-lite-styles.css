@@ -576,7 +576,7 @@ body.dark-mode .complete-all-btn:hover {
     max-width: 400px;
     background: white;
     border-radius: 10px;
-    min-height: 12px;
+    height: 12px; /* Fixed height prevents CLS */
     margin-top: 15px;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -584,7 +584,7 @@ body.dark-mode .complete-all-btn:hover {
 
 .progress-bar {
     width: 0%;
-    min-height: 12px;
+    height: 12px; /* Fixed height prevents CLS */
     background: #82db8c;
     transition: width 0.3s ease;
 }
@@ -1201,6 +1201,7 @@ body.dark-mode .header-logo.task-completed-glow {
 }
 
 .dot {
+    /* Visual dot size */
     width: 7px;
     height: 7px;
     background-color: #ccc;
@@ -1208,6 +1209,12 @@ body.dark-mode .header-logo.task-completed-glow {
     transition: background-color 0.2s ease;
     pointer-events: auto;
     cursor: pointer;
+
+    /* Touch target: 44x44px minimum for accessibility (WCAG 2.5.5) */
+    padding: 18px;
+    margin: -18px;
+    background-clip: content-box;
+    box-sizing: content-box;
 }
 
 .dot.active {
@@ -1719,8 +1726,12 @@ body.dark-mode #quick-dark-toggle:hover {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.5);
     transition: all 0.2s ease;
-    padding: 0;
-    margin: 6px;
+
+    /* Touch target: 44x44px minimum for accessibility (WCAG 2.5.5) */
+    padding: 18px;
+    margin: -12px;
+    background-clip: content-box;
+    box-sizing: content-box;
 }
 
 .navigation-dots button.dot:hover {
@@ -4075,13 +4086,17 @@ body.dark-mode #mobile-task-input:focus {
     transition: all 0.3s ease;
     pointer-events: auto;
     cursor: pointer;
-    
+
     /* ✅ Button-specific resets */
     border: none;
     outline: none;
-    padding: 0;
-    margin: 6px;
-    
+
+    /* Touch target: 44x44px minimum for accessibility (WCAG 2.5.5) */
+    padding: 18px;
+    margin: -12px;
+    background-clip: content-box;
+    box-sizing: content-box;
+
     /* ✅ Default inactive state */
     background-color: rgba(255, 255, 255, 0.5);
     transform: scale(1);

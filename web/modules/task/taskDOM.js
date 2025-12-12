@@ -1228,7 +1228,7 @@ export class TaskDOMManager {
         checkbox.setAttribute("name", `task-complete-${assignedTaskId}`);
         checkbox.checked = completed;
         checkbox.setAttribute("aria-label", `Mark task "${taskTextTrimmed}" as complete`);
-        checkbox.setAttribute("aria-role", "checkbox");
+        checkbox.setAttribute("role", "checkbox");
         checkbox.setAttribute("aria-checked", checkbox.checked);
 
         // Add event listener using safe helper
