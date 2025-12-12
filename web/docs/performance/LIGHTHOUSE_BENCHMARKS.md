@@ -2,10 +2,10 @@
 
 > Lighthouse audit results and Core Web Vitals for minicycle.app
 
-**Last Tested:** December 9, 2025  
-**App Version:** 1.459 
-**Service Worker Cache:** v211  
-**Test Environment:** Microsoft Edge DevTools (Chromium)
+**Last Tested:** December 12, 2025
+**App Version:** 1.474
+**Service Worker Cache:** v261
+**Test Environment:** Chrome DevTools (Chromium 143)
 
 ---
 
@@ -13,10 +13,10 @@
 
 | Category | Score | Rating |
 |----------|-------|--------|
-| **Performance** | 97 | 🟢 Excellent |
-| **Accessibility** | 93 | 🟢 Great |
+| **Performance** | 98 | 🟢 Excellent |
+| **Accessibility** | 97 | 🟢 Excellent |
 | **Best Practices** | 100 | 🟢 Perfect |
-| **SEO** | 92 | 🟢 Great |
+| **SEO** | 100 | 🟢 Perfect |
 
 ---
 
@@ -24,11 +24,11 @@
 
 | Metric | Value | Target | Status | Description |
 |--------|-------|--------|--------|-------------|
-| **LCP** (Largest Contentful Paint) | 1.1s | < 2.5s | ✅ Pass | Time until main content is visible |
-| **FCP** (First Contentful Paint) | 0.8s | < 1.8s | ✅ Pass | Time until first content appears |
-| **TBT** (Total Blocking Time) | 10ms | < 200ms | ✅ Pass | Time main thread was blocked |
-| **CLS** (Cumulative Layout Shift) | 0.018 | < 0.1 | ✅ Pass | Visual stability score |
-| **Speed Index** | 0.8s | < 3.4s | ✅ Pass | How quickly content is visually populated |
+| **LCP** (Largest Contentful Paint) | 1.0s | < 2.5s | ✅ Pass | Time until main content is visible |
+| **FCP** (First Contentful Paint) | 0.9s | < 1.8s | ✅ Pass | Time until first content appears |
+| **TBT** (Total Blocking Time) | 0ms | < 200ms | ✅ Pass | Time main thread was blocked |
+| **CLS** (Cumulative Layout Shift) | 0.02 | < 0.1 | ✅ Pass | Visual stability score |
+| **Speed Index** | 0.9s | < 3.4s | ✅ Pass | How quickly content is visually populated |
 | **INP** (Interaction to Next Paint) | - | < 200ms | ✅ Pass | Interaction responsiveness |
 
 ---
@@ -108,9 +108,11 @@ These benchmarks validate key architectural decisions:
 
 | Issue | Impact | Priority |
 |-------|--------|----------|
-| Images missing explicit `width` and `height` | Minor CLS impact | Low |
-| SEO score 92 (not 100) | Minor SEO impact | Low |
+| Touch target size warning for `.dot` buttons | Lighthouse detection limitation | Info |
+| CLS from progress-container (0.017) | Minor visual stability | Low |
 | IndexedDB data affects audit | Testing artifact | Info |
+
+> **Note:** The `.dot` button touch targets are actually 44x44px (WCAG compliant) using the `background-clip: content-box` technique, but Lighthouse measures the visual bounding box (7-8px) rather than the clickable area.
 
 ### Recommended Fixes
 
@@ -149,9 +151,17 @@ Check for:
 
 | Date | Version | Performance | Accessibility | Best Practices | SEO |
 |------|---------|-------------|---------------|----------------|-----|
-| Dec 9, 2025 | 1.391 | 97 | 93 | 100 | 92 |
+| Dec 12, 2025 | 1.474 | 98 | 97 | 100 | 100 |
+| Dec 9, 2025 | 1.459 | 97 | 93 | 100 | 92 |
 
 *Update this table when running new audits to track performance over time.*
+
+### Recent Improvements (v1.474)
+
+- Fixed invalid `aria-role` → `role` attribute in taskDOM.js (+4 Accessibility)
+- Added WCAG 2.5.5 compliant touch targets for `.dot` buttons (44x44px)
+- Fixed progress-container CLS with explicit height
+- SEO improvements (+8 SEO)
 
 ---
 
@@ -194,7 +204,7 @@ Recommended limits to maintain current scores:
 | Total CSS | < 100 KB | ~50 KB |
 | LCP | < 2.5s | 1.1s |
 | TBT | < 200ms | 10ms |
-| CLS | < 0.1 | 0.018 |
+| CLS | < 0.1 | 0.02 |
 
 ---
 
@@ -215,5 +225,5 @@ Recommended limits to maintain current scores:
 
 ---
 
-**Last Updated:** December 9, 2025  
+**Last Updated:** December 12, 2025
 **Maintainer:** sparkinCreations
