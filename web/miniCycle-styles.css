@@ -295,7 +295,7 @@ button {
     transition: background 0.3s;
 }
 
-button:hover {
+button:not(.dot):hover {
     background: #ff4d4d;
 }
 
@@ -5579,6 +5579,7 @@ select.hidden {
   clip: rect(0 0 0 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Container styles for months and days */
@@ -5886,42 +5887,55 @@ select.hidden {
 .navigation-dots {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 15px;
   position: absolute;
   bottom: 35px;
-  width: 100%;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1;
   pointer-events: auto;
+  cursor: pointer;
+
+  /* Subtle pill background */
+  background: none;
+  background-color: rgba(130, 177, 250, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 4px 8px;
+  border: 1px solid rgba(220, 231, 252, 0.2);
+  border-radius: 20px;
+  transition: background-color 0.2s ease;
+}
+
+.navigation-dots:hover {
+  background-color: rgba(130, 177, 250, 0.55);
 }
 
 .dot {
-  /* Visual dot size */
+  /* Visual dot with tooltip support */
   width: 7px;
   height: 7px;
-  background-color: #ccc;
+  background-color: rgba(68, 82, 124, 1);
   border-radius: 50%;
   transition: background-color 0.3s ease;
+  pointer-events: auto; /* Enable for tooltips */
   cursor: pointer;
+  position: relative;
 
   /* Reset button styles */
   border: none;
   outline: none;
-
-  /* Touch target: 44x44px minimum for accessibility (WCAG 2.5.5) */
-  /* Padding creates larger tap area while keeping visual dot small */
-  padding: 18px;
-  margin: -18px;
-  background-clip: content-box;
-  box-sizing: content-box;
-
-  /* Prevent large tap highlight on mobile */
-  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  margin: 0;
 }
 
-.dot:active {
-  /* Subtle feedback on tap - only affects the visual dot color */
-  background-color: #999;
-}
+.dot:hover {
+  /* Subtle hover feedback */
+  background-color: #aaa;
+} 
+
+
+
 
 .dot:focus {
   outline: 2px solid #007BFF;
@@ -5929,11 +5943,16 @@ select.hidden {
 }
 
 .dot.active {
-  background-color: #007BFF;
+  background-color: rgb(220, 231, 252);
+  transform: scale(1.3);
+}
+
+.dot.active:hover {
+  background-color: #0056b3;
 }
 
 .dot.active:active {
-  background-color: #0056b3;
+  background-color: #004494;
 }
 
 @media (max-width: 768px) {
