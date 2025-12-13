@@ -595,6 +595,11 @@ async function initApp() {
         // ============ PHASE 2: MODULES ============
         // Feature module loading now handled by app-featureBoot.js
         console.log('🔌 Phase 2: Loading modules via bootFeatures...');
+    
+  // ✅ Update recurring panel button visibility if module is loaded
+  if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
+      window.recurringPanel.updateRecurringPanelButtonVisibility();
+  }
 
         const featureResult = await bootFeatures(deps, coreResult);
         console.log('✅ bootFeatures complete:', Object.keys(featureResult.managers).length, 'managers,', Object.keys(featureResult.modules).length, 'modules');
