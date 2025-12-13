@@ -27,7 +27,7 @@ npx serve .                         # Node.js
 
 # 3. Open browser
 # Full version: http://localhost:8080/miniCycle.html
-# Lite version: http://localhost:8080/lite/miniCycle-lite.html
+# Lite version: http://localhost:8080/lite/miniCycle-lite.html (static fallback, not maintained)
 
 # 4. Run tests (optional)
 npm test                            # Automated tests (1458/1458 passing)

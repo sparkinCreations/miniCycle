@@ -1,6 +1,45 @@
-// ==========================================
-// 📱 miniCycle LITE - Fixed for Maximum Compatibility
-// ==========================================
+// ================================================================================
+// 📱 miniCycle LITE - Static Fallback Version
+// ================================================================================
+//
+// PURPOSE:
+// This is a STATIC, FROZEN version of miniCycle designed for:
+//   • Older devices that cannot run the full ES6+ version
+//   • Slow connections where the full app takes too long to load
+//   • Users who want a simple, lightweight task manager with just the basics
+//
+// ⚠️  THIS VERSION IS NOT MEANT TO BE MAINTAINED OR UPDATED  ⚠️
+//
+// It exists as a permanent fallback that provides the core miniCycle concept
+// (routine tracking with auto-reset) without the advanced features.
+//
+// DO NOT:
+//   ✗ Add new features from the main app to this version
+//   ✗ Try to keep this in sync with the main app's modules
+//   ✗ Refactor to modern JavaScript (ES5 compatibility is intentional)
+//   ✗ Add npm dependencies or build steps
+//   ✗ Use arrow functions, const/let, async/await, or ES6+ features
+//
+// WHY ES5:
+// This code intentionally uses var, function expressions, and ES5 patterns
+// to ensure compatibility with older browsers (IE11, old Safari, etc.)
+// that don't support modern JavaScript.
+//
+// WHAT'S INCLUDED:
+//   • Basic task CRUD (add, edit, delete, toggle)
+//   • Three modes: Auto Cycle, Manual Cycle, To-Do
+//   • Simple undo/redo (4-item stack)
+//   • Dark mode toggle
+//   • Basic stats panel
+//   • LocalStorage persistence
+//
+// WHAT'S NOT INCLUDED (full app only):
+//   • Multiple cycles, Recurring tasks, Due dates, Reminders
+//   • Theme unlocks, Gamification, Import/export, Advanced settings
+//
+// Last meaningful update: v1.480 (intentionally static thereafter)
+// © 2025 sparkinCreations - https://sparkincreations.com
+// ================================================================================
 
 // ✅ Global Variables
 var draggedTask = null;

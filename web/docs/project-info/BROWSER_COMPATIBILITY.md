@@ -27,6 +27,8 @@
 - **Firefox < 88** | ⚠️ Use miniCycle Lite
 - **Safari < 14** | ⚠️ Use miniCycle Lite
 
+> **Note:** miniCycle Lite is a **static, frozen version** (v1.480) that provides the core routine-tracking concept without advanced features. It is intentionally NOT maintained or kept in sync with the full app - it exists as a permanent fallback for older devices and slow connections.
+
 ---
 
 ## Feature Compatibility
@@ -332,9 +334,10 @@ console.log({
    - Reliable offline mode
 
 4. **Legacy systems:** miniCycle Lite
-   - ES5-compatible
-   - Works on older browsers
-   - Slightly reduced features
+   - ES5-compatible (static/frozen version)
+   - Works on older browsers and slow connections
+   - Core features only (no recurring tasks, multiple cycles, etc.)
+   - **Note:** Lite is intentionally NOT updated - it's a permanent fallback
 
 ---
 

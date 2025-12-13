@@ -21,7 +21,7 @@ All content is hosted at **minicycle.app**:
 |----------|-----|
 | **Product Page** | [minicycle.app/product.html](https://minicycle.app/product.html) |
 | **Full App** | [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html) |
-| **Lite Version** | [minicycle.app/miniCycle-lite.html](https://minicycle.app/miniCycle-lite.html) |
+| **Lite Version** | [minicycle.app/miniCycle-lite.html](https://minicycle.app/miniCycle-lite.html) ⚠️ Static fallback |
 | **Test Suite** | [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html) |
 | **Documentation** | [minicycle.app/docs](https://minicycle.app/docs) |
 
@@ -43,7 +43,7 @@ minicycle.app/product.html (Product landing page)
 minicycle.app/
 ├── product.html                    # Landing page (redirect target)
 ├── miniCycle.html                  # Full PWA application
-├── miniCycle-lite.html            # ES5 compatible version
+├── miniCycle-lite.html            # ES5 compatible version (static fallback, not maintained)
 ├── modules/boot/orchestrator.js           # Main application bundle
 ├── miniCycle-lite-scripts.js      # Lite version bundle
 ├── service-worker.js              # PWA service worker
