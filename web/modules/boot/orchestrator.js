@@ -85,10 +85,8 @@ window.AppInit = null; // Will be replaced with appInit below
 // CRITICAL: Import coreBoot IMMEDIATELY to set window.AppBootStarted
 // This MUST happen before DOMContentLoaded to prevent lite fallback
 // ============================================================================
-import('./coreBoot.js').catch(err => {
-  console.error('❌ Failed to load coreBoot.js:', err);
-});
 
+window.AppBootStarted = true;
 
 
 
