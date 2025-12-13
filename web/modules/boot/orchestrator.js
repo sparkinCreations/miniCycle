@@ -274,14 +274,11 @@ async function initApp() {
     deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
 
-    // Still expose to window for backward compat - all notification functions point directly to module
+    // Essential notification globals (audit Dec 2025: reduced from 8 to 5)
     window.notifications = notifications;
     window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
-    window.showNotificationWithTip = (content, type, duration, tipId) => notifications.showWithTip(content, type, duration, tipId);
-    window.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
     window.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
     window.showPromptModal = (options) => notifications.showPromptModal(options);
-    window.setupNotificationDragging = (container) => notifications.setupNotificationDragging(container);
     window.resetNotificationPosition = () => notifications.resetPosition();
     console.log('✅ Notifications loaded');
 
@@ -306,18 +303,8 @@ async function initApp() {
 
     // ✅ Load Theme Manager
     const themeManagerMod = await import(withV('../features/themeManager.js'));
-    window.ThemeManager = themeManagerMod.default;
-    window.themeManager = themeManagerMod.themeManager;
-    window.applyTheme = themeManagerMod.applyTheme;
-    window.updateThemeColor = themeManagerMod.updateThemeColor;
-    window.setupDarkModeToggle = themeManagerMod.setupDarkModeToggle;
-    window.setupQuickDarkToggle = themeManagerMod.setupQuickDarkToggle;
-    window.unlockDarkOceanTheme = themeManagerMod.unlockDarkOceanTheme;
-    window.unlockGoldenGlowTheme = themeManagerMod.unlockGoldenGlowTheme;
-    window.initializeThemesPanel = themeManagerMod.initializeThemesPanel;
-    window.refreshThemeToggles = themeManagerMod.refreshThemeToggles;
-    window.setupThemesPanel = themeManagerMod.setupThemesPanel;
-    window.setupThemesPanelWithData = themeManagerMod.setupThemesPanelWithData;
+    // Theme functions - called directly, not via window.*
+    const { applyTheme, initializeThemesPanel, setupThemesPanel } = themeManagerMod;
     // ✅ Inject available deps early (AppState injected later after it's created)
     if (themeManagerMod.setThemeManagerDependencies) {
         themeManagerMod.setThemeManagerDependencies({
@@ -339,11 +326,8 @@ async function initApp() {
             safeAddEventListener: deps.utils.safeAddEventListener
         });
     }
-    // Expose to window immediately
-    window.GamesManager = gamesManagerMod.default;
+    // Keep gamesManager on window for .init() call and test access
     window.gamesManager = gamesManagerMod.gamesManager;
-    window.unlockMiniGame = (...args) => gamesManagerMod.gamesManager?.unlockMiniGame?.(...args);
-    window.checkGamesUnlock = (...args) => gamesManagerMod.gamesManager?.checkGamesUnlock?.(...args);
     // ✅ Initialize AFTER dependencies are set (DI-pure pattern)
     // NOTE: Don't await - init() waits for core internally, which hasn't been marked ready yet
     window.gamesManager.init();
@@ -383,10 +367,10 @@ async function initApp() {
     // ✅ NOW it's safe to set up UI components that may call loadMiniCycleData()
     console.log('🎨 Setting up UI components (after migration manager)...');
 
-    // Centralized overlay detection for UI state management
-    window.isOverlayActive = function() {
+    // Centralized overlay detection for UI state management (local function, not exposed)
+    function isOverlayActive() {
         if (document.querySelector(".menu-container.visible")) return true;
-        
+
         const overlaySelectors = [
             '.settings-modal[style*="display: flex"]',
             '.mini-cycle-switch-modal[style*="display: flex"]',
@@ -403,11 +387,11 @@ async function initApp() {
             '.miniCycle-overlay',
             '.onboarding-modal:not([style*="display: none"])'
         ];
-        
-        return overlaySelectors.some(selector => document.querySelector(selector));
-    };
 
-    // Navigation dots for task/stats panel switching
+        return overlaySelectors.some(selector => document.querySelector(selector));
+    }
+
+    // Navigation dots for task/stats panel switching (local function, not exposed)
     function updateNavDots() {
         const statsPanel = document.getElementById("stats-panel");
         const statsVisible = statsPanel && statsPanel.classList.contains("show");
@@ -418,8 +402,6 @@ async function initApp() {
             dots[1].classList.toggle("active", statsVisible);
         }
     }
-    
-    window.updateNavDots = updateNavDots;
 
 
     // ✅ DOM Element References

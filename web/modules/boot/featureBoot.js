@@ -1234,215 +1234,82 @@ export async function bootFeatures(deps, coreResult) {
   }
 
   // ============================================================================
-  // WINDOW.* EXPOSURES (for backward compatibility with Phase 3 code)
+  // WINDOW.* EXPOSURES - PUBLIC API
   // ============================================================================
-  // Phase 3 code in miniCycle-scripts.js relies on window.* globals.
-  // These exposures maintain compatibility during the transition to full DI.
-  console.log('🔧 Setting up window.* exposures for backward compatibility...');
+  // These globals are actively used via window.* calls in the codebase.
+  // Audit performed Dec 2025: Reduced from 131 to 37 essential globals.
+  // Before adding new exposures, verify they're actually called via window.*
+  console.log('🔧 Setting up window.* public API...');
 
-  // ---- Core/State ----
+  // ---- Core/State (3) ----
+  // Essential app state and initialization
   window.AppState = deps.core.AppState;
   window.appInit = appInit;
   window.AppGlobalState = AppGlobalState;
 
-  // ---- Utilities ----
+  // ---- Utilities (4) ----
+  // Common helpers used throughout the app
   window.showNotification = deps.utils.showNotification;
   window.sanitizeInput = deps.utils.sanitizeInput;
   window.generateId = deps.utils.generateId;
   window.isTouchDevice = deps.utils.isTouchDevice;
 
-  // ---- Task Core ----
+  // ---- Task Operations (5) ----
+  // Task creation and management
   window.addTask = deps.task.addTask;
-  window.taskCore = deps.task.taskCore;
-  window.handleTaskCompletionChange = deps.task.handleTaskCompletionChange;
   window.handleCompleteAllTasks = deps.task.handleCompleteAllTasks;
-  window.resetTasks = deps.task.resetTasks;
-  window.editTaskFromCore = deps.task.editTaskFromCore;
-  window.deleteTaskFromCore = deps.task.deleteTaskFromCore;
-  window.saveTaskToSchema25 = deps.task.saveTaskToSchema25;
-  window.setTaskCoreDependencies = deps.task.setTaskCoreDependencies;
-
-  // ---- Task DOM ----
   window.createTaskDOMElements = deps.task.createTaskDOMElements;
-  window.createThreeDotsButton = deps.task.createThreeDotsButton;
-  window.setupTaskInteractions = deps.task.setupTaskInteractions;
   window.finalizeTaskCreation = deps.task.finalizeTaskCreation;
-  window.extractTaskDataFromDOM = deps.task.extractTaskDataFromDOM;
   window.loadTaskContext = deps.task.loadTaskContext;
-  window.createOrUpdateTaskData = deps.task.createOrUpdateTaskData;
-  window.validateAndSanitizeTaskInput = deps.task.validateAndSanitizeTaskInput;
-  window.refreshUIFromState = deps.task.refreshUIFromState;
-  window.isTaskDOMReady = true; // Flag set after taskDOM init
-  window.__taskDOMManager = deps.task.taskDOMManager;
-  window.taskEvents = deps.task.taskEvents;
-  window.__TaskValidator = deps.task.TaskValidator;
-  window.__TaskUtils = deps.task.TaskUtils;
-  window.__TaskRenderer = deps.task.TaskRenderer;
-  window.__TaskEvents = deps.task.TaskEvents;
 
-  // ---- Task Options ----
-  window.showTaskOptions = deps.ui.showTaskOptions;
-  window.hideTaskOptions = deps.ui.hideTaskOptions;
-  window.revealTaskButtons = deps.ui.revealTaskButtons;
-  window.hideTaskButtons = deps.ui.hideTaskButtons;
-  window.handleTaskButtonClick = deps.ui.handleTaskButtonClick;
-  window.attachKeyboardTaskOptionToggle = deps.ui.attachKeyboardTaskOptionToggle;
-  window.taskOptionsCustomizer = deps.ui.taskOptionsCustomizer;
-  window.TaskOptionsCustomizer = deps.ui.TaskOptionsCustomizer;
-  window.TaskOptionsVisibilityController = deps.ui.TaskOptionsVisibilityController;
-
-  // ---- Drag & Drop ----
-  window.dragDropManager = deps.ui.dragDropManager;
-  window.enableDragAndDropOnTask = deps.ui.enableDragAndDropOnTask;
+  // ---- Drag & Drop (1) ----
   window.updateMoveArrowsVisibility = deps.ui.updateMoveArrowsVisibility;
-  window.toggleArrowVisibility = deps.ui.toggleArrowVisibility;
-  window.updateArrowsInDOM = deps.ui.updateArrowsInDOM;
-  window.handleTaskListMovement = deps.ui.handleTaskListMovement;
 
-  // ---- Stats Panel ----
-  window.statsPanelManager = deps.progress.statsPanelManager;
-  window.showStatsPanel = deps.progress.showStatsPanel;
-  window.updateStatsPanel = deps.progress.updateStatsPanel;
-  window.updateProgressBar = deps.progress.updateProgressBar;
+  // ---- Progress (1) ----
   window.checkMiniCycle = deps.progress.checkMiniCycle;
-  window.incrementCycleCount = deps.progress.incrementCycleCount;
-  window.showCompletionAnimation = deps.progress.showCompletionAnimation;
 
-  // ---- Due Dates ----
-  window.dueDatesManager = deps.features.dueDatesManager;
-  window.createDueDateInput = deps.features.createDueDateInput;
-  window.setupDueDateButtonInteraction = deps.features.setupDueDateButtonInteraction;
+  // ---- Due Dates (2) ----
   window.checkOverdueTasks = deps.features.checkOverdueTasks;
   window.remindOverdueTasks = deps.features.remindOverdueTasks;
-  window.saveTaskDueDate = deps.features.saveTaskDueDate;
-  window.updateDueDateVisibility = deps.features.updateDueDateVisibility;
 
-  // ---- Reminders ----
+  // ---- Reminders (4) ----
   window.reminderManager = deps.features.reminderManager;
   window.startReminders = deps.features.startReminders;
-  window.stopReminders = deps.features.stopReminders;
-  window.setupReminderButtonHandler = deps.features.setupReminderButtonHandler;
-  window.handleReminderToggle = deps.features.handleReminderToggle;
-  window.loadRemindersSettings = deps.features.loadRemindersSettings;
-  window.autoSaveReminders = deps.features.autoSaveReminders;
-  window.saveTaskReminderState = deps.features.saveTaskReminderState;
   window.updateReminderButtons = deps.features.updateReminderButtons;
+  window.loadRemindersSettings = deps.features.loadRemindersSettings;
 
-  // ---- Recurring ----
+  // ---- Recurring (3) ----
   window.recurringPanel = deps.recurring.panel;
   window.recurringCore = deps.recurring.core;
-  window.setupRecurringButtonHandler = deps.recurring.setupButtonHandler;
-  window.handleRecurringTaskActivation = deps.recurring.handleActivation;
-  window.handleRecurringTaskDeactivation = deps.recurring.handleDeactivation;
   window.openRecurringSettingsPanelForTask = deps.recurring.openSettingsPanel;
-  window.updateRecurringPanelButtonVisibility = deps.recurring.updatePanelButtonVisibility;
-  window.removeRecurringTasksFromCycle = deps.recurring.removeTasksFromCycle;
-  window.testRecurringIntegration = deps.recurring.testIntegration;
 
-  // ---- Mode Manager ----
-  window.modeManager = deps.cycle.modeManager;
+  // ---- Mode Manager (3) ----
   window.initializeModeSelector = deps.cycle.initializeModeSelector;
-  window.setupModeSelector = deps.cycle.setupModeSelector;
-  window.syncModeFromToggles = deps.cycle.syncModeFromToggles;
-  window.getModeName = deps.cycle.getModeName;
-  window.updateCycleModeDescription = deps.cycle.updateCycleModeDescription;
-  window.refreshTaskButtonsForModeChange = deps.cycle.refreshTaskButtonsForModeChange;
-  window.updateStorageFromToggles = deps.cycle.updateStorageFromToggles;
   window.syncCurrentSettingsToStorage = deps.cycle.syncCurrentSettingsToStorage;
   window.saveToggleAutoReset = deps.cycle.saveToggleAutoReset;
 
-  // ---- Cycle Switcher ----
-  window.cycleSwitcher = deps.cycle.cycleSwitcher;
-  window.switchMiniCycle = deps.cycle.switchMiniCycle;
-
-  // ---- Cycle Manager ----
-  window.cycleManager = deps.cycle.cycleManager;
-  window.createNewMiniCycle = deps.cycle.createNewMiniCycle;
-  window.deleteMiniCycle = deps.cycle.deleteMiniCycle;
-  window.renameMiniCycle = deps.cycle.renameMiniCycle;
-  window.saveMiniCycleAsNew = deps.cycle.saveMiniCycleAsNew;
+  // ---- Cycle Management (2) ----
   window.showCycleCreationModal = deps.cycle.showCycleCreationModal;
-  window.onCycleCreated = deps.cycle.onCycleCreated;
-  window.onCycleDeleted = deps.cycle.onCycleDeleted;
-  window.onCycleRenamed = deps.cycle.onCycleRenamed;
-  window.onCycleSwitched = deps.cycle.onCycleSwitched;
-
-  // ---- Cycle Loader ----
   window.loadMiniCycle = deps.cycle.loadMiniCycle;
-  window.setCycleLoaderDependencies = deps.cycle.setCycleLoaderDependencies;
 
-  // ---- Undo/Redo ----
+  // ---- Undo/Redo (5) ----
   window.captureStateSnapshot = deps.ui.captureStateSnapshot;
-  window.captureInitialSnapshot = deps.ui.captureInitialSnapshot;
   window.performStateBasedUndo = deps.ui.performStateBasedUndo;
   window.performStateBasedRedo = deps.ui.performStateBasedRedo;
   window.updateUndoRedoButtons = deps.ui.updateUndoRedoButtons;
-  window.initializeUndoRedoButtons = deps.ui.initializeUndoRedoButtons;
-  window.setupStateBasedUndoRedo = deps.ui.setupStateBasedUndoRedo;
-  window.wireUndoRedoUI = deps.ui.wireUndoRedoUI;
-  window.snapshotsEqual = deps.ui.snapshotsEqual;
-  window.buildSnapshotSignature = deps.ui.buildSnapshotSignature;
   window.enableUndoSystemOnFirstInteraction = deps.ui.enableUndoSystemOnFirstInteraction;
 
-  // ---- Menu Manager ----
-  window.menuManager = deps.ui.menuManager;
-  window.MenuManager = deps.ui.MenuManager;
-  window.setupMainMenu = deps.ui.setupMainMenu;
-  window.closeMainMenu = deps.ui.closeMainMenu;
+  // ---- Menu (1) ----
   window.hideMainMenu = deps.ui.hideMainMenu;
-  window.closeMenuOnClickOutside = deps.ui.closeMenuOnClickOutside;
 
-  // ---- Modal Manager ----
-  window.modalManager = deps.ui.modalManager;
-  window.closeAllModals = deps.ui.closeAllModals;
-
-  // ---- Settings Manager ----
-  window.settingsManager = deps.ui.settingsManager;
-
-  // ---- Completed Tasks ----
-  window.completedTasksManager = deps.ui.completedTasksManager;
+  // ---- Completed Tasks (2) ----
   window.initCompletedTasksSection = deps.ui.initCompletedTasksSection;
-  window.toggleCompletedTasksSection = deps.ui.toggleCompletedTasksSection;
-  window.isCompletedDropdownEnabled = deps.ui.isCompletedDropdownEnabled;
-  window.moveTaskToCompleted = deps.ui.moveTaskToCompleted;
-  window.moveTaskToActive = deps.ui.moveTaskToActive;
   window.organizeCompletedTasks = deps.ui.organizeCompletedTasks;
-  window.updateCompletedTasksCount = deps.ui.updateCompletedTasksCount;
 
-  // ---- Help Window ----
-  window.helpWindowManager = deps.ui.helpWindowManager;
-
-  // ---- Task View ----
-  window.showTaskView = deps.ui.showTaskView;
-  window.refreshTaskListUI = deps.ui.refreshTaskListUI;
-
-  // ---- Theme ----
-  window.updateThemeColor = deps.features.updateThemeColor;
-  window.triggerLogoBackground = deps.ui.triggerLogoBackground;
-
-  // ---- Device Detection ----
-  window.deviceDetectionManager = deps.ui.deviceDetectionManager;
-
-  // ---- Pull to Refresh ----
-  window.pullToRefresh = deps.ui.pullToRefresh;
-
-  // ---- Clear/Delete Tasks ----
-  window.clearAllTasks = deps.task.clearAllTasks;
-  window.deleteAllTasks = deps.task.deleteAllTasks;
-
-  // ---- Main Menu Header ----
+  // ---- Main Menu Header (1) ----
   window.updateMainMenuHeader = deps.ui.updateMainMenuHeader;
-  window.checkCompleteAllButton = deps.ui.checkCompleteAllButton;
 
-  // ---- Debug ----
-  window.debugAppState = () => {
-    console.group('🔍 App State Debug');
-    console.log('Ready:', deps.core.AppState?.isReady?.());
-    console.log('State:', deps.core.AppState?.get?.());
-    console.groupEnd();
-  };
-
-  console.log('✅ Window exposures complete (131 functions/objects)');
+  console.log('✅ Window exposures complete (37 public API globals)');
 
   // ============================================================================
   // COMPLETE
