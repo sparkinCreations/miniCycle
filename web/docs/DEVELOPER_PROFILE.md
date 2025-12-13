@@ -147,6 +147,7 @@ The user-facing simplicity masks engineering depth:
 3. **Respect established patterns** - They exist for reasons learned through experience
 4. **The 2-phase init is intentional** - Timeout safety was added Dec 2025, keep it
 5. **Ask before changing architecture** - Developer knows the system deeply
+6. **Inline detection for critical device checks** - Use `'ontouchstart' in window || navigator.maxTouchPoints > 0` instead of DI for touch detection. DI can fail if deps aren't wired up (Dec 2025 lesson)
 
 ---
 
@@ -161,6 +162,8 @@ The user-facing simplicity masks engineering depth:
 - Added `--auto` flag to version script for unattended version bumps
 - Deep discussion on patience, problem-solving mindset, and what sustains 11 months of solo work
 - Updated developer profile with new insights
+- **Fixed iOS native drag preview missing** - `deps.utils.isTouchDevice` wasn't wired up, causing `setDragImage(transparentPixel)` to run on mobile and hide iOS's native drag preview. Fix: inline touch detection (`'ontouchstart' in window || navigator.maxTouchPoints > 0`)
+- **Lesson learned**: For critical device-specific checks, inline detection > dependency injection. DI can fail if not wired up correctly; inline checks always work.
 
 ### December 9, 2025
 - Fixed DI timing issues (gamesManager, onboardingManager)

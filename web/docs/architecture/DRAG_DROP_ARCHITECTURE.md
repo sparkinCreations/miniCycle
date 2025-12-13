@@ -2,7 +2,7 @@
 ## Custom Implementation for miniCycle Task Rearrangement
 
 **Author:** miniCycle Team
-**Last Updated:** January 2025
+**Last Updated:** December 2025
 **Status:** Production Ready
 **Test Coverage:** 76 tests (100% passing)
 
@@ -230,8 +230,8 @@ Safari on iPhone/iPad uses touch events exclusively. The HTML5 drag API is not s
 #### Code Flow
 ```javascript
 dragstart →
-  Set AppGlobalState.draggedTask →
-  Create transparent drag image →
+  Set this.draggedTask →
+  Hide drag image on DESKTOP ONLY (let iOS show native preview) →
   Add .dragging class →
 
 dragover (event delegation on document) →
@@ -579,16 +579,35 @@ taskElement.style.msUserSelect = "none";
 
 ### Safari Mobile (iOS/iPadOS)
 
-**Key Difference:** iOS Safari doesn't support HTML5 drag-and-drop API at all.
+**Key Difference:** iOS Safari doesn't support HTML5 drag-and-drop API via touch, BUT it does show a **native drag preview** when:
+1. Element has `draggable="true"`
+2. You DON'T override it with `setDragImage()`
 
-**Solution:** Touch events with long-press pattern
+**Solution:** Touch events with long-press pattern + native iOS drag preview
 ```javascript
 touchstart → 500ms timer → touchmove → touchend
+// iOS automatically shows native drag preview (dark rectangle with content)
 ```
+
+**Critical: Don't Hide the Native Preview!**
+```javascript
+// In dragstart handler - use INLINE touch detection
+const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+if (!isMobileDevice) {
+    event.dataTransfer.setDragImage(transparentPixel, 0, 0);  // Desktop only!
+}
+// On mobile: skip setDragImage → iOS shows its native preview
+```
+
+**Why Inline Detection?** (December 2025 Fix)
+- Dependency-injected `isTouchDevice()` can fail if not wired up correctly
+- Inline check `'ontouchstart' in window || navigator.maxTouchPoints > 0` always works
+- Evaluated at event time, not initialization time
 
 **Why This Works:**
 - iOS touch events are well-supported
 - Long-press is a familiar iOS pattern
+- Native iOS drag preview gives smooth visual feedback
 - Works on all iOS versions back to iOS 11
 
 ---
@@ -879,14 +898,15 @@ taskElement.addEventListener("dragstart", (event) => {
     // Line 285: Add visual feedback
     taskElement.classList.add("dragging");
 
-    // Lines 288-290: Hide drag ghost image (Safari fix!)
-    if (!this.deps.isTouchDevice()) {
+    // Lines 332-336: Hide drag ghost image on DESKTOP ONLY
+    // Use inline detection - more reliable than dependency injection
+    const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!isMobileDevice) {
         // Use the image we created OUTSIDE this handler
         // (Safari requirement - must exist before dragstart fires)
         event.dataTransfer.setDragImage(transparentPixel, 0, 0);
-        //                                ^^^^^^^^^^^^^^^^^
-        //                                This is from the closure!
     }
+    // On mobile: skip setDragImage → iOS shows its native drag preview!
 });
 ```
 
@@ -1866,6 +1886,46 @@ console.log({
 
 ---
 
+### Issue: iOS native drag preview missing (shows placeholder icon)
+
+**Symptoms:**
+- Drag works on iOS
+- But shows tiny question mark icon instead of task content preview
+- Native iOS drag preview (dark rectangle with content) not appearing
+
+**Root Cause (December 2025):**
+The `isTouchDevice()` dependency wasn't wired up in `deps.utils`, so it returned `false` on mobile. This caused `setDragImage(transparentPixel)` to run on iOS, hiding the native preview.
+
+**Diagnosis:**
+```javascript
+// In browser console on iOS
+console.log({
+  ontouchstart: 'ontouchstart' in window,
+  maxTouchPoints: navigator.maxTouchPoints
+});
+// Should show: { ontouchstart: true, maxTouchPoints: 5 }
+```
+
+**Solution:**
+Use **inline touch detection** instead of dependency injection:
+```javascript
+// ❌ BAD: Depends on external wiring (can fail)
+if (!this.deps.isTouchDevice()) {
+    event.dataTransfer.setDragImage(transparentPixel, 0, 0);
+}
+
+// ✅ GOOD: Inline detection (always works)
+const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+if (!isMobileDevice) {
+    event.dataTransfer.setDragImage(transparentPixel, 0, 0);
+}
+```
+
+**Lesson Learned:**
+For critical device-specific checks, prefer inline detection over dependency injection. DI is great for testability, but simple checks like touch detection should be self-contained to avoid wiring issues.
+
+---
+
 ### Issue: Drag works but doesn't save
 
 **Symptoms:**
@@ -2062,7 +2122,21 @@ Not just drag-and-drop:
 
 **Universal design benefits everyone.**
 
-### 5. Documentation is Worth It
+### 5. Inline Detection for Critical Checks
+Dependency injection is great for testability, but for critical device-specific checks:
+- ✅ Inline detection is more reliable (no wiring issues)
+- ✅ Evaluated at runtime (not initialization time)
+- ✅ Self-contained (doesn't depend on boot order)
+
+**Example (December 2025 fix):**
+```javascript
+// Inline check - always works
+const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+```
+
+This fixed a bug where iOS native drag preview was hidden because `deps.utils.isTouchDevice` wasn't wired up.
+
+### 6. Documentation is Worth It
 This document took 2 hours to write.
 It will save **20+ hours** over the life of this feature:
 - Onboarding new developers
@@ -2103,6 +2177,6 @@ If something in this document is unclear:
 ---
 
 **Document Version:** 1.0
-**Last Updated:** January 2025
+**Last Updated:** December 2025
 **Maintained By:** miniCycle Team
 **License:** Part of miniCycle project

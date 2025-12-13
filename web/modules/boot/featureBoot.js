@@ -300,7 +300,8 @@ export async function bootFeatures(deps, coreResult) {
       hideTaskButtons: (task) => deps.task.hideTaskButtons?.(task),
       isTouchDevice: () => deps.utils.isTouchDevice?.() || false,
       enableUndoSystemOnFirstInteraction: () => deps.ui.enableUndoSystemOnFirstInteraction?.(),
-      showNotification: deps.utils.showNotification
+      showNotification: deps.utils.showNotification,
+      safeAddEventListener: deps.utils.safeAddEventListener
     });
 
     deps.task.dragDropManager = dragDropManager;
