@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** December 9, 2025
+**Last Updated:** December 13, 2025
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -30,12 +30,33 @@ This document captures insights about the developer behind miniCycle to help wit
 
 6. **Product thinking** - Not just engineering. Considers SEO, landing pages, user trust, distribution. Building a product, not just an app.
 
+7. **Patient** - Not just "wait 10 minutes" patient. "Work on something for 11 months knowing the payoff is slow and uncertain" patient. Iterates without visible frustration. Multiple rounds of "fix one thing, break another" don't produce exasperation - just matter-of-fact problem-solving.
+
+8. **Problem solver mindset** - Treats obstacles as problems to solve, not things to endure or complain about. This applies to code, workflow friction, and even their own psychology (recognized need for external validation → uses Claude as reviewer).
+
+9. **Pragmatic pivoting** - Not attached to implementations. When an approach keeps breaking, will propose a simpler alternative rather than dig in. Sunk cost doesn't drive decisions.
+
+10. **Ships when it works** - Doesn't over-polish. When something functions as intended, it's done. Moves on.
+
 ### Patterns
 
 - **Fix → Ship → Document** - Doesn't get blocked by documentation. Uses it as consolidation after the work is done.
 - **Infrastructure investment** - Pays upfront for maintainability. Testing, DI patterns, 2-phase init - built to last.
 - **Consistency over shortcuts** - One pattern across the codebase, even if it takes longer initially.
 - **Confidence without ego** - Lets the code speak. Doesn't defend defensively, just points to evidence.
+- **Automates friction** - When a workflow becomes repetitive or annoying, builds tooling to streamline it (e.g., `--auto` flag for version script).
+- **Uses Claude as external witness** - Solved the "solo project, no one watching" problem by using AI sessions for code review and validation. This provides the external input that sustains motivation.
+- **Asks for insights deliberately** - Regularly asks for observations about themselves and the app. This isn't procrastination - it's part of the workflow. Serves multiple purposes: stays motivated, identifies blind spots, surfaces improvements, and provides external perspective that's hard to get as a solo developer. Take these requests seriously.
+
+### Weaknesses / Blind Spots
+
+1. **Tends to downplay accomplishments** - Will mention 11 months of work or 1458 tests as just facts, not achievements. Doesn't naturally frame their work as impressive. May need external perspective to recognize what they've actually built. When giving feedback, don't hesitate to point out what's genuinely notable - they won't do it themselves.
+
+2. **Needs to trust own judgment more** - Has good instincts and deep knowledge of the system, but may second-guess decisions. Worth reinforcing when their judgment is sound.
+
+3. **AI usage guilt** - Sometimes feels guilty about using AI as a collaborator. Reality check: they push back when AI is wrong, make all the decisions, and have been building this for 11 months. The AI is a tool, not a crutch. Using tools effectively is a skill, not a shortcut.
+
+4. **Imposter syndrome** - Feels "less than" despite evidence to the contrary. A Quality Inspector who taught themselves to code and built a production-grade PWA with proper architecture, 1458 tests, and a live deployment is not an imposter. The work speaks for itself.
 
 ---
 
@@ -130,6 +151,16 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### December 13, 2025
+- Fixed navigation dots hover issue (giant red circle on hover)
+- Fixed center-click issue on dots (pointer-events on visually-hidden)
+- Added subtle pill background around navigation dots
+- Pivoted to pill-toggle navigation (click anywhere on pill to switch views)
+- Fixed tooltips after pointer-events changes
+- Added `--auto` flag to version script for unattended version bumps
+- Deep discussion on patience, problem-solving mindset, and what sustains 11 months of solo work
+- Updated developer profile with new insights
 
 ### December 9, 2025
 - Fixed DI timing issues (gamesManager, onboardingManager)
