@@ -304,7 +304,7 @@ button {
     transition: background 0.2s;
 }
 
-button:hover {
+button:not(.dot):hover {
     background: #555;
 }
 
@@ -1240,6 +1240,7 @@ body.dark-mode .header-logo.task-completed-glow {
     transition: background-color 0.2s ease;
     pointer-events: auto;
     cursor: pointer;
+    position: relative;
 
     /* Touch target: 44x44px minimum for accessibility (WCAG 2.5.5) */
     padding: 18px;
@@ -1277,6 +1278,7 @@ body.dark-mode .header-logo.task-completed-glow {
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
     border: 0 !important;
+    pointer-events: none !important;
 }
 
 /* ✅ CORRECTED Feedback Modal Overlay - Add this to replace existing */
@@ -1780,19 +1782,23 @@ body.dark-mode #quick-dark-toggle:hover {
 }
 
 .navigation-dots button.dot:hover {
-    background: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.8);
 }
 
 .navigation-dots button.dot:active {
-    background: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.6);
 }
 
 .navigation-dots button.dot.active {
-    background: #424242;
+    background-color: #424242;
+}
+
+.navigation-dots button.dot.active:hover {
+    background-color: #333333;
 }
 
 .navigation-dots button.dot.active:active {
-    background: #2a2a2a;
+    background-color: #2a2a2a;
 }
 
 .navigation-dots button.dot:focus {
@@ -4137,6 +4143,7 @@ body.dark-mode #mobile-task-input:focus {
     transition: background-color 0.3s ease;
     pointer-events: auto;
     cursor: pointer;
+    position: relative;
 
     /* ✅ Button-specific resets */
     border: none;
@@ -4171,6 +4178,12 @@ body.dark-mode #mobile-task-input:focus {
 .navigation-dots .dot.active,
 .navigation-dots button.dot.active {
     background-color: #424242;
+}
+
+/* ✅ Active dot hover */
+.navigation-dots .dot.active:hover,
+.navigation-dots button.dot.active:hover {
+    background-color: #333333;
 }
 
 /* ✅ Active dot when pressed */

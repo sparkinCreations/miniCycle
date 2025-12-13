@@ -138,6 +138,7 @@ export class StatsPanelManager {
             liveRegion: document.getElementById("live-region"),
             slideLeft: document.getElementById("slide-left"),
             slideRight: document.getElementById("slide-right"),
+            navDotsContainer: document.getElementById("nav-dots"),
             dots: document.querySelectorAll(".dot"),
             taskList: document.getElementById("taskList"),
             addTaskButton: document.getElementById("addTask"),
@@ -197,6 +198,7 @@ export class StatsPanelManager {
             handleTaskListChange: this.handleTaskListChange.bind(this),
             handleAddTaskClick: this.handleAddTaskClick.bind(this),
             handleDotClick: this.handleDotClick.bind(this),
+            handleNavPillClick: this.handleNavPillClick.bind(this),
             // UI event handlers
             handleSlideLeftClick: () => this.showTaskView(),
             handleSlideRightClick: () => this.showStatsPanel(),
@@ -277,13 +279,18 @@ export class StatsPanelManager {
             safeAdd(this.elements.slideRight, "click", this.boundHandlers.handleSlideRightClick);
         }
 
-        // Navigation dots - create indexed handlers
-        this.elements.dots.forEach((dot, index) => {
-            // Create a stable reference for each dot's click handler
-            if (!this.boundHandlers[`handleDotClick_${index}`]) {
-                this.boundHandlers[`handleDotClick_${index}`] = () => this.handleDotClick(index);
-            }
-            safeAdd(dot, "click", this.boundHandlers[`handleDotClick_${index}`]);
+        // Navigation pill container - click anywhere to toggle views
+        if (this.elements.navDotsContainer) {
+            safeAdd(this.elements.navDotsContainer, "click", this.boundHandlers.handleNavPillClick);
+        }
+
+        // Navigation dots - also toggle on click (for tooltip support)
+        // stopPropagation prevents double-firing with container
+        this.elements.dots.forEach((dot) => {
+            safeAdd(dot, "click", (event) => {
+                event.stopPropagation();
+                this.handleNavPillClick();
+            });
         });
 
         // Task list changes
@@ -782,12 +789,23 @@ export class StatsPanelManager {
     }
 
     /**
-     * Handle navigation dot clicks
+     * Handle navigation dot clicks (legacy - kept for potential direct calls)
      */
     handleDotClick(index) {
         if (index === 0) {
             this.showTaskView();
         } else if (index === 1) {
+            this.showStatsPanel();
+        }
+    }
+
+    /**
+     * Handle navigation pill container click - toggles between views
+     */
+    handleNavPillClick() {
+        if (this.state.isStatsVisible) {
+            this.showTaskView();
+        } else {
             this.showStatsPanel();
         }
     }
