@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 4.2 - Added git tag automation (Dec 2025)
+# Version: 4.3 - Added --auto flag for unattended updates (Dec 2025)
 #
 # Features:
 #  - Generates version.js as single source of truth
@@ -9,9 +9,66 @@
 #  - macOS and Linux compatible
 #  - Modules get version via DI (no hardcoded versions in modules)
 #  - Git tag automation with optional remote push
+#  - --auto flag for fully automated sequential version bumps
 
-echo "🎯 miniCycle Version Updater v4.2"
-echo "=============================="
+# ============================================
+# AUTO MODE HANDLING
+# ============================================
+
+AUTO_MODE=false
+AUTO_GIT_TAG=false
+AUTO_GIT_PUSH=false
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --auto|-a)
+            AUTO_MODE=true
+            shift
+            ;;
+        --tag|-t)
+            AUTO_GIT_TAG=true
+            shift
+            ;;
+        --push|-p)
+            AUTO_GIT_PUSH=true
+            AUTO_GIT_TAG=true  # Push implies tag
+            shift
+            ;;
+        --help|-h)
+            echo "🎯 miniCycle Version Updater v4.3"
+            echo ""
+            echo "Usage: ./update-version.sh [options]"
+            echo ""
+            echo "Options:"
+            echo "  --auto, -a     Auto-bump versions and update all files (no prompts)"
+            echo "  --tag, -t      Auto-create git tag (use with --auto)"
+            echo "  --push, -p     Auto-push tag to remote (implies --tag)"
+            echo "  --help, -h     Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  ./update-version.sh              # Interactive mode"
+            echo "  ./update-version.sh --auto       # Auto-bump, no git tag"
+            echo "  ./update-version.sh --auto --tag # Auto-bump + create tag"
+            echo "  ./update-version.sh -a -p        # Auto-bump + tag + push"
+            echo ""
+            exit 0
+            ;;
+        *)
+            echo "❌ Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+if [ "$AUTO_MODE" = true ]; then
+    echo "🤖 miniCycle Version Updater v4.3 (AUTO MODE)"
+    echo "=============================================="
+else
+    echo "🎯 miniCycle Version Updater v4.3"
+    echo "================================="
+fi
 echo ""
 
 # ============================================
@@ -112,32 +169,67 @@ echo "   App version: ${CURRENT_VERSION:-"Not set"}"
 echo "   Service Worker: ${CURRENT_SW_VERSION:-"Not set"}"
 echo ""
 
-# ✅ Get new version from user
-read -p "🔢 Enter new app version (e.g., 1.320): " NEW_VERSION
-read -p "⚙️  Enter new service worker version (e.g., v96): " SW_VERSION
+# ✅ Get new version (auto-calculate or prompt)
+if [ "$AUTO_MODE" = true ]; then
+    # Auto-bump app version (increment by 0.001)
+    if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        NEW_MINOR=$((MINOR + 1))
+        NEW_VERSION="${MAJOR}.${NEW_MINOR}"
+    else
+        echo "❌ Cannot parse current version for auto-bump: $CURRENT_VERSION"
+        exit 1
+    fi
 
-# ✅ Validate input
-if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-    echo "❌ Invalid version format. Use format like 1.320"
-    exit 1
+    # Auto-bump SW version (increment by 1)
+    if [[ "$CURRENT_SW_VERSION" =~ ^v([0-9]+)$ ]]; then
+        SW_NUM="${BASH_REMATCH[1]}"
+        NEW_SW_NUM=$((SW_NUM + 1))
+        SW_VERSION="v${NEW_SW_NUM}"
+    else
+        echo "❌ Cannot parse current SW version for auto-bump: $CURRENT_SW_VERSION"
+        exit 1
+    fi
+
+    echo "🤖 Auto-calculated new versions:"
+    echo "   App version: $CURRENT_VERSION → $NEW_VERSION"
+    echo "   Service Worker: $CURRENT_SW_VERSION → $SW_VERSION"
+    echo ""
+else
+    # Interactive mode - prompt user
+    read -p "🔢 Enter new app version (e.g., 1.320): " NEW_VERSION
+    read -p "⚙️  Enter new service worker version (e.g., v96): " SW_VERSION
+
+    # ✅ Validate input
+    if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        echo "❌ Invalid version format. Use format like 1.320"
+        exit 1
+    fi
+
+    if [[ ! "$SW_VERSION" =~ ^v[0-9]+$ ]]; then
+        echo "❌ Invalid service worker version. Use format like v96"
+        exit 1
+    fi
 fi
 
-if [[ ! "$SW_VERSION" =~ ^v[0-9]+$ ]]; then
-    echo "❌ Invalid service worker version. Use format like v96"
-    exit 1
+if [ "$AUTO_MODE" = true ]; then
+    # Auto mode: always update all files
+    UPDATE_MODE="1"
+    echo "📦 Auto mode: Updating ALL files"
+else
+    echo ""
+    echo "📝 Select update mode:"
+    echo "   [1] Update ALL files (default)"
+    echo "   [2] Select files ONE-BY-ONE"
+    echo "   [3] Custom file selection (enter file names)"
+    echo "   [4] Cancel"
+    echo ""
+    read -p "Choice [1-4]: " UPDATE_MODE
+
+    # Default to mode 1 if empty
+    UPDATE_MODE=${UPDATE_MODE:-1}
 fi
-
-echo ""
-echo "📝 Select update mode:"
-echo "   [1] Update ALL files (default)"
-echo "   [2] Select files ONE-BY-ONE"
-echo "   [3] Custom file selection (enter file names)"
-echo "   [4] Cancel"
-echo ""
-read -p "Choice [1-4]: " UPDATE_MODE
-
-# Default to mode 1 if empty
-UPDATE_MODE=${UPDATE_MODE:-1}
 
 # ============================================
 # FILE SELECTION TRACKING (bash 3 compatible)
@@ -300,12 +392,17 @@ echo "   Service Worker: ${CURRENT_SW_VERSION:-"?"} → $SW_VERSION"
 echo "   Files to update: $TOTAL_FILES"
 echo "   Backups will be saved to: $BACKUP_FOLDER"
 echo ""
-read -p "🤔 Continue? (Y/N): " -n 1 -r
-echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "❌ Update cancelled."
-    rm -rf "$BACKUP_FOLDER" 2>/dev/null
-    exit 1
+
+if [ "$AUTO_MODE" = true ]; then
+    echo "🤖 Auto mode: Proceeding with update..."
+else
+    read -p "🤔 Continue? (Y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Update cancelled."
+        rm -rf "$BACKUP_FOLDER" 2>/dev/null
+        exit 1
+    fi
 fi
 
 echo ""
@@ -694,23 +791,44 @@ echo ""
 
 echo "🏷️  Git Tag Automation"
 echo "----------------------"
-read -p "Create git tag v$NEW_VERSION? (y/N): " -n 1 -r
-echo ""
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+# Determine if we should create a tag
+CREATE_TAG=false
+if [ "$AUTO_MODE" = true ]; then
+    if [ "$AUTO_GIT_TAG" = true ]; then
+        CREATE_TAG=true
+        echo "🤖 Auto mode: Creating git tag..."
+    else
+        echo "⏭️  Auto mode: Skipping tag (use --tag to auto-create)"
+    fi
+else
+    read -p "Create git tag v$NEW_VERSION? (y/N): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        CREATE_TAG=true
+    fi
+fi
+
+if [ "$CREATE_TAG" = true ]; then
     # Check if we're in a git repository
     if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
         # Check if tag already exists
         if git rev-parse "v$NEW_VERSION" > /dev/null 2>&1; then
             echo "⚠️  Tag v$NEW_VERSION already exists"
-            read -p "Delete and recreate? (y/N): " -n 1 -r
-            echo ""
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
+            if [ "$AUTO_MODE" = true ]; then
+                # Auto mode: delete and recreate
                 git tag -d "v$NEW_VERSION" 2>/dev/null
-                echo "🗑️  Deleted existing tag"
+                echo "🤖 Auto mode: Deleted existing tag"
             else
-                echo "⏭️  Skipping tag creation"
-                SKIP_TAG=true
+                read -p "Delete and recreate? (y/N): " -n 1 -r
+                echo ""
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    git tag -d "v$NEW_VERSION" 2>/dev/null
+                    echo "🗑️  Deleted existing tag"
+                else
+                    echo "⏭️  Skipping tag creation"
+                    SKIP_TAG=true
+                fi
             fi
         fi
 
@@ -725,18 +843,32 @@ Generated by update-version.sh"
             if [ $? -eq 0 ]; then
                 echo "✅ Created tag: v$NEW_VERSION"
 
-                # Ask about pushing
-                read -p "Push tag to remote? (y/N): " -n 1 -r
-                echo ""
-                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                # Determine if we should push
+                PUSH_TAG=false
+                if [ "$AUTO_MODE" = true ]; then
+                    if [ "$AUTO_GIT_PUSH" = true ]; then
+                        PUSH_TAG=true
+                        echo "🤖 Auto mode: Pushing tag to remote..."
+                    else
+                        echo "💡 Push later with: git push origin v$NEW_VERSION"
+                    fi
+                else
+                    read -p "Push tag to remote? (y/N): " -n 1 -r
+                    echo ""
+                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                        PUSH_TAG=true
+                    else
+                        echo "💡 Push later with: git push origin v$NEW_VERSION"
+                    fi
+                fi
+
+                if [ "$PUSH_TAG" = true ]; then
                     git push origin "v$NEW_VERSION"
                     if [ $? -eq 0 ]; then
                         echo "✅ Pushed tag to remote"
                     else
                         echo "⚠️  Failed to push tag (you can push manually: git push origin v$NEW_VERSION)"
                     fi
-                else
-                    echo "💡 Push later with: git push origin v$NEW_VERSION"
                 fi
             else
                 echo "❌ Failed to create tag"
@@ -746,8 +878,10 @@ Generated by update-version.sh"
         echo "⚠️  Not in a git repository - skipping tag creation"
     fi
 else
-    echo "⏭️  Skipping tag creation"
-    echo "💡 Create manually with: git tag -a v$NEW_VERSION -m \"Release v$NEW_VERSION\""
+    if [ "$AUTO_MODE" != true ]; then
+        echo "⏭️  Skipping tag creation"
+        echo "💡 Create manually with: git tag -a v$NEW_VERSION -m \"Release v$NEW_VERSION\""
+    fi
 fi
 
 echo ""
@@ -766,6 +900,19 @@ echo "✅ All done!"
 #    ./scripts/update-version.sh
 #
 # 3️⃣ Follow the prompts to enter new version numbers
+#
+# 🤖 AUTO MODE (v4.3+):
+#    ./scripts/update-version.sh --auto       # Auto-bump versions, no prompts
+#    ./scripts/update-version.sh --auto --tag # Auto-bump + create git tag
+#    ./scripts/update-version.sh -a -p        # Auto-bump + tag + push to remote
+#
+# Auto mode:
+# • Increments app version by 1 (e.g., 1.483 → 1.484)
+# • Increments SW cache version by 1 (e.g., v271 → v272)
+# • Updates all files automatically
+# • Skips all confirmation prompts
+# • Use --tag to auto-create git tag
+# • Use --push to auto-push tag to remote
 #
 # 📝 PLATFORM NOTES:
 # • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled
