@@ -159,7 +159,7 @@ npm run test:coverage        # Coverage report
 
 # Access Points
 http://localhost:8080/miniCycle.html           # Full app
-http://localhost:8080/lite/miniCycle-lite.html # Lite version
+http://localhost:8080/lite/miniCycle-lite.html # Lite version (static fallback, not maintained)
 http://localhost:8080/tests/module-test-suite.html # Tests
 ```
 

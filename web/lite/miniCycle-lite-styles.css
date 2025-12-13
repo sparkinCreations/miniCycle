@@ -1,7 +1,34 @@
-/* ==========================================
-   📱 miniCycle LITE - Optimized CSS for Older Devices
-   ES5 Compatible | Same Interface | Maximum Performance
-   ========================================== */
+/* ================================================================================
+   📱 miniCycle LITE - Static Fallback Version (Styles)
+   ================================================================================
+
+   PURPOSE:
+   This is a STATIC, FROZEN stylesheet for miniCycle Lite, designed for:
+     • Older devices that cannot run the full app
+     • Slow connections where performance matters
+     • Maximum browser compatibility (including IE11)
+
+   ⚠️  THIS VERSION IS NOT MEANT TO BE MAINTAINED OR UPDATED  ⚠️
+
+   It exists as a permanent fallback stylesheet. The styles here are simplified
+   and optimized for older rendering engines.
+
+   DO NOT:
+     ✗ Add new styles from the main app's CSS
+     ✗ Try to keep this in sync with miniCycle-styles.css
+     ✗ Use modern CSS features (CSS Grid complexities, CSS variables heavily, etc.)
+     ✗ Add CSS animations that may cause performance issues on old devices
+
+   DESIGN CHOICES:
+     • Solid colors instead of gradients (performance)
+     • Web-safe font fallbacks (Arial instead of Inter)
+     • Simplified animations or none
+     • Fixed values instead of calc() where possible
+     • CSS variable fallbacks for IE11
+
+   Last meaningful update: v1.480 (intentionally static thereafter)
+   © 2025 sparkinCreations - https://sparkincreations.com
+   ================================================================================ */
 
 /* ✅ CSS Variables Fallbacks for IE11 */
 :root {

@@ -29,8 +29,10 @@ npm run test:coverage        # Coverage report
 
 ### File Access
 - **Main App**: http://localhost:8080/miniCycle.html
-- **Lite Version**: http://localhost:8080/lite/miniCycle-lite.html
+- **Lite Version**: http://localhost:8080/lite/miniCycle-lite.html ⚠️ *Static fallback - see note below*
 - **Test Suite**: http://localhost:8080/tests/module-test-suite.html
+
+> ⚠️ **Lite Version Note:** The lite version (`/lite/`) is a **static, frozen fallback** (v1.480) for older devices and slow connections. It is **NOT meant to be maintained or updated**. Do not add features, modernize the code, or try to sync it with the main app. It provides the core routine-tracking concept only.
 
 ---
 
@@ -251,8 +253,9 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ### Before Committing
 - Run full test suite
-- Test both full and lite versions
+- Test the full version works
 - Check PWA functionality still works
+- **Note:** The lite version is static/frozen - no need to test it for main app changes
 
 ---
 
@@ -293,7 +296,7 @@ Every module follows this pattern:
 | Run tests | `npm test` |
 | Update version | `./update-version.sh` |
 | Main app | `miniCycle.html` |
-| Lite version | `lite/miniCycle-lite.html` |
+| Lite version | `lite/miniCycle-lite.html` ⚠️ Static fallback, not maintained |
 | State management | `modules/core/appState.js` |
 | Initialization | `modules/core/appInit.js` |
 | DI wiring hub | `modules/boot/orchestrator.js` |

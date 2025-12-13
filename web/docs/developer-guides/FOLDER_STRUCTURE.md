@@ -108,10 +108,10 @@ web/
 │   ├── user-manual.html
 │   └── user-manual-styles.css
 │
-├── 📁 lite/                             # ES5 legacy version
-│   ├── miniCycle-lite.html
-│   ├── miniCycle-lite-scripts.js        # ES5 compatible version
-│   └── miniCycle-lite-styles.css
+├── 📁 lite/                             # ⚠️ STATIC fallback (NOT maintained)
+│   ├── miniCycle-lite.html              # Frozen ES5 version for old devices
+│   ├── miniCycle-lite-scripts.js        # ES5 compatible - intentionally not updated
+│   └── miniCycle-lite-styles.css        # Simplified styles for older browsers
 │
 ├── 📁 miniCycleGames/                   # Hidden mini-games
 │   ├── miniCycle-taskOrder.html         # Whack-a-Order game (unlocks at 100 cycles)
@@ -190,10 +190,19 @@ web/
 **Philosophy:** Legal compliance should be organized and accessible
 **Why this matters:** GDPR, accessibility, and user trust
 
-### `/lite/` - Legacy Browser Support
-**Purpose:** ES5 version for older devices
-**Philosophy:** Progressive enhancement, not graceful degradation
-**Why this matters:** iPad 3 users deserve task cycling too
+### `/lite/` - Static Fallback Version
+**Purpose:** FROZEN ES5 version for older devices and slow connections
+**Philosophy:** Provide the core concept to everyone, not feature parity
+**Why this matters:** Users on old devices or slow connections can still use miniCycle's basic routine-tracking concept
+
+> ⚠️ **IMPORTANT: This version is intentionally STATIC and NOT meant to be maintained.**
+>
+> It exists as a permanent fallback that provides the basic miniCycle concept without advanced features. Do NOT:
+> - Add new features from the main app
+> - Try to keep it in sync with the full version
+> - Modernize the JavaScript (ES5 is intentional)
+>
+> The lite version is frozen at v1.480 and serves users whose browsers can't run the full app or who prefer a simpler experience.
 
 ### `/miniCycleGames/` - Hidden Games
 **Purpose:** Easter egg mini-games (unlock rewards)

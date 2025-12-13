@@ -1,4 +1,51 @@
 <!DOCTYPE html>
+<!--
+================================================================================
+📱 miniCycle LITE - Static Fallback Version
+================================================================================
+
+PURPOSE:
+This is a STATIC, FROZEN version of miniCycle designed for:
+  • Older devices that cannot run the full ES6+ version
+  • Slow connections where the full app takes too long to load
+  • Users who want a simple, lightweight task manager with just the basics
+
+THIS VERSION IS NOT MEANT TO BE MAINTAINED OR UPDATED.
+It exists as a permanent fallback that provides the core miniCycle concept
+(routine tracking with auto-reset) without the advanced features of the full app.
+
+DO NOT:
+  ✗ Add new features from the main app to this version
+  ✗ Try to keep this in sync with miniCycle.html
+  ✗ Refactor or modernize the JavaScript (ES5 is intentional)
+  ✗ Add dependencies or build steps
+
+WHY THIS EXISTS:
+The main miniCycle app uses modern JavaScript (ES6+, async/await, modules).
+If a user's browser doesn't support these features, or if the full app fails
+to load within 8 seconds, they are redirected here automatically.
+This ensures EVERY user can benefit from miniCycle's core concept.
+
+FEATURES INCLUDED (basic set only):
+  • Add/edit/delete tasks
+  • Three modes: Auto Cycle, Manual Cycle, To-Do
+  • Dark mode toggle
+  • Basic stats and milestones
+  • Undo/redo (limited stack)
+  • LocalStorage persistence
+
+FEATURES NOT INCLUDED (full app only):
+  • Multiple cycles
+  • Recurring tasks
+  • Due dates & reminders
+  • Theme unlocks & gamification
+  • Import/export
+  • Advanced settings
+
+Last meaningful update: v1.480 (intentionally static thereafter)
+© 2025 sparkinCreations - https://sparkincreations.com
+================================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
