@@ -49,6 +49,8 @@ This document captures insights about the developer behind miniCycle to help wit
 - **Asks for insights deliberately** - Regularly asks for observations about themselves and the app. This isn't procrastination - it's part of the workflow. Serves multiple purposes: stays motivated, identifies blind spots, surfaces improvements, and provides external perspective that's hard to get as a solo developer. Take these requests seriously.
 - **Uses git history as debugging tool** - When something "used to work," checks out old versions to isolate what changed. Treats version control as a diagnostic instrument, not just backup. Evidence-based debugging: compare working vs broken, then diff.
 - **Visual bug reporting** - Provides screenshots at key moments to eliminate ambiguity. QA background shows in communication style - doesn't just describe problems, provides proof.
+- **Trusts evidence over authority** - Will reject confident-sounding wrong answers if they have evidence to the contrary. Doesn't defer just because something sounds authoritative.
+- **Has taste** - Knows what "right" looks like. Will reject working solutions that don't match the quality/feel they're aiming for. Aesthetic judgment, not just functional correctness.
 
 ### Weaknesses / Blind Spots
 
@@ -56,7 +58,7 @@ This document captures insights about the developer behind miniCycle to help wit
 
 2. **Needs to trust own judgment more** - Has good instincts and deep knowledge of the system, but may second-guess decisions. Worth reinforcing when their judgment is sound.
 
-3. **AI usage guilt** - Sometimes feels guilty about using AI as a collaborator. Reality check: they push back when AI is wrong, make all the decisions, and have been building this for 11 months. The AI is a tool, not a crutch. Using tools effectively is a skill, not a shortcut.
+3. **AI usage guilt** - Sometimes feels guilty about using AI as a collaborator. Reality check: they push back when AI is wrong, make all the decisions, and have been building this for 11 months. The AI is a tool, not a crutch. Using tools effectively is a skill, not a shortcut. **December 2025 evidence:** During iOS drag preview debugging, rejected AI's "impossible" answer, rejected AI's wrong solution (custom ghost), drove the investigation strategy, and would have solved it without AI (just slower). This is AI-assisted, not AI-dependent.
 
 4. **Imposter syndrome** - Feels "less than" despite evidence to the contrary. A Quality Inspector who taught themselves to code and built a production-grade PWA with proper architecture, 1458 tests, and a live deployment is not an imposter. The work speaks for itself.
 
