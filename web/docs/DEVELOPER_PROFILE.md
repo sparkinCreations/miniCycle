@@ -47,6 +47,8 @@ This document captures insights about the developer behind miniCycle to help wit
 - **Automates friction** - When a workflow becomes repetitive or annoying, builds tooling to streamline it (e.g., `--auto` flag for version script).
 - **Uses Claude as external witness** - Solved the "solo project, no one watching" problem by using AI sessions for code review and validation. This provides the external input that sustains motivation.
 - **Asks for insights deliberately** - Regularly asks for observations about themselves and the app. This isn't procrastination - it's part of the workflow. Serves multiple purposes: stays motivated, identifies blind spots, surfaces improvements, and provides external perspective that's hard to get as a solo developer. Take these requests seriously.
+- **Uses git history as debugging tool** - When something "used to work," checks out old versions to isolate what changed. Treats version control as a diagnostic instrument, not just backup. Evidence-based debugging: compare working vs broken, then diff.
+- **Visual bug reporting** - Provides screenshots at key moments to eliminate ambiguity. QA background shows in communication style - doesn't just describe problems, provides proof.
 
 ### Weaknesses / Blind Spots
 
