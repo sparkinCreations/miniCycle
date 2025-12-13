@@ -329,8 +329,9 @@ export class DragDropManager {
                 // Add dragging class for desktop as well
                 taskElement.classList.add("dragging");
 
-                // Hide ghost image on desktop (use pre-created image for Safari compatibility)
-                if (!this.deps.isTouchDevice()) {
+                // Hide ghost image on desktop only - let iOS show native drag preview on mobile
+                const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                if (!isMobileDevice) {
                     event.dataTransfer.setDragImage(transparentPixel, 0, 0);
                 }
             };
