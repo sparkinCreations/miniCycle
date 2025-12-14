@@ -24,6 +24,7 @@ import {
     createMockNotification,
     waitForAsyncOperations
 } from './testHelpers.js';
+import { getTestDeviceDetectionManager } from './helpers/testContext.js';
 
 export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -37,7 +38,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     let passed = { count: 0 }, total = { count: 0 };
 
     // Import the DeviceDetectionManager class
-    const DeviceDetectionManager = window.DeviceDetectionManager;
+    const DeviceDetectionManager = getTestDeviceDetectionManager();
 
     // Check if class is available
     if (!DeviceDetectionManager) {

@@ -9,6 +9,7 @@ import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
+import { getTestDragDropManager, getTestAppGlobalState } from './helpers/testContext.js';
 
 export async function runDragDropManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔄 DragDropManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -38,7 +39,7 @@ export async function runDragDropManagerTests(resultsDiv) {
     });
 
     test('DragDropManager class is exported', () => {
-        if (typeof window.DragDropManager === 'undefined') {
+        if (!getTestDragDropManager()) {
             throw new Error('DragDropManager not available on window object');
         }
     });

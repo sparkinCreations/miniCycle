@@ -12,6 +12,7 @@ import {
     createMockNotification,
     waitForAsyncOperations
 } from './testHelpers.js';
+import { getTestMiniCycleReminders, getTestAppGlobalState } from './helpers/testContext.js';
 
 export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Reminders Module Tests</h2><h3>Setting up mocks...</h3>';
@@ -51,7 +52,7 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
     try {
 
         // Import the module class
-        const MiniCycleReminders = window.MiniCycleReminders;
+        const MiniCycleReminders = getTestMiniCycleReminders();
 
         // Check if class is available
         if (!MiniCycleReminders) {

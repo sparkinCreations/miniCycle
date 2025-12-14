@@ -237,8 +237,7 @@ export class CycleManager {
             this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
             // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-            // Use injected AppState (DI pattern) with fallback to window.AppState
-            const appState = this.deps.AppState || window.AppState;
+            const appState = this.deps.AppState;
             if (appState && typeof appState.init === 'function') {
                 appState.data = fullSchemaData;
                 appState.isInitialized = true;
@@ -316,8 +315,7 @@ export class CycleManager {
         this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
         // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-        // Use injected AppState (DI pattern) with fallback to window.AppState
-        const appState = this.deps.AppState || window.AppState;
+        const appState = this.deps.AppState;
         if (appState && typeof appState.init === 'function') {
             appState.data = fullSchemaData;
             appState.isInitialized = true;

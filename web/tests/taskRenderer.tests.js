@@ -3,6 +3,8 @@
  * Tests for task rendering and UI refresh operations
  */
 
+import { getTestTaskRenderer, hasGlobal } from './helpers/testContext.js';
+
 // ============================================
 // 🧪 MOCK DEPENDENCIES FOR TASKRENDERER
 // (Phase 3 - all deps are now required)
@@ -70,13 +72,13 @@ export async function runTaskRendererTests(resultsDiv) {
     });
 
     await test('TaskRenderer is exported to window', () => {
-        if (typeof window.TaskRenderer === 'undefined') {
+        if (!getTestTaskRenderer()) {
             throw new Error('TaskRenderer not available on window object');
         }
     });
 
     await test('initTaskRenderer function is exported', () => {
-        if (typeof window.initTaskRenderer !== 'function') {
+        if (!hasGlobal('initTaskRenderer')) {
             throw new Error('initTaskRenderer not found on window object');
         }
     });

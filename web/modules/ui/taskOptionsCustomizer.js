@@ -559,6 +559,8 @@ export class TaskOptionsCustomizer {
         const currentThreeDots = currentState.settings?.showThreeDots || false;
         const newThreeDots = newOptions.threeDots || false;
 
+        console.log('🔵 Three dots check:', { currentThreeDots, newThreeDots, changed: newThreeDots !== currentThreeDots });
+
         if (newThreeDots !== currentThreeDots) {
             // Update global three dots setting
             await this.deps.AppState.update(state => {

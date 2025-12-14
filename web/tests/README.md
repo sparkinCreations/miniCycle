@@ -52,6 +52,7 @@ All modules use **strict DI** with no `|| window.*` fallbacks:
 ```javascript
 // Modern DI Pattern (used by all modules)
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+import { hasGlobal, getTestYourClass } from './helpers/testContext.js';
 
 export async function runYourModuleTests(resultsDiv) {
     // 1. Setup test environment with mocks
@@ -71,6 +72,11 @@ export async function runYourModuleTests(resultsDiv) {
         const instance = new YourModule();
         // assertions...
     });
+
+    // 5. Check globals using testContext helpers
+    await test('class exported to window', () => {
+        if (!hasGlobal('YourClass')) throw new Error('Not exported');
+    });
 }
 ```
 
@@ -79,12 +85,14 @@ export async function runYourModuleTests(resultsDiv) {
 ```
 tests/
 ├── testHelpers.js              # Shared mocks and DI setup (REQUIRED)
+├── helpers/
+│   └── testContext.js          # Centralized global access (REQUIRED)
 ├── MODULE_TEMPLATE.tests.js    # Template for new modules
 ├── module-test-suite.html      # Browser test runner UI
 ├── automated/
 │   ├── run-browser-tests.js    # Playwright automation
 │   └── README.md               # CI/CD documentation
-└── *.tests.js                  # Individual module tests (32 files)
+└── *.tests.js                  # Individual module tests (50 files)
 ```
 
 ## Key Patterns
@@ -121,6 +129,25 @@ setYourModuleDependencies({
     showNotification: () => {}
 });
 ```
+
+### 4. Use testContext.js for Global Access
+
+```javascript
+import { hasGlobal, getTestAppState, getTestBackupManager } from './helpers/testContext.js';
+
+// Check if global exists (preferred over window.*)
+if (!hasGlobal('AppState')) throw new Error('Not found');
+
+// Get specific globals via type-safe getters
+const AppState = getTestAppState();
+const BackupManager = getTestBackupManager();
+```
+
+**Key functions:**
+- `hasGlobal('name')` - Check if window.name exists
+- `getTestAppState()`, `getTestBackupManager()`, etc. - Get specific globals
+- `getAllTestGlobals()` - Get all available test globals
+- `waitForAppReady(timeout)` - Wait for app initialization
 
 ## Known Playwright Limitations
 
@@ -168,8 +195,9 @@ See comments in test files marked with `// NOTE:` for specific exclusions.
 
 1. Copy `MODULE_TEMPLATE.tests.js`
 2. Use `testHelpers.js` for DI setup
-3. Add to `module-test-suite.html`
-4. Add to `automated/run-browser-tests.js` modules array
+3. Use `testContext.js` for checking global exports
+4. Add to `module-test-suite.html`
+5. Add to `automated/run-browser-tests.js` modules array
 
 See [TEMPLATE_QUICK_START.md](./TEMPLATE_QUICK_START.md) for detailed steps.
 
@@ -189,8 +217,10 @@ All test files protect your real app data:
 - **Data protected** - All tests backup/restore localStorage
 - **Real environment** - Tests actual browser behavior
 - **DI throughout** - No global state pollution
+- **Centralized globals** - Use testContext.js instead of direct window.* access
 
 ---
 
+**Version:** 3.1 (Strict DI + testContext)
 **Last Updated:** December 2025
 **Test Coverage:** 1458+ tests across 50 modules (100%)

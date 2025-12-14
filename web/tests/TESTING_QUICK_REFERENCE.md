@@ -32,6 +32,8 @@ python3 -m http.server 8080
 ```
 tests/
 ├── testHelpers.js              # Shared mocks and DI setup (REQUIRED)
+├── helpers/
+│   └── testContext.js          # Centralized global access (REQUIRED)
 ├── module-test-suite.html      # Browser test runner UI
 ├── MODULE_TEMPLATE.tests.js    # Template for new tests
 ├── automated/
@@ -57,6 +59,7 @@ import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
+import { hasGlobal, getTestMyClass } from './helpers/testContext.js';
 
 import { setMyModuleDependencies } from '../modules/myModule.js';
 
@@ -260,6 +263,27 @@ resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 | `createMockAppState()` | Creates Schema 2.5 compliant AppState mock |
 | `createMockSchemaData()` | Returns complete Schema 2.5 data structure |
 
+## 🔧 testContext.js Functions (helpers/)
+
+| Function | Purpose |
+|----------|---------|
+| `hasGlobal('name')` | Check if a global exists (e.g., `hasGlobal('AppState')`) |
+| `getTestAppState()` | Get window.AppState |
+| `getTestBackupManager()` | Get window.BackupManager |
+| `getTestCycleManager()` | Get window.CycleManager |
+| `getTestModeManager()` | Get window.ModeManager |
+| `getTestMenuManager()` | Get window.MenuManager |
+| `getTestSettingsManager()` | Get window.SettingsManager |
+| `getTestErrorHandler()` | Get window.ErrorHandler |
+| `getTestTaskRenderer()` | Get window.TaskRenderer |
+| `getTestTaskDOMManager()` | Get window.TaskDOMManager |
+| `getTestPullToRefresh()` | Get window.PullToRefresh |
+| `getAllTestGlobals()` | Get all available test globals as object |
+| `waitForAppReady(timeout)` | Wait for app to be fully initialized |
+| `requireGlobals(...names)` | Assert required globals exist, throws if missing |
+
+**Full list:** See `tests/helpers/testContext.js` for all 25+ getters.
+
 ### Usage Example
 
 ```javascript
@@ -368,15 +392,15 @@ const browser = await chromium.launch({
 ## ✅ Best Practices (Top 10)
 
 1. **Use testHelpers.js** - Never recreate mock patterns manually
-2. **Test one thing per test** - Easier debugging
-3. **Use descriptive names** - "calculates total correctly" not "test1"
-4. **State is auto-protected** - createProtectedTest saves/restores localStorage
-5. **Test edge cases** - null, empty, missing properties
-6. **Test error handling** - Not just happy paths
-7. **Keep tests independent** - Don't rely on execution order
-8. **Inject all dependencies** - Use set*Dependencies() functions
-9. **Use complete Schema 2.5 mocks** - Partial mocks cause false failures
-10. **Clean up DOM elements** - Remove elements you create
+2. **Use testContext.js** - Use `hasGlobal()` or `getTestX()` instead of `window.X`
+3. **Test one thing per test** - Easier debugging
+4. **Use descriptive names** - "calculates total correctly" not "test1"
+5. **State is auto-protected** - createProtectedTest saves/restores localStorage
+6. **Test edge cases** - null, empty, missing properties
+7. **Test error handling** - Not just happy paths
+8. **Keep tests independent** - Don't rely on execution order
+9. **Inject all dependencies** - Use set*Dependencies() functions
+10. **Use complete Schema 2.5 mocks** - Partial mocks cause false failures
 
 ---
 
@@ -478,10 +502,11 @@ jobs:
 
 - **Test Template**: `tests/MODULE_TEMPLATE.tests.js`
 - **Shared Helpers**: `tests/testHelpers.js`
+- **Global Access Helpers**: `tests/helpers/testContext.js`
 - **Automation**: `tests/automated/README.md`
 - **Test UI**: `http://localhost:8080/tests/module-test-suite.html`
 
 ---
 
-**Version**: 3.0 (Strict DI Architecture)
-**Last Updated**: December 2024
+**Version**: 3.1 (Strict DI + testContext)
+**Last Updated**: December 2025

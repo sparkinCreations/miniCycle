@@ -11,6 +11,8 @@
  * - To-Do Mode ✓: Tasks are deleted instead of reset
  */
 
+import { getTestModeManager } from './helpers/testContext.js';
+
 // Import module directly for DI testing
 let ModeManager = null;
 let setModeManagerDependencies = null;
@@ -704,7 +706,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4 class="test-section">🌍 Global Wrappers (Backward Compat)</h4>';
 
     await test('window.ModeManager exists (backward compat)', async () => {
-        if (!window.ModeManager) {
+        if (!getTestModeManager()) {
             throw new Error('Global ModeManager class not found');
         }
     });

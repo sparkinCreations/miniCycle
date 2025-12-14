@@ -3,6 +3,8 @@
  * Test functions for module-test-suite.html
  */
 
+import { getTestMiniCycleNotifications, getTestEducationalTipManager, hasGlobal } from './helpers/testContext.js';
+
 export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔔 MiniCycleNotifications Tests</h2><h3>Running tests...</h3>';
 

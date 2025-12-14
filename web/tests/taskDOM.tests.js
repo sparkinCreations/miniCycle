@@ -13,6 +13,7 @@ import {
     createProtectedTest,
     waitForAsyncOperations
 } from './testHelpers.js';
+import { getTestTaskDOMManager, getTestGlobalUtils, getTestSanitizeInput, hasGlobal } from './helpers/testContext.js';
 
 export async function runTaskDOMTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎨 TaskDOM Tests</h2><h3>Setting up mocks...</h3>';
@@ -23,19 +24,20 @@ export async function runTaskDOMTests(resultsDiv) {
     const env = await setupTestEnvironment();
 
     // Ensure sanitizeInput is available globally (required by TaskValidator)
-    if (!window.sanitizeInput) {
+    if (!getTestSanitizeInput()) {
         window.sanitizeInput = createMockSanitizeInput();
     }
 
     // Ensure GlobalUtils.sanitizeInput is also available
-    if (window.GlobalUtils && !window.GlobalUtils.sanitizeInput) {
-        window.GlobalUtils.sanitizeInput = window.sanitizeInput;
+    const globalUtils = getTestGlobalUtils();
+    if (globalUtils && !globalUtils.sanitizeInput) {
+        globalUtils.sanitizeInput = getTestSanitizeInput() || createMockSanitizeInput();
     }
 
     // Helper to get default dependencies for TaskDOMManager
     // This ensures sanitizeInput is always available (Phase 3 requires explicit DI)
     const getDefaultDeps = () => ({
-        sanitizeInput: window.sanitizeInput || createMockSanitizeInput(),
+        sanitizeInput: getTestSanitizeInput() || createMockSanitizeInput(),
         showNotification: () => {},
         AppState: createMockAppState()
     });
@@ -60,13 +62,13 @@ export async function runTaskDOMTests(resultsDiv) {
     });
 
     await test('TaskDOMManager class is exported to window', () => {
-        if (typeof window.TaskDOMManager === 'undefined') {
+        if (!getTestTaskDOMManager()) {
             throw new Error('TaskDOMManager not available on window object');
         }
     });
 
     await test('initTaskDOMManager function is exported', () => {
-        if (typeof window.initTaskDOMManager !== 'function') {
+        if (!hasGlobal('initTaskDOMManager')) {
             throw new Error('initTaskDOMManager not found on window object');
         }
     });
@@ -88,7 +90,7 @@ export async function runTaskDOMTests(resultsDiv) {
         ];
 
         for (const funcName of requiredFunctions) {
-            if (typeof window[funcName] !== 'function') {
+            if (!hasGlobal(funcName)) {
                 throw new Error(`${funcName} not found on window object`);
             }
         }

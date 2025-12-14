@@ -5,6 +5,8 @@
  * Tests the global error handling system and safe utility functions.
  */
 
+import { getTestErrorHandler, hasGlobal } from './helpers/testContext.js';
+
 export function runErrorHandlerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛡️ Error Handler Tests</h2><h3>Running tests...</h3>';
 
@@ -27,19 +29,22 @@ export function runErrorHandlerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ ErrorHandler Module</h4>';
 
     test('ErrorHandler is loaded globally', () => {
-        if (typeof window.ErrorHandler === 'undefined') {
-            throw new Error('ErrorHandler not found on window');
+        const ErrorHandler = getTestErrorHandler();
+        if (!ErrorHandler) {
+            throw new Error('ErrorHandler not found');
         }
     });
 
     test('ErrorHandler has getStats method', () => {
-        if (typeof window.ErrorHandler.getStats !== 'function') {
+        const ErrorHandler = getTestErrorHandler();
+        if (typeof ErrorHandler?.getStats !== 'function') {
             throw new Error('ErrorHandler.getStats not found');
         }
     });
 
     test('ErrorHandler stats returns correct structure', () => {
-        const stats = window.ErrorHandler.getStats();
+        const ErrorHandler = getTestErrorHandler();
+        const stats = ErrorHandler.getStats();
         if (!stats.hasOwnProperty('totalErrors') ||
             !stats.hasOwnProperty('recentErrors') ||
             !stats.hasOwnProperty('errorLog')) {
@@ -48,27 +53,31 @@ export function runErrorHandlerTests(resultsDiv) {
     });
 
     test('ErrorHandler has reset method', () => {
-        if (typeof window.ErrorHandler.reset !== 'function') {
+        const ErrorHandler = getTestErrorHandler();
+        if (typeof ErrorHandler?.reset !== 'function') {
             throw new Error('ErrorHandler.reset not found');
         }
     });
 
     test('ErrorHandler reset clears error count', () => {
-        window.ErrorHandler.reset();
-        const stats = window.ErrorHandler.getStats();
+        const ErrorHandler = getTestErrorHandler();
+        ErrorHandler.reset();
+        const stats = ErrorHandler.getStats();
         if (stats.totalErrors !== 0) {
             throw new Error('Reset did not clear error count');
         }
     });
 
     test('ErrorHandler has exportErrorLog method', () => {
-        if (typeof window.ErrorHandler.exportErrorLog !== 'function') {
+        const ErrorHandler = getTestErrorHandler();
+        if (typeof ErrorHandler?.exportErrorLog !== 'function') {
             throw new Error('ErrorHandler.exportErrorLog not found');
         }
     });
 
     test('ErrorHandler exportErrorLog returns string', () => {
-        const log = window.ErrorHandler.exportErrorLog();
+        const ErrorHandler = getTestErrorHandler();
+        const log = ErrorHandler.exportErrorLog();
         if (typeof log !== 'string') {
             throw new Error('Error log is not a string');
         }
@@ -78,19 +87,19 @@ export function runErrorHandlerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Safe localStorage Functions</h4>';
 
     test('safeLocalStorageGet is available globally', () => {
-        if (typeof window.safeLocalStorageGet !== 'function') {
+        if (!hasGlobal('safeLocalStorageGet')) {
             throw new Error('safeLocalStorageGet not found');
         }
     });
 
     test('safeLocalStorageSet is available globally', () => {
-        if (typeof window.safeLocalStorageSet !== 'function') {
+        if (!hasGlobal('safeLocalStorageSet')) {
             throw new Error('safeLocalStorageSet not found');
         }
     });
 
     test('safeLocalStorageRemove is available globally', () => {
-        if (typeof window.safeLocalStorageRemove !== 'function') {
+        if (!hasGlobal('safeLocalStorageRemove')) {
             throw new Error('safeLocalStorageRemove not found');
         }
     });
@@ -159,13 +168,13 @@ export function runErrorHandlerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">📋 Safe JSON Functions</h4>';
 
     test('safeJSONParse is available globally', () => {
-        if (typeof window.safeJSONParse !== 'function') {
+        if (!hasGlobal('safeJSONParse')) {
             throw new Error('safeJSONParse not found');
         }
     });
 
     test('safeJSONStringify is available globally', () => {
-        if (typeof window.safeJSONStringify !== 'function') {
+        if (!hasGlobal('safeJSONStringify')) {
             throw new Error('safeJSONStringify not found');
         }
     });

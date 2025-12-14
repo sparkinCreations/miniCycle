@@ -207,7 +207,12 @@ export async function initCoreBoot(deps) {
   deps.core.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
   deps.core.performSchema25Migration = migrationMod.performSchema25Migration;
 
-  // Expose migration functions globally
+  // Initialize migration facade (consolidates 8 globals into 1 importable object)
+  const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${window.APP_VERSION || '1.0'}`);
+  migrationFacadeMod.initMigrationFacade(migrationMod);
+  deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
+
+  // Expose migration functions globally (backward compatibility - can be removed when code uses facade)
   window.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
   window.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
   window.simulateMigrationToSchema25 = migrationMod.simulateMigrationToSchema25;
@@ -217,7 +222,19 @@ export async function initCoreBoot(deps) {
   window.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
   window.forceAppMigration = migrationMod.forceAppMigration;
 
-  console.log('✅ Migration Manager loaded');
+  console.log('✅ Migration Manager loaded (with facade)');
+
+  // ========== Initialize appContext early ==========
+  // This allows modules loaded between initCoreBoot and initAppState
+  // to use appContext getters (e.g., getGlobalUtils())
+  const appContextMod = await import('../core/appContext.js');
+  appContextMod.initAppContext({
+    appInit,
+    AppGlobalState,
+    GlobalUtils
+    // Note: AppState will be added via setContextValue in initAppState
+  });
+  console.log('✅ appContext initialized (early) with appInit, AppGlobalState, GlobalUtils');
 
   return {
     AppGlobalState,
@@ -309,14 +326,29 @@ export async function initAppState(deps, showNotification) {
   window.AppState = AppState;
   deps.core.AppState = AppState;
 
-  // ✅ Expose core data functions to deps.core for featureBoot.js
-  deps.core.loadMiniCycleData = loadMiniCycleData;
-  deps.core.autoSave = autoSave;
-  deps.core.updateCycleData = updateCycleData;
-
   // Initialize AppState
   await AppState.init();
   console.log('✅ AppState initialized');
+
+  // ========== Add AppState to appContext ==========
+  // appContext was already initialized in initCoreBoot with appInit, AppGlobalState, GlobalUtils
+  // Now we add AppState which is created here
+  const appContextMod = await import('../core/appContext.js');
+  appContextMod.setContextValue('AppState', AppState);
+  console.log('✅ AppState added to appContext');
+
+  // ========== Initialize data access functions ==========
+  // Must be after appContext so dataAccess.js can use getAppState()
+  await initDataAccess();
+
+  // Update appContext with data functions
+  appContextMod.setContextValue('loadMiniCycleData', loadMiniCycleData);
+  appContextMod.setContextValue('autoSave', autoSave);
+
+  // Update deps.core with data functions
+  deps.core.loadMiniCycleData = loadMiniCycleData;
+  deps.core.autoSave = autoSave;
+  deps.core.updateCycleData = updateCycleData;
 
   // Mark core systems ready
   await appInit.markCoreSystemsReady();
@@ -326,168 +358,31 @@ export async function initAppState(deps, showNotification) {
 }
 
 // ============================================================================
-// SECTION 2: Core Data Functions
+// SECTION 2: Core Data Functions (imported from dataAccess.js)
 // ============================================================================
+// These functions are now defined in modules/core/dataAccess.js
+// Re-exported here for backward compatibility
 
-/**
- * Load miniCycle data from AppState (Schema 2.5 format)
- * Returns legacy-compatible format for backward compatibility
- * Creates initial data if none exists
- */
-export function loadMiniCycleData() {
-  // Try AppState first for most current data (if available)
-  if (window.AppState?.isReady?.()) {
-    try {
-      const state = window.AppState.get();
-      if (state) {
-        // Load reminders from active cycle (per-cycle)
-        const activeCycleId = state.appState.activeCycleId;
-        const activeCycle = state.data.cycles[activeCycleId];
-        const reminders = activeCycle?.reminders || {
-          enabled: false,
-          indefinite: false,
-          dueDatesReminders: false,
-          repeatCount: 0,
-          frequencyValue: 30,
-          frequencyUnit: "minutes"
-        };
+// Import will be done dynamically after appContext is initialized
+let loadMiniCycleData, autoSave, updateCycleData;
 
-        return {
-          cycles: state.data.cycles,
-          activeCycle: activeCycleId,
-          reminders: reminders,
-          settings: state.settings
-        };
-      }
-    } catch (error) {
-      console.warn('⚠️ AppState read failed, falling back to localStorage:', error);
-    }
-  }
+// Initialize data access functions (called after appContext is ready)
+async function initDataAccess() {
+  const dataAccessMod = await import(`../core/dataAccess.js?v=${window.APP_VERSION || '1.0'}`);
+  loadMiniCycleData = dataAccessMod.loadMiniCycleData;
+  autoSave = dataAccessMod.autoSave;
+  updateCycleData = dataAccessMod.updateCycleData;
 
-  // Fallback to localStorage
-  const data = localStorage.getItem("miniCycleData");
-  if (data) {
-    try {
-      const parsed = JSON.parse(data);
-      const activeCycleId = parsed.appState.activeCycleId;
-      const activeCycle = parsed.data.cycles[activeCycleId];
-      const reminders = activeCycle?.reminders || {
-        enabled: false,
-        indefinite: false,
-        dueDatesReminders: false,
-        repeatCount: 0,
-        frequencyValue: 30,
-        frequencyUnit: "minutes"
-      };
+  // Expose on window for backward compatibility
+  window.loadMiniCycleData = loadMiniCycleData;
+  window.autoSave = autoSave;
+  window.updateCycleData = updateCycleData;
 
-      return {
-        cycles: parsed.data.cycles,
-        activeCycle: activeCycleId,
-        reminders: reminders,
-        settings: parsed.settings
-      };
-    } catch (error) {
-      console.error('❌ Error parsing Schema 2.5 data:', error);
-      console.error('❌ This likely means data is corrupted. NOT creating fresh data to preserve existing localStorage.');
-      return null;
-    }
-  }
-
-  // CREATE INITIAL DATA IF NONE EXISTS
-  // SAFETY CHECK: Verify localStorage truly has no data before creating fresh data
-  const existingData = localStorage.getItem("miniCycleData");
-  if (existingData) {
-    console.error('❌ Data exists in localStorage but failed to parse. NOT creating fresh data to prevent data loss.');
-    console.error('❌ Existing data:', existingData.substring(0, 200) + '...');
-    return null;
-  }
-
-  console.log('🆕 No data found in localStorage - Creating initial Schema 2.5 structure...');
-  window.createInitialSchema25Data?.();
-
-  // Try again after creating
-  const newData = localStorage.getItem("miniCycleData");
-  if (newData) {
-    const parsed = JSON.parse(newData);
-    const activeCycleId = parsed.appState.activeCycleId;
-    const activeCycle = parsed.data.cycles[activeCycleId];
-    const reminders = activeCycle?.reminders || {
-      enabled: false,
-      indefinite: false,
-      dueDatesReminders: false,
-      repeatCount: 0,
-      frequencyValue: 30,
-      frequencyUnit: "minutes"
-    };
-
-    return {
-      cycles: parsed.data.cycles,
-      activeCycle: activeCycleId,
-      reminders: reminders,
-      settings: parsed.settings
-    };
-  }
-
-  return null;
+  console.log('✅ Data access functions loaded from dataAccess.js');
 }
-window.loadMiniCycleData = loadMiniCycleData;
 
-/**
- * Auto-save current state with debouncing
- */
-export async function autoSave(overrideTaskList = null, immediate = false) {
-  // AppState must be ready
-  if (!window.AppState?.isReady?.()) {
-    console.error('❌ autoSave called before AppState ready');
-    return { success: false, error: 'AppState not ready' };
-  }
-
-  try {
-    const taskData = overrideTaskList || window.extractTaskDataFromDOM?.() || [];
-
-    await window.AppState.update(state => {
-      const activeCycle = state?.appState?.activeCycleId;
-      if (!activeCycle) {
-        throw new Error('No active cycle ID found in state');
-      }
-
-      const currentCycle = state?.data?.cycles?.[activeCycle];
-      if (!currentCycle) {
-        throw new Error(`Active cycle "${activeCycle}" not found in state`);
-      }
-
-      currentCycle.tasks = taskData;
-    }, immediate);
-
-    return { success: true, taskCount: taskData.length };
-  } catch (error) {
-    console.error('❌ autoSave failed:', error?.message || error);
-    return { success: false, error: error?.message || 'Unknown error' };
-  }
-}
-window.autoSave = autoSave;
-
-/**
- * Update cycle data with a producer function
- */
-export async function updateCycleData(cycleId, updateFn, immediate = true) {
-  if (!window.AppState?.isReady?.()) {
-    console.warn('⚠️ updateCycleData called before AppState ready');
-    return;
-  }
-
-  try {
-    await window.AppState.update(state => {
-      if (state.data?.cycles?.[cycleId]) {
-        updateFn(state.data.cycles[cycleId]);
-        state.metadata.lastModified = new Date().toISOString();
-      }
-    }, immediate);
-  } catch (error) {
-    console.error('❌ updateCycleData failed:', error);
-  }
-}
-window.updateCycleData = updateCycleData;
+// Export the functions (they'll be populated after initDataAccess)
+export { loadMiniCycleData, autoSave, updateCycleData, initDataAccess };
 
 // ============================================================================
 // SECTION 3: Cache Recovery Helpers

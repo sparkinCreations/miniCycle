@@ -112,7 +112,9 @@ async function initApp() {
   // featureBoot: All feature module loading and DI wiring
   // ============================================
   const coreBoot = await import(`./coreBoot.js?v=${window.APP_VERSION || '1.470'}`);
-  const { initCoreBoot, initAppState, loadMiniCycleData, autoSave, updateCycleData } = coreBoot;
+  // Note: loadMiniCycleData, autoSave, updateCycleData are NOT destructured here
+  // They're populated AFTER initCoreBoot() runs, so access via deps.core.* instead
+  const { initCoreBoot, initAppState } = coreBoot;
 
   // Feature boot module - handles Phase 2 module loading
   const featureBoot = await import(`./featureBoot.js?v=${window.APP_VERSION || '1.470'}`);
@@ -195,9 +197,15 @@ async function initApp() {
   // ============================================================
   console.log('🔧 Phase 1: Initializing remaining core systems...');
 
-
-
-
+  // Import appContext getters for use throughout boot
+  const {
+      getAppState,
+      getAppendToTestResults,
+      getConsoleCapture,
+      getCompleteInitialSetup,
+      getShowCycleCreationModal,
+      getGlobalUtils
+  } = await import('../core/appContext.js');
 
     /******
      * UTILITY MODULE IMPORTS & INITIALIZATION
@@ -245,7 +253,7 @@ async function initApp() {
     if (consoleCaptureMod.setConsoleCaptureDependencies) {
         consoleCaptureMod.setConsoleCaptureDependencies({
             showNotification: deps.utils.showNotification,
-            get appendToTestResults() { return window.appendToTestResults; }
+            get appendToTestResults() { return getAppendToTestResults(); }
         });
     }
 
@@ -280,6 +288,11 @@ async function initApp() {
     window.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
     window.showPromptModal = (options) => notifications.showPromptModal(options);
     window.resetNotificationPosition = () => notifications.resetPosition();
+
+    // Update appContext with showNotification
+    import('../core/appContext.js').then(mod => {
+        mod.setContextValue('showNotification', window.showNotification);
+    });
     console.log('✅ Notifications loaded');
 
     // Show deferred cache notification if we had to fetch fresh appInit.js
@@ -322,7 +335,7 @@ async function initApp() {
         gamesManagerMod.setGamesManagerDependencies({
             appInit: appInit,  // ✅ DI-injected (no static import in module)
             AppMeta: window.AppMeta,
-            get AppState() { return window.AppState; },  // Lazy getter for late binding
+            get AppState() { return getAppState(); },  // Lazy getter via appContext
             safeAddEventListener: deps.utils.safeAddEventListener
         });
     }
@@ -341,10 +354,10 @@ async function initApp() {
             appInit: appInit,  // ✅ DI-injected (no static import in module)
             AppMeta: window.AppMeta,
             showNotification: deps.utils.showNotification,
-            get AppState() { return window.AppState; },
-            get showCycleCreationModal() { return window.showCycleCreationModal; },
-            get completeInitialSetup() { return window.completeInitialSetup; },
-            get safeAddEventListenerById() { return window.GlobalUtils?.safeAddEventListenerById; }
+            get AppState() { return getAppState(); },
+            get showCycleCreationModal() { return getShowCycleCreationModal(); },
+            get completeInitialSetup() { return getCompleteInitialSetup(); },
+            get safeAddEventListenerById() { return getGlobalUtils()?.safeAddEventListenerById; }
         });
     }
     window.onboardingManager = onboardingManagerMod.onboardingManager;
@@ -439,7 +452,7 @@ async function initApp() {
 
 
     try {
-        const schemaData = loadMiniCycleData();
+        const schemaData = deps.core.loadMiniCycleData?.();
         if (schemaData) {
             darkModeEnabled = schemaData.settings.darkMode || false;
         }
@@ -509,7 +522,7 @@ async function initApp() {
     // ✅ Theme Loading (Schema 2.5 only) - don't save during initial load
     console.log('🎨 Loading theme settings...');
     try {
-        const schemaData = loadMiniCycleData();
+        const schemaData = deps.core.loadMiniCycleData?.();
         if (schemaData && schemaData.settings.theme) {
             console.log('🎨 Applying theme from Schema 2.5:', schemaData.settings.theme);
             applyTheme(schemaData.settings.theme, false);  // Don't save during initial load
@@ -546,6 +559,11 @@ async function initApp() {
     // ✅ completeInitialSetup now delegates to appInit method (extracted from main script)
     window.completeInitialSetup = (activeCycle, fullSchemaData, schemaData) =>
         appInit.runCompleteInitialSetup(activeCycle, fullSchemaData, schemaData);
+
+    // Update appContext with completeInitialSetup
+    import('../core/appContext.js').then(mod => {
+        mod.setContextValue('completeInitialSetup', window.completeInitialSetup);
+    });
 
 
 
@@ -708,7 +726,7 @@ async function initApp() {
                         testingIntegrationMod.setTestingModalDependencies({
                             safeAddEventListenerById: deps.utils.safeAddEventListenerById,
                             showNotification: deps.utils.showNotification,
-                            get ConsoleCapture() { return window.ConsoleCapture; }
+                            get ConsoleCapture() { return getConsoleCapture(); }
                         });
                     }
 
@@ -768,7 +786,7 @@ async function initApp() {
             // Wire dependencies (DI-pure)
             if (backupManagerMod.setBackupManagerDependencies) {
                 backupManagerMod.setBackupManagerDependencies({
-                    get AppState() { return window.AppState; }  // Lazy getter for late binding
+                    get AppState() { return getAppState(); }  // Lazy getter via appContext
                 });
             }
 
@@ -1050,7 +1068,7 @@ async function handleMiniCycleTitleBlur() {
     if (newTitle === "") {
         console.log('Empty title detected, reverting (Schema 2.5 only)...');
 
-        const schemaData = loadMiniCycleData();
+        const schemaData = window.loadMiniCycleData?.();
         if (!schemaData) {
             console.error('Schema 2.5 data required for title revert');
             return;
@@ -1065,7 +1083,7 @@ async function handleMiniCycleTitleBlur() {
     }
 
     console.log('Updating title (Schema 2.5 only)...');
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.loadMiniCycleData?.();
     if (!schemaData) {
         console.error('Schema 2.5 data required for setupMiniCycleTitleListener');
         return;
@@ -1379,7 +1397,7 @@ function validateAndSanitizeTaskInput(taskText) {
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
     console.log('📝 Adding task (Schema 2.5 only)...');
 
-    const schemaData = loadMiniCycleData();
+    const schemaData = window.loadMiniCycleData?.();
     if (!schemaData) {
         console.error('❌ Schema 2.5 data required for addTask');
         throw new Error('Schema 2.5 data not found');

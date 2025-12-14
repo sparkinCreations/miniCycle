@@ -74,22 +74,28 @@ python3 -m http.server 8080
 npm test
 ```
 
-## Key Pattern: testHelpers.js
+## Key Pattern: testHelpers.js + testContext.js
 
-**Always use testHelpers.js** - it provides:
+**Always use both** - they provide:
 
 ```javascript
 import {
     setupTestEnvironment,  // Sets up mocks, appInit, localStorage
     createProtectedTest    // Auto-saves/restores localStorage
 } from './testHelpers.js';
+import { hasGlobal, getTestYourClass } from './helpers/testContext.js';
 
 export async function runYourModuleTests(resultsDiv) {
     const env = await setupTestEnvironment();
     const test = createProtectedTest(resultsDiv, passed, total);
 
-    await test('your test', () => {
-        // Test code here
+    await test('class exists', () => {
+        // Use testContext helpers instead of window.*
+        if (!getTestYourClass()) throw new Error('Not found');
+    });
+
+    await test('function exists', () => {
+        if (!hasGlobal('yourFunction')) throw new Error('Not found');
     });
 }
 ```
@@ -139,17 +145,20 @@ Add comment when skipping:
 ## Template Features
 
 - **testHelpers.js integration** - Comprehensive mock setup
+- **testContext.js integration** - Centralized global access
 - **createProtectedTest()** - localStorage safety
 - **DI pattern support** - Inject dependencies via setter
 - **AppState testing** - Both ready and not-ready scenarios
 - **Error handling tests** - Graceful degradation
-- **Global wrapper tests** - Backward compatibility
+- **Global wrapper tests** - Backward compatibility (via hasGlobal/getTestX)
 
 ## Checklist
 
 - [ ] Copied MODULE_TEMPLATE.tests.js
 - [ ] Replaced all CAPS placeholders
 - [ ] Updated DI setter import path
+- [ ] Added testContext.js import with needed helpers
+- [ ] Updated window.* checks to use hasGlobal() or getTestX()
 - [ ] Added to module-test-suite.html (4 locations)
 - [ ] Added to automated/run-browser-tests.js
 - [ ] Tests pass in browser
@@ -159,4 +168,4 @@ Add comment when skipping:
 
 **Total setup time: ~5 minutes per module**
 
-**Last Updated:** December 2024
+**Last Updated:** December 2025
