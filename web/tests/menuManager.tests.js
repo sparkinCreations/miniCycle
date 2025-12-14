@@ -17,6 +17,8 @@
  * - deleteAllTasks() - Delete all tasks (CRITICAL)
  */
 
+import { getTestMenuManager } from './helpers/testContext.js';
+
 // Import module directly for DI testing
 let MenuManager = null;
 let setMenuManagerDependencies = null;
@@ -560,7 +562,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4>🌍 Global Wrappers (Backward Compat)</h4>';
 
     test('window.MenuManager exists (backward compat)', () => {
-        if (!window.MenuManager) {
+        if (!getTestMenuManager()) {
             throw new Error('Global MenuManager class not found');
         }
     });

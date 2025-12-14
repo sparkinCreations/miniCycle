@@ -23,6 +23,7 @@ import {
     createMockData,
     waitForAsyncOperations
 } from './testHelpers.js';
+import { getTestCycleManager, hasGlobal } from './helpers/testContext.js';
 
 export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 CycleManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -60,10 +61,10 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
     }
 
     // Import the module class and functions
-    const CycleManager = window.CycleManager;
-    const setCycleManagerDependencies = window.setCycleManagerDependencies;
-    const initializeCycleManager = window.initializeCycleManager;
-    const getCycleManager = window.getCycleManager;
+    const CycleManager = getTestCycleManager();
+    const setCycleManagerDependencies = hasGlobal('setCycleManagerDependencies') ? window.setCycleManagerDependencies : null;
+    const initializeCycleManager = hasGlobal('initializeCycleManager') ? window.initializeCycleManager : null;
+    const getCycleManager = hasGlobal('getCycleManager') ? window.getCycleManager : null;
 
     // Check if class is available
     if (!CycleManager) {

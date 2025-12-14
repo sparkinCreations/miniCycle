@@ -3,6 +3,8 @@
  * Tests for task utility functions (context building, DOM extraction, etc.)
  */
 
+import { getTestTaskUtils, hasGlobal } from './helpers/testContext.js';
+
 export async function runTaskUtilsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛠️ TaskUtils Tests</h2><h3>Running tests...</h3>';
 
@@ -55,7 +57,7 @@ export async function runTaskUtilsTests(resultsDiv) {
     });
 
     await test('TaskUtils class is exported to window', () => {
-        if (typeof window.TaskUtils === 'undefined') {
+        if (!getTestTaskUtils()) {
             throw new Error('TaskUtils not available on window object');
         }
     });
@@ -71,7 +73,7 @@ export async function runTaskUtilsTests(resultsDiv) {
         ];
 
         for (const funcName of requiredFunctions) {
-            if (typeof window[funcName] !== 'function') {
+            if (!hasGlobal(funcName)) {
                 throw new Error(`${funcName} not found on window object`);
             }
         }

@@ -140,7 +140,7 @@ export class TaskOptionsVisibilityController {
  * Refreshes the task list UI from Schema 2.5 state.
  * Clears and re-renders all tasks from the current cycle.
  */
-export function refreshTaskListUI() {
+export async function refreshTaskListUI() {
     console.log('Refreshing task list UI (Schema 2.5 only)...');
 
     const loadMiniCycleData = _deps.loadMiniCycleData;
@@ -169,15 +169,16 @@ export function refreshTaskListUI() {
     if (!taskListContainer) return;
     taskListContainer.innerHTML = "";
 
-    // Re-render each task from Schema 2.5
+    // Re-render each task from Schema 2.5 (await each to ensure proper settings are loaded)
     const addTask = _deps.addTask;
     if (typeof addTask !== 'function') {
         console.error('refreshTaskListUI: addTask dependency not set');
         return;
     }
 
-    (cycleData.tasks || []).forEach(task => {
-        addTask(
+    const tasks = cycleData.tasks || [];
+    for (const task of tasks) {
+        await addTask(
             task.text,
             task.completed,
             false, // Don't double save
@@ -191,7 +192,7 @@ export function refreshTaskListUI() {
             task.deleteWhenComplete,
             task.deleteWhenCompleteSettings
         );
-    });
+    }
 
     const updateRecurringButtonVisibility = _deps.updateRecurringButtonVisibility;
     if (typeof updateRecurringButtonVisibility === 'function') {

@@ -6,6 +6,8 @@
  * Compatible with both manual browser testing and automated CI/CD
  */
 
+import { getTestTaskOptionsCustomizer, getTestAppState, hasGlobal } from './helpers/testContext.js';
+
 export function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>TaskOptionsCustomizer Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -35,7 +37,7 @@ export function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = false)
     }
 
     // Import the module class
-    const TaskOptionsCustomizer = window.TaskOptionsCustomizer;
+    const TaskOptionsCustomizer = getTestTaskOptionsCustomizer();
 
     // Check if class is available
     if (!TaskOptionsCustomizer) {

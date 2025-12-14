@@ -5,6 +5,8 @@
  * Uses dependency injection pattern - no reliance on window.* globals
  */
 
+import { getTestOnboardingManager, getTestOnboardingManagerInstance } from './helpers/testContext.js';
+
 // Import the module and its DI setter
 let OnboardingManager = null;
 let setOnboardingManagerDependencies = null;
@@ -107,10 +109,11 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     test('has global instance (backward compat)', () => {
-        if (!window.onboardingManager) {
+        const instance = getTestOnboardingManagerInstance();
+        if (!instance) {
             throw new Error('Global onboardingManager instance not found');
         }
-        if (typeof window.onboardingManager.showOnboarding !== 'function') {
+        if (typeof instance.showOnboarding !== 'function') {
             throw new Error('Global instance missing methods');
         }
     });
@@ -704,10 +707,12 @@ export async function runOnboardingManagerTests(resultsDiv) {
     });
 
     test('onboardingManager instance is accessible globally', () => {
-        if (!window.onboardingManager) {
+        const instance = getTestOnboardingManagerInstance();
+        const ManagerClass = getTestOnboardingManager();
+        if (!instance) {
             throw new Error('onboardingManager instance not accessible globally');
         }
-        if (!(window.onboardingManager instanceof window.OnboardingManager)) {
+        if (!(instance instanceof ManagerClass)) {
             throw new Error('Global instance is not OnboardingManager instance');
         }
     });

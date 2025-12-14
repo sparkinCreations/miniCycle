@@ -10,6 +10,7 @@ import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
+import { getTestPullToRefresh, hasGlobal } from './helpers/testContext.js';
 
 export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>Pull-to-Refresh Tests</h2><h3>Setting up mocks...</h3>';
@@ -51,7 +52,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">Initialization</h4>';
 
     test('PullToRefresh class exists', () => {
-        if (typeof window.PullToRefresh === 'undefined') {
+        if (!getTestPullToRefresh()) {
             throw new Error('PullToRefresh class not found');
         }
     });

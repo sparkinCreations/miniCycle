@@ -6,18 +6,24 @@
  *
  * This template follows the miniCycle Strict DI testing pattern:
  * - Uses testHelpers.js for mock setup
+ * - Uses testContext.js for accessing window globals
  * - Uses createProtectedTest for localStorage safety
  * - Uses setModuleDependencies() for DI injection
  *
  * Compatible with both manual browser testing and Playwright automation.
  *
- * @version 2.0.0 - Updated for Strict DI architecture
+ * @version 3.0.0 - Updated with testContext helpers (Dec 2025)
  */
 
 import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
+
+// Import testContext helpers for checking globals exist
+// Add the getters you need for your module (see tests/helpers/testContext.js for full list)
+import { hasGlobal } from './helpers/testContext.js';
+// Example: import { getTestCLASS_NAME, hasGlobal } from './helpers/testContext.js';
 
 // Import the module's DI setter (update path for your module)
 // import { setMODULE_NAMEDependencies } from '../modules/path/to/MODULE_NAME.js';
@@ -77,8 +83,11 @@ export async function runMODULE_NAMETests(resultsDiv) {
     });
 
     await test('Window exports exist', () => {
-        if (typeof window.CLASS_NAME !== 'function') {
-            throw new Error('window.CLASS_NAME not exported');
+        // Use testContext helpers instead of direct window.* access
+        // Replace CLASS_NAME with your getter from testContext.js
+        // e.g., if (!getTestCLASS_NAME()) throw new Error('...');
+        if (!hasGlobal('CLASS_NAME')) {
+            throw new Error('CLASS_NAME not exported to window');
         }
     });
 
@@ -208,18 +217,20 @@ export async function runMODULE_NAMETests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
 
     await test('Global instance is accessible', () => {
-        if (!window.MODULE_INSTANCE_GLOBAL) {
+        // Use testContext helper: getTestMODULE_INSTANCE_GLOBAL()
+        // or hasGlobal('MODULE_INSTANCE_GLOBAL')
+        if (!hasGlobal('MODULE_INSTANCE_GLOBAL')) {
             throw new Error('Global instance not found');
         }
     });
 
     await test('Global wrapper function works', () => {
-        // Replace GLOBAL_FUNCTION with your actual global function
-        if (typeof window.GLOBAL_FUNCTION !== 'function') {
+        // Use hasGlobal() to check if function exists
+        if (!hasGlobal('GLOBAL_FUNCTION')) {
             throw new Error('Global function not found');
         }
 
-        // Should not throw
+        // Should not throw - use window.* for actual invocation
         window.GLOBAL_FUNCTION();
     });
 
@@ -284,20 +295,30 @@ KEY PATTERNS FOR STRICT DI TESTING
 1. ALWAYS use testHelpers.js:
    import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 
-2. ALWAYS use createProtectedTest() for localStorage safety:
+2. ALWAYS use testContext.js for checking globals:
+   import { hasGlobal, getTestYourClass } from './helpers/testContext.js';
+
+   // Check if global exists:
+   if (!hasGlobal('functionName')) throw new Error('...');
+
+   // Get a specific global:
+   const MyClass = getTestMyClass();
+   if (!MyClass) throw new Error('...');
+
+3. ALWAYS use createProtectedTest() for localStorage safety:
    const test = createProtectedTest(resultsDiv, passed, total);
 
-3. INJECT dependencies via the module's setter:
+4. INJECT dependencies via the module's setter:
    setYourModuleDependencies({ AppState: mockAppState });
 
-4. Mock AppState properly:
+5. Mock AppState properly:
    AppState: {
        isReady: () => true,
        get: () => ({ settings: {}, data: { cycles: {} } }),
        update: (fn) => { fn({}); }
    }
 
-5. Test both "AppState ready" and "AppState not ready" scenarios.
+6. Test both "AppState ready" and "AppState not ready" scenarios.
 
 ================================================================================
 PLAYWRIGHT LIMITATIONS - Tests to Avoid
@@ -317,7 +338,9 @@ CHECKLIST
 ================================================================================
 
 ✅ Imported testHelpers.js functions
+✅ Imported testContext.js helpers (hasGlobal, getTestX)
 ✅ Used createProtectedTest() for all tests
+✅ Used hasGlobal() or getTestX() instead of window.* for existence checks
 ✅ Added DI setter import (commented or active)
 ✅ Created createMockDependencies() helper
 ✅ Tested initialization, core functionality, error handling

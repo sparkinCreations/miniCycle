@@ -48,6 +48,9 @@ export async function bootFeatures(deps, coreResult) {
     UNDO_MIN_INTERVAL_MS
   } = coreResult;
 
+  // Import appContext getters for late-bound dependencies
+  const { getCompleteInitialSetup } = await import('../core/appContext.js');
+
   console.log('🚀 app-featureBoot: Starting feature module loading...');
 
   // Container for initialized modules
@@ -220,7 +223,7 @@ export async function bootFeatures(deps, coreResult) {
         showNotification: deps.utils.showNotification,
         get AppState() { return deps.core.AppState; },
         get showCycleCreationModal() { return deps.cycle.showCycleCreationModal; },
-        get completeInitialSetup() { return window.completeInitialSetup; },
+        get completeInitialSetup() { return getCompleteInitialSetup(); },
         get safeAddEventListenerById() { return GlobalUtils.safeAddEventListenerById; }
       });
     }
@@ -1310,6 +1313,12 @@ export async function bootFeatures(deps, coreResult) {
   window.updateMainMenuHeader = deps.ui.updateMainMenuHeader;
 
   console.log('✅ Window exposures complete (37 public API globals)');
+
+  // Update appContext with late-bound values
+  import('../core/appContext.js').then(mod => {
+      mod.setContextValue('hideMainMenu', deps.ui.hideMainMenu);
+      mod.setContextValue('showCycleCreationModal', deps.cycle.showCycleCreationModal);
+  });
 
   // ============================================================================
   // COMPLETE

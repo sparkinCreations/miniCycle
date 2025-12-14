@@ -16,6 +16,7 @@ import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
+import { getTestTaskEvents, hasGlobal } from './helpers/testContext.js';
 
 export async function runTaskEventsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎮 TaskEvents Tests</h2><h3>Setting up mocks...</h3>';
@@ -125,16 +126,16 @@ export async function runTaskEventsTests(resultsDiv) {
     });
 
     await test('Window exports exist', () => {
-        if (typeof window.TaskEvents !== 'function') {
+        if (!getTestTaskEvents()) {
             throw new Error('window.TaskEvents not exported');
         }
-        if (typeof window.initTaskEvents !== 'function') {
+        if (!hasGlobal('initTaskEvents')) {
             throw new Error('window.initTaskEvents not exported');
         }
-        if (typeof window.handleTaskButtonClick !== 'function') {
+        if (!hasGlobal('handleTaskButtonClick')) {
             throw new Error('window.handleTaskButtonClick not exported');
         }
-        if (typeof window.revealTaskButtons !== 'function') {
+        if (!hasGlobal('revealTaskButtons')) {
             throw new Error('window.revealTaskButtons not exported');
         }
     });
