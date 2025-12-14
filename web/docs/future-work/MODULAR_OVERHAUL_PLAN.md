@@ -5,37 +5,42 @@
 
 ---
 
-## 🎉 COMPLETED - December 6, 2025
+## 🎉 COMPLETED - December 6, 2025 (Updated Dec 14, 2025)
 
 **The modular overhaul is complete.** All modules now use strict dependency injection with no `|| window.*` fallbacks.
 
 ### Final Metrics
 
-| Metric | Before (Nov 2025) | Final (Dec 2025) | Target | Status |
-|--------|-------------------|------------------|--------|--------|
-| `|| window.*` fallbacks | ~40 modules | **0** | 0 | ✅ **100%** |
-| Modules with `set*Dependencies()` | 0 | **40** | All stateful | ✅ **Exceeded** |
-| `this.deps.*` usage across codebase | 0 | **950+** | 100+ | ✅ **Exceeded** |
-| `window.*` references (modules/) | ~748 | **~205** | <100 | ✅ **73%** |
-| Total module files | 43 | **46** | — | — |
-| Test coverage | 100% | **100%** | 100% | ✅ |
+| Metric | Before (Nov 2025) | Dec 6, 2025 | Dec 14, 2025 | Target | Status |
+|--------|-------------------|-------------|--------------|--------|--------|
+| `|| window.*` fallbacks | ~40 modules | **0** | **0** | 0 | ✅ **100%** |
+| Modules with `set*Dependencies()` | 0 | **40** | **40+** | All stateful | ✅ **Exceeded** |
+| `this.deps.*` usage across codebase | 0 | **950+** | **950+** | 100+ | ✅ **Exceeded** |
+| `window.*` writes (orchestrator.js) | ~90 | **~42** | **4** | <10 | ✅ **96%** |
+| Total module files | 43 | **46** | **46** | — | — |
+| Test coverage | 100% | **100%** | **100%** | 100% | ✅ |
 
 ### What Was Accomplished ✅
 
 1. **All modules use strict DI** - No `|| window.*` fallbacks anywhere
-2. **40 modules have `set*Dependencies()` functions** - Wired in miniCycle-scripts.js
+2. **40+ modules have `set*Dependencies()` functions** - Wired in orchestrator.js
 3. **Object.defineProperties pattern** - Preserves lazy getters during DI wiring
 4. **Instance getter pattern** - For modules created before deps are available
 5. **DI-pure versioning** - `AppMeta.version` injected, no `window.APP_VERSION` in modules
-6. **Single wiring hub** - `miniCycle-scripts.js` is the only place dependencies connect
+6. **Single wiring hub** - `modules/boot/orchestrator.js` is the only place dependencies connect
 7. **1458 tests passing** - All tests updated for DI patterns
+8. **appContext centralized registry** - Cross-module access via getters, not window.*
+9. **deps container pattern** - Module-to-module communication within boot sequence
 
-### Remaining `window.*` References (~205)
+### Remaining `window.*` References (Intentional Only)
 
-These are **intentional** and not fallbacks:
-- **DOM APIs** - `window.innerWidth`, `window.addEventListener`, etc.
-- **Backward compatibility** - `window.addTask()` for HTML onclick handlers
-- **Console/debugging** - References that will be phased out over time
+Only **2 intentional window.* exposures** remain in orchestrator.js:
+- `window.AppBootStarted` - Required for HTML lite fallback detection
+- `window.closeStorageViewer` - Required for HTML onclick handler
+
+All other cross-module access now uses:
+- **deps container** - For boot-time module communication
+- **appContext getters** - For runtime cross-module access
 
 ---
 

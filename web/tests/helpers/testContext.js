@@ -1,271 +1,252 @@
 /**
  * @file testContext.js
- * @description Centralized access to app globals for tests
+ * @description Centralized access to app dependencies for tests
  * @module tests/helpers/testContext
  *
- * Created Dec 2025 as part of Window Globals Reduction Plan (Tier 4).
+ * This module re-exports appContext getters for test usage.
+ * Tests should import from here instead of accessing window.* directly.
  *
- * Instead of accessing window.* globals directly in tests:
- *   window.AppState.get()
- *   window.BackupManager.createBackup()
- *
- * Use these helpers:
+ * Usage:
  *   import { getTestAppState, getTestBackupManager } from './helpers/testContext.js';
  *   getTestAppState().get()
  *   getTestBackupManager().createBackup()
  *
- * Benefits:
- * - Single point of access for all test globals
- * - Easier to refactor when window.* globals are removed
- * - Clear documentation of what globals tests depend on
- * - Can add safety checks, logging, or mocking support
+ * Architecture (Dec 2025):
+ * - testContext imports from appContext (single source of truth)
+ * - No window.* access - clean DI architecture
+ * - Tests get same values as production code
  */
+
+import {
+    // Core state
+    getAppState,
+    getAppInit,
+    getAppGlobalState,
+    getFeatureFlags,
+
+    // Data functions
+    getLoadMiniCycleData,
+    getAutoSave,
+
+    // Managers
+    getBackupManager,
+    getCycleManager,
+    getModeManager,
+    getMenuManager,
+    getSettingsManager,
+    getErrorHandler,
+    getReminderManager,
+    getGamesManager,
+    getOnboardingManagerClass,
+    getOnboardingManager,
+    getDragDropManager,
+    getDeviceDetectionManagerClass,
+    getDeviceDetectionManager,
+    getModalManagerClass,
+    getModalManager,
+    getCycleSwitcherClass,
+    getCycleSwitcher,
+
+    // UI functions
+    getCompleteInitialSetup,
+    getShowCycleCreationModal,
+    getHideMainMenu,
+    getUpdateMainMenuHeader,
+    getShowLoader,
+    getHideLoader,
+    getWithLoader,
+
+    // Notifications
+    getNotifications,
+    getShowNotification,
+    getShowConfirmationModal,
+    getShowPromptModal,
+    getResetNotificationPosition,
+
+    // Utilities
+    getGlobalUtils,
+    getDataValidator,
+    getSanitizeInput,
+    getGenerateId,
+    getGenerateHashId,
+    getSafeAddEventListener,
+    getSafeAddEventListenerById,
+    getIsTouchDevice,
+
+    // Undo/Redo
+    getPerformStateBasedUndo,
+    getPerformStateBasedRedo,
+    getUpdateUndoRedoButtons,
+    getCaptureStateSnapshot,
+
+    // Reminders
+    getUpdateReminderButtons,
+    getStartReminders,
+    getRemindOverdueTasks,
+    getLoadRemindersSettings,
+
+    // Recurring
+    getRecurringPanel,
+    getOpenRecurringSettingsPanelForTask,
+
+    // Mode
+    getInitializeModeSelector,
+
+    // Task functions
+    getUpdateMoveArrowsVisibility,
+    getAddTask,
+    getValidateAndSanitizeTaskInput,
+    getLoadTaskContext,
+    getCreateTaskDOMElements,
+    getCreateOrUpdateTaskData,
+    getFixTaskValidationIssues,
+    getTaskRenderer,
+    getTaskDOMManager,
+    getTaskEvents,
+    getTaskUtils,
+    getTaskOptionsCustomizer,
+
+    // Cycle Switcher
+    getSwitchMiniCycle,
+    getRenameMiniCycle,
+    getDeleteMiniCycle,
+    getConfirmMiniCycle,
+    getHideSwitchMiniCycleModal,
+    getUpdatePreview,
+    getLoadMiniCycleList,
+    getSetupModalClickOutside,
+
+    // Features
+    getPullToRefresh,
+    getMiniCycleReminders,
+    getMiniCycleNotifications,
+    getEducationalTipManager,
+
+    // Testing
+    getConsoleCapture,
+    getAppendToTestResults,
+
+    // Convenience
+    getAppContext,
+    isContextReady
+} from '../../modules/core/appContext.js';
 
 // ============================================================================
 // CORE STATE GETTERS
 // ============================================================================
 
-/**
- * Get AppState from window (central state management)
- * @returns {Object|null} AppState instance
- */
-export function getTestAppState() {
-    return window.AppState || null;
-}
-
-/**
- * Get AppGlobalState from window (runtime flags)
- * @returns {Object|null} AppGlobalState instance
- */
-export function getTestAppGlobalState() {
-    return window.AppGlobalState || null;
-}
-
-/**
- * Get FeatureFlags from window
- * @returns {Object|null} FeatureFlags object
- */
-export function getTestFeatureFlags() {
-    return window.FeatureFlags || null;
-}
+export function getTestAppState() { return getAppState(); }
+export function getTestAppInit() { return getAppInit(); }
+export function getTestAppGlobalState() { return getAppGlobalState(); }
+export function getTestFeatureFlags() { return getFeatureFlags(); }
+export function getTestLoadMiniCycleData() { return getLoadMiniCycleData(); }
 
 // ============================================================================
-// MANAGER GETTERS (Singletons)
+// MANAGER GETTERS
 // ============================================================================
 
-/**
- * Get BackupManager from window
- * @returns {Object|null} BackupManager instance
- */
-export function getTestBackupManager() {
-    return window.BackupManager || null;
-}
+export function getTestBackupManager() { return getBackupManager(); }
+export function getTestCycleManager() { return getCycleManager(); }
+export function getTestModeManager() { return getModeManager(); }
+export function getTestMenuManager() { return getMenuManager(); }
+export function getTestSettingsManager() { return getSettingsManager(); }
+export function getTestErrorHandler() { return getErrorHandler(); }
+export function getTestReminderManager() { return getReminderManager(); }
 
-/**
- * Get CycleManager class from window
- * @returns {Function|null} CycleManager constructor
- */
-export function getTestCycleManager() {
-    return window.CycleManager || null;
-}
-
-/**
- * Get ModeManager from window
- * @returns {Object|null} ModeManager instance
- */
-export function getTestModeManager() {
-    return window.ModeManager || null;
-}
-
-/**
- * Get MenuManager from window
- * @returns {Object|null} MenuManager instance
- */
-export function getTestMenuManager() {
-    return window.MenuManager || null;
-}
-
-/**
- * Get OnboardingManager class from window
- * @returns {Function|null} OnboardingManager constructor
- */
-export function getTestOnboardingManager() {
-    return window.OnboardingManager || null;
-}
-
-/**
- * Get onboardingManager instance from window
- * @returns {Object|null} onboardingManager singleton instance
- */
-export function getTestOnboardingManagerInstance() {
-    return window.onboardingManager || null;
-}
-
-/**
- * Get DragDropManager class from window
- * @returns {Function|null} DragDropManager constructor
- */
-export function getTestDragDropManager() {
-    return window.DragDropManager || null;
-}
-
-/**
- * Get SettingsManager from window
- * @returns {Object|null} SettingsManager instance
- */
-export function getTestSettingsManager() {
-    return window.SettingsManager || null;
-}
-
-/**
- * Get DeviceDetectionManager from window
- * @returns {Object|null} DeviceDetectionManager instance
- */
-export function getTestDeviceDetectionManager() {
-    return window.DeviceDetectionManager || null;
-}
-
-/**
- * Get ErrorHandler from window
- * @returns {Object|null} ErrorHandler instance
- */
-export function getTestErrorHandler() {
-    return window.ErrorHandler || null;
-}
+// Classes + instances
+export function getTestOnboardingManager() { return getOnboardingManagerClass(); }
+export function getTestOnboardingManagerInstance() { return getOnboardingManager(); }
+export function getTestDragDropManager() { return getDragDropManager(); }
+export function getTestDeviceDetectionManager() { return getDeviceDetectionManagerClass(); }
+export function getTestDeviceDetectionManagerInstance() { return getDeviceDetectionManager(); }
+export function getTestModalManager() { return getModalManagerClass(); }
+export function getTestModalManagerInstance() { return getModalManager(); }
+export function getTestCycleSwitcher() { return getCycleSwitcherClass(); }
+export function getTestCycleSwitcherInstance() { return getCycleSwitcher(); }
 
 // ============================================================================
-// TASK-RELATED GETTERS
+// UI FUNCTION GETTERS
 // ============================================================================
 
-/**
- * Get TaskRenderer class from window
- * @returns {Function|null} TaskRenderer constructor
- */
-export function getTestTaskRenderer() {
-    return window.TaskRenderer || null;
-}
-
-/**
- * Get TaskDOMManager class from window
- * @returns {Function|null} TaskDOMManager constructor
- */
-export function getTestTaskDOMManager() {
-    return window.TaskDOMManager || null;
-}
-
-/**
- * Get TaskEvents class from window
- * @returns {Function|null} TaskEvents constructor
- */
-export function getTestTaskEvents() {
-    return window.TaskEvents || null;
-}
-
-/**
- * Get TaskUtils from window
- * @returns {Object|null} TaskUtils object
- */
-export function getTestTaskUtils() {
-    return window.TaskUtils || null;
-}
-
-/**
- * Get TaskOptionsCustomizer class from window
- * @returns {Function|null} TaskOptionsCustomizer constructor
- */
-export function getTestTaskOptionsCustomizer() {
-    return window.TaskOptionsCustomizer || null;
-}
-
-// ============================================================================
-// FEATURE GETTERS
-// ============================================================================
-
-/**
- * Get PullToRefresh class from window
- * @returns {Function|null} PullToRefresh constructor
- */
-export function getTestPullToRefresh() {
-    return window.PullToRefresh || null;
-}
-
-/**
- * Get MiniCycleReminders class from window
- * @returns {Function|null} MiniCycleReminders constructor
- */
-export function getTestMiniCycleReminders() {
-    return window.MiniCycleReminders || null;
-}
-
-/**
- * Get MiniCycleNotifications class from window
- * @returns {Function|null} MiniCycleNotifications constructor
- */
-export function getTestMiniCycleNotifications() {
-    return window.MiniCycleNotifications || null;
-}
-
-/**
- * Get EducationalTipManager class from window
- * @returns {Function|null} EducationalTipManager constructor
- */
-export function getTestEducationalTipManager() {
-    return window.EducationalTipManager || null;
-}
+export function getTestShowNotification() { return getShowNotification(); }
+export function getTestHideMainMenu() { return getHideMainMenu(); }
+export function getTestShowLoader() { return getShowLoader(); }
+export function getTestHideLoader() { return getHideLoader(); }
+export function getTestWithLoader() { return getWithLoader(); }
 
 // ============================================================================
 // UTILITY GETTERS
 // ============================================================================
 
-/**
- * Get GlobalUtils from window
- * @returns {Object|null} GlobalUtils object
- */
-export function getTestGlobalUtils() {
-    return window.GlobalUtils || null;
-}
+export function getTestGlobalUtils() { return getGlobalUtils(); }
+export function getTestDataValidator() { return getDataValidator(); }
+export function getTestSanitizeInput() { return getSanitizeInput(); }
+export function getTestGenerateId() { return getGenerateId(); }
+export function getTestGenerateHashId() { return getGenerateHashId(); }
+export function getTestSafeAddEventListener() { return getSafeAddEventListener(); }
+export function getTestIsTouchDevice() { return getIsTouchDevice(); }
 
-/**
- * Get DataValidator from window
- * @returns {Object|null} DataValidator instance
- */
-export function getTestDataValidator() {
-    return window.DataValidator || null;
-}
+// ============================================================================
+// TASK GETTERS
+// ============================================================================
 
-/**
- * Get sanitizeInput function from window
- * @returns {Function|null} sanitizeInput function
- */
-export function getTestSanitizeInput() {
-    return window.sanitizeInput || null;
-}
+export function getTestAddTask() { return getAddTask(); }
+export function getTestUpdateMoveArrowsVisibility() { return getUpdateMoveArrowsVisibility(); }
+export function getTestTaskRenderer() { return getTaskRenderer(); }
+export function getTestTaskDOMManager() { return getTaskDOMManager(); }
+export function getTestTaskEvents() { return getTaskEvents(); }
+export function getTestTaskUtils() { return getTaskUtils(); }
+export function getTestTaskOptionsCustomizer() { return getTaskOptionsCustomizer(); }
 
-/**
- * Get generateId function from window
- * @returns {Function|null} generateId function
- */
-export function getTestGenerateId() {
-    return window.generateId || null;
-}
+// ============================================================================
+// CYCLE SWITCHER GETTERS
+// ============================================================================
+
+export function getTestSwitchMiniCycle() { return getSwitchMiniCycle(); }
+export function getTestRenameMiniCycle() { return getRenameMiniCycle(); }
+export function getTestDeleteMiniCycle() { return getDeleteMiniCycle(); }
+export function getTestConfirmMiniCycle() { return getConfirmMiniCycle(); }
+export function getTestHideSwitchMiniCycleModal() { return getHideSwitchMiniCycleModal(); }
+export function getTestUpdatePreview() { return getUpdatePreview(); }
+export function getTestLoadMiniCycleList() { return getLoadMiniCycleList(); }
+export function getTestSetupModalClickOutside() { return getSetupModalClickOutside(); }
+
+// ============================================================================
+// FEATURE GETTERS
+// ============================================================================
+
+export function getTestPullToRefresh() { return getPullToRefresh(); }
+export function getTestMiniCycleReminders() { return getMiniCycleReminders(); }
+export function getTestMiniCycleNotifications() { return getMiniCycleNotifications(); }
+export function getTestEducationalTipManager() { return getEducationalTipManager(); }
+
+// ============================================================================
+// UNDO/REDO GETTERS
+// ============================================================================
+
+export function getTestPerformStateBasedUndo() { return getPerformStateBasedUndo(); }
+export function getTestPerformStateBasedRedo() { return getPerformStateBasedRedo(); }
+export function getTestCaptureStateSnapshot() { return getCaptureStateSnapshot(); }
+export function getTestUpdateUndoRedoButtons() { return getUpdateUndoRedoButtons(); }
 
 // ============================================================================
 // CONVENIENCE FUNCTIONS
 // ============================================================================
 
 /**
- * Wait for the app to be fully initialized
- * Useful when tests need to wait for async boot
+ * Wait for the app context to be initialized
  * @param {number} timeout - Max wait time in ms (default: 5000)
- * @returns {Promise<boolean>} True if app ready, false if timeout
+ * @returns {Promise<boolean>} True if ready, false if timeout
  */
 export async function waitForAppReady(timeout = 5000) {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
-        const appState = getTestAppState();
-        if (appState && typeof appState.isReady === 'function' && appState.isReady()) {
-            return true;
+        if (isContextReady()) {
+            const appState = getAppState();
+            if (appState && typeof appState.isReady === 'function' && appState.isReady()) {
+                return true;
+            }
         }
         await new Promise(resolve => setTimeout(resolve, 50));
     }
@@ -275,18 +256,18 @@ export async function waitForAppReady(timeout = 5000) {
 }
 
 /**
- * Check if a specific global exists
- * @param {string} name - Name of the global (e.g., 'AppState', 'BackupManager')
- * @returns {boolean} True if exists
+ * Check if a context value exists
+ * @param {string} name - Name to check
+ * @returns {boolean}
  */
-export function hasGlobal(name) {
-    return typeof window[name] !== 'undefined';
+export function hasContextValue(name) {
+    const ctx = getAppContext();
+    return ctx[name] != null;
 }
 
 /**
- * Get all available test globals as an object
- * Useful for debugging or bulk access
- * @returns {Object} Object with all available globals
+ * Get all available test values as an object
+ * @returns {Object}
  */
 export function getAllTestGlobals() {
     return {
@@ -294,17 +275,28 @@ export function getAllTestGlobals() {
         AppState: getTestAppState(),
         AppGlobalState: getTestAppGlobalState(),
         FeatureFlags: getTestFeatureFlags(),
+        appInit: getTestAppInit(),
+        loadMiniCycleData: getTestLoadMiniCycleData(),
+        showNotification: getTestShowNotification(),
+        hideMainMenu: getTestHideMainMenu(),
 
         // Managers
         BackupManager: getTestBackupManager(),
         CycleManager: getTestCycleManager(),
         ModeManager: getTestModeManager(),
         MenuManager: getTestMenuManager(),
+        ModalManager: getTestModalManager(),
+        modalManager: getTestModalManagerInstance(),
         OnboardingManager: getTestOnboardingManager(),
+        onboardingManager: getTestOnboardingManagerInstance(),
         DragDropManager: getTestDragDropManager(),
         SettingsManager: getTestSettingsManager(),
         DeviceDetectionManager: getTestDeviceDetectionManager(),
+        deviceDetectionManager: getTestDeviceDetectionManagerInstance(),
         ErrorHandler: getTestErrorHandler(),
+        CycleSwitcher: getTestCycleSwitcher(),
+        cycleSwitcher: getTestCycleSwitcherInstance(),
+        reminderManager: getTestReminderManager(),
 
         // Task
         TaskRenderer: getTestTaskRenderer(),
@@ -312,6 +304,18 @@ export function getAllTestGlobals() {
         TaskEvents: getTestTaskEvents(),
         TaskUtils: getTestTaskUtils(),
         TaskOptionsCustomizer: getTestTaskOptionsCustomizer(),
+        addTask: getTestAddTask(),
+        updateMoveArrowsVisibility: getTestUpdateMoveArrowsVisibility(),
+
+        // Cycle Switcher Functions
+        switchMiniCycle: getTestSwitchMiniCycle(),
+        renameMiniCycle: getTestRenameMiniCycle(),
+        deleteMiniCycle: getTestDeleteMiniCycle(),
+        confirmMiniCycle: getTestConfirmMiniCycle(),
+        hideSwitchMiniCycleModal: getTestHideSwitchMiniCycleModal(),
+        updatePreview: getTestUpdatePreview(),
+        loadMiniCycleList: getTestLoadMiniCycleList(),
+        setupModalClickOutside: getTestSetupModalClickOutside(),
 
         // Features
         PullToRefresh: getTestPullToRefresh(),
@@ -323,21 +327,34 @@ export function getAllTestGlobals() {
         GlobalUtils: getTestGlobalUtils(),
         DataValidator: getTestDataValidator(),
         sanitizeInput: getTestSanitizeInput(),
-        generateId: getTestGenerateId()
+        generateId: getTestGenerateId(),
+        generateHashId: getTestGenerateHashId(),
+        safeAddEventListener: getTestSafeAddEventListener(),
+
+        // UI Helpers
+        showLoader: getTestShowLoader(),
+        hideLoader: getTestHideLoader(),
+        withLoader: getTestWithLoader(),
+        isTouchDevice: getTestIsTouchDevice(),
+
+        // Undo/Redo
+        performStateBasedUndo: getTestPerformStateBasedUndo(),
+        performStateBasedRedo: getTestPerformStateBasedRedo(),
+        captureStateSnapshot: getTestCaptureStateSnapshot(),
+        updateUndoRedoButtons: getTestUpdateUndoRedoButtons()
     };
 }
 
 /**
- * Assert that required globals exist, throwing if missing
- * Use at the start of test files to fail fast
- * @param {string[]} globalNames - Array of global names to check
- * @throws {Error} If any required global is missing
+ * Assert that required context values exist
+ * @param {string[]} names - Names to check
+ * @throws {Error} If any required value is missing
  */
-export function requireGlobals(...globalNames) {
-    const missing = globalNames.filter(name => !hasGlobal(name));
+export function requireContextValues(...names) {
+    const missing = names.filter(name => !hasContextValue(name));
     if (missing.length > 0) {
-        throw new Error(`Required globals not found: ${missing.join(', ')}`);
+        throw new Error(`Required context values not found: ${missing.join(', ')}`);
     }
 }
 
-console.log('[testContext] Test context helpers loaded');
+console.log('[testContext] Test context helpers loaded (using appContext)');

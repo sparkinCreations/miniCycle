@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** December 13, 2025
+**Last Updated:** December 14, 2025
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -156,6 +156,23 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### December 14, 2025
+- **Major window.* pollution cleanup in orchestrator.js**
+  - Removed: `window.AppInit`, `window.addTaskFunction`, `window.BackupManager`
+  - Removed: 8 testing modal window.* writes (kept only `closeStorageViewer` for HTML onclick)
+  - BackupManager now stored in `deps.storage.BackupManager` instead of window.*
+  - Window.* count in orchestrator.js reduced from ~42 to 4 intentional uses
+- **Only 2 intentional window.* exposures remain:**
+  - `window.AppBootStarted` - Required for HTML fallback detection
+  - `window.closeStorageViewer` - Required for HTML onclick handler
+- Updated all reads to use `deps` container or `appContext` getters
+- **Developer insights captured:**
+  - Teaches through questions, not statements (challenges assumptions to verify them)
+  - Doing architectural cleanup on side project after 11 months - ownership mentality
+  - Low tolerance for vestigial code - dead code isn't neutral, it's friction
+  - Builds systems that make mistakes harder (DI patterns, guardrails over carefulness)
+  - Uses insight requests as calibration - checking if AI understands the system
 
 ### December 13, 2025
 - Fixed navigation dots hover issue (giant red circle on hover)

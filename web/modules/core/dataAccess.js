@@ -12,7 +12,7 @@
  * - updateCycleData(): Update specific cycle data
  */
 
-import { getAppState } from './appContext.js';
+import { getAppState, getExtractTaskDataFromDOM } from './appContext.js';
 
 // ============================================================================
 // DATA ACCESS FUNCTIONS
@@ -139,7 +139,7 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
     }
 
     try {
-        const taskData = overrideTaskList || window.extractTaskDataFromDOM?.() || [];
+        const taskData = overrideTaskList || getExtractTaskDataFromDOM()?.() || [];
 
         await AppState.update(state => {
             const activeCycle = state?.appState?.activeCycleId;

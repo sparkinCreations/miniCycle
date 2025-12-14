@@ -22,6 +22,9 @@
  * ============================================================================
  */
 
+// Import appContext getters for DI access
+import { getAppState, getShowNotification } from '../core/appContext.js';
+
 // ============================================================================
 // GLOBAL EVENT LISTENERS
 // ============================================================================
@@ -221,14 +224,18 @@ function handleGlobalClickForSwitchModal(event) {
 async function handleResetNotificationPosition() {
   console.log('🔄 Resetting notification position (Schema 2.5 only)...');
 
-  if (!window.AppState?.isReady?.()) {
+  // Use appContext getters instead of window.*
+  const AppState = getAppState();
+  const showNotification = getShowNotification();
+
+  if (!AppState?.isReady?.()) {
     console.error('❌ AppState not ready for reset notification position');
-    window.showNotification?.('❌ Unable to reset position.', 'error', 2000);
+    showNotification?.('❌ Unable to reset position.', 'error', 2000);
     return;
   }
 
   try {
-    await window.AppState.update(state => {
+    await AppState.update(state => {
       if (!state?.settings) {
         state.settings = {};
       }
@@ -238,10 +245,10 @@ async function handleResetNotificationPosition() {
 
     console.log('✅ Notification position reset in Schema 2.5');
     window.resetNotificationPosition?.();
-    window.showNotification?.('🔄 Notification position reset.', 'success', 2000);
+    showNotification?.('🔄 Notification position reset.', 'success', 2000);
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
-    window.showNotification?.('❌ Failed to reset position.', 'error', 2000);
+    showNotification?.('❌ Failed to reset position.', 'error', 2000);
   }
 }
 

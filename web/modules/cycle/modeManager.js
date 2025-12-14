@@ -438,6 +438,12 @@ export class ModeManager {
      * Main setup function that configures all mode-related UI elements
      */
     async setupModeSelector() {
+        // ✅ Guard against duplicate setup - prevents double notifications
+        if (this._modeSelectorSetupComplete) {
+            console.log('⏭️ ModeManager: Mode selector already set up, skipping');
+            return;
+        }
+
         console.log('🎯 ModeManager: Setting up mode selectors (state-based)...');
 
         // Wait for core
@@ -460,8 +466,12 @@ export class ModeManager {
             return;
         }
 
+        // Mark setup as complete
+        this._modeSelectorSetupComplete = true;
+
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)
-        const syncTogglesFromMode = (selectedMode) => {
+        // ✅ FIXED: Made async to properly await storage update before UI sync
+        const syncTogglesFromMode = async (selectedMode) => {
             console.log('🔄 ModeManager: Syncing toggles from mode selector:', selectedMode);
 
             switch(selectedMode) {
@@ -483,16 +493,16 @@ export class ModeManager {
             modeSelector.value = selectedMode;
             mobileModeSelector.value = selectedMode;
 
-            // ✅ UPDATE STORAGE FIRST before dispatching events
-            this.updateStorageFromToggles();
+            // ✅ UPDATE STORAGE FIRST - must await to ensure data is saved before UI sync
+            await this.updateStorageFromToggles();
 
             // ✅ THEN trigger change events (but prevent them from updating storage again)
             console.log('🔔 ModeManager: Dispatching change events to update storage...');
             toggleAutoReset.dispatchEvent(new Event('change'));
             deleteCheckedTasks.dispatchEvent(new Event('change'));
 
-            // Update UI
-            this.syncModeFromToggles();
+            // Update UI - now storage has correct values (MUST await to ensure body class is set)
+            await this.syncModeFromToggles();
 
             // Check complete all button
             if (this.deps.checkCompleteAllButton) {
@@ -517,9 +527,9 @@ export class ModeManager {
         console.log('📡 ModeManager: Setting up event listeners for both selectors...');
         const safeAdd = this.deps.safeAddEventListener;
 
-        modeSelector._changeHandler = (e) => {
+        modeSelector._changeHandler = async (e) => {
             console.log('🎯 ModeManager: Desktop mode selector changed:', e.target.value);
-            syncTogglesFromMode(e.target.value);
+            await syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
 
             if (this.deps.checkCompleteAllButton) {
@@ -536,6 +546,14 @@ export class ModeManager {
                     this.deps.recurringCore.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
+            }
+
+            // ✅ If switching to auto-cycle mode, check if cycle should complete
+            if (e.target.value === 'auto-cycle' && this.deps.checkMiniCycle) {
+                console.log('🔄 ModeManager: Auto-cycle mode enabled - checking if cycle should complete...');
+                setTimeout(() => {
+                    this.deps.checkMiniCycle();
+                }, 150); // Small delay to ensure UI is updated first
             }
 
             if (this.deps.showNotification) {
@@ -546,9 +564,9 @@ export class ModeManager {
         };
         safeAdd(modeSelector, 'change', modeSelector._changeHandler);
 
-        mobileModeSelector._changeHandler = (e) => {
+        mobileModeSelector._changeHandler = async (e) => {
             console.log('📱 ModeManager: Mobile mode selector changed:', e.target.value);
-            syncTogglesFromMode(e.target.value);
+            await syncTogglesFromMode(e.target.value);
             this.updateCycleModeDescription();
 
             if (this.deps.checkCompleteAllButton) {
@@ -565,6 +583,14 @@ export class ModeManager {
                     this.deps.recurringCore.updateRecurringButtonVisibility();
                     console.log('🔁 ModeManager: Recurring button visibility update completed');
                 }, 100);
+            }
+
+            // ✅ If switching to auto-cycle mode, check if cycle should complete
+            if (e.target.value === 'auto-cycle' && this.deps.checkMiniCycle) {
+                console.log('🔄 ModeManager: Auto-cycle mode enabled - checking if cycle should complete...');
+                setTimeout(() => {
+                    this.deps.checkMiniCycle();
+                }, 150); // Small delay to ensure UI is updated first
             }
 
             if (this.deps.showNotification) {

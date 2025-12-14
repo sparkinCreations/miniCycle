@@ -1,6 +1,6 @@
 # DI Patterns Guide
 
-**Last Updated:** December 11, 2025
+**Last Updated:** December 14, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
 This document covers the dependency injection patterns used in miniCycle. All 46 modules follow these patterns.
@@ -178,19 +178,69 @@ setModuleDependencies({
     AppMeta: window.AppMeta,
 
     // Lazy getters for deps that may not exist yet
-    get AppState() { return window.AppState; },
-    get taskCore() { return window.taskCore; },
+    get AppState() { return getAppState(); },  // Via appContext getter
+    get taskCore() { return deps.task.taskCore; },  // Via deps container
 
     // Function wrappers for defensive access
-    loadData: () => window.loadMiniCycleData?.()
+    loadData: () => getLoadMiniCycleData()?.()
 });
 
 // 3. Create instance (reads from _deps)
 const myModule = new MyModule();
 
-// 4. Optionally expose for backward compatibility
-window.myModule = myModule;
+// 4. Store in deps container (NOT window.*)
+deps.ui.myModule = myModule;
 ```
+
+---
+
+## appContext: Centralized Registry (Dec 2025)
+
+`modules/core/appContext.js` provides a centralized registry for cross-module access without window.* pollution.
+
+### The Pattern
+
+```javascript
+// In modules/core/appContext.js
+const context = {};
+
+export function initAppContext(deps) {
+    Object.assign(context, deps);
+}
+
+export function setContextValue(key, value) {
+    context[key] = value;
+}
+
+// Lazy getters for each registered value
+export function getAppState() { return context.AppState; }
+export function getAppInit() { return context.appInit; }
+export function getShowNotification() { return context.showNotification; }
+// ... etc
+```
+
+### Usage in Modules
+
+```javascript
+// Instead of window.AppState
+import { getAppState, getShowNotification } from '../core/appContext.js';
+
+const AppState = getAppState();
+const showNotification = getShowNotification();
+```
+
+### Why appContext vs window.*
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| `window.*` | Simple, always available | Global pollution, no control, no typing |
+| `appContext` | Explicit, auditable, no pollution | Requires import |
+
+### Registration Points
+
+- **coreBoot.js**: Registers core dependencies via `initAppContext()`
+- **featureBoot.js**: Registers feature modules via `setContextValue()`
+- **orchestrator.js**: Registers UI managers via `setContextValue()`
 
 ### When to Use Lazy Getters
 

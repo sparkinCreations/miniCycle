@@ -18,25 +18,147 @@
 
 // Internal context storage
 const context = {
-    // Core state
+    // =========================================================================
+    // CORE STATE
+    // =========================================================================
     AppState: null,
     appInit: null,
     AppGlobalState: null,
+    FeatureFlags: null,
 
-    // Data functions
+    // =========================================================================
+    // DATA FUNCTIONS
+    // =========================================================================
     loadMiniCycleData: null,
     autoSave: null,
 
-    // UI functions
+    // =========================================================================
+    // MANAGERS (Singletons/Instances)
+    // =========================================================================
+    BackupManager: null,
+    CycleManager: null,
+    ModeManager: null,
+    MenuManager: null,
+    SettingsManager: null,
+    ErrorHandler: null,
+    reminderManager: null,
+    gamesManager: null,
+
+    // Manager classes + instances
+    OnboardingManager: null,
+    onboardingManager: null,
+    DragDropManager: null,
+    DeviceDetectionManager: null,
+    deviceDetectionManager: null,
+    ModalManager: null,
+    modalManager: null,
+    CycleSwitcher: null,
+    cycleSwitcher: null,
+
+    // =========================================================================
+    // UI FUNCTIONS
+    // =========================================================================
     completeInitialSetup: null,
     showCycleCreationModal: null,
     hideMainMenu: null,
+    updateMainMenuHeader: null,
+    showLoader: null,
+    hideLoader: null,
+    withLoader: null,
 
-    // Utilities
-    GlobalUtils: null,
+    // =========================================================================
+    // NOTIFICATIONS
+    // =========================================================================
+    notifications: null,
     showNotification: null,
+    showConfirmationModal: null,
+    showPromptModal: null,
+    resetNotificationPosition: null,
 
-    // Testing (lazy-loaded)
+    // =========================================================================
+    // UTILITIES
+    // =========================================================================
+    GlobalUtils: null,
+    DataValidator: null,
+    sanitizeInput: null,
+    generateId: null,
+    generateHashId: null,
+    safeAddEventListener: null,
+    safeAddEventListenerById: null,
+    isTouchDevice: null,
+
+    // =========================================================================
+    // UNDO/REDO
+    // =========================================================================
+    performStateBasedUndo: null,
+    performStateBasedRedo: null,
+    updateUndoRedoButtons: null,
+    captureStateSnapshot: null,
+
+    // =========================================================================
+    // REMINDERS
+    // =========================================================================
+    updateReminderButtons: null,
+    startReminders: null,
+    remindOverdueTasks: null,
+    loadRemindersSettings: null,
+
+    // =========================================================================
+    // RECURRING
+    // =========================================================================
+    recurringPanel: null,
+    openRecurringSettingsPanelForTask: null,
+
+    // =========================================================================
+    // MODE
+    // =========================================================================
+    initializeModeSelector: null,
+
+    // =========================================================================
+    // TASK FUNCTIONS
+    // =========================================================================
+    updateMoveArrowsVisibility: null,
+    addTask: null,
+    validateAndSanitizeTaskInput: null,
+    loadTaskContext: null,
+    createTaskDOMElements: null,
+    createOrUpdateTaskData: null,
+    fixTaskValidationIssues: null,
+    handleCompleteAllTasks: null,
+    initCompletedTasksSection: null,
+    resumeDeferredRenderIfNeeded: null,
+    extractTaskDataFromDOM: null,
+
+    // Task classes
+    TaskRenderer: null,
+    TaskDOMManager: null,
+    TaskEvents: null,
+    TaskUtils: null,
+    TaskOptionsCustomizer: null,
+
+    // =========================================================================
+    // CYCLE SWITCHER
+    // =========================================================================
+    switchMiniCycle: null,
+    renameMiniCycle: null,
+    deleteMiniCycle: null,
+    confirmMiniCycle: null,
+    hideSwitchMiniCycleModal: null,
+    updatePreview: null,
+    loadMiniCycleList: null,
+    setupModalClickOutside: null,
+
+    // =========================================================================
+    // FEATURES
+    // =========================================================================
+    PullToRefresh: null,
+    MiniCycleReminders: null,
+    MiniCycleNotifications: null,
+    EducationalTipManager: null,
+
+    // =========================================================================
+    // TESTING (lazy-loaded)
+    // =========================================================================
     ConsoleCapture: null,
     appendToTestResults: null
 };
@@ -108,6 +230,14 @@ export function getAppInit() {
  */
 export function getAppGlobalState() {
     return context.AppGlobalState;
+}
+
+/**
+ * Get FeatureFlags
+ * @returns {Object|null}
+ */
+export function getFeatureFlags() {
+    return context.FeatureFlags;
 }
 
 /**
@@ -183,6 +313,290 @@ export function getAppendToTestResults() {
 }
 
 // ============================================================================
+// UI GETTERS
+// ============================================================================
+
+/**
+ * Get updateMainMenuHeader function
+ * @returns {Function|null}
+ */
+export function getUpdateMainMenuHeader() {
+    return context.updateMainMenuHeader;
+}
+
+/**
+ * Get resetNotificationPosition function
+ * @returns {Function|null}
+ */
+export function getResetNotificationPosition() {
+    return context.resetNotificationPosition;
+}
+
+// ============================================================================
+// UNDO/REDO GETTERS
+// ============================================================================
+
+/**
+ * Get performStateBasedUndo function
+ * @returns {Function|null}
+ */
+export function getPerformStateBasedUndo() {
+    return context.performStateBasedUndo;
+}
+
+/**
+ * Get performStateBasedRedo function
+ * @returns {Function|null}
+ */
+export function getPerformStateBasedRedo() {
+    return context.performStateBasedRedo;
+}
+
+/**
+ * Get updateUndoRedoButtons function
+ * @returns {Function|null}
+ */
+export function getUpdateUndoRedoButtons() {
+    return context.updateUndoRedoButtons;
+}
+
+/**
+ * Get captureStateSnapshot function
+ * @returns {Function|null}
+ */
+export function getCaptureStateSnapshot() {
+    return context.captureStateSnapshot;
+}
+
+// ============================================================================
+// REMINDER GETTERS
+// ============================================================================
+
+/**
+ * Get updateReminderButtons function
+ * @returns {Function|null}
+ */
+export function getUpdateReminderButtons() {
+    return context.updateReminderButtons;
+}
+
+/**
+ * Get startReminders function
+ * @returns {Function|null}
+ */
+export function getStartReminders() {
+    return context.startReminders;
+}
+
+/**
+ * Get remindOverdueTasks function
+ * @returns {Function|null}
+ */
+export function getRemindOverdueTasks() {
+    return context.remindOverdueTasks;
+}
+
+/**
+ * Get loadRemindersSettings function
+ * @returns {Function|null}
+ */
+export function getLoadRemindersSettings() {
+    return context.loadRemindersSettings;
+}
+
+// ============================================================================
+// RECURRING GETTERS
+// ============================================================================
+
+/**
+ * Get recurringPanel instance
+ * @returns {Object|null}
+ */
+export function getRecurringPanel() {
+    return context.recurringPanel;
+}
+
+/**
+ * Get openRecurringSettingsPanelForTask function
+ * @returns {Function|null}
+ */
+export function getOpenRecurringSettingsPanelForTask() {
+    return context.openRecurringSettingsPanelForTask;
+}
+
+// ============================================================================
+// MODE GETTERS
+// ============================================================================
+
+/**
+ * Get initializeModeSelector function
+ * @returns {Function|null}
+ */
+export function getInitializeModeSelector() {
+    return context.initializeModeSelector;
+}
+
+// ============================================================================
+// TASK GETTERS
+// ============================================================================
+
+/**
+ * Get updateMoveArrowsVisibility function
+ * @returns {Function|null}
+ */
+export function getUpdateMoveArrowsVisibility() {
+    return context.updateMoveArrowsVisibility;
+}
+
+/**
+ * Get addTask function
+ * @returns {Function|null}
+ */
+export function getAddTask() {
+    return context.addTask;
+}
+
+/**
+ * Get validateAndSanitizeTaskInput function
+ * @returns {Function|null}
+ */
+export function getValidateAndSanitizeTaskInput() {
+    return context.validateAndSanitizeTaskInput;
+}
+
+/**
+ * Get loadTaskContext function
+ * @returns {Function|null}
+ */
+export function getLoadTaskContext() {
+    return context.loadTaskContext;
+}
+
+/**
+ * Get createTaskDOMElements function
+ * @returns {Function|null}
+ */
+export function getCreateTaskDOMElements() {
+    return context.createTaskDOMElements;
+}
+
+/**
+ * Get createOrUpdateTaskData function
+ * @returns {Function|null}
+ */
+export function getCreateOrUpdateTaskData() {
+    return context.createOrUpdateTaskData;
+}
+
+/**
+ * Get fixTaskValidationIssues function
+ * @returns {Function|null}
+ */
+export function getFixTaskValidationIssues() {
+    return context.fixTaskValidationIssues;
+}
+
+export function getHandleCompleteAllTasks() {
+    return context.handleCompleteAllTasks;
+}
+
+export function getInitCompletedTasksSection() {
+    return context.initCompletedTasksSection;
+}
+
+export function getExtractTaskDataFromDOM() {
+    return context.extractTaskDataFromDOM;
+}
+
+export function getResumeDeferredRenderIfNeeded() {
+    return context.resumeDeferredRenderIfNeeded;
+}
+
+// ============================================================================
+// MANAGER GETTERS
+// ============================================================================
+
+export function getBackupManager() { return context.BackupManager; }
+export function getCycleManager() { return context.CycleManager; }
+export function getModeManager() { return context.ModeManager; }
+export function getMenuManager() { return context.MenuManager; }
+export function getSettingsManager() { return context.SettingsManager; }
+export function getErrorHandler() { return context.ErrorHandler; }
+export function getReminderManager() { return context.reminderManager; }
+export function getGamesManager() { return context.gamesManager; }
+
+// Manager classes + instances
+export function getOnboardingManagerClass() { return context.OnboardingManager; }
+export function getOnboardingManager() { return context.onboardingManager; }
+export function getDragDropManager() { return context.DragDropManager; }
+export function getDeviceDetectionManagerClass() { return context.DeviceDetectionManager; }
+export function getDeviceDetectionManager() { return context.deviceDetectionManager; }
+export function getModalManagerClass() { return context.ModalManager; }
+export function getModalManager() { return context.modalManager; }
+export function getCycleSwitcherClass() { return context.CycleSwitcher; }
+export function getCycleSwitcher() { return context.cycleSwitcher; }
+
+// ============================================================================
+// NOTIFICATION GETTERS
+// ============================================================================
+
+export function getNotifications() { return context.notifications; }
+export function getShowConfirmationModal() { return context.showConfirmationModal; }
+export function getShowPromptModal() { return context.showPromptModal; }
+
+// ============================================================================
+// UTILITY GETTERS
+// ============================================================================
+
+export function getDataValidator() { return context.DataValidator; }
+export function getSanitizeInput() { return context.sanitizeInput; }
+export function getGenerateId() { return context.generateId; }
+export function getGenerateHashId() { return context.generateHashId; }
+export function getSafeAddEventListener() { return context.safeAddEventListener; }
+export function getSafeAddEventListenerById() { return context.safeAddEventListenerById; }
+export function getIsTouchDevice() { return context.isTouchDevice; }
+
+// ============================================================================
+// UI HELPER GETTERS
+// ============================================================================
+
+export function getShowLoader() { return context.showLoader; }
+export function getHideLoader() { return context.hideLoader; }
+export function getWithLoader() { return context.withLoader; }
+
+// ============================================================================
+// TASK CLASS GETTERS
+// ============================================================================
+
+export function getTaskRenderer() { return context.TaskRenderer; }
+export function getTaskDOMManager() { return context.TaskDOMManager; }
+export function getTaskEvents() { return context.TaskEvents; }
+export function getTaskUtils() { return context.TaskUtils; }
+export function getTaskOptionsCustomizer() { return context.TaskOptionsCustomizer; }
+
+// ============================================================================
+// CYCLE SWITCHER GETTERS
+// ============================================================================
+
+export function getSwitchMiniCycle() { return context.switchMiniCycle; }
+export function getRenameMiniCycle() { return context.renameMiniCycle; }
+export function getDeleteMiniCycle() { return context.deleteMiniCycle; }
+export function getConfirmMiniCycle() { return context.confirmMiniCycle; }
+export function getHideSwitchMiniCycleModal() { return context.hideSwitchMiniCycleModal; }
+export function getUpdatePreview() { return context.updatePreview; }
+export function getLoadMiniCycleList() { return context.loadMiniCycleList; }
+export function getSetupModalClickOutside() { return context.setupModalClickOutside; }
+
+// ============================================================================
+// FEATURE GETTERS
+// ============================================================================
+
+export function getPullToRefresh() { return context.PullToRefresh; }
+export function getMiniCycleReminders() { return context.MiniCycleReminders; }
+export function getMiniCycleNotifications() { return context.MiniCycleNotifications; }
+export function getEducationalTipManager() { return context.EducationalTipManager; }
+
+// ============================================================================
 // CONVENIENCE - Get multiple values at once
 // ============================================================================
 
@@ -202,15 +616,53 @@ export function getAppContext() {
  */
 export function createLazyDeps() {
     return {
+        // Core
         get AppState() { return context.AppState; },
         get appInit() { return context.appInit; },
         get AppGlobalState() { return context.AppGlobalState; },
         get loadMiniCycleData() { return context.loadMiniCycleData; },
+        get autoSave() { return context.autoSave; },
+
+        // UI
         get completeInitialSetup() { return context.completeInitialSetup; },
         get showCycleCreationModal() { return context.showCycleCreationModal; },
         get hideMainMenu() { return context.hideMainMenu; },
+        get updateMainMenuHeader() { return context.updateMainMenuHeader; },
+
+        // Utilities
         get GlobalUtils() { return context.GlobalUtils; },
         get showNotification() { return context.showNotification; },
+        get resetNotificationPosition() { return context.resetNotificationPosition; },
+
+        // Undo/Redo
+        get performStateBasedUndo() { return context.performStateBasedUndo; },
+        get performStateBasedRedo() { return context.performStateBasedRedo; },
+        get updateUndoRedoButtons() { return context.updateUndoRedoButtons; },
+        get captureStateSnapshot() { return context.captureStateSnapshot; },
+
+        // Reminders
+        get updateReminderButtons() { return context.updateReminderButtons; },
+        get startReminders() { return context.startReminders; },
+        get remindOverdueTasks() { return context.remindOverdueTasks; },
+        get loadRemindersSettings() { return context.loadRemindersSettings; },
+
+        // Recurring
+        get recurringPanel() { return context.recurringPanel; },
+        get openRecurringSettingsPanelForTask() { return context.openRecurringSettingsPanelForTask; },
+
+        // Mode
+        get initializeModeSelector() { return context.initializeModeSelector; },
+
+        // Task
+        get updateMoveArrowsVisibility() { return context.updateMoveArrowsVisibility; },
+        get addTask() { return context.addTask; },
+        get validateAndSanitizeTaskInput() { return context.validateAndSanitizeTaskInput; },
+        get loadTaskContext() { return context.loadTaskContext; },
+        get createTaskDOMElements() { return context.createTaskDOMElements; },
+        get createOrUpdateTaskData() { return context.createOrUpdateTaskData; },
+        get fixTaskValidationIssues() { return context.fixTaskValidationIssues; },
+
+        // Testing
         get ConsoleCapture() { return context.ConsoleCapture; },
         get appendToTestResults() { return context.appendToTestResults; }
     };
