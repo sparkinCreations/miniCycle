@@ -79,7 +79,7 @@ let isDraggingNotification = false;
 **/
 
 // ✅ Backward compatibility alias - will be set after appInit loads
-window.AppInit = null; // Will be replaced with appInit below
+// appInit is managed via appContext, not window.*
 
 // ============================================================================
 // CRITICAL: Import coreBoot IMMEDIATELY to set window.AppBootStarted
@@ -172,12 +172,7 @@ async function initApp() {
     appInit,
     setAppInitDependencies,
     migrationMod,
-    withV,
-    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS,
-    TASK_LIMIT,
-    UNDO_LIMIT,
-    UNDO_MIN_INTERVAL_MS
+    withV
   } = coreResult;
 
   console.log('✅ Core boot complete');
@@ -200,11 +195,41 @@ async function initApp() {
   // Import appContext getters for use throughout boot
   const {
       getAppState,
+      getAppGlobalState,
+      getAppInit,
       getAppendToTestResults,
       getConsoleCapture,
       getCompleteInitialSetup,
       getShowCycleCreationModal,
-      getGlobalUtils
+      getGlobalUtils,
+      getLoadMiniCycleData,
+      getShowNotification,
+      getResetNotificationPosition,
+      getCaptureStateSnapshot,
+      getDeviceDetectionManager,
+      getFixTaskValidationIssues,
+      getHandleCompleteAllTasks,
+      getInitCompletedTasksSection,
+      // UI
+      getUpdateMainMenuHeader,
+      getHideMainMenu,
+      // Undo/Redo
+      getPerformStateBasedUndo,
+      getPerformStateBasedRedo,
+      getUpdateUndoRedoButtons,
+      // Reminders
+      getUpdateReminderButtons,
+      getStartReminders,
+      getRemindOverdueTasks,
+      getLoadRemindersSettings,
+      // Recurring
+      getRecurringPanel,
+      getOpenRecurringSettingsPanelForTask,
+      // Mode
+      getInitializeModeSelector,
+      // Task
+      getUpdateMoveArrowsVisibility,
+      getAddTask
   } = await import('../core/appContext.js');
 
     /******
@@ -242,36 +267,28 @@ async function initApp() {
         sanitizeInput: deps.utils.sanitizeInput
     });
     deps.utils.DataValidator = dataValidatorMod.DataValidator;
-    // Still expose to window for backward compat
-    window.DataValidator = dataValidatorMod.DataValidator;
     console.log('🛡️ Data Validator loaded');
 
     // ✅ Load Console Capture (DI-pure)
     const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
-
-    // Wire dependencies for ConsoleCapture (DI-pure)
     if (consoleCaptureMod.setConsoleCaptureDependencies) {
         consoleCaptureMod.setConsoleCaptureDependencies({
             showNotification: deps.utils.showNotification,
             get appendToTestResults() { return getAppendToTestResults(); }
         });
     }
-
-    window.consoleCapture = consoleCaptureMod.default;
-    window.ConsoleCapture = consoleCaptureMod.default;  // Alias for testing-modal-integration
+    deps.utils.consoleCapture = consoleCaptureMod.default;
+    console.log('🔍 Console Capture loaded');
 
     // ✅ Load Notifications (DI-pure)
     const notificationsMod = await import(withV('../utils/notifications.js'));
-
-    // Set early dependencies (others set later when available)
     notificationsMod.setNotificationsDependencies({
-        // These will be available later - use deferred getters
         AppState: null, // Set after AppState is created
-        appInit: appInit,  // ✅ DI-injected (no static import in module)
-        loadMiniCycleData: () => window.loadMiniCycleData?.(),
-        generateHashId: (...args) => window.generateHashId?.(...args),
-        GlobalUtils: window.GlobalUtils,
-        escapeHtml: (...args) => window.escapeHtml?.(...args),
+        appInit: appInit,
+        loadMiniCycleData: () => getLoadMiniCycleData()?.(),
+        generateHashId: (...args) => GlobalUtils.generateHashId?.(...args),
+        GlobalUtils: GlobalUtils,
+        escapeHtml: (...args) => GlobalUtils.escapeHtml?.(...args),
         safeAddEventListener: GlobalUtils.safeAddEventListener
     });
 
@@ -282,23 +299,17 @@ async function initApp() {
     deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
     deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
 
-    // Essential notification globals (audit Dec 2025: reduced from 8 to 5)
-    window.notifications = notifications;
-    window.showNotification = (message, type, duration) => notifications.show(message, type, duration);
-    window.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
-    window.showPromptModal = (options) => notifications.showPromptModal(options);
-    window.resetNotificationPosition = () => notifications.resetPosition();
-
     // Update appContext with showNotification
     import('../core/appContext.js').then(mod => {
-        mod.setContextValue('showNotification', window.showNotification);
+        mod.setContextValue('showNotification', deps.utils.showNotification);
     });
     console.log('✅ Notifications loaded');
 
     // Show deferred cache notification if we had to fetch fresh appInit.js
-    if (window.AppGlobalState.pendingCacheNotification) {
+    const appGlobalState = getAppGlobalState();
+    if (appGlobalState?.pendingCacheNotification) {
       notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
-      window.AppGlobalState.pendingCacheNotification = false;
+      appGlobalState.pendingCacheNotification = false;
     }
 
     // ✅ Wire ErrorHandler now that showNotification is available
@@ -330,28 +341,23 @@ async function initApp() {
 
     // ✅ Load Games Manager (DI-pure)
     const gamesManagerMod = await import(withV('../ui/gamesManager.js'));
-    // Inject dependencies (DI-pure)
     if (gamesManagerMod.setGamesManagerDependencies) {
         gamesManagerMod.setGamesManagerDependencies({
-            appInit: appInit,  // ✅ DI-injected (no static import in module)
+            appInit: appInit,
             AppMeta: window.AppMeta,
-            get AppState() { return getAppState(); },  // Lazy getter via appContext
+            get AppState() { return getAppState(); },
             safeAddEventListener: deps.utils.safeAddEventListener
         });
     }
-    // Keep gamesManager on window for .init() call and test access
-    window.gamesManager = gamesManagerMod.gamesManager;
-    // ✅ Initialize AFTER dependencies are set (DI-pure pattern)
-    // NOTE: Don't await - init() waits for core internally, which hasn't been marked ready yet
-    window.gamesManager.init();
+    deps.ui.gamesManager = gamesManagerMod.gamesManager;
+    deps.ui.gamesManager.init();
     console.log('✅ Games Manager loaded');
 
     // ✅ Load Onboarding Manager (DI-pure)
     const onboardingManagerMod = await import(withV('../ui/onboardingManager.js'));
-    // Inject dependencies (DI-pure, use lazy getters for late-available deps)
     if (onboardingManagerMod.setOnboardingManagerDependencies) {
         onboardingManagerMod.setOnboardingManagerDependencies({
-            appInit: appInit,  // ✅ DI-injected (no static import in module)
+            appInit: appInit,
             AppMeta: window.AppMeta,
             showNotification: deps.utils.showNotification,
             get AppState() { return getAppState(); },
@@ -360,10 +366,12 @@ async function initApp() {
             get safeAddEventListenerById() { return getGlobalUtils()?.safeAddEventListenerById; }
         });
     }
-    window.onboardingManager = onboardingManagerMod.onboardingManager;
-    // Initialize AFTER dependencies are set (fixes race condition)
-    // NOTE: Don't await - init() waits for core internally, which hasn't been marked ready yet
-    window.onboardingManager.init();
+    deps.ui.onboardingManager = onboardingManagerMod.onboardingManager;
+    deps.ui.onboardingManager.init();
+    // Register with appContext for coreBoot.js lazy getter
+    import('../core/appContext.js').then(mod => {
+        mod.setContextValue('onboardingManager', deps.ui.onboardingManager);
+    });
     console.log('✅ Onboarding Manager loaded');
 
     // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
@@ -485,7 +493,8 @@ async function initApp() {
             e.target.matches(selector)
         );
         if (isMatch) {
-            if (window.recurringPanel?.updateRecurringSummary) window.recurringPanel.updateRecurringSummary();
+            const rp = getRecurringPanel();
+            if (rp?.updateRecurringSummary) rp.updateRecurringSummary();
         }
     };
     
@@ -495,7 +504,8 @@ async function initApp() {
             e.target.matches(selector)
         );
         if (isMatch) {
-            if (window.recurringPanel?.updateRecurringSummary) window.recurringPanel.updateRecurringSummary();
+            const rp = getRecurringPanel();
+            if (rp?.updateRecurringSummary) rp.updateRecurringSummary();
         }
     };
     
@@ -554,15 +564,11 @@ async function initApp() {
     // ✅ MOVED TO PHASE 2: setupSettingsMenu() - now handled by settingsManager module
     setupUserManual();
 
-    // ✅ Expose functions needed by cycleLoader and cycleManager
-    // Note: updateMainMenuHeader now exported by menuManager module
-    // ✅ completeInitialSetup now delegates to appInit method (extracted from main script)
-    window.completeInitialSetup = (activeCycle, fullSchemaData, schemaData) =>
+    // ✅ completeInitialSetup delegates to appInit method - register with appContext
+    const completeInitialSetupFn = (activeCycle, fullSchemaData, schemaData) =>
         appInit.runCompleteInitialSetup(activeCycle, fullSchemaData, schemaData);
-
-    // Update appContext with completeInitialSetup
     import('../core/appContext.js').then(mod => {
-        mod.setContextValue('completeInitialSetup', window.completeInitialSetup);
+        mod.setContextValue('completeInitialSetup', completeInitialSetupFn);
     });
 
 
@@ -582,7 +588,7 @@ async function initApp() {
   // Update notifications with AppState now available
   if (deps.utils.setNotificationsDependencies) {
       deps.utils.setNotificationsDependencies({
-          AppState: window.AppState
+          AppState: getAppState()
       });
   }
 
@@ -595,8 +601,9 @@ async function initApp() {
         console.log('🔌 Phase 2: Loading modules via bootFeatures...');
     
   // ✅ Update recurring panel button visibility if module is loaded
-  if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-      window.recurringPanel.updateRecurringPanelButtonVisibility();
+  const rpVisibility = getRecurringPanel();
+  if (rpVisibility?.updateRecurringPanelButtonVisibility) {
+      rpVisibility.updateRecurringPanelButtonVisibility();
   }
 
         const featureResult = await bootFeatures(deps, coreResult);
@@ -611,7 +618,7 @@ async function initApp() {
         // 🎯 Now that all modules are ready, load data
         try {
           console.log('🔧 Running fixTaskValidationIssues...');
-          window.fixTaskValidationIssues?.();
+          getFixTaskValidationIssues()?.();
 
           console.log('🚀 Running initializeAppWithAutoMigration...');
           // ✅ IMPORTANT: initializeAppWithAutoMigration calls initialSetup() after Phase 2 modules are ready
@@ -625,8 +632,9 @@ async function initApp() {
         // ✅ Setup taskCore event listeners (after taskCore loaded in Phase 2)
         try {
           const completeAllButton = document.getElementById("completeAll");
-          if (completeAllButton && typeof window.handleCompleteAllTasks === 'function') {
-            GlobalUtils.safeAddEventListener(completeAllButton, "click", window.handleCompleteAllTasks);
+          const handleCompleteAll = getHandleCompleteAllTasks();
+          if (completeAllButton && typeof handleCompleteAll === 'function') {
+            GlobalUtils.safeAddEventListener(completeAllButton, "click", handleCompleteAll);
             console.log('✅ Complete All button listener attached');
           }
         } catch (eventErr) {
@@ -637,20 +645,25 @@ async function initApp() {
 
         // 🧰 Centralize undo snapshots on AppState.update (wrap once)
         try {
-          if (!window.AppGlobalState.wrappedAppStateUpdate) {
+          const globalState = getAppGlobalState();
+          const AppState = getAppState();
+          const appInitRef = getAppInit();
+          const captureSnapshot = getCaptureStateSnapshot();
+
+          if (!globalState?.wrappedAppStateUpdate && AppState) {
             // Bind methods to preserve `this`
-            const boundUpdate = window.AppState.update.bind(window.AppState);
-            const boundGet = typeof window.AppState.get === 'function'
-              ? window.AppState.get.bind(window.AppState)
+            const boundUpdate = AppState.update.bind(AppState);
+            const boundGet = typeof AppState.get === 'function'
+              ? AppState.get.bind(AppState)
               : null;
 
-             window.AppState.update = async (producer, immediate) => {
+            AppState.update = async (producer, immediate) => {
               try {
                 // ✅ Use new appInit API
-                if (window.appInit?.isCoreReady?.() && !window.AppGlobalState.isPerformingUndoRedo && boundGet) {
+                if (appInitRef?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
                   const prev = boundGet();
-                  if (prev && typeof window.captureStateSnapshot === 'function') {
-                    window.captureStateSnapshot(prev);
+                  if (prev && typeof captureSnapshot === 'function') {
+                    captureSnapshot(prev);
                   }
                 }
               } catch (e) {
@@ -659,8 +672,8 @@ async function initApp() {
               return boundUpdate(producer, immediate);
             };
 
-            window.AppGlobalState.wrappedAppStateUpdate = true;
-            window.AppGlobalState.useUpdateWrapper = true; // ✅ wrapper becomes single snapshot source
+            globalState.wrappedAppStateUpdate = true;
+            globalState.useUpdateWrapper = true; // ✅ wrapper becomes single snapshot source
             console.log('🧰 Undo snapshots centralized on AppState.update (bound)');
           }
         } catch (e) {
@@ -671,17 +684,21 @@ async function initApp() {
 
         // 🔘 Update button states and capture an initial snapshot
         try {
-          if (typeof window.updateUndoRedoButtons === 'function') {
-            window.updateUndoRedoButtons();
+          const updateUndoRedo = getUpdateUndoRedoButtons();
+          if (typeof updateUndoRedo === 'function') {
+            updateUndoRedo();
           }
 
           // Only capture initial snapshot if not using the update wrapper
-          if (!window.AppGlobalState.useUpdateWrapper) {
+          const globalStateCheck = getAppGlobalState();
+          if (!globalStateCheck?.useUpdateWrapper) {
             setTimeout(() => {
               try {
-                const st = window.AppState.get?.();
-                if (st && typeof window.captureStateSnapshot === 'function') {
-                  window.captureStateSnapshot(st);
+                const AppStateRef = getAppState();
+                const captureSnapshotRef = getCaptureStateSnapshot();
+                const st = AppStateRef?.get?.();
+                if (st && typeof captureSnapshotRef === 'function') {
+                  captureSnapshotRef(st);
                 }
               } catch (e) {
                 console.warn('⚠️ Initial snapshot failed:', e);
@@ -711,13 +728,8 @@ async function initApp() {
                     testingModalMod = await import(withV('../testing/testing-modal.js'));
                     console.log('✅ Testing modal loaded (lazy)');
 
-                    // Expose testing modal functions to window
-                    if (testingModalMod.openStorageViewer) window.openStorageViewer = testingModalMod.openStorageViewer;
+                    // Only expose closeStorageViewer - required for HTML onclick handler
                     if (testingModalMod.closeStorageViewer) window.closeStorageViewer = testingModalMod.closeStorageViewer;
-                    if (testingModalMod.appendToTestResults) window.appendToTestResults = testingModalMod.appendToTestResults;
-                    if (testingModalMod.clearTestResults) window.clearTestResults = testingModalMod.clearTestResults;
-                    if (testingModalMod.exportTestResults) window.exportTestResults = testingModalMod.exportTestResults;
-                    if (testingModalMod.copyTestResults) window.copyTestResults = testingModalMod.copyTestResults;
 
                     const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
 
@@ -733,8 +745,8 @@ async function initApp() {
                     // Inject dependencies into Testing Modal
                     if (testingModalMod.setTestingModalDependencies) {
                         testingModalMod.setTestingModalDependencies({
-                            AppState: window.AppState,
-                            BackupManager: window.BackupManager,
+                            AppState: getAppState(),
+                            get BackupManager() { return deps.storage.BackupManager; },
                             notifications: deps.utils.notifications,
                             showNotification: deps.utils.showNotification,
                             deleteStorageItem: (key, storageType) => {
@@ -752,13 +764,11 @@ async function initApp() {
                     // Setup testing modal
                     if (typeof testingModalMod.setupTestingModal === 'function') {
                         testingModalMod.setupTestingModal();
-                        window.setupTestingModal = testingModalMod.setupTestingModal;
                     }
 
                     // Initialize enhancements
                     if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
                         testingModalMod.initializeTestingModalEnhancements();
-                        window.initializeTestingModalEnhancements = testingModalMod.initializeTestingModalEnhancements;
                     }
 
                     testingModalLoaded = true;
@@ -791,7 +801,7 @@ async function initApp() {
             }
 
             backupManagerInstance = backupManagerMod.default;
-            window.BackupManager = backupManagerInstance;  // Expose for backward compat
+            deps.storage.BackupManager = backupManagerInstance;  // Store in deps container
             console.log('✅ Backup manager loaded');
 
             // ✅ Create auto-backup in background (non-blocking)
@@ -815,7 +825,8 @@ async function initApp() {
         }
 
         // Optional debug subscribe
-        window.AppState.subscribe('debug', (newState, oldState) => {
+        const AppStateForDebug = getAppState();
+        AppStateForDebug?.subscribe('debug', (newState, oldState) => {
           console.log('🔄 State changed:', {
             timestamp: new Date().toISOString(),
             activeCycle: newState.appState.activeCycleId,
@@ -837,7 +848,7 @@ async function initApp() {
 
   // ✅ Mode Selector (with delay for DOM readiness)
   console.log('🎯 Initializing mode selector...');
-  window.initializeModeSelector?.(); // This calls setupModeSelector()
+  getInitializeModeSelector()?.(); // This calls setupModeSelector()
 
   // ✅ Reminder System (with staggered timing)
   console.log('🔔 Setting up reminder system...');
@@ -846,7 +857,7 @@ async function initApp() {
 
   setTimeout(() => {
     try {
-      window.remindOverdueTasks?.();
+      getRemindOverdueTasks()?.();
     } catch (error) {
       console.warn('⚠️ Overdue task reminder failed:', error);
     }
@@ -855,8 +866,8 @@ async function initApp() {
 
   setTimeout(() => {
     try {
-      window.updateReminderButtons?.(); // ✅ This is the *right* place!
-      window.startReminders?.();
+      getUpdateReminderButtons()?.(); // ✅ This is the *right* place!
+      getStartReminders()?.();
     } catch (error) {
       console.warn('⚠️ Reminder system setup failed:', error);
     }
@@ -872,14 +883,15 @@ async function initApp() {
   // See line ~668 for the new location
 
   // ✅ Now that AppState is ready, setup arrow visibility
-  window.updateMoveArrowsVisibility?.();
+  getUpdateMoveArrowsVisibility()?.();
 
   // ✅ App already marked as ready at line 777 after Phase 2 modules loaded
   console.log('✅ miniCycle initialization complete - app is ready');
 
   // ✅ Initialize completed tasks section
-  if (typeof window.initCompletedTasksSection === 'function') {
-    window.initCompletedTasksSection();
+  const initCompleted = getInitCompletedTasksSection();
+  if (typeof initCompleted === 'function') {
+    initCompleted();
   }
 
   // ✅ Keep isInitializing true - will be disabled on first user interaction
@@ -888,8 +900,10 @@ async function initApp() {
 
   // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
   console.log('📱 Running device detection...');
-  if (window.deviceDetectionManager && window.loadMiniCycleData) {
-    await window.deviceDetectionManager.autoRedetectOnVersionChange();
+  const loadMiniCycleDataFn = getLoadMiniCycleData();
+  const deviceManager = getDeviceDetectionManager();
+  if (deviceManager && loadMiniCycleDataFn) {
+    await deviceManager.autoRedetectOnVersionChange();
   } else {
     // Not critical - device detection will be available on next full load
     console.log('⏭️ Skipping device detection (not fully initialized yet)');
@@ -972,10 +986,10 @@ async function initApp() {
 function handleUndoRedoKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
-        window.performStateBasedUndo?.();
+        getPerformStateBasedUndo()?.();
     } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
         e.preventDefault();
-        window.performStateBasedRedo?.();
+        getPerformStateBasedRedo()?.();
     }
 }
 GlobalUtils.safeAddEventListener(document, "keydown", handleUndoRedoKeydown);
@@ -1014,7 +1028,7 @@ function detectDeviceType() {
         document.body.classList.add("non-touch-device");
     }
 }
-if (!window.deviceDetectionManager) {
+if (!getDeviceDetectionManager()) {
   detectDeviceType();
 }
 
@@ -1063,12 +1077,17 @@ async function handleMiniCycleTitleBlur() {
     const titleElement = document.getElementById("mini-cycle-title");
     if (!titleElement) return;
 
-    let newTitle = window.sanitizeInput(titleElement.textContent.trim());
+    // Use appContext getters instead of window.*
+    const AppState = getAppState();
+    const loadMiniCycleData = getLoadMiniCycleData();
+    const showNotification = getShowNotification();
+
+    let newTitle = GlobalUtils.sanitizeInput(titleElement.textContent.trim());
 
     if (newTitle === "") {
         console.log('Empty title detected, reverting (Schema 2.5 only)...');
 
-        const schemaData = window.loadMiniCycleData?.();
+        const schemaData = loadMiniCycleData?.();
         if (!schemaData) {
             console.error('Schema 2.5 data required for title revert');
             return;
@@ -1077,13 +1096,13 @@ async function handleMiniCycleTitleBlur() {
         const { cycles, activeCycle } = schemaData;
         const oldTitle = cycles[activeCycle]?.title || "Untitled miniCycle";
 
-        window.showNotification?.("Title cannot be empty. Reverting to previous title.");
+        showNotification?.("Title cannot be empty. Reverting to previous title.");
         titleElement.textContent = oldTitle;
         return;
     }
 
     console.log('Updating title (Schema 2.5 only)...');
-    const schemaData = window.loadMiniCycleData?.();
+    const schemaData = loadMiniCycleData?.();
     if (!schemaData) {
         console.error('Schema 2.5 data required for setupMiniCycleTitleListener');
         return;
@@ -1101,8 +1120,8 @@ async function handleMiniCycleTitleBlur() {
         console.log(`Title change detected: "${oldTitle}" → "${newTitle}"`);
 
         // Update via AppState only (no direct localStorage fallback)
-        if (window.AppState?.isReady?.()) {
-            await window.AppState.update(state => {
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
                 const cid = state?.appState?.activeCycleId;
                 const cycle = state?.data?.cycles?.[cid];
                 if (cycle) cycle.title = newTitle;
@@ -1110,14 +1129,14 @@ async function handleMiniCycleTitleBlur() {
         } else {
             // AppState should always be ready by this point
             console.error('Title update failed: AppState not ready');
-            window.showNotification?.('Failed to save title change', 'error');
+            showNotification?.('Failed to save title change', 'error');
             titleElement.textContent = oldTitle; // Revert UI
             return;
         }
 
         // Refresh UI
-        window.updateMainMenuHeader?.();
-        window.updateUndoRedoButtons?.();
+        getUpdateMainMenuHeader()?.();
+        getUpdateUndoRedoButtons()?.();
     }
 }
 
@@ -1204,15 +1223,17 @@ GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', handleTryLiteV
   // Use window.sendReminderNotificationIfNeeded() and window.startReminders() which are globally exported
 
   // ✅ Update recurring panel button visibility if module is loaded
-  if (window.recurringPanel?.updateRecurringPanelButtonVisibility) {
-      window.recurringPanel.updateRecurringPanelButtonVisibility();
+  const rpVisibility = getRecurringPanel();
+  if (rpVisibility?.updateRecurringPanelButtonVisibility) {
+      rpVisibility.updateRecurringPanelButtonVisibility();
   }
 
 
 // Named handler for safeAddEventListener duplicate prevention
 function handleAlwaysShowRecurringChange() {
-    if (window.recurringPanel?.saveAlwaysShowRecurringSetting) {
-        window.recurringPanel.saveAlwaysShowRecurringSetting();
+    const rp = getRecurringPanel();
+    if (rp?.saveAlwaysShowRecurringSetting) {
+        rp.saveAlwaysShowRecurringSetting();
     }
 }
 GlobalUtils.safeAddEventListenerById("always-show-recurring", "change", handleAlwaysShowRecurringChange);
@@ -1226,7 +1247,7 @@ GlobalUtils.safeAddEventListenerById("always-show-recurring", "change", handleAl
  */
 
 function handleOpenUserManualClick() {
-    window.hideMainMenu?.(); // Hide the menu when clicking
+    getHideMainMenu()?.(); // Hide the menu when clicking
 
     // Disable button briefly to prevent multiple clicks
     openUserManual.disabled = true;
@@ -1248,46 +1269,7 @@ function setupUserManual() {
 
 // ✅ REMOVED: setupAbout() - Now handled by modalManager module
 
-/**
- * Assigncyclevariables function.
- *
- * @returns {void}
- */
-
-// ✅ MIGRATED: assignCycleVariables now in modules/core/appState.js
-// This inline version is a FALLBACK only - prefer window.assignCycleVariables from module
-function assignCycleVariables() {
-    // Use module version if available
-    if (window.assignCycleVariables && window.assignCycleVariables !== assignCycleVariables) {
-        return window.assignCycleVariables();
-    }
-
-    console.log('🔄 Assigning cycle variables (inline fallback)...');
-
-    if (!window.AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for assignCycleVariables');
-        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
-    }
-
-    const currentState = window.AppState.get();
-    if (!currentState) {
-        console.error('❌ No state data available for assignCycleVariables');
-        return { lastUsedMiniCycle: null, savedMiniCycles: {} };
-    }
-
-    const { data, appState } = currentState;
-
-    console.log('📊 Retrieved cycle data:', {
-        activeCycle: appState.activeCycleId,
-        cycleCount: Object.keys(data.cycles).length
-    });
-
-    return {
-        lastUsedMiniCycle: appState.activeCycleId,
-        savedMiniCycles: data.cycles
-    };
-}
-
+// ✅ MIGRATED: assignCycleVariables now in modules/core/appState.js (via coreBoot.js)
 // ✅ EXTRACTED: updateProgressBar and checkMiniCycle moved to modules/progress/cycleCompletion.js
 // Now accessed via window.updateProgressBar and window.checkMiniCycle (set during module init)
 
@@ -1309,306 +1291,15 @@ function assignCycleVariables() {
  *
  ************************/
 
-    /***********************
- * 
- * 
- * Task Management
- * 
- * 
- ************************/
-    /**
-     * Adds a new task to the list.
-     * @param {string} taskText - The task description.
-     * @param {boolean} [completed=false] - Whether the task starts as completed.
-     * @param {boolean} [shouldSave=true] - If true, the task is saved.
-     * @param {string|null} [dueDate=null] - Optional due date.
-     * @param {boolean} [highPriority=false] - If true, the task is marked as high priority.
-     * @param {boolean} [isLoading=false] - If true, task is loaded from storage.
-     * @param {boolean} [remindersEnabled=false] - If true, reminders are turned on.
-     */
-
-
-    
-// ✅ MIGRATED: addTask now in modules/task/taskCore.js
-// window.addTask is set when taskCore module loads
-// This inline version is a FALLBACK only (used before taskCore initializes)
-function addTaskFallback(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}, deleteWhenComplete = undefined, deleteWhenCompleteSettings = undefined) {
-    // Input validation and sanitization
-    const validatedInput = window.validateAndSanitizeTaskInput?.(taskText) || validateAndSanitizeTaskInput(taskText);
-    if (!validatedInput) return;
-
-    // Load and validate data context
-    const taskContext = window.loadTaskContext?.(validatedInput, taskId, {
-        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
-    }, isLoading) || loadTaskContext(validatedInput, taskId, {
-        completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
-    }, isLoading);
-    if (!taskContext) return;
-
-    // Create or update task data
-    const taskData = window.createOrUpdateTaskData?.(taskContext) || createOrUpdateTaskData(taskContext);
-
-    // Create DOM elements - prefer window.createTaskDOMElements from taskDOM.js
-    const taskElements = window.createTaskDOMElements?.(taskContext, taskData) || createTaskDOMElements(taskContext, taskData);
-
-    // Setup task interactions and events (from taskEvents.js via taskDOM.js)
-    if (window.setupTaskInteractions) {
-        window.setupTaskInteractions(taskElements, taskContext);
-    } else {
-        console.warn('⚠️ setupTaskInteractions not available - event handlers may not work!');
-    }
-
-    // Finalize task creation (from taskDOM.js)
-    if (window.finalizeTaskCreation) {
-        window.finalizeTaskCreation(taskElements, taskContext, { shouldSave, isLoading });
-    } else {
-        console.warn('⚠️ finalizeTaskCreation not available - task may not be added properly!');
-    }
-
-    console.log('✅ Task creation completed (Schema 2.5)');
-}
-
-// ✅ 1. Input Validation and Sanitization
-function validateAndSanitizeTaskInput(taskText) {
-    if (typeof taskText !== "string") {
-        console.error("❌ Error: taskText is not a string", taskText);
-        return null;
-    }
-
-    const taskTextTrimmed = window.sanitizeInput(taskText.trim());
-    if (!taskTextTrimmed) {
-        console.warn("⚠ Skipping empty or unsafe task.");
-        return null;
-    }
-    
-    if (taskTextTrimmed.length > TASK_LIMIT) {
-        window.showNotification?.(`Task must be ${TASK_LIMIT} characters or less.`);
-        return null;
-    }
-    
-    return taskTextTrimmed;
-}
-
-// ✅ Export for taskCore module
-// ❌ DISABLED: Old export - now provided by taskDOM module
-// window.validateAndSanitizeTaskInput = validateAndSanitizeTaskInput;
-
-// ✅ 2. Data Context Loading and Validation
-function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
-    console.log('📝 Adding task (Schema 2.5 only)...');
-
-    const schemaData = window.loadMiniCycleData?.();
-    if (!schemaData) {
-        console.error('❌ Schema 2.5 data required for addTask');
-        throw new Error('Schema 2.5 data not found');
-    }
-
-    const { cycles, activeCycle, settings, reminders } = schemaData;
-    const currentCycle = cycles[activeCycle];
-
-    if (!activeCycle || !currentCycle) {
-        console.error("❌ No active cycle found in Schema 2.5 for addTask");
-        throw new Error('No active cycle found');
-    }
-
-    console.log('📊 Active cycle found:', activeCycle);
-
-    const assignedTaskId = taskId || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    console.log('🆔 Assigned task ID:', assignedTaskId);
-
-    return {
-        taskTextTrimmed,
-        assignedTaskId,
-        schemaData,
-        cycles,
-        activeCycle,
-        currentCycle,
-        settings,
-        reminders,
-        cycleTasks: currentCycle.tasks || [],
-        autoResetEnabled: currentCycle.autoReset || false,
-        remindersEnabledGlobal: reminders?.enabled === true,
-        deleteCheckedEnabled: currentCycle.deleteCheckedTasks || false,
-        isLoading,  // ✅ Pass through isLoading flag
-        ...taskOptions
-    };
-}
-
-// ✅ Export for taskCore module
-// ❌ DISABLED: Old export - now provided by taskDOM module
-// window.loadTaskContext = loadTaskContext;
-
-// ✅ 3. Task Data Creation and Storage
-function createOrUpdateTaskData(taskContext) {
-    const {
-        cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
-        highPriority, remindersEnabled, recurring, recurringSettings,
-        currentCycle, cycles, activeCycle, isLoading, deleteWhenComplete,
-        deleteWhenCompleteSettings
-    } = taskContext;
-
-    let existingTask = cycleTasks.find(task => task.id === assignedTaskId);
-
-    if (!existingTask) {
-        console.log('📋 Creating new task in Schema 2.5');
-
-        // ✅ Mode-specific deleteWhenComplete architecture:
-        // - Active value synced with current mode
-        // - Settings object stores preference per mode
-        const isToDoMode = currentCycle.deleteCheckedTasks === true;
-
-        // Use provided settings or defaults
-        const finalSettings = deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-
-        // Active value based on current mode (unless explicitly provided)
-        const activeDeleteWhenComplete = deleteWhenComplete !== undefined ?
-            deleteWhenComplete :
-            (isToDoMode ? finalSettings.todo : finalSettings.cycle);
-
-        existingTask = {
-            id: assignedTaskId,
-            text: taskTextTrimmed,
-            completed,
-            dueDate,
-            highPriority,
-            remindersEnabled,
-            recurring,
-            recurringSettings,
-            deleteWhenComplete: activeDeleteWhenComplete,
-            deleteWhenCompleteSettings: finalSettings,
-            schemaVersion: 2
-        };
-
-        // ✅ FIX: Only push to cycle data if NOT loading (prevents duplicate tasks with new IDs)
-        if (!isLoading) {
-            currentCycle.tasks.push(existingTask);
-        } else {
-            console.log('⏭️ Skipping push to currentCycle.tasks during load (task already in AppState)');
-        }
-
-        // Handle recurring template creation
-        if (recurring && recurringSettings) {
-            console.log('🔁 Saving recurring template');
-
-            if (!currentCycle.recurringTemplates) {
-                currentCycle.recurringTemplates = {};
-            }
-
-            currentCycle.recurringTemplates[assignedTaskId] = {
-                id: assignedTaskId,
-                text: taskTextTrimmed,
-                recurring: true,
-                recurringSettings: structuredClone(recurringSettings),
-                highPriority: highPriority || false,
-                dueDate: dueDate || null,
-                remindersEnabled: remindersEnabled || false,
-                deleteWhenComplete: true, // Recurring tasks always auto-remove
-                deleteWhenCompleteSettings: { ...DEFAULT_RECURRING_DELETE_SETTINGS },
-                lastTriggeredTimestamp: null,
-                schemaVersion: 2
-            };
-        }
-
-        // ✅ FIX: Only save to AppState if NOT loading from saved data
-        if (!isLoading) {
-            // Save to Schema 2.5 directly
-            window.saveTaskToSchema25(activeCycle, currentCycle);
-            console.log('💾 Task saved to Schema 2.5');
-        } else {
-            console.log('⏭️ Skipping save during load (isLoading=true)');
-        }
-    }
-
-    return existingTask;
-}
-
-// ✅ MIGRATED: createOrUpdateTaskData now in modules/task/taskUtils.js
-// The inline version above is a FALLBACK - prefer window.createOrUpdateTaskData from taskDOM module
-// window.createOrUpdateTaskData is set by taskDOM.js during initialization
-
-// ✅ 4. Recurring Template Creation (extracted from task data creation)
-// ✅ REMOVED: createRecurringTemplate - now handled by recurringCore/recurringPanel modules
-
-// ✅ 5. DOM Elements Creation
-function createTaskDOMElements(taskContext, taskData) {
-    const {
-        assignedTaskId, taskTextTrimmed, highPriority, recurring,
-        recurringSettings, settings, autoResetEnabled, currentCycle
-    } = taskContext;
-
-    // ✅ Extract deleteWhenComplete settings from task data
-    const deleteWhenComplete = taskData.deleteWhenComplete || false;
-    const deleteWhenCompleteSettings = taskData.deleteWhenCompleteSettings || { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-
-    // Get required DOM elements
-    const taskList = document.getElementById("taskList");
-    const taskInput = document.getElementById("taskInput");
-
-    // Create main task element with deleteWhenComplete settings
-    const taskItem = createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenComplete, deleteWhenCompleteSettings);
-
-    // Create three dots button if needed (use window.* to ensure we get the taskDOM version)
-    const threeDotsButton = (window.createThreeDotsButton || createThreeDotsButton)(taskItem, settings);
-
-    // Create button container and buttons
-    const buttonContainer = createTaskButtonContainer(taskContext);
-    
-    // Create task content elements
-    const { checkbox, taskLabel, dueDateInput } = createTaskContentElements(taskContext);
-    
-    // Create task content wrapper
-    const taskContent = document.createElement("div");
-    taskContent.classList.add("task-content");
-    taskContent.appendChild(checkbox);
-    taskContent.appendChild(taskLabel);
-
-    // Assemble the task item
-    taskItem.appendChild(buttonContainer);
-    taskItem.appendChild(taskContent);
-    taskItem.appendChild(dueDateInput);
-
-    return {
-        taskItem,
-        taskList,
-        taskInput,
-        buttonContainer,
-        checkbox,
-        taskLabel,
-        dueDateInput,
-        threeDotsButton
-    };
-}
+// ✅ MIGRATED: Task management functions now in modules/task/taskCore.js and taskDOM.js
+// - addTask, validateAndSanitizeTaskInput, loadTaskContext, createOrUpdateTaskData, createTaskDOMElements
 
 
 
 
 
 
-/**
- * Sync recurring state to DOM elements
- * Called by recurring modules to update task UI
- */
-window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
-    taskEl.setAttribute("data-recurring-settings", JSON.stringify(recurringSettings));
-    const recurringBtn = taskEl.querySelector(".recurring-btn");
-    if (recurringBtn) {
-        recurringBtn.classList.add("active");
-        recurringBtn.setAttribute("aria-pressed", "true");
-    }
-
-    // ✅ Add recurring icon to task label if not already present
-    const taskLabel = taskEl.querySelector(".task-text");
-    if (taskLabel) {
-        let existingIcon = taskLabel.querySelector('.recurring-indicator');
-        if (!existingIcon) {
-            const icon = document.createElement("span");
-            icon.className = "recurring-indicator";
-            icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
-            taskLabel.appendChild(icon);
-            console.log('✅ Added recurring icon via syncRecurringStateToDOM');
-        }
-    }
-};
+// ✅ REMOVED: syncRecurringStateToDOM - now in modules/task/taskEvents.js
 
 
 
@@ -1617,43 +1308,25 @@ window.syncRecurringStateToDOM = function(taskEl, recurringSettings) {
 
 
 
-// Flush queued addTask calls (window.addTask is set by taskCore module)
+// Flush queued addTask calls (addTask is set via appContext by taskCore module in featureBoot)
 (function finalizeAddTaskBootstrap() {
   try {
-    // window.addTask should already be set by taskCore module
-    // If not, use the fallback
-    if (typeof window.addTask !== 'function' && typeof addTaskFallback === 'function') {
-      window.addTask = addTaskFallback;
-    }
-
-    if (typeof window.addTask === 'function') {
-      window.addTaskFunction = window.addTask; // alias for programmatic entry
-      const queuedCalls = window.AppGlobalState?.queuedAddTaskCalls;
+    const addTaskFn = getAddTask();
+    if (typeof addTaskFn === 'function') {
+      // addTask available via appContext.getAddTask() - no window.* exposure needed
+      const globalState = getAppGlobalState();
+      const queuedCalls = globalState?.queuedAddTaskCalls;
       if (Array.isArray(queuedCalls) && queuedCalls.length) {
         console.log(`🚚 Flushing ${queuedCalls.length} queued addTask calls`);
         queuedCalls.splice(0).forEach(args => {
-          try { window.addTask(...args); } catch (e) { console.warn('addTask flush error:', e); }
+          try { addTaskFn(...args); } catch (e) { console.warn('addTask flush error:', e); }
         });
-      }
-      if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
-        window.resumeDeferredRenderIfNeeded();
       }
     }
   } catch (e) {
     console.warn('finalizeAddTaskBootstrap error:', e);
   }
 })();
-// ▶️ Attempt to resume deferred render once real addTask is present
-if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
-  window.resumeDeferredRenderIfNeeded();
-} else {
-  // Fallback: try again shortly if cycleLoader not finished attaching hook yet
-  setTimeout(() => {
-    if (typeof window.resumeDeferredRenderIfNeeded === 'function') {
-      window.resumeDeferredRenderIfNeeded();
-    }
-  }, 200);
-}
 
 // ✅ toggleHoverTaskOptions removed - now using module version from taskDOM.js
 
@@ -1665,7 +1338,7 @@ function handleRecurringSettingsClick(e) {
   if (!taskId) return;
 
   // 🎯 Use your centralized panel-opening logic
-  window.openRecurringSettingsPanelForTask?.(taskId);
+  getOpenRecurringSettingsPanelForTask()?.(taskId);
 }
 GlobalUtils.safeAddEventListener(document, "click", handleRecurringSettingsClick);
 
@@ -1693,25 +1366,7 @@ GlobalUtils.safeAddEventListener(document, "click", handleRecurringSettingsClick
 // Functions: initCompletedTasksSection, toggleCompletedTasksSection, moveTaskToCompleted,
 // moveTaskToActive, updateCompletedTasksCount, handleTaskListMovement, organizeCompletedTasks, isCompletedDropdownEnabled
 
-// ✅ MIGRATED: isTouchDevice now in modules/utils/deviceDetection.js
-// window.isTouchDevice is set when deviceDetection module loads
-// The inline version below is a FALLBACK only
-function isTouchDevice() {
-    // Use module version if available
-    if (window.isTouchDevice && window.isTouchDevice !== isTouchDevice) {
-        return window.isTouchDevice();
-    }
-
-    // Inline fallback
-    const hasTouchEvents = "ontouchstart" in window;
-    const touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
-    const isFinePointer = window.matchMedia("(pointer: fine)").matches;
-    console.log(`touch detected (fallback): hasTouchEvents=${hasTouchEvents}, maxTouchPoints=${touchPoints}, isFinePointer=${isFinePointer}`);
-
-    if (isFinePointer) return false;
-
-    return hasTouchEvents || touchPoints > 0;
-}
+// ✅ MIGRATED: isTouchDevice now in modules/utils/deviceDetection.js (via featureBoot/uiBoot)
 
 
 
@@ -1747,15 +1402,19 @@ attachGlobalEventListeners(GlobalUtils);
 GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", async () => {
     console.log('🔄 Resetting notification position (Schema 2.5 only)...');
 
+    // Use appContext getters instead of window.*
+    const AppState = getAppState();
+    const showNotification = getShowNotification();
+
     // ✅ Use AppState only (no direct localStorage writes)
-    if (!window.AppState?.isReady?.()) {
+    if (!AppState?.isReady?.()) {
         console.error('❌ AppState not ready for reset notification position');
-        window.showNotification?.("❌ Unable to reset position.", "error", 2000);
+        showNotification?.("❌ Unable to reset position.", "error", 2000);
         return;
     }
 
     try {
-        await window.AppState.update(state => {
+        await AppState.update(state => {
             if (!state?.settings) {
                 state.settings = {};
             }
@@ -1766,12 +1425,12 @@ GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", asy
         console.log('✅ Notification position reset in Schema 2.5');
 
         // Reset UI position
-        window.resetNotificationPosition?.();
+        getResetNotificationPosition()?.();
 
-        window.showNotification?.("🔄 Notification position reset.", "success", 2000);
+        showNotification?.("🔄 Notification position reset.", "success", 2000);
     } catch (error) {
         console.error('❌ Failed to reset notification position:', error);
-        window.showNotification?.("❌ Failed to reset position.", "error", 2000);
+        showNotification?.("❌ Failed to reset position.", "error", 2000);
     }
 });
 
@@ -1780,53 +1439,16 @@ function handleOpenRemindersModalClick() {
     console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
 
     // Load current settings from Schema 2.5 before opening
-    window.loadRemindersSettings?.(); // This function already has Schema 2.5 support
+    getLoadRemindersSettings()?.(); // This function already has Schema 2.5 support
     document.getElementById("reminders-modal").style.display = "flex";
-    window.hideMainMenu?.();
+    getHideMainMenu()?.();
 
     console.log('✅ Reminders modal opened');
 }
 GlobalUtils.safeAddEventListenerById("open-reminders-modal", "click", handleOpenRemindersModalClick);
 
-// 🟢 Safe Global Click for Hiding Task Buttons
-GlobalUtils.safeAddEventListener(document, "click", (event) => {
-    let isTaskOrOptionsClick = event.target.closest(".task, .task-options");
-    let isModalClick = event.target.closest(".modal, .mini-modal-overlay, .settings-modal, .notification");
-
-    if (!isTaskOrOptionsClick && !isModalClick) {
-        console.log("✅ Clicking outside - closing task buttons");
-
-        // ✅ Check if three-dots mode is enabled
-        const threeDotsEnabled = document.body.classList.contains("show-three-dots-enabled");
-
-        document.querySelectorAll(".task-options").forEach(action => {
-            if (threeDotsEnabled) {
-                // Three-dots mode: use inline styles to explicitly hide
-                action.style.opacity = "0";
-                action.style.visibility = "hidden";
-                action.style.pointerEvents = "none";
-            } else {
-                // Regular hover mode: clear inline styles to let CSS handle it
-                action.style.opacity = "";
-                action.style.visibility = "";
-                action.style.pointerEvents = "";
-            }
-        });
-
-        document.querySelectorAll(".task").forEach(task => {
-            task.classList.remove("long-pressed");
-            task.classList.remove("draggable");
-            task.classList.remove("dragging");
-            
-            // Only remove selected class if not in recurring panel
-            if (!document.getElementById("recurring-panel-overlay")?.classList.contains("hidden")) {
-                // Keep selections in recurring panel
-            } else {
-                task.classList.remove("selected");
-            }
-        });
-    }
-});
+// ✅ REMOVED: Duplicate global click handler for hiding task buttons
+// Now handled by uiBoot.js via attachGlobalEventListeners() → handleGlobalClickForTaskButtons()
 
 // 🟢 Safe Global Click for Deselecting miniCycle in Switch Modal
 GlobalUtils.safeAddEventListener(document, "click", (event) => {

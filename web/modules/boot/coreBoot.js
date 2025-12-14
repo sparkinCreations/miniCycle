@@ -120,9 +120,7 @@ export async function initCoreBoot(deps) {
   deps.core.setAppInitDependencies = setAppInitDependencies;
   deps.core.appInitVersion = APPINIT_VERSION || null;
 
-  // Set backward compatibility aliases
-  window.AppInit = appInit;
-  window.appInit = appInit;
+  // appInit is available via appContext.getAppInit()
 
   // Log version info
   if (APPINIT_VERSION) {
@@ -231,10 +229,11 @@ export async function initCoreBoot(deps) {
   appContextMod.initAppContext({
     appInit,
     AppGlobalState,
-    GlobalUtils
+    GlobalUtils,
+    fixTaskValidationIssues: migrationMod.fixTaskValidationIssues
     // Note: AppState will be added via setContextValue in initAppState
   });
-  console.log('✅ appContext initialized (early) with appInit, AppGlobalState, GlobalUtils');
+  console.log('✅ appContext initialized (early) with appInit, AppGlobalState, GlobalUtils, fixTaskValidationIssues');
 
   return {
     AppGlobalState,
@@ -273,7 +272,7 @@ export async function initAppState(deps, showNotification) {
       loadMiniCycleData: () => loadMiniCycleData?.(),
       createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
       showCycleCreationModal: () => window.showCycleCreationModal?.(),
-      getOnboardingManager: () => window.onboardingManager,
+      getOnboardingManager: () => appContextMod.getOnboardingManager?.() || null,
       getMiniCycleState: () => null,
 
       // For completeInitialSetup

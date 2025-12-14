@@ -708,7 +708,7 @@ export async function bootFeatures(deps, coreResult) {
       showPromptModal: (opts) => deps.utils.showPromptModal?.(opts),
       showNotification: deps.utils.showNotification,
       sanitizeInput: (text) => GlobalUtils.sanitizeInput(text),
-      completeInitialSetup: (id, data) => window.completeInitialSetup?.(id, data),
+      completeInitialSetup: (id, data) => getCompleteInitialSetup()?.(id, data),
       hideMainMenu: () => deps.ui.hideMainMenu?.(),
       updateProgressBar: () => deps.progress.updateProgressBar?.(),
       checkCompleteAllButton: () => deps.ui.checkCompleteAllButton?.(),
@@ -1245,9 +1245,8 @@ export async function bootFeatures(deps, coreResult) {
   console.log('🔧 Setting up window.* public API...');
 
   // ---- Core/State (3) ----
-  // Essential app state and initialization
+  // Essential app state (still needed for debugAppState and error recovery)
   window.AppState = deps.core.AppState;
-  window.appInit = appInit;
   window.AppGlobalState = AppGlobalState;
 
   // ---- Utilities (4) ----
@@ -1314,11 +1313,114 @@ export async function bootFeatures(deps, coreResult) {
 
   console.log('✅ Window exposures complete (37 public API globals)');
 
-  // Update appContext with late-bound values
-  import('../core/appContext.js').then(mod => {
-      mod.setContextValue('hideMainMenu', deps.ui.hideMainMenu);
-      mod.setContextValue('showCycleCreationModal', deps.cycle.showCycleCreationModal);
-  });
+  // Update appContext with late-bound values (comprehensive registration)
+  // ✅ Must await to ensure values are set before bootFeatures returns
+  const appContextMod = await import('../core/appContext.js');
+
+  // =========================================================================
+  // CORE STATE
+  // =========================================================================
+  appContextMod.setContextValue('FeatureFlags', FeatureFlags);
+
+      // =========================================================================
+      // MANAGERS
+      // =========================================================================
+      appContextMod.setContextValue('BackupManager', deps.storage.BackupManager);
+      appContextMod.setContextValue('CycleManager', deps.cycle.cycleManager);
+      appContextMod.setContextValue('ModeManager', deps.cycle.modeManager);
+      appContextMod.setContextValue('MenuManager', deps.ui.MenuManager);
+      appContextMod.setContextValue('SettingsManager', deps.ui.settingsManager);
+      appContextMod.setContextValue('reminderManager', deps.features.reminderManager);
+      appContextMod.setContextValue('gamesManager', deps.ui.gamesManager);
+
+      // Manager classes + instances
+      appContextMod.setContextValue('onboardingManager', deps.ui.onboardingManager);
+      appContextMod.setContextValue('DragDropManager', deps.task.dragDropManager);
+      appContextMod.setContextValue('deviceDetectionManager', deps.utils.deviceDetectionManager);
+      appContextMod.setContextValue('modalManager', deps.ui.modalManager);
+      appContextMod.setContextValue('cycleSwitcher', deps.cycle.cycleSwitcher);
+
+      // =========================================================================
+      // UI FUNCTIONS
+      // =========================================================================
+      appContextMod.setContextValue('hideMainMenu', deps.ui.hideMainMenu);
+      appContextMod.setContextValue('updateMainMenuHeader', deps.ui.updateMainMenuHeader);
+      appContextMod.setContextValue('showCycleCreationModal', deps.cycle.showCycleCreationModal);
+      appContextMod.setContextValue('initializeModeSelector', deps.cycle.initializeModeSelector);
+
+      // =========================================================================
+      // NOTIFICATIONS
+      // =========================================================================
+      appContextMod.setContextValue('notifications', deps.utils.notifications);
+      appContextMod.setContextValue('showNotification', deps.utils.showNotification);
+      appContextMod.setContextValue('showConfirmationModal', deps.utils.showConfirmationModal);
+      appContextMod.setContextValue('showPromptModal', deps.utils.showPromptModal);
+      appContextMod.setContextValue('resetNotificationPosition', deps.utils.resetNotificationPosition);
+
+      // =========================================================================
+      // UTILITIES
+      // =========================================================================
+      appContextMod.setContextValue('DataValidator', deps.utils.DataValidator);
+      appContextMod.setContextValue('sanitizeInput', deps.utils.sanitizeInput);
+      appContextMod.setContextValue('generateId', deps.utils.generateId);
+      appContextMod.setContextValue('generateHashId', deps.utils.generateHashId);
+      appContextMod.setContextValue('safeAddEventListener', GlobalUtils.safeAddEventListener);
+      appContextMod.setContextValue('safeAddEventListenerById', GlobalUtils.safeAddEventListenerById);
+      appContextMod.setContextValue('isTouchDevice', deps.utils.isTouchDevice);
+
+      // =========================================================================
+      // UNDO/REDO
+      // =========================================================================
+      appContextMod.setContextValue('performStateBasedUndo', deps.ui.performStateBasedUndo);
+      appContextMod.setContextValue('performStateBasedRedo', deps.ui.performStateBasedRedo);
+      appContextMod.setContextValue('updateUndoRedoButtons', deps.ui.updateUndoRedoButtons);
+      appContextMod.setContextValue('captureStateSnapshot', deps.ui.captureStateSnapshot);
+
+      // =========================================================================
+      // REMINDERS
+      // =========================================================================
+      appContextMod.setContextValue('updateReminderButtons', deps.features.updateReminderButtons);
+      appContextMod.setContextValue('startReminders', deps.features.startReminders);
+      appContextMod.setContextValue('remindOverdueTasks', deps.features.remindOverdueTasks);
+      appContextMod.setContextValue('loadRemindersSettings', deps.features.loadRemindersSettings);
+
+      // =========================================================================
+      // RECURRING
+      // =========================================================================
+      appContextMod.setContextValue('recurringPanel', deps.recurring.panel);
+      appContextMod.setContextValue('openRecurringSettingsPanelForTask', deps.recurring.openSettingsPanel);
+
+      // =========================================================================
+      // TASK
+      // =========================================================================
+      appContextMod.setContextValue('updateMoveArrowsVisibility', deps.task.updateMoveArrowsVisibility);
+      appContextMod.setContextValue('addTask', deps.task.addTask);
+      appContextMod.setContextValue('loadTaskContext', deps.task.loadTaskContext);
+      appContextMod.setContextValue('createTaskDOMElements', deps.task.createTaskDOMElements);
+      appContextMod.setContextValue('createOrUpdateTaskData', deps.task.createOrUpdateTaskData);
+      appContextMod.setContextValue('validateAndSanitizeTaskInput', deps.task.validateAndSanitizeTaskInput);
+      appContextMod.setContextValue('handleCompleteAllTasks', deps.task.handleCompleteAllTasks);
+  appContextMod.setContextValue('extractTaskDataFromDOM', deps.task.extractTaskDataFromDOM);
+      appContextMod.setContextValue('initCompletedTasksSection', deps.ui.initCompletedTasksSection);
+      appContextMod.setContextValue('TaskRenderer', deps.task.taskCore?.TaskRenderer);
+      appContextMod.setContextValue('TaskDOMManager', deps.task.taskDOMManager);
+      appContextMod.setContextValue('TaskEvents', deps.task.taskEvents);
+      appContextMod.setContextValue('TaskUtils', deps.task.taskCore?.TaskUtils);
+      appContextMod.setContextValue('TaskOptionsCustomizer', deps.ui.taskOptionsCustomizer);
+
+      // =========================================================================
+      // CYCLE SWITCHER
+      // =========================================================================
+      appContextMod.setContextValue('switchMiniCycle', deps.cycle.switchMiniCycle);
+      appContextMod.setContextValue('renameMiniCycle', deps.cycle.renameMiniCycle);
+      appContextMod.setContextValue('deleteMiniCycle', deps.cycle.deleteMiniCycle);
+
+      // =========================================================================
+      // FEATURES
+      // =========================================================================
+      appContextMod.setContextValue('PullToRefresh', deps.ui.pullToRefresh);
+
+  console.log('✅ appContext updated with comprehensive values');
 
   // ============================================================================
   // COMPLETE

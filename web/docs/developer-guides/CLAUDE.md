@@ -38,17 +38,17 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 11, 2025 - Verified)
+### Current State (December 14, 2025 - Verified)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Boot files | 1 monolithic | **4 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **45+ files** | — | — |
+| Modules | 43 files | **46 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
-| `window.*` references (modules/) | ~748 | **~205** | <50 | **73%** |
+| `window.*` writes (orchestrator.js) | ~90 | **4** | <10 | **96%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **45+** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **46** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -92,37 +92,55 @@ const { MyModule, setModuleDependencies } = await import('../path/myModule.js');
 
 // Wire BEFORE creating instance
 setModuleDependencies({
-    get AppState() { return window.AppState; },  // Lazy getter for late-available deps
+    get AppState() { return getAppState(); },  // Via appContext getter
     showNotification: deps.utils.showNotification,
     AppMeta: window.AppMeta
 });
 
 const myModule = new MyModule();
+deps.ui.myModule = myModule;  // Store in deps container, NOT window.*
 ```
 
 **Boot File Structure (Dec 2025):**
 ```
 miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (DI wiring hub, ~1,883 lines)
+  → modules/boot/orchestrator.js (DI wiring hub, ~1,560 lines)
       → modules/boot/coreBoot.js (core state, ~673 lines)
       → modules/boot/featureBoot.js (feature loading, ~1,470 lines)
       → modules/boot/uiBoot.js (UI handlers, ~406 lines)
 ```
 
+### appContext: Centralized Registry (Dec 2025)
+
+`modules/core/appContext.js` provides cross-module access without window.* pollution:
+
+```javascript
+// Instead of window.AppState
+import { getAppState, getShowNotification } from '../core/appContext.js';
+
+const AppState = getAppState();
+const showNotification = getShowNotification();
+```
+
 ### Remaining `window.*` Usage
 
-The ~205 `window.*` references in modules are:
-1. **Intentional backward-compat wrappers** in boot orchestrator (for HTML onclick handlers)
-2. **DOM APIs** like `window.innerWidth`, `window.addEventListener`
-3. **Console/debugging** references being phased out
+Only **2 intentional window.* exposures** remain:
+- `window.AppBootStarted` - Required for HTML lite fallback detection
+- `window.closeStorageViewer` - Required for HTML onclick handler
+
+All other cross-module access uses:
+- **deps container** - For boot-time module communication
+- **appContext getters** - For runtime cross-module access
 
 ### What Works Well
 
 - **Strict DI** - All modules receive dependencies via injection
+- **appContext** - Centralized registry for cross-module access without window.*
+- **deps container** - Boot-time module communication pattern
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1458 tests across 45 modules, 100% passing
+- **Test coverage** - 1458 tests across 46 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -244,7 +262,7 @@ const instance = new MyModule();         // Then create
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1458 tests across 45 modules)
+npm test                    # All tests (1458 tests across 46 modules)
 npm run test:watch          # Watch mode
 ```
 
@@ -266,7 +284,7 @@ Open http://localhost:8080/tests/module-test-suite.html
 | Folder | Purpose | Modules |
 |--------|---------|---------|
 | `boot/` | Boot sequence (Dec 2025 split) | 4 |
-| `core/` | AppState, appInit (frozen) | 4 |
+| `core/` | AppState, appInit, appContext | 5 |
 | `task/` | Task CRUD, DOM, events, drag-drop | 7 |
 | `cycle/` | Cycle management, switching, migration | 5 |
 | `recurring/` | Recurring task templates and panel | 3 |
