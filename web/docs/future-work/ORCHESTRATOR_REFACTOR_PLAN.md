@@ -1,260 +1,302 @@
 # Orchestrator Refactor & DI Standardization Plan
 
 **Created:** December 2025
+**Updated:** December 2025 (incorporated architectural analysis)
 **Status:** Planning
 **Priority:** Medium
-**Related:** MODULAR_OVERHAUL_PLAN.md, WINDOW_GLOBALS_REDUCTION_PLAN.md
+**Related:** MODULAR_OVERHAUL_PLAN.md, ZERO_WINDOW_GLOBALS_PLAN.md
 
 ---
 
 ## Executive Summary
 
-This plan addresses three interconnected improvements identified during the DI refactoring work:
+The orchestrator is carrying legacy weight that makes it feel like it "handles too many possibilities." This plan focuses on making orchestrator small and boring (in a good way) by:
 
-1. **Orchestrator Extraction** - Break down the 1500-line orchestrator.js into focused modules
-2. **DI Pattern Standardization** - Converge on appContext getters as the single DI pattern
-3. **Boot Sequence Hardening** - Add validation and improve timing reliability
+1. **Deleting redundant code** - featureBoot already handles most of what orchestrator duplicates
+2. **Enforcing single DI pattern** - appContext getters everywhere, no tri-mix
+3. **Moving cross-cutting concerns** - Undo wrapper belongs in undoRedoManager, not boot code
+
+**Target:** Orchestrator should do only 5 things:
+```javascript
+async function initApp() {
+    const deps = createDepsContainer();
+    await initCoreBoot(deps);
+    await bootFeatures(deps, coreResult);
+    attachGlobalEventListeners();
+    hideAppLoader();
+}
+```
+
+Everything else belongs in the module that owns it.
 
 ---
 
-## Part 1: Current State Assessment
+## Part 1: What's Strong (Keep This)
 
-### What's Working Well
+### 1.1 Clear Boot Layering
+- `coreBoot` establishes foundation early (sets `window.AppBootStarted` immediately)
+- `featureBoot` wires almost everything
+- `uiBoot` focuses on global event listeners/helpers
 
-- `appContext.js` centralized DI approach eliminates scattered `window.*` globals
-- Clear module boundaries (boot, core, cycle, task, ui, etc.)
-- Good logging throughout makes debugging easier
-- Phased boot approach (Core → Modules → Data Loading)
+### 1.2 deps Container is the Right Idea
+Feature modules should talk through injected functions/objects, not reach into `window.*`.
 
-### Identified Challenges
-
-| Issue | Impact | Location |
-|-------|--------|----------|
-| Orchestrator is 1500+ lines | Hard to maintain | `modules/boot/orchestrator.js` |
-| 4 different DI patterns in use | Inconsistent, confusing | Throughout codebase |
-| Two-step DI registration easy to miss | Runtime bugs | `appContext.js` |
-| Duplicate event handlers | Unclear code paths | `modeManager.js` |
-| Nested 300-line async IIFE | Hard to follow | `orchestrator.js:584-917` |
-| Async timing bugs | Missing `await` issues | Various |
-
-### Current DI Patterns (Problem)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Pattern                │ Example                │ Used In      │
-├─────────────────────────┼────────────────────────┼──────────────┤
-│  getXyz() getters       │ getAppState()          │ orchestrator │
-│  deps.xyz container     │ deps.core.AppState     │ featureBoot  │
-│  this.deps.xyz          │ this.deps.showNotify   │ ModeManager  │
-│  window.xyz             │ window.AppState        │ Legacy       │
-└─────────────────────────────────────────────────────────────────┘
-```
+### 1.3 Back-Compat Strategy is Explicit
+featureBoot has a dedicated "WINDOW.* EXPOSURES" section - the right place to centralize globals while migrating.
 
 ---
 
-## Part 2: Orchestrator Extraction Plan
+## Part 2: The Core Problem
 
-### Target Architecture
+### 2.1 The Tri-Mix is Why It Feels Huge
 
-```
-orchestrator.js (current: ~1500 lines → target: ~200 lines)
-│
-├── initApp()
-│   ├── await initCoreBoot()        // Already in coreBoot.js
-│   ├── await initFeatures()        // Already in featureBoot.js
-│   ├── await initUI()              // Expand uiBoot.js
-│   ├── await loadAppData()         // NEW: Extract from IIFE
-│   └── await finalizeBootstrap()   // NEW: Extract final setup
-```
+Orchestrator uses three dependency systems simultaneously:
 
-### Extraction Tasks
+| Pattern | Example | Problem |
+|---------|---------|---------|
+| `deps.*` | `deps.core.loadMiniCycleData` | DI container |
+| `appContext getters` | `getAppState()` | Service locator |
+| `window.*` | `window.AppState` | Legacy global |
 
-#### 2.1 Extract DOM Element References → `uiBoot.js`
+Every code path needs 3 compatibility hooks. This is the root cause of the bloat.
 
-**Current Location:** `orchestrator.js:429-456`
+### 2.2 Orchestrator Duplicates featureBoot Work
+
+Orchestrator imports/initializes modules that featureBoot already handles:
+- Notifications
+- Theme manager
+- Onboarding
+- Console capture
+- Error handler
+
+This creates:
+- **Double wiring risk** - Module gets dependencies twice
+- **"Who owns the truth?" confusion** - `deps.utils.showNotification` vs `appContext` vs `window`
+- **Hard-to-debug ordering bugs**
+
+### 2.3 Cross-Cutting Logic Lives in Wrong Place
+
+The `AppState.update` wrapper (undo snapshot capture) at `orchestrator.js:647-681` is classic "orchestrator bloat." This behavior belongs in:
+- `undoRedoManager.js` (since it owns undo capture), OR
+- `AppState` itself as middleware: `AppState.addMiddleware('beforeUpdate', fn)`
+
+---
+
+## Part 3: The Ideal Orchestrator
+
+### 3.1 Job Description
+
+Orchestrator should do **only** this:
 
 ```javascript
-// MOVE these to uiBoot.js as getDOMElements() function
-const taskInput = document.getElementById("taskInput");
-const addTaskButton = document.getElementById("addTaskBtn");
-const taskList = document.getElementById("taskList");
-// ... 20+ more element references
+async function initApp() {
+    // 1. Create deps container
+    const deps = {
+        utils: {}, features: {}, ui: {}, core: {},
+        task: {}, cycle: {}, recurring: {}, progress: {},
+        storage: {}, testing: {}
+    };
+
+    // 2. Initialize core (AppState, appInit, GlobalUtils)
+    const coreResult = await initCoreBoot(deps);
+    if (!coreResult) return; // Reload happening
+
+    // 3. Load all features (this does the real work)
+    await bootFeatures(deps, coreResult);
+
+    // 4. Attach global event listeners
+    attachGlobalEventListeners();
+
+    // 5. Done
+    hideAppLoader();
+    validateContext();
+}
 ```
 
-**Target:**
+**That's it.** Everything else belongs in the module that owns it.
+
+### 3.2 What This Means
+
+| Currently In Orchestrator | Should Be In |
+|---------------------------|--------------|
+| Utility module imports | **DELETE** - featureBoot handles it |
+| Theme loading | **DELETE** - featureBoot handles it |
+| Notifications setup | **DELETE** - featureBoot handles it |
+| AppState.update wrapper | `undoRedoManager.js` |
+| DOM element references | `uiBoot.js` |
+| Inline event handlers | Respective feature modules |
+| Title listener | NEW `titleManager.js` |
+| Recurring handlers | `recurringIntegration.js` |
+
+---
+
+## Part 4: Concrete Refactor Steps
+
+### Step A: Delete Utility Module Imports Block (SAFE)
+
+**Current Location:** `orchestrator.js:249-326`
+
+This entire block is redundant - featureBoot already handles:
+- Error handler
+- Data validator
+- Console capture
+- Notifications
+- Theme manager
+
+**Action:** Delete lines 249-326. Trust featureBoot.
+
+### Step B: featureBoot is Single Source of Globals (SAFE)
+
+**Rule:** Orchestrator NEVER sets `window.*` except the one boot flag (which is already in coreBoot).
+
+**Current violation:** Orchestrator still touches `window.*` in various places.
+
+**Action:**
+1. Search orchestrator for `window.` assignments
+2. Delete them - featureBoot's "WINDOW.* EXPOSURES" section is the only place globals are set
+3. If something breaks, add it to featureBoot, not orchestrator
+
+### Step C: Move AppState.update Snapshot Wrapper (MEDIUM)
+
+**Current Location:** `orchestrator.js:647-681`
+
 ```javascript
-// In uiBoot.js
-export function getDOMElements() {
-    return {
-        taskInput: document.getElementById("taskInput"),
-        addTaskButton: document.getElementById("addTaskBtn"),
-        taskList: document.getElementById("taskList"),
-        // ...
+// THIS DOESN'T BELONG HERE
+AppState.update = async (producer, immediate) => {
+    // Capture undo snapshot before update
+    if (appInitRef?.isCoreReady?.() && !globalState?.isPerformingUndoRedo) {
+        const prev = boundGet();
+        if (prev) captureSnapshot(prev);
+    }
+    return boundUpdate(producer, immediate);
+};
+```
+
+**Action:** Move to `undoRedoManager.js`:
+
+```javascript
+// In undoRedoManager.js
+export function wrapAppStateForUndo(AppState, getAppGlobalState, captureSnapshot) {
+    const boundUpdate = AppState.update.bind(AppState);
+    const boundGet = AppState.get.bind(AppState);
+
+    AppState.update = async (producer, immediate) => {
+        const globalState = getAppGlobalState();
+        if (!globalState?.isPerformingUndoRedo) {
+            const prev = boundGet();
+            if (prev) captureSnapshot(prev);
+        }
+        return boundUpdate(producer, immediate);
     };
 }
 ```
 
-#### 2.2 Extract Recurring Handlers → `recurringIntegration.js`
-
-**Current Location:** `orchestrator.js:476-510`
-
+Call from featureBoot after undoRedoManager loads:
 ```javascript
-// MOVE to recurringIntegration.js
-const handleRecurringChange = (e) => { /* ... */ };
-const handleRecurringClick = (e) => { /* ... */ };
+// In featureBoot.js, Phase 6 (UI modules)
+undoRedoManager.wrapAppStateForUndo(AppState, getAppGlobalState, captureSnapshot);
 ```
 
-#### 2.3 Extract Title Listener → NEW `modules/ui/titleManager.js`
+### Step D: uiBoot Should Use appContext, Not window.* (GRADUAL)
 
-**Current Location:** `orchestrator.js:1076-1151`
+**Current problem:** uiBoot still calls `window.addTask`, `window.performStateBasedUndo`, etc.
+
+**Already started:** uiBoot uses some appContext getters (`getAppState`, `getShowNotification`).
+
+**Action:** Continue pushing this direction:
 
 ```javascript
-// CREATE new module: modules/ui/titleManager.js
-export function setupMiniCycleTitleListener() { /* ... */ }
-async function handleMiniCycleTitleBlur() { /* ... */ }
+// BEFORE (uiBoot.js)
+window.addTask?.(...);
+window.performStateBasedUndo?.();
+
+// AFTER
+getAddTask()?.(...);
+getPerformStateBasedUndo()?.();
 ```
-
-#### 2.4 Extract Nested IIFE → Named Phase Functions
-
-**Current Location:** `orchestrator.js:584-917` (300+ lines)
-
-**Target Structure:**
-```javascript
-// In orchestrator.js - replace IIFE with:
-async function runPhase2_ModuleLoading(deps, coreResult) {
-    console.log('🔌 Phase 2: Loading modules via bootFeatures...');
-    const featureResult = await bootFeatures(deps, coreResult);
-    // ... module loading logic
-    return featureResult;
-}
-
-async function runPhase3_DataLoading(deps) {
-    console.log('📊 Phase 3: Loading app data...');
-    await initializeAppWithAutoMigration({ forceMode: true });
-    // ... data loading logic
-}
-
-async function runPhase4_FinalSetup(deps) {
-    console.log('🎯 Phase 4: Final setup...');
-    // Undo wrapper, testing modal, backup manager, etc.
-}
-```
-
-#### 2.5 Extract Inline Event Handlers → Respective Modules
-
-**Current Location:** `orchestrator.js:1177-1476`
-
-| Handler | Target Module |
-|---------|---------------|
-| `handleIndefiniteCheckboxChange` | `reminders.js` |
-| `handleCloseRemindersBtnClick` | `reminders.js` |
-| `handleTryLiteVersionClick` | `modalManager.js` |
-| `handleOpenRemindersModalClick` | `reminders.js` |
-| `handleAlwaysShowRecurringChange` | `recurringPanel.js` |
-| `handleOpenUserManualClick` | `menuManager.js` |
-| `handleRecurringSettingsClick` | `recurringPanel.js` |
-
-#### 2.6 Move detectDeviceType Fallback → `deviceDetection.js`
-
-**Current Location:** `orchestrator.js:1018-1033`
 
 ---
 
-## Part 3: DI Pattern Standardization
+## Part 5: Delete List
 
-### Target: Single Pattern
+### 5.1 Safe Deletions (featureBoot Already Handles)
 
-**Standardize on `appContext` getters for all module-level dependencies.**
+These can be deleted immediately - featureBoot already does this work:
+
+| Lines (approx) | What | Why Safe |
+|----------------|------|----------|
+| 249-270 | Error handler import/init | featureBoot Phase 1 |
+| 271-282 | Console capture import/init | featureBoot Phase 1 |
+| 283-326 | Notifications import/init | featureBoot Phase 1 |
+| 328-340 | Theme manager deps setup | featureBoot Phase 2 |
+| 342-354 | Games manager init | featureBoot Phase 6 |
+| 356-375 | Onboarding manager init | featureBoot Phase 6 |
+
+**Total safe deletion:** ~125 lines
+
+### 5.2 Medium Risk Deletions (Need Verification)
+
+| Lines (approx) | What | Risk |
+|----------------|------|------|
+| 647-681 | AppState.update wrapper | Must move to undoRedoManager first |
+| 429-456 | DOM element references | Must add to uiBoot first |
+| 476-510 | Recurring handlers | Must move to recurringIntegration first |
+
+### 5.3 Requires New Module First
+
+| Lines (approx) | What | Prerequisite |
+|----------------|------|--------------|
+| 1076-1151 | Title listener | Create `titleManager.js` |
+| 1177-1200 | Reminder handlers | Move to `reminders.js` |
+| 1232-1239 | Recurring panel handler | Move to `recurringPanel.js` |
+
+---
+
+## Part 6: DI Pattern Standardization
+
+### 6.1 The Single Pattern
+
+**Standardize on appContext getters everywhere:**
 
 ```javascript
-// ✅ STANDARD PATTERN - Use everywhere
+// ✅ THE ONLY PATTERN
 import { getAppState, getShowNotification } from '../core/appContext.js';
 
 function doSomething() {
     const AppState = getAppState();
-    const showNotification = getShowNotification();
-    // ...
+    getShowNotification()?.('message', 'info');
 }
 ```
 
-### Migration Path
+### 6.2 Migration Order
 
-#### 3.1 Phase A: Orchestrator Migration
+1. **Orchestrator first** - Replace all `deps.xyz` with getters
+2. **uiBoot second** - Replace all `window.xyz` with getters
+3. **featureBoot** - Keep `deps` for collecting, but modules receive getters
+4. **Class modules** - `this.deps` stores getters from appContext
 
-Replace `deps.xyz` references with appContext getters:
+### 6.3 What to Stop Doing
 
-```javascript
-// BEFORE (orchestrator.js)
-deps.core.loadMiniCycleData?.()
-deps.utils.showNotification?.('message', 'info')
-
-// AFTER
-getLoadMiniCycleData()?.()
-getShowNotification()?.('message', 'info')
-```
-
-#### 3.2 Phase B: featureBoot.js Migration
-
-Keep `deps` container for collecting references during boot, but pass getters to modules:
-
-```javascript
-// BEFORE
-const modeManager = new ModeManager({
-    getAppState: () => deps.core.AppState,
-    showNotification: deps.utils.showNotification,
-});
-
-// AFTER - Pass getter functions directly
-const modeManager = new ModeManager({
-    getAppState: getAppState,  // The getter itself
-    showNotification: getShowNotification,
-});
-```
-
-#### 3.3 Phase C: Class Module Updates
-
-For class-based modules like `ModeManager`, update internal usage:
-
-```javascript
-// BEFORE (in ModeManager)
-const AppState = this.deps.getAppState();
-
-// AFTER - deps stores the getter, call it
-const AppState = this.deps.getAppState();  // Same, but getter comes from appContext
-```
-
-#### 3.4 Phase D: Deprecate window.* (Except Public API)
-
-Keep only the 37 documented public API globals. Remove internal `window.*` usage.
-
-**Public API globals to KEEP:**
-- `window.AppState` (debugging)
-- `window.showNotification` (backward compat)
-- `window.addTask`, `window.handleCompleteAllTasks`
-- ... (see featureBoot.js "WINDOW.* EXPOSURES" section)
-
-**Internal usage to REMOVE:**
-- Any `window.xyz` that's only used internally
-- Replace with appContext getter
+| Don't Do This | Do This Instead |
+|---------------|-----------------|
+| `deps.core.AppState` | `getAppState()` |
+| `deps.utils.showNotification` | `getShowNotification()` |
+| `window.addTask` | `getAddTask()` |
+| `this.deps.xyz = window.xyz` | `this.deps.xyz = getXyz` |
 
 ---
 
-## Part 4: Boot Sequence Hardening
+## Part 7: Boot Sequence Hardening
 
-### 4.1 Add Post-Boot Validation
-
-Add to `appContext.js`:
+### 7.1 Add Post-Boot Validation
 
 ```javascript
-/**
- * Validate that all expected context values are registered
- * Call after boot completes to catch missing registrations
- */
+// In appContext.js
 export function validateContext() {
     const requiredKeys = [
         'AppState', 'appInit', 'loadMiniCycleData', 'autoSave',
         'showNotification', 'addTask', 'extractTaskDataFromDOM',
-        // ... add all required keys
+        // ... all required keys
     ];
 
     const missing = requiredKeys.filter(key => context[key] === null);
@@ -269,226 +311,156 @@ export function validateContext() {
 }
 ```
 
-Call after boot:
+### 7.2 Call After Boot
+
 ```javascript
-// In orchestrator.js, after all phases complete
+// In orchestrator.js, at the very end of initApp()
 import { validateContext } from '../core/appContext.js';
-validateContext();
-```
 
-### 4.2 Add Registration Helper
+async function initApp() {
+    // ... all boot steps ...
 
-Simplify the two-step registration:
-
-```javascript
-// In appContext.js
-/**
- * Register a new context key (adds to context object AND sets value)
- * Use for dynamic registrations that aren't predefined
- */
-export function registerContextValue(key, value) {
-    if (!(key in context)) {
-        context[key] = null;  // Add to context object
-        console.log(`📝 appContext: Registered new key "${key}"`);
-    }
-    context[key] = value;
+    validateContext(); // Catch missing registrations
+    hideAppLoader();
 }
-```
-
-### 4.3 Create Boot Sequence Diagram
-
-Add to documentation:
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     BOOT SEQUENCE DIAGRAM                           │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. DOMContentLoaded                                                │
-│     │                                                               │
-│     ▼                                                               │
-│  2. initApp() [orchestrator.js]                                     │
-│     │                                                               │
-│     ├─► initCoreBoot() [coreBoot.js]                               │
-│     │   ├─ AppGlobalState, FeatureFlags                            │
-│     │   ├─ appInit created                                          │
-│     │   ├─ GlobalUtils loaded                                       │
-│     │   └─ Migration check                                          │
-│     │                                                               │
-│     ├─► initAppContext() [appContext.js]                           │
-│     │   └─ Core getters available                                   │
-│     │                                                               │
-│     ├─► initAppState() [coreBoot.js]                               │
-│     │   ├─ AppState created                                         │
-│     │   ├─ localStorage loaded                                      │
-│     │   └─ ✅ appInit.markCoreSystemsReady()                        │
-│     │                                                               │
-│     ├─► bootFeatures() [featureBoot.js]                            │
-│     │   ├─ Phase 1: Core utilities                                  │
-│     │   ├─ Phase 2: Theme & visual                                  │
-│     │   ├─ Phase 3: Task management                                 │
-│     │   ├─ Phase 4: Recurring                                       │
-│     │   ├─ Phase 5: Cycle management                                │
-│     │   ├─ Phase 6: UI modules                                      │
-│     │   ├─ Phase 7: Testing & backup                                │
-│     │   └─ appContext values registered                             │
-│     │                                                               │
-│     ├─► loadAppData()                                               │
-│     │   ├─ fixTaskValidationIssues()                               │
-│     │   └─ initializeAppWithAutoMigration()                        │
-│     │                                                               │
-│     ├─► finalizeBootstrap()                                         │
-│     │   ├─ Complete All button listener                             │
-│     │   ├─ Undo system wrapper                                      │
-│     │   ├─ Mode selector init                                       │
-│     │   └─ Reminder system                                          │
-│     │                                                               │
-│     └─► ✅ validateContext()                                        │
-│         └─ Verify all required keys registered                      │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Part 5: Helper Functions to Create
+## Part 8: Implementation Phases
 
-### 5.1 Async Safety Helpers
+### Phase 1: Safe Deletions (Low Risk) ⏱️ 1 hour
+- [ ] Delete utility module imports block (lines 249-326)
+- [ ] Delete duplicate theme/games/onboarding init
+- [ ] Verify app still works (featureBoot handles these)
 
-```javascript
-// In globalUtils.js or new utils/asyncHelpers.js
+### Phase 2: Move Cross-Cutting Logic (Medium Risk) ⏱️ 2 hours
+- [ ] Create `wrapAppStateForUndo()` in undoRedoManager.js
+- [ ] Call it from featureBoot after undoRedoManager loads
+- [ ] Delete wrapper from orchestrator.js (lines 647-681)
+- [ ] Test undo/redo still works
 
-/**
- * Ensure a function is awaited even if caller forgets
- * Logs warning if promise is not awaited
- */
-export function mustAwait(asyncFn, fnName) {
-    return async (...args) => {
-        const result = asyncFn(...args);
-        if (result instanceof Promise) {
-            return result.catch(err => {
-                console.error(`❌ ${fnName} failed:`, err);
-                throw err;
-            });
-        }
-        return result;
-    };
-}
+### Phase 3: Extract Remaining Code (Medium Risk) ⏱️ 3 hours
+- [ ] Move DOM elements to `getDOMElements()` in uiBoot.js
+- [ ] Move title listener to new `titleManager.js`
+- [ ] Move recurring handlers to `recurringIntegration.js`
+- [ ] Move inline event handlers to respective modules
 
-/**
- * Wait for a condition with timeout
- */
-export async function waitFor(condition, timeout = 5000, interval = 50) {
-    const start = Date.now();
-    while (!condition()) {
-        if (Date.now() - start > timeout) {
-            throw new Error('waitFor timeout');
-        }
-        await new Promise(r => setTimeout(r, interval));
-    }
-}
-```
+### Phase 4: DI Pattern Migration (Higher Risk) ⏱️ 4 hours
+- [ ] Replace all `deps.xyz` in orchestrator with getters
+- [ ] Replace all `window.xyz` in uiBoot with getters
+- [ ] Update featureBoot to pass getter functions to modules
+- [ ] Verify no regressions
 
-### 5.2 Mode Selector Shared Handler
-
-Refactor duplicate logic in `modeManager.js`:
-
-```javascript
-// In modeManager.js - replace duplicate handlers with shared function
-async _handleModeChange(selectedMode, source) {
-    console.log(`🎯 ModeManager: ${source} mode selector changed:`, selectedMode);
-
-    await this._syncTogglesFromMode(selectedMode);
-    this.updateCycleModeDescription();
-
-    this.deps.checkCompleteAllButton?.();
-    this.refreshTaskButtonsForModeChange();
-
-    // Update recurring visibility
-    if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
-        setTimeout(() => {
-            this.deps.recurringCore.updateRecurringButtonVisibility();
-        }, 100);
-    }
-
-    // Check auto-reset if switching to auto-cycle
-    if (selectedMode === 'auto-cycle' && this.deps.checkMiniCycle) {
-        setTimeout(() => this.deps.checkMiniCycle(), 150);
-    }
-
-    this.deps.showNotification?.(
-        `Switched to ${this.getModeName(selectedMode)}`,
-        'success',
-        2000
-    );
-}
-
-// Then both handlers just call:
-modeSelector._changeHandler = (e) => this._handleModeChange(e.target.value, 'Desktop');
-mobileModeSelector._changeHandler = (e) => this._handleModeChange(e.target.value, 'Mobile');
-```
-
----
-
-## Part 6: Implementation Phases
-
-### Phase 1: Quick Wins (Low Risk)
+### Phase 5: Validation & Cleanup ⏱️ 1 hour
 - [ ] Add `validateContext()` to appContext.js
-- [ ] Add `registerContextValue()` helper
-- [ ] Create boot sequence diagram documentation
-- [ ] Refactor duplicate mode selector handlers
-
-### Phase 2: Orchestrator Extraction (Medium Risk)
-- [ ] Extract DOM elements to `getDOMElements()` in uiBoot.js
-- [ ] Extract title listener to new `titleManager.js`
-- [ ] Extract recurring handlers to `recurringIntegration.js`
-- [ ] Convert nested IIFE to named phase functions
-
-### Phase 3: DI Pattern Migration (Higher Risk)
-- [ ] Migrate orchestrator.js from `deps.xyz` to getters
-- [ ] Update featureBoot.js to pass getter functions
-- [ ] Audit and update class-based modules
-- [ ] Remove internal `window.*` usage
-
-### Phase 4: Inline Handler Extraction (Medium Risk)
-- [ ] Move reminder handlers to `reminders.js`
-- [ ] Move modal handlers to `modalManager.js`
-- [ ] Move recurring handlers to `recurringPanel.js`
-- [ ] Clean up orchestrator.js
+- [ ] Call validation at end of boot
+- [ ] Final cleanup pass on orchestrator
+- [ ] Update documentation
 
 ---
 
-## Part 7: Success Metrics
+## Part 9: Success Metrics
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| orchestrator.js lines | ~1500 | ~200 |
-| DI patterns in use | 4 | 1 (appContext getters) |
+| orchestrator.js lines | ~1500 | ~100-150 |
+| DI patterns in use | 3 (tri-mix) | 1 (appContext getters) |
+| Modules initialized in orchestrator | ~10 | 0 (featureBoot owns this) |
+| Cross-cutting logic in orchestrator | Yes (undo wrapper) | No |
 | Inline event handlers in orchestrator | ~15 | 0 |
 | Post-boot validation | None | Automatic |
-| Missing registration bugs | Occasional | Zero (caught by validation) |
 
 ---
 
-## Appendix: Files to Modify
+## Part 10: The Target Orchestrator
+
+After all phases complete, orchestrator.js should look like this:
+
+```javascript
+/**
+ * orchestrator.js - Boot Orchestration
+ *
+ * This file ONLY coordinates the boot sequence.
+ * It does NOT initialize modules (featureBoot does that).
+ * It does NOT set window.* globals (featureBoot does that).
+ * It does NOT contain business logic (modules do that).
+ */
+
+import { validateContext } from '../core/appContext.js';
+
+window.AppBootStarted = true;
+
+async function initApp() {
+    console.log('🚀 Starting miniCycle initialization...');
+
+    // 1. Load boot modules
+    const { initCoreBoot, initAppState } = await import('./coreBoot.js');
+    const { bootFeatures } = await import('./featureBoot.js');
+    const { attachGlobalEventListeners, hideAppLoader } = await import('./uiBoot.js');
+
+    // 2. Create deps container
+    const deps = {
+        utils: {}, features: {}, ui: {}, core: {},
+        task: {}, cycle: {}, recurring: {}, progress: {},
+        storage: {}, testing: {}
+    };
+
+    // 3. Initialize core systems
+    const coreResult = await initCoreBoot(deps);
+    if (!coreResult) return; // Reload happening
+
+    // 4. Initialize AppState
+    await initAppState(deps);
+
+    // 5. Boot all features (this does the real work)
+    await bootFeatures(deps, coreResult);
+
+    // 6. Attach global event listeners
+    attachGlobalEventListeners();
+
+    // 7. Validate and finish
+    validateContext();
+    hideAppLoader();
+
+    console.log('✅ miniCycle initialization complete');
+}
+
+// Run when DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+```
+
+**That's ~50 lines.** Everything else lives in the module that owns it.
+
+---
+
+## Appendix A: Files to Modify
 
 | File | Changes |
 |------|---------|
-| `modules/boot/orchestrator.js` | Major extraction, pattern migration |
-| `modules/boot/uiBoot.js` | Add getDOMElements(), receive extracted code |
-| `modules/boot/featureBoot.js` | Update to pass getter functions |
-| `modules/core/appContext.js` | Add validateContext(), registerContextValue() |
-| `modules/cycle/modeManager.js` | Refactor duplicate handlers |
-| `modules/recurring/recurringIntegration.js` | Receive recurring handlers |
+| `modules/boot/orchestrator.js` | Major deletion, simplification |
+| `modules/boot/featureBoot.js` | Add undo wrapper call, ensure all modules init here |
+| `modules/boot/uiBoot.js` | Add getDOMElements(), use getters not window.* |
+| `modules/core/appContext.js` | Add validateContext() |
+| `modules/ui/undoRedoManager.js` | Add wrapAppStateForUndo() |
 | `modules/ui/titleManager.js` | NEW - title editing logic |
+| `modules/recurring/recurringIntegration.js` | Receive recurring handlers |
 | `modules/features/reminders.js` | Receive reminder handlers |
-| `modules/ui/modalManager.js` | Receive modal handlers |
+
+## Appendix B: What NOT to Touch
+
+- `coreBoot.js` - Already clean and focused
+- `appContext.js` - Just add validateContext()
+- Module internals - Only change how they receive deps, not what they do
 
 ---
 
 ## References
 
-- `docs/future-work/MODULAR_OVERHAUL_PLAN.md` - Original modularization plan
-- `docs/future-work/WINDOW_GLOBALS_REDUCTION_PLAN.md` - Window.* reduction work
-- `modules/core/appContext.js` - Current DI implementation
-- `modules/boot/featureBoot.js:1240-1314` - Current window.* public API
+- `docs/future-work/ZERO_WINDOW_GLOBALS_PLAN.md` - Window.* elimination
+- `docs/future-work/MODULAR_OVERHAUL_PLAN.md` - Original modularization
+- `modules/boot/featureBoot.js:1240-1314` - Current window.* exposures

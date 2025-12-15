@@ -1,6 +1,7 @@
 # Zero Window Globals Plan
 
 **Created:** December 2025
+**Updated:** December 2025 (incorporated architectural review feedback)
 **Status:** Planning
 **Priority:** Medium
 **Target:** 0 `window.*` globals (absolute zero, no exceptions)
@@ -9,7 +10,7 @@
 
 ## Executive Summary
 
-Eliminate all `window.*` global variable usage from miniCycle, replacing with appContext getters. This improves testability, eliminates implicit dependencies, and creates a cleaner architecture.
+Eliminate all `window.*` global variable usage from miniCycle, replacing with appContext APIs. This improves testability, eliminates implicit dependencies, and creates a cleaner architecture.
 
 **Current:** ~270 `window.*` usages
 **Target:** Absolute 0 (no debug namespace, no exceptions)
@@ -46,83 +47,266 @@ Eliminate all `window.*` global variable usage from miniCycle, replacing with ap
 
 ### 1.3 Files with Most window.* References
 
-Run this to get current counts:
+Run this to get current counts (searches entire project):
 ```bash
-grep -rc "window\." modules --include="*.js" | grep -v ":0" | sort -t: -k2 -rn | head -20
+grep -rc "window\." . --include="*.js" --include="*.html" | grep -v ":0" | grep -v node_modules | sort -t: -k2 -rn | head -20
 ```
 
 ---
 
-## Part 2: Migration Strategy
+## Part 2: The Getter Sprawl Problem
 
-### 2.1 Add Missing Getters to appContext.js
+### 2.1 The Risk
 
-**New getters needed:**
+Replacing 270 `window.*` globals with 100+ tiny getters doesn't reduce complexity—it just moves it. "Getter sprawl" is the new "window sprawl."
 
 ```javascript
-// In appContext.js - add to context object
-const context = {
-    // ... existing keys ...
+// ❌ BAD: 15 separate task getters
+getAddTask()
+getUpdateTask()
+getDeleteTask()
+getLoadTaskContext()
+getCreateTaskDOMElements()
+// ... this is still messy, just typed messy
+```
 
-    // ADD THESE:
-    AppGlobalState: null,        // Currently 51 window.* refs
-    AppMeta: null,               // Currently 5 window.* refs
-    createInitialSchema25Data: null,
-    closeStorageViewer: null,    // For testing modal
+### 2.2 The Solution: Grouped Domain APIs
+
+Instead of many individual getters, group by domain:
+
+```javascript
+// ✅ GOOD: Grouped APIs
+getTaskApi()    → { add, update, delete, loadContext, createDOM, ... }
+getCycleApi()   → { load, create, reset, check, ... }
+getUiApi()      → { showNotification, showModal, hideMenu, ... }
+getStateApi()   → { AppState, AppGlobalState, AppMeta }
+getUndoApi()    → { capture, undo, redo, updateButtons }
+```
+
+**Rule of thumb:** If you're about to add the 3rd getter in a domain, make it a `*Api` object instead.
+
+### 2.3 Recommended API Groupings
+
+| API Group | Contents |
+|-----------|----------|
+| `getStateApi()` | `AppState`, `AppGlobalState`, `AppMeta`, `loadMiniCycleData`, `autoSave` |
+| `getTaskApi()` | `add`, `update`, `delete`, `loadContext`, `createDOM`, `extractFromDOM`, `handleCompleteAll` |
+| `getCycleApi()` | `load`, `create`, `check`, `showCreationModal`, `createInitialSchema` |
+| `getUiApi()` | `showNotification`, `hideMainMenu`, `updateMainMenuHeader` |
+| `getUndoApi()` | `capture`, `undo`, `redo`, `updateButtons`, `enableOnFirstInteraction` |
+| `getReminderApi()` | `manager`, `start`, `stop`, `updateButtons`, `loadSettings` |
+| `getRecurringApi()` | `panel`, `core`, `openSettingsForTask` |
+
+### 2.4 Implementation in appContext.js
+
+```javascript
+// In appContext.js
+
+const context = {
+    // Grouped APIs (preferred)
+    stateApi: null,
+    taskApi: null,
+    cycleApi: null,
+    uiApi: null,
+    undoApi: null,
+    reminderApi: null,
+    recurringApi: null,
+
+    // Individual values that don't fit a group
+    appInit: null,
+    GlobalUtils: null,
 };
 
-// ADD THESE GETTER FUNCTIONS:
-export function getAppGlobalState() { return context.AppGlobalState; }
-export function getAppMeta() { return context.AppMeta; }
-export function getCreateInitialSchema25Data() { return context.createInitialSchema25Data; }
-export function getCloseStorageViewer() { return context.closeStorageViewer; }
+// Grouped API getters
+export function getStateApi() {
+    assertRegistered('stateApi');
+    return context.stateApi;
+}
+
+export function getTaskApi() {
+    assertRegistered('taskApi');
+    return context.taskApi;
+}
+
+// ... etc
 ```
 
-### 2.2 Register Values During Boot
+---
 
-**In coreBoot.js** (for early-boot values):
+## Part 3: Fail Loudly in Dev
+
+### 3.1 The Problem
+
+If `getAppGlobalState()` is called before registration, it returns `null` and causes silent breakage downstream. This is how bugs like `extractTaskDataFromDOM` happen.
+
+### 3.2 The Solution: Assert on Access
+
 ```javascript
-// AppGlobalState is created here, register immediately
-setContextValue('AppGlobalState', AppGlobalState);
-setContextValue('AppMeta', AppMeta);
+// In appContext.js
+
+const DEV_MODE = true; // Or check process.env.NODE_ENV
+
+function assertRegistered(key) {
+    if (context[key] === null) {
+        const error = `❌ appContext: "${key}" accessed before registration!`;
+        console.error(error);
+        console.trace(); // Show call stack
+
+        if (DEV_MODE) {
+            throw new Error(error); // Fail hard in dev
+        }
+    }
+}
+
+export function getStateApi() {
+    assertRegistered('stateApi');
+    return context.stateApi;
+}
+
+export function getTaskApi() {
+    assertRegistered('taskApi');
+    return context.taskApi;
+}
+
+// Apply to ALL getters
 ```
 
-**In featureBoot.js** (for feature values):
+### 3.3 Post-Boot Validation
+
+Run after featureBoot completes, before uiBoot attaches listeners:
+
 ```javascript
-// Register instead of window.* exposure
-setContextValue('createInitialSchema25Data', createInitialSchema25Data);
+// In appContext.js
+export function validateAllApisRegistered() {
+    const requiredApis = [
+        'stateApi', 'taskApi', 'cycleApi', 'uiApi',
+        'undoApi', 'reminderApi', 'recurringApi',
+        'appInit', 'GlobalUtils'
+    ];
+
+    const missing = requiredApis.filter(key => context[key] === null);
+
+    if (missing.length > 0) {
+        console.error('❌ appContext validation failed!');
+        console.error('Missing APIs:', missing);
+        throw new Error(`Boot incomplete: missing ${missing.join(', ')}`);
+    }
+
+    console.log('✅ appContext validation passed - all APIs registered');
+}
 ```
 
-### 2.3 Replace window.* Reads with Getters
+Call from orchestrator:
+```javascript
+// In orchestrator.js
+await bootFeatures(deps, coreResult);
+validateAllApisRegistered(); // BEFORE uiBoot
+attachGlobalEventListeners();
+```
 
-**Pattern:**
+---
+
+## Part 4: Migration Strategy
+
+### 4.1 Register Values as Grouped APIs
+
+**In coreBoot.js** (early boot):
+```javascript
+import { setContextValue } from '../core/appContext.js';
+
+// Register state API
+setContextValue('stateApi', {
+    AppState,
+    AppGlobalState,
+    AppMeta,
+    loadMiniCycleData: () => loadMiniCycleData(),
+    autoSave: (tasks, immediate) => autoSave(tasks, immediate),
+});
+```
+
+**In featureBoot.js** (feature loading):
+```javascript
+// Register task API
+setContextValue('taskApi', {
+    add: deps.task.addTask,
+    loadContext: deps.task.loadTaskContext,
+    createDOM: deps.task.createTaskDOMElements,
+    extractFromDOM: deps.task.extractTaskDataFromDOM,
+    handleCompleteAll: deps.task.handleCompleteAllTasks,
+});
+
+// Register cycle API
+setContextValue('cycleApi', {
+    load: deps.cycle.loadMiniCycle,
+    create: deps.cycle.showCycleCreationModal,
+    check: deps.progress.checkMiniCycle,
+    createInitialSchema: createInitialSchema25Data,
+});
+
+// Register UI API
+setContextValue('uiApi', {
+    showNotification: deps.utils.showNotification,
+    hideMainMenu: deps.ui.hideMainMenu,
+    updateMainMenuHeader: deps.ui.updateMainMenuHeader,
+});
+```
+
+### 4.2 Replace window.* Reads with API Calls
+
 ```javascript
 // BEFORE
 const globalState = window.AppGlobalState;
-if (window.AppGlobalState?.isPerformingUndoRedo) { ... }
+window.showNotification?.('message', 'info');
+window.addTask?.(text, false);
 
 // AFTER
-import { getAppGlobalState } from '../core/appContext.js';
-const globalState = getAppGlobalState();
-if (getAppGlobalState()?.isPerformingUndoRedo) { ... }
+import { getStateApi, getUiApi, getTaskApi } from '../core/appContext.js';
+
+const globalState = getStateApi().AppGlobalState;
+getUiApi().showNotification?.('message', 'info');
+getTaskApi().add?.(text, false);
 ```
 
-### 2.4 Remove Public API Exposures
+### 4.3 Remove Public API Exposures (ONLY AFTER ALL READS MIGRATED)
 
-**In featureBoot.js**, delete lines 1247-1314:
+**Critical:** Do NOT delete exposures until all callers are migrated.
+
+**Order:**
+1. First pass: Replace all reads in modules (`window.X` → `getXApi().x`)
+2. Second pass: Replace UI callback reads (handlers that use `window.*`)
+3. Third pass: Verify zero `window.*` reads remain (run verification)
+4. **Only then:** Delete the exposure section in featureBoot.js
+
+---
+
+## Part 5: Fix HTML onclick Handler
+
+### 5.1 The Problem
+
+```html
+<!-- miniCycle.html:1624 -->
+<button class="btn-confirm" onclick="closeStorageViewer()">Close</button>
+```
+
+This requires `window.closeStorageViewer` to exist.
+
+### 5.2 The Solution: Event Delegation
+
+Use event delegation to handle dynamically created elements:
+
 ```javascript
-// DELETE THIS ENTIRE SECTION:
-// ============================================================================
-// WINDOW.* EXPOSURES - PUBLIC API
-// ============================================================================
-window.AppState = deps.core.AppState;
-window.AppGlobalState = AppGlobalState;
-// ... all 34 lines
+// In testing-modal.js (or a global listener setup)
+
+document.addEventListener('click', (e) => {
+    // Handle storage viewer close button
+    if (e.target.id === 'close-storage-viewer-btn' ||
+        e.target.closest('#close-storage-viewer-btn')) {
+        closeStorageViewer();
+    }
+});
 ```
 
-### 2.5 Fix HTML onclick Handler
-
-**In miniCycle.html:1624:**
+**HTML change:**
 ```html
 <!-- BEFORE -->
 <button class="btn-confirm" onclick="closeStorageViewer()">Close</button>
@@ -131,242 +315,152 @@ window.AppGlobalState = AppGlobalState;
 <button class="btn-confirm" id="close-storage-viewer-btn">Close</button>
 ```
 
-**In testing-modal.js:**
-```javascript
-// Add event listener instead of relying on window global
-document.getElementById('close-storage-viewer-btn')
-    ?.addEventListener('click', closeStorageViewer);
-```
-
-### 2.6 No Debug Namespace (Explicitly Rejected)
-
-**We are NOT adding a `window.debug` namespace.**
-
-Rationale:
-- The goal is absolute zero `window.*` globals, no exceptions
-- Debugging can be done via DevTools Application tab (localStorage inspection)
-- If programmatic debugging is needed, import getters directly in DevTools console:
-  ```javascript
-  // In DevTools console, use dynamic import:
-  const { getAppState, getAppContext } = await import('./modules/core/appContext.js');
-  getAppState()?.get();
-  ```
-- Any "convenience" global is a slippery slope back to pollution
-
-**This decision is final. Do not add window.debug or any similar namespace.**
+**Why event delegation?** The testing modal might be injected late. Direct `getElementById` + `addEventListener` could miss it if the DOM isn't ready.
 
 ---
 
-## Part 3: File-by-File Migration Guide
+## Part 6: AppBootStarted Solution
 
-### 3.1 High Priority (>10 references)
+### 6.1 Current Problem
 
-#### `modules/boot/orchestrator.js`
-- [ ] Replace `window.AppGlobalState` with `getAppGlobalState()`
-- [ ] Replace `window.AppMeta` with `getAppMeta()`
-- [ ] Remove any `window.*` assignments
-- [ ] Import required getters at top of file
-
-#### `modules/boot/featureBoot.js`
-- [ ] Delete all `window.*` exposures (lines 1247-1314)
-- [ ] Ensure all values are registered via `setContextValue()` instead
-- [ ] Keep `window.closeStorageViewer` temporarily until HTML onclick is fixed
-
-#### `modules/core/appGlobalState.js`
-- [ ] Remove any `window.AppGlobalState` self-assignment
-- [ ] Export only via module system
-
-### 3.2 Medium Priority (3-10 references)
-
-#### `modules/cycle/cycleLoader.js`
-- [ ] Replace `window.loadMiniCycle` references
-- [ ] Replace `window.addTask` with `getAddTask()`
-- [ ] Replace `window.createInitialSchema25Data` with getter
-
-#### `modules/ui/undoRedoManager.js`
-- [ ] Replace `window.AppGlobalState` with getter
-- [ ] Replace `window.performStateBasedUndo/Redo` with getters
-- [ ] Replace `window.enableUndoSystemOnFirstInteraction` with getter
-
-#### `modules/features/reminders.js`
-- [ ] Replace `window.startReminders` with getter
-- [ ] Replace `window.updateReminderButtons` with getter
-- [ ] Replace `window.loadRemindersSettings` with getter
-
-#### `modules/cycle/modeManager.js`
-- [ ] Replace `window.saveToggleAutoReset` with getter
-- [ ] Replace `window.syncCurrentSettingsToStorage` with getter
-
-### 3.3 Low Priority (1-2 references)
-
-These files have minimal `window.*` usage - update as encountered:
-
-- `modules/ui/menuManager.js`
-- `modules/ui/settingsManager.js`
-- `modules/ui/taskUI.js`
-- `modules/task/taskCore.js`
-- `modules/task/taskDOM.js`
-- `modules/progress/cycleCompletion.js`
-- `modules/recurring/recurringCore.js`
-- `modules/recurring/recurringPanel.js`
-- `modules/testing/testing-modal.js`
-
----
-
-## Part 4: Special Cases
-
-### 4.1 window.AppBootStarted
-
-**Purpose:** Prevents lite fallback loader from showing
-
-**Current:**
 ```javascript
 // In orchestrator.js
 window.AppBootStarted = true;
 ```
 
-**Solution:** Keep this ONE exception OR move boot detection to a different mechanism:
-```javascript
-// Alternative: Use a meta tag or data attribute
-document.documentElement.dataset.appBooted = 'true';
+This is the one remaining `window.*` assignment we need to eliminate.
 
-// Lite fallback checks:
-if (document.documentElement.dataset.appBooted) { ... }
+### 6.2 The Solution: Dataset Attribute
+
+```javascript
+// In coreBoot.js (as early as possible, even before imports)
+document.documentElement.dataset.appBooted = 'true';
 ```
 
-### 4.2 window.removeEventListener / window.addEventListener
+**Checking boot status:**
+```javascript
+// In lite fallback or any code that needs to check
+if (document.documentElement.dataset.appBooted === 'true') {
+    // Main app has started booting
+}
+```
 
-**These are browser APIs, not custom globals. KEEP THEM.**
-
-They're standard DOM methods and don't count toward our zero goal.
-
-### 4.3 window.localStorage / window.sessionStorage
-
-**These are browser APIs. KEEP THEM.**
-
-### 4.4 window.location / window.matchMedia / etc.
-
-**These are browser APIs. KEEP THEM.**
-
-Our goal is zero *custom* `window.*` globals, not removing browser API usage.
+**Benefits:**
+- No `window.*` pollution
+- Works before any modules load (can be in inline script)
+- Survives across module boundaries
+- Clear semantic meaning
 
 ---
 
-## Part 5: Implementation Phases
+## Part 7: Implementation Phases (Refined Order)
 
-### Phase 1: Preparation (Low Risk)
-- [ ] Add all missing keys to `context` object in appContext.js
-- [ ] Add all missing getter functions
-- [ ] Add `getAppGlobalState()` getter (biggest impact - 51 refs)
-- [ ] Add `getAppMeta()` getter
+The key insight: **Don't delete exposures until ALL callers are migrated.**
 
-**Estimated:** 30 minutes
+### Phase 1: Add APIs + Dev Protection ⏱️ 1 hour
+- [ ] Add grouped API structure to appContext.js
+- [ ] Add `assertRegistered()` function
+- [ ] Add `validateAllApisRegistered()` function
+- [ ] Test that missing APIs throw errors in dev
 
-### Phase 2: Registration (Low Risk)
-- [ ] Register `AppGlobalState` in coreBoot.js
-- [ ] Register `AppMeta` in coreBoot.js
-- [ ] Register remaining values in featureBoot.js via `setContextValue()`
+### Phase 2: Register Early APIs ⏱️ 30 min
+- [ ] Register `stateApi` in coreBoot.js
+- [ ] Replace `window.AppBootStarted` with dataset attribute
+- [ ] Verify state API accessible after coreBoot
 
-**Estimated:** 30 minutes
+### Phase 3: Register Feature APIs ⏱️ 1 hour
+- [ ] Register `taskApi` in featureBoot.js
+- [ ] Register `cycleApi` in featureBoot.js
+- [ ] Register `uiApi` in featureBoot.js
+- [ ] Register `undoApi` in featureBoot.js
+- [ ] Register `reminderApi` in featureBoot.js
+- [ ] Register `recurringApi` in featureBoot.js
+- [ ] Call `validateAllApisRegistered()` after boot
 
-### Phase 3: Big Migration - AppGlobalState (Medium Risk)
-- [ ] Find all 51 `window.AppGlobalState` references
-- [ ] Update each to use `getAppGlobalState()`
+### Phase 4: Migrate AppGlobalState (51 refs) ⏱️ 2-3 hours
+- [ ] Replace all `window.AppGlobalState` with `getStateApi().AppGlobalState`
 - [ ] Test after each file
+- [ ] This proves the pattern works at scale
 
-**Estimated:** 2-3 hours
-
-### Phase 4: Remaining Migrations (Medium Risk)
-- [ ] Migrate all other `window.*` reads (~185 remaining)
-- [ ] Group by file, update systematically
+### Phase 5: Migrate Remaining Reads ⏱️ 3-4 hours
+- [ ] Migrate all other `window.*` reads (~185)
+- [ ] Focus on one file at a time
 - [ ] Test incrementally
 
-**Estimated:** 3-4 hours
+### Phase 6: Fix HTML onclick ⏱️ 30 min
+- [ ] Add event delegation in testing-modal.js
+- [ ] Update HTML to use id instead of onclick
+- [ ] Test storage viewer still works
 
-### Phase 5: Remove Public API Exposures (Higher Risk)
+### Phase 7: Delete Exposures ⏱️ 1 hour
+- [ ] Run verification script (must pass first!)
 - [ ] Delete `window.*` assignments in featureBoot.js
-- [ ] Fix HTML onclick handler
-- [ ] Verify NO debug namespace is added (policy: absolute zero)
 - [ ] Full regression test
+- [ ] Commit with clear message
 
-**Estimated:** 1 hour
-
-### Phase 6: Cleanup & Verification
-- [ ] Run verification script (see below)
-- [ ] Fix any stragglers
-- [ ] Update documentation
-
-**Estimated:** 30 minutes
+### Phase 8: CI Integration ⏱️ 30 min
+- [ ] Add verification script to CI
+- [ ] Ensure builds fail on `window.*` violations
+- [ ] Document in README
 
 ---
 
-## Part 6: Verification
+## Part 8: Verification
 
-### 6.1 Verification Script
+### 8.1 Verification Script (Searches Entire Project)
 
 Create `scripts/verify-no-window-globals.sh`:
 
 ```bash
 #!/bin/bash
-# Verify zero custom window.* globals
+# Verify zero custom window.* globals across entire project
 
 echo "🔍 Checking for window.* globals..."
 
 # Exclude browser APIs
-EXCLUDE="window\.location|window\.matchMedia|window\.addEventListener|window\.removeEventListener|window\.innerWidth|window\.innerHeight|window\.scrollY|window\.getComputedStyle|window\.requestAnimationFrame|window\.confirm|window\.open|window\.setTimeout|window\.clearTimeout|window\.localStorage|window\.sessionStorage|window\.navigator|window\.screen|window\.performance|window\.history|window\.document|window\.alert|window\.fetch|window\.URL|window\.Blob|window\.File|window\.FormData|window\.Headers|window\.Request|window\.Response|window\.crypto|window\.indexedDB|window\.caches|window\.Promise|window\.Map|window\.Set|window\.WeakMap|window\.WeakSet|window\.Symbol|window\.Proxy|window\.Reflect|window\.ArrayBuffer|window\.DataView|window\.JSON|window\.Math|window\.Date|window\.RegExp|window\.Error|window\.console|window\.self|window\.parent|window\.top|window\.frames|window\.frameElement|window\.onerror|window\.onload"
+EXCLUDE="window\.location|window\.matchMedia|window\.addEventListener|window\.removeEventListener|window\.innerWidth|window\.innerHeight|window\.scrollY|window\.scrollX|window\.getComputedStyle|window\.requestAnimationFrame|window\.confirm|window\.open|window\.setTimeout|window\.clearTimeout|window\.setInterval|window\.clearInterval|window\.localStorage|window\.sessionStorage|window\.navigator|window\.screen|window\.performance|window\.history|window\.document|window\.alert|window\.fetch|window\.URL|window\.Blob|window\.File|window\.FormData|window\.Headers|window\.Request|window\.Response|window\.crypto|window\.indexedDB|window\.caches|window\.Promise|window\.Map|window\.Set|window\.WeakMap|window\.WeakSet|window\.Symbol|window\.Proxy|window\.Reflect|window\.ArrayBuffer|window\.DataView|window\.JSON|window\.Math|window\.Date|window\.RegExp|window\.Error|window\.console|window\.self|window\.parent|window\.top|window\.frames|window\.frameElement|window\.onerror|window\.onload|window\.onbeforeunload|window\.onunload|window\.onresize|window\.onscroll|window\.dispatchEvent|window\.CustomEvent|window\.Event|window\.focus|window\.blur|window\.print|window\.atob|window\.btoa|window\.encodeURI|window\.decodeURI|window\.encodeURIComponent|window\.decodeURIComponent|window\.escape|window\.unescape|window\.isNaN|window\.isFinite|window\.parseFloat|window\.parseInt|window\.Object|window\.Array|window\.String|window\.Number|window\.Boolean|window\.Function|window\.eval|window\.getSelection|window\.devicePixelRatio|window\.visualViewport|window\.speechSynthesis|window\.Notification|window\.Worker|window\.ServiceWorker|window\.BroadcastChannel|window\.MessageChannel|window\.requestIdleCallback|window\.cancelIdleCallback|window\.queueMicrotask|window\.reportError|window\.structuredClone"
 
 # NO window.debug allowed - absolute zero policy
-
 # Also allow window.APP_VERSION (build-time constant)
 EXCLUDE="$EXCLUDE|window\.APP_VERSION"
 
-# Count violations
-VIOLATIONS=$(grep -rE "window\.[a-zA-Z_]+" modules --include="*.js" | grep -vE "$EXCLUDE" | grep -vE "^\s*//" | wc -l)
+# Search entire project (not just modules)
+SEARCH_PATHS="modules miniCycle.html"
 
-if [ "$VIOLATIONS" -eq 0 ]; then
+# Count violations (excluding comments)
+VIOLATIONS=$(grep -rE "window\.[a-zA-Z_]+" $SEARCH_PATHS --include="*.js" --include="*.html" 2>/dev/null | grep -vE "$EXCLUDE" | grep -vE "^\s*//" | grep -vE "<!--.*-->" | wc -l | tr -d ' ')
+
+if [ "$VIOLATIONS" -eq "0" ]; then
     echo "✅ Zero custom window.* globals found!"
     exit 0
 else
     echo "❌ Found $VIOLATIONS window.* violations:"
-    grep -rE "window\.[a-zA-Z_]+" modules --include="*.js" | grep -vE "$EXCLUDE" | grep -vE "^\s*//"
+    echo ""
+    grep -rn "window\.[a-zA-Z_]+" $SEARCH_PATHS --include="*.js" --include="*.html" 2>/dev/null | grep -vE "$EXCLUDE" | grep -vE "^\s*//" | grep -vE "<!--.*-->"
     exit 1
 fi
 ```
 
-### 6.2 Run Verification
+### 8.2 Run Before Deleting Exposures
 
 ```bash
 chmod +x scripts/verify-no-window-globals.sh
 ./scripts/verify-no-window-globals.sh
 ```
 
-### 6.3 Add to CI/Pre-commit (Optional)
+**If this doesn't pass, DO NOT proceed to Phase 7.**
+
+### 8.3 CI Integration
 
 ```yaml
-# In .github/workflows/ci.yml or pre-commit hook
+# In .github/workflows/ci.yml
 - name: Verify no window globals
   run: ./scripts/verify-no-window-globals.sh
 ```
 
 ---
 
-## Part 7: Rollback Plan
-
-If issues arise after removing `window.*` exposures:
-
-1. **Quick rollback:** Re-add the specific `window.*` assignment that's needed
-2. **Identify the caller:** Find what's still using `window.*` instead of getter
-3. **Fix properly:** Update caller to use getter, then remove `window.*` again
-
-Keep a git branch/tag before Phase 5 for easy rollback:
-```bash
-git checkout -b pre-zero-globals
-git tag v1.x-pre-zero-globals
-```
-
----
-
-## Part 8: Success Criteria
+## Part 9: Success Criteria
 
 | Metric | Before | After |
 |--------|--------|-------|
@@ -374,64 +468,101 @@ git tag v1.x-pre-zero-globals
 | Custom `window.*` reads | 236 | **0** |
 | HTML onclick using globals | 1 | **0** |
 | `window.debug` or similar | N/A | **Explicitly forbidden** |
-| Verification script | N/A | Passes |
-| All tests passing | Yes | Yes |
-| App functions correctly | Yes | Yes |
+| Individual getters in appContext | N/A | **Grouped into ~7 APIs** |
+| Missing registration detection | Silent null | **Throws in dev** |
+| Verification script | N/A | **Passes + in CI** |
 
 ---
 
-## Part 9: Files to Modify (Complete List)
+## Part 10: Rollback Plan
 
-### Must Modify:
-- `modules/core/appContext.js` - Add getters
-- `modules/boot/coreBoot.js` - Register early values
-- `modules/boot/featureBoot.js` - Remove exposures, register via setContextValue
-- `modules/boot/orchestrator.js` - Replace reads with getters
-- `miniCycle.html` - Fix onclick handler
+If issues arise after removing `window.*` exposures:
 
-### Likely Modify (based on grep counts):
-- `modules/core/appGlobalState.js`
-- `modules/cycle/cycleLoader.js`
-- `modules/ui/undoRedoManager.js`
-- `modules/features/reminders.js`
-- `modules/cycle/modeManager.js`
-- `modules/ui/menuManager.js`
-- `modules/ui/settingsManager.js`
-- `modules/task/taskCore.js`
-- `modules/task/taskDOM.js`
-- `modules/testing/testing-modal.js`
+1. **Quick rollback:** Re-add the specific `window.*` assignment that's needed
+2. **Identify the caller:** The dev assertion should show the call stack
+3. **Fix properly:** Update caller to use API getter, then remove `window.*` again
 
-### Possibly Modify (1-2 refs each):
-- ~15 other module files
+**Keep a git branch before Phase 7:**
+```bash
+git checkout -b pre-zero-globals
+git tag v1.x-pre-zero-globals
+```
 
 ---
 
-## Appendix A: Quick Reference - Getter Mapping
+## Appendix A: API Reference
 
-| Old (window.*) | New (getter) |
-|----------------|--------------|
-| `window.AppState` | `getAppState()` |
-| `window.AppGlobalState` | `getAppGlobalState()` |
-| `window.AppMeta` | `getAppMeta()` |
-| `window.loadMiniCycleData` | `getLoadMiniCycleData()` |
-| `window.autoSave` | `getAutoSave()` |
-| `window.showNotification` | `getShowNotification()` |
-| `window.addTask` | `getAddTask()` |
-| `window.handleCompleteAllTasks` | `getHandleCompleteAllTasks()` |
-| `window.loadMiniCycle` | `getLoadMiniCycle()` *(add)* |
-| `window.checkMiniCycle` | `getCheckMiniCycle()` *(add)* |
-| `window.showCycleCreationModal` | `getShowCycleCreationModal()` |
-| `window.hideMainMenu` | `getHideMainMenu()` |
-| `window.updateMainMenuHeader` | `getUpdateMainMenuHeader()` |
-| `window.reminderManager` | `getReminderManager()` |
-| `window.startReminders` | `getStartReminders()` |
-| `window.recurringPanel` | `getRecurringPanel()` |
-| `window.recurringCore` | `getRecurringCore()` *(add)* |
-| `window.captureStateSnapshot` | `getCaptureStateSnapshot()` |
-| `window.performStateBasedUndo` | `getPerformStateBasedUndo()` |
-| `window.performStateBasedRedo` | `getPerformStateBasedRedo()` |
-| `window.updateUndoRedoButtons` | `getUpdateUndoRedoButtons()` |
-| `window.createInitialSchema25Data` | `getCreateInitialSchema25Data()` *(add)* |
+### getStateApi()
+```javascript
+{
+    AppState,           // The state manager
+    AppGlobalState,     // Runtime flags
+    AppMeta,            // Version info
+    loadMiniCycleData,  // Load from storage
+    autoSave,           // Save to storage
+}
+```
+
+### getTaskApi()
+```javascript
+{
+    add,                // Add new task
+    loadContext,        // Load task context
+    createDOM,          // Create DOM elements
+    extractFromDOM,     // Extract data from DOM
+    handleCompleteAll,  // Complete all handler
+}
+```
+
+### getCycleApi()
+```javascript
+{
+    load,               // Load a cycle
+    create,             // Show creation modal
+    check,              // Check cycle completion
+    createInitialSchema,// Create initial data
+}
+```
+
+### getUiApi()
+```javascript
+{
+    showNotification,   // Show notification
+    hideMainMenu,       // Hide menu
+    updateMainMenuHeader, // Update header
+}
+```
+
+### getUndoApi()
+```javascript
+{
+    capture,            // Capture snapshot
+    undo,               // Perform undo
+    redo,               // Perform redo
+    updateButtons,      // Update UI buttons
+    enableOnFirstInteraction, // Enable on interaction
+}
+```
+
+### getReminderApi()
+```javascript
+{
+    manager,            // Reminder manager instance
+    start,              // Start reminders
+    stop,               // Stop reminders
+    updateButtons,      // Update UI
+    loadSettings,       // Load settings
+}
+```
+
+### getRecurringApi()
+```javascript
+{
+    panel,              // Recurring panel
+    core,               // Recurring core
+    openSettingsForTask,// Open settings
+}
+```
 
 ---
 
@@ -457,6 +588,22 @@ These `window.*` usages are standard browser APIs and should NOT be changed:
 - `window.crypto`
 - `window.indexedDB`
 - `window.caches`
+
+---
+
+## Appendix C: Old Getter Mapping (For Reference)
+
+If you prefer individual getters over grouped APIs, here's the mapping:
+
+| Old (window.*) | Individual Getter | Grouped API |
+|----------------|-------------------|-------------|
+| `window.AppState` | `getAppState()` | `getStateApi().AppState` |
+| `window.AppGlobalState` | `getAppGlobalState()` | `getStateApi().AppGlobalState` |
+| `window.addTask` | `getAddTask()` | `getTaskApi().add` |
+| `window.showNotification` | `getShowNotification()` | `getUiApi().showNotification` |
+| `window.checkMiniCycle` | `getCheckMiniCycle()` | `getCycleApi().check` |
+
+**Recommendation:** Use grouped APIs. They're more maintainable.
 
 ---
 
