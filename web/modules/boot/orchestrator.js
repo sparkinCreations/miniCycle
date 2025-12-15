@@ -6,14 +6,11 @@
  *   Phase 2: featureBoot (all feature modules)
  *   Phase 3: uiBoot (event listeners, UI finalization)
  *
- * This file only coordinates - no DI writes, no UI logic, no timing hacks.
+ * This file only coordinates - no DI writes, no UI logic, no DOM queries.
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.500';
-
-// Set boot flag to prevent lite fallback
-document.documentElement.dataset.appBooted = 'true';
+const APP_VERSION = '1.501';
 
 /**
  * Main initialization - pure sequence controller
@@ -29,11 +26,7 @@ async function initApp() {
   const { bootFeatures, bootEarlyDeps } = featureBoot;
 
   const uiBoot = await import(`./uiBoot.js?v=${APP_VERSION}`);
-  const {
-    attachGlobalEventListeners, attachTaskInputListeners, attachMenuButtonListener,
-    hideAppLoader, isOverlayActive, updateNavDots, setupUserManual,
-    setupTryLiteVersionButton, finalizeUI
-  } = uiBoot;
+  const { initUIBoot } = uiBoot;
 
   // ========== CREATE DEPS CONTAINER ==========
   const deps = {
@@ -49,7 +42,6 @@ async function initApp() {
   const { GlobalUtils } = coreResult;
   await bootEarlyDeps(deps, coreResult);
   await initAppState(deps, deps.utils.showNotification);
-  deps.ui.isOverlayActive = isOverlayActive;
   console.log('✅ Phase 1 complete');
 
   // ========== PHASE 2: FEATURES ==========
@@ -68,37 +60,8 @@ async function initApp() {
   getFixTaskValidationIssues()?.();
   await deps.core.initializeAppWithAutoMigration({ forceMode: true });
 
-  // DOM elements for listeners
-  const taskInput = document.getElementById("taskInput");
-  const addTaskButton = document.getElementById("addTaskBtn");
-  const menuButton = document.querySelector(".menu-button");
-  const menu = document.querySelector(".menu-container");
-
-  // UI setup
-  updateNavDots();
-  setupUserManual(GlobalUtils);
-  setupTryLiteVersionButton(GlobalUtils, { showConfirmationModal: deps.utils.showConfirmationModal });
-
-  // Finalize UI (Complete All button, mode selector, device detection, etc.)
-  await finalizeUI({
-    GlobalUtils,
-    deps,
-    getHandleCompleteAllTasks: appContextMod.getHandleCompleteAllTasks,
-    getInitializeModeSelector: appContextMod.getInitializeModeSelector,
-    getUpdateMoveArrowsVisibility: appContextMod.getUpdateMoveArrowsVisibility,
-    getInitCompletedTasksSection: appContextMod.getInitCompletedTasksSection,
-    getRecurringPanel: appContextMod.getRecurringPanel,
-    getDeviceDetectionManager: appContextMod.getDeviceDetectionManager
-  });
-
-  // Attach event listeners
-  attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
-  attachMenuButtonListener(GlobalUtils, menuButton, menu);
-  attachGlobalEventListeners(GlobalUtils);
-
-  // Hide loader and focus input
-  hideAppLoader();
-  requestAnimationFrame(() => taskInput?.focus());
+  // Initialize UI (single entrypoint - all DOM/listeners/finalization)
+  await initUIBoot({ GlobalUtils, deps, appContextMod });
 
   console.log('✅ miniCycle initialization complete');
 }

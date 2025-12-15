@@ -621,6 +621,57 @@ export async function finalizeUI(options) {
 }
 
 // ============================================================================
+// MAIN ENTRYPOINT
+// ============================================================================
+
+/**
+ * Initialize all UI setup in one call
+ * This is the single entrypoint for orchestrator.js to call
+ * @param {Object} options - Configuration options
+ * @param {Object} options.GlobalUtils - GlobalUtils module reference
+ * @param {Object} options.deps - Dependencies container
+ * @param {Object} options.appContextMod - appContext module reference
+ */
+export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
+  // Register isOverlayActive to deps
+  deps.ui.isOverlayActive = isOverlayActive;
+
+  // Nav dots and menu setup
+  updateNavDots();
+  setupUserManual(GlobalUtils);
+  setupTryLiteVersionButton(GlobalUtils, { showConfirmationModal: deps.utils.showConfirmationModal });
+
+  // Finalize UI (Complete All button, mode selector, device detection, etc.)
+  await finalizeUI({
+    GlobalUtils,
+    deps,
+    getHandleCompleteAllTasks: appContextMod.getHandleCompleteAllTasks,
+    getInitializeModeSelector: appContextMod.getInitializeModeSelector,
+    getUpdateMoveArrowsVisibility: appContextMod.getUpdateMoveArrowsVisibility,
+    getInitCompletedTasksSection: appContextMod.getInitCompletedTasksSection,
+    getRecurringPanel: appContextMod.getRecurringPanel,
+    getDeviceDetectionManager: appContextMod.getDeviceDetectionManager
+  });
+
+  // DOM elements for listeners
+  const taskInput = document.getElementById('taskInput');
+  const addTaskButton = document.getElementById('addTaskBtn');
+  const menuButton = document.querySelector('.menu-button');
+  const menu = document.querySelector('.menu-container');
+
+  // Attach event listeners
+  attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
+  attachMenuButtonListener(GlobalUtils, menuButton, menu);
+  attachGlobalEventListeners(GlobalUtils);
+
+  // Hide loader and focus input
+  hideAppLoader();
+  requestAnimationFrame(() => taskInput?.focus());
+
+  console.log('✅ UI boot complete');
+}
+
+// ============================================================================
 // MODULE INFO
 // ============================================================================
 
