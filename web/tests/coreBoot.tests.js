@@ -262,9 +262,9 @@ export async function runCoreBootTests(resultsDiv) {
     // ===== BOOT STATE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Boot State</h4>';
 
-    await test('AppBootStarted flag is set', () => {
-        if (window.AppBootStarted !== true) {
-            throw new Error('AppBootStarted should be true after boot');
+    await test('AppBooted flag is set (dataset attribute)', () => {
+        if (document.documentElement.dataset.appBooted !== 'true') {
+            throw new Error('document.documentElement.dataset.appBooted should be "true" after boot');
         }
     });
 

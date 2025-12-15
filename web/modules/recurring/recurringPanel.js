@@ -2371,6 +2371,40 @@ export class RecurringPanelManager {
         }
     }
 
+    /**
+     * Wire always-show-recurring checkbox listener
+     * Moved from orchestrator.js for proper module ownership
+     */
+    wireAlwaysShowRecurringListener() {
+        const checkbox = this.deps.getElementById("always-show-recurring");
+        if (!checkbox) {
+            console.warn('⚠️ always-show-recurring checkbox not found');
+            return;
+        }
+
+        this.deps.safeAddEventListener(checkbox, "change", () => {
+            this.saveAlwaysShowRecurringSetting();
+        });
+        console.log('✅ always-show-recurring listener wired');
+    }
+
+    /**
+     * Wire delegated click listener for .open-recurring-settings buttons
+     * Moved from orchestrator.js for proper module ownership
+     */
+    wireRecurringSettingsClickListener() {
+        this.deps.safeAddEventListener(document, "click", (e) => {
+            const target = e.target.closest(".open-recurring-settings");
+            if (!target) return;
+
+            const taskId = target.dataset.taskId;
+            if (!taskId) return;
+
+            this.openRecurringSettingsPanelForTask(taskId);
+        });
+        console.log('✅ Recurring settings click listener wired');
+    }
+
     // ============================================
     // PUBLIC API METHODS
     // ============================================

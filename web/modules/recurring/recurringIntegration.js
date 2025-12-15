@@ -256,6 +256,15 @@ export async function initializeRecurringModules(options = {}) {
         }, 100);
 
         // ============================================
+        // STEP 6.6: Wire recurring event listeners
+        // ============================================
+        // These listeners were moved from orchestrator.js for proper module ownership
+
+        recurringPanel.wireAlwaysShowRecurringListener();
+        recurringPanel.wireRecurringSettingsClickListener();
+        console.log('✅ Recurring event listeners wired');
+
+        // ============================================
         // STEP 7: Build return object (Phase 3 - no window.* exports)
         // ============================================
 
@@ -301,6 +310,12 @@ export async function initializeRecurringModules(options = {}) {
             deferredSetups.forEach(setupFn => setupFn());
             deps.clearDeferredRecurringSetup?.();
         }
+
+        // ✅ Update recurring button visibility on init (shows button if templates exist)
+        setTimeout(() => {
+            recurringPanel.updateRecurringPanelButtonVisibility();
+            console.log('✅ Recurring button visibility updated on init');
+        }, 150);
 
         console.log('✅ Recurring modules initialized (Phase 3)');
 

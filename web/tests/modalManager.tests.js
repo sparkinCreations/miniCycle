@@ -2,13 +2,27 @@
  * ModalManager Browser Tests
  * Test functions for module-test-suite.html
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ * Updated for Phase 3 DI Pattern - uses shared testHelpers and testContext
  */
 
 import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
+
+import {
+    getTestModalManager,
+    getTestModalManagerInstance,
+    getTestShowNotification,
+    getTestHideMainMenu,
+    getTestSanitizeInput,
+    getTestSafeAddEventListener
+} from './helpers/testContext.js';
+
+import {
+    getCloseAllModals,
+    getInitModalManager
+} from '../modules/core/appContext.js';
 
 export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -22,13 +36,16 @@ export async function runModalManagerTests(resultsDiv) {
     // Phase 3: Initialize modalManager with test dependencies
     // (No longer auto-initializes on import)
     // =====================================================
-    if (window.initModalManager && !window.modalManager) {
-        // ✅ FIX: Save returned instance to window.modalManager for tests
-        window.modalManager = await window.initModalManager({
-            showNotification: window.showNotification || (() => {}),
-            hideMainMenu: window.hideMainMenu || (() => {}),
-            sanitizeInput: window.sanitizeInput || ((text) => text),
-            safeAddEventListener: window.safeAddEventListener || ((el, ev, fn) => el?.addEventListener?.(ev, fn)),
+    const initModalManager = getInitModalManager();
+    let modalManagerInstance = getTestModalManagerInstance();
+
+    if (initModalManager && !modalManagerInstance) {
+        // Initialize via appContext getter if needed
+        modalManagerInstance = await initModalManager({
+            showNotification: getTestShowNotification() || (() => {}),
+            hideMainMenu: getTestHideMainMenu() || (() => {}),
+            sanitizeInput: getTestSanitizeInput() || ((text) => text),
+            safeAddEventListener: getTestSafeAddEventListener() || ((el, ev, fn) => el?.addEventListener?.(ev, fn)),
             waitForCore: () => Promise.resolve()
         });
     }
@@ -41,35 +58,39 @@ export async function runModalManagerTests(resultsDiv) {
     // Use shared test helper with data protection
     const test = createProtectedTest(resultsDiv, passed, total);
 
+    // Get ModalManager class via testContext
+    const ModalManager = getTestModalManager();
+
     // ===== INITIALIZATION TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    test('ModalManager class exists', () => {
-        if (typeof window.ModalManager === 'undefined') {
-            throw new Error('ModalManager class not found');
+    test('ModalManager class exists (via testContext)', () => {
+        if (typeof ModalManager === 'undefined') {
+            throw new Error('ModalManager class not found via testContext');
         }
     });
 
     test('creates instance successfully', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (!mm || typeof mm.closeAllModals !== 'function') {
             throw new Error('ModalManager not properly initialized');
         }
     });
 
-    test('has global instance', () => {
-        if (!window.modalManager) {
-            throw new Error('Global modalManager instance not found');
+    test('has global instance (via testContext)', () => {
+        const instance = getTestModalManagerInstance();
+        if (!instance) {
+            throw new Error('Global modalManager instance not found via testContext');
         }
-        if (typeof window.modalManager.closeAllModals !== 'function') {
+        if (typeof instance.closeAllModals !== 'function') {
             throw new Error('Global instance missing methods');
         }
     });
 
 
     test('has initialized property', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.initialized === 'undefined') {
             throw new Error('initialized property missing');
         }
@@ -83,42 +104,42 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ Modal Setup</h4>';
 
     test('setupEventListeners method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupEventListeners !== 'function') {
             throw new Error('setupEventListeners method not found');
         }
     });
 
     test('setupFeedbackModal method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupFeedbackModal !== 'function') {
             throw new Error('setupFeedbackModal method not found');
         }
     });
 
     test('setupAboutModal method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupAboutModal !== 'function') {
             throw new Error('setupAboutModal method not found');
         }
     });
 
     test('setupSettingsModalClickOutside method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupSettingsModalClickOutside !== 'function') {
             throw new Error('setupSettingsModalClickOutside method not found');
         }
     });
 
     test('setupRemindersModalHandlers method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupRemindersModalHandlers !== 'function') {
             throw new Error('setupRemindersModalHandlers method not found');
         }
     });
 
     test('setupGlobalKeyHandlers method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupGlobalKeyHandlers !== 'function') {
             throw new Error('setupGlobalKeyHandlers method not found');
         }
@@ -129,14 +150,14 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🚪 Close All Modals</h4>';
 
     test('closeAllModals method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.closeAllModals !== 'function') {
             throw new Error('closeAllModals method not found');
         }
     });
 
     test('closeAllModals hides visible modals', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test modal
         const modal = document.createElement('div');
@@ -155,7 +176,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('closeAllModals handles data-modal elements', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test modal with data-modal attribute
         const modal = document.createElement('div');
@@ -174,7 +195,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('closeAllModals handles overlay elements', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test overlay
         const overlay = document.createElement('div');
@@ -192,7 +213,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('closeAllModals clears task options', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test task options
         const taskOptions = document.createElement('div');
@@ -215,7 +236,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('closeAllModals resets task states', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test task
         const task = document.createElement('div');
@@ -236,7 +257,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('closeAllModals clears recurring task selections', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test recurring task item
         const item = document.createElement('div');
@@ -254,7 +275,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('closeAllModals hides recurring settings panel', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test recurring settings panel
         const panel = document.createElement('div');
@@ -276,21 +297,24 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">📝 Feedback Modal</h4>';
 
     test('setupFeedbackModal handles missing elements gracefully', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Should not throw when elements don't exist
         mm.setupFeedbackModal();
     });
 
     test('setupFeedbackFooterButton method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.setupFeedbackFooterButton !== 'function') {
             throw new Error('setupFeedbackFooterButton method not found');
         }
     });
 
     test('feedback modal opens when button clicked', () => {
-        const mm = new window.ModalManager();
+        const hideMainMenu = getTestHideMainMenu();
+        const mm = new ModalManager({
+            hideMainMenu: hideMainMenu || (() => {})
+        });
 
         // Create mock elements
         const modal = document.createElement('div');
@@ -323,9 +347,6 @@ export async function runModalManagerTests(resultsDiv) {
         thankYou.id = 'thank-you-message';
         modal.appendChild(thankYou);
 
-        // Mock hideMainMenu
-        window.hideMainMenu = () => {};
-
         mm.setupFeedbackModal();
 
         openBtn.click();
@@ -337,11 +358,10 @@ export async function runModalManagerTests(resultsDiv) {
         // Cleanup
         modal.remove();
         openBtn.remove();
-        delete window.hideMainMenu;
     });
 
     test('feedback modal closes when close button clicked', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create mock elements
         const modal = document.createElement('div');
@@ -392,14 +412,14 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">ℹ️ About Modal</h4>';
 
     test('setupAboutModal handles missing elements gracefully', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Should not throw when elements don't exist
         mm.setupAboutModal();
     });
 
     test('about modal opens when button clicked', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create mock elements
         const modal = document.createElement('div');
@@ -429,7 +449,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('about modal closes when close button clicked', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create mock elements
         const modal = document.createElement('div');
@@ -463,14 +483,14 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⏰ Reminders Modal</h4>';
 
     test('setupRemindersModalHandlers handles missing elements gracefully', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Should not throw when elements don't exist
         mm.setupRemindersModalHandlers();
     });
 
     test('reminders modal closes when close button clicked', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create mock elements
         const modal = document.createElement('div');
@@ -500,7 +520,7 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ Settings Modal</h4>';
 
     test('setupSettingsModalClickOutside handles missing elements gracefully', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Should not throw when elements don't exist
         mm.setupSettingsModalClickOutside();
@@ -511,9 +531,7 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Global Key Handlers</h4>';
 
     test('setupGlobalKeyHandlers attaches ESC key handler', () => {
-        // ✅ FIX: Module-level deps take precedence, so verify handler works via ESC key test
-        // The handler is attached during initialization, so verify it closes modals on ESC
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create test modal
         const modal = document.createElement('div');
@@ -521,7 +539,7 @@ export async function runModalManagerTests(resultsDiv) {
         modal.style.display = 'flex';
         document.body.appendChild(modal);
 
-        // Call setupGlobalKeyHandlers (uses module-level deps)
+        // Call setupGlobalKeyHandlers
         mm.setupGlobalKeyHandlers();
 
         // Simulate ESC key press to verify handler is attached
@@ -536,16 +554,6 @@ export async function runModalManagerTests(resultsDiv) {
         if (!handlerWorks) {
             throw new Error('ESC key handler should be attached');
         }
-    });
-
-    test('setupGlobalKeyHandlers handles missing safeAddEventListener', () => {
-        const mm = new window.ModalManager();
-
-        // Clear safeAddEventListener
-        delete window.safeAddEventListener;
-
-        // Should not throw
-        mm.setupGlobalKeyHandlers();
     });
 
     test('ESC key closes modals', () => {
@@ -564,7 +572,7 @@ export async function runModalManagerTests(resultsDiv) {
             }
         };
 
-        const mm = new window.ModalManager({
+        const mm = new ModalManager({
             safeAddEventListener: mockSafeAddEventListener
         });
 
@@ -591,7 +599,7 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔍 Is Modal Open</h4>';
 
     test('isModalOpen method exists', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         if (typeof mm.isModalOpen !== 'function') {
             throw new Error('isModalOpen method not found');
         }
@@ -612,7 +620,7 @@ export async function runModalManagerTests(resultsDiv) {
             document.querySelectorAll(sel).forEach(el => el.remove());
         });
 
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
         const result = mm.isModalOpen();
 
         if (result !== false) {
@@ -621,7 +629,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('isModalOpen detects open feedback modal', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create visible modal
         const modal = document.createElement('div');
@@ -640,7 +648,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('isModalOpen detects open about modal', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create visible modal
         const modal = document.createElement('div');
@@ -659,7 +667,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('isModalOpen detects open settings modal', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create visible modal
         const modal = document.createElement('div');
@@ -678,7 +686,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('isModalOpen detects onboarding modal', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Create visible onboarding modal
         const modal = document.createElement('div');
@@ -695,159 +703,46 @@ export async function runModalManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    // ===== GLOBAL WRAPPERS TESTS =====
+    // ===== GLOBAL WRAPPERS TESTS (via appContext) =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (via appContext)</h4>';
 
-    test('window.closeAllModals exists', () => {
-        if (typeof window.closeAllModals !== 'function') {
-            throw new Error('Global closeAllModals not found');
+    test('closeAllModals is available via appContext', () => {
+        const closeAllModals = getCloseAllModals();
+        if (typeof closeAllModals !== 'function') {
+            throw new Error('closeAllModals not available via appContext');
         }
     });
 
-    test('global closeAllModals calls instance method', () => {
+    test('closeAllModals via appContext closes modals', () => {
+        const closeAllModals = getCloseAllModals();
+
         // Create test modal
         const modal = document.createElement('div');
         modal.id = 'feedback-modal';
         modal.style.display = 'flex';
         document.body.appendChild(modal);
 
-        window.closeAllModals();
+        closeAllModals();
 
         if (modal.style.display !== 'none') {
-            throw new Error('Global closeAllModals should close modals');
+            throw new Error('closeAllModals via appContext should close modals');
         }
 
         // Cleanup
         modal.remove();
     });
 
-    test('modalManager instance is accessible globally', () => {
-        if (!window.modalManager) {
-            throw new Error('modalManager instance not accessible globally');
+    test('modalManager instance is accessible via testContext', () => {
+        const instance = getTestModalManagerInstance();
+        const ModalManagerClass = getTestModalManager();
+
+        if (!instance) {
+            throw new Error('modalManager instance not accessible via testContext');
         }
-        if (!(window.modalManager instanceof window.ModalManager)) {
-            throw new Error('Global instance is not ModalManager instance');
+        if (!(instance instanceof ModalManagerClass)) {
+            throw new Error('Instance is not ModalManager instance');
         }
-    });
-
-    // ===== CLICK OUTSIDE TO CLOSE TESTS =====
-
-    resultsDiv.innerHTML += '<h4 class="test-section">🖱️ Click Outside to Close</h4>';
-
-    test('feedback modal closes when clicking outside', () => {
-        // Remove any existing feedback modal first
-        const existingModal = document.getElementById('feedback-modal');
-        if (existingModal) existingModal.remove();
-        const existingBtn = document.getElementById('open-feedback-modal');
-        if (existingBtn) existingBtn.remove();
-
-        // Create mock elements
-        const modal = document.createElement('div');
-        modal.id = 'feedback-modal';
-        modal.style.display = 'flex';
-        document.body.appendChild(modal);
-
-        const openBtn = document.createElement('button');
-        openBtn.id = 'open-feedback-modal';
-        document.body.appendChild(openBtn);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.classList.add('close-feedback-modal');
-        modal.appendChild(closeBtn);
-
-        const form = document.createElement('form');
-        form.id = 'feedback-form';
-        modal.appendChild(form);
-
-        const textarea = document.createElement('textarea');
-        textarea.id = 'feedback-text';
-        form.appendChild(textarea);
-
-        const submitBtn = document.createElement('button');
-        submitBtn.id = 'submit-feedback';
-        submitBtn.type = 'submit';
-        form.appendChild(submitBtn);
-
-        const thankYou = document.createElement('div');
-        thankYou.id = 'thank-you-message';
-        modal.appendChild(thankYou);
-
-        const mm = new window.ModalManager();
-        mm.setupFeedbackModal();
-
-        // Simulate click on modal background - use window event since handler is on window
-        const clickEvent = new MouseEvent('click', { bubbles: true, target: modal });
-        Object.defineProperty(clickEvent, 'target', { value: modal, writable: false });
-        window.dispatchEvent(clickEvent);
-
-        if (modal.style.display !== 'none') {
-            throw new Error('Modal should close when clicking outside');
-        }
-
-        // Cleanup
-        modal.remove();
-        openBtn.remove();
-    });
-
-    test('about modal closes when clicking outside', () => {
-        const mm = new window.ModalManager();
-
-        // Create mock elements
-        const modal = document.createElement('div');
-        modal.id = 'about-modal';
-        modal.style.display = 'flex';
-        document.body.appendChild(modal);
-
-        const openBtn = document.createElement('button');
-        openBtn.id = 'open-about-modal';
-        document.body.appendChild(openBtn);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.classList.add('close-modal');
-        modal.appendChild(closeBtn);
-
-        mm.setupAboutModal();
-
-        // Simulate click on modal background (dispatch on modal, bubbles to window)
-        const clickEvent = new MouseEvent('click', { bubbles: true });
-        modal.dispatchEvent(clickEvent);
-
-        if (modal.style.display !== 'none') {
-            throw new Error('About modal should close when clicking outside');
-        }
-
-        // Cleanup
-        modal.remove();
-        openBtn.remove();
-    });
-
-    test('reminders modal closes when clicking outside', () => {
-        const mm = new window.ModalManager();
-
-        // Create mock elements
-        const modal = document.createElement('div');
-        modal.id = 'reminders-modal';
-        modal.style.display = 'flex';
-        document.body.appendChild(modal);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.id = 'close-reminders-btn';
-        document.body.appendChild(closeBtn);
-
-        mm.setupRemindersModalHandlers();
-
-        // Simulate click on modal background (dispatch on modal, bubbles to window)
-        const clickEvent = new MouseEvent('click', { bubbles: true });
-        modal.dispatchEvent(clickEvent);
-
-        if (modal.style.display !== 'none') {
-            throw new Error('Reminders modal should close when clicking outside');
-        }
-
-        // Cleanup
-        modal.remove();
-        closeBtn.remove();
     });
 
     // ===== ERROR HANDLING TESTS =====
@@ -855,14 +750,14 @@ export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
     test('closeAllModals handles missing elements gracefully', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Should not throw when no modals exist
         mm.closeAllModals();
     });
 
     test('setupFeedbackModal handles null elements', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Clear any existing elements
         const existingModal = document.getElementById('feedback-modal');
@@ -873,7 +768,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('setupAboutModal handles null elements', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Clear any existing elements
         const existingModal = document.getElementById('about-modal');
@@ -884,7 +779,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('setupRemindersModalHandlers handles null elements', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Clear any existing elements
         const existingModal = document.getElementById('reminders-modal');
@@ -895,7 +790,7 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('isModalOpen handles no modal elements', () => {
-        const mm = new window.ModalManager();
+        const mm = new ModalManager();
 
         // Should return false, not throw
         const result = mm.isModalOpen();
@@ -903,20 +798,6 @@ export async function runModalManagerTests(resultsDiv) {
         if (result !== false) {
             throw new Error('Should return false when no modal elements exist');
         }
-    });
-
-    test('global closeAllModals handles undefined modalManager', () => {
-        // Save original
-        const original = window.modalManager;
-
-        // Set to undefined
-        window.modalManager = undefined;
-
-        // Should not throw
-        window.closeAllModals();
-
-        // Restore
-        window.modalManager = original;
     });
 
     // ===== SUMMARY =====

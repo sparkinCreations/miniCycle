@@ -82,11 +82,12 @@ let isDraggingNotification = false;
 // appInit is managed via appContext, not window.*
 
 // ============================================================================
-// CRITICAL: Import coreBoot IMMEDIATELY to set window.AppBootStarted
-// This MUST happen before DOMContentLoaded to prevent lite fallback
+// CRITICAL: Set boot flag IMMEDIATELY to prevent lite fallback
+// Uses dataset attribute instead of window.* for zero-globals compliance
+// Note: coreBoot.js also sets this, but we set it here as failsafe
 // ============================================================================
 
-window.AppBootStarted = true;
+document.documentElement.dataset.appBooted = 'true';
 
 
 
@@ -205,7 +206,6 @@ async function initApp() {
       getLoadMiniCycleData,
       getShowNotification,
       getResetNotificationPosition,
-      getCaptureStateSnapshot,
       getDeviceDetectionManager,
       getFixTaskValidationIssues,
       getHandleCompleteAllTasks,
@@ -255,30 +255,9 @@ async function initApp() {
     // Just log confirmation
     console.log('🛠️ Global utilities already loaded by app-coreBoot.js');
 
-    // ✅ Load Error Handler (DI-pure - wiring done after notifications load)
-    const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
-    deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
-    console.log('🛡️ Global error handlers initialized');
-
-    // ✅ Load Data Validator (needed before settingsManager)
-    const dataValidatorMod = await import(withV('../utils/dataValidator.js'));
-    // Wire dependency using deps container (true DI pattern)
-    dataValidatorMod.setDataValidatorDependencies({
-        sanitizeInput: deps.utils.sanitizeInput
-    });
-    deps.utils.DataValidator = dataValidatorMod.DataValidator;
-    console.log('🛡️ Data Validator loaded');
-
-    // ✅ Load Console Capture (DI-pure)
-    const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
-    if (consoleCaptureMod.setConsoleCaptureDependencies) {
-        consoleCaptureMod.setConsoleCaptureDependencies({
-            showNotification: deps.utils.showNotification,
-            get appendToTestResults() { return getAppendToTestResults(); }
-        });
-    }
-    deps.utils.consoleCapture = consoleCaptureMod.default;
-    console.log('🔍 Console Capture loaded');
+    // ✅ REMOVED: Error Handler, Data Validator, Console Capture
+    // These are now loaded by featureBoot.js (Phase 1)
+    // Duplicate loading was causing unnecessary double initialization
 
     // ✅ Load Notifications (DI-pure)
     const notificationsMod = await import(withV('../utils/notifications.js'));
@@ -312,10 +291,7 @@ async function initApp() {
       appGlobalState.pendingCacheNotification = false;
     }
 
-    // ✅ Wire ErrorHandler now that showNotification is available
-    deps.utils.setErrorHandlerDependencies({
-        showNotification: deps.utils.showNotification
-    });
+    // ✅ ErrorHandler wiring now handled by featureBoot.js after notifications load
 
     // ✅ Wire GlobalUtils now that showNotification is available (DI-pure)
     // setGlobalUtilsDependencies was stored in deps.utils by app-coreBoot.js
@@ -339,40 +315,9 @@ async function initApp() {
     }
     console.log('✅ Theme Manager loaded');
 
-    // ✅ Load Games Manager (DI-pure)
-    const gamesManagerMod = await import(withV('../ui/gamesManager.js'));
-    if (gamesManagerMod.setGamesManagerDependencies) {
-        gamesManagerMod.setGamesManagerDependencies({
-            appInit: appInit,
-            AppMeta: window.AppMeta,
-            get AppState() { return getAppState(); },
-            safeAddEventListener: deps.utils.safeAddEventListener
-        });
-    }
-    deps.ui.gamesManager = gamesManagerMod.gamesManager;
-    deps.ui.gamesManager.init();
-    console.log('✅ Games Manager loaded');
-
-    // ✅ Load Onboarding Manager (DI-pure)
-    const onboardingManagerMod = await import(withV('../ui/onboardingManager.js'));
-    if (onboardingManagerMod.setOnboardingManagerDependencies) {
-        onboardingManagerMod.setOnboardingManagerDependencies({
-            appInit: appInit,
-            AppMeta: window.AppMeta,
-            showNotification: deps.utils.showNotification,
-            get AppState() { return getAppState(); },
-            get showCycleCreationModal() { return getShowCycleCreationModal(); },
-            get completeInitialSetup() { return getCompleteInitialSetup(); },
-            get safeAddEventListenerById() { return getGlobalUtils()?.safeAddEventListenerById; }
-        });
-    }
-    deps.ui.onboardingManager = onboardingManagerMod.onboardingManager;
-    deps.ui.onboardingManager.init();
-    // Register with appContext for coreBoot.js lazy getter
-    import('../core/appContext.js').then(mod => {
-        mod.setContextValue('onboardingManager', deps.ui.onboardingManager);
-    });
-    console.log('✅ Onboarding Manager loaded');
+    // ✅ REMOVED: Games Manager and Onboarding Manager
+    // These are now loaded and initialized by featureBoot.js (Phase 6)
+    // Duplicate initialization was causing double init() calls
 
     // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
     const modalManagerMod = await import(withV('../ui/modalManager.js'));
@@ -443,11 +388,8 @@ async function initApp() {
     const openUserManual = document.getElementById("open-user-manual");
     const enableReminders = document.getElementById("enableReminders");
     const enableTaskReminders = document.getElementById("enable-task-reminders");
-    const indefiniteCheckbox = document.getElementById("indefiniteCheckbox");
-    const repeatCountRow = document.getElementById("repeat-count-row");
-    const frequencySection = document.getElementById("frequency-section");
-    const remindersModal = document.getElementById("reminders-modal");
-    const closeRemindersBtn = document.getElementById("close-reminders-btn");
+    // ✅ REMOVED: indefiniteCheckbox, repeatCountRow, frequencySection, remindersModal, closeRemindersBtn
+    // Now handled by reminders module (Phase 3c refactor)
     const closeMainMenuBtn = document.getElementById("close-main-menu");
     const themeUnlockMessage = document.getElementById("theme-unlock-message");
     const themeUnlockStatus = document.getElementById("theme-unlock-status");
@@ -472,45 +414,8 @@ async function initApp() {
         quickToggle.textContent = darkModeEnabled ? "☀️" : "🌙";
     }
 
-    // === 🎯 Constants for event delegation targets ===
-    const RECURRING_CLICK_TARGETS = [
-        ".weekly-day-box",
-        ".biweekly-day-box",
-        ".monthly-day-box",
-        ".yearly-day-box",
-        ".yearly-month-box"
-    ];
-    
-    const RECURRING_CHANGE_TARGETS = [
-        "input",
-        "select",
-        "#yearly-apply-days-to-all"
-    ];
-    
-    // === 🔁 Delegated Change Handler ===
-    const handleRecurringChange = (e) => {
-        const isMatch = RECURRING_CHANGE_TARGETS.some(selector =>
-            e.target.matches(selector)
-        );
-        if (isMatch) {
-            const rp = getRecurringPanel();
-            if (rp?.updateRecurringSummary) rp.updateRecurringSummary();
-        }
-    };
-    
-    // === 🔁 Delegated Click Handler ===
-    const handleRecurringClick = (e) => {
-        const isMatch = RECURRING_CLICK_TARGETS.some(selector =>
-            e.target.matches(selector)
-        );
-        if (isMatch) {
-            const rp = getRecurringPanel();
-            if (rp?.updateRecurringSummary) rp.updateRecurringSummary();
-        }
-    };
-    
-    // === 🧠 Attach Delegated Listeners ===
-// ✅ REMOVED: attachRecurringSummaryListeners - now handled by recurringCore/recurringPanel modules
+    // ✅ REMOVED: Recurring delegated handlers (RECURRING_CLICK_TARGETS, RECURRING_CHANGE_TARGETS,
+    // handleRecurringChange, handleRecurringClick) - now handled by recurringCore/recurringPanel modules
 
     const DRAG_THROTTLE_MS = 50;
     // TASK_LIMIT is now from app-coreBoot.js (coreResult.TASK_LIMIT)
@@ -551,7 +456,19 @@ async function initApp() {
 
     // ✅ Feature Setup
     console.log('⚙️ Setting up features...');
-    setupMiniCycleTitleListener();
+
+    // ✅ Title Manager (extracted to module)
+    const titleManagerMod = await import(withV('../ui/titleManager.js'));
+    titleManagerMod.setTitleManagerDependencies({
+        GlobalUtils: GlobalUtils,
+        getAppState: getAppState,
+        getLoadMiniCycleData: getLoadMiniCycleData,
+        getShowNotification: getShowNotification,
+        getUpdateMainMenuHeader: getUpdateMainMenuHeader,
+        getUpdateUndoRedoButtons: getUpdateUndoRedoButtons
+    });
+    titleManagerMod.setupMiniCycleTitleListener();
+
     // ✅ MOVED TO PHASE 2: setupDownloadMiniCycle() - now handled by settingsManager module
     // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
     // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
@@ -609,6 +526,10 @@ async function initApp() {
         const featureResult = await bootFeatures(deps, coreResult);
         console.log('✅ bootFeatures complete:', Object.keys(featureResult.managers).length, 'managers,', Object.keys(featureResult.modules).length, 'modules');
 
+        // ✅ Validate all grouped APIs are registered before proceeding
+        const appContextMod = await import('../core/appContext.js');
+        appContextMod.validateAllApisRegistered();
+
         // ✅ Mark Phase 2 complete - all modules are now loaded and ready
         console.log('✅ Phase 2 complete - all modules initialized');
 
@@ -622,7 +543,7 @@ async function initApp() {
 
           console.log('🚀 Running initializeAppWithAutoMigration...');
           // ✅ IMPORTANT: initializeAppWithAutoMigration calls initialSetup() after Phase 2 modules are ready
-          await initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup() async
+          await deps.core.initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup() async
           console.log('✅ Data initialization sequence started');
         } catch (error) {
           console.error('❌ Critical initialization error:', error);
@@ -641,73 +562,7 @@ async function initApp() {
           console.warn('⚠️ Failed to setup Complete All listener:', eventErr);
         }
 
-        // ✅ Undo/Redo buttons already wired in Phase 2 (undoRedoManager module)
-
-        // 🧰 Centralize undo snapshots on AppState.update (wrap once)
-        try {
-          const globalState = getAppGlobalState();
-          const AppState = getAppState();
-          const appInitRef = getAppInit();
-          const captureSnapshot = getCaptureStateSnapshot();
-
-          if (!globalState?.wrappedAppStateUpdate && AppState) {
-            // Bind methods to preserve `this`
-            const boundUpdate = AppState.update.bind(AppState);
-            const boundGet = typeof AppState.get === 'function'
-              ? AppState.get.bind(AppState)
-              : null;
-
-            AppState.update = async (producer, immediate) => {
-              try {
-                // ✅ Use new appInit API
-                if (appInitRef?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
-                  const prev = boundGet();
-                  if (prev && typeof captureSnapshot === 'function') {
-                    captureSnapshot(prev);
-                  }
-                }
-              } catch (e) {
-                console.warn('⚠️ Undo snapshot wrapper error:', e);
-              }
-              return boundUpdate(producer, immediate);
-            };
-
-            globalState.wrappedAppStateUpdate = true;
-            globalState.useUpdateWrapper = true; // ✅ wrapper becomes single snapshot source
-            console.log('🧰 Undo snapshots centralized on AppState.update (bound)');
-          }
-        } catch (e) {
-          console.warn('⚠️ Failed to wrap AppState.update:', e);
-        }
-
-        // ✅ State-based undo/redo subscription already set up in Phase 2 (undoRedoManager module)
-
-        // 🔘 Update button states and capture an initial snapshot
-        try {
-          const updateUndoRedo = getUpdateUndoRedoButtons();
-          if (typeof updateUndoRedo === 'function') {
-            updateUndoRedo();
-          }
-
-          // Only capture initial snapshot if not using the update wrapper
-          const globalStateCheck = getAppGlobalState();
-          if (!globalStateCheck?.useUpdateWrapper) {
-            setTimeout(() => {
-              try {
-                const AppStateRef = getAppState();
-                const captureSnapshotRef = getCaptureStateSnapshot();
-                const st = AppStateRef?.get?.();
-                if (st && typeof captureSnapshotRef === 'function') {
-                  captureSnapshotRef(st);
-                }
-              } catch (e) {
-                console.warn('⚠️ Initial snapshot failed:', e);
-              }
-            }, 50);
-          }
-        } catch (uiErr) {
-          console.warn('⚠️ Undo/redo UI init failed:', uiErr);
-        }
+        // ✅ Undo/Redo: wiring, wrapper, and initialization handled by featureBoot.js (undoRedoManager module)
 
         // ✅ LAZY LOAD Testing Modal - only loads when button is clicked
         let testingModalMod = null;
@@ -728,8 +583,7 @@ async function initApp() {
                     testingModalMod = await import(withV('../testing/testing-modal.js'));
                     console.log('✅ Testing modal loaded (lazy)');
 
-                    // Only expose closeStorageViewer - required for HTML onclick handler
-                    if (testingModalMod.closeStorageViewer) window.closeStorageViewer = testingModalMod.closeStorageViewer;
+                    // ✅ closeStorageViewer handled via event delegation in testing-modal.js
 
                     const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
 
@@ -755,9 +609,10 @@ async function initApp() {
                             },
                             safeAddEventListener: GlobalUtils.safeAddEventListener,
                             safeAddEventListenerById: GlobalUtils.safeAddEventListenerById,
-                            setupAutomatedTestingFunctions: () => window.setupAutomatedTestingFunctions?.(),
-                            startAutoConsoleCapture: () => window.startAutoConsoleCapture?.(),
-                            isConsoleCapturing: () => window.consoleCapturing || false
+                            // Use module exports instead of window.* globals
+                            setupAutomatedTestingFunctions: () => testingIntegrationMod.setupAutomatedTestingFunctions?.(),
+                            startAutoConsoleCapture: () => getConsoleCapture()?.startAutoConsoleCapture?.(),
+                            isConsoleCapturing: () => getConsoleCapture()?.consoleCapturing || false
                         });
                     }
 
@@ -835,8 +690,8 @@ async function initApp() {
           });
         });
   } catch (error) {
-    console.warn('⚠️ State module initialization failed, using legacy methods:', error);
-    window.AppState = null;
+    console.warn('⚠️ State module initialization failed:', error);
+    // Note: AppState accessible via appContext.getAppState() - no window.* fallback
   }
 
   // ✅ REMOVED: No more setTimeout hacks - InitGuard handles timing
@@ -915,21 +770,14 @@ async function initApp() {
     }
   };
 })(); // ✅ End of async IIFE - executes immediately
-// ...existing code...
 
-// ...existing code...
-
-
-
-
-
-    
-  
-
-
-
-// ✅ REMOVED: Duplicate recurring modules initialization
-// Now handled in Phase 2 (see line ~712)
+// ============================================================================
+// EXTRACTED TO MODULES (Dec 2025):
+// - Undo/Redo system → ui/undoRedoManager.js
+// - Recurring modules → featureBoot Phase 2
+// - Progress system → progress/cycleCompletion.js
+// - Completed Tasks → ui/completedTasksManager.js
+// ============================================================================
 
 
 
@@ -947,27 +795,6 @@ async function initApp() {
 
 
 
-// ==== 🔁 UNDO / REDO SYSTEM =============================
-// - Tracks task + recurring state snapshots
-// - Limit: 4 snapshots
-// - Functions: pushUndoSnapshot, performUndo, performRedo
-// ========================================================
-
-
-
-
-
-
-
- // ✅ Add this new function
-// ✅ All undo/redo functions moved to modules/ui/undoRedoManager.js:
-// - initializeUndoRedoButtons
-// - captureInitialSnapshot
-// - setupStateBasedUndoRedo
-// - enableUndoSystemOnFirstInteraction
-// ✅ refreshUIFromState, captureStateSnapshot, updateUndoRedoButtons moved to modules
-// Using deferred dependency injection pattern: () => window.functionName?.()
-// This allows modules to be injected before they're fully loaded (follows modularization guide v4)
 
 
 
@@ -977,22 +804,6 @@ async function initApp() {
 
 
 
-
-
-
-
-
-// Undo "Z" and Redo "Y" keyboard shortcuts (state-based)
-function handleUndoRedoKeydown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-        e.preventDefault();
-        getPerformStateBasedUndo()?.();
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
-        e.preventDefault();
-        getPerformStateBasedRedo()?.();
-    }
-}
-GlobalUtils.safeAddEventListener(document, "keydown", handleUndoRedoKeydown);
 
 
 // ============================================================================
@@ -1067,88 +878,9 @@ if (!getDeviceDetectionManager()) {
 
   
   // Optional helper to format checkbox IDs
-/**
- * Enables editing of the miniCycle title and saves changes to localStorage.
- * Prevents empty titles and restores the previous title if an invalid entry is made.
- */
-
-// Named handler for title blur - defined at module level for safeAddEventListener
-async function handleMiniCycleTitleBlur() {
-    const titleElement = document.getElementById("mini-cycle-title");
-    if (!titleElement) return;
-
-    // Use appContext getters instead of window.*
-    const AppState = getAppState();
-    const loadMiniCycleData = getLoadMiniCycleData();
-    const showNotification = getShowNotification();
-
-    let newTitle = GlobalUtils.sanitizeInput(titleElement.textContent.trim());
-
-    if (newTitle === "") {
-        console.log('Empty title detected, reverting (Schema 2.5 only)...');
-
-        const schemaData = loadMiniCycleData?.();
-        if (!schemaData) {
-            console.error('Schema 2.5 data required for title revert');
-            return;
-        }
-
-        const { cycles, activeCycle } = schemaData;
-        const oldTitle = cycles[activeCycle]?.title || "Untitled miniCycle";
-
-        showNotification?.("Title cannot be empty. Reverting to previous title.");
-        titleElement.textContent = oldTitle;
-        return;
-    }
-
-    console.log('Updating title (Schema 2.5 only)...');
-    const schemaData = loadMiniCycleData?.();
-    if (!schemaData) {
-        console.error('Schema 2.5 data required for setupMiniCycleTitleListener');
-        return;
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const miniCycleData = cycles[activeCycle];
-    if (!activeCycle || !miniCycleData) {
-        console.warn("No active miniCycle found. Title update aborted.");
-        return;
-    }
-
-    const oldTitle = miniCycleData.title;
-    if (newTitle !== oldTitle) {
-        console.log(`Title change detected: "${oldTitle}" → "${newTitle}"`);
-
-        // Update via AppState only (no direct localStorage fallback)
-        if (AppState?.isReady?.()) {
-            await AppState.update(state => {
-                const cid = state?.appState?.activeCycleId;
-                const cycle = state?.data?.cycles?.[cid];
-                if (cycle) cycle.title = newTitle;
-            }, true);
-        } else {
-            // AppState should always be ready by this point
-            console.error('Title update failed: AppState not ready');
-            showNotification?.('Failed to save title change', 'error');
-            titleElement.textContent = oldTitle; // Revert UI
-            return;
-        }
-
-        // Refresh UI
-        getUpdateMainMenuHeader()?.();
-        getUpdateUndoRedoButtons()?.();
-    }
-}
-
-function setupMiniCycleTitleListener() {
-    const titleElement = document.getElementById("mini-cycle-title");
-    if (!titleElement) return;
-
-    titleElement.contentEditable = true;
-
-    // safeAddEventListener handles duplicate prevention - no dataset flag needed
-    GlobalUtils.safeAddEventListener(titleElement, "blur", handleMiniCycleTitleBlur);
-}
+// ✅ EXTRACTED: Title editing functions moved to modules/ui/titleManager.js
+// - handleMiniCycleTitleBlur()
+// - setupMiniCycleTitleListener()
 
 // ==========================================
 // 🔄 CORE DATA FUNCTIONS
@@ -1174,30 +906,9 @@ function setupMiniCycleTitleListener() {
 
 
 
-function handleIndefiniteCheckboxChange() {
-  // If indefinite, hide the repeatCount row
-  repeatCountRow.style.display = indefiniteCheckbox.checked ? "none" : "block";
-}
-GlobalUtils.safeAddEventListener(indefiniteCheckbox, "change", handleIndefiniteCheckboxChange);
-
-
-
-// All functions are globally accessible via:
-// - window.reminderManager (the module instance)
-// - window.startReminders(), window.stopReminders(), etc. (individual functions)
-//
-// Modal event listeners remain here for backward compatibility:
-function handleCloseRemindersBtnClick() {
-    remindersModal.style.display = "none";
-}
-GlobalUtils.safeAddEventListener(closeRemindersBtn, "click", handleCloseRemindersBtnClick);
-
-function handleWindowClickForRemindersModal(event) {
-    if (event.target === remindersModal) {
-        remindersModal.style.display = "none";
-    }
-}
-GlobalUtils.safeAddEventListener(window, "click", handleWindowClickForRemindersModal);
+// ✅ EXTRACTED: handleIndefiniteCheckboxChange, handleCloseRemindersBtnClick,
+// handleWindowClickForRemindersModal moved to modules/features/reminders.js
+// (Phase 3c refactor - reminders module now handles its own modal close listeners)
 
 // Named handler for safeAddEventListener duplicate prevention
 function handleTryLiteVersionClick() {
@@ -1229,14 +940,7 @@ GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', handleTryLiteV
   }
 
 
-// Named handler for safeAddEventListener duplicate prevention
-function handleAlwaysShowRecurringChange() {
-    const rp = getRecurringPanel();
-    if (rp?.saveAlwaysShowRecurringSetting) {
-        rp.saveAlwaysShowRecurringSetting();
-    }
-}
-GlobalUtils.safeAddEventListenerById("always-show-recurring", "change", handleAlwaysShowRecurringChange);
+// ✅ MOVED: handleAlwaysShowRecurringChange → recurringPanel.wireAlwaysShowRecurringListener()
 
 
 
@@ -1330,17 +1034,7 @@ function setupUserManual() {
 
 // ✅ toggleHoverTaskOptions removed - now using module version from taskDOM.js
 
-function handleRecurringSettingsClick(e) {
-  const target = e.target.closest(".open-recurring-settings");
-  if (!target) return;
-
-  const taskId = target.dataset.taskId;
-  if (!taskId) return;
-
-  // 🎯 Use your centralized panel-opening logic
-  getOpenRecurringSettingsPanelForTask()?.(taskId);
-}
-GlobalUtils.safeAddEventListener(document, "click", handleRecurringSettingsClick);
+// ✅ MOVED: handleRecurringSettingsClick → recurringPanel.wireRecurringSettingsClickListener()
 
 /**
  * ✅ Sanitize user input to prevent XSS attacks or malformed content.
@@ -1434,18 +1128,7 @@ GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", asy
     }
 });
 
-// Named handler for safeAddEventListener duplicate prevention
-function handleOpenRemindersModalClick() {
-    console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
-
-    // Load current settings from Schema 2.5 before opening
-    getLoadRemindersSettings()?.(); // This function already has Schema 2.5 support
-    document.getElementById("reminders-modal").style.display = "flex";
-    getHideMainMenu()?.();
-
-    console.log('✅ Reminders modal opened');
-}
-GlobalUtils.safeAddEventListenerById("open-reminders-modal", "click", handleOpenRemindersModalClick);
+// ✅ MOVED: handleOpenRemindersModalClick → reminderManager.wireOpenRemindersModalListener()
 
 // ✅ REMOVED: Duplicate global click handler for hiding task buttons
 // Now handled by uiBoot.js via attachGlobalEventListeners() → handleGlobalClickForTaskButtons()

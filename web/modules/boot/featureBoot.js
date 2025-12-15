@@ -48,8 +48,9 @@ export async function bootFeatures(deps, coreResult) {
     UNDO_MIN_INTERVAL_MS
   } = coreResult;
 
-  // Import appContext getters for late-bound dependencies
-  const { getCompleteInitialSetup } = await import('../core/appContext.js');
+  // Import appContext module for late-bound dependencies and setContextValue
+  const appContextMod = await import('../core/appContext.js');
+  const { getCompleteInitialSetup } = appContextMod;
 
   console.log('🚀 app-featureBoot: Starting feature module loading...');
 
@@ -507,8 +508,12 @@ export async function bootFeatures(deps, coreResult) {
     const reminderManager = await initReminderManager({
       getElementById: (id) => document.getElementById(id),
       querySelectorAll: (selector) => document.querySelectorAll(selector),
-      safeAddEventListener: GlobalUtils.safeAddEventListener
+      safeAddEventListener: GlobalUtils.safeAddEventListener,
+      hideMainMenu: () => deps.ui.hideMainMenu?.()
     });
+
+    // Wire the open-reminders-modal button (moved from orchestrator.js)
+    reminderManager.wireOpenRemindersModalListener();
 
     deps.features.reminderManager = reminderManager;
     deps.features.startReminders = () => reminderManager.startReminders();
@@ -754,14 +759,20 @@ export async function bootFeatures(deps, coreResult) {
       showNotification: deps.utils.showNotification
     });
 
+    // Install wrapper for centralized undo snapshot capture
+    undoRedoModule.wrapAppStateForUndo(appInit);
+
     undoRedoModule.wireUndoRedoUI();
+    undoRedoModule.wireUndoRedoKeyboardShortcuts();
     undoRedoModule.setupStateBasedUndoRedo();
     await undoRedoModule.initializeUndoSystemForApp();
 
     deps.ui.wireUndoRedoUI = undoRedoModule.wireUndoRedoUI;
+    deps.ui.wireUndoRedoKeyboardShortcuts = undoRedoModule.wireUndoRedoKeyboardShortcuts;
     deps.ui.initializeUndoRedoButtons = undoRedoModule.initializeUndoRedoButtons;
     deps.ui.captureInitialSnapshot = undoRedoModule.captureInitialSnapshot;
     deps.ui.setupStateBasedUndoRedo = undoRedoModule.setupStateBasedUndoRedo;
+    deps.ui.wrapAppStateForUndo = undoRedoModule.wrapAppStateForUndo;
     deps.ui.enableUndoSystemOnFirstInteraction = undoRedoModule.enableUndoSystemOnFirstInteraction;
     deps.ui.captureStateSnapshot = undoRedoModule.captureStateSnapshot;
     deps.ui.buildSnapshotSignature = undoRedoModule.buildSnapshotSignature;
@@ -1067,6 +1078,12 @@ export async function bootFeatures(deps, coreResult) {
 
     deps.task.taskCore = taskCore;
 
+    // Register TaskCore-related values to appContext
+    appContextMod.setContextValue('TaskCore', taskCore.constructor);
+    appContextMod.setContextValue('handleTaskCompletionChange', handleTaskCompletionChange);
+    appContextMod.setContextValue('saveCurrentTaskOrder', taskCore.saveCurrentTaskOrder?.bind(taskCore));
+    appContextMod.setContextValue('resetTasks', resetTasks);
+
     // Inject cycle completion deps
     setTaskCoreDependencies({
       incrementCycleCount: deps.progress.incrementCycleCount,
@@ -1164,9 +1181,7 @@ export async function bootFeatures(deps, coreResult) {
     deps.testing.clearTestResults = testingModalMod.clearTestResults;
     deps.testing.exportTestResults = testingModalMod.exportTestResults;
     deps.testing.copyTestResults = testingModalMod.copyTestResults;
-
-    // HTML onclick needs this on window
-    window.closeStorageViewer = testingModalMod.closeStorageViewer;
+    // ✅ closeStorageViewer handled via app:closeStorageViewer event - no window.* exposure
 
     const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
     if (testingIntegrationMod.setTestingModalDependencies) {
@@ -1237,85 +1252,37 @@ export async function bootFeatures(deps, coreResult) {
   }
 
   // ============================================================================
-  // WINDOW.* EXPOSURES - PUBLIC API
+  // HTML INTEGRATION VIA CUSTOM EVENTS (Zero window.* globals)
   // ============================================================================
-  // These globals are actively used via window.* calls in the codebase.
-  // Audit performed Dec 2025: Reduced from 131 to 37 essential globals.
-  // Before adding new exposures, verify they're actually called via window.*
-  console.log('🔧 Setting up window.* public API...');
+  // HTML dispatches CustomEvents, we listen and call the appropriate functions.
+  // This eliminates all window.* exposures while maintaining HTML functionality.
+  console.log('🔧 Setting up HTML event listeners (zero window.* globals)...');
 
-  // ---- Core/State (3) ----
-  // Essential app state (still needed for debugAppState and error recovery)
-  window.AppState = deps.core.AppState;
-  window.AppGlobalState = AppGlobalState;
+  // Listen for notification requests from HTML/service worker
+  document.addEventListener('app:showNotification', (e) => {
+    const { message, type, duration } = e.detail || {};
+    deps.utils.showNotification?.(message, type, duration);
+  });
 
-  // ---- Utilities (4) ----
-  // Common helpers used throughout the app
-  window.showNotification = deps.utils.showNotification;
-  window.sanitizeInput = deps.utils.sanitizeInput;
-  window.generateId = deps.utils.generateId;
-  window.isTouchDevice = deps.utils.isTouchDevice;
+  // Listen for confirmation modal requests from HTML/service worker
+  document.addEventListener('app:showConfirmationModal', (e) => {
+    deps.utils.showConfirmationModal?.(e.detail);
+  });
 
-  // ---- Task Operations (5) ----
-  // Task creation and management
-  window.addTask = deps.task.addTask;
-  window.handleCompleteAllTasks = deps.task.handleCompleteAllTasks;
-  window.createTaskDOMElements = deps.task.createTaskDOMElements;
-  window.finalizeTaskCreation = deps.task.finalizeTaskCreation;
-  window.loadTaskContext = deps.task.loadTaskContext;
+  // Listen for stats panel requests from HTML
+  document.addEventListener('app:showStatsPanel', () => {
+    deps.ui.showStatsPanel?.();
+  });
 
-  // ---- Drag & Drop (1) ----
-  window.updateMoveArrowsVisibility = deps.ui.updateMoveArrowsVisibility;
+  // Listen for closeStorageViewer requests (testing modal)
+  document.addEventListener('app:closeStorageViewer', () => {
+    deps.testing?.closeStorageViewer?.();
+  });
 
-  // ---- Progress (1) ----
-  window.checkMiniCycle = deps.progress.checkMiniCycle;
-
-  // ---- Due Dates (2) ----
-  window.checkOverdueTasks = deps.features.checkOverdueTasks;
-  window.remindOverdueTasks = deps.features.remindOverdueTasks;
-
-  // ---- Reminders (4) ----
-  window.reminderManager = deps.features.reminderManager;
-  window.startReminders = deps.features.startReminders;
-  window.updateReminderButtons = deps.features.updateReminderButtons;
-  window.loadRemindersSettings = deps.features.loadRemindersSettings;
-
-  // ---- Recurring (3) ----
-  window.recurringPanel = deps.recurring.panel;
-  window.recurringCore = deps.recurring.core;
-  window.openRecurringSettingsPanelForTask = deps.recurring.openSettingsPanel;
-
-  // ---- Mode Manager (3) ----
-  window.initializeModeSelector = deps.cycle.initializeModeSelector;
-  window.syncCurrentSettingsToStorage = deps.cycle.syncCurrentSettingsToStorage;
-  window.saveToggleAutoReset = deps.cycle.saveToggleAutoReset;
-
-  // ---- Cycle Management (2) ----
-  window.showCycleCreationModal = deps.cycle.showCycleCreationModal;
-  window.loadMiniCycle = deps.cycle.loadMiniCycle;
-
-  // ---- Undo/Redo (5) ----
-  window.captureStateSnapshot = deps.ui.captureStateSnapshot;
-  window.performStateBasedUndo = deps.ui.performStateBasedUndo;
-  window.performStateBasedRedo = deps.ui.performStateBasedRedo;
-  window.updateUndoRedoButtons = deps.ui.updateUndoRedoButtons;
-  window.enableUndoSystemOnFirstInteraction = deps.ui.enableUndoSystemOnFirstInteraction;
-
-  // ---- Menu (1) ----
-  window.hideMainMenu = deps.ui.hideMainMenu;
-
-  // ---- Completed Tasks (2) ----
-  window.initCompletedTasksSection = deps.ui.initCompletedTasksSection;
-  window.organizeCompletedTasks = deps.ui.organizeCompletedTasks;
-
-  // ---- Main Menu Header (1) ----
-  window.updateMainMenuHeader = deps.ui.updateMainMenuHeader;
-
-  console.log('✅ Window exposures complete (37 public API globals)');
+  console.log('✅ HTML event listeners configured (zero window.* globals)');
 
   // Update appContext with late-bound values (comprehensive registration)
-  // ✅ Must await to ensure values are set before bootFeatures returns
-  const appContextMod = await import('../core/appContext.js');
+  // Note: appContextMod already imported at start of bootFeatures
 
   // =========================================================================
   // CORE STATE
@@ -1385,6 +1352,14 @@ export async function bootFeatures(deps, coreResult) {
       appContextMod.setContextValue('loadRemindersSettings', deps.features.loadRemindersSettings);
 
       // =========================================================================
+      // FEATURES (Due Dates, Completed Tasks, Theme)
+      // =========================================================================
+      appContextMod.setContextValue('updateDueDateVisibility', deps.features.updateDueDateVisibility);
+      appContextMod.setContextValue('checkOverdueTasks', deps.features.checkOverdueTasks);
+      appContextMod.setContextValue('organizeCompletedTasks', deps.ui.organizeCompletedTasks);
+      appContextMod.setContextValue('updateThemeColor', deps.features.updateThemeColor);
+
+      // =========================================================================
       // RECURRING
       // =========================================================================
       appContextMod.setContextValue('recurringPanel', deps.recurring.panel);
@@ -1420,7 +1395,77 @@ export async function bootFeatures(deps, coreResult) {
       // =========================================================================
       appContextMod.setContextValue('PullToRefresh', deps.ui.pullToRefresh);
 
-  console.log('✅ appContext updated with comprehensive values');
+  console.log('✅ appContext updated with comprehensive values (legacy individual keys)');
+
+  // ============================================================================
+  // GROUPED APIs (PREFERRED - new code should use these)
+  // ============================================================================
+
+  // Task API - task operations
+  appContextMod.setContextValue('taskApi', {
+    add: deps.task.addTask,
+    loadContext: deps.task.loadTaskContext,
+    createDOM: deps.task.createTaskDOMElements,
+    extractFromDOM: deps.task.extractTaskDataFromDOM,
+    handleCompleteAll: deps.task.handleCompleteAllTasks,
+    updateMoveArrows: deps.task.updateMoveArrowsVisibility,
+    createOrUpdateData: deps.task.createOrUpdateTaskData,
+    validateInput: deps.task.validateAndSanitizeTaskInput,
+    initCompletedSection: deps.ui.initCompletedTasksSection
+  });
+
+  // Cycle API - cycle management
+  appContextMod.setContextValue('cycleApi', {
+    load: deps.cycle.loadMiniCycle,
+    create: deps.cycle.showCycleCreationModal,
+    check: deps.progress.checkMiniCycle,
+    switch: deps.cycle.switchMiniCycle,
+    rename: deps.cycle.renameMiniCycle,
+    delete: deps.cycle.deleteMiniCycle,
+    initializeModeSelector: deps.cycle.initializeModeSelector,
+    saveToggleAutoReset: deps.cycle.saveToggleAutoReset
+  });
+
+  // UI API - notifications and menus
+  appContextMod.setContextValue('uiApi', {
+    showNotification: deps.utils.showNotification,
+    hideMainMenu: deps.ui.hideMainMenu,
+    updateMainMenuHeader: deps.ui.updateMainMenuHeader,
+    showLoader: deps.ui.showLoader,
+    hideLoader: deps.ui.hideLoader,
+    withLoader: deps.ui.withLoader,
+    showConfirmationModal: deps.utils.showConfirmationModal,
+    showPromptModal: deps.utils.showPromptModal,
+    syncCurrentSettingsToStorage: deps.ui.syncCurrentSettingsToStorage,
+    resetNotificationPosition: deps.utils.resetNotificationPosition
+  });
+
+  // Undo API - undo/redo operations
+  appContextMod.setContextValue('undoApi', {
+    capture: deps.ui.captureStateSnapshot,
+    undo: deps.ui.performStateBasedUndo,
+    redo: deps.ui.performStateBasedRedo,
+    updateButtons: deps.ui.updateUndoRedoButtons,
+    enableOnFirstInteraction: deps.ui.enableUndoSystemOnFirstInteraction
+  });
+
+  // Reminder API - reminder management
+  appContextMod.setContextValue('reminderApi', {
+    manager: deps.features.reminderManager,
+    start: deps.features.startReminders,
+    updateButtons: deps.features.updateReminderButtons,
+    loadSettings: deps.features.loadRemindersSettings,
+    remindOverdue: deps.features.remindOverdueTasks
+  });
+
+  // Recurring API - recurring task panel
+  appContextMod.setContextValue('recurringApi', {
+    panel: deps.recurring.panel,
+    core: deps.recurring.core,
+    openSettingsForTask: deps.recurring.openSettingsPanel
+  });
+
+  console.log('✅ Grouped APIs registered (taskApi, cycleApi, uiApi, undoApi, reminderApi, recurringApi)');
 
   // ============================================================================
   // COMPLETE

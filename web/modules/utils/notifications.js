@@ -268,23 +268,9 @@ export class MiniCycleNotifications {
     return { ..._deps, ...this._constructorDeps };
   }
 
-  // Helper method to sync with global variable
+  // Helper method to update dragging state (no window.* sync needed)
   setDraggingState(isDragging) {
     this.isDraggingNotification = isDragging;
-    // Also update the global variable if it exists
-    if (typeof window !== 'undefined') {
-      if ('isDraggingNotification' in window) {
-        window.isDraggingNotification = isDragging;
-      }
-      // Also try to update the global variable directly if it exists in global scope
-      try {
-        if (typeof globalThis !== 'undefined' && 'isDraggingNotification' in globalThis) {
-          globalThis.isDraggingNotification = isDragging;
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    }
   }
 
   /**

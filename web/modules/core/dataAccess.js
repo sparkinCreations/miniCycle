@@ -13,6 +13,7 @@
  */
 
 import { getAppState, getExtractTaskDataFromDOM } from './appContext.js';
+import { createInitialSchema25Data } from './migrationFacade.js';
 
 // ============================================================================
 // DATA ACCESS FUNCTIONS
@@ -95,7 +96,7 @@ export function loadMiniCycleData() {
     }
 
     console.log('🆕 No data found in localStorage - Creating initial Schema 2.5 structure...');
-    window.createInitialSchema25Data?.();
+    createInitialSchema25Data();
 
     // Try again after creating
     const newData = localStorage.getItem("miniCycleData");

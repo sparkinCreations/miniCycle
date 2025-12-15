@@ -119,6 +119,7 @@ export class MiniCycleReminders {
         try {
             this.setupReminderToggle();
             this.setupReminderInputListeners();
+            this.setupModalCloseListeners();
 
             // ✅ Add hook to update reminder buttons after app is fully ready (DI-pure)
             if (appInitModule?.addHook) {
@@ -943,6 +944,63 @@ export class MiniCycleReminders {
         });
 
         console.log('✅ Reminder input listeners set up');
+    }
+
+    /**
+     * Set up modal close listeners for reminders modal
+     * (Extracted from orchestrator.js Phase 3c)
+     */
+    setupModalCloseListeners() {
+        const remindersModal = this.deps.getElementById("reminders-modal");
+        const closeRemindersBtn = this.deps.getElementById("close-reminders-btn");
+
+        if (closeRemindersBtn) {
+            this.deps.safeAddEventListener(closeRemindersBtn, "click", () => {
+                if (remindersModal) remindersModal.style.display = "none";
+            });
+        }
+
+        // Close on outside click
+        this.deps.safeAddEventListener(window, "click", (event) => {
+            if (event.target === remindersModal) {
+                remindersModal.style.display = "none";
+            }
+        });
+
+        console.log('✅ Reminder modal close listeners set up');
+    }
+
+    /**
+     * Wire the open-reminders-modal button listener
+     * Moved from orchestrator.js for proper module ownership
+     */
+    wireOpenRemindersModalListener() {
+        const openBtn = this.deps.getElementById("open-reminders-modal");
+        if (!openBtn) {
+            console.warn('⚠️ open-reminders-modal button not found');
+            return;
+        }
+
+        this.deps.safeAddEventListener(openBtn, "click", () => {
+            console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
+
+            // Load current settings from Schema 2.5 before opening
+            this.loadRemindersSettings();
+
+            const remindersModal = this.deps.getElementById("reminders-modal");
+            if (remindersModal) {
+                remindersModal.style.display = "flex";
+            }
+
+            // Hide main menu if available
+            if (typeof this.deps.hideMainMenu === 'function') {
+                this.deps.hideMainMenu();
+            }
+
+            console.log('✅ Reminders modal opened');
+        });
+
+        console.log('✅ open-reminders-modal listener wired');
     }
 
     // ============================================

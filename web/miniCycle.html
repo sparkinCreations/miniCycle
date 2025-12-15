@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.494">
+<meta name="app-version" content="1.495">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.494">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.495">
 <link rel="manifest" href="manifest.json">
 
 
@@ -81,7 +81,7 @@
 
 
 
-<script src="./version.js?v=1.494" defer></script>
+<script src="./version.js?v=1.495" defer></script>
 
 <script>
 
@@ -130,21 +130,32 @@
     var loader = document.getElementById('app-loader');
     var isStillLoading = loader && loader.style.display !== 'none';
 
+    // Check if app loaded successfully via dataset (set by uiBoot.js)
+    if (document.documentElement.dataset.appLoaded === 'true') {
+      return; // App loaded successfully
+    }
     if (isStillLoading && location.pathname.indexOf('miniCycle-lite.html') === -1) {
       console.warn('⚠️ App load timeout - redirecting to lite version');
       location.replace('./lite/miniCycle-lite.html?mode=lite&src=load-timeout');
     }
   }, LOAD_TIMEOUT_MS);
-
-  // Cancel timeout if app loads successfully
-  window.__cancelLoadTimeout = function() {
-    clearTimeout(timeoutId);
-  };
 })();
 
 // ✅ Enhanced Service Worker Registration with Update Management
 if ('serviceWorker' in navigator) {
   let refreshing;
+
+  // ✅ Zero-globals helpers - dispatch CustomEvents instead of calling window.*
+  function showNotification(message, type, duration) {
+    document.dispatchEvent(new CustomEvent('app:showNotification', {
+      detail: { message, type, duration }
+    }));
+  }
+  function showConfirmationModal(options) {
+    document.dispatchEvent(new CustomEvent('app:showConfirmationModal', {
+      detail: options
+    }));
+  }
 
   // ✅ SW version - increment this when you update the service worker
   const SW_VERSION = '1338';
@@ -152,7 +163,7 @@ if ('serviceWorker' in navigator) {
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.494${SW_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.495${SW_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -239,7 +250,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.494')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.495')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -256,12 +267,9 @@ if ('serviceWorker' in navigator) {
 
         // Show user-friendly notification
         setTimeout(() => {
-          if (typeof showNotification === 'function') {
-            showNotification('🔄 App update ready - reload recommended', 'info', 8000);
-          }
+          showNotification('🔄 App update ready - reload recommended', 'info', 8000);
 
-          if (typeof showConfirmationModal === 'function') {
-            showConfirmationModal({
+          showConfirmationModal({
               title: "🔄 Important App Update",
               message: `We've updated miniCycle's core system!<br><br>
                        ✅ Old version has been safely removed<br>
@@ -276,12 +284,6 @@ if ('serviceWorker' in navigator) {
                 }
               }
             });
-          } else {
-            // Fallback
-            if (confirm('🔄 App update ready!\n\nReload now to complete the update?\n(One-time update to improve future updates)')) {
-              window.location.reload();
-            }
-          }
         }, 1500);
         return; // Don't register SW yet - wait for reload
       }
@@ -297,45 +299,34 @@ if ('serviceWorker' in navigator) {
   // ✅ Function to show update notification using your confirmation modal
   function showUpdateAvailable(registration) {
     // First show a notification
-    if (typeof showNotification === 'function') {
-      showNotification('🆕 New app version available!', 'info', 5000);
-    }
-    
+    showNotification('🆕 New app version available!', 'info', 5000);
+
     // Then show confirmation modal after a brief delay
     setTimeout(() => {
-      if (typeof showConfirmationModal === 'function') {
-        showConfirmationModal({
-          title: "🚀 App Update Available!",
-          message: `A new version of miniCycle is ready to install!<br><br>
-                   ✨ New features and improvements<br>
-                   🐛 Bug fixes and performance enhancements<br>
-                   🔒 Latest security updates<br><br>
-                   <strong>Don't worry:</strong> After clicking "Prepare Update", you'll be asked again before the page reloads. Your work is safe!`,
-          confirmText: "✅ Prepare Update",
-          cancelText: "Maybe Later",
-          callback: (confirmed) => {
-            if (confirmed) {
-              updateServiceWorker(registration);
-              showNotification('⏳ Preparing update in background...', 'info', 3000);
-            } else {
-              showNotification('ℹ️ Update postponed - you can install it anytime from Settings', 'info', 6000);
-            }
+      showConfirmationModal({
+        title: "🚀 App Update Available!",
+        message: `A new version of miniCycle is ready to install!<br><br>
+                 ✨ New features and improvements<br>
+                 🐛 Bug fixes and performance enhancements<br>
+                 🔒 Latest security updates<br><br>
+                 <strong>Don't worry:</strong> After clicking "Prepare Update", you'll be asked again before the page reloads. Your work is safe!`,
+        confirmText: "✅ Prepare Update",
+        cancelText: "Maybe Later",
+        callback: (confirmed) => {
+          if (confirmed) {
+            updateServiceWorker(registration);
+            showNotification('⏳ Preparing update in background...', 'info', 3000);
+          } else {
+            showNotification('ℹ️ Update postponed - you can install it anytime from Settings', 'info', 6000);
           }
-        });
-      } else {
-        // Fallback to browser confirm if modal isn't available yet
-        if (confirm('🆕 New app version available! Would you like to update now?')) {
-          updateServiceWorker(registration);
         }
-      }
+      });
     }, 1000);
   }
   
   // ✅ Function to show app cached notification
   function showAppCachedNotification() {
-    if (typeof showNotification === 'function') {
-      showNotification('📱 miniCycle is now available offline!', 'success', 4000);
-    }
+    showNotification('📱 miniCycle is now available offline!', 'success', 4000);
   }
   
   // ✅ Function to update service worker
@@ -351,47 +342,31 @@ if ('serviceWorker' in navigator) {
     console.log('📢 Asking user if they want to reload now...');
 
     // Show notification first
-    if (typeof showNotification === 'function') {
-      showNotification('✅ Update installed! Ready to reload?', 'success', 5000);
-    }
+    showNotification('✅ Update installed! Ready to reload?', 'success', 5000);
 
     // Then show confirmation modal
     setTimeout(() => {
-      if (typeof showConfirmationModal === 'function') {
-        showConfirmationModal({
-          title: "✅ Update Installed Successfully!",
-          message: `The app has been updated in the background.<br><br>
-                   🔄 <strong>Reload now</strong> to start using the new version<br>
-                   ⏰ <strong>Or reload later</strong> when you're ready<br><br>
-                   Your tasks and data are safe - nothing will be lost. The update will apply on your next visit if you choose to wait.`,
-          confirmText: "🔄 Reload Now",
-          cancelText: "⏰ Reload Later",
-          callback: (confirmed) => {
-            if (confirmed) {
-              console.log('User confirmed reload - reloading now...');
-              if (typeof showNotification === 'function') {
-                showNotification('🔄 Reloading to apply update...', 'info', 2000);
-              }
-              setTimeout(() => {
-                window.location.reload();
-              }, 500);
-            } else {
-              console.log('User postponed reload - will apply on next page load');
-              if (typeof showNotification === 'function') {
-                showNotification('✅ Update will apply on your next visit', 'info', 4000);
-              }
-            }
+      showConfirmationModal({
+        title: "✅ Update Installed Successfully!",
+        message: `The app has been updated in the background.<br><br>
+                 🔄 <strong>Reload now</strong> to start using the new version<br>
+                 ⏰ <strong>Or reload later</strong> when you're ready<br><br>
+                 Your tasks and data are safe - nothing will be lost. The update will apply on your next visit if you choose to wait.`,
+        confirmText: "🔄 Reload Now",
+        cancelText: "⏰ Reload Later",
+        callback: (confirmed) => {
+          if (confirmed) {
+            console.log('User confirmed reload - reloading now...');
+            showNotification('🔄 Reloading to apply update...', 'info', 2000);
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          } else {
+            console.log('User postponed reload - will apply on next page load');
+            showNotification('✅ Update will apply on your next visit', 'info', 4000);
           }
-        });
-      } else {
-        // Fallback to browser confirm if modal isn't available yet
-        const reloadNow = confirm('✅ Update installed!\n\nReload now to apply the update?\n\n(You can also reload later - the update is ready and waiting)');
-        if (reloadNow) {
-          window.location.reload();
-        } else {
-          console.log('User chose to reload later');
         }
-      }
+      });
     }, 1000);
   }
   
@@ -399,95 +374,83 @@ if ('serviceWorker' in navigator) {
   console.warn('⚠️ Service Workers not supported in this browser');
 }
 
+// ✅ Global zero-globals helpers (dispatch CustomEvents)
+function _notify(message, type, duration) {
+  document.dispatchEvent(new CustomEvent('app:showNotification', {
+    detail: { message, type, duration }
+  }));
+}
+function _confirm(options) {
+  document.dispatchEvent(new CustomEvent('app:showConfirmationModal', {
+    detail: options
+  }));
+}
+
 // ✅ Expose update function globally for manual updates
 window.checkForUpdates = async function() {
   if (!('serviceWorker' in navigator)) {
     console.warn('Service Workers not supported');
-    if (typeof showNotification === 'function') {
-      showNotification('❌ Service Workers not supported', 'error', 3000);
-    }
+    _notify('❌ Service Workers not supported', 'error', 3000);
     return;
   }
-  
+
   try {
     const registration = await navigator.serviceWorker.getRegistration();
     if (!registration) {
-      if (typeof showNotification === 'function') {
-        showNotification('❌ No service worker registered', 'error', 3000);
-      }
+      _notify('❌ No service worker registered', 'error', 3000);
       return;
     }
 
     // Get current version info
     const currentVersion = await getServiceWorkerVersion(registration);
-    
-    if (typeof showNotification === 'function') {
-      showNotification('🔍 Checking for app updates...', 'info', 2000);
-    }
-    
+
+    _notify('🔍 Checking for app updates...', 'info', 2000);
+
     // Force check for updates
     await registration.update();
-    
+
     // Wait a moment for the update check to process
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     // Check if there's a waiting worker (new version available)
     if (registration.waiting) {
       // Get new version info from the waiting worker
       const newVersion = await getWaitingWorkerVersion(registration.waiting);
-      
+
       // Show detailed update modal
-      if (typeof showConfirmationModal === 'function') {
-        showConfirmationModal({
-          title: "🆕 Update Available!",
-          message: `A new version of miniCycle is available!<br><br>
-                   <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
-                   � <strong>Current Version:</strong> ${currentVersion}<br>
-                   🚀 <strong>New Version:</strong> ${newVersion}<br>
-                   </div>
-                   ✨ This update includes new features and improvements<br>
-                   🐛 Bug fixes and performance enhancements<br>
-                   🔒 Latest security updates<br><br>
-                   You can choose to update now or continue using the current version. The update is optional and you can install it whenever you're ready.`,
-          confirmText: "🔄 Update Now",
-          cancelText: "Later",
-          callback: (confirmed) => {
-            if (confirmed) {
-              updateServiceWorker(registration);
-              if (typeof showNotification === 'function') {
-                showNotification('🔄 Installing update...', 'info', 3000);
-              }
-            } else {
-              if (typeof showNotification === 'function') {
-                showNotification('ℹ️ Update postponed - you can install it anytime', 'info', 4000);
-              }
-            }
+      _confirm({
+        title: "🆕 Update Available!",
+        message: `A new version of miniCycle is available!<br><br>
+                 <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
+                 📦 <strong>Current Version:</strong> ${currentVersion}<br>
+                 🚀 <strong>New Version:</strong> ${newVersion}<br>
+                 </div>
+                 ✨ This update includes new features and improvements<br>
+                 🐛 Bug fixes and performance enhancements<br>
+                 🔒 Latest security updates<br><br>
+                 You can choose to update now or continue using the current version. The update is optional and you can install it whenever you're ready.`,
+        confirmText: "🔄 Update Now",
+        cancelText: "Later",
+        callback: (confirmed) => {
+          if (confirmed) {
+            updateServiceWorker(registration);
+            _notify('🔄 Installing update...', 'info', 3000);
+          } else {
+            _notify('ℹ️ Update postponed - you can install it anytime', 'info', 4000);
           }
-        });
-      } else {
-        // Fallback to browser confirm if modal isn't available yet
-        const updateConfirmed = confirm(`🆕 Update Available!\n\nCurrent: ${currentVersion}\nNew: ${newVersion}\n\nWould you like to update now?`);
-        if (updateConfirmed) {
-          updateServiceWorker(registration);
         }
-      }
+      });
     } else if (registration.installing) {
       // Update is currently installing
-      if (typeof showNotification === 'function') {
-        showNotification('⏳ Update is currently installing...', 'info', 3000);
-      }
+      _notify('⏳ Update is currently installing...', 'info', 3000);
     } else {
       // No update available
-      if (typeof showNotification === 'function') {
-        showNotification(`✅ App is up to date! (${currentVersion})`, 'success', 3000);
-      }
+      _notify(`✅ App is up to date! (${currentVersion})`, 'success', 3000);
     }
-    
+
   } catch (error) {
     console.error('Failed to check for updates:', error);
-    if (typeof showNotification === 'function') {
-      showNotification('❌ Failed to check for updates', 'error', 3000);
-    }
+    _notify('❌ Failed to check for updates', 'error', 3000);
   }
 };
 
@@ -567,80 +530,60 @@ async function getWaitingWorkerVersion(waitingWorker) {
 // ✅ Add manual update check to your testing modal
 window.forceServiceWorkerUpdate = async function() {
   if (!('serviceWorker' in navigator)) {
-    if (typeof showNotification === 'function') {
-      showNotification('❌ Service Workers not supported', 'error', 3000);
-    }
+    _notify('❌ Service Workers not supported', 'error', 3000);
     return;
   }
-  
+
   try {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) {
       // Get current version before forcing update
       const currentVersion = await getServiceWorkerVersion(registration);
-      
-      if (typeof showNotification === 'function') {
-        showNotification('🔄 Force checking for updates...', 'info', 2000);
-      }
-      
+
+      _notify('🔄 Force checking for updates...', 'info', 2000);
+
       await registration.update();
-      
+
       // Wait a moment for the update check to process
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Check if there's a waiting worker
       if (registration.waiting) {
         const newVersion = await getWaitingWorkerVersion(registration.waiting);
-        
-        if (typeof showConfirmationModal === 'function') {
-          showConfirmationModal({
-            title: "🔄 Update Ready!",
-            message: `An update is ready to install!<br><br>
-                     <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
-                     📊 <strong>Current Version:</strong> ${currentVersion}<br>
-                     🚀 <strong>New Version:</strong> ${newVersion}<br>
-                     </div>
-                     Would you like to apply it now?`,
-            confirmText: "Apply Update",
-            cancelText: "Cancel",
-            callback: (confirmed) => {
-              if (confirmed) {
-                updateServiceWorker(registration);
-                if (typeof showNotification === 'function') {
-                  showNotification('🔄 Installing update...', 'info', 3000);
-                }
-              }
+
+        _confirm({
+          title: "🔄 Update Ready!",
+          message: `An update is ready to install!<br><br>
+                   <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
+                   📊 <strong>Current Version:</strong> ${currentVersion}<br>
+                   🚀 <strong>New Version:</strong> ${newVersion}<br>
+                   </div>
+                   Would you like to apply it now?`,
+          confirmText: "Apply Update",
+          cancelText: "Cancel",
+          callback: (confirmed) => {
+            if (confirmed) {
+              updateServiceWorker(registration);
+              _notify('🔄 Installing update...', 'info', 3000);
             }
-          });
-        } else {
-          // Fallback to browser confirm
-          const updateConfirmed = confirm(`🔄 Update Ready!\n\nCurrent: ${currentVersion}\nNew: ${newVersion}\n\nApply update now?`);
-          if (updateConfirmed) {
-            updateServiceWorker(registration);
           }
-        }
+        });
       } else {
-        if (typeof showNotification === 'function') {
-          showNotification(`✅ App is up to date! (${currentVersion})`, 'success', 2000);
-        }
+        _notify(`✅ App is up to date! (${currentVersion})`, 'success', 2000);
       }
     } else {
-      if (typeof showNotification === 'function') {
-        showNotification('❌ No service worker registered', 'error', 2000);
-      }
+      _notify('❌ No service worker registered', 'error', 2000);
     }
   } catch (error) {
     console.error('Failed to force update:', error);
-    if (typeof showNotification === 'function') {
-      showNotification('❌ Failed to check for updates', 'error', 3000);
-    }
+    _notify('❌ Failed to check for updates', 'error', 3000);
   }
 };
 
 // ✅ ADD: Handle PWA shortcuts (add after service worker registration)
 window.addEventListener('DOMContentLoaded', () => {
   const fragment = window.location.hash;
-  
+
   if (fragment === '#add-task') {
     setTimeout(() => {
       const taskInput = document.getElementById('taskInput');
@@ -651,13 +594,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 500);
     // Clear the fragment
     history.replaceState(null, '', './miniCycle.html');
-  } 
+  }
   else if (fragment === '#stats') {
     setTimeout(() => {
-      // Show stats panel if function exists
-      if (typeof showStatsPanel === 'function') {
-        showStatsPanel();
-      }
+      // Show stats panel via CustomEvent
+      document.dispatchEvent(new CustomEvent('app:showStatsPanel'));
     }, 500);
     // Clear the fragment
     history.replaceState(null, '', './miniCycle.html');
@@ -672,16 +613,14 @@ window.addEventListener('beforeinstallprompt', (e) => {
   console.log('📱 Install prompt available');
   e.preventDefault();
   deferredPrompt = e;
-  
+
   // Show install suggestion for new users
   setTimeout(() => {
-    if (typeof showNotification === 'function') {
-      showNotification(
-        '📱 Install miniCycle for offline access and faster loading!', 
-        'info', 
-        6000
-      );
-    }
+    _notify(
+      '📱 Install miniCycle for offline access and faster loading!',
+      'info',
+      6000
+    );
   }, 45000); // After 45 seconds for full version
 });
 
@@ -692,9 +631,7 @@ window.installApp = () => {
     deferredPrompt.userChoice.then((choiceResult) => {
       if (choiceResult.outcome === 'accepted') {
         console.log('📱 User accepted the install prompt');
-        if (typeof showNotification === 'function') {
-          showNotification('🎉 miniCycle installed successfully!', 'success', 4000);
-        }
+        _notify('🎉 miniCycle installed successfully!', 'success', 4000);
       }
       deferredPrompt = null;
     });
@@ -1621,7 +1558,7 @@ window.installApp = () => {
         <input type="checkbox" id="stay-open-toggle" name="stay-open-toggle" />
         Stay open when clicking outside
       </label>
-      <button class="btn-confirm" onclick="closeStorageViewer()">Close</button>
+      <button class="btn-confirm" onclick="document.dispatchEvent(new CustomEvent('app:closeStorageViewer'))">Close</button>
     </div>
   </div>
 </div>
@@ -1890,7 +1827,7 @@ Feedback
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.494"></script>
+ <script type="module" src="miniCycle-main.js?v=1.495"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1929,7 +1866,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.494"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.495"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
@@ -1941,7 +1878,8 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     // If full app has begun booting, don't redirect even if AppReady isn't set yet (e.g., onboarding).
-    if (window.AppBootStarted) {
+    // Uses dataset attribute instead of window.* for zero-globals compliance
+    if (document.documentElement.dataset.appBooted === 'true') {
       console.warn('Full mode boot started; skipping lite fallback.');
       return;
     }

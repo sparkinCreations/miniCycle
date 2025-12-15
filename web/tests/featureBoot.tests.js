@@ -6,6 +6,23 @@
  */
 
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+import {
+    getTestAppState,
+    getTestAppInit,
+    getTestShowNotification,
+    getTestShowLoader,
+    getTestHideLoader,
+    getTestSanitizeInput,
+    getTestGenerateId,
+    getTestAddTask,
+    getTestPerformStateBasedUndo,
+    getTestPerformStateBasedRedo,
+    getTestTaskDOMManager,
+    getTestModeManager,
+    getTestDeviceDetectionManagerInstance,
+    hasContextValue
+} from './helpers/testContext.js';
+import { getExtractTaskDataFromDOM, getSwitchMiniCycle, getLoadMiniCycle, getEscapeHtml } from '../modules/core/appContext.js';
 
 export async function runFeatureBootTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔌 featureBoot Tests</h2><h3>Running tests...</h3>';
@@ -220,145 +237,159 @@ export async function runFeatureBootTests(resultsDiv) {
     // ===== FEATURE BOOT RESULT VERIFICATION =====
     resultsDiv.innerHTML += '<h4 class="test-section">✅ Boot Verification</h4>';
 
-    await test('App has core dependencies loaded', () => {
-        // Verify that core boot populated essential globals
-        if (!window.AppState) {
-            throw new Error('AppState should be on window after boot');
+    await test('App has core dependencies loaded (via testContext)', () => {
+        // Verify that core boot populated essential values via appContext
+        const AppState = getTestAppState();
+        const appInit = getTestAppInit();
+
+        if (!AppState) {
+            throw new Error('AppState should be available via testContext after boot');
         }
-        if (!window.appInit) {
-            throw new Error('appInit should be on window after boot');
+        if (!appInit) {
+            throw new Error('appInit should be available via testContext after boot');
         }
     });
 
-    await test('App has utility functions loaded', () => {
-        const requiredUtils = ['sanitizeInput', 'escapeHtml', 'generateId', 'showNotification'];
-        for (const util of requiredUtils) {
-            if (typeof window[util] !== 'function') {
-                throw new Error(`${util} should be available after boot`);
-            }
+    await test('App has utility functions loaded (via testContext)', () => {
+        const sanitizeInput = getTestSanitizeInput();
+        const escapeHtml = getEscapeHtml();
+        const generateId = getTestGenerateId();
+        const showNotification = getTestShowNotification();
+
+        if (typeof sanitizeInput !== 'function') {
+            throw new Error('sanitizeInput should be available via testContext');
+        }
+        if (typeof escapeHtml !== 'function') {
+            throw new Error('escapeHtml should be available via appContext');
+        }
+        if (typeof generateId !== 'function') {
+            throw new Error('generateId should be available via testContext');
+        }
+        if (typeof showNotification !== 'function') {
+            throw new Error('showNotification should be available via testContext');
         }
     });
 
-    await test('App has task functions loaded', () => {
-        const taskFuncs = ['addTask', 'extractTaskDataFromDOM'];
-        for (const func of taskFuncs) {
-            if (typeof window[func] !== 'function') {
-                throw new Error(`${func} should be available after boot`);
-            }
+    await test('App has task functions loaded (via testContext)', () => {
+        const addTask = getTestAddTask();
+        const extractTaskDataFromDOM = getExtractTaskDataFromDOM();
+
+        if (typeof addTask !== 'function') {
+            throw new Error('addTask should be available via testContext');
+        }
+        if (typeof extractTaskDataFromDOM !== 'function') {
+            throw new Error('extractTaskDataFromDOM should be available via appContext');
         }
     });
 
-    await test('App has cycle functions loaded', () => {
-        const cycleFuncs = ['loadMiniCycle', 'switchMiniCycle'];
-        for (const func of cycleFuncs) {
-            if (typeof window[func] !== 'function') {
-                throw new Error(`${func} should be available after boot`);
-            }
+    await test('App has cycle functions loaded (via appContext)', () => {
+        const loadMiniCycle = getLoadMiniCycle();
+        const switchMiniCycle = getSwitchMiniCycle();
+
+        if (typeof loadMiniCycle !== 'function') {
+            throw new Error('loadMiniCycle should be available via appContext');
+        }
+        if (typeof switchMiniCycle !== 'function') {
+            throw new Error('switchMiniCycle should be available via appContext');
         }
     });
 
-    await test('App has UI functions loaded (core set)', () => {
-        // In test environment, not all UI functions may be available
-        // Check for core UI functions that should always be present after any boot
-        const coreUiFuncs = ['showLoader', 'hideLoader', 'showNotification'];
-        for (const func of coreUiFuncs) {
-            if (typeof window[func] !== 'function') {
-                throw new Error(`${func} should be available after boot`);
-            }
+    await test('App has UI functions loaded (via testContext)', () => {
+        const showLoader = getTestShowLoader();
+        const hideLoader = getTestHideLoader();
+        const showNotification = getTestShowNotification();
+
+        if (typeof showLoader !== 'function') {
+            throw new Error('showLoader should be available via testContext');
+        }
+        if (typeof hideLoader !== 'function') {
+            throw new Error('hideLoader should be available via testContext');
+        }
+        if (typeof showNotification !== 'function') {
+            throw new Error('showNotification should be available via testContext');
         }
     });
 
     // ===== MANAGER INSTANCES =====
     resultsDiv.innerHTML += '<h4 class="test-section">🎛️ Manager Instances</h4>';
 
-    await test('TaskDOMManager is initialized', () => {
-        // In test environment, TaskDOMManager may not be fully initialized
-        // Check for any of the indicators that task DOM handling is set up
-        const hasTaskDOM = window.__taskDOMManager ||
-                          window.isTaskDOMReady ||
-                          typeof window.extractTaskDataFromDOM === 'function';
+    await test('TaskDOMManager is initialized (via testContext)', () => {
+        // Check via testContext
+        const taskDOMManager = getTestTaskDOMManager();
+        const extractFromDOM = getExtractTaskDataFromDOM();
+
+        const hasTaskDOM = taskDOMManager ||
+                          typeof extractFromDOM === 'function';
         if (!hasTaskDOM) {
-            throw new Error('TaskDOMManager or task DOM functions should be available');
+            throw new Error('TaskDOMManager or task DOM functions should be available via testContext');
         }
     });
 
-    await test('ModeManager is accessible', () => {
-        // ModeManager may not be fully initialized in test environment
-        // Check for any mode-related functionality or indicators
-        const hasModeAccess = window.modeManager ||
-                             window.ModeManager ||
-                             typeof window.initializeModeSelector === 'function' ||
-                             typeof window.switchMode === 'function' ||
-                             window.AppState?.getActiveCycle ||
+    await test('ModeManager is accessible (via testContext)', () => {
+        // Check for mode-related functionality via testContext
+        const modeManager = getTestModeManager();
+        const AppState = getTestAppState();
+
+        const hasModeAccess = modeManager ||
+                             (AppState && typeof AppState.get === 'function') ||
                              document.body.classList.contains('auto-cycle') ||
                              document.body.classList.contains('manual-cycle') ||
                              document.body.classList.contains('todo-mode') ||
-                             document.getElementById('toggle-auto-reset'); // Mode toggle exists
+                             document.getElementById('toggle-auto-reset');
         if (!hasModeAccess) {
-            throw new Error('ModeManager or mode functions should be accessible');
+            throw new Error('ModeManager or mode functions should be accessible via testContext');
         }
     });
 
-    await test('Notifications system is available', () => {
-        if (typeof window.showNotification !== 'function') {
-            throw new Error('Notification system should be available');
+    await test('Notifications system is available (via testContext)', () => {
+        const showNotification = getTestShowNotification();
+        if (typeof showNotification !== 'function') {
+            throw new Error('Notification system should be available via testContext');
         }
     });
 
-    await test('Undo/Redo system is available', () => {
-        if (typeof window.performStateBasedUndo !== 'function') {
-            throw new Error('Undo system should be available');
+    await test('Undo/Redo system is available (via testContext)', () => {
+        const performUndo = getTestPerformStateBasedUndo();
+        const performRedo = getTestPerformStateBasedRedo();
+
+        if (typeof performUndo !== 'function') {
+            throw new Error('Undo system should be available via testContext');
         }
-        if (typeof window.performStateBasedRedo !== 'function') {
-            throw new Error('Redo system should be available');
+        if (typeof performRedo !== 'function') {
+            throw new Error('Redo system should be available via testContext');
         }
     });
 
     // ===== DEBUG FUNCTION =====
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Debug Functions</h4>';
 
-    await test('debugAppState function is available', () => {
-        // debugAppState may only be exposed after full app init
-        // In test environment, check if it exists or if AppState has debug capabilities
-        const hasDebug = typeof window.debugAppState === 'function' ||
-                        (window.AppState && typeof window.AppState.getState === 'function');
+    await test('AppState has debug capabilities (via testContext)', () => {
+        const AppState = getTestAppState();
+
+        // Check if AppState has debug capabilities
+        const hasDebug = AppState &&
+                        (typeof AppState.get === 'function' ||
+                         typeof AppState.getState === 'function');
         if (!hasDebug) {
-            throw new Error('debugAppState or AppState.getState should be available');
+            throw new Error('AppState should have get() or getState() for debugging');
         }
     });
 
-    await test('debugAppState runs without error', () => {
-        // In test environment, debugAppState may not be available
-        // Test what's available without error
-        if (typeof window.debugAppState === 'function') {
-            // Capture console output to prevent noise
-            const originalGroup = console.group;
-            const originalLog = console.log;
-            const originalGroupEnd = console.groupEnd;
+    await test('AppState.get() returns state object', () => {
+        const AppState = getTestAppState();
 
-            let called = false;
-            console.group = () => { called = true; };
-            console.log = () => {};
-            console.groupEnd = () => {};
-
-            try {
-                window.debugAppState();
-                if (!called) {
-                    throw new Error('debugAppState should call console.group');
-                }
-            } finally {
-                console.group = originalGroup;
-                console.log = originalLog;
-                console.groupEnd = originalGroupEnd;
-            }
-        } else if (window.AppState && typeof window.AppState.getState === 'function') {
-            // Alternative: verify AppState.getState works
-            const state = window.AppState.getState();
+        if (AppState && typeof AppState.get === 'function') {
+            const state = AppState.get();
             if (typeof state !== 'object') {
-                throw new Error('AppState.getState should return an object');
+                throw new Error('AppState.get() should return an object');
+            }
+        } else if (AppState && typeof AppState.getState === 'function') {
+            const state = AppState.getState();
+            if (typeof state !== 'object') {
+                throw new Error('AppState.getState() should return an object');
             }
         } else {
-            throw new Error('No debug capability available');
+            throw new Error('No debug capability available via testContext');
         }
     });
 

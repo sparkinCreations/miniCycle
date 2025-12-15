@@ -71,6 +71,34 @@ export function wireUndoRedoUI() {
 }
 
 /**
+ * Wire up keyboard shortcuts for undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
+ * Called once during app initialization
+ */
+export function wireUndoRedoKeyboardShortcuts() {
+  // Idempotent guard
+  if (Deps.AppGlobalState.__undoRedoKeyboardWired) {
+    console.log('ℹ️ Undo/redo keyboard shortcuts already wired');
+    return;
+  }
+  Deps.AppGlobalState.__undoRedoKeyboardWired = true;
+
+  assertInjected('safeAddEventListener', Deps.safeAddEventListener);
+
+  function handleUndoRedoKeydown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      performStateBasedUndo();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
+      e.preventDefault();
+      performStateBasedRedo();
+    }
+  }
+
+  Deps.safeAddEventListener(document, 'keydown', handleUndoRedoKeydown);
+  console.log('⌨️ Undo/redo keyboard shortcuts wired (Ctrl+Z, Ctrl+Y)');
+}
+
+/**
  * Initialize undo/redo buttons to hidden state
  */
 export function initializeUndoRedoButtons() {
@@ -103,6 +131,59 @@ export function captureInitialSnapshot() {
 }
 
 // ============ STATE SUBSCRIPTION ============
+
+/**
+ * Wrap AppState.update to capture snapshots automatically
+ * This centralizes undo snapshot capture on every state update
+ * @param {Object} appInit - AppInit module for readiness check
+ * @returns {boolean} True if wrapper was installed
+ */
+export function wrapAppStateForUndo(appInit) {
+  assertInjected('AppState', Deps.AppState);
+  assertInjected('AppGlobalState', Deps.AppGlobalState);
+
+  // Already wrapped - skip
+  if (Deps.AppGlobalState.wrappedAppStateUpdate) {
+    console.log('ℹ️ AppState.update already wrapped for undo');
+    return false;
+  }
+
+  try {
+    const AppState = Deps.AppState;
+    const globalState = Deps.AppGlobalState;
+
+    // Bind methods to preserve `this`
+    const boundUpdate = AppState.update.bind(AppState);
+    const boundGet = typeof AppState.get === 'function'
+      ? AppState.get.bind(AppState)
+      : null;
+
+    AppState.update = async (producer, immediate) => {
+      try {
+        // Capture snapshot before update (if core ready and not during undo/redo)
+        if (appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
+          const prev = boundGet();
+          if (prev) {
+            captureStateSnapshot(prev);
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Undo snapshot wrapper error:', e);
+      }
+      return boundUpdate(producer, immediate);
+    };
+
+    globalState.wrappedAppStateUpdate = true;
+    globalState.useUpdateWrapper = true;  // wrapper becomes single snapshot source
+    Deps.wrapperActive = true;  // update internal flag
+
+    console.log('🧰 Undo snapshots centralized on AppState.update');
+    return true;
+  } catch (e) {
+    console.error('❌ Failed to wrap AppState.update:', e);
+    return false;
+  }
+}
 
 /**
  * Set up AppState subscription for automatic snapshots
