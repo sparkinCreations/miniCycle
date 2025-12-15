@@ -10,7 +10,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.498';
+const APP_VERSION = '1.500';
 
 // Set boot flag to prevent lite fallback
 document.documentElement.dataset.appBooted = 'true';

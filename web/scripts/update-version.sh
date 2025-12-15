@@ -84,6 +84,7 @@ CORE_HTML_FILES=(
 CORE_JS_FILES=(
     "miniCycle-main.js"
     "modules/boot/orchestrator.js"
+    "modules/boot/coreBoot.js"
     "lite/miniCycle-lite-scripts.js"
     "service-worker.js"
 )
