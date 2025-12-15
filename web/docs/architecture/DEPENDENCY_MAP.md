@@ -1,26 +1,26 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** December 4, 2025
+> **Updated:** December 15, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
 
-The miniCycle codebase has **43 modules** across **11 directories**. Communication is transitioning from `window.*` globals to a `deps` container pattern.
+The miniCycle codebase has **45 modules** across **11 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
 
 ### Key Numbers
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
-| Total modules | 43 | 44 | — | — |
-| `window.*` globals created (in modules/) | ~68 | **27** | <20 | **85%** |
-| `window.*` references consumed (in modules/) | ~748 | **562** | <100 | **29%** |
-| Modules with DI setters (`set*Dependencies`) | 0 | **27** | 15+ | **Exceeded** |
-| `this.deps.*` usage | 0 | **934** | 100+ | **Exceeded** |
-| Modules still exporting to `window.*` | ~40 | **13** | 0 | **70%** |
+| Total modules | 43 | **45** | — | — |
+| `window.*` globals created | ~68 | **0** | 0 | **100%** ✅ |
+| `window.*` references consumed | ~748 | **0** | 0 | **100%** ✅ |
+| Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
+| `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
+| Modules still exporting to `window.*` | ~40 | **0** | 0 | **100%** ✅ |
 
-> **Note:** Modular overhaul in progress (~50-60% complete). See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for tracking.
+> **Modular overhaul complete (December 2025).** All modules use strict DI.
 >
-> **Last verified:** December 4, 2025
+> **Last verified:** December 15, 2025
 
 ---
 
@@ -28,8 +28,8 @@ The miniCycle codebase has **43 modules** across **11 directories**. Communicati
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      window.* globals                        │
-│  AppState, taskCore, showNotification, sanitizeInput, etc.  │
+│                   appContext.js (centralized registry)       │
+│  getAppState(), getTaskApi(), getUiApi(), getCycleApi()     │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
@@ -48,6 +48,7 @@ The miniCycle codebase has **43 modules** across **11 directories**. Communicati
 │  │integrat │  │themes   │  │dataValid│                     │
 │  └─────────┘  └─────────┘  └─────────┘                     │
 │                                                              │
+│  All modules use strict DI - no window.* globals             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -308,50 +309,38 @@ These modules are endpoints - they use other modules but nothing uses them:
 
 ---
 
-## Global Variables Reference
+## Module Access Reference
 
-### Core Globals (Always needed)
+**No `window.*` globals exist.** All module access is via:
+
+### appContext.js Getters (Preferred)
 ```javascript
-window.AppState          // State management singleton
-window.appInit           // Initialization coordinator
-window.showNotification  // User feedback
-window.sanitizeInput     // XSS prevention
-window.loadMiniCycleData // Data loading
+import {
+  getAppState, getShowNotification,
+  getTaskApi, getCycleApi, getUiApi, getStateApi
+} from '../core/appContext.js';
+
+// Usage
+const AppState = getAppState();
+const taskApi = getTaskApi();
+taskApi.add('New task');
 ```
 
-### Feature Globals
+### deps Container (Boot-time)
 ```javascript
-window.cycleManager      // Cycle creation/management
-window.cycleSwitcher     // Cycle switching
-window.modeManager       // Mode management
-window.taskCore          // Task operations (sometimes)
-window.recurringCore     // Recurring tasks
-window.statsPanel        // Statistics
-window.menuManager       // Main menu
-window.modalManager      // Modal coordination
-window.reminders         // Reminder system
-window.themeManager      // Theme system
+// In boot files, modules are stored in deps container
+deps.core.AppState
+deps.utils.showNotification
+deps.task.taskCore
+deps.ui.modalManager
+deps.cycle.cycleManager
+deps.recurring.recurringCore
 ```
 
-### Utility Globals
+### Direct ES Module Import
 ```javascript
-window.GlobalUtils       // Event listener helpers
-window.safeAddEventListener
-window.safeAddEventListenerById
-window.DataValidator     // Data validation
-window.escapeHtml        // XSS prevention
-window.autoSave          // Save function
-```
-
-### Internal Globals (Versioning workaround)
-```javascript
-window.__taskDOMManager
-window.__TaskValidator
-window.__TaskUtils
-window.__TaskRenderer
-window.__TaskEvents
-window.__dragDropManager
-window.__statsPanel
+import { GlobalUtils } from '../utils/globalUtils.js';
+import { TaskCore } from '../task/taskCore.js';
 ```
 
 ---
@@ -475,49 +464,55 @@ constructor(options = {}) {
 
 ---
 
-## Future: Path to True Modularity
+## True Modularity Achieved (December 2025)
 
-Current state: **File separation with global coupling**
+**Current state: True modularity with strict DI**
 
-To achieve true modularity:
+All goals achieved:
 
-1. **Remove fallbacks** - Make DI required, not optional
-2. **Wire in main script** - One place creates and connects all modules
-3. **Remove window pollution** - Modules don't write to `window.*`
-4. **Explicit imports** - Dependencies visible in import statements
+1. ✅ **No fallbacks** - DI required, no `|| window.*` patterns
+2. ✅ **Wire in boot files** - `featureBoot.js` creates and connects all modules
+3. ✅ **No window pollution** - Zero custom `window.*` globals
+4. ✅ **Explicit imports** - Dependencies via appContext.js or direct import
 
-Example transformation:
+Current pattern (all modules):
 ```javascript
-// CURRENT (globally coupled)
+// All modules follow strict DI
+let _deps = {};
+
+export function setModuleDependencies(dependencies) {
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+}
+
 class TaskCore {
-    constructor(deps = {}) {
-        this.notify = deps.showNotification || window.showNotification;
+    constructor(dependencies = {}) {
+        const mergedDeps = { ..._deps, ...dependencies };
+        if (!mergedDeps.AppState) throw new Error('AppState required');
+        this.deps = {
+            AppState: mergedDeps.AppState,  // No fallback
+            showNotification: mergedDeps.showNotification
+        };
     }
 }
 
-// TARGET (truly modular)
-class TaskCore {
-    constructor({ showNotification }) {
-        if (!showNotification) throw new Error('showNotification required');
-        this.notify = showNotification;
-    }
-}
-
-// In main script:
-const taskCore = new TaskCore({
-    showNotification: notifications.show
+// In featureBoot.js:
+setModuleDependencies({
+    get AppState() { return deps.core.AppState; },
+    showNotification: deps.utils.showNotification
 });
+const taskCore = new TaskCore();
 ```
 
 ---
 
 ## Maintenance Notes
 
-- **Adding a new feature:** Create module, have it use `window.*` for deps, expose via `window.featureName`
+- **Adding a new feature:** Create module with `set*Dependencies()`, wire in `featureBoot.js`, register in `appContext.js` if needed
 - **Debugging state issues:** Start at AppState, trace through subscribers
 - **Performance issues:** Check for excessive re-renders in state subscribers
-- **Testing:** Mock `window.*` globals before importing module
+- **Testing:** Mock dependencies via `set*Dependencies()` - no window mocking needed
 
 ---
 
-*This document reflects the actual architecture, not the aspirational one. Update when significant refactoring occurs.*
+*This document reflects the actual architecture as of December 2025. All modules use strict DI.*

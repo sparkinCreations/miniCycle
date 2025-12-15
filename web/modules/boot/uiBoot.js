@@ -4,21 +4,28 @@
  * ============================================================================
  * Location: modules/boot/uiBoot.js
  *
- * This file handles:
+ * This file handles ALL UI setup via the initUIBoot() entrypoint:
  * - All global DOM event listeners
  * - UI helper functions (loaders, etc.)
  * - Device detection fallback
+ * - DOM queries and listener attachment
+ * - Loader hiding and input focus
  *
- * RESPONSIBILITIES:
- * - Attach global event listeners
- * - Handle keyboard shortcuts
- * - UI utilities like loader/spinner
+ * MAIN ENTRYPOINT:
+ * - initUIBoot({ GlobalUtils, deps, appContextMod })
+ *   Called by orchestrator.js after data load
+ *
+ * ARCHITECTURE (Dec 2025):
+ * - orchestrator.js is a pure sequence controller (no UI logic)
+ * - uiBoot.js owns ALL UI setup via initUIBoot()
+ * - Zero window.* globals
  *
  * IMPORT RULES:
  * - This file CAN import from coreBoot.js
  * - This file CAN import from featureBoot.js
- * - This file should NOT expose services to window.* (featureBoot does that)
+ * - This file uses appContext.js getters for cross-module access
  *
+ * @version 2.0.0
  * ============================================================================
  */
 

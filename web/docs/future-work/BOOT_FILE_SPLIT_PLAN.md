@@ -435,34 +435,40 @@ If timeout expires, the app logs an error and continues in degraded state rather
 | Phase | Description | Status | Lines |
 |-------|-------------|--------|-------|
 | 1 | Extract AppGlobalState | ✅ Complete | 266 |
-| 2 | Create coreBoot.js | ✅ Complete | 673 |
-| 3 | Create featureBoot.js | ✅ Complete | 1,470 |
-| 4 | Create uiBoot.js | ✅ Complete | 406 |
+| 2 | Create coreBoot.js | ✅ Complete | 575 |
+| 3 | Create featureBoot.js | ✅ Complete | 1,649 |
+| 4 | Create uiBoot.js | ✅ Complete | 678 |
 | 5 | Finalize (entrypoint + HTML) | ✅ Complete | 133 |
 | 6 | Move to modules/boot/ | ✅ Complete | - |
+| 7 | Pure orchestrator refactor | ✅ Complete | 74 |
 
-**Final File Structure:**
+**Final File Structure (Dec 2025):**
 ```
 miniCycle-main.js              (133 lines)  - Entrypoint with error handling
 
 modules/boot/
-  ├── orchestrator.js          (1,883 lines) - Boot orchestration
-  ├── coreBoot.js              (673 lines)   - Core state + init
-  ├── featureBoot.js           (1,470 lines) - DI wiring + window.* exposure
-  └── uiBoot.js                (406 lines)   - UI event handlers + helpers
+  ├── orchestrator.js          (74 lines)    - Pure sequence controller
+  ├── coreBoot.js              (575 lines)   - Core state + init
+  ├── featureBoot.js           (1,649 lines) - DI wiring + feature loading
+  └── uiBoot.js                (678 lines)   - UI handlers + initUIBoot()
 ```
+
+**Architecture (Dec 2025 Refactor):**
+- **orchestrator.js** is now a pure sequence controller with no DI writes, no DOM queries, no UI logic
+- All UI setup consolidated into single `initUIBoot()` entrypoint in uiBoot.js
+- Zero `window.*` globals - all module communication via appContext.js or deps container
 
 **Load Order:**
 ```
 miniCycle.html
   └── miniCycle-main.js (entrypoint)
-        └── modules/boot/orchestrator.js
-              ├── modules/boot/coreBoot.js (core systems)
-              ├── modules/boot/featureBoot.js (feature modules)
-              └── modules/boot/uiBoot.js (UI handlers)
+        └── modules/boot/orchestrator.js (pure sequence controller)
+              ├── Phase 1: coreBoot.js (AppState, GlobalUtils, migration)
+              ├── Phase 2: featureBoot.js (all feature modules)
+              └── Phase 3: uiBoot.js → initUIBoot() (all UI setup)
 ```
 
 ---
 
-**Last Updated:** December 11, 2025
-**Version:** 1.5 (All boot files moved to modules/boot/)
+**Last Updated:** December 15, 2025
+**Version:** 2.0 (Pure orchestrator refactor complete)
