@@ -779,35 +779,8 @@ async function initApp() {
 // - Completed Tasks → ui/completedTasksManager.js
 // ============================================================================
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ============================================================================
-// SECTION 3: RUNTIME FUNCTIONS (Lines 2556-3776)
+// SECTION 3: RUNTIME FUNCTIONS
 // ============================================================================
 // Core task orchestration, fallback functions, and small event handlers.
 // These functions share closure-scoped variables with the DI wiring above.
@@ -853,62 +826,7 @@ if (!getDeviceDetectionManager()) {
 
 
 
-// Helper function to get readable mode name (keep this)
-
-
-// ✅ EXTRACTED: initialSetup() and completeInitialSetup() moved to modules/core/appInit.js
-// Now accessed via appInit.runInitialSetup() and appInit.runCompleteInitialSetup()
-// window.completeInitialSetup is a wrapper that delegates to appInit method
-
-
-
-
-
-
-
-
-
-// Update your existing setupDarkModeToggle function to include quick toggle
-
-
-// setupQuickDarkToggle function
-
-
-// ✅ Dynamic Theme Color System with Gradient-Matching Solid Colors
-
-  
-  // Optional helper to format checkbox IDs
-// ✅ EXTRACTED: Title editing functions moved to modules/ui/titleManager.js
-// - handleMiniCycleTitleBlur()
-// - setupMiniCycleTitleListener()
-
-// ==========================================
-// 🔄 CORE DATA FUNCTIONS
-// ==========================================
-// autoSave, loadMiniCycleData, and updateCycleData are now in app-coreBoot.js
-// They are imported at initialization and exposed on window.*
-// See app-coreBoot.js for implementation details
-
-
-
-
-
-// ✅ EXTRACTED: remindOverdueTasks moved to modules/features/dueDates.js
-// Now accessed via window.remindOverdueTasks (set during dueDates module init)
-
-
-
-
-
-
-
-
-
-
-
-// ✅ EXTRACTED: handleIndefiniteCheckboxChange, handleCloseRemindersBtnClick,
-// handleWindowClickForRemindersModal moved to modules/features/reminders.js
-// (Phase 3c refactor - reminders module now handles its own modal close listeners)
+// ✅ EXTRACTED to modules: initialSetup, title editing, core data functions, reminders
 
 // Named handler for safeAddEventListener duplicate prevention
 function handleTryLiteVersionClick() {
@@ -927,28 +845,11 @@ function handleTryLiteVersionClick() {
 GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', handleTryLiteVersionClick);
 
 
-// ✅ REMOVED: Notification wrapper functions (showNotification, showConfirmationModal, showPromptModal, etc.)
-// Now exposed directly on window from notifications module initialization (see line ~504)
-
-  // ✅ REMOVED: sendReminderNotificationIfNeeded() and startReminders() - Now in modules/features/reminders.js
-  // Use window.sendReminderNotificationIfNeeded() and window.startReminders() which are globally exported
-
-  // ✅ Update recurring panel button visibility if module is loaded
-  const rpVisibility = getRecurringPanel();
-  if (rpVisibility?.updateRecurringPanelButtonVisibility) {
-      rpVisibility.updateRecurringPanelButtonVisibility();
-  }
-
-
-// ✅ MOVED: handleAlwaysShowRecurringChange → recurringPanel.wireAlwaysShowRecurringListener()
-
-
-
-/**
- * Setupusermanual function.
- *
- * @returns {void}
- */
+// ✅ Update recurring panel button visibility if module is loaded
+const rpVisibility = getRecurringPanel();
+if (rpVisibility?.updateRecurringPanelButtonVisibility) {
+    rpVisibility.updateRecurringPanelButtonVisibility();
+}
 
 function handleOpenUserManualClick() {
     getHideMainMenu()?.(); // Hide the menu when clicking
@@ -969,48 +870,7 @@ function setupUserManual() {
     GlobalUtils.safeAddEventListener(openUserManual, "click", handleOpenUserManualClick);
 }
 
-
-
-// ✅ REMOVED: setupAbout() - Now handled by modalManager module
-
-// ✅ MIGRATED: assignCycleVariables now in modules/core/appState.js (via coreBoot.js)
-// ✅ EXTRACTED: updateProgressBar and checkMiniCycle moved to modules/progress/cycleCompletion.js
-// Now accessed via window.updateProgressBar and window.checkMiniCycle (set during module init)
-
-// ✅ MOVED TO MODULE: modules/progress/cycleCompletion.js
-// - incrementCycleCount
-// - updateProgressBar
-// - checkMiniCycle
-// - handleMilestoneUnlocks
-// - showCompletionAnimation
-// - checkForMilestone
-// - showMilestoneMessage
-
-    /***********************
- *
- *
- * Rearrange Management Logic - MOVED TO MODULE
- * See: modules/task/dragDropManager.js
- *
- *
- ************************/
-
-// ✅ MIGRATED: Task management functions now in modules/task/taskCore.js and taskDOM.js
-// - addTask, validateAndSanitizeTaskInput, loadTaskContext, createOrUpdateTaskData, createTaskDOMElements
-
-
-
-
-
-
-// ✅ REMOVED: syncRecurringStateToDOM - now in modules/task/taskEvents.js
-
-
-
-// ✅ REMOVED: createTaskCheckbox - now in modules/task/taskDOM.js
-// ✅ REMOVED: createTaskLabel - now in modules/task/taskDOM.js
-
-
+// ✅ EXTRACTED: See modules/progress/cycleCompletion.js, task/dragDropManager.js, task/taskCore.js
 
 // Flush queued addTask calls (addTask is set via appContext by taskCore module in featureBoot)
 (function finalizeAddTaskBootstrap() {
@@ -1032,160 +892,14 @@ function setupUserManual() {
   }
 })();
 
-// ✅ toggleHoverTaskOptions removed - now using module version from taskDOM.js
+// ✅ Task/UI/Event functions extracted to modules (see task/, ui/, features/)
 
-// ✅ MOVED: handleRecurringSettingsClick → recurringPanel.wireRecurringSettingsClickListener()
-
-/**
- * ✅ Sanitize user input to prevent XSS attacks or malformed content.
- * @param {string} input - The user input to be sanitized.
- * @returns {string} - Cleaned and safe string, trimmed and limited in length.
- */
-// ✅ sanitizeInput removed - now using module version from globalUtils.js
-
-// ✅ MOVED: TaskOptionsVisibilityController to modules/ui/taskUI.js
-// ✅ MOVED: attachKeyboardTaskOptionToggle to modules/ui/taskInteractions.js
-// ✅ MOVED: hideTaskButtons to modules/ui/taskUI.js
-// ✅ MOVED: showTaskOptions to modules/ui/taskUI.js
-// ✅ MOVED: hideTaskOptions to modules/ui/taskUI.js
-
-
-// ✅ REMOVED: handleTaskCompletionChange - now in modules/task/taskCore.js
-
-// ========================================
-// Completed Tasks Management
-// ========================================
-
-// ✅ MOVED: Completed tasks functions to modules/ui/completedTasksManager.js
-// Functions: initCompletedTasksSection, toggleCompletedTasksSection, moveTaskToCompleted,
-// moveTaskToActive, updateCompletedTasksCount, handleTaskListMovement, organizeCompletedTasks, isCompletedDropdownEnabled
-
-// ✅ MIGRATED: isTouchDevice now in modules/utils/deviceDetection.js (via featureBoot/uiBoot)
-
-
-
-
-// ✅ MOVED: checkCompleteAllButton to modules/ui/taskUI.js
-// ✅ MOVED: triggerLogoBackground to modules/ui/uiEffects.js
-
-// ✅ MOVED: saveToggleAutoReset() to modules/cycle/modeManager.js
-// Now accessed via window.saveToggleAutoReset() which calls modeManager.setupToggleAutoReset()
-
-// ✅ Function to complete all tasks and handle reset
-// ✅ REMOVED: handleCompleteAllTasks - now in modules/task/taskCore.js
-// ✅ Event listener moved to Phase 3 (after taskCore loads)
-
-
-/***********************
- *
- *
- * Add Event Listeners (via app-uiBoot.js)
- *
- *
- ************************/
-// ✅ Task input listeners now handled by app-uiBoot.js
+// Event listeners (via uiBoot.js)
 attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
-
-// ✅ Menu button listener now handled by app-uiBoot.js
 attachMenuButtonListener(GlobalUtils, menuButton, menu);
-
-// ✅ Global event listeners (keyboard shortcuts, global clicks, touch events) now handled by app-uiBoot.js
 attachGlobalEventListeners(GlobalUtils);
 
-// ✅ LEGACY: Keep reset-notification-position handler inline for now (requires AppState access)
-GlobalUtils.safeAddEventListenerById("reset-notification-position", "click", async () => {
-    console.log('🔄 Resetting notification position (Schema 2.5 only)...');
-
-    // Use appContext getters instead of window.*
-    const AppState = getAppState();
-    const showNotification = getShowNotification();
-
-    // ✅ Use AppState only (no direct localStorage writes)
-    if (!AppState?.isReady?.()) {
-        console.error('❌ AppState not ready for reset notification position');
-        showNotification?.("❌ Unable to reset position.", "error", 2000);
-        return;
-    }
-
-    try {
-        await AppState.update(state => {
-            if (!state?.settings) {
-                state.settings = {};
-            }
-            state.settings.notificationPosition = { x: 0, y: 0 };
-            state.settings.notificationPositionModified = false;
-        }, true);
-
-        console.log('✅ Notification position reset in Schema 2.5');
-
-        // Reset UI position
-        getResetNotificationPosition()?.();
-
-        showNotification?.("🔄 Notification position reset.", "success", 2000);
-    } catch (error) {
-        console.error('❌ Failed to reset notification position:', error);
-        showNotification?.("❌ Failed to reset position.", "error", 2000);
-    }
-});
-
-// ✅ MOVED: handleOpenRemindersModalClick → reminderManager.wireOpenRemindersModalListener()
-
-// ✅ REMOVED: Duplicate global click handler for hiding task buttons
-// Now handled by uiBoot.js via attachGlobalEventListeners() → handleGlobalClickForTaskButtons()
-
-// 🟢 Safe Global Click for Deselecting miniCycle in Switch Modal
-GlobalUtils.safeAddEventListener(document, "click", (event) => {
-    const switchModalContent = document.querySelector(".mini-cycle-switch-modal-content");
-    const selectedCycle = document.querySelector(".mini-cycle-switch-item.selected");
-    const switchItemsRow = document.getElementById("switch-items-row");
-    const previewWindow = document.querySelector(".switch-preview-window");
-
-    if (
-        switchModalContent?.contains(event.target) &&
-        selectedCycle &&
-        !event.target.classList.contains("mini-cycle-switch-item") &&
-        !previewWindow?.contains(event.target)
-    ) {
-        selectedCycle.classList.remove("selected");
-        if (switchItemsRow) {
-            switchItemsRow.style.display = "none";
-        }
-        
-        // Clear preview content
-        if (previewWindow) {
-            previewWindow.innerHTML = '<p style="color: #888; font-style: italic;">Select a miniCycle to preview</p>';
-        }
-    }
-});
-
-
-
-
-// ✅ REMOVED: closeAllModals() - Now handled by modalManager module
-// ✅ REMOVED: ESC key listener - Now handled by modalManager module
-
-// ✅ MOVED TO MODULE: modules/ui/helpWindowManager.js
-// - HelpWindowManager class
-// - helpWindowManager initialization
-
-/**
- * Refresh task buttons when mode changes to show/hide recurring button
- */
-
-// ✅ Updated setupModeSelector to use state-based system
-
-
-// ✅ Updated updateCycleModeDescription to Schema 2.5 only
-
-
-
-
-
-
-/*****SPEACIAL EVENT LISTENERS *****/
-// ✅ MOVED TO app-uiBoot.js: Touch event handlers (handleFirstTouchInteraction, handlePassiveTouchstart)
-
-// ✅ Hide initial app loader when app is ready (now via app-uiBoot.js)
+// Hide initial app loader
 hideAppLoader();
 
 } // End of initApp function
@@ -1197,13 +911,7 @@ if (document.readyState === 'loading') {
   initApp();
 }
 
-  function supportsModern() {
-    try { new Function('()=>{}'); } catch(_) { return false; }
-    return !!(window.Promise && window.fetch);
-  }
-
-// ============================================
-// LOADING SPINNER GLOBAL FUNCTIONS
-// ✅ MOVED TO app-uiBoot.js: showLoader, hideLoader, withLoader
-// These are now exported from app-uiBoot.js and exposed to window there
-// ============================================
+function supportsModern() {
+  try { new Function('()=>{}'); } catch(_) { return false; }
+  return !!(window.Promise && window.fetch);
+}
