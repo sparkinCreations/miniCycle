@@ -1,848 +1,111 @@
 /**
- * ============================================================================
  * orchestrator.js - Boot Orchestration
- * ============================================================================
- * Location: modules/boot/orchestrator.js
  *
- * Welcome to miniCycle! - MJ, Developer
- * Website: https://sparkincreations.com | App: https://minicycleapp.com
+ * Pure sequence controller for miniCycle boot:
+ *   Phase 1: coreBoot (AppState, GlobalUtils, migration)
+ *   Phase 2: featureBoot (all feature modules)
+ *   Phase 3: uiBoot (event listeners, UI finalization)
  *
- * ============================================================================
- * BOOT FILE STRUCTURE (Dec 2025)
- * ============================================================================
- *
- * All boot files are now in modules/boot/:
- *
- * 1. modules/boot/coreBoot.js (~673 lines)
- *    - Core initialization (appInit, constants, GlobalUtils, migration)
- *    - AppState creation and initialization
- *    - Core data functions (loadMiniCycleData, autoSave, updateCycleData)
- *
- * 2. modules/boot/featureBoot.js (~1,470 lines)
- *    - Feature module loading and DI wiring
- *    - Window.* exposures for backward compatibility
- *
- * 3. modules/boot/uiBoot.js (~406 lines)
- *    - UI event handlers (keyboard, clicks, touch)
- *    - Loader/spinner helpers
- *
- * 4. modules/boot/orchestrator.js - THIS FILE
- *    - Coordinates boot sequence
- *    - Early module loading (before AppState)
- *    - UI setup and initialization
- *
- * LOAD ORDER:
- * -----------
- * miniCycle-main.js (entrypoint)
- *   → modules/boot/orchestrator.js (this file)
- *       → modules/boot/coreBoot.js
- *       → modules/boot/featureBoot.js
- *       → modules/boot/uiBoot.js
- *
- * ============================================================================
+ * This file only coordinates - no DI writes, no UI logic, no timing hacks.
  */
 
+// Version constant - auto-updated by update-version.sh
+const APP_VERSION = '1.498';
 
-
-
-
-// ============================================================================
-// SECTION 1: GLOBAL STATE SETUP
-// ============================================================================
-// AppGlobalState, FeatureFlags, and backward-compatible property getters
-// are now in modules/core/appGlobalState.js
-//
-// The module is imported synchronously at the top of Section 2 (DOMContentLoaded)
-// to ensure it loads before any other modules.
-//
-// Exports from appGlobalState.js:
-// - AppGlobalState: Runtime mutable state
-// - FeatureFlags: Feature toggles
-// - UNDO_LIMIT, UNDO_MIN_INTERVAL_MS: Constants
-// - debugAppState(): Debug helper function
-// ============================================================================
-
-// Additional global variable for notification system compatibility
-let isDraggingNotification = false;
-
-
-/**  🚦 App Initialization Lifecycle Manager
-// ✅ REMOVED: Old AppInit system replaced with proper appInit from appInitialization.js
-// The new system provides 2-phase initialization:
-// - Phase 1 (Core): AppState + cycle data loaded (use appInit.waitForCore())
-// - Phase 2 (App): All modules initialized (use appInit.waitForApp())
-//
-// Old API mapping:
-// - AppInit.onReady(fn) → Use appInit.waitForCore() in async functions
-// - AppInit.isReady() → Use appInit.isCoreReady()
-// - AppInit.signalReady() → Use appInit.markCoreSystemsReady()
-**/
-
-// ✅ Backward compatibility alias - will be set after appInit loads
-// appInit is managed via appContext, not window.*
-
-// ============================================================================
-// CRITICAL: Set boot flag IMMEDIATELY to prevent lite fallback
-// Uses dataset attribute instead of window.* for zero-globals compliance
-// Note: coreBoot.js also sets this, but we set it here as failsafe
-// ============================================================================
-
+// Set boot flag to prevent lite fallback
 document.documentElement.dataset.appBooted = 'true';
 
-
-
-
-
-// ============================================================================
-// SECTION 2: DEPENDENCY INJECTION WIRING HUB
-// ============================================================================
-// Main application initialization sequence.
-// This section loads all modules and wires their dependencies together.
-// The `deps` container enables true DI - modules receive deps, not window.*
-//
-// Core initialization (AppGlobalState, appInit, constants, GlobalUtils, migration)
-// is now handled by coreBoot.js
-
-// Handle case where DOMContentLoaded may have already fired
+/**
+ * Main initialization - pure sequence controller
+ */
 async function initApp() {
-    console.log('🚀 Starting miniCycle initialization (Schema 2.5 only)...');
+  console.log('🚀 Starting miniCycle initialization...');
 
-  // ============================================
-  // 🎯 LOAD BOOT MODULES
-  // coreBoot: AppGlobalState, appInit, constants, GlobalUtils, migration
-  // featureBoot: All feature module loading and DI wiring
-  // ============================================
-  const coreBoot = await import(`./coreBoot.js?v=${window.APP_VERSION || '1.470'}`);
-  // Note: loadMiniCycleData, autoSave, updateCycleData are NOT destructured here
-  // They're populated AFTER initCoreBoot() runs, so access via deps.core.* instead
+  // ========== LOAD BOOT MODULES ==========
+  const coreBoot = await import(`./coreBoot.js?v=${APP_VERSION}`);
   const { initCoreBoot, initAppState } = coreBoot;
 
-  // Feature boot module - handles Phase 2 module loading
-  const featureBoot = await import(`./featureBoot.js?v=${window.APP_VERSION || '1.470'}`);
+  const featureBoot = await import(`./featureBoot.js?v=${APP_VERSION}`);
   const { bootFeatures, bootEarlyDeps } = featureBoot;
-  console.log('📦 Feature boot module loaded');
 
-  // UI boot module - handles UI event listeners and helpers
-  const uiBoot = await import(`./uiBoot.js?v=${window.APP_VERSION || '1.470'}`);
-  const { attachGlobalEventListeners, attachTaskInputListeners, attachMenuButtonListener, hideAppLoader } = uiBoot;
-  console.log('📦 UI boot module loaded');
+  const uiBoot = await import(`./uiBoot.js?v=${APP_VERSION}`);
+  const {
+    attachGlobalEventListeners, attachTaskInputListeners, attachMenuButtonListener,
+    hideAppLoader, isOverlayActive, updateNavDots, setupUserManual,
+    setupTryLiteVersionButton, finalizeUI
+  } = uiBoot;
 
-  // ============================================
-  // 🎯 DEPENDENCY CONTAINER
-  // This object collects all module references for true dependency injection.
-  // Modules receive deps instead of reaching for window.*
-  // See: docs/future-work/MODULAR_OVERHAUL_PLAN.md
-  // ============================================
+  // ========== CREATE DEPS CONTAINER ==========
   const deps = {
-    // Will be populated as modules are loaded
-    // Core utilities
-    utils: {},
-    // Feature modules
-    features: {},
-    // UI modules
-    ui: {},
-    // Core systems (AppState, appInit, etc.)
-    core: {},
-    // Task modules
-    task: {},
-    // Cycle modules
-    cycle: {},
-    // Recurring task modules
-    recurring: {},
-    // Progress/stats modules
-    progress: {},
-    // Storage/backup modules
-    storage: {},
-    // Testing modules
-    testing: {}
+    utils: {}, features: {}, ui: {}, core: {}, task: {},
+    cycle: {}, recurring: {}, progress: {}, storage: {}, testing: {}
   };
 
-  // Initialize core boot (AppGlobalState, appInit, constants, GlobalUtils, migration)
+  // ========== PHASE 1: CORE ==========
+  console.log('🔧 Phase 1: Core systems...');
   const coreResult = await initCoreBoot(deps);
-  if (!coreResult) {
-    // Reload happening due to stale cache, bail out
-    console.log('⏳ Core boot initiated reload...');
-    return;
-  }
+  if (!coreResult) { console.log('⏳ Core boot initiated reload...'); return; }
 
-  // Extract core references for local use
-  const {
-    AppGlobalState,
-    FeatureFlags,
+  const { GlobalUtils } = coreResult;
+  await bootEarlyDeps(deps, coreResult);
+  await initAppState(deps, deps.utils.showNotification);
+  deps.ui.isOverlayActive = isOverlayActive;
+  console.log('✅ Phase 1 complete');
+
+  // ========== PHASE 2: FEATURES ==========
+  console.log('🔌 Phase 2: Feature modules...');
+  await bootFeatures(deps, coreResult);
+
+  const appContextMod = await import('../core/appContext.js');
+  appContextMod.validateAllApisRegistered();
+  console.log('✅ Phase 2 complete');
+
+  // ========== PHASE 3: DATA & UI ==========
+  console.log('🎨 Phase 3: Data & UI...');
+
+  // Load app data
+  const { getFixTaskValidationIssues } = appContextMod;
+  getFixTaskValidationIssues()?.();
+  await deps.core.initializeAppWithAutoMigration({ forceMode: true });
+
+  // DOM elements for listeners
+  const taskInput = document.getElementById("taskInput");
+  const addTaskButton = document.getElementById("addTaskBtn");
+  const menuButton = document.querySelector(".menu-button");
+  const menu = document.querySelector(".menu-container");
+
+  // UI setup
+  updateNavDots();
+  setupUserManual(GlobalUtils);
+  setupTryLiteVersionButton(GlobalUtils, { showConfirmationModal: deps.utils.showConfirmationModal });
+
+  // Finalize UI (Complete All button, mode selector, device detection, etc.)
+  await finalizeUI({
     GlobalUtils,
-    appInit,
-    setAppInitDependencies,
-    migrationMod,
-    withV
-  } = coreResult;
-
-  console.log('✅ Core boot complete');
-
-// ======================================================================
-// 🚀 APPINIT-COMPLIANT INITIALIZATION SEQUENCE
-// ======================================================================
-// Following APPINIT_INTEGRATION_PLAN.md structure:
-// PHASE 1 (CORE): Basic utilities → Migration Manager → AppState → Mark core ready
-//   ✅ Now handled by app-coreBoot.js (AppGlobalState, appInit, constants, GlobalUtils, migration)
-// PHASE 2 (MODULES): DragDrop, Stats, Recurring, DeviceDetection
-// PHASE 3 (UI/DATA): Load data, setup UI, wire event listeners
-// ======================================================================
-
-  // ============================================================
-  // PHASE 1: CORE SYSTEMS (Partially in app-coreBoot.js)
-  // ============================================================
-  console.log('🔧 Phase 1: Initializing remaining core systems...');
-
-  // Import appContext getters for use throughout boot
-  const {
-      getAppState,
-      getAppGlobalState,
-      getAppInit,
-      getAppendToTestResults,
-      getConsoleCapture,
-      getCompleteInitialSetup,
-      getShowCycleCreationModal,
-      getGlobalUtils,
-      getLoadMiniCycleData,
-      getShowNotification,
-      getResetNotificationPosition,
-      getDeviceDetectionManager,
-      getFixTaskValidationIssues,
-      getHandleCompleteAllTasks,
-      getInitCompletedTasksSection,
-      // UI
-      getUpdateMainMenuHeader,
-      getHideMainMenu,
-      // Undo/Redo
-      getPerformStateBasedUndo,
-      getPerformStateBasedRedo,
-      getUpdateUndoRedoButtons,
-      // Reminders
-      getUpdateReminderButtons,
-      getStartReminders,
-      getRemindOverdueTasks,
-      getLoadRemindersSettings,
-      // Recurring
-      getRecurringPanel,
-      getOpenRecurringSettingsPanelForTask,
-      // Mode
-      getInitializeModeSelector,
-      // Task
-      getUpdateMoveArrowsVisibility,
-      getAddTask
-  } = await import('../core/appContext.js');
-
-    /******
-     * UTILITY MODULE IMPORTS & INITIALIZATION
-     *
-     * Core utilities (GlobalUtils) are now loaded by app-coreBoot.js
-     * This section continues with remaining utility modules:
-     *
-     * 1. Error handler (global error handling)
-     * 2. Data validator (input validation)
-     * 3. Console capture system (debugging & diagnostics)
-     * 4. Notification system (user feedback & alerts)
-     *
-     * All modules are made globally accessible for cross-component communication.
-     ******/
-
-    // ============================================
-    // EARLY DEPENDENCIES (before AppState)
-    // Uses bootEarlyDeps() from featureBoot.js to load notifications
-    // This avoids duplicate loading - bootFeatures() skips these modules
-    // ============================================
-
-    // ✅ GlobalUtils already loaded by app-coreBoot.js and stored in deps.utils
-    console.log('🛠️ Global utilities already loaded by app-coreBoot.js');
-
-    // ✅ Load early deps (ErrorHandler, ConsoleCapture, Notifications)
-    // These are needed before AppState for error handling and user feedback
-    const { showNotification } = await bootEarlyDeps(deps, coreResult);
-
-    // Update appContext with showNotification
-    import('../core/appContext.js').then(mod => {
-        mod.setContextValue('showNotification', deps.utils.showNotification);
-    });
-
-    // ✅ REMOVED: Theme Manager, Modal Manager early loading
-    // These are now loaded by featureBoot.js only (Phase 2)
-    // This eliminates duplicate module loading
-
-    // ✅ Migration Manager already loaded by app-coreBoot.js
-    // Now initialize AppState with showNotification available
-    console.log('🗃️ Initializing AppState (after notifications ready)...');
-    await initAppState(deps, deps.utils.showNotification);
-    console.log('✅ AppState initialized via app-coreBoot.js');
-
-    // ✅ NOW it's safe to set up UI components that may call loadMiniCycleData()
-    console.log('🎨 Setting up UI components (after migration manager)...');
-
-    // Centralized overlay detection for UI state management (local function, not exposed)
-    function isOverlayActive() {
-        if (document.querySelector(".menu-container.visible")) return true;
-
-        const overlaySelectors = [
-            '.settings-modal[style*="display: flex"]',
-            '.mini-cycle-switch-modal[style*="display: flex"]',
-            '#feedback-modal[style*="display: flex"]',
-            '#about-modal[style*="display: flex"]',
-            '#themes-modal[style*="display: flex"]',
-            '#games-panel[style*="display: flex"]',
-            '#reminders-modal[style*="display: flex"]',
-            '#testing-modal[style*="display: flex"]',
-            '#recurring-panel-overlay:not(.hidden)',
-            '.notification-container .notification',
-            '#storage-viewer-overlay:not(.hidden)',
-            '.mini-modal-overlay',
-            '.miniCycle-overlay',
-            '.onboarding-modal:not([style*="display: none"])'
-        ];
-
-        return overlaySelectors.some(selector => document.querySelector(selector));
-    }
-
-    // Navigation dots for task/stats panel switching (local function, not exposed)
-    function updateNavDots() {
-        const statsPanel = document.getElementById("stats-panel");
-        const statsVisible = statsPanel && statsPanel.classList.contains("show");
-        const dots = document.querySelectorAll(".dot");
-
-        if (dots.length === 2) {
-            dots[0].classList.toggle("active", !statsVisible);
-            dots[1].classList.toggle("active", statsVisible);
-        }
-    }
-
-
-    // ✅ DOM Element References
-    const taskInput = document.getElementById("taskInput");
-   const addTaskButton = document.getElementById("addTaskBtn");
-    const taskList = document.getElementById("taskList");
-    const progressBar = document.getElementById("progressBar");
-    const completeAllButton = document.getElementById("completeAll");
-    const toggleAutoReset = document.getElementById("toggleAutoReset");
-    const menuButton = document.querySelector(".menu-button");
-    const menu = document.querySelector(".menu-container");
-    const exitMiniCycle = document.getElementById("exit-mini-cycle");
-    const feedbackModal = document.getElementById("feedback-modal");
-    const openFeedbackBtn = document.getElementById("open-feedback-modal");
-    const closeFeedbackBtn = document.querySelector(".close-feedback-modal");
-    const submitFeedbackBtn = document.getElementById("submit-feedback");
-    const feedbackText = document.getElementById("feedback-text");
-    const openUserManual = document.getElementById("open-user-manual");
-    const enableReminders = document.getElementById("enableReminders");
-    const enableTaskReminders = document.getElementById("enable-task-reminders");
-    // ✅ REMOVED: indefiniteCheckbox, repeatCountRow, frequencySection, remindersModal, closeRemindersBtn
-    // Now handled by reminders module (Phase 3c refactor)
-    const closeMainMenuBtn = document.getElementById("close-main-menu");
-    const themeUnlockMessage = document.getElementById("theme-unlock-message");
-    const themeUnlockStatus = document.getElementById("theme-unlock-status");
-    const selectedYearlyDays = {}; // key = month number, value = array of selected days
-    const yearlyApplyToAllCheckbox = document.getElementById("yearly-apply-days-to-all");
-
-    // ✅ Dark Mode Toggle Setup (Schema 2.5)
-    const quickToggle = document.getElementById("quick-dark-toggle");
-    let darkModeEnabled = false;
-
-
-    try {
-        const schemaData = deps.core.loadMiniCycleData?.();
-        if (schemaData) {
-            darkModeEnabled = schemaData.settings.darkMode || false;
-        }
-    } catch (error) {
-        console.warn('⚠️ Could not load dark mode setting, using default');
-    }
-
-    if (quickToggle) {
-        quickToggle.textContent = darkModeEnabled ? "☀️" : "🌙";
-    }
-
-    // ✅ REMOVED: Recurring delegated handlers (RECURRING_CLICK_TARGETS, RECURRING_CHANGE_TARGETS,
-    // handleRecurringChange, handleRecurringClick) - now handled by recurringCore/recurringPanel modules
-
-    const DRAG_THROTTLE_MS = 50;
-    // TASK_LIMIT is now from app-coreBoot.js (coreResult.TASK_LIMIT)
-
-    // ✅ Initialize app with proper error handling and Schema 2.5 focus
-    console.log('🔧 Starting core initialization sequence...');
-
-
-    
-
-    // ✅ UI Component Setup - MOVED to async block after migration manager loads
-    console.log('🎨 UI Component Setup will run after migration manager loads...');
-
-    // ✅ Stats and Navigation
-    console.log('📊 Updating stats and navigation...');
-    updateNavDots();
-
-
-    // ✅ Theme Loading - MOVED to featureBoot.js (after ThemeManager is wired)
-    // This eliminates duplicate theme initialization and ensures proper DI
-    console.log('🎨 Theme loading deferred to featureBoot...');
-
-    // ✅ MOVED TO PHASE 2: cycleLoader initialization moved after AppState is ready
-    // This prevents capturing null AppState reference
-    // See Phase 2 initialization section (line ~1152) for cycleLoader setup
-
-    // ✅ Feature Setup
-    console.log('⚙️ Setting up features...');
-
-    // ✅ Title Manager (extracted to module)
-    const titleManagerMod = await import(withV('../ui/titleManager.js'));
-    titleManagerMod.setTitleManagerDependencies({
-        GlobalUtils: GlobalUtils,
-        getAppState: getAppState,
-        getLoadMiniCycleData: getLoadMiniCycleData,
-        getShowNotification: getShowNotification,
-        getUpdateMainMenuHeader: getUpdateMainMenuHeader,
-        getUpdateUndoRedoButtons: getUpdateUndoRedoButtons
-    });
-    titleManagerMod.setupMiniCycleTitleListener();
-
-    // ✅ MOVED TO PHASE 2: setupDownloadMiniCycle() - now handled by settingsManager module
-    // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
-    // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
-    // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
-    // ✅ MOVED: initializeThemesPanel() and setupThemesPanel() to featureBoot.js
-
-    // ✅ UI Setup (Modal Manager handles modal setup automatically)
-    // ✅ MOVED TO PHASE 2: setupMainMenu() - now handled by menuManager module
-    // ✅ MOVED TO PHASE 2: setupSettingsMenu() - now handled by settingsManager module
-    setupUserManual();
-
-    // ✅ completeInitialSetup delegates to appInit method - register with appContext
-    const completeInitialSetupFn = (activeCycle, fullSchemaData, schemaData) =>
-        appInit.runCompleteInitialSetup(activeCycle, fullSchemaData, schemaData);
-    import('../core/appContext.js').then(mod => {
-        mod.setContextValue('completeInitialSetup', completeInitialSetupFn);
-    });
-
-
-
-// ...existing code...
-
-// ✅ wireUndoRedoUI moved to modules/ui/undoRedoManager.js
-
-// ✅ Data-ready initialization - runs immediately (no more deferral needed)
-// The code below will execute after data is loaded in the main sequence
-// NOTE: AppState initialization is now handled by initAppState() in app-coreBoot.js
-// which was called earlier after notifications were loaded (line ~363)
-(async () => {
-  console.log('🟢 Data-ready initializers running…');
-
-  // ✅ AppState already initialized via initAppState() in app-coreBoot.js
-  // Update notifications with AppState now available
-  if (deps.utils.setNotificationsDependencies) {
-      deps.utils.setNotificationsDependencies({
-          AppState: getAppState()
-      });
-  }
-
-  try {
-        // ✅ Core systems already marked ready by initAppState()
-        console.log('✅ Core systems already initialized by app-coreBoot.js');
-
-        // ============ PHASE 2: MODULES ============
-        // Feature module loading now handled by app-featureBoot.js
-        console.log('🔌 Phase 2: Loading modules via bootFeatures...');
-    
-  // ✅ Update recurring panel button visibility if module is loaded
-  const rpVisibility = getRecurringPanel();
-  if (rpVisibility?.updateRecurringPanelButtonVisibility) {
-      rpVisibility.updateRecurringPanelButtonVisibility();
-  }
-
-        const featureResult = await bootFeatures(deps, coreResult);
-        console.log('✅ bootFeatures complete:', Object.keys(featureResult.managers).length, 'managers,', Object.keys(featureResult.modules).length, 'modules');
-
-        // ✅ Validate all grouped APIs are registered before proceeding
-        const appContextMod = await import('../core/appContext.js');
-        appContextMod.validateAllApisRegistered();
-
-        // ✅ Mark Phase 2 complete - all modules are now loaded and ready
-        console.log('✅ Phase 2 complete - all modules initialized');
-
-        // ============ PHASE 3: DATA LOADING ============
-        console.log('📊 Phase 3: Loading app data...');
-
-        // 🎯 Now that all modules are ready, load data
-        try {
-          console.log('🔧 Running fixTaskValidationIssues...');
-          getFixTaskValidationIssues()?.();
-
-          console.log('🚀 Running initializeAppWithAutoMigration...');
-          // ✅ IMPORTANT: initializeAppWithAutoMigration calls initialSetup() after Phase 2 modules are ready
-          await deps.core.initializeAppWithAutoMigration({ forceMode: true }); // will call initialSetup() async
-          console.log('✅ Data initialization sequence started');
-        } catch (error) {
-          console.error('❌ Critical initialization error:', error);
-          console.error('❌ Error stack:', error.stack);
-        }
-
-        // ✅ Setup taskCore event listeners (after taskCore loaded in Phase 2)
-        try {
-          const completeAllButton = document.getElementById("completeAll");
-          const handleCompleteAll = getHandleCompleteAllTasks();
-          if (completeAllButton && typeof handleCompleteAll === 'function') {
-            GlobalUtils.safeAddEventListener(completeAllButton, "click", handleCompleteAll);
-            console.log('✅ Complete All button listener attached');
-          }
-        } catch (eventErr) {
-          console.warn('⚠️ Failed to setup Complete All listener:', eventErr);
-        }
-
-        // ✅ Undo/Redo: wiring, wrapper, and initialization handled by featureBoot.js (undoRedoManager module)
-
-        // ✅ LAZY LOAD Testing Modal - only loads when button is clicked
-        let testingModalMod = null;
-        let testingModalLoaded = false;
-
-        const openTestingBtn = document.getElementById('open-testing-modal');
-        if (openTestingBtn) {
-            openTestingBtn.addEventListener('click', async (e) => {
-                // If already loaded, the module's own click handler will open it
-                if (testingModalLoaded) return;
-
-                e.stopPropagation();
-                console.log('🔬 Lazy loading testing modal...');
-                deps.utils.showNotification?.('🔬 Loading diagnostics...', 'info', 2000);
-
-                try {
-                    // Load modules on-demand
-                    testingModalMod = await import(withV('../testing/testing-modal.js'));
-                    console.log('✅ Testing modal loaded (lazy)');
-
-                    // ✅ closeStorageViewer handled via event delegation in testing-modal.js
-
-                    const testingIntegrationMod = await import(withV('../testing/testing-modal-integration.js'));
-
-                    // Wire dependencies for testing-modal-integration (DI-pure)
-                    if (testingIntegrationMod.setTestingModalDependencies) {
-                        testingIntegrationMod.setTestingModalDependencies({
-                            safeAddEventListenerById: deps.utils.safeAddEventListenerById,
-                            showNotification: deps.utils.showNotification,
-                            get ConsoleCapture() { return getConsoleCapture(); }
-                        });
-                    }
-
-                    // Inject dependencies into Testing Modal
-                    if (testingModalMod.setTestingModalDependencies) {
-                        testingModalMod.setTestingModalDependencies({
-                            AppState: getAppState(),
-                            get BackupManager() { return deps.storage.BackupManager; },
-                            notifications: deps.utils.notifications,
-                            showNotification: deps.utils.showNotification,
-                            deleteStorageItem: (key, storageType) => {
-                                const storage = storageType === 'local' ? localStorage : sessionStorage;
-                                storage.removeItem(key);
-                            },
-                            safeAddEventListener: GlobalUtils.safeAddEventListener,
-                            safeAddEventListenerById: GlobalUtils.safeAddEventListenerById,
-                            // Use module exports instead of window.* globals
-                            setupAutomatedTestingFunctions: () => testingIntegrationMod.setupAutomatedTestingFunctions?.(),
-                            startAutoConsoleCapture: () => getConsoleCapture()?.startAutoConsoleCapture?.(),
-                            isConsoleCapturing: () => getConsoleCapture()?.consoleCapturing || false
-                        });
-                    }
-
-                    // Setup testing modal
-                    if (typeof testingModalMod.setupTestingModal === 'function') {
-                        testingModalMod.setupTestingModal();
-                    }
-
-                    // Initialize enhancements
-                    if (typeof testingModalMod.initializeTestingModalEnhancements === 'function') {
-                        testingModalMod.initializeTestingModalEnhancements();
-                    }
-
-                    testingModalLoaded = true;
-                    console.log('✅ Testing modal initialized (lazy)');
-
-                    // Now open the modal
-                    const testingModal = document.getElementById('testing-modal');
-                    if (testingModal) {
-                        testingModal.style.display = 'flex';
-                    }
-                } catch (error) {
-                    console.error('❌ Failed to load testing modal:', error);
-                    deps.utils.showNotification?.('❌ Failed to load diagnostics', 'error', 3000);
-                }
-            });
-            console.log('✅ Testing modal lazy loader attached');
-        }
-
-        // ✅ Initialize Backup Manager (DI-pure)
-        console.log('💾 Loading backup manager...');
-        let backupManagerInstance = null;
-        try {
-            const backupManagerMod = await import(withV('../storage/backupManager.js'));
-
-            // Wire dependencies (DI-pure)
-            if (backupManagerMod.setBackupManagerDependencies) {
-                backupManagerMod.setBackupManagerDependencies({
-                    get AppState() { return getAppState(); }  // Lazy getter via appContext
-                });
-            }
-
-            backupManagerInstance = backupManagerMod.default;
-            deps.storage.BackupManager = backupManagerInstance;  // Store in deps container
-            console.log('✅ Backup manager loaded');
-
-            // ✅ Create auto-backup in background (non-blocking)
-            if (backupManagerInstance) {
-                // Don't await - run in background
-                backupManagerInstance.createAutoBackup()
-                    .then(created => {
-                        if (created) {
-                            console.log('✅ Auto-backup created successfully');
-                        } else {
-                            console.log('⏭️ Auto-backup skipped (recent backup exists)');
-                        }
-                    })
-                    .catch(error => {
-                        console.warn('⚠️ Auto-backup failed (non-critical):', error);
-                    });
-            }
-        } catch (error) {
-            console.error('❌ Failed to load backup manager:', error);
-            console.warn('⚠️ App will continue without auto-backup functionality');
-        }
-
-        // Optional debug subscribe
-        const AppStateForDebug = getAppState();
-        AppStateForDebug?.subscribe('debug', (newState, oldState) => {
-          console.log('🔄 State changed:', {
-            timestamp: new Date().toISOString(),
-            activeCycle: newState.appState.activeCycleId,
-            taskCount:
-              newState.data.cycles[newState.appState.activeCycleId]?.tasks?.length || 0
-          });
-        });
-  } catch (error) {
-    console.warn('⚠️ State module initialization failed:', error);
-    // Note: AppState accessible via appContext.getAppState() - no window.* fallback
-  }
-
-  // ✅ REMOVED: No more setTimeout hacks - InitGuard handles timing
-  // ✅ REMOVED: No more deferred queue processing - modules wait for core via AppInit
-
-  // ✅ Recurring Features - now handled by recurringIntegration module
-  // Old initialization code removed - see modules/recurring/recurringIntegration.js
-  console.log('🔁 Recurring features initialized via recurringIntegration module');
-
-  // ✅ Mode Selector (with delay for DOM readiness)
-  console.log('🎯 Initializing mode selector...');
-  getInitializeModeSelector()?.(); // This calls setupModeSelector()
-
-  // ✅ Reminder System (with staggered timing)
-  console.log('🔔 Setting up reminder system...');
-
-  // ✅ setupReminderToggle() now handled by reminderManager.init() in Phase 2
-
-  setTimeout(() => {
-    try {
-      getRemindOverdueTasks()?.();
-    } catch (error) {
-      console.warn('⚠️ Overdue task reminder failed:', error);
-    }
-  }, 2000);
-  // ✅ checkDueDates now handled by dueDatesManager.init() in Phase 2
-
-  setTimeout(() => {
-    try {
-      getUpdateReminderButtons()?.(); // ✅ This is the *right* place!
-      getStartReminders()?.();
-    } catch (error) {
-      console.warn('⚠️ Reminder system setup failed:', error);
-    }
-  }, 200);
-
-  // ✅ Note: setupRecurringWatcher() is now called by initializeRecurringModules() below
-  // No need to call it here - it would cause "setupRecurringWatcher is not defined" error
-
-  // ✅ Final Setup
-  console.log('🎯 Completing initialization...');
-
-  // ✅ MOVED: DragDropManager initialization moved earlier (before markCoreSystemsReady)
-  // See line ~668 for the new location
-
-  // ✅ Now that AppState is ready, setup arrow visibility
-  getUpdateMoveArrowsVisibility()?.();
-
-  // ✅ App already marked as ready at line 777 after Phase 2 modules loaded
-  console.log('✅ miniCycle initialization complete - app is ready');
-
-  // ✅ Initialize completed tasks section
-  const initCompleted = getInitCompletedTasksSection();
-  if (typeof initCompleted === 'function') {
-    initCompleted();
-  }
-
-  // ✅ Keep isInitializing true - will be disabled on first user interaction
-  // This prevents the undo button from appearing on page load
-  console.log('✅ Initialization complete - undo system will activate on first user action');
-
-  // ✅ Run device detection (now uses appInit.waitForCore() internally - no setTimeout needed)
-  console.log('📱 Running device detection...');
-  const loadMiniCycleDataFn = getLoadMiniCycleData();
-  const deviceManager = getDeviceDetectionManager();
-  if (deviceManager && loadMiniCycleDataFn) {
-    await deviceManager.autoRedetectOnVersionChange();
-  } else {
-    // Not critical - device detection will be available on next full load
-    console.log('⏭️ Skipping device detection (not fully initialized yet)');
-  }
-
-  window.onload = () => {
-    if (taskInput) {
-      taskInput.focus();
-    }
-  };
-})(); // ✅ End of async IIFE - executes immediately
-
-// ============================================================================
-// EXTRACTED TO MODULES (Dec 2025):
-// - Undo/Redo system → ui/undoRedoManager.js
-// - Recurring modules → featureBoot Phase 2
-// - Progress system → progress/cycleCompletion.js
-// - Completed Tasks → ui/completedTasksManager.js
-// ============================================================================
-
-// ============================================================================
-// SECTION 3: RUNTIME FUNCTIONS
-// ============================================================================
-// Core task orchestration, fallback functions, and small event handlers.
-// These functions share closure-scoped variables with the DI wiring above.
-//
-// EXTRACTIONS COMPLETED (Dec 2025):
-// ✅ saveToggleAutoReset → cycle/modeManager.js
-// ✅ createTaskLabel/createTaskCheckbox → task/taskDOM.js
-// ✅ Completed Tasks (9 funcs) → ui/completedTasksManager.js
-// ✅ Progress system (7 funcs) → progress/cycleCompletion.js
-// See: docs/future-work/REMAINING_EXTRACTIONS_ANALYSIS.md
-// ============================================================================
-
-// Note: generateNotificationId and generateHashId are in modules/utils/globalUtils.js
-
-/**
- * Detects the device type and applies the appropriate class to the body.
- * Determines if the device has touch capabilities or a fine pointer (mouse).
- */
-function detectDeviceType() {
-    let hasTouchEvents = "ontouchstart" in window;
-    let touchPoints = navigator.maxTouchPoints || navigator.msMaxTouchPoints;
-    let isFinePointer = window.matchMedia("(pointer: fine)").matches;
-
-    console.log(`touch detected: hasTouchEvents=${hasTouchEvents}, maxTouchPoints=${touchPoints}, isFinePointer=${isFinePointer}`);
-
-    if (!isFinePointer && (hasTouchEvents || touchPoints > 0)) {
-        document.body.classList.add("touch-device");
-    } else {
-        document.body.classList.add("non-touch-device");
-    }
-}
-if (!getDeviceDetectionManager()) {
-  detectDeviceType();
-}
-
-
-// ✅ MOVED: refreshTaskListUI to modules/ui/taskUI.js
-
-
-// ✅ REMOVED: initializeDefaultRecurringSettings - now handled by recurringCore module
-
-// ...existing code...
-
-
-
-// ✅ EXTRACTED to modules: initialSetup, title editing, core data functions, reminders
-
-// Named handler for safeAddEventListener duplicate prevention
-function handleTryLiteVersionClick() {
-  showConfirmationModal({
-    title: "Switch to Lite Version",
-    message: "Try the Lite version? It works great on older devices and slower connections.",
-    confirmText: "Try Lite Version",
-    cancelText: "Stay Here",
-    callback: (confirmed) => {
-      if (confirmed) {
-        window.location.href = 'lite/miniCycle-lite.html';
-      }
-    }
+    deps,
+    getHandleCompleteAllTasks: appContextMod.getHandleCompleteAllTasks,
+    getInitializeModeSelector: appContextMod.getInitializeModeSelector,
+    getUpdateMoveArrowsVisibility: appContextMod.getUpdateMoveArrowsVisibility,
+    getInitCompletedTasksSection: appContextMod.getInitCompletedTasksSection,
+    getRecurringPanel: appContextMod.getRecurringPanel,
+    getDeviceDetectionManager: appContextMod.getDeviceDetectionManager
   });
-}
-GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', handleTryLiteVersionClick);
 
+  // Attach event listeners
+  attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
+  attachMenuButtonListener(GlobalUtils, menuButton, menu);
+  attachGlobalEventListeners(GlobalUtils);
 
-// ✅ Update recurring panel button visibility if module is loaded
-const rpVisibility = getRecurringPanel();
-if (rpVisibility?.updateRecurringPanelButtonVisibility) {
-    rpVisibility.updateRecurringPanelButtonVisibility();
-}
+  // Hide loader and focus input
+  hideAppLoader();
+  requestAnimationFrame(() => taskInput?.focus());
 
-function handleOpenUserManualClick() {
-    getHideMainMenu()?.(); // Hide the menu when clicking
-
-    // Disable button briefly to prevent multiple clicks
-    openUserManual.disabled = true;
-
-    // Redirect to the User Manual page after a short delay
-    setTimeout(() => {
-        window.location.href = "legal/user-manual.html"; // ✅ Opens the manual page
-
-        // Re-enable button after navigation (won't matter much since page changes)
-        openUserManual.disabled = false;
-    }, 200);
+  console.log('✅ miniCycle initialization complete');
 }
 
-function setupUserManual() {
-    GlobalUtils.safeAddEventListener(openUserManual, "click", handleOpenUserManualClick);
-}
-
-// ✅ EXTRACTED: See modules/progress/cycleCompletion.js, task/dragDropManager.js, task/taskCore.js
-
-// Flush queued addTask calls (addTask is set via appContext by taskCore module in featureBoot)
-(function finalizeAddTaskBootstrap() {
-  try {
-    const addTaskFn = getAddTask();
-    if (typeof addTaskFn === 'function') {
-      // addTask available via appContext.getAddTask() - no window.* exposure needed
-      const globalState = getAppGlobalState();
-      const queuedCalls = globalState?.queuedAddTaskCalls;
-      if (Array.isArray(queuedCalls) && queuedCalls.length) {
-        console.log(`🚚 Flushing ${queuedCalls.length} queued addTask calls`);
-        queuedCalls.splice(0).forEach(args => {
-          try { addTaskFn(...args); } catch (e) { console.warn('addTask flush error:', e); }
-        });
-      }
-    }
-  } catch (e) {
-    console.warn('finalizeAddTaskBootstrap error:', e);
-  }
-})();
-
-// ✅ Task/UI/Event functions extracted to modules (see task/, ui/, features/)
-
-// Event listeners (via uiBoot.js)
-attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
-attachMenuButtonListener(GlobalUtils, menuButton, menu);
-attachGlobalEventListeners(GlobalUtils);
-
-// Hide initial app loader
-hideAppLoader();
-
-} // End of initApp function
-
-// Run initApp when DOM is ready (or immediately if already ready)
+// Run when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
-}
-
-function supportsModern() {
-  try { new Function('()=>{}'); } catch(_) { return false; }
-  return !!(window.Promise && window.fetch);
 }

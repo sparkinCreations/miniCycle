@@ -520,7 +520,19 @@ if should_update "modules/boot/orchestrator.js"; then
         "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" modules/boot/orchestrator.js
         "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" modules/boot/orchestrator.js
         "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" modules/boot/orchestrator.js
+        "${SED_INPLACE[@]}" "s/const APP_VERSION = '[0-9.]*'/const APP_VERSION = '$NEW_VERSION'/g" modules/boot/orchestrator.js
         echo "✅ Updated modules/boot/orchestrator.js"
+    fi
+fi
+
+# ============================================
+# UPDATE: modules/boot/coreBoot.js
+# ============================================
+
+if should_update "modules/boot/coreBoot.js"; then
+    if backup_file "modules/boot/coreBoot.js"; then
+        "${SED_INPLACE[@]}" "s/const APP_VERSION = '[0-9.]*'/const APP_VERSION = '$NEW_VERSION'/g" modules/boot/coreBoot.js
+        echo "✅ Updated modules/boot/coreBoot.js"
     fi
 fi
 

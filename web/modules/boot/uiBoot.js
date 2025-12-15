@@ -369,6 +369,48 @@ function closeMenuOnClickOutside(event) {
 // ============================================================================
 
 /**
+ * Check if any overlay/modal is currently active
+ * Used by various modules to determine if UI interactions should be blocked
+ * @returns {boolean} True if an overlay is active
+ */
+export function isOverlayActive() {
+  if (document.querySelector(".menu-container.visible")) return true;
+
+  const overlaySelectors = [
+    '.settings-modal[style*="display: flex"]',
+    '.mini-cycle-switch-modal[style*="display: flex"]',
+    '#feedback-modal[style*="display: flex"]',
+    '#about-modal[style*="display: flex"]',
+    '#themes-modal[style*="display: flex"]',
+    '#games-panel[style*="display: flex"]',
+    '#reminders-modal[style*="display: flex"]',
+    '#testing-modal[style*="display: flex"]',
+    '#recurring-panel-overlay:not(.hidden)',
+    '.notification-container .notification',
+    '#storage-viewer-overlay:not(.hidden)',
+    '.mini-modal-overlay',
+    '.miniCycle-overlay',
+    '.onboarding-modal:not([style*="display: none"])'
+  ];
+
+  return overlaySelectors.some(selector => document.querySelector(selector));
+}
+
+/**
+ * Update navigation dots for task/stats panel switching
+ */
+export function updateNavDots() {
+  const statsPanel = document.getElementById("stats-panel");
+  const statsVisible = statsPanel && statsPanel.classList.contains("show");
+  const dots = document.querySelectorAll(".dot");
+
+  if (dots.length === 2) {
+    dots[0].classList.toggle("active", !statsVisible);
+    dots[1].classList.toggle("active", statsVisible);
+  }
+}
+
+/**
  * Hide the app loader/splash screen
  */
 export function hideAppLoader() {
@@ -474,6 +516,109 @@ export function isTouchDevice() {
 
 // NOTE: isTouchDevice is exported and registered via featureBoot to appContext
 // Consumers should use it via import or grouped API, not window.*
+
+// ============================================================================
+// UI EVENT HANDLERS (Moved from orchestrator.js)
+// ============================================================================
+
+/**
+ * Handle click on "Try Lite Version" button
+ * @param {Object} deps - Dependencies containing showConfirmationModal
+ */
+export function handleTryLiteVersionClick(deps) {
+  const showConfirmationModal = deps?.showConfirmationModal || getUiApi()?.showConfirmationModal;
+
+  showConfirmationModal?.({
+    title: "Switch to Lite Version",
+    message: "Try the Lite version? It works great on older devices and slower connections.",
+    confirmText: "Try Lite Version",
+    cancelText: "Stay Here",
+    callback: (confirmed) => {
+      if (confirmed) {
+        window.location.href = 'lite/miniCycle-lite.html';
+      }
+    }
+  });
+}
+
+/**
+ * Setup user manual link handler
+ * @param {Object} GlobalUtils - GlobalUtils module reference
+ */
+export function setupUserManual(GlobalUtils) {
+  const openUserManual = document.getElementById("open-user-manual");
+  if (!openUserManual) return;
+
+  GlobalUtils.safeAddEventListener(openUserManual, "click", () => {
+    // Hide the menu when clicking
+    try {
+      getUiApi()?.hideMainMenu?.();
+    } catch (e) {
+      // Menu API not ready - ok
+    }
+
+    // Disable button briefly to prevent multiple clicks
+    openUserManual.disabled = true;
+
+    // Redirect to the User Manual page after a short delay
+    setTimeout(() => {
+      window.location.href = "legal/user-manual.html";
+      openUserManual.disabled = false;
+    }, 200);
+  });
+}
+
+/**
+ * Setup lite version button handler
+ * @param {Object} GlobalUtils - GlobalUtils module reference
+ * @param {Object} deps - Dependencies containing showConfirmationModal
+ */
+export function setupTryLiteVersionButton(GlobalUtils, deps) {
+  GlobalUtils.safeAddEventListenerById('try-lite-version', 'click', () => handleTryLiteVersionClick(deps));
+}
+
+// ============================================================================
+// FINALIZE UI
+// ============================================================================
+
+/**
+ * Finalize UI setup after all modules are loaded
+ * Called by orchestrator after bootFeatures completes
+ * @param {Object} options - Configuration options
+ */
+export async function finalizeUI(options) {
+  const {
+    GlobalUtils,
+    deps,
+    getHandleCompleteAllTasks,
+    getInitializeModeSelector,
+    getUpdateMoveArrowsVisibility,
+    getInitCompletedTasksSection,
+    getRecurringPanel,
+    getDeviceDetectionManager
+  } = options;
+
+  // Complete All button listener
+  const completeAllButton = document.getElementById("completeAll");
+  const handleCompleteAll = getHandleCompleteAllTasks?.();
+  if (completeAllButton && typeof handleCompleteAll === 'function') {
+    GlobalUtils.safeAddEventListener(completeAllButton, "click", handleCompleteAll);
+  }
+
+  // Final module setup
+  getInitializeModeSelector?.()?.();
+  getUpdateMoveArrowsVisibility?.()?.();
+  getInitCompletedTasksSection?.()?.();
+  getRecurringPanel?.()?.updateRecurringPanelButtonVisibility?.();
+
+  // Device detection
+  const deviceManager = getDeviceDetectionManager?.();
+  if (deviceManager) {
+    await deviceManager.autoRedetectOnVersionChange();
+  }
+
+  console.log('✅ UI finalized');
+}
 
 // ============================================================================
 // MODULE INFO
