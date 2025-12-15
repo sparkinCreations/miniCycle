@@ -104,9 +104,9 @@ deps.ui.myModule = myModule;  // Store in deps container, NOT window.*
 **Boot File Structure (Dec 2025):**
 ```
 miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (DI wiring hub, ~917 lines)
+  → modules/boot/orchestrator.js (DI wiring hub, ~848 lines)
       → modules/boot/coreBoot.js (core state, ~673 lines)
-      → modules/boot/featureBoot.js (feature loading, ~1,470 lines)
+      → modules/boot/featureBoot.js (feature loading, ~1,626 lines)
       → modules/boot/uiBoot.js (UI handlers, ~480 lines)
 ```
 
