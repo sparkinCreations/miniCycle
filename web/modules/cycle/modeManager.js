@@ -754,10 +754,13 @@ export class ModeManager {
                 self.deps.checkMiniCycle();
             }
 
-            // Refresh UI
-            const refreshTaskListUI = self.deps.refreshTaskListUI;
-            if (typeof refreshTaskListUI === 'function') {
-                refreshTaskListUI();
+            // ✅ Only refresh UI on real user interactions, not programmatic mode switches
+            // event.isTrusted is false when dispatched programmatically by syncTogglesFromMode()
+            if (event.isTrusted) {
+                const refreshTaskListUI = self.deps.refreshTaskListUI;
+                if (typeof refreshTaskListUI === 'function') {
+                    refreshTaskListUI();
+                }
             }
             self.deps.updateRecurringButtonVisibility();
 

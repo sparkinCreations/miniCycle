@@ -7,6 +7,19 @@
  * @module tests/taskCore
  */
 
+import {
+    getTestAppState,
+    getTestShowNotification,
+    getTestAddTask
+} from './helpers/testContext.js';
+import {
+    getTaskCoreClass,
+    getHandleTaskCompletionChange,
+    getSaveCurrentTaskOrder,
+    getResetTasks,
+    getHandleCompleteAllTasks
+} from '../modules/core/appContext.js';
+
 export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🎯 TaskCore Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -35,8 +48,8 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     }
 
 
-    // Import the module class
-    const TaskCore = window.TaskCore;
+    // Import the module class via appContext
+    const TaskCore = getTaskCoreClass();
 
     // Check if class is available
     if (!TaskCore) {
@@ -57,11 +70,9 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
             }
         }
 
-        const savedGlobals = {
-            AppState: window.AppState,
-            showNotification: window.showNotification,
-            taskCore: window.taskCore
-        };
+        // Save references from appContext (these won't be modified, just for tracking)
+        const savedAppState = getTestAppState();
+        const savedShowNotification = getTestShowNotification();
 
         try {
             // Clear localStorage
@@ -74,28 +85,15 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
             // Reset DOM state
             document.body.className = '';
 
-            // Clear any global state
-            delete window.AppState;
-            delete window.showNotification;
-            delete window.taskCore;
-
             await testFn();
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
             resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
         } finally {
-            // Restore state
+            // Restore localStorage state
             Object.keys(savedLocalStorage).forEach(key => {
                 localStorage.setItem(key, savedLocalStorage[key]);
-            });
-
-            Object.keys(savedGlobals).forEach(key => {
-                if (savedGlobals[key] === undefined) {
-                    delete window[key];
-                } else {
-                    window[key] = savedGlobals[key];
-                }
             });
         }
     }
@@ -445,50 +443,50 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // ===================================================================
-    // GLOBAL EXPORTS TESTS
+    // GLOBAL EXPORTS TESTS (via testContext/appContext)
     // ===================================================================
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌍 Global Exports</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌍 Global Exports (via appContext)</h4>';
 
-    await test('global window.taskCore is available', async () => {
-        // Note: test framework clears window.taskCore for isolation,
-        // but it's restored after each test. Check if TaskCore class is available instead.
-        if (typeof window.TaskCore === 'undefined') {
-            throw new Error('window.TaskCore not exported globally');
-        }
-        // Verify instance was created during module load
-        if (typeof window.addTask !== 'function') {
-            throw new Error('window.taskCore instance methods not available');
+    await test('TaskCore class is available via appContext', async () => {
+        const TaskCoreClass = getTaskCoreClass();
+        if (typeof TaskCoreClass === 'undefined') {
+            throw new Error('TaskCore not available via appContext');
         }
     });
 
-    await test('global window.addTask function exists', async () => {
-        if (typeof window.addTask !== 'function') {
-            throw new Error('window.addTask not exported');
+    await test('addTask function is available via testContext', async () => {
+        const addTask = getTestAddTask();
+        if (typeof addTask !== 'function') {
+            throw new Error('addTask not available via testContext');
         }
     });
 
-    await test('global window.handleTaskCompletionChange exists', async () => {
-        if (typeof window.handleTaskCompletionChange !== 'function') {
-            throw new Error('window.handleTaskCompletionChange not exported');
+    await test('handleTaskCompletionChange is available via appContext', async () => {
+        const handleTaskCompletionChange = getHandleTaskCompletionChange();
+        if (typeof handleTaskCompletionChange !== 'function') {
+            throw new Error('handleTaskCompletionChange not available via appContext');
         }
     });
 
-    await test('global window.saveCurrentTaskOrder exists', async () => {
-        if (typeof window.saveCurrentTaskOrder !== 'function') {
-            throw new Error('window.saveCurrentTaskOrder not exported');
+    await test('saveCurrentTaskOrder is available via appContext', async () => {
+        const saveCurrentTaskOrder = getSaveCurrentTaskOrder();
+        if (typeof saveCurrentTaskOrder !== 'function') {
+            throw new Error('saveCurrentTaskOrder not available via appContext');
         }
     });
 
-    await test('global window.resetTasks exists', async () => {
-        if (typeof window.resetTasks !== 'function') {
-            throw new Error('window.resetTasks not exported');
+    await test('resetTasks is available via appContext', async () => {
+        const resetTasks = getResetTasks();
+        if (typeof resetTasks !== 'function') {
+            throw new Error('resetTasks not available via appContext');
         }
     });
 
-    await test('global window.handleCompleteAllTasks exists', async () => {
-        if (typeof window.handleCompleteAllTasks !== 'function') {
-            throw new Error('window.handleCompleteAllTasks not exported');
+    await test('handleCompleteAllTasks is available via appContext', async () => {
+        const handleCompleteAllTasks = getHandleCompleteAllTasks();
+        if (typeof handleCompleteAllTasks !== 'function') {
+            throw new Error('handleCompleteAllTasks not available via appContext');
         }
     });
 
@@ -573,7 +571,7 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         resultsDiv.innerHTML += `<div class="result fail">❌ ${total.count - passed.count} test(s) failed</div>`;
     }
 
-    
+
     // 🔓 RESTORE original localStorage data (only when running individually)
     restoreOriginalData();
 

@@ -7,17 +7,70 @@
  * Instead of using lazy getters like `get AppState() { return window.AppState; }`,
  * modules can import from appContext.
  *
+ * ARCHITECTURE (December 2025):
+ * - Grouped APIs: getStateApi(), getTaskApi(), getCycleApi(), etc.
+ * - Dev protection: assertRegistered() throws if API accessed before registration
+ * - Post-boot validation: validateAllApisRegistered() catches missing registrations
+ *
  * Usage:
+ *   // PREFERRED: Grouped APIs
+ *   import { getStateApi, getTaskApi } from '../core/appContext.js';
+ *   const state = getStateApi().AppState.get();
+ *   getTaskApi().add(taskText, false);
+ *
+ *   // LEGACY: Individual getters (being phased out)
  *   import { getAppState, getAppInit } from '../core/appContext.js';
  *   const state = getAppState()?.get();
  *
  * Initialization (in coreBoot.js):
- *   import { initAppContext } from '../core/appContext.js';
- *   initAppContext({ AppState, appInit, ... });
+ *   import { setContextValue } from '../core/appContext.js';
+ *   setContextValue('stateApi', { AppState, AppGlobalState, ... });
  */
 
-// Internal context storage
+// ============================================================================
+// DEV MODE PROTECTION
+// ============================================================================
+
+const DEV_MODE = true; // Set to false in production builds
+
+/**
+ * Assert that a context key is registered before access
+ * In dev mode, throws an error with stack trace
+ * In prod mode, logs error but continues
+ * @param {string} key - Context key to check
+ */
+function assertRegistered(key) {
+    if (context[key] === null) {
+        const error = `❌ appContext: "${key}" accessed before registration!`;
+        console.error(error);
+        console.trace(); // Show call stack to identify the caller
+
+        if (DEV_MODE) {
+            throw new Error(error);
+        }
+    }
+}
+
+// ============================================================================
+// INTERNAL CONTEXT STORAGE
+// ============================================================================
+
 const context = {
+    // =========================================================================
+    // GROUPED APIs (PREFERRED - use these for new code)
+    // =========================================================================
+    stateApi: null,      // { AppState, AppGlobalState, AppMeta, loadMiniCycleData, autoSave }
+    taskApi: null,       // { add, loadContext, createDOM, extractFromDOM, handleCompleteAll, ... }
+    cycleApi: null,      // { load, create, check, createInitialSchema, ... }
+    uiApi: null,         // { showNotification, hideMainMenu, updateMainMenuHeader, ... }
+    undoApi: null,       // { capture, undo, redo, updateButtons, enableOnFirstInteraction }
+    reminderApi: null,   // { manager, start, stop, updateButtons, loadSettings }
+    recurringApi: null,  // { panel, core, openSettingsForTask }
+
+    // =========================================================================
+    // INDIVIDUAL VALUES (LEGACY - being migrated to grouped APIs)
+    // =========================================================================
+
     // =========================================================================
     // CORE STATE
     // =========================================================================
@@ -155,6 +208,10 @@ const context = {
     MiniCycleReminders: null,
     MiniCycleNotifications: null,
     EducationalTipManager: null,
+    updateDueDateVisibility: null,
+    checkOverdueTasks: null,
+    organizeCompletedTasks: null,
+    updateThemeColor: null,
 
     // =========================================================================
     // TESTING (lazy-loaded)
@@ -205,11 +262,113 @@ export function isContextReady() {
 }
 
 // ============================================================================
-// GETTERS - Use these in modules instead of window.*
+// GROUPED API GETTERS (PREFERRED - use these for new code)
+// ============================================================================
+
+/**
+ * Get State API - core state management
+ * @returns {Object} { AppState, AppGlobalState, AppMeta, loadMiniCycleData, autoSave }
+ */
+export function getStateApi() {
+    assertRegistered('stateApi');
+    return context.stateApi;
+}
+
+/**
+ * Get Task API - task operations
+ * @returns {Object} { add, loadContext, createDOM, extractFromDOM, handleCompleteAll, ... }
+ */
+export function getTaskApi() {
+    assertRegistered('taskApi');
+    return context.taskApi;
+}
+
+/**
+ * Get Cycle API - cycle management
+ * @returns {Object} { load, create, check, createInitialSchema, ... }
+ */
+export function getCycleApi() {
+    assertRegistered('cycleApi');
+    return context.cycleApi;
+}
+
+/**
+ * Get UI API - notifications and menus
+ * @returns {Object} { showNotification, hideMainMenu, updateMainMenuHeader, ... }
+ */
+export function getUiApi() {
+    assertRegistered('uiApi');
+    return context.uiApi;
+}
+
+/**
+ * Get Undo API - undo/redo operations
+ * @returns {Object} { capture, undo, redo, updateButtons, enableOnFirstInteraction }
+ */
+export function getUndoApi() {
+    assertRegistered('undoApi');
+    return context.undoApi;
+}
+
+/**
+ * Get Reminder API - reminder management
+ * @returns {Object} { manager, start, stop, updateButtons, loadSettings }
+ */
+export function getReminderApi() {
+    assertRegistered('reminderApi');
+    return context.reminderApi;
+}
+
+/**
+ * Get Recurring API - recurring task panel
+ * @returns {Object} { panel, core, openSettingsForTask }
+ */
+export function getRecurringApi() {
+    assertRegistered('recurringApi');
+    return context.recurringApi;
+}
+
+/**
+ * Validate that all required APIs are registered
+ * Call this after boot completes, before UI listeners are attached
+ * @throws {Error} if any required API is missing (in DEV_MODE)
+ * @returns {boolean} true if all APIs registered
+ */
+export function validateAllApisRegistered() {
+    const requiredApis = [
+        'stateApi',
+        'taskApi',
+        'cycleApi',
+        'uiApi',
+        'undoApi',
+        'reminderApi',
+        'recurringApi'
+    ];
+
+    const missing = requiredApis.filter(key => context[key] === null);
+
+    if (missing.length > 0) {
+        const error = `❌ appContext validation failed! Missing APIs: ${missing.join(', ')}`;
+        console.error(error);
+
+        if (DEV_MODE) {
+            throw new Error(error);
+        }
+        return false;
+    }
+
+    console.log('✅ appContext validation passed - all APIs registered');
+    return true;
+}
+
+// ============================================================================
+// INDIVIDUAL GETTERS (LEGACY - being phased out)
+// Use grouped APIs above for new code
 // ============================================================================
 
 /**
  * Get AppState instance
+ * @deprecated Use getStateApi().AppState instead
  * @returns {Object|null} AppState or null if not initialized
  */
 export function getAppState() {
@@ -405,6 +564,42 @@ export function getLoadRemindersSettings() {
 }
 
 // ============================================================================
+// FEATURE GETTERS (Due Dates, Completed Tasks, Theme)
+// ============================================================================
+
+/**
+ * Get updateDueDateVisibility function
+ * @returns {Function|null}
+ */
+export function getUpdateDueDateVisibility() {
+    return context.updateDueDateVisibility;
+}
+
+/**
+ * Get checkOverdueTasks function
+ * @returns {Function|null}
+ */
+export function getCheckOverdueTasks() {
+    return context.checkOverdueTasks;
+}
+
+/**
+ * Get organizeCompletedTasks function
+ * @returns {Function|null}
+ */
+export function getOrganizeCompletedTasks() {
+    return context.organizeCompletedTasks;
+}
+
+/**
+ * Get updateThemeColor function
+ * @returns {Function|null}
+ */
+export function getUpdateThemeColor() {
+    return context.updateThemeColor;
+}
+
+// ============================================================================
 // RECURRING GETTERS
 // ============================================================================
 
@@ -498,6 +693,22 @@ export function getFixTaskValidationIssues() {
 
 export function getHandleCompleteAllTasks() {
     return context.handleCompleteAllTasks;
+}
+
+export function getTaskCoreClass() {
+    return context.TaskCore;
+}
+
+export function getHandleTaskCompletionChange() {
+    return context.handleTaskCompletionChange;
+}
+
+export function getSaveCurrentTaskOrder() {
+    return context.saveCurrentTaskOrder;
+}
+
+export function getResetTasks() {
+    return context.resetTasks;
 }
 
 export function getInitCompletedTasksSection() {
@@ -668,4 +879,4 @@ export function createLazyDeps() {
     };
 }
 
-console.log('📦 appContext module loaded');
+console.log('📦 appContext module loaded (with grouped APIs + dev protection)');

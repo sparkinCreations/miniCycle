@@ -338,15 +338,9 @@ async function saveCycleData(activeCycle, currentCycle) {
   }
 }
 
-/**
- * Optional minimal global attach for backward compatibility
- * (Prefer importing and calling the exported functions directly.)
- */
-(function attachGlobalsOnce() {
-  if (window.__cycleLoaderGlobalsAttached) return;
-  window.__cycleLoaderGlobalsAttached = true;
-  window.loadMiniCycle ||= loadMiniCycle;
-})();
+// ✅ REMOVED: Backward compatibility global attachment
+// featureBoot.js now handles window.loadMiniCycle exposure
+// Prefer importing loadMiniCycle directly from this module
 
 export {
   loadMiniCycle,

@@ -24,8 +24,7 @@ export const FeatureFlags = {
   debugMode: false
 };
 
-// Expose to window for legacy access
-window.FeatureFlags = FeatureFlags;
+// ✅ FeatureFlags accessible via import - no window.* exposure
 
 // ============================================================================
 // APP GLOBAL STATE
@@ -80,135 +79,13 @@ export const AppGlobalState = {
   recurringModules: null     // Stores recurring module references
 };
 
-// Expose to window for legacy access
-window.AppGlobalState = AppGlobalState;
+// ✅ AppGlobalState accessible via import and appContext - no window.* exposure
 
 // ============================================================================
-// BACKWARD-COMPATIBLE PROPERTY GETTERS
+// REMOVED: BACKWARD-COMPATIBLE PROPERTY GETTERS (Dec 2025)
 // ============================================================================
-// These allow legacy code to access window.propertyName while the actual
-// data lives in AppGlobalState.
-
-// Touch state
-Object.defineProperty(window, 'touchStartTime', {
-  get: () => window.AppGlobalState.touchStartTime,
-  set: (value) => { window.AppGlobalState.touchStartTime = value; }
-});
-
-Object.defineProperty(window, 'isLongPress', {
-  get: () => window.AppGlobalState.isLongPress,
-  set: (value) => { window.AppGlobalState.isLongPress = value; }
-});
-
-Object.defineProperty(window, 'touchStartY', {
-  get: () => window.AppGlobalState.touchStartY,
-  set: (value) => { window.AppGlobalState.touchStartY = value; }
-});
-
-Object.defineProperty(window, 'touchEndY', {
-  get: () => window.AppGlobalState.touchEndY,
-  set: (value) => { window.AppGlobalState.touchEndY = value; }
-});
-
-Object.defineProperty(window, 'holdTimeout', {
-  get: () => window.AppGlobalState.holdTimeout,
-  set: (value) => { window.AppGlobalState.holdTimeout = value; }
-});
-
-Object.defineProperty(window, 'moved', {
-  get: () => window.AppGlobalState.moved,
-  set: (value) => { window.AppGlobalState.moved = value; }
-});
-
-// Drag state
-Object.defineProperty(window, 'rearrangeInitialized', {
-  get: () => window.AppGlobalState.rearrangeInitialized,
-  set: (value) => { window.AppGlobalState.rearrangeInitialized = value; }
-});
-
-Object.defineProperty(window, 'lastDraggedOver', {
-  get: () => window.AppGlobalState.lastDraggedOver,
-  set: (value) => { window.AppGlobalState.lastDraggedOver = value; }
-});
-
-Object.defineProperty(window, 'lastRearrangeTarget', {
-  get: () => window.AppGlobalState.lastRearrangeTarget,
-  set: (value) => { window.AppGlobalState.lastRearrangeTarget = value; }
-});
-
-Object.defineProperty(window, 'lastDragOverTime', {
-  get: () => window.AppGlobalState.lastDragOverTime,
-  set: (value) => { window.AppGlobalState.lastDragOverTime = value; }
-});
-
-Object.defineProperty(window, 'didDragReorderOccur', {
-  get: () => window.AppGlobalState.didDragReorderOccur,
-  set: (value) => { window.AppGlobalState.didDragReorderOccur = value; }
-});
-
-Object.defineProperty(window, 'lastReorderTime', {
-  get: () => window.AppGlobalState.lastReorderTime,
-  set: (value) => { window.AppGlobalState.lastReorderTime = value; }
-});
-
-Object.defineProperty(window, 'draggedTask', {
-  get: () => window.AppGlobalState.draggedTask,
-  set: (value) => { window.AppGlobalState.draggedTask = value; }
-});
-
-Object.defineProperty(window, 'isDragging', {
-  get: () => window.AppGlobalState.isDragging,
-  set: (value) => { window.AppGlobalState.isDragging = value; }
-});
-
-// Interaction state
-Object.defineProperty(window, 'hasInteracted', {
-  get: () => window.AppGlobalState.hasInteracted,
-  set: (value) => { window.AppGlobalState.hasInteracted = value; }
-});
-
-Object.defineProperty(window, 'logoTimeoutId', {
-  get: () => window.AppGlobalState.logoTimeoutId,
-  set: (value) => { window.AppGlobalState.logoTimeoutId = value; }
-});
-
-Object.defineProperty(window, 'advancedVisible', {
-  get: () => window.AppGlobalState.advancedVisible,
-  set: (value) => { window.AppGlobalState.advancedVisible = value; }
-});
-
-// Reminder state
-Object.defineProperty(window, 'timesReminded', {
-  get: () => window.AppGlobalState.timesReminded,
-  set: (value) => { window.AppGlobalState.timesReminded = value; }
-});
-
-Object.defineProperty(window, 'reminderIntervalId', {
-  get: () => window.AppGlobalState.reminderIntervalId,
-  set: (value) => { window.AppGlobalState.reminderIntervalId = value; }
-});
-
-Object.defineProperty(window, 'lastReminderTime', {
-  get: () => window.AppGlobalState.lastReminderTime,
-  set: (value) => { window.AppGlobalState.lastReminderTime = value; }
-});
-
-// Undo/redo state
-Object.defineProperty(window, 'isResetting', {
-  get: () => window.AppGlobalState.isResetting,
-  set: (value) => { window.AppGlobalState.isResetting = value; }
-});
-
-// Legacy names mapped to actual property names
-Object.defineProperty(window, 'undoStack', {
-  get: () => window.AppGlobalState.activeUndoStack,
-  set: (value) => { window.AppGlobalState.activeUndoStack = value; }
-});
-
-Object.defineProperty(window, 'redoStack', {
-  get: () => window.AppGlobalState.activeRedoStack,
-  set: (value) => { window.AppGlobalState.activeRedoStack = value; }
-});
+// These window.propertyName aliases were removed as part of zero-globals initiative.
+// All code now uses AppGlobalState directly via import or appContext.
 
 // ============================================================================
 // CONSTANTS
@@ -221,18 +98,22 @@ export const UNDO_MIN_INTERVAL_MS = 100;
 // DEBUG FUNCTION
 // ============================================================================
 
-export function debugAppState() {
+export async function debugAppState() {
   console.group('🔍 App State Debug');
 
-  if (!window.AppState) {
+  // Use dynamic import to avoid circular dependency
+  const { getAppState } = await import('./appContext.js');
+  const AppState = getAppState();
+
+  if (!AppState) {
     console.error('❌ AppState not available');
     console.groupEnd();
     return;
   }
 
-  console.log('Ready:', window.AppState.isReady());
+  console.log('Ready:', AppState.isReady());
 
-  const state = window.AppState.get();
+  const state = AppState.get();
   if (!state) {
     console.error('❌ No state data');
     console.groupEnd();
@@ -260,7 +141,6 @@ export function debugAppState() {
   console.groupEnd();
 }
 
-// Expose debug function to window
-window.debugAppState = debugAppState;
+// ✅ debugAppState accessible via: import('./modules/core/appGlobalState.js').then(m => m.debugAppState())
 
 console.log('✅ appGlobalState.js loaded');

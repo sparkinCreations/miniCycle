@@ -22,8 +22,18 @@
  * ============================================================================
  */
 
-// Import appContext getters for DI access
-import { getAppState, getShowNotification } from '../core/appContext.js';
+// Import appContext getters for DI access (grouped APIs preferred)
+import {
+  getAppState,
+  getShowNotification,
+  getStateApi,
+  getTaskApi,
+  getUndoApi,
+  getUiApi,
+  getCycleApi,
+  getReminderApi,
+  getDeviceDetectionManager
+} from '../core/appContext.js';
 
 // ============================================================================
 // GLOBAL EVENT LISTENERS
@@ -75,7 +85,11 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton) 
   if (addTaskButton) {
     safeAddEventListener(addTaskButton, 'click', () => {
       // Enable undo system on first user interaction
-      window.enableUndoSystemOnFirstInteraction?.();
+      try {
+        getUndoApi()?.enableOnFirstInteraction?.();
+      } catch (e) {
+        // API not ready yet - ok during early boot
+      }
 
       const taskText = taskInput?.value?.trim() || '';
       if (!taskText) {
@@ -83,7 +97,11 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton) 
         return;
       }
 
-      window.addTask?.(taskText);
+      try {
+        getTaskApi()?.add?.(taskText);
+      } catch (e) {
+        console.error('❌ Failed to add task:', e);
+      }
       taskInput.value = '';
     });
   }
@@ -93,7 +111,11 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton) 
     safeAddEventListener(taskInput, 'keypress', (event) => {
       if (event.key === 'Enter') {
         // Enable undo system on first user interaction
-        window.enableUndoSystemOnFirstInteraction?.();
+        try {
+          getUndoApi()?.enableOnFirstInteraction?.();
+        } catch (e) {
+          // API not ready yet - ok during early boot
+        }
 
         event.preventDefault();
         const taskText = taskInput.value?.trim() || '';
@@ -102,7 +124,11 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton) 
           return;
         }
 
-        window.addTask?.(taskText);
+        try {
+          getTaskApi()?.add?.(taskText);
+        } catch (e) {
+          console.error('❌ Failed to add task:', e);
+        }
         taskInput.value = '';
       }
     });
@@ -123,8 +149,15 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
   if (menuButton && menu) {
     safeAddEventListener(menuButton, 'click', (event) => {
       event.stopPropagation();
-      window.syncCurrentSettingsToStorage?.();
-      window.saveToggleAutoReset?.();
+
+      // Sync settings before showing menu
+      try {
+        getUiApi()?.syncCurrentSettingsToStorage?.();
+        getCycleApi()?.saveToggleAutoReset?.();
+      } catch (e) {
+        // APIs may not be ready - that's ok
+      }
+
       menu.classList.toggle('visible');
 
       if (menu.classList.contains('visible')) {
@@ -145,13 +178,21 @@ function handleGlobalKeydown(e) {
   // Undo: Ctrl/Cmd + Z
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault();
-    window.performStateBasedUndo?.();
+    try {
+      getUndoApi()?.undo?.();
+    } catch (err) {
+      console.warn('⚠️ Undo not available:', err);
+    }
   }
 
   // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
   if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
     e.preventDefault();
-    window.performStateBasedRedo?.();
+    try {
+      getUndoApi()?.redo?.();
+    } catch (err) {
+      console.warn('⚠️ Redo not available:', err);
+    }
   }
 }
 
@@ -224,7 +265,7 @@ function handleGlobalClickForSwitchModal(event) {
 async function handleResetNotificationPosition() {
   console.log('🔄 Resetting notification position (Schema 2.5 only)...');
 
-  // Use appContext getters instead of window.*
+  // Use appContext getters
   const AppState = getAppState();
   const showNotification = getShowNotification();
 
@@ -244,7 +285,14 @@ async function handleResetNotificationPosition() {
     }, true);
 
     console.log('✅ Notification position reset in Schema 2.5');
-    window.resetNotificationPosition?.();
+
+    // Use grouped API
+    try {
+      getUiApi()?.resetNotificationPosition?.();
+    } catch (e) {
+      console.warn('⚠️ Could not reset notification position UI:', e);
+    }
+
     showNotification?.('🔄 Notification position reset.', 'success', 2000);
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
@@ -258,12 +306,23 @@ async function handleResetNotificationPosition() {
 function handleOpenRemindersModalClick() {
   console.log('🔔 Opening reminders modal (Schema 2.5 only)...');
 
-  window.loadRemindersSettings?.();
+  // Use grouped APIs
+  try {
+    getReminderApi()?.loadSettings?.();
+  } catch (e) {
+    console.warn('⚠️ Could not load reminder settings:', e);
+  }
+
   const modal = document.getElementById('reminders-modal');
   if (modal) {
     modal.style.display = 'flex';
   }
-  window.hideMainMenu?.();
+
+  try {
+    getUiApi()?.hideMainMenu?.();
+  } catch (e) {
+    // Menu API not ready - ok
+  }
 
   console.log('✅ Reminders modal opened');
 }
@@ -272,8 +331,15 @@ function handleOpenRemindersModalClick() {
  * Handle first touch interaction (for enabling audio, etc.)
  */
 function handleFirstTouchInteraction() {
-  if (window.AppGlobalState) {
-    window.AppGlobalState.hasInteracted = true;
+  // Use grouped API
+  try {
+    const stateApi = getStateApi();
+    if (stateApi?.AppGlobalState) {
+      stateApi.AppGlobalState.hasInteracted = true;
+    }
+  } catch (e) {
+    // stateApi not registered yet - fallback silently
+    console.warn('⚠️ First touch before stateApi ready');
   }
   console.log('✅ First touch interaction detected');
 }
@@ -312,10 +378,8 @@ export function hideAppLoader() {
       appLoader.classList.add('fade-out');
       setTimeout(() => {
         appLoader.style.display = 'none';
-        // Cancel the load timeout failsafe since we loaded successfully
-        if (typeof window.__cancelLoadTimeout === 'function') {
-          window.__cancelLoadTimeout();
-        }
+        // Signal successful load via dataset (HTML checks this instead of window.*)
+        document.documentElement.dataset.appLoaded = 'true';
       }, 500);
     }
   }, 500);
@@ -363,10 +427,8 @@ export async function withLoader(asyncFunction, message = 'Processing...') {
   }
 }
 
-// Expose loader functions to window for global access
-window.showLoader = showLoader;
-window.hideLoader = hideLoader;
-window.withLoader = withLoader;
+// NOTE: Loader functions are accessed via uiApi grouped API, not window.*
+// featureBoot.js registers them: getUiApi().showLoader, getUiApi().hideLoader, etc.
 
 // ============================================================================
 // DEVICE DETECTION FALLBACK
@@ -376,14 +438,20 @@ window.withLoader = withLoader;
  * Fallback device detection if module fails to load
  */
 export function detectDeviceType() {
-  if (window.deviceDetectionManager) {
-    return; // Module loaded, use that instead
+  // Check if device detection manager loaded via appContext
+  try {
+    const deviceManager = getDeviceDetectionManager();
+    if (deviceManager) {
+      return; // Module loaded, use that instead
+    }
+  } catch (e) {
+    // Not registered yet - use fallback
   }
 
   const isFinePointer = window.matchMedia('(pointer: fine)').matches;
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const isTouchDeviceCheck = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-  if (isFinePointer && !isTouchDevice) {
+  if (isFinePointer && !isTouchDeviceCheck) {
     document.body.classList.add('desktop-mode');
     document.body.classList.remove('touch-mode');
   } else {
@@ -404,8 +472,8 @@ export function isTouchDevice() {
     !window.matchMedia('(pointer: fine)').matches;
 }
 
-// Expose to window
-window.isTouchDevice = isTouchDevice;
+// NOTE: isTouchDevice is exported and registered via featureBoot to appContext
+// Consumers should use it via import or grouped API, not window.*
 
 // ============================================================================
 // MODULE INFO

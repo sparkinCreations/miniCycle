@@ -22,10 +22,10 @@
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
+// Uses dataset attribute instead of window.* for zero-globals compliance
 // ============================================================================
-window.AppBootStarted = true;
-window.AppGlobalState = window.AppGlobalState || {}; // Ensure exists before async
-window.AppGlobalState.bootStartTime = Date.now();
+document.documentElement.dataset.appBooted = 'true';
+document.documentElement.dataset.bootStartTime = Date.now().toString();
 
 // ============================================================================
 // MODULE STATE
@@ -86,8 +86,8 @@ export async function initCoreBoot(deps) {
     window.history.replaceState({}, '', cleanUrl);
   }
 
-  // ========== Update boot timestamp ==========
-  AppGlobalState.bootStartTime = Date.now();
+  // ========== Update boot timestamp from dataset (set at module load time) ==========
+  AppGlobalState.bootStartTime = parseInt(document.documentElement.dataset.bootStartTime, 10) || Date.now();
 
   // ========== Load appInit ==========
   const appInitModule = await import(`../core/appInit.js?v=${window.APP_VERSION}`);
@@ -154,11 +154,13 @@ export async function initCoreBoot(deps) {
   deps.core.withV = withV;
 
   // ========== Create AppMeta ==========
-  window.AppMeta = {
+  // Create locally first, then expose to window for backward compatibility
+  const AppMeta = {
     version: window.APP_VERSION,
     appInitVersion: APPINIT_VERSION || null
   };
-  deps.core.AppMeta = window.AppMeta;
+  deps.core.AppMeta = AppMeta;
+  // ✅ AppMeta accessible via deps.core.AppMeta and appContext - no window.* exposure
 
   console.log('🚀 appInit and constants loaded (2-phase initialization system)');
 
@@ -180,19 +182,7 @@ export async function initCoreBoot(deps) {
   deps.utils.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
   deps.utils.setGlobalUtilsDependencies = globalUtilsModule.setGlobalUtilsDependencies;
 
-  // Expose to window for backward compat
-  window.GlobalUtils = GlobalUtils;
-  window.DEFAULT_TASK_OPTION_BUTTONS = globalUtilsModule.DEFAULT_TASK_OPTION_BUTTONS;
-  window.sanitizeInput = GlobalUtils.sanitizeInput;
-  window.escapeHtml = GlobalUtils.escapeHtml;
-  window.generateHashId = GlobalUtils.generateHashId;
-  window.syncAllTasksWithMode = GlobalUtils.syncAllTasksWithMode;
-  window.safeLocalStorageGet = GlobalUtils.safeLocalStorageGet;
-  window.safeLocalStorageSet = GlobalUtils.safeLocalStorageSet;
-  window.safeLocalStorageRemove = GlobalUtils.safeLocalStorageRemove;
-  window.safeJSONParse = GlobalUtils.safeJSONParse;
-  window.safeJSONStringify = GlobalUtils.safeJSONStringify;
-  window.generateId = GlobalUtils.generateId;
+  // ✅ GlobalUtils accessible via deps.utils and appContext.getGlobalUtils() - no window.* exposure
 
   console.log('🛠️ Global utilities loaded');
 
@@ -204,21 +194,14 @@ export async function initCoreBoot(deps) {
   deps.core.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
   deps.core.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
   deps.core.performSchema25Migration = migrationMod.performSchema25Migration;
+  deps.core.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
 
   // Initialize migration facade (consolidates 8 globals into 1 importable object)
   const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${window.APP_VERSION || '1.0'}`);
   migrationFacadeMod.initMigrationFacade(migrationMod);
   deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
 
-  // Expose migration functions globally (backward compatibility - can be removed when code uses facade)
-  window.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
-  window.checkMigrationNeeded = migrationMod.checkMigrationNeeded;
-  window.simulateMigrationToSchema25 = migrationMod.simulateMigrationToSchema25;
-  window.performSchema25Migration = migrationMod.performSchema25Migration;
-  window.validateAllMiniCycleTasksLenient = migrationMod.validateAllMiniCycleTasksLenient;
-  window.fixTaskValidationIssues = migrationMod.fixTaskValidationIssues;
-  window.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
-  window.forceAppMigration = migrationMod.forceAppMigration;
+  // ✅ Migration functions accessible via deps.core and MigrationFacade - no window.* exposure
 
   console.log('✅ Migration Manager loaded (with facade)');
 
@@ -265,24 +248,29 @@ export async function initAppState(deps, showNotification) {
 
   const { appInit, migrationMod, setAppInitDependencies, withV } = deps.core;
 
+  // Import appContext early for use in deferred dependency getters
+  const appContextMod = await import('../core/appContext.js');
+
   // Wire appInit setup dependencies
+  // Note: These are GETTER FUNCTIONS that resolve at call time (deferred DI)
+  // Use appContext getters instead of window.* for proper DI
   if (typeof setAppInitDependencies === 'function') {
     setAppInitDependencies({
       // For initialSetup
       loadMiniCycleData: () => loadMiniCycleData?.(),
       createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
-      showCycleCreationModal: () => window.showCycleCreationModal?.(),
+      showCycleCreationModal: () => appContextMod.getShowCycleCreationModal?.(),
       getOnboardingManager: () => appContextMod.getOnboardingManager?.() || null,
       getMiniCycleState: () => null,
 
-      // For completeInitialSetup
-      loadMiniCycle: () => window.loadMiniCycle,
-      updateReminderButtons: () => window.updateReminderButtons,
-      updateDueDateVisibility: () => window.updateDueDateVisibility,
-      checkOverdueTasks: () => window.checkOverdueTasks,
-      organizeCompletedTasks: () => window.organizeCompletedTasks,
-      startReminders: () => window.startReminders?.(),
-      updateThemeColor: () => window.updateThemeColor?.(),
+      // For completeInitialSetup - use appContext getters (not window.*)
+      loadMiniCycle: () => appContextMod.getCycleApi?.()?.load,
+      updateReminderButtons: () => appContextMod.getUpdateReminderButtons?.(),
+      updateDueDateVisibility: () => appContextMod.getUpdateDueDateVisibility?.(),
+      checkOverdueTasks: () => appContextMod.getCheckOverdueTasks?.(),
+      organizeCompletedTasks: () => appContextMod.getOrganizeCompletedTasks?.(),
+      startReminders: () => appContextMod.getStartReminders?.()?.(),
+      updateThemeColor: () => appContextMod.getUpdateThemeColor?.()?.(),
       getElementById: (id) => document.getElementById(id),
       addBodyClass: (cls) => document.body.classList.add(cls),
       removeBodyClass: (cls) => document.body.classList.remove(cls)
@@ -311,18 +299,17 @@ export async function initAppState(deps, showNotification) {
   // Load and create AppState
   const { createStateManager, assignCycleVariables } = await import(withV('../core/appState.js'));
 
-  // Expose assignCycleVariables to window (needed by cycleCompletion and other modules)
-  window.assignCycleVariables = assignCycleVariables;
+  // ✅ assignCycleVariables accessible via deps.core - no window.* exposure
   deps.core.assignCycleVariables = assignCycleVariables;
 
   AppState = createStateManager({
     showNotification: showNotification || console.log.bind(console),
     storage: localStorage,
     createInitialData: migrationMod.createInitialSchema25Data,
-    AppMeta: window.AppMeta
+    AppMeta: deps.core.AppMeta  // Use deps, not window.*
   });
 
-  window.AppState = AppState;
+  // ✅ AppState accessible via deps.core.AppState and appContext.getAppState() - no window.* exposure
   deps.core.AppState = AppState;
 
   // Initialize AppState
@@ -332,7 +319,7 @@ export async function initAppState(deps, showNotification) {
   // ========== Add AppState to appContext ==========
   // appContext was already initialized in initCoreBoot with appInit, AppGlobalState, GlobalUtils
   // Now we add AppState which is created here
-  const appContextMod = await import('../core/appContext.js');
+  // Note: appContextMod already imported at start of initAppState
   appContextMod.setContextValue('AppState', AppState);
   console.log('✅ AppState added to appContext');
 
@@ -340,9 +327,20 @@ export async function initAppState(deps, showNotification) {
   // Must be after appContext so dataAccess.js can use getAppState()
   await initDataAccess();
 
-  // Update appContext with data functions
+  // Update appContext with data functions (legacy individual values)
   appContextMod.setContextValue('loadMiniCycleData', loadMiniCycleData);
   appContextMod.setContextValue('autoSave', autoSave);
+
+  // ========== Register stateApi (grouped API) ==========
+  // This is the preferred way to access state - groups related functions
+  appContextMod.setContextValue('stateApi', {
+    AppState,
+    AppGlobalState: deps.core.AppGlobalState,
+    AppMeta: deps.core.AppMeta,  // Use deps, not window.*
+    loadMiniCycleData,
+    autoSave
+  });
+  console.log('✅ stateApi registered in appContext');
 
   // Update deps.core with data functions
   deps.core.loadMiniCycleData = loadMiniCycleData;
@@ -372,10 +370,7 @@ async function initDataAccess() {
   autoSave = dataAccessMod.autoSave;
   updateCycleData = dataAccessMod.updateCycleData;
 
-  // Expose on window for backward compatibility
-  window.loadMiniCycleData = loadMiniCycleData;
-  window.autoSave = autoSave;
-  window.updateCycleData = updateCycleData;
+  // ✅ Data functions accessible via appContext.getStateApi() and deps.core - no window.* exposure
 
   console.log('✅ Data access functions loaded from dataAccess.js');
 }
@@ -532,14 +527,17 @@ async function runFallbackInitialSetup(deps) {
 
     const { cycles, activeCycle } = schemaData;
 
+    // Use appContext instead of window.* for app functions
+    const appContextMod = await import('../core/appContext.js');
+
     if (!activeCycle || !cycles?.[activeCycle]) {
       console.log('🆕 No active cycle - showing cycle creation modal...');
-      window.showCycleCreationModal?.();
+      appContextMod.getShowCycleCreationModal?.()?.();
       return;
     }
 
     console.log('📦 Loading cycle:', activeCycle);
-    await window.loadMiniCycle?.(activeCycle);
+    await appContextMod.getCycleApi?.()?.load?.(activeCycle);
 
     console.log('✅ Fallback initialization complete');
   } catch (error) {

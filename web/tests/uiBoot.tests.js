@@ -6,6 +6,14 @@
  */
 
 import { setupTestEnvironment, createProtectedTest, wait } from './testHelpers.js';
+import {
+    getTestShowLoader,
+    getTestHideLoader,
+    getTestWithLoader,
+    getTestIsTouchDevice,
+    getTestPerformStateBasedUndo,
+    getTestPerformStateBasedRedo
+} from './helpers/testContext.js';
 
 export async function runUIBootTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>📱 uiBoot Tests</h2><h3>Running tests...</h3>';
@@ -18,27 +26,31 @@ export async function runUIBootTests(resultsDiv) {
     // ===== MODULE LOADING TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
-    await test('showLoader is defined on window', () => {
-        if (typeof window.showLoader !== 'function') {
-            throw new Error('showLoader not found on window');
+    await test('showLoader is available via testContext', () => {
+        const showLoader = getTestShowLoader();
+        if (typeof showLoader !== 'function') {
+            throw new Error('showLoader not available via testContext');
         }
     });
 
-    await test('hideLoader is defined on window', () => {
-        if (typeof window.hideLoader !== 'function') {
-            throw new Error('hideLoader not found on window');
+    await test('hideLoader is available via testContext', () => {
+        const hideLoader = getTestHideLoader();
+        if (typeof hideLoader !== 'function') {
+            throw new Error('hideLoader not available via testContext');
         }
     });
 
-    await test('withLoader is defined on window', () => {
-        if (typeof window.withLoader !== 'function') {
-            throw new Error('withLoader not found on window');
+    await test('withLoader is available via testContext', () => {
+        const withLoader = getTestWithLoader();
+        if (typeof withLoader !== 'function') {
+            throw new Error('withLoader not available via testContext');
         }
     });
 
-    await test('isTouchDevice is defined on window', () => {
-        if (typeof window.isTouchDevice !== 'function') {
-            throw new Error('isTouchDevice not found on window');
+    await test('isTouchDevice is available via testContext', () => {
+        const isTouchDevice = getTestIsTouchDevice();
+        if (typeof isTouchDevice !== 'function') {
+            throw new Error('isTouchDevice not available via testContext');
         }
     });
 
@@ -46,27 +58,33 @@ export async function runUIBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⏳ showLoader()</h4>';
 
     await test('showLoader can be called without arguments', () => {
+        const showLoader = getTestShowLoader();
+        const hideLoader = getTestHideLoader();
         // Should not throw
         try {
-            window.showLoader();
+            showLoader();
             // Clean up
-            window.hideLoader();
+            hideLoader();
         } catch (error) {
             throw new Error(`showLoader threw error: ${error.message}`);
         }
     });
 
     await test('showLoader accepts custom message', () => {
+        const showLoader = getTestShowLoader();
+        const hideLoader = getTestHideLoader();
         try {
-            window.showLoader('Loading data...');
+            showLoader('Loading data...');
             // Clean up
-            window.hideLoader();
+            hideLoader();
         } catch (error) {
             throw new Error(`showLoader with message threw error: ${error.message}`);
         }
     });
 
     await test('showLoader activates loading overlay when element exists', () => {
+        const showLoader = getTestShowLoader();
+        const hideLoader = getTestHideLoader();
         // Create mock loading overlay if it doesn't exist
         let overlay = document.getElementById('loading-overlay');
         const created = !overlay;
@@ -79,7 +97,7 @@ export async function runUIBootTests(resultsDiv) {
         }
 
         try {
-            window.showLoader('Test Message');
+            showLoader('Test Message');
 
             if (!overlay.classList.contains('active')) {
                 throw new Error('Loading overlay should have active class');
@@ -90,7 +108,7 @@ export async function runUIBootTests(resultsDiv) {
                 throw new Error(`Expected text 'Test Message', got '${textEl.textContent}'`);
             }
         } finally {
-            window.hideLoader();
+            hideLoader();
             if (created) {
                 overlay.remove();
             }
@@ -101,14 +119,16 @@ export async function runUIBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">✓ hideLoader()</h4>';
 
     await test('hideLoader can be called without errors', () => {
+        const hideLoader = getTestHideLoader();
         try {
-            window.hideLoader();
+            hideLoader();
         } catch (error) {
             throw new Error(`hideLoader threw error: ${error.message}`);
         }
     });
 
     await test('hideLoader removes active class from overlay', () => {
+        const hideLoader = getTestHideLoader();
         // Create mock loading overlay if it doesn't exist
         let overlay = document.getElementById('loading-overlay');
         const created = !overlay;
@@ -121,7 +141,7 @@ export async function runUIBootTests(resultsDiv) {
 
         try {
             overlay.classList.add('active');
-            window.hideLoader();
+            hideLoader();
 
             if (overlay.classList.contains('active')) {
                 throw new Error('Loading overlay should not have active class after hideLoader');
@@ -137,7 +157,8 @@ export async function runUIBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔄 withLoader()</h4>';
 
     await test('withLoader executes async function and returns result', async () => {
-        const result = await window.withLoader(async () => {
+        const withLoader = getTestWithLoader();
+        const result = await withLoader(async () => {
             return 'test-result';
         });
 
@@ -147,6 +168,7 @@ export async function runUIBootTests(resultsDiv) {
     });
 
     await test('withLoader hides loader after function completes', async () => {
+        const withLoader = getTestWithLoader();
         let overlay = document.getElementById('loading-overlay');
         const created = !overlay;
 
@@ -157,7 +179,7 @@ export async function runUIBootTests(resultsDiv) {
         }
 
         try {
-            await window.withLoader(async () => {
+            await withLoader(async () => {
                 await wait(10);
                 return 'done';
             });
@@ -173,6 +195,7 @@ export async function runUIBootTests(resultsDiv) {
     });
 
     await test('withLoader hides loader even if function throws', async () => {
+        const withLoader = getTestWithLoader();
         let overlay = document.getElementById('loading-overlay');
         const created = !overlay;
 
@@ -184,7 +207,7 @@ export async function runUIBootTests(resultsDiv) {
 
         try {
             try {
-                await window.withLoader(async () => {
+                await withLoader(async () => {
                     throw new Error('Test error');
                 });
             } catch {
@@ -202,6 +225,8 @@ export async function runUIBootTests(resultsDiv) {
     });
 
     await test('withLoader accepts custom message', async () => {
+        const withLoader = getTestWithLoader();
+        const hideLoader = getTestHideLoader();
         let overlay = document.getElementById('loading-overlay');
         const created = !overlay;
 
@@ -215,7 +240,7 @@ export async function runUIBootTests(resultsDiv) {
         let capturedMessage = null;
 
         try {
-            await window.withLoader(async () => {
+            await withLoader(async () => {
                 const textEl = overlay.querySelector('.loading-spinner-text');
                 capturedMessage = textEl?.textContent;
                 return 'done';
@@ -225,7 +250,7 @@ export async function runUIBootTests(resultsDiv) {
                 throw new Error(`Expected 'Custom Loading...', got '${capturedMessage}'`);
             }
         } finally {
-            window.hideLoader();
+            hideLoader();
             if (created) {
                 overlay.remove();
             }
@@ -236,15 +261,17 @@ export async function runUIBootTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">👆 isTouchDevice()</h4>';
 
     await test('isTouchDevice returns a boolean', () => {
-        const result = window.isTouchDevice();
+        const isTouchDevice = getTestIsTouchDevice();
+        const result = isTouchDevice();
         if (typeof result !== 'boolean') {
             throw new Error(`Expected boolean, got ${typeof result}`);
         }
     });
 
     await test('isTouchDevice is consistent across calls', () => {
-        const result1 = window.isTouchDevice();
-        const result2 = window.isTouchDevice();
+        const isTouchDevice = getTestIsTouchDevice();
+        const result1 = isTouchDevice();
+        const result2 = isTouchDevice();
 
         if (result1 !== result2) {
             throw new Error('isTouchDevice should return consistent results');
@@ -252,9 +279,10 @@ export async function runUIBootTests(resultsDiv) {
     });
 
     await test('isTouchDevice checks for touch capabilities', () => {
+        const isTouchDevice = getTestIsTouchDevice();
         // The function should check for ontouchstart or maxTouchPoints
         // We can't easily mock these, but we can verify the function runs
-        const result = window.isTouchDevice();
+        const result = isTouchDevice();
 
         // In a browser test environment, this should work without throwing
         if (result !== true && result !== false) {
@@ -276,7 +304,10 @@ export async function runUIBootTests(resultsDiv) {
             // If module can't be imported directly, check if body classes are set
             const hasDeviceClass = document.body.classList.contains('desktop-mode') ||
                                    document.body.classList.contains('touch-mode');
-            if (!hasDeviceClass && !window.deviceDetectionManager) {
+            // Check via testContext instead of window
+            const { getTestDeviceDetectionManagerInstance } = await import('./helpers/testContext.js');
+            const deviceManager = getTestDeviceDetectionManagerInstance();
+            if (!hasDeviceClass && !deviceManager) {
                 throw new Error('Device type detection should set body class or use deviceDetectionManager');
             }
         }
@@ -294,7 +325,8 @@ export async function runUIBootTests(resultsDiv) {
                 // OR deviceDetectionManager should exist (meaning the module handles it)
                 const hasClass = document.body.classList.contains('desktop-mode') ||
                                  document.body.classList.contains('touch-mode');
-                const hasManager = !!window.deviceDetectionManager;
+                const { getTestDeviceDetectionManagerInstance } = await import('./helpers/testContext.js');
+                const hasManager = !!getTestDeviceDetectionManagerInstance();
                 if (!hasClass && !hasManager) {
                     // The function ran but didn't set classes - this is okay if deviceDetectionManager is used
                     console.log('detectDeviceType ran without setting classes (deviceDetectionManager may handle this)');
@@ -309,14 +341,17 @@ export async function runUIBootTests(resultsDiv) {
     // ===== EVENT LISTENER ATTACHMENT TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 Event Listeners</h4>';
 
-    await test('Global keyboard handler is attached', async () => {
+    await test('Global keyboard handler is attached (undo/redo available)', async () => {
         // Test that Ctrl+Z and Ctrl+Shift+Z handlers exist
-        // We can verify by checking if undo/redo functions are exposed
-        if (typeof window.performStateBasedUndo !== 'function') {
-            throw new Error('performStateBasedUndo should be available for keyboard shortcuts');
+        // We verify by checking if undo/redo functions are available via testContext
+        const performUndo = getTestPerformStateBasedUndo();
+        const performRedo = getTestPerformStateBasedRedo();
+
+        if (typeof performUndo !== 'function') {
+            throw new Error('performStateBasedUndo should be available via testContext for keyboard shortcuts');
         }
-        if (typeof window.performStateBasedRedo !== 'function') {
-            throw new Error('performStateBasedRedo should be available for keyboard shortcuts');
+        if (typeof performRedo !== 'function') {
+            throw new Error('performStateBasedRedo should be available via testContext for keyboard shortcuts');
         }
     });
 
@@ -348,7 +383,7 @@ export async function runUIBootTests(resultsDiv) {
             if (error.message.includes('Expected')) {
                 throw error;
             }
-            // Module import issues are okay, functions are on window
+            // Module import issues are okay, functions are available via testContext
         }
     });
 
