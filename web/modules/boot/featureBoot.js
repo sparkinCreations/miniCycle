@@ -115,6 +115,10 @@ export async function bootEarlyDeps(deps, coreResult) {
     });
   }
 
+  // ========== Register showNotification with appContext ==========
+  const { setContextValue } = await import('../core/appContext.js');
+  setContextValue('showNotification', deps.utils.showNotification);
+
   console.log('✅ bootEarlyDeps complete');
 
   return { showNotification, notifications };
@@ -1030,6 +1034,24 @@ export async function bootFeatures(deps, coreResult) {
     console.log('✅ SettingsManager initialized');
   } catch (error) {
     console.error('❌ Failed to initialize SettingsManager:', error);
+  }
+
+  // ========== Title Manager ==========
+  try {
+    const titleManagerMod = await import(withV('../ui/titleManager.js'));
+    titleManagerMod.setTitleManagerDependencies({
+      GlobalUtils,
+      getAppState: () => deps.core.AppState,
+      getLoadMiniCycleData: () => deps.core.loadMiniCycleData,
+      getShowNotification: () => deps.utils.showNotification,
+      getUpdateMainMenuHeader: () => deps.ui.updateMainMenuHeader,
+      getUpdateUndoRedoButtons: () => deps.ui.updateUndoRedoButtons
+    });
+    titleManagerMod.setupMiniCycleTitleListener();
+    deps.ui.titleManager = titleManagerMod;
+    console.log('✅ TitleManager initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize TitleManager:', error);
   }
 
   // ========== Completed Tasks Manager ==========

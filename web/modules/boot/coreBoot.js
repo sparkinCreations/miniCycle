@@ -5,7 +5,7 @@
  * Location: modules/boot/coreBoot.js
  *
  * This is the FOUNDATION boot file. It:
- * - Sets window.AppBootStarted IMMEDIATELY (for HTML fallback detection)
+ * - Sets boot flag IMMEDIATELY (for HTML fallback detection)
  * - Loads AppGlobalState and FeatureFlags from appGlobalState.js
  * - Loads and configures appInit (2-phase initialization system)
  * - Creates AppState (central state manager)
@@ -19,6 +19,9 @@
  * @version 1.0.0
  * ============================================================================
  */
+
+// Version constant - auto-updated by update-version.sh
+const APP_VERSION = '1.497';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -44,7 +47,7 @@ let DEFAULT_RECURRING_DELETE_SETTINGS = null;
 let TASK_LIMIT = 500;
 
 // Version helper for cache-busted imports
-let withV = (path) => `${path}?v=${window.APP_VERSION || '1.0'}`;
+let withV = (path) => `${path}?v=${APP_VERSION}`;
 
 // ============================================================================
 // SECTION 1: Core Initialization
@@ -60,7 +63,7 @@ export async function initCoreBoot(deps) {
 
   // ========== Load AppGlobalState ==========
   const appGlobalStateMod = await import(
-    `../core/appGlobalState.js?v=${window.APP_VERSION || '1.0'}`
+    `../core/appGlobalState.js?v=${APP_VERSION}`
   );
   AppGlobalState = appGlobalStateMod.AppGlobalState;
   FeatureFlags = appGlobalStateMod.FeatureFlags;
@@ -90,7 +93,7 @@ export async function initCoreBoot(deps) {
   AppGlobalState.bootStartTime = parseInt(document.documentElement.dataset.bootStartTime, 10) || Date.now();
 
   // ========== Load appInit ==========
-  const appInitModule = await import(`../core/appInit.js?v=${window.APP_VERSION}`);
+  const appInitModule = await import(`../core/appInit.js?v=${APP_VERSION}`);
   const { appInit: appInitInstance, setAppInitDependencies, APPINIT_VERSION } = appInitModule;
   appInit = appInitInstance;
 
@@ -150,13 +153,13 @@ export async function initCoreBoot(deps) {
   console.log('✅ Constants loaded');
 
   // ========== Update withV helper ==========
-  withV = (path) => `${path}?v=${window.APP_VERSION}`;
+  withV = (path) => `${path}?v=${APP_VERSION}`;
   deps.core.withV = withV;
 
   // ========== Create AppMeta ==========
   // Create locally first, then expose to window for backward compatibility
   const AppMeta = {
-    version: window.APP_VERSION,
+    version: APP_VERSION,
     appInitVersion: APPINIT_VERSION || null
   };
   deps.core.AppMeta = AppMeta;
@@ -197,7 +200,7 @@ export async function initCoreBoot(deps) {
   deps.core.initializeAppWithAutoMigration = migrationMod.initializeAppWithAutoMigration;
 
   // Initialize migration facade (consolidates 8 globals into 1 importable object)
-  const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${window.APP_VERSION || '1.0'}`);
+  const migrationFacadeMod = await import(`../core/migrationFacade.js?v=${APP_VERSION}`);
   migrationFacadeMod.initMigrationFacade(migrationMod);
   deps.core.MigrationFacade = migrationFacadeMod.MigrationFacade;
 
@@ -216,7 +219,13 @@ export async function initCoreBoot(deps) {
     fixTaskValidationIssues: migrationMod.fixTaskValidationIssues
     // Note: AppState will be added via setContextValue in initAppState
   });
-  console.log('✅ appContext initialized (early) with appInit, AppGlobalState, GlobalUtils, fixTaskValidationIssues');
+
+  // Register completeInitialSetup (wrapper for appInit.runCompleteInitialSetup)
+  const completeInitialSetup = (activeCycle, fullSchemaData, schemaData) =>
+    appInit.runCompleteInitialSetup(activeCycle, fullSchemaData, schemaData);
+  appContextMod.setContextValue('completeInitialSetup', completeInitialSetup);
+
+  console.log('✅ appContext initialized (early) with appInit, AppGlobalState, GlobalUtils, fixTaskValidationIssues, completeInitialSetup');
 
   return {
     AppGlobalState,
@@ -365,7 +374,7 @@ let loadMiniCycleData, autoSave, updateCycleData;
 
 // Initialize data access functions (called after appContext is ready)
 async function initDataAccess() {
-  const dataAccessMod = await import(`../core/dataAccess.js?v=${window.APP_VERSION || '1.0'}`);
+  const dataAccessMod = await import(`../core/dataAccess.js?v=${APP_VERSION}`);
   loadMiniCycleData = dataAccessMod.loadMiniCycleData;
   autoSave = dataAccessMod.autoSave;
   updateCycleData = dataAccessMod.updateCycleData;
