@@ -38,17 +38,17 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 14, 2025 - Verified)
+### Current State (December 15, 2025 - Verified)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Boot files | 1 monolithic | **4 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **46 files** | — | — |
+| Modules | 43 files | **45 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
-| `window.*` writes (orchestrator.js) | ~90 | **4** | <10 | **96%** ✅ |
+| Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **46** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **45** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -122,15 +122,15 @@ const AppState = getAppState();
 const showNotification = getShowNotification();
 ```
 
-### Remaining `window.*` Usage
+### Zero Custom `window.*` Globals (Dec 2025)
 
-Only **2 intentional window.* exposures** remain:
-- `window.AppBootStarted` - Required for HTML lite fallback detection
-- `window.closeStorageViewer` - Required for HTML onclick handler
+**The codebase now has zero custom window.* globals.** All module communication uses:
+- **ES Module imports** - Direct function/class imports
+- **appContext.js grouped APIs** - `getStateApi()`, `getTaskApi()`, `getUiApi()`, etc.
+- **CustomEvents** - For HTML-to-module communication (e.g., `app:showNotification`)
+- **Dataset attributes** - For boot flags (`document.documentElement.dataset.appBooted`)
 
-All other cross-module access uses:
-- **deps container** - For boot-time module communication
-- **appContext getters** - For runtime cross-module access
+Only standard browser API event handlers remain (`window.onload`, `window.onerror`).
 
 ### What Works Well
 

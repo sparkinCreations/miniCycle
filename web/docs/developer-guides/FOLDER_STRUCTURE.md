@@ -382,7 +382,6 @@ miniCycle-main.js (entrypoint)
 
 - `testing-modal.js` (891 lines) - In-app testing modal
 - `testing-modal-integration.js` (156 lines) - Test runner integration
-- `testing-modal-modifications.js` (89 lines) - Test-specific modifications
 - `testing-modal-tab-html.html` - Test UI HTML
 - `automated-tests-fix.js` (42 lines) - Test automation fixes
 
