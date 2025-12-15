@@ -38,7 +38,7 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 15, 2025 - Verified)
+### Current State (December 15, 2025 - Updated)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
@@ -84,10 +84,10 @@ export class MyModule {
 
 ### The Wiring Layer
 
-`modules/boot/orchestrator.js` is the **only place** where dependencies are wired:
+`modules/boot/featureBoot.js` is where dependencies are wired. `orchestrator.js` is a pure sequence controller:
 
 ```javascript
-// In modules/boot/orchestrator.js - THE wiring hub
+// In modules/boot/featureBoot.js - THE wiring location
 const { MyModule, setModuleDependencies } = await import('../path/myModule.js');
 
 // Wire BEFORE creating instance
@@ -104,11 +104,16 @@ deps.ui.myModule = myModule;  // Store in deps container, NOT window.*
 **Boot File Structure (Dec 2025):**
 ```
 miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (DI wiring hub, ~848 lines)
-      → modules/boot/coreBoot.js (core state, ~673 lines)
-      → modules/boot/featureBoot.js (feature loading, ~1,626 lines)
-      → modules/boot/uiBoot.js (UI handlers, ~480 lines)
+  → modules/boot/orchestrator.js (pure sequence controller, ~74 lines)
+      → modules/boot/coreBoot.js (core state, ~575 lines)
+      → modules/boot/featureBoot.js (DI wiring + feature loading, ~1,649 lines)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~678 lines)
 ```
+
+**Key Architecture Points:**
+- `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic
+- All UI setup consolidated into single `initUIBoot()` entrypoint in uiBoot.js
+- DI wiring happens in `featureBoot.js`
 
 ### appContext: Centralized Registry (Dec 2025)
 
@@ -317,7 +322,8 @@ Every module follows this pattern:
 | Lite version | `lite/miniCycle-lite.html` ⚠️ Static fallback, not maintained |
 | State management | `modules/core/appState.js` |
 | Initialization | `modules/core/appInit.js` |
-| DI wiring hub | `modules/boot/orchestrator.js` |
+| DI wiring | `modules/boot/featureBoot.js` |
+| Boot sequencer | `modules/boot/orchestrator.js` |
 | Entrypoint | `miniCycle-main.js` |
 
 ---

@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 11, 2025
+**Last Updated**: December 15, 2025
 
 ---
 
@@ -32,7 +32,7 @@
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
-**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. The boot orchestrator (`modules/boot/orchestrator.js`) is the DI wiring hub.
+**Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. DI wiring happens in `modules/boot/featureBoot.js`, while `orchestrator.js` is a pure sequence controller.
 
 ---
 
@@ -112,11 +112,16 @@ const myModule = new MyModule();
 **Boot File Structure (Dec 2025):**
 ```
 miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (DI wiring hub, ~1,883 lines)
-      → modules/boot/coreBoot.js (core state, ~673 lines)
-      → modules/boot/featureBoot.js (feature loading, ~1,470 lines)
-      → modules/boot/uiBoot.js (UI handlers, ~406 lines)
+  → modules/boot/orchestrator.js (pure sequence controller, ~74 lines)
+      → modules/boot/coreBoot.js (core state, ~575 lines)
+      → modules/boot/featureBoot.js (feature loading, ~1,649 lines)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~678 lines)
 ```
+
+**Key Architecture Points:**
+- `orchestrator.js` is a pure sequence controller - no DI writes, no DOM queries, no UI logic
+- All UI setup consolidated into single `initUIBoot()` entrypoint
+- DI wiring happens in `featureBoot.js`, not orchestrator
 
 See [DI_PATTERNS.md](./DI_PATTERNS.md) for complete patterns and examples.
 
@@ -133,10 +138,10 @@ web/
 │
 ├── modules/                          # 46 ES6 modules (all strict DI)
 │   ├── boot/                        # Boot sequence (Dec 2025 split)
-│   │   ├── orchestrator.js          # DI wiring hub (~1,883 lines)
-│   │   ├── coreBoot.js              # Core state & init (~673 lines)
-│   │   ├── featureBoot.js           # Feature loading (~1,470 lines)
-│   │   └── uiBoot.js                # UI handlers (~406 lines)
+│   │   ├── orchestrator.js          # Pure sequence controller (~74 lines)
+│   │   ├── coreBoot.js              # Core state & init (~575 lines)
+│   │   ├── featureBoot.js           # Feature loading (~1,649 lines)
+│   │   └── uiBoot.js                # UI handlers + initUIBoot() (~678 lines)
 │   │
 │   ├── core/                        # Core systems (4 modules)
 │   │   ├── appState.js              # Centralized state management

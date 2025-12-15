@@ -1,28 +1,31 @@
 /**
  * ============================================================================
- * featureBoot.js - Feature Module DI Wiring
+ * featureBoot.js - Feature Module DI Wiring Hub
  * ============================================================================
  * Location: modules/boot/featureBoot.js
  *
- * This file handles ALL feature module loading and dependency injection.
- * It minimizes window.* exposures - modules communicate via deps container.
+ * This is the DI WIRING HUB for miniCycle. All feature module loading and
+ * dependency injection happens here. Zero window.* globals - modules
+ * communicate via deps container and appContext.js.
  *
  * RESPONSIBILITIES:
  * - Import all feature modules with cache-busting
  * - Call set*Dependencies() for each module
  * - Initialize module instances
- * - Return features object for main script
+ * - Register APIs in appContext.js for cross-module access
+ * - Populate deps container for boot-time communication
  *
- * WINDOW.* EXPOSURES (for backward compatibility):
- * - 131 window.* assignments for Phase 3 compatibility
- * - See "WINDOW.* EXPOSURES" section at end of bootFeatures()
+ * ARCHITECTURE (Dec 2025):
+ * - orchestrator.js is a pure sequence controller (no DI writes)
+ * - featureBoot.js is the DI wiring hub (this file)
+ * - uiBoot.js handles all UI setup via initUIBoot()
  *
  * IMPORT RULES:
  * - This file imports from coreBoot.js
  * - This file must NOT import from uiBoot.js
  *
- * @module app-featureBoot
- * @version 1.0.0
+ * @module featureBoot
+ * @version 2.0.0
  */
 
 /**
