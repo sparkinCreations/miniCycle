@@ -26,6 +26,101 @@
  */
 
 /**
+ * Boot early dependencies needed before AppState initialization
+ * This loads only notifications (and its prerequisites) so showNotification
+ * is available for initAppState and early error messages.
+ *
+ * @param {Object} deps - Dependency container from main script
+ * @param {Object} coreResult - Results from coreBoot.js initCoreBoot()
+ * @returns {Object} { showNotification, notifications }
+ */
+export async function bootEarlyDeps(deps, coreResult) {
+  const { GlobalUtils, appInit, AppGlobalState, withV } = coreResult;
+
+  console.log('🔧 bootEarlyDeps: Loading notifications (pre-AppState)...');
+
+  // ========== Error Handler (needed for notifications error handling) ==========
+  try {
+    const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
+    deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
+    console.log('✅ ErrorHandler loaded (early)');
+  } catch (error) {
+    console.error('❌ Failed to load ErrorHandler:', error);
+  }
+
+  // ========== Console Capture (needed for diagnostics) ==========
+  try {
+    const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
+    deps.utils.consoleCapture = consoleCaptureMod.default;
+    console.log('✅ ConsoleCapture loaded (early)');
+  } catch (error) {
+    console.error('❌ Failed to load ConsoleCapture:', error);
+  }
+
+  // ========== Notifications ==========
+  let showNotification = null;
+  let notifications = null;
+
+  try {
+    const notificationsMod = await import(withV('../utils/notifications.js'));
+
+    notificationsMod.setNotificationsDependencies({
+      AppState: null, // Set later after AppState is created
+      appInit: appInit,
+      loadMiniCycleData: () => deps.core.loadMiniCycleData?.(),
+      generateHashId: (...args) => deps.utils.generateHashId?.(...args),
+      GlobalUtils: GlobalUtils,
+      escapeHtml: (...args) => deps.utils.escapeHtml?.(...args),
+      safeAddEventListener: GlobalUtils.safeAddEventListener
+    });
+
+    notifications = new notificationsMod.MiniCycleNotifications();
+
+    // Store in deps container
+    deps.utils.notifications = notifications;
+    deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+    deps.utils.showNotificationWithTip = (content, type, duration, tipId) => notifications.showWithTip(content, type, duration, tipId);
+    deps.utils.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
+    deps.utils.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
+    deps.utils.showPromptModal = (options) => notifications.showPromptModal(options);
+    deps.utils.setupNotificationDragging = (container) => notifications.setupNotificationDragging(container);
+    deps.utils.resetNotificationPosition = () => notifications.resetPosition();
+    deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
+
+    showNotification = deps.utils.showNotification;
+    deps.earlyDeps = { notificationsMod, notifications }; // Store for bootFeatures to skip
+
+    console.log('✅ Notifications loaded (early)');
+
+    // Show deferred cache notification if needed
+    if (AppGlobalState.pendingCacheNotification) {
+      notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
+      AppGlobalState.pendingCacheNotification = false;
+    }
+  } catch (error) {
+    console.error('❌ Failed to load Notifications:', error);
+  }
+
+  // ========== Wire ErrorHandler (needs showNotification) ==========
+  if (deps.utils.setErrorHandlerDependencies) {
+    deps.utils.setErrorHandlerDependencies({
+      showNotification: deps.utils.showNotification
+    });
+  }
+
+  // ========== Wire GlobalUtils (needs showNotification) ==========
+  if (deps.utils.setGlobalUtilsDependencies) {
+    deps.utils.setGlobalUtilsDependencies({
+      showNotification: deps.utils.showNotification
+    });
+  }
+
+  console.log('✅ bootEarlyDeps complete');
+
+  return { showNotification, notifications };
+}
+
+/**
  * Boot all feature modules with proper DI wiring
  *
  * @param {Object} deps - Dependency container from main script
@@ -64,16 +159,22 @@ export async function bootFeatures(deps, coreResult) {
   // ============================================================================
   // PHASE 1: CORE UTILITIES (no dependencies on other features)
   // ============================================================================
-  console.log('🔧 Phase 1: Loading core utilities...');
+  // NOTE: If bootEarlyDeps() was called first, ErrorHandler, ConsoleCapture,
+  // and Notifications are already loaded. We skip them here.
+  const earlyDepsLoaded = !!deps.earlyDeps;
+
+  console.log('🔧 Phase 1: Loading core utilities...', earlyDepsLoaded ? '(skipping early deps)' : '');
 
   // ========== Error Handler ==========
-  try {
-    const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
-    deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
-    features.modules.errorHandler = errorHandlerMod;
-    console.log('✅ ErrorHandler loaded');
-  } catch (error) {
-    console.error('❌ Failed to load ErrorHandler:', error);
+  if (!earlyDepsLoaded) {
+    try {
+      const errorHandlerMod = await import(withV('../utils/errorHandler.js'));
+      deps.utils.setErrorHandlerDependencies = errorHandlerMod.setErrorHandlerDependencies;
+      features.modules.errorHandler = errorHandlerMod;
+      console.log('✅ ErrorHandler loaded');
+    } catch (error) {
+      console.error('❌ Failed to load ErrorHandler:', error);
+    }
   }
 
   // ========== Data Validator ==========
@@ -90,73 +191,77 @@ export async function bootFeatures(deps, coreResult) {
   }
 
   // ========== Console Capture ==========
-  try {
-    const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
-    if (consoleCaptureMod.setConsoleCaptureDependencies) {
-      consoleCaptureMod.setConsoleCaptureDependencies({
-        showNotification: () => deps.utils.showNotification,
-        get appendToTestResults() { return deps.utils.appendToTestResults; }
-      });
+  if (!earlyDepsLoaded) {
+    try {
+      const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
+      if (consoleCaptureMod.setConsoleCaptureDependencies) {
+        consoleCaptureMod.setConsoleCaptureDependencies({
+          showNotification: () => deps.utils.showNotification,
+          get appendToTestResults() { return deps.utils.appendToTestResults; }
+        });
+      }
+      deps.utils.consoleCapture = consoleCaptureMod.default;
+      features.modules.consoleCapture = consoleCaptureMod;
+      console.log('✅ ConsoleCapture loaded');
+    } catch (error) {
+      console.error('❌ Failed to load ConsoleCapture:', error);
     }
-    deps.utils.consoleCapture = consoleCaptureMod.default;
-    features.modules.consoleCapture = consoleCaptureMod;
-    console.log('✅ ConsoleCapture loaded');
-  } catch (error) {
-    console.error('❌ Failed to load ConsoleCapture:', error);
   }
 
   // ========== Notifications ==========
-  try {
-    const notificationsMod = await import(withV('../utils/notifications.js'));
+  if (!earlyDepsLoaded) {
+    try {
+      const notificationsMod = await import(withV('../utils/notifications.js'));
 
-    notificationsMod.setNotificationsDependencies({
-      AppState: null, // Set later after AppState is created
-      appInit: appInit,
-      loadMiniCycleData: () => deps.core.loadMiniCycleData?.(),
-      generateHashId: (...args) => deps.utils.generateHashId?.(...args),
-      GlobalUtils: GlobalUtils,
-      escapeHtml: (...args) => deps.utils.escapeHtml?.(...args),
-      safeAddEventListener: GlobalUtils.safeAddEventListener
-    });
+      notificationsMod.setNotificationsDependencies({
+        AppState: null, // Set later after AppState is created
+        appInit: appInit,
+        loadMiniCycleData: () => deps.core.loadMiniCycleData?.(),
+        generateHashId: (...args) => deps.utils.generateHashId?.(...args),
+        GlobalUtils: GlobalUtils,
+        escapeHtml: (...args) => deps.utils.escapeHtml?.(...args),
+        safeAddEventListener: GlobalUtils.safeAddEventListener
+      });
 
-    const notifications = new notificationsMod.MiniCycleNotifications();
+      const notifications = new notificationsMod.MiniCycleNotifications();
 
-    // Store in deps container
-    deps.utils.notifications = notifications;
-    deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
-    deps.utils.showNotificationWithTip = (content, type, duration, tipId) => notifications.showWithTip(content, type, duration, tipId);
-    deps.utils.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
-    deps.utils.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
-    deps.utils.showPromptModal = (options) => notifications.showPromptModal(options);
-    deps.utils.setupNotificationDragging = (container) => notifications.setupNotificationDragging(container);
-    deps.utils.resetNotificationPosition = () => notifications.resetPosition();
-    deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
+      // Store in deps container
+      deps.utils.notifications = notifications;
+      deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
+      deps.utils.showNotificationWithTip = (content, type, duration, tipId) => notifications.showWithTip(content, type, duration, tipId);
+      deps.utils.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
+      deps.utils.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
+      deps.utils.showPromptModal = (options) => notifications.showPromptModal(options);
+      deps.utils.setupNotificationDragging = (container) => notifications.setupNotificationDragging(container);
+      deps.utils.resetNotificationPosition = () => notifications.resetPosition();
+      deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
 
-    features.managers.notifications = notifications;
-    features.modules.notifications = notificationsMod;
-    console.log('✅ Notifications loaded');
+      features.managers.notifications = notifications;
+      features.modules.notifications = notificationsMod;
+      console.log('✅ Notifications loaded');
 
-    // Show deferred cache notification if needed
-    if (AppGlobalState.pendingCacheNotification) {
-      notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
-      AppGlobalState.pendingCacheNotification = false;
+      // Show deferred cache notification if needed
+      if (AppGlobalState.pendingCacheNotification) {
+        notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
+        AppGlobalState.pendingCacheNotification = false;
+      }
+    } catch (error) {
+      console.error('❌ Failed to load Notifications:', error);
     }
-  } catch (error) {
-    console.error('❌ Failed to load Notifications:', error);
-  }
 
-  // ========== Wire ErrorHandler (needs showNotification) ==========
-  if (deps.utils.setErrorHandlerDependencies) {
-    deps.utils.setErrorHandlerDependencies({
-      showNotification: deps.utils.showNotification
-    });
-  }
+    // ========== Wire ErrorHandler (needs showNotification) ==========
+    if (deps.utils.setErrorHandlerDependencies) {
+      deps.utils.setErrorHandlerDependencies({
+        showNotification: deps.utils.showNotification
+      });
+    }
 
-  // ========== Wire GlobalUtils (needs showNotification) ==========
-  if (deps.utils.setGlobalUtilsDependencies) {
-    deps.utils.setGlobalUtilsDependencies({
-      showNotification: deps.utils.showNotification
-    });
+    // ========== Wire GlobalUtils (needs showNotification) ==========
+    if (deps.utils.setGlobalUtilsDependencies) {
+      deps.utils.setGlobalUtilsDependencies({
+        showNotification: deps.utils.showNotification
+      });
+    }
   }
 
   // ============================================================================
@@ -251,15 +356,16 @@ export async function bootFeatures(deps, coreResult) {
   // APPSTATE CHECK (may already be initialized by main script)
   // ============================================================================
   // Note: When integrating incrementally, initAppState may have already been
-  // called by miniCycle-scripts.js before bootFeatures is called.
-  // We check if AppState is ready to avoid duplicate initialization.
+  // called by orchestrator.js before bootFeatures is called.
+  // We check if appInit.isCoreReady() to avoid duplicate initialization.
+  // Don't use AppState.isReady() - that checks if data is loaded, not if core was initialized.
   const { initAppState } = coreResult;
-  if (!deps.core.AppState?.isReady?.()) {
+  if (!appInit.isCoreReady()) {
     console.log('🗃️ Initializing AppState...');
     await initAppState(deps, deps.utils.showNotification);
     console.log('✅ AppState initialized');
   } else {
-    console.log('✅ AppState already initialized (skipping)');
+    console.log('✅ AppState already initialized by orchestrator (skipping)');
   }
 
   // Update notifications with AppState
@@ -845,6 +951,29 @@ export async function bootFeatures(deps, coreResult) {
       showNotification: deps.utils.showNotification,
       hideMainMenu: () => deps.ui.hideMainMenu?.()
     });
+
+    // Initialize theme panels
+    if (typeof themeManagerMod.initializeThemesPanel === 'function') {
+      themeManagerMod.initializeThemesPanel();
+    }
+    if (typeof themeManagerMod.setupThemesPanel === 'function') {
+      themeManagerMod.setupThemesPanel();
+    }
+
+    // Load saved theme from Schema 2.5
+    try {
+      const schemaData = deps.core.loadMiniCycleData?.();
+      if (schemaData?.settings?.theme) {
+        console.log('🎨 Applying theme from Schema 2.5:', schemaData.settings.theme);
+        themeManagerMod.applyTheme(schemaData.settings.theme, false);  // Don't save during initial load
+      } else {
+        console.log('🎨 Using default theme');
+        themeManagerMod.applyTheme('default', false);
+      }
+    } catch (error) {
+      console.warn('⚠️ Theme loading failed, using default:', error);
+      themeManagerMod.applyTheme('default', false);
+    }
   }
 
   // ========== Modal Manager (full init) ==========
@@ -861,6 +990,7 @@ export async function bootFeatures(deps, coreResult) {
 
       deps.ui.modalManager = modalManager;
       deps.ui.closeAllModals = () => modalManager?.closeAllModals?.();
+      deps.ui.initModalManager = modalManagerMod.initModalManager;
       features.managers.modalManager = modalManager;
       console.log('✅ ModalManager initialized');
     } catch (error) {
@@ -1305,6 +1435,8 @@ export async function bootFeatures(deps, coreResult) {
       appContextMod.setContextValue('DragDropManager', deps.task.dragDropManager);
       appContextMod.setContextValue('deviceDetectionManager', deps.utils.deviceDetectionManager);
       appContextMod.setContextValue('modalManager', deps.ui.modalManager);
+      appContextMod.setContextValue('closeAllModals', deps.ui.closeAllModals);
+      appContextMod.setContextValue('initModalManager', deps.ui.initModalManager);
       appContextMod.setContextValue('cycleSwitcher', deps.cycle.cycleSwitcher);
 
       // =========================================================================

@@ -1484,6 +1484,13 @@ export async function setupRecurringWatcher() {
     // ✅ Read from AppState
     assertInjected('getAppState', Deps.getAppState);
     const state = Deps.getAppState();
+
+    // Handle case where state isn't loaded yet
+    if (!state) {
+        console.log('ℹ️ State not loaded yet - recurring watcher will initialize after data loads');
+        return;
+    }
+
     const activeCycleId = state.appState?.activeCycleId;
 
     if (!activeCycleId) {

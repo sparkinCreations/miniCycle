@@ -44,6 +44,7 @@ import {
     getDeviceDetectionManager,
     getModalManagerClass,
     getModalManager,
+    getCloseAllModals,
     getCycleSwitcherClass,
     getCycleSwitcher,
 
@@ -263,6 +264,15 @@ export async function waitForAppReady(timeout = 5000) {
 export function hasContextValue(name) {
     const ctx = getAppContext();
     return ctx[name] != null;
+}
+
+/**
+ * Alias for hasContextValue for backward compatibility with tests
+ * @param {string} name - Name to check
+ * @returns {boolean}
+ */
+export function hasGlobal(name) {
+    return hasContextValue(name);
 }
 
 /**

@@ -119,7 +119,7 @@ async function initApp() {
 
   // Feature boot module - handles Phase 2 module loading
   const featureBoot = await import(`./featureBoot.js?v=${window.APP_VERSION || '1.470'}`);
-  const { bootFeatures } = featureBoot;
+  const { bootFeatures, bootEarlyDeps } = featureBoot;
   console.log('📦 Feature boot module loaded');
 
   // UI boot module - handles UI event listeners and helpers
@@ -247,82 +247,26 @@ async function initApp() {
      ******/
 
     // ============================================
-    // MODULE LOADING WITH DEPENDENCY COLLECTION
-    // All modules loaded with withV() for cache-busting
+    // EARLY DEPENDENCIES (before AppState)
+    // Uses bootEarlyDeps() from featureBoot.js to load notifications
+    // This avoids duplicate loading - bootFeatures() skips these modules
     // ============================================
 
     // ✅ GlobalUtils already loaded by app-coreBoot.js and stored in deps.utils
-    // Just log confirmation
     console.log('🛠️ Global utilities already loaded by app-coreBoot.js');
 
-    // ✅ REMOVED: Error Handler, Data Validator, Console Capture
-    // These are now loaded by featureBoot.js (Phase 1)
-    // Duplicate loading was causing unnecessary double initialization
-
-    // ✅ Load Notifications (DI-pure)
-    const notificationsMod = await import(withV('../utils/notifications.js'));
-    notificationsMod.setNotificationsDependencies({
-        AppState: null, // Set after AppState is created
-        appInit: appInit,
-        loadMiniCycleData: () => getLoadMiniCycleData()?.(),
-        generateHashId: (...args) => GlobalUtils.generateHashId?.(...args),
-        GlobalUtils: GlobalUtils,
-        escapeHtml: (...args) => GlobalUtils.escapeHtml?.(...args),
-        safeAddEventListener: GlobalUtils.safeAddEventListener
-    });
-
-    const notifications = new notificationsMod.MiniCycleNotifications();
-
-    // Store in deps container - this is the canonical reference
-    deps.utils.notifications = notifications;
-    deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
-    deps.utils.setNotificationsDependencies = notificationsMod.setNotificationsDependencies;
+    // ✅ Load early deps (ErrorHandler, ConsoleCapture, Notifications)
+    // These are needed before AppState for error handling and user feedback
+    const { showNotification } = await bootEarlyDeps(deps, coreResult);
 
     // Update appContext with showNotification
     import('../core/appContext.js').then(mod => {
         mod.setContextValue('showNotification', deps.utils.showNotification);
     });
-    console.log('✅ Notifications loaded');
 
-    // Show deferred cache notification if we had to fetch fresh appInit.js
-    const appGlobalState = getAppGlobalState();
-    if (appGlobalState?.pendingCacheNotification) {
-      notifications.show('App updated! Cache refreshed automatically.', 'info', 4000);
-      appGlobalState.pendingCacheNotification = false;
-    }
-
-    // ✅ ErrorHandler wiring now handled by featureBoot.js after notifications load
-
-    // ✅ Wire GlobalUtils now that showNotification is available (DI-pure)
-    // setGlobalUtilsDependencies was stored in deps.utils by app-coreBoot.js
-    if (deps.utils.setGlobalUtilsDependencies) {
-        deps.utils.setGlobalUtilsDependencies({
-            showNotification: deps.utils.showNotification
-        });
-    }
-
-    // ✅ Load Theme Manager
-    const themeManagerMod = await import(withV('../features/themeManager.js'));
-    // Theme functions - called directly, not via window.*
-    const { applyTheme, initializeThemesPanel, setupThemesPanel } = themeManagerMod;
-    // ✅ Inject available deps early (AppState injected later after it's created)
-    if (themeManagerMod.setThemeManagerDependencies) {
-        themeManagerMod.setThemeManagerDependencies({
-            appInit: appInit,  // ✅ DI-injected (no static import in module)
-            showNotification: deps.utils.showNotification
-            // AppState and hideMainMenu injected later
-        });
-    }
-    console.log('✅ Theme Manager loaded');
-
-    // ✅ REMOVED: Games Manager and Onboarding Manager
-    // These are now loaded and initialized by featureBoot.js (Phase 6)
-    // Duplicate initialization was causing double init() calls
-
-    // ✅ Load Modal Manager (Phase 3 - no auto-init, initialized later with full deps)
-    const modalManagerMod = await import(withV('../ui/modalManager.js'));
-    // Note: modalManager instance is null until initModalManager is called later
-    console.log('✅ Modal Manager module loaded (awaiting initialization)');
+    // ✅ REMOVED: Theme Manager, Modal Manager early loading
+    // These are now loaded by featureBoot.js only (Phase 2)
+    // This eliminates duplicate module loading
 
     // ✅ Migration Manager already loaded by app-coreBoot.js
     // Now initialize AppState with showNotification available
@@ -434,21 +378,9 @@ async function initApp() {
     updateNavDots();
 
 
-    // ✅ Theme Loading (Schema 2.5 only) - don't save during initial load
-    console.log('🎨 Loading theme settings...');
-    try {
-        const schemaData = deps.core.loadMiniCycleData?.();
-        if (schemaData && schemaData.settings.theme) {
-            console.log('🎨 Applying theme from Schema 2.5:', schemaData.settings.theme);
-            applyTheme(schemaData.settings.theme, false);  // Don't save during initial load
-        } else {
-            console.log('🎨 Using default theme');
-            applyTheme('default', false);  // Don't save during initial load
-        }
-    } catch (error) {
-        console.warn('⚠️ Theme loading failed, using default:', error);
-        applyTheme('default', false);  // Don't save during initial load
-    }
+    // ✅ Theme Loading - MOVED to featureBoot.js (after ThemeManager is wired)
+    // This eliminates duplicate theme initialization and ensures proper DI
+    console.log('🎨 Theme loading deferred to featureBoot...');
 
     // ✅ MOVED TO PHASE 2: cycleLoader initialization moved after AppState is ready
     // This prevents capturing null AppState reference
@@ -473,8 +405,7 @@ async function initApp() {
     // ✅ MOVED TO PHASE 2: setupUploadMiniCycle() - now handled by settingsManager module
     // ✅ REMOVED: setupRearrange() and dragEndCleanup() - now handled by dragDropManager module
     // ✅ MOVED: updateMoveArrowsVisibility() to AppInit.onReady() where AppState is available
-    initializeThemesPanel();
-    setupThemesPanel();
+    // ✅ MOVED: initializeThemesPanel() and setupThemesPanel() to featureBoot.js
 
     // ✅ UI Setup (Modal Manager handles modal setup automatically)
     // ✅ MOVED TO PHASE 2: setupMainMenu() - now handled by menuManager module

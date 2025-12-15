@@ -105,6 +105,8 @@ const context = {
     deviceDetectionManager: null,
     ModalManager: null,
     modalManager: null,
+    closeAllModals: null,
+    initModalManager: null,
     CycleSwitcher: null,
     cycleSwitcher: null,
 
@@ -183,11 +185,15 @@ const context = {
     extractTaskDataFromDOM: null,
 
     // Task classes
+    TaskCore: null,
     TaskRenderer: null,
     TaskDOMManager: null,
     TaskEvents: null,
     TaskUtils: null,
     TaskOptionsCustomizer: null,
+    handleTaskCompletionChange: null,
+    saveCurrentTaskOrder: null,
+    resetTasks: null,
 
     // =========================================================================
     // CYCLE SWITCHER
@@ -744,6 +750,8 @@ export function getDeviceDetectionManagerClass() { return context.DeviceDetectio
 export function getDeviceDetectionManager() { return context.deviceDetectionManager; }
 export function getModalManagerClass() { return context.ModalManager; }
 export function getModalManager() { return context.modalManager; }
+export function getCloseAllModals() { return context.closeAllModals; }
+export function getInitModalManager() { return context.initModalManager; }
 export function getCycleSwitcherClass() { return context.CycleSwitcher; }
 export function getCycleSwitcher() { return context.cycleSwitcher; }
 
