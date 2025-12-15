@@ -462,7 +462,6 @@ These are pure utilities or static configuration with no dependencies:
 
 - `appInit.js` - Singleton initialization coordinator
 - `constants.js` - Static constants
-- `testing-modal-modifications.js` - Test modifications
 - `exampleTimeTrackerPlugin.js` - Example plugin
 - `recurringPanel.js` - Uses constructor DI only
 
