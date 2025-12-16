@@ -7,27 +7,39 @@
  * @module progress/cycleCompletion
  */
 
-// Module-level dependencies (set via setCycleCompletionDependencies)
-let deps = {
-    AppState: null,
-    showNotification: null,
-    updateStatsPanel: null,
-    unlockDarkOceanTheme: null,
-    unlockGoldenGlowTheme: null,
-    unlockMiniGame: null,
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('CycleCompletion', {
+    AppState: optional(null),
+    showNotification: optional(null),
+    updateStatsPanel: optional(null),
+    unlockDarkOceanTheme: optional(null),
+    unlockGoldenGlowTheme: optional(null),
+    unlockMiniGame: optional(null),
     // For updateProgressBar and checkMiniCycle
-    getTaskList: null,           // () => taskList element
-    getProgressBar: null,        // () => progressBar element
-    assignCycleVariables: null,  // () => { lastUsedMiniCycle, savedMiniCycles }
-    resetTasks: null             // () => void
-};
+    getTaskList: optional(null),           // () => taskList element
+    getProgressBar: optional(null),        // () => progressBar element
+    assignCycleVariables: optional(null),  // () => { lastUsedMiniCycle, savedMiniCycles }
+    resetTasks: optional(null)             // () => void
+});
+
+// Late-binding deps via Proxy
+const deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for cycle completion functions.
  * @param {Object} dependencies - Injected dependencies
  */
 export function setCycleCompletionDependencies(dependencies) {
-    deps = { ...deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🎯 CycleCompletion dependencies set:', Object.keys(dependencies));
 }
 

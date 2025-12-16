@@ -10,24 +10,25 @@
  * - Count updates
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    getAppState: null,
-    getElementById: null,
-    querySelector: null,
-    safeAddEventListener: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('CompletedTasksManager', {
+    getAppState: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    safeAddEventListener: optional((el, evt, fn) => el?.addEventListener(evt, fn))
+});
 
 /**
  * Set dependencies for CompletedTasksManager (call before creating instance)
  * @param {Object} dependencies - { getAppState, getElementById, querySelector, safeAddEventListener }
  */
 export function setCompletedTasksManagerDependencies(dependencies) {
-    const descriptors = {};
-    for (const [key, value] of Object.entries(dependencies)) {
-        descriptors[key] = { value, writable: true, configurable: true };
-    }
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('🎯 CompletedTasksManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -35,16 +36,8 @@ export class CompletedTasksManager {
     constructor(dependencies = {}) {
         console.log('🎯 CompletedTasksManager: Constructing with dependencies');
 
-        // Merge injected deps with module-level deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
-
-        // Store dependencies - no window.* fallbacks
-        this.deps = {
-            getAppState: mergedDeps.getAppState || null,
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || ((el, evt, fn) => el?.addEventListener(evt, fn))
-        };
+        // Resolve deps from diBase, with constructor overrides
+        this.deps = di.resolve(dependencies);
 
         this.isInitialized = false;
     }

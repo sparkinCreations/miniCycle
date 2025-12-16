@@ -16,23 +16,37 @@
  * @module reminders
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    AppState: null,
-    showNotification: null,
-    loadMiniCycleData: null,
-    appInit: null,
-    refreshTaskListUI: null,
-    AppGlobalState: null,
-    AppMeta: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('Reminders', {
+    AppState: optional(null),
+    showNotification: optional(null),
+    loadMiniCycleData: optional(null),
+    appInit: optional(null),
+    refreshTaskListUI: optional(null),
+    updateUndoRedoButtons: optional(null),
+    autoSave: optional(null),
+    AppGlobalState: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for MiniCycleReminders (call before creating instance)
  * @param {Object} dependencies - { AppState, showNotification, loadMiniCycleData, appInit, refreshTaskListUI, AppGlobalState, AppMeta }
  */
 export function setRemindersDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🔔 Reminders dependencies set:', Object.keys(dependencies));
 }
 

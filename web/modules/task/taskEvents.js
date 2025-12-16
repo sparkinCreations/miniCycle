@@ -10,29 +10,42 @@
  * @module modules/task/taskEvents
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    AppState: null,
-    taskCore: null,
-    showNotification: null,
-    autoSave: null,
-    enableUndoSystemOnFirstInteraction: null,
-    checkMiniCycle: null,
-    triggerLogoBackground: null,
-    showTaskOptions: null,
-    hideTaskOptions: null,
-    TaskOptionsVisibilityController: null,
-    setupDueDateButtonInteraction: null,
-    attachKeyboardTaskOptionToggle: null,
-    AppMeta: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+import { ui, state } from '../core/appContext.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskEvents', {
+    AppState: optional(null),
+    taskCore: optional(null),
+    showNotification: optional(null),
+    autoSave: optional(null),
+    enableUndoSystemOnFirstInteraction: optional(null),
+    checkMiniCycle: optional(null),
+    triggerLogoBackground: optional(null),
+    showTaskOptions: optional(null),
+    hideTaskOptions: optional(null),
+    TaskOptionsVisibilityController: optional(null),
+    setupDueDateButtonInteraction: optional(null),
+    attachKeyboardTaskOptionToggle: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskEvents (call before init)
  * @param {Object} dependencies - { AppState, taskCore, showNotification, etc. }
  */
 export function setTaskEventsDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🎮 TaskEvents dependencies set:', Object.keys(dependencies));
 }
 
@@ -150,8 +163,8 @@ export class TaskEvents {
                 this.deps.checkMiniCycle();
             }
 
-            // Auto-save
-            this.deps.autoSave?.();
+            // Auto-save (using grouped API)
+            state()?.autoSave?.();
 
             // Logo background animation (DI-pure)
             if (typeof this.deps.triggerLogoBackground === 'function') {
@@ -207,7 +220,7 @@ export class TaskEvents {
                 this.deps.taskCore.editTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, edit operation skipped');
-                this.deps.showNotification?.('Edit feature temporarily unavailable', 'warning');
+                ui()?.showNotification?.('Edit feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("delete-btn")) {
@@ -215,7 +228,7 @@ export class TaskEvents {
                 this.deps.taskCore.deleteTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, delete operation skipped');
-                this.deps.showNotification?.('Delete feature temporarily unavailable', 'warning');
+                ui()?.showNotification?.('Delete feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("priority-btn")) {
@@ -223,12 +236,12 @@ export class TaskEvents {
                 this.deps.taskCore.toggleTaskPriority(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, priority toggle skipped');
-                this.deps.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
+                ui()?.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         }
 
-        if (shouldSave) this.deps.autoSave?.();
+        if (shouldSave) state()?.autoSave?.();
         console.log("✅ Task button clicked:", button.className);
     }
 

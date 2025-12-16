@@ -1,5 +1,5 @@
 /**
- * 🎨 miniCycle Task Renderer
+ * 🎨 miniCycle Task Renderer (DI-Pure)
  * Handles task rendering and UI refresh operations
  *
  * Pattern: Simple Instance 🎯
@@ -10,57 +10,83 @@
  * @module modules/task/taskRenderer
  */
 
-// Module-level deps for late injection
-let _deps = {};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskRenderer', {
+    AppState: optional(null),
+    addTask: optional(null),
+    loadMiniCycle: optional(null),
+    updateProgressBar: optional(null),
+    checkCompleteAllButton: optional(null),
+    updateStatsPanel: optional(null),
+    updateMainMenuHeader: optional(null),
+    updateArrowsInDOM: optional(null),
+    checkOverdueTasks: optional(null),
+    enableDragAndDropOnTask: optional(null),
+    recurringPanel: optional(null),
+    updateRecurringPanelButtonVisibility: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskRenderer (call before initTaskRenderer)
  * @param {Object} dependencies - { AppState, updateProgressBar, etc. }
  */
 export function setTaskRendererDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🎨 TaskRenderer dependencies set:', Object.keys(dependencies));
 }
 
 export class TaskRenderer {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Store dependencies - no window.* fallbacks
         this.deps = {
             // Core data access (required)
-            AppState: mergedDeps.AppState,
+            AppState: resolvedDeps.AppState,
 
             // Task management functions (required)
-            addTask: mergedDeps.addTask,
-            loadMiniCycle: mergedDeps.loadMiniCycle,
+            addTask: resolvedDeps.addTask,
+            loadMiniCycle: resolvedDeps.loadMiniCycle,
 
             // UI update functions (required)
-            updateProgressBar: mergedDeps.updateProgressBar,
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton,
-            updateStatsPanel: mergedDeps.updateStatsPanel,
-            updateMainMenuHeader: mergedDeps.updateMainMenuHeader,
-            updateArrowsInDOM: mergedDeps.updateArrowsInDOM,
-            checkOverdueTasks: mergedDeps.checkOverdueTasks,
+            updateProgressBar: resolvedDeps.updateProgressBar,
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
+            updateStatsPanel: resolvedDeps.updateStatsPanel,
+            updateMainMenuHeader: resolvedDeps.updateMainMenuHeader,
+            updateArrowsInDOM: resolvedDeps.updateArrowsInDOM,
+            checkOverdueTasks: resolvedDeps.checkOverdueTasks,
 
             // Drag-drop (required)
-            enableDragAndDropOnTask: mergedDeps.enableDragAndDropOnTask,
+            enableDragAndDropOnTask: resolvedDeps.enableDragAndDropOnTask,
 
             // Recurring panel (required)
-            recurringPanel: mergedDeps.recurringPanel,
-            updateRecurringPanelButtonVisibility: mergedDeps.updateRecurringPanelButtonVisibility,
+            recurringPanel: resolvedDeps.recurringPanel,
+            updateRecurringPanelButtonVisibility: resolvedDeps.updateRecurringPanelButtonVisibility,
 
             // DOM helpers
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: resolvedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
         // Validate required dependencies
         this._validateDependencies();
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
 
         console.log('🎨 TaskRenderer created');
     }

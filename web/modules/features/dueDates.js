@@ -1,5 +1,5 @@
 /**
- * 📅 miniCycle Due Dates Module
+ * 📅 miniCycle Due Dates Module (DI-Pure)
  * Handles task due dates, overdue detection, and due date reminders
  *
  * Features:
@@ -13,42 +13,60 @@
  * @module dueDates
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('DueDates', {
+    appInit: optional(null),
+    loadMiniCycleData: optional(null),
+    showNotification: optional(null),
+    updateStatsPanel: optional(null),
+    updateProgressBar: optional(null),
+    checkCompleteAllButton: optional(null),
+    saveTaskToSchema25: optional(null),
+    AppState: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for MiniCycleDueDates (call before creating instance)
  * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
  */
 export function setDueDatesDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('📅 DueDates dependencies set:', Object.keys(dependencies));
 }
 
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            updateStatsPanel: mergedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: mergedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
-            saveTaskToSchema25: mergedDeps.saveTaskToSchema25 || this.fallbackSave,
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddEventListener,
-            AppState: mergedDeps.AppState || null  // ✅ DI-pure (no window.* fallback)
+            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification,
+            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
+            saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener,
+            AppState: resolvedDeps.AppState || null
         };
 
         // Store reference to auto reset toggle element (will be set in init)

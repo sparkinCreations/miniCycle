@@ -17,6 +17,8 @@
  * @requires AppInit (for initialization coordination)
  */
 
+import { utils } from '../core/appContext.js';
+
 // ✅ appInit now injected via DI (no static import - enables versioning)
 
 // Module-level dependencies (DI-pure for app logic; legacy global flag kept for drag state sync)
@@ -289,8 +291,8 @@ export class MiniCycleNotifications {
         message = "⚠️ Unknown notification";
       }
 
-      // Generate unique ID (DI-pure)
-      const newId = this.deps.generateHashId?.(message) || `notif-${Date.now()}`;
+      // Generate unique ID (using grouped API)
+      const newId = utils()?.generateHashId?.(message) || `notif-${Date.now()}`;
       if ([...notificationContainer.querySelectorAll(".notification")]
           .some(n => n.dataset.id === newId)) {
         console.log("🔄 Notification already exists, skipping duplicate.");
@@ -391,7 +393,7 @@ export class MiniCycleNotifications {
         content = "⚠️ Unknown notification";
       }
 
-      const newId = this.deps.generateHashId?.(content) || `notif-${Date.now()}`;
+      const newId = utils()?.generateHashId?.(content) || `notif-${Date.now()}`;
       const existing = [...notificationContainer.querySelectorAll(".notification")];
 
       // Prevent duplicates

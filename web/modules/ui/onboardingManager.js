@@ -14,46 +14,63 @@
  * @module onboardingManager
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('OnboardingManager', {
+    appInit: optional(null),
+    AppState: optional(null),
+    showNotification: optional(null),
+    showCycleCreationModal: optional(null),
+    completeInitialSetup: optional(null),
+    safeAddEventListenerById: optional(null),
+    safeAddEventListener: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for OnboardingManager (call before initOnboardingManager)
  * @param {Object} dependencies - { AppState, showNotification, showCycleCreationModal, completeInitialSetup, safeAddEventListenerById }
  */
 export function setOnboardingManagerDependencies(dependencies) {
-    // Use Object.defineProperties to preserve getters (for lazy binding)
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('🎓 OnboardingManager dependencies set:', Object.keys(dependencies));
 }
 
 export class OnboardingManager {
     constructor(dependencies = {}) {
-        // Merge module-level deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
-
-        // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        // For singleton created at module load time, use getter for late-binding
         this.initialized = false;
+        this._fallbackNotification = this.fallbackNotification.bind(this);
 
-        // Store injected dependencies
-        this._injectedDeps = dependencies;
+        // Instance version - late-binding via getter (singleton created before deps set)
+        Object.defineProperty(this, 'version', {
+            get: () => di.resolve().AppMeta?.version
+        });
 
-        // Dependency injection - DI-pure (no window.* fallbacks)
-        // Priority: constructor injection > module deps > fallback method
+        // Use getter for late-binding (singleton created before deps set)
+        // IMPORTANT: Don't pass dependencies to resolve() - use injected deps from setDependencies
         Object.defineProperty(this, 'deps', {
-            get: () => ({
-                showNotification: this._injectedDeps.showNotification || _deps.showNotification || this.fallbackNotification.bind(this),
-                AppState: this._injectedDeps.AppState || _deps.AppState || null,
-                showCycleCreationModal: this._injectedDeps.showCycleCreationModal || _deps.showCycleCreationModal || null,
-                completeInitialSetup: this._injectedDeps.completeInitialSetup || _deps.completeInitialSetup || null,
-                safeAddEventListenerById: this._injectedDeps.safeAddEventListenerById || _deps.safeAddEventListenerById || null
-            })
+            get: () => {
+                const resolvedDeps = di.resolve();
+                return {
+                    showNotification: resolvedDeps.showNotification || this._fallbackNotification,
+                    AppState: resolvedDeps.AppState,
+                    showCycleCreationModal: resolvedDeps.showCycleCreationModal,
+                    completeInitialSetup: resolvedDeps.completeInitialSetup,
+                    safeAddEventListenerById: resolvedDeps.safeAddEventListenerById
+                };
+            }
         });
     }
 

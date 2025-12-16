@@ -1,5 +1,5 @@
 /**
- * 🔄 miniCycle Migration Manager
+ * 🔄 miniCycle Migration Manager (DI-Pure)
  *
  * Pattern: Strict Dependency Injection (🔧)
  * Handles schema version migrations with strict dependencies
@@ -20,20 +20,28 @@
  * @module modules/cycle/migrationManager
  */
 
-// ==========================================
-// 🔧 STRICT DEPENDENCY INJECTION
-// ==========================================
+import { createDIModule, optional } from '../core/diBase.js';
 
-const Deps = {
-    storage: null,              // window.localStorage
-    sessionStorage: null,       // window.sessionStorage
-    showNotification: null,     // (message, type, duration) => void
-    initialSetup: null, 
-    onInitialSetupComplete: null,       // () => void (app initialization fallback)
-    now: null,                  // () => Date.now()
-    document: null              // document reference for DOM operations
-    
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('MigrationManager', {
+    storage: optional(null),
+    sessionStorage: optional(null),
+    showNotification: optional(null),
+    initialSetup: optional(null),
+    onInitialSetupComplete: optional(null),
+    now: optional(null),
+    document: optional(null)
+});
+
+// Late-binding deps via Proxy
+const Deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Configure migration manager dependencies
@@ -48,14 +56,15 @@ const Deps = {
  * @param {Object} overrides.document - Document reference (for DOM operations)
  */
 export function setMigrationManagerDependencies(overrides = {}) {
-    Object.assign(Deps, overrides);
+    di.setDependencies(overrides);
+    const resolved = di.resolve();
     console.log('🔄 Migration Manager dependencies configured:', {
-        storage: !!Deps.storage,
-        sessionStorage: !!Deps.sessionStorage,
-        showNotification: typeof Deps.showNotification === 'function',
-        initialSetup: typeof Deps.initialSetup === 'function',
-        now: typeof Deps.now === 'function',
-        document: !!Deps.document
+        storage: !!resolved.storage,
+        sessionStorage: !!resolved.sessionStorage,
+        showNotification: typeof resolved.showNotification === 'function',
+        initialSetup: typeof resolved.initialSetup === 'function',
+        now: typeof resolved.now === 'function',
+        document: !!resolved.document
     });
 }
 

@@ -5,48 +5,58 @@
  * @module cycleSwitcher
  */
 
-// Module-level deps for late injection
-let _deps = {};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('CycleSwitcher', {
+    AppState: optional(null),
+    AppMeta: optional(null),
+    loadMiniCycleData: optional(() => null),
+    showNotification: optional(null),
+    hideMainMenu: optional(() => {}),
+    showPromptModal: optional(null),
+    showConfirmationModal: optional(null),
+    sanitizeInput: optional((str) => str),
+    loadMiniCycle: optional(null),
+    updateProgressBar: optional(() => {}),
+    updateStatsPanel: optional(() => {}),
+    checkCompleteAllButton: optional(() => {}),
+    updateReminderButtons: optional(() => {}),
+    updateUndoRedoButtons: optional(() => {}),
+    initialSetup: optional(() => {}),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    safeAddEventListener: optional(null),
+    onCycleRenamed: optional(null),
+    onCycleDeleted: optional(null),
+    onCycleSwitched: optional(null)
+});
 
 /**
  * Set dependencies for CycleSwitcher (call before creating instance)
  * @param {Object} dependencies - Late-injected dependencies
  */
 export function setCycleSwitcherDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🔄 CycleSwitcher dependencies set:', Object.keys(dependencies));
 }
 
 export class CycleSwitcher {
     constructor(dependencies = {}) {
-        // Merge module-level deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
-        // Store dependencies (DI-pure, no window.* fallbacks)
-        // Priority: constructor > module deps > graceful fallbacks
+        // Store dependencies with instance-bound fallbacks
         this.deps = {
-            AppState: mergedDeps.AppState || null,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || (() => null),
-            showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this),
-            hideMainMenu: mergedDeps.hideMainMenu || (() => {}),
-            showPromptModal: mergedDeps.showPromptModal || this.fallbackPrompt.bind(this),
-            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirm.bind(this),
-            sanitizeInput: mergedDeps.sanitizeInput || ((str) => str),
-            loadMiniCycle: mergedDeps.loadMiniCycle || null,
-            updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
-            updateStatsPanel: mergedDeps.updateStatsPanel || (() => {}),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
-            updateReminderButtons: mergedDeps.updateReminderButtons || (() => {}),
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || (() => {}),
-            initialSetup: mergedDeps.initialSetup || (() => {}),
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener.bind(this),
-            // Undo system callbacks (DI-pure)
-            onCycleRenamed: mergedDeps.onCycleRenamed || null,
-            onCycleDeleted: mergedDeps.onCycleDeleted || null,
-            onCycleSwitched: mergedDeps.onCycleSwitched || null
+            ...resolvedDeps,
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification.bind(this),
+            showPromptModal: resolvedDeps.showPromptModal || this.fallbackPrompt.bind(this),
+            showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirm.bind(this),
+            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener.bind(this)
         };
 
         // Instance state for temporary data (replaces window._tempRenameData)
@@ -54,7 +64,7 @@ export class CycleSwitcher {
 
         this.loadMiniCycleListTimeout = null;
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = this.deps.AppMeta?.version;
 
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();

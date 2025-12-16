@@ -1,46 +1,53 @@
 /**
- * ⚙️ miniCycle Settings Manager
+ * ⚙️ miniCycle Settings Manager (DI-Pure)
  * Handles settings panel, import/export, and configuration
  *
  * @module settingsManager
  * @pattern Resilient Constructor 🛡️
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
-// ❌ REMOVED: Static imports cause duplicate module instances
-// These are loaded via withV() in miniCycle-scripts.js and exposed to window.*
-// import { calculateNextOccurrence } from '../recurring/recurringCore.js';
-// import { DataValidator } from '../utils/dataValidator.js';
+import { createDIModule, optional } from '../core/diBase.js';
+import { ui } from '../core/appContext.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    appInit: null,  // AppInit for initialization coordination
-    loadMiniCycleData: null,
-    AppState: null,
-    showNotification: null,
-    showConfirmationModal: null,
-    hideMainMenu: null,
-    setupDarkModeToggle: null,
-    setupQuickDarkToggle: null,
-    updateMoveArrowsVisibility: null,
-    toggleHoverTaskOptions: null,
-    refreshTaskListUI: null,
-    performSchema25Migration: null,
-    resetDefaultRecurringSettings: null,
-    organizeCompletedTasks: null,
-    DataValidator: null,
-    calculateNextOccurrence: null,
-    sanitizeInput: null,
-    AppMeta: null,
-    safeAddEventListener: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('SettingsManager', {
+    appInit: optional(null),
+    loadMiniCycleData: optional(null),
+    AppState: optional(null),
+    showNotification: optional(null),
+    showConfirmationModal: optional(null),
+    hideMainMenu: optional(null),
+    setupDarkModeToggle: optional(null),
+    setupQuickDarkToggle: optional(null),
+    updateMoveArrowsVisibility: optional(null),
+    toggleHoverTaskOptions: optional(null),
+    refreshTaskListUI: optional(null),
+    performSchema25Migration: optional(null),
+    resetDefaultRecurringSettings: optional(null),
+    organizeCompletedTasks: optional(null),
+    DataValidator: optional(null),
+    calculateNextOccurrence: optional(null),
+    sanitizeInput: optional(null),
+    AppMeta: optional(null),
+    safeAddEventListener: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for SettingsManager (call before creating instance)
  * @param {Object} dependencies - { loadMiniCycleData, showNotification, AppState, DataValidator, etc. }
  */
 export function setSettingsManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('⚙️ SettingsManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -242,7 +249,7 @@ export class SettingsManager {
                     console.log('Move arrows setting saved to state:', enabled);
                 } else {
                     console.error('AppState not ready - setting not saved');
-                    this.deps.showNotification?.('Failed to save setting', 'error');
+                    ui()?.showNotification?.('Failed to save setting', 'error');
                     moveArrowsToggle.checked = !enabled; // Revert UI
                     return;
                 }
@@ -297,7 +304,7 @@ export class SettingsManager {
                     console.log('Three dots setting saved to AppState:', enabled);
                 } else {
                     console.error('AppState not ready - setting not saved');
-                    this.deps.showNotification?.('Failed to save setting', 'error');
+                    ui()?.showNotification?.('Failed to save setting', 'error');
                     threeDotsToggle.checked = !enabled; // Revert UI
                     return;
                 }
@@ -352,7 +359,7 @@ export class SettingsManager {
                     console.log('Completed dropdown setting saved to state:', enabled);
                 } else {
                     console.error('AppState not ready - setting not saved');
-                    this.deps.showNotification?.('Failed to save setting', 'error');
+                    ui()?.showNotification?.('Failed to save setting', 'error');
                     completedDropdownToggle.checked = !enabled; // Revert UI
                     return;
                 }

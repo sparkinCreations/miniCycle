@@ -1,5 +1,5 @@
 /**
- * 🔒 miniCycle Task Validation
+ * 🔒 miniCycle Task Validation (DI-Pure)
  * Validates and sanitizes task input for security and data integrity
  *
  * Pattern: Simple Instance ✨
@@ -10,39 +10,56 @@
  * @module modules/task/taskValidation
  */
 
-// Module-level deps for late injection
-let _deps = {};
+import { createDIModule, optional } from '../core/diBase.js';
+import { ui } from '../core/appContext.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskValidation', {
+    sanitizeInput: optional(null),
+    showNotification: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskValidator (call before initTaskValidator)
  * @param {Object} dependencies - { sanitizeInput, showNotification }
  */
 export function setTaskValidationDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🔒 TaskValidation dependencies set:', Object.keys(dependencies));
 }
 
 export class TaskValidator {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Require sanitizeInput - no fallback to window
-        if (typeof mergedDeps.sanitizeInput !== 'function') {
+        if (typeof resolvedDeps.sanitizeInput !== 'function') {
             throw new Error('TaskValidator requires sanitizeInput function');
         }
 
         // Store dependencies - showNotification is optional
         this.deps = {
-            sanitizeInput: mergedDeps.sanitizeInput,
-            showNotification: mergedDeps.showNotification || ((msg) => console.log(msg))
+            sanitizeInput: resolvedDeps.sanitizeInput,
+            showNotification: resolvedDeps.showNotification || ((msg) => console.log(msg))
         };
 
         // Constants
         this.TASK_LIMIT = 100; // Character limit for tasks
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
 
         console.log('🔒 TaskValidator created');
     }
@@ -75,7 +92,7 @@ export class TaskValidator {
 
         // Character limit check
         if (taskTextTrimmed.length > this.TASK_LIMIT) {
-            this.deps.showNotification?.(`Task must be ${this.TASK_LIMIT} characters or less.`, 'warning');
+            ui()?.showNotification?.(`Task must be ${this.TASK_LIMIT} characters or less.`, 'warning');
             return null;
         }
 

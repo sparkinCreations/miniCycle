@@ -1,5 +1,5 @@
 /**
- * miniCycle Undo/Redo Manager Module
+ * miniCycle Undo/Redo Manager Module (DI-Pure)
  * - State-based undo/redo system with snapshot management
  * - CRITICAL: Cannot work without AppState - fails fast
  * - Pure module with explicit dependency injection
@@ -8,27 +8,48 @@
  * @pattern Strict Injection 🔧
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
 // ============ CONSTANTS ============
 const UNDO_LIMIT = 20;
 const UNDO_MIN_INTERVAL_MS = 300;
 const UNDO_DB_WRITE_DEBOUNCE_MS = 3000;  // Batch IndexedDB writes every 3s
 
-// ============ DEPENDENCY INJECTION ============
-const Deps = {
-  appInit: null,   // AppInit for initialization coordination
-  AppState: null,
-  refreshUIFromState: null,
-  AppGlobalState: null,
-  getElementById: null,
-  safeAddEventListener: null,
-  wrapperActive: false,
-  showNotification: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('UndoRedoManager', {
+  appInit: optional(null),
+  AppState: optional(null),
+  refreshUIFromState: optional(null),
+  AppGlobalState: optional(null),
+  getElementById: optional(null),
+  safeAddEventListener: optional(null),
+  showNotification: optional(null)
+});
+
+// Late-binding deps via Proxy
+const Deps = new Proxy({ wrapperActive: false }, {
+  get(target, prop) {
+    // wrapperActive is a mutable instance property, not a DI dep
+    if (prop === 'wrapperActive') {
+      return target.wrapperActive;
+    }
+    return di.resolve()[prop];
+  },
+  set(target, prop, value) {
+    // Allow setting wrapperActive
+    if (prop === 'wrapperActive') {
+      target.wrapperActive = value;
+      return true;
+    }
+    return false;
+  }
+});
 
 export function setUndoRedoManagerDependencies(overrides = {}) {
-  Object.assign(Deps, overrides);
+  di.setDependencies(overrides);
   console.log('🔄 UndoRedoManager dependencies configured');
 }
 

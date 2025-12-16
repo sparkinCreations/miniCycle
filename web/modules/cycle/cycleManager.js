@@ -1,5 +1,5 @@
 /**
- * @file cycleManager.js
+ * @file cycleManager.js (DI-Pure)
  * @description Cycle creation and management functionality for miniCycle
  * @module modules/cycleManager
  * @pattern Resilient Constructor 🛡️
@@ -12,63 +12,93 @@
  * - Onboarding integration
  */
 
-// Module-level deps for late injection
-let _deps = {};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('CycleManager', {
+    AppState: optional(null),
+    loadMiniCycleData: optional(null),
+    showPromptModal: optional(null),
+    showNotification: optional(null),
+    sanitizeInput: optional(null),
+    completeInitialSetup: optional(null),
+    hideMainMenu: optional(null),
+    updateProgressBar: optional(null),
+    checkCompleteAllButton: optional(null),
+    autoSave: optional(null),
+    safeLocalStorageGet: optional(null),
+    safeLocalStorageSet: optional(null),
+    safeJSONParse: optional(null),
+    safeJSONStringify: optional(null),
+    onCycleCreated: optional(null),
+    DEFAULT_TASK_OPTION_BUTTONS: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for CycleManager (call before creating instance)
  * @param {Object} dependencies - { AppState, showNotification, sanitizeInput, etc. }
  */
 export function setCycleManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🔄 CycleManager dependencies set:', Object.keys(dependencies));
 }
 
 export class CycleManager {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         this.deps = {
             // State management (required)
-            AppState: mergedDeps.AppState,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData,
+            AppState: resolvedDeps.AppState,
+            loadMiniCycleData: resolvedDeps.loadMiniCycleData,
 
             // UI functions (required)
-            showPromptModal: mergedDeps.showPromptModal,
-            showNotification: mergedDeps.showNotification || this.fallbackNotification.bind(this),
-            sanitizeInput: mergedDeps.sanitizeInput,
+            showPromptModal: resolvedDeps.showPromptModal,
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification.bind(this),
+            sanitizeInput: resolvedDeps.sanitizeInput,
 
             // Lifecycle functions (required)
-            completeInitialSetup: mergedDeps.completeInitialSetup,
-            hideMainMenu: mergedDeps.hideMainMenu,
-            updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
-            autoSave: mergedDeps.autoSave || (() => {}),
+            completeInitialSetup: resolvedDeps.completeInitialSetup,
+            hideMainMenu: resolvedDeps.hideMainMenu,
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
+            autoSave: resolvedDeps.autoSave || (() => {}),
 
             // Storage functions (required) - no global fallbacks
-            safeLocalStorageGet: mergedDeps.safeLocalStorageGet,
-            safeLocalStorageSet: mergedDeps.safeLocalStorageSet,
-            safeJSONParse: mergedDeps.safeJSONParse,
-            safeJSONStringify: mergedDeps.safeJSONStringify,
+            safeLocalStorageGet: resolvedDeps.safeLocalStorageGet,
+            safeLocalStorageSet: resolvedDeps.safeLocalStorageSet,
+            safeJSONParse: resolvedDeps.safeJSONParse,
+            safeJSONStringify: resolvedDeps.safeJSONStringify,
 
             // Undo system callback (optional)
-            onCycleCreated: mergedDeps.onCycleCreated || null,
+            onCycleCreated: resolvedDeps.onCycleCreated || null,
 
             // Constants (required)
-            DEFAULT_TASK_OPTION_BUTTONS: mergedDeps.DEFAULT_TASK_OPTION_BUTTONS,
+            DEFAULT_TASK_OPTION_BUTTONS: resolvedDeps.DEFAULT_TASK_OPTION_BUTTONS,
 
             // DOM functions
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel))
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel))
         };
 
         // Validate required dependencies
         this._validateDependencies();
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
         console.log('✅ CycleManager initialized');
     }
 

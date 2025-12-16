@@ -1,5 +1,5 @@
 /**
- * 🎭 miniCycle Modal Manager
+ * 🎭 miniCycle Modal Manager (DI-Pure)
  * Centralized modal management and coordination
  *
  * Features:
@@ -9,61 +9,57 @@
  * - Individual modal setup (feedback, about, settings, reminders)
  * - Modal state tracking
  *
- * Dependencies (injected via setModalManagerDependencies):
- * - hideMainMenu (menu management)
- * - showNotification (notifications)
- * - sanitizeInput (input sanitization)
- * - safeAddEventListener (event listener helper)
- * - waitForCore (initialization wait function)
- *
  * @module modalManager
  */
 
-// Module-level dependencies - set via setModalManagerDependencies
-let _deps = {
-    showNotification: null,
-    hideMainMenu: null,
-    sanitizeInput: null,
-    safeAddEventListener: null,
-    waitForCore: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('ModalManager', {
+    showNotification: optional(null),
+    hideMainMenu: optional(null),
+    sanitizeInput: optional(null),
+    safeAddEventListener: optional(null),
+    waitForCore: optional(() => Promise.resolve()),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for ModalManager
  * Call this after dependencies are available
  */
 export function setModalManagerDependencies(deps) {
-    if (deps.showNotification) _deps.showNotification = deps.showNotification;
-    if (deps.hideMainMenu) _deps.hideMainMenu = deps.hideMainMenu;
-    if (deps.sanitizeInput) _deps.sanitizeInput = deps.sanitizeInput;
-    if (deps.safeAddEventListener) _deps.safeAddEventListener = deps.safeAddEventListener;
-    if (deps.waitForCore) _deps.waitForCore = deps.waitForCore;
+    di.setDependencies(deps);
     console.log('🎭 ModalManager dependencies injected');
 }
 
 export class ModalManager {
     constructor(dependencies = {}) {
-        // Merge module-level deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
         this.initialized = false;
 
-        // Store injected dependencies
-        this._injectedDeps = dependencies;
-
-        // Dependency injection - no window.* fallbacks
-        // Priority: module-level _deps → instance _injectedDeps
-        Object.defineProperty(this, 'deps', {
-            get: () => ({
-                showNotification: _deps.showNotification || this._injectedDeps.showNotification || this.fallbackNotification.bind(this),
-                hideMainMenu: _deps.hideMainMenu || this._injectedDeps.hideMainMenu || null,
-                sanitizeInput: _deps.sanitizeInput || this._injectedDeps.sanitizeInput || null,
-                safeAddEventListener: _deps.safeAddEventListener || this._injectedDeps.safeAddEventListener || null,
-                waitForCore: _deps.waitForCore || this._injectedDeps.waitForCore || (() => Promise.resolve())
-            })
-        });
+        // Store resolved dependencies
+        this.deps = {
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification.bind(this),
+            hideMainMenu: resolvedDeps.hideMainMenu,
+            sanitizeInput: resolvedDeps.sanitizeInput,
+            safeAddEventListener: resolvedDeps.safeAddEventListener,
+            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve())
+        };
     }
 
     /**

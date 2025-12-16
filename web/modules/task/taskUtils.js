@@ -14,40 +14,39 @@
  * @module modules/task/taskUtils
  */
 
-// Import constants
+import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS
 } from '../core/constants.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    AppState: null,
-    loadMiniCycleData: null,
-    generateId: null,
-    remindOverdueTasks: null,
-    enableDragAndDropOnTask: null,
-    updateMoveArrowsVisibility: null,
-    saveTaskToSchema25: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskUtils', {
+    AppState: optional(null),
+    loadMiniCycleData: optional(null),
+    generateId: optional(null),
+    remindOverdueTasks: optional(null),
+    enableDragAndDropOnTask: optional(null),
+    updateMoveArrowsVisibility: optional(null),
+    saveTaskToSchema25: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskUtils wrapper functions
- * Uses Object.defineProperties to preserve getter behavior for late-bound deps
  * @param {Object} dependencies - { AppState, loadMiniCycleData, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility, saveTaskToSchema25 }
  */
 export function setTaskUtilsDependencies(dependencies) {
-    // Copy getters properly instead of evaluating them
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    for (const [key, descriptor] of Object.entries(descriptors)) {
-        if (descriptor.get) {
-            // It's a getter - define it as a getter on _deps
-            Object.defineProperty(_deps, key, descriptor);
-        } else {
-            // Regular value - just assign
-            _deps[key] = descriptor.value;
-        }
-    }
+    di.setDependencies(dependencies);
     console.log('🛠️ TaskUtils dependencies set:', Object.keys(dependencies));
 }
 

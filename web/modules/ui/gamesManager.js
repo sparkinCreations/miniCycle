@@ -12,38 +12,56 @@
  * @module gamesManager
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('GamesManager', {
+    appInit: optional(null),
+    AppState: optional(null),
+    safeAddEventListener: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for GamesManager (call before init)
  * @param {Object} dependencies - { AppState, safeAddEventListener }
  */
 export function setGamesManagerDependencies(dependencies) {
-    // Use Object.defineProperties to preserve getters (for lazy binding)
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('🎮 GamesManager dependencies set:', Object.keys(dependencies));
 }
 
 class GamesManager {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
-
-        // Store dependencies
-        this.deps = {
-            AppState: mergedDeps.AppState,
-            safeAddEventListener: mergedDeps.safeAddEventListener
-        };
-
-        // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        // For singleton created at module load time, use getter for late-binding
         this.initialized = false;
+
+        // Instance version - late-binding via getter
+        Object.defineProperty(this, 'version', {
+            get: () => di.resolve().AppMeta?.version
+        });
+
+        // Use getter for late-binding (singleton created before deps set)
+        // IMPORTANT: Don't pass dependencies to resolve() - use injected deps from setDependencies
+        Object.defineProperty(this, 'deps', {
+            get: () => {
+                const resolvedDeps = di.resolve();
+                return {
+                    AppState: resolvedDeps.AppState,
+                    safeAddEventListener: resolvedDeps.safeAddEventListener
+                };
+            }
+        });
     }
 
     /**
@@ -72,7 +90,8 @@ class GamesManager {
      */
     async deferredCheckGamesUnlock() {
         // Wait for AppState to be ready
-        const maxAttempts = 50;
+        // Note: For new users, data is created in Phase 3 which may take longer
+        const maxAttempts = 150;  // 15 seconds max (150 × 100ms)
         let attempts = 0;
 
         const checkInterval = setInterval(() => {
@@ -84,7 +103,7 @@ class GamesManager {
                 this.checkGamesUnlock();
             } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
-                console.warn('⚠️ AppState never became ready for checkGamesUnlock');
+                console.warn('⚠️ AppState never became ready for checkGamesUnlock (this is normal for new users until cycle is created)');
             }
         }, 100); // Check every 100ms
     }
