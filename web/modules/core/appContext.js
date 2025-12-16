@@ -149,6 +149,7 @@ const legacy = {
     FeatureFlags: null,
     loadMiniCycleData: null,
     autoSave: null,
+    fixTaskValidationIssues: null,
 
     // Managers
     BackupManager: null,
@@ -261,21 +262,19 @@ export function registerApi(name, api) {
 /**
  * Get a grouped API
  * @param {string} name - API name
- * @returns {Object} API object
- * @throws {Error} If API not registered (in dev mode)
+ * @returns {Object|null} API object or null if not yet registered
  */
 export function getApi(name) {
     if (!(name in apis)) {
-        throw new Error(`appContext: Unknown API "${name}"`);
+        if (DEV_MODE) {
+            console.warn(`⚠️ appContext: Unknown API "${name}"`);
+        }
+        return null;
     }
     if (apis[name] === null) {
-        const error = `appContext: "${name}" API accessed before registration!`;
-        console.error(error);
-        console.trace();
-        if (DEV_MODE) {
-            throw new Error(error);
-        }
-        return {};
+        // Return null to allow optional chaining (e.g., getCycleApi?.()?.load)
+        // This is expected during boot when APIs are set up with late binding
+        return null;
     }
     return apis[name];
 }
@@ -398,6 +397,7 @@ export function getAppGlobalState() { return legacy.AppGlobalState; }
 export function getFeatureFlags() { return legacy.FeatureFlags; }
 export function getLoadMiniCycleData() { return legacy.loadMiniCycleData; }
 export function getAutoSave() { return legacy.autoSave; }
+export function getFixTaskValidationIssues() { return legacy.fixTaskValidationIssues; }
 
 // Managers
 export function getBackupManager() { return legacy.BackupManager; }
