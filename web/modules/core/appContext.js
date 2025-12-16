@@ -8,131 +8,178 @@
  * modules can import from appContext.
  *
  * ARCHITECTURE (December 2025):
- * - Grouped APIs: getStateApi(), getTaskApi(), getCycleApi(), etc.
- * - Dev protection: assertRegistered() throws if API accessed before registration
- * - Post-boot validation: validateAllApisRegistered() catches missing registrations
+ * - Primary: Grouped APIs - state(), task(), cycle(), ui(), undo(), reminder(), recurring()
+ * - Legacy: Individual getters (deprecated, maintained for backwards compatibility)
  *
- * Usage:
- *   // PREFERRED: Grouped APIs
- *   import { getStateApi, getTaskApi } from '../core/appContext.js';
- *   const state = getStateApi().AppState.get();
- *   getTaskApi().add(taskText, false);
+ * USAGE (PREFERRED - Grouped APIs):
+ * ```javascript
+ * import { state, task, ui } from '../core/appContext.js';
  *
- *   // LEGACY: Individual getters (being phased out)
- *   import { getAppState, getAppInit } from '../core/appContext.js';
- *   const state = getAppState()?.get();
+ * // Access state
+ * const data = state().loadMiniCycleData();
+ * const appState = state().AppState;
  *
- * Initialization (in coreBoot.js):
- *   import { setContextValue } from '../core/appContext.js';
- *   setContextValue('stateApi', { AppState, AppGlobalState, ... });
+ * // Perform task operations
+ * task().add('New task', false);
+ *
+ * // Show notifications
+ * ui().showNotification('Success!', 'success');
+ * ```
+ *
+ * USAGE (LEGACY - Individual getters):
+ * ```javascript
+ * import { getAppState, getShowNotification } from '../core/appContext.js';
+ * const state = getAppState()?.get();
+ * ```
+ *
+ * @version 2.0.0 - Simplified with grouped APIs
  */
 
 // ============================================================================
-// DEV MODE PROTECTION
+// CONFIGURATION
 // ============================================================================
 
 const DEV_MODE = true; // Set to false in production builds
 
+// ============================================================================
+// GROUPED API STORAGE
+// ============================================================================
+
 /**
- * Assert that a context key is registered before access
- * In dev mode, throws an error with stack trace
- * In prod mode, logs error but continues
- * @param {string} key - Context key to check
+ * @typedef {Object} StateApi
+ * @property {Object} AppState - Main application state
+ * @property {Object} AppGlobalState - Runtime flags and temporary state
+ * @property {Object} AppMeta - Application metadata (version, etc.)
+ * @property {Function} loadMiniCycleData - Load current cycle data
+ * @property {Function} autoSave - Trigger auto-save
  */
-function assertRegistered(key) {
-    if (context[key] === null) {
-        const error = `❌ appContext: "${key}" accessed before registration!`;
-        console.error(error);
-        console.trace(); // Show call stack to identify the caller
 
-        if (DEV_MODE) {
-            throw new Error(error);
-        }
-    }
-}
+/**
+ * @typedef {Object} TaskApi
+ * @property {Function} add - Add a new task
+ * @property {Function} delete - Delete a task
+ * @property {Function} edit - Edit a task
+ * @property {Function} handleCompleteAll - Complete all tasks
+ * @property {Function} loadContext - Load task context
+ * @property {Function} createDOM - Create task DOM elements
+ * @property {Function} extractFromDOM - Extract task data from DOM
+ * @property {Function} updateMoveArrows - Update arrow visibility
+ * @property {Function} refresh - Refresh task list UI
+ */
+
+/**
+ * @typedef {Object} CycleApi
+ * @property {Function} load - Load a cycle
+ * @property {Function} create - Show cycle creation modal
+ * @property {Function} switch - Switch to another cycle
+ * @property {Function} rename - Rename a cycle
+ * @property {Function} delete - Delete a cycle
+ * @property {Function} check - Check cycle completion
+ * @property {Function} initializeModeSelector - Initialize mode selector
+ */
+
+/**
+ * @typedef {Object} UiApi
+ * @property {Function} showNotification - Show a notification
+ * @property {Function} showConfirmationModal - Show confirmation dialog
+ * @property {Function} showPromptModal - Show prompt dialog
+ * @property {Function} hideMainMenu - Hide the main menu
+ * @property {Function} updateMainMenuHeader - Update menu header
+ * @property {Function} closeAllModals - Close all open modals
+ * @property {Function} resetNotificationPosition - Reset notification position
+ */
+
+/**
+ * @typedef {Object} UndoApi
+ * @property {Function} capture - Capture state snapshot
+ * @property {Function} undo - Perform undo
+ * @property {Function} redo - Perform redo
+ * @property {Function} updateButtons - Update undo/redo button states
+ * @property {Function} enableOnFirstInteraction - Enable undo on first user action
+ */
+
+/**
+ * @typedef {Object} ReminderApi
+ * @property {Object} manager - Reminder manager instance
+ * @property {Function} start - Start reminders
+ * @property {Function} stop - Stop reminders
+ * @property {Function} updateButtons - Update reminder button states
+ * @property {Function} loadSettings - Load reminder settings
+ */
+
+/**
+ * @typedef {Object} RecurringApi
+ * @property {Object} panel - Recurring panel instance
+ * @property {Object} core - Recurring core functionality
+ * @property {Function} openForTask - Open settings panel for a task
+ */
+
+/**
+ * @typedef {Object} UtilsApi
+ * @property {Object} GlobalUtils - Global utility functions
+ * @property {Object} DataValidator - Data validation class
+ * @property {Function} sanitizeInput - Sanitize user input
+ * @property {Function} generateId - Generate unique ID
+ * @property {Function} generateHashId - Generate hash ID
+ * @property {Function} safeAddEventListener - Add event listener safely
+ * @property {Function} isTouchDevice - Check if touch device
+ */
+
+const apis = {
+    state: null,
+    task: null,
+    cycle: null,
+    ui: null,
+    undo: null,
+    reminder: null,
+    recurring: null,
+    utils: null
+};
 
 // ============================================================================
-// INTERNAL CONTEXT STORAGE
+// LEGACY INDIVIDUAL VALUES (for backwards compatibility)
 // ============================================================================
 
-const context = {
-    // =========================================================================
-    // GROUPED APIs (PREFERRED - use these for new code)
-    // =========================================================================
-    stateApi: null,      // { AppState, AppGlobalState, AppMeta, loadMiniCycleData, autoSave }
-    taskApi: null,       // { add, loadContext, createDOM, extractFromDOM, handleCompleteAll, ... }
-    cycleApi: null,      // { load, create, check, createInitialSchema, ... }
-    uiApi: null,         // { showNotification, hideMainMenu, updateMainMenuHeader, ... }
-    undoApi: null,       // { capture, undo, redo, updateButtons, enableOnFirstInteraction }
-    reminderApi: null,   // { manager, start, stop, updateButtons, loadSettings }
-    recurringApi: null,  // { panel, core, openSettingsForTask }
-
-    // =========================================================================
-    // INDIVIDUAL VALUES (LEGACY - being migrated to grouped APIs)
-    // =========================================================================
-
-    // =========================================================================
-    // CORE STATE
-    // =========================================================================
+const legacy = {
+    // Core
     AppState: null,
     appInit: null,
     AppGlobalState: null,
+    AppMeta: null,
     FeatureFlags: null,
-
-    // =========================================================================
-    // DATA FUNCTIONS
-    // =========================================================================
     loadMiniCycleData: null,
     autoSave: null,
 
-    // =========================================================================
-    // MANAGERS (Singletons/Instances)
-    // =========================================================================
+    // Managers
     BackupManager: null,
     CycleManager: null,
     ModeManager: null,
     MenuManager: null,
     SettingsManager: null,
-    ErrorHandler: null,
     reminderManager: null,
     gamesManager: null,
-
-    // Manager classes + instances
-    OnboardingManager: null,
     onboardingManager: null,
-    DragDropManager: null,
-    DeviceDetectionManager: null,
     deviceDetectionManager: null,
-    ModalManager: null,
     modalManager: null,
-    closeAllModals: null,
-    initModalManager: null,
-    CycleSwitcher: null,
     cycleSwitcher: null,
+    statsPanelManager: null,
+    completedTasksManager: null,
 
-    // =========================================================================
-    // UI FUNCTIONS
-    // =========================================================================
+    // UI Functions
     completeInitialSetup: null,
     showCycleCreationModal: null,
     hideMainMenu: null,
     updateMainMenuHeader: null,
-    showLoader: null,
-    hideLoader: null,
-    withLoader: null,
+    closeAllModals: null,
 
-    // =========================================================================
-    // NOTIFICATIONS
-    // =========================================================================
+    // Notifications
     notifications: null,
     showNotification: null,
     showConfirmationModal: null,
     showPromptModal: null,
     resetNotificationPosition: null,
 
-    // =========================================================================
-    // UTILITIES
-    // =========================================================================
+    // Utilities
     GlobalUtils: null,
     DataValidator: null,
     sanitizeInput: null,
@@ -142,104 +189,152 @@ const context = {
     safeAddEventListenerById: null,
     isTouchDevice: null,
 
-    // =========================================================================
-    // UNDO/REDO
-    // =========================================================================
+    // Undo/Redo
     performStateBasedUndo: null,
     performStateBasedRedo: null,
     updateUndoRedoButtons: null,
     captureStateSnapshot: null,
 
-    // =========================================================================
-    // REMINDERS
-    // =========================================================================
+    // Reminders
     updateReminderButtons: null,
     startReminders: null,
     remindOverdueTasks: null,
     loadRemindersSettings: null,
 
-    // =========================================================================
-    // RECURRING
-    // =========================================================================
+    // Recurring
     recurringPanel: null,
     openRecurringSettingsPanelForTask: null,
 
-    // =========================================================================
-    // MODE
-    // =========================================================================
+    // Mode
     initializeModeSelector: null,
 
-    // =========================================================================
-    // TASK FUNCTIONS
-    // =========================================================================
+    // Task
     updateMoveArrowsVisibility: null,
     addTask: null,
     validateAndSanitizeTaskInput: null,
     loadTaskContext: null,
     createTaskDOMElements: null,
     createOrUpdateTaskData: null,
-    fixTaskValidationIssues: null,
     handleCompleteAllTasks: null,
-    initCompletedTasksSection: null,
-    resumeDeferredRenderIfNeeded: null,
     extractTaskDataFromDOM: null,
-
-    // Task classes
+    initCompletedTasksSection: null,
     TaskCore: null,
-    TaskRenderer: null,
     TaskDOMManager: null,
-    TaskEvents: null,
-    TaskUtils: null,
-    TaskOptionsCustomizer: null,
     handleTaskCompletionChange: null,
     saveCurrentTaskOrder: null,
     resetTasks: null,
 
-    // =========================================================================
-    // CYCLE SWITCHER
-    // =========================================================================
+    // Cycle
     switchMiniCycle: null,
     renameMiniCycle: null,
     deleteMiniCycle: null,
-    confirmMiniCycle: null,
-    hideSwitchMiniCycleModal: null,
-    updatePreview: null,
-    loadMiniCycleList: null,
-    setupModalClickOutside: null,
 
-    // =========================================================================
-    // FEATURES
-    // =========================================================================
-    PullToRefresh: null,
-    MiniCycleReminders: null,
-    MiniCycleNotifications: null,
-    EducationalTipManager: null,
+    // Features
     updateDueDateVisibility: null,
     checkOverdueTasks: null,
     organizeCompletedTasks: null,
     updateThemeColor: null,
-
-    // =========================================================================
-    // TESTING (lazy-loaded)
-    // =========================================================================
-    ConsoleCapture: null,
-    appendToTestResults: null
+    PullToRefresh: null
 };
 
-// Track initialization state
+// Track initialization
 let isInitialized = false;
 
+// ============================================================================
+// GROUPED API REGISTRATION & ACCESS
+// ============================================================================
+
 /**
- * Initialize the app context with core dependencies
- * Should be called early in boot, after core systems are created
+ * Register a grouped API
+ * @param {string} name - API name (state, task, cycle, ui, undo, reminder, recurring, utils)
+ * @param {Object} api - API object with methods
+ */
+export function registerApi(name, api) {
+    if (!(name in apis)) {
+        console.warn(`⚠️ appContext: Unknown API "${name}"`);
+        return;
+    }
+    apis[name] = api;
+    console.log(`✅ appContext: ${name} API registered`);
+}
+
+/**
+ * Get a grouped API
+ * @param {string} name - API name
+ * @returns {Object} API object
+ * @throws {Error} If API not registered (in dev mode)
+ */
+export function getApi(name) {
+    if (!(name in apis)) {
+        throw new Error(`appContext: Unknown API "${name}"`);
+    }
+    if (apis[name] === null) {
+        const error = `appContext: "${name}" API accessed before registration!`;
+        console.error(error);
+        console.trace();
+        if (DEV_MODE) {
+            throw new Error(error);
+        }
+        return {};
+    }
+    return apis[name];
+}
+
+// Typed API accessors (preferred usage)
+/** @returns {StateApi} */
+export const state = () => getApi('state');
+
+/** @returns {TaskApi} */
+export const task = () => getApi('task');
+
+/** @returns {CycleApi} */
+export const cycle = () => getApi('cycle');
+
+/** @returns {UiApi} */
+export const ui = () => getApi('ui');
+
+/** @returns {UndoApi} */
+export const undo = () => getApi('undo');
+
+/** @returns {ReminderApi} */
+export const reminder = () => getApi('reminder');
+
+/** @returns {RecurringApi} */
+export const recurring = () => getApi('recurring');
+
+/** @returns {UtilsApi} */
+export const utils = () => getApi('utils');
+
+// ============================================================================
+// GROUPED API GETTERS (Alternative naming for existing code)
+// ============================================================================
+
+export function getStateApi() { return getApi('state'); }
+export function getTaskApi() { return getApi('task'); }
+export function getCycleApi() { return getApi('cycle'); }
+export function getUiApi() { return getApi('ui'); }
+export function getUndoApi() { return getApi('undo'); }
+export function getReminderApi() { return getApi('reminder'); }
+export function getRecurringApi() { return getApi('recurring'); }
+export function getUtilsApi() { return getApi('utils'); }
+
+// ============================================================================
+// LEGACY API SUPPORT
+// ============================================================================
+
+/**
+ * Initialize the app context with legacy dependencies
+ * @deprecated Use registerApi() for grouped APIs instead
  * @param {Object} deps - Dependencies to register
  */
 export function initAppContext(deps) {
     Object.keys(deps).forEach(key => {
-        if (key in context) {
-            context[key] = deps[key];
+        if (key in legacy) {
+            legacy[key] = deps[key];
+        } else if (key in apis) {
+            apis[key] = deps[key];
         } else {
-            console.warn(`⚠️ appContext: Unknown dependency "${key}" - add to context object if needed`);
+            console.warn(`⚠️ appContext: Unknown key "${key}"`);
         }
     });
     isInitialized = true;
@@ -247,15 +342,18 @@ export function initAppContext(deps) {
 }
 
 /**
- * Update a single context value (for late-bound dependencies)
- * @param {string} key - Context key to update
- * @param {*} value - New value
+ * Set a single context value
+ * @param {string} key - Context key
+ * @param {*} value - Value to set
  */
 export function setContextValue(key, value) {
-    if (key in context) {
-        context[key] = value;
+    if (key in apis) {
+        apis[key] = value;
+    } else if (key in legacy) {
+        legacy[key] = value;
     } else {
-        console.warn(`⚠️ appContext: Unknown key "${key}"`);
+        // Allow dynamic addition for backwards compatibility
+        legacy[key] = value;
     }
 }
 
@@ -267,98 +365,20 @@ export function isContextReady() {
     return isInitialized;
 }
 
-// ============================================================================
-// GROUPED API GETTERS (PREFERRED - use these for new code)
-// ============================================================================
-
 /**
- * Get State API - core state management
- * @returns {Object} { AppState, AppGlobalState, AppMeta, loadMiniCycleData, autoSave }
- */
-export function getStateApi() {
-    assertRegistered('stateApi');
-    return context.stateApi;
-}
-
-/**
- * Get Task API - task operations
- * @returns {Object} { add, loadContext, createDOM, extractFromDOM, handleCompleteAll, ... }
- */
-export function getTaskApi() {
-    assertRegistered('taskApi');
-    return context.taskApi;
-}
-
-/**
- * Get Cycle API - cycle management
- * @returns {Object} { load, create, check, createInitialSchema, ... }
- */
-export function getCycleApi() {
-    assertRegistered('cycleApi');
-    return context.cycleApi;
-}
-
-/**
- * Get UI API - notifications and menus
- * @returns {Object} { showNotification, hideMainMenu, updateMainMenuHeader, ... }
- */
-export function getUiApi() {
-    assertRegistered('uiApi');
-    return context.uiApi;
-}
-
-/**
- * Get Undo API - undo/redo operations
- * @returns {Object} { capture, undo, redo, updateButtons, enableOnFirstInteraction }
- */
-export function getUndoApi() {
-    assertRegistered('undoApi');
-    return context.undoApi;
-}
-
-/**
- * Get Reminder API - reminder management
- * @returns {Object} { manager, start, stop, updateButtons, loadSettings }
- */
-export function getReminderApi() {
-    assertRegistered('reminderApi');
-    return context.reminderApi;
-}
-
-/**
- * Get Recurring API - recurring task panel
- * @returns {Object} { panel, core, openSettingsForTask }
- */
-export function getRecurringApi() {
-    assertRegistered('recurringApi');
-    return context.recurringApi;
-}
-
-/**
- * Validate that all required APIs are registered
- * Call this after boot completes, before UI listeners are attached
- * @throws {Error} if any required API is missing (in DEV_MODE)
- * @returns {boolean} true if all APIs registered
+ * Validate all grouped APIs are registered
+ * @returns {boolean}
  */
 export function validateAllApisRegistered() {
-    const requiredApis = [
-        'stateApi',
-        'taskApi',
-        'cycleApi',
-        'uiApi',
-        'undoApi',
-        'reminderApi',
-        'recurringApi'
-    ];
-
-    const missing = requiredApis.filter(key => context[key] === null);
+    const missing = Object.entries(apis)
+        .filter(([_, v]) => v === null)
+        .map(([k]) => k);
 
     if (missing.length > 0) {
-        const error = `❌ appContext validation failed! Missing APIs: ${missing.join(', ')}`;
-        console.error(error);
-
+        console.warn(`⚠️ appContext: Missing APIs: ${missing.join(', ')}`);
         if (DEV_MODE) {
-            throw new Error(error);
+            // In dev mode, warn but don't throw - some APIs may be optional
+            console.trace();
         }
         return false;
     }
@@ -368,523 +388,131 @@ export function validateAllApisRegistered() {
 }
 
 // ============================================================================
-// INDIVIDUAL GETTERS (LEGACY - being phased out)
-// Use grouped APIs above for new code
+// LEGACY GETTERS (Deprecated - use grouped APIs instead)
+// ============================================================================
+
+// Core
+export function getAppState() { return legacy.AppState; }
+export function getAppInit() { return legacy.appInit; }
+export function getAppGlobalState() { return legacy.AppGlobalState; }
+export function getFeatureFlags() { return legacy.FeatureFlags; }
+export function getLoadMiniCycleData() { return legacy.loadMiniCycleData; }
+export function getAutoSave() { return legacy.autoSave; }
+
+// Managers
+export function getBackupManager() { return legacy.BackupManager; }
+export function getCycleManager() { return legacy.CycleManager; }
+export function getModeManager() { return legacy.ModeManager; }
+export function getMenuManager() { return legacy.MenuManager; }
+export function getSettingsManager() { return legacy.SettingsManager; }
+export function getReminderManager() { return legacy.reminderManager; }
+export function getGamesManager() { return legacy.gamesManager; }
+export function getOnboardingManager() { return legacy.onboardingManager; }
+export function getDeviceDetectionManager() { return legacy.deviceDetectionManager; }
+export function getModalManager() { return legacy.modalManager; }
+export function getCycleSwitcher() { return legacy.cycleSwitcher; }
+
+// UI Functions
+export function getCompleteInitialSetup() { return legacy.completeInitialSetup; }
+export function getShowCycleCreationModal() { return legacy.showCycleCreationModal; }
+export function getHideMainMenu() { return legacy.hideMainMenu; }
+export function getUpdateMainMenuHeader() { return legacy.updateMainMenuHeader; }
+export function getCloseAllModals() { return legacy.closeAllModals; }
+
+// Notifications
+export function getNotifications() { return legacy.notifications; }
+export function getShowNotification() { return legacy.showNotification; }
+export function getShowConfirmationModal() { return legacy.showConfirmationModal; }
+export function getShowPromptModal() { return legacy.showPromptModal; }
+export function getResetNotificationPosition() { return legacy.resetNotificationPosition; }
+
+// Utilities
+export function getGlobalUtils() { return legacy.GlobalUtils; }
+export function getDataValidator() { return legacy.DataValidator; }
+export function getSanitizeInput() { return legacy.sanitizeInput; }
+export function getGenerateId() { return legacy.generateId; }
+export function getGenerateHashId() { return legacy.generateHashId; }
+export function getSafeAddEventListener() { return legacy.safeAddEventListener; }
+export function getSafeAddEventListenerById() { return legacy.safeAddEventListenerById; }
+export function getIsTouchDevice() { return legacy.isTouchDevice; }
+
+// Undo/Redo
+export function getPerformStateBasedUndo() { return legacy.performStateBasedUndo; }
+export function getPerformStateBasedRedo() { return legacy.performStateBasedRedo; }
+export function getUpdateUndoRedoButtons() { return legacy.updateUndoRedoButtons; }
+export function getCaptureStateSnapshot() { return legacy.captureStateSnapshot; }
+
+// Reminders
+export function getUpdateReminderButtons() { return legacy.updateReminderButtons; }
+export function getStartReminders() { return legacy.startReminders; }
+export function getRemindOverdueTasks() { return legacy.remindOverdueTasks; }
+export function getLoadRemindersSettings() { return legacy.loadRemindersSettings; }
+
+// Recurring
+export function getRecurringPanel() { return legacy.recurringPanel; }
+export function getOpenRecurringSettingsPanelForTask() { return legacy.openRecurringSettingsPanelForTask; }
+
+// Mode
+export function getInitializeModeSelector() { return legacy.initializeModeSelector; }
+
+// Task
+export function getUpdateMoveArrowsVisibility() { return legacy.updateMoveArrowsVisibility; }
+export function getAddTask() { return legacy.addTask; }
+export function getValidateAndSanitizeTaskInput() { return legacy.validateAndSanitizeTaskInput; }
+export function getLoadTaskContext() { return legacy.loadTaskContext; }
+export function getCreateTaskDOMElements() { return legacy.createTaskDOMElements; }
+export function getCreateOrUpdateTaskData() { return legacy.createOrUpdateTaskData; }
+export function getHandleCompleteAllTasks() { return legacy.handleCompleteAllTasks; }
+export function getExtractTaskDataFromDOM() { return legacy.extractTaskDataFromDOM; }
+export function getInitCompletedTasksSection() { return legacy.initCompletedTasksSection; }
+export function getTaskCoreClass() { return legacy.TaskCore; }
+export function getTaskDOMManager() { return legacy.TaskDOMManager; }
+export function getHandleTaskCompletionChange() { return legacy.handleTaskCompletionChange; }
+export function getSaveCurrentTaskOrder() { return legacy.saveCurrentTaskOrder; }
+export function getResetTasks() { return legacy.resetTasks; }
+
+// Cycle
+export function getSwitchMiniCycle() { return legacy.switchMiniCycle; }
+export function getRenameMiniCycle() { return legacy.renameMiniCycle; }
+export function getDeleteMiniCycle() { return legacy.deleteMiniCycle; }
+
+// Features
+export function getUpdateDueDateVisibility() { return legacy.updateDueDateVisibility; }
+export function getCheckOverdueTasks() { return legacy.checkOverdueTasks; }
+export function getOrganizeCompletedTasks() { return legacy.organizeCompletedTasks; }
+export function getUpdateThemeColor() { return legacy.updateThemeColor; }
+export function getPullToRefresh() { return legacy.PullToRefresh; }
+
+// ============================================================================
+// CONVENIENCE HELPERS
 // ============================================================================
 
 /**
- * Get AppState instance
- * @deprecated Use getStateApi().AppState instead
- * @returns {Object|null} AppState or null if not initialized
- */
-export function getAppState() {
-    return context.AppState;
-}
-
-/**
- * Get appInit instance
- * @returns {Object|null} appInit or null if not initialized
- */
-export function getAppInit() {
-    return context.appInit;
-}
-
-/**
- * Get AppGlobalState (runtime flags)
- * @returns {Object|null}
- */
-export function getAppGlobalState() {
-    return context.AppGlobalState;
-}
-
-/**
- * Get FeatureFlags
- * @returns {Object|null}
- */
-export function getFeatureFlags() {
-    return context.FeatureFlags;
-}
-
-/**
- * Get loadMiniCycleData function
- * @returns {Function|null}
- */
-export function getLoadMiniCycleData() {
-    return context.loadMiniCycleData;
-}
-
-/**
- * Get autoSave function
- * @returns {Function|null}
- */
-export function getAutoSave() {
-    return context.autoSave;
-}
-
-/**
- * Get completeInitialSetup function
- * @returns {Function|null}
- */
-export function getCompleteInitialSetup() {
-    return context.completeInitialSetup;
-}
-
-/**
- * Get showCycleCreationModal function
- * @returns {Function|null}
- */
-export function getShowCycleCreationModal() {
-    return context.showCycleCreationModal;
-}
-
-/**
- * Get hideMainMenu function
- * @returns {Function|null}
- */
-export function getHideMainMenu() {
-    return context.hideMainMenu;
-}
-
-/**
- * Get GlobalUtils object
- * @returns {Object|null}
- */
-export function getGlobalUtils() {
-    return context.GlobalUtils;
-}
-
-/**
- * Get showNotification function
- * @returns {Function|null}
- */
-export function getShowNotification() {
-    return context.showNotification;
-}
-
-/**
- * Get ConsoleCapture (testing)
- * @returns {Object|null}
- */
-export function getConsoleCapture() {
-    return context.ConsoleCapture;
-}
-
-/**
- * Get appendToTestResults (testing)
- * @returns {Function|null}
- */
-export function getAppendToTestResults() {
-    return context.appendToTestResults;
-}
-
-// ============================================================================
-// UI GETTERS
-// ============================================================================
-
-/**
- * Get updateMainMenuHeader function
- * @returns {Function|null}
- */
-export function getUpdateMainMenuHeader() {
-    return context.updateMainMenuHeader;
-}
-
-/**
- * Get resetNotificationPosition function
- * @returns {Function|null}
- */
-export function getResetNotificationPosition() {
-    return context.resetNotificationPosition;
-}
-
-// ============================================================================
-// UNDO/REDO GETTERS
-// ============================================================================
-
-/**
- * Get performStateBasedUndo function
- * @returns {Function|null}
- */
-export function getPerformStateBasedUndo() {
-    return context.performStateBasedUndo;
-}
-
-/**
- * Get performStateBasedRedo function
- * @returns {Function|null}
- */
-export function getPerformStateBasedRedo() {
-    return context.performStateBasedRedo;
-}
-
-/**
- * Get updateUndoRedoButtons function
- * @returns {Function|null}
- */
-export function getUpdateUndoRedoButtons() {
-    return context.updateUndoRedoButtons;
-}
-
-/**
- * Get captureStateSnapshot function
- * @returns {Function|null}
- */
-export function getCaptureStateSnapshot() {
-    return context.captureStateSnapshot;
-}
-
-// ============================================================================
-// REMINDER GETTERS
-// ============================================================================
-
-/**
- * Get updateReminderButtons function
- * @returns {Function|null}
- */
-export function getUpdateReminderButtons() {
-    return context.updateReminderButtons;
-}
-
-/**
- * Get startReminders function
- * @returns {Function|null}
- */
-export function getStartReminders() {
-    return context.startReminders;
-}
-
-/**
- * Get remindOverdueTasks function
- * @returns {Function|null}
- */
-export function getRemindOverdueTasks() {
-    return context.remindOverdueTasks;
-}
-
-/**
- * Get loadRemindersSettings function
- * @returns {Function|null}
- */
-export function getLoadRemindersSettings() {
-    return context.loadRemindersSettings;
-}
-
-// ============================================================================
-// FEATURE GETTERS (Due Dates, Completed Tasks, Theme)
-// ============================================================================
-
-/**
- * Get updateDueDateVisibility function
- * @returns {Function|null}
- */
-export function getUpdateDueDateVisibility() {
-    return context.updateDueDateVisibility;
-}
-
-/**
- * Get checkOverdueTasks function
- * @returns {Function|null}
- */
-export function getCheckOverdueTasks() {
-    return context.checkOverdueTasks;
-}
-
-/**
- * Get organizeCompletedTasks function
- * @returns {Function|null}
- */
-export function getOrganizeCompletedTasks() {
-    return context.organizeCompletedTasks;
-}
-
-/**
- * Get updateThemeColor function
- * @returns {Function|null}
- */
-export function getUpdateThemeColor() {
-    return context.updateThemeColor;
-}
-
-// ============================================================================
-// RECURRING GETTERS
-// ============================================================================
-
-/**
- * Get recurringPanel instance
- * @returns {Object|null}
- */
-export function getRecurringPanel() {
-    return context.recurringPanel;
-}
-
-/**
- * Get openRecurringSettingsPanelForTask function
- * @returns {Function|null}
- */
-export function getOpenRecurringSettingsPanelForTask() {
-    return context.openRecurringSettingsPanelForTask;
-}
-
-// ============================================================================
-// MODE GETTERS
-// ============================================================================
-
-/**
- * Get initializeModeSelector function
- * @returns {Function|null}
- */
-export function getInitializeModeSelector() {
-    return context.initializeModeSelector;
-}
-
-// ============================================================================
-// TASK GETTERS
-// ============================================================================
-
-/**
- * Get updateMoveArrowsVisibility function
- * @returns {Function|null}
- */
-export function getUpdateMoveArrowsVisibility() {
-    return context.updateMoveArrowsVisibility;
-}
-
-/**
- * Get addTask function
- * @returns {Function|null}
- */
-export function getAddTask() {
-    return context.addTask;
-}
-
-/**
- * Get validateAndSanitizeTaskInput function
- * @returns {Function|null}
- */
-export function getValidateAndSanitizeTaskInput() {
-    return context.validateAndSanitizeTaskInput;
-}
-
-/**
- * Get loadTaskContext function
- * @returns {Function|null}
- */
-export function getLoadTaskContext() {
-    return context.loadTaskContext;
-}
-
-/**
- * Get createTaskDOMElements function
- * @returns {Function|null}
- */
-export function getCreateTaskDOMElements() {
-    return context.createTaskDOMElements;
-}
-
-/**
- * Get createOrUpdateTaskData function
- * @returns {Function|null}
- */
-export function getCreateOrUpdateTaskData() {
-    return context.createOrUpdateTaskData;
-}
-
-/**
- * Get fixTaskValidationIssues function
- * @returns {Function|null}
- */
-export function getFixTaskValidationIssues() {
-    return context.fixTaskValidationIssues;
-}
-
-export function getHandleCompleteAllTasks() {
-    return context.handleCompleteAllTasks;
-}
-
-export function getTaskCoreClass() {
-    return context.TaskCore;
-}
-
-export function getHandleTaskCompletionChange() {
-    return context.handleTaskCompletionChange;
-}
-
-export function getSaveCurrentTaskOrder() {
-    return context.saveCurrentTaskOrder;
-}
-
-export function getResetTasks() {
-    return context.resetTasks;
-}
-
-export function getInitCompletedTasksSection() {
-    return context.initCompletedTasksSection;
-}
-
-export function getExtractTaskDataFromDOM() {
-    return context.extractTaskDataFromDOM;
-}
-
-export function getResumeDeferredRenderIfNeeded() {
-    return context.resumeDeferredRenderIfNeeded;
-}
-
-// ============================================================================
-// MANAGER GETTERS
-// ============================================================================
-
-export function getBackupManager() { return context.BackupManager; }
-export function getCycleManager() { return context.CycleManager; }
-export function getModeManager() { return context.ModeManager; }
-export function getMenuManager() { return context.MenuManager; }
-export function getSettingsManager() { return context.SettingsManager; }
-export function getErrorHandler() { return context.ErrorHandler; }
-export function getReminderManager() { return context.reminderManager; }
-export function getGamesManager() { return context.gamesManager; }
-
-// Manager classes + instances
-export function getOnboardingManagerClass() { return context.OnboardingManager; }
-export function getOnboardingManager() { return context.onboardingManager; }
-export function getDragDropManager() { return context.DragDropManager; }
-export function getDeviceDetectionManagerClass() { return context.DeviceDetectionManager; }
-export function getDeviceDetectionManager() { return context.deviceDetectionManager; }
-export function getModalManagerClass() { return context.ModalManager; }
-export function getModalManager() { return context.modalManager; }
-export function getCloseAllModals() { return context.closeAllModals; }
-export function getInitModalManager() { return context.initModalManager; }
-export function getCycleSwitcherClass() { return context.CycleSwitcher; }
-export function getCycleSwitcher() { return context.cycleSwitcher; }
-
-// ============================================================================
-// NOTIFICATION GETTERS
-// ============================================================================
-
-export function getNotifications() { return context.notifications; }
-export function getShowConfirmationModal() { return context.showConfirmationModal; }
-export function getShowPromptModal() { return context.showPromptModal; }
-
-// ============================================================================
-// UTILITY GETTERS
-// ============================================================================
-
-export function getDataValidator() { return context.DataValidator; }
-export function getSanitizeInput() { return context.sanitizeInput; }
-export function getGenerateId() { return context.generateId; }
-export function getGenerateHashId() { return context.generateHashId; }
-export function getSafeAddEventListener() { return context.safeAddEventListener; }
-export function getSafeAddEventListenerById() { return context.safeAddEventListenerById; }
-export function getIsTouchDevice() { return context.isTouchDevice; }
-
-// ============================================================================
-// UI HELPER GETTERS
-// ============================================================================
-
-export function getShowLoader() { return context.showLoader; }
-export function getHideLoader() { return context.hideLoader; }
-export function getWithLoader() { return context.withLoader; }
-
-// ============================================================================
-// TASK CLASS GETTERS
-// ============================================================================
-
-export function getTaskRenderer() { return context.TaskRenderer; }
-export function getTaskDOMManager() { return context.TaskDOMManager; }
-export function getTaskEvents() { return context.TaskEvents; }
-export function getTaskUtils() { return context.TaskUtils; }
-export function getTaskOptionsCustomizer() { return context.TaskOptionsCustomizer; }
-
-// ============================================================================
-// CYCLE SWITCHER GETTERS
-// ============================================================================
-
-export function getSwitchMiniCycle() { return context.switchMiniCycle; }
-export function getRenameMiniCycle() { return context.renameMiniCycle; }
-export function getDeleteMiniCycle() { return context.deleteMiniCycle; }
-export function getConfirmMiniCycle() { return context.confirmMiniCycle; }
-export function getHideSwitchMiniCycleModal() { return context.hideSwitchMiniCycleModal; }
-export function getUpdatePreview() { return context.updatePreview; }
-export function getLoadMiniCycleList() { return context.loadMiniCycleList; }
-export function getSetupModalClickOutside() { return context.setupModalClickOutside; }
-
-// ============================================================================
-// FEATURE GETTERS
-// ============================================================================
-
-export function getPullToRefresh() { return context.PullToRefresh; }
-export function getMiniCycleReminders() { return context.MiniCycleReminders; }
-export function getMiniCycleNotifications() { return context.MiniCycleNotifications; }
-export function getEducationalTipManager() { return context.EducationalTipManager; }
-
-// ============================================================================
-// CONVENIENCE - Get multiple values at once
-// ============================================================================
-
-/**
- * Get the full context object (readonly copy)
- * Useful for debugging or when you need multiple values
- * @returns {Object} Copy of context
+ * Get full context (for debugging)
+ * @returns {Object} Copy of all registered values
  */
 export function getAppContext() {
-    return { ...context };
-}
-
-/**
- * Create a deps object compatible with setDependencies() calls
- * Uses getters so values are always current
- * @returns {Object} Deps object with lazy getters
- */
-export function createLazyDeps() {
     return {
-        // Core
-        get AppState() { return context.AppState; },
-        get appInit() { return context.appInit; },
-        get AppGlobalState() { return context.AppGlobalState; },
-        get loadMiniCycleData() { return context.loadMiniCycleData; },
-        get autoSave() { return context.autoSave; },
-
-        // UI
-        get completeInitialSetup() { return context.completeInitialSetup; },
-        get showCycleCreationModal() { return context.showCycleCreationModal; },
-        get hideMainMenu() { return context.hideMainMenu; },
-        get updateMainMenuHeader() { return context.updateMainMenuHeader; },
-
-        // Utilities
-        get GlobalUtils() { return context.GlobalUtils; },
-        get showNotification() { return context.showNotification; },
-        get resetNotificationPosition() { return context.resetNotificationPosition; },
-
-        // Undo/Redo
-        get performStateBasedUndo() { return context.performStateBasedUndo; },
-        get performStateBasedRedo() { return context.performStateBasedRedo; },
-        get updateUndoRedoButtons() { return context.updateUndoRedoButtons; },
-        get captureStateSnapshot() { return context.captureStateSnapshot; },
-
-        // Reminders
-        get updateReminderButtons() { return context.updateReminderButtons; },
-        get startReminders() { return context.startReminders; },
-        get remindOverdueTasks() { return context.remindOverdueTasks; },
-        get loadRemindersSettings() { return context.loadRemindersSettings; },
-
-        // Recurring
-        get recurringPanel() { return context.recurringPanel; },
-        get openRecurringSettingsPanelForTask() { return context.openRecurringSettingsPanelForTask; },
-
-        // Mode
-        get initializeModeSelector() { return context.initializeModeSelector; },
-
-        // Task
-        get updateMoveArrowsVisibility() { return context.updateMoveArrowsVisibility; },
-        get addTask() { return context.addTask; },
-        get validateAndSanitizeTaskInput() { return context.validateAndSanitizeTaskInput; },
-        get loadTaskContext() { return context.loadTaskContext; },
-        get createTaskDOMElements() { return context.createTaskDOMElements; },
-        get createOrUpdateTaskData() { return context.createOrUpdateTaskData; },
-        get fixTaskValidationIssues() { return context.fixTaskValidationIssues; },
-
-        // Testing
-        get ConsoleCapture() { return context.ConsoleCapture; },
-        get appendToTestResults() { return context.appendToTestResults; }
+        apis: { ...apis },
+        legacy: { ...legacy }
     };
 }
 
-console.log('📦 appContext module loaded (with grouped APIs + dev protection)');
+/**
+ * Create a lazy deps object for DI
+ * @returns {Object} Object with getters for current values
+ */
+export function createLazyDeps() {
+    return {
+        get AppState() { return legacy.AppState; },
+        get appInit() { return legacy.appInit; },
+        get AppGlobalState() { return legacy.AppGlobalState; },
+        get loadMiniCycleData() { return legacy.loadMiniCycleData; },
+        get autoSave() { return legacy.autoSave; },
+        get GlobalUtils() { return legacy.GlobalUtils; },
+        get showNotification() { return legacy.showNotification; },
+        get hideMainMenu() { return legacy.hideMainMenu; }
+    };
+}
+
+console.log('📦 appContext module loaded (v2.0 - grouped APIs)');

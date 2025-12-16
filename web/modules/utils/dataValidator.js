@@ -9,22 +9,45 @@
  * @pattern Static Utilities (with injected sanitizer)
  */
 
-// Module-level dependency - must be set before use
-let _sanitizeInput = null;
+import { createDIModule, required } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP
+// ============================================================================
+
+/**
+ * @typedef {Object} DataValidatorDeps
+ * @property {Function} sanitizeInput - Function to sanitize user input (required)
+ */
+
+const di = createDIModule('DataValidator', {
+    sanitizeInput: required()
+}, { strict: true }); // Strict mode - throw if sanitizeInput missing
 
 /**
  * Set the sanitize function dependency
- * @param {Function} sanitizeFn - The sanitize function to use
+ * @param {DataValidatorDeps} dependencies - { sanitizeInput }
  */
-export function setDataValidatorDependencies({ sanitizeInput }) {
-    if (typeof sanitizeInput !== 'function') {
-        throw new Error('DataValidator requires sanitizeInput function');
-    }
-    _sanitizeInput = sanitizeInput;
-    console.log('🛡️ DataValidator dependencies injected');
-}
+export const setDataValidatorDependencies = (dependencies) => di.setDependencies(dependencies);
+
+// ============================================================================
+// DATA VALIDATOR CLASS
+// ============================================================================
 
 export class DataValidator {
+    /**
+     * Get sanitizeInput from DI container
+     * @private
+     * @returns {Function}
+     */
+    static _getSanitizer() {
+        const deps = di.resolve();
+        if (!deps.sanitizeInput) {
+            throw new Error('DataValidator: sanitizeInput not injected. Call setDataValidatorDependencies first.');
+        }
+        return deps.sanitizeInput;
+    }
+
     /**
      * Validate and sanitize cycle name
      * @param {string} name - The cycle name to validate
@@ -45,12 +68,7 @@ export class DataValidator {
             throw new Error('Cycle name too long (max 100 characters)');
         }
 
-        // Use injected sanitizeInput
-        if (!_sanitizeInput) {
-            throw new Error('DataValidator: sanitizeInput not injected. Call setDataValidatorDependencies first.');
-        }
-        const sanitized = _sanitizeInput(name, 100);
-
+        const sanitized = this._getSanitizer()(name, 100);
         return sanitized;
     }
 
@@ -74,12 +92,7 @@ export class DataValidator {
             throw new Error('Task text too long (max 500 characters)');
         }
 
-        // Use injected sanitizeInput
-        if (!_sanitizeInput) {
-            throw new Error('DataValidator: sanitizeInput not injected. Call setDataValidatorDependencies first.');
-        }
-        const sanitized = _sanitizeInput(text, 500);
-
+        const sanitized = this._getSanitizer()(text, 500);
         return sanitized;
     }
 
@@ -229,5 +242,4 @@ export class DataValidator {
     }
 }
 
-// Phase 2 Step 5 - Clean exports (no window.* pollution)
-console.log('🛡️ DataValidator module loaded (Phase 2 - no window.* exports)');
+console.log('📦 DataValidator module loaded (using diBase)');

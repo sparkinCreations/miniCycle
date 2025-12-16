@@ -11,19 +11,30 @@
  * @created November 13, 2025
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    showNotification: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP
+// ============================================================================
+
+/**
+ * @typedef {Object} ErrorHandlerDeps
+ * @property {Function} [showNotification] - Function to show user notifications
+ */
+
+const di = createDIModule('ErrorHandler', {
+    showNotification: optional(null)
+});
 
 /**
  * Set dependencies for ErrorHandler (call after notifications module loads)
- * @param {Object} dependencies - { showNotification }
+ * @param {ErrorHandlerDeps} dependencies - { showNotification }
  */
-export function setErrorHandlerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
-    console.log('🛡️ ErrorHandler dependencies set:', Object.keys(dependencies));
-}
+export const setErrorHandlerDependencies = (dependencies) => di.setDependencies(dependencies);
+
+// ============================================================================
+// ERROR HANDLER CLASS
+// ============================================================================
 
 class ErrorHandler {
     constructor() {
@@ -36,12 +47,11 @@ class ErrorHandler {
     }
 
     /**
-     * Getter for dependencies - always reads from current module-level _deps
+     * Get current dependencies
+     * @returns {ErrorHandlerDeps}
      */
     get deps() {
-        return {
-            showNotification: _deps.showNotification
-        };
+        return di.resolve();
     }
 
     /**
@@ -117,8 +127,8 @@ class ErrorHandler {
         if (this.errorCount <= this.maxErrorsBeforeSilence) {
             this.showUserNotification(errorInfo);
         } else if (this.errorCount === this.maxErrorsBeforeSilence + 1) {
-            // Show final warning (DI-pure)
-            const showNotification = this.deps.showNotification;
+            // Show final warning
+            const { showNotification } = this.deps;
             if (typeof showNotification === 'function') {
                 showNotification(
                     'Multiple errors detected. Further error notifications will be suppressed. Check the console for details.',
@@ -152,7 +162,7 @@ class ErrorHandler {
      * Show user-friendly notification
      */
     showUserNotification(errorInfo) {
-        const showNotification = this.deps.showNotification;
+        const { showNotification } = this.deps;
         if (typeof showNotification !== 'function') {
             return;
         }
@@ -199,7 +209,7 @@ class ErrorHandler {
      */
     suggestDataExport(errorInfo) {
         setTimeout(() => {
-            const showNotification = this.deps.showNotification;
+            const { showNotification } = this.deps;
             if (typeof showNotification === 'function') {
                 showNotification(
                     'Critical error detected. We recommend exporting your data as backup. Go to Settings → Import/Export.',
@@ -241,7 +251,6 @@ class ErrorHandler {
 // Create singleton instance
 const errorHandler = new ErrorHandler();
 
-// DI-pure module (no window.* fallbacks for dependencies)
-console.log('🛡️ ErrorHandler module loaded (DI-pure, no window.* exports)');
+console.log('📦 ErrorHandler module loaded (using diBase)');
 
 export default errorHandler;
