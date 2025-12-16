@@ -1,7 +1,7 @@
 # Grouped APIs DI Refactor Plan
 
 **Date:** December 16, 2025
-**Status:** Partially Implemented (Branch: `claude/review-app-V2kdl`)
+**Status:** Complete (Merged to `main`)
 **Goal:** Migrate from individual legacy getters to grouped API pattern for cleaner dependency injection
 
 ---
@@ -120,7 +120,7 @@ Three modules were migrated to use `diBase.js`:
 
 ---
 
-## What's Incomplete
+## Issues Fixed
 
 ### Critical Issue Fixed (December 2025)
 
@@ -137,46 +137,36 @@ appContextMod.setContextValue('cycleApi', {...});  // Stores in legacy['cycleApi
 
 **Result:** `getCycleApi()` returned `null`, causing `loadMiniCycle` to silently fail.
 
-**Fix Applied:** Added `registerApi('cycle', cycleApiObj)` in featureBoot.js.
+**Fix Applied:** Added `registerApi()` calls for ALL grouped APIs in featureBoot.js.
 
-### Remaining Work
+### Final Status - All APIs Registered
 
-| API | Registered? | To Complete |
-|-----|-------------|-------------|
-| `cycle` | ✅ Yes | Fixed |
-| `state` | ❌ No | Add `registerApi('state', stateApiObj)` |
-| `task` | ❌ No | Add `registerApi('task', taskApiObj)` |
-| `ui` | ❌ No | Add `registerApi('ui', uiApiObj)` |
-| `undo` | ❌ No | Add `registerApi('undo', undoApiObj)` |
-| `reminder` | ❌ No | Add `registerApi('reminder', reminderApiObj)` |
-| `recurring` | ❌ No | Add `registerApi('recurring', recurringApiObj)` |
-| `utils` | ❌ No | Add `registerApi('utils', utilsApiObj)` |
+| API | Registered? | Status |
+|-----|-------------|--------|
+| `state` | ✅ Yes | Complete |
+| `task` | ✅ Yes | Complete |
+| `cycle` | ✅ Yes | Complete |
+| `ui` | ✅ Yes | Complete |
+| `undo` | ✅ Yes | Complete |
+| `reminder` | ✅ Yes | Complete |
+| `recurring` | ✅ Yes | Complete |
+| `utils` | ✅ Yes | Complete |
 
-The app still shows this warning:
+The "Missing APIs" warning should no longer appear in the console. Instead, you should see:
 ```
-⚠️ appContext: Missing APIs: state, task, ui, undo, reminder, recurring, utils
+✅ appContext validation passed - all APIs registered
 ```
 
 ---
 
-## How to Complete the Migration
+## Optional Future Enhancements
 
-### Step 1: Register All Grouped APIs
+The core grouped API registration is complete. These optional steps can further improve the codebase:
 
-In `featureBoot.js`, after each API object is created with `setContextValue`, also call `registerApi`:
+### Step 1: Register All Grouped APIs - ✅ COMPLETE
 
-```javascript
-// Example for state API (around line 1560)
-const stateApiObj = {
-    AppState: deps.core.AppState,
-    loadMiniCycleData: deps.core.loadMiniCycleData,
-    autoSave: deps.core.autoSave
-};
-appContextMod.setContextValue('stateApi', stateApiObj);
-appContextMod.registerApi('state', stateApiObj);  // ADD THIS
-
-// Repeat for task, ui, undo, reminder, recurring, utils
-```
+All 8 grouped APIs are now registered in `featureBoot.js`:
+- `state`, `task`, `cycle`, `ui`, `undo`, `reminder`, `recurring`, `utils`
 
 ### Step 2: Update Consumers (Optional)
 
@@ -307,7 +297,7 @@ Then use `moduleLoader.js` for automatic dependency resolution.
 | `modules/boot/moduleManifests.js` | **NEW** - Declarative module definitions |
 | `modules/boot/moduleLoader.js` | **NEW** - Auto-loading utilities |
 | `modules/boot/coreBoot.js` | Updated to use `getCycleApi()` |
-| `modules/boot/featureBoot.js` | Added `registerApi('cycle', ...)` (partial fix) |
+| `modules/boot/featureBoot.js` | Added `registerApi()` for all 8 grouped APIs |
 | `modules/ui/uiEffects.js` | Migrated to diBase.js |
 | `modules/utils/dataValidator.js` | Migrated to diBase.js |
 | `modules/utils/errorHandler.js` | Migrated to diBase.js |
@@ -336,6 +326,9 @@ After completing the migration:
 
 ## Conclusion
 
-This refactoring improves code organization and reduces boilerplate, but was left incomplete. The critical `cycle` API issue has been fixed. Completing the remaining API registrations is low-risk and can be done incrementally.
+This refactoring is now **complete**. All 8 grouped APIs are registered and functional:
+- `state`, `task`, `cycle`, `ui`, `undo`, `reminder`, `recurring`, `utils`
 
-**Recommendation:** Complete the migration by adding `registerApi()` calls for all grouped APIs in `featureBoot.js`. This eliminates the warning and enables full use of the cleaner grouped API pattern.
+The grouped API pattern is now ready for use throughout the codebase. New code can use the cleaner `cycle().load()` syntax instead of legacy `getLoadMiniCycle()()` patterns.
+
+**Optional future work:** Migrate more modules to use `diBase.js` and the module manifest system for further boilerplate reduction.

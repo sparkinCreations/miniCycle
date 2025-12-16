@@ -1556,10 +1556,21 @@ export async function bootFeatures(deps, coreResult) {
 
   // ============================================================================
   // GROUPED APIs (PREFERRED - new code should use these)
+  // Register with both legacy setContextValue AND grouped registerApi
   // ============================================================================
 
+  // State API - core state management
+  const stateApiObj = {
+    AppState: deps.core.AppState,
+    AppGlobalState: AppGlobalState,
+    loadMiniCycleData: deps.core.loadMiniCycleData,
+    autoSave: deps.core.autoSave
+  };
+  appContextMod.setContextValue('stateApi', stateApiObj);
+  appContextMod.registerApi('state', stateApiObj);
+
   // Task API - task operations
-  appContextMod.setContextValue('taskApi', {
+  const taskApiObj = {
     add: deps.task.addTask,
     loadContext: deps.task.loadTaskContext,
     createDOM: deps.task.createTaskDOMElements,
@@ -1569,10 +1580,11 @@ export async function bootFeatures(deps, coreResult) {
     createOrUpdateData: deps.task.createOrUpdateTaskData,
     validateInput: deps.task.validateAndSanitizeTaskInput,
     initCompletedSection: deps.ui.initCompletedTasksSection
-  });
+  };
+  appContextMod.setContextValue('taskApi', taskApiObj);
+  appContextMod.registerApi('task', taskApiObj);
 
   // Cycle API - cycle management
-  // Register with both legacy setContextValue AND grouped registerApi
   const cycleApiObj = {
     load: deps.cycle.loadMiniCycle,
     create: deps.cycle.showCycleCreationModal,
@@ -1587,7 +1599,7 @@ export async function bootFeatures(deps, coreResult) {
   appContextMod.registerApi('cycle', cycleApiObj);
 
   // UI API - notifications and menus
-  appContextMod.setContextValue('uiApi', {
+  const uiApiObj = {
     showNotification: deps.utils.showNotification,
     hideMainMenu: deps.ui.hideMainMenu,
     updateMainMenuHeader: deps.ui.updateMainMenuHeader,
@@ -1598,34 +1610,56 @@ export async function bootFeatures(deps, coreResult) {
     showPromptModal: deps.utils.showPromptModal,
     syncCurrentSettingsToStorage: deps.ui.syncCurrentSettingsToStorage,
     resetNotificationPosition: deps.utils.resetNotificationPosition
-  });
+  };
+  appContextMod.setContextValue('uiApi', uiApiObj);
+  appContextMod.registerApi('ui', uiApiObj);
 
   // Undo API - undo/redo operations
-  appContextMod.setContextValue('undoApi', {
+  const undoApiObj = {
     capture: deps.ui.captureStateSnapshot,
     undo: deps.ui.performStateBasedUndo,
     redo: deps.ui.performStateBasedRedo,
     updateButtons: deps.ui.updateUndoRedoButtons,
     enableOnFirstInteraction: deps.ui.enableUndoSystemOnFirstInteraction
-  });
+  };
+  appContextMod.setContextValue('undoApi', undoApiObj);
+  appContextMod.registerApi('undo', undoApiObj);
 
   // Reminder API - reminder management
-  appContextMod.setContextValue('reminderApi', {
+  const reminderApiObj = {
     manager: deps.features.reminderManager,
     start: deps.features.startReminders,
+    stop: deps.features.stopReminders,
     updateButtons: deps.features.updateReminderButtons,
     loadSettings: deps.features.loadRemindersSettings,
     remindOverdue: deps.features.remindOverdueTasks
-  });
+  };
+  appContextMod.setContextValue('reminderApi', reminderApiObj);
+  appContextMod.registerApi('reminder', reminderApiObj);
 
   // Recurring API - recurring task panel
-  appContextMod.setContextValue('recurringApi', {
+  const recurringApiObj = {
     panel: deps.recurring.panel,
     core: deps.recurring.core,
     openSettingsForTask: deps.recurring.openSettingsPanel
-  });
+  };
+  appContextMod.setContextValue('recurringApi', recurringApiObj);
+  appContextMod.registerApi('recurring', recurringApiObj);
 
-  console.log('✅ Grouped APIs registered (taskApi, cycleApi, uiApi, undoApi, reminderApi, recurringApi)');
+  // Utils API - utility functions
+  const utilsApiObj = {
+    GlobalUtils: GlobalUtils,
+    DataValidator: deps.utils.DataValidator,
+    sanitizeInput: deps.utils.sanitizeInput,
+    generateId: deps.utils.generateId,
+    generateHashId: deps.utils.generateHashId,
+    safeAddEventListener: GlobalUtils.safeAddEventListener,
+    isTouchDevice: deps.utils.isTouchDevice
+  };
+  appContextMod.setContextValue('utilsApi', utilsApiObj);
+  appContextMod.registerApi('utils', utilsApiObj);
+
+  console.log('✅ All grouped APIs registered (state, task, cycle, ui, undo, reminder, recurring, utils)');
 
   // ============================================================================
   // COMPLETE
