@@ -5,26 +5,37 @@
  * - Keyboard navigation for task options
  * - Focus-based visibility toggling
  *
+ * Pattern: Simple Instance ✨
+ * - Single responsibility (keyboard/focus interactions)
+ * - Required dependencies via diBase.js
+ *
  * @module modules/ui/taskInteractions
  */
 
 import { TaskOptionsVisibilityController } from './taskUI.js';
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    safeAddEventListener: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskInteractions', {
+    safeAddEventListener: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskInteractions module
  * @param {Object} dependencies - Injected dependencies
  */
 export function setTaskInteractionsDependencies(dependencies) {
-    const descriptors = {};
-    for (const [key, value] of Object.entries(dependencies)) {
-        descriptors[key] = { value, writable: true, configurable: true };
-    }
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('TaskInteractions dependencies set:', Object.keys(dependencies));
 }
 

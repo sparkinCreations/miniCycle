@@ -6,35 +6,47 @@
  * - Task options visibility (show/hide on hover/focus)
  * - Complete all button visibility
  *
+ * Pattern: Simple Instance ✨
+ * - Single responsibility (task UI operations)
+ * - Required dependencies via diBase.js
+ *
  * @module modules/ui/taskUI
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskUI', {
     // For refreshTaskListUI
-    loadMiniCycleData: null,
-    addTask: null,
-    updateRecurringButtonVisibility: null,
-    getElementById: null,
+    loadMiniCycleData: optional(null),
+    addTask: optional(null),
+    updateRecurringButtonVisibility: optional(null),
+    getElementById: optional(null),
 
     // For checkCompleteAllButton
-    getTaskList: null,
-    getCompleteAllButton: null,
+    getTaskList: optional(null),
+    getCompleteAllButton: optional(null),
 
     // For touch detection
-    isTouchDevice: null
-};
+    isTouchDevice: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskUI module
  * @param {Object} dependencies - Injected dependencies
  */
 export function setTaskUIDependencies(dependencies) {
-    const descriptors = {};
-    for (const [key, value] of Object.entries(dependencies)) {
-        descriptors[key] = { value, writable: true, configurable: true };
-    }
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('🎯 TaskUI dependencies set:', Object.keys(dependencies));
 }
 

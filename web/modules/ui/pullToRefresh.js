@@ -6,27 +6,43 @@
  * 2. Refreshes UI from state
  * 3. Triggers recurring task check
  *
+ * Pattern: Simple Instance ✨
+ * - Single responsibility (pull-to-refresh)
+ * - Required dependencies via diBase.js
+ *
  * Note: document.*, window.scrollY, navigator.serviceWorker are browser APIs,
  * not dependencies - they cannot be injected.
  *
  * @module pullToRefresh
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    refreshUIFromState: null,
-    checkRecurringTasksNow: null,
-    watchRecurringTasks: null,
-    promptServiceWorkerUpdate: null,
-    showNotification: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('PullToRefresh', {
+    refreshUIFromState: optional(null),
+    checkRecurringTasksNow: optional(null),
+    watchRecurringTasks: optional(null),
+    promptServiceWorkerUpdate: optional(null),
+    showNotification: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for PullToRefresh (call before initPullToRefresh)
  * @param {Object} dependencies - { refreshUIFromState, checkRecurringTasksNow, watchRecurringTasks, promptServiceWorkerUpdate, showNotification }
  */
 export function setPullToRefreshDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🔄 PullToRefresh dependencies set:', Object.keys(dependencies));
 }
 
