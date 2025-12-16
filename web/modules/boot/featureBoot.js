@@ -1572,7 +1572,8 @@ export async function bootFeatures(deps, coreResult) {
   });
 
   // Cycle API - cycle management
-  appContextMod.setContextValue('cycleApi', {
+  // Register with both legacy setContextValue AND grouped registerApi
+  const cycleApiObj = {
     load: deps.cycle.loadMiniCycle,
     create: deps.cycle.showCycleCreationModal,
     check: deps.progress.checkMiniCycle,
@@ -1581,7 +1582,9 @@ export async function bootFeatures(deps, coreResult) {
     delete: deps.cycle.deleteMiniCycle,
     initializeModeSelector: deps.cycle.initializeModeSelector,
     saveToggleAutoReset: deps.cycle.saveToggleAutoReset
-  });
+  };
+  appContextMod.setContextValue('cycleApi', cycleApiObj);
+  appContextMod.registerApi('cycle', cycleApiObj);
 
   // UI API - notifications and menus
   appContextMod.setContextValue('uiApi', {
