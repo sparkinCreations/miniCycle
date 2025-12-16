@@ -141,6 +141,41 @@ export const MODULE_MANIFESTS = {
     // =========================================================================
     // PHASE 3: TASK MANAGEMENT
     // =========================================================================
+    taskValidation: {
+        path: '../task/taskValidation.js',
+        phase: PHASES.TASK_MANAGEMENT,
+        requires: ['sanitizeInput', 'showNotification'],
+        provides: ['TaskValidator', 'validateAndSanitizeTaskInput'],
+        api: 'task'
+    },
+
+    taskUtils: {
+        path: '../task/taskUtils.js',
+        phase: PHASES.TASK_MANAGEMENT,
+        requires: ['AppState', 'loadMiniCycleData', 'generateId'],
+        provides: ['TaskUtils', 'buildTaskContext', 'loadTaskContext', 'createOrUpdateTaskData'],
+        api: 'task',
+        after: ['taskValidation']
+    },
+
+    taskRenderer: {
+        path: '../task/taskRenderer.js',
+        phase: PHASES.TASK_MANAGEMENT,
+        requires: ['AppState', 'addTask', 'updateProgressBar'],
+        provides: ['TaskRenderer', 'renderTasks', 'refreshUIFromState'],
+        api: 'task',
+        after: ['taskUtils']
+    },
+
+    taskEvents: {
+        path: '../task/taskEvents.js',
+        phase: PHASES.TASK_MANAGEMENT,
+        requires: ['appInit', 'AppState'],
+        provides: ['TaskEvents', 'initTaskEvents'],
+        api: 'task',
+        after: ['taskUtils']
+    },
+
     dragDropManager: {
         path: '../task/dragDropManager.js',
         phase: PHASES.TASK_MANAGEMENT,
@@ -365,6 +400,14 @@ export const MODULE_MANIFESTS = {
         provides: ['BackupManager'],
         optional: true,
         singleton: true
+    },
+
+    basicPluginSystem: {
+        path: '../other/basicPluginSystem.js',
+        phase: PHASES.TESTING,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        provides: ['pluginManager'],
+        optional: true
     }
 };
 

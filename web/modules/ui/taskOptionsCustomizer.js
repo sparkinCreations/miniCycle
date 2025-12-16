@@ -14,28 +14,39 @@
  * - Sensible defaults for new cycles
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
+import { ui } from '../core/appContext.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    AppState: null,
-    showNotification: null,
-    renderTaskList: null,
-    updateMoveArrowsVisibility: null,
-    startReminders: null,
-    stopReminders: null,
-    modeManager: null,
-    appInit: null,
-    DEFAULT_TASK_OPTION_BUTTONS: null,
-    safeAddEventListener: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskOptionsCustomizer', {
+    AppState: optional(null),
+    showNotification: optional(null),
+    renderTaskList: optional(null),
+    updateMoveArrowsVisibility: optional(null),
+    startReminders: optional(null),
+    stopReminders: optional(null),
+    modeManager: optional(null),
+    appInit: optional(null),
+    DEFAULT_TASK_OPTION_BUTTONS: optional(null),
+    safeAddEventListener: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for TaskOptionsCustomizer (call before creating instance)
  * @param {Object} dependencies - { AppState, showNotification, renderTaskList, etc. }
  */
 export function setTaskOptionsCustomizerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('⚙️ TaskOptionsCustomizer dependencies set:', Object.keys(dependencies));
 }
 
@@ -199,7 +210,7 @@ export class TaskOptionsCustomizer {
                         // Then open the customization modal
                         this.showCustomizationModal(currentCycleId);
                     } else {
-                        this.deps.showNotification?.('Please select a cycle first', 'warning');
+                        ui()?.showNotification?.('Please select a cycle first', 'warning');
                     }
                 };
                 safeAdd(openButton, 'click', openButton._clickHandler);
@@ -632,7 +643,7 @@ export class TaskOptionsCustomizer {
         // ✅ Refresh task list UI to apply button visibility changes
         await this.refreshAllTaskButtons();
 
-        this.deps.showNotification?.('✅ Task options updated', 'success', 2000);
+        ui()?.showNotification?.('✅ Task options updated', 'success', 2000);
 
         console.log(`✅ Saved task option customization for cycle: ${cycleId}`, newOptions);
     }
@@ -648,7 +659,7 @@ export class TaskOptionsCustomizer {
             cb.checked = defaultValue ?? false;
         });
 
-        this.deps.showNotification?.('🔄 Reset to defaults', 'info', 2000);
+        ui()?.showNotification?.('🔄 Reset to defaults', 'info', 2000);
     }
 
     /**
@@ -688,48 +699,6 @@ export class TaskOptionsCustomizer {
         }
 
         console.warn("⚠️ No valid task refresh function found");
-    }
-
-    /**
-     * Update button visibility for a single task element (deprecated - use refreshAllTaskButtons)
-     * @param {HTMLElement} taskElement - The task element
-     * @deprecated Use refreshAllTaskButtons() instead
-     */
-    updateTaskButtonVisibility(taskElement) {
-        const state = this.deps.AppState.get();
-        const activeCycleId = state.appState.activeCycleId;
-        const cycle = state.data.cycles[activeCycleId];
-
-        if (!cycle?.taskOptionButtons) return;
-
-        const visibleOptions = cycle.taskOptionButtons;
-        const buttonContainer = taskElement.querySelector('.task-options');
-
-        if (!buttonContainer) return;
-
-        // Button class to option key mapping (updated for moveArrows)
-        const buttonMap = {
-            'move-up': 'moveArrows',
-            'move-down': 'moveArrows',
-            'priority-btn': 'highPriority',
-            'edit-btn': 'rename',
-            'delete-btn': 'delete',
-            'recurring-btn': 'recurring',
-            'set-due-date': 'dueDate',
-            'enable-task-reminders': 'reminders'
-        };
-
-        Object.entries(buttonMap).forEach(([btnClass, optionKey]) => {
-            const button = buttonContainer.querySelector(`.${btnClass}`);
-            if (button) {
-                const shouldShow = visibleOptions[optionKey] ?? false;
-                if (shouldShow) {
-                    button.classList.remove('hidden');
-                } else {
-                    button.classList.add('hidden');
-                }
-            }
-        });
     }
 
     /**

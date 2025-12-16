@@ -1,5 +1,5 @@
 /**
- * 🎯 miniCycle Task Core Module
+ * 🎯 miniCycle Task Core Module (DI-Pure)
  * Handles core task CRUD operations with graceful error handling
  *
  * Features:
@@ -15,12 +15,48 @@
  * @module task/taskCore
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
+import { ui, state } from '../core/appContext.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TaskCore', {
+    appInit: optional(null),
+    AppState: optional(null),
+    loadMiniCycleData: optional(null),
+    sanitizeInput: optional(null),
+    safeJSONParse: optional(null),
+    safeJSONStringify: optional(null),
+    safeLocalStorageGet: optional(null),
+    safeLocalStorageSet: optional(null),
+    isPerformingUndoRedo: optional(null),
+    showNotification: optional(null),
+    updateStatsPanel: optional(null),
+    updateProgressBar: optional(null),
+    checkCompleteAllButton: optional(null),
+    updateMainMenuHeader: optional(null),
+    checkOverdueTasks: optional(null),
+    updateArrowsInDOM: optional(null),
+    updateMoveArrowsVisibility: optional(null),
+    syncTaskDeleteWhenCompleteDOM: optional(null),
+    recurringPanel: optional(null),
+    updateRecurringPanelButtonVisibility: optional(null),
+    enableDragAndDropOnTask: optional(null),
+    checkMiniCycle: optional(null),
+    incrementCycleCount: optional(null),
+    AppMeta: optional(null),
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional(null),
+    DEFAULT_TASK_OPTION_BUTTONS: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 // Singleton instance (initialized by initTaskCore)
 let taskCoreInstance = null;
@@ -33,11 +69,17 @@ let taskCoreInstance = null;
  * @param {Object} dependencies - Dependencies to inject
  */
 export function setTaskCoreDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
 
     // Also update existing instance if initialized
+    // IMPORTANT: Only assign deps that were actually passed (not ALL resolved deps)
+    // Otherwise we'd overwrite existing deps like AppState with null
     if (taskCoreInstance && taskCoreInstance.deps) {
-        Object.assign(taskCoreInstance.deps, dependencies);
+        for (const [key, value] of Object.entries(dependencies)) {
+            if (value !== undefined) {
+                taskCoreInstance.deps[key] = value;
+            }
+        }
         console.log('🎯 TaskCore instance deps updated:', Object.keys(dependencies));
     } else {
         console.log('🎯 TaskCore module deps set (pre-init):', Object.keys(dependencies));
@@ -46,11 +88,11 @@ export function setTaskCoreDependencies(dependencies) {
 
 export class TaskCore {
     constructor(dependencies = {}) {
-        // Merge module-level deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
 
         // ✅ FIX #7: Track active timeouts for cleanup
         this.activeTimeouts = new Set();
@@ -59,70 +101,70 @@ export class TaskCore {
         // Priority: constructor > module deps > local fallback
         this.deps = {
             // State management
-            AppState: mergedDeps.AppState || null,
+            AppState: resolvedDeps.AppState || null,
 
             // Data operations
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
-            sanitizeInput: mergedDeps.sanitizeInput || ((text) => text),
+            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
+            sanitizeInput: resolvedDeps.sanitizeInput || ((text) => text),
 
             // Safe storage utilities (injected, no globals)
-            safeJSONParse: mergedDeps.safeJSONParse || ((str, fallback) => { try { return JSON.parse(str); } catch { return fallback; } }),
-            safeJSONStringify: mergedDeps.safeJSONStringify || ((obj, fallback) => { try { return JSON.stringify(obj); } catch { return fallback; } }),
-            safeLocalStorageGet: mergedDeps.safeLocalStorageGet || ((key, fallback) => { try { return localStorage.getItem(key); } catch { return fallback; } }),
-            safeLocalStorageSet: mergedDeps.safeLocalStorageSet || ((key, value) => { try { localStorage.setItem(key, value); } catch { console.warn('localStorage unavailable'); } }),
+            safeJSONParse: resolvedDeps.safeJSONParse || ((str, fallback) => { try { return JSON.parse(str); } catch { return fallback; } }),
+            safeJSONStringify: resolvedDeps.safeJSONStringify || ((obj, fallback) => { try { return JSON.stringify(obj); } catch { return fallback; } }),
+            safeLocalStorageGet: resolvedDeps.safeLocalStorageGet || ((key, fallback) => { try { return localStorage.getItem(key); } catch { return fallback; } }),
+            safeLocalStorageSet: resolvedDeps.safeLocalStorageSet || ((key, value) => { try { localStorage.setItem(key, value); } catch { console.warn('localStorage unavailable'); } }),
 
             // Undo system state check (injected function, no AppGlobalState)
-            isPerformingUndoRedo: mergedDeps.isPerformingUndoRedo || (() => false),
+            isPerformingUndoRedo: resolvedDeps.isPerformingUndoRedo || (() => false),
 
             // UI updates
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            updateStatsPanel: mergedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: mergedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
-            refreshUIFromState: mergedDeps.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification,
+            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
+            refreshUIFromState: resolvedDeps.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
 
             // Undo system
-            captureStateSnapshot: mergedDeps.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
-            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || (() => {}),
+            captureStateSnapshot: resolvedDeps.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
+            enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || (() => {}),
 
             // Modal system
-            showPromptModal: mergedDeps.showPromptModal || this.fallbackPromptModal,
-            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirmModal,
+            showPromptModal: resolvedDeps.showPromptModal || this.fallbackPromptModal,
+            showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirmModal,
 
             // DOM helpers
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((selector) => document.querySelector(selector)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelector: resolvedDeps.querySelector || ((selector) => document.querySelector(selector)),
+            querySelectorAll: resolvedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
 
             // Task DOM creation (injected from taskDOM.js)
-            validateAndSanitizeTaskInput: mergedDeps.validateAndSanitizeTaskInput || null,
-            loadTaskContext: mergedDeps.loadTaskContext || null,
-            createOrUpdateTaskData: mergedDeps.createOrUpdateTaskData || null,
-            createTaskDOMElements: mergedDeps.createTaskDOMElements || null,
-            setupTaskInteractions: mergedDeps.setupTaskInteractions || null,
-            finalizeTaskCreation: mergedDeps.finalizeTaskCreation || null,
+            validateAndSanitizeTaskInput: resolvedDeps.validateAndSanitizeTaskInput || null,
+            loadTaskContext: resolvedDeps.loadTaskContext || null,
+            createOrUpdateTaskData: resolvedDeps.createOrUpdateTaskData || null,
+            createTaskDOMElements: resolvedDeps.createTaskDOMElements || null,
+            setupTaskInteractions: resolvedDeps.setupTaskInteractions || null,
+            finalizeTaskCreation: resolvedDeps.finalizeTaskCreation || null,
 
             // Auto-save
-            autoSave: mergedDeps.autoSave || (() => console.log('⏭️ autoSave not available')),
+            autoSave: resolvedDeps.autoSave || (() => console.log('⏭️ autoSave not available')),
 
             // Cycle completion (used in resetTasks)
-            incrementCycleCount: mergedDeps.incrementCycleCount || null,
-            helpWindowManager: mergedDeps.helpWindowManager || null,
-            showCompletionAnimation: mergedDeps.showCompletionAnimation || null,
-            updateCompletedTasksCount: mergedDeps.updateCompletedTasksCount || null,
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || null,
+            incrementCycleCount: resolvedDeps.incrementCycleCount || null,
+            helpWindowManager: resolvedDeps.helpWindowManager || null,
+            showCompletionAnimation: resolvedDeps.showCompletionAnimation || null,
+            updateCompletedTasksCount: resolvedDeps.updateCompletedTasksCount || null,
+            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || null,
 
             // Task operations
-            checkOverdueTasks: mergedDeps.checkOverdueTasks || null,
-            handleTaskListMovement: mergedDeps.handleTaskListMovement || null,
-            removeRecurringTasksFromCycle: mergedDeps.removeRecurringTasksFromCycle || null,
-            checkMiniCycle: mergedDeps.checkMiniCycle || null,
+            checkOverdueTasks: resolvedDeps.checkOverdueTasks || null,
+            handleTaskListMovement: resolvedDeps.handleTaskListMovement || null,
+            removeRecurringTasksFromCycle: resolvedDeps.removeRecurringTasksFromCycle || null,
+            checkMiniCycle: resolvedDeps.checkMiniCycle || null,
 
             // Recurring system
-            recurringCore: mergedDeps.recurringCore || null,
+            recurringCore: resolvedDeps.recurringCore || null,
 
             // Move arrows
-            updateMoveArrowsVisibility: mergedDeps.updateMoveArrowsVisibility || null
+            updateMoveArrowsVisibility: resolvedDeps.updateMoveArrowsVisibility || null
         };
 
         // Local instance state (previously on AppGlobalState)
@@ -167,7 +209,7 @@ export class TaskCore {
             console.log('✅ Task core system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Task core system initialization failed:', error);
-            this.deps.showNotification('Task system initialized with limited functionality', 'warning');
+            ui()?.showNotification?.('Task system initialized with limited functionality', 'warning');
         }
     }
 
@@ -362,7 +404,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Task creation failed:', error);
-            this.deps.showNotification('Could not add task - please try again', 'warning');
+            ui()?.showNotification?.('Could not add task - please try again', 'warning');
         }
     }
 
@@ -430,7 +472,7 @@ export class TaskCore {
                             }
                         }
 
-                        this.deps.showNotification(`Task renamed to "${cleanText}"`, "info", 1500);
+                        ui()?.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
                         this.deps.updateStatsPanel();
                         this.deps.updateProgressBar();
                         this.deps.checkCompleteAllButton();
@@ -440,7 +482,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Task edit failed:', error);
-            this.deps.showNotification('Could not edit task', 'warning');
+            ui()?.showNotification?.('Could not edit task', 'warning');
         }
     }
 
@@ -462,7 +504,7 @@ export class TaskCore {
                 cancelText: "Cancel",
                 callback: async (confirmDelete) => {
                     if (!confirmDelete) {
-                        this.deps.showNotification(`"${taskName}" has not been deleted.`, "show", 2500);
+                        ui()?.showNotification?.(`"${taskName}" has not been deleted.`, "show", 2500);
                         return;
                     }
 
@@ -491,7 +533,7 @@ export class TaskCore {
                         // Remove from DOM
                         taskItem.remove();
 
-                        this.deps.showNotification(`Task "${taskName}" deleted.`, "show", 2500);
+                        ui()?.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
                         this.deps.updateStatsPanel();
                         this.deps.updateProgressBar();
                         this.deps.checkCompleteAllButton();
@@ -519,7 +561,7 @@ export class TaskCore {
                                     this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
                                     taskItem.remove();
-                                    this.deps.showNotification(`Task "${taskName}" deleted.`, "show", 2500);
+                                    ui()?.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
                                     this.deps.updateStatsPanel();
                                     this.deps.updateProgressBar();
                                     this.deps.checkCompleteAllButton();
@@ -537,7 +579,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Task deletion failed:', error);
-            this.deps.showNotification('Could not delete task', 'warning');
+            ui()?.showNotification?.('Could not delete task', 'warning');
         }
     }
 
@@ -603,7 +645,7 @@ export class TaskCore {
                     if (t) t.highPriority = newHighPriority;
                 }, true);
 
-                this.deps.showNotification(
+                ui()?.showNotification?.(
                     `Priority ${newHighPriority ? "enabled" : "removed"}.`,
                     newHighPriority ? "error" : "info",
                     1500
@@ -622,7 +664,7 @@ export class TaskCore {
                             fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
                             fullSchemaData.metadata.lastModified = Date.now();
                             this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                            this.deps.showNotification(
+                            ui()?.showNotification?.(
                                 `Priority ${task.highPriority ? "enabled" : "removed"}.`,
                                 task.highPriority ? "error" : "info",
                                 1500
@@ -634,7 +676,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Priority toggle failed:', error);
-            this.deps.showNotification('Could not toggle priority', 'warning');
+            ui()?.showNotification?.('Could not toggle priority', 'warning');
         }
     }
 
@@ -1042,7 +1084,7 @@ export class TaskCore {
                 if (this.deps.recurringCore?.watchRecurringTasks) {
                     this.deps.recurringCore.watchRecurringTasks();
                 }
-                this.deps.autoSave();
+                state()?.autoSave?.();
                 this.deps.updateStatsPanel();
                 console.log('✅ Reset tasks completed successfully');
             }, 1000);
@@ -1050,7 +1092,7 @@ export class TaskCore {
         } catch (error) {
             console.warn('⚠️ Reset tasks failed:', error);
             this.isResetting = false;
-            this.deps.showNotification('Could not reset tasks', 'warning');
+            ui()?.showNotification?.('Could not reset tasks', 'warning');
         }
     }
 
@@ -1122,7 +1164,7 @@ export class TaskCore {
                                 });
 
                                 if (tasksToDelete.length === 0) {
-                                    this.deps.showNotification("⚠️ No completed tasks to delete.", "default", 3000);
+                                    ui()?.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
                                     return;
                                 }
 
@@ -1132,7 +1174,7 @@ export class TaskCore {
                                     taskElement.remove();
                                 });
 
-                                this.deps.autoSave();
+                                state()?.autoSave?.();
 
                                 // ✅ Update progress bar after bulk deletion in confirmation modal
                                 this.deps.updateProgressBar();
@@ -1176,7 +1218,7 @@ export class TaskCore {
                 });
 
                 if (tasksToDelete.length === 0) {
-                    this.deps.showNotification("⚠️ No completed tasks to delete.", "default", 3000);
+                    ui()?.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
                     return;
                 }
 
@@ -1232,7 +1274,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Complete all tasks failed:', error);
-            this.deps.showNotification('Could not complete all tasks', 'warning');
+            ui()?.showNotification?.('Could not complete all tasks', 'warning');
         }
     }
 }

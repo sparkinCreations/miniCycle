@@ -1,6 +1,6 @@
 /**
  * ==========================================
- * 📊 STATS PANEL MODULE WITH SWIPE SUPPORT
+ * 📊 STATS PANEL MODULE WITH SWIPE SUPPORT (DI-Pure)
  * ==========================================
  *
  * Manages the stats panel functionality including:
@@ -14,28 +14,38 @@
  * @author miniCycle Development Team
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    showNotification: null,
-    loadMiniCycleData: null,
-    isOverlayActive: null,
-    isDraggingNotification: null,
-    updateThemeColor: null,
-    hideMainMenu: null,
-    setupDarkModeToggle: null,
-    AppState: null,
-    appInit: null,
-    safeAddEventListener: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('StatsPanel', {
+    showNotification: optional(null),
+    loadMiniCycleData: optional(null),
+    isOverlayActive: optional(null),
+    isDraggingNotification: optional(null),
+    updateThemeColor: optional(null),
+    hideMainMenu: optional(null),
+    setupDarkModeToggle: optional(null),
+    AppState: optional(null),
+    appInit: optional(null),
+    safeAddEventListener: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for StatsPanelManager (call before creating instance)
  * @param {Object} dependencies - { showNotification, loadMiniCycleData, AppState, appInit, etc. }
  */
 export function setStatsPanelDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('📊 StatsPanel dependencies set:', Object.keys(dependencies));
 }
 

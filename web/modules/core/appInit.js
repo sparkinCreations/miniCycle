@@ -10,37 +10,52 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.503
+ * @version 1.504
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
+import { createDIModule, optional } from './diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('AppInit', {
 	// For initialSetup
-	loadMiniCycleData: null,
-	createInitialSchema25Data: null,
-	showCycleCreationModal: null,
-	getOnboardingManager: null,
-	getMiniCycleState: null,
+	loadMiniCycleData: optional(null),
+	createInitialSchema25Data: optional(null),
+	showCycleCreationModal: optional(null),
+	getOnboardingManager: optional(null),
+	getMiniCycleState: optional(null),
 
 	// For completeInitialSetup
-	loadMiniCycle: null,
-	updateReminderButtons: null,
-	updateDueDateVisibility: null,
-	checkOverdueTasks: null,
-	organizeCompletedTasks: null,
-	startReminders: null,
-	updateThemeColor: null,
-	getElementById: null,
-	addBodyClass: null,
-	removeBodyClass: null
-};
+	loadMiniCycle: optional(null),
+	updateReminderButtons: optional(null),
+	updateDueDateVisibility: optional(null),
+	checkOverdueTasks: optional(null),
+	organizeCompletedTasks: optional(null),
+	startReminders: optional(null),
+	updateThemeColor: optional(null),
+	getElementById: optional((id) => document.getElementById(id)),
+	addBodyClass: optional((cls) => document.body.classList.add(cls)),
+	removeBodyClass: optional((cls) => document.body.classList.remove(cls))
+});
 
-export function setAppInitDependencies(dependencies) {
-	const descriptors = {};
-	for (const [key, value] of Object.entries(dependencies)) {
-		descriptors[key] = { value, writable: true, configurable: true };
+// Helper to get current deps (resolves fresh each time for late binding)
+const getDeps = () => di.resolve();
+
+// Legacy _deps reference for compatibility (uses getter for late binding)
+const _deps = new Proxy({}, {
+	get(_, prop) {
+		return getDeps()[prop];
 	}
-	Object.defineProperties(_deps, descriptors);
+});
+
+/**
+ * Set the AppInit dependencies
+ * @param {Object} dependencies - Dependencies to inject
+ */
+export function setAppInitDependencies(dependencies) {
+	di.setDependencies(dependencies);
 	console.log('🎯 AppInit dependencies set:', Object.keys(dependencies));
 }
 

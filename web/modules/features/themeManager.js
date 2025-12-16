@@ -1,5 +1,5 @@
 /**
- * Theme Manager Module
+ * Theme Manager Module (DI-Pure)
  *
  * 🎯 Pattern: Simple Instance
  * ✅ Self-contained theme and dark mode management
@@ -26,16 +26,26 @@
  * @requires AppInit (for initialization coordination)
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level dependencies - set via setThemeManagerDependencies
-let _deps = {
-    appInit: null,  // AppInit for initialization coordination
-    AppState: null,
-    showNotification: null,
-    hideMainMenu: null,
-    safeAddEventListener: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('ThemeManager', {
+    appInit: optional(null),
+    AppState: optional(null),
+    showNotification: optional(null),
+    hideMainMenu: optional(null),
+    safeAddEventListener: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 // Fallback for safeAddEventListener
 const fallbackAddListener = (el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); };
@@ -45,9 +55,7 @@ const fallbackAddListener = (el, ev, fn, opts) => { el?.removeEventListener(ev, 
  * Call this after AppState is available
  */
 export function setThemeManagerDependencies(deps) {
-    if (deps.AppState) _deps.AppState = deps.AppState;
-    if (deps.showNotification) _deps.showNotification = deps.showNotification;
-    if (deps.hideMainMenu) _deps.hideMainMenu = deps.hideMainMenu;
+    di.setDependencies(deps);
     console.log('🎨 ThemeManager dependencies injected');
 }
 

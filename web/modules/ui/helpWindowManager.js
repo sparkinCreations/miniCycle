@@ -1,23 +1,35 @@
 /**
- * Help Window Manager Module
+ * Help Window Manager Module (DI-Pure)
  *
  * Manages the help window that shows task status and cycle completion messages.
  *
  * @module ui/helpWindowManager
  */
 
-// Module-level dependencies (DI-pure, no window.* fallbacks)
-let deps = {
-    loadMiniCycleData: null,
-    AppState: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('HelpWindowManager', {
+    loadMiniCycleData: optional(null),
+    AppState: optional(null)
+});
+
+// Late-binding deps via Proxy
+const deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for HelpWindowManager.
  * @param {Object} dependencies - Injected dependencies
  */
 export function setHelpWindowManagerDependencies(dependencies) {
-    deps = { ...deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🎯 HelpWindowManager dependencies set:', Object.keys(dependencies));
 }
 

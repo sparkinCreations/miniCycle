@@ -1,5 +1,5 @@
 /**
- * miniCycle Recurring Tasks - Core Scheduling Engine
+ * miniCycle Recurring Tasks - Core Scheduling Engine (DI-Pure)
  *
  * Pattern: Strict Dependency Injection 🔧
  * Purpose: Mission-critical business logic for recurring task scheduling
@@ -15,57 +15,43 @@
  * @requires AppInit (for initialization coordination)
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS
 } from '../core/constants.js';
 
-// ============================================
-// DEPENDENCY INJECTION SETUP
-// ============================================
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
 
-/**
- * Dependency container for all external functions
- * All dependencies MUST be injected before using this module
- */
-const Deps = {
-    // AppInit for initialization coordination (injected, not imported)
-    appInit: null,            // appInit singleton instance
+const di = createDIModule('RecurringCore', {
+    appInit: optional(null),
+    getAppState: optional(null),
+    updateAppState: optional(null),
+    isAppStateReady: optional(null),
+    loadData: optional(null),
+    showNotification: optional(null),
+    showNotificationWithTip: optional(null),
+    notifications: optional(null),
+    querySelector: optional(null),
+    updateRecurringPanel: optional(null),
+    updateRecurringSummary: optional(null),
+    updatePanelButtonVisibility: optional(null),
+    refreshUIFromState: optional(null),
+    updateProgressBar: optional(null),
+    GlobalUtils: optional(null),
+    now: optional(null),
+    setInterval: optional(null),
+    isEnabled: optional(null)
+});
 
-    // State management
-    getAppState: null,        // () => AppState.get()
-    updateAppState: null,     // (updateFn) => AppState.update(updateFn)
-    isAppStateReady: null,    // () => AppState.isReady()
-
-    // Data operations (legacy - for backwards compatibility)
-    loadData: null,           // () => loadMiniCycleData()
-
-    // Notifications
-    showNotification: null,   // (msg, type, duration) => showNotification()
-    showNotificationWithTip: null, // (content, type, duration, tipKey) => showNotificationWithTip()
-    notifications: null,      // notifications module object
-
-    // DOM operations
-    querySelector: null,      // (selector) => document.querySelector(selector)
-
-    // UI callbacks (optional - for panel updates)
-    updateRecurringPanel: null,        // () => updateRecurringPanel()
-    updateRecurringSummary: null,      // () => updateRecurringSummary()
-    updatePanelButtonVisibility: null, // () => updateRecurringPanelButtonVisibility()
-    refreshUIFromState: null,          // () => refreshUIFromState() - refresh DOM after data changes
-    updateProgressBar: null,           // () => updateProgressBar() - update progress bar
-
-    // Utilities
-    GlobalUtils: null,        // GlobalUtils module (syncTaskDeleteWhenCompleteDOM, etc.)
-
-    // Time/scheduling
-    now: null,                // () => Date.now()
-    setInterval: null,        // (fn, ms) => setInterval(fn, ms)
-
-    // Feature flags
-    isEnabled: null           // () => FeatureFlags.recurringEnabled
-};
+// Late-binding deps via Proxy
+const Deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Configure dependencies for the recurring core module
@@ -73,7 +59,7 @@ const Deps = {
  * @throws {Error} If called multiple times (prevents accidental reconfiguration)
  */
 export function setRecurringCoreDependencies(overrides = {}) {
-    Object.assign(Deps, overrides);
+    di.setDependencies(overrides);
     console.log('🔧 RecurringCore dependencies configured');
 }
 

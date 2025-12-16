@@ -7,22 +7,34 @@
  * @module ui/titleManager
  */
 
-// Dependencies injected via setTitleManagerDependencies
-let deps = {
-    GlobalUtils: null,
-    getAppState: null,
-    getLoadMiniCycleData: null,
-    getShowNotification: null,
-    getUpdateMainMenuHeader: null,
-    getUpdateUndoRedoButtons: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('TitleManager', {
+    GlobalUtils: optional(null),
+    getAppState: optional(null),
+    getLoadMiniCycleData: optional(null),
+    getShowNotification: optional(null),
+    getUpdateMainMenuHeader: optional(null),
+    getUpdateUndoRedoButtons: optional(null)
+});
+
+// Late-binding deps via Proxy
+const deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for title manager (DI-pure pattern)
  * @param {Object} injected - Dependencies to inject
  */
 export function setTitleManagerDependencies(injected) {
-    Object.assign(deps, injected);
+    di.setDependencies(injected);
 }
 
 /**

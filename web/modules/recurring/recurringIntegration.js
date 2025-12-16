@@ -1,5 +1,5 @@
 /**
- * miniCycle Recurring Tasks - Integration Module
+ * miniCycle Recurring Tasks - Integration Module (DI-Pure)
  *
  * This module demonstrates how to integrate recurringCore and recurringPanel
  * into the main miniCycle application.
@@ -11,35 +11,44 @@
  * @requires AppInit (for initialization coordination)
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level dependencies (DI-pure, no window.* fallbacks)
-let deps = {
-    appInit: null,  // AppInit for initialization coordination
-    AppState: null,
-    loadMiniCycleData: null,
-    showNotification: null,
-    showNotificationWithTip: null,
-    refreshUIFromState: null,
-    updateProgressBar: null,
-    FeatureFlags: null,
-    notifications: null,
-    isOverlayActive: null,
-    getDeferredRecurringSetup: null,  // For deferred setup queue
-    clearDeferredRecurringSetup: null, // For clearing the queue after processing
-    // Utilities for recurringCore and recurringPanel
-    GlobalUtils: null,
-    escapeHtml: null,
-    syncRecurringStateToDOM: null,
-    refreshTaskButtonsForModeChange: null
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('RecurringIntegration', {
+    appInit: optional(null),
+    AppState: optional(null),
+    loadMiniCycleData: optional(null),
+    showNotification: optional(null),
+    showNotificationWithTip: optional(null),
+    refreshUIFromState: optional(null),
+    updateProgressBar: optional(null),
+    FeatureFlags: optional(null),
+    notifications: optional(null),
+    isOverlayActive: optional(null),
+    getDeferredRecurringSetup: optional(null),
+    clearDeferredRecurringSetup: optional(null),
+    GlobalUtils: optional(null),
+    escapeHtml: optional(null),
+    syncRecurringStateToDOM: optional(null),
+    refreshTaskButtonsForModeChange: optional(null)
+});
+
+// Late-binding deps via Proxy
+const deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for RecurringIntegration module.
  * @param {Object} dependencies - Injected dependencies
  */
 export function setRecurringIntegrationDependencies(dependencies) {
-    deps = { ...deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🎯 RecurringIntegration dependencies set:', Object.keys(dependencies));
 }
 

@@ -1,50 +1,76 @@
 /**
- * 🔄 miniCycle Drag & Drop Manager
+ * 🔄 miniCycle Drag & Drop Manager (DI-Pure)
  * Handles task rearrangement via drag-and-drop and arrow buttons
  * Uses Resilient Constructor Pattern - graceful degradation with user feedback
  *
  * @module modules/task/dragDropManager
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('DragDropManager', {
+    appInit: optional(null),
+    AppState: optional(null),
+    saveCurrentTaskOrder: optional(null),
+    autoSave: optional(null),
+    updateProgressBar: optional(null),
+    updateStatsPanel: optional(null),
+    checkCompleteAllButton: optional(null),
+    updateUndoRedoButtons: optional(null),
+    captureStateSnapshot: optional(null),
+    refreshUIFromState: optional(null),
+    revealTaskButtons: optional(null),
+    hideTaskButtons: optional(null),
+    isTouchDevice: optional(null),
+    enableUndoSystemOnFirstInteraction: optional(null),
+    showNotification: optional(null),
+    safeAddEventListener: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for DragDropManager (call before init)
  * @param {Object} dependencies - { AppState, saveCurrentTaskOrder, etc. }
  */
 export function setDragDropManagerDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
+    di.setDependencies(dependencies);
     console.log('🔄 DragDropManager dependencies set:', Object.keys(dependencies));
 }
 
 export class DragDropManager {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Store dependencies - DI-pure pattern (no window.* fallbacks, no AppGlobalState)
         this.deps = {
             // Core state access
-            AppState: mergedDeps.AppState,
-            saveCurrentTaskOrder: mergedDeps.saveCurrentTaskOrder || this.fallbackSave,
-            autoSave: mergedDeps.autoSave || this.fallbackAutoSave,
-            updateProgressBar: mergedDeps.updateProgressBar || this.fallbackUpdate,
-            updateStatsPanel: mergedDeps.updateStatsPanel || this.fallbackUpdate,
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || this.fallbackUpdate,
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || this.fallbackUpdate,
-            captureStateSnapshot: mergedDeps.captureStateSnapshot || this.fallbackCapture,
-            refreshUIFromState: mergedDeps.refreshUIFromState || this.fallbackRefresh,
-            revealTaskButtons: mergedDeps.revealTaskButtons || this.fallbackReveal,
-            hideTaskButtons: mergedDeps.hideTaskButtons || this.fallbackHide,
-            isTouchDevice: mergedDeps.isTouchDevice || this.fallbackIsTouchDevice,
-            enableUndoSystemOnFirstInteraction: mergedDeps.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener
+            AppState: resolvedDeps.AppState,
+            saveCurrentTaskOrder: resolvedDeps.saveCurrentTaskOrder || this.fallbackSave,
+            autoSave: resolvedDeps.autoSave || this.fallbackAutoSave,
+            updateProgressBar: resolvedDeps.updateProgressBar || this.fallbackUpdate,
+            updateStatsPanel: resolvedDeps.updateStatsPanel || this.fallbackUpdate,
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || this.fallbackUpdate,
+            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || this.fallbackUpdate,
+            captureStateSnapshot: resolvedDeps.captureStateSnapshot || this.fallbackCapture,
+            refreshUIFromState: resolvedDeps.refreshUIFromState || this.fallbackRefresh,
+            revealTaskButtons: resolvedDeps.revealTaskButtons || this.fallbackReveal,
+            hideTaskButtons: resolvedDeps.hideTaskButtons || this.fallbackHide,
+            isTouchDevice: resolvedDeps.isTouchDevice || this.fallbackIsTouchDevice,
+            enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification,
+            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener
         };
 
         // Internal state (local to this instance, not global)

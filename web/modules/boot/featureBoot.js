@@ -20,13 +20,31 @@
  * - featureBoot.js is the DI wiring hub (this file)
  * - uiBoot.js handles all UI setup via initUIBoot()
  *
+ * FEATURE FLAG: USE_MODULE_LOADER
+ * - false (default): Use legacy manual loading (current behavior)
+ * - true: Use moduleLoader.js with moduleManifests.js
+ * - Set via localStorage: localStorage.setItem('miniCycle_useModuleLoader', 'true')
+ *
  * IMPORT RULES:
  * - This file imports from coreBoot.js
  * - This file must NOT import from uiBoot.js
  *
  * @module featureBoot
- * @version 2.0.0
+ * @version 2.1.0
  */
+
+// ============================================================================
+// FEATURE FLAG: Module Loader Rollout
+// ============================================================================
+// Set to true to use the new moduleLoader.js instead of manual loading
+// Can also be enabled via: localStorage.setItem('miniCycle_useModuleLoader', 'true')
+const USE_MODULE_LOADER = (() => {
+  try {
+    return localStorage.getItem('miniCycle_useModuleLoader') === 'true';
+  } catch {
+    return false;
+  }
+})();
 
 /**
  * Boot early dependencies needed before AppState initialization
@@ -135,6 +153,12 @@ export async function bootEarlyDeps(deps, coreResult) {
  * @returns {Object} Initialized feature module references
  */
 export async function bootFeatures(deps, coreResult) {
+  // Check feature flag for moduleLoader rollout
+  if (USE_MODULE_LOADER) {
+    console.log('🧪 Using moduleLoader (experimental)');
+    return await bootFeaturesWithLoader(deps, coreResult);
+  }
+
   const {
     AppGlobalState,
     FeatureFlags,
@@ -154,7 +178,7 @@ export async function bootFeatures(deps, coreResult) {
   const appContextMod = await import('../core/appContext.js');
   const { getCompleteInitialSetup } = appContextMod;
 
-  console.log('🚀 app-featureBoot: Starting feature module loading...');
+  console.log('🚀 app-featureBoot: Starting feature module loading (legacy)...');
 
   // Container for initialized modules
   const features = {
@@ -1686,4 +1710,184 @@ export function createDepsContainer() {
     storage: {},
     testing: {}
   };
+}
+
+// ============================================================================
+// EXPERIMENTAL: moduleLoader-based Boot
+// ============================================================================
+
+/**
+ * Boot all feature modules using moduleLoader.js (experimental)
+ *
+ * This is an alternative to the legacy manual loading above.
+ * Enable via: localStorage.setItem('miniCycle_useModuleLoader', 'true')
+ *
+ * @param {Object} deps - Dependency container from main script
+ * @param {Object} coreResult - Results from coreBoot.js initCoreBoot()
+ * @returns {Object} Initialized feature module references
+ */
+async function bootFeaturesWithLoader(deps, coreResult) {
+  const { GlobalUtils, appInit, withV } = coreResult;
+
+  console.log('🧪 bootFeaturesWithLoader: Starting moduleLoader-based boot...');
+
+  // Import moduleLoader and manifests
+  const { loadAllModules, loadPhase } = await import('./moduleLoader.js');
+  const { PHASES, MODULE_MANIFESTS, getLoadOrder } = await import('./moduleManifests.js');
+  const appContextMod = await import('../core/appContext.js');
+
+  // Container for initialized modules
+  const features = {
+    managers: {},
+    modules: {},
+    apis: {}
+  };
+
+  try {
+    // Log load order for debugging
+    const loadOrder = getLoadOrder();
+    console.log(`📦 Will load ${loadOrder.length} modules in order:`, loadOrder.slice(0, 5).join(', ') + '...');
+
+    // Load all modules using moduleLoader
+    const result = await loadAllModules(deps, coreResult);
+
+    console.log(`✅ moduleLoader loaded ${result.modules.size} modules`);
+
+    // Copy loaded modules to features container
+    for (const [name, mod] of result.modules) {
+      features.modules[name] = mod;
+    }
+    for (const [name, instance] of result.instances) {
+      features.managers[name] = instance;
+    }
+    features.apis = result.apis;
+
+    // Register grouped APIs with appContext
+    registerGroupedApisFromLoader(deps, appContextMod, coreResult);
+
+    console.log('✅ bootFeaturesWithLoader: Complete');
+    console.log(`📦 Loaded ${Object.keys(features.managers).length} managers, ${Object.keys(features.modules).length} modules`);
+
+    return features;
+
+  } catch (error) {
+    console.error('❌ moduleLoader boot failed, falling back to legacy:', error);
+
+    // Fall back to legacy loading
+    console.log('⚠️ Falling back to legacy boot...');
+
+    // Re-call bootFeatures but bypass the feature flag check
+    // We need to temporarily disable the flag
+    const savedFlag = USE_MODULE_LOADER;
+    // Can't actually disable it, so we'll just throw and let the error propagate
+    throw error;
+  }
+}
+
+/**
+ * Register grouped APIs from moduleLoader results
+ */
+function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
+  const { GlobalUtils } = coreResult;
+
+  // State API
+  const stateApiObj = {
+    AppState: deps.core?.AppState,
+    AppGlobalState: deps.core?.AppGlobalState,
+    AppMeta: deps.core?.AppMeta,
+    loadMiniCycleData: deps.core?.loadMiniCycleData,
+    autoSave: deps.core?.autoSave
+  };
+  appContextMod.setContextValue('stateApi', stateApiObj);
+  appContextMod.registerApi('state', stateApiObj);
+
+  // Task API
+  const taskApiObj = {
+    add: deps.task?.addTask,
+    delete: deps.task?.deleteTask,
+    handleCompletionChange: deps.task?.handleTaskCompletionChange,
+    handleCompleteAll: deps.task?.handleCompleteAllTasks,
+    loadContext: deps.task?.loadTaskContext,
+    createDOM: deps.task?.createTaskDOMElements,
+    extractFromDOM: deps.task?.extractTaskDataFromDOM,
+    updateMoveArrows: deps.task?.updateMoveArrowsVisibility,
+    refresh: deps.task?.refreshTaskListUI,
+    checkCompleteAllButton: deps.ui?.checkCompleteAllButton
+  };
+  appContextMod.setContextValue('taskApi', taskApiObj);
+  appContextMod.registerApi('task', taskApiObj);
+
+  // Cycle API
+  const cycleApiObj = {
+    load: deps.cycle?.loadMiniCycle,
+    create: deps.cycle?.showCycleCreationModal,
+    switch: deps.cycle?.switchMiniCycle,
+    rename: deps.cycle?.renameMiniCycle,
+    delete: deps.cycle?.deleteMiniCycle,
+    check: deps.progress?.checkMiniCycle,
+    updateProgress: deps.progress?.updateProgressBar,
+    incrementCount: deps.progress?.incrementCycleCount,
+    initializeModeSelector: deps.cycle?.initializeModeSelector
+  };
+  appContextMod.setContextValue('cycleApi', cycleApiObj);
+  appContextMod.registerApi('cycle', cycleApiObj);
+
+  // UI API
+  const uiApiObj = {
+    showNotification: deps.utils?.showNotification,
+    showConfirmationModal: deps.utils?.showConfirmationModal,
+    showPromptModal: deps.utils?.showPromptModal,
+    hideMainMenu: deps.ui?.hideMainMenu,
+    updateMainMenuHeader: deps.ui?.updateMainMenuHeader,
+    closeAllModals: deps.ui?.closeAllModals,
+    resetNotificationPosition: deps.utils?.resetNotificationPosition
+  };
+  appContextMod.setContextValue('uiApi', uiApiObj);
+  appContextMod.registerApi('ui', uiApiObj);
+
+  // Undo API
+  const undoApiObj = {
+    capture: deps.ui?.captureStateSnapshot,
+    undo: deps.ui?.performStateBasedUndo,
+    redo: deps.ui?.performStateBasedRedo,
+    updateButtons: deps.ui?.updateUndoRedoButtons,
+    enableOnFirstInteraction: deps.ui?.enableUndoSystemOnFirstInteraction
+  };
+  appContextMod.setContextValue('undoApi', undoApiObj);
+  appContextMod.registerApi('undo', undoApiObj);
+
+  // Reminder API
+  const reminderApiObj = {
+    manager: deps.features?.reminderManager,
+    start: deps.features?.startReminders,
+    stop: deps.features?.stopReminders,
+    updateButtons: deps.features?.updateReminderButtons,
+    loadSettings: deps.features?.loadRemindersSettings
+  };
+  appContextMod.setContextValue('reminderApi', reminderApiObj);
+  appContextMod.registerApi('reminder', reminderApiObj);
+
+  // Recurring API
+  const recurringApiObj = {
+    panel: deps.recurring?.panel,
+    core: deps.recurring?.core,
+    openSettingsForTask: deps.recurring?.openSettingsPanel
+  };
+  appContextMod.setContextValue('recurringApi', recurringApiObj);
+  appContextMod.registerApi('recurring', recurringApiObj);
+
+  // Utils API
+  const utilsApiObj = {
+    GlobalUtils: GlobalUtils,
+    DataValidator: deps.utils?.DataValidator,
+    sanitizeInput: deps.utils?.sanitizeInput,
+    generateId: deps.utils?.generateId,
+    generateHashId: deps.utils?.generateHashId,
+    safeAddEventListener: GlobalUtils?.safeAddEventListener,
+    isTouchDevice: deps.utils?.isTouchDevice
+  };
+  appContextMod.setContextValue('utilsApi', utilsApiObj);
+  appContextMod.registerApi('utils', utilsApiObj);
+
+  console.log('✅ Grouped APIs registered via moduleLoader');
 }

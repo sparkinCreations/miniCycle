@@ -7,27 +7,38 @@
  * @module cycleLoader
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
-const Deps = {
-  appInit: null,   // AppInit for initialization coordination
-  AppState: null,  // ✅ Will be a GETTER FUNCTION: () => window.AppState
-  loadMiniCycleData: null,
-  createInitialSchema25Data: null,
-  addTask: null,
-  updateThemeColor: null,
-  startReminders: null,
-  catchUpMissedRecurringTasks: null,
-  updateProgressBar: null,
-  checkCompleteAllButton: null,
-  updateMainMenuHeader: null,
-  updateStatsPanel: null,
-  syncAllTasksWithMode: null  // ✅ For syncing delete-when-complete visual indicators
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('CycleLoader', {
+  appInit: optional(null),
+  AppState: optional(null),
+  loadMiniCycleData: optional(null),
+  createInitialSchema25Data: optional(null),
+  addTask: optional(null),
+  updateThemeColor: optional(null),
+  startReminders: optional(null),
+  catchUpMissedRecurringTasks: optional(null),
+  updateProgressBar: optional(null),
+  checkCompleteAllButton: optional(null),
+  updateMainMenuHeader: optional(null),
+  updateStatsPanel: optional(null),
+  syncAllTasksWithMode: optional(null)
+});
+
+// Late-binding Deps via Proxy
+const Deps = new Proxy({}, {
+  get(_, prop) {
+    return di.resolve()[prop];
+  }
+});
 
 function setCycleLoaderDependencies(overrides = {}) {
-  Object.assign(Deps, overrides);
+  di.setDependencies(overrides);
 }
 
 /**

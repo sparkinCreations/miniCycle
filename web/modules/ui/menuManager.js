@@ -8,57 +8,84 @@
  * @pattern Resilient Constructor 🛡️
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('MenuManager', {
+    appInit: optional(null),
+    loadMiniCycleData: optional(null),
+    AppState: optional(null),
+    showNotification: optional(null),
+    showPromptModal: optional(null),
+    showConfirmationModal: optional(null),
+    safeAddEventListener: optional(null),
+    switchMiniCycle: optional(null),
+    createNewMiniCycle: optional(null),
+    loadMiniCycle: optional(null),
+    updateCycleModeDescription: optional(null),
+    checkGamesUnlock: optional(null),
+    sanitizeInput: optional(null),
+    updateCycleData: optional(null),
+    updateProgressBar: optional(null),
+    updateStatsPanel: optional(null),
+    checkCompleteAllButton: optional(null),
+    updateUndoRedoButtons: optional(null),
+    recurringPanel: optional(null),
+    AppMeta: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for MenuManager (call before creating instance)
  * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
  */
 export function setMenuManagerDependencies(dependencies) {
-    // Use Object.defineProperties to preserve getters (for lazy binding)
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('🎛️ MenuManager dependencies set:', Object.keys(dependencies));
 }
 
 export class MenuManager {
     constructor(dependencies = {}) {
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = mergedDeps.AppMeta?.version;
+        this.version = resolvedDeps.AppMeta?.version;
         this.initialized = false;
         this.hasRun = false; // Track if setupMainMenu has run
 
         // Store dependencies with resilient fallbacks
         this.deps = {
-            loadMiniCycleData: mergedDeps.loadMiniCycleData || this.fallbackLoadData,
-            AppState: mergedDeps.AppState || (() => null),
-            showNotification: mergedDeps.showNotification || this.fallbackNotification,
-            showPromptModal: mergedDeps.showPromptModal || this.fallbackPromptModal,
-            showConfirmationModal: mergedDeps.showConfirmationModal || this.fallbackConfirmationModal,
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelector: mergedDeps.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener,
-            switchMiniCycle: mergedDeps.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
-            createNewMiniCycle: mergedDeps.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
-            loadMiniCycle: mergedDeps.loadMiniCycle || (() => console.warn('loadMiniCycle not available')),
-            updateCycleModeDescription: mergedDeps.updateCycleModeDescription || null,  // ✅ Deferred lookup
-            checkGamesUnlock: mergedDeps.checkGamesUnlock || (() => {}),
-            sanitizeInput: mergedDeps.sanitizeInput || ((input) => input),
-            updateCycleData: mergedDeps.updateCycleData || (() => false),
-            updateProgressBar: mergedDeps.updateProgressBar || (() => {}),
-            updateStatsPanel: mergedDeps.updateStatsPanel || (() => {}),
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton || (() => {}),
-            updateUndoRedoButtons: mergedDeps.updateUndoRedoButtons || (() => {}),
-            recurringPanel: mergedDeps.recurringPanel || null  // ✅ Added for DI
+            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
+            AppState: resolvedDeps.AppState || (() => null),
+            showNotification: resolvedDeps.showNotification || this.fallbackNotification,
+            showPromptModal: resolvedDeps.showPromptModal || this.fallbackPromptModal,
+            showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirmationModal,
+            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
+            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener,
+            switchMiniCycle: resolvedDeps.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
+            createNewMiniCycle: resolvedDeps.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
+            loadMiniCycle: resolvedDeps.loadMiniCycle || (() => console.warn('loadMiniCycle not available')),
+            updateCycleModeDescription: resolvedDeps.updateCycleModeDescription || null,
+            checkGamesUnlock: resolvedDeps.checkGamesUnlock || (() => {}),
+            sanitizeInput: resolvedDeps.sanitizeInput || ((input) => input),
+            updateCycleData: resolvedDeps.updateCycleData || (() => false),
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
+            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => {}),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
+            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || (() => {}),
+            recurringPanel: resolvedDeps.recurringPanel || null
         };
 
         // Cache DOM elements (will be set in init)

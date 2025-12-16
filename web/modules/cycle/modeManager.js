@@ -13,21 +13,38 @@
  * Note: document.*, sessionStorage are browser APIs, not dependencies.
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+import { createDIModule, optional } from '../core/diBase.js';
 
-// Module-level deps for late injection
-let _deps = {
-    appInit: null  // AppInit for initialization coordination
-};
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('ModeManager', {
+    appInit: optional(null),
+    getAppState: optional(null),
+    loadMiniCycleData: optional(null),
+    createTaskButtonContainer: optional(null),
+    setupDueDateButtonInteraction: optional(null),
+    checkCompleteAllButton: optional(null),
+    showNotification: optional(null),
+    helpWindowManager: optional(null),
+    recurringCore: optional(null),
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
+    safeAddEventListener: optional(null),
+    checkMiniCycle: optional(() => {}),
+    refreshTaskListUI: optional(null),
+    updateRecurringButtonVisibility: optional(() => {}),
+    syncAllTasksWithMode: optional(null),
+    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional({ cycle: false, todo: true })
+});
 
 /**
  * Set dependencies for ModeManager (call before creating instance)
  * @param {Object} dependencies - { getAppState, showNotification, etc. }
  */
 export function setModeManagerDependencies(dependencies) {
-    // Use Object.defineProperties to preserve getters (for lazy binding)
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('🎯 ModeManager dependencies set:', Object.keys(dependencies));
 }
 
@@ -35,28 +52,13 @@ export class ModeManager {
     constructor(dependencies = {}) {
         console.log('🎯 ModeManager: Constructing with dependencies');
 
-        // Merge injected deps with constructor deps (constructor takes precedence)
-        const mergedDeps = { ..._deps, ...dependencies };
+        // Resolve deps from diBase, with constructor overrides
+        const resolvedDeps = di.resolve(dependencies);
 
-        // Store dependencies - no window.* fallbacks
+        // Store dependencies with fallback for safeAddEventListener
         this.deps = {
-            getAppState: mergedDeps.getAppState || null,
-            loadMiniCycleData: mergedDeps.loadMiniCycleData,
-            createTaskButtonContainer: mergedDeps.createTaskButtonContainer,
-            setupDueDateButtonInteraction: mergedDeps.setupDueDateButtonInteraction,
-            checkCompleteAllButton: mergedDeps.checkCompleteAllButton,
-            showNotification: mergedDeps.showNotification,
-            helpWindowManager: mergedDeps.helpWindowManager,
-            recurringCore: mergedDeps.recurringCore || null,  // ✅ For updating recurring button visibility
-            getElementById: mergedDeps.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: mergedDeps.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: mergedDeps.safeAddEventListener || this.fallbackAddListener.bind(this),
-            // For setupToggleAutoReset
-            checkMiniCycle: mergedDeps.checkMiniCycle || (() => {}),
-            refreshTaskListUI: mergedDeps.refreshTaskListUI,
-            updateRecurringButtonVisibility: mergedDeps.updateRecurringButtonVisibility || (() => {}),
-            syncAllTasksWithMode: mergedDeps.syncAllTasksWithMode,
-            DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: mergedDeps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS || { cycle: false, todo: true }
+            ...resolvedDeps,
+            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener.bind(this)
         };
 
         // Debounce timer for refresh operations
@@ -73,7 +75,7 @@ export class ModeManager {
         console.log('🎯 ModeManager: Initializing...');
 
         // Wait for core systems to be ready
-        await _deps.appInit?.waitForCore();
+        await this.deps.appInit?.waitForCore();
 
         console.log('⏰ ModeManager: Initializing mode selector with 200ms delay...');
         setTimeout(() => {
@@ -120,7 +122,7 @@ export class ModeManager {
             console.log('🔄 ModeManager: Refreshing task buttons for mode change...');
 
             // Wait for core if needed
-            await _deps.appInit?.waitForCore();
+            await this.deps.appInit?.waitForCore();
 
             const tasks = this.deps.querySelectorAll('.task');
             if (tasks.length === 0) {
@@ -241,7 +243,7 @@ export class ModeManager {
         console.log('🔄 ModeManager: Syncing mode from toggles (state-based)...');
 
         // Wait for core
-        await _deps.appInit?.waitForCore();
+        await this.deps.appInit?.waitForCore();
 
         const AppState = this.deps.getAppState();
         const currentState = AppState?.get();
@@ -334,7 +336,7 @@ export class ModeManager {
         console.log('💾 ModeManager: Updating storage from toggles (state-based)...');
 
         // Wait for core
-        await _deps.appInit?.waitForCore();
+        await this.deps.appInit?.waitForCore();
 
         const AppState = this.deps.getAppState();
         const currentState = AppState?.get();
@@ -374,7 +376,7 @@ export class ModeManager {
         console.log('📝 ModeManager: Updating cycle mode description (Schema 2.5 only)...');
 
         // Wait for core
-        await _deps.appInit?.waitForCore();
+        await this.deps.appInit?.waitForCore();
 
         // ✅ Schema 2.5 only
         const loadMiniCycleData = this.deps.loadMiniCycleData;
@@ -447,7 +449,7 @@ export class ModeManager {
         console.log('🎯 ModeManager: Setting up mode selectors (state-based)...');
 
         // Wait for core
-        await _deps.appInit?.waitForCore();
+        await this.deps.appInit?.waitForCore();
 
         const modeSelector = this.deps.getElementById('mode-selector');
         const mobileModeSelector = this.deps.getElementById('mobile-mode-selector');
