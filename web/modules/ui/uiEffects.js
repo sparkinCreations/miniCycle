@@ -8,25 +8,34 @@
  * @module modules/ui/uiEffects
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    querySelector: null,
-    getLogoTimeoutId: null,
-    setLogoTimeoutId: null
-};
+import { createDIModule, required, optional, createFallback } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP
+// ============================================================================
+
+/**
+ * @typedef {Object} UIEffectsDeps
+ * @property {Function} querySelector - DOM query function
+ * @property {Function} [getLogoTimeoutId] - Get current timeout ID
+ * @property {Function} [setLogoTimeoutId] - Set timeout ID for cleanup
+ */
+
+const di = createDIModule('UIEffects', {
+    querySelector: optional((sel) => document.querySelector(sel)),
+    getLogoTimeoutId: optional(() => null),
+    setLogoTimeoutId: optional(() => {})
+});
 
 /**
  * Set dependencies for UIEffects module
- * @param {Object} dependencies - Injected dependencies
+ * @param {UIEffectsDeps} dependencies - Injected dependencies
  */
-export function setUIEffectsDependencies(dependencies) {
-    const descriptors = {};
-    for (const [key, value] of Object.entries(dependencies)) {
-        descriptors[key] = { value, writable: true, configurable: true };
-    }
-    Object.defineProperties(_deps, descriptors);
-    console.log('UIEffects dependencies set:', Object.keys(dependencies));
-}
+export const setUIEffectsDependencies = (dependencies) => di.setDependencies(dependencies);
+
+// ============================================================================
+// MODULE IMPLEMENTATION
+// ============================================================================
 
 /**
  * Temporarily changes the logo background color to indicate an action, then resets it.
@@ -35,28 +44,21 @@ export function setUIEffectsDependencies(dependencies) {
  * @param {number} [duration=300] - The duration (in milliseconds) before resetting the background.
  */
 export function triggerLogoBackground(color = 'green', duration = 300) {
+    const deps = di.resolve();
+
     // Target the specific logo image (not the app name)
-    const querySelector = _deps.querySelector || ((sel) => document.querySelector(sel));
-    const logo = querySelector('.header-branding .header-logo');
+    const logo = deps.querySelector('.header-branding .header-logo');
 
     console.log('Logo element found:', logo);
     console.log('Applying color:', color);
 
     if (logo) {
         // Clear any existing timeout
-        const getLogoTimeoutId = _deps.getLogoTimeoutId;
-        const setLogoTimeoutId = _deps.setLogoTimeoutId;
-
-        let currentTimeoutId = null;
-        if (typeof getLogoTimeoutId === 'function') {
-            currentTimeoutId = getLogoTimeoutId();
-        }
+        const currentTimeoutId = deps.getLogoTimeoutId?.();
 
         if (currentTimeoutId) {
             clearTimeout(currentTimeoutId);
-            if (typeof setLogoTimeoutId === 'function') {
-                setLogoTimeoutId(null);
-            }
+            deps.setLogoTimeoutId?.(null);
         }
 
         // Apply background color
@@ -69,19 +71,14 @@ export function triggerLogoBackground(color = 'green', duration = 300) {
         const newTimeoutId = setTimeout(() => {
             logo.style.backgroundColor = '';
             logo.style.borderRadius = '';
-            if (typeof setLogoTimeoutId === 'function') {
-                setLogoTimeoutId(null);
-            }
+            deps.setLogoTimeoutId?.(null);
             console.log('Background cleared');
         }, duration);
 
-        if (typeof setLogoTimeoutId === 'function') {
-            setLogoTimeoutId(newTimeoutId);
-        }
+        deps.setLogoTimeoutId?.(newTimeoutId);
     } else {
         console.error('Logo element not found!');
     }
 }
 
-// DI-pure module (no window.* exports)
-console.log('UIEffects module loaded (DI-pure, no window.* exports)');
+console.log('📦 UIEffects module loaded (using diBase)');
