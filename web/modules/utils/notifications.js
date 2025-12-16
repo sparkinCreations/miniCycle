@@ -8,6 +8,10 @@
  * - Modal dialogs (confirmation & prompt)
  * - Schema 2.5 data integration
  *
+ * Pattern: Simple Instance ✨
+ * - Single responsibility (notifications)
+ * - Required dependencies via diBase.js
+ *
  * Usage:
  *   import { MiniCycleNotifications } from './modules/utils/notifications.js';
  *   const notifications = new MiniCycleNotifications();
@@ -18,29 +22,38 @@
  */
 
 import { utils } from '../core/appContext.js';
+import { createDIModule, optional } from '../core/diBase.js';
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
 
-// Module-level dependencies (DI-pure for app logic; legacy global flag kept for drag state sync)
-let _deps = {
-  appInit: null,  // AppInit for initialization coordination
-  AppState: null,
-  loadMiniCycleData: null,
-  generateHashId: null,
-  GlobalUtils: null,
-  escapeHtml: null,
-  applyRecurringToTaskSchema25: null,
-  updateRecurringPanel: null,
-  openRecurringSettingsPanelForTask: null,
-  safeAddEventListener: null
-};
+const di = createDIModule('Notifications', {
+  appInit: optional(null),  // AppInit for initialization coordination
+  AppState: optional(null),
+  loadMiniCycleData: optional(null),
+  generateHashId: optional(null),
+  GlobalUtils: optional(null),
+  escapeHtml: optional(null),
+  applyRecurringToTaskSchema25: optional(null),
+  updateRecurringPanel: optional(null),
+  openRecurringSettingsPanelForTask: optional(null),
+  safeAddEventListener: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+  get(_, prop) {
+    return di.resolve()[prop];
+  }
+});
 
 /**
  * Set dependencies for Notifications module (call before creating instance)
  * @param {Object} dependencies - Late-injected dependencies
  */
 export function setNotificationsDependencies(dependencies) {
-  _deps = { ..._deps, ...dependencies };
+  di.setDependencies(dependencies);
   console.log('🔔 Notifications dependencies set:', Object.keys(dependencies));
 }
 

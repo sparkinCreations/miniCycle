@@ -4,24 +4,38 @@
  * Manages automatic and manual backups using IndexedDB for efficient,
  * non-blocking storage that doesn't compete with localStorage quota.
  *
+ * Pattern: Simple Instance ✨
+ * - Single responsibility (backup management)
+ * - Required dependencies via diBase.js
+ *
  * Note: indexedDB, document.* are browser APIs, not dependencies.
  *
  * @module storage/backupManager
  */
 
-// Module-level deps for late injection (DI-pure, no window.* fallbacks)
-let _deps = {
-    AppState: null
-};
+import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP (using diBase.js)
+// ============================================================================
+
+const di = createDIModule('BackupManager', {
+    AppState: optional(null)
+});
+
+// Late-binding deps via Proxy
+const _deps = new Proxy({}, {
+    get(_, prop) {
+        return di.resolve()[prop];
+    }
+});
 
 /**
  * Set dependencies for BackupManager
  * @param {Object} dependencies - { AppState }
  */
 export function setBackupManagerDependencies(dependencies) {
-    // Use Object.defineProperties to preserve getters (for lazy binding)
-    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
-    Object.defineProperties(_deps, descriptors);
+    di.setDependencies(dependencies);
     console.log('💾 BackupManager dependencies set:', Object.keys(dependencies));
 }
 
