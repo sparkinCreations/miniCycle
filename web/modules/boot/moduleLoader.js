@@ -25,21 +25,22 @@
  */
 
 import { MODULE_MANIFESTS, PHASES, getModulesByPhase, getLoadOrder } from './moduleManifests.js';
-<<<<<<< HEAD
-import { registerApi, getCompleteInitialSetup, getHideMainMenu } from '../core/appContext.js';
-=======
 
 // ============================================================================
 // APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
 // ============================================================================
 let _appContextModule = null;
 let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
+let getCompleteInitialSetup = () => null;
+let getHideMainMenu = () => null;
 
 async function loadAppContext() {
     if (!_appContextModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.507') : '1.507';
         _appContextModule = await import(`../core/appContext.js?v=${version}`);
         registerApi = _appContextModule.registerApi;
+        getCompleteInitialSetup = _appContextModule.getCompleteInitialSetup || (() => null);
+        getHideMainMenu = _appContextModule.getHideMainMenu || (() => null);
         console.log('✅ ModuleLoader: appContext loaded with version', version);
     }
     return _appContextModule;
@@ -47,7 +48,6 @@ async function loadAppContext() {
 
 // Load appContext early (non-blocking)
 loadAppContext().catch(e => console.warn('⚠️ ModuleLoader: Failed to load appContext:', e));
->>>>>>> cf647491d8aae24f11fde5d6952f3f2f32fb8f67
 
 // ============================================================================
 // MODULE LOADING STATE
@@ -138,6 +138,10 @@ export async function initializeModule(name, mod, deps, coreResult) {
         }
 
         // No init function - module is just a collection of exports
+        // Still register provides from the raw module exports
+        if (manifest.provides) {
+            registerProvides(name, manifest, mod, deps);
+        }
         return mod;
     } catch (error) {
         if (manifest.optional) {
@@ -261,6 +265,16 @@ function findInitFunction(mod, name) {
         }
     }
 
+    // Also search for any exported function starting with 'init' or 'initialize'
+    // This handles cases like initTaskValidator for module taskValidation
+    for (const key of Object.keys(mod)) {
+        if ((key.startsWith('init') || key.startsWith('initialize')) &&
+            typeof mod[key] === 'function' &&
+            key !== 'initDependencies') {  // Skip dependency setters
+            return mod[key];
+        }
+    }
+
     return null;
 }
 
@@ -284,6 +298,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // AppState: callable Proxy that works both as function and object
     // - this.deps.AppState() returns the AppState object (for settingsManager, etc.)
     // - this.deps.AppState?.isReady?.() works via property access (for taskCore, etc.)
+    // - this.deps.AppState.data = x works via property assignment (for cycleManager, etc.)
     const appStateGetter = () => deps.core?.AppState;
     result.AppState = new Proxy(appStateGetter, {
         get(target, prop) {
@@ -292,6 +307,15 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             }
             // Proxy property access to the actual AppState
             return deps.core?.AppState?.[prop];
+        },
+        set(target, prop, value) {
+            // Proxy property assignment to the actual AppState
+            const appState = deps.core?.AppState;
+            if (appState) {
+                appState[prop] = value;
+                return true;
+            }
+            return false;
         },
         apply(target, thisArg, args) {
             // Allow function call: this.deps.AppState()
@@ -354,6 +378,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         addTask: (...args) => deps.task?.addTask?.(...args),
         resetTasks: (...args) => deps.task?.resetTasks?.(...args),
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
+        saveTaskToSchema25: (...args) => deps.task?.saveTaskToSchema25?.(...args),
 
         // Drag & drop functions (from deps.task)
         enableDragAndDropOnTask: (...args) => deps.task?.enableDragAndDropOnTask?.(...args),
@@ -366,6 +391,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         deleteMiniCycle: (...args) => deps.cycle?.deleteMiniCycle?.(...args),
         loadMiniCycle: (...args) => deps.cycle?.loadMiniCycle?.(...args),
         showCycleCreationModal: (...args) => deps.cycle?.showCycleCreationModal?.(...args),
+        createNewMiniCycle: (...args) => deps.cycle?.createNewMiniCycle?.(...args),
         checkMiniCycle: (...args) => deps.cycle?.checkMiniCycle?.(...args),
         incrementCycleCount: (...args) => deps.cycle?.incrementCycleCount?.(...args),
 
@@ -389,6 +415,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Due dates (from deps.features)
         checkOverdueTasks: (...args) => deps.features?.checkOverdueTasks?.(...args),
+        remindOverdueTasks: (...args) => deps.features?.remindOverdueTasks?.(...args),
 
         // Recurring (from deps.recurring) - use Proxy for lazy evaluation
         // Proxy allows property access (e.g., recurringPanel.updateRecurringPanelButtonVisibility)

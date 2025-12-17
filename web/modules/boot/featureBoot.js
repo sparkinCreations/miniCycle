@@ -1885,5 +1885,11 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   appContextMod.setContextValue('utilsApi', utilsApiObj);
   appContextMod.registerApi('utils', utilsApiObj);
 
+  // Register legacy context values needed by appInit and other modules
+  // onboardingManager is in deps.features (no api field = features)
+  appContextMod.setContextValue('onboardingManager', deps.features?.onboardingManager);
+  appContextMod.setContextValue('showCycleCreationModal', deps.cycle?.showCycleCreationModal);
+  appContextMod.setContextValue('hideMainMenu', deps.ui?.hideMainMenu);
+
   console.log('✅ Grouped APIs registered via moduleLoader');
 }
