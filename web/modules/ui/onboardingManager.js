@@ -339,11 +339,25 @@ export class OnboardingManager {
 // Create single instance
 const onboardingManager = new OnboardingManager();
 
-// NOTE: Do NOT auto-init here. The main script must call init() AFTER setting dependencies.
-// onboardingManager.init(); // ❌ Removed - causes race condition with DI
+/**
+ * Initialize OnboardingManager (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {OnboardingManager} The singleton instance
+ */
+export async function initOnboardingManager(dependencies = {}) {
+    // Set dependencies
+    setOnboardingManagerDependencies(dependencies);
+
+    // Initialize the manager
+    await onboardingManager.init();
+
+    console.log('✅ OnboardingManager initialized via initOnboardingManager');
+    return onboardingManager;
+}
 
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('🎓 Onboarding Manager module loaded (DI-pure, awaiting init)');
 
+// Note: initOnboardingManager is already exported via 'export async function' declaration
 export default OnboardingManager;
 export { onboardingManager };

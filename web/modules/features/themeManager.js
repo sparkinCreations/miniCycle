@@ -812,6 +812,19 @@ export class ThemeManager {
 // Create singleton instance
 const themeManager = new ThemeManager();
 
+/**
+ * Initialize ThemeManager (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {ThemeManager} The singleton instance
+ */
+export function initThemeManager(dependencies = {}) {
+    // Set dependencies
+    setThemeManagerDependencies(dependencies);
+
+    console.log('✅ ThemeManager initialized via initThemeManager');
+    return themeManager;
+}
+
 // ===== GLOBAL API FUNCTIONS =====
 
 /**
@@ -894,6 +907,7 @@ function setupThemesPanelWithData(schemaData) {
 console.log('🎨 ThemeManager module loaded (Phase 2 - no window.* exports)');
 
 // Export class, singleton, and wrapper functions
+// Note: initThemeManager is already exported via 'export function' declaration
 export default ThemeManager;
 export {
     themeManager,
