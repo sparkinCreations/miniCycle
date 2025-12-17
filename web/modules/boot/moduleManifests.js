@@ -110,7 +110,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle'],
+        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle'],
         after: ['notifications']
     },
 
@@ -180,7 +180,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/dragDropManager.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['enableDragAndDropOnTask', 'updateMoveArrowsVisibility'],
+        provides: ['enableDragAndDropOnTask', 'updateMoveArrowsVisibility', 'updateArrowsInDOM'],
         api: 'task'
     },
 
@@ -204,7 +204,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'generateId'],
-        provides: ['createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState'],
+        provides: ['createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState', 'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation'],
         api: 'task',
         after: ['dragDropManager']
     },
@@ -271,7 +271,8 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CYCLE,
         requires: ['AppState', 'showNotification', 'showPromptModal'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle'],
-        api: 'cycle'
+        api: 'cycle',
+        after: ['menuManager']  // Needs hideMainMenu from menuManager
     },
 
     // =========================================================================
@@ -288,7 +289,7 @@ export const MODULE_MANIFESTS = {
 
     menuManager: {
         path: '../ui/menuManager.js',
-        phase: PHASES.UI_MANAGERS,
+        phase: PHASES.CYCLE,  // Moved to Phase 5 - needed by cycleManager
         requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['hideMainMenu', 'updateMainMenuHeader'],
         api: 'ui',
