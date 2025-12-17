@@ -10,7 +10,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.505';
+const APP_VERSION = '1.506';
 
 /**
  * Main initialization - pure sequence controller
@@ -48,7 +48,8 @@ async function initApp() {
   console.log('🔌 Phase 2: Feature modules...');
   await bootFeatures(deps, coreResult);
 
-  const appContextMod = await import('../core/appContext.js');
+  // ✅ Use version param for cache-busting (like appInit pattern)
+  const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
   appContextMod.validateAllApisRegistered();
   console.log('✅ Phase 2 complete');
 
