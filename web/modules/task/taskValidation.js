@@ -11,7 +11,22 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { ui } from '../core/appContext.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let ui = () => null; // Fallback until loaded
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        ui = _appContextModule.ui;
+        console.log('✅ TaskValidation: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -110,11 +125,14 @@ let taskValidator = null;
  * Initialize the global task validator
  * @param {Object} dependencies - Required dependencies
  */
-export function initTaskValidator(dependencies = {}) {
+export async function initTaskValidator(dependencies = {}) {
     if (taskValidator) {
         console.warn('⚠️ TaskValidator already initialized');
         return taskValidator;
     }
+
+    // Load appContext with version (cache-busting)
+    await loadAppContext();
 
     taskValidator = new TaskValidator(dependencies);
     return taskValidator;

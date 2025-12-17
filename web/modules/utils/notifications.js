@@ -21,8 +21,26 @@
  * @requires AppInit (for initialization coordination)
  */
 
-import { utils } from '../core/appContext.js';
 import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let utils = () => null; // Fallback until loaded
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        utils = _appContextModule.utils;
+        console.log('✅ Notifications: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
+
+// Load appContext early (non-blocking)
+loadAppContext().catch(e => console.warn('⚠️ Notifications: Failed to load appContext:', e));
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)

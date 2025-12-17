@@ -25,7 +25,25 @@
  */
 
 import { MODULE_MANIFESTS, PHASES, getModulesByPhase, getLoadOrder } from './moduleManifests.js';
-import { registerApi } from '../core/appContext.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        registerApi = _appContextModule.registerApi;
+        console.log('✅ ModuleLoader: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
+
+// Load appContext early (non-blocking)
+loadAppContext().catch(e => console.warn('⚠️ ModuleLoader: Failed to load appContext:', e));
 
 // ============================================================================
 // MODULE LOADING STATE

@@ -137,7 +137,8 @@ export async function bootEarlyDeps(deps, coreResult) {
   }
 
   // ========== Register showNotification with appContext ==========
-  const { setContextValue } = await import('../core/appContext.js');
+  // ✅ Use version param for cache-busting (like appInit pattern)
+  const { setContextValue } = await import(withV('../core/appContext.js'));
   setContextValue('showNotification', deps.utils.showNotification);
 
   console.log('✅ bootEarlyDeps complete');
@@ -175,7 +176,8 @@ export async function bootFeatures(deps, coreResult) {
   } = coreResult;
 
   // Import appContext module for late-bound dependencies and setContextValue
-  const appContextMod = await import('../core/appContext.js');
+  // ✅ Use version param for cache-busting (like appInit pattern)
+  const appContextMod = await import(withV('../core/appContext.js'));
   const { getCompleteInitialSetup } = appContextMod;
 
   console.log('🚀 app-featureBoot: Starting feature module loading (legacy)...');
@@ -1732,9 +1734,10 @@ async function bootFeaturesWithLoader(deps, coreResult) {
   console.log('🧪 bootFeaturesWithLoader: Starting moduleLoader-based boot...');
 
   // Import moduleLoader and manifests
-  const { loadAllModules, loadPhase } = await import('./moduleLoader.js');
-  const { PHASES, MODULE_MANIFESTS, getLoadOrder } = await import('./moduleManifests.js');
-  const appContextMod = await import('../core/appContext.js');
+  // ✅ Use version param for cache-busting (like appInit pattern)
+  const { loadAllModules, loadPhase } = await import(withV('./moduleLoader.js'));
+  const { PHASES, MODULE_MANIFESTS, getLoadOrder } = await import(withV('./moduleManifests.js'));
+  const appContextMod = await import(withV('../core/appContext.js'));
 
   // Container for initialized modules
   const features = {

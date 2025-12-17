@@ -16,7 +16,24 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { ui, state } from '../core/appContext.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let ui = () => null; // Fallback until loaded
+let state = () => null; // Fallback until loaded
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        ui = _appContextModule.ui;
+        state = _appContextModule.state;
+        console.log('✅ TaskCore: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1291,6 +1308,9 @@ export class TaskCore {
 export async function initTaskCore(dependencies = {}) {
     if (!taskCoreInstance) {
         try {
+            // Load appContext with version (cache-busting)
+            await loadAppContext();
+
             taskCoreInstance = new TaskCore(dependencies);
             await taskCoreInstance.init();
 
