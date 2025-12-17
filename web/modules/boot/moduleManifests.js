@@ -203,7 +203,7 @@ export const MODULE_MANIFESTS = {
     taskDOM: {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'generateId'],
+        requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput'],
         provides: ['createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState', 'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation'],
         api: 'task',
         after: ['dragDropManager']
@@ -361,7 +361,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput'],
-        provides: ['addTask', 'handleTaskCompletionChange', 'resetTasks'],
+        provides: ['addTask', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25'],
         api: 'task',
         after: ['taskDOM', 'cycleCompletion']
     },
