@@ -75,6 +75,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CORE_UTILS,
         requires: [],
         provides: ['errorHandler'],
+        api: 'utils',
         optional: false,
         singleton: true
     },
@@ -92,6 +93,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CORE_UTILS,
         requires: [],
         provides: ['consoleCapture'],
+        api: 'utils',
         optional: true
     },
 
@@ -100,7 +102,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.CORE_UTILS,
         requires: ['appInit', 'GlobalUtils'],
         provides: ['showNotification', 'showConfirmationModal', 'showPromptModal'],
-        api: 'ui'
+        api: 'utils'
     },
 
     // =========================================================================
@@ -110,7 +112,9 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle'],
+        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme'],
+        provideInstance: 'themeManager',
+        api: 'features',
         after: ['notifications']
     },
 
@@ -118,7 +122,9 @@ export const MODULE_MANIFESTS = {
         path: '../ui/gamesManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'AppState', 'AppMeta'],
-        provides: ['unlockMiniGame', 'checkGamesUnlock'],
+        provides: [],
+        provideInstance: 'gamesManager',
+        api: 'ui',
         after: ['notifications']
     },
 
@@ -126,55 +132,27 @@ export const MODULE_MANIFESTS = {
         path: '../ui/onboardingManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['onboardingManager'],
+        provides: [],
+        provideInstance: 'onboardingManager',
+        api: 'ui',
         after: ['notifications']
     },
 
     modalManager: {
         path: '../ui/modalManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['showNotification', 'safeAddEventListener'],
-        provides: ['modalManager', 'closeAllModals'],
+        requires: ['appInit', 'showNotification', 'safeAddEventListener'],
+        provides: [],
+        provideInstance: 'modalManager',
         api: 'ui'
     },
 
     // =========================================================================
     // PHASE 3: TASK MANAGEMENT
     // =========================================================================
-    taskValidation: {
-        path: '../task/taskValidation.js',
-        phase: PHASES.TASK_MANAGEMENT,
-        requires: ['sanitizeInput', 'showNotification'],
-        provides: ['TaskValidator', 'validateAndSanitizeTaskInput'],
-        api: 'task'
-    },
-
-    taskUtils: {
-        path: '../task/taskUtils.js',
-        phase: PHASES.TASK_MANAGEMENT,
-        requires: ['AppState', 'loadMiniCycleData', 'generateId'],
-        provides: ['TaskUtils', 'buildTaskContext', 'loadTaskContext', 'createOrUpdateTaskData'],
-        api: 'task',
-        after: ['taskValidation']
-    },
-
-    taskRenderer: {
-        path: '../task/taskRenderer.js',
-        phase: PHASES.TASK_MANAGEMENT,
-        requires: ['AppState', 'addTask', 'updateProgressBar'],
-        provides: ['TaskRenderer', 'renderTasks', 'refreshUIFromState'],
-        api: 'task',
-        after: ['taskUtils']
-    },
-
-    taskEvents: {
-        path: '../task/taskEvents.js',
-        phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState'],
-        provides: ['TaskEvents', 'initTaskEvents'],
-        api: 'task',
-        after: ['taskUtils']
-    },
+    // NOTE: taskValidation, taskUtils, taskRenderer, and taskEvents are
+    // loaded as sub-modules inside taskDOM.init() - do NOT list them here
+    // to avoid duplicate initialization and event listener conflicts.
 
     dragDropManager: {
         path: '../task/dragDropManager.js',
@@ -196,7 +174,8 @@ export const MODULE_MANIFESTS = {
         path: '../features/statsPanel.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['showNotification', 'AppState', 'appInit'],
-        provides: ['showStatsPanel', 'updateStatsPanel'],
+        provides: ['showStatsPanel', 'showTaskView', 'updateStatsPanel'],
+        provideInstance: 'statsPanelManager',
         api: 'ui'
     },
 
@@ -204,7 +183,13 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput'],
-        provides: ['createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState', 'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation'],
+        provides: [
+            'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
+            'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',
+            'validateAndSanitizeTaskInput', 'buildTaskContext', 'extractTaskDataFromDOM',
+            'renderTasks', 'refreshTaskListUI', 'createTaskButtonContainer', 'handleTaskButtonClick',
+            'setupRecurringButtonHandler', 'revealTaskButtons'
+        ],
         api: 'task',
         after: ['dragDropManager']
     },
@@ -213,7 +198,9 @@ export const MODULE_MANIFESTS = {
         path: '../ui/taskOptionsCustomizer.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['taskOptionsCustomizer'],
+        provides: [],
+        provideInstance: 'taskOptionsCustomizer',
+        api: 'ui',
         after: ['taskDOM']
     },
 
@@ -221,8 +208,9 @@ export const MODULE_MANIFESTS = {
         path: '../features/reminders.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['startReminders', 'stopReminders', 'updateReminderButtons'],
-        api: 'reminder',
+        provides: ['startReminders', 'stopReminders', 'updateReminderButtons', 'setupReminderButtonHandler', 'loadRemindersSettings'],
+        api: 'features',
+        provideInstance: 'reminderManager',
         after: ['taskDOM']
     },
 
@@ -233,7 +221,7 @@ export const MODULE_MANIFESTS = {
         path: '../recurring/recurringIntegration.js',
         phase: PHASES.RECURRING,
         requires: ['appInit', 'AppState', 'showNotification', 'FeatureFlags'],
-        provides: ['recurringPanel', 'recurringCore'],
+        provides: ['panel', 'core'],
         api: 'recurring',
         after: ['taskDOM', 'reminders']
     },
@@ -243,6 +231,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.RECURRING,
         requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['checkOverdueTasks', 'createDueDateInput'],
+        api: 'features',
         after: ['taskDOM']
     },
 
@@ -253,7 +242,7 @@ export const MODULE_MANIFESTS = {
         path: '../cycle/modeManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['initializeModeSelector', 'refreshTaskButtonsForModeChange'],
+        provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription'],
         api: 'cycle',
         after: ['recurringIntegration']
     },
@@ -261,7 +250,7 @@ export const MODULE_MANIFESTS = {
     cycleSwitcher: {
         path: '../cycle/cycleSwitcher.js',
         phase: PHASES.CYCLE,
-        requires: ['AppState', 'showNotification', 'showPromptModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle'
     },
@@ -269,7 +258,7 @@ export const MODULE_MANIFESTS = {
     cycleManager: {
         path: '../cycle/cycleManager.js',
         phase: PHASES.CYCLE,
-        requires: ['AppState', 'showNotification', 'showPromptModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle'],
         api: 'cycle',
         after: ['menuManager']  // Needs hideMainMenu from menuManager
@@ -282,7 +271,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction'],
         api: 'undo',
         after: ['taskDOM']
     },
@@ -300,46 +289,51 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['settingsManager'],
+        provides: [],
+        provideInstance: 'settingsManager',
+        api: 'ui',
         after: ['menuManager', 'themeManager']
     },
 
     titleManager: {
         path: '../ui/titleManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['GlobalUtils', 'AppState'],
-        provides: ['titleManager']
+        requires: ['appInit', 'GlobalUtils', 'AppState'],
+        provides: ['setupMiniCycleTitleListener', 'handleMiniCycleTitleBlur'],
+        api: 'ui'
     },
 
     completedTasksManager: {
         path: '../ui/completedTasksManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['AppState'],
-        provides: ['initCompletedTasksSection', 'organizeCompletedTasks'],
+        requires: ['appInit', 'AppState'],
+        provides: [],
+        provideInstance: 'completedTasksManager',
         api: 'ui'
     },
 
     cycleCompletion: {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount'],
-        api: 'cycle'
+        api: 'progress'
     },
 
     taskUI: {
         path: '../ui/taskUI.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['loadMiniCycleData'],
-        provides: ['refreshTaskListUI', 'showTaskOptions', 'checkCompleteAllButton'],
-        api: 'task'
+        requires: ['appInit', 'loadMiniCycleData'],
+        provides: ['refreshTaskListUI', 'showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
+        api: 'ui'
     },
 
     taskInteractions: {
         path: '../ui/taskInteractions.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['safeAddEventListener'],
-        provides: ['attachKeyboardTaskOptionToggle']
+        provides: ['attachKeyboardTaskOptionToggle'],
+        api: 'ui'
     },
 
     uiEffects: {
@@ -353,15 +347,18 @@ export const MODULE_MANIFESTS = {
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['AppState', 'loadMiniCycleData'],
-        provides: ['helpWindowManager']
+        requires: ['appInit', 'AppState', 'loadMiniCycleData'],
+        provides: [],
+        provideInstance: 'helpWindowManager',
+        api: 'ui'
     },
 
     taskCore: {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput'],
-        provides: ['addTask', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25'],
+        provides: ['addTask', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'deleteTaskFromCore', 'handleCompleteAllTasks'],
+        provideInstance: 'taskCore',
         api: 'task',
         after: ['taskDOM', 'cycleCompletion']
     },
@@ -380,6 +377,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['showNotification'],
         provides: ['pullToRefresh'],
+        api: 'ui',
         optional: true
     },
 
@@ -391,6 +389,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.TESTING,
         requires: [],
         provides: ['openStorageViewer', 'closeStorageViewer'],
+        api: 'testing',
         optional: true
     },
 
@@ -399,6 +398,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.TESTING,
         requires: ['AppState'],
         provides: ['BackupManager'],
+        api: 'storage',
         optional: true,
         singleton: true
     },
@@ -408,6 +408,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.TESTING,
         requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['pluginManager'],
+        api: 'plugins',
         optional: true
     }
 };

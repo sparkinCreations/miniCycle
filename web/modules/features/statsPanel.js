@@ -1362,7 +1362,72 @@ export class StatsPanelManager {
     }
 }
 
+// ============================================================================
+// MODULE INITIALIZATION (for moduleLoader)
+// ============================================================================
+
+let statsPanelManager = null;
+
+/**
+ * Initialize the stats panel manager (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {StatsPanelManager} The initialized instance
+ */
+export async function initStatsPanel(dependencies = {}) {
+    if (statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager already initialized');
+        return statsPanelManager;
+    }
+
+    // Set module-level dependencies first
+    setStatsPanelDependencies(dependencies);
+
+    // Create and initialize the manager
+    statsPanelManager = new StatsPanelManager(dependencies);
+
+    console.log('✅ StatsPanelManager initialized via initStatsPanel');
+    return statsPanelManager;
+}
+
+// ============================================================================
+// WRAPPER FUNCTIONS (for moduleLoader provides registration)
+// ============================================================================
+
+/**
+ * Show the stats panel
+ */
+export function showStatsPanel() {
+    if (!statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager not initialized');
+        return;
+    }
+    return statsPanelManager.showStatsPanel();
+}
+
+/**
+ * Show the task view
+ */
+export function showTaskView() {
+    if (!statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager not initialized');
+        return;
+    }
+    return statsPanelManager.showTaskView();
+}
+
+/**
+ * Update the stats panel
+ */
+export function updateStatsPanel() {
+    if (!statsPanelManager) {
+        console.warn('⚠️ StatsPanelManager not initialized');
+        return;
+    }
+    return statsPanelManager.updateStatsPanel();
+}
+
 // DI-pure module (no window.* fallbacks)
 console.log('📊 Stats Panel module loaded (DI-pure, no window.* exports)');
 
 export default StatsPanelManager;
+export { statsPanelManager };

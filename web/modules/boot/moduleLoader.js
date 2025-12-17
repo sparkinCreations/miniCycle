@@ -26,6 +26,9 @@
 
 import { MODULE_MANIFESTS, PHASES, getModulesByPhase, getLoadOrder } from './moduleManifests.js';
 
+// Re-export for consumers that import moduleLoader (avoids duplicate module loading)
+export { MODULE_MANIFESTS, PHASES, getLoadOrder };
+
 // ============================================================================
 // APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
 // ============================================================================
@@ -130,8 +133,17 @@ export async function initializeModule(name, mod, deps, coreResult) {
             moduleInstances.set(name, instance);
 
             // Register provides in deps container
+            // Pass both instance and raw module - instance is checked first, then module exports as fallback
             if (manifest.provides && instance) {
-                registerProvides(name, manifest, instance, deps);
+                registerProvides(name, manifest, instance, deps, mod);
+            }
+
+            // Register instance itself if provideInstance is specified
+            if (manifest.provideInstance && instance) {
+                const category = getDepsCategoryForModule(manifest);
+                if (deps[category]) {
+                    deps[category][manifest.provideInstance] = instance;
+                }
             }
 
             return instance;
@@ -142,6 +154,23 @@ export async function initializeModule(name, mod, deps, coreResult) {
         if (manifest.provides) {
             registerProvides(name, manifest, mod, deps);
         }
+
+        // Check for exported instances that have init() methods (e.g., onboardingManager)
+        // These are pre-created singletons that need initialization after dependencies are set
+        if (manifest.provides) {
+            for (const provided of manifest.provides) {
+                const exportedInstance = mod[provided];
+                if (exportedInstance && typeof exportedInstance.init === 'function' && !exportedInstance.initialized) {
+                    try {
+                        await exportedInstance.init();
+                        console.log(`✅ ${name}.${provided}.init() called`);
+                    } catch (initError) {
+                        console.warn(`⚠️ ${name}.${provided}.init() failed:`, initError.message);
+                    }
+                }
+            }
+        }
+
         return mod;
     } catch (error) {
         if (manifest.optional) {
@@ -189,6 +218,14 @@ export async function loadPhase(deps, coreResult, phase) {
  * @returns {Promise<Object>} All loaded modules and instances
  */
 export async function loadAllModules(deps, coreResult) {
+    const { appInit } = coreResult;
+
+    // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
+    if (appInit && !appInit.isCoreReady()) {
+        console.log('⏳ moduleLoader: Waiting for core systems...');
+        await appInit.waitForCore();
+    }
+
     const results = {
         modules: new Map(),
         instances: new Map(),
@@ -328,6 +365,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Core
         loadMiniCycleData: () => deps.core?.loadMiniCycleData?.(),
         autoSave: () => deps.core?.autoSave?.(),
+        updateCycleData: (...args) => deps.core?.updateCycleData?.(...args),
+        assignCycleVariables: () => deps.core?.assignCycleVariables?.(),
 
         // Utils
         showNotification: deps.utils?.showNotification,
@@ -348,6 +387,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
         querySelectorAll: (sel) => document.querySelectorAll(sel),
+        getTaskList: () => document.getElementById('taskList'),
+        getProgressBar: () => document.getElementById('progressBar'),
 
         // Safe storage
         safeLocalStorageGet: GlobalUtils?.safeLocalStorageGet,
@@ -360,12 +401,22 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // UI functions (from appContext or deps.ui) - wrapper functions for lazy resolution
         hideMainMenu: (...args) => (getHideMainMenu() || deps.ui?.hideMainMenu)?.(...args),
-        updateProgressBar: (...args) => deps.cycle?.updateProgressBar?.(...args),
-        checkCompleteAllButton: (...args) => deps.task?.checkCompleteAllButton?.(...args),
+        updateProgressBar: (...args) => deps.progress?.updateProgressBar?.(...args),
+        checkCompleteAllButton: (...args) => deps.ui?.checkCompleteAllButton?.(...args),
+
+        // Theme manager instance (from deps.features) - returns instance when called as function
+        themeManager: () => deps.features?.themeManager,
 
         // Theme functions (from themeManager in deps.features)
         setupDarkModeToggle: (...args) => deps.features?.setupDarkModeToggle?.(...args),
         setupQuickDarkToggle: (...args) => deps.features?.setupQuickDarkToggle?.(...args),
+        updateThemeColor: (...args) => deps.features?.updateThemeColor?.(...args),
+        unlockDarkOceanTheme: (...args) => deps.features?.unlockDarkOceanTheme?.(...args),
+        unlockGoldenGlowTheme: (...args) => deps.features?.unlockGoldenGlowTheme?.(...args),
+
+        // Games functions (from gamesManager instance in deps.ui)
+        unlockMiniGame: (...args) => deps.ui?.gamesManager?.unlockMiniGame?.(...args),
+        checkGamesUnlock: (...args) => deps.ui?.gamesManager?.checkGamesUnlock?.(...args),
 
         // Task functions (from task modules in deps.task) - lazy resolution for cross-phase deps
         validateAndSanitizeTaskInput: (...args) => deps.task?.validateAndSanitizeTaskInput?.(...args),
@@ -380,6 +431,25 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
         saveTaskToSchema25: (...args) => deps.task?.saveTaskToSchema25?.(...args),
 
+        // Task button container and click handler (from taskDOM)
+        createTaskButtonContainer: (...args) => deps.task?.createTaskButtonContainer?.(...args),
+        handleTaskButtonClick: (...args) => deps.task?.handleTaskButtonClick?.(...args),
+        setupRecurringButtonHandler: (...args) => deps.task?.setupRecurringButtonHandler?.(...args),
+        revealTaskButtons: (...args) => deps.task?.revealTaskButtons?.(...args),
+
+        // TaskCore instance (for editTask, deleteTask, toggleTaskPriority) - lazy proxy
+        taskCore: new Proxy({}, {
+            get(target, prop) {
+                return deps.task?.taskCore?.[prop];
+            }
+        }),
+
+        // Task list rendering (loads from AppState then renders)
+        renderTaskList: () => deps.task?.refreshTaskListUI?.(),
+
+        // Mode sync (from GlobalUtils)
+        syncAllTasksWithMode: (...args) => GlobalUtils?.syncAllTasksWithMode?.(...args),
+
         // Drag & drop functions (from deps.task)
         enableDragAndDropOnTask: (...args) => deps.task?.enableDragAndDropOnTask?.(...args),
         updateMoveArrowsVisibility: (...args) => deps.task?.updateMoveArrowsVisibility?.(...args),
@@ -392,30 +462,49 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         loadMiniCycle: (...args) => deps.cycle?.loadMiniCycle?.(...args),
         showCycleCreationModal: (...args) => deps.cycle?.showCycleCreationModal?.(...args),
         createNewMiniCycle: (...args) => deps.cycle?.createNewMiniCycle?.(...args),
-        checkMiniCycle: (...args) => deps.cycle?.checkMiniCycle?.(...args),
-        incrementCycleCount: (...args) => deps.cycle?.incrementCycleCount?.(...args),
+        checkMiniCycle: (...args) => deps.progress?.checkMiniCycle?.(...args),
+        incrementCycleCount: (...args) => deps.progress?.incrementCycleCount?.(...args),
 
         // UI functions (from deps.ui)
         refreshUIFromState: (...args) => deps.task?.refreshUIFromState?.(...args),
-        closeAllModals: (...args) => deps.ui?.closeAllModals?.(...args),
+        closeAllModals: (...args) => deps.ui?.modalManager?.closeAllModals?.(...args),
         updateMainMenuHeader: (...args) => deps.ui?.updateMainMenuHeader?.(...args),
-        organizeCompletedTasks: (...args) => deps.ui?.organizeCompletedTasks?.(...args),
+        organizeCompletedTasks: (...args) => deps.ui?.completedTasksManager?.organize?.(...args),
+        initCompletedTasksSection: (...args) => deps.ui?.completedTasksManager?.init?.(...args),
         updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
+        triggerLogoBackground: (...args) => deps.ui?.triggerLogoBackground?.(...args),
+        showTaskOptions: (...args) => deps.ui?.showTaskOptions?.(...args),
+        hideTaskOptions: (...args) => deps.ui?.hideTaskOptions?.(...args),
+        get TaskOptionsVisibilityController() { return deps.ui?.TaskOptionsVisibilityController; },
+        attachKeyboardTaskOptionToggle: (...args) => deps.ui?.attachKeyboardTaskOptionToggle?.(...args),
+        // taskOptionsCustomizer is an object - use Proxy for lazy resolution since it loads after taskDOM
+        taskOptionsCustomizer: new Proxy({}, {
+            get(target, prop) {
+                return deps.ui?.taskOptionsCustomizer?.[prop];
+            }
+        }),
 
-        // Undo/redo functions (from deps.ui)
+        // Undo/redo functions (api: 'undo' maps to deps.ui via apiToCategory)
         captureStateSnapshot: (...args) => deps.ui?.captureStateSnapshot?.(...args),
         performStateBasedUndo: (...args) => deps.ui?.performStateBasedUndo?.(...args),
         performStateBasedRedo: (...args) => deps.ui?.performStateBasedRedo?.(...args),
         enableUndoSystemOnFirstInteraction: (...args) => deps.ui?.enableUndoSystemOnFirstInteraction?.(...args),
+        updateUndoRedoButtons: (...args) => deps.ui?.updateUndoRedoButtons?.(...args),
 
         // Reminders (from deps.features)
         startReminders: (...args) => deps.features?.startReminders?.(...args),
         stopReminders: (...args) => deps.features?.stopReminders?.(...args),
         updateReminderButtons: (...args) => deps.features?.updateReminderButtons?.(...args),
+        setupReminderButtonHandler: (...args) => deps.features?.setupReminderButtonHandler?.(...args),
 
         // Due dates (from deps.features)
         checkOverdueTasks: (...args) => deps.features?.checkOverdueTasks?.(...args),
         remindOverdueTasks: (...args) => deps.features?.remindOverdueTasks?.(...args),
+        createDueDateInput: (...args) => deps.features?.createDueDateInput?.(...args),
+
+        // Recurring task activation/deactivation (from recurringCore via deps.recurring.core)
+        handleRecurringTaskActivation: (...args) => deps.recurring?.core?.handleRecurringTaskActivation?.(...args),
+        handleRecurringTaskDeactivation: (...args) => deps.recurring?.core?.handleRecurringTaskDeactivation?.(...args),
 
         // Recurring (from deps.recurring) - use Proxy for lazy evaluation
         // Proxy allows property access (e.g., recurringPanel.updateRecurringPanelButtonVisibility)
@@ -431,6 +520,19 @@ function buildModuleDependencies(manifest, deps, coreResult) {
             }
         }),
         updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.recurringPanel?.updateRecurringPanelButtonVisibility?.(...args),
+        catchUpMissedRecurringTasks: (...args) => deps.recurring?.core?.catchUpMissedRecurringTasks?.(...args),
+
+        // Mode manager (from deps.cycle)
+        refreshTaskButtonsForModeChange: (...args) => deps.cycle?.refreshTaskButtonsForModeChange?.(...args),
+        initializeModeSelector: (...args) => deps.cycle?.setupModeSelector?.(...args),
+        setupModeSelector: (...args) => deps.cycle?.setupModeSelector?.(...args),
+        updateCycleModeDescription: (...args) => deps.cycle?.updateCycleModeDescription?.(...args),
+
+        // Help window manager (from deps.ui) - returns instance when called as function
+        helpWindowManager: () => deps.ui?.helpWindowManager,
+
+        // Stats panel manager (from deps.ui) - returns instance when called as function
+        statsPanelManager: () => deps.ui?.statsPanelManager,
 
         // State access - returns AppState object (not the state data)
         getAppState: () => deps.core?.AppState
@@ -455,18 +557,26 @@ function buildModuleDependencies(manifest, deps, coreResult) {
  * Register a module's provided APIs in the deps container
  * @param {string} name - Module name
  * @param {Object} manifest - Module manifest
- * @param {Object} instance - Module instance
+ * @param {Object} instance - Module instance (from init function)
  * @param {Object} deps - Dependencies container
+ * @param {Object} mod - Raw module exports (optional fallback for wrapper functions)
  */
-function registerProvides(name, manifest, instance, deps) {
+function registerProvides(name, manifest, instance, deps, mod = null) {
     if (!manifest.provides) return;
 
     // Determine which deps category to use
     const category = getDepsCategoryForModule(manifest);
 
     for (const provided of manifest.provides) {
-        // Look for the provided function/property
-        const value = findProvidedValue(instance, provided);
+        // Look for the provided function/property on instance first
+        let value = findProvidedValue(instance, provided);
+
+        // Fallback to raw module exports if not found on instance
+        // This handles cases where init returns an instance but wrapper functions are module-level exports
+        if (value === undefined && mod) {
+            value = findProvidedValue(mod, provided);
+        }
+
         if (value !== undefined) {
             // Add to appropriate deps category
             if (deps[category]) {
@@ -488,9 +598,13 @@ function getDepsCategoryForModule(manifest) {
         cycle: 'cycle',
         ui: 'ui',
         undo: 'ui',
-        reminder: 'features',
+        features: 'features',
         recurring: 'recurring',
-        utils: 'utils'
+        utils: 'utils',
+        testing: 'testing',
+        storage: 'storage',
+        plugins: 'plugins',
+        progress: 'progress'
     };
 
     return apiToCategory[manifest.api] || 'features';
@@ -554,7 +668,8 @@ function buildGroupedApis(deps) {
             rename: deps.cycle?.renameMiniCycle,
             delete: deps.cycle?.deleteMiniCycle,
             check: deps.progress?.checkMiniCycle,
-            initializeModeSelector: deps.cycle?.initializeModeSelector
+            initializeModeSelector: deps.cycle?.setupModeSelector,
+            setupModeSelector: deps.cycle?.setupModeSelector
         },
         ui: {
             showNotification: deps.utils?.showNotification,
@@ -562,7 +677,7 @@ function buildGroupedApis(deps) {
             showPromptModal: deps.utils?.showPromptModal,
             hideMainMenu: deps.ui?.hideMainMenu,
             updateMainMenuHeader: deps.ui?.updateMainMenuHeader,
-            closeAllModals: deps.ui?.closeAllModals,
+            closeAllModals: (...args) => deps.ui?.modalManager?.closeAllModals?.(...args),
             resetNotificationPosition: deps.utils?.resetNotificationPosition
         },
         undo: {

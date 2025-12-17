@@ -345,7 +345,8 @@ export class TaskDOMManager {
                     autoSave: this.deps.autoSave,
                     getElementById: this.deps.getElementById,
                     querySelectorAll: this.deps.querySelectorAll,
-                    safeAddEventListener: this.deps.safeAddEventListener
+                    safeAddEventListener: this.deps.safeAddEventListener,
+                    taskCore: this.deps.taskCore  // For edit, delete, priority operations
                 });
 
                 // ✅ CRITICAL: Initialize event delegation for task clicks

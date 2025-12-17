@@ -73,7 +73,9 @@ export class TaskEvents {
             // DOM helpers with defaults
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener
+            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
+            // Core modules (injected from TaskDOMManager)
+            taskCore: dependencies.taskCore
         };
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
@@ -91,9 +93,9 @@ export class TaskEvents {
      */
     get deps() {
         return {
-            // Core modules (read from _deps at access time, not construction time)
+            // Core modules (prefer constructor-injected, fallback to module-level _deps)
             AppState: _deps.AppState,
-            taskCore: _deps.taskCore,
+            taskCore: this._constructorDeps.taskCore || _deps.taskCore,
 
             // UI update functions
             showNotification: _deps.showNotification || this.fallbackNotification,

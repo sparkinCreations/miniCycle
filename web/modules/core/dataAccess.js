@@ -12,18 +12,18 @@
  * - updateCycleData(): Update specific cycle data
  */
 
-import { createInitialSchema25Data } from './migrationFacade.js';
-
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// DYNAMIC IMPORTS (versioned for cache-busting, avoids duplicate module loading)
 // ============================================================================
 let _appContextModule = null;
+let _migrationFacadeModule = null;
 let getAppState = () => null;
 let getExtractTaskDataFromDOM = () => null;
+let createInitialSchema25Data = () => { console.warn('⚠️ migrationFacade not loaded yet'); };
 
 async function loadAppContext() {
     if (!_appContextModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
         _appContextModule = await import(`./appContext.js?v=${version}`);
         getAppState = _appContextModule.getAppState;
         getExtractTaskDataFromDOM = _appContextModule.getExtractTaskDataFromDOM;
@@ -35,6 +35,19 @@ async function loadAppContext() {
 // Load appContext early (non-blocking) - must complete before functions are called
 // This is called from coreBoot.js initDataAccess() which awaits this module load
 loadAppContext().catch(e => console.warn('⚠️ DataAccess: Failed to load appContext:', e));
+
+async function loadMigrationFacade() {
+    if (!_migrationFacadeModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
+        _migrationFacadeModule = await import(`./migrationFacade.js?v=${version}`);
+        createInitialSchema25Data = _migrationFacadeModule.createInitialSchema25Data;
+        console.log('✅ DataAccess: migrationFacade loaded with version', version);
+    }
+    return _migrationFacadeModule;
+}
+
+// Load migrationFacade early (non-blocking)
+loadMigrationFacade().catch(e => console.warn('⚠️ DataAccess: Failed to load migrationFacade:', e));
 
 // ============================================================================
 // DATA ACCESS FUNCTIONS
@@ -189,13 +202,14 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
  * @param {string} cycleId - ID of the cycle to update
  * @param {Function} updateFn - Function that receives and modifies the cycle object
  * @param {boolean} immediate - If true, save immediately without debouncing
+ * @returns {Promise<boolean>} True if update succeeded, false otherwise
  */
 export async function updateCycleData(cycleId, updateFn, immediate = true) {
     const AppState = getAppState();
 
     if (!AppState?.isReady?.()) {
         console.warn('⚠️ updateCycleData called before AppState ready');
-        return;
+        return false;
     }
 
     try {
@@ -205,8 +219,10 @@ export async function updateCycleData(cycleId, updateFn, immediate = true) {
                 state.metadata.lastModified = new Date().toISOString();
             }
         }, immediate);
+        return true;
     } catch (error) {
         console.error('❌ updateCycleData failed:', error);
+        return false;
     }
 }
 

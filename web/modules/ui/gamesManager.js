@@ -255,11 +255,25 @@ class GamesManager {
 // Create single instance
 const gamesManager = new GamesManager();
 
-// NOTE: Do NOT auto-init here. The main script must call init() AFTER setting dependencies.
-// gamesManager.init(); // ❌ Removed - causes race condition with DI
+/**
+ * Initialize GamesManager (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {GamesManager} The singleton instance
+ */
+export async function initGamesManager(dependencies = {}) {
+    // Set dependencies
+    setGamesManagerDependencies(dependencies);
+
+    // Initialize the manager
+    await gamesManager.init();
+
+    console.log('✅ GamesManager initialized via initGamesManager');
+    return gamesManager;
+}
 
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('🎮 Games Manager module loaded (DI-pure, awaiting init)');
 
+// Note: initGamesManager is already exported via 'export async function' declaration
 export default GamesManager;
 export { gamesManager };

@@ -12,8 +12,24 @@
  * @module modules/ui/taskInteractions
  */
 
-import { TaskOptionsVisibilityController } from './taskUI.js';
 import { createDIModule, optional } from '../core/diBase.js';
+
+// ============================================================================
+// TASKUI DYNAMIC IMPORT (avoids duplicate loading with versioned imports)
+// ============================================================================
+let TaskOptionsVisibilityController = null;
+
+async function loadTaskUI() {
+    if (!TaskOptionsVisibilityController) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
+        const taskUIModule = await import(`./taskUI.js?v=${version}`);
+        TaskOptionsVisibilityController = taskUIModule.TaskOptionsVisibilityController;
+    }
+    return TaskOptionsVisibilityController;
+}
+
+// Load early (non-blocking)
+loadTaskUI().catch(e => console.warn('⚠️ taskInteractions: Failed to load taskUI:', e));
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -73,7 +89,9 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
         }
 
         // Use centralized controller (handles mode checking automatically)
-        TaskOptionsVisibilityController.show(taskItem, 'focusin');
+        if (TaskOptionsVisibilityController) {
+            TaskOptionsVisibilityController.show(taskItem, 'focusin');
+        }
     });
 
     /**
@@ -83,7 +101,9 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
         if (taskItem.contains(e.relatedTarget)) return;
 
         // Use centralized controller (handles mode checking automatically)
-        TaskOptionsVisibilityController.hide(taskItem, 'focusout');
+        if (TaskOptionsVisibilityController) {
+            TaskOptionsVisibilityController.hide(taskItem, 'focusout');
+        }
     });
 }
 

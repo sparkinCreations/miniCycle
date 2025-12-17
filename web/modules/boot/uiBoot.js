@@ -29,18 +29,43 @@
  * ============================================================================
  */
 
-// Import appContext getters for DI access (grouped APIs preferred)
-import {
-  getAppState,
-  getShowNotification,
-  getStateApi,
-  getTaskApi,
-  getUndoApi,
-  getUiApi,
-  getCycleApi,
-  getReminderApi,
-  getDeviceDetectionManager
-} from '../core/appContext.js';
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (avoids duplicate loading with versioned imports)
+// ============================================================================
+// NOTE: We use dynamic import to ensure appContext.js is loaded with versioning,
+// matching how other modules load it. Static imports would cause duplicate loading.
+let _appContextModule = null;
+let getAppState = () => { console.warn('⚠️ appContext not loaded yet'); return null; };
+let getShowNotification = () => null;
+let getStateApi = () => null;
+let getTaskApi = () => null;
+let getUndoApi = () => null;
+let getUiApi = () => null;
+let getCycleApi = () => null;
+let getReminderApi = () => null;
+let getDeviceDetectionManager = () => null;
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        // Update the module-level getters
+        getAppState = _appContextModule.getAppState;
+        getShowNotification = _appContextModule.getShowNotification;
+        getStateApi = _appContextModule.getStateApi;
+        getTaskApi = _appContextModule.getTaskApi;
+        getUndoApi = _appContextModule.getUndoApi;
+        getUiApi = _appContextModule.getUiApi;
+        getCycleApi = _appContextModule.getCycleApi;
+        getReminderApi = _appContextModule.getReminderApi;
+        getDeviceDetectionManager = _appContextModule.getDeviceDetectionManager;
+        console.log('✅ uiBoot: appContext loaded dynamically');
+    }
+    return _appContextModule;
+}
+
+// Load appContext early (non-blocking)
+loadAppContext().catch(e => console.warn('⚠️ uiBoot: Failed to load appContext:', e));
 
 // ============================================================================
 // GLOBAL EVENT LISTENERS
@@ -209,8 +234,9 @@ function handleGlobalKeydown(e) {
 function handleGlobalClickForTaskButtons(event) {
   const isTaskOrOptionsClick = event.target.closest('.task, .task-options');
   const isModalClick = event.target.closest('.modal, .mini-modal-overlay, .settings-modal, .notification');
+  const isUndoRedoClick = event.target.closest('#undo-btn, #redo-btn, .undo-btn, .redo-btn');
 
-  if (!isTaskOrOptionsClick && !isModalClick) {
+  if (!isTaskOrOptionsClick && !isModalClick && !isUndoRedoClick) {
     console.log('✅ Clicking outside - closing task buttons');
 
     const threeDotsEnabled = document.body.classList.contains('show-three-dots-enabled');
@@ -640,6 +666,9 @@ export async function finalizeUI(options) {
  * @param {Object} options.appContextMod - appContext module reference
  */
 export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
+  // Ensure appContext is loaded before using getters
+  await loadAppContext();
+
   // Register isOverlayActive to deps
   deps.ui.isOverlayActive = isOverlayActive;
 

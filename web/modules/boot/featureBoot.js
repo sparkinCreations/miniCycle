@@ -1711,7 +1711,8 @@ export function createDepsContainer() {
     recurring: {},
     progress: {},
     storage: {},
-    testing: {}
+    testing: {},
+    plugins: {}
   };
 }
 
@@ -1734,10 +1735,9 @@ async function bootFeaturesWithLoader(deps, coreResult) {
 
   console.log('🧪 bootFeaturesWithLoader: Starting moduleLoader-based boot...');
 
-  // Import moduleLoader and manifests
+  // Import moduleLoader (which re-exports moduleManifests to avoid duplicate loading)
   // ✅ Use version param for cache-busting (like appInit pattern)
-  const { loadAllModules, loadPhase } = await import(withV('./moduleLoader.js'));
-  const { PHASES, MODULE_MANIFESTS, getLoadOrder } = await import(withV('./moduleManifests.js'));
+  const { loadAllModules, loadPhase, PHASES, MODULE_MANIFESTS, getLoadOrder } = await import(withV('./moduleLoader.js'));
   const appContextMod = await import(withV('../core/appContext.js'));
 
   // Container for initialized modules
@@ -1800,7 +1800,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   // Task API
   const taskApiObj = {
     add: deps.task?.addTask,
-    delete: deps.task?.deleteTask,
+    delete: deps.task?.deleteTaskFromCore,
     handleCompletionChange: deps.task?.handleTaskCompletionChange,
     handleCompleteAll: deps.task?.handleCompleteAllTasks,
     loadContext: deps.task?.loadTaskContext,
@@ -1867,7 +1867,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   const recurringApiObj = {
     panel: deps.recurring?.panel,
     core: deps.recurring?.core,
-    openSettingsForTask: deps.recurring?.openSettingsPanel
+    openSettingsForTask: (taskId) => deps.recurring?.panel?.openRecurringSettingsPanelForTask?.(taskId)
   };
   appContextMod.setContextValue('recurringApi', recurringApiObj);
   appContextMod.registerApi('recurring', recurringApiObj);
@@ -1886,10 +1886,46 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   appContextMod.registerApi('utils', utilsApiObj);
 
   // Register legacy context values needed by appInit and other modules
-  // onboardingManager is in deps.features (no api field = features)
-  appContextMod.setContextValue('onboardingManager', deps.features?.onboardingManager);
+  // onboardingManager has api: 'ui' so it's in deps.ui
+  appContextMod.setContextValue('onboardingManager', deps.ui?.onboardingManager);
   appContextMod.setContextValue('showCycleCreationModal', deps.cycle?.showCycleCreationModal);
   appContextMod.setContextValue('hideMainMenu', deps.ui?.hideMainMenu);
+
+  // Critical: extractTaskDataFromDOM is used by dataAccess.js autoSave
+  // Without this, autoSave defaults to [] and wipes all tasks
+  appContextMod.setContextValue('extractTaskDataFromDOM', deps.task?.extractTaskDataFromDOM);
+
+  // Task operations used by menu buttons
+  appContextMod.setContextValue('resetTasks', deps.task?.resetTasks);
+  appContextMod.setContextValue('handleCompleteAllTasks', deps.task?.handleCompleteAllTasks);
+  appContextMod.setContextValue('handleTaskCompletionChange', deps.task?.handleTaskCompletionChange);
+  appContextMod.setContextValue('addTask', deps.task?.addTask);
+  appContextMod.setContextValue('updateMoveArrowsVisibility', deps.task?.updateMoveArrowsVisibility);
+
+  // UI operations used by uiBoot
+  // initCompletedTasksSection is a wrapper around completedTasksManager.init()
+  appContextMod.setContextValue('initCompletedTasksSection', () => deps.ui?.completedTasksManager?.init?.());
+  appContextMod.setContextValue('initializeModeSelector', deps.cycle?.setupModeSelector);
+
+  // Recurring panel
+  appContextMod.setContextValue('recurringPanel', deps.recurring?.panel);
+
+  // Device detection
+  appContextMod.setContextValue('deviceDetectionManager', deps.utils?.deviceDetectionManager);
+
+  // Utility functions that may be accessed via legacy getters
+  appContextMod.setContextValue('showNotification', deps.utils?.showNotification);
+  appContextMod.setContextValue('showConfirmationModal', deps.utils?.showConfirmationModal);
+  appContextMod.setContextValue('showPromptModal', deps.utils?.showPromptModal);
+  appContextMod.setContextValue('sanitizeInput', deps.utils?.sanitizeInput);
+  appContextMod.setContextValue('generateId', deps.utils?.generateId);
+
+  // Undo/redo functions (api: 'undo' maps to deps.ui via apiToCategory)
+  appContextMod.setContextValue('performStateBasedUndo', deps.ui?.performStateBasedUndo);
+  appContextMod.setContextValue('performStateBasedRedo', deps.ui?.performStateBasedRedo);
+  appContextMod.setContextValue('updateUndoRedoButtons', deps.ui?.updateUndoRedoButtons);
+  appContextMod.setContextValue('captureStateSnapshot', deps.ui?.captureStateSnapshot);
+  appContextMod.setContextValue('enableUndoSystemOnFirstInteraction', deps.ui?.enableUndoSystemOnFirstInteraction);
 
   console.log('✅ Grouped APIs registered via moduleLoader');
 }
