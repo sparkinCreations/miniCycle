@@ -515,4 +515,7 @@ export function createLazyDeps() {
     };
 }
 
-console.log('📦 appContext module loaded (v2.0 - grouped APIs)');
+// Version constant for cache validation (like APPINIT_VERSION pattern)
+export const APPCONTEXT_VERSION = '1.506';
+
+console.log(`📦 appContext module loaded (v${APPCONTEXT_VERSION} - grouped APIs)`);

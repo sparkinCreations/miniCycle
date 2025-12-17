@@ -7,7 +7,22 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { ui } from '../core/appContext.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let ui = () => null; // Fallback until loaded
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        ui = _appContextModule.ui;
+        console.log('✅ SettingsManager: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -1348,9 +1363,13 @@ export class SettingsManager {
 let settingsManager = null;
 
 // Export initialization function
-export function initSettingsManager(dependencies) {
+export async function initSettingsManager(dependencies) {
+    // Load appContext with version (cache-busting)
+    await loadAppContext();
+
     settingsManager = new SettingsManager(dependencies);
-    return settingsManager.init().then(() => settingsManager);
+    await settingsManager.init();
+    return settingsManager;
 }
 
 // DI-pure module (no window.* fallbacks)

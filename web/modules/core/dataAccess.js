@@ -12,8 +12,29 @@
  * - updateCycleData(): Update specific cycle data
  */
 
-import { getAppState, getExtractTaskDataFromDOM } from './appContext.js';
 import { createInitialSchema25Data } from './migrationFacade.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let getAppState = () => null;
+let getExtractTaskDataFromDOM = () => null;
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`./appContext.js?v=${version}`);
+        getAppState = _appContextModule.getAppState;
+        getExtractTaskDataFromDOM = _appContextModule.getExtractTaskDataFromDOM;
+        console.log('✅ DataAccess: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
+
+// Load appContext early (non-blocking) - must complete before functions are called
+// This is called from coreBoot.js initDataAccess() which awaits this module load
+loadAppContext().catch(e => console.warn('⚠️ DataAccess: Failed to load appContext:', e));
 
 // ============================================================================
 // DATA ACCESS FUNCTIONS
