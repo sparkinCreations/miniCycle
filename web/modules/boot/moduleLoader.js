@@ -25,7 +25,7 @@
  */
 
 import { MODULE_MANIFESTS, PHASES, getModulesByPhase, getLoadOrder } from './moduleManifests.js';
-import { registerApi } from '../core/appContext.js';
+import { registerApi, getCompleteInitialSetup, getHideMainMenu } from '../core/appContext.js';
 
 // ============================================================================
 // MODULE LOADING STATE
@@ -259,7 +259,23 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     result.AppGlobalState = AppGlobalState;
     result.FeatureFlags = FeatureFlags;
     result.AppMeta = deps.core?.AppMeta;
-    result.AppState = deps.core?.AppState;
+    // AppState: callable Proxy that works both as function and object
+    // - this.deps.AppState() returns the AppState object (for settingsManager, etc.)
+    // - this.deps.AppState?.isReady?.() works via property access (for taskCore, etc.)
+    const appStateGetter = () => deps.core?.AppState;
+    result.AppState = new Proxy(appStateGetter, {
+        get(target, prop) {
+            if (prop === 'apply' || prop === 'call' || prop === 'bind') {
+                return target[prop].bind(target);
+            }
+            // Proxy property access to the actual AppState
+            return deps.core?.AppState?.[prop];
+        },
+        apply(target, thisArg, args) {
+            // Allow function call: this.deps.AppState()
+            return target();
+        }
+    });
 
     // Map common dependencies from deps container
     const depMappings = {
@@ -279,6 +295,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         safeAddEventListenerById: GlobalUtils?.safeAddEventListenerById,
         isTouchDevice: deps.utils?.isTouchDevice,
 
+        // Constants
+        DEFAULT_TASK_OPTION_BUTTONS: deps.utils?.DEFAULT_TASK_OPTION_BUTTONS,
+
         // DOM helpers
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
@@ -288,7 +307,84 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         safeLocalStorageGet: GlobalUtils?.safeLocalStorageGet,
         safeLocalStorageSet: GlobalUtils?.safeLocalStorageSet,
         safeJSONParse: GlobalUtils?.safeJSONParse,
-        safeJSONStringify: GlobalUtils?.safeJSONStringify
+        safeJSONStringify: GlobalUtils?.safeJSONStringify,
+
+        // From appContext (registered by coreBoot/featureBoot) - wrapper functions for lazy resolution
+        completeInitialSetup: (...args) => getCompleteInitialSetup()?.(...args),
+
+        // UI functions (from appContext or deps.ui) - wrapper functions for lazy resolution
+        hideMainMenu: (...args) => (getHideMainMenu() || deps.ui?.hideMainMenu)?.(...args),
+        updateProgressBar: (...args) => deps.cycle?.updateProgressBar?.(...args),
+        checkCompleteAllButton: (...args) => deps.task?.checkCompleteAllButton?.(...args),
+
+        // Theme functions (from themeManager in deps.features)
+        setupDarkModeToggle: (...args) => deps.features?.setupDarkModeToggle?.(...args),
+        setupQuickDarkToggle: (...args) => deps.features?.setupQuickDarkToggle?.(...args),
+
+        // Task functions (from task modules in deps.task) - lazy resolution for cross-phase deps
+        validateAndSanitizeTaskInput: (...args) => deps.task?.validateAndSanitizeTaskInput?.(...args),
+        loadTaskContext: (...args) => deps.task?.loadTaskContext?.(...args),
+        createOrUpdateTaskData: (...args) => deps.task?.createOrUpdateTaskData?.(...args),
+        createTaskDOMElements: (...args) => deps.task?.createTaskDOMElements?.(...args),
+        setupTaskInteractions: (...args) => deps.task?.setupTaskInteractions?.(...args),
+        finalizeTaskCreation: (...args) => deps.task?.finalizeTaskCreation?.(...args),
+        refreshTaskListUI: (...args) => deps.task?.refreshTaskListUI?.(...args),
+        addTask: (...args) => deps.task?.addTask?.(...args),
+        resetTasks: (...args) => deps.task?.resetTasks?.(...args),
+        handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
+
+        // Drag & drop functions (from deps.task)
+        enableDragAndDropOnTask: (...args) => deps.task?.enableDragAndDropOnTask?.(...args),
+        updateMoveArrowsVisibility: (...args) => deps.task?.updateMoveArrowsVisibility?.(...args),
+        updateArrowsInDOM: (...args) => deps.task?.updateArrowsInDOM?.(...args),
+
+        // Cycle functions (from cycle modules in deps.cycle) - lazy resolution
+        switchMiniCycle: (...args) => deps.cycle?.switchMiniCycle?.(...args),
+        renameMiniCycle: (...args) => deps.cycle?.renameMiniCycle?.(...args),
+        deleteMiniCycle: (...args) => deps.cycle?.deleteMiniCycle?.(...args),
+        loadMiniCycle: (...args) => deps.cycle?.loadMiniCycle?.(...args),
+        showCycleCreationModal: (...args) => deps.cycle?.showCycleCreationModal?.(...args),
+        checkMiniCycle: (...args) => deps.cycle?.checkMiniCycle?.(...args),
+        incrementCycleCount: (...args) => deps.cycle?.incrementCycleCount?.(...args),
+
+        // UI functions (from deps.ui)
+        refreshUIFromState: (...args) => deps.task?.refreshUIFromState?.(...args),
+        closeAllModals: (...args) => deps.ui?.closeAllModals?.(...args),
+        updateMainMenuHeader: (...args) => deps.ui?.updateMainMenuHeader?.(...args),
+        organizeCompletedTasks: (...args) => deps.ui?.organizeCompletedTasks?.(...args),
+        updateStatsPanel: (...args) => deps.ui?.updateStatsPanel?.(...args),
+
+        // Undo/redo functions (from deps.ui)
+        captureStateSnapshot: (...args) => deps.ui?.captureStateSnapshot?.(...args),
+        performStateBasedUndo: (...args) => deps.ui?.performStateBasedUndo?.(...args),
+        performStateBasedRedo: (...args) => deps.ui?.performStateBasedRedo?.(...args),
+        enableUndoSystemOnFirstInteraction: (...args) => deps.ui?.enableUndoSystemOnFirstInteraction?.(...args),
+
+        // Reminders (from deps.features)
+        startReminders: (...args) => deps.features?.startReminders?.(...args),
+        stopReminders: (...args) => deps.features?.stopReminders?.(...args),
+        updateReminderButtons: (...args) => deps.features?.updateReminderButtons?.(...args),
+
+        // Due dates (from deps.features)
+        checkOverdueTasks: (...args) => deps.features?.checkOverdueTasks?.(...args),
+
+        // Recurring (from deps.recurring) - use Proxy for lazy evaluation
+        // Proxy allows property access (e.g., recurringPanel.updateRecurringPanelButtonVisibility)
+        // to be resolved lazily after the module loads
+        recurringPanel: new Proxy({}, {
+            get(target, prop) {
+                return deps.recurring?.recurringPanel?.[prop];
+            }
+        }),
+        recurringCore: new Proxy({}, {
+            get(target, prop) {
+                return deps.recurring?.recurringCore?.[prop];
+            }
+        }),
+        updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.recurringPanel?.updateRecurringPanelButtonVisibility?.(...args),
+
+        // State access - returns AppState object (not the state data)
+        getAppState: () => deps.core?.AppState
     };
 
     // Add required dependencies
@@ -358,14 +454,15 @@ function getDepsCategoryForModule(manifest) {
  * @returns {*}
  */
 function findProvidedValue(instance, name) {
-    // Direct property
-    if (instance[name] !== undefined) {
-        return instance[name];
-    }
-
-    // Method on instance
+    // Method on instance - bind to preserve 'this' context
+    // IMPORTANT: Check function FIRST before general property check
     if (typeof instance[name] === 'function') {
         return instance[name].bind(instance);
+    }
+
+    // Direct property (non-function)
+    if (instance[name] !== undefined) {
+        return instance[name];
     }
 
     // Getter

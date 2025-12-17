@@ -21,9 +21,9 @@
  * - uiBoot.js handles all UI setup via initUIBoot()
  *
  * FEATURE FLAG: USE_MODULE_LOADER
- * - false (default): Use legacy manual loading (current behavior)
- * - true: Use moduleLoader.js with moduleManifests.js
- * - Set via localStorage: localStorage.setItem('miniCycle_useModuleLoader', 'true')
+ * - true (default): Use moduleLoader.js with moduleManifests.js
+ * - false: Use legacy manual loading (fallback)
+ * - To disable: localStorage.setItem('miniCycle_useModuleLoader', 'false')
  *
  * IMPORT RULES:
  * - This file imports from coreBoot.js
@@ -36,13 +36,14 @@
 // ============================================================================
 // FEATURE FLAG: Module Loader Rollout
 // ============================================================================
-// Set to true to use the new moduleLoader.js instead of manual loading
-// Can also be enabled via: localStorage.setItem('miniCycle_useModuleLoader', 'true')
+// moduleLoader is now enabled by default (Dec 2025)
+// To disable: localStorage.setItem('miniCycle_useModuleLoader', 'false')
 const USE_MODULE_LOADER = (() => {
   try {
-    return localStorage.getItem('miniCycle_useModuleLoader') === 'true';
+    // Default to true, allow opt-out via localStorage
+    return localStorage.getItem('miniCycle_useModuleLoader') !== 'false';
   } catch {
-    return false;
+    return true;
   }
 })();
 
@@ -1771,15 +1772,7 @@ async function bootFeaturesWithLoader(deps, coreResult) {
     return features;
 
   } catch (error) {
-    console.error('❌ moduleLoader boot failed, falling back to legacy:', error);
-
-    // Fall back to legacy loading
-    console.log('⚠️ Falling back to legacy boot...');
-
-    // Re-call bootFeatures but bypass the feature flag check
-    // We need to temporarily disable the flag
-    const savedFlag = USE_MODULE_LOADER;
-    // Can't actually disable it, so we'll just throw and let the error propagate
+    console.error('❌ moduleLoader boot failed:', error);
     throw error;
   }
 }
