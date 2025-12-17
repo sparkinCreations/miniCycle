@@ -574,6 +574,18 @@ if [ -f "$APPINIT_FILE" ]; then
 fi
 
 # ============================================
+# UPDATE: modules/core/appContext.js (APPCONTEXT_VERSION for cache debugging)
+# ============================================
+
+APPCONTEXT_FILE="modules/core/appContext.js"
+if [ -f "$APPCONTEXT_FILE" ]; then
+    backup_file "$APPCONTEXT_FILE"
+    # Update APPCONTEXT_VERSION constant (helps identify stale cached versions)
+    "${SED_INPLACE[@]}" "s/APPCONTEXT_VERSION = '[0-9.]*'/APPCONTEXT_VERSION = '$NEW_VERSION'/g" "$APPCONTEXT_FILE"
+    echo "✅ Updated $APPCONTEXT_FILE APPCONTEXT_VERSION"
+fi
+
+# ============================================
 # UPDATE: manifest.json
 # ============================================
 

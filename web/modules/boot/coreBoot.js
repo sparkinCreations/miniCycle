@@ -211,7 +211,8 @@ export async function initCoreBoot(deps) {
   // ========== Initialize appContext early ==========
   // This allows modules loaded between initCoreBoot and initAppState
   // to use appContext getters (e.g., getGlobalUtils())
-  const appContextMod = await import('../core/appContext.js');
+  // ✅ Use version param for cache-busting (like appInit pattern)
+  const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
   appContextMod.initAppContext({
     appInit,
     AppGlobalState,
@@ -258,7 +259,8 @@ export async function initAppState(deps, showNotification) {
   const { appInit, migrationMod, setAppInitDependencies, withV } = deps.core;
 
   // Import appContext early for use in deferred dependency getters
-  const appContextMod = await import('../core/appContext.js');
+  // ✅ Use version param for cache-busting (like appInit pattern)
+  const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
 
   // Wire appInit setup dependencies
   // Note: These are GETTER FUNCTIONS that resolve at call time (deferred DI)
@@ -537,7 +539,8 @@ async function runFallbackInitialSetup(deps) {
     const { cycles, activeCycle } = schemaData;
 
     // Use appContext instead of window.* for app functions
-    const appContextMod = await import('../core/appContext.js');
+    // ✅ Use version param for cache-busting (like appInit pattern)
+    const appContextMod = await import(`../core/appContext.js?v=${APP_VERSION}`);
 
     if (!activeCycle || !cycles?.[activeCycle]) {
       console.log('🆕 No active cycle - showing cycle creation modal...');
