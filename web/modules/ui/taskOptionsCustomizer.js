@@ -15,7 +15,22 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { ui } from '../core/appContext.js';
+
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// ============================================================================
+let _appContextModule = null;
+let ui = () => null; // Fallback until loaded
+
+async function loadAppContext() {
+    if (!_appContextModule) {
+        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
+        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        ui = _appContextModule.ui;
+        console.log('✅ TaskOptionsCustomizer: appContext loaded with version', version);
+    }
+    return _appContextModule;
+}
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -727,11 +742,14 @@ let taskOptionsCustomizer = null;
  * @param {Object} dependencies - Dependency injection object
  * @returns {TaskOptionsCustomizer} The initialized instance
  */
-export function initTaskOptionsCustomizer(dependencies = {}) {
+export async function initTaskOptionsCustomizer(dependencies = {}) {
     if (taskOptionsCustomizer) {
         console.warn('⚠️ TaskOptionsCustomizer already initialized');
         return taskOptionsCustomizer;
     }
+
+    // Load appContext with version (cache-busting)
+    await loadAppContext();
 
     taskOptionsCustomizer = new TaskOptionsCustomizer(dependencies);
 
