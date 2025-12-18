@@ -356,11 +356,11 @@ export const MODULE_MANIFESTS = {
     taskCore: {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput'],
+        requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
         provides: ['addTask', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'deleteTaskFromCore', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
-        after: ['taskDOM', 'cycleCompletion']
+        after: ['taskDOM', 'cycleCompletion', 'recurringIntegration']
     },
 
     cycleLoader: {
