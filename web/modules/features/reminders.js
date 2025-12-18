@@ -134,6 +134,7 @@ export class MiniCycleReminders {
             this.setupReminderToggle();
             this.setupReminderInputListeners();
             this.setupModalCloseListeners();
+            this.wireOpenRemindersModalListener();
 
             // ✅ Add hook to update reminder buttons after app is fully ready (DI-pure)
             if (appInitModule?.addHook) {

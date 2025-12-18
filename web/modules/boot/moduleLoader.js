@@ -413,6 +413,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         updateThemeColor: (...args) => deps.features?.updateThemeColor?.(...args),
         unlockDarkOceanTheme: (...args) => deps.features?.unlockDarkOceanTheme?.(...args),
         unlockGoldenGlowTheme: (...args) => deps.features?.unlockGoldenGlowTheme?.(...args),
+        initializeThemesPanel: (...args) => deps.features?.initializeThemesPanel?.(...args),
+        refreshThemeToggles: (...args) => deps.features?.refreshThemeToggles?.(...args),
+        setupThemesPanel: (...args) => deps.features?.setupThemesPanel?.(...args),
 
         // Games functions (from gamesManager instance in deps.ui)
         unlockMiniGame: (...args) => deps.ui?.gamesManager?.unlockMiniGame?.(...args),
@@ -464,6 +467,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         createNewMiniCycle: (...args) => deps.cycle?.createNewMiniCycle?.(...args),
         checkMiniCycle: (...args) => deps.progress?.checkMiniCycle?.(...args),
         incrementCycleCount: (...args) => deps.progress?.incrementCycleCount?.(...args),
+        showCompletionAnimation: (...args) => deps.progress?.showCompletionAnimation?.(...args),
 
         // UI functions (from deps.ui)
         refreshUIFromState: (...args) => deps.task?.refreshUIFromState?.(...args),

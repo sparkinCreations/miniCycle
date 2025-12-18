@@ -1256,6 +1256,51 @@ export async function clearAllUndoHistoryFromIndexedDB() {
   }
 }
 
+// ============ INIT FUNCTION (for moduleLoader) ============
+
+/**
+ * Initialize UndoRedoManager (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {Object} Module exports for registration
+ */
+export async function initUndoRedoManager(dependencies = {}) {
+  // Set dependencies
+  setUndoRedoManagerDependencies(dependencies);
+
+  // Wrap AppState for undo tracking (if appInit is available)
+  if (dependencies.appInit) {
+    wrapAppStateForUndo(dependencies.appInit);
+  }
+
+  // Wire up undo/redo button event listeners
+  wireUndoRedoUI();
+
+  // Wire up keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
+  wireUndoRedoKeyboardShortcuts();
+
+  // Setup state-based undo/redo system
+  setupStateBasedUndoRedo();
+
+  // Initialize undo system for the app
+  await initializeUndoSystemForApp();
+
+  console.log('✅ UndoRedoManager initialized via initUndoRedoManager');
+
+  // Return exports for registration
+  return {
+    performStateBasedUndo,
+    performStateBasedRedo,
+    captureStateSnapshot,
+    updateUndoRedoButtons,
+    enableUndoSystemOnFirstInteraction,
+    wireUndoRedoUI,
+    wireUndoRedoKeyboardShortcuts,
+    wrapAppStateForUndo,
+    setupStateBasedUndoRedo,
+    initializeUndoSystemForApp
+  };
+}
+
 // ============ EXPORTS ============
 
 console.log('🔄 UndoRedoManager module loaded');

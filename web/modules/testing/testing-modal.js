@@ -3263,6 +3263,38 @@ function getServiceWorkerInfo() {
 }
 
 // ============================================
+// Init Function (for moduleLoader)
+// ============================================
+
+/**
+ * Initialize Testing Modal (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {Object} Module exports for registration
+ */
+export function initTestingModal(dependencies = {}) {
+    // Set dependencies
+    setTestingModalDependencies(dependencies);
+
+    // Setup the testing modal UI and event listeners
+    setupTestingModal();
+
+    // Initialize enhancements
+    initializeTestingModalEnhancements();
+
+    console.log('✅ TestingModal initialized via initTestingModal');
+
+    // Return exports for registration
+    return {
+        openStorageViewer,
+        closeStorageViewer,
+        appendToTestResults,
+        clearTestResults,
+        exportTestResults,
+        copyTestResults
+    };
+}
+
+// ============================================
 // Exports
 // ============================================
 

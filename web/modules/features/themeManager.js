@@ -500,7 +500,8 @@ export class ThemeManager {
             
             const container = document.getElementById("theme-option-container");
             if (!container) {
-                console.warn('⚠️ Theme option container not found');
+                // Settings panel not open - skip UI refresh (theme is still unlocked in state)
+                console.log('ℹ️ Theme panel not visible - skipping toggle refresh');
                 return;
             }
             
@@ -820,6 +821,10 @@ const themeManager = new ThemeManager();
 export function initThemeManager(dependencies = {}) {
     // Set dependencies
     setThemeManagerDependencies(dependencies);
+
+    // Initialize theme panel (creates containers and populates theme toggles)
+    themeManager.initializeThemesPanel();
+    themeManager.setupThemesPanel?.();
 
     console.log('✅ ThemeManager initialized via initThemeManager');
     return themeManager;

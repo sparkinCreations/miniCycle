@@ -1769,6 +1769,36 @@ async function bootFeaturesWithLoader(deps, coreResult) {
     // Register grouped APIs with appContext
     registerGroupedApisFromLoader(deps, appContextMod, coreResult);
 
+    // =========================================================================
+    // HTML EVENT LISTENERS (zero window.* globals)
+    // =========================================================================
+    // These listeners allow HTML inline scripts (like service worker update UI)
+    // to communicate with the app via CustomEvents instead of window.* globals.
+    console.log('🔧 Setting up HTML event listeners (moduleLoader path)...');
+
+    // Listen for notification requests from HTML/service worker
+    document.addEventListener('app:showNotification', (e) => {
+      const { message, type, duration } = e.detail || {};
+      deps.utils.showNotification?.(message, type, duration);
+    });
+
+    // Listen for confirmation modal requests from HTML/service worker
+    document.addEventListener('app:showConfirmationModal', (e) => {
+      deps.utils.showConfirmationModal?.(e.detail);
+    });
+
+    // Listen for stats panel requests from HTML
+    document.addEventListener('app:showStatsPanel', () => {
+      deps.ui.showStatsPanel?.();
+    });
+
+    // Listen for closeStorageViewer requests (testing modal)
+    document.addEventListener('app:closeStorageViewer', () => {
+      deps.testing?.closeStorageViewer?.();
+    });
+
+    console.log('✅ HTML event listeners configured (moduleLoader path)');
+
     console.log('✅ bootFeaturesWithLoader: Complete');
     console.log(`📦 Loaded ${Object.keys(features.managers).length} managers, ${Object.keys(features.modules).length} modules`);
 
