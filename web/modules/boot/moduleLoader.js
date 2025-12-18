@@ -525,6 +525,12 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         }),
         updateRecurringPanelButtonVisibility: (...args) => deps.recurring?.recurringPanel?.updateRecurringPanelButtonVisibility?.(...args),
         catchUpMissedRecurringTasks: (...args) => deps.recurring?.core?.catchUpMissedRecurringTasks?.(...args),
+        removeRecurringTasksFromCycle: (...args) => {
+            // Try multiple paths for compatibility
+            const fn = deps.recurring?.core?.removeRecurringTasksFromCycle
+                    || deps.recurring?.removeTasksFromCycle;
+            return fn?.(...args);
+        },
 
         // Mode manager (from deps.cycle)
         refreshTaskButtonsForModeChange: (...args) => deps.cycle?.refreshTaskButtonsForModeChange?.(...args),
