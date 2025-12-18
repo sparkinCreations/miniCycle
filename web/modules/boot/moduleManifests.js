@@ -382,6 +382,19 @@ export const MODULE_MANIFESTS = {
     },
 
     // =========================================================================
+    // PHASE 7: FEATURES
+    // =========================================================================
+    uxRatingsPanel: {
+        path: '../features/uxRatingsPanel.js',
+        phase: PHASES.FEATURES,
+        requires: ['appInit', 'AppState', 'showNotification'],
+        provides: [],
+        provideInstance: 'uxRatingsPanel',
+        api: 'features',
+        after: ['notifications']
+    },
+
+    // =========================================================================
     // PHASE 8: TESTING & BACKUP
     // =========================================================================
     testingModal: {

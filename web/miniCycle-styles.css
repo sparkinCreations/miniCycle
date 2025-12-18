@@ -8505,3 +8505,275 @@ body.dark-mode .pull-refresh-text {
         display: none;
     }
 }
+
+/* ============================================================================
+   UX RATINGS PANEL STYLES
+   ============================================================================ */
+
+/* UX Ratings Modal - uses shared modal-overlay */
+#ux-ratings-modal {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#ux-ratings-modal.show {
+    opacity: 1;
+}
+
+.ux-ratings-modal {
+    max-width: 480px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Rating Sections */
+.ux-rating-section {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.ux-rating-label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color, #333);
+    margin-bottom: 12px;
+}
+
+/* Star Rating */
+.ux-star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.ux-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 2rem;
+    color: #d1d5db;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+}
+
+.ux-star:hover,
+.ux-star.hover {
+    color: #fbbf24;
+    transform: scale(1.15);
+}
+
+.ux-star.selected {
+    color: #f59e0b;
+}
+
+.ux-star.selected i {
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
+}
+
+.ux-star:focus {
+    outline: 2px solid var(--primary-color, #4a90d9);
+    outline-offset: 2px;
+}
+
+/* Rating Prompt */
+.ux-rating-prompt {
+    font-size: 0.95rem;
+    color: var(--text-secondary, #666);
+    margin-top: 12px;
+    min-height: 1.5em;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ux-rating-prompt.show {
+    opacity: 1;
+}
+
+/* Rating Tags */
+.ux-tags-section {
+    animation: ux-fade-in 0.3s ease;
+}
+
+@keyframes ux-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ux-rating-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.ux-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--background-light, #f3f4f6);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-color, #333);
+    transition: all 0.2s ease;
+}
+
+.ux-tag:hover {
+    background: var(--background-hover, #e5e7eb);
+    transform: translateY(-2px);
+}
+
+.ux-tag.selected {
+    background: var(--primary-light, #dbeafe);
+    border-color: var(--primary-color, #4a90d9);
+    color: var(--primary-color, #4a90d9);
+}
+
+.ux-tag-icon {
+    font-size: 1.1em;
+}
+
+.ux-tag-label {
+    font-weight: 500;
+}
+
+/* Feedback Textarea */
+.ux-feedback-section {
+    animation: ux-fade-in 0.3s ease;
+}
+
+.ux-feedback-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 2px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+.ux-feedback-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color, #4a90d9);
+}
+
+.ux-feedback-textarea::placeholder {
+    color: var(--text-muted, #9ca3af);
+}
+
+.ux-char-count {
+    display: block;
+    text-align: right;
+    font-size: 0.8rem;
+    color: var(--text-muted, #9ca3af);
+    margin-top: 4px;
+}
+
+/* Previous Rating Info */
+.ux-previous-rating {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--background-light, #f3f4f6);
+    border-radius: 8px;
+}
+
+.ux-previous-note {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #666);
+    margin: 0;
+}
+
+.ux-previous-note i {
+    margin-right: 6px;
+    color: var(--primary-color, #4a90d9);
+}
+
+/* Dark Mode Support for UX Ratings */
+body.dark-mode .ux-rating-label {
+    color: var(--text-color, #e0e0e0);
+}
+
+body.dark-mode .ux-star {
+    color: #4b5563;
+}
+
+body.dark-mode .ux-star:hover,
+body.dark-mode .ux-star.hover {
+    color: #fbbf24;
+}
+
+body.dark-mode .ux-star.selected {
+    color: #f59e0b;
+}
+
+body.dark-mode .ux-rating-prompt {
+    color: var(--text-secondary, #9ca3af);
+}
+
+body.dark-mode .ux-tag {
+    background: var(--background-dark, #374151);
+    color: var(--text-color, #e0e0e0);
+}
+
+body.dark-mode .ux-tag:hover {
+    background: var(--background-hover-dark, #4b5563);
+}
+
+body.dark-mode .ux-tag.selected {
+    background: var(--primary-dark, #1e3a5f);
+    border-color: var(--primary-color, #4a90d9);
+    color: var(--primary-light, #93c5fd);
+}
+
+body.dark-mode .ux-feedback-textarea {
+    background: var(--background-dark, #1f2937);
+    border-color: var(--border-dark, #374151);
+    color: var(--text-color, #e0e0e0);
+}
+
+body.dark-mode .ux-feedback-textarea:focus {
+    border-color: var(--primary-color, #4a90d9);
+}
+
+body.dark-mode .ux-previous-rating {
+    background: var(--background-dark, #374151);
+}
+
+body.dark-mode .ux-previous-note {
+    color: var(--text-secondary, #9ca3af);
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .ux-ratings-modal {
+        max-height: 90vh;
+        padding: 16px;
+    }
+
+    .ux-star {
+        font-size: 1.75rem;
+        padding: 6px;
+    }
+
+    .ux-tag {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .ux-rating-tags {
+        gap: 8px;
+    }
+}

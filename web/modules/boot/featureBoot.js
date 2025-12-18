@@ -670,6 +670,29 @@ export async function bootFeatures(deps, coreResult) {
     console.error('❌ Failed to initialize ReminderManager:', error);
   }
 
+  // ========== UX Ratings Panel ==========
+  try {
+    const { initUXRatingsPanel, setUXRatingsPanelDependencies } = await import(withV('../features/uxRatingsPanel.js'));
+
+    setUXRatingsPanelDependencies({
+      appInit: appInit,
+      get AppState() { return deps.core.AppState; },
+      showNotification: deps.utils.showNotification,
+      safeAddEventListener: GlobalUtils.safeAddEventListener
+    });
+
+    const uxRatingsPanel = await initUXRatingsPanel({
+      getElementById: (id) => document.getElementById(id),
+      querySelector: (selector) => document.querySelector(selector)
+    });
+
+    deps.features.uxRatingsPanel = uxRatingsPanel;
+    features.managers.uxRatingsPanel = uxRatingsPanel;
+    console.log('✅ UXRatingsPanel initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize UXRatingsPanel:', error);
+  }
+
   // ============================================================================
   // PHASE 4: RECURRING MODULES
   // ============================================================================
