@@ -128,5 +128,36 @@ export function setupMiniCycleTitleListener() {
     console.log('✅ Title manager initialized');
 }
 
+/**
+ * Initialize TitleManager (called by moduleLoader)
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {Object} Module exports for registration
+ */
+export function initTitleManager(dependencies = {}) {
+    // Adapt moduleLoader dependencies to getter pattern expected by this module
+    const adaptedDeps = {
+        GlobalUtils: dependencies.GlobalUtils,
+        getAppState: () => dependencies.AppState,
+        getLoadMiniCycleData: () => dependencies.loadMiniCycleData,
+        getShowNotification: () => dependencies.showNotification,
+        getUpdateMainMenuHeader: () => dependencies.updateMainMenuHeader,
+        getUpdateUndoRedoButtons: () => dependencies.updateUndoRedoButtons
+    };
+
+    // Set dependencies
+    setTitleManagerDependencies(adaptedDeps);
+
+    // Setup the title listener for inline editing
+    setupMiniCycleTitleListener();
+
+    console.log('✅ TitleManager initialized via initTitleManager');
+
+    // Return exports for registration
+    return {
+        setupMiniCycleTitleListener,
+        handleMiniCycleTitleBlur
+    };
+}
+
 // Export the handler for testing
 export { handleMiniCycleTitleBlur };

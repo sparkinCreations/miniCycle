@@ -257,6 +257,17 @@ console.log('🎯 CompletedTasksManager module loaded (DI-pure, no window.* expo
  * @returns {CompletedTasksManager} Configured instance
  */
 export async function initCompletedTasksManager(dependencies = {}) {
-    const manager = new CompletedTasksManager(dependencies);
+    // Adapt moduleLoader dependencies to getter pattern expected by this module
+    const adaptedDeps = {
+        getAppState: () => dependencies.AppState,
+        getElementById: (id) => document.getElementById(id),
+        querySelector: (sel) => document.querySelector(sel),
+        querySelectorAll: (sel) => document.querySelectorAll(sel),
+        safeAddEventListener: dependencies.safeAddEventListener || dependencies.GlobalUtils?.safeAddEventListener
+    };
+
+    const manager = new CompletedTasksManager(adaptedDeps);
+    manager.init();
+    console.log('✅ CompletedTasksManager initialized via initCompletedTasksManager');
     return manager;
 }

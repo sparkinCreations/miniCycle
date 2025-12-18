@@ -258,6 +258,21 @@ export class TaskEvents {
                 ui()?.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
+        } else if (button.classList.contains("set-due-date")) {
+            // Toggle due date input visibility
+            const dueDateInput = taskItem.querySelector(".due-date");
+            if (dueDateInput) {
+                const isHidden = dueDateInput.classList.contains("hidden");
+                dueDateInput.classList.toggle("hidden", !isHidden);
+                if (isHidden) {
+                    // Focus the input when showing
+                    dueDateInput.focus();
+                }
+                console.log('📅 Due date input toggled:', isHidden ? 'shown' : 'hidden');
+            } else {
+                console.warn('⚠️ Due date input not found for task');
+            }
+            shouldSave = false;
         }
 
         if (shouldSave) state()?.autoSave?.();

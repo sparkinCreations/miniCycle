@@ -112,7 +112,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/themeManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme'],
+        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme', 'initializeThemesPanel', 'refreshThemeToggles', 'setupThemesPanel'],
         provideInstance: 'themeManager',
         api: 'features',
         after: ['notifications']
@@ -121,7 +121,7 @@ export const MODULE_MANIFESTS = {
     gamesManager: {
         path: '../ui/gamesManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'AppState', 'AppMeta'],
+        requires: ['appInit', 'AppState', 'AppMeta', 'safeAddEventListener'],
         provides: [],
         provideInstance: 'gamesManager',
         api: 'ui',
@@ -131,7 +131,7 @@ export const MODULE_MANIFESTS = {
     onboardingManager: {
         path: '../ui/onboardingManager.js',
         phase: PHASES.THEME_VISUAL,
-        requires: ['appInit', 'AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListenerById', 'safeAddEventListener'],
         provides: [],
         provideInstance: 'onboardingManager',
         api: 'ui',
@@ -270,8 +270,8 @@ export const MODULE_MANIFESTS = {
     undoRedoManager: {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction'],
+        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initializeUndoSystemForApp'],
         api: 'undo',
         after: ['taskDOM']
     },
@@ -298,7 +298,7 @@ export const MODULE_MANIFESTS = {
     titleManager: {
         path: '../ui/titleManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'GlobalUtils', 'AppState'],
+        requires: ['appInit', 'GlobalUtils', 'AppState', 'loadMiniCycleData', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons'],
         provides: ['setupMiniCycleTitleListener', 'handleMiniCycleTitleBlur'],
         api: 'ui'
     },
@@ -306,7 +306,7 @@ export const MODULE_MANIFESTS = {
     completedTasksManager: {
         path: '../ui/completedTasksManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState'],
+        requires: ['appInit', 'AppState', 'GlobalUtils', 'safeAddEventListener'],
         provides: [],
         provideInstance: 'completedTasksManager',
         api: 'ui'
@@ -316,7 +316,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount'],
+        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation'],
         api: 'progress'
     },
 
@@ -387,7 +387,7 @@ export const MODULE_MANIFESTS = {
     testingModal: {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
-        requires: [],
+        requires: ['AppState', 'showNotification', 'safeAddEventListener', 'safeAddEventListenerById'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true
