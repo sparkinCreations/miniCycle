@@ -30,6 +30,7 @@
   * [Security Guide](developer-guides/SECURITY_GUIDE.md)
   * [Testing Guide](developer-guides/TESTING_GUIDE.md)
   * [Claude AI Guide](developer-guides/CLAUDE.md)
+  * [Code Review (Dec 2025)](developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)
   * [Dev Server](DEV_SERVER.md)
 
 * **Architecture**
