@@ -112,13 +112,26 @@ function parseDateAsLocal(dateStr) {
     }
 }
 
+// Memoization cache for normalizeRecurringSettings (performance optimization)
+const normalizationCache = new Map();
+const MAX_NORMALIZATION_CACHE_SIZE = 50;
+
 /**
  * Normalize recurring settings with all required fields
+ * Uses memoization to avoid creating 11 new objects on every call
  * @param {Object} settings - Partial recurring settings
  * @returns {Object} Normalized settings with defaults
  */
 export function normalizeRecurringSettings(settings = {}) {
-    return {
+    // Generate cache key from settings
+    const cacheKey = JSON.stringify(settings);
+
+    // Return cached result if available
+    if (normalizationCache.has(cacheKey)) {
+        return normalizationCache.get(cacheKey);
+    }
+
+    const normalized = {
         frequency: settings.frequency || "daily",
         indefinitely: settings.indefinitely !== false,
         count: settings.count ?? null,
@@ -170,6 +183,15 @@ export function normalizeRecurringSettings(settings = {}) {
             daysByMonth: settings.yearly?.daysByMonth || {}
         }
     };
+
+    // Bound cache size to prevent memory leaks
+    if (normalizationCache.size >= MAX_NORMALIZATION_CACHE_SIZE) {
+        const firstKey = normalizationCache.keys().next().value;
+        normalizationCache.delete(firstKey);
+    }
+
+    normalizationCache.set(cacheKey, normalized);
+    return normalized;
 }
 
 // ============================================

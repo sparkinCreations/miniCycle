@@ -1205,7 +1205,7 @@ export class TaskCore {
                                 }
 
                                 if (!cycleData.autoReset) {
-                                    setTimeout(() => this.resetTasks(), 1000);
+                                    this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
                                 }
                             }
                         }
@@ -1283,7 +1283,7 @@ export class TaskCore {
 
                 // Only call resetTasks() if autoReset is OFF
                 if (!cycleData.autoReset) {
-                    setTimeout(() => this.resetTasks(), 1000);
+                    this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
                 }
             }
 

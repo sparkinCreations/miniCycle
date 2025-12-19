@@ -1483,13 +1483,18 @@ export async function bootFeatures(deps, coreResult) {
       appContextMod.setContextValue('gamesManager', deps.ui.gamesManager);
 
       // Manager classes + instances
+      appContextMod.setContextValue('ErrorHandler', deps.utils.ErrorHandler);
       appContextMod.setContextValue('onboardingManager', deps.ui.onboardingManager);
+      appContextMod.setContextValue('OnboardingManager', deps.ui.OnboardingManager);
       appContextMod.setContextValue('DragDropManager', deps.task.dragDropManager);
       appContextMod.setContextValue('deviceDetectionManager', deps.utils.deviceDetectionManager);
+      appContextMod.setContextValue('DeviceDetectionManager', deps.utils.DeviceDetectionManager);
       appContextMod.setContextValue('modalManager', deps.ui.modalManager);
+      appContextMod.setContextValue('ModalManager', deps.ui.ModalManager);
       appContextMod.setContextValue('closeAllModals', deps.ui.closeAllModals);
       appContextMod.setContextValue('initModalManager', deps.ui.initModalManager);
       appContextMod.setContextValue('cycleSwitcher', deps.cycle.cycleSwitcher);
+      appContextMod.setContextValue('CycleSwitcher', deps.cycle.CycleSwitcher);
 
       // =========================================================================
       // UI FUNCTIONS
@@ -1498,6 +1503,9 @@ export async function bootFeatures(deps, coreResult) {
       appContextMod.setContextValue('updateMainMenuHeader', deps.ui.updateMainMenuHeader);
       appContextMod.setContextValue('showCycleCreationModal', deps.cycle.showCycleCreationModal);
       appContextMod.setContextValue('initializeModeSelector', deps.cycle.initializeModeSelector);
+      appContextMod.setContextValue('showLoader', deps.ui.showLoader);
+      appContextMod.setContextValue('hideLoader', deps.ui.hideLoader);
+      appContextMod.setContextValue('withLoader', deps.ui.withLoader);
 
       // =========================================================================
       // NOTIFICATIONS
@@ -1513,6 +1521,7 @@ export async function bootFeatures(deps, coreResult) {
       // =========================================================================
       appContextMod.setContextValue('DataValidator', deps.utils.DataValidator);
       appContextMod.setContextValue('sanitizeInput', deps.utils.sanitizeInput);
+      appContextMod.setContextValue('escapeHtml', GlobalUtils?.escapeHtml);
       appContextMod.setContextValue('generateId', deps.utils.generateId);
       appContextMod.setContextValue('generateHashId', deps.utils.generateHashId);
       appContextMod.setContextValue('safeAddEventListener', GlobalUtils.safeAddEventListener);
@@ -1573,11 +1582,25 @@ export async function bootFeatures(deps, coreResult) {
       appContextMod.setContextValue('switchMiniCycle', deps.cycle.switchMiniCycle);
       appContextMod.setContextValue('renameMiniCycle', deps.cycle.renameMiniCycle);
       appContextMod.setContextValue('deleteMiniCycle', deps.cycle.deleteMiniCycle);
+      appContextMod.setContextValue('confirmMiniCycle', deps.cycle.cycleSwitcher?.confirmMiniCycle?.bind(deps.cycle.cycleSwitcher));
+      appContextMod.setContextValue('hideSwitchMiniCycleModal', deps.cycle.cycleSwitcher?.hideSwitchMiniCycleModal?.bind(deps.cycle.cycleSwitcher));
+      appContextMod.setContextValue('updatePreview', deps.cycle.cycleSwitcher?.updatePreview?.bind(deps.cycle.cycleSwitcher));
+      appContextMod.setContextValue('loadMiniCycleList', deps.cycle.cycleSwitcher?.loadMiniCycleList?.bind(deps.cycle.cycleSwitcher));
+      appContextMod.setContextValue('setupModalClickOutside', deps.cycle.cycleSwitcher?.setupModalClickOutside?.bind(deps.cycle.cycleSwitcher));
 
       // =========================================================================
       // FEATURES
       // =========================================================================
       appContextMod.setContextValue('PullToRefresh', deps.ui.pullToRefresh);
+      appContextMod.setContextValue('MiniCycleReminders', deps.features?.MiniCycleReminders);
+      appContextMod.setContextValue('MiniCycleNotifications', deps.features?.MiniCycleNotifications);
+      appContextMod.setContextValue('EducationalTipManager', deps.ui?.EducationalTipManager);
+
+      // =========================================================================
+      // TESTING
+      // =========================================================================
+      appContextMod.setContextValue('ConsoleCapture', deps.utils.consoleCapture);
+      appContextMod.setContextValue('appendToTestResults', deps.testing?.appendToTestResults);
 
   console.log('✅ appContext updated with comprehensive values (legacy individual keys)');
 

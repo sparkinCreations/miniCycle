@@ -193,6 +193,8 @@ export class TaskDOMManager {
             revealTaskButtons: resolvedDeps.revealTaskButtons || null,
             showTaskOptions: resolvedDeps.showTaskOptions || null,
             hideTaskOptions: resolvedDeps.hideTaskOptions || null,
+            TaskOptionsVisibilityController: resolvedDeps.TaskOptionsVisibilityController || null,
+            attachKeyboardTaskOptionToggle: resolvedDeps.attachKeyboardTaskOptionToggle || null,
             setupRecurringButtonHandler: resolvedDeps.setupRecurringButtonHandler || null,
             setupReminderButtonHandler: resolvedDeps.setupReminderButtonHandler || null,
             handleTaskButtonClick: resolvedDeps.handleTaskButtonClick || null,
@@ -346,7 +348,13 @@ export class TaskDOMManager {
                     getElementById: this.deps.getElementById,
                     querySelectorAll: this.deps.querySelectorAll,
                     safeAddEventListener: this.deps.safeAddEventListener,
-                    taskCore: this.deps.taskCore  // For edit, delete, priority operations
+                    taskCore: this.deps.taskCore,  // For edit, delete, priority operations
+                    // Task options visibility (for three-dots menu)
+                    TaskOptionsVisibilityController: this.deps.TaskOptionsVisibilityController,
+                    showTaskOptions: this.deps.showTaskOptions,
+                    hideTaskOptions: this.deps.hideTaskOptions,
+                    attachKeyboardTaskOptionToggle: this.deps.attachKeyboardTaskOptionToggle,
+                    triggerLogoBackground: this.deps.triggerLogoBackground
                 });
 
                 // ✅ CRITICAL: Initialize event delegation for task clicks

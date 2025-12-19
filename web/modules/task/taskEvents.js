@@ -75,7 +75,13 @@ export class TaskEvents {
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
             safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
             // Core modules (injected from TaskDOMManager)
-            taskCore: dependencies.taskCore
+            taskCore: dependencies.taskCore,
+            // Task options visibility (for three-dots menu)
+            TaskOptionsVisibilityController: dependencies.TaskOptionsVisibilityController,
+            showTaskOptions: dependencies.showTaskOptions,
+            hideTaskOptions: dependencies.hideTaskOptions,
+            attachKeyboardTaskOptionToggle: dependencies.attachKeyboardTaskOptionToggle,
+            triggerLogoBackground: dependencies.triggerLogoBackground
         };
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
@@ -101,15 +107,15 @@ export class TaskEvents {
             showNotification: _deps.showNotification || this.fallbackNotification,
             autoSave: _deps.autoSave || this.fallbackAutoSave,
 
-            // Task interaction functions
+            // Task interaction functions (prefer constructor-injected for three-dots menu)
             enableUndoSystemOnFirstInteraction: _deps.enableUndoSystemOnFirstInteraction,
             checkMiniCycle: _deps.checkMiniCycle,
-            triggerLogoBackground: _deps.triggerLogoBackground,
-            showTaskOptions: _deps.showTaskOptions,
-            hideTaskOptions: _deps.hideTaskOptions,
-            TaskOptionsVisibilityController: _deps.TaskOptionsVisibilityController,
+            triggerLogoBackground: this._constructorDeps.triggerLogoBackground || _deps.triggerLogoBackground,
+            showTaskOptions: this._constructorDeps.showTaskOptions || _deps.showTaskOptions,
+            hideTaskOptions: this._constructorDeps.hideTaskOptions || _deps.hideTaskOptions,
+            TaskOptionsVisibilityController: this._constructorDeps.TaskOptionsVisibilityController || _deps.TaskOptionsVisibilityController,
             setupDueDateButtonInteraction: _deps.setupDueDateButtonInteraction,
-            attachKeyboardTaskOptionToggle: _deps.attachKeyboardTaskOptionToggle,
+            attachKeyboardTaskOptionToggle: this._constructorDeps.attachKeyboardTaskOptionToggle || _deps.attachKeyboardTaskOptionToggle,
 
             // DOM helpers (from constructor)
             ...this._constructorDeps

@@ -182,7 +182,7 @@ export const MODULE_MANIFESTS = {
     taskDOM: {
         path: '../task/taskDOM.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput'],
+        requires: ['appInit', 'AppState', 'generateId', 'sanitizeInput', 'TaskOptionsVisibilityController', 'showTaskOptions', 'hideTaskOptions', 'attachKeyboardTaskOptionToggle', 'triggerLogoBackground'],
         provides: [
             'createTaskDOMElements', 'setupTaskInteractions', 'refreshUIFromState',
             'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',
@@ -191,17 +191,17 @@ export const MODULE_MANIFESTS = {
             'setupRecurringButtonHandler', 'revealTaskButtons'
         ],
         api: 'task',
-        after: ['dragDropManager']
+        after: ['dragDropManager', 'taskUI', 'taskInteractions', 'uiEffects']
     },
 
     taskOptionsCustomizer: {
         path: '../ui/taskOptionsCustomizer.js',
         phase: PHASES.TASK_MANAGEMENT,
-        requires: ['appInit', 'AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'modeManager', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener'],
         provides: [],
         provideInstance: 'taskOptionsCustomizer',
         api: 'ui',
-        after: ['taskDOM']
+        after: ['taskDOM', 'reminders', 'modeManager']
     },
 
     reminders: {
@@ -220,7 +220,7 @@ export const MODULE_MANIFESTS = {
     recurringIntegration: {
         path: '../recurring/recurringIntegration.js',
         phase: PHASES.RECURRING,
-        requires: ['appInit', 'AppState', 'showNotification', 'FeatureFlags'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showNotificationWithTip', 'notifications', 'FeatureFlags', 'GlobalUtils', 'refreshUIFromState', 'updateProgressBar'],
         provides: ['panel', 'core'],
         api: 'recurring',
         after: ['taskDOM', 'reminders']
@@ -322,7 +322,7 @@ export const MODULE_MANIFESTS = {
 
     taskUI: {
         path: '../ui/taskUI.js',
-        phase: PHASES.UI_MANAGERS,
+        phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so TaskOptionsVisibilityController is available
         requires: ['appInit', 'loadMiniCycleData'],
         provides: ['refreshTaskListUI', 'showTaskOptions', 'hideTaskOptions', 'checkCompleteAllButton', 'TaskOptionsVisibilityController', 'hideTaskButtons'],
         api: 'ui'
@@ -330,7 +330,7 @@ export const MODULE_MANIFESTS = {
 
     taskInteractions: {
         path: '../ui/taskInteractions.js',
-        phase: PHASES.UI_MANAGERS,
+        phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so attachKeyboardTaskOptionToggle is available
         requires: ['safeAddEventListener'],
         provides: ['attachKeyboardTaskOptionToggle'],
         api: 'ui'
@@ -338,7 +338,7 @@ export const MODULE_MANIFESTS = {
 
     uiEffects: {
         path: '../ui/uiEffects.js',
-        phase: PHASES.UI_MANAGERS,
+        phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so triggerLogoBackground is available
         requires: [],
         provides: ['triggerLogoBackground'],
         api: 'ui'

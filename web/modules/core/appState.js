@@ -144,8 +144,18 @@ class MiniCycleState {
 
                 if (tasksInitialized > 0 || templatesInitialized > 0) {
                     console.log(`✅ Initialized deleteWhenCompleteSettings for ${tasksInitialized} tasks and ${templatesInitialized} templates`);
-                    // Save the updated data immediately
-                    this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+
+                    // Defer the save operation to avoid blocking the main thread during init
+                    const saveData = () => {
+                        this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+                    };
+
+                    if (typeof requestIdleCallback !== 'undefined') {
+                        requestIdleCallback(saveData, { timeout: 2000 });
+                    } else {
+                        // Fallback for browsers without requestIdleCallback
+                        setTimeout(saveData, 100);
+                    }
                 }
             } else {
                 // ✅ Don't create data if none exists - let the main app handle this

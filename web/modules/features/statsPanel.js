@@ -86,6 +86,10 @@ export class StatsPanelManager {
         // Timers
         this.wheelTimeout = null;
 
+        // Task stats cache (performance optimization)
+        this._taskStatsCache = null;
+        this._taskStatsCacheTime = 0;
+
         // Event handler bindings (for proper removal)
         this.boundHandlers = {};
 
@@ -670,9 +674,10 @@ export class StatsPanelManager {
             return;
         }
 
-        // Calculate current stats
-        const totalTasks = document.querySelectorAll(".task").length;
-        const completedTasks = document.querySelectorAll(".task input:checked").length;
+        // Calculate current stats (using cached DOM queries for performance)
+        const taskStats = this.getCachedTaskStats();
+        const totalTasks = taskStats.total;
+        const completedTasks = taskStats.completed;
         const taskCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%";
 
         let perCycleCount = 0;
@@ -852,6 +857,7 @@ export class StatsPanelManager {
      * Handle task list changes
      */
     handleTaskListChange() {
+        this.invalidateTaskStatsCache();
         this.updateStatsPanel();
     }
 
@@ -860,7 +866,10 @@ export class StatsPanelManager {
      */
     handleAddTaskClick() {
         // Small delay to allow DOM to update
-        setTimeout(() => this.updateStatsPanel(), 100);
+        setTimeout(() => {
+            this.invalidateTaskStatsCache();
+            this.updateStatsPanel();
+        }, 100);
     }
 
     // ==========================================
@@ -1282,6 +1291,35 @@ export class StatsPanelManager {
     // ==========================================
     // 🛠️ UTILITY METHODS
     // ==========================================
+
+    /**
+     * Get cached task statistics (avoids repeated DOM queries)
+     * Cache invalidates after 5 seconds or when manually invalidated
+     * @returns {{ total: number, completed: number }}
+     */
+    getCachedTaskStats() {
+        const now = Date.now();
+        const CACHE_TTL = 5000; // 5 seconds
+
+        if (!this._taskStatsCache || this._taskStatsCacheTime < now - CACHE_TTL) {
+            const tasks = document.querySelectorAll(".task");
+            const checked = document.querySelectorAll(".task input:checked");
+            this._taskStatsCache = {
+                total: tasks.length,
+                completed: checked.length
+            };
+            this._taskStatsCacheTime = now;
+        }
+
+        return this._taskStatsCache;
+    }
+
+    /**
+     * Invalidate task stats cache (call when tasks are modified)
+     */
+    invalidateTaskStatsCache() {
+        this._taskStatsCacheTime = 0;
+    }
 
     /**
      * Get current state

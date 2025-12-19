@@ -244,6 +244,19 @@ export async function loadAllModules(deps, coreResult) {
     // Build grouped APIs
     results.apis = buildGroupedApis(deps);
 
+    // =========================================================================
+    // POST-INIT CROSS-MODULE INJECTIONS
+    // Some modules need to be injected into other modules after all are loaded
+    // =========================================================================
+
+    // Inject taskOptionsCustomizer into taskDOMManager (required for three-dots menu)
+    if (deps.task?.taskDOMManager && deps.ui?.taskOptionsCustomizer) {
+        if (typeof deps.task.taskDOMManager.injectDependency === 'function') {
+            deps.task.taskDOMManager.injectDependency('taskOptionsCustomizer', deps.ui.taskOptionsCustomizer);
+            console.log('✅ moduleLoader: Injected taskOptionsCustomizer into taskDOMManager');
+        }
+    }
+
     return results;
 }
 
@@ -370,6 +383,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Utils
         showNotification: deps.utils?.showNotification,
+        showNotificationWithTip: deps.utils?.showNotificationWithTip,
+        notifications: deps.utils?.notifications,
         showConfirmationModal: deps.utils?.showConfirmationModal,
         showPromptModal: deps.utils?.showPromptModal,
         sanitizeInput: deps.utils?.sanitizeInput || GlobalUtils?.sanitizeInput,
@@ -533,6 +548,11 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         },
 
         // Mode manager (from deps.cycle)
+        modeManager: new Proxy({}, {
+            get(target, prop) {
+                return deps.cycle?.modeManager?.[prop];
+            }
+        }),
         refreshTaskButtonsForModeChange: (...args) => deps.cycle?.refreshTaskButtonsForModeChange?.(...args),
         initializeModeSelector: (...args) => deps.cycle?.setupModeSelector?.(...args),
         setupModeSelector: (...args) => deps.cycle?.setupModeSelector?.(...args),
@@ -627,15 +647,29 @@ function getDepsCategoryForModule(manifest) {
  * @returns {*}
  */
 function findProvidedValue(instance, name) {
-    // Method on instance - bind to preserve 'this' context
-    // IMPORTANT: Check function FIRST before general property check
-    if (typeof instance[name] === 'function') {
-        return instance[name].bind(instance);
+    const value = instance[name];
+
+    if (typeof value === 'function') {
+        // Check if this is a class (ES6 class or constructor function with static methods)
+        // Classes should NOT be bound because .bind() strips away static methods
+        const isClass = /^class\s/.test(value.toString()) ||
+                        (value.prototype && value.prototype.constructor === value &&
+                         Object.getOwnPropertyNames(value).some(prop =>
+                             prop !== 'length' && prop !== 'name' && prop !== 'prototype' &&
+                             typeof value[prop] === 'function'));
+
+        if (isClass) {
+            // Return class as-is to preserve static methods
+            return value;
+        }
+
+        // Regular function - bind to preserve 'this' context
+        return value.bind(instance);
     }
 
     // Direct property (non-function)
-    if (instance[name] !== undefined) {
-        return instance[name];
+    if (value !== undefined) {
+        return value;
     }
 
     // Getter
