@@ -10,7 +10,7 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.513
+ * @version 1.514
  */
 
 import { createDIModule, optional } from './diBase.js';
@@ -293,10 +293,14 @@ class AppInit {
 			hasSettings: !!settings
 		});
 
-		const onboardingManager = _deps.getOnboardingManager?.();
-		if (onboardingManager?.shouldShowOnboarding?.()) {
+		// ✅ FIX: Check onboarding directly from schemaData instead of via AppState
+		// This avoids a race condition where AppState.isReady() returns false on initial load
+		// because data was just created by dataAccess and AppState wasn't re-initialized
+		const hasSeenOnboarding = settings?.onboardingCompleted || false;
+		if (!hasSeenOnboarding) {
 			console.log('👋 First time user - showing onboarding first...');
-			onboardingManager.showOnboarding(cycles, activeCycle);
+			const onboardingManager = _deps.getOnboardingManager?.();
+			onboardingManager?.showOnboarding?.(cycles, activeCycle);
 			return;
 		}
 
