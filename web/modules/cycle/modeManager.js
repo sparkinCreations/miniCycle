@@ -418,16 +418,16 @@ export class ModeManager {
             currentMode = "todo-mode";
             modeTitle = "To-Do List Mode";
             modeDetail = `This mode will not complete any cycles.<br>
-        Instead, it will delete all tasks when <br> you hit the complete button.<br>
-        This will reveal a recurring option in the <br> task options menu.`;
+        Instead, it will delete all tasks when <br> you hit the complete button.`;
         } else if (autoReset) {
             currentMode = "auto-cycle";
             modeTitle = "Auto Cycle Mode";
-            modeDetail = `Tasks will automatically reset when<br>all are completed. This is the traditional<br>miniCycle experience.`;
+            modeDetail = `Tasks will automatically reset to incomplete <br>when all are completed. This is the <br> traditional miniCycle experience.`;
         } else {
             currentMode = "manual-cycle";
             modeTitle = "Manual Cycle Mode";
-            modeDetail = `Tasks will only reset when you<br>manually click the complete button.<br>Gives you more control over timing.`;
+            modeDetail = `Tasks will only reset when you<br>manually press the complete button.<br> 
+            The complete button will complete any<br> remaining tasks and then reset<br> all tasks to incomplete. `;
         }
 
         descriptionBox.innerHTML = `<strong>${modeTitle}:</strong><br>${modeDetail}`;
