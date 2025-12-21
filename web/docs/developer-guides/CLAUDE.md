@@ -36,7 +36,7 @@ npm test                     # Run automated tests (1623 tests, Playwright)
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 20, 2025 - Updated)
+### Current State (December 21, 2025 - Updated)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
@@ -288,7 +288,7 @@ Open http://localhost:8080/tests/module-test-suite.html
 | `boot/` | Boot sequence (Dec 2025 split) | 4 |
 | `core/` | AppState, appInit, appContext | 5 |
 | `task/` | Task CRUD, DOM, events, drag-drop | 7 |
-| `cycle/` | Cycle management, switching, migration | 5 |
+| `routine/` | Routine management, switching, migration | 5 |
 | `recurring/` | Recurring task templates and panel | 3 |
 | `ui/` | Modals, menus, settings, onboarding | 9 |
 | `features/` | Themes, stats, reminders, due dates | 4 |

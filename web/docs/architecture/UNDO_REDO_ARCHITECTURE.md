@@ -204,7 +204,7 @@ Stored in `window.AppGlobalState`:
 ### 4. Cycle Switching
 
 **Function:** `onCycleSwitched(newCycleId)`
-**Called by:** `cycleSwitcher` module when user switches cycles
+**Called by:** `routineSwitcher` module when user switches cycles
 
 **Logic Flow:**
 1. Check if actually changing cycles
@@ -282,14 +282,14 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 ### Cycle Creation
 
 **Function:** `onCycleCreated(cycleId)`
-**Called by:** `cycleManager` when new cycle created
+**Called by:** `routineManager` when new cycle created
 
 **Action:** Initialize empty undo/redo stacks in IndexedDB for new cycle
 
 ### Cycle Deletion
 
 **Function:** `onCycleDeleted(cycleId)`
-**Called by:** `cycleManager` when cycle deleted
+**Called by:** `routineManager` when cycle deleted
 
 **Action:**
 - Remove cycle's undo history from IndexedDB
@@ -298,7 +298,7 @@ Signatures are cached on snapshot objects (`_sig` property) to avoid recomputing
 ### Cycle Rename
 
 **Function:** `onCycleRenamed(oldCycleId, newCycleId)`
-**Called by:** `cycleSwitcher` when cycle renamed
+**Called by:** `routineSwitcher` when cycle renamed
 
 **Action:**
 - Load undo history under old key

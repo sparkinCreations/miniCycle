@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 20, 2025
+**Last Updated**: December 21, 2025
 
 ---
 
@@ -157,10 +157,10 @@ web/
 │   │   ├── taskUtils.js             # Task utilities
 │   │   └── dragDropManager.js       # Drag & drop
 │   │
-│   ├── cycle/                       # Cycle system (5 modules)
-│   │   ├── cycleLoader.js           # Data loading
-│   │   ├── cycleManager.js          # Cycle CRUD
-│   │   ├── cycleSwitcher.js         # Cycle switching
+│   ├── routine/                     # Routine system (5 modules)
+│   │   ├── routineLoader.js         # Data loading
+│   │   ├── routineManager.js        # Routine CRUD
+│   │   ├── routineSwitcher.js       # Routine switching
 │   │   ├── modeManager.js           # Auto/Manual/To-Do modes
 │   │   └── migrationManager.js      # Schema migration
 │   │
@@ -219,7 +219,7 @@ web/
 
 ### 1. Task Cycling System
 
-**The Heart of miniCycle**
+**The Heart of miniCycle** - Defined in `modules/routine/`
 
 ```javascript
 // From modules/boot/orchestrator.js (real code)
@@ -565,7 +565,7 @@ cycle.taskOptionButtons = {
 
 **Three Operating Modes with UI Refresh Without Reload**
 
-The mode manager (`modules/cycle/modeManager.js`) controls miniCycle's three fundamental operating modes and manages smooth transitions between them.
+The mode manager (`modules/routine/modeManager.js`) controls miniCycle's three fundamental operating modes and manages smooth transitions between them.
 
 **Key Innovation (v1.372+):**
 - ✅ **UI refresh without page reload** - Mode changes apply instantly in-place

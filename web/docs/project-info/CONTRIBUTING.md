@@ -34,7 +34,7 @@ appInitialization.js  →  appInit.waitForCore()
    ↓
 state.js              →  AppState (central store)
    ↓
-cycleLoader.js        →  Load saved cycles/tasks
+routineLoader.js      →  Load saved cycles/tasks
    ↓
 taskCore.js           →  Task CRUD logic
    ↓
@@ -56,8 +56,8 @@ If you’re building a new feature, decide **which stage** your module should ho
 /src
  ├── appInitialization.js     ← Core init and event coordination
  ├── state.js                 ← AppState data management
- ├── cycleManager.js          ← Cycle creation and persistence
- ├── cycleLoader.js           ← Task loading and schema repair
+ ├── routineManager.js        ← Routine creation and persistence
+ ├── routineLoader.js         ← Task loading and schema repair
  ├── task/
  │    ├── taskCore.js         ← Core CRUD logic
  │    ├── taskDOM.js          ← DOM creation
@@ -81,9 +81,9 @@ Each module declares its pattern in the header comment:
 
 | Pattern | Meaning |
 |----------|----------|
-| 🛡 **Resilient Constructor** | Class with fallback-safe methods (e.g. `TaskDOMManager`, `CycleManager`) |
+| 🛡 **Resilient Constructor** | Class with fallback-safe methods (e.g. `TaskDOMManager`, `RoutineManager`) |
 | 🎯 **Simple Instance** | Stateless class for handling events or rendering (e.g. `TaskRenderer`, `TaskEvents`) |
-| 🔧 **Strict Injection** | Pure functions that must receive dependencies explicitly (e.g. `undoRedoManager`, `cycleLoader`) |
+| 🔧 **Strict Injection** | Pure functions that must receive dependencies explicitly (e.g. `undoRedoManager`, `routineLoader`) |
 
 When creating a new file, include this in the header:
 

@@ -679,7 +679,7 @@ window.renderAllTasks?.();
 - `cycle.reminders.enabled` syncs with `taskOptionButtons.reminders`
 
 **4. Cycle Creation**
-- `modules/cycle/cycleManager.js` adds `taskOptionButtons` to new cycles
+- `modules/routine/routineManager.js` adds `taskOptionButtons` to new cycles
 - Uses `DEFAULT_TASK_OPTION_BUTTONS` as template
 
 ---

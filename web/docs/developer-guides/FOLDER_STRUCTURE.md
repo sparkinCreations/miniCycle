@@ -1,6 +1,6 @@
 # miniCycle Folder Structure
 
-**Last Updated:** December 20, 2025
+**Last Updated:** December 21, 2025
 **Status:** All 53 modules use strict DI | Boot files split (Dec 2025)
 
 ---
@@ -28,7 +28,7 @@ miniCycle's folder structure evolved through three major phases:
 The monolithic 15,677-line script was broken into 33 focused modules (12,003 lines extracted). This achieved a 74.8% reduction while maintaining 100% test coverage.
 
 ### 2. **Logical Grouping** (Nov 2025)
-Modules were organized into domain-based subfolders (`core/`, `task/`, `cycle/`, etc.) to improve discoverability and reduce cognitive load.
+Modules were organized into domain-based subfolders (`core/`, `task/`, `routine/`, etc.) to improve discoverability and reduce cognitive load.
 
 ### 3. **Clean Root** (Nov 2025)
 Marketing pages, legal documents, and archived code were moved into dedicated folders, leaving the root clean and deployment-ready.
@@ -45,7 +45,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 - All files deploy as-is from `web/`
 
 ### ✅ Domain-Driven Organization
-- Modules grouped by business domain (task, cycle, recurring)
+- Modules grouped by business domain (task, routine, recurring)
 - Not by technical pattern (controllers, services, utils)
 - Makes onboarding and feature work faster
 
@@ -90,7 +90,7 @@ web/
 │   │   └── uiBoot.js                    # UI event handlers (~406 lines)
 │   ├── core/                            # Essential system modules
 │   ├── task/                            # Task management system (7 modules)
-│   ├── cycle/                           # Cycle management system (5 modules)
+│   ├── routine/                         # Routine management system (5 modules)
 │   ├── recurring/                       # Recurring tasks system (3 modules)
 │   ├── ui/                              # UI coordination (6 modules)
 │   ├── features/                        # Optional/pluggable features (4 modules)
@@ -298,19 +298,19 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `cycle/` - Cycle Management System (5 modules)
-**Purpose:** Cycle lifecycle from creation to switching to migration
-**When to add here:** Cycle operations, mode changes, data migration
+### `routine/` - Routine Management System (5 modules)
+**Purpose:** Routine lifecycle from creation to switching to migration
+**When to add here:** Routine operations, mode changes, data migration
 
-- `cycleLoader.js` (273 lines) - Data loading and file import/export
-- `cycleManager.js` (445 lines) - Cycle creation and management
-- `cycleSwitcher.js` (677 lines) - Cycle switching with modal UI
+- `routineLoader.js` (273 lines) - Data loading and file import/export
+- `routineManager.js` (445 lines) - Routine creation and management
+- `routineSwitcher.js` (677 lines) - Routine switching with modal UI
 - `modeManager.js` (380 lines) - Auto/Manual/Todo mode management
 - `migrationManager.js` (850 lines) - Schema migrations and data upgrades
 
-**Philosophy:** Cycles are first-class entities with complex state machines. Each module handles one phase of the cycle lifecycle.
+**Philosophy:** Routines are first-class entities with complex state machines. Each module handles one phase of the routine lifecycle.
 
-**Reasoning:** Cycle switching involves 20+ steps. Breaking it into loader → manager → switcher made it testable and debuggable.
+**Reasoning:** Routine switching involves 20+ steps. Breaking it into loader → manager → switcher made it testable and debuggable.
 
 ---
 
@@ -412,7 +412,7 @@ miniCycle-main.js (entrypoint)
 **New name:** `modules/`
 **Reason:** "Utilities" implies helpers. These are full modules with state, dependencies, and complex logic. The rename happened in commit `bd373e2` on Nov 10, 2025.
 
-### Why domain folders (task/, cycle/) instead of technical layers (services/, controllers/)?
+### Why domain folders (task/, routine/) instead of technical layers (services/, controllers/)?
 **Traditional approach:** Group by pattern (all services together)
 **Our approach:** Group by domain (all task stuff together)
 **Reason:** When working on tasks, you want task files together. Finding "which service handles this task operation" is cognitive overhead we don't need.
@@ -526,7 +526,7 @@ miniCycle-main.js (entrypoint)
 
 ### Decision: Domain-based module organization
 **Alternative considered:** Technical layers (services/, components/, utils/)
-**Chosen approach:** Domain folders (task/, cycle/, recurring/)
+**Chosen approach:** Domain folders (task/, routine/, recurring/)
 **Reasoning:**
 - Features are developed vertically (task creation touches core, DOM, events, validation)
 - Finding "all task-related files" is easier than "all service files"
