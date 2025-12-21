@@ -282,9 +282,11 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         const menu = document.createElement('div');
         menu.className = 'menu-container visible';
 
-        setMenuManagerDependencies(createMockDeps());
-        // querySelector must be passed to constructor (not just DI)
-        const instance = new MenuManager({ querySelector: () => menu });
+        // querySelector injected via DI system
+        setMenuManagerDependencies(createMockDeps({
+            querySelector: () => menu
+        }));
+        const instance = new MenuManager();
 
         instance.hideMainMenu();
 
@@ -502,7 +504,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             activeCycle: 'cycle-1'
         };
 
-        // getElementById must be passed to constructor (not just DI)
+        // getElementById injected via DI system
         const getElementByIdMock = (id) => {
             if (id === 'main-menu-mini-cycle-title') return header;
             if (id === 'current-date') return document.createElement('span');
@@ -510,9 +512,10 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => mockFlattenedData
+            loadMiniCycleData: () => mockFlattenedData,
+            getElementById: getElementByIdMock
         }));
-        const instance = new MenuManager({ getElementById: getElementByIdMock });
+        const instance = new MenuManager();
 
         instance.updateMainMenuHeader();
 

@@ -34,7 +34,11 @@ const di = createDIModule('MenuManager', {
     checkCompleteAllButton: optional(null),
     updateUndoRedoButtons: optional(null),
     recurringPanel: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    // DOM query functions (can be injected for testing)
+    getElementById: optional((id) => document.getElementById(id)),
+    querySelector: optional((sel) => document.querySelector(sel)),
+    querySelectorAll: optional((sel) => document.querySelectorAll(sel))
 });
 
 // Late-binding deps via Proxy
@@ -64,15 +68,16 @@ export class MenuManager {
         this.hasRun = false; // Track if setupMainMenu has run
 
         // Store dependencies with resilient fallbacks
+        // All deps come from DI system (resolvedDeps), not raw constructor params
         this.deps = {
             loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
             AppState: resolvedDeps.AppState || (() => null),
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             showPromptModal: resolvedDeps.showPromptModal || this.fallbackPromptModal,
             showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirmationModal,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            getElementById: resolvedDeps.getElementById,
+            querySelector: resolvedDeps.querySelector,
+            querySelectorAll: resolvedDeps.querySelectorAll,
             safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener,
             switchMiniCycle: resolvedDeps.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
             createNewMiniCycle: resolvedDeps.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
