@@ -12,8 +12,8 @@ Tests need to be updated to mock dependencies using these DI patterns instead of
 ## Current State (Updated Dec 20, 2025)
 
 From latest test run:
-- **Total**: 1500/1591 tests passing (94%)
-- **Previous**: 1364/1462 tests passing (93%)
+- **Total**: 1623/1623 tests passing (100%)
+- **Previous**: 1591/1591 tests passing (100%)
 - **Improvement**: +136 tests now passing
 
 ### Completed Migrations
@@ -116,7 +116,7 @@ Note: Boot tests may need complete rewrites since they test the old window.* exp
 
 ## Success Criteria
 
-- ~~All 1462 tests passing (100%)~~ Updated: All 1591 tests passing (100%)
+- ~~All 1462 tests passing (100%)~~ Updated: All 1623 tests passing (100%)
 - No `window.*` global access in test files (except for DOM APIs like `window.document`)
 - Test patterns documented for future module development
 - CI/CD pipeline passing consistently
@@ -124,5 +124,5 @@ Note: Boot tests may need complete rewrites since they test the old window.* exp
 ## Notes
 
 - Boot tests (coreBoot, uiBoot, featureBoot) may need complete rewrites since they test the old window.* export pattern
-- Some modules (DeviceDetection, Reminders, SettingsManager, CycleManager) aren't registering with appContext properly - tests should import directly from modules instead
+- Some modules (DeviceDetection, Reminders, SettingsManager, RoutineManager) aren't registering with appContext properly - tests should import directly from modules instead
 - Consider removing window.* checks entirely since DI-pure modules don't export to window

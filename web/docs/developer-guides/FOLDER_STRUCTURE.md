@@ -243,7 +243,7 @@ web/
 
 ## Modules Organization
 
-The `/modules/` directory contains 46 ES6 modules organized into 11 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
+The `/modules/` directory contains 61 ES6 modules organized into 12 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
 
 ### `boot/` - Boot Sequence Modules (Dec 2025)
 **Purpose:** Application boot orchestration split into focused files

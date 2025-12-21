@@ -81,13 +81,13 @@ This document summarizes the comprehensive error handling improvements and testi
   - `resetTasks()` - Cycle reset
   - `handleCompleteAllTasks()` - Bulk completion
 
-### 2. cycleManager.js
+### 2. routineManager.js
 - **Score:** 48/100 → 88/100 (+40 points)
 - **Fixes:** 3 locations
 - **Methods Fixed:**
-  - `showCycleCreationModal()` - New cycle creation
-  - `preloadGettingStartedCycle()` - Onboarding
-  - `createBasicFallbackCycle()` - Emergency fallback
+  - `showRoutineCreationModal()` - New routine creation
+  - `preloadGettingStartedRoutine()` - Onboarding
+  - `createBasicFallbackRoutine()` - Emergency fallback
 
 ### 3. testing-modal.js
 - **Score:** 30/100 → 85/100 (+55 points)
@@ -243,7 +243,7 @@ This document summarizes the comprehensive error handling improvements and testi
 | Metric | Before | After |
 |--------|--------|-------|
 | **taskCore.js** | 45/100 | 90/100 |
-| **cycleManager.js** | 48/100 | 88/100 |
+| **routineManager.js** | 48/100 | 88/100 |
 | **testing-modal.js** | 30/100 | 85/100 |
 | **globalUtils.js** | 82/100 | 95/100 |
 | **errorHandler.js** | N/A | 95/100 |
@@ -292,7 +292,7 @@ This document summarizes the comprehensive error handling improvements and testi
 ### Files Enhanced (13)
 1. `modules/utils/globalUtils.js` - Added 5 safe utility functions
 2. `modules/task/taskCore.js` - Added error handling to 8 methods
-3. `modules/cycle/cycleManager.js` - Added error handling to 3 methods
+3. `modules/routine/routineManager.js` - Added error handling to 3 methods
 4. `modules/testing/testing-modal.js` - Added error handling to 14 locations
 5. `modules/boot/orchestrator.js` - Integrated errorHandler module
 6. `tests/module-test-suite.html` - Added 2 new test modules
@@ -454,7 +454,7 @@ Visit `http://localhost:8080/tests/module-test-suite.html` and select:
 **miniCycle v1.355 now has:**
 - ✅ Enterprise-grade error handling
 - ✅ Comprehensive security testing
-- ✅ 1,070 tests (100% passing)
+- ✅ 1,623 tests (100% passing)
 - ✅ 92/100 error handling score
 - ✅ Complete documentation
 - ✅ Zero known vulnerabilities

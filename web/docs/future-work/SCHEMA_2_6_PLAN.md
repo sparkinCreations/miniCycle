@@ -118,7 +118,7 @@ const SCHEMA_2_6 = {
 
 ### Migration Function
 
-**Location:** `modules/cycle/cycleLoader.js`
+**Location:** `modules/routine/routineLoader.js`
 
 ```javascript
 /**
@@ -180,7 +180,7 @@ function migrateSchema_2_5_to_2_6(data) {
 
 ### 1. Update Schema Detection
 
-**File:** `modules/cycle/cycleLoader.js`
+**File:** `modules/routine/routineLoader.js`
 
 ```javascript
 // Current
@@ -202,9 +202,9 @@ if (data.schemaVersion === "2.6") {
 
 **Files to Update:**
 - `miniCycle-scripts.js` - Main app orchestration
-- `modules/cycle/cycleManager.js` - Cycle creation/management
-- `modules/cycle/cycleSwitcher.js` - Cycle switching
-- `modules/cycle/cycleLoader.js` - Data loading/saving
+- `modules/routine/routineManager.js` - Routine creation/management
+- `modules/routine/routineSwitcher.js` - Routine switching
+- `modules/routine/routineLoader.js` - Data loading/saving
 - `modules/task/taskCore.js` - Task operations
 - `modules/ui/statsPanel.js` - Statistics display
 
@@ -356,7 +356,7 @@ describe('Schema 2.5 → 2.6 Migration', () => {
 - [ ] Run all existing tests
 - [ ] Fix any breaking tests
 - [ ] Add new integration tests
-- [ ] Verify 1070 tests still passing
+- [ ] Verify 1623 tests still passing
 
 ### Phase 3: Documentation & Release (Day 3)
 

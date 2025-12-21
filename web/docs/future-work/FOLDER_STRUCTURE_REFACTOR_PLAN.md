@@ -398,7 +398,7 @@ const modules = [
 
 3. **Run baseline tests**
    ```bash
-   npm test  # Verify all 1070 tests passing
+   npm test  # Verify all 1623 tests passing
    ```
 
 ### Phase 2: Folder & File Renames (1 hour)

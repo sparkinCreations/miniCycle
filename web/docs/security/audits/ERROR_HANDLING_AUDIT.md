@@ -43,7 +43,7 @@
 
 **✅ Critical Files Fixed**
 - **taskCore.js:** 45/100 → 90/100 (+45 points) - 8 methods protected
-- **cycleManager.js:** 48/100 → 88/100 (+40 points) - 3 methods protected
+- **routineManager.js:** 48/100 → 88/100 (+40 points) - 3 methods protected
 - **testing-modal.js:** 30/100 → 85/100 (+55 points) - 14 locations protected
 
 **✅ Test Coverage Added**
@@ -104,9 +104,9 @@ See [../ERROR_HANDLING_AND_TESTING_SUMMARY.md](../ERROR_HANDLING_AND_TESTING_SUM
 - `themeManager.js` - Basic coverage
 - `dueDates.js` - Basic coverage
 
-**Cycle Module (3 files)**
-- `cycleManager.js` - Good: Sample loading protected (line 120-194)
-- `cycleLoader.js` - Good: Task rendering protected
+**Routine Module (3 files)**
+- `routineManager.js` - Good: Sample loading protected (line 120-194)
+- `routineLoader.js` - Good: Task rendering protected
 - `migrationManager.js` - Good: Migration operations protected
 
 **Utilities Module (3 files)**
@@ -290,7 +290,7 @@ JSON.parse(localStorage.getItem("miniCycleData"))
 
 **Locations:**
 - taskCore.js: 14 instances
-- cycleManager.js: Multiple instances
+- routineManager.js: Multiple instances
 - testing-modal.js: Multiple instances
 - notifications.js: Line 47, 78 (wrapped in try-catch ✓)
 - settingsManager.js: Protected with try-catch ✓
@@ -329,11 +329,11 @@ fallbackUpdate() {
 **13 Files With Minimal or No Error Handling:**
 
 1. `taskUtils.js` - ✗ No try-catch blocks
-2. `taskValidation.js` - ✗ No try-catch blocks  
+2. `taskValidation.js` - ✗ No try-catch blocks
 3. `taskRenderer.js` - ✗ No try-catch blocks
 4. `taskEvents.js` - ✗ No try-catch blocks
-5. `cycleLoader.js` - ✗ No try-catch blocks (despite critical data operations)
-6. `cycleSwitcher.js` - ✗ No try-catch blocks
+5. `routineLoader.js` - ✗ No try-catch blocks (despite critical data operations)
+6. `routineSwitcher.js` - ✗ No try-catch blocks
 7. `modeManager.js` - ✗ No try-catch blocks
 8. `basicPluginSystem.js` - ✗ Plugin loading unprotected
 9. `reminders.js` - ✗ Minimal error handling
@@ -411,10 +411,10 @@ async init() {
 
 **Gap:** Users never see these errors
 
-- cycleManager.js - Line 184: `console.error('❌ Failed to load sample miniCycle:', err);`
+- routineManager.js - Line 184: `console.error('❌ Failed to load sample miniRoutine:', err);`
   - Should call: `this.deps.showNotification('Failed to load sample', 'error')`
 
-- cycleLoader.js - Multiple console.error calls without notifications
+- routineLoader.js - Multiple console.error calls without notifications
 
 - taskDOM.js - Module loading errors logged but not shown to user
 
@@ -481,7 +481,7 @@ setupEventListeners() {
    - ✗ No catch handler
 
 **Async/Await without Catch (Multiple locations)**
-- cycleSwitcher.js - Async functions without error handling
+- routineSwitcher.js - Async functions without error handling
 - reminders.js - Initialization without error handling
 
 ---
@@ -562,7 +562,7 @@ function assertInjected(name, value) {
 - Some modules call `appInit.waitForCore()` without timeout
 - Some modules don't wait and assume state is ready
 - Examples:
-  - cycleManager.js - Line 78: No await before JSON.parse
+  - routineManager.js - Line 78: No await before JSON.parse
   - settingsManager.js - Line 94: DOM queries without null checks
 
 ---
@@ -624,7 +624,7 @@ function assertInjected(name, value) {
 
 4. **Wrap Critical Initialization Functions**
    - taskDOM.js - Dynamic imports (line 125+)
-   - cycleLoader.js - Task rendering
+   - routineLoader.js - Task rendering
    - settingsManager.js - Already good, keep pattern
 
 ### Priority 2 (Implement This Sprint)
@@ -632,7 +632,7 @@ function assertInjected(name, value) {
 5. **Add Error Notifications for Silent Failures**
    - Review all console.error/warn calls
    - Add showNotification for user-facing operations
-   - Files: cycleManager.js, cycleLoader.js, taskDOM.js
+   - Files: routineManager.js, routineLoader.js, taskDOM.js
 
 6. **Add Timeout to Async Initialization**
    ```javascript

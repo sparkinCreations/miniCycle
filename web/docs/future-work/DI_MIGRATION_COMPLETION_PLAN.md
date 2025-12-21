@@ -86,14 +86,14 @@ export const deps = di.deps;
 | TaskValidation | `task/taskValidation.js` | Low |
 | DragDropManager | `task/dragDropManager.js` | Medium |
 
-#### Priority 3: Cycle Modules
+#### Priority 3: Routine Modules
 | Module | Path | Complexity |
 |--------|------|------------|
-| CycleLoader | `cycle/cycleLoader.js` | Medium |
-| CycleManager | `cycle/cycleManager.js` | High |
-| CycleSwitcher | `cycle/cycleSwitcher.js` | Medium |
-| ModeManager | `cycle/modeManager.js` | Low |
-| MigrationManager | `cycle/migrationManager.js` | High |
+| RoutineLoader | `routine/routineLoader.js` | Medium |
+| RoutineManager | `routine/routineManager.js` | High |
+| RoutineSwitcher | `routine/routineSwitcher.js` | Medium |
+| ModeManager | `routine/modeManager.js` | Low |
+| MigrationManager | `routine/migrationManager.js` | High |
 
 #### Priority 4: UI Modules
 | Module | Path | Complexity |
@@ -247,7 +247,7 @@ export const PHASES = {
     UTILITIES: 1,      // Notifications, DataValidator, ErrorHandler
     DATA_ACCESS: 2,    // DataAccess, MigrationManager
     TASK_MANAGEMENT: 3,// TaskCore, TaskDOM, TaskEvents
-    CYCLE_MANAGEMENT: 4,// CycleLoader, CycleManager, CycleSwitcher
+    ROUTINE_MANAGEMENT: 4,// RoutineLoader, RoutineManager, RoutineSwitcher
     UI_MANAGERS: 5,    // MenuManager, SettingsManager, ModalManager
     FEATURES: 6,       // ThemeManager, Reminders, DueDates
     RECURRING: 7,      // RecurringCore, RecurringPanel
@@ -494,7 +494,7 @@ Phase 4: Cleanup
 - Test that all APIs are accessible
 
 ### Regression Tests
-- Full test suite (1,458 tests) must pass
+- Full test suite (1,623 tests) must pass
 - Manual testing of critical flows:
   - Task creation/completion
   - Cycle switching
