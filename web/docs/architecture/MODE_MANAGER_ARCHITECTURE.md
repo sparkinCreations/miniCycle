@@ -4,7 +4,7 @@
 
 **Version**: 1.373
 **Last Updated**: November 23, 2025
-**Module**: `modules/cycle/modeManager.js` (633 lines)
+**Module**: `modules/routine/modeManager.js` (633 lines)
 **Pattern**: Resilient Constructor 🛡️
 
 ---

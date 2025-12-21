@@ -24,8 +24,12 @@ The following changes were made on December 21, 2025:
    - `setCycleManagerDependencies` → `setRoutineManagerDependencies`
    - `setCycleSwitcherDependencies` → `setRoutineSwitcherDependencies`
    - `setCycleLoaderDependencies` → `setRoutineLoaderDependencies`
+5. **Test files renamed:**
+   - `cycleManager.tests.js` → `routineManager.tests.js`
+   - `cycleSwitcher.tests.js` → `routineSwitcher.tests.js`
+   - `cycleLoader.tests.js` → `routineLoader.tests.js`
 
-**Backward compatibility aliases provided** for all renamed exports to prevent breaking existing code.
+**All backward compatibility aliases were removed** to keep the codebase clean. All 1623 tests pass.
 
 ---
 
@@ -625,6 +629,6 @@ After this refactor:
 
 ---
 
-**Last Updated:** November 14, 2025
-**Status:** Ready for implementation alongside Schema 2.6
-**Estimated Completion:** 1-2 days
+**Last Updated:** December 21, 2025
+**Status:** ✅ COMPLETED
+**Completed:** December 21, 2025

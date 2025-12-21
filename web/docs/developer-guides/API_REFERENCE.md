@@ -203,7 +203,7 @@ const themes = ThemeManager.getAvailableThemes();
 ### Mode Manager Module
 
 ```javascript
-import { ModeManager } from './utilities/cycle/modeManager.js';
+import { ModeManager } from './utilities/routine/modeManager.js';
 
 // Switch mode
 ModeManager.switchMode('auto-cycle');  // or 'manual-cycle', 'todo-mode'

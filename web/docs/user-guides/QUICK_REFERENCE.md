@@ -92,7 +92,7 @@ web/
 │   ├── notifications.js       # Notification system
 │   ├── statsPanel.js          # Stats & achievements
 │   ├── recurringCore.js       # Recurring logic
-│   ├── cycleLoader.js         # Data loading
+│   ├── routineLoader.js       # Data loading
 │   ├── globalUtils.js         # Utilities
 │   ├── task/                  # Task modules (100% COMPLETE!)
 │   │   ├── taskDOM.js         # High-level coordination
@@ -110,9 +110,9 @@ web/
 │   │   ├── onboardingManager.js # First-time setup
 │   │   ├── gamesManager.js    # Mini-games
 │   │   └── themeManager.js    # Theme management
-│   ├── cycle/                 # Cycle modules (ALL COMPLETE!)
-│   │   ├── cycleManager.js    # Cycle CRUD
-│   │   ├── cycleSwitcher.js   # Cycle switching
+│   ├── routine/               # Routine modules (ALL COMPLETE!)
+│   │   ├── routineManager.js  # Routine CRUD
+│   │   ├── routineSwitcher.js # Routine switching
 │   │   ├── modeManager.js     # Mode management
 │   │   └── migrationManager.js # Data migration
 │   └── ...
@@ -242,10 +242,10 @@ export class StatsPanelManager {
 
 ### Pattern 4: Strict Injection
 ```javascript
-// utilities/cycleLoader.js
+// modules/routine/routineLoader.js
 const Deps = { loadData: null, addTask: null };
 
-function setCycleLoaderDependencies(overrides) {
+function setRoutineLoaderDependencies(overrides) {
     Object.assign(Deps, overrides);
 }
 
@@ -699,7 +699,7 @@ export function runMyModuleTests(resultsDiv) {
 |--------|-------|--------|
 | ThemeManager | 18 | ✅ |
 | DeviceDetection | 17 | ✅ |
-| CycleLoader | 11 | ✅ |
+| RoutineLoader | 11 | ✅ |
 | StatsPanel | 27 | ✅ |
 | State | 41 | ✅ |
 | RecurringCore | 44 | ✅ |
@@ -711,7 +711,7 @@ export function runMyModuleTests(resultsDiv) {
 | DueDates | 23 | ✅ |
 | Reminders | 28 | ✅ |
 | ModeManager | 26 | ✅ |
-| CycleSwitcher | 38 | ✅ |
+| RoutineSwitcher | 38 | ✅ |
 | GamesManager | 23 | ✅ |
 | OnboardingManager | 38 | ✅ |
 | ModalManager | 50 | ✅ |
@@ -786,7 +786,7 @@ window.exportDebugData()                 // Debug package
 - **utilities/notifications.js** - Notification system (1,036 lines)
 - **utilities/statsPanel.js** - Stats & achievements (1,047 lines)
 - **utilities/task/** - Task system (7 modules)
-- **utilities/cycle/** - Cycle system (5 modules)
+- **utilities/routine/** - Routine system (5 modules)
 - **utilities/ui/** - UI coordination (6 modules)
 - **utilities/recurringCore.js** - Recurring logic (927 lines)
 

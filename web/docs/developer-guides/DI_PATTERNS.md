@@ -1,6 +1,6 @@
 # DI Patterns Guide
 
-**Last Updated:** December 20, 2025
+**Last Updated:** December 21, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
 This document covers the dependency injection patterns used in miniCycle. All 53 modules follow these patterns.
@@ -419,9 +419,9 @@ loadData: () => window.loadMiniCycleData?.()
 | `backupManager.js` | `setBackupManagerDependencies` |
 | `basicPluginSystem.js` | `setBasicPluginSystemDependencies` |
 | `consoleCapture.js` | `setConsoleCaptureDependencies` |
-| `cycleLoader.js` | `setCycleLoaderDependencies` |
-| `cycleManager.js` | `setCycleManagerDependencies` |
-| `cycleSwitcher.js` | `setCycleSwitcherDependencies` |
+| `routineLoader.js` | `setRoutineLoaderDependencies` |
+| `routineManager.js` | `setRoutineManagerDependencies` |
+| `routineSwitcher.js` | `setRoutineSwitcherDependencies` |
 | `dataValidator.js` | `setDataValidatorDependencies` |
 | `deviceDetection.js` | `setDeviceDetectionDependencies` |
 | `dragDropManager.js` | `setDragDropManagerDependencies` |

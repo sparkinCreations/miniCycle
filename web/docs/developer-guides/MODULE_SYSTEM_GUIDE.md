@@ -117,16 +117,16 @@ const statsPanel = new StatsPanelManager({
 **Requires dependencies, throws if missing.**
 
 ```javascript
-// modules/cycle/cycleLoader.js
+// modules/routine/routineLoader.js
 const Deps = {};
 
-export function setCycleLoaderDependencies(overrides) {
+export function setRoutineLoaderDependencies(overrides) {
     Object.assign(Deps, overrides);
 }
 
 function assertInjected(name, fn) {
     if (typeof fn !== 'function') {
-        throw new Error(`cycleLoader: missing dependency ${name}`);
+        throw new Error(`routineLoader: missing dependency ${name}`);
     }
 }
 
@@ -139,7 +139,7 @@ export function loadMiniCycle() {
 }
 
 // In main script - still injects globals
-setCycleLoaderDependencies({
+setRoutineLoaderDependencies({
     loadMiniCycleData: window.loadMiniCycleData,  // ← global
     addTask: window.addTask,                       // ← global
 });
@@ -278,7 +278,7 @@ The difference: no fallback to globals. Dependencies are required and explicit.
 - Most UI modules
 
 ### Strict Injection (Legacy)
-- `modules/cycle/cycleLoader.js` - Cycle loading
+- `modules/routine/routineLoader.js` - Routine loading
 - `modules/recurring/recurringCore.js` - Recurring logic
 - `modules/ui/undoRedoManager.js` - Undo/redo system
 

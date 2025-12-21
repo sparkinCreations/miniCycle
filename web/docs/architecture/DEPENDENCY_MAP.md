@@ -1,7 +1,7 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** December 20, 2025
+> **Updated:** December 21, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
@@ -29,13 +29,13 @@ The miniCycle codebase has **53 modules** across **11 directories**. All modules
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   appContext.js (centralized registry)       │
-│  getAppState(), getTaskApi(), getUiApi(), getCycleApi()     │
+│  getAppState(), getTaskApi(), getUiApi(), getRoutineApi()   │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
-│  │  core/  │  │  tasks/ │  │  cycle/ │  │   ui/   │        │
+│  │  core/  │  │  tasks/ │  │routine/ │  │   ui/   │        │
 │  │         │  │         │  │         │  │         │        │
-│  │appState │  │taskCore │  │ cycle   │  │ modal   │        │
+│  │appState │  │taskCore │  │ routine │  │ modal   │        │
 │  │appInit  │  │taskDOM  │  │ Manager │  │ Manager │        │
 │  │constants│  │dragDrop │  │ modeMan │  │settings │        │
 │  └─────────┘  └─────────┘  └─────────┘  └─────────┘        │
@@ -65,8 +65,8 @@ Phase 1: Core Systems
 
 Phase 2: Module Loading (parallel-safe)
 ───────────────────────────────────────
-├── cycleManager.js
-├── cycleSwitcher.js
+├── routineManager.js
+├── routineSwitcher.js
 ├── modeManager.js
 ├── taskCore.js
 ├── taskDOM.js
@@ -80,7 +80,7 @@ Phase 2: Module Loading (parallel-safe)
 
 Phase 3: Data & Rendering
 ─────────────────────────
-1. cycleLoader.loadMiniCycle()
+1. routineLoader.loadMiniCycle()
 2. UI fully interactive
 ```
 
@@ -118,9 +118,9 @@ Exports:    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETT
 
 ### Tier 2: Core Functionality
 
-#### `modules/cycle/cycleManager.js`
+#### `modules/routine/routineManager.js`
 ```
-Creates:    window.cycleManager
+Creates:    window.routineManager
 Imports:    none
 Dependencies (constructor injection with validation):
   - AppState, showPromptModal, sanitizeInput
@@ -132,7 +132,7 @@ Dependencies (constructor injection with validation):
 Note:       Has _validateDependencies() method, uses deps.* pattern
 ```
 
-#### `modules/cycle/cycleLoader.js`
+#### `modules/routine/routineLoader.js`
 ```
 Creates:    window.loadMiniCycle (optional)
 Consumes:   window.syncAllTasksWithMode, window.recurringCore
@@ -143,7 +143,7 @@ Dependencies (injected):
   - updateProgressBar, updateMainMenuHeader, updateStatsPanel
 ```
 
-#### `modules/cycle/modeManager.js`
+#### `modules/routine/modeManager.js`
 ```
 Creates:    window.modeManager, window.initializeModeSelector,
             window.setupModeSelector, window.syncModeFromToggles, etc.
@@ -151,9 +151,9 @@ Consumes:   window.AppState, window.recurringCore
 Imports:    appInit
 ```
 
-#### `modules/cycle/cycleSwitcher.js`
+#### `modules/routine/routineSwitcher.js`
 ```
-Creates:    window.cycleSwitcher + 7 wrapper functions
+Creates:    window.routineSwitcher + 7 wrapper functions
 Consumes:   window.AppState, window.showPromptModal,
             window.showConfirmationModal, window.sanitizeInput,
             window.loadMiniCycle
@@ -333,7 +333,7 @@ deps.core.AppState
 deps.utils.showNotification
 deps.task.taskCore
 deps.ui.modalManager
-deps.cycle.cycleManager
+deps.routine.routineManager
 deps.recurring.recurringCore
 ```
 
@@ -350,7 +350,7 @@ import { TaskCore } from '../task/taskCore.js';
 ```
 User Action
     ↓
-TaskCore / CycleSwitcher / etc.
+TaskCore / RoutineSwitcher / etc.
     ↓
 AppState.update(producer, immediate)
     ↓
@@ -385,7 +385,7 @@ export function setDependencies(overrides) {
     Object.assign(Deps, overrides);
 }
 // Used by: recurringCore, undoRedoManager, migrationManager, themeManager,
-//          dataValidator, modalManager, cycleManager, taskRenderer,
+//          dataValidator, modalManager, routineManager, taskRenderer,
 //          taskOptionsCustomizer, onboardingManager, pullToRefresh
 ```
 **Reality:** Actually enforced. Must call setter before use.

@@ -72,7 +72,7 @@ tests/
 |----------|---------|-------|
 | **Core** | integration, state, appInit, appState, constants | 169 |
 | **Task Management** | taskCore, taskValidation, taskUtils, taskRenderer, taskEvents, taskDOM, taskUI, taskInteractions | 189 |
-| **Cycle System** | cycleLoader, modeManager, cycleSwitcher, cycleManager, cycleCompletion, migrationManager | 190 |
+| **Routine System** | routineLoader, modeManager, routineSwitcher, routineManager, cycleCompletion, migrationManager | 190 |
 | **Recurring Tasks** | recurringCore, recurringIntegration, recurringPanel | 173 |
 | **UI Components** | undoRedoManager, modalManager, menuManager, settingsManager, onboardingManager, gamesManager, taskOptionsCustomizer, helpWindowManager, completedTasksManager, uiEffects | 390 |
 | **Features** | notifications, statsPanel, themeManager, dragDropManager, dueDates, reminders, pullToRefresh | 181 |
@@ -269,7 +269,7 @@ npm run lighthouse  # Terminal 2
 ✅ integration          11/11 tests
 ✅ themeManager         15/15 tests
 ✅ deviceDetection      13/13 tests
-✅ cycleLoader          10/10 tests
+✅ routineLoader        10/10 tests
 ✅ statsPanel           24/24 tests
 ✅ consoleCapture       32/32 tests
 ✅ state                40/40 tests
@@ -283,8 +283,8 @@ npm run lighthouse  # Terminal 2
 ✅ dueDates             16/16 tests
 ✅ reminders            4/4 tests
 ✅ modeManager          27/27 tests
-✅ cycleSwitcher        20/20 tests
-✅ cycleManager         35/35 tests
+✅ routineSwitcher      20/20 tests
+✅ routineManager       35/35 tests
 ✅ undoRedoManager      73/73 tests
 ✅ gamesManager         21/21 tests
 ✅ onboardingManager    32/32 tests

@@ -94,7 +94,7 @@ Running 53 test modules across all systems...
 ============================================================
    ✅ PASS themeManager           15/15 tests
    ✅ PASS deviceDetection        13/13 tests
-   ✅ PASS cycleLoader            10/10 tests
+   ✅ PASS routineLoader           10/10 tests
    ✅ PASS globalUtils            36/36 tests
    ✅ PASS notifications          35/35 tests
    ✅ PASS state                  40/40 tests
@@ -346,7 +346,7 @@ Current module test coverage (53 modules, 1623 tests):
 | integration | 11 | taskCore | 35 |
 | themeManager | 15 | taskValidation | 25 |
 | deviceDetection | 13 | taskUtils | 22 |
-| cycleLoader | 10 | taskRenderer | 16 |
+| routineLoader | 10 | taskRenderer | 16 |
 | statsPanel | 24 | taskEvents | 13 |
 | consoleCapture | 32 | taskDOM | 45 |
 | state | 40 | taskOptionsCustomizer | 27 |
@@ -360,8 +360,8 @@ Current module test coverage (53 modules, 1623 tests):
 | dueDates | 22 | cycleCompletion | 41 |
 | reminders | 4 | dataValidator | 54 |
 | modeManager | 31 | appInit | 53 |
-| cycleSwitcher | 20 | appState | 60 |
-| cycleManager | 35 | helpWindowManager | 54 |
+| routineSwitcher | 20 | appState | 60 |
+| routineManager | 35 | helpWindowManager | 54 |
 | undoRedoManager | 72 | constants | 21 |
 | gamesManager | 21 | basicPluginSystem | 42 |
 | onboardingManager | 33 | accessibility | 41 |

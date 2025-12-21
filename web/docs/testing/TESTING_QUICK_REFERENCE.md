@@ -77,7 +77,7 @@ tests/
 ├── globalUtils.tests.js            # GlobalUtils tests
 ├── themeManager.tests.js           # ThemeManager tests
 ├── deviceDetection.tests.js        # DeviceDetection tests
-├── cycleLoader.tests.js            # CycleLoader tests
+├── routineLoader.tests.js          # RoutineLoader tests
 ├── notifications.tests.js          # Notifications tests
 ├── taskOptionsCustomizer.tests.js  # TaskOptionsCustomizer tests
 └── ... (50 modules total)
@@ -180,7 +180,7 @@ if (currentModule === 'myModule') {
 const modules = [
     'themeManager',
     'deviceDetection',
-    'cycleLoader',
+    'routineLoader',
     'globalUtils',
     'notifications',
     'myModule'  // ← Add here
@@ -393,7 +393,7 @@ function test(name, testFn) {
 | DueDates | 17 | ✅ |
 | Reminders | 20 | ✅ |
 | ModeManager | 28 | ✅ |
-| CycleSwitcher | 22 | ✅ |
+| RoutineSwitcher | 22 | ✅ |
 | UndoRedoManager | 52 | ✅ |
 | GamesManager | 21 | ✅ |
 | OnboardingManager | 33 | ✅ |
@@ -726,12 +726,12 @@ test('rolls back on update error', async () => {
 
 ### Schema 2.5 Testing Pattern 🗄️
 
-**Critical lesson from CycleSwitcher tests: Always test data access paths**
+**Critical lesson from RoutineSwitcher tests: Always test data access paths**
 
 ```javascript
 // ❌ WRONG - This test would pass with incorrect code!
 test('updatePreview works', async () => {
-    const instance = new CycleSwitcher({
+    const instance = new RoutineSwitcher({
         loadMiniCycleData: () => ({ cycles: {} })  // Wrong structure!
     });
 
@@ -764,7 +764,7 @@ test('updatePreview generates task preview', async () => {
     previewWindow.id = 'switch-preview-window';
     document.body.appendChild(previewWindow);
 
-    const instance = new CycleSwitcher({
+    const instance = new RoutineSwitcher({
         loadMiniCycleData: () => schemaData,
         getElementById: (id) => document.getElementById(id)
     });
@@ -789,7 +789,7 @@ test('updatePreview generates task preview', async () => {
 5. **Verify all branches** - Test success AND error paths
 
 **Real Impact:**
-- CycleSwitcher tests found Schema 2.5 bug in first run (4/22 tests failed)
+- RoutineSwitcher tests found Schema 2.5 bug in first run (4/22 tests failed)
 - Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.cycles`
 - Single fix: `const cycles = schemaData.data?.cycles || {};`
 - All 22 tests passed after fix - **100% success rate**
