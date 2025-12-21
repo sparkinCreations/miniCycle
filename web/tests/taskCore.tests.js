@@ -3,22 +3,22 @@
  *
  * Tests for the Task Core module (CRUD operations and batch operations)
  *
- * @version 1.333
+ * @version 1.334
  * @module tests/taskCore
  */
 
+// Direct import from module (not via appContext which may not be populated)
 import {
-    getTestAppState,
-    getTestShowNotification,
-    getTestAddTask
-} from './helpers/testContext.js';
+    TaskCore,
+    setTaskCoreDependencies,
+    initTaskCore
+} from '../modules/task/taskCore.js';
+
 import {
-    getTaskCoreClass,
-    getHandleTaskCompletionChange,
-    getSaveCurrentTaskOrder,
-    getResetTasks,
-    getHandleCompleteAllTasks
-} from '../modules/core/appContext.js';
+    createMockAppState,
+    createMockNotification,
+    setupTestEnvironment
+} from './testHelpers.js';
 
 export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🎯 TaskCore Tests</h2>';
@@ -47,9 +47,17 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         }
     }
 
+    // Setup test environment
+    await setupTestEnvironment();
 
-    // Import the module class via appContext
-    const TaskCore = getTaskCoreClass();
+    // Set up mock dependencies for TaskCore
+    const mockShowNotification = createMockNotification();
+    setTaskCoreDependencies({
+        showNotification: mockShowNotification,
+        loadMiniCycleData: () => null,
+        autoSave: () => {},
+        showPromptModal: (opts) => { if (opts.callback) opts.callback('Test'); }
+    });
 
     // Check if class is available
     if (!TaskCore) {
@@ -70,9 +78,7 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
             }
         }
 
-        // Save references from appContext (these won't be modified, just for tracking)
-        const savedAppState = getTestAppState();
-        const savedShowNotification = getTestShowNotification();
+        // References for test tracking (using local mocks)
 
         try {
             // Clear localStorage
@@ -443,50 +449,61 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     });
 
     // ===================================================================
-    // GLOBAL EXPORTS TESTS (via testContext/appContext)
+    // MODULE EXPORTS TESTS
     // ===================================================================
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌍 Global Exports (via appContext)</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌍 Module Exports</h4>';
 
-    await test('TaskCore class is available via appContext', async () => {
-        const TaskCoreClass = getTaskCoreClass();
-        if (typeof TaskCoreClass === 'undefined') {
-            throw new Error('TaskCore not available via appContext');
+    await test('TaskCore class is exported from module', async () => {
+        if (typeof TaskCore !== 'function') {
+            throw new Error('TaskCore not exported from module');
         }
     });
 
-    await test('addTask function is available via testContext', async () => {
-        const addTask = getTestAddTask();
-        if (typeof addTask !== 'function') {
-            throw new Error('addTask not available via testContext');
+    await test('setTaskCoreDependencies is exported from module', async () => {
+        if (typeof setTaskCoreDependencies !== 'function') {
+            throw new Error('setTaskCoreDependencies not exported from module');
         }
     });
 
-    await test('handleTaskCompletionChange is available via appContext', async () => {
-        const handleTaskCompletionChange = getHandleTaskCompletionChange();
-        if (typeof handleTaskCompletionChange !== 'function') {
-            throw new Error('handleTaskCompletionChange not available via appContext');
+    await test('initTaskCore is exported from module', async () => {
+        if (typeof initTaskCore !== 'function') {
+            throw new Error('initTaskCore not exported from module');
         }
     });
 
-    await test('saveCurrentTaskOrder is available via appContext', async () => {
-        const saveCurrentTaskOrder = getSaveCurrentTaskOrder();
-        if (typeof saveCurrentTaskOrder !== 'function') {
-            throw new Error('saveCurrentTaskOrder not available via appContext');
+    await test('TaskCore instance has addTask method', async () => {
+        const instance = new TaskCore();
+        if (typeof instance.addTask !== 'function') {
+            throw new Error('addTask method not found on TaskCore instance');
         }
     });
 
-    await test('resetTasks is available via appContext', async () => {
-        const resetTasks = getResetTasks();
-        if (typeof resetTasks !== 'function') {
-            throw new Error('resetTasks not available via appContext');
+    await test('TaskCore instance has handleTaskCompletionChange method', async () => {
+        const instance = new TaskCore();
+        if (typeof instance.handleTaskCompletionChange !== 'function') {
+            throw new Error('handleTaskCompletionChange method not found on TaskCore instance');
         }
     });
 
-    await test('handleCompleteAllTasks is available via appContext', async () => {
-        const handleCompleteAllTasks = getHandleCompleteAllTasks();
-        if (typeof handleCompleteAllTasks !== 'function') {
-            throw new Error('handleCompleteAllTasks not available via appContext');
+    await test('TaskCore instance has saveCurrentTaskOrder method', async () => {
+        const instance = new TaskCore();
+        if (typeof instance.saveCurrentTaskOrder !== 'function') {
+            throw new Error('saveCurrentTaskOrder method not found on TaskCore instance');
+        }
+    });
+
+    await test('TaskCore instance has resetTasks method', async () => {
+        const instance = new TaskCore();
+        if (typeof instance.resetTasks !== 'function') {
+            throw new Error('resetTasks method not found on TaskCore instance');
+        }
+    });
+
+    await test('TaskCore instance has handleCompleteAllTasks method', async () => {
+        const instance = new TaskCore();
+        if (typeof instance.handleCompleteAllTasks !== 'function') {
+            throw new Error('handleCompleteAllTasks method not found on TaskCore instance');
         }
     });
 

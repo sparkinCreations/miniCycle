@@ -2,27 +2,24 @@
  * ModalManager Browser Tests
  * Test functions for module-test-suite.html
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers and testContext
+ * Updated for Phase 3 DI Pattern - direct module imports with DI
  */
 
 import {
     setupTestEnvironment,
-    createProtectedTest
+    createProtectedTest,
+    createMockNotification,
+    createMockHideMainMenu,
+    createMockSanitizeInput
 } from './testHelpers.js';
 
+// Direct import from module (not via appContext which may not be populated)
 import {
-    getTestModalManager,
-    getTestModalManagerInstance,
-    getTestShowNotification,
-    getTestHideMainMenu,
-    getTestSanitizeInput,
-    getTestSafeAddEventListener
-} from './helpers/testContext.js';
-
-import {
-    getCloseAllModals,
-    getInitModalManager
-} from '../modules/core/appContext.js';
+    ModalManager,
+    setModalManagerDependencies,
+    initModalManager,
+    getModalManager
+} from '../modules/ui/modalManager.js';
 
 export async function runModalManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -33,22 +30,33 @@ export async function runModalManagerTests(resultsDiv) {
     const env = await setupTestEnvironment();
 
     // =====================================================
-    // Phase 3: Initialize modalManager with test dependencies
-    // (No longer auto-initializes on import)
+    // Create mock dependencies for tests
     // =====================================================
-    const initModalManager = getInitModalManager();
-    let modalManagerInstance = getTestModalManagerInstance();
+    const mockShowNotification = createMockNotification();
+    const mockHideMainMenu = createMockHideMainMenu();
+    const mockSanitizeInput = createMockSanitizeInput();
+    const mockSafeAddEventListener = (el, ev, fn) => {
+        el?.removeEventListener?.(ev, fn);
+        el?.addEventListener?.(ev, fn);
+    };
 
-    if (initModalManager && !modalManagerInstance) {
-        // Initialize via appContext getter if needed
-        modalManagerInstance = await initModalManager({
-            showNotification: getTestShowNotification() || (() => {}),
-            hideMainMenu: getTestHideMainMenu() || (() => {}),
-            sanitizeInput: getTestSanitizeInput() || ((text) => text),
-            safeAddEventListener: getTestSafeAddEventListener() || ((el, ev, fn) => el?.addEventListener?.(ev, fn)),
-            waitForCore: () => Promise.resolve()
-        });
-    }
+    // Set dependencies at module level
+    setModalManagerDependencies({
+        showNotification: mockShowNotification,
+        hideMainMenu: mockHideMainMenu,
+        sanitizeInput: mockSanitizeInput,
+        safeAddEventListener: mockSafeAddEventListener,
+        waitForCore: () => Promise.resolve()
+    });
+
+    // Initialize the module-level instance
+    let modalManagerInstance = await initModalManager({
+        showNotification: mockShowNotification,
+        hideMainMenu: mockHideMainMenu,
+        sanitizeInput: mockSanitizeInput,
+        safeAddEventListener: mockSafeAddEventListener,
+        waitForCore: () => Promise.resolve()
+    });
 
     resultsDiv.innerHTML = '<h2>🎭 ModalManager Tests</h2><h3>Running tests...</h3>';
 
@@ -58,16 +66,13 @@ export async function runModalManagerTests(resultsDiv) {
     // Use shared test helper with data protection
     const test = createProtectedTest(resultsDiv, passed, total);
 
-    // Get ModalManager class via testContext
-    const ModalManager = getTestModalManager();
-
     // ===== INITIALIZATION TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization</h4>';
 
-    test('ModalManager class exists (via testContext)', () => {
+    test('ModalManager class exists', () => {
         if (typeof ModalManager === 'undefined') {
-            throw new Error('ModalManager class not found via testContext');
+            throw new Error('ModalManager class not found');
         }
     });
 
@@ -78,10 +83,10 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
-    test('has global instance (via testContext)', () => {
-        const instance = getTestModalManagerInstance();
+    test('has global instance', () => {
+        const instance = getModalManager();
         if (!instance) {
-            throw new Error('Global modalManager instance not found via testContext');
+            throw new Error('Global modalManager instance not found');
         }
         if (typeof instance.closeAllModals !== 'function') {
             throw new Error('Global instance missing methods');
@@ -311,9 +316,8 @@ export async function runModalManagerTests(resultsDiv) {
     });
 
     test('feedback modal opens when button clicked', () => {
-        const hideMainMenu = getTestHideMainMenu();
         const mm = new ModalManager({
-            hideMainMenu: hideMainMenu || (() => {})
+            hideMainMenu: mockHideMainMenu
         });
 
         // Create mock elements
@@ -703,19 +707,19 @@ export async function runModalManagerTests(resultsDiv) {
         modal.remove();
     });
 
-    // ===== GLOBAL WRAPPERS TESTS (via appContext) =====
+    // ===== GLOBAL INSTANCE TESTS =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (via appContext)</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Instance</h4>';
 
-    test('closeAllModals is available via appContext', () => {
-        const closeAllModals = getCloseAllModals();
-        if (typeof closeAllModals !== 'function') {
-            throw new Error('closeAllModals not available via appContext');
+    test('closeAllModals is available via getModalManager()', () => {
+        const instance = getModalManager();
+        if (!instance || typeof instance.closeAllModals !== 'function') {
+            throw new Error('closeAllModals not available via getModalManager()');
         }
     });
 
-    test('closeAllModals via appContext closes modals', () => {
-        const closeAllModals = getCloseAllModals();
+    test('closeAllModals via getModalManager() closes modals', () => {
+        const instance = getModalManager();
 
         // Create test modal
         const modal = document.createElement('div');
@@ -723,24 +727,23 @@ export async function runModalManagerTests(resultsDiv) {
         modal.style.display = 'flex';
         document.body.appendChild(modal);
 
-        closeAllModals();
+        instance.closeAllModals();
 
         if (modal.style.display !== 'none') {
-            throw new Error('closeAllModals via appContext should close modals');
+            throw new Error('closeAllModals via getModalManager() should close modals');
         }
 
         // Cleanup
         modal.remove();
     });
 
-    test('modalManager instance is accessible via testContext', () => {
-        const instance = getTestModalManagerInstance();
-        const ModalManagerClass = getTestModalManager();
+    test('modalManager instance is accessible via getModalManager()', () => {
+        const instance = getModalManager();
 
         if (!instance) {
-            throw new Error('modalManager instance not accessible via testContext');
+            throw new Error('modalManager instance not accessible');
         }
-        if (!(instance instanceof ModalManagerClass)) {
+        if (!(instance instanceof ModalManager)) {
             throw new Error('Instance is not ModalManager instance');
         }
     });

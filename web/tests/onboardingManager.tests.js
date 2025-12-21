@@ -5,7 +5,7 @@
  * Uses dependency injection pattern - no reliance on window.* globals
  */
 
-import { getTestOnboardingManager, getTestOnboardingManagerInstance } from './helpers/testContext.js';
+// DI-pure pattern: direct module imports instead of testContext
 
 // Import the module and its DI setter
 let OnboardingManager = null;
@@ -108,13 +108,13 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
-    test('has global instance (backward compat)', () => {
-        const instance = getTestOnboardingManagerInstance();
-        if (!instance) {
-            throw new Error('Global onboardingManager instance not found');
+    test('module exports singleton instance', () => {
+        // Module exports onboardingManager as named export
+        if (!onboardingManagerInstance) {
+            throw new Error('Module-level onboardingManager instance not found');
         }
-        if (typeof instance.showOnboarding !== 'function') {
-            throw new Error('Global instance missing methods');
+        if (typeof onboardingManagerInstance.showOnboarding !== 'function') {
+            throw new Error('Module instance missing methods');
         }
     });
 
@@ -677,43 +677,37 @@ export async function runOnboardingManagerTests(resultsDiv) {
         om.completeOnboarding(modal, {}, null);
     });
 
-    // ===== GLOBAL WRAPPER TESTS (Backward Compat) =====
+    // ===== MODULE EXPORTS TESTS =====
 
-    resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Wrappers (Backward Compat)</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Exports</h4>';
 
-    test('window.showOnboarding exists', () => {
-        if (typeof window.showOnboarding !== 'function') {
-            throw new Error('Global showOnboarding not found');
+    test('OnboardingManager class is exported', () => {
+        if (typeof OnboardingManager !== 'function') {
+            throw new Error('OnboardingManager class not exported');
         }
     });
 
-    test('global showOnboarding calls instance method', () => {
-        let called = false;
-
-        // Mock the instance method
-        const originalMethod = window.onboardingManager.showOnboarding;
-        window.onboardingManager.showOnboarding = () => {
-            called = true;
-        };
-
-        window.showOnboarding({}, null);
-
-        if (!called) {
-            throw new Error('Global wrapper did not call instance method');
+    test('setOnboardingManagerDependencies function is exported', () => {
+        if (typeof setOnboardingManagerDependencies !== 'function') {
+            throw new Error('setOnboardingManagerDependencies not exported');
         }
-
-        // Restore
-        window.onboardingManager.showOnboarding = originalMethod;
     });
 
-    test('onboardingManager instance is accessible globally', () => {
-        const instance = getTestOnboardingManagerInstance();
-        const ManagerClass = getTestOnboardingManager();
-        if (!instance) {
-            throw new Error('onboardingManager instance not accessible globally');
+    test('module instance can call showOnboarding', () => {
+        if (!onboardingManagerInstance) {
+            throw new Error('Module instance not available');
         }
-        if (!(instance instanceof ManagerClass)) {
-            throw new Error('Global instance is not OnboardingManager instance');
+        if (typeof onboardingManagerInstance.showOnboarding !== 'function') {
+            throw new Error('Module instance missing showOnboarding method');
+        }
+    });
+
+    test('module instance is OnboardingManager type', () => {
+        if (!onboardingManagerInstance) {
+            throw new Error('Module instance not available');
+        }
+        if (!(onboardingManagerInstance instanceof OnboardingManager)) {
+            throw new Error('Module instance is not OnboardingManager type');
         }
     });
 

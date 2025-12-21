@@ -133,10 +133,15 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         });
     });
 
-    await test('setDataValidatorDependencies throws without sanitizeInput', () => {
+    await test('DataValidator throws when used without sanitizeInput dependency', () => {
+        // DI system logs warning on setDependencies, but throws on resolve() in strict mode
+        // Explicitly set sanitizeInput to undefined (since DI merges, not replaces)
+        setDataValidatorDependencies({ sanitizeInput: undefined });
+
+        // The throw happens when we try to USE the validator
         let threw = false;
         try {
-            setDataValidatorDependencies({});
+            DataValidator.validateCycleName('Test');
         } catch (error) {
             threw = true;
             if (!error.message.includes('sanitizeInput')) {
@@ -144,21 +149,25 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
             }
         }
         if (!threw) {
-            throw new Error('Should throw when sanitizeInput not provided');
+            throw new Error('Should throw when sanitizeInput not injected');
         }
     });
 
-    await test('setDataValidatorDependencies throws for non-function sanitizeInput', () => {
+    await test('DataValidator throws when sanitizeInput is not a function', () => {
+        // Set a non-function sanitizeInput
+        setDataValidatorDependencies({
+            sanitizeInput: 'not a function'
+        });
+
+        // The throw happens when we try to call it
         let threw = false;
         try {
-            setDataValidatorDependencies({
-                sanitizeInput: 'not a function'
-            });
+            DataValidator.validateCycleName('Test');
         } catch (error) {
             threw = true;
         }
         if (!threw) {
-            throw new Error('Should throw for non-function sanitizeInput');
+            throw new Error('Should throw when sanitizeInput is not callable');
         }
     });
 

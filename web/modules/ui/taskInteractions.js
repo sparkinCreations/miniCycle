@@ -31,6 +31,12 @@ async function loadTaskUI() {
 // Load early (non-blocking)
 loadTaskUI().catch(e => console.warn('⚠️ taskInteractions: Failed to load taskUI:', e));
 
+/**
+ * Ensure TaskUI is loaded (for tests and initialization)
+ * @returns {Promise<typeof TaskOptionsVisibilityController>}
+ */
+export { loadTaskUI as ensureTaskUILoaded };
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================

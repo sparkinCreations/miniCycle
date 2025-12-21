@@ -17,9 +17,7 @@
  * - deleteAllTasks() - Delete all tasks (CRITICAL)
  */
 
-import { getTestMenuManager } from './helpers/testContext.js';
-
-// Import module directly for DI testing
+// Import module directly for DI testing (not via appContext which may not be populated)
 let MenuManager = null;
 let setMenuManagerDependencies = null;
 
@@ -284,10 +282,9 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         const menu = document.createElement('div');
         menu.className = 'menu-container visible';
 
-        setMenuManagerDependencies(createMockDeps({
-            querySelector: () => menu
-        }));
-        const instance = new MenuManager();
+        setMenuManagerDependencies(createMockDeps());
+        // querySelector must be passed to constructor (not just DI)
+        const instance = new MenuManager({ querySelector: () => menu });
 
         instance.hideMainMenu();
 
@@ -505,15 +502,17 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
             activeCycle: 'cycle-1'
         };
 
+        // getElementById must be passed to constructor (not just DI)
+        const getElementByIdMock = (id) => {
+            if (id === 'main-menu-mini-cycle-title') return header;
+            if (id === 'current-date') return document.createElement('span');
+            return null;
+        };
+
         setMenuManagerDependencies(createMockDeps({
-            getElementById: (id) => {
-                if (id === 'main-menu-mini-cycle-title') return header;
-                if (id === 'current-date') return document.createElement('span');
-                return null;
-            },
             loadMiniCycleData: () => mockFlattenedData
         }));
-        const instance = new MenuManager();
+        const instance = new MenuManager({ getElementById: getElementByIdMock });
 
         instance.updateMainMenuHeader();
 
@@ -561,9 +560,9 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // === GLOBAL COMPATIBILITY TESTS ===
     resultsDiv.innerHTML += '<h4>🌍 Global Wrappers (Backward Compat)</h4>';
 
-    test('window.MenuManager exists (backward compat)', () => {
-        if (!getTestMenuManager()) {
-            throw new Error('Global MenuManager class not found');
+    test('MenuManager class is exported from module', () => {
+        if (typeof MenuManager !== 'function') {
+            throw new Error('MenuManager not exported from module');
         }
     });
 

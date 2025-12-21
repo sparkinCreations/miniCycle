@@ -630,7 +630,7 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         updateProgressBar();
     });
 
-    await test('updateProgressBar sets width to 0% for empty task list', () => {
+    await test('updateProgressBar sets scaleX(0) for empty task list', () => {
         const mockTaskList = document.createElement('ul');
         const mockProgressBar = document.createElement('div');
 
@@ -641,8 +641,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        if (mockProgressBar.style.width !== '0%') {
-            throw new Error(`Expected 0%, got ${mockProgressBar.style.width}`);
+        // The module uses transform: scaleX() instead of width
+        if (mockProgressBar.style.transform !== 'scaleX(0)') {
+            throw new Error(`Expected scaleX(0), got ${mockProgressBar.style.transform}`);
         }
     });
 
@@ -667,12 +668,13 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        if (mockProgressBar.style.width !== '50%') {
-            throw new Error(`Expected 50%, got ${mockProgressBar.style.width}`);
+        // The module uses transform: scaleX() instead of width
+        if (mockProgressBar.style.transform !== 'scaleX(0.5)') {
+            throw new Error(`Expected scaleX(0.5), got ${mockProgressBar.style.transform}`);
         }
     });
 
-    await test('updateProgressBar sets 100% when all tasks complete', () => {
+    await test('updateProgressBar sets scaleX(1) when all tasks complete', () => {
         const mockTaskList = document.createElement('ul');
         for (let i = 0; i < 3; i++) {
             const task = document.createElement('li');
@@ -692,8 +694,9 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        if (mockProgressBar.style.width !== '100%') {
-            throw new Error(`Expected 100%, got ${mockProgressBar.style.width}`);
+        // The module uses transform: scaleX() instead of width
+        if (mockProgressBar.style.transform !== 'scaleX(1)') {
+            throw new Error(`Expected scaleX(1), got ${mockProgressBar.style.transform}`);
         }
     });
 
@@ -708,7 +711,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        if (!mockProgressBar.style.transition.includes('width')) {
+        // The module uses transition: transform instead of width
+        if (!mockProgressBar.style.transition.includes('transform')) {
             throw new Error('Should set transition for smooth animation');
         }
     });
@@ -813,7 +817,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         checkMiniCycle();
 
-        if (mockProgressBar.style.width !== '0%') {
+        // The module uses transform: scaleX() instead of width
+        if (mockProgressBar.style.transform !== 'scaleX(0)') {
             throw new Error('Should update progress bar');
         }
     });

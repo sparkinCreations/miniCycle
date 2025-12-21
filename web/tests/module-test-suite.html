@@ -896,25 +896,15 @@
                 // Stress tests don't need module imports - they test system limits
                 console.log('Stress tests loaded (no module dependencies)');
             } else if (moduleKey === 'coreBoot') {
-                const mod = await import(`../modules/boot/coreBoot.js?v=${cacheBuster}`);
-                window.loadMiniCycleData = mod.loadMiniCycleData;
-                window.autoSave = mod.autoSave;
-                window.updateCycleData = mod.updateCycleData;
-                window.initCoreBoot = mod.initCoreBoot;
-                window.initAppState = mod.initAppState;
+                // Boot tests are standalone - they use fetch() to verify module structure
+                // Don't import actual boot modules as they have side effects that hang
+                console.log('CoreBoot tests loaded (standalone - no module import needed)');
             } else if (moduleKey === 'uiBoot') {
-                const mod = await import(`../modules/boot/uiBoot.js?v=${cacheBuster}`);
-                window.showLoader = mod.showLoader;
-                window.hideLoader = mod.hideLoader;
-                window.withLoader = mod.withLoader;
-                window.isTouchDevice = mod.isTouchDevice;
-                window.detectDeviceType = mod.detectDeviceType;
-                window.hideAppLoader = mod.hideAppLoader;
-                window.attachGlobalEventListeners = mod.attachGlobalEventListeners;
+                // Boot tests are standalone - they use fetch() to verify module structure
+                console.log('UIBoot tests loaded (standalone - no module import needed)');
             } else if (moduleKey === 'featureBoot') {
-                const mod = await import(`../modules/boot/featureBoot.js?v=${cacheBuster}`);
-                window.createDepsContainer = mod.createDepsContainer;
-                window.bootFeatures = mod.bootFeatures;
+                // Boot tests are standalone - they use fetch() to verify module structure
+                console.log('FeatureBoot tests loaded (standalone - no module import needed)');
             }
         }
 
@@ -1357,6 +1347,18 @@
                     // Stress tests don't need module imports
                     currentModule = 'stress';
                     resultsDiv.innerHTML = '<p>✅ Stress tests ready. Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'coreBoot') {
+                    // Boot tests are standalone - they use fetch() to verify module structure
+                    currentModule = 'coreBoot';
+                    resultsDiv.innerHTML = '<p>✅ CoreBoot tests ready (standalone). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'uiBoot') {
+                    // Boot tests are standalone - they use fetch() to verify module structure
+                    currentModule = 'uiBoot';
+                    resultsDiv.innerHTML = '<p>✅ UIBoot tests ready (standalone). Click "Run Tests" to begin.</p>';
+                } else if (moduleName === 'featureBoot') {
+                    // Boot tests are standalone - they use fetch() to verify module structure
+                    currentModule = 'featureBoot';
+                    resultsDiv.innerHTML = '<p>✅ FeatureBoot tests ready (standalone). Click "Run Tests" to begin.</p>';
                 }
             } catch (error) {
                 resultsDiv.innerHTML = `<div class="result fail">❌ Failed to load module: ${error.message}</div>`;

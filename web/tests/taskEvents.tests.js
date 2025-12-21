@@ -2,10 +2,10 @@
  * 🧪 TaskEvents Module Tests
  * Tests event handling and user interaction logic
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ * Updated for Phase 3 DI Pattern - direct module imports
  *
  * Coverage:
- * - Module loading (TaskEvents class, window exports)
+ * - Module loading (TaskEvents class)
  * - Initialization (constructor, dependencies)
  * - Event handling (button clicks, hover, focus)
  * - Task interaction setup
@@ -16,7 +16,12 @@ import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
-import { getTestTaskEvents, hasGlobal } from './helpers/testContext.js';
+
+// Direct import from module (not via appContext which may not be populated)
+import {
+    TaskEvents,
+    setTaskEventsDependencies
+} from '../modules/task/taskEvents.js';
 
 export async function runTaskEventsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎮 TaskEvents Tests</h2><h3>Setting up mocks...</h3>';
@@ -119,24 +124,18 @@ export async function runTaskEventsTests(resultsDiv) {
         }
     });
 
-    await test('initTaskEvents function exists', () => {
-        if (typeof initTaskEvents !== 'function') {
-            throw new Error('initTaskEvents function not found');
+    await test('setTaskEventsDependencies function exists', () => {
+        if (typeof setTaskEventsDependencies !== 'function') {
+            throw new Error('setTaskEventsDependencies function not found');
         }
     });
 
-    await test('Window exports exist', () => {
-        if (!getTestTaskEvents()) {
-            throw new Error('window.TaskEvents not exported');
+    await test('Module exports exist', () => {
+        if (typeof TaskEvents !== 'function') {
+            throw new Error('TaskEvents not exported from module');
         }
-        if (!hasGlobal('initTaskEvents')) {
-            throw new Error('window.initTaskEvents not exported');
-        }
-        if (!hasGlobal('handleTaskButtonClick')) {
-            throw new Error('window.handleTaskButtonClick not exported');
-        }
-        if (!hasGlobal('revealTaskButtons')) {
-            throw new Error('window.revealTaskButtons not exported');
+        if (typeof setTaskEventsDependencies !== 'function') {
+            throw new Error('setTaskEventsDependencies not exported from module');
         }
     });
 

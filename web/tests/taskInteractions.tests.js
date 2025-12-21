@@ -9,6 +9,7 @@
 
 let setTaskInteractionsDependencies = null;
 let attachKeyboardTaskOptionToggle = null;
+let ensureTaskUILoaded = null;
 
 export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>TaskInteractions Tests (DI-Pure)</h2><h3>Loading module...</h3>';
@@ -18,6 +19,9 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         const module = await import('../modules/ui/taskInteractions.js');
         setTaskInteractionsDependencies = module.setTaskInteractionsDependencies;
         attachKeyboardTaskOptionToggle = module.attachKeyboardTaskOptionToggle;
+        ensureTaskUILoaded = module.ensureTaskUILoaded;
+        // Ensure TaskOptionsVisibilityController is loaded before running tests
+        await ensureTaskUILoaded();
         resultsDiv.innerHTML = '<h2>TaskInteractions Tests (DI-Pure)</h2><h3>Running tests...</h3>';
     } catch (e) {
         resultsDiv.innerHTML = `<h2>TaskInteractions Tests</h2><div class="result fail">Failed to import module: ${e.message}</div>`;

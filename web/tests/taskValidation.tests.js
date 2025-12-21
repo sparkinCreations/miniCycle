@@ -2,7 +2,7 @@
  * 🧪 TaskValidation Tests
  * Tests for task input validation and sanitization
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ * Updated for Phase 3 DI Pattern - direct module imports
  */
 
 import {
@@ -10,6 +10,12 @@ import {
     createProtectedTest,
     createMockSanitizeInput
 } from './testHelpers.js';
+
+// Direct import from module (not via appContext which may not be populated)
+import {
+    TaskValidator,
+    initTaskValidator
+} from '../modules/task/taskValidation.js';
 
 export async function runTaskValidationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔒 TaskValidation Tests</h2><h3>Setting up mocks...</h3>';
@@ -19,10 +25,8 @@ export async function runTaskValidationTests(resultsDiv) {
     // =====================================================
     const env = await setupTestEnvironment();
 
-    // Ensure sanitizeInput is available globally (required by TaskValidator)
-    if (!window.sanitizeInput) {
-        window.sanitizeInput = createMockSanitizeInput();
-    }
+    // Create mock sanitizeInput for tests
+    const mockSanitizeInput = createMockSanitizeInput();
 
     resultsDiv.innerHTML = '<h2>🔒 TaskValidation Tests</h2><h3>Running tests...</h3>';
 
@@ -43,24 +47,17 @@ export async function runTaskValidationTests(resultsDiv) {
         }
     });
 
-    await test('TaskValidator class is available via taskDOM', () => {
-        // TaskValidator is available in global scope after taskDOM initializes
-        // No longer checking window.__TaskValidator (removed for DI-pure)
-        if (typeof TaskValidator === 'undefined') {
-            throw new Error('TaskValidator not available (check taskDOM initialization)');
+    await test('TaskValidator class is imported from module', () => {
+        if (typeof TaskValidator !== 'function') {
+            throw new Error('TaskValidator not available from module import');
         }
     });
 
-    await test('initTaskValidator is available as ES6 export (not on window)', () => {
-        // Phase 2: initTaskValidator is ES6 export only, not on window
-        // The taskDOM manager handles validator initialization internally
-        // This test verifies we can import it if needed
-        if (typeof initTaskValidator !== 'undefined') {
-            // Available as import in this scope
-            return;
+    await test('initTaskValidator is available as ES6 export', () => {
+        // initTaskValidator is ES6 export from taskValidation module
+        if (typeof initTaskValidator !== 'function') {
+            throw new Error('initTaskValidator not available from module import');
         }
-        // In runtime tests, taskDOM handles initialization so this is OK to skip
-        console.log('ℹ️ initTaskValidator not in scope - taskDOM handles initialization');
     });
 
     await test('validateAndSanitizeTaskInput function is available', () => {

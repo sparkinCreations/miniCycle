@@ -3,14 +3,19 @@
  * Test functions for module-test-suite.html
  *
  * Tests the pull-to-refresh functionality for mobile PWA
- * @version 1.0.0
+ * @version 2.2.0 - Direct module imports (Dec 2025)
  */
+
+import {
+    PullToRefresh,
+    setPullToRefreshDependencies,
+    initPullToRefresh
+} from '../modules/ui/pullToRefresh.js';
 
 import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
-import { getTestPullToRefresh, hasGlobal } from './helpers/testContext.js';
 
 export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>Pull-to-Refresh Tests</h2><h3>Setting up mocks...</h3>';
@@ -18,12 +23,10 @@ export async function runPullToRefreshTests(resultsDiv) {
     // Use shared testHelpers for comprehensive mock setup
     const env = await setupTestEnvironment();
 
-    // ✅ Initialize pullToRefresh if not already done
-    if (window.initPullToRefresh && !window.pullToRefresh) {
-        window.initPullToRefresh({
-            showNotification: window.showNotification || (() => {})
-        });
-    }
+    // Set up dependencies for DI pattern
+    setPullToRefreshDependencies({
+        showNotification: () => {}
+    });
 
     resultsDiv.innerHTML = '<h2>Pull-to-Refresh Tests</h2><h3>Running tests...</h3>';
 
@@ -51,23 +54,23 @@ export async function runPullToRefreshTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">Initialization</h4>';
 
-    test('PullToRefresh class exists', () => {
-        if (!getTestPullToRefresh()) {
-            throw new Error('PullToRefresh class not found');
+    test('PullToRefresh class is exported from module', () => {
+        if (typeof PullToRefresh !== 'function') {
+            throw new Error('PullToRefresh class not exported from module');
         }
     });
 
     test('creates instance successfully', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         if (!ptr || typeof ptr.enable !== 'function') {
             throw new Error('PullToRefresh not properly initialized');
         }
         ptr.destroy(); // Cleanup
     });
 
-    test('has global instance', () => {
-        if (!window.pullToRefresh) {
-            throw new Error('Global pullToRefresh instance not found');
+    test('initPullToRefresh function is exported', () => {
+        if (typeof initPullToRefresh !== 'function') {
+            throw new Error('initPullToRefresh function not exported');
         }
     });
 
@@ -78,7 +81,7 @@ export async function runPullToRefreshTests(resultsDiv) {
             resistance: 3,
             activationDistance: 20
         };
-        const ptr = new window.PullToRefresh(customOptions);
+        const ptr = new PullToRefresh(customOptions);
 
         if (ptr.threshold !== 100) throw new Error('threshold not set correctly');
         if (ptr.maxPull !== 150) throw new Error('maxPull not set correctly');
@@ -94,7 +97,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">DOM Indicator</h4>';
 
     test('creates indicator element', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         const indicator = document.getElementById('pull-refresh-indicator');
 
         if (!indicator) {
@@ -105,7 +108,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('indicator has correct structure', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         const indicator = document.getElementById('pull-refresh-indicator');
 
         const content = indicator.querySelector('.pull-refresh-content');
@@ -120,7 +123,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('indicator initially hidden', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         const indicator = document.getElementById('pull-refresh-indicator');
 
         if (indicator.classList.contains('visible')) {
@@ -131,7 +134,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('destroy removes indicator', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         ptr.destroy();
 
         // Create new instance to check indicator was removed
@@ -145,7 +148,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">State Management</h4>';
 
     test('initial state is correct', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
 
         if (ptr.isPulling !== false) throw new Error('isPulling should be false');
         if (ptr.isActivated !== false) throw new Error('isActivated should be false');
@@ -158,7 +161,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('enable() sets enabled to true', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         ptr.enabled = false;
         ptr.enable();
 
@@ -170,7 +173,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('disable() sets enabled to false', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         ptr.disable();
 
         if (ptr.enabled !== false) {
@@ -181,7 +184,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('resetIndicator resets all state', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
 
         // Set some state
         ptr.isActivated = true;
@@ -208,7 +211,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">Touch Event Handling</h4>';
 
     test('handleTouchEnd resets state', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
 
         ptr.isPulling = true;
         ptr.isActivated = true;
@@ -230,7 +233,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">Indicator Updates</h4>';
 
     test('updateIndicator adds visible class', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
 
         ptr.updateIndicator(50);
 
@@ -242,7 +245,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('updateIndicator adds ready class when above threshold', () => {
-        const ptr = new window.PullToRefresh({ threshold: 80 });
+        const ptr = new PullToRefresh({ threshold: 80 });
 
         ptr.updateIndicator(100); // Above threshold
 
@@ -254,7 +257,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     });
 
     test('updateIndicator updates text based on threshold', () => {
-        const ptr = new window.PullToRefresh({ threshold: 80 });
+        const ptr = new PullToRefresh({ threshold: 80 });
 
         // Below threshold
         ptr.updateIndicator(50);
@@ -280,7 +283,7 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">Error Handling</h4>';
 
     test('handles missing indicator gracefully', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
         ptr.indicator = null;
 
         // Should not throw
@@ -295,13 +298,13 @@ export async function runPullToRefreshTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">Cleanup</h4>';
 
     test('destroy removes event listeners', () => {
-        const ptr = new window.PullToRefresh();
+        const ptr = new PullToRefresh();
 
         // Should not throw
         ptr.destroy();
 
         // Verify we can create a new instance (listeners were properly removed)
-        const ptr2 = new window.PullToRefresh();
+        const ptr2 = new PullToRefresh();
         ptr2.destroy();
     });
 

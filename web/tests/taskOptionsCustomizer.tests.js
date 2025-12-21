@@ -6,9 +6,19 @@
  * Compatible with both manual browser testing and automated CI/CD
  */
 
-import { getTestTaskOptionsCustomizer, getTestAppState, hasGlobal } from './helpers/testContext.js';
+// Direct import from module (not via appContext which may not be populated)
+import {
+    TaskOptionsCustomizer,
+    setTaskOptionsCustomizerDependencies,
+    initTaskOptionsCustomizer
+} from '../modules/ui/taskOptionsCustomizer.js';
 
-export function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = false) {
+import {
+    createMockAppState,
+    setupTestEnvironment
+} from './testHelpers.js';
+
+export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>TaskOptionsCustomizer Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
 
@@ -36,8 +46,14 @@ export function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = false)
         }
     }
 
-    // Import the module class
-    const TaskOptionsCustomizer = getTestTaskOptionsCustomizer();
+    // Setup test environment and dependencies
+    await setupTestEnvironment();
+    setTaskOptionsCustomizerDependencies({
+        showNotification: () => {},
+        showConfirmationModal: (opts) => { if (opts.onConfirm) opts.onConfirm(); },
+        loadMiniCycleData: () => null,
+        autoSave: () => {}
+    });
 
     // Check if class is available
     if (!TaskOptionsCustomizer) {

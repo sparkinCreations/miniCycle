@@ -2,14 +2,19 @@
  * 🧪 DragDropManager Tests
  * Tests for drag-and-drop task reordering functionality
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ * Updated for Phase 3 DI Pattern - direct module imports
+ * @version 2.2.0 - Standalone tests (Dec 2025)
  */
+
+import {
+    DragDropManager,
+    setDragDropManagerDependencies
+} from '../modules/task/dragDropManager.js';
 
 import {
     setupTestEnvironment,
     createProtectedTest
 } from './testHelpers.js';
-import { getTestDragDropManager, getTestAppGlobalState } from './helpers/testContext.js';
 
 export async function runDragDropManagerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔄 DragDropManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -38,9 +43,9 @@ export async function runDragDropManagerTests(resultsDiv) {
         }
     });
 
-    test('DragDropManager class is exported', () => {
-        if (!getTestDragDropManager()) {
-            throw new Error('DragDropManager not available on window object');
+    test('DragDropManager class is exported from module', () => {
+        if (typeof DragDropManager !== 'function') {
+            throw new Error('DragDropManager not exported from module');
         }
     });
 

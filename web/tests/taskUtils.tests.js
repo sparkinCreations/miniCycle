@@ -3,10 +3,25 @@
  * Tests for task utility functions (context building, DOM extraction, etc.)
  */
 
-import { getTestTaskUtils, hasGlobal } from './helpers/testContext.js';
+// Direct import from module (not via appContext which may not be populated)
+import {
+    TaskUtils,
+    setTaskUtilsDependencies
+} from '../modules/task/taskUtils.js';
+
+import {
+    setupTestEnvironment,
+    createMockAppState
+} from './testHelpers.js';
 
 export async function runTaskUtilsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛠️ TaskUtils Tests</h2><h3>Running tests...</h3>';
+
+    // Setup test environment and dependencies
+    await setupTestEnvironment();
+    setTaskUtilsDependencies({
+        loadMiniCycleData: () => null
+    });
 
     let passed = { count: 0 };
     let total = { count: 0 };
@@ -56,14 +71,14 @@ export async function runTaskUtilsTests(resultsDiv) {
         }
     });
 
-    await test('TaskUtils class is exported to window', () => {
-        if (!getTestTaskUtils()) {
-            throw new Error('TaskUtils not available on window object');
+    await test('TaskUtils class is imported from module', () => {
+        if (typeof TaskUtils !== 'function') {
+            throw new Error('TaskUtils not available from module import');
         }
     });
 
-    await test('all utility functions are exported', () => {
-        const requiredFunctions = [
+    await test('all utility functions are exported from module', () => {
+        const requiredMethods = [
             'buildTaskContext',
             'extractTaskDataFromDOM',
             'loadTaskContext',
@@ -72,9 +87,9 @@ export async function runTaskUtilsTests(resultsDiv) {
             'setupFinalTaskInteractions'
         ];
 
-        for (const funcName of requiredFunctions) {
-            if (!hasGlobal(funcName)) {
-                throw new Error(`${funcName} not found on window object`);
+        for (const method of requiredMethods) {
+            if (typeof TaskUtils[method] !== 'function') {
+                throw new Error(`${method} not found as static method on TaskUtils`);
             }
         }
     });

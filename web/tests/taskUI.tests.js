@@ -507,12 +507,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         oldTask.textContent = 'Old task';
         taskList.appendChild(oldTask);
 
-        refreshTaskListUI();
-
-        if (taskList.innerHTML !== '') {
-            // Task list should be cleared (addTask would repopulate)
-            // Actually, refreshTaskListUI sets innerHTML = "" first
-        }
+        await refreshTaskListUI();
 
         if (addTaskCalls.length !== 2) {
             throw new Error(`Expected 2 addTask calls, got ${addTaskCalls.length}`);
@@ -532,7 +527,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
 
         let threwError = false;
         try {
-            refreshTaskListUI();
+            await refreshTaskListUI();
         } catch (e) {
             threwError = true;
             if (!e.message.includes('Schema 2.5 data not found')) {
@@ -556,7 +551,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         });
 
         // Should not throw, just return early
-        refreshTaskListUI();
+        await refreshTaskListUI();
         // If we get here without error, test passes
     });
 
@@ -569,7 +564,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
             updateRecurringButtonVisibility: () => { updateCalled = true; }
         });
 
-        refreshTaskListUI();
+        await refreshTaskListUI();
 
         if (!updateCalled) {
             throw new Error('updateRecurringButtonVisibility should be called');

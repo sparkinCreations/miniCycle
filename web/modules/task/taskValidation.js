@@ -107,7 +107,7 @@ export class TaskValidator {
 
         // Character limit check
         if (taskTextTrimmed.length > this.TASK_LIMIT) {
-            ui()?.showNotification?.(`Task must be ${this.TASK_LIMIT} characters or less.`, 'warning');
+            this.deps.showNotification?.(`Task must be ${this.TASK_LIMIT} characters or less.`, 'warning');
             return null;
         }
 
