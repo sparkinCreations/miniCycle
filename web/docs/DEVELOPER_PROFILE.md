@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** December 14, 2025
+**Last Updated:** December 21, 2025
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -22,7 +22,7 @@ This document captures insights about the developer behind miniCycle to help wit
 
 2. **Defensive by nature** - QA background shows in the code. Builds for failure scenarios: lite fallback, timeout safety, rollback on errors, graceful degradation.
 
-3. **Methodical execution** - 1,458 tests don't happen by accident. Sustained discipline over time, maintained through refactors.
+3. **Methodical execution** - 1,623 tests don't happen by accident. Sustained discipline over time, maintained through refactors.
 
 4. **Owns the architecture** - Knows why every piece exists. Can reason about tradeoffs. Doesn't treat own codebase as a black box.
 
@@ -54,13 +54,13 @@ This document captures insights about the developer behind miniCycle to help wit
 
 ### Weaknesses / Blind Spots
 
-1. **Tends to downplay accomplishments** - Will mention 11 months of work or 1458 tests as just facts, not achievements. Doesn't naturally frame their work as impressive. May need external perspective to recognize what they've actually built. When giving feedback, don't hesitate to point out what's genuinely notable - they won't do it themselves.
+1. **Tends to downplay accomplishments** - Will mention 11 months of work or 1,623 tests as just facts, not achievements. Doesn't naturally frame their work as impressive. May need external perspective to recognize what they've actually built. When giving feedback, don't hesitate to point out what's genuinely notable - they won't do it themselves.
 
 2. **Needs to trust own judgment more** - Has good instincts and deep knowledge of the system, but may second-guess decisions. Worth reinforcing when their judgment is sound.
 
 3. **AI usage guilt** - Sometimes feels guilty about using AI as a collaborator. Reality check: they push back when AI is wrong, make all the decisions, and have been building this for 11 months. The AI is a tool, not a crutch. Using tools effectively is a skill, not a shortcut. **December 2025 evidence:** During iOS drag preview debugging, rejected AI's "impossible" answer, rejected AI's wrong solution (custom ghost), drove the investigation strategy, and would have solved it without AI (just slower). This is AI-assisted, not AI-dependent.
 
-4. **Imposter syndrome** - Feels "less than" despite evidence to the contrary. A Quality Inspector who taught themselves to code and built a production-grade PWA with proper architecture, 1458 tests, and a live deployment is not an imposter. The work speaks for itself.
+4. **Imposter syndrome** - Feels "less than" despite evidence to the contrary. A Quality Inspector who taught themselves to code and built a production-grade PWA with proper architecture, 1,623 tests, and a live deployment is not an imposter. The work speaks for itself.
 
 ---
 
@@ -87,7 +87,7 @@ This document captures insights about the developer behind miniCycle to help wit
    - Browser-runnable tests (source of truth)
    - Playwright automation layer on top
    - localStorage protection during tests
-   - ~1,458 tests, 100% pass rate expected
+   - ~1,623 tests, 100% pass rate expected
 
 5. **Lite Fallback**
    - Catastrophic failure safety net
@@ -132,7 +132,7 @@ The user-facing simplicity masks engineering depth:
 | Recurring tasks | Full scheduling engine: 6 frequencies, DST-safe, hybrid optimization |
 | Undo/Redo | Persistent per-cycle IndexedDB history with rollback |
 | Drag & drop | Dual input (mouse/touch), Safari compat, race condition handling |
-| Testing | 1,458 tests, Playwright CI, security/accessibility/stress tests |
+| Testing | 1,623 tests, Playwright CI, security/accessibility/stress tests |
 
 ### Business Context
 
@@ -156,6 +156,27 @@ The user-facing simplicity masks engineering depth:
 ---
 
 ## Session History
+
+### December 21, 2025
+- **Completed `cycle/` → `routine/` folder refactor**
+  - Renamed folder: `modules/cycle/` → `modules/routine/`
+  - Renamed classes: CycleManager → RoutineManager, CycleSwitcher → RoutineSwitcher
+  - Updated all imports, test files, and 15+ documentation files
+- **Fixed silent error handling in `taskCore.js`**
+  - `handleTaskCompletionChange` and `saveCurrentTaskOrder` now show user notifications on failure
+  - Previously only logged to console (users had no feedback)
+- **Fixed delete-when-complete button not syncing on mode switch**
+  - Root cause: `refreshTaskButtonsForModeChange()` recreated buttons without syncing visual state
+  - Fix: Added `syncAllTasksWithMode()` call after button refresh
+- **Architecture review: 9.35/10** (9.7/10 with sustainability context)
+  - Recognized constraints: vanilla JS, no build, offline-first, no server
+  - Security audit confirmed: `.mcyc` imports sanitized via `sanitizeImportedData()`
+- **New insight: "Can't Enshittify" Architecture**
+  - No server dependency, no external services, no accounts, no tracking
+  - User data stays local - even developer can't access it
+  - App can be useful indefinitely without maintenance
+  - Distribution model immune to platform decay (PWA + GitHub)
+- Test count now 1,623 (up from 1,458 in Dec 14 session)
 
 ### December 14, 2025
 - **Major window.* pollution cleanup in orchestrator.js**
