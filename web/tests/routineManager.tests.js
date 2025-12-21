@@ -1,16 +1,16 @@
 /**
- * 🧪 CycleManager Tests
- * Tests for modules/cycle/cycleManager.js
+ * 🧪 RoutineManager Tests
+ * Tests for modules/routine/routineManager.js
  * Pattern: Resilient Constructor 🛡️
  *
  * Updated for Phase 3 DI Pattern - uses shared testHelpers
  *
- * Tests cycle management functionality:
+ * Tests routine management functionality:
  * - Constructor and dependency injection
  * - Dependency validation
- * - Cycle creation modal
- * - Sample cycle preloading
- * - Fallback cycle creation
+ * - Routine creation modal
+ * - Sample routine preloading
+ * - Fallback routine creation
  * - Duplicate name handling
  * - AppState synchronization
  */
@@ -26,21 +26,21 @@ import {
 
 // Direct import from module (not via appContext which may not be populated)
 import {
-    CycleManager,
-    setCycleManagerDependencies,
-    initializeCycleManager,
-    getCycleManager
-} from '../modules/cycle/cycleManager.js';
+    RoutineManager,
+    setRoutineManagerDependencies,
+    initializeRoutineManager,
+    getRoutineManager
+} from '../modules/routine/routineManager.js';
 
-export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>🔄 CycleManager Tests</h2><h3>Setting up mocks...</h3>';
+export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🔄 RoutineManager Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================
     // Use shared testHelpers for comprehensive mock setup
     // =====================================================
     const env = await setupTestEnvironment();
 
-    resultsDiv.innerHTML = '<h2>🔄 CycleManager Tests</h2><h3>Running tests...</h3>';
+    resultsDiv.innerHTML = '<h2>🔄 RoutineManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
@@ -53,7 +53,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
                 savedRealData[key] = value;
             }
         });
-        console.log('🔒 Saved original localStorage for individual cycleManager test');
+        console.log('🔒 Saved original localStorage for individual routineManager test');
     }
 
     // Helper to restore original data after all tests (only when running individually)
@@ -63,17 +63,17 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             Object.keys(savedRealData).forEach(key => {
                 localStorage.setItem(key, savedRealData[key]);
             });
-            console.log('✅ Individual cycleManager test completed - original localStorage restored');
+            console.log('✅ Individual routineManager test completed - original localStorage restored');
         }
     }
 
     // Check if class is available
-    if (!CycleManager) {
-        resultsDiv.innerHTML += '<div class="result fail">❌ CycleManager class not found. Make sure the module is properly loaded.</div>';
+    if (!RoutineManager) {
+        resultsDiv.innerHTML += '<div class="result fail">❌ RoutineManager class not found. Make sure the module is properly loaded.</div>';
         return { passed: 0, total: 1 };
     }
 
-    // Helper: Create valid mock dependencies for CycleManager
+    // Helper: Create valid mock dependencies for RoutineManager
     function createValidDeps(overrides = {}) {
         const mockSchemaData = createMockSchemaData();
         return {
@@ -201,10 +201,10 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('creates instance successfully with valid dependencies', async () => {
         const deps = createValidDeps();
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         if (!instance) {
-            throw new Error('CycleManager not created');
+            throw new Error('RoutineManager not created');
         }
         if (typeof instance.showCycleCreationModal !== 'function') {
             throw new Error('showCycleCreationModal method not found');
@@ -217,7 +217,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('throws error when missing required dependencies', async () => {
         let threw = false;
         try {
-            new CycleManager({});
+            new RoutineManager({});
         } catch (error) {
             threw = true;
             if (!error.message.includes('missing required dependencies')) {
@@ -251,7 +251,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
 
             let threw = false;
             try {
-                new CycleManager(deps);
+                new RoutineManager(deps);
             } catch (error) {
                 threw = true;
                 if (!error.message.includes(depName)) {
@@ -268,26 +268,26 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
         const deps = createValidDeps({
             AppMeta: { version: '2.5.0' }
         });
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         if (instance.version !== '2.5.0') {
             throw new Error(`Expected version 2.5.0, got ${instance.version}`);
         }
     });
 
-    await test('setCycleManagerDependencies sets module-level deps', async () => {
-        if (typeof setCycleManagerDependencies !== 'function') {
-            throw new Error('setCycleManagerDependencies not exported');
+    await test('setRoutineManagerDependencies sets module-level deps', async () => {
+        if (typeof setRoutineManagerDependencies !== 'function') {
+            throw new Error('setRoutineManagerDependencies not exported');
         }
 
         // Set module-level deps
-        setCycleManagerDependencies({
+        setRoutineManagerDependencies({
             testDep: 'test-value'
         });
 
         // Create instance without that dep - should merge
         const deps = createValidDeps();
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Instance should exist (testDep is not required)
         if (!instance) {
@@ -295,33 +295,33 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('initializeCycleManager creates and returns instance', async () => {
-        if (typeof initializeCycleManager !== 'function') {
-            throw new Error('initializeCycleManager not exported');
+    await test('initializeRoutineManager creates and returns instance', async () => {
+        if (typeof initializeRoutineManager !== 'function') {
+            throw new Error('initializeRoutineManager not exported');
         }
 
         const deps = createValidDeps();
-        const instance = initializeCycleManager(deps);
+        const instance = initializeRoutineManager(deps);
 
         if (!instance) {
-            throw new Error('initializeCycleManager should return instance');
+            throw new Error('initializeRoutineManager should return instance');
         }
-        if (!(instance instanceof CycleManager)) {
-            throw new Error('Should return CycleManager instance');
+        if (!(instance instanceof RoutineManager)) {
+            throw new Error('Should return RoutineManager instance');
         }
     });
 
-    await test('getCycleManager returns the initialized instance', async () => {
-        if (typeof getCycleManager !== 'function') {
-            throw new Error('getCycleManager not exported');
+    await test('getRoutineManager returns the initialized instance', async () => {
+        if (typeof getRoutineManager !== 'function') {
+            throw new Error('getRoutineManager not exported');
         }
 
         const deps = createValidDeps();
-        const created = initializeCycleManager(deps);
-        const retrieved = getCycleManager();
+        const created = initializeRoutineManager(deps);
+        const retrieved = getRoutineManager();
 
         if (retrieved !== created) {
-            throw new Error('getCycleManager should return the same instance');
+            throw new Error('getRoutineManager should return the same instance');
         }
     });
 
@@ -330,7 +330,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('fallbackNotification logs to console', async () => {
         const deps = createValidDeps();
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Should not throw
         instance.fallbackNotification('Test message', 'info', 3000);
@@ -342,7 +342,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
         const deps = createValidDeps();
         delete deps.showNotification; // Remove it
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Should use fallbackNotification - should not throw
         instance.deps.showNotification('Test', 'info', 3000);
@@ -368,7 +368,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.showCycleCreationModal();
 
         // Wait for setTimeout
@@ -395,7 +395,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.showCycleCreationModal();
 
         // Wait for setTimeout and async operations
@@ -430,7 +430,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Mock preloadGettingStartedCycle
         instance.preloadGettingStartedCycle = async () => {
@@ -459,7 +459,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createBasicFallbackCycle();
 
         if (!completeSetupCalled) {
@@ -492,7 +492,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             safeJSONParse: () => null
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Should not throw
         instance.createBasicFallbackCycle();
@@ -515,7 +515,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             completeInitialSetup: () => {}
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createBasicFallbackCycle();
 
         // Check injected AppState was synced via DI
@@ -546,7 +546,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (!notificationShown) {
@@ -563,7 +563,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (!modalOptions) {
@@ -589,7 +589,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (!notificationMsg || !notificationMsg.includes('canceled')) {
@@ -617,7 +617,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (!updateCalled) {
@@ -658,7 +658,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         // Should create "Duplicate Name (2)"
@@ -702,7 +702,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         // Should fall back to using cycle_timestamp as key
@@ -768,7 +768,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             autoSave: () => { autoSaveCalled = true; }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         // Check UI updates
@@ -819,7 +819,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         // Wait for async
@@ -854,7 +854,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         const newCycle = mockData.data.cycles['Schema Test'];
@@ -912,7 +912,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (mockData.metadata.lastModified <= originalTimestamp) {
@@ -936,7 +936,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (mockData.metadata.totalCyclesCreated !== originalCount + 1) {
@@ -959,7 +959,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (mockData.appState.activeCycleId !== 'Active Test') {
@@ -981,7 +981,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Should not throw
         instance.showCycleCreationModal();
@@ -1005,7 +1005,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             getElementById: () => null // Missing DOM elements
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Should not throw
         instance.createNewMiniCycle();
@@ -1029,7 +1029,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Should not throw despite onCycleCreated rejection
         instance.createNewMiniCycle();
@@ -1060,7 +1060,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // For showCycleCreationModal path
         instance.showCycleCreationModal();
@@ -1075,7 +1075,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('works with constructor dependency injection', async () => {
         const deps = createValidDeps();
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Verify deps are properly set
         if (!instance.deps.AppState) {
@@ -1088,7 +1088,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('merges module-level and constructor deps correctly', async () => {
         // Set module-level dep
-        setCycleManagerDependencies({
+        setRoutineManagerDependencies({
             customModuleDep: 'module-value'
         });
 
@@ -1096,7 +1096,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             customConstructorDep: 'constructor-value'
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         // Constructor deps should be present
         if (!instance.deps.AppState) {
@@ -1112,7 +1112,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             completeInitialSetup: () => {}
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
 
         const startTime = performance.now();
         instance.createBasicFallbackCycle();
@@ -1143,7 +1143,7 @@ export async function runCycleManagerTests(resultsDiv, isPartOfSuite = false) {
             sanitizeInput: (input) => input.trim()
         });
 
-        const instance = new CycleManager(deps);
+        const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
         if (callbackDuration > 50) {

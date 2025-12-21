@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v305'; // Boot files moved to modules/boot/
+var CACHE_VERSION = 'v306'; // Boot files moved to modules/boot/
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -60,12 +60,12 @@ var UTILITIES = [
   './modules/utils/consoleCapture.js',
   './modules/utils/dataValidator.js',
   './modules/utils/errorHandler.js',
-  // Cycle modules
-  './modules/cycle/cycleLoader.js',
-  './modules/cycle/cycleManager.js',
-  './modules/cycle/cycleSwitcher.js',
-  './modules/cycle/migrationManager.js',
-  './modules/cycle/modeManager.js',
+  // Routine modules
+  './modules/routine/routineLoader.js',
+  './modules/routine/routineManager.js',
+  './modules/routine/routineSwitcher.js',
+  './modules/routine/migrationManager.js',
+  './modules/routine/modeManager.js',
   // Task modules
   './modules/task/dragDropManager.js',
   './modules/task/taskCore.js',

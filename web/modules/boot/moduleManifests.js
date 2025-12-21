@@ -239,7 +239,7 @@ export const MODULE_MANIFESTS = {
     // PHASE 5: CYCLE MANAGEMENT
     // =========================================================================
     modeManager: {
-        path: '../cycle/modeManager.js',
+        path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription'],
@@ -247,16 +247,16 @@ export const MODULE_MANIFESTS = {
         after: ['recurringIntegration']
     },
 
-    cycleSwitcher: {
-        path: '../cycle/cycleSwitcher.js',
+    routineSwitcher: {
+        path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle'
     },
 
-    cycleManager: {
-        path: '../cycle/cycleManager.js',
+    routineManager: {
+        path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle'],
@@ -278,7 +278,7 @@ export const MODULE_MANIFESTS = {
 
     menuManager: {
         path: '../ui/menuManager.js',
-        phase: PHASES.CYCLE,  // Moved to Phase 5 - needed by cycleManager
+        phase: PHASES.CYCLE,  // Moved to Phase 5 - needed by routineManager
         requires: ['appInit', 'AppState', 'showNotification'],
         provides: ['hideMainMenu', 'updateMainMenuHeader'],
         api: 'ui',
@@ -363,8 +363,8 @@ export const MODULE_MANIFESTS = {
         after: ['taskDOM', 'cycleCompletion', 'recurringIntegration']
     },
 
-    cycleLoader: {
-        path: '../cycle/cycleLoader.js',
+    routineLoader: {
+        path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'loadMiniCycleData'],
         provides: ['loadMiniCycle'],

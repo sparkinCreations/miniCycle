@@ -1,6 +1,6 @@
 /**
- * CycleLoader Module Tests (Schema 2.5)
- * Simplified tests for the main cycle loading and coordination functionality
+ * RoutineLoader Module Tests (Schema 2.5)
+ * Simplified tests for the main routine loading and coordination functionality
  *
  * Updated for Phase 3 DI Pattern - uses shared testHelpers
  *
@@ -33,11 +33,11 @@ import {
     setupRemindersForCycle,
     updateDependentComponents,
     saveCycleData,
-    setCycleLoaderDependencies
-} from '../modules/cycle/cycleLoader.js';
+    setRoutineLoaderDependencies
+} from '../modules/routine/routineLoader.js';
 
-export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>🔄 CycleLoader Tests</h2><h3>Setting up mocks...</h3>';
+export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🔄 RoutineLoader Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================
     // Use shared testHelpers for comprehensive mock setup
@@ -119,7 +119,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
             localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
 
             // Reset dependencies for each test (must explicitly set to null)
-            setCycleLoaderDependencies({
+            setRoutineLoaderDependencies({
                 loadMiniCycleData: null,
                 createInitialSchema25Data: null,
                 addTask: null,
@@ -154,16 +154,16 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
             updateThemeColor: () => {}
         };
 
-        setCycleLoaderDependencies(mockDeps);
+        setRoutineLoaderDependencies(mockDeps);
 
-        if (typeof setCycleLoaderDependencies !== 'function') {
-            throw new Error('setCycleLoaderDependencies function not available');
+        if (typeof setRoutineLoaderDependencies !== 'function') {
+            throw new Error('setRoutineLoaderDependencies function not available');
         }
     });
 
     // ⚠️ ENVIRONMENT-SPECIFIC: May fail if dependency error handling differs
     await test('throws error for missing required dependencies', async () => {
-        setCycleLoaderDependencies({});
+        setRoutineLoaderDependencies({});
 
         let errorThrown = false;
         try {
@@ -185,7 +185,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     await test('handles missing Schema 2.5 data gracefully', () => {
         let initialDataCreated = false;
 
-        setCycleLoaderDependencies({
+        setRoutineLoaderDependencies({
             loadMiniCycleData: () => null,
             createInitialSchema25Data: () => { initialDataCreated = true; },
             addTask: () => {}
@@ -264,7 +264,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
     await test('handles missing taskList element gracefully', () => {
         const tasks = [{ id: 'task1', text: 'Test Task', completed: false }];
 
-        setCycleLoaderDependencies({
+        setRoutineLoaderDependencies({
             addTask: () => {}
         });
 
@@ -279,7 +279,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
         const cycle = { title: 'Test' };
         const settings = {};
 
-        setCycleLoaderDependencies({
+        setRoutineLoaderDependencies({
             updateThemeColor: () => {}
         });
 
@@ -292,7 +292,7 @@ export async function runCycleLoaderTests(resultsDiv, isPartOfSuite = false) {
 
     await test('applies theme settings correctly', () => {
         let themeColorCalled = false;
-        setCycleLoaderDependencies({
+        setRoutineLoaderDependencies({
             updateThemeColor: () => { themeColorCalled = true; }
         });
 
