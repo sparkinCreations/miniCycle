@@ -30,7 +30,7 @@ import {
 
     // Managers
     getBackupManager,
-    getCycleManager,
+    getRoutineManager,
     getModeManager,
     getMenuManager,
     getSettingsManager,
@@ -45,8 +45,8 @@ import {
     getModalManagerClass,
     getModalManager,
     getCloseAllModals,
-    getCycleSwitcherClass,
-    getCycleSwitcher,
+    getRoutineSwitcherClass,
+    getRoutineSwitcher,
 
     // UI functions
     getCompleteInitialSetup,
@@ -147,7 +147,7 @@ export function getTestLoadMiniCycleData() { return getLoadMiniCycleData(); }
 // ============================================================================
 
 export function getTestBackupManager() { return getBackupManager(); }
-export function getTestCycleManager() { return getCycleManager(); }
+export function getTestRoutineManager() { return getRoutineManager(); }
 export function getTestModeManager() { return getModeManager(); }
 export function getTestMenuManager() { return getMenuManager(); }
 export function getTestSettingsManager() { return getSettingsManager(); }
@@ -162,8 +162,8 @@ export function getTestDeviceDetectionManager() { return getDeviceDetectionManag
 export function getTestDeviceDetectionManagerInstance() { return getDeviceDetectionManager(); }
 export function getTestModalManager() { return getModalManagerClass(); }
 export function getTestModalManagerInstance() { return getModalManager(); }
-export function getTestCycleSwitcher() { return getCycleSwitcherClass(); }
-export function getTestCycleSwitcherInstance() { return getCycleSwitcher(); }
+export function getTestRoutineSwitcher() { return getRoutineSwitcherClass(); }
+export function getTestRoutineSwitcherInstance() { return getRoutineSwitcher(); }
 
 // ============================================================================
 // UI FUNCTION GETTERS
@@ -200,7 +200,7 @@ export function getTestTaskUtils() { return getTaskUtils(); }
 export function getTestTaskOptionsCustomizer() { return getTaskOptionsCustomizer(); }
 
 // ============================================================================
-// CYCLE SWITCHER GETTERS
+// ROUTINE SWITCHER GETTERS
 // ============================================================================
 
 export function getTestSwitchMiniCycle() { return getSwitchMiniCycle(); }
@@ -292,7 +292,7 @@ export function getAllTestGlobals() {
 
         // Managers
         BackupManager: getTestBackupManager(),
-        CycleManager: getTestCycleManager(),
+        RoutineManager: getTestRoutineManager(),
         ModeManager: getTestModeManager(),
         MenuManager: getTestMenuManager(),
         ModalManager: getTestModalManager(),
@@ -304,8 +304,8 @@ export function getAllTestGlobals() {
         DeviceDetectionManager: getTestDeviceDetectionManager(),
         deviceDetectionManager: getTestDeviceDetectionManagerInstance(),
         ErrorHandler: getTestErrorHandler(),
-        CycleSwitcher: getTestCycleSwitcher(),
-        cycleSwitcher: getTestCycleSwitcherInstance(),
+        RoutineSwitcher: getTestRoutineSwitcher(),
+        routineSwitcher: getTestRoutineSwitcherInstance(),
         reminderManager: getTestReminderManager(),
 
         // Task
@@ -317,7 +317,7 @@ export function getAllTestGlobals() {
         addTask: getTestAddTask(),
         updateMoveArrowsVisibility: getTestUpdateMoveArrowsVisibility(),
 
-        // Cycle Switcher Functions
+        // Routine Switcher Functions
         switchMiniCycle: getTestSwitchMiniCycle(),
         renameMiniCycle: getTestRenameMiniCycle(),
         deleteMiniCycle: getTestDeleteMiniCycle(),

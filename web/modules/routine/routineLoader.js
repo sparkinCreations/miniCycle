@@ -1,10 +1,10 @@
 /**
- * miniCycle Cycle Loader Module (Schema 2.5, DI-Pure)
+ * miniCycle Routine Loader Module (Schema 2.5, DI-Pure)
  * - Pure module with explicit dependency injection
  * - No window probing, no stubs, no retry loops
  * - No window.* fallbacks (DI-pure)
  *
- * @module cycleLoader
+ * @module routineLoader
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -14,7 +14,7 @@ import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
-const di = createDIModule('CycleLoader', {
+const di = createDIModule('RoutineLoader', {
   appInit: optional(null),
   AppState: optional(null),
   loadMiniCycleData: optional(null),
@@ -37,7 +37,7 @@ const Deps = new Proxy({}, {
   }
 });
 
-function setCycleLoaderDependencies(overrides = {}) {
+function setRoutineLoaderDependencies(overrides = {}) {
   di.setDependencies(overrides);
 }
 
@@ -52,7 +52,7 @@ function getAppState() {
 
 function assertInjected(name, fn) {
   if (typeof fn !== 'function') {
-    throw new Error(`cycleLoader: missing dependency ${name}`);
+    throw new Error(`routineLoader: missing dependency ${name}`);
   }
 }
 
@@ -362,5 +362,5 @@ export {
   setupRemindersForCycle,
   updateDependentComponents,
   saveCycleData,
-  setCycleLoaderDependencies
+  setRoutineLoaderDependencies
 };

@@ -1,7 +1,7 @@
 /**
- * @file cycleManager.js (DI-Pure)
- * @description Cycle creation and management functionality for miniCycle
- * @module modules/cycleManager
+ * @file routineManager.js (DI-Pure)
+ * @description Routine creation and management functionality for miniCycle
+ * @module modules/routineManager
  * @pattern Resilient Constructor 🛡️
  *
  * Handles:
@@ -18,7 +18,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
-const di = createDIModule('CycleManager', {
+const di = createDIModule('RoutineManager', {
     AppState: optional(null),
     loadMiniCycleData: optional(null),
     showPromptModal: optional(null),
@@ -46,15 +46,15 @@ const _deps = new Proxy({}, {
 });
 
 /**
- * Set dependencies for CycleManager (call before creating instance)
+ * Set dependencies for RoutineManager (call before creating instance)
  * @param {Object} dependencies - { AppState, showNotification, sanitizeInput, etc. }
  */
-export function setCycleManagerDependencies(dependencies) {
+export function setRoutineManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔄 CycleManager dependencies set:', Object.keys(dependencies));
+    console.log('🔄 RoutineManager dependencies set:', Object.keys(dependencies));
 }
 
-export class CycleManager {
+export class RoutineManager {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
@@ -99,7 +99,7 @@ export class CycleManager {
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
-        console.log('✅ CycleManager initialized');
+        console.log('✅ RoutineManager initialized');
     }
 
     /**
@@ -124,8 +124,8 @@ export class CycleManager {
         const missing = required.filter(dep => !this.deps[dep]);
 
         if (missing.length > 0) {
-            console.error('❌ CycleManager missing required dependencies:', missing);
-            throw new Error(`CycleManager missing required dependencies: ${missing.join(', ')}`);
+            console.error('❌ RoutineManager missing required dependencies:', missing);
+            throw new Error(`RoutineManager missing required dependencies: ${missing.join(', ')}`);
         }
     }
 
@@ -494,23 +494,23 @@ export class CycleManager {
 }
 
 // Create global instance
-let cycleManager = null;
+let routineManager = null;
 
 // Phase 3 - No window.* exports (main script handles exposure)
-console.log('✅ CycleManager module loaded (Phase 3 - no window.* exports)');
+console.log('✅ RoutineManager module loaded (Phase 3 - no window.* exports)');
 
 /**
- * Initialize the CycleManager module
+ * Initialize the RoutineManager module
  * @param {Object} dependencies - Dependency injection object
- * @returns {CycleManager} The initialized CycleManager instance
+ * @returns {RoutineManager} The initialized RoutineManager instance
  */
-export function initializeCycleManager(dependencies) {
-    cycleManager = new CycleManager(dependencies);
-    console.log('✅ CycleManager instance created');
-    return cycleManager;
+export function initializeRoutineManager(dependencies) {
+    routineManager = new RoutineManager(dependencies);
+    console.log('✅ RoutineManager instance created');
+    return routineManager;
 }
 
-// Export for access to cycleManager instance
-export function getCycleManager() {
-    return cycleManager;
+// Export for access to routineManager instance
+export function getRoutineManager() {
+    return routineManager;
 }

@@ -153,7 +153,7 @@ const legacy = {
 
     // Managers
     BackupManager: null,
-    CycleManager: null,
+    RoutineManager: null,
     ModeManager: null,
     MenuManager: null,
     SettingsManager: null,
@@ -162,7 +162,7 @@ const legacy = {
     onboardingManager: null,
     deviceDetectionManager: null,
     modalManager: null,
-    cycleSwitcher: null,
+    routineSwitcher: null,
     statsPanelManager: null,
     completedTasksManager: null,
 
@@ -402,7 +402,7 @@ export function getFixTaskValidationIssues() { return legacy.fixTaskValidationIs
 
 // Managers
 export function getBackupManager() { return legacy.BackupManager; }
-export function getCycleManager() { return legacy.CycleManager; }
+export function getRoutineManager() { return legacy.RoutineManager; }
 export function getModeManager() { return legacy.ModeManager; }
 export function getMenuManager() { return legacy.MenuManager; }
 export function getSettingsManager() { return legacy.SettingsManager; }
@@ -415,8 +415,8 @@ export function getDeviceDetectionManager() { return legacy.deviceDetectionManag
 export function getDeviceDetectionManagerClass() { return legacy.DeviceDetectionManager; }
 export function getModalManager() { return legacy.modalManager; }
 export function getModalManagerClass() { return legacy.ModalManager; }
-export function getCycleSwitcher() { return legacy.cycleSwitcher; }
-export function getCycleSwitcherClass() { return legacy.CycleSwitcher; }
+export function getRoutineSwitcher() { return legacy.routineSwitcher; }
+export function getRoutineSwitcherClass() { return legacy.RoutineSwitcher; }
 export function getDragDropManager() { return legacy.DragDropManager; }
 
 // UI Functions
@@ -544,6 +544,6 @@ export function createLazyDeps() {
 }
 
 // Version constant for cache validation (like APPINIT_VERSION pattern)
-export const APPCONTEXT_VERSION = '1.517';
+export const APPCONTEXT_VERSION = '1.518';
 
 console.log(`📦 appContext module loaded (v${APPCONTEXT_VERSION} - grouped APIs)`);

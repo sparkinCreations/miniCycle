@@ -1,8 +1,8 @@
 /**
- * 🔄 miniCycle Cycle Switcher
- * Manages cycle switching UI and operations
+ * 🔄 miniCycle Routine Switcher
+ * Manages routine switching UI and operations
  *
- * @module cycleSwitcher
+ * @module routineSwitcher
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -11,7 +11,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
-const di = createDIModule('CycleSwitcher', {
+const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
     AppMeta: optional(null),
     loadMiniCycleData: optional(() => null),
@@ -37,15 +37,15 @@ const di = createDIModule('CycleSwitcher', {
 });
 
 /**
- * Set dependencies for CycleSwitcher (call before creating instance)
+ * Set dependencies for RoutineSwitcher (call before creating instance)
  * @param {Object} dependencies - Late-injected dependencies
  */
-export function setCycleSwitcherDependencies(dependencies) {
+export function setRoutineSwitcherDependencies(dependencies) {
     di.setDependencies(dependencies);
-    console.log('🔄 CycleSwitcher dependencies set:', Object.keys(dependencies));
+    console.log('🔄 RoutineSwitcher dependencies set:', Object.keys(dependencies));
 }
 
-export class CycleSwitcher {
+export class RoutineSwitcher {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
@@ -69,7 +69,7 @@ export class CycleSwitcher {
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
 
-        console.log('🔄 CycleSwitcher initialized');
+        console.log('🔄 RoutineSwitcher initialized');
     }
 
     /**
@@ -711,7 +711,7 @@ export class CycleSwitcher {
 
     // Fallback methods for graceful degradation
     fallbackNotification(msg) {
-        console.log(`[CycleSwitcher] ${msg}`);
+        console.log(`[RoutineSwitcher] ${msg}`);
     }
 
     fallbackPrompt(options) {
@@ -740,16 +740,16 @@ export class CycleSwitcher {
 // Global Instance Management
 // ============================================
 
-let cycleSwitcher = null;
+let routineSwitcher = null;
 
 /**
- * Initialize the global cycle switcher
+ * Initialize the global routine switcher
  * @param {Object} dependencies - Required dependencies
  */
-export function initializeCycleSwitcher(dependencies) {
-    cycleSwitcher = new CycleSwitcher(dependencies);
-    console.log('✅ CycleSwitcher instance created');
-    return cycleSwitcher;
+export function initializeRoutineSwitcher(dependencies) {
+    routineSwitcher = new RoutineSwitcher(dependencies);
+    console.log('✅ RoutineSwitcher instance created');
+    return routineSwitcher;
 }
 
 // ============================================
@@ -757,43 +757,43 @@ export function initializeCycleSwitcher(dependencies) {
 // ============================================
 
 function switchMiniCycle() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.switchMiniCycle();
+    if (!routineSwitcher) return;
+    routineSwitcher.switchMiniCycle();
 }
 
 function renameMiniCycle() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.renameMiniCycle();
+    if (!routineSwitcher) return;
+    routineSwitcher.renameMiniCycle();
 }
 
 function deleteMiniCycle() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.deleteMiniCycle();
+    if (!routineSwitcher) return;
+    routineSwitcher.deleteMiniCycle();
 }
 
 function hideSwitchMiniCycleModal() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.hideSwitchMiniCycleModal();
+    if (!routineSwitcher) return;
+    routineSwitcher.hideSwitchMiniCycleModal();
 }
 
 function confirmMiniCycle() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.confirmMiniCycle();
+    if (!routineSwitcher) return;
+    routineSwitcher.confirmMiniCycle();
 }
 
 function updatePreview(cycleName) {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.updatePreview(cycleName);
+    if (!routineSwitcher) return;
+    routineSwitcher.updatePreview(cycleName);
 }
 
 function loadMiniCycleList() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.loadMiniCycleList();
+    if (!routineSwitcher) return;
+    routineSwitcher.loadMiniCycleList();
 }
 
 function setupModalClickOutside() {
-    if (!cycleSwitcher) return;
-    cycleSwitcher.setupModalClickOutside();
+    if (!routineSwitcher) return;
+    routineSwitcher.setupModalClickOutside();
 }
 
 // ============================================
@@ -801,7 +801,7 @@ function setupModalClickOutside() {
 // ============================================
 
 // Phase 2 Step 11 - Clean exports (no window.* pollution)
-console.log('🔄 CycleSwitcher module loaded (Phase 2 - no window.* exports)');
+console.log('🔄 RoutineSwitcher module loaded (Phase 2 - no window.* exports)');
 
 export {
     switchMiniCycle,

@@ -1,6 +1,6 @@
 /**
  * ModeManager Tests (DI-Pure)
- * Tests for modules/cycle/modeManager.js
+ * Tests for modules/routine/modeManager.js
  * Pattern: Resilient Constructor + Module-level DI
  *
  * Uses dependency injection pattern - imports module directly
@@ -20,7 +20,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     // Import the module directly for DI testing
     try {
-        const module = await import('../modules/cycle/modeManager.js');
+        const module = await import('../modules/routine/modeManager.js');
         ModeManager = module.ModeManager;
         setModeManagerDependencies = module.setModeManagerDependencies;
         resultsDiv.innerHTML = '<h2>🎯 ModeManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';

@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.517';
+const APP_VERSION = '1.518';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -191,7 +191,7 @@ export async function initCoreBoot(deps) {
 
   // ========== Load Migration Manager ==========
   console.log('🔄 Loading migration manager (core system)...');
-  const migrationMod = await import(withV('../cycle/migrationManager.js'));
+  const migrationMod = await import(withV('../routine/migrationManager.js'));
 
   deps.core.migrationMod = migrationMod;
   deps.core.createInitialSchema25Data = migrationMod.createInitialSchema25Data;

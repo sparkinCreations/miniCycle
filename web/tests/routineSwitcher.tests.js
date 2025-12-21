@@ -1,16 +1,16 @@
 /**
- * 🧪 CycleSwitcher Tests
- * Tests for modules/cycleSwitcher.js
+ * 🧪 RoutineSwitcher Tests
+ * Tests for modules/routine/routineSwitcher.js
  * Pattern: Resilient Constructor 🛡️
  *
  * Updated for Phase 3 DI Pattern - uses shared testHelpers
  *
- * Tests cycle switching functionality:
+ * Tests routine switching functionality:
  * - Opening switch modal
- * - Renaming cycles
- * - Deleting cycles
- * - Confirming cycle switch
- * - Cycle list management
+ * - Renaming routines
+ * - Deleting routines
+ * - Confirming routine switch
+ * - Routine list management
  * - Preview generation
  */
 
@@ -21,15 +21,15 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
-export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
-    resultsDiv.innerHTML = '<h2>🔄 CycleSwitcher Tests</h2><h3>Setting up mocks...</h3>';
+export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================
     // Use shared testHelpers for comprehensive mock setup
     // =====================================================
     const env = await setupTestEnvironment();
 
-    resultsDiv.innerHTML = '<h2>🔄 CycleSwitcher Tests</h2><h3>Running tests...</h3>';
+    resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
@@ -42,7 +42,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
                 savedRealData[key] = value;
             }
         });
-        console.log('🔒 Saved original localStorage for individual cycleSwitcher test');
+        console.log('🔒 Saved original localStorage for individual routineSwitcher test');
     }
 
     // Helper to restore original data after all tests (only when running individually)
@@ -52,16 +52,16 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             Object.keys(savedRealData).forEach(key => {
                 localStorage.setItem(key, savedRealData[key]);
             });
-            console.log('✅ Individual cycleSwitcher test completed - original localStorage restored');
+            console.log('✅ Individual routineSwitcher test completed - original localStorage restored');
         }
     }
 
     // Import the module class
-    const CycleSwitcher = window.CycleSwitcher;
+    const RoutineSwitcher = window.RoutineSwitcher;
 
     // Check if class is available
-    if (!CycleSwitcher) {
-        resultsDiv.innerHTML += '<div class="result fail">❌ CycleSwitcher class not found. Make sure the module is properly loaded.</div>';
+    if (!RoutineSwitcher) {
+        resultsDiv.innerHTML += '<div class="result fail">❌ RoutineSwitcher class not found. Make sure the module is properly loaded.</div>';
         return { passed: 0, total: 1 };
     }
 
@@ -149,9 +149,9 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization Tests</h4>';
 
     await test('creates instance successfully', async () => {
-        const instance = new CycleSwitcher();
+        const instance = new RoutineSwitcher();
         if (!instance || typeof instance.switchMiniCycle !== 'function') {
-            throw new Error('CycleSwitcher not properly initialized');
+            throw new Error('RoutineSwitcher not properly initialized');
         }
     });
 
@@ -166,7 +166,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             hideMainMenu: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         if (!instance.deps.AppState) {
             throw new Error('Dependency injection failed');
@@ -175,7 +175,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
 
 
     await test('initializes with empty dependencies object', async () => {
-        const instance = new CycleSwitcher({});
+        const instance = new RoutineSwitcher({});
         if (!instance.deps) {
             throw new Error('Should initialize with empty dependencies');
         }
@@ -228,7 +228,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             showNotification: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.switchMiniCycle();
 
         // Modal should be visible
@@ -260,7 +260,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             }
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.switchMiniCycle();
     });
 
@@ -274,7 +274,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             querySelector: (sel) => document.querySelector(sel)
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.hideSwitchMiniCycleModal();
 
         if (modal.style.display !== 'none') {
@@ -297,7 +297,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             getElementById: (id) => document.getElementById(id)
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.updatePreview('Morning Routine');
 
         if (!previewWindow.innerHTML.includes('Tasks:')) {
@@ -323,7 +323,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             getElementById: (id) => document.getElementById(id)
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.updatePreview('NonExistentCycle');
 
         if (!previewWindow.innerHTML.includes('No tasks found')) {
@@ -348,7 +348,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             updateReminderButtons: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.loadMiniCycleListActual();
 
         // Should have 3 cycles
@@ -375,7 +375,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             updateReminderButtons: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
         instance.loadMiniCycleListActual();
 
         // Morning Routine has autoReset=true, should have 🔃
@@ -408,7 +408,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             }
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         // Should not throw
         instance.switchMiniCycle();
@@ -427,7 +427,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             showNotification: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         // Should not throw even with missing DOM
         instance.hideSwitchMiniCycleModal();
@@ -442,7 +442,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             showNotification: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         // Should use fallback notification
         const result = instance.deps.showNotification('test');
@@ -474,7 +474,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             loadMiniCycle: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         // Mock hideSwitchMiniCycleModal
         instance.hideSwitchMiniCycleModal = () => {};
@@ -507,7 +507,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             showNotification: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         // Should work with provided AppState
         const previewWindow = document.createElement('div');
@@ -578,7 +578,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             updateReminderButtons: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         // Call multiple times rapidly
         instance.loadMiniCycleList();
@@ -615,7 +615,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             updateReminderButtons: () => {}
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         const startTime = performance.now();
         instance.loadMiniCycleListActual();
@@ -640,7 +640,7 @@ export async function runCycleSwitcherTests(resultsDiv, isPartOfSuite = false) {
             getElementById: (id) => document.getElementById(id)
         };
 
-        const instance = new CycleSwitcher(mockDeps);
+        const instance = new RoutineSwitcher(mockDeps);
 
         const startTime = performance.now();
         instance.updatePreview('Morning Routine');
