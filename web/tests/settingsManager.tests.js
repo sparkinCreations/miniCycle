@@ -20,7 +20,9 @@ import {
     createMockNotification,
     expect
 } from './testHelpers.js';
-import { getTestSettingsManager } from './helpers/testContext.js';
+
+// Direct import from module (not via appContext which may not be populated)
+import { SettingsManager } from '../modules/ui/settingsManager.js';
 
 export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2><h3>Setting up mocks...</h3>';
@@ -56,9 +58,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     }
 
-
-    // Import the module class
-    const SettingsManager = getTestSettingsManager();
 
     // Check if class is available
     if (!SettingsManager) {

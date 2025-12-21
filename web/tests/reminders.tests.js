@@ -2,8 +2,8 @@
  * Reminders Module Tests
  * Comprehensive tests for the miniCycle Reminders module (Schema 2.5)
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
- * @version 1.330
+ * Updated for Phase 3 DI Pattern - direct module imports
+ * @version 1.331
  */
 
 import {
@@ -12,7 +12,9 @@ import {
     createMockNotification,
     waitForAsyncOperations
 } from './testHelpers.js';
-import { getTestMiniCycleReminders, getTestAppGlobalState } from './helpers/testContext.js';
+
+// Direct import from module (not via appContext which may not be populated)
+import { MiniCycleReminders } from '../modules/features/reminders.js';
 
 export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Reminders Module Tests</h2><h3>Setting up mocks...</h3>';
@@ -50,9 +52,6 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
 
 
     try {
-
-        // Import the module class
-        const MiniCycleReminders = getTestMiniCycleReminders();
 
         // Check if class is available
         if (!MiniCycleReminders) {

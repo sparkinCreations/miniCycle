@@ -4,7 +4,7 @@
  * Tests for device capability detection and app version routing
  * Following miniCycle browser testing patterns
  *
- * Updated for Phase 3 DI Pattern - uses shared testHelpers
+ * Updated for Phase 3 DI Pattern - direct module imports
  *
  * ⚠️ EXPECTED TEST FAILURES IN BROWSER ENVIRONMENT:
  * Some tests may fail when run in a browser test environment due to:
@@ -24,7 +24,9 @@ import {
     createMockNotification,
     waitForAsyncOperations
 } from './testHelpers.js';
-import { getTestDeviceDetectionManager } from './helpers/testContext.js';
+
+// Direct import from module (not via appContext which may not be populated)
+import { DeviceDetectionManager } from '../modules/utils/deviceDetection.js';
 
 export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -36,9 +38,6 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
 
     resultsDiv.innerHTML = '<h2>📱 DeviceDetectionManager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
-
-    // Import the DeviceDetectionManager class
-    const DeviceDetectionManager = getTestDeviceDetectionManager();
 
     // Check if class is available
     if (!DeviceDetectionManager) {

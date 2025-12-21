@@ -5,7 +5,9 @@
  * Tests the global error handling system and safe utility functions.
  */
 
-import { getTestErrorHandler, hasGlobal } from './helpers/testContext.js';
+// Direct import from module (not via appContext which may not be populated)
+import errorHandler from '../modules/utils/errorHandler.js';
+import { hasGlobal } from './helpers/testContext.js';
 
 export function runErrorHandlerTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🛡️ Error Handler Tests</h2><h3>Running tests...</h3>';
@@ -28,23 +30,20 @@ export function runErrorHandlerTests(resultsDiv) {
     // ===== ERROR HANDLER MODULE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">🛡️ ErrorHandler Module</h4>';
 
-    test('ErrorHandler is loaded globally', () => {
-        const ErrorHandler = getTestErrorHandler();
-        if (!ErrorHandler) {
+    test('ErrorHandler is loaded from module', () => {
+        if (!errorHandler) {
             throw new Error('ErrorHandler not found');
         }
     });
 
     test('ErrorHandler has getStats method', () => {
-        const ErrorHandler = getTestErrorHandler();
-        if (typeof ErrorHandler?.getStats !== 'function') {
+        if (typeof errorHandler?.getStats !== 'function') {
             throw new Error('ErrorHandler.getStats not found');
         }
     });
 
     test('ErrorHandler stats returns correct structure', () => {
-        const ErrorHandler = getTestErrorHandler();
-        const stats = ErrorHandler.getStats();
+        const stats = errorHandler.getStats();
         if (!stats.hasOwnProperty('totalErrors') ||
             !stats.hasOwnProperty('recentErrors') ||
             !stats.hasOwnProperty('errorLog')) {
@@ -53,31 +52,27 @@ export function runErrorHandlerTests(resultsDiv) {
     });
 
     test('ErrorHandler has reset method', () => {
-        const ErrorHandler = getTestErrorHandler();
-        if (typeof ErrorHandler?.reset !== 'function') {
+        if (typeof errorHandler?.reset !== 'function') {
             throw new Error('ErrorHandler.reset not found');
         }
     });
 
     test('ErrorHandler reset clears error count', () => {
-        const ErrorHandler = getTestErrorHandler();
-        ErrorHandler.reset();
-        const stats = ErrorHandler.getStats();
+        errorHandler.reset();
+        const stats = errorHandler.getStats();
         if (stats.totalErrors !== 0) {
             throw new Error('Reset did not clear error count');
         }
     });
 
     test('ErrorHandler has exportErrorLog method', () => {
-        const ErrorHandler = getTestErrorHandler();
-        if (typeof ErrorHandler?.exportErrorLog !== 'function') {
+        if (typeof errorHandler?.exportErrorLog !== 'function') {
             throw new Error('ErrorHandler.exportErrorLog not found');
         }
     });
 
     test('ErrorHandler exportErrorLog returns string', () => {
-        const ErrorHandler = getTestErrorHandler();
-        const log = ErrorHandler.exportErrorLog();
+        const log = errorHandler.exportErrorLog();
         if (typeof log !== 'string') {
             throw new Error('Error log is not a string');
         }
@@ -86,21 +81,21 @@ export function runErrorHandlerTests(resultsDiv) {
     // ===== SAFE LOCALSTORAGE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Safe localStorage Functions</h4>';
 
-    test('safeLocalStorageGet is available globally', () => {
-        if (!hasGlobal('safeLocalStorageGet')) {
-            throw new Error('safeLocalStorageGet not found');
+    test('safeLocalStorageGet is available on GlobalUtils', () => {
+        if (typeof window.GlobalUtils?.safeLocalStorageGet !== 'function') {
+            throw new Error('GlobalUtils.safeLocalStorageGet not found');
         }
     });
 
-    test('safeLocalStorageSet is available globally', () => {
-        if (!hasGlobal('safeLocalStorageSet')) {
-            throw new Error('safeLocalStorageSet not found');
+    test('safeLocalStorageSet is available on GlobalUtils', () => {
+        if (typeof window.GlobalUtils?.safeLocalStorageSet !== 'function') {
+            throw new Error('GlobalUtils.safeLocalStorageSet not found');
         }
     });
 
-    test('safeLocalStorageRemove is available globally', () => {
-        if (!hasGlobal('safeLocalStorageRemove')) {
-            throw new Error('safeLocalStorageRemove not found');
+    test('safeLocalStorageRemove is available on GlobalUtils', () => {
+        if (typeof window.GlobalUtils?.safeLocalStorageRemove !== 'function') {
+            throw new Error('GlobalUtils.safeLocalStorageRemove not found');
         }
     });
 
@@ -167,15 +162,15 @@ export function runErrorHandlerTests(resultsDiv) {
     // ===== SAFE JSON TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">📋 Safe JSON Functions</h4>';
 
-    test('safeJSONParse is available globally', () => {
-        if (!hasGlobal('safeJSONParse')) {
-            throw new Error('safeJSONParse not found');
+    test('safeJSONParse is available on GlobalUtils', () => {
+        if (typeof window.GlobalUtils?.safeJSONParse !== 'function') {
+            throw new Error('GlobalUtils.safeJSONParse not found');
         }
     });
 
-    test('safeJSONStringify is available globally', () => {
-        if (!hasGlobal('safeJSONStringify')) {
-            throw new Error('safeJSONStringify not found');
+    test('safeJSONStringify is available on GlobalUtils', () => {
+        if (typeof window.GlobalUtils?.safeJSONStringify !== 'function') {
+            throw new Error('GlobalUtils.safeJSONStringify not found');
         }
     });
 

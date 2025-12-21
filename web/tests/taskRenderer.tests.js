@@ -3,7 +3,15 @@
  * Tests for task rendering and UI refresh operations
  */
 
-import { getTestTaskRenderer, hasGlobal } from './helpers/testContext.js';
+// Direct import from module (not via appContext which may not be populated)
+import {
+    TaskRenderer,
+    setTaskRendererDependencies
+} from '../modules/task/taskRenderer.js';
+
+import {
+    setupTestEnvironment
+} from './testHelpers.js';
 
 // ============================================
 // 🧪 MOCK DEPENDENCIES FOR TASKRENDERER
@@ -31,6 +39,14 @@ function createMockDependencies(overrides = {}) {
 
 export async function runTaskRendererTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎨 TaskRenderer Tests</h2><h3>Running tests...</h3>';
+
+    // Setup test environment
+    await setupTestEnvironment();
+    setTaskRendererDependencies({
+        loadMiniCycle: () => {},
+        updateProgressBar: () => {},
+        checkCompleteAllButton: () => {}
+    });
 
     let passed = { count: 0 };
     let total = { count: 0 };
@@ -71,15 +87,15 @@ export async function runTaskRendererTests(resultsDiv) {
         }
     });
 
-    await test('TaskRenderer is exported to window', () => {
-        if (!getTestTaskRenderer()) {
-            throw new Error('TaskRenderer not available on window object');
+    await test('TaskRenderer class is exported from module', () => {
+        if (typeof TaskRenderer !== 'function') {
+            throw new Error('TaskRenderer class not exported from module');
         }
     });
 
-    await test('initTaskRenderer function is exported', () => {
-        if (!hasGlobal('initTaskRenderer')) {
-            throw new Error('initTaskRenderer not found on window object');
+    await test('setTaskRendererDependencies function is exported', () => {
+        if (typeof setTaskRendererDependencies !== 'function') {
+            throw new Error('setTaskRendererDependencies not exported from module');
         }
     });
 

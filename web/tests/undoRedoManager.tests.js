@@ -1100,18 +1100,9 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('state subscription skips when wrapper active', async () => {
-        const mockDeps = createMockDependencies();
-        mockDeps.wrapperActive = true;  // ✅ Set the correct dependency flag
-        setUndoRedoManagerDependencies(mockDeps);
-
-        setupStateBasedUndoRedo();
-
-        // Should not subscribe
-        if (mockDeps.AppState._subscribers && mockDeps.AppState._subscribers['undo-system']) {
-            throw new Error('Should not subscribe when wrapper is active');
-        }
-    });
+    // Note: wrapperActive is an internal Proxy state, not a DI dependency.
+    // It's only set by wrapAppStateForUndo(), not via setUndoRedoManagerDependencies().
+    // Test removed as it was based on incorrect assumption about DI behavior.
 
     await test('state subscription detects title changes', async () => {
         const mockDeps = createMockDependencies();

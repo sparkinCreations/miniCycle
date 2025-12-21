@@ -12,8 +12,6 @@
  * and can be safely removed from production if needed.
  */
 
-import { getTestBackupManager, getTestAppState } from './helpers/testContext.js';
-
 export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Testing Modal Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -159,7 +157,8 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4>💾 Backup Manager Integration</h4>';
 
     await test('BackupManager exists and has correct interface', async () => {
-        const BackupManager = getTestBackupManager();
+        // Use window.BackupManager which is set up by the test framework
+        const BackupManager = window.BackupManager;
         if (!BackupManager) {
             throw new Error('BackupManager not available');
         }

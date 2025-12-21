@@ -847,12 +847,12 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 cycles: { 'old-cycle': { title: 'Old' } },
                 activeCycle: null, // No active cycle
                 reminders: { enabled: false },
-                settings: {}
+                settings: { onboardingCompleted: true } // Existing user - completed onboarding
             }),
             createInitialSchema25Data: () => {},
             showCycleCreationModal: () => { cycleModalShown = true; },
             getOnboardingManager: () => ({
-                shouldShowOnboarding: () => false // Not a new user
+                shouldShowOnboarding: () => false // Not used by current implementation
             }),
             getMiniCycleState: () => null
         });

@@ -323,12 +323,17 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
-    await test('show sets display to flex', () => {
+    await test('show does not manipulate display (uses opacity via CSS)', () => {
         const manager = new HelpWindowManager();
         manager.show();
 
-        if (helpWindowEl.style.display !== 'flex') {
-            throw new Error('Should set display to flex');
+        // Implementation uses opacity via CSS classes, not display toggle (to prevent CLS)
+        // Just verify show class is added and isVisible is set
+        if (!helpWindowEl.classList.contains('show')) {
+            throw new Error('Should add show class');
+        }
+        if (!manager.isVisible) {
+            throw new Error('Should set isVisible to true');
         }
     });
 
