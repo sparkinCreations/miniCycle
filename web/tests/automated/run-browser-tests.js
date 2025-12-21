@@ -4,7 +4,7 @@
  *
  * Usage:
  *   npm test                     # Run all tests
- *   npm test -- cycleManager     # Run single module
+ *   npm test -- routineManager   # Run single module
  *   npm test -- task             # Run all modules matching "task"
  *   npm test -- --list           # List all available modules
  */
@@ -24,10 +24,10 @@ const colors = {
 
 // All available test modules (50 modules - matches browser "Run All Tests")
 const ALL_MODULES = [
-    'integration', 'themeManager', 'deviceDetection', 'cycleLoader', 'statsPanel',
+    'integration', 'themeManager', 'deviceDetection', 'routineLoader', 'statsPanel',
     'consoleCapture', 'state', 'recurringCore', 'recurringIntegration', 'recurringPanel',
     'globalUtils', 'notifications', 'dragDropManager', 'migrationManager', 'dueDates',
-    'reminders', 'modeManager', 'cycleSwitcher', 'cycleManager', 'undoRedoManager',
+    'reminders', 'modeManager', 'routineSwitcher', 'routineManager', 'undoRedoManager',
     'gamesManager', 'onboardingManager', 'modalManager', 'menuManager', 'settingsManager',
     'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
@@ -48,7 +48,7 @@ function parseArgs() {
         });
         console.log(`\n${colors.yellow}Usage:${colors.reset}`);
         console.log(`  npm test                     ${colors.cyan}# Run all tests${colors.reset}`);
-        console.log(`  npm test -- cycleManager     ${colors.cyan}# Run single module${colors.reset}`);
+        console.log(`  npm test -- routineManager   ${colors.cyan}# Run single module${colors.reset}`);
         console.log(`  npm test -- task             ${colors.cyan}# Run all modules matching "task"${colors.reset}`);
         console.log(`  npm test -- --list           ${colors.cyan}# Show this list${colors.reset}\n`);
         process.exit(0);
