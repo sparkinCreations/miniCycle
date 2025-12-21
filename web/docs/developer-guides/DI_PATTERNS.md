@@ -1,9 +1,9 @@
 # DI Patterns Guide
 
-**Last Updated:** December 14, 2025
+**Last Updated:** December 20, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
-This document covers the dependency injection patterns used in miniCycle. All 46 modules follow these patterns.
+This document covers the dependency injection patterns used in miniCycle. All 53 modules follow these patterns.
 
 ---
 

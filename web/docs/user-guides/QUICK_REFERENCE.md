@@ -1,9 +1,9 @@
 # miniCycle Developer - Quick Reference
 
-**Version**: 1.341 | **Service Worker**: v82 | **Schema**: 2.5
-**Last Updated**: November 9, 2025
+**Version**: 1.516 | **Service Worker**: v110 | **Schema**: 2.5
+**Last Updated**: December 20, 2025
 **Modularization**: ✅ COMPLETE (74.8% reduction achieved!)
-**Tests**: ✅ 958/958 passing (100%) - All platforms
+**Tests**: ✅ 1623/1623 passing (100%) - All platforms
 
 ---
 
@@ -58,10 +58,10 @@ const morningRoutine = {
 | Metric | Value |
 |--------|-------|
 | Boot Files | 4 files (~4,400 lines total) |
-| Modules | 46+ modules (all strict DI) |
+| Modules | 53+ modules (all strict DI) |
 | Schema Version | 2.5 |
-| App Version | 1.470 |
-| Test Coverage | 100% (1458 tests) ✅ |
+| App Version | 1.516 |
+| Test Coverage | 100% (1623 tests) ✅ |
 | Browser Support | Modern + ES5 |
 
 **Boot File Structure (Dec 2025):**
@@ -818,7 +818,7 @@ window.exportDebugData()                 // Debug package
 **✅ MODULARIZATION & BOOT SPLIT COMPLETE!**
 - Boot files: 4 focused files (~4,400 lines total)
 - 46+ modules (all strict DI)
-- 100% test coverage (1458 tests passing) ✅
+- 100% test coverage (1623 tests passing) ✅
 
 **Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../future-work/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.
 

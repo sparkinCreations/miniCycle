@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 15, 2025
+**Last Updated**: December 20, 2025
 
 ---
 
@@ -25,10 +25,10 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Boot Files** | 4 files | Split Dec 2025 for debuggability |
-| **Modules** | 45+ modules | All using strict DI |
+| **Modules** | 53+ modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1458 tests across 45 modules |
+| **Test Coverage** | 100% ✅ | 1623 tests across 53 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
