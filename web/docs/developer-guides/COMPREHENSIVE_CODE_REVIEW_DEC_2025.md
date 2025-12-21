@@ -27,7 +27,7 @@
 
 ## Executive Summary
 
-miniCycle is a **well-architected, production-quality PWA** with excellent testing coverage (958 tests) and modern ES6+ patterns. The DI system is sophisticated and the error handling is comprehensive. The codebase demonstrates strong engineering practices overall.
+miniCycle is a **well-architected, production-quality PWA** with excellent testing coverage (1,623 tests) and modern ES6+ patterns. The DI system is sophisticated and the error handling is comprehensive. The codebase demonstrates strong engineering practices overall.
 
 **Key Strengths:**
 - Zero window.* globals - All state accessed via appContext and DI
@@ -83,7 +83,7 @@ The project is organized into **13 functional modules** under `/modules`:
 | **boot/** | 6 | Bootstrap and initialization orchestration |
 | **core/** | 8 | Central state management, DI, app context |
 | **task/** | 7 | Task CRUD operations, DOM manipulation, drag-drop |
-| **cycle/** | 5 | Cycle management, migration, mode switching |
+| **routine/** | 5 | Routine management, migration, mode switching |
 | **recurring/** | 3 | Recurring task scheduling and templates |
 | **features/** | 4 | Theme management, reminders, due dates, stats |
 | **ui/** | 14 | User interface managers (menu, modals, settings) |
@@ -322,7 +322,7 @@ if (typeof requestIdleCallback !== 'undefined') {
 
 #### Storage Access Pattern (Repeated 6+ times)
 
-**Files:** `task/taskCore.js`, `cycle/cycleManager.js`
+**Files:** `task/taskCore.js`, `routine/routineManager.js`
 
 ```javascript
 // This pattern repeats across multiple files:
@@ -442,7 +442,7 @@ localStorage.setItem('miniCycleData', safeJSONStringify(data));
 | # | Issue | Files Affected | Estimated Effort |
 |---|-------|----------------|------------------|
 | 5 | Add memoization to normalizeRecurringSettings | `recurring/recurringCore.js` | 1 hour |
-| 6 | Extract storage access helper | `task/taskCore.js`, `cycle/cycleManager.js` | 2 hours |
+| 6 | Extract storage access helper | `task/taskCore.js`, `routine/routineManager.js` | 2 hours |
 | 7 | Flatten deeply nested conditionals | `task/taskCore.js` | 2-3 hours |
 | 8 | Add log levels | `utils/` | 3 hours |
 | 9 | Consider splitting taskCore.js | `task/taskCore.js` | 4-6 hours |
@@ -490,7 +490,7 @@ localStorage.setItem('miniCycleData', safeJSONStringify(data));
 | boot/ | 6 | Good | Well-structured orchestration |
 | core/ | 8 | Good | Strong DI patterns |
 | task/ | 7 | Good | Consider splitting taskCore.js |
-| cycle/ | 5 | Good | Clean separation |
+| routine/ | 5 | Good | Clean separation |
 | recurring/ | 3 | Good | Size justified by domain complexity |
 | features/ | 4 | Good | Focused modules |
 | ui/ | 14 | Good | settingsManager.js could use extraction |

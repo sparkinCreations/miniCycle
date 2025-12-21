@@ -409,7 +409,7 @@ loadData: () => window.loadMiniCycleData?.()
 
 ## All DI Modules
 
-**All 46 modules use strict dependency injection with no `|| window.*` fallbacks.**
+**All 61 modules use strict dependency injection with no `|| window.*` fallbacks.**
 
 ### Modules with `set*Dependencies()` (40 modules)
 

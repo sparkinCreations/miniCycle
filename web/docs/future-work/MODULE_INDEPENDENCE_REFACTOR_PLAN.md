@@ -92,7 +92,7 @@ Add storage functions to dependency injection:
 
 ```javascript
 // Before
-class CycleManager {
+class RoutineManager {
     constructor(dependencies = {}) {
         this.deps = {
             AppState: dependencies.AppState,
@@ -106,7 +106,7 @@ class CycleManager {
 }
 
 // After
-class CycleManager {
+class RoutineManager {
     constructor(dependencies = {}) {
         this.deps = {
             AppState: dependencies.AppState,
@@ -127,7 +127,7 @@ class CycleManager {
 ### Files to Update
 | File | Storage Calls | Priority |
 |------|---------------|----------|
-| cycleManager.js | 6+ | High |
+| routineManager.js | 6+ | High |
 | taskCore.js | 4+ | High |
 | appState.js | Already injected | Done |
 | themeManager.js | 2 | Medium |
@@ -135,7 +135,7 @@ class CycleManager {
 
 ### Implementation Steps
 1. Define storage interface in constants or globalUtils
-2. Update CycleManager constructor to accept storage
+2. Update RoutineManager constructor to accept storage
 3. Replace all `safeLocalStorageX()` calls with `this.deps.storage.x()`
 4. Update main script initialization to pass storage
 5. Repeat for each affected module
@@ -153,13 +153,13 @@ class CycleManager {
 ### Test Verification
 ```javascript
 // Test can now use in-memory storage
-const manager = new CycleManager({
+const manager = new RoutineManager({
     storage: mockStorage,
     AppState: mockAppState
 });
 
-manager.saveCycle(testCycle);
-expect(mockStorage._data["miniCycleData"]).toContain(testCycle);
+manager.saveRoutine(testRoutine);
+expect(mockStorage._data["miniCycleData"]).toContain(testRoutine);
 ```
 
 ---

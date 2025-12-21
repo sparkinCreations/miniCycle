@@ -18,7 +18,7 @@
   - Fixed 14 unprotected localStorage operations
   - Added comprehensive error notifications
 
-- ✅ **cycleManager.js** - Score: 48/100 → 88/100 (+40 points)
+- ✅ **routineManager.js** - Score: 48/100 → 88/100 (+40 points)
   - Protected 3 key methods
   - Fixed 2 unprotected localStorage operations
   - Added error recovery mechanisms
@@ -393,16 +393,16 @@ fallbackUpdate() {
 
 ---
 
-## Cycle Module
+## Routine Module
 
-### 16. cycleManager.js (250+ lines)
+### 16. routineManager.js (250+ lines)
 **Status:** Good Error Handling
 **Score:** 78/100
 
 **Strengths:**
 - Sample loading protected (lines 120-194)
 - Try-catch catches fetch errors
-- Fallback cycle creation on failure
+- Fallback routine creation on failure
 - User notification for sample load failure
 
 **Gaps:**
@@ -426,7 +426,7 @@ const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
 
 ---
 
-### 17. cycleLoader.js
+### 17. routineLoader.js
 **Status:** Good Error Handling (with GAPS)
 **Score:** 70/100
 
@@ -458,16 +458,16 @@ list.innerHTML = '';
 
 ---
 
-### 18. cycleSwitcher.js
+### 18. routineSwitcher.js
 **Status:** Minimal Error Handling
 **Score:** 35/100
 
 **Critical Gap:** ASYNC OPERATIONS WITHOUT TRY-CATCH
 
 **Issues:**
-- Cycle switching unprotected
+- Routine switching unprotected
 - No error handling for state updates
-- Silent failures in cycle navigation
+- Silent failures in routine navigation
 
 **Recommendations:**
 1. Add try-catch around all async operations
@@ -822,14 +822,14 @@ const retrieved = JSON.parse(localStorage.getItem(testKey));
 3. undoRedoManager.js (75)
 4. taskCore.js (65) - Actually has critical gaps
 5. dragDropManager.js (76)
-6. cycleManager.js (78)
+6. routineManager.js (78)
 7. recurringCore.js (78)
 8. statsPanel.js (77)
 
 ### Basic (60-74)
 1. themeManager.js (65)
 2. taskDOM.js (72)
-3. cycleLoader.js (70)
+3. routineLoader.js (70)
 4. deviceDetection.js (70)
 5. recurringPanel.js (65)
 6. recurringIntegration.js (60)
@@ -841,7 +841,7 @@ const retrieved = JSON.parse(localStorage.getItem(testKey));
 1. taskUtils.js (20) - NO ERROR HANDLING
 2. taskValidation.js (25) - NO ERROR HANDLING
 3. taskRenderer.js (30) - NO ERROR HANDLING
-4. cycleSwitcher.js (35) - NO ERROR HANDLING
+4. routineSwitcher.js (35) - NO ERROR HANDLING
 5. modeManager.js (40) - NO ERROR HANDLING
 6. testing-modal.js (40) - 20+ UNPROTECTED ops
 7. globalUtils.js (50) - MINIMAL HANDLING

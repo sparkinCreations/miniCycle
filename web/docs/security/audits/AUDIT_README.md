@@ -21,7 +21,7 @@
 ✅ **Safe Utilities** - Created 5 safe utility functions (localStorage, JSON operations)
 ✅ **Storage Protection** - Protected 50+ unprotected localStorage operations
 ✅ **JSON Protection** - Protected 23+ unprotected JSON.parse operations
-✅ **Critical Files** - Fixed taskCore.js, cycleManager.js, testing-modal.js
+✅ **Critical Files** - Fixed taskCore.js, routineManager.js, testing-modal.js
 ✅ **Test Coverage** - Added 59 security & error handling tests (100% pass rate)
 
 ### Implementation Summary
@@ -34,7 +34,7 @@
 **Files Enhanced:**
 - `modules/utils/globalUtils.js` - Added safe utility functions
 - `modules/task/taskCore.js` - Protected all storage operations
-- `modules/cycle/cycleManager.js` - Added error handling
+- `modules/routine/routineManager.js` - Added error handling
 - `modules/testing/testing-modal.js` - Protected all operations
 
 **For Complete Implementation Details:**
@@ -124,10 +124,10 @@ These modules demonstrate excellent error handling and should be used as templat
 ### CRITICAL (Fix Immediately)
 - taskCore.js - 14 unprotected storage operations
 - testing-modal.js - 20+ unprotected storage operations
-- cycleManager.js - 2 unprotected storage operations
+- routineManager.js - 2 unprotected storage operations
 
 ### HIGH (Fix This Sprint)
-- taskDOM.js, cycleLoader.js, taskUtils.js, taskValidation.js, taskRenderer.js
+- taskDOM.js, routineLoader.js, taskUtils.js, taskValidation.js, taskRenderer.js
 
 ### MEDIUM (Fix Next Quarter)
 - dragDropManager.js, recurringCore.js, statsPanel.js, and others
@@ -172,13 +172,13 @@ All critical vulnerabilities need test coverage:
 - taskUtils.js
 - taskValidation.js
 - taskRenderer.js
-- cycleSwitcher.js
+- routineSwitcher.js
 - modeManager.js
 
 ### Unprotected Storage Operations
 - taskCore.js (14 instances)
 - testing-modal.js (20+ instances)
-- cycleManager.js (2 instances)
+- routineManager.js (2 instances)
 
 ### Missing Global Handlers
 - All modules (no window.onerror or unhandledrejection)

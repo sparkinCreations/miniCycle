@@ -112,10 +112,10 @@ const myModule = new MyModule();
 **Boot File Structure (Dec 2025):**
 ```
 miniCycle-main.js (entrypoint, ~133 lines)
-  → modules/boot/orchestrator.js (pure sequence controller, ~74 lines)
-      → modules/boot/coreBoot.js (core state, ~575 lines)
-      → modules/boot/featureBoot.js (feature loading, ~1,649 lines)
-      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~678 lines)
+  → modules/boot/orchestrator.js (pure sequence controller, ~75 lines)
+      → modules/boot/coreBoot.js (core state, ~578 lines)
+      → modules/boot/featureBoot.js (feature loading, ~385 lines)
+      → modules/boot/uiBoot.js (UI handlers + initUIBoot(), ~714 lines)
 ```
 
 **Key Architecture Points:**
@@ -136,12 +136,12 @@ web/
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker
 │
-├── modules/                          # 46 ES6 modules (all strict DI)
+├── modules/                          # 61 ES6 modules (all strict DI)
 │   ├── boot/                        # Boot sequence (Dec 2025 split)
-│   │   ├── orchestrator.js          # Pure sequence controller (~74 lines)
-│   │   ├── coreBoot.js              # Core state & init (~575 lines)
-│   │   ├── featureBoot.js           # Feature loading (~1,649 lines)
-│   │   └── uiBoot.js                # UI handlers + initUIBoot() (~678 lines)
+│   │   ├── orchestrator.js          # Pure sequence controller (~75 lines)
+│   │   ├── coreBoot.js              # Core state & init (~578 lines)
+│   │   ├── featureBoot.js           # Feature loading (~385 lines)
+│   │   └── uiBoot.js                # UI handlers + initUIBoot() (~714 lines)
 │   │
 │   ├── core/                        # Core systems (4 modules)
 │   │   ├── appState.js              # Centralized state management

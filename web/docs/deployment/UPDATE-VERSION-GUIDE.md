@@ -726,7 +726,7 @@ web/
 │   │       ├── notifications.js
 │   │       ├── cycleLoader.js
 │   │       ├── [...15 more files...]
-│   │       ├── cycle/
+│   │       ├── routine/
 │   │       │   └── migrationManager.js
 │   │       └── task/
 │   │           └── dragDropManager.js
@@ -1229,7 +1229,7 @@ utilities/cycleLoader.js
 utilities/consoleCapture.js
 utilities/basicPluginSystem.js
 utilities/testing-modal.js
-utilities/cycle/migrationManager.js
+utilities/routine/migrationManager.js
 utilities/task/dragDropManager.js
 
 # Total: 24 files

@@ -63,7 +63,7 @@ taskTextSpan.textContent = taskText;
 // taskTextSpan.innerHTML = taskText;  // XSS vulnerability!
 ```
 
-### Cycle Names (cycleSwitcher.js)
+### Routine Names (routineSwitcher.js)
 
 ```javascript
 // ✅ Already verified secure - uses textContent for display
@@ -144,7 +144,7 @@ The following modules have been audited and verified secure (November 2025):
 |--------|--------------|-------|
 | onboardingManager.js | ✅ Secure | Theme sanitization (line 155) |
 | notifications.js | ✅ Secure | Uses textContent only |
-| cycleSwitcher.js | ✅ Secure | Uses textContent for names |
+| routineSwitcher.js | ✅ Secure | Uses textContent for names |
 | taskDOM.js | ✅ Secure | No innerHTML usage |
 | taskRenderer.js | ✅ Secure | textContent for task text |
 | taskEvents.js | ✅ Secure | Event handlers only |
@@ -197,7 +197,7 @@ createModalInsecure(theme, title, content) {
 - **November 2025:** XSS audit completed
   - Theme sanitization implemented (onboardingManager.js:155)
   - Notification system verified secure (textContent usage)
-  - Cycle switcher verified secure (textContent usage)
+  - Routine switcher verified secure (textContent usage)
   - Task rendering verified secure (no innerHTML)
   - Settings persistence verified secure (AppState validation)
 

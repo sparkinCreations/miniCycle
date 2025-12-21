@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The miniCycle codebase has **53 modules** across **11 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
+The miniCycle codebase has **61 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
 
 ### Key Numbers
 | Metric | Before | Current | Target | Progress |

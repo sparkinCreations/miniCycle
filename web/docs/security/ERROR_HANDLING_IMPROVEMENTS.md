@@ -142,16 +142,16 @@ safeLocalStorageSet("miniCycleData", safeJSONStringify(data, null));
 
 ---
 
-### 2. cycleManager.js
+### 2. routineManager.js
 **Score Before:** 48/100 (Critical)
 **Score After:** 88/100 (Excellent)
 
 **Fixes Applied:** 3 locations
 
 **Methods Fixed:**
-- `showCycleCreationModal()` (line 78-99) - New cycle creation
-- `preloadGettingStartedCycle()` (line 144-169) - Onboarding cycle setup
-- `createBasicFallbackCycle()` (line 211-246) - Emergency fallback cycle
+- `showRoutineCreationModal()` (line 78-99) - New routine creation
+- `preloadGettingStartedRoutine()` (line 144-169) - Onboarding routine setup
+- `createBasicFallbackRoutine()` (line 211-246) - Emergency fallback routine
 
 **Key Improvements:**
 - Added null checks after safe operations
@@ -160,9 +160,9 @@ safeLocalStorageSet("miniCycleData", safeJSONStringify(data, null));
 - User notifications on critical errors
 
 **Risk Eliminated:**
-- ❌ Failed cycle creation crashes
+- ❌ Failed routine creation crashes
 - ❌ Onboarding failures leave app unusable
-- ✅ Fallback cycles ensure app always works
+- ✅ Fallback routines ensure app always works
 
 ---
 
@@ -214,15 +214,15 @@ safeLocalStorageSet("miniCycleData", safeJSONStringify(data, null));
 | File | Before | After | Change |
 |------|--------|-------|--------|
 | taskCore.js | 45/100 | 90/100 | **+45** |
-| cycleManager.js | 48/100 | 88/100 | **+40** |
+| routineManager.js | 48/100 | 88/100 | **+40** |
 | testing-modal.js | 30/100 | 85/100 | **+55** |
 | globalUtils.js | 82/100 | 95/100 | **+13** |
 | errorHandler.js | N/A | 95/100 | **NEW** |
 | **Overall App** | **68/100** | **92/100** | **+24** |
 
 ### Test Results
-- **Before fixes:** 1,036/1,036 tests passing (100%)
-- **After fixes:** 1,036/1,036 tests passing (100%)
+- **Before fixes:** 1,623/1,623 tests passing (100%)
+- **After fixes:** 1,623/1,623 tests passing (100%)
 - **Regressions:** 0
 - **New failures:** 0
 - **Test duration:** 269.27s
@@ -309,17 +309,17 @@ createCycle(name) {
 }
 
 // ✅ AFTER (Error Handling):
-createCycle(name) {
+createRoutine(name) {
     const data = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
     if (!data) {
-        console.error('[CycleManager] Failed to load schema for cycle creation');
-        showNotification('Failed to create cycle. Please refresh and try again.', 'error');
+        console.error('[RoutineManager] Failed to load schema for routine creation');
+        showNotification('Failed to create routine. Please refresh and try again.', 'error');
         return false;
     }
     data.cycles[newId] = { name, tasks: [] };
     const success = safeLocalStorageSet("miniCycleData", safeJSONStringify(data, null));
     if (!success) {
-        showNotification('Failed to save new cycle. Storage may be full.', 'error');
+        showNotification('Failed to save new routine. Storage may be full.', 'error');
         return false;
     }
     return true;
@@ -332,7 +332,7 @@ createCycle(name) {
 
 ### High Priority (Optional - Further Improvements)
 1. **Add error boundaries to high-risk files** (~2 hours)
-   - taskDOM.js, cycleLoader.js, taskUtils.js
+   - taskDOM.js, routineLoader.js, taskUtils.js
    - Same pattern: replace unsafe operations
 
 2. **Add try-catch to async/await** (~1 hour)
@@ -366,7 +366,7 @@ npm test
 ```
 
 **Results:**
-- ✅ All 1,036 tests passing (100%)
+- ✅ All 1,623 tests passing (100%)
 - ✅ Zero regressions
 - ✅ Error handling tested in 25 XSS vulnerability tests
 - ✅ Safe utilities tested in 36 globalUtils tests
@@ -520,9 +520,9 @@ See `migrationManager.js` and `recurringCore.js` for model examples.
 - ✅ Added global error handlers (errorHandler.js)
 - ✅ Added 5 safe utility functions (globalUtils.js)
 - ✅ Fixed taskCore.js (8 locations, 25+ operations)
-- ✅ Fixed cycleManager.js (3 locations)
+- ✅ Fixed routineManager.js (3 locations)
 - ✅ Fixed testing-modal.js (14 locations, 20+ operations)
-- ✅ All 1,036 tests passing with zero regressions
+- ✅ All 1,623 tests passing with zero regressions
 - ✅ Error handling score improved from 68/100 to 92/100
 
 ---
