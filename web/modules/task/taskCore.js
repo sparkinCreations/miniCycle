@@ -789,6 +789,7 @@ export class TaskCore {
             }
         } catch (error) {
             console.warn('⚠️ Task completion change failed:', error);
+            ui()?.showNotification?.('Could not update task', 'warning');
         }
     }
 
@@ -845,6 +846,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Save task order failed:', error);
+            ui()?.showNotification?.('Could not save task order', 'warning');
         }
     }
 

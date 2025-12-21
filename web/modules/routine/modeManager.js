@@ -228,6 +228,19 @@ export class ModeManager {
             // Summary logging instead of per-task spam
             if (successCount > 0) {
                 console.log(`✅ ModeManager: Task button refresh complete (${successCount} tasks)`);
+
+                // ✅ Sync delete-when-complete button visual states after buttons are recreated
+                if (this.deps.syncAllTasksWithMode && currentCycle?.tasks) {
+                    // Determine current mode from toggle states (already captured above)
+                    const currentMode = deleteCheckedEnabled ? 'todo' : 'cycle';
+                    const tasksData = {};
+                    currentCycle.tasks.forEach(t => { tasksData[t.id] = t; });
+                    const constants = {
+                        DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+                    };
+                    this.deps.syncAllTasksWithMode(currentMode, tasksData, constants);
+                    console.log('✅ ModeManager: Synced delete-when-complete button states');
+                }
             } else if (tasks.length > 0) {
                 // Only log if there were tasks but none had buttons yet (initial load)
                 console.log('ℹ️ ModeManager: Task buttons not yet rendered, will be created by taskDOM');
