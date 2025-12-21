@@ -234,6 +234,9 @@ export async function runNotificationsTests(resultsDiv) {
 
     test('show() prevents duplicate notifications', () => {
         setupMockGlobals();
+        // Ensure clean container with no leftover notifications
+        const existingContainer = document.getElementById('notification-container');
+        if (existingContainer) existingContainer.remove();
         const container = createNotificationContainer();
         const notifications = new window.MiniCycleNotifications();
 

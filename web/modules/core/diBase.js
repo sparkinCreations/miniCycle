@@ -146,11 +146,19 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
          * Preserves getters using Object.defineProperties
          *
          * @param {Object} dependencies - Dependencies to inject
+         * @param {Object} [options] - Options for setting dependencies
+         * @param {boolean} [options.replace=false] - If true, clears existing deps first
          */
-        setDependencies(dependencies) {
+        setDependencies(dependencies, { replace = false } = {}) {
             if (!dependencies || typeof dependencies !== 'object') {
                 console.warn(`⚠️ ${moduleName}: setDependencies called with invalid value`);
                 return;
+            }
+
+            // If replace mode, clear existing deps first
+            if (replace) {
+                _injected = {};
+                _setKeys.clear();
             }
 
             // Use defineProperties to preserve getters (for lazy binding)
@@ -161,6 +169,25 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
             Object.keys(dependencies).forEach(k => _setKeys.add(k));
 
             console.log(`✅ ${moduleName} deps set:`, Object.keys(dependencies));
+        },
+
+        /**
+         * Reset all injected dependencies
+         * Useful for testing or reinitializing a module
+         */
+        reset() {
+            _injected = {};
+            _setKeys.clear();
+            console.log(`🔄 ${moduleName} deps reset`);
+        },
+
+        /**
+         * Clear a specific dependency
+         * @param {string} key - Dependency key to remove
+         */
+        clear(key) {
+            delete _injected[key];
+            _setKeys.delete(key);
         },
 
         /**
@@ -342,7 +369,9 @@ export function safeGet(getter, name = 'dependency') {
 /**
  * @typedef {Object} DIContainer
  * @property {string} name - Module name
- * @property {Function} setDependencies - Inject dependencies
+ * @property {Function} setDependencies - Inject dependencies (supports { replace: true })
+ * @property {Function} reset - Clear all injected dependencies
+ * @property {Function} clear - Clear a specific dependency by key
  * @property {Function} resolve - Resolve and validate dependencies
  * @property {Function} getInjected - Get current injected deps
  * @property {Function} has - Check if dependency exists
