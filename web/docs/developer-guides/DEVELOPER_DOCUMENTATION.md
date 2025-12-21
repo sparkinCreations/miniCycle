@@ -1,8 +1,8 @@
 # miniCycle - Developer Documentation Hub
 
-**Version**: 1.402
-**Last Updated**: December 2025
-**Test Status**: 1458/1458 tests passing (100%)
+**Version**: 1.516
+**Last Updated**: December 20, 2025
+**Test Status**: 1623/1623 tests passing (100%)
 
 ---
 
@@ -44,9 +44,9 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 | Metric | Value | Notes |
 |--------|-------|-------|
 | Boot Files | 4 files (~4,400 lines) | Split Dec 2025 for debuggability |
-| Modules | 46+ files | Organized by feature |
+| Modules | 53+ files | Organized by feature |
 | DI Completion | 100% | No `\|\| window.*` fallbacks |
-| Test Coverage | 100% | 1458 tests passing |
+| Test Coverage | 100% | 1623 tests passing |
 
 **Boot File Structure:**
 - `miniCycle-main.js` (133 lines) - Entrypoint
@@ -75,7 +75,7 @@ setModuleDependencies({
 ```
 
 **Result:**
-- ✅ Code organized into 46+ focused modules
+- ✅ Code organized into 53+ focused modules
 - ✅ All modules use strict DI
 - ✅ Modules can be tested in isolation
 - ✅ Dependencies are explicit and injected

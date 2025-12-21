@@ -1,17 +1,17 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** December 15, 2025
+> **Updated:** December 20, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
 
-The miniCycle codebase has **45 modules** across **11 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
+The miniCycle codebase has **53 modules** across **11 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
 
 ### Key Numbers
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
-| Total modules | 43 | **45** | — | — |
+| Total modules | 43 | **53** | — | — |
 | `window.*` globals created | ~68 | **0** | 0 | **100%** ✅ |
 | `window.*` references consumed | ~748 | **0** | 0 | **100%** ✅ |
 | Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
@@ -20,7 +20,7 @@ The miniCycle codebase has **45 modules** across **11 directories**. All modules
 
 > **Modular overhaul complete (December 2025).** All modules use strict DI.
 >
-> **Last verified:** December 15, 2025
+> **Last verified:** December 20, 2025
 
 ---
 

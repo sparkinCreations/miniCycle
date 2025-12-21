@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Last Updated:** December 11, 2025
-**Status:** All 46 modules use strict DI | Boot files split (Dec 2025)
+**Last Updated:** December 20, 2025
+**Status:** All 53 modules use strict DI | Boot files split (Dec 2025)
 
 ---
 
@@ -57,7 +57,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 1458/1458 tests passing ✅
+- 1623/1623 tests passing ✅
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -82,7 +82,7 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (46 modules, all strict DI)
+├── 📁 modules/                          # ES6 application modules (53 modules, all strict DI)
 │   ├── boot/                            # Boot sequence modules (Dec 2025 split)
 │   │   ├── orchestrator.js              # DI wiring hub (~1,883 lines)
 │   │   ├── coreBoot.js                  # Core state & init (~673 lines)
@@ -128,7 +128,7 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (1458 tests, 100% passing)
+├── 📁 tests/                            # Test suite (1623 tests, 100% passing)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
 │   ├── [33 module test files]
@@ -176,7 +176,7 @@ web/
 **Why this matters:** GitHub renders Markdown beautifully, Docsify adds navigation
 
 ### `/tests/` - Test Suite
-**Purpose:** 1458 automated tests mirroring module structure
+**Purpose:** 1623 automated tests mirroring module structure
 **Philosophy:** Tests are first-class citizens, not afterthoughts
 **Why this matters:** 100% passing tests = confidence to refactor fearlessly
 

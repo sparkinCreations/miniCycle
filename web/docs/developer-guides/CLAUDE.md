@@ -22,9 +22,7 @@ npm start                    # Starts Python HTTP server on port 8080
 ./update-version.sh          # Interactive version updater
 
 # Testing
-npm test                     # Run automated tests
-npm run test:watch           # Jest watch mode
-npm run test:coverage        # Coverage report
+npm test                     # Run automated tests (1623 tests, Playwright)
 ```
 
 ### File Access
@@ -38,17 +36,17 @@ npm run test:coverage        # Coverage report
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 15, 2025 - Updated)
+### Current State (December 20, 2025 - Updated)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Boot files | 1 monolithic | **4 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **45 files** | — | — |
+| Modules | 43 files | **53 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **45** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **53** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -145,7 +143,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1458 tests across 46 modules, 100% passing
+- **Test coverage** - 1623 tests across 53 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -267,8 +265,7 @@ const instance = new MyModule();         // Then create
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1458 tests across 46 modules)
-npm run test:watch          # Watch mode
+npm test                    # All tests (1623 tests across 53 modules)
 ```
 
 ### Browser Tests
