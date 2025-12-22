@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.516 | **Test Coverage**: 1623/1623 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.519 | **Test Coverage**: 1623/1623 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -72,22 +72,22 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 | Metric | Value |
 |--------|-------|
-| Boot files | 4 files (~4,400 lines total) |
-| Modules | 53+ files |
+| Boot files | 4 files (~1,885 lines total) |
+| Modules | 61 files |
 | DI completion | 100% (no `\|\| window.*` fallbacks) |
 | Test coverage | 1623 tests (100%) |
 
 **Boot File Structure:**
-- `miniCycle-main.js` (133 lines) - Entrypoint
-- `modules/boot/orchestrator.js` (1,883 lines) - DI wiring hub
-- `modules/boot/coreBoot.js` (673 lines) - Core state & init
-- `modules/boot/featureBoot.js` (1,470 lines) - Feature loading
-- `modules/boot/uiBoot.js` (406 lines) - UI handlers
+- `miniCycle-main.js` (~133 lines) - Entrypoint
+- `modules/boot/orchestrator.js` (~75 lines) - Pure sequence controller
+- `modules/boot/coreBoot.js` (~578 lines) - Core state & init
+- `modules/boot/featureBoot.js` (~385 lines) - DI wiring hub
+- `modules/boot/uiBoot.js` (~714 lines) - UI handlers
 
 ### The Reality
 
 The codebase has **complete strict DI**:
-- ✅ Code is organized into 53+ focused modules
+- ✅ Code is organized into 61 focused modules
 - ✅ All modules use strict dependency injection
 - ✅ No `|| window.*` fallbacks remain
 - ✅ Modules can be tested in isolation
