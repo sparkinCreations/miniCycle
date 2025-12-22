@@ -234,6 +234,11 @@ export class TaskDOMManager {
     injectDependency(name, value) {
         this.deps[name] = value;
         console.log(`💉 TaskDOMManager: Injected dependency '${name}'`);
+
+        // ✅ Also inject into renderer if it exists (for deps like enableDragAndDropOnTask)
+        if (this.renderer && typeof this.renderer.injectDependency === 'function') {
+            this.renderer.injectDependency(name, value);
+        }
     }
 
     /**
@@ -310,9 +315,8 @@ export class TaskDOMManager {
                 });
 
                 // Initialize renderer module - Phase 3: pass all dependencies (no window.* fallbacks)
-                // ✅ Use this.deps (can be updated via injectDependency) for late-injected deps
-                // Use _rawDeps for deps passed at construction time (addTask, loadMiniCycle)
-                const managerDeps = this.deps;
+                // Note: enableDragAndDropOnTask may be null here - it gets injected later via
+                // moduleLoader post-init injection, which propagates to renderer via injectDependency()
                 this.renderer = this._rawDeps.renderer || new TaskRenderer({
                     // Core state
                     appVersion: this.version,  // Pass injected version
@@ -330,9 +334,8 @@ export class TaskDOMManager {
                     updateArrowsInDOM: this._rawDeps.updateArrowsInDOM || null,
                     checkOverdueTasks: this._rawDeps.checkOverdueTasks || null,
 
-                    // Drag-drop - ✅ Use getter to resolve lazily (fixes long-press after 3-dots toggle)
-                    // This is late-injected via moduleLoader post-init, so it needs lazy resolution
-                    get enableDragAndDropOnTask() { return managerDeps.enableDragAndDropOnTask; },
+                    // Drag-drop (may be null initially - gets injected via injectDependency later)
+                    enableDragAndDropOnTask: this._rawDeps.enableDragAndDropOnTask || null,
 
                     // Recurring panel
                     recurringPanel: this.deps.recurringPanel,
