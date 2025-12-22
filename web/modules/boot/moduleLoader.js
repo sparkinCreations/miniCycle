@@ -36,6 +36,35 @@ export { MODULE_MANIFESTS, PHASES, getLoadOrder };
 
 let _manifestsLoaded = false;
 
+// ============================================================================
+// APPCONTEXT DYNAMIC IMPORT
+// ============================================================================
+// IMPORTANT: Must use versioned import to match coreBoot's instance
+// (unversioned and versioned imports are different modules with separate state)
+let _appContextModule = null;
+let _withV = null;
+let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
+let getCompleteInitialSetup = () => null;
+let getHideMainMenu = () => null;
+
+async function loadAppContext(withV) {
+    // Store withV for future use if provided
+    if (withV) _withV = withV;
+
+    if (!_appContextModule && _withV) {
+        // Use versioned import to match coreBoot's appContext instance
+        _appContextModule = await import(_withV('../core/appContext.js'));
+        registerApi = _appContextModule.registerApi;
+        getCompleteInitialSetup = _appContextModule.getCompleteInitialSetup || (() => null);
+        getHideMainMenu = _appContextModule.getHideMainMenu || (() => null);
+        console.log('✅ ModuleLoader: appContext loaded (versioned)');
+    }
+    return _appContextModule;
+}
+
+// Note: Early non-blocking import removed - must wait for withV from coreBoot
+// to ensure we get the same appContext instance where completeInitialSetup is set
+
 /**
  * Load moduleManifests with version cache-busting
  * @param {Function} withV - Version-appending function from coreBoot (e.g., path => `${path}?v=1.528`)
@@ -50,33 +79,11 @@ export async function loadManifests(withV) {
     getLoadOrder = manifestModule.getLoadOrder;
     _manifestsLoaded = true;
 
+    // Also load appContext with versioning (must match coreBoot's instance)
+    await loadAppContext(withV);
+
     console.log('📋 Module manifests loaded with version cache-busting');
 }
-
-// ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
-let getCompleteInitialSetup = () => null;
-let getHideMainMenu = () => null;
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        registerApi = _appContextModule.registerApi;
-        getCompleteInitialSetup = _appContextModule.getCompleteInitialSetup || (() => null);
-        getHideMainMenu = _appContextModule.getHideMainMenu || (() => null);
-        console.log('✅ ModuleLoader: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// Load appContext early (non-blocking)
-loadAppContext().catch(e => console.warn('⚠️ ModuleLoader: Failed to load appContext:', e));
 
 // ============================================================================
 // MODULE LOADING STATE
