@@ -61,6 +61,32 @@ class MiniCycleState {
         return this.data;
     }
 
+    /**
+     * ✅ Reload data from localStorage (used after createInitialSchema25Data)
+     * Unlike init(), this will reload even if already initialized
+     * @returns {Object|null} The loaded data
+     */
+    reload() {
+        console.log('🔄 Reloading AppState from localStorage...');
+        try {
+            const stored = this.deps.storage.getItem("miniCycleData");
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (this.validateSchema25Structure(parsed)) {
+                    this.data = parsed;
+                    this.isInitialized = true;
+                    console.log('✅ AppState reloaded successfully');
+                    return this.data;
+                }
+            }
+            console.warn('⚠️ No valid data found during reload');
+            return null;
+        } catch (error) {
+            console.error('❌ Error reloading AppState:', error);
+            return null;
+        }
+    }
+
     // ✅ FIX #1: Enhanced init with initialization lock to prevent race conditions
     async init() {
         // Already initialized - return immediately

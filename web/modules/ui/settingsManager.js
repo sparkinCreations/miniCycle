@@ -542,16 +542,7 @@ export class SettingsManager {
                   this.sanitizeImportedData(backupData);
                   console.log('✅ [Restore] Data sanitization complete');
 
-                  // ✅ Check if user is currently on Schema 2.5 (should always be true now)
-                  const currentSchemaData = localStorage.getItem("miniCycleData");
-                  if (!currentSchemaData) {
-                    console.error('❌ [Restore] No Schema 2.5 data found in localStorage');
-                    this.deps.showNotification("❌ Cannot restore - Schema 2.5 data structure required.", "error");
-                    return;
-                  }
-                  console.log('✅ [Restore] Current Schema 2.5 data exists');
-
-                  // ✅ SAFETY: Create pre-restore backup before making changes
+                  // ✅ SAFETY: Create pre-restore backup before making changes (if data exists)
                   console.log('💾 [Restore] Creating safety backup before restore...');
                   try {
                     const BackupManager = this.deps.BackupManager?.();

@@ -10,7 +10,7 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.529
+ * @version 1.530
  */
 
 import { createDIModule, optional } from './diBase.js';
@@ -281,6 +281,14 @@ class AppInit {
 		if (!schemaData) {
 			console.log('🆕 No Schema 2.5 data found - creating initial structure...');
 			_deps.createInitialSchema25Data?.();
+
+			// ✅ FIX: Reload AppState so it picks up the newly created data
+			// This ensures AppState.isReady() returns true for onboarding and subsequent code
+			if (miniCycleState?.reload) {
+				miniCycleState.reload();
+				console.log('✅ AppState reloaded with new data');
+			}
+
 			schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
 		}
 
@@ -300,7 +308,8 @@ class AppInit {
 		if (!hasSeenOnboarding) {
 			console.log('👋 First time user - showing onboarding first...');
 			const onboardingManager = _deps.getOnboardingManager?.();
-			onboardingManager?.showOnboarding?.(cycles, activeCycle);
+			// Pass schemaData to avoid AppState race condition
+			onboardingManager?.showOnboarding?.(cycles, activeCycle, schemaData);
 			return;
 		}
 

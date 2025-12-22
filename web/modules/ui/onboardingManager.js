@@ -133,19 +133,24 @@ export class OnboardingManager {
      * Show onboarding modal flow
      * @param {Object} cycles - Available cycles
      * @param {string} activeCycle - Currently active cycle name
+     * @param {Object} [schemaData] - Optional schema data (avoids AppState race condition on first load)
      */
-    showOnboarding(cycles, activeCycle) {
+    showOnboarding(cycles, activeCycle, schemaData = null) {
         console.log('🎯 Starting onboarding flow...');
 
-        if (!this.deps.AppState?.isReady?.()) {
-            console.warn('⚠️ AppState not ready for showOnboarding');
-            return;
-        }
-
-        const currentState = this.deps.AppState.get();
+        // ✅ FIX: Use passed schemaData if available (avoids race condition on initial load)
+        // AppState may not be ready yet when createInitialSchema25Data just created the data
+        let currentState = schemaData;
         if (!currentState) {
-            console.warn('⚠️ No state data for showOnboarding');
-            return;
+            if (!this.deps.AppState?.isReady?.()) {
+                console.warn('⚠️ AppState not ready for showOnboarding');
+                return;
+            }
+            currentState = this.deps.AppState.get();
+            if (!currentState) {
+                console.warn('⚠️ No state data for showOnboarding');
+                return;
+            }
         }
 
         const currentTheme = currentState.settings?.theme || 'default';
