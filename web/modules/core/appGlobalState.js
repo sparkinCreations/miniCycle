@@ -102,9 +102,8 @@ export async function debugAppState() {
   console.group('🔍 App State Debug');
 
   // Use dynamic import to avoid circular dependency
-  // ✅ Use version param for cache-busting (like appInit pattern)
-  const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
-  const { getAppState } = await import(`./appContext.js?v=${version}`);
+  // No version param - debug function, service worker handles cache
+  const { getAppState } = await import('./appContext.js');
   const AppState = getAppState();
 
   if (!AppState) {
