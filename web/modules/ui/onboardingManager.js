@@ -278,22 +278,35 @@ export class OnboardingManager {
     completeOnboarding(modal, cycles, activeCycle) {
         console.log('✅ Onboarding completed, transitioning...');
 
-        if (!this.deps.AppState?.isReady?.()) {
-            console.warn('⚠️ AppState not ready for completeOnboarding');
-            modal.remove();
-            return;
+        // ✅ FIX: Try to mark onboarding complete, but don't bail out if AppState isn't ready
+        // The cycle creation modal will properly initialize everything
+        if (this.deps.AppState?.isReady?.()) {
+            // Mark onboarding as complete using AppState
+            this.deps.AppState.update(state => {
+                state.settings.onboardingCompleted = true;
+            }, true);
+            console.log('✅ Onboarding flag set in AppState');
+        } else {
+            // AppState not ready - try direct localStorage update as fallback
+            console.warn('⚠️ AppState not ready, attempting direct localStorage update...');
+            try {
+                const stored = localStorage.getItem('miniCycleData');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    if (data.settings) {
+                        data.settings.onboardingCompleted = true;
+                        localStorage.setItem('miniCycleData', JSON.stringify(data));
+                        console.log('✅ Onboarding flag set via direct localStorage');
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ Could not update localStorage directly:', e.message);
+            }
         }
-
-        // Mark onboarding as complete using AppState
-        this.deps.AppState.update(state => {
-            state.settings.onboardingCompleted = true;
-        }, true);
-
-        console.log('✅ Onboarding flag set in AppState');
 
         modal.remove();
 
-        // Transition to cycle creation or complete setup
+        // Always transition to cycle creation or complete setup
         if (!activeCycle || !cycles[activeCycle]) {
             // No active cycle - show cycle creation modal
             setTimeout(() => {
@@ -306,7 +319,7 @@ export class OnboardingManager {
         } else {
             // Already have a cycle - complete setup
             if (this.deps.completeInitialSetup) {
-                const updatedState = this.deps.AppState.get();
+                const updatedState = this.deps.AppState?.get?.();
                 this.deps.completeInitialSetup(activeCycle, null, updatedState);
             } else {
                 console.warn('⚠️ completeInitialSetup not available');

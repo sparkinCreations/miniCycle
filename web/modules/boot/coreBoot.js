@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.530';
+const APP_VERSION = '1.531';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -272,7 +272,7 @@ export async function initAppState(deps, showNotification) {
       createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
       showCycleCreationModal: () => appContextMod.getShowCycleCreationModal?.(),
       getOnboardingManager: () => appContextMod.getOnboardingManager?.() || null,
-      getMiniCycleState: () => null,
+      getMiniCycleState: () => deps.core.AppState || null,
 
       // For completeInitialSetup - use appContext getters (not window.*)
       loadMiniCycle: () => appContextMod.getCycleApi?.()?.load,
