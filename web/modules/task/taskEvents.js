@@ -13,19 +13,21 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// APPCONTEXT DYNAMIC IMPORT
 // ============================================================================
+// NOTE: Early imports before DI use unversioned paths. Service worker handles
+// cache invalidation. This avoids hardcoded fallback versions that get stale.
 let _appContextModule = null;
 let ui = () => null; // Fallback until loaded
 let state = () => null; // Fallback until loaded
 
 async function loadAppContext() {
     if (!_appContextModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.505') : '1.505';
-        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        // No version param - early import before DI, service worker handles cache
+        _appContextModule = await import('../core/appContext.js');
         ui = _appContextModule.ui;
         state = _appContextModule.state;
-        console.log('✅ TaskEvents: appContext loaded with version', version);
+        console.log('✅ TaskEvents: appContext loaded');
     }
     return _appContextModule;
 }

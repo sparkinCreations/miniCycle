@@ -13,8 +13,10 @@
  */
 
 // ============================================================================
-// DYNAMIC IMPORTS (versioned for cache-busting, avoids duplicate module loading)
+// DYNAMIC IMPORTS
 // ============================================================================
+// NOTE: Early imports before DI use unversioned paths. Service worker handles
+// cache invalidation. This avoids hardcoded fallback versions that get stale.
 let _appContextModule = null;
 let _migrationFacadeModule = null;
 let getAppState = () => null;
@@ -23,11 +25,11 @@ let createInitialSchema25Data = () => { console.warn('⚠️ migrationFacade not
 
 async function loadAppContext() {
     if (!_appContextModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
-        _appContextModule = await import(`./appContext.js?v=${version}`);
+        // No version param - early import before DI, service worker handles cache
+        _appContextModule = await import('./appContext.js');
         getAppState = _appContextModule.getAppState;
         getExtractTaskDataFromDOM = _appContextModule.getExtractTaskDataFromDOM;
-        console.log('✅ DataAccess: appContext loaded with version', version);
+        console.log('✅ DataAccess: appContext loaded');
     }
     return _appContextModule;
 }
@@ -38,10 +40,10 @@ loadAppContext().catch(e => console.warn('⚠️ DataAccess: Failed to load appC
 
 async function loadMigrationFacade() {
     if (!_migrationFacadeModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
-        _migrationFacadeModule = await import(`./migrationFacade.js?v=${version}`);
+        // No version param - early import before DI, service worker handles cache
+        _migrationFacadeModule = await import('./migrationFacade.js');
         createInitialSchema25Data = _migrationFacadeModule.createInitialSchema25Data;
-        console.log('✅ DataAccess: migrationFacade loaded with version', version);
+        console.log('✅ DataAccess: migrationFacade loaded');
     }
     return _migrationFacadeModule;
 }

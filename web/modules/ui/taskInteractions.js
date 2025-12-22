@@ -15,14 +15,16 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// TASKUI DYNAMIC IMPORT (avoids duplicate loading with versioned imports)
+// TASKUI DYNAMIC IMPORT
 // ============================================================================
+// NOTE: Early imports before DI use unversioned paths. Service worker handles
+// cache invalidation. This avoids hardcoded fallback versions that get stale.
 let TaskOptionsVisibilityController = null;
 
 async function loadTaskUI() {
     if (!TaskOptionsVisibilityController) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
-        const taskUIModule = await import(`./taskUI.js?v=${version}`);
+        // No version param - early import before DI, service worker handles cache
+        const taskUIModule = await import('./taskUI.js');
         TaskOptionsVisibilityController = taskUIModule.TaskOptionsVisibilityController;
     }
     return TaskOptionsVisibilityController;

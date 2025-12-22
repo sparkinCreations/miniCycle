@@ -30,10 +30,10 @@
  */
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT (avoids duplicate loading with versioned imports)
+// APPCONTEXT DYNAMIC IMPORT
 // ============================================================================
-// NOTE: We use dynamic import to ensure appContext.js is loaded with versioning,
-// matching how other modules load it. Static imports would cause duplicate loading.
+// NOTE: Early imports before DI use unversioned paths. Service worker handles
+// cache invalidation. This avoids hardcoded fallback versions that get stale.
 let _appContextModule = null;
 let getAppState = () => { console.warn('⚠️ appContext not loaded yet'); return null; };
 let getShowNotification = () => null;
@@ -47,8 +47,8 @@ let getDeviceDetectionManager = () => null;
 
 async function loadAppContext() {
     if (!_appContextModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.508') : '1.508';
-        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        // No version param - early import before DI, service worker handles cache
+        _appContextModule = await import('../core/appContext.js');
         // Update the module-level getters
         getAppState = _appContextModule.getAppState;
         getShowNotification = _appContextModule.getShowNotification;
@@ -59,7 +59,7 @@ async function loadAppContext() {
         getCycleApi = _appContextModule.getCycleApi;
         getReminderApi = _appContextModule.getReminderApi;
         getDeviceDetectionManager = _appContextModule.getDeviceDetectionManager;
-        console.log('✅ uiBoot: appContext loaded dynamically');
+        console.log('✅ uiBoot: appContext loaded');
     }
     return _appContextModule;
 }

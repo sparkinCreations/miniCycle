@@ -24,14 +24,40 @@
  * @version 1.0.0
  */
 
-import { MODULE_MANIFESTS, PHASES, getModulesByPhase, getLoadOrder } from './moduleManifests.js';
+// ✅ FIX: Dynamic import with version for cache-busting (prevents stale manifest issues)
+// Static imports can serve cached old versions even when moduleLoader.js is updated
+let MODULE_MANIFESTS = {};
+let PHASES = {};
+let getModulesByPhase = () => [];
+let getLoadOrder = () => [];
 
-// Re-export for consumers that import moduleLoader (avoids duplicate module loading)
+// Re-export for consumers (will be populated after loadManifests())
 export { MODULE_MANIFESTS, PHASES, getLoadOrder };
 
+let _manifestsLoaded = false;
+
+/**
+ * Load moduleManifests with version cache-busting
+ * @param {Function} withV - Version-appending function from coreBoot (e.g., path => `${path}?v=1.528`)
+ */
+export async function loadManifests(withV) {
+    if (_manifestsLoaded) return;
+
+    const manifestModule = await import(withV('./moduleManifests.js'));
+    MODULE_MANIFESTS = manifestModule.MODULE_MANIFESTS;
+    PHASES = manifestModule.PHASES;
+    getModulesByPhase = manifestModule.getModulesByPhase;
+    getLoadOrder = manifestModule.getLoadOrder;
+    _manifestsLoaded = true;
+
+    console.log('📋 Module manifests loaded with version cache-busting');
+}
+
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT (versioned for cache-busting, like appInit pattern)
+// APPCONTEXT DYNAMIC IMPORT
 // ============================================================================
+// NOTE: Early imports before DI use unversioned paths. Service worker handles
+// cache invalidation. This avoids hardcoded fallback versions that get stale.
 let _appContextModule = null;
 let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
 let getCompleteInitialSetup = () => null;
@@ -39,12 +65,12 @@ let getHideMainMenu = () => null;
 
 async function loadAppContext() {
     if (!_appContextModule) {
-        const version = typeof window !== 'undefined' ? (window.APP_VERSION || '1.507') : '1.507';
-        _appContextModule = await import(`../core/appContext.js?v=${version}`);
+        // No version param - early import before DI, service worker handles cache
+        _appContextModule = await import('../core/appContext.js');
         registerApi = _appContextModule.registerApi;
         getCompleteInitialSetup = _appContextModule.getCompleteInitialSetup || (() => null);
         getHideMainMenu = _appContextModule.getHideMainMenu || (() => null);
-        console.log('✅ ModuleLoader: appContext loaded with version', version);
+        console.log('✅ ModuleLoader: appContext loaded');
     }
     return _appContextModule;
 }
@@ -72,6 +98,11 @@ const moduleInstances = new Map();
  * @returns {Promise<Object|null>} Loaded module or null if failed
  */
 export async function loadModule(name, deps, coreResult, withV) {
+    // ✅ Ensure manifests are loaded (idempotent - only loads once)
+    if (!_manifestsLoaded) {
+        await loadManifests(withV);
+    }
+
     if (loadedModules.has(name)) {
         return loadedModules.get(name);
     }
@@ -195,6 +226,11 @@ export async function initializeModule(name, mod, deps, coreResult) {
  */
 export async function loadPhase(deps, coreResult, phase) {
     const { withV } = coreResult;
+
+    // ✅ Ensure manifests are loaded (idempotent - only loads once)
+    if (!_manifestsLoaded) {
+        await loadManifests(withV);
+    }
     const modules = getModulesByPhase(phase);
     const results = new Map();
 
@@ -218,7 +254,11 @@ export async function loadPhase(deps, coreResult, phase) {
  * @returns {Promise<Object>} All loaded modules and instances
  */
 export async function loadAllModules(deps, coreResult) {
-    const { appInit } = coreResult;
+    const { appInit, withV } = coreResult;
+
+    // ✅ FIX: Load manifests with version cache-busting BEFORE using any manifest data
+    // This prevents stale cached manifests from causing 404s on moved/renamed modules
+    await loadManifests(withV);
 
     // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
     if (appInit && !appInit.isCoreReady()) {
