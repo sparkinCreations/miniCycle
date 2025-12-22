@@ -310,12 +310,15 @@ export class TaskDOMManager {
                 });
 
                 // Initialize renderer module - Phase 3: pass all dependencies (no window.* fallbacks)
+                // ✅ Use this.deps (can be updated via injectDependency) for late-injected deps
+                // Use _rawDeps for deps passed at construction time (addTask, loadMiniCycle)
+                const managerDeps = this.deps;
                 this.renderer = this._rawDeps.renderer || new TaskRenderer({
                     // Core state
                     appVersion: this.version,  // Pass injected version
                     AppState: this.deps.AppState,
 
-                    // Task management (from raw deps - may not be in normalized deps)
+                    // Task management (from raw deps - passed at construction time)
                     addTask: this._rawDeps.addTask || null,
                     loadMiniCycle: this._rawDeps.loadMiniCycle || null,
 
@@ -327,8 +330,9 @@ export class TaskDOMManager {
                     updateArrowsInDOM: this._rawDeps.updateArrowsInDOM || null,
                     checkOverdueTasks: this._rawDeps.checkOverdueTasks || null,
 
-                    // Drag-drop
-                    enableDragAndDropOnTask: this._rawDeps.enableDragAndDropOnTask || null,
+                    // Drag-drop - ✅ Use getter to resolve lazily (fixes long-press after 3-dots toggle)
+                    // This is late-injected via moduleLoader post-init, so it needs lazy resolution
+                    get enableDragAndDropOnTask() { return managerDeps.enableDragAndDropOnTask; },
 
                     // Recurring panel
                     recurringPanel: this.deps.recurringPanel,

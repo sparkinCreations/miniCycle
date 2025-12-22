@@ -257,6 +257,14 @@ export async function loadAllModules(deps, coreResult) {
         }
     }
 
+    // Inject enableDragAndDropOnTask into taskDOMManager (required for long-press after refresh)
+    if (deps.task?.taskDOMManager && deps.task?.enableDragAndDropOnTask) {
+        if (typeof deps.task.taskDOMManager.injectDependency === 'function') {
+            deps.task.taskDOMManager.injectDependency('enableDragAndDropOnTask', deps.task.enableDragAndDropOnTask);
+            console.log('✅ moduleLoader: Injected enableDragAndDropOnTask into taskDOMManager');
+        }
+    }
+
     return results;
 }
 
