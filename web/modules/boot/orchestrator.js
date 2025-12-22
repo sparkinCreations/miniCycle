@@ -10,7 +10,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.525';
+const APP_VERSION = '1.526';
 
 /**
  * Main initialization - pure sequence controller

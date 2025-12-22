@@ -27,7 +27,8 @@ const di = createDIModule('PullToRefresh', {
     checkRecurringTasksNow: optional(null),
     watchRecurringTasks: optional(null),
     promptServiceWorkerUpdate: optional(null),
-    showNotification: optional(null)
+    showNotification: optional(null),
+    isModalOpen: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -96,7 +97,8 @@ export class PullToRefresh {
             checkRecurringTasksNow: _deps.checkRecurringTasksNow,
             watchRecurringTasks: _deps.watchRecurringTasks,
             promptServiceWorkerUpdate: _deps.promptServiceWorkerUpdate,
-            showNotification: _deps.showNotification || this.fallbackNotification
+            showNotification: _deps.showNotification || this.fallbackNotification,
+            isModalOpen: _deps.isModalOpen
         };
     }
 
@@ -187,6 +189,9 @@ export class PullToRefresh {
      */
     handleTouchStart(e) {
         if (!this.enabled || this.isRefreshing) return;
+
+        // Don't trigger pull-to-refresh when a modal is open
+        if (this.deps.isModalOpen?.()) return;
 
         // Store the touch target to check scrollable containers
         this.touchStartTarget = e.target;
