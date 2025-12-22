@@ -494,6 +494,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // UI functions (from deps.ui)
         refreshUIFromState: (...args) => deps.task?.refreshUIFromState?.(...args),
         closeAllModals: (...args) => deps.ui?.modalManager?.closeAllModals?.(...args),
+        isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.(),
         updateMainMenuHeader: (...args) => deps.ui?.updateMainMenuHeader?.(...args),
         organizeCompletedTasks: (...args) => deps.ui?.completedTasksManager?.organize?.(...args),
         initCompletedTasksSection: (...args) => deps.ui?.completedTasksManager?.init?.(...args),
