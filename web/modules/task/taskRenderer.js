@@ -198,18 +198,11 @@ export class TaskRenderer {
 
         // ✅ FIX: Re-initialize drag handlers on newly rendered tasks
         // This is needed after refreshUIFromState() recreates the DOM
-        console.log('🔍 enableDragAndDropOnTask check:', {
-            exists: !!this.deps.enableDragAndDropOnTask,
-            type: typeof this.deps.enableDragAndDropOnTask
-        });
         if (this.deps.enableDragAndDropOnTask) {
             const tasks = this.deps.querySelectorAll('#taskList .task');
             tasks.forEach(task => {
                 this.deps.enableDragAndDropOnTask(task);
             });
-            console.log(`🎯 Re-initialized drag handlers for ${tasks.length} tasks`);
-        } else {
-            console.warn('⚠️ enableDragAndDropOnTask is not available - long press will NOT work!');
         }
 
         console.log('✅ Tasks rendered successfully (batched DOM update)');
