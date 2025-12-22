@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.533';
+const APP_VERSION = '1.534';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -377,6 +377,13 @@ let loadMiniCycleData, autoSave, updateCycleData;
 // Initialize data access functions (called after appContext is ready)
 async function initDataAccess() {
   const dataAccessMod = await import(`../core/dataAccess.js?v=${APP_VERSION}`);
+
+  // ✅ FIX: Inject AppState directly into dataAccess to avoid versioned/unversioned module mismatch
+  // This ensures loadMiniCycleData uses the same AppState instance as the rest of the app
+  if (dataAccessMod.setDataAccessDeps && AppState) {
+    dataAccessMod.setDataAccessDeps({ AppState });
+  }
+
   loadMiniCycleData = dataAccessMod.loadMiniCycleData;
   autoSave = dataAccessMod.autoSave;
   updateCycleData = dataAccessMod.updateCycleData;

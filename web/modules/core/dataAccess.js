@@ -17,17 +17,41 @@
 // ============================================================================
 // NOTE: Early imports before DI use unversioned paths. Service worker handles
 // cache invalidation. This avoids hardcoded fallback versions that get stale.
+// HOWEVER: Versioned and unversioned imports create SEPARATE module instances!
+// So we use dependency injection via setDataAccessDeps() to get the correct AppState.
 let _appContextModule = null;
 let _migrationFacadeModule = null;
 let getAppState = () => null;
 let getExtractTaskDataFromDOM = () => null;
 let createInitialSchema25Data = () => { console.warn('⚠️ migrationFacade not loaded yet'); };
 
+// ✅ FIX: Direct AppState injection to avoid versioned/unversioned module instance mismatch
+// coreBoot.js calls this after setting AppState in the versioned appContext
+let _injectedAppState = null;
+
+/**
+ * Inject dependencies directly from coreBoot (avoids module instance mismatch)
+ * @param {Object} deps - { AppState, getAppState }
+ */
+export function setDataAccessDeps(deps) {
+    if (deps.AppState) {
+        _injectedAppState = deps.AppState;
+        console.log('✅ DataAccess: AppState injected directly');
+    }
+    if (deps.getAppState) {
+        getAppState = deps.getAppState;
+        console.log('✅ DataAccess: getAppState injected directly');
+    }
+}
+
 async function loadAppContext() {
     if (!_appContextModule) {
         // No version param - early import before DI, service worker handles cache
         _appContextModule = await import('./appContext.js');
-        getAppState = _appContextModule.getAppState;
+        // Only use appContext's getAppState as fallback if not injected
+        if (!_injectedAppState) {
+            getAppState = _appContextModule.getAppState;
+        }
         getExtractTaskDataFromDOM = _appContextModule.getExtractTaskDataFromDOM;
         console.log('✅ DataAccess: appContext loaded');
     }
@@ -62,7 +86,8 @@ loadMigrationFacade().catch(e => console.warn('⚠️ DataAccess: Failed to load
  * @returns {Object|null} Cycle data or null if unavailable
  */
 export function loadMiniCycleData() {
-    const AppState = getAppState();
+    // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
+    const AppState = _injectedAppState || getAppState();
 
     // Try AppState first for most current data (if available)
     if (AppState?.isReady?.()) {
@@ -167,7 +192,8 @@ export function loadMiniCycleData() {
  * @returns {Promise<Object>} Result object with success status
  */
 export async function autoSave(overrideTaskList = null, immediate = false) {
-    const AppState = getAppState();
+    // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
+    const AppState = _injectedAppState || getAppState();
 
     // AppState must be ready
     if (!AppState?.isReady?.()) {
@@ -207,7 +233,8 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
  * @returns {Promise<boolean>} True if update succeeded, false otherwise
  */
 export async function updateCycleData(cycleId, updateFn, immediate = true) {
-    const AppState = getAppState();
+    // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
+    const AppState = _injectedAppState || getAppState();
 
     if (!AppState?.isReady?.()) {
         console.warn('⚠️ updateCycleData called before AppState ready');
