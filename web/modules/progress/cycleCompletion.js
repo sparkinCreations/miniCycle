@@ -277,7 +277,27 @@ export function checkMiniCycle() {
         // Auto-reset: Only reset if AutoReset is enabled (manual mode = autoReset OFF)
         if (autoResetEnabled) {
             console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
+            // Store expected cycle to verify it hasn't changed during delay
+            const expectedCycleId = activeCycleId;
             setTimeout(() => {
+                // ✅ FIX: Verify cycle hasn't changed and autoReset still enabled during delay
+                const freshState = deps.AppState?.get?.();
+
+                // Only validate if we can read fresh state (backwards compatible with tests)
+                if (freshState) {
+                    const currentCycleId = freshState?.appState?.activeCycleId;
+                    const currentCycleData = currentCycleId ? freshState?.data?.cycles?.[currentCycleId] : null;
+
+                    if (currentCycleId !== expectedCycleId) {
+                        console.warn('⚠️ Cycle changed during auto-reset delay, aborting stale reset');
+                        return;
+                    }
+                    if (currentCycleData && !currentCycleData.autoReset) {
+                        console.warn('⚠️ AutoReset disabled during delay, aborting reset');
+                        return;
+                    }
+                }
+
                 deps.resetTasks?.();
             }, 1000);
             return;

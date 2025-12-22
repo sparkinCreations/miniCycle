@@ -108,14 +108,24 @@ async function handleMiniCycleTitleBlur() {
     }
 }
 
+// ✅ FIX: Module-level flag for idempotency
+let _titleListenerInitialized = false;
+
 /**
  * Set up the miniCycle title listener for inline editing.
  * Makes the title element contentEditable and attaches blur handler.
  */
 export function setupMiniCycleTitleListener() {
+    // ✅ FIX: Idempotency guard to prevent duplicate listeners
+    if (_titleListenerInitialized) {
+        console.log('✅ Title listener already set up');
+        return;
+    }
+
     const titleElement = document.getElementById("mini-cycle-title");
     if (!titleElement) return;
 
+    _titleListenerInitialized = true;
     titleElement.contentEditable = true;
 
     const GlobalUtils = deps.GlobalUtils;

@@ -668,8 +668,12 @@ export class ModeManager {
 
             // Small delay to ensure DOM is ready
             setTimeout(() => {
-                modeSelector.value = modeToRestore;
-                mobileModeSelector.value = modeToRestore;
+                // ✅ FIX: Re-query DOM elements fresh inside setTimeout (not stale from outer scope)
+                const freshModeSelector = this.deps.getElementById("mode-selector");
+                const freshMobileModeSelector = this.deps.getElementById("mobile-mode-selector");
+
+                if (freshModeSelector) freshModeSelector.value = modeToRestore;
+                if (freshMobileModeSelector) freshMobileModeSelector.value = modeToRestore;
                 this.syncModeFromToggles();
                 this.updateCycleModeDescription();
 
@@ -1025,6 +1029,13 @@ export class ModeManager {
      * Validates mode enforcement when user returns to the app
      */
     setupVisibilityChangeListener() {
+        // ✅ FIX: Idempotency guard to prevent duplicate listeners
+        if (this._visibilityListenerInitialized) {
+            console.log('✅ ModeManager: Visibility listener already set up');
+            return;
+        }
+        this._visibilityListenerInitialized = true;
+
         console.log('👁️ ModeManager: Setting up visibility change listener...');
 
         // Store reference for potential cleanup

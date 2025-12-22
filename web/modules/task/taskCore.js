@@ -781,10 +781,13 @@ export class TaskCore {
 
             // Update help window if available (DI-pure, no window.* fallback)
             // Note: helpWindowManager may be a getter function
-            const helpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
-            if (helpWindowMgr && typeof helpWindowMgr.updateConstantMessage === 'function') {
+            if (this.deps.helpWindowManager) {
                 setTimeout(() => {
-                    helpWindowMgr.updateConstantMessage();
+                    // ✅ FIX: Resolve fresh inside setTimeout (not stale from outer scope)
+                    const freshHelpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
+                    if (freshHelpWindowMgr && typeof freshHelpWindowMgr.updateConstantMessage === 'function') {
+                        freshHelpWindowMgr.updateConstantMessage();
+                    }
                 }, 100);
             }
         } catch (error) {
@@ -968,12 +971,33 @@ export class TaskCore {
             }
 
             // Wait for animation, then reset tasks
+            // Capture the cycle ID we're resetting for verification after timeout
+            const originalCycleId = activeCycle;
+
             setTimeout(() => {
                 console.log('🧹 Removing recurring tasks and resetting non-recurring tasks');
 
-                // Remove recurring tasks
+                // ✅ FIX: Read FRESH state inside setTimeout - user may have switched cycles during animation
+                const freshState = this.deps.AppState?.get?.();
+                const currentActiveCycle = freshState?.appState?.activeCycleId;
+
+                // Verify we're still on the same cycle
+                if (currentActiveCycle !== originalCycleId) {
+                    console.warn('⚠️ Cycle switched during reset animation, aborting stale reset');
+                    this.isResetting = false;
+                    return;
+                }
+
+                const freshCycleData = freshState?.data?.cycles?.[currentActiveCycle];
+                if (!freshCycleData) {
+                    console.warn('⚠️ Could not get fresh cycle data in reset callback');
+                    this.isResetting = false;
+                    return;
+                }
+
+                // Remove recurring tasks (use fresh data)
                 if (typeof this.deps.removeRecurringTasksFromCycle === 'function') {
-                    this.deps.removeRecurringTasksFromCycle(taskElements, cycleData);
+                    this.deps.removeRecurringTasksFromCycle(taskElements, freshCycleData);
                 }
 
                 // ✅ Update task data AND DOM for non-recurring tasks
@@ -983,7 +1007,8 @@ export class TaskCore {
                     if (isRecurring) return;
 
                     const taskId = taskEl.dataset.taskId;
-                    const task = cycleData?.tasks?.find(t => t.id === taskId);
+                    // ✅ FIX: Use fresh cycle data for task lookup
+                    const task = freshCycleData?.tasks?.find(t => t.id === taskId);
 
                     // ✅ Check if task should be deleted on reset
                     if (task?.deleteWhenComplete === true) {
@@ -1014,25 +1039,35 @@ export class TaskCore {
                     }
                 });
 
-                // ✅ Remove tasks marked for deletion from cycle data
-                if (tasksToDelete.length > 0) {
-                    cycleData.tasks = cycleData.tasks.filter(t => !tasksToDelete.includes(t.id));
-                    console.log(`🗑️ Deleted ${tasksToDelete.length} task(s) with deleteWhenComplete=true`);
-                }
-
-                // ✅ FIX: Save the updated task data to AppState (will auto-save to localStorage after 600ms debounce)
+                // ✅ FIX: Update through AppState.update to ensure atomic operation
                 if (this.deps.AppState?.isReady?.()) {
                     this.deps.AppState.update(state => {
-                        if (state?.data?.cycles?.[activeCycle]) {
-                            state.data.cycles[activeCycle] = cycleData;
+                        const cycle = state?.data?.cycles?.[currentActiveCycle];
+                        if (cycle) {
+                            // Remove tasks marked for deletion
+                            if (tasksToDelete.length > 0) {
+                                cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.includes(t.id));
+                                console.log(`🗑️ Deleted ${tasksToDelete.length} task(s) with deleteWhenComplete=true`);
+                            }
+                            // Reset remaining tasks
+                            cycle.tasks.forEach(task => {
+                                if (!task.recurring) {
+                                    task.completed = false;
+                                    task.dueDate = null;
+                                }
+                            });
                         }
                     });
                     console.log('✅ Reset task data saved to AppState (will persist to localStorage)');
                 } else {
                     // Fallback: Save directly to localStorage if AppState not available
                     const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                    if (fullSchemaData?.data?.cycles?.[activeCycle]) {
-                        fullSchemaData.data.cycles[activeCycle] = cycleData;
+                    if (fullSchemaData?.data?.cycles?.[currentActiveCycle]) {
+                        // Remove tasks marked for deletion
+                        if (tasksToDelete.length > 0) {
+                            fullSchemaData.data.cycles[currentActiveCycle].tasks =
+                                fullSchemaData.data.cycles[currentActiveCycle].tasks.filter(t => !tasksToDelete.includes(t.id));
+                        }
                         fullSchemaData.metadata.lastModified = Date.now();
                         this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
                         console.log('✅ Reset task data saved to localStorage (AppState fallback)');
@@ -1165,14 +1200,25 @@ export class TaskCore {
                         callback: (confirmed) => {
                             if (!confirmed) return;
 
-                            if (cycleData.deleteCheckedTasks) {
+                            // ✅ FIX: Read FRESH state inside callback - user may have changed mode while modal was open
+                            const freshState = this.deps.AppState?.get?.();
+                            const freshActiveCycle = freshState?.appState?.activeCycleId;
+                            const freshCycleData = freshActiveCycle ? freshState?.data?.cycles?.[freshActiveCycle] : null;
+                            const freshTaskList = this.deps.querySelector("#taskList");
+
+                            if (!freshCycleData || !freshTaskList) {
+                                console.warn('⚠️ Could not get fresh state in confirmation callback');
+                                return;
+                            }
+
+                            if (freshCycleData.deleteCheckedTasks) {
                                 // ✅ To-Do mode: Delete completed tasks that have deleteWhenComplete enabled
                                 const tasksToDelete = [];
-                                const allTaskElements = taskList.querySelectorAll(".task");
+                                const allTaskElements = freshTaskList.querySelectorAll(".task");
 
                                 allTaskElements.forEach(taskElement => {
                                     const taskId = taskElement.dataset.taskId;
-                                    const task = cycleData.tasks?.find(t => t.id === taskId);
+                                    const task = freshCycleData.tasks?.find(t => t.id === taskId);
                                     const checkbox = taskElement.querySelector("input[type='checkbox']");
                                     const isCompleted = checkbox?.checked || false;
 
@@ -1183,17 +1229,22 @@ export class TaskCore {
                                 });
 
                                 if (tasksToDelete.length === 0) {
-                                    ui()?.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
+                                    this.deps.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
                                     return;
                                 }
 
-                                // Remove from DOM and data
-                                tasksToDelete.forEach(({ taskId, taskElement }) => {
-                                    cycleData.tasks = cycleData.tasks.filter(t => t.id !== taskId);
+                                // ✅ FIX: Update through AppState, not stale cycleData reference
+                                this.deps.AppState?.update?.(state => {
+                                    const cycle = state.data.cycles[freshActiveCycle];
+                                    if (cycle) {
+                                        cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.some(d => d.taskId === t.id));
+                                    }
+                                }, true);
+
+                                // Remove from DOM
+                                tasksToDelete.forEach(({ taskElement }) => {
                                     taskElement.remove();
                                 });
-
-                                state()?.autoSave?.();
 
                                 // ✅ Update progress bar after bulk deletion in confirmation modal
                                 this.deps.updateProgressBar();
@@ -1201,12 +1252,12 @@ export class TaskCore {
                                 this.deps.checkCompleteAllButton();
 
                             } else {
-                                taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+                                freshTaskList.querySelectorAll(".task input").forEach(task => task.checked = true);
                                 if (typeof this.deps.checkMiniCycle === 'function') {
                                     this.deps.checkMiniCycle();
                                 }
 
-                                if (!cycleData.autoReset) {
+                                if (!freshCycleData.autoReset) {
                                     this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
                                 }
                             }

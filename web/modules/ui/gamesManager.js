@@ -187,9 +187,16 @@ class GamesManager {
             return;
         }
 
+        // ✅ FIX: Only set up handler once - reuse stored reference to prevent accumulation
+        if (this._gamesOutsideClickHandler) {
+            console.log('✅ Games outside click already set up');
+            return;
+        }
+
         console.log("✅ Games outside click ready");
 
-        const handleClickOutside = (event) => {
+        // ✅ FIX: Store handler as instance property for reuse
+        this._gamesOutsideClickHandler = (event) => {
             const isOpen = gamesPanel.style.display === "flex";
             const clickedOutside =
                 !gamesContent.contains(event.target) &&
@@ -202,9 +209,9 @@ class GamesManager {
 
         // Use safeAddEventListener if available (DI-pure, no window.* fallback)
         if (this.deps.safeAddEventListener) {
-            this.deps.safeAddEventListener(document, "click", handleClickOutside);
+            this.deps.safeAddEventListener(document, "click", this._gamesOutsideClickHandler);
         } else {
-            document.addEventListener("click", handleClickOutside);
+            document.addEventListener("click", this._gamesOutsideClickHandler);
         }
     }
 

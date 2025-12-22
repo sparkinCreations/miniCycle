@@ -1471,11 +1471,20 @@ export async function watchRecurringTasks() {
     }
 }
 
+// ✅ FIX: Module-level flag to prevent duplicate watcher setup
+let _recurringWatcherInitialized = false;
+
 /**
  * Setup the recurring task watcher interval
  * Checks every 30 seconds for tasks that need to be recreated
  */
 export async function setupRecurringWatcher() {
+    // ✅ FIX: Idempotency guard to prevent duplicate intervals and listeners
+    if (_recurringWatcherInitialized) {
+        console.log('✅ Recurring watcher already initialized');
+        return;
+    }
+
     console.log('⚙️ Setting up recurring watcher (AppState-based)...');
 
     // ✅ Check feature flag
@@ -1542,6 +1551,8 @@ export async function setupRecurringWatcher() {
         }
     });
 
+    // ✅ FIX: Mark as initialized after setting up interval and listener
+    _recurringWatcherInitialized = true;
     console.log('✅ Recurring watcher initialized successfully');
 }
 
