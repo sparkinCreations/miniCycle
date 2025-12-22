@@ -155,8 +155,7 @@ export class ThemeManager {
             const statusBarMeta = document.getElementById('status-bar-style-meta');
             
             let themeColor = '#5680ff'; // Default
-            let statusBarStyle = 'default';
-            
+
             // Determine current theme
             let currentTheme = 'default';
             if (body.classList.contains('theme-dark-ocean')) {
@@ -164,13 +163,14 @@ export class ThemeManager {
             } else if (body.classList.contains('theme-golden-glow')) {
                 currentTheme = 'golden-glow';
             }
-            
+
             // Apply colors based on dark mode + theme
             const isDarkMode = body.classList.contains('dark-mode');
             const colorSet = isDarkMode ? this.themeColors.dark : this.themeColors.light;
-            
+
             themeColor = colorSet[currentTheme] || colorSet.default;
-            statusBarStyle = isDarkMode ? 'black-translucent' : 'default';
+            // Always use black-translucent so the gradient shows through the status bar
+            const statusBarStyle = 'black-translucent';
             
             // Update meta tags
             if (themeColorMeta) {
