@@ -236,6 +236,22 @@ export class DragDropManager {
             // Use safeAddEventListener
             const safeAdd = this.deps.safeAddEventListener;
 
+            // ✅ FIX: Remove old handlers BEFORE creating new ones
+            // This prevents duplicate handlers when enableDragAndDrop is called multiple times
+            // (e.g., during re-rendering after three-dots toggle)
+            if (taskElement._touchstartHandler) {
+                taskElement.removeEventListener("touchstart", taskElement._touchstartHandler);
+            }
+            if (taskElement._touchmoveHandler) {
+                taskElement.removeEventListener("touchmove", taskElement._touchmoveHandler);
+            }
+            if (taskElement._touchendHandler) {
+                taskElement.removeEventListener("touchend", taskElement._touchendHandler);
+            }
+            if (taskElement._dragstartHandler) {
+                taskElement.removeEventListener("dragstart", taskElement._dragstartHandler);
+            }
+
             // 📱 **Touch-based Drag for Mobile**
             taskElement._touchstartHandler = (event) => {
                 if (event.target.closest(".task-options")) return;
