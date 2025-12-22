@@ -21,7 +21,7 @@
  * ============================================================================
  */
 
-const APP_VERSION = window.APP_VERSION || '1.519';
+const APP_VERSION = window.APP_VERSION || '1.520';
 
 // Start the application
 (async () => {

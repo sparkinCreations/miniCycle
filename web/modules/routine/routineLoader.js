@@ -90,9 +90,10 @@ async function loadMiniCycle() {
 
   const currentCycle = cycles[activeCycleId];
 
-  // 1) Repair/clean
-  const cleaned = repairAndCleanTasks(currentCycle);
+  // 1) Validate and repair cycle + task data (comprehensive, like import does)
+  const cleaned = repairAndCleanTasks(currentCycle, activeCycleId);
   if (cleaned.wasModified) {
+    console.log(`🔧 Saving repaired data for cycle "${activeCycleId}"`);
     await saveCycleData(activeCycleId, currentCycle);
   }
 
@@ -131,24 +132,75 @@ async function loadMiniCycle() {
 }
 
 /**
- * Repair & cleanup
+ * Repair & cleanup - validates and repairs cycle-level AND task-level data
+ * Handles corrupted or incomplete data gracefully (like import does)
  */
-function repairAndCleanTasks(currentCycle) {
-  if (!currentCycle.tasks || !Array.isArray(currentCycle.tasks)) {
-    currentCycle.tasks = [];
-    return { tasks: [], wasModified: false };
+function repairAndCleanTasks(currentCycle, cycleKey = 'unknown') {
+  let tasksModified = false;
+
+  // ============================================================================
+  // CYCLE-LEVEL VALIDATION (matches routineSwitcher._validateAndRepairCycleData)
+  // ============================================================================
+
+  // Ensure title exists
+  if (!currentCycle.title || typeof currentCycle.title !== 'string') {
+    currentCycle.title = cycleKey !== 'unknown' ? cycleKey : 'Untitled Routine';
+    tasksModified = true;
+    console.warn(`⚠️ Repaired missing cycle title: "${currentCycle.title}"`);
   }
 
-  let tasksModified = false;
+  // Ensure cycleCount is a valid number
+  if (typeof currentCycle.cycleCount !== 'number' || currentCycle.cycleCount < 0 || isNaN(currentCycle.cycleCount)) {
+    currentCycle.cycleCount = 0;
+    tasksModified = true;
+    console.warn('⚠️ Repaired invalid cycleCount to 0');
+  }
+
+  // Ensure autoReset is a boolean
+  if (typeof currentCycle.autoReset !== 'boolean') {
+    currentCycle.autoReset = true;
+    tasksModified = true;
+    console.warn('⚠️ Repaired autoReset to default (true)');
+  }
+
+  // Ensure deleteCheckedTasks is a boolean
+  if (typeof currentCycle.deleteCheckedTasks !== 'boolean') {
+    currentCycle.deleteCheckedTasks = false;
+    tasksModified = true;
+    console.warn('⚠️ Repaired deleteCheckedTasks to default (false)');
+  }
+
+  // ============================================================================
+  // TASK ARRAY VALIDATION
+  // ============================================================================
+
+  if (!currentCycle.tasks || !Array.isArray(currentCycle.tasks)) {
+    currentCycle.tasks = [];
+    tasksModified = true;
+    console.warn('⚠️ Repaired invalid tasks array');
+    return { tasks: [], wasModified: tasksModified };
+  }
+
   const originalLength = currentCycle.tasks.length;
 
   // Determine current mode for deleteWhenComplete defaults
   const isToDoMode = currentCycle.deleteCheckedTasks === true;
   const currentMode = isToDoMode ? 'todo' : 'cycle';
 
+  // ============================================================================
+  // TASK-LEVEL VALIDATION (comprehensive, like import does)
+  // ============================================================================
+
   currentCycle.tasks.forEach((task, index) => {
     if (!task) return;
     if (typeof task !== 'object') return; // Skip non-objects (strings, numbers, etc.)
+
+    // ✅ Repair missing ID
+    if (!task.id || typeof task.id !== 'string') {
+      task.id = `task-${Date.now()}-${index}-${Math.floor(Math.random() * 1000)}`;
+      tasksModified = true;
+      console.warn('⚠️ Repaired task with missing ID:', task.id);
+    }
 
     // ✅ Repair missing text (don't filter out yet)
     const hasText = task.text || task.taskText;
@@ -156,13 +208,45 @@ function repairAndCleanTasks(currentCycle) {
       task.text = `[Task ${index + 1}]`;
       tasksModified = true;
       console.warn('⚠️ Repaired task with missing text:', task.id);
+    } else if (task.taskText && !task.text) {
+      // Migrate legacy taskText to text
+      task.text = task.taskText;
+      delete task.taskText;
+      tasksModified = true;
     }
 
-    // ✅ Repair missing ID
-    if (!task.id) {
-      task.id = `task-${Date.now()}-${index}`;
+    // ✅ Repair boolean fields with proper defaults
+    if (typeof task.completed !== 'boolean') {
+      task.completed = Boolean(task.completed);
       tasksModified = true;
-      console.warn('⚠️ Repaired task with missing ID');
+    }
+
+    if (typeof task.highPriority !== 'boolean') {
+      task.highPriority = Boolean(task.highPriority);
+      tasksModified = true;
+    }
+
+    if (typeof task.remindersEnabled !== 'boolean') {
+      task.remindersEnabled = Boolean(task.remindersEnabled);
+      tasksModified = true;
+    }
+
+    if (typeof task.recurring !== 'boolean') {
+      task.recurring = Boolean(task.recurring);
+      tasksModified = true;
+    }
+
+    // ✅ Repair dueDate (should be null, string, or number)
+    if (task.dueDate === undefined) {
+      task.dueDate = null;
+      tasksModified = true;
+    }
+
+    // ✅ Repair recurringSettings (should be object if recurring)
+    if (task.recurring && (!task.recurringSettings || typeof task.recurringSettings !== 'object')) {
+      task.recurringSettings = {};
+      tasksModified = true;
+      console.warn('⚠️ Repaired missing recurringSettings for recurring task:', task.id);
     }
 
     // ✅ Repair missing deleteWhenCompleteSettings
@@ -190,12 +274,16 @@ function repairAndCleanTasks(currentCycle) {
     // At this point, all tasks have been repaired to have .text and .id
     return true;
   });
-  
+
   currentCycle.tasks = validTasks;
 
   const removedCount = originalLength - validTasks.length;
   if (removedCount > 0) {
     console.warn(`⚠️ Removed ${removedCount} corrupted tasks during sanitization`);
+  }
+
+  if (tasksModified) {
+    console.log(`🔧 Cycle "${cycleKey}" data was repaired during load`);
   }
 
   return {
