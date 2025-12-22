@@ -85,6 +85,9 @@ export class ModeManager {
             this.setupDeleteCheckedTasksModeListener();
         }, 200);
 
+        // ✅ Setup visibility change listener for mode validation on app resume
+        this.setupVisibilityChangeListener();
+
         this.isInitialized = true;
         console.log('✅ ModeManager: Initialized');
     }
@@ -928,6 +931,115 @@ export class ModeManager {
         safeAdd(deleteCheckedTasks, "change", deleteCheckedTasks._deleteCheckedTasksModeHandler);
 
         deleteCheckedTasks.dataset.modeListenerAdded = 'true';
+    }
+
+    /**
+     * Validate and enforce mode settings on app resume
+     * Checks if DOM toggles match AppState and fixes any discrepancies
+     * This is a safety net to catch stale state issues
+     */
+    validateModeEnforcement() {
+        console.log('🔍 ModeManager: Validating mode enforcement...');
+
+        const AppState = this.deps.getAppState();
+        if (!AppState?.isReady?.()) {
+            console.log('⏳ ModeManager: AppState not ready for validation');
+            return;
+        }
+
+        const currentState = AppState.get();
+        if (!currentState) {
+            console.warn('⚠️ ModeManager: No state data for validation');
+            return;
+        }
+
+        const { data, appState } = currentState;
+        const activeCycle = appState?.activeCycleId;
+        const currentCycle = activeCycle ? data?.cycles?.[activeCycle] : null;
+
+        if (!currentCycle) {
+            console.warn('⚠️ ModeManager: No active cycle for validation');
+            return;
+        }
+
+        // Get DOM elements
+        const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
+        const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
+        const modeSelector = this.deps.getElementById('modeSelector');
+        const mobileModeSelector = this.deps.getElementById('mobile-mode-selector');
+
+        if (!toggleAutoReset || !deleteCheckedTasks) {
+            console.warn('⚠️ ModeManager: Toggle elements not found for validation');
+            return;
+        }
+
+        // Get expected values from AppState (source of truth)
+        const expectedAutoReset = currentCycle.autoReset || false;
+        const expectedDeleteChecked = currentCycle.deleteCheckedTasks || false;
+
+        // Get current DOM values
+        const domAutoReset = toggleAutoReset.checked;
+        const domDeleteChecked = deleteCheckedTasks.checked;
+
+        // Check for mismatches
+        const autoResetMismatch = domAutoReset !== expectedAutoReset;
+        const deleteCheckedMismatch = domDeleteChecked !== expectedDeleteChecked;
+
+        if (autoResetMismatch || deleteCheckedMismatch) {
+            console.warn('⚠️ ModeManager: Mode mismatch detected!', {
+                expected: { autoReset: expectedAutoReset, deleteChecked: expectedDeleteChecked },
+                dom: { autoReset: domAutoReset, deleteChecked: domDeleteChecked }
+            });
+
+            // Fix DOM to match AppState
+            toggleAutoReset.checked = expectedAutoReset;
+            deleteCheckedTasks.checked = expectedDeleteChecked;
+
+            // Determine correct mode
+            let correctMode = 'auto-cycle';
+            if (expectedDeleteChecked) {
+                correctMode = 'todo-mode';
+            } else if (!expectedAutoReset) {
+                correctMode = 'manual-cycle';
+            }
+
+            // Update mode selectors
+            if (modeSelector) modeSelector.value = correctMode;
+            if (mobileModeSelector) mobileModeSelector.value = correctMode;
+
+            // Update body class
+            document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+            document.body.classList.add(correctMode + '-mode');
+
+            console.log('✅ ModeManager: Mode enforcement corrected to:', correctMode);
+
+            // Refresh UI to reflect correct mode
+            this.refreshTaskButtonsForModeChange();
+        } else {
+            console.log('✅ ModeManager: Mode enforcement validated - no issues');
+        }
+    }
+
+    /**
+     * Setup visibility change listener for mode validation
+     * Validates mode enforcement when user returns to the app
+     */
+    setupVisibilityChangeListener() {
+        console.log('👁️ ModeManager: Setting up visibility change listener...');
+
+        // Store reference for potential cleanup
+        this._visibilityHandler = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('👁️ ModeManager: App became visible - validating mode...');
+                // Small delay to ensure app state is fully restored
+                setTimeout(() => {
+                    this.validateModeEnforcement();
+                }, 100);
+            }
+        };
+
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+        console.log('✅ ModeManager: Visibility change listener registered');
     }
 
     /**
