@@ -1259,7 +1259,9 @@ export class SettingsManager {
     }
 
     fallbackAddListener(element, event, handler) {
+        // ✅ FIX: Remove before add to prevent accumulation (match safeAddEventListener pattern)
         if (element) {
+            element.removeEventListener(event, handler);
             element.addEventListener(event, handler);
         }
     }

@@ -386,7 +386,7 @@ export class RoutineSwitcher {
                         this.hideSwitchMiniCycleModal();
                         this.deps.showNotification("⚠ No miniCycles left. Please create a new one.");
 
-                        // Manually reset UI instead of reloading
+                        // ✅ FIX: Query DOM elements fresh inside setTimeout (not stale from outer scope)
                         const taskList = this.deps.getElementById("taskList");
                         const toggleAutoReset = this.deps.getElementById("toggleAutoReset");
 
@@ -510,9 +510,20 @@ export class RoutineSwitcher {
         this.hideSwitchMiniCycleModal();
 
         // ✅ Add a small delay to ensure state is fully propagated
+        // Store expected cycle to verify it hasn't changed during delay
+        const expectedCycleKey = cycleKey;
         setTimeout(() => {
+            // ✅ FIX: Verify cycle hasn't changed during delay (prevents stale load)
+            const freshState = this.deps.AppState.get();
+            const currentActiveCycle = freshState?.appState?.activeCycleId;
+
+            if (currentActiveCycle !== expectedCycleKey) {
+                console.warn('⚠️ Cycle changed during switch delay, aborting stale load');
+                return;
+            }
+
             console.log('🔄 Loading new cycle after delay...');
-            console.log('🔍 Final active cycle check before loading:', this.deps.AppState.get()?.appState?.activeCycleId);
+            console.log('🔍 Final active cycle check before loading:', currentActiveCycle);
 
             // Load the new cycle
             if (typeof this.deps.loadMiniCycle === 'function') {
@@ -523,9 +534,8 @@ export class RoutineSwitcher {
                 setTimeout(() => window.location.reload(), 1000);
             }
 
-            // ✅ Get cycle name from state for confirmation
-            const currentState = this.deps.AppState.get();
-            const cycleName = currentState?.data?.cycles?.[cycleKey]?.title || cycleKey;
+            // ✅ Get cycle name from state for confirmation (use fresh state)
+            const cycleName = freshState?.data?.cycles?.[currentActiveCycle]?.title || currentActiveCycle;
             this.deps.showNotification(`✅ Switched to "${cycleName}"`, "success", 2000);
         }, 100);
     }

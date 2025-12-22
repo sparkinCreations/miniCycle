@@ -66,6 +66,13 @@ export class HelpWindowManager {
     }
 
     setupEventListeners() {
+        // ✅ FIX: Only set up handlers once - idempotency guard to prevent accumulation
+        if (this._eventListenersInitialized) {
+            console.log('✅ HelpWindowManager event listeners already set up');
+            return;
+        }
+        this._eventListenersInitialized = true;
+
         const safeAdd = (el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); };
 
         // Listen for checkbox changes on tasks

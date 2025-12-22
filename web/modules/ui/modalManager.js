@@ -82,6 +82,13 @@ export class ModalManager {
      * Set up all modal event listeners
      */
     setupEventListeners() {
+        // ✅ FIX: Idempotency guard to prevent duplicate listeners
+        if (this._eventListenersInitialized) {
+            console.log('✅ Modal event listeners already set up');
+            return;
+        }
+        this._eventListenersInitialized = true;
+
         this.setupFeedbackModal();
         this.setupAboutModal();
         this.setupSettingsModalClickOutside();
