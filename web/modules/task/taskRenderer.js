@@ -70,7 +70,7 @@ export class TaskRenderer {
             updateArrowsInDOM: resolvedDeps.updateArrowsInDOM,
             checkOverdueTasks: resolvedDeps.checkOverdueTasks,
 
-            // Drag-drop (required)
+            // Drag-drop (may be late-injected)
             enableDragAndDropOnTask: resolvedDeps.enableDragAndDropOnTask,
 
             // Recurring panel (required)
@@ -89,6 +89,16 @@ export class TaskRenderer {
         this.version = resolvedDeps.AppMeta?.version;
 
         console.log('🎨 TaskRenderer created');
+    }
+
+    /**
+     * Inject a dependency after construction (for late-bound dependencies)
+     * @param {string} name - The dependency name
+     * @param {*} value - The dependency value
+     */
+    injectDependency(name, value) {
+        this.deps[name] = value;
+        console.log(`💉 TaskRenderer: Injected dependency '${name}'`);
     }
 
     /**
