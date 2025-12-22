@@ -808,6 +808,9 @@ export class ModeManager {
             // ✅ Update recurring button visibility when setting changes
             self.deps.updateRecurringButtonVisibility();
 
+            // ✅ FIX: Refresh task buttons to show/hide delete-when-complete button
+            self.refreshTaskButtonsForModeChange();
+
             console.log('✅ Delete checked tasks setting saved (state-based)');
         }
 
@@ -929,6 +932,11 @@ export class ModeManager {
 
             // ✅ Update recurring button visibility in real-time
             self.deps.updateRecurringButtonVisibility();
+
+            // ✅ FIX: Refresh task buttons to show/hide delete-when-complete button
+            // syncAllTasksWithMode only updates EXISTING buttons - it doesn't create them
+            // This re-renders task buttons so the delete-when-complete button appears
+            self.refreshTaskButtonsForModeChange();
 
             console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
         };
