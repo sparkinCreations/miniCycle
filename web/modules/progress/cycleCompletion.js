@@ -267,13 +267,22 @@ export function checkMiniCycle() {
     if (allCompleted && taskList.children.length > 0) {
         console.log(`✅ All tasks completed for "${lastUsedMiniCycle}"`);
 
-        // Auto-reset: Only reset if AutoReset is enabled
-        if (cycleData.autoReset) {
+        // ✅ FIX: Read autoReset from FRESH AppState, not potentially stale cycleVars
+        // This ensures mode changes are respected immediately
+        const state = deps.AppState?.get?.();
+        const activeCycleId = state?.appState?.activeCycleId;
+        const freshCycleData = activeCycleId ? state?.data?.cycles?.[activeCycleId] : null;
+        const autoResetEnabled = freshCycleData?.autoReset ?? cycleData.autoReset;
+
+        // Auto-reset: Only reset if AutoReset is enabled (manual mode = autoReset OFF)
+        if (autoResetEnabled) {
             console.log(`🔄 AutoReset is ON. Resetting tasks for "${lastUsedMiniCycle}"...`);
             setTimeout(() => {
                 deps.resetTasks?.();
             }, 1000);
             return;
+        } else {
+            console.log(`⏸️ AutoReset is OFF (manual mode). Not resetting tasks.`);
         }
     }
 
