@@ -9,8 +9,14 @@
  * This file only coordinates - no DI writes, no UI logic, no DOM queries.
  */
 
+import { installDebugFilter } from '../utils/debugMode.js';
+
+// Install debug filter FIRST - before any other console.log calls
+// Enable with: ?debug=true or localStorage.setItem('miniCycle_debug', 'true')
+installDebugFilter();
+
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.545';
+const APP_VERSION = '1.546';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {

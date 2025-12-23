@@ -1164,200 +1164,198 @@ export class TaskCore {
     }
 
     /**
+     * Delete completed tasks that have deleteWhenComplete enabled (To-Do mode).
+     * Used by handleCompleteAllTasks in both modal callback and direct paths.
+     * @param {string} activeCycleId - The active cycle ID
+     * @param {Object} cycleData - The cycle data object
+     * @param {HTMLElement} taskList - The task list DOM element
+     * @returns {Object} { deleted: number } or { aborted: true, reason: string }
+     */
+    async _deleteCompletedTasks(activeCycleId, cycleData, taskList) {
+        // Find all tasks that are BOTH completed AND marked for deletion
+        const tasksToDelete = [];
+        const allTaskElements = taskList.querySelectorAll(".task");
+
+        allTaskElements.forEach(taskElement => {
+            const taskId = taskElement.dataset.taskId;
+            const task = cycleData.tasks?.find(t => t.id === taskId);
+            const checkbox = taskElement.querySelector("input[type='checkbox']");
+            const isCompleted = checkbox?.checked || false;
+
+            if (isCompleted && task?.deleteWhenComplete === true) {
+                tasksToDelete.push({ taskId, taskElement });
+            }
+        });
+
+        if (tasksToDelete.length === 0) {
+            this.deps.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
+            return { aborted: true, reason: 'no_tasks' };
+        }
+
+        console.log(`🗑️ Deleting ${tasksToDelete.length} tasks marked for deletion`);
+
+        // Remove from DOM and collect IDs
+        const taskIdsToDelete = tasksToDelete.map(({ taskId, taskElement }) => {
+            taskElement.remove();
+            return taskId;
+        });
+
+        // Update AppState
+        if (this.deps.AppState?.isReady?.()) {
+            await this.deps.AppState.update(state => {
+                const cycle = state.data.cycles[activeCycleId];
+                if (cycle?.tasks) {
+                    cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
+                }
+            }, true);
+        } else {
+            // Fallback to localStorage
+            cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
+            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
+            if (fullSchemaData) {
+                fullSchemaData.data.cycles[activeCycleId] = cycleData;
+                fullSchemaData.metadata.lastModified = Date.now();
+                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
+            }
+        }
+
+        // Update UI
+        this.deps.updateProgressBar?.();
+        this.deps.updateStatsPanel?.();
+        this.deps.checkCompleteAllButton?.();
+
+        return { deleted: taskIdsToDelete.length };
+    }
+
+    /**
+     * Mark all tasks as complete and trigger cycle check/reset.
+     * Used by handleCompleteAllTasks in both modal callback and direct paths.
+     * @param {Object} cycleData - The cycle data object
+     * @param {HTMLElement} taskList - The task list DOM element
+     */
+    _markAllTasksComplete(cycleData, taskList) {
+        console.log('✔️ Marking all tasks as complete');
+
+        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+
+        if (typeof this.deps.checkMiniCycle === 'function') {
+            this.deps.checkMiniCycle();
+        }
+
+        // Only call resetTasks() if autoReset is OFF
+        if (!cycleData.autoReset) {
+            this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
+        }
+    }
+
+    /**
      * Complete all tasks at once
      */
     async handleCompleteAllTasks() {
         try {
             console.log('✔️ Handling complete all tasks (Schema 2.5 only)...');
 
-            let cycles, activeCycle, cycleData;
-            const taskList = this.deps.querySelector("#taskList");
+            // Step 1: Get context
+            const context = this._getCompleteAllContext();
+            if (!context) return;
 
-            // Try AppState first, fall back to localStorage
-            if (this.deps.AppState?.isReady?.()) {
-                const state = this.deps.AppState.get();
-                cycles = state?.data?.cycles || {};
-                activeCycle = state?.appState?.activeCycleId;
-                cycleData = cycles[activeCycle];
-            } else {
-                // Fallback to localStorage
-                const schemaData = this.deps.loadMiniCycleData();
-                if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
-                    throw new Error('Schema 2.5 data not found');
-                }
-                cycles = schemaData.data?.cycles || {};
-                activeCycle = schemaData.appState?.activeCycleId;
-                cycleData = cycles[activeCycle];
-            }
-
-            if (!activeCycle || !cycleData) {
-                console.warn('⚠️ No active cycle found for complete all tasks');
-                return;
-            }
-
+            const { activeCycle, cycleData, taskList } = context;
             console.log('📊 Processing complete all tasks for cycle:', activeCycle);
 
-            // Only show alert if tasks will be reset (not deleted)
+            // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
             if (!cycleData.deleteCheckedTasks) {
                 const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
                     dueDateInput => dueDateInput.value
                 );
 
                 if (hasDueDates) {
-                    this.deps.showConfirmationModal({
-                        title: "Reset Tasks with Due Dates",
-                        message: "⚠️ This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
-                        confirmText: "Reset Tasks",
-                        cancelText: "Cancel",
-                        callback: (confirmed) => {
-                            if (!confirmed) return;
-
-                            // ✅ FIX: Read FRESH state inside callback - user may have changed mode while modal was open
-                            const freshState = this.deps.AppState?.get?.();
-                            const freshActiveCycle = freshState?.appState?.activeCycleId;
-                            const freshCycleData = freshActiveCycle ? freshState?.data?.cycles?.[freshActiveCycle] : null;
-                            const freshTaskList = this.deps.querySelector("#taskList");
-
-                            if (!freshCycleData || !freshTaskList) {
-                                console.warn('⚠️ Could not get fresh state in confirmation callback');
-                                return;
-                            }
-
-                            if (freshCycleData.deleteCheckedTasks) {
-                                // ✅ To-Do mode: Delete completed tasks that have deleteWhenComplete enabled
-                                const tasksToDelete = [];
-                                const allTaskElements = freshTaskList.querySelectorAll(".task");
-
-                                allTaskElements.forEach(taskElement => {
-                                    const taskId = taskElement.dataset.taskId;
-                                    const task = freshCycleData.tasks?.find(t => t.id === taskId);
-                                    const checkbox = taskElement.querySelector("input[type='checkbox']");
-                                    const isCompleted = checkbox?.checked || false;
-
-                                    // Delete only if task is completed AND deleteWhenComplete is true
-                                    if (isCompleted && task?.deleteWhenComplete === true) {
-                                        tasksToDelete.push({ taskId, taskElement });
-                                    }
-                                });
-
-                                if (tasksToDelete.length === 0) {
-                                    this.deps.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
-                                    return;
-                                }
-
-                                // ✅ FIX: Update through AppState, not stale cycleData reference
-                                this.deps.AppState?.update?.(state => {
-                                    const cycle = state.data.cycles[freshActiveCycle];
-                                    if (cycle) {
-                                        cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.some(d => d.taskId === t.id));
-                                    }
-                                }, true);
-
-                                // Remove from DOM
-                                tasksToDelete.forEach(({ taskElement }) => {
-                                    taskElement.remove();
-                                });
-
-                                // ✅ Update progress bar after bulk deletion in confirmation modal
-                                this.deps.updateProgressBar();
-                                this.deps.updateStatsPanel();
-                                this.deps.checkCompleteAllButton();
-
-                            } else {
-                                freshTaskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-                                if (typeof this.deps.checkMiniCycle === 'function') {
-                                    this.deps.checkMiniCycle();
-                                }
-
-                                if (!freshCycleData.autoReset) {
-                                    this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
-                                }
-                            }
-                        }
-                    });
+                    this._showDueDateConfirmationModal();
                     return;
                 }
             }
 
-            if (cycleData.deleteCheckedTasks) {
-                // ✅ To-Do mode: Delete completed tasks that have deleteWhenComplete enabled
-                console.log('🗑️ To-Do mode: Deleting completed tasks marked for deletion');
-
-                // Find all tasks that are BOTH completed AND marked for deletion
-                const tasksToDelete = [];
-                const allTaskElements = taskList.querySelectorAll(".task");
-
-                allTaskElements.forEach(taskElement => {
-                    const taskId = taskElement.dataset.taskId;
-                    const task = cycleData.tasks?.find(t => t.id === taskId);
-                    const checkbox = taskElement.querySelector("input[type='checkbox']");
-                    const isCompleted = checkbox?.checked || false;
-
-                    // Delete only if task is completed AND deleteWhenComplete is true
-                    if (isCompleted && task?.deleteWhenComplete === true) {
-                        tasksToDelete.push({ taskId, taskElement });
-                    }
-                });
-
-                if (tasksToDelete.length === 0) {
-                    _deps.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
-                    return;
-                }
-
-                console.log(`🗑️ Deleting ${tasksToDelete.length} tasks marked for deletion (deleteWhenComplete=true)`);
-
-                // Remove from DOM
-                const taskIdsToDelete = tasksToDelete.map(({ taskId, taskElement }) => {
-                    taskElement.remove();
-                    return taskId;
-                });
-
-                // Update data (AppState or localStorage)
-                if (this.deps.AppState?.isReady?.()) {
-                    await this.deps.AppState.update(state => {
-                        const cid = state.appState.activeCycleId;
-                        const cycle = state.data.cycles[cid];
-                        if (cycle?.tasks) {
-                            cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-                            console.log(`✅ Removed ${taskIdsToDelete.length} tasks from state`);
-                        }
-                    }, true);
-                } else {
-                    // Fallback to localStorage
-                    cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                    if (fullSchemaData) {
-                        fullSchemaData.data.cycles[activeCycle] = cycleData;
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                    }
-                }
-
-                // ✅ Update progress bar after bulk deletion
-                this.deps.updateProgressBar();
-                this.deps.updateStatsPanel();
-                this.deps.checkCompleteAllButton();
-
-            } else {
-                console.log('✔️ Marking all tasks as complete');
-
-                taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-                if (typeof this.deps.checkMiniCycle === 'function') {
-                    this.deps.checkMiniCycle();
-                }
-
-                // Only call resetTasks() if autoReset is OFF
-                if (!cycleData.autoReset) {
-                    this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
-                }
-            }
+            // Step 3: Execute the appropriate action
+            await this._executeCompleteAll(activeCycle, cycleData, taskList);
 
             console.log('✅ Complete all tasks handled (Schema 2.5)');
 
         } catch (error) {
             console.warn('⚠️ Complete all tasks failed:', error);
             _deps.showNotification?.('Could not complete all tasks', 'warning');
+        }
+    }
+
+    /**
+     * Get context for complete all operation.
+     * @returns {Object|null} { activeCycle, cycleData, taskList } or null if invalid
+     */
+    _getCompleteAllContext() {
+        const taskList = this.deps.querySelector("#taskList");
+        let activeCycle, cycleData;
+
+        if (this.deps.AppState?.isReady?.()) {
+            const state = this.deps.AppState.get();
+            activeCycle = state?.appState?.activeCycleId;
+            cycleData = state?.data?.cycles?.[activeCycle];
+        } else {
+            const schemaData = this.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
+                return null;
+            }
+            activeCycle = schemaData.appState?.activeCycleId;
+            cycleData = schemaData.data?.cycles?.[activeCycle];
+        }
+
+        if (!activeCycle || !cycleData) {
+            console.warn('⚠️ No active cycle found for complete all tasks');
+            return null;
+        }
+
+        return { activeCycle, cycleData, taskList };
+    }
+
+    /**
+     * Show confirmation modal for completing tasks with due dates.
+     */
+    _showDueDateConfirmationModal() {
+        this.deps.showConfirmationModal({
+            title: "Reset Tasks with Due Dates",
+            message: "⚠️ This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
+            confirmText: "Reset Tasks",
+            cancelText: "Cancel",
+            callback: async (confirmed) => {
+                if (!confirmed) return;
+
+                // Read FRESH state - user may have changed mode while modal was open
+                const freshContext = this._getCompleteAllContext();
+                if (!freshContext) {
+                    console.warn('⚠️ Could not get fresh state in confirmation callback');
+                    return;
+                }
+
+                await this._executeCompleteAll(
+                    freshContext.activeCycle,
+                    freshContext.cycleData,
+                    freshContext.taskList
+                );
+            }
+        });
+    }
+
+    /**
+     * Execute the complete all operation (delete or mark complete).
+     * @param {string} activeCycle - Active cycle ID
+     * @param {Object} cycleData - Cycle data
+     * @param {HTMLElement} taskList - Task list element
+     */
+    async _executeCompleteAll(activeCycle, cycleData, taskList) {
+        if (cycleData.deleteCheckedTasks) {
+            // To-Do mode: delete completed tasks
+            await this._deleteCompletedTasks(activeCycle, cycleData, taskList);
+        } else {
+            // Cycle mode: mark all complete and trigger reset
+            this._markAllTasksComplete(cycleData, taskList);
         }
     }
 }
