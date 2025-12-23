@@ -31,34 +31,17 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let ui = () => null; // Fallback until loaded
-let state = () => null; // Fallback until loaded
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        ui = _appContextModule.ui;
-        state = _appContextModule.state;
-        console.log('✅ TaskDOM: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No appContext fallback - all dependencies must come through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskDOMManager', {
     appInit: optional(null),
     AppState: optional(null),
     taskCore: optional(null),
     loadMiniCycleData: optional(null),
+    autoSave: optional(null),
     showNotification: optional(null),
     sanitizeInput: optional(null),
     escapeHtml: optional(null),
@@ -394,7 +377,7 @@ export class TaskDOMManager {
         } catch (error) {
             console.error('❌ TaskDOMManager initialization failed:', error);
             console.error('❌ Error stack:', error.stack);
-            ui()?.showNotification?.('Task display may not work properly', 'warning');
+            _deps.showNotification?.('Task display may not work properly', 'warning');
 
             // ✅ Rethrow error so initTaskDOMManager() knows initialization failed
             throw error;
@@ -1055,7 +1038,7 @@ export class TaskDOMManager {
             // If disabled, show pin indicator - task will be kept on reset (won't respawn until re-enabled)
             if (isRecurring && !newState) {
                 // Show info notification (not a blocking modal)
-                ui()?.showNotification?.(
+                _deps.showNotification?.(
                     "📌 This recurring task will be kept on reset instead of respawning.",
                     "info",
                     3000
@@ -1065,7 +1048,7 @@ export class TaskDOMManager {
             // ✅ Update state and DOM using centralized functions
             if (!this.deps.AppState?.isReady?.()) {
                 console.error('❌ AppState not available for delete-when-complete toggle');
-                ui()?.showNotification?.('Feature temporarily unavailable', 'error', 3000);
+                _deps.showNotification?.('Feature temporarily unavailable', 'error', 3000);
                 return;
             }
 
@@ -1158,7 +1141,7 @@ export class TaskDOMManager {
                     ? "📌 Task will be kept on complete (pinned)"
                     : "Task will remain in list on auto-reset";
             }
-            ui()?.showNotification?.(message, "info", 2000);
+            _deps.showNotification?.(message, "info", 2000);
         };
         safeAdd(button, "click", button._deleteWhenCompleteClickHandler);
     }
@@ -1239,7 +1222,7 @@ export class TaskDOMManager {
                 button.setAttribute("aria-pressed", restoredDeleteWhenComplete.toString());
             }
 
-            ui()?.showNotification?.("Recurring disabled for this task", "info", 2000);
+            _deps.showNotification?.("Recurring disabled for this task", "info", 2000);
         }
     }
 
@@ -1304,7 +1287,7 @@ export class TaskDOMManager {
                 this.deps.checkMiniCycle();
             }
 
-            state()?.autoSave?.(null, true);  // ✅ Force immediate save on task completion
+            _deps.autoSave?.(null, true);  // ✅ Force immediate save on task completion
 
             if (typeof this.deps.triggerLogoBackground === 'function') {
                 this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
@@ -1559,7 +1542,7 @@ export class TaskDOMManager {
             this.deps.updateMoveArrowsVisibility();
         }
 
-        if (shouldSave) state()?.autoSave?.();
+        if (shouldSave) _deps.autoSave?.();
     }
 
     // GROUP 6: RENDERING
@@ -1583,9 +1566,6 @@ async function initTaskDOMManager(dependencies = {}) {
         console.warn('⚠️ TaskDOMManager already initialized');
         return taskDOMManager;
     }
-
-    // Load appContext with version (cache-busting)
-    await loadAppContext();
 
     taskDOMManager = new TaskDOMManager(dependencies);
     await taskDOMManager.init(); // Await async init

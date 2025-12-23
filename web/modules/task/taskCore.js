@@ -18,33 +18,16 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let ui = () => null; // Fallback until loaded
-let state = () => null; // Fallback until loaded
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        ui = _appContextModule.ui;
-        state = _appContextModule.state;
-        console.log('✅ TaskCore: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No appContext fallback - all dependencies must come through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskCore', {
     appInit: optional(null),
     AppState: optional(null),
     loadMiniCycleData: optional(null),
+    autoSave: optional(null),
     sanitizeInput: optional(null),
     safeJSONParse: optional(null),
     safeJSONStringify: optional(null),
@@ -228,7 +211,7 @@ export class TaskCore {
             console.log('✅ Task core system initialized successfully');
         } catch (error) {
             console.warn('⚠️ Task core system initialization failed:', error);
-            ui()?.showNotification?.('Task system initialized with limited functionality', 'warning');
+            _deps.showNotification?.('Task system initialized with limited functionality', 'warning');
         }
     }
 
@@ -423,7 +406,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Task creation failed:', error);
-            ui()?.showNotification?.('Could not add task - please try again', 'warning');
+            _deps.showNotification?.('Could not add task - please try again', 'warning');
         }
     }
 
@@ -491,7 +474,7 @@ export class TaskCore {
                             }
                         }
 
-                        ui()?.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
+                        _deps.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
                         this.deps.updateStatsPanel();
                         this.deps.updateProgressBar();
                         this.deps.checkCompleteAllButton();
@@ -501,7 +484,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Task edit failed:', error);
-            ui()?.showNotification?.('Could not edit task', 'warning');
+            _deps.showNotification?.('Could not edit task', 'warning');
         }
     }
 
@@ -523,7 +506,7 @@ export class TaskCore {
                 cancelText: "Cancel",
                 callback: async (confirmDelete) => {
                     if (!confirmDelete) {
-                        ui()?.showNotification?.(`"${taskName}" has not been deleted.`, "show", 2500);
+                        _deps.showNotification?.(`"${taskName}" has not been deleted.`, "show", 2500);
                         return;
                     }
 
@@ -552,7 +535,7 @@ export class TaskCore {
                         // Remove from DOM
                         taskItem.remove();
 
-                        ui()?.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
+                        _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
                         this.deps.updateStatsPanel();
                         this.deps.updateProgressBar();
                         this.deps.checkCompleteAllButton();
@@ -580,7 +563,7 @@ export class TaskCore {
                                     this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
 
                                     taskItem.remove();
-                                    ui()?.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
+                                    _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
                                     this.deps.updateStatsPanel();
                                     this.deps.updateProgressBar();
                                     this.deps.checkCompleteAllButton();
@@ -598,7 +581,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Task deletion failed:', error);
-            ui()?.showNotification?.('Could not delete task', 'warning');
+            _deps.showNotification?.('Could not delete task', 'warning');
         }
     }
 
@@ -664,7 +647,7 @@ export class TaskCore {
                     if (t) t.highPriority = newHighPriority;
                 }, true);
 
-                ui()?.showNotification?.(
+                _deps.showNotification?.(
                     `Priority ${newHighPriority ? "enabled" : "removed"}.`,
                     newHighPriority ? "error" : "info",
                     1500
@@ -683,7 +666,7 @@ export class TaskCore {
                             fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
                             fullSchemaData.metadata.lastModified = Date.now();
                             this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                            ui()?.showNotification?.(
+                            _deps.showNotification?.(
                                 `Priority ${task.highPriority ? "enabled" : "removed"}.`,
                                 task.highPriority ? "error" : "info",
                                 1500
@@ -695,7 +678,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Priority toggle failed:', error);
-            ui()?.showNotification?.('Could not toggle priority', 'warning');
+            _deps.showNotification?.('Could not toggle priority', 'warning');
         }
     }
 
@@ -794,7 +777,7 @@ export class TaskCore {
             }
         } catch (error) {
             console.warn('⚠️ Task completion change failed:', error);
-            ui()?.showNotification?.('Could not update task', 'warning');
+            _deps.showNotification?.('Could not update task', 'warning');
         }
     }
 
@@ -851,7 +834,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Save task order failed:', error);
-            ui()?.showNotification?.('Could not save task order', 'warning');
+            _deps.showNotification?.('Could not save task order', 'warning');
         }
     }
 
@@ -1140,7 +1123,7 @@ export class TaskCore {
                 if (this.deps.recurringCore?.watchRecurringTasks) {
                     this.deps.recurringCore.watchRecurringTasks();
                 }
-                state()?.autoSave?.();
+                _deps.autoSave?.();
                 this.deps.updateStatsPanel();
                 console.log('✅ Reset tasks completed successfully');
             }, 1000);
@@ -1148,7 +1131,7 @@ export class TaskCore {
         } catch (error) {
             console.warn('⚠️ Reset tasks failed:', error);
             this.isResetting = false;
-            ui()?.showNotification?.('Could not reset tasks', 'warning');
+            _deps.showNotification?.('Could not reset tasks', 'warning');
         }
     }
 
@@ -1290,7 +1273,7 @@ export class TaskCore {
                 });
 
                 if (tasksToDelete.length === 0) {
-                    ui()?.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
+                    _deps.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
                     return;
                 }
 
@@ -1346,7 +1329,7 @@ export class TaskCore {
 
         } catch (error) {
             console.warn('⚠️ Complete all tasks failed:', error);
-            ui()?.showNotification?.('Could not complete all tasks', 'warning');
+            _deps.showNotification?.('Could not complete all tasks', 'warning');
         }
     }
 }
@@ -1363,9 +1346,6 @@ export class TaskCore {
 export async function initTaskCore(dependencies = {}) {
     if (!taskCoreInstance) {
         try {
-            // Load appContext with version (cache-busting)
-            await loadAppContext();
-
             taskCoreInstance = new TaskCore(dependencies);
             await taskCoreInstance.init();
 

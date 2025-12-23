@@ -13,67 +13,33 @@
  */
 
 // ============================================================================
-// DYNAMIC IMPORTS
+// DEPENDENCY INJECTION
 // ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-// HOWEVER: Versioned and unversioned imports create SEPARATE module instances!
-// So we use dependency injection via setDataAccessDeps() to get the correct AppState.
-let _appContextModule = null;
-let _migrationFacadeModule = null;
-let getAppState = () => null;
-let getExtractTaskDataFromDOM = () => null;
-let createInitialSchema25Data = () => { console.warn('⚠️ migrationFacade not loaded yet'); };
+// NOTE: No dynamic imports - all dependencies come through setDataAccessDeps()
+// This avoids versioned/unversioned module instance mismatch issues
 
-// ✅ FIX: Direct AppState injection to avoid versioned/unversioned module instance mismatch
-// coreBoot.js calls this after setting AppState in the versioned appContext
 let _injectedAppState = null;
+let _injectedGetExtractTaskDataFromDOM = null;
+let _injectedCreateInitialSchema25Data = null;
 
 /**
  * Inject dependencies directly from coreBoot (avoids module instance mismatch)
- * @param {Object} deps - { AppState, getAppState }
+ * @param {Object} deps - { AppState, getExtractTaskDataFromDOM, createInitialSchema25Data }
  */
 export function setDataAccessDeps(deps) {
     if (deps.AppState) {
         _injectedAppState = deps.AppState;
-        console.log('✅ DataAccess: AppState injected directly');
+        console.log('✅ DataAccess: AppState injected');
     }
-    if (deps.getAppState) {
-        getAppState = deps.getAppState;
-        console.log('✅ DataAccess: getAppState injected directly');
+    if (deps.getExtractTaskDataFromDOM) {
+        _injectedGetExtractTaskDataFromDOM = deps.getExtractTaskDataFromDOM;
+        console.log('✅ DataAccess: getExtractTaskDataFromDOM injected');
+    }
+    if (deps.createInitialSchema25Data) {
+        _injectedCreateInitialSchema25Data = deps.createInitialSchema25Data;
+        console.log('✅ DataAccess: createInitialSchema25Data injected');
     }
 }
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('./appContext.js');
-        // Only use appContext's getAppState as fallback if not injected
-        if (!_injectedAppState) {
-            getAppState = _appContextModule.getAppState;
-        }
-        getExtractTaskDataFromDOM = _appContextModule.getExtractTaskDataFromDOM;
-        console.log('✅ DataAccess: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// Load appContext early (non-blocking) - must complete before functions are called
-// This is called from coreBoot.js initDataAccess() which awaits this module load
-loadAppContext().catch(e => console.warn('⚠️ DataAccess: Failed to load appContext:', e));
-
-async function loadMigrationFacade() {
-    if (!_migrationFacadeModule) {
-        // No version param - early import before DI, service worker handles cache
-        _migrationFacadeModule = await import('./migrationFacade.js');
-        createInitialSchema25Data = _migrationFacadeModule.createInitialSchema25Data;
-        console.log('✅ DataAccess: migrationFacade loaded');
-    }
-    return _migrationFacadeModule;
-}
-
-// Load migrationFacade early (non-blocking)
-loadMigrationFacade().catch(e => console.warn('⚠️ DataAccess: Failed to load migrationFacade:', e));
 
 // ============================================================================
 // DATA ACCESS FUNCTIONS
@@ -87,7 +53,7 @@ loadMigrationFacade().catch(e => console.warn('⚠️ DataAccess: Failed to load
  */
 export function loadMiniCycleData() {
     // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
-    const AppState = _injectedAppState || getAppState();
+    const AppState = _injectedAppState;
 
     // Try AppState first for most current data (if available)
     if (AppState?.isReady?.()) {
@@ -157,7 +123,7 @@ export function loadMiniCycleData() {
     }
 
     console.log('🆕 No data found in localStorage - Creating initial Schema 2.5 structure...');
-    createInitialSchema25Data();
+    _injectedCreateInitialSchema25Data?.();
 
     // Try again after creating
     const newData = localStorage.getItem("miniCycleData");
@@ -193,7 +159,7 @@ export function loadMiniCycleData() {
  */
 export async function autoSave(overrideTaskList = null, immediate = false) {
     // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
-    const AppState = _injectedAppState || getAppState();
+    const AppState = _injectedAppState;
 
     // AppState must be ready
     if (!AppState?.isReady?.()) {
@@ -202,7 +168,7 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
     }
 
     try {
-        const taskData = overrideTaskList || getExtractTaskDataFromDOM()?.() || [];
+        const taskData = overrideTaskList || _injectedGetExtractTaskDataFromDOM?.() || [];
 
         await AppState.update(state => {
             const activeCycle = state?.appState?.activeCycleId;
@@ -234,7 +200,7 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
  */
 export async function updateCycleData(cycleId, updateFn, immediate = true) {
     // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
-    const AppState = _injectedAppState || getAppState();
+    const AppState = _injectedAppState;
 
     if (!AppState?.isReady?.()) {
         console.warn('⚠️ updateCycleData called before AppState ready');

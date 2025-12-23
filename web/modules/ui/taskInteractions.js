@@ -15,36 +15,14 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// TASKUI DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let TaskOptionsVisibilityController = null;
-
-async function loadTaskUI() {
-    if (!TaskOptionsVisibilityController) {
-        // No version param - early import before DI, service worker handles cache
-        const taskUIModule = await import('./taskUI.js');
-        TaskOptionsVisibilityController = taskUIModule.TaskOptionsVisibilityController;
-    }
-    return TaskOptionsVisibilityController;
-}
-
-// Load early (non-blocking)
-loadTaskUI().catch(e => console.warn('⚠️ taskInteractions: Failed to load taskUI:', e));
-
-/**
- * Ensure TaskUI is loaded (for tests and initialization)
- * @returns {Promise<typeof TaskOptionsVisibilityController>}
- */
-export { loadTaskUI as ensureTaskUILoaded };
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No dynamic imports - TaskOptionsVisibilityController comes through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskInteractions', {
-    safeAddEventListener: optional(null)
+    safeAddEventListener: optional(null),
+    TaskOptionsVisibilityController: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -97,8 +75,8 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
         }
 
         // Use centralized controller (handles mode checking automatically)
-        if (TaskOptionsVisibilityController) {
-            TaskOptionsVisibilityController.show(taskItem, 'focusin');
+        if (_deps.TaskOptionsVisibilityController) {
+            _deps.TaskOptionsVisibilityController.show(taskItem, 'focusin');
         }
     });
 
@@ -109,8 +87,8 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
         if (taskItem.contains(e.relatedTarget)) return;
 
         // Use centralized controller (handles mode checking automatically)
-        if (TaskOptionsVisibilityController) {
-            TaskOptionsVisibilityController.hide(taskItem, 'focusout');
+        if (_deps.TaskOptionsVisibilityController) {
+            _deps.TaskOptionsVisibilityController.hide(taskItem, 'focusout');
         }
     });
 }

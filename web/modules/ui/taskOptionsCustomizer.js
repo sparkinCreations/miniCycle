@@ -17,26 +17,10 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let ui = () => null; // Fallback until loaded
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        ui = _appContextModule.ui;
-        console.log('✅ TaskOptionsCustomizer: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No appContext fallback - all dependencies must come through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskOptionsCustomizer', {
     AppState: optional(null),
@@ -227,7 +211,7 @@ export class TaskOptionsCustomizer {
                         // Then open the customization modal
                         this.showCustomizationModal(currentCycleId);
                     } else {
-                        ui()?.showNotification?.('Please select a cycle first', 'warning');
+                        _deps.showNotification?.('Please select a cycle first', 'warning');
                     }
                 };
                 safeAdd(openButton, 'click', openButton._clickHandler);
@@ -660,7 +644,7 @@ export class TaskOptionsCustomizer {
         // ✅ Refresh task list UI to apply button visibility changes
         await this.refreshAllTaskButtons();
 
-        ui()?.showNotification?.('✅ Task options updated', 'success', 2000);
+        _deps.showNotification?.('✅ Task options updated', 'success', 2000);
 
         console.log(`✅ Saved task option customization for cycle: ${cycleId}`, newOptions);
     }
@@ -676,7 +660,7 @@ export class TaskOptionsCustomizer {
             cb.checked = defaultValue ?? false;
         });
 
-        ui()?.showNotification?.('🔄 Reset to defaults', 'info', 2000);
+        _deps.showNotification?.('🔄 Reset to defaults', 'info', 2000);
     }
 
     /**
@@ -749,9 +733,6 @@ export async function initTaskOptionsCustomizer(dependencies = {}) {
         console.warn('⚠️ TaskOptionsCustomizer already initialized');
         return taskOptionsCustomizer;
     }
-
-    // Load appContext with version (cache-busting)
-    await loadAppContext();
 
     taskOptionsCustomizer = new TaskOptionsCustomizer(dependencies);
 

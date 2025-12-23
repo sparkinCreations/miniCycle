@@ -24,29 +24,10 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let utils = () => null; // Fallback until loaded
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        utils = _appContextModule.utils;
-        console.log('✅ Notifications: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// Load appContext early (non-blocking)
-loadAppContext().catch(e => console.warn('⚠️ Notifications: Failed to load appContext:', e));
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No appContext fallback - all dependencies must come through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('Notifications', {
   appInit: optional(null),  // AppInit for initialization coordination
@@ -324,8 +305,8 @@ export class MiniCycleNotifications {
         message = "⚠️ Unknown notification";
       }
 
-      // Generate unique ID (using grouped API)
-      const newId = utils()?.generateHashId?.(message) || `notif-${Date.now()}`;
+      // Generate unique ID (DI-pure)
+      const newId = _deps.generateHashId?.(message) || `notif-${Date.now()}`;
       if ([...notificationContainer.querySelectorAll(".notification")]
           .some(n => n.dataset.id === newId)) {
         console.log("🔄 Notification already exists, skipping duplicate.");
@@ -426,7 +407,7 @@ export class MiniCycleNotifications {
         content = "⚠️ Unknown notification";
       }
 
-      const newId = utils()?.generateHashId?.(content) || `notif-${Date.now()}`;
+      const newId = _deps.generateHashId?.(content) || `notif-${Date.now()}`;
       const existing = [...notificationContainer.querySelectorAll(".notification")];
 
       // Prevent duplicates

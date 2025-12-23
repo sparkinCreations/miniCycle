@@ -98,13 +98,18 @@ export const UNDO_MIN_INTERVAL_MS = 100;
 // DEBUG FUNCTION
 // ============================================================================
 
+// Debug AppState - receives AppState as parameter to avoid module import issues
+let _debugAppState = null;
+
+export function setDebugAppState(AppState) {
+  _debugAppState = AppState;
+}
+
 export async function debugAppState() {
   console.group('🔍 App State Debug');
 
-  // Use dynamic import to avoid circular dependency
-  // No version param - debug function, service worker handles cache
-  const { getAppState } = await import('./appContext.js');
-  const AppState = getAppState();
+  // Use injected AppState to avoid module instance mismatch
+  const AppState = _debugAppState;
 
   if (!AppState) {
     console.error('❌ AppState not available');
@@ -142,6 +147,6 @@ export async function debugAppState() {
   console.groupEnd();
 }
 
-// ✅ debugAppState accessible via: import('./modules/core/appGlobalState.js').then(m => m.debugAppState())
+// ✅ debugAppState requires AppState to be set first via setDebugAppState(AppState)
 
 console.log('✅ appGlobalState.js loaded');

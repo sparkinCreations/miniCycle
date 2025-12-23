@@ -9,26 +9,10 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let ui = () => null; // Fallback until loaded
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        ui = _appContextModule.ui;
-        console.log('✅ SettingsManager: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No appContext fallback - all dependencies must come through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('SettingsManager', {
     appInit: optional(null),
@@ -266,7 +250,7 @@ export class SettingsManager {
                     console.log('Move arrows setting saved to state:', enabled);
                 } else {
                     console.error('AppState not ready - setting not saved');
-                    ui()?.showNotification?.('Failed to save setting', 'error');
+                    _deps.showNotification?.('Failed to save setting', 'error');
                     moveArrowsToggle.checked = !enabled; // Revert UI
                     return;
                 }
@@ -321,7 +305,7 @@ export class SettingsManager {
                     console.log('Three dots setting saved to AppState:', enabled);
                 } else {
                     console.error('AppState not ready - setting not saved');
-                    ui()?.showNotification?.('Failed to save setting', 'error');
+                    _deps.showNotification?.('Failed to save setting', 'error');
                     threeDotsToggle.checked = !enabled; // Revert UI
                     return;
                 }
@@ -376,7 +360,7 @@ export class SettingsManager {
                     console.log('Completed dropdown setting saved to state:', enabled);
                 } else {
                     console.error('AppState not ready - setting not saved');
-                    ui()?.showNotification?.('Failed to save setting', 'error');
+                    _deps.showNotification?.('Failed to save setting', 'error');
                     completedDropdownToggle.checked = !enabled; // Revert UI
                     return;
                 }
@@ -1359,9 +1343,6 @@ let settingsManager = null;
 
 // Export initialization function
 export async function initSettingsManager(dependencies) {
-    // Load appContext with version (cache-busting)
-    await loadAppContext();
-
     settingsManager = new SettingsManager(dependencies);
     await settingsManager.init();
     return settingsManager;
