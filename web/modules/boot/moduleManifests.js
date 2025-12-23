@@ -316,7 +316,7 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation'],
+        provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty'],
         api: 'progress'
     },
 
