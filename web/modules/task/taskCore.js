@@ -347,17 +347,38 @@ export class TaskCore {
     /**
      * Add a new task to the current cycle
      * @param {string} taskText - The text content of the task
-     * @param {boolean} completed - Whether the task is completed
-     * @param {boolean} shouldSave - Whether to save immediately
-     * @param {string|null} dueDate - Due date for the task
-     * @param {boolean|null} highPriority - Whether task is high priority
-     * @param {boolean} isLoading - Whether task is being loaded from storage
-     * @param {boolean} remindersEnabled - Whether reminders are enabled for this task
-     * @param {boolean} recurring - Whether task is recurring
-     * @param {string|null} taskId - Specific task ID (for loading)
-     * @param {object} recurringSettings - Settings for recurring tasks
+     * @param {Object} options - Task options
+     * @param {boolean} [options.completed=false] - Whether the task is completed
+     * @param {boolean} [options.shouldSave=true] - Whether to save immediately
+     * @param {string|null} [options.dueDate=null] - Due date for the task
+     * @param {boolean|null} [options.highPriority=null] - Whether task is high priority
+     * @param {boolean} [options.isLoading=false] - Whether task is being loaded from storage
+     * @param {boolean} [options.remindersEnabled=false] - Whether reminders are enabled
+     * @param {boolean} [options.recurring=false] - Whether task is recurring
+     * @param {string|null} [options.taskId=null] - Specific task ID (for loading)
+     * @param {Object} [options.recurringSettings={}] - Settings for recurring tasks
+     * @param {boolean} [options.deleteWhenComplete] - Auto-delete when completed
+     * @param {Object} [options.deleteWhenCompleteSettings] - Auto-delete settings
+     * @param {boolean} [options.deferAppend=false] - Defer DOM append for batch ops
+     * @param {HTMLElement|null} [options.targetContainer=null] - Target container for task
      */
-    async addTask(taskText, completed = false, shouldSave = true, dueDate = null, highPriority = null, isLoading = false, remindersEnabled = false, recurring = false, taskId = null, recurringSettings = {}, deleteWhenComplete = undefined, deleteWhenCompleteSettings = undefined, deferAppend = false, targetContainer = null) {
+    async addTask(taskText, options = {}) {
+        const {
+            completed = false,
+            shouldSave = true,
+            dueDate = null,
+            highPriority = null,
+            isLoading = false,
+            remindersEnabled = false,
+            recurring = false,
+            taskId = null,
+            recurringSettings = {},
+            deleteWhenComplete = undefined,
+            deleteWhenCompleteSettings = undefined,
+            deferAppend = false,
+            targetContainer = null
+        } = options;
+
         try {
             // Wait for core to be ready
             await this.waitForCoreWithTimeout();
@@ -1373,12 +1394,12 @@ export async function initTaskCore(dependencies = {}) {
 // WRAPPER FUNCTIONS (for cross-module compatibility)
 // ============================================================================
 
-function addTask(...args) {
+function addTask(taskText, options = {}) {
     if (!taskCoreInstance) {
         console.warn('⚠️ TaskCore not initialized');
         return Promise.reject(new Error('TaskCore not initialized'));
     }
-    return taskCoreInstance.addTask(...args);
+    return taskCoreInstance.addTask(taskText, options);
 }
 
 function editTaskFromCore(taskItem) {

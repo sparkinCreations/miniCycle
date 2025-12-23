@@ -190,20 +190,19 @@ export async function refreshTaskListUI() {
 
     const tasks = cycleData.tasks || [];
     for (const task of tasks) {
-        await addTask(
-            task.text,
-            task.completed,
-            false, // Don't double save
-            task.dueDate,
-            task.highPriority,
-            true,  // isLoading (skip overdue reminder immediately)
-            task.remindersEnabled,
-            task.recurring,
-            task.id,
-            task.recurringSettings,
-            task.deleteWhenComplete,
-            task.deleteWhenCompleteSettings
-        );
+        await addTask(task.text, {
+            completed: task.completed,
+            shouldSave: false,
+            dueDate: task.dueDate,
+            highPriority: task.highPriority,
+            isLoading: true,
+            remindersEnabled: task.remindersEnabled,
+            recurring: task.recurring,
+            taskId: task.id,
+            recurringSettings: task.recurringSettings,
+            deleteWhenComplete: task.deleteWhenComplete,
+            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
+        });
     }
 
     const updateRecurringButtonVisibility = _deps.updateRecurringButtonVisibility;
