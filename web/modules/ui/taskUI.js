@@ -14,6 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { taskToAddTaskOptions } from '../task/taskUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -190,19 +191,7 @@ export async function refreshTaskListUI() {
 
     const tasks = cycleData.tasks || [];
     for (const task of tasks) {
-        await addTask(task.text, {
-            completed: task.completed,
-            shouldSave: false,
-            dueDate: task.dueDate,
-            highPriority: task.highPriority,
-            isLoading: true,
-            remindersEnabled: task.remindersEnabled,
-            recurring: task.recurring,
-            taskId: task.id,
-            recurringSettings: task.recurringSettings,
-            deleteWhenComplete: task.deleteWhenComplete,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
-        });
+        await addTask(task.text, taskToAddTaskOptions(task));
     }
 
     const updateRecurringButtonVisibility = _deps.updateRecurringButtonVisibility;
