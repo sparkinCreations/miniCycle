@@ -471,6 +471,8 @@ if should_update "miniCycle.html"; then
         "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" miniCycle.html
         "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" miniCycle.html
         "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" miniCycle.html
+        # ✅ Sync CURRENT_CACHE_VERSION with service-worker.js CACHE_VERSION
+        "${SED_INPLACE[@]}" "s/const CURRENT_CACHE_VERSION = 'v[0-9]*'/const CURRENT_CACHE_VERSION = '$SW_VERSION'/g" miniCycle.html
         echo "✅ Updated miniCycle.html"
     fi
 fi
@@ -719,7 +721,12 @@ fi
 # Validate HTML files
 if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
     if ! grep -q "content=\"$NEW_VERSION\"" miniCycle.html; then
-        echo "⚠️  Warning: miniCycle.html may not have updated correctly"
+        echo "⚠️  Warning: miniCycle.html app-version may not have updated correctly"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    fi
+    # ✅ Validate CURRENT_CACHE_VERSION is synced with SW_VERSION
+    if ! grep -q "CURRENT_CACHE_VERSION = '$SW_VERSION'" miniCycle.html; then
+        echo "⚠️  Warning: miniCycle.html CURRENT_CACHE_VERSION may not have synced with service-worker.js"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
 fi
