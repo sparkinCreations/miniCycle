@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.536';
+const APP_VERSION = '1.537';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -336,7 +336,7 @@ export async function initAppState(deps, showNotification) {
 
   // ========== Initialize data access functions ==========
   // Must be after appContext so dataAccess.js can use getAppState()
-  await initDataAccess();
+  await initDataAccess(deps);
 
   // Update appContext with data functions (legacy individual values)
   appContextMod.setContextValue('loadMiniCycleData', loadMiniCycleData);
@@ -375,13 +375,18 @@ export async function initAppState(deps, showNotification) {
 let loadMiniCycleData, autoSave, updateCycleData;
 
 // Initialize data access functions (called after appContext is ready)
-async function initDataAccess() {
+async function initDataAccess(deps) {
   const dataAccessMod = await import(`../core/dataAccess.js?v=${APP_VERSION}`);
 
-  // ✅ FIX: Inject AppState directly into dataAccess to avoid versioned/unversioned module mismatch
-  // This ensures loadMiniCycleData uses the same AppState instance as the rest of the app
-  if (dataAccessMod.setDataAccessDeps && AppState) {
-    dataAccessMod.setDataAccessDeps({ AppState });
+  // ✅ FIX: Inject all deps directly into dataAccess to avoid versioned/unversioned module mismatch
+  if (dataAccessMod.setDataAccessDeps) {
+    dataAccessMod.setDataAccessDeps({
+      AppState,
+      // createInitialSchema25Data is set by initMigration before this is called
+      createInitialSchema25Data: deps?.core?.createInitialSchema25Data,
+      // getExtractTaskDataFromDOM is set later by featureBoot - use lazy wrapper
+      getExtractTaskDataFromDOM: () => deps?.task?.extractTaskDataFromDOM?.()
+    });
   }
 
   loadMiniCycleData = dataAccessMod.loadMiniCycleData;

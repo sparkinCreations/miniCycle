@@ -331,9 +331,10 @@ export const MODULE_MANIFESTS = {
     taskInteractions: {
         path: '../ui/taskInteractions.js',
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so attachKeyboardTaskOptionToggle is available
-        requires: ['safeAddEventListener'],
+        requires: ['safeAddEventListener', 'TaskOptionsVisibilityController'],
         provides: ['attachKeyboardTaskOptionToggle'],
-        api: 'ui'
+        api: 'ui',
+        after: ['taskUI']  // TaskOptionsVisibilityController comes from taskUI
     },
 
     uiEffects: {

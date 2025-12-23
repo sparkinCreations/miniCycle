@@ -13,28 +13,10 @@
 import { createDIModule, optional } from '../core/diBase.js';
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
-// ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let ui = () => null; // Fallback until loaded
-let state = () => null; // Fallback until loaded
-
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        ui = _appContextModule.ui;
-        state = _appContextModule.state;
-        console.log('✅ TaskEvents: appContext loaded');
-    }
-    return _appContextModule;
-}
-
-// ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
+// NOTE: No appContext fallback - all dependencies must come through DI
+// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskEvents', {
     AppState: optional(null),
@@ -190,8 +172,8 @@ export class TaskEvents {
                 this.deps.checkMiniCycle();
             }
 
-            // Auto-save (using grouped API)
-            state()?.autoSave?.();
+            // Auto-save (DI-pure)
+            _deps.autoSave?.();
 
             // Logo background animation (DI-pure)
             if (typeof this.deps.triggerLogoBackground === 'function') {
@@ -247,7 +229,7 @@ export class TaskEvents {
                 this.deps.taskCore.editTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, edit operation skipped');
-                ui()?.showNotification?.('Edit feature temporarily unavailable', 'warning');
+                _deps.showNotification?.('Edit feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("delete-btn")) {
@@ -255,7 +237,7 @@ export class TaskEvents {
                 this.deps.taskCore.deleteTask(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, delete operation skipped');
-                ui()?.showNotification?.('Delete feature temporarily unavailable', 'warning');
+                _deps.showNotification?.('Delete feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("priority-btn")) {
@@ -263,7 +245,7 @@ export class TaskEvents {
                 this.deps.taskCore.toggleTaskPriority(taskItem);
             } else {
                 console.warn('⚠️ TaskCore not injected, priority toggle skipped');
-                ui()?.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
+                _deps.showNotification?.('Priority toggle feature temporarily unavailable', 'warning');
             }
             shouldSave = false;
         } else if (button.classList.contains("set-due-date")) {
@@ -283,7 +265,7 @@ export class TaskEvents {
             shouldSave = false;
         }
 
-        if (shouldSave) state()?.autoSave?.();
+        if (shouldSave) _deps.autoSave?.();
         console.log("✅ Task button clicked:", button.className);
     }
 
@@ -527,9 +509,6 @@ export async function initTaskEvents(dependencies = {}) {
         console.warn('⚠️ TaskEvents already initialized');
         return taskEvents;
     }
-
-    // Load appContext with version (cache-busting)
-    await loadAppContext();
 
     taskEvents = new TaskEvents(dependencies);
 

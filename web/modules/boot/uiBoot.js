@@ -30,42 +30,22 @@
  */
 
 // ============================================================================
-// APPCONTEXT DYNAMIC IMPORT
+// MODULE-LEVEL DEPS (set via initUIBoot from appContextMod)
 // ============================================================================
-// NOTE: Early imports before DI use unversioned paths. Service worker handles
-// cache invalidation. This avoids hardcoded fallback versions that get stale.
-let _appContextModule = null;
-let getAppState = () => { console.warn('⚠️ appContext not loaded yet'); return null; };
-let getShowNotification = () => null;
-let getStateApi = () => null;
-let getTaskApi = () => null;
-let getUndoApi = () => null;
-let getUiApi = () => null;
-let getCycleApi = () => null;
-let getReminderApi = () => null;
-let getDeviceDetectionManager = () => null;
+// NOTE: No appContext fallback - all dependencies come through initUIBoot
+// This avoids versioned/unversioned module instance mismatch issues
 
-async function loadAppContext() {
-    if (!_appContextModule) {
-        // No version param - early import before DI, service worker handles cache
-        _appContextModule = await import('../core/appContext.js');
-        // Update the module-level getters
-        getAppState = _appContextModule.getAppState;
-        getShowNotification = _appContextModule.getShowNotification;
-        getStateApi = _appContextModule.getStateApi;
-        getTaskApi = _appContextModule.getTaskApi;
-        getUndoApi = _appContextModule.getUndoApi;
-        getUiApi = _appContextModule.getUiApi;
-        getCycleApi = _appContextModule.getCycleApi;
-        getReminderApi = _appContextModule.getReminderApi;
-        getDeviceDetectionManager = _appContextModule.getDeviceDetectionManager;
-        console.log('✅ uiBoot: appContext loaded');
-    }
-    return _appContextModule;
-}
+let _appContextMod = null;
 
-// Load appContext early (non-blocking)
-loadAppContext().catch(e => console.warn('⚠️ uiBoot: Failed to load appContext:', e));
+// Getters that use the injected appContextMod
+const getAppState = () => _appContextMod?.getAppState?.() || null;
+const getShowNotification = () => _appContextMod?.getShowNotification?.() || null;
+const getStateApi = () => _appContextMod?.getStateApi?.() || null;
+const getUndoApi = () => _appContextMod?.getUndoApi?.() || null;
+const getUiApi = () => _appContextMod?.getUiApi?.() || null;
+const getCycleApi = () => _appContextMod?.getCycleApi?.() || null;
+const getReminderApi = () => _appContextMod?.getReminderApi?.() || null;
+const getDeviceDetectionManager = () => _appContextMod?.getDeviceDetectionManager?.() || null;
 
 // ============================================================================
 // GLOBAL EVENT LISTENERS
@@ -676,8 +656,8 @@ export async function finalizeUI(options) {
  * @param {Object} options.appContextMod - appContext module reference
  */
 export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
-  // Ensure appContext is loaded before using getters
-  await loadAppContext();
+  // Store appContextMod for use by module-level getters
+  _appContextMod = appContextMod;
 
   // Register isOverlayActive to deps
   deps.ui.isOverlayActive = isOverlayActive;
