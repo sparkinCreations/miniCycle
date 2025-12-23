@@ -109,33 +109,41 @@ export function attachGlobalEventListeners(GlobalUtils, options = {}) {
  * @param {Object} GlobalUtils - GlobalUtils module reference
  * @param {HTMLElement} taskInput - Task input element
  * @param {HTMLElement} addTaskButton - Add task button element
+ * @param {Object} appContextMod - appContext module (versioned import)
  */
-export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton) {
+export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, appContextMod) {
   const { safeAddEventListener } = GlobalUtils;
 
   // Add Task Button (Click)
   if (addTaskButton) {
     safeAddEventListener(addTaskButton, 'click', () => {
+      console.log('🔘 Add Task button clicked');
       // Enable undo system on first user interaction
       try {
-        getUndoApi()?.enableOnFirstInteraction?.();
+        appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.();
       } catch (e) {
         // API not ready yet - ok during early boot
       }
 
       const taskText = taskInput?.value?.trim() || '';
+      console.log('📝 Task text:', taskText);
       if (!taskText) {
         console.warn('⚠ Cannot add an empty task.');
         return;
       }
 
       try {
-        getTaskApi()?.add?.(taskText);
+        const taskApi = appContextMod.getTaskApi();
+        console.log('🔍 TaskAPI:', taskApi);
+        console.log('🔍 TaskAPI.add:', taskApi?.add);
+        taskApi?.add?.(taskText);
       } catch (e) {
         console.error('❌ Failed to add task:', e);
       }
       taskInput.value = '';
     });
+  } else {
+    console.warn('⚠️ addTaskButton element not found!');
   }
 
   // Task Input (Enter Key)
@@ -696,7 +704,7 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   const menu = document.querySelector('.menu-container');
 
   // Attach event listeners
-  attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton);
+  attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, appContextMod);
   attachMenuButtonListener(GlobalUtils, menuButton, menu);
   attachGlobalEventListeners(GlobalUtils);
 

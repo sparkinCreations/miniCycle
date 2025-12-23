@@ -255,8 +255,16 @@ export function registerApi(name, api) {
         console.warn(`⚠️ appContext: Unknown API "${name}"`);
         return;
     }
+    if (name === 'task') {
+        console.log(`🔍 DEBUG registerApi: Registering taskApi:`, api);
+        console.log(`🔍 DEBUG registerApi: taskApi.add =`, api?.add);
+    }
     apis[name] = api;
     console.log(`✅ appContext: ${name} API registered`);
+    if (name === 'task') {
+        console.log(`🔍 DEBUG registerApi: Verification - apis.task after registration:`, apis.task);
+        console.log(`🔍 DEBUG registerApi: Verification - apis.task.add =`, apis.task?.add);
+    }
 }
 
 /**
@@ -265,6 +273,12 @@ export function registerApi(name, api) {
  * @returns {Object|null} API object or null if not yet registered
  */
 export function getApi(name) {
+    if (name === 'task') {
+        console.log(`🔍 DEBUG getApi('task'): Checking apis object...`);
+        console.log(`🔍 DEBUG getApi('task'): name in apis =`, name in apis);
+        console.log(`🔍 DEBUG getApi('task'): apis[name] =`, apis[name]);
+        console.log(`🔍 DEBUG getApi('task'): apis[name]?.add =`, apis[name]?.add);
+    }
     if (!(name in apis)) {
         if (DEV_MODE) {
             console.warn(`⚠️ appContext: Unknown API "${name}"`);
@@ -272,9 +286,15 @@ export function getApi(name) {
         return null;
     }
     if (apis[name] === null) {
+        if (name === 'task') {
+            console.log(`🔍 DEBUG getApi('task'): API is null, returning null`);
+        }
         // Return null to allow optional chaining (e.g., getCycleApi?.()?.load)
         // This is expected during boot when APIs are set up with late binding
         return null;
+    }
+    if (name === 'task') {
+        console.log(`🔍 DEBUG getApi('task'): Returning API:`, apis[name]);
     }
     return apis[name];
 }

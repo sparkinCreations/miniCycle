@@ -155,7 +155,7 @@ export class StatsPanelManager {
             navDotsContainer: document.getElementById("nav-dots"),
             dots: document.querySelectorAll(".dot"),
             taskList: document.getElementById("taskList"),
-            addTaskButton: document.getElementById("addTask"),
+            addTaskButton: document.getElementById("addTaskBtn"),
             // Stats display elements
             totalTasks: document.getElementById("total-tasks"),
             completedTasks: document.getElementById("completed-tasks"),
