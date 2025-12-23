@@ -200,6 +200,35 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles) {
 }
 
 /**
+ * Animate progress bar to full (used at start of reset)
+ * @returns {Promise} Resolves when animation completes
+ */
+export function animateProgressBarFill() {
+    return new Promise(resolve => {
+        const progressBar = deps.getProgressBar?.();
+        if (progressBar) {
+            progressBar.style.transition = "transform 0.2s ease-out";
+            progressBar.style.transform = "scaleX(1)";
+        }
+        setTimeout(resolve, 100); // Wait for animation + small buffer
+    });
+}
+
+/**
+ * Animate progress bar to empty (used after reset completes)
+ */
+export function animateProgressBarEmpty() {
+    const progressBar = deps.getProgressBar?.();
+    if (progressBar) {
+        progressBar.style.transition = "transform 0.3s ease-in";
+        progressBar.style.transform = "scaleX(0)";
+        setTimeout(() => {
+            progressBar.style.transition = "";
+        }, 50);
+    }
+}
+
+/**
  * Updates the progress bar to reflect current task completion.
  * Animates the width transition smoothly.
  */

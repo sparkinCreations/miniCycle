@@ -640,6 +640,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         checkMiniCycle: (...args) => deps.progress?.checkMiniCycle?.(...args),
         incrementCycleCount: (...args) => deps.progress?.incrementCycleCount?.(...args),
         showCompletionAnimation: (...args) => deps.progress?.showCompletionAnimation?.(...args),
+        animateProgressBarFill: (...args) => deps.progress?.animateProgressBarFill?.(...args),
+        animateProgressBarEmpty: (...args) => deps.progress?.animateProgressBarEmpty?.(...args),
 
         // UI functions (from deps.ui)
         refreshUIFromState: (...args) => deps.task?.refreshUIFromState?.(...args),

@@ -48,6 +48,9 @@ const di = createDIModule('TaskCore', {
     enableDragAndDropOnTask: optional(null),
     checkMiniCycle: optional(null),
     incrementCycleCount: optional(null),
+    animateProgressBarFill: optional(null),
+    animateProgressBarEmpty: optional(null),
+    pluginManager: optional(null),
     AppMeta: optional(null),
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null)
@@ -898,6 +901,171 @@ export class TaskCore {
         }
     }
 
+    // ============================================================================
+    // RESET HELPERS (extracted for clarity)
+    // ============================================================================
+
+    /**
+     * Get context needed for reset operation
+     * @returns {Object|null} Reset context or null if invalid
+     */
+    _getResetContext() {
+        const taskList = this.deps.querySelector("#taskList");
+        const completedTaskList = this.deps.querySelector("#completedTaskList");
+
+        if (!taskList) {
+            console.error('❌ Task list element not found');
+            return null;
+        }
+
+        // Get tasks from both lists
+        const taskElements = [
+            ...taskList.querySelectorAll(".task"),
+            ...(completedTaskList?.querySelectorAll(".task") || [])
+        ];
+
+        // Get cycle data from AppState or localStorage
+        let cycles, activeCycle, cycleData;
+        if (this.deps.AppState?.isReady?.()) {
+            const state = this.deps.AppState.get();
+            cycles = state?.data?.cycles || {};
+            activeCycle = state?.appState?.activeCycleId;
+            cycleData = cycles[activeCycle];
+        } else {
+            const schemaData = this.deps.loadMiniCycleData();
+            if (!schemaData) {
+                console.error('❌ Schema 2.5 data required for resetTasks');
+                return null;
+            }
+            cycles = schemaData.data?.cycles || {};
+            activeCycle = schemaData.appState?.activeCycleId;
+            cycleData = cycles[activeCycle];
+        }
+
+        if (!activeCycle || !cycleData) {
+            console.error("❌ No active cycle found for resetTasks");
+            return null;
+        }
+
+        return { taskList, completedTaskList, taskElements, cycles, activeCycle, cycleData };
+    }
+
+    /**
+     * Perform the core data reset logic
+     * @param {Object} context - Reset context from _getResetContext
+     * @returns {Object} Result with tasksDeleted count
+     */
+    _resetTasksData(context) {
+        const { taskElements, activeCycle } = context;
+
+        // Get fresh state (user may have switched cycles during animation)
+        const freshState = this.deps.AppState?.get?.();
+        const currentActiveCycle = freshState?.appState?.activeCycleId;
+
+        if (currentActiveCycle !== activeCycle) {
+            console.warn('⚠️ Cycle switched during reset, aborting');
+            return { aborted: true };
+        }
+
+        const freshCycleData = freshState?.data?.cycles?.[currentActiveCycle];
+        if (!freshCycleData) {
+            console.warn('⚠️ Could not get fresh cycle data');
+            return { aborted: true };
+        }
+
+        // Remove recurring tasks
+        if (typeof this.deps.removeRecurringTasksFromCycle === 'function') {
+            this.deps.removeRecurringTasksFromCycle(taskElements, freshCycleData);
+        }
+
+        // Process non-recurring tasks
+        const tasksToDelete = [];
+        taskElements.forEach(taskEl => {
+            if (taskEl.classList.contains("recurring")) return;
+
+            const taskId = taskEl.dataset.taskId;
+            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
+
+            // Check if task should be deleted
+            if (task?.deleteWhenComplete === true) {
+                console.log(`🗑️ Marking task for deletion: ${task.text}`);
+                tasksToDelete.push(taskId);
+                taskEl.remove();
+                return;
+            }
+
+            // Reset task DOM
+            const checkbox = taskEl.querySelector("input[type='checkbox']");
+            const dueDateInput = taskEl.querySelector(".due-date");
+            if (checkbox) checkbox.checked = false;
+            taskEl.classList.remove("overdue-task");
+            if (dueDateInput) {
+                dueDateInput.value = "";
+                dueDateInput.classList.add("hidden");
+            }
+        });
+
+        // Update AppState atomically
+        if (this.deps.AppState?.isReady?.()) {
+            this.deps.AppState.update(state => {
+                const cycle = state?.data?.cycles?.[currentActiveCycle];
+                if (cycle) {
+                    if (tasksToDelete.length > 0) {
+                        cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.includes(t.id));
+                    }
+                    cycle.tasks.forEach(task => {
+                        if (!task.recurring) {
+                            task.completed = false;
+                            task.dueDate = null;
+                        }
+                    });
+                }
+            });
+            console.log('✅ Reset data saved to AppState');
+        } else {
+            // localStorage fallback
+            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
+            if (fullSchemaData?.data?.cycles?.[currentActiveCycle]) {
+                if (tasksToDelete.length > 0) {
+                    fullSchemaData.data.cycles[currentActiveCycle].tasks =
+                        fullSchemaData.data.cycles[currentActiveCycle].tasks.filter(t => !tasksToDelete.includes(t.id));
+                }
+                fullSchemaData.metadata.lastModified = Date.now();
+                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
+            }
+        }
+
+        return { aborted: false, tasksDeleted: tasksToDelete.length };
+    }
+
+    /**
+     * Move completed tasks back to active list
+     * @param {Object} context - Reset context
+     */
+    _moveCompletedTasksBack(context) {
+        const { taskList, completedTaskList } = context;
+        if (!completedTaskList || !taskList) return;
+
+        const completedTaskElements = completedTaskList.querySelectorAll('.task');
+        completedTaskElements.forEach(taskEl => {
+            if (!taskEl.classList.contains('recurring')) {
+                taskList.appendChild(taskEl);
+            }
+        });
+
+        if (completedTaskElements.length > 0) {
+            console.log(`✅ Moved ${completedTaskElements.length} task(s) back to active list`);
+        }
+
+        if (typeof this.deps.updateCompletedTasksCount === 'function') {
+            this.deps.updateCompletedTasksCount();
+        }
+    }
+
+    // ============================================================================
+    // MAIN RESET FUNCTION
+    // ============================================================================
+
     /**
      * Reset all tasks (cycle completion)
      */
@@ -909,245 +1077,81 @@ export class TaskCore {
             console.log('🔄 Resetting tasks (Schema 2.5 only)...');
 
             // Wait for critical UI functions to be available
-            console.log('⏳ Waiting for UI functions (helpWindowManager, incrementCycleCount, etc.)...');
             await this.waitForUIFunctions();
 
-            let cycles, activeCycle, cycleData;
-            const taskList = this.deps.querySelector("#taskList");
-            const completedTaskList = this.deps.querySelector("#completedTaskList");
-
-            // ✅ FIX: Get tasks from BOTH active and completed lists
-            let taskElements = [];
-            if (taskList) {
-                taskElements.push(...taskList.querySelectorAll(".task"));
-            }
-            if (completedTaskList) {
-                taskElements.push(...completedTaskList.querySelectorAll(".task"));
-            }
-
-            const progressBar = this.deps.querySelector("#progressBar");
-
-            // Validate DOM elements
-            if (!taskList) {
-                console.error('❌ Task list element not found');
+            // Step 1: Get and validate context
+            const context = this._getResetContext();
+            if (!context) {
                 this.isResetting = false;
                 return;
             }
 
-            // Try AppState first, fall back to localStorage
-            if (this.deps.AppState?.isReady?.()) {
-                const state = this.deps.AppState.get();
-                cycles = state?.data?.cycles || {};
-                activeCycle = state?.appState?.activeCycleId;
-                cycleData = cycles[activeCycle];
-            } else {
-                // Fallback to localStorage
-                const schemaData = this.deps.loadMiniCycleData();
-                if (!schemaData) {
-                    console.error('❌ Schema 2.5 data required for resetTasks');
-                    this.isResetting = false;
-                    throw new Error('Schema 2.5 data not found');
-                }
-                cycles = schemaData.data?.cycles || {};
-                activeCycle = schemaData.appState?.activeCycleId;
-                cycleData = cycles[activeCycle];
-            }
-
-            if (!activeCycle || !cycleData) {
-                console.error("❌ No active cycle found in Schema 2.5 for resetTasks");
-                this.isResetting = false;
-                return;
-            }
-
+            const { activeCycle, cycles } = context;
             console.log('📊 Resetting tasks for cycle:', activeCycle);
 
-            // ✅ CAPTURE UNDO SNAPSHOT BEFORE ANY MODIFICATIONS
+            // Step 2: Capture undo snapshot BEFORE modifications
             if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.isPerformingUndoRedo()) {
                 const currentState = this.deps.AppState?.get?.();
                 if (currentState) {
                     this.deps.captureStateSnapshot(currentState);
-                    console.log('📸 Undo snapshot captured BEFORE task reset (includes current cycle count and task states)');
+                    console.log('📸 Undo snapshot captured');
                 }
             }
 
-            // Animation: Show progress bar becoming full first
-            if (progressBar) {
-                progressBar.style.transform = "scaleX(1)";
-                progressBar.style.transition = "transform 0.2s ease-out";
+            // Step 3: Animate progress bar fill (delegated to cycleCompletion)
+            if (typeof this.deps.animateProgressBarFill === 'function') {
+                await this.deps.animateProgressBarFill();
             }
 
-            // Wait for animation, then reset tasks
-            // Capture the cycle ID we're resetting for verification after timeout
-            const originalCycleId = activeCycle;
-
-            setTimeout(() => {
-                console.log('🧹 Removing recurring tasks and resetting non-recurring tasks');
-
-                // ✅ FIX: Read FRESH state inside setTimeout - user may have switched cycles during animation
-                const freshState = this.deps.AppState?.get?.();
-                const currentActiveCycle = freshState?.appState?.activeCycleId;
-
-                // Verify we're still on the same cycle
-                if (currentActiveCycle !== originalCycleId) {
-                    console.warn('⚠️ Cycle switched during reset animation, aborting stale reset');
-                    this.isResetting = false;
-                    return;
-                }
-
-                const freshCycleData = freshState?.data?.cycles?.[currentActiveCycle];
-                if (!freshCycleData) {
-                    console.warn('⚠️ Could not get fresh cycle data in reset callback');
-                    this.isResetting = false;
-                    return;
-                }
-
-                // Remove recurring tasks (use fresh data)
-                if (typeof this.deps.removeRecurringTasksFromCycle === 'function') {
-                    this.deps.removeRecurringTasksFromCycle(taskElements, freshCycleData);
-                }
-
-                // ✅ Update task data AND DOM for non-recurring tasks
-                const tasksToDelete = [];
-                taskElements.forEach(taskEl => {
-                    const isRecurring = taskEl.classList.contains("recurring");
-                    if (isRecurring) return;
-
-                    const taskId = taskEl.dataset.taskId;
-                    // ✅ FIX: Use fresh cycle data for task lookup
-                    const task = freshCycleData?.tasks?.find(t => t.id === taskId);
-
-                    // ✅ Check if task should be deleted on reset
-                    if (task?.deleteWhenComplete === true) {
-                        console.log(`🗑️ Marking task for deletion (deleteWhenComplete): ${task.text}`);
-                        tasksToDelete.push(taskId);
-                        taskEl.remove(); // Remove from DOM
-                        return;
-                    }
-
-                    // Otherwise, reset the task normally
-                    const checkbox = taskEl.querySelector("input[type='checkbox']");
-                    const dueDateInput = taskEl.querySelector(".due-date");
-
-                    // Update DOM
-                    if (checkbox) checkbox.checked = false;
-                    taskEl.classList.remove("overdue-task");
-
-                    if (dueDateInput) {
-                        dueDateInput.value = "";
-                        dueDateInput.classList.add("hidden");
-                    }
-
-                    // ✅ FIX: Update the actual task data in memory
-                    if (task) {
-                        task.completed = false;
-                        task.dueDate = null;
-                        console.log(`✅ Reset task data for: ${task.text}`);
-                    }
-                });
-
-                // ✅ FIX: Update through AppState.update to ensure atomic operation
-                if (this.deps.AppState?.isReady?.()) {
-                    this.deps.AppState.update(state => {
-                        const cycle = state?.data?.cycles?.[currentActiveCycle];
-                        if (cycle) {
-                            // Remove tasks marked for deletion
-                            if (tasksToDelete.length > 0) {
-                                cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.includes(t.id));
-                                console.log(`🗑️ Deleted ${tasksToDelete.length} task(s) with deleteWhenComplete=true`);
-                            }
-                            // Reset remaining tasks
-                            cycle.tasks.forEach(task => {
-                                if (!task.recurring) {
-                                    task.completed = false;
-                                    task.dueDate = null;
-                                }
-                            });
-                        }
-                    });
-                    console.log('✅ Reset task data saved to AppState (will persist to localStorage)');
-                } else {
-                    // Fallback: Save directly to localStorage if AppState not available
-                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                    if (fullSchemaData?.data?.cycles?.[currentActiveCycle]) {
-                        // Remove tasks marked for deletion
-                        if (tasksToDelete.length > 0) {
-                            fullSchemaData.data.cycles[currentActiveCycle].tasks =
-                                fullSchemaData.data.cycles[currentActiveCycle].tasks.filter(t => !tasksToDelete.includes(t.id));
-                        }
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                        console.log('✅ Reset task data saved to localStorage (AppState fallback)');
-                    }
-                }
-
-                // ✅ FIX: Move completed tasks back to active list after reset
-                if (completedTaskList && taskList) {
-                    const completedTaskElements = completedTaskList.querySelectorAll('.task');
-                    completedTaskElements.forEach(taskEl => {
-                        // Only move non-recurring tasks (recurring tasks are already removed)
-                        if (!taskEl.classList.contains('recurring')) {
-                            taskList.appendChild(taskEl);
-                        }
-                    });
-                    if (completedTaskElements.length > 0) {
-                        console.log(`✅ Moved ${completedTaskElements.length} task(s) from completed list back to active list`);
-                    }
-
-                    // Update completed tasks count
-                    if (typeof this.deps.updateCompletedTasksCount === 'function') {
-                        this.deps.updateCompletedTasksCount();
-                    }
-                }
-
-                // Increment cycle count (this calls showCompletionAnimation internally)
-                // DI-pure: use injected dep only
-                if (typeof this.deps.incrementCycleCount === 'function') {
-                    this.deps.incrementCycleCount(activeCycle, cycles);
-                }
-
-                // Animate progress bar reset
-                if (progressBar) {
-                    progressBar.style.transition = "transform 0.3s ease-in";
-                    progressBar.style.transform = "scaleX(0)";
-
-                    setTimeout(() => {
-                        progressBar.style.transition = "";
-                    }, 50);
-                }
-
-                // Show cycle completion message (DI-pure, no window.* fallback)
-                // Note: helpWindowManager may be a getter function
-                const helpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
-                if (helpWindowMgr?.showCycleCompleteMessage) {
-                    helpWindowMgr.showCycleCompleteMessage();
-                }
-
-                // ✅ Update undo/redo buttons to reflect the new snapshot
-                if (typeof this.deps.updateUndoRedoButtons === 'function') {
-                    this.deps.updateUndoRedoButtons();
-                    console.log('✅ Undo/redo buttons updated after cycle completion');
-                }
-
-                console.log('✅ Task reset animation completed');
-
-            }, 100);
-
-            // Release reset lock
-            setTimeout(() => {
+            // Step 4: Perform core data reset
+            const result = this._resetTasksData(context);
+            if (result.aborted) {
                 this.isResetting = false;
-                console.log('🔓 Reset lock released');
-            }, 2000);
+                return;
+            }
 
-            // Post-reset cleanup
-            setTimeout(() => {
-                console.log('🔄 Running post-reset cleanup tasks');
+            // Step 5: Move completed tasks back
+            this._moveCompletedTasksBack(context);
+
+            // Step 6: Increment cycle count (handles animation + milestones)
+            if (typeof this.deps.incrementCycleCount === 'function') {
+                this.deps.incrementCycleCount(activeCycle, cycles);
+            }
+
+            // Step 7: Animate progress bar empty (delegated to cycleCompletion)
+            if (typeof this.deps.animateProgressBarEmpty === 'function') {
+                this.deps.animateProgressBarEmpty();
+            }
+
+            // Step 8: Show cycle completion message
+            const helpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
+            if (helpWindowMgr?.showCycleCompleteMessage) {
+                helpWindowMgr.showCycleCompleteMessage();
+            }
+
+            // Step 9: Update undo/redo buttons
+            if (typeof this.deps.updateUndoRedoButtons === 'function') {
+                this.deps.updateUndoRedoButtons();
+            }
+
+            // Step 10: Trigger plugin hook (if pluginManager available)
+            if (this.deps.pluginManager?.triggerHook) {
+                this.deps.pluginManager.triggerHook('cycleReset', { cycleId: activeCycle });
+            }
+
+            // Step 11: Schedule cleanup and release lock
+            this.trackTimeout(setTimeout(() => {
                 if (this.deps.recurringCore?.watchRecurringTasks) {
                     this.deps.recurringCore.watchRecurringTasks();
                 }
                 _deps.autoSave?.();
-                this.deps.updateStatsPanel();
-                console.log('✅ Reset tasks completed successfully');
-            }, 1000);
+                this.deps.updateStatsPanel?.();
+                console.log('✅ Reset tasks completed');
+            }, 500));
+
+            this.trackTimeout(setTimeout(() => {
+                this.isResetting = false;
+            }, 1500));
 
         } catch (error) {
             console.warn('⚠️ Reset tasks failed:', error);
