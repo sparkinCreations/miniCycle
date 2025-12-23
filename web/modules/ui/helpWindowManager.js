@@ -57,7 +57,13 @@ export class HelpWindowManager {
 
         this.initialized = true;
 
-        // Start showing initial message after a delay
+        // Show welcome message immediately
+        this.currentMessage = 'Welcome to miniCycle!';
+        this.updateContent(this.currentMessage);
+        this.helpWindow.classList.add('show');
+        this.isVisible = true;
+
+        // Switch to normal help message after delay
         setTimeout(() => {
             this.showConstantMessage();
         }, 3000);
