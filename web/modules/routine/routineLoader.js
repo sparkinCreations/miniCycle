@@ -9,6 +9,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { taskToAddTaskOptions } from '../task/taskUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -307,20 +308,8 @@ function renderTasksToDOM(tasks = []) {
   console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
 
   tasks.forEach(task => {
-    // Render task to DOM using existing data from AppState
-    Deps.addTask(task.text || task.taskText || '', {
-      completed: task.completed || false,
-      shouldSave: false,
-      dueDate: task.dueDate || null,
-      highPriority: task.highPriority || false,
-      isLoading: true,
-      remindersEnabled: task.remindersEnabled || false,
-      recurring: task.recurring || false,
-      taskId: task.id,
-      recurringSettings: task.recurringSettings || {},
-      deleteWhenComplete: task.deleteWhenComplete,
-      deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
-    });
+    // Render task to DOM using shared options helper
+    Deps.addTask(task.text || task.taskText || '', taskToAddTaskOptions(task));
   });
 
   console.log('✅ Tasks rendered to DOM with original IDs and states preserved');

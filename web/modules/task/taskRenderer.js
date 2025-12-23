@@ -11,6 +11,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { taskToAddTaskOptions } from './taskUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -159,21 +160,9 @@ export class TaskRenderer {
                 continue;
             }
 
-            // Use injected addTask
+            // Use injected addTask with shared options helper
             if (this.deps.addTask) {
-                await this.deps.addTask(task.text, {
-                    completed: task.completed,
-                    shouldSave: false,
-                    dueDate: task.dueDate,
-                    highPriority: task.highPriority,
-                    isLoading: true,
-                    remindersEnabled: task.remindersEnabled,
-                    recurring: task.recurring,
-                    taskId: task.id,
-                    recurringSettings: task.recurringSettings,
-                    deleteWhenComplete: task.deleteWhenComplete,
-                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
-                });
+                await this.deps.addTask(task.text, taskToAddTaskOptions(task));
             } else {
                 console.warn('⚠️ addTask function not available for task:', task.id);
             }

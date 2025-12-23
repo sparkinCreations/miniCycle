@@ -50,6 +50,28 @@ export function setTaskUtilsDependencies(dependencies) {
     console.log('🛠️ TaskUtils dependencies set:', Object.keys(dependencies));
 }
 
+/**
+ * Convert a task object to addTask options for rendering
+ * Centralizes the task-to-options mapping to avoid duplication across render functions
+ * @param {Object} task - Task object from AppState
+ * @returns {Object} - Options object for addTask
+ */
+export function taskToAddTaskOptions(task) {
+    return {
+        completed: task.completed || false,
+        shouldSave: false,
+        dueDate: task.dueDate || null,
+        highPriority: task.highPriority || false,
+        isLoading: true,
+        remindersEnabled: task.remindersEnabled || false,
+        recurring: task.recurring || false,
+        taskId: task.id,
+        recurringSettings: task.recurringSettings || {},
+        deleteWhenComplete: task.deleteWhenComplete,
+        deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
+    };
+}
+
 export class TaskUtils {
     /**
      * Build task context from DOM element
