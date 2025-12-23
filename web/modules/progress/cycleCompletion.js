@@ -222,9 +222,10 @@ export function animateProgressBarEmpty() {
     if (progressBar) {
         progressBar.style.transition = "transform 0.3s ease-in";
         progressBar.style.transform = "scaleX(0)";
+        // Clear transition after animation completes (300ms + buffer)
         setTimeout(() => {
             progressBar.style.transition = "";
-        }, 50);
+        }, 350);
     }
 }
 

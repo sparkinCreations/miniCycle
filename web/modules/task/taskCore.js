@@ -158,6 +158,9 @@ export class TaskCore {
             showCompletionAnimation: resolvedDeps.showCompletionAnimation || null,
             updateCompletedTasksCount: resolvedDeps.updateCompletedTasksCount || null,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || null,
+            animateProgressBarFill: resolvedDeps.animateProgressBarFill || null,
+            animateProgressBarEmpty: resolvedDeps.animateProgressBarEmpty || null,
+            pluginManager: resolvedDeps.pluginManager || null,
 
             // Task operations
             checkOverdueTasks: resolvedDeps.checkOverdueTasks || null,
