@@ -16,7 +16,7 @@ import { installDebugFilter } from '../utils/debugMode.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.549';
+const APP_VERSION = '1.550';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {
@@ -60,6 +60,54 @@ function redirectToLite() {
 }
 
 /**
+ * Get user-friendly error description and suggestion
+ * @param {Error} error - The error that occurred
+ * @param {string} phase - Which phase failed
+ * @returns {Object} - { description, suggestion }
+ */
+function getErrorDetails(error, phase) {
+  const msg = error?.message || '';
+
+  // Cache/import errors
+  if (msg.includes('Importing') || msg.includes('module') || msg.includes('binding name')) {
+    return {
+      description: 'A cached file is outdated',
+      suggestion: 'Clear browser cache and reload'
+    };
+  }
+
+  // Network errors
+  if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to load')) {
+    return {
+      description: 'Network connection issue',
+      suggestion: 'Check your internet connection'
+    };
+  }
+
+  // Timeout errors
+  if (msg.includes('timed out') || msg.includes('timeout')) {
+    return {
+      description: `${phase} took too long`,
+      suggestion: 'Try again or use Lite version'
+    };
+  }
+
+  // Storage errors
+  if (msg.includes('localStorage') || msg.includes('storage') || msg.includes('quota')) {
+    return {
+      description: 'Storage access problem',
+      suggestion: 'Clear site data in browser settings'
+    };
+  }
+
+  // Default
+  return {
+    description: 'Something went wrong during startup',
+    suggestion: 'Try refreshing or clearing cache'
+  };
+}
+
+/**
  * Show boot error to user with retry or lite fallback
  * Uses the existing #app-loader for consistent branding
  * @param {string} phase - Which phase failed
@@ -81,20 +129,30 @@ function showBootError(phase, error, willRetry = false) {
   loader.style.display = 'flex';
   loader.classList.remove('fade-out');
 
+  const { description, suggestion } = getErrorDetails(error, phase);
+  const shortError = (error?.message || 'Unknown error').substring(0, 80);
+
   if (willRetry) {
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
       <div class="loader-text" style="animation: none;">Having trouble loading...</div>
-      <div style="margin-top: 10px; color: rgba(255,255,255,0.8); font-size: 14px;">Retrying automatically</div>
+      <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 13px;">${description}</div>
+      <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">Retrying automatically...</div>
     `;
   } else {
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
       <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">Unable to Load</div>
-      <div style="margin-top: 8px; color: rgba(255,255,255,0.8); font-size: 14px; max-width: 280px; text-align: center;">
-        miniCycle couldn't start properly
+      <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 14px; max-width: 300px; text-align: center;">
+        ${description}
       </div>
-      <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+      <div style="margin-top: 6px; color: rgba(255,255,255,0.6); font-size: 12px; max-width: 280px; text-align: center; font-family: monospace; word-break: break-word;">
+        ${shortError}
+      </div>
+      <div style="margin-top: 12px; color: rgba(255,255,255,0.8); font-size: 13px;">
+        💡 ${suggestion}
+      </div>
+      <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
         <button onclick="location.reload()" style="padding: 12px 24px; cursor: pointer; border: 2px solid white; background: transparent; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Try Again
         </button>
@@ -102,8 +160,8 @@ function showBootError(phase, error, willRetry = false) {
           Use Lite Version
         </button>
       </div>
-      <div style="margin-top: 16px; color: rgba(255,255,255,0.6); font-size: 12px;">
-        Lite version loads faster with core features
+      <div style="margin-top: 12px; color: rgba(255,255,255,0.5); font-size: 11px;">
+        Failed at: ${phase} (attempt ${bootAttempt})
       </div>
     `;
   }
