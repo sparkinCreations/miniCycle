@@ -150,9 +150,10 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
   if (taskInput) {
     safeAddEventListener(taskInput, 'keypress', (event) => {
       if (event.key === 'Enter') {
+        console.log('⌨️ Enter key pressed');
         // Enable undo system on first user interaction
         try {
-          getUndoApi()?.enableOnFirstInteraction?.();
+          appContextMod?.getUndoApi?.()?.enableOnFirstInteraction?.();
         } catch (e) {
           // API not ready yet - ok during early boot
         }
@@ -165,7 +166,8 @@ export function attachTaskInputListeners(GlobalUtils, taskInput, addTaskButton, 
         }
 
         try {
-          getTaskApi()?.add?.(taskText);
+          const taskApi = appContextMod.getTaskApi();
+          taskApi?.add?.(taskText);
         } catch (e) {
           console.error('❌ Failed to add task:', e);
         }
