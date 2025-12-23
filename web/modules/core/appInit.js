@@ -10,7 +10,7 @@
  * Now includes initialSetup and completeInitialSetup methods (extracted
  * from main script).
  *
- * @version 1.546
+ * @version 1.547
  */
 
 import { createDIModule, optional } from './diBase.js';

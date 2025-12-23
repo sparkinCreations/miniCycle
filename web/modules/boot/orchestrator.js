@@ -16,7 +16,7 @@ import { installDebugFilter } from '../utils/debugMode.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.546';
+const APP_VERSION = '1.547';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {
@@ -61,6 +61,7 @@ function redirectToLite() {
 
 /**
  * Show boot error to user with retry or lite fallback
+ * Uses the existing #app-loader for consistent branding
  * @param {string} phase - Which phase failed
  * @param {Error} error - The error that occurred
  * @param {boolean} willRetry - Whether a retry will be attempted
@@ -68,39 +69,44 @@ function redirectToLite() {
 function showBootError(phase, error, willRetry = false) {
   console.error(`❌ Boot failed at ${phase} (attempt ${bootAttempt}):`, error);
 
-  const container = document.getElementById('taskListContainer') || document.body;
-  const errorDiv = document.createElement('div');
-  errorDiv.style.cssText = 'padding:20px;text-align:center;color:#d32f2f;font-family:system-ui;';
+  // Use existing app-loader for consistent styling
+  const loader = document.getElementById('app-loader');
+  if (!loader) {
+    // Fallback if loader not found
+    console.error('App loader element not found');
+    return;
+  }
+
+  // Keep loader visible and update its content
+  loader.style.display = 'flex';
+  loader.classList.remove('fade-out');
 
   if (willRetry) {
-    errorDiv.innerHTML = `
-      <h2>⚠️ Loading Issue</h2>
-      <p>miniCycle is having trouble loading (${phase})</p>
-      <p style="font-size:14px;color:#666;">Retrying automatically...</p>
-      <div style="margin-top:15px;">
-        <div class="spinner" style="width:24px;height:24px;border:3px solid #ccc;border-top-color:#1976d2;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
-      </div>
-      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    loader.innerHTML = `
+      <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
+      <div class="loader-text" style="animation: none;">Having trouble loading...</div>
+      <div style="margin-top: 10px; color: rgba(255,255,255,0.8); font-size: 14px;">Retrying automatically</div>
     `;
   } else {
-    errorDiv.innerHTML = `
-      <h2>⚠️ App Loading Error</h2>
-      <p>miniCycle failed to load after ${bootAttempt} attempt(s)</p>
-      <p style="font-size:12px;color:#666;">${error.message}</p>
-      <div style="margin-top:15px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button onclick="location.reload()" style="padding:10px 20px;cursor:pointer;border:1px solid #ccc;background:#fff;border-radius:4px;">
+    loader.innerHTML = `
+      <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
+      <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">Unable to Load</div>
+      <div style="margin-top: 8px; color: rgba(255,255,255,0.8); font-size: 14px; max-width: 280px; text-align: center;">
+        miniCycle couldn't start properly
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+        <button onclick="location.reload()" style="padding: 12px 24px; cursor: pointer; border: 2px solid white; background: transparent; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Try Again
         </button>
-        <button onclick="window.location.href='${LITE_VERSION_PATH}'" style="padding:10px 20px;cursor:pointer;border:none;background:#1976d2;color:#fff;border-radius:4px;">
+        <button onclick="window.location.href='${LITE_VERSION_PATH}'" style="padding: 12px 24px; cursor: pointer; border: none; background: white; color: #4c79ff; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Use Lite Version
         </button>
       </div>
-      <p style="font-size:11px;color:#999;margin-top:15px;">Lite version has fewer features but loads faster</p>
+      <div style="margin-top: 16px; color: rgba(255,255,255,0.6); font-size: 12px;">
+        Lite version loads faster with core features
+      </div>
     `;
   }
-
-  container.innerHTML = '';
-  container.appendChild(errorDiv);
 }
 
 /**
