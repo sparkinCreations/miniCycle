@@ -16,7 +16,7 @@ import { installDebugFilter } from '../utils/debugMode.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.547';
+const APP_VERSION = '1.548';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {
