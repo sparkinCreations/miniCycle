@@ -93,6 +93,106 @@ const loadedModules = new Map();
 const moduleInstances = new Map();
 
 // ============================================================================
+// CIRCULAR DEPENDENCY DETECTION
+// ============================================================================
+
+/**
+ * Build a dependency graph from module manifests
+ * @param {Object} manifests - MODULE_MANIFESTS object
+ * @returns {Map<string, Set<string>>} - Adjacency list of dependencies
+ */
+function buildDependencyGraph(manifests) {
+    const graph = new Map();
+
+    for (const [name, manifest] of Object.entries(manifests)) {
+        const deps = new Set();
+
+        // Add explicit dependencies from manifest.deps
+        if (manifest.deps && Array.isArray(manifest.deps)) {
+            manifest.deps.forEach(dep => deps.add(dep));
+        }
+
+        graph.set(name, deps);
+    }
+
+    return graph;
+}
+
+/**
+ * Detect circular dependencies using DFS with cycle detection
+ * @param {Map<string, Set<string>>} graph - Dependency graph
+ * @returns {Array<Array<string>>} - Array of cycles found (each cycle is an array of module names)
+ */
+function findCycles(graph) {
+    const cycles = [];
+    const visited = new Set();
+    const recursionStack = new Set();
+    const path = [];
+
+    function dfs(node) {
+        if (recursionStack.has(node)) {
+            // Found a cycle - extract it from the path
+            const cycleStart = path.indexOf(node);
+            const cycle = path.slice(cycleStart).concat(node);
+            cycles.push(cycle);
+            return;
+        }
+
+        if (visited.has(node)) {
+            return;
+        }
+
+        visited.add(node);
+        recursionStack.add(node);
+        path.push(node);
+
+        const deps = graph.get(node) || new Set();
+        for (const dep of deps) {
+            if (graph.has(dep)) { // Only check deps that are in our manifest
+                dfs(dep);
+            }
+        }
+
+        path.pop();
+        recursionStack.delete(node);
+    }
+
+    // Run DFS from each node
+    for (const node of graph.keys()) {
+        if (!visited.has(node)) {
+            dfs(node);
+        }
+    }
+
+    return cycles;
+}
+
+/**
+ * Detect and report circular dependencies in module manifests
+ * Should be called before loading modules
+ * @param {Object} manifests - MODULE_MANIFESTS object
+ * @returns {boolean} - True if no cycles found, false if cycles exist
+ */
+export function detectCircularDeps(manifests) {
+    console.log('🔍 Checking for circular dependencies...');
+
+    const graph = buildDependencyGraph(manifests);
+    const cycles = findCycles(graph);
+
+    if (cycles.length > 0) {
+        console.error('🔄 Circular dependencies detected!');
+        cycles.forEach((cycle, i) => {
+            console.error(`  Cycle ${i + 1}: ${cycle.join(' → ')}`);
+        });
+        console.warn('⚠️ Circular dependencies may cause initialization issues.');
+        return false;
+    }
+
+    console.log('✅ No circular dependencies found');
+    return true;
+}
+
+// ============================================================================
 // CORE LOADER
 // ============================================================================
 
@@ -266,6 +366,9 @@ export async function loadAllModules(deps, coreResult) {
     // ✅ FIX: Load manifests with version cache-busting BEFORE using any manifest data
     // This prevents stale cached manifests from causing 404s on moved/renamed modules
     await loadManifests(withV);
+
+    // ✅ Check for circular dependencies before loading
+    detectCircularDeps(MODULE_MANIFESTS);
 
     // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
     if (appInit && !appInit.isCoreReady()) {

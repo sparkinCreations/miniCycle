@@ -19,9 +19,11 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
         const module = await import('../modules/ui/taskInteractions.js');
         setTaskInteractionsDependencies = module.setTaskInteractionsDependencies;
         attachKeyboardTaskOptionToggle = module.attachKeyboardTaskOptionToggle;
+        // ensureTaskUILoaded is optional - tests use mocks so it's not needed
         ensureTaskUILoaded = module.ensureTaskUILoaded;
-        // Ensure TaskOptionsVisibilityController is loaded before running tests
-        await ensureTaskUILoaded();
+        if (typeof ensureTaskUILoaded === 'function') {
+            await ensureTaskUILoaded();
+        }
         resultsDiv.innerHTML = '<h2>TaskInteractions Tests (DI-Pure)</h2><h3>Running tests...</h3>';
     } catch (e) {
         resultsDiv.innerHTML = `<h2>TaskInteractions Tests</h2><div class="result fail">Failed to import module: ${e.message}</div>`;
@@ -39,6 +41,31 @@ export async function runTaskInteractionsTests(resultsDiv, isPartOfSuite = false
     function createMockDeps(overrides = {}) {
         return {
             safeAddEventListener: (el, evt, fn) => el?.addEventListener(evt, fn),
+            // Mock TaskOptionsVisibilityController that directly manipulates visibility
+            TaskOptionsVisibilityController: {
+                show: (taskItem, source) => {
+                    const taskOptions = taskItem.querySelector('.task-options');
+                    if (taskOptions) {
+                        // Check if source is permitted (mock three-dots check)
+                        const isThreeDotsMode = document.body.classList.contains('show-three-dots-enabled');
+                        const threeDotsPermissions = ['hover', 'long-press', 'three-dots'];
+                        if (isThreeDotsMode && !threeDotsPermissions.includes(source)) {
+                            return; // Block non-permitted sources in three-dots mode
+                        }
+                        taskOptions.style.visibility = 'visible';
+                        taskOptions.style.opacity = '1';
+                        taskOptions.style.pointerEvents = 'auto';
+                    }
+                },
+                hide: (taskItem, source) => {
+                    const taskOptions = taskItem.querySelector('.task-options');
+                    if (taskOptions) {
+                        taskOptions.style.visibility = 'hidden';
+                        taskOptions.style.opacity = '0';
+                        taskOptions.style.pointerEvents = 'none';
+                    }
+                }
+            },
             ...overrides
         };
     }
