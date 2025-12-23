@@ -80,6 +80,7 @@
   * [Update Version Guide](deployment/UPDATE-VERSION-GUIDE.md)
 
 * **Future Work**
+  * [Error Handling Improvements](future-work/ERROR_HANDLING_IMPROVEMENTS_PLAN.md)
   * [Modular Overhaul Plan](future-work/MODULAR_OVERHAUL_PLAN.md)
   * [Module Independence Refactor](future-work/MODULE_INDEPENDENCE_REFACTOR_PLAN.md)
   * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)

@@ -7,6 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { enableDebug, disableDebug, isDebug } from '../utils/debugMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -391,6 +392,34 @@ export class SettingsManager {
             safeAdd(completedDropdownToggle, "change", completedDropdownToggle._changeHandler);
 
             console.log('✅ Completed dropdown toggle setup completed');
+        }
+
+        // ✅ Toggle Debug Mode Setting
+        const debugModeToggle = this.deps.getElementById("toggle-debug-mode");
+        if (debugModeToggle) {
+            console.log('🔄 Setting up debug mode toggle...');
+
+            // Read current debug state
+            const debugEnabled = isDebug();
+            console.log('📊 Current debug mode state:', debugEnabled);
+
+            debugModeToggle.checked = debugEnabled;
+
+            debugModeToggle._changeHandler = () => {
+                const enabled = debugModeToggle.checked;
+                console.log('Debug mode toggle changed:', enabled);
+
+                if (enabled) {
+                    enableDebug();
+                    _deps.showNotification?.('🐛 Debug mode enabled - console.log output visible', 'success', 3000);
+                } else {
+                    disableDebug();
+                    _deps.showNotification?.('🐛 Debug mode disabled - console.log output suppressed', 'info', 3000);
+                }
+            };
+            safeAdd(debugModeToggle, "change", debugModeToggle._changeHandler);
+
+            console.log('✅ Debug mode toggle setup completed');
         }
 
         // Update backup function to be Schema 2.5 only
