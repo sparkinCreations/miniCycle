@@ -307,23 +307,20 @@ function renderTasksToDOM(tasks = []) {
   console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
 
   tasks.forEach(task => {
-    // Call addTask but ensure it doesn't create new task objects in AppState
-    // The isLoading=true flag should prevent this, but it still generates new IDs
-    // So we need to call addTask but make sure it uses the EXACT task data from AppState
-    Deps.addTask(
-      task.text || task.taskText || '',
-      task.completed || false,   // ✅ Use ACTUAL completion state from AppState
-      false,                      // do not save during load
-      task.dueDate || null,
-      task.highPriority || false,
-      true,                       // isLoading - prevents saving
-      task.remindersEnabled || false,
-      task.recurring || false,
-      task.id,                    // ✅ MUST use existing ID (removed fallback)
-      task.recurringSettings || {}, // ✅ NOTE: This converts undefined to {}
-      task.deleteWhenComplete,      // ✅ Pass through deleteWhenComplete
-      task.deleteWhenCompleteSettings // ✅ Pass through settings
-    );
+    // Render task to DOM using existing data from AppState
+    Deps.addTask(task.text || task.taskText || '', {
+      completed: task.completed || false,
+      shouldSave: false,
+      dueDate: task.dueDate || null,
+      highPriority: task.highPriority || false,
+      isLoading: true,
+      remindersEnabled: task.remindersEnabled || false,
+      recurring: task.recurring || false,
+      taskId: task.id,
+      recurringSettings: task.recurringSettings || {},
+      deleteWhenComplete: task.deleteWhenComplete,
+      deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
+    });
   });
 
   console.log('✅ Tasks rendered to DOM with original IDs and states preserved');

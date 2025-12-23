@@ -161,20 +161,19 @@ export class TaskRenderer {
 
             // Use injected addTask
             if (this.deps.addTask) {
-                await this.deps.addTask(
-                    task.text,
-                    task.completed,
-                    false,                     // shouldSave: false (don't save during render)
-                    task.dueDate,
-                    task.highPriority,
-                    true,                      // isLoading: true (avoid overdue reminder popups)
-                    task.remindersEnabled,
-                    task.recurring,
-                    task.id,
-                    task.recurringSettings,
-                    task.deleteWhenComplete,   // ✅ FIX: Pass actual deleteWhenComplete value
-                    task.deleteWhenCompleteSettings  // ✅ FIX: Pass actual deleteWhenCompleteSettings
-                );
+                await this.deps.addTask(task.text, {
+                    completed: task.completed,
+                    shouldSave: false,
+                    dueDate: task.dueDate,
+                    highPriority: task.highPriority,
+                    isLoading: true,
+                    remindersEnabled: task.remindersEnabled,
+                    recurring: task.recurring,
+                    taskId: task.id,
+                    recurringSettings: task.recurringSettings,
+                    deleteWhenComplete: task.deleteWhenComplete,
+                    deleteWhenCompleteSettings: task.deleteWhenCompleteSettings
+                });
             } else {
                 console.warn('⚠️ addTask function not available for task:', task.id);
             }

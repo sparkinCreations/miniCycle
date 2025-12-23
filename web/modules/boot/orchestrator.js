@@ -10,7 +10,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.539';
+const APP_VERSION = '1.541';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {

@@ -212,8 +212,8 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
             loadTaskContext: () => null
         });
 
-        // Should not throw when called with full params
-        await instance.addTask('Test Task', false, true, null, null, false, false, false, null, {});
+        // Should not throw when called with options object
+        await instance.addTask('Test Task', { completed: false, shouldSave: true });
     });
 
     await test('editTask method exists and is callable', async () => {
