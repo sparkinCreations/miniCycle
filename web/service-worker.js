@@ -2,9 +2,13 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v327'; // Fix all unversioned dynamic imports
+var CACHE_VERSION = 'v329'; // Fix all unversioned dynamic imports
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
+
+// ✅ Cache expiration configuration
+var MAX_DYNAMIC_ENTRIES = 100;  // Maximum entries in dynamic cache
+var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 var CORE = [
   './',
@@ -161,6 +165,9 @@ self.addEventListener('activate', function (event) {
       }));
     }).then(function () {
       console.log('✅ Old caches cleaned');
+      // ✅ Clean expired entries and trim cache on activation
+      cleanExpiredEntries();
+      trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
       return self.clients.claim();
     })
   );
@@ -168,6 +175,56 @@ self.addEventListener('activate', function (event) {
 
 function fromScope(path) {
   return new URL(path, self.registration.scope).href;
+}
+
+/**
+ * Trim cache to prevent unbounded growth (LRU-style)
+ * Removes oldest entries when cache exceeds MAX_DYNAMIC_ENTRIES
+ * @param {string} cacheName - Name of the cache to trim
+ * @param {number} maxEntries - Maximum number of entries to keep
+ */
+function trimCache(cacheName, maxEntries) {
+  caches.open(cacheName).then(function(cache) {
+    cache.keys().then(function(keys) {
+      if (keys.length > maxEntries) {
+        // Delete oldest entry (first in list)
+        cache.delete(keys[0]).then(function() {
+          console.log('🗑️ Trimmed cache entry:', keys[0].url);
+          // Recursively trim until under limit
+          if (keys.length - 1 > maxEntries) {
+            trimCache(cacheName, maxEntries);
+          }
+        });
+      }
+    });
+  });
+}
+
+/**
+ * Clean expired entries from cache (older than MAX_CACHE_AGE_MS)
+ * Called periodically during activate and fetch events
+ */
+function cleanExpiredEntries() {
+  var now = Date.now();
+  caches.open(DYNAMIC_CACHE).then(function(cache) {
+    cache.keys().then(function(requests) {
+      requests.forEach(function(request) {
+        cache.match(request).then(function(response) {
+          if (response) {
+            var dateHeader = response.headers.get('date');
+            if (dateHeader) {
+              var cacheTime = new Date(dateHeader).getTime();
+              if (now - cacheTime > MAX_CACHE_AGE_MS) {
+                cache.delete(request).then(function() {
+                  console.log('🗑️ Expired cache entry removed:', request.url);
+                });
+              }
+            }
+          }
+        });
+      });
+    });
+  });
 }
 
 function pickShell(urlObj) {
@@ -218,6 +275,8 @@ self.addEventListener('fetch', function (event) {
           return caches.open(DYNAMIC_CACHE).then(function (cache) {
             // ✅ ADDED: Safe cache.put for navigation requests
             return cache.put(request, fresh.clone()).then(function() {
+              // ✅ Trim cache after adding new entry
+              trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
               return fresh;
             }).catch(function(cacheError) {
               console.warn('⚠️ Navigation cache put failed for:', request.url, cacheError);
@@ -283,6 +342,8 @@ self.addEventListener('fetch', function (event) {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
               return cache.put(request, res.clone()).then(function() {
                 console.log('📦 Cached fresh JS/CSS:', request.url);
+                // ✅ Trim cache after adding new entry
+                trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
                 return res;
               }).catch(function(cacheError) {
                 console.warn('⚠️ Cache put failed for:', request.url, cacheError);
@@ -318,6 +379,8 @@ self.addEventListener('fetch', function (event) {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
               return cache.put(request, res.clone()).then(function() {
                 console.log('📦 Cached new asset:', request.url);
+                // ✅ Trim cache after adding new entry
+                trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
                 return res;
               }).catch(function(cacheError) {
                 console.warn('⚠️ Cache put failed for:', request.url, cacheError);
