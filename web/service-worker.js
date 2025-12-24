@@ -2,7 +2,11 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
+<<<<<<< HEAD
 var CACHE_VERSION = 'v342'; // Force refresh for taskUtils.js export fix
+=======
+var CACHE_VERSION = 'v343'; // Force refresh for taskToAddTaskOptions export
+>>>>>>> 5f6c1099c2778716ddf242b5b4a246ca681eddba
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
