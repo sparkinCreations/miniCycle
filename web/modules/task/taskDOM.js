@@ -122,7 +122,7 @@ export class TaskDOMManager {
             // ============================================
 
             // Task operations
-            taskCore: resolvedDeps.taskCore || {},
+            taskCore: resolvedDeps.taskCore || this._warnMissingOptional('taskCore'),
 
             // UI updates (safe with ?.() chaining)
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
@@ -135,9 +135,9 @@ export class TaskDOMManager {
             getCurrentMode: resolvedDeps.getCurrentMode || this.fallbackGetMode,
 
             // Feature modules
-            dueDates: resolvedDeps.dueDates || {},
-            reminders: resolvedDeps.reminders || {},
-            recurringPanel: resolvedDeps.recurringPanel || {},
+            dueDates: resolvedDeps.dueDates || this._warnMissingOptional('dueDates'),
+            reminders: resolvedDeps.reminders || this._warnMissingOptional('reminders'),
+            recurringPanel: resolvedDeps.recurringPanel || this._warnMissingOptional('recurringPanel'),
 
             // Helper functions
             incrementCycleCount: resolvedDeps.incrementCycleCount || this.fallbackIncrement,
@@ -438,6 +438,15 @@ export class TaskDOMManager {
     _warnMissingWithFallback(depName, fallbackFn) {
         console.warn(`⚠️ TaskDOMManager: ${depName} not injected - using fallback`);
         return fallbackFn;
+    }
+
+    /**
+     * Warn about missing optional dependency and return empty object
+     * Used for optional feature modules that may not be injected
+     */
+    _warnMissingOptional(depName) {
+        console.warn(`⚠️ TaskDOMManager: Optional dependency ${depName} not injected`);
+        return {};
     }
 
     // ============================================
