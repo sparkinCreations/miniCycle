@@ -2,11 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-<<<<<<< HEAD
-var CACHE_VERSION = 'v342'; // Force refresh for taskUtils.js export fix
-=======
-var CACHE_VERSION = 'v343'; // Force refresh for taskToAddTaskOptions export
->>>>>>> 5f6c1099c2778716ddf242b5b4a246ca681eddba
+var CACHE_VERSION = 'v345'; // Force refresh - bypass browser HTTP cache for JS
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -339,13 +335,24 @@ self.addEventListener('fetch', function (event) {
 
   if (isScriptOrStyle) {
     // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
+    // ✅ IMPORTANT: Use cache: 'no-cache' to bypass browser HTTP cache
+    // This prevents 304 responses returning stale module content
+    var freshRequest = new Request(request.url, {
+      method: 'GET',
+      headers: request.headers,
+      mode: request.mode,
+      credentials: request.credentials,
+      cache: 'no-cache'  // Force revalidation, bypass stale browser cache
+    });
+
     event.respondWith(
-      fetch(request)
+      fetch(freshRequest)
         .then(function (res) {
           if (res && res.status === 200) {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
+              // Store with original request URL for consistent cache keys
               return cache.put(request, res.clone()).then(function() {
-                console.log('📦 Cached fresh JS/CSS:', request.url);
+                // console.log('📦 Cached fresh JS/CSS:', request.url);
                 // ✅ Trim cache after adding new entry
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
                 return res;
