@@ -9,11 +9,12 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { LIMITS, DEBOUNCE } from '../core/constants.js';
 
-// ============ CONSTANTS ============
-const UNDO_LIMIT = 20;
-const UNDO_MIN_INTERVAL_MS = 300;
-const UNDO_DB_WRITE_DEBOUNCE_MS = 3000;  // Batch IndexedDB writes every 3s
+// ============ CONSTANTS (from centralized constants.js) ============
+const UNDO_LIMIT = LIMITS.UNDO_STACK;
+const UNDO_MIN_INTERVAL_MS = DEBOUNCE.UNDO_MIN_INTERVAL;
+const UNDO_DB_WRITE_DEBOUNCE_MS = DEBOUNCE.UNDO_DB_WRITE;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)

@@ -16,6 +16,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { TASK_TIMEOUTS, UI_TIMEOUTS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -212,7 +213,7 @@ export class TaskCore {
         try {
             await Promise.race([
                 _deps.appInit?.waitForCore(),
-                new Promise((resolve) => setTimeout(resolve, 1000)) // 1s timeout for tests
+                new Promise((resolve) => setTimeout(resolve, TASK_TIMEOUTS.CORE_INIT))
             ]);
             console.log('✅ Task core system initialized successfully');
         } catch (error) {
@@ -232,7 +233,7 @@ export class TaskCore {
         try {
             await Promise.race([
                 _deps.appInit?.waitForCore(),
-                new Promise((resolve) => setTimeout(resolve, 100)) // 100ms timeout for tests
+                new Promise((resolve) => setTimeout(resolve, TASK_TIMEOUTS.UI_FUNC_MAX_WAIT))
             ]);
         } catch (error) {
             console.warn('⚠️ Core wait timeout or error:', error);
@@ -246,9 +247,9 @@ export class TaskCore {
      * Note: Dependencies may be passed as getter functions (e.g., () => window.helpWindowManager)
      * to handle late initialization. This method resolves getters before checking.
      */
-    async waitForUIFunctions(maxWaitMs = 2000) {
+    async waitForUIFunctions(maxWaitMs = TASK_TIMEOUTS.UI_FUNC_WAIT_TOTAL) {
         const startTime = Date.now();
-        const checkInterval = 50; // Check every 50ms
+        const checkInterval = TASK_TIMEOUTS.UI_FUNC_CHECK_INTERVAL;
 
         // Helper to resolve getter functions
         const resolveGetter = (dep) => {
@@ -800,7 +801,7 @@ export class TaskCore {
                     if (freshHelpWindowMgr && typeof freshHelpWindowMgr.updateConstantMessage === 'function') {
                         freshHelpWindowMgr.updateConstantMessage();
                     }
-                }, 100);
+                }, UI_TIMEOUTS.STATS_UPDATE_DELAY);
             }
         } catch (error) {
             console.warn('⚠️ Task completion change failed:', error);
@@ -1150,11 +1151,11 @@ export class TaskCore {
                 _deps.autoSave?.();
                 this.deps.updateStatsPanel?.();
                 console.log('✅ Reset tasks completed');
-            }, 500));
+            }, TASK_TIMEOUTS.POST_RESET_CLEANUP));
 
             this.trackTimeout(setTimeout(() => {
                 this.isResetting = false;
-            }, 1500));
+            }, TASK_TIMEOUTS.RESET_LOCK_RELEASE));
 
         } catch (error) {
             console.warn('⚠️ Reset tasks failed:', error);
@@ -1244,7 +1245,7 @@ export class TaskCore {
 
         // Only call resetTasks() if autoReset is OFF
         if (!cycleData.autoReset) {
-            this.trackTimeout(setTimeout(() => this.resetTasks(), 1000));
+            this.trackTimeout(setTimeout(() => this.resetTasks(), TASK_TIMEOUTS.CORE_INIT));
         }
     }
 

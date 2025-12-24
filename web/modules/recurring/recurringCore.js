@@ -18,7 +18,9 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS
+    DEFAULT_RECURRING_DELETE_SETTINGS,
+    LIMITS,
+    INTERVALS
 } from '../core/constants.js';
 
 // ============================================================================
@@ -114,7 +116,7 @@ function parseDateAsLocal(dateStr) {
 
 // Memoization cache for normalizeRecurringSettings (performance optimization)
 const normalizationCache = new Map();
-const MAX_NORMALIZATION_CACHE_SIZE = 50;
+const MAX_NORMALIZATION_CACHE_SIZE = LIMITS.NORMALIZATION_CACHE;
 
 /**
  * Normalize recurring settings with all required fields
@@ -1536,9 +1538,9 @@ export async function setupRecurringWatcher() {
     await catchUpMissedRecurringTasks();
     await watchRecurringTasks();
 
-    // Setup 30-second interval
+    // Setup recurring task watcher interval
     assertInjected('setInterval', Deps.setInterval);
-    Deps.setInterval(() => watchRecurringTasks(), 30000);
+    Deps.setInterval(() => watchRecurringTasks(), INTERVALS.RECURRING_WATCHER);
 
     // Re-check when tab becomes visible (user might have been away)
     document.addEventListener("visibilitychange", async () => {

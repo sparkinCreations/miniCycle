@@ -588,6 +588,30 @@ if [ -f "$APPCONTEXT_FILE" ]; then
 fi
 
 # ============================================
+# UPDATE: modules/core/constants.js (CONSTANTS_VERSION for cache debugging)
+# ============================================
+
+CONSTANTS_FILE="modules/core/constants.js"
+if [ -f "$CONSTANTS_FILE" ]; then
+    backup_file "$CONSTANTS_FILE"
+    # Update CONSTANTS_VERSION constant (helps identify stale cached versions)
+    "${SED_INPLACE[@]}" "s/CONSTANTS_VERSION = '[0-9.]*'/CONSTANTS_VERSION = '$NEW_VERSION'/g" "$CONSTANTS_FILE"
+    echo "✅ Updated $CONSTANTS_FILE CONSTANTS_VERSION"
+fi
+
+# ============================================
+# UPDATE: modules/core/diBase.js (DIBASE_VERSION for cache debugging)
+# ============================================
+
+DIBASE_FILE="modules/core/diBase.js"
+if [ -f "$DIBASE_FILE" ]; then
+    backup_file "$DIBASE_FILE"
+    # Update DIBASE_VERSION constant (helps identify stale cached versions)
+    "${SED_INPLACE[@]}" "s/DIBASE_VERSION = '[0-9.]*'/DIBASE_VERSION = '$NEW_VERSION'/g" "$DIBASE_FILE"
+    echo "✅ Updated $DIBASE_FILE DIBASE_VERSION"
+fi
+
+# ============================================
 # UPDATE: manifest.json
 # ============================================
 

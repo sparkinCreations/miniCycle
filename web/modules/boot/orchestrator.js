@@ -10,22 +10,14 @@
  */
 
 import { installDebugFilter } from '../utils/debugMode.js';
+import { BOOT_TIMEOUTS } from '../core/constants.js';
 
 // Install debug filter FIRST - before any other console.log calls
 // Enable with: ?debug=true or localStorage.setItem('miniCycle_debug', 'true')
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.553';
-
-// Boot timeout configuration (in milliseconds)
-const BOOT_TIMEOUTS = {
-  MODULE_IMPORT: 10000,  // 10s for initial module imports
-  PHASE_1: 15000,        // 15s for core boot
-  PHASE_2: 20000,        // 20s for feature boot (largest phase)
-  PHASE_3: 15000,        // 15s for UI boot
-  TOTAL: 45000           // 45s total boot timeout
-};
+const APP_VERSION = '1.554';
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
@@ -302,8 +294,8 @@ async function initApp() {
     if (bootAttempt <= MAX_BOOT_RETRIES) {
       // Show retry message and try again
       showBootError(phase, error, true);
-      console.log(`🔄 Retrying boot in 1 second...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`🔄 Retrying boot in ${BOOT_TIMEOUTS.RETRY_DELAY}ms...`);
+      await new Promise(resolve => setTimeout(resolve, BOOT_TIMEOUTS.RETRY_DELAY));
       return initApp(); // Retry
     } else {
       // Max retries exceeded - show final error with lite option

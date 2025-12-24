@@ -10,7 +10,8 @@
 // Import constants
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
-    DEFAULT_RECURRING_DELETE_SETTINGS
+    DEFAULT_RECURRING_DELETE_SETTINGS,
+    DEBOUNCE
 } from './constants.js';
 
 // Module-level deps for late injection (must be set before createStateManager)
@@ -44,7 +45,7 @@ class MiniCycleState {
         this.isDirty = false;
         this.saveTimeout = null;
         this.listeners = new Map();
-        this.SAVE_DELAY = 600; // ✅ Reduced from 2000ms for faster persistence
+        this.SAVE_DELAY = DEBOUNCE.STATE_SAVE; // Debounce for faster persistence
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = mergedDeps.AppMeta?.version;
         this.isInitialized = false; // ✅ Add this flag
@@ -177,10 +178,10 @@ class MiniCycleState {
                     };
 
                     if (typeof requestIdleCallback !== 'undefined') {
-                        requestIdleCallback(saveData, { timeout: 2000 });
+                        requestIdleCallback(saveData, { timeout: DEBOUNCE.STATE_SAVE_IDLE_TIMEOUT });
                     } else {
                         // Fallback for browsers without requestIdleCallback
-                        setTimeout(saveData, 100);
+                        setTimeout(saveData, DEBOUNCE.STATE_SAVE_FALLBACK);
                     }
                 }
             } else {
@@ -318,10 +319,10 @@ class MiniCycleState {
                     if (storedTimestamp > ourTimestamp) {
                         const diff = storedTimestamp - ourTimestamp;
 
-                        // ✅ FIX: Only treat as conflict if timestamp diff > 1000ms
-                        // Differences < 1000ms are likely rapid-fire saves from same session
-                        // (e.g., arrow click → UI refresh within 600ms debounce window)
-                        if (diff > 1000) {
+                        // ✅ FIX: Only treat as conflict if timestamp diff > threshold
+                        // Differences below threshold are likely rapid-fire saves from same session
+                        // (e.g., arrow click → UI refresh within debounce window)
+                        if (diff > DEBOUNCE.CONCURRENT_MOD_CONFLICT) {
                             console.warn('⚠️ Real concurrent modification detected!', {
                                 storedTimestamp,
                                 ourTimestamp,
