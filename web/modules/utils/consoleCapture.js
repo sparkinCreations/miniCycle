@@ -329,7 +329,9 @@ export class MiniCycleConsoleCapture {
                         allLogs.push(log);
                     }
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.warn('⚠️ Failed to parse stored console buffer:', e.message);
+            }
         }
         
         // Enhanced filtering for migration-related messages
