@@ -15,6 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { GESTURE, UI_TIMEOUTS, CHART, INTERVALS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -71,13 +72,13 @@ export class StatsPanelManager {
             pointerStartX: 0
         };
 
-        // Configuration thresholds
+        // Configuration thresholds (from centralized constants.js)
         this.config = {
-            SWIPE_THRESHOLD: 400,
-            MOUSE_DRAG_THRESHOLD: 400,
-            WHEEL_RESET_DELAY: 15,
-            TOUCH_SWIPE_THRESHOLD: 50,
-            MOUSE_DRAG_START_THRESHOLD: 20
+            SWIPE_THRESHOLD: GESTURE.SWIPE_THRESHOLD,
+            MOUSE_DRAG_THRESHOLD: GESTURE.MOUSE_DRAG_THRESHOLD,
+            WHEEL_RESET_DELAY: UI_TIMEOUTS.WHEEL_RESET_DELAY,
+            TOUCH_SWIPE_THRESHOLD: GESTURE.TOUCH_SWIPE,
+            MOUSE_DRAG_START_THRESHOLD: GESTURE.MOUSE_DRAG_START
         };
 
         // DOM elements cache
@@ -358,7 +359,7 @@ export class StatsPanelManager {
             this.boundHandlers.handleCycleReady = () => {
                 console.log('Stats panel detected data ready - updating stats...');
                 // Delay slightly to ensure DOM is fully updated
-                setTimeout(() => this.updateStatsPanel(), 100);
+                setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
             };
         }
 
@@ -370,7 +371,7 @@ export class StatsPanelManager {
         if (appInitModule && typeof appInitModule.onReady === 'function') {
             appInitModule.onReady(() => {
                 console.log('📊 Stats panel detected AppInit ready - updating stats...');
-                setTimeout(() => this.updateStatsPanel(), 100);
+                setTimeout(() => this.updateStatsPanel(), UI_TIMEOUTS.STATS_UPDATE_DELAY);
             });
         }
     }
@@ -719,7 +720,7 @@ export class StatsPanelManager {
 
         if (this.elements.currentCycleDoughnutProgress) {
             // SVG circle circumference = 2 * π * radius = 2 * π * 40 ≈ 251.2
-            const circumference = 251.2;
+            const circumference = CHART.DOUGHNUT_CIRCUMFERENCE;
             // Calculate offset: full circumference - (percentage * circumference)
             const offset = circumference - (completionPercentage / 100) * circumference;
             this.elements.currentCycleDoughnutProgress.style.strokeDashoffset = offset;
@@ -869,7 +870,7 @@ export class StatsPanelManager {
         setTimeout(() => {
             this.invalidateTaskStatsCache();
             this.updateStatsPanel();
-        }, 100);
+        }, UI_TIMEOUTS.STATS_UPDATE_DELAY);
     }
 
     // ==========================================
@@ -1299,7 +1300,7 @@ export class StatsPanelManager {
      */
     getCachedTaskStats() {
         const now = Date.now();
-        const CACHE_TTL = 5000; // 5 seconds
+        const CACHE_TTL = INTERVALS.STATS_CACHE_TTL; // 5 seconds
 
         if (!this._taskStatsCache || this._taskStatsCacheTime < now - CACHE_TTL) {
             const tasks = document.querySelectorAll(".task");

@@ -12,6 +12,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { LIMITS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -39,9 +40,9 @@ export const setErrorHandlerDependencies = (dependencies) => di.setDependencies(
 class ErrorHandler {
     constructor() {
         this.errorCount = 0;
-        this.maxErrorsBeforeSilence = 10; // Prevent notification spam
+        this.maxErrorsBeforeSilence = LIMITS.MAX_ERRORS_BEFORE_SILENCE;
         this.errorLog = [];
-        this.maxLogSize = 50;
+        this.maxLogSize = LIMITS.ERROR_LOG;
 
         this.setupGlobalHandlers();
     }
