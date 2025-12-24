@@ -16,7 +16,7 @@ import { installDebugFilter } from '../utils/debugMode.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.552';
+const APP_VERSION = '1.553';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {
@@ -141,7 +141,8 @@ function showBootError(phase, error, willRetry = false) {
     `;
   } else {
     // Check if this looks like a cache error
-    const isCacheError = msg.includes('Importing') || msg.includes('module') || msg.includes('binding name') || msg.includes('export');
+    const errorMsg = error?.message || '';
+    const isCacheError = errorMsg.includes('Importing') || errorMsg.includes('module') || errorMsg.includes('binding name') || errorMsg.includes('export');
 
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
