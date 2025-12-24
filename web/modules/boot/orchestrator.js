@@ -16,7 +16,7 @@ import { installDebugFilter } from '../utils/debugMode.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.550';
+const APP_VERSION = '1.551';
 
 // Boot timeout configuration (in milliseconds)
 const BOOT_TIMEOUTS = {
@@ -140,6 +140,9 @@ function showBootError(phase, error, willRetry = false) {
       <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">Retrying automatically...</div>
     `;
   } else {
+    // Check if this looks like a cache error
+    const isCacheError = msg.includes('Importing') || msg.includes('module') || msg.includes('binding name') || msg.includes('export');
+
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
       <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">Unable to Load</div>
@@ -153,9 +156,15 @@ function showBootError(phase, error, willRetry = false) {
         💡 ${suggestion}
       </div>
       <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+        ${isCacheError ? `
+        <button id="clear-cache-btn" style="padding: 12px 24px; cursor: pointer; border: none; background: #ff9800; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
+          🗑️ Clear Cache & Reload
+        </button>
+        ` : `
         <button onclick="location.reload()" style="padding: 12px 24px; cursor: pointer; border: 2px solid white; background: transparent; color: white; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Try Again
         </button>
+        `}
         <button onclick="window.location.href='${LITE_VERSION_PATH}'" style="padding: 12px 24px; cursor: pointer; border: none; background: white; color: #4c79ff; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; transition: all 0.2s;">
           Use Lite Version
         </button>
@@ -164,6 +173,37 @@ function showBootError(phase, error, willRetry = false) {
         Failed at: ${phase} (attempt ${bootAttempt})
       </div>
     `;
+
+    // Add clear cache handler
+    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    if (clearCacheBtn) {
+      clearCacheBtn.addEventListener('click', async () => {
+        clearCacheBtn.textContent = 'Clearing...';
+        clearCacheBtn.disabled = true;
+
+        try {
+          // Unregister all service workers
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(r => r.unregister()));
+            console.log('✅ Service workers unregistered');
+          }
+
+          // Clear all caches
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log('✅ Caches cleared');
+          }
+
+          // Reload without cache
+          window.location.reload(true);
+        } catch (e) {
+          console.error('Cache clear failed:', e);
+          window.location.reload(true);
+        }
+      });
+    }
   }
 }
 
