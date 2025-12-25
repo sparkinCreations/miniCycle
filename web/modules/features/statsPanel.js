@@ -662,6 +662,10 @@ export class StatsPanelManager {
     async updateStatsPanel() {
         console.log('📊 Updating stats panel...');
 
+        // ✅ Always invalidate cache when explicitly updating stats
+        // This fixes stale data when tasks are moved between lists (completed dropdown)
+        this.invalidateTaskStatsCache();
+
         // ✅ Wait for core systems (AppState + data) to be ready - DI-pure
         const appInitModule = this.dependencies.appInit;
         if (appInitModule?.waitForCore) {
