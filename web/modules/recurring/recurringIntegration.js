@@ -78,7 +78,10 @@ export async function initializeRecurringModules(options = {}) {
         }
         const version = options.AppMeta?.version || 'dev-local';
         const recurringCore = await import(`./recurringCore.js?v=${version}`);
-        const { RecurringPanelManager, buildRecurringSummaryFromSettings } = await import(`./recurringPanel.js?v=${version}`);
+        const { RecurringPanelManager, buildRecurringSummaryFromSettings, loadPanelSubModules } = await import(`./recurringPanel.js?v=${version}`);
+
+        // Load panel sub-modules with version cache-busting
+        await loadPanelSubModules(version);
 
         console.log('✅ Recurring modules imported');
 
