@@ -358,7 +358,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/taskCore.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'sanitizeInput', 'removeRecurringTasksFromCycle'],
-        provides: ['addTask', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'deleteTaskFromCore', 'handleCompleteAllTasks'],
+        provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
         after: ['taskDOM', 'cycleCompletion', 'recurringIntegration']
@@ -388,7 +388,7 @@ export const MODULE_MANIFESTS = {
     testingModal: {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
-        requires: ['AppState', 'showNotification', 'safeAddEventListener', 'safeAddEventListenerById'],
+        requires: ['AppState', 'showNotification', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true

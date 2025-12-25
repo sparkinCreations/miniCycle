@@ -34,10 +34,6 @@ const di = createDIModule('TaskCore', {
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
     sanitizeInput: optional(null),
-    safeJSONParse: optional(null),
-    safeJSONStringify: optional(null),
-    safeLocalStorageGet: optional(null),
-    safeLocalStorageSet: optional(null),
     isPerformingUndoRedo: optional(null),
     showNotification: optional(null),
     updateStatsPanel: optional(null),
@@ -189,12 +185,6 @@ export class TaskCore {
             // Data operations
             loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
             sanitizeInput: resolvedDeps.sanitizeInput || ((text) => text),
-
-            // Safe storage utilities
-            safeJSONParse: resolvedDeps.safeJSONParse || ((str, fallback) => { try { return JSON.parse(str); } catch { return fallback; } }),
-            safeJSONStringify: resolvedDeps.safeJSONStringify || ((obj, fallback) => { try { return JSON.stringify(obj); } catch { return fallback; } }),
-            safeLocalStorageGet: resolvedDeps.safeLocalStorageGet || ((key, fallback) => { try { return localStorage.getItem(key); } catch { return fallback; } }),
-            safeLocalStorageSet: resolvedDeps.safeLocalStorageSet || ((key, value) => { try { localStorage.setItem(key, value); } catch { console.warn('localStorage unavailable'); } }),
 
             // Undo system state check
             isPerformingUndoRedo: resolvedDeps.isPerformingUndoRedo || (() => false),
@@ -486,17 +476,17 @@ function addTask(taskText, options = {}) {
     return taskCoreInstance.addTask(taskText, options);
 }
 
-function editTaskFromCore(taskItem) {
+function editTask(taskItem) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.editTask(taskItem);
 }
 
-function deleteTaskFromCore(taskItem) {
+function deleteTask(taskItem) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.deleteTask(taskItem);
 }
 
-function toggleTaskPriorityFromCore(taskItem) {
+function toggleTaskPriority(taskItem) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.toggleTaskPriority(taskItem);
 }
@@ -535,9 +525,9 @@ console.log('TaskCore module loaded (DI-pure, dynamic versioned imports)');
 export {
     taskCoreInstance,
     addTask,
-    editTaskFromCore,
-    deleteTaskFromCore,
-    toggleTaskPriorityFromCore,
+    editTask,
+    deleteTask,
+    toggleTaskPriority,
     handleTaskCompletionChange,
     saveCurrentTaskOrder,
     saveTaskToSchema25,
