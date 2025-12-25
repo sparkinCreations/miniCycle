@@ -11,7 +11,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { taskToAddTaskOptions } from './taskUtils.js';
+// NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -30,7 +30,8 @@ const di = createDIModule('TaskRenderer', {
     enableDragAndDropOnTask: optional(null),
     recurringPanel: optional(null),
     updateRecurringPanelButtonVisibility: optional(null),
-    AppMeta: optional(null)
+    AppMeta: optional(null),
+    taskToAddTaskOptions: optional(null)  // From taskUtils - injected to avoid duplicate module loading
 });
 
 // Late-binding deps via Proxy
@@ -77,6 +78,9 @@ export class TaskRenderer {
             // Recurring panel (required)
             recurringPanel: resolvedDeps.recurringPanel,
             updateRecurringPanelButtonVisibility: resolvedDeps.updateRecurringPanelButtonVisibility,
+
+            // Task utilities (required for rendering)
+            taskToAddTaskOptions: resolvedDeps.taskToAddTaskOptions,
 
             // DOM helpers
             getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
@@ -161,10 +165,11 @@ export class TaskRenderer {
             }
 
             // Use injected addTask with shared options helper
-            if (this.deps.addTask) {
-                await this.deps.addTask(task.text, taskToAddTaskOptions(task));
+            if (this.deps.addTask && this.deps.taskToAddTaskOptions) {
+                const options = this.deps.taskToAddTaskOptions(task);
+                await this.deps.addTask(task.text, options);
             } else {
-                console.warn('⚠️ addTask function not available for task:', task.id);
+                console.warn('⚠️ addTask or taskToAddTaskOptions not available for task:', task.id);
             }
         }
 

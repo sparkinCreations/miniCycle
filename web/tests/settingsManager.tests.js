@@ -22,7 +22,7 @@ import {
 } from './testHelpers.js';
 
 // Direct import from module (not via appContext which may not be populated)
-import { SettingsManager } from '../modules/ui/settingsManager.js';
+import { SettingsManager, setSettingsManagerDependencies } from '../modules/ui/settingsManager.js';
 
 export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2><h3>Setting up mocks...</h3>';
@@ -65,7 +65,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         return { passed: 0, total: 1 };
     }
 
-    function test(name, testFn) {
+    async function test(name, testFn) {
         total.count++;
         try {
             // Reset environment before each test
@@ -120,7 +120,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             delete window.AppState;
             delete window.showNotification;
 
-            testFn(mockFlattenedData, mockFullSchema);
+            await testFn(mockFlattenedData, mockFullSchema);
             resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
             passed.count++;
         } catch (error) {
@@ -131,7 +131,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4>🔧 Initialization Tests</h4>';
 
-    test('creates instance successfully', () => {
+    await test('creates instance successfully', async () => {
         const instance = new SettingsManager();
         if (!instance || typeof instance.setupSettingsMenu !== 'function') {
             throw new Error('SettingsManager not properly initialized');
@@ -139,7 +139,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
 
-    test('accepts dependency injection', () => {
+    await test('accepts dependency injection', async () => {
         const mockLoad = () => ({ cycles: {}, activeCycle: null });
         const mockNotify = () => {};
 
@@ -154,19 +154,24 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('has fallback methods for all dependencies', () => {
+    await test('is DI-pure with no fallback methods', async () => {
         const instance = new SettingsManager();
 
-        // Check key fallback methods exist
-        if (typeof instance.fallbackLoadData !== 'function') {
-            throw new Error('Missing fallbackLoadData');
+        // DI-pure pattern: no fallbacks, dependencies are required via setSettingsManagerDependencies
+        // Verify instance doesn't have legacy fallback methods (they were removed in facade refactor)
+        if (typeof instance.fallbackLoadData === 'function') {
+            throw new Error('DI-pure: fallbackLoadData should not exist');
         }
-        if (typeof instance.fallbackNotification !== 'function') {
-            throw new Error('Missing fallbackNotification');
+        if (typeof instance.fallbackNotification === 'function') {
+            throw new Error('DI-pure: fallbackNotification should not exist');
+        }
+        // Instance should exist and have initialized flag
+        if (instance.initialized !== false) {
+            throw new Error('initialized should start as false');
         }
     });
 
-    test('initializes with false initialized flag', () => {
+    await test('initializes with false initialized flag', async () => {
         const instance = new SettingsManager();
         if (instance.initialized !== false) {
             throw new Error('initialized should start as false');
@@ -176,7 +181,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === CORE FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Core Functionality</h4>';
 
-    test('setupSettingsMenu sets up event listeners', () => {
+    await test('setupSettingsMenu sets up event listeners', async () => {
         const openBtn = document.createElement('button');
         openBtn.id = 'open-settings';
         const closeBtn = document.createElement('button');
@@ -204,7 +209,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             loadMiniCycleData: () => ({ cycles: {}, activeCycle: null })
         });
 
-        // Run setup
+        // Run setup (sub-modules loaded via init)
+        await instance.init();
         instance.setupSettingsMenu();
 
         // Check that event handlers are attached (simulate click)
@@ -220,7 +226,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('setupDownloadMiniCycle creates download button handler', (mockFlattenedData) => {
+    await test('setupDownloadMiniCycle creates download button handler', async (mockFlattenedData) => {
         const exportBtn = document.createElement('button');
         exportBtn.id = 'export-mini-cycle';
 
@@ -233,7 +239,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
 
-        // Setup the download handler
+        // Init to load sub-modules, then setup the download handler
+        await instance.init();
         instance.setupDownloadMiniCycle();
 
         // Verify button has a click handler attached (check _onclick or simulate)
@@ -242,7 +249,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('setupUploadMiniCycle creates upload button handler', (mockFlattenedData) => {
+    await test('setupUploadMiniCycle creates upload button handler', async (mockFlattenedData) => {
         const importBtn = document.createElement('button');
         importBtn.id = 'import-mini-cycle';
 
@@ -255,7 +262,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             AppState: () => ({ isReady: () => true, get: () => ({}) })
         });
 
-        // Setup the upload handler
+        // Init to load sub-modules, then setup the upload handler
+        await instance.init();
         instance.setupUploadMiniCycle();
 
         // Verify button exists and setup completed
@@ -267,7 +275,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === IMPORT/EXPORT FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4>📤 Import/Export Functionality</h4>';
 
-    test('exportMiniCycleData creates download', (mockFlattenedData) => {
+    await test('exportMiniCycleData creates download', async (mockFlattenedData) => {
         let linkCreated = false;
         let blobCreated = false;
 
@@ -304,6 +312,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
 
+        // Init to load sub-modules before calling exportMiniCycleData
+        await instance.init();
+
         const miniCycleData = {
             name: 'test-cycle',
             title: 'Test Cycle',
@@ -327,7 +338,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('exportMiniCycleData handles export flow', (mockFlattenedData) => {
+    await test('exportMiniCycleData handles export flow', async (mockFlattenedData) => {
         // Mock URL methods
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
@@ -344,6 +355,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             loadMiniCycleData: () => mockFlattenedData,
             showNotification: () => {}
         });
+
+        // Init to load sub-modules
+        await instance.init();
 
         const miniCycleData = {
             name: 'test',
@@ -366,7 +380,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('exportMiniCycleData sanitizes filename', (mockFlattenedData) => {
+    await test('exportMiniCycleData sanitizes filename', async (mockFlattenedData) => {
         let filename = '';
 
         // Mock URL methods
@@ -399,6 +413,9 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             showNotification: () => {}
         });
 
+        // Init to load sub-modules
+        await instance.init();
+
         instance.exportMiniCycleData({
             name: 'test',
             title: 'My Cycle!',
@@ -423,7 +440,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === SETTINGS SYNCHRONIZATION TESTS ===
     resultsDiv.innerHTML += '<h4>⚙️ Settings Synchronization</h4>';
 
-    test('syncCurrentSettingsToStorage updates localStorage', (mockFlattenedData) => {
+    await test('syncCurrentSettingsToStorage updates localStorage', async (mockFlattenedData) => {
         const toggleAutoReset = document.createElement('input');
         toggleAutoReset.type = 'checkbox';
         toggleAutoReset.id = 'toggleAutoReset';
@@ -443,7 +460,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             }
         });
 
-        instance.syncCurrentSettingsToStorage();
+        await instance.init();
+        await instance.syncCurrentSettingsToStorage();
 
         // Verify localStorage was updated
         const saved = JSON.parse(localStorage.getItem('miniCycleData'));
@@ -452,12 +470,14 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('syncCurrentSettingsToStorage handles missing data gracefully', () => {
+    await test('syncCurrentSettingsToStorage handles missing data gracefully', async () => {
         localStorage.clear();
 
         const instance = new SettingsManager({
             loadMiniCycleData: () => null
         });
+
+        await instance.init();
 
         // Should not throw
         expect(() => {
@@ -468,7 +488,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === FACTORY RESET TEST ===
     resultsDiv.innerHTML += '<h4>🔄 Factory Reset</h4>';
 
-    test('factory reset clears all data', () => {
+    await test('factory reset clears all data', async () => {
         // This test just verifies the method exists and setup works
         const resetBtn = document.createElement('button');
         resetBtn.id = 'factory-reset';
@@ -483,7 +503,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             AppState: () => null
         });
 
-        // Setup should attach event listener
+        // Init to load sub-modules, then setup
+        await instance.init();
         instance.setupSettingsMenu();
 
         // Just verify the instance exists
@@ -495,7 +516,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === ERROR HANDLING TESTS ===
     resultsDiv.innerHTML += '<h4>🛡️ Error Handling</h4>';
 
-    test('handles missing settings modal gracefully', () => {
+    await test('handles missing settings modal gracefully', async () => {
         const instance = new SettingsManager({
             querySelector: () => null,
             getElementById: () => null,
@@ -504,13 +525,15 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             loadMiniCycleData: () => null
         });
 
+        await instance.init();
+
         // Should not throw
         expect(() => {
             instance.setupSettingsMenu();
         }).not.toThrow();
     });
 
-    test('handles corrupted localStorage in export', () => {
+    await test('handles corrupted localStorage in export', async () => {
         localStorage.clear();
 
         // Mock URL and DOM methods to prevent downloads
@@ -528,6 +551,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             loadMiniCycleData: () => null,
             showNotification: () => {}
         });
+
+        await instance.init();
 
         const miniCycleData = {
             name: 'test',
@@ -550,7 +575,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('handles missing AppState in syncSettings', () => {
+    await test('handles missing AppState in syncSettings', async () => {
         localStorage.clear();
 
         const instance = new SettingsManager({
@@ -558,13 +583,15 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             AppState: () => null
         });
 
+        await instance.init();
+
         // Should not throw
         expect(() => {
             instance.syncCurrentSettingsToStorage();
         }).not.toThrow();
     });
 
-    test('handles schema migration failure gracefully', () => {
+    await test('handles schema migration failure gracefully', async () => {
         const instance = new SettingsManager({
             performSchema25Migration: () => ({ success: false }),
             showNotification: () => {}
@@ -579,71 +606,109 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === DOM INTERACTION TESTS ===
     resultsDiv.innerHTML += '<h4>🌐 DOM Interaction</h4>';
 
-    test('opens settings modal on button click', () => {
+    await test('opens settings modal on button click', async () => {
+        // Create DOM elements
         const modal = document.createElement('div');
         modal.className = 'settings-modal';
         modal.style.display = 'none';
+        document.body.appendChild(modal);
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'settings-modal-content';
+        modal.appendChild(modalContent);
 
         const openBtn = document.createElement('button');
         openBtn.id = 'open-settings';
+        document.body.appendChild(openBtn);
 
-        const instance = new SettingsManager({
-            querySelector: (sel) => {
-                if (sel === '.settings-modal') return modal;
-                if (sel === '.settings-modal-content') return document.createElement('div');
-                return null;
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'close-settings';
+        document.body.appendChild(closeBtn);
+
+        // Set up module-level dependencies (DI-pure pattern)
+        setSettingsManagerDependencies({
+            safeAddEventListener: (el, event, handler) => {
+                el?.removeEventListener(event, handler);
+                el?.addEventListener(event, handler);
             },
-            getElementById: (id) => {
-                if (id === 'open-settings') return openBtn;
-                if (id === 'close-settings') return document.createElement('button');
-                return null;
-            },
+            AppState: () => ({ isReady: () => true, get: () => ({}) }),
+            loadMiniCycleData: () => ({ settings: {} }),
+            showNotification: () => {},
+            showConfirmationModal: () => {},
+            sanitizeInput: (text) => text,
             setupDarkModeToggle: () => {},
             setupQuickDarkToggle: () => {},
-            hideMainMenu: () => {},
-            loadMiniCycleData: () => null
+            hideMainMenu: () => {}
         });
 
+        const instance = new SettingsManager();
+        await instance.init();
         instance.setupSettingsMenu();
 
         // Simulate button click
         openBtn.click();
 
-        if (modal.style.display !== 'flex') {
+        const passed = modal.style.display === 'flex';
+
+        // Cleanup
+        modal.remove();
+        openBtn.remove();
+        closeBtn.remove();
+
+        if (!passed) {
             throw new Error('Modal should be visible after click');
         }
     });
 
-    test('closes settings modal on close button click', () => {
+    await test('closes settings modal on close button click', async () => {
+        // Create DOM elements
         const modal = document.createElement('div');
         modal.className = 'settings-modal';
         modal.style.display = 'flex';
+        document.body.appendChild(modal);
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'settings-modal-content';
+        modal.appendChild(modalContent);
+
+        const openBtn = document.createElement('button');
+        openBtn.id = 'open-settings';
+        document.body.appendChild(openBtn);
 
         const closeBtn = document.createElement('button');
         closeBtn.id = 'close-settings';
+        document.body.appendChild(closeBtn);
 
-        const instance = new SettingsManager({
-            querySelector: (sel) => {
-                if (sel === '.settings-modal') return modal;
-                if (sel === '.settings-modal-content') return document.createElement('div');
-                return null;
+        // Set up module-level dependencies (DI-pure pattern)
+        setSettingsManagerDependencies({
+            safeAddEventListener: (el, event, handler) => {
+                el?.removeEventListener(event, handler);
+                el?.addEventListener(event, handler);
             },
-            getElementById: (id) => {
-                if (id === 'open-settings') return document.createElement('button');
-                if (id === 'close-settings') return closeBtn;
-                return null;
-            },
+            AppState: () => ({ isReady: () => true, get: () => ({}) }),
+            loadMiniCycleData: () => ({ settings: {} }),
+            showNotification: () => {},
+            showConfirmationModal: () => {},
+            sanitizeInput: (text) => text,
             setupDarkModeToggle: () => {},
-            setupQuickDarkToggle: () => {},
-            loadMiniCycleData: () => null
+            setupQuickDarkToggle: () => {}
         });
 
+        const instance = new SettingsManager();
+        await instance.init();
         instance.setupSettingsMenu();
 
         // Simulate close button click
         closeBtn.click();
 
-        if (modal.style.display !== 'none') {
+        const passed = modal.style.display === 'none';
+
+        // Cleanup
+        modal.remove();
+        openBtn.remove();
+        closeBtn.remove();
+
+        if (!passed) {
             throw new Error('Modal should be hidden after close click');
         }
     });
@@ -659,14 +724,24 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === PERFORMANCE TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Performance Tests</h4>';
 
-    test('setupSettingsMenu completes quickly', () => {
-        const instance = new SettingsManager({
-            querySelector: () => document.createElement('div'),
-            getElementById: () => document.createElement('button'),
+    await test('setupSettingsMenu completes quickly', async () => {
+        // Set up module-level dependencies (DI-pure pattern)
+        setSettingsManagerDependencies({
+            safeAddEventListener: (el, event, handler) => {
+                el?.removeEventListener(event, handler);
+                el?.addEventListener(event, handler);
+            },
+            AppState: () => ({ isReady: () => true, get: () => ({}) }),
+            loadMiniCycleData: () => ({ settings: {} }),
+            showNotification: () => {},
+            showConfirmationModal: () => {},
+            sanitizeInput: (text) => text,
             setupDarkModeToggle: () => {},
-            setupQuickDarkToggle: () => {},
-            loadMiniCycleData: () => null
+            setupQuickDarkToggle: () => {}
         });
+
+        const instance = new SettingsManager();
+        await instance.init();
 
         const startTime = performance.now();
         instance.setupSettingsMenu();
@@ -679,7 +754,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('exportMiniCycleData completes quickly', () => {
+    await test('exportMiniCycleData completes quickly', async () => {
         // Mock URL and DOM methods to prevent downloads
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
@@ -694,6 +769,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const instance = new SettingsManager({
             showNotification: () => {}
         });
+
+        await instance.init();
 
         const miniCycleData = {
             name: 'test',
@@ -724,7 +801,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // === EDGE CASES ===
     resultsDiv.innerHTML += '<h4>🎯 Edge Cases</h4>';
 
-    test('handles empty settings object', () => {
+    await test('handles empty settings object', async () => {
         const instance = new SettingsManager({
             loadMiniCycleData: () => ({ cycles: {}, activeCycle: null })
         });
@@ -735,7 +812,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('handles missing data in export', () => {
+    await test('handles missing data in export', async () => {
         // Mock URL and DOM methods to prevent downloads
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
@@ -750,6 +827,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const instance = new SettingsManager({
             showNotification: () => {}
         });
+
+        await instance.init();
 
         const miniCycleData = {
             name: 'test',
@@ -769,7 +848,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    test('handles very large data export', () => {
+    await test('handles very large data export', async () => {
         // Mock URL and DOM methods to prevent downloads
         const originalCreateObjectURL = URL.createObjectURL;
         const originalRevokeObjectURL = URL.revokeObjectURL;
@@ -784,6 +863,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const instance = new SettingsManager({
             showNotification: () => {}
         });
+
+        await instance.init();
 
         // Create large dataset
         const largeTasks = Array.from({ length: 1000 }, (_, i) => ({

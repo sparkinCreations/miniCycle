@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { taskToAddTaskOptions } from '../task/taskUtils.js';
+// NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -32,7 +32,10 @@ const di = createDIModule('TaskUI', {
     getCompleteAllButton: optional(null),
 
     // For touch detection
-    isTouchDevice: optional(null)
+    isTouchDevice: optional(null),
+
+    // From taskUtils - injected to avoid duplicate module loading
+    taskToAddTaskOptions: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -190,8 +193,14 @@ export async function refreshTaskListUI() {
     }
 
     const tasks = cycleData.tasks || [];
+    const taskToAddTaskOptions = _deps.taskToAddTaskOptions;
+    if (typeof taskToAddTaskOptions !== 'function') {
+        console.error('refreshTaskListUI: taskToAddTaskOptions not available - aborting to prevent task duplication');
+        return;
+    }
     for (const task of tasks) {
-        await addTask(task.text, taskToAddTaskOptions(task));
+        const options = taskToAddTaskOptions(task);
+        await addTask(task.text, options);
     }
 
     const updateRecurringButtonVisibility = _deps.updateRecurringButtonVisibility;

@@ -332,6 +332,9 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
             querySelectorAll: () => []
         });
 
+        // Init to load sub-modules
+        await instance.init();
+
         await instance.saveCurrentTaskOrder();
 
         if (!updateCalled) {
@@ -418,6 +421,8 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         taskDiv.appendChild(checkbox);
 
         const instance = new TaskCore();
+        // Init to load sub-modules
+        await instance.init();
         await instance.handleTaskCompletionChange(checkbox);
 
         if (taskDiv.classList.contains('overdue-task')) {

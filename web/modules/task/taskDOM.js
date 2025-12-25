@@ -72,6 +72,8 @@ export function setTaskDOMManagerDependencies(dependencies) {
 let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;
 // ✅ Wrapper function from taskUtils.js (uses _deps for saveTaskToSchema25)
 let _createOrUpdateTaskDataFn = null;
+// ✅ taskToAddTaskOptions from taskUtils.js - exported for other modules to use
+let _taskToAddTaskOptions = null;
 
 export class TaskDOMManager {
     constructor(dependencies = {}) {
@@ -252,7 +254,7 @@ export class TaskDOMManager {
                 console.log('📦 Starting Promise.all for sub-module imports...');
                 const [
                     { TaskValidator: ValidatorClass },
-                    { TaskUtils: UtilsClass, setTaskUtilsDependencies, createOrUpdateTaskData: createOrUpdateTaskDataWrapper },
+                    { TaskUtils: UtilsClass, setTaskUtilsDependencies, createOrUpdateTaskData: createOrUpdateTaskDataWrapper, taskToAddTaskOptions },
                     { TaskRenderer: RendererClass },
                     { TaskEvents: EventsClass }
                 ] = await Promise.all([
@@ -270,6 +272,8 @@ export class TaskDOMManager {
                 TaskEvents = EventsClass;
                 // Store wrapper function that uses _deps (for saveTaskToSchema25)
                 _createOrUpdateTaskDataFn = createOrUpdateTaskDataWrapper;
+                // Store taskToAddTaskOptions for export to other modules
+                _taskToAddTaskOptions = taskToAddTaskOptions;
 
                 // Wire TaskUtils dependencies for wrapper functions (DI-pure)
                 // Use this.deps (instance deps from constructor) - these have the actual injected functions
@@ -328,7 +332,10 @@ export class TaskDOMManager {
 
                     // DOM helpers
                     getElementById: this.deps.getElementById,
-                    querySelectorAll: this.deps.querySelectorAll
+                    querySelectorAll: this.deps.querySelectorAll,
+
+                    // TaskUtils helper (injected to avoid duplicate module loading)
+                    taskToAddTaskOptions: taskToAddTaskOptions
                 });
 
                 // Initialize events module - no window.* fallbacks (Phase 2)
@@ -445,7 +452,11 @@ export class TaskDOMManager {
      * Used for optional feature modules that may not be injected
      */
     _warnMissingOptional(depName) {
-        console.warn(`⚠️ TaskDOMManager: Optional dependency ${depName} not injected`);
+        // These deps load in later boot phases - don't warn for expected late-loading deps
+        const lateLoadingDeps = ['dueDates', 'reminders', 'recurringPanel', 'taskCore'];
+        if (!lateLoadingDeps.includes(depName)) {
+            console.warn(`⚠️ TaskDOMManager: Optional dependency ${depName} not injected`);
+        }
         return {};
     }
 
@@ -1933,6 +1944,21 @@ async function refreshTaskListUI() {
     return await taskDOMManager.renderer.refreshTaskListUI();
 }
 
+/**
+ * Wrapper for taskToAddTaskOptions from taskUtils.js
+ * Converts task object to addTask options format
+ * @param {Object} task - Task data object
+ * @returns {Object} Options for addTask
+ * @throws {Error} If called before taskDOM is initialized
+ */
+function taskToAddTaskOptions(task) {
+    if (!_taskToAddTaskOptions) {
+        // Don't return {} - that would cause addTask to generate new IDs and duplicate tasks!
+        throw new Error('taskToAddTaskOptions called before taskDOM initialized - this would cause task duplication');
+    }
+    return _taskToAddTaskOptions(task);
+}
+
 // ============================================
 // Exports
 // ============================================
@@ -1976,7 +2002,9 @@ export {
     // Group 6: Rendering
     renderTasks,
     refreshUIFromState,
-    refreshTaskListUI
+    refreshTaskListUI,
+    // Group 7: Task Utils (loaded from taskUtils.js, exposed for other modules)
+    taskToAddTaskOptions
 };
 
 // DI-pure module (no window.* fallbacks in wrappers)

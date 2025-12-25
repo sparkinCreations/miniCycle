@@ -9,7 +9,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
-import { taskToAddTaskOptions } from '../task/taskUtils.js';
+// NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -28,7 +28,8 @@ const di = createDIModule('RoutineLoader', {
   checkCompleteAllButton: optional(null),
   updateMainMenuHeader: optional(null),
   updateStatsPanel: optional(null),
-  syncAllTasksWithMode: optional(null)
+  syncAllTasksWithMode: optional(null),
+  taskToAddTaskOptions: optional(null)  // From taskUtils - injected to avoid duplicate module loading
 });
 
 // Late-binding Deps via Proxy
@@ -307,9 +308,15 @@ function renderTasksToDOM(tasks = []) {
   // Instead, render tasks directly to DOM from the data already in AppState
   console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
 
+  const taskToAddTaskOptions = Deps.taskToAddTaskOptions;
+  if (typeof taskToAddTaskOptions !== 'function') {
+    console.error('renderTasksToDOM: taskToAddTaskOptions not available - aborting to prevent task duplication');
+    return;
+  }
   tasks.forEach(task => {
-    // Render task to DOM using shared options helper
-    Deps.addTask(task.text || task.taskText || '', taskToAddTaskOptions(task));
+    // Render task to DOM using shared options helper (injected via DI)
+    const options = taskToAddTaskOptions(task);
+    Deps.addTask(task.text || task.taskText || '', options);
   });
 
   console.log('✅ Tasks rendered to DOM with original IDs and states preserved');

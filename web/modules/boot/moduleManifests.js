@@ -188,7 +188,7 @@ export const MODULE_MANIFESTS = {
             'loadTaskContext', 'createOrUpdateTaskData', 'finalizeTaskCreation',
             'validateAndSanitizeTaskInput', 'buildTaskContext', 'extractTaskDataFromDOM',
             'renderTasks', 'refreshTaskListUI', 'createTaskButtonContainer', 'handleTaskButtonClick',
-            'setupRecurringButtonHandler', 'revealTaskButtons'
+            'setupRecurringButtonHandler', 'revealTaskButtons', 'taskToAddTaskOptions'
         ],
         api: 'task',
         after: ['dragDropManager', 'taskUI', 'taskInteractions', 'uiEffects']
