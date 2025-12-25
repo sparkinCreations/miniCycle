@@ -16,12 +16,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 const di = createDIModule('TaskCRUD', {
     appInit: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     sanitizeInput: optional(null),
-    safeJSONParse: optional(null),
-    safeJSONStringify: optional(null),
-    safeLocalStorageGet: optional(null),
-    safeLocalStorageSet: optional(null),
     showNotification: optional(null),
     updateStatsPanel: optional(null),
     updateProgressBar: optional(null),
@@ -193,7 +188,6 @@ export async function editTaskImpl(taskItem, deps = {}) {
         const showPromptModal = deps.showPromptModal || _deps.showPromptModal || fallbackPromptModal;
         const sanitizeInput = deps.sanitizeInput || _deps.sanitizeInput || ((text) => text);
         const AppState = deps.AppState || _deps.AppState;
-        const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
         const updateStatsPanel = deps.updateStatsPanel || _deps.updateStatsPanel;
@@ -226,7 +220,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
                     const taskId = taskItem.dataset.taskId;
 
-                    // Update AppState
+                    // ✅ Use AppState only (no localStorage fallback) - DI-pure
                     if (AppState?.isReady?.()) {
                         await AppState.update(state => {
                             const cid = state.appState.activeCycleId;
@@ -235,27 +229,7 @@ export async function editTaskImpl(taskItem, deps = {}) {
                             if (t) t.text = cleanText;
                         }, true);
                     } else {
-                        // Fallback to localStorage
-                        const schemaData = loadMiniCycleData?.();
-                        if (schemaData) {
-                            const cycles = schemaData.data?.cycles || {};
-                            const activeCycle = schemaData.appState?.activeCycleId;
-                            const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                            if (task) {
-                                task.text = cleanText;
-                                const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-                                const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-                                const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-                                const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-                                const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-                                if (fullSchemaData) {
-                                    fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                                    fullSchemaData.metadata.lastModified = Date.now();
-                                    safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-                                }
-                            }
-                        }
+                        console.warn('⚠️ AppState not ready for task edit - state may be lost');
                     }
 
                     _deps.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
@@ -286,7 +260,6 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
 
         const showConfirmationModal = deps.showConfirmationModal || _deps.showConfirmationModal || fallbackConfirmModal;
         const AppState = deps.AppState || _deps.AppState;
-        const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
         const updateStatsPanel = deps.updateStatsPanel || _deps.updateStatsPanel;
@@ -314,7 +287,7 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     if (currentState) captureStateSnapshot?.(currentState);
                 }
 
-                // Update AppState
+                // ✅ Use AppState only (no localStorage fallback) - DI-pure
                 if (AppState?.isReady?.()) {
                     await AppState.update(state => {
                         const cid = state.appState.activeCycleId;
@@ -339,42 +312,9 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     if (typeof updateMoveArrowsVisibility === 'function') {
                         updateMoveArrowsVisibility();
                     }
-
                 } else {
-                    // Fallback to localStorage
-                    const schemaData = loadMiniCycleData?.();
-                    if (schemaData) {
-                        const cycles = schemaData.data?.cycles || {};
-                        const activeCycle = schemaData.appState?.activeCycleId;
-                        const tasks = cycles[activeCycle]?.tasks || [];
-                        const index = tasks.findIndex(t => t.id === taskId);
-
-                        if (index !== -1) {
-                            tasks.splice(index, 1);
-                            const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-                            const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-                            const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-                            const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-                            const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-                            if (fullSchemaData) {
-                                fullSchemaData.data.cycles[activeCycle].tasks = tasks;
-                                fullSchemaData.metadata.lastModified = Date.now();
-                                safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-
-                                taskItem.remove();
-                                _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
-                                updateStatsPanel?.();
-                                updateProgressBar?.();
-                                checkCompleteAllButton?.();
-
-                                // Update move arrows (first/last task may have changed)
-                                if (typeof updateMoveArrowsVisibility === 'function') {
-                                    updateMoveArrowsVisibility();
-                                }
-                            }
-                        }
-                    }
+                    console.warn('⚠️ AppState not ready for task deletion - state may be lost');
+                    _deps.showNotification?.('Could not delete task - please try again', 'warning');
                 }
             }
         });
@@ -395,7 +335,6 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
         await waitForCoreWithTimeout();
 
         const AppState = deps.AppState || _deps.AppState;
-        const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
 
@@ -444,7 +383,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
             button.setAttribute("aria-pressed", newHighPriority.toString());
         }
 
-        // Update AppState
+        // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (AppState?.isReady?.()) {
             AppState.update(state => {
                 const cid = state.appState.activeCycleId;
@@ -459,32 +398,7 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                 1500
             );
         } else {
-            // Fallback to localStorage
-            const schemaData = loadMiniCycleData?.();
-            if (schemaData) {
-                const cycles = schemaData.data?.cycles || {};
-                const activeCycle = schemaData.appState?.activeCycleId;
-                const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                if (task) {
-                    task.highPriority = taskItem.classList.contains("high-priority");
-                    const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-                    const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-                    const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-                    const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-                    const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-                    if (fullSchemaData) {
-                        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                        fullSchemaData.metadata.lastModified = Date.now();
-                        safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-                        _deps.showNotification?.(
-                            `Priority ${task.highPriority ? "enabled" : "removed"}.`,
-                            task.highPriority ? "error" : "info",
-                            1500
-                        );
-                    }
-                }
-            }
+            console.warn('⚠️ AppState not ready for priority toggle - state may be lost');
         }
 
     } catch (error) {

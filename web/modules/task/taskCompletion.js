@@ -17,11 +17,6 @@ import { UI_TIMEOUTS } from '../core/constants.js';
 const di = createDIModule('TaskCompletion', {
     appInit: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
-    safeJSONParse: optional(null),
-    safeJSONStringify: optional(null),
-    safeLocalStorageGet: optional(null),
-    safeLocalStorageSet: optional(null),
     isPerformingUndoRedo: optional(null),
     showNotification: optional(null),
     captureStateSnapshot: optional(null),
@@ -98,7 +93,6 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
         const isCompleted = checkbox.checked;
 
         const AppState = deps.AppState || _deps.AppState;
-        const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const isPerformingUndoRedo = deps.isPerformingUndoRedo || _deps.isPerformingUndoRedo || (() => false);
         const checkOverdueTasks = deps.checkOverdueTasks || _deps.checkOverdueTasks;
@@ -114,9 +108,9 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
             }
         }
 
-        // Save completion state to AppState/localStorage (only if taskId exists)
+        // Save completion state to AppState (only if taskId exists)
+        // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (taskId) {
-            // Update AppState if available
             if (AppState?.isReady?.()) {
                 await AppState.update(state => {
                     const cid = state.appState?.activeCycleId;
@@ -130,32 +124,7 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                     }
                 }, false); // Don't force immediate save, let debounce handle it
             } else {
-                // Fallback to localStorage
-                const schemaData = loadMiniCycleData?.();
-                if (schemaData) {
-                    const activeCycle = schemaData.appState?.activeCycleId;
-                    const task = schemaData.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
-                    if (task) {
-                        task.completed = isCompleted;
-
-                        // Save to localStorage
-                        const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-                        const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-                        const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-                        const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-                        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-                        if (fullSchemaData?.data?.cycles?.[activeCycle]) {
-                            const taskIndex = fullSchemaData.data.cycles[activeCycle].tasks.findIndex(t => t.id === taskId);
-                            if (taskIndex !== -1) {
-                                fullSchemaData.data.cycles[activeCycle].tasks[taskIndex].completed = isCompleted;
-                                fullSchemaData.metadata.lastModified = Date.now();
-                                safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-                                console.log(`Task completion saved to localStorage: ${task.text} = ${isCompleted}`);
-                            }
-                        }
-                    }
-                }
+                console.warn('⚠️ AppState not ready for task completion save - state may be lost');
             }
         } else {
             console.warn('No task ID found - completion state not saved (DOM update only)');
@@ -203,13 +172,12 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
         await waitForCoreWithTimeout();
 
         const AppState = deps.AppState || _deps.AppState;
-        const loadMiniCycleData = deps.loadMiniCycleData || _deps.loadMiniCycleData;
         const querySelectorAll = deps.querySelectorAll || _deps.querySelectorAll || ((sel) => document.querySelectorAll(sel));
 
         const taskElements = querySelectorAll("#taskList .task");
         const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
 
-        // Use AppState to trigger undo snapshots
+        // ✅ Use AppState only (no localStorage fallback) - DI-pure
         if (AppState?.isReady?.()) {
             await AppState.update(state => {
                 const cid = state.appState.activeCycleId;
@@ -223,36 +191,8 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
 
                 cycle.tasks = reorderedTasks;
             }, true);
-            return;
-        }
-
-        // Fallback to localStorage
-        const schemaData = loadMiniCycleData?.();
-        if (!schemaData) {
-            console.error('Schema 2.5 data required for saveCurrentTaskOrder');
-            return;
-        }
-        const cycles = schemaData.data?.cycles || {};
-        const activeCycle = schemaData.appState?.activeCycleId;
-        const currentCycle = cycles[activeCycle];
-        if (!currentCycle || !Array.isArray(currentCycle.tasks)) return;
-
-        const reorderedTasks = newOrderIds.map(id =>
-            currentCycle.tasks.find(task => task.id === id)
-        ).filter(Boolean);
-
-        currentCycle.tasks = reorderedTasks;
-
-        const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-        const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-        const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-        const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-        if (fullSchemaData) {
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
+        } else {
+            console.warn('⚠️ AppState not ready for saveCurrentTaskOrder - order may be lost');
         }
 
     } catch (error) {
@@ -263,7 +203,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
 
 /**
  * Save task data to Schema 2.5 storage
- * Prioritizes AppState, falls back to localStorage
+ * ✅ Use AppState only (no localStorage fallback) - DI-pure
  *
  * @param {string} activeCycle - The cycle ID to save
  * @param {object} currentCycle - The cycle data to save
@@ -272,39 +212,19 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
 export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
     const AppState = deps.AppState || _deps.AppState;
 
-    // Use AppState if available, otherwise fallback to localStorage
-    if (AppState && AppState.isReady()) {
+    if (AppState?.isReady?.()) {
         try {
             AppState.update(state => {
-                if (state && state.data && state.data.cycles) {
+                if (state?.data?.cycles) {
                     state.data.cycles[activeCycle] = currentCycle;
                     state.metadata.lastModified = Date.now();
                 }
-            });
-            return;
+            }, true); // immediate save - required for stats panel to read correct data
         } catch (error) {
-            console.warn('AppState save failed, falling back to localStorage:', error);
-            // Fall through to localStorage fallback
+            console.error('❌ AppState save failed:', error);
         }
-    }
-
-    // Fallback to localStorage if AppState not ready or failed
-    try {
-        const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-        const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-        const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-        const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-        if (fullSchemaData && fullSchemaData.data && fullSchemaData.data.cycles) {
-            fullSchemaData.data.cycles[activeCycle] = currentCycle;
-            fullSchemaData.metadata.lastModified = Date.now();
-            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-        } else {
-            console.error('Invalid schema data structure in localStorage');
-        }
-    } catch (error) {
-        console.error('Failed to save to localStorage:', error);
+    } else {
+        console.warn('⚠️ AppState not ready for saveTaskToSchema25 - state may be lost');
     }
 }
 

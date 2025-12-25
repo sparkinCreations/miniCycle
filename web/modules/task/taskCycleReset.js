@@ -19,10 +19,6 @@ const di = createDIModule('TaskCycleReset', {
     AppState: optional(null),
     loadMiniCycleData: optional(null),
     autoSave: optional(null),
-    safeJSONParse: optional(null),
-    safeJSONStringify: optional(null),
-    safeLocalStorageGet: optional(null),
-    safeLocalStorageSet: optional(null),
     isPerformingUndoRedo: optional(null),
     showNotification: optional(null),
     showConfirmationModal: optional(null),
@@ -271,7 +267,7 @@ function resetTasksData(context, deps) {
         }
     });
 
-    // Update AppState atomically
+    // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState?.isReady?.()) {
         AppState.update(state => {
             const cycle = state?.data?.cycles?.[currentActiveCycle];
@@ -286,24 +282,10 @@ function resetTasksData(context, deps) {
                     }
                 });
             }
-        });
+        }, true); // immediate save - required for stats panel to read correct data
         console.log('Reset data saved to AppState');
     } else {
-        // localStorage fallback
-        const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-        const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-        const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-        const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-        if (fullSchemaData?.data?.cycles?.[currentActiveCycle]) {
-            if (tasksToDelete.length > 0) {
-                fullSchemaData.data.cycles[currentActiveCycle].tasks =
-                    fullSchemaData.data.cycles[currentActiveCycle].tasks.filter(t => !tasksToDelete.includes(t.id));
-            }
-            fullSchemaData.metadata.lastModified = Date.now();
-            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-        }
+        console.warn('⚠️ AppState not ready for cycle reset - state may be lost');
     }
 
     return { aborted: false, tasksDeleted: tasksToDelete.length };
@@ -498,7 +480,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         return taskId;
     });
 
-    // Update AppState
+    // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState?.isReady?.()) {
         await AppState.update(state => {
             const cycle = state.data.cycles[activeCycleId];
@@ -507,19 +489,7 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
             }
         }, true);
     } else {
-        // Fallback to localStorage
-        const safeJSONParse = _deps.safeJSONParse || ((str, fb) => { try { return JSON.parse(str); } catch { return fb; } });
-        const safeLocalStorageGet = _deps.safeLocalStorageGet || ((key, fb) => { try { return localStorage.getItem(key); } catch { return fb; } });
-        const safeLocalStorageSet = _deps.safeLocalStorageSet || ((key, val) => { try { localStorage.setItem(key, val); } catch {} });
-        const safeJSONStringify = _deps.safeJSONStringify || ((obj, fb) => { try { return JSON.stringify(obj); } catch { return fb; } });
-
-        cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-        const fullSchemaData = safeJSONParse(safeLocalStorageGet("miniCycleData", null), null);
-        if (fullSchemaData) {
-            fullSchemaData.data.cycles[activeCycleId] = cycleData;
-            fullSchemaData.metadata.lastModified = Date.now();
-            safeLocalStorageSet("miniCycleData", safeJSONStringify(fullSchemaData, null));
-        }
+        console.warn('⚠️ AppState not ready for task deletion - state may be lost');
     }
 
     // Update UI
