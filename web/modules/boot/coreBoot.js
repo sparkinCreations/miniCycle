@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.559';
+const APP_VERSION = '1.560';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -270,18 +270,18 @@ export async function initAppState(deps, showNotification) {
       // For initialSetup
       loadMiniCycleData: () => loadMiniCycleData?.(),
       createInitialSchema25Data: () => migrationMod.createInitialSchema25Data?.(),
-      showCycleCreationModal: () => appContextMod.getShowCycleCreationModal?.(),
-      getOnboardingManager: () => appContextMod.getOnboardingManager?.() || null,
+      showCycleCreationModal: () => appContextMod.getCycleApi?.()?.create,
+      getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
       getMiniCycleState: () => deps.core.AppState || null,
 
-      // For completeInitialSetup - use appContext getters (not window.*)
+      // For completeInitialSetup - use grouped APIs (not legacy getters)
       loadMiniCycle: () => appContextMod.getCycleApi?.()?.load,
-      updateReminderButtons: () => appContextMod.getUpdateReminderButtons?.(),
-      updateDueDateVisibility: () => appContextMod.getUpdateDueDateVisibility?.(),
-      checkOverdueTasks: () => appContextMod.getCheckOverdueTasks?.(),
-      organizeCompletedTasks: () => appContextMod.getOrganizeCompletedTasks?.(),
-      startReminders: () => appContextMod.getStartReminders?.()?.(),
-      updateThemeColor: () => appContextMod.getUpdateThemeColor?.()?.(),
+      updateReminderButtons: () => appContextMod.getReminderApi?.()?.updateButtons,
+      updateDueDateVisibility: () => appContextMod.getUiApi?.()?.updateDueDateVisibility,
+      checkOverdueTasks: () => appContextMod.getReminderApi?.()?.checkOverdue,
+      organizeCompletedTasks: () => appContextMod.getUiApi?.()?.organizeCompletedTasks,
+      startReminders: () => appContextMod.getReminderApi?.()?.start?.(),
+      updateThemeColor: () => appContextMod.getUiApi?.()?.updateThemeColor?.(),
       getElementById: (id) => document.getElementById(id),
       addBodyClass: (cls) => document.body.classList.add(cls),
       removeBodyClass: (cls) => document.body.classList.remove(cls)
@@ -320,7 +320,7 @@ export async function initAppState(deps, showNotification) {
     AppMeta: deps.core.AppMeta  // Use deps, not window.*
   });
 
-  // ✅ AppState accessible via deps.core.AppState and appContext.getAppState() - no window.* exposure
+  // ✅ AppState accessible via deps.core.AppState and appContext.state().AppState - no window.* exposure
   deps.core.AppState = AppState;
 
   // Initialize AppState
@@ -335,7 +335,7 @@ export async function initAppState(deps, showNotification) {
   console.log('✅ AppState added to appContext');
 
   // ========== Initialize data access functions ==========
-  // Must be after appContext so dataAccess.js can use getAppState()
+  // Must be after appContext so dataAccess.js can use state().AppState
   await initDataAccess(deps);
 
   // Update appContext with data functions (legacy individual values)
@@ -349,7 +349,8 @@ export async function initAppState(deps, showNotification) {
     AppGlobalState: deps.core.AppGlobalState,
     AppMeta: deps.core.AppMeta,  // Use deps, not window.*
     loadMiniCycleData,
-    autoSave
+    autoSave,
+    fixTaskValidationIssues: migrationMod.fixTaskValidationIssues
   });
   console.log('✅ stateApi registered in appContext');
 
@@ -556,7 +557,7 @@ async function runFallbackInitialSetup(deps) {
 
     if (!activeCycle || !cycles?.[activeCycle]) {
       console.log('🆕 No active cycle - showing cycle creation modal...');
-      appContextMod.getShowCycleCreationModal?.()?.();
+      appContextMod.getCycleApi?.()?.create?.();
       return;
     }
 

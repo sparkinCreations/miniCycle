@@ -37,13 +37,13 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     // Create mock dependencies
     function createMockDeps(overrides = {}) {
         return {
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({
                     settings: { completedTasksExpanded: false, showCompletedDropdown: true }
                 }),
                 update: () => {}
-            }),
+            },
             getElementById: (id) => document.getElementById(id),
             querySelector: (sel) => document.querySelector(sel),
             safeAddEventListener: (el, evt, fn) => el?.addEventListener(evt, fn),
@@ -196,7 +196,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         createTestDOM();
         let savedState = null;
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: {} }),
                 update: (fn) => {
@@ -204,7 +204,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
                     fn(state);
                     savedState = state;
                 }
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -231,10 +231,10 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('restoreState expands section when saved as expanded', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { completedTasksExpanded: true } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -249,10 +249,10 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('restoreState keeps section collapsed when saved as collapsed', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { completedTasksExpanded: false } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -267,7 +267,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('restoreState handles AppState not ready', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({ isReady: () => false })
+            AppState: { isReady: () => false }
         }));
         const manager = new CompletedTasksManager();
         // Should not throw
@@ -428,7 +428,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('isEnabled returns true when AppState has showCompletedDropdown true', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
             })
@@ -443,7 +443,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('isEnabled returns false when AppState has showCompletedDropdown false', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: false } })
             })
@@ -461,7 +461,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         toggle.checked = true;
 
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({ isReady: () => false })
+            AppState: { isReady: () => false }
         }));
         const manager = new CompletedTasksManager();
 
@@ -476,7 +476,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('handleMovement moves completed task when feature enabled', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
             })
@@ -498,7 +498,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('handleMovement moves uncompleted task back when feature enabled', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
             })
@@ -520,7 +520,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('handleMovement does nothing when feature disabled', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: false } })
             })
@@ -548,7 +548,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('organize moves all completed tasks to completed section', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
             })
@@ -576,7 +576,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
     await test('organize does nothing when feature disabled', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: false } })
             })

@@ -17,7 +17,7 @@ import { BOOT_TIMEOUTS } from '../core/constants.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.559';
+const APP_VERSION = '1.560';
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
@@ -259,9 +259,8 @@ async function runBootSequence() {
 
   await withTimeout(
     (async () => {
-      // Load app data
-      const { getFixTaskValidationIssues } = appContextMod;
-      getFixTaskValidationIssues()?.();
+      // Load app data - fix any task validation issues first
+      appContextMod.state?.()?.fixTaskValidationIssues?.();
       await deps.core.initializeAppWithAutoMigration({ forceMode: true });
 
       // Initialize UI (single entrypoint - all DOM/listeners/finalization)

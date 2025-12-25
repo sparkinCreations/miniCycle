@@ -47,9 +47,8 @@ export class RecurringPanelManager {
             calculateNextOccurrence: dependencies.calculateNextOccurrence || this.fallbackCalculateNext.bind(this),
 
             // State management (DI-pure, must be injected)
-            getAppState: dependencies.getAppState || null,
+            AppState: dependencies.AppState || null,
             updateAppState: dependencies.updateAppState || null,
-            isAppStateReady: dependencies.isAppStateReady || null,
             loadData: dependencies.loadData || null,
 
             // UI dependencies
@@ -285,9 +284,9 @@ export class RecurringPanelManager {
             if (removeBtn) {
                 event.stopPropagation();
                 const taskId = item.getAttribute("data-task-id");
-                if (taskId && this.deps.isAppStateReady()) {
+                if (taskId && this.deps.AppState?.isReady?.()) {
                     // Get template from recurringTemplates (not tasks array)
-                    const currentState = this.deps.getAppState();
+                    const currentState = this.deps.AppState;
                     const activeCycleId = currentState.appState?.activeCycleId;
                     const currentCycle = currentState.data?.cycles?.[activeCycleId];
                     const template = currentCycle?.recurringTemplates?.[taskId];
@@ -309,8 +308,8 @@ export class RecurringPanelManager {
             this.state.selectedTaskId = taskId;
 
             // Get fresh data from AppState - ONLY use recurringTemplates
-            if (this.deps.isAppStateReady()) {
-                const currentState = this.deps.getAppState();
+            if (this.deps.AppState?.isReady?.()) {
+                const currentState = this.deps.AppState;
                 const activeCycleId = currentState.appState?.activeCycleId;
                 const currentCycle = currentState.data?.cycles?.[activeCycleId];
 
@@ -1091,7 +1090,7 @@ export class RecurringPanelManager {
             // ✅ Wait for core systems to be ready (AppState + data)
             await this.deps.appInit?.waitForCore();
 
-            const state = this.deps.getAppState();
+            const state = this.deps.AppState;
             const activeCycleId = state.appState?.activeCycleId;
 
             if (!activeCycleId) {
@@ -1222,7 +1221,7 @@ export class RecurringPanelManager {
 
                     // Update preview with new settings
                     const taskId = firstCheckedTask.dataset.taskId;
-                    const state = this.deps.getAppState();
+                    const state = this.deps.AppState;
                     const activeCycleId = state.appState?.activeCycleId;
                     const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
 
@@ -1533,7 +1532,7 @@ export class RecurringPanelManager {
             // ✅ Wait for core systems to be ready (AppState + data)
             await this.deps.appInit?.waitForCore();
 
-            const state = this.deps.getAppState();
+            const state = this.deps.AppState;
             const activeCycleId = state.appState?.activeCycleId;
 
             if (!activeCycleId) {
@@ -1670,13 +1669,13 @@ export class RecurringPanelManager {
 
                 try {
                     // ✅ Use AppState instead of direct localStorage manipulation
-                    if (!this.deps.isAppStateReady()) {
+                    if (!this.deps.AppState?.isReady?.()) {
                         console.error('❌ AppState not ready for task removal');
                         this.deps.showNotification('App not ready, please try again', 'error');
                         return;
                     }
 
-                    const state = this.deps.getAppState();
+                    const state = this.deps.AppState;
                     const activeCycleId = state.appState?.activeCycleId;
 
                     if (!activeCycleId) {
@@ -1721,7 +1720,7 @@ export class RecurringPanelManager {
                     this.updateRecurringPanelButtonVisibility();
 
                     // ✅ Check remaining templates via AppState
-                    const updatedState = this.deps.getAppState();
+                    const updatedState = this.deps.AppState;
                     const updatedCycle = updatedState.data?.cycles?.[activeCycleId];
                     const remaining = Object.values(updatedCycle?.recurringTemplates || {});
                     if (remaining.length === 0) {
@@ -1823,12 +1822,12 @@ export class RecurringPanelManager {
             summaryContainer.classList.remove("hidden");
 
             // Get recurring settings
-            if (!this.deps.isAppStateReady()) {
+            if (!this.deps.AppState?.isReady?.()) {
                 console.warn('⚠️ AppState not ready for showTaskSummaryPreview');
                 return;
             }
 
-            const state = this.deps.getAppState();
+            const state = this.deps.AppState;
             const activeCycleId = state.appState?.activeCycleId;
 
             if (!activeCycleId) {
@@ -2233,13 +2232,13 @@ export class RecurringPanelManager {
 
             try {
                 // ✅ Use AppState instead of loadData
-                if (!this.deps.isAppStateReady()) {
+                if (!this.deps.AppState?.isReady?.()) {
                     console.warn('⚠️ AppState not ready for button visibility check');
                     panelButton.classList.add("hidden"); // Hide by default
                     return;
                 }
 
-                const state = this.deps.getAppState();
+                const state = this.deps.AppState;
                 const activeCycleId = state.appState?.activeCycleId;
                 const currentCycle = state.data?.cycles?.[activeCycleId];
 
@@ -2288,7 +2287,7 @@ export class RecurringPanelManager {
             const alwaysShow = checkbox.checked;
 
             // ✅ Save via AppState
-            if (!this.deps.isAppStateReady || !this.deps.isAppStateReady()) {
+            if (!this.deps.AppState?.isReady?.()) {
                 console.warn('⚠️ AppState not ready for saving always show recurring setting');
                 return;
             }
@@ -2323,12 +2322,12 @@ export class RecurringPanelManager {
         console.log('📥 Loading always show recurring setting...');
 
         try {
-            if (!this.deps.isAppStateReady || !this.deps.isAppStateReady()) {
+            if (!this.deps.AppState?.isReady?.()) {
                 console.warn('⚠️ AppState not ready for loading always show recurring setting');
                 return;
             }
 
-            const state = this.deps.getAppState();
+            const state = this.deps.AppState;
             const isEnabled = state.settings?.alwaysShowRecurring || false;
 
             console.log('📊 Loaded always show recurring setting from AppState:', isEnabled);
@@ -2431,8 +2430,8 @@ export class RecurringPanelManager {
                 }
 
                 // Show task preview
-                if (this.deps.isAppStateReady()) {
-                    const state = this.deps.getAppState();
+                if (this.deps.AppState?.isReady?.()) {
+                    const state = this.deps.AppState;
                     const activeCycleId = state.appState?.activeCycleId;
                     const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskIdToPreselect);
 

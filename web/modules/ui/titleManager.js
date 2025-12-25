@@ -15,11 +15,11 @@ import { createDIModule, optional } from '../core/diBase.js';
 
 const di = createDIModule('TitleManager', {
     GlobalUtils: optional(null),
-    getAppState: optional(null),
-    getLoadMiniCycleData: optional(null),
-    getShowNotification: optional(null),
-    getUpdateMainMenuHeader: optional(null),
-    getUpdateUndoRedoButtons: optional(null)
+    AppState: optional(null),
+    loadMiniCycleData: optional(null),
+    showNotification: optional(null),
+    updateMainMenuHeader: optional(null),
+    updateUndoRedoButtons: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -45,9 +45,9 @@ async function handleMiniCycleTitleBlur() {
     const titleElement = document.getElementById("mini-cycle-title");
     if (!titleElement) return;
 
-    const AppState = deps.getAppState?.();
-    const loadMiniCycleData = deps.getLoadMiniCycleData?.();
-    const showNotification = deps.getShowNotification?.();
+    const AppState = deps.AppState;
+    const loadMiniCycleData = deps.loadMiniCycleData;
+    const showNotification = deps.showNotification;
     const GlobalUtils = deps.GlobalUtils;
 
     let newTitle = GlobalUtils?.sanitizeInput?.(titleElement.textContent.trim()) || titleElement.textContent.trim();
@@ -103,8 +103,8 @@ async function handleMiniCycleTitleBlur() {
         }
 
         // Refresh UI
-        deps.getUpdateMainMenuHeader?.()?.();
-        deps.getUpdateUndoRedoButtons?.()?.();
+        deps.updateMainMenuHeader?.();
+        deps.updateUndoRedoButtons?.();
     }
 }
 
@@ -144,14 +144,14 @@ export function setupMiniCycleTitleListener() {
  * @returns {Object} Module exports for registration
  */
 export function initTitleManager(dependencies = {}) {
-    // Adapt moduleLoader dependencies to getter pattern expected by this module
+    // Pass dependencies directly (no adapter needed with new pattern)
     const adaptedDeps = {
         GlobalUtils: dependencies.GlobalUtils,
-        getAppState: () => dependencies.AppState,
-        getLoadMiniCycleData: () => dependencies.loadMiniCycleData,
-        getShowNotification: () => dependencies.showNotification,
-        getUpdateMainMenuHeader: () => dependencies.updateMainMenuHeader,
-        getUpdateUndoRedoButtons: () => dependencies.updateUndoRedoButtons
+        AppState: dependencies.AppState,
+        loadMiniCycleData: dependencies.loadMiniCycleData,
+        showNotification: dependencies.showNotification,
+        updateMainMenuHeader: dependencies.updateMainMenuHeader,
+        updateUndoRedoButtons: dependencies.updateUndoRedoButtons
     };
 
     // Set dependencies

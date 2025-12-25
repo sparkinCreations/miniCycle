@@ -8,10 +8,9 @@
  * modules can import from appContext.
  *
  * ARCHITECTURE (December 2025):
- * - Primary: Grouped APIs - state(), task(), cycle(), ui(), undo(), reminder(), recurring()
- * - Legacy: Individual getters (deprecated, maintained for backwards compatibility)
+ * Grouped APIs - state(), task(), cycle(), ui(), undo(), reminder(), recurring(), utils()
  *
- * USAGE (PREFERRED - Grouped APIs):
+ * USAGE:
  * ```javascript
  * import { state, task, ui } from '../core/appContext.js';
  *
@@ -26,13 +25,7 @@
  * ui().showNotification('Success!', 'success');
  * ```
  *
- * USAGE (LEGACY - Individual getters):
- * ```javascript
- * import { getAppState, getShowNotification } from '../core/appContext.js';
- * const state = getAppState()?.get();
- * ```
- *
- * @version 2.0.0 - Simplified with grouped APIs
+ * @version 2.1.0 - Removed legacy getters, grouped APIs only
  */
 
 // ============================================================================
@@ -377,6 +370,21 @@ export function setContextValue(key, value) {
 }
 
 /**
+ * Get a single context value
+ * @param {string} key - Context key
+ * @returns {*} The value or undefined
+ */
+export function getContextValue(key) {
+    if (key in apis) {
+        return apis[key];
+    }
+    if (key in legacy) {
+        return legacy[key];
+    }
+    return undefined;
+}
+
+/**
  * Check if context is initialized
  * @returns {boolean}
  */
@@ -405,131 +413,6 @@ export function validateAllApisRegistered() {
     console.log('✅ appContext validation passed - all APIs registered');
     return true;
 }
-
-// ============================================================================
-// LEGACY GETTERS (Deprecated - use grouped APIs instead)
-// ============================================================================
-
-// Core
-export function getAppState() { return legacy.AppState; }
-export function getAppInit() { return legacy.appInit; }
-export function getAppGlobalState() { return legacy.AppGlobalState; }
-export function getFeatureFlags() { return legacy.FeatureFlags; }
-export function getLoadMiniCycleData() { return legacy.loadMiniCycleData; }
-export function getLoadMiniCycle() { return legacy.loadMiniCycleData; }
-export function getAutoSave() { return legacy.autoSave; }
-export function getFixTaskValidationIssues() { return legacy.fixTaskValidationIssues; }
-
-// Managers
-export function getBackupManager() { return legacy.BackupManager; }
-export function getRoutineManager() { return legacy.RoutineManager; }
-export function getModeManager() { return legacy.ModeManager; }
-export function getMenuManager() { return legacy.MenuManager; }
-export function getSettingsManager() { return legacy.SettingsManager; }
-export function getErrorHandler() { return legacy.ErrorHandler; }
-export function getReminderManager() { return legacy.reminderManager; }
-export function getGamesManager() { return legacy.gamesManager; }
-export function getOnboardingManager() { return legacy.onboardingManager; }
-export function getOnboardingManagerClass() { return legacy.OnboardingManager; }
-export function getDeviceDetectionManager() { return legacy.deviceDetectionManager; }
-export function getDeviceDetectionManagerClass() { return legacy.DeviceDetectionManager; }
-export function getModalManager() { return legacy.modalManager; }
-export function getModalManagerClass() { return legacy.ModalManager; }
-export function getRoutineSwitcher() { return legacy.routineSwitcher; }
-export function getRoutineSwitcherClass() { return legacy.RoutineSwitcher; }
-export function getDragDropManager() { return legacy.DragDropManager; }
-
-// UI Functions
-export function getCompleteInitialSetup() { return legacy.completeInitialSetup; }
-export function getShowCycleCreationModal() { return legacy.showCycleCreationModal; }
-export function getHideMainMenu() { return legacy.hideMainMenu; }
-export function getUpdateMainMenuHeader() { return legacy.updateMainMenuHeader; }
-export function getCloseAllModals() { return legacy.closeAllModals; }
-export function getInitModalManager() { return legacy.initModalManager; }
-export function getShowLoader() { return legacy.showLoader; }
-export function getHideLoader() { return legacy.hideLoader; }
-export function getWithLoader() { return legacy.withLoader; }
-
-// Notifications
-export function getNotifications() { return legacy.notifications; }
-export function getShowNotification() { return legacy.showNotification; }
-export function getShowConfirmationModal() { return legacy.showConfirmationModal; }
-export function getShowPromptModal() { return legacy.showPromptModal; }
-export function getResetNotificationPosition() { return legacy.resetNotificationPosition; }
-
-// Utilities
-export function getGlobalUtils() { return legacy.GlobalUtils; }
-export function getDataValidator() { return legacy.DataValidator; }
-export function getSanitizeInput() { return legacy.sanitizeInput; }
-export function getEscapeHtml() { return legacy.escapeHtml; }
-export function getGenerateId() { return legacy.generateId; }
-export function getGenerateHashId() { return legacy.generateHashId; }
-export function getSafeAddEventListener() { return legacy.safeAddEventListener; }
-export function getSafeAddEventListenerById() { return legacy.safeAddEventListenerById; }
-export function getIsTouchDevice() { return legacy.isTouchDevice; }
-
-// Undo/Redo
-export function getPerformStateBasedUndo() { return legacy.performStateBasedUndo; }
-export function getPerformStateBasedRedo() { return legacy.performStateBasedRedo; }
-export function getUpdateUndoRedoButtons() { return legacy.updateUndoRedoButtons; }
-export function getCaptureStateSnapshot() { return legacy.captureStateSnapshot; }
-
-// Reminders
-export function getUpdateReminderButtons() { return legacy.updateReminderButtons; }
-export function getStartReminders() { return legacy.startReminders; }
-export function getRemindOverdueTasks() { return legacy.remindOverdueTasks; }
-export function getLoadRemindersSettings() { return legacy.loadRemindersSettings; }
-
-// Recurring
-export function getRecurringPanel() { return legacy.recurringPanel; }
-export function getOpenRecurringSettingsPanelForTask() { return legacy.openRecurringSettingsPanelForTask; }
-
-// Mode
-export function getInitializeModeSelector() { return legacy.initializeModeSelector; }
-
-// Task
-export function getUpdateMoveArrowsVisibility() { return legacy.updateMoveArrowsVisibility; }
-export function getAddTask() { return legacy.addTask; }
-export function getValidateAndSanitizeTaskInput() { return legacy.validateAndSanitizeTaskInput; }
-export function getLoadTaskContext() { return legacy.loadTaskContext; }
-export function getCreateTaskDOMElements() { return legacy.createTaskDOMElements; }
-export function getCreateOrUpdateTaskData() { return legacy.createOrUpdateTaskData; }
-export function getHandleCompleteAllTasks() { return legacy.handleCompleteAllTasks; }
-export function getExtractTaskDataFromDOM() { return legacy.extractTaskDataFromDOM; }
-export function getInitCompletedTasksSection() { return legacy.initCompletedTasksSection; }
-export function getTaskCoreClass() { return legacy.TaskCore; }
-export function getTaskDOMManager() { return legacy.TaskDOMManager; }
-export function getTaskRenderer() { return legacy.TaskRenderer; }
-export function getTaskEvents() { return legacy.TaskEvents; }
-export function getTaskUtils() { return legacy.TaskUtils; }
-export function getTaskOptionsCustomizer() { return legacy.TaskOptionsCustomizer; }
-export function getHandleTaskCompletionChange() { return legacy.handleTaskCompletionChange; }
-export function getSaveCurrentTaskOrder() { return legacy.saveCurrentTaskOrder; }
-export function getResetTasks() { return legacy.resetTasks; }
-
-// Cycle
-export function getSwitchMiniCycle() { return legacy.switchMiniCycle; }
-export function getRenameMiniCycle() { return legacy.renameMiniCycle; }
-export function getDeleteMiniCycle() { return legacy.deleteMiniCycle; }
-export function getConfirmMiniCycle() { return legacy.confirmMiniCycle; }
-export function getHideSwitchMiniCycleModal() { return legacy.hideSwitchMiniCycleModal; }
-export function getUpdatePreview() { return legacy.updatePreview; }
-export function getLoadMiniCycleList() { return legacy.loadMiniCycleList; }
-export function getSetupModalClickOutside() { return legacy.setupModalClickOutside; }
-
-// Features
-export function getUpdateDueDateVisibility() { return legacy.updateDueDateVisibility; }
-export function getCheckOverdueTasks() { return legacy.checkOverdueTasks; }
-export function getOrganizeCompletedTasks() { return legacy.organizeCompletedTasks; }
-export function getUpdateThemeColor() { return legacy.updateThemeColor; }
-export function getPullToRefresh() { return legacy.PullToRefresh; }
-export function getMiniCycleReminders() { return legacy.MiniCycleReminders; }
-export function getMiniCycleNotifications() { return legacy.MiniCycleNotifications; }
-export function getEducationalTipManager() { return legacy.EducationalTipManager; }
-
-// Testing
-export function getConsoleCapture() { return legacy.ConsoleCapture; }
-export function getAppendToTestResults() { return legacy.appendToTestResults; }
 
 // ============================================================================
 // CONVENIENCE HELPERS
@@ -564,6 +447,6 @@ export function createLazyDeps() {
 }
 
 // Version constant for cache validation (like APPINIT_VERSION pattern)
-export const APPCONTEXT_VERSION = '1.559';
+export const APPCONTEXT_VERSION = '1.560';
 
 console.log(`📦 appContext module loaded (v${APPCONTEXT_VERSION} - grouped APIs)`);
