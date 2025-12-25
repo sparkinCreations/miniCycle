@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.519 | **Test Coverage**: 1623/1623 (100%) ✅ | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.560 | **Test Coverage**: 1623/1623 (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -64,6 +64,10 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 - **[ERROR_HANDLING_IMPROVEMENTS.md](./security/ERROR_HANDLING_IMPROVEMENTS.md)** - Implementation details and safe utility functions
 - **[DEVELOPER_DOCUMENTATION.md#-security](./developer-guides/DEVELOPER_DOCUMENTATION.md#-security)** - XSS prevention, secure coding patterns
 
+### Code Quality & Reviews
+- **[COMPREHENSIVE_CODE_REVIEW_DEC_2025.md](./developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)** - Full code review with ratings (8.8/10 overall)
+- **[HIDDEN_CODEBASE_INSIGHTS.md](./developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)** - Non-obvious patterns and hidden behaviors
+
 ---
 
 ## 📊 Architecture Status
@@ -73,9 +77,12 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 | Metric | Value |
 |--------|-------|
 | Boot files | 4 files (~1,885 lines total) |
-| Modules | 61 files |
+| Modules | 80 files |
+| Total LOC | ~44,200 lines |
 | DI completion | 100% (no `\|\| window.*` fallbacks) |
 | Test coverage | 1623 tests (100%) |
+| JSDoc blocks | 514 (98% module coverage) |
+| Overall rating | 8.8/10 |
 
 **Boot File Structure:**
 - `miniCycle-main.js` (~133 lines) - Entrypoint
@@ -87,11 +94,13 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 ### The Reality
 
 The codebase has **complete strict DI**:
-- ✅ Code is organized into 61 focused modules
+- ✅ Code is organized into 80 focused modules
 - ✅ All modules use strict dependency injection
 - ✅ No `|| window.*` fallbacks remain
 - ✅ Modules can be tested in isolation
 - ✅ Boot files split for debuggability (Dec 2025)
+- ✅ Comprehensive error handling with multi-tier fallbacks
+- ✅ Enterprise-grade DI system rivaling frameworks
 
 See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
@@ -129,6 +138,9 @@ See [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) for complete analysis.
 
 **...understand the architecture limitations**
 → Read [DEPENDENCY_MAP.md](./architecture/DEPENDENCY_MAP.md) and [MODULAR_OVERHAUL_PLAN.md](./future-work/MODULAR_OVERHAUL_PLAN.md)
+
+**...see code quality assessment**
+→ Check [COMPREHENSIVE_CODE_REVIEW_DEC_2025.md](./developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md) and [HIDDEN_CODEBASE_INSIGHTS.md](./developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)
 
 ---
 

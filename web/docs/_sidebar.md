@@ -32,6 +32,7 @@
   * [Debug Mode](developer-guides/DEBUG_MODE.md)
   * [Claude AI Guide](developer-guides/CLAUDE.md)
   * [Code Review (Dec 2025)](developer-guides/COMPREHENSIVE_CODE_REVIEW_DEC_2025.md)
+  * [Hidden Codebase Insights](developer-guides/HIDDEN_CODEBASE_INSIGHTS.md)
   * [Dev Server](DEV_SERVER.md)
 
 * **Architecture**
