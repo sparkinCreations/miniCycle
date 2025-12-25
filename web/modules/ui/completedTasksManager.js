@@ -17,7 +17,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 // ============================================================================
 
 const di = createDIModule('CompletedTasksManager', {
-    getAppState: optional(null),
+    AppState: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     safeAddEventListener: optional((el, evt, fn) => el?.addEventListener(evt, fn))
@@ -25,7 +25,7 @@ const di = createDIModule('CompletedTasksManager', {
 
 /**
  * Set dependencies for CompletedTasksManager (call before creating instance)
- * @param {Object} dependencies - { getAppState, getElementById, querySelector, safeAddEventListener }
+ * @param {Object} dependencies - { AppState, getElementById, querySelector, safeAddEventListener }
  */
 export function setCompletedTasksManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -83,7 +83,7 @@ export class CompletedTasksManager {
         toggleIcon.textContent = isVisible ? '▲' : '▼';
 
         // Save preference to AppState
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         if (AppState?.isReady?.()) {
             AppState.update(state => {
                 if (!state.settings) state.settings = {};
@@ -98,7 +98,7 @@ export class CompletedTasksManager {
      * Restore completed tasks section state from AppState
      */
     restoreState() {
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         if (!AppState?.isReady?.()) return;
 
         const state = AppState.get();
@@ -206,7 +206,7 @@ export class CompletedTasksManager {
      */
     isEnabled() {
         // Check AppState first
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         if (AppState?.isReady?.()) {
             const state = AppState.get();
             return state?.settings?.showCompletedDropdown || false;
@@ -257,9 +257,9 @@ console.log('🎯 CompletedTasksManager module loaded (DI-pure, no window.* expo
  * @returns {CompletedTasksManager} Configured instance
  */
 export async function initCompletedTasksManager(dependencies = {}) {
-    // Adapt moduleLoader dependencies to getter pattern expected by this module
+    // Pass dependencies directly (no adapter needed with new pattern)
     const adaptedDeps = {
-        getAppState: () => dependencies.AppState,
+        AppState: dependencies.AppState,
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
         querySelectorAll: (sel) => document.querySelectorAll(sel),

@@ -37,15 +37,15 @@
 
 let _appContextMod = null;
 
-// Getters that use the injected appContextMod
-const getAppState = () => _appContextMod?.getAppState?.() || null;
-const getShowNotification = () => _appContextMod?.getShowNotification?.() || null;
-const getStateApi = () => _appContextMod?.getStateApi?.() || null;
-const getUndoApi = () => _appContextMod?.getUndoApi?.() || null;
-const getUiApi = () => _appContextMod?.getUiApi?.() || null;
-const getCycleApi = () => _appContextMod?.getCycleApi?.() || null;
-const getReminderApi = () => _appContextMod?.getReminderApi?.() || null;
-const getDeviceDetectionManager = () => _appContextMod?.getDeviceDetectionManager?.() || null;
+// Getters that use the injected appContextMod (using grouped APIs)
+const getAppState = () => _appContextMod?.state?.()?.AppState || null;
+const getShowNotification = () => _appContextMod?.ui?.()?.showNotification || null;
+const getStateApi = () => _appContextMod?.state?.() || null;
+const getUndoApi = () => _appContextMod?.undo?.() || null;
+const getUiApi = () => _appContextMod?.ui?.() || null;
+const getCycleApi = () => _appContextMod?.cycle?.() || null;
+const getReminderApi = () => _appContextMod?.reminder?.() || null;
+const getDeviceDetectionManager = () => _appContextMod?.ui?.()?.deviceDetectionManager || null;
 
 // ============================================================================
 // GLOBAL EVENT LISTENERS
@@ -177,7 +177,6 @@ export function attachMenuButtonListener(GlobalUtils, menuButton, menu) {
       // Sync settings before showing menu
       try {
         getUiApi()?.syncCurrentSettingsToStorage?.();
-        getCycleApi()?.saveToggleAutoReset?.();
       } catch (e) {
         // APIs may not be ready - that's ok
       }
@@ -673,12 +672,12 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   await finalizeUI({
     GlobalUtils,
     deps,
-    getHandleCompleteAllTasks: appContextMod.getHandleCompleteAllTasks,
-    getInitializeModeSelector: appContextMod.getInitializeModeSelector,
-    getUpdateMoveArrowsVisibility: appContextMod.getUpdateMoveArrowsVisibility,
-    getInitCompletedTasksSection: appContextMod.getInitCompletedTasksSection,
-    getRecurringPanel: appContextMod.getRecurringPanel,
-    getDeviceDetectionManager: appContextMod.getDeviceDetectionManager
+    getHandleCompleteAllTasks: () => appContextMod.getTaskApi?.()?.handleCompleteAll,
+    getInitializeModeSelector: () => appContextMod.getCycleApi?.()?.initializeModeSelector,
+    getUpdateMoveArrowsVisibility: () => appContextMod.getTaskApi?.()?.updateMoveArrows,
+    getInitCompletedTasksSection: () => appContextMod.getUiApi?.()?.initCompletedTasksSection,
+    getRecurringPanel: () => appContextMod.getRecurringApi?.()?.panel,
+    getDeviceDetectionManager: () => appContextMod.getUiApi?.()?.deviceDetectionManager
   });
 
   // DOM elements for listeners

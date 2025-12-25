@@ -289,7 +289,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/settingsManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: [],
+        provides: ['syncCurrentSettingsToStorage'],
         provideInstance: 'settingsManager',
         api: 'ui',
         after: ['menuManager', 'themeManager']

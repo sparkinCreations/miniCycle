@@ -89,21 +89,13 @@ export async function initializeRecurringModules(options = {}) {
         console.log('🔧 Configuring recurringCore dependencies...');
 
         recurringCore.setRecurringCoreDependencies({
-            // State management (required) - DI-pure
-            getAppState: () => {
-                if (!deps.AppState) {
-                    throw new Error('AppState not available');
-                }
-                return deps.AppState.get();
-            },
+            // State management (required) - DI-pure (pass AppState directly)
+            AppState: deps.AppState,
             updateAppState: (updateFn, immediate = false) => {
                 if (!deps.AppState) {
                     throw new Error('AppState not available');
                 }
                 return deps.AppState.update(updateFn, immediate);
-            },
-            isAppStateReady: () => {
-                return deps.AppState && deps.AppState.isReady();
             },
 
             // Data operations (legacy - for backwards compatibility)
@@ -175,10 +167,9 @@ export async function initializeRecurringModules(options = {}) {
             formatNextOccurrence: recurringCore.formatNextOccurrence,
             calculateNextOccurrence: recurringCore.calculateNextOccurrence,
 
-            // State management - DI-pure
-            getAppState: () => deps.AppState?.get(),
+            // State management - DI-pure (pass AppState directly)
+            AppState: deps.AppState,
             updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
-            isAppStateReady: () => deps.AppState?.isReady(),
             loadData: () => deps.loadMiniCycleData?.(),
 
             // UI dependencies - DI-pure

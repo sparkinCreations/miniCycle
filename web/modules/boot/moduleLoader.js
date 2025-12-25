@@ -44,8 +44,10 @@ let _manifestsLoaded = false;
 let _appContextModule = null;
 let _withV = null;
 let registerApi = () => { console.warn('⚠️ registerApi not loaded yet'); };
-let getCompleteInitialSetup = () => null;
-let getHideMainMenu = () => null;
+
+// Use grouped APIs instead of legacy getters
+const getCompleteInitialSetup = () => _appContextModule?.getContextValue?.('completeInitialSetup') || null;
+const getHideMainMenu = () => _appContextModule?.getUiApi?.()?.hideMainMenu || null;
 
 async function loadAppContext(withV) {
     // Store withV for future use if provided
@@ -55,8 +57,6 @@ async function loadAppContext(withV) {
         // Use versioned import to match coreBoot's appContext instance
         _appContextModule = await import(_withV('../core/appContext.js'));
         registerApi = _appContextModule.registerApi;
-        getCompleteInitialSetup = _appContextModule.getCompleteInitialSetup || (() => null);
-        getHideMainMenu = _appContextModule.getHideMainMenu || (() => null);
         console.log('✅ ModuleLoader: appContext loaded (versioned)');
     }
     return _appContextModule;
@@ -725,8 +725,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
 
-        // State access - returns AppState object (not the state data)
-        getAppState: () => deps.core?.AppState
     };
 
     // Add required dependencies

@@ -293,7 +293,14 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     hideMainMenu: deps.ui?.hideMainMenu,
     updateMainMenuHeader: deps.ui?.updateMainMenuHeader,
     closeAllModals: deps.ui?.closeAllModals,
-    resetNotificationPosition: deps.utils?.resetNotificationPosition
+    resetNotificationPosition: deps.utils?.resetNotificationPosition,
+    syncCurrentSettingsToStorage: deps.ui?.syncCurrentSettingsToStorage,
+    // Additional UI functions
+    onboardingManager: deps.ui?.onboardingManager,
+    deviceDetectionManager: deps.ui?.deviceDetectionManager,
+    updateDueDateVisibility: deps.features?.updateDueDateVisibility,
+    organizeCompletedTasks: deps.features?.organizeCompletedTasks,
+    updateThemeColor: deps.features?.updateThemeColor
   };
   appContextMod.setContextValue('uiApi', uiApiObj);
   appContextMod.registerApi('ui', uiApiObj);
@@ -315,7 +322,8 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     start: deps.features?.startReminders,
     stop: deps.features?.stopReminders,
     updateButtons: deps.features?.updateReminderButtons,
-    loadSettings: deps.features?.loadRemindersSettings
+    loadSettings: deps.features?.loadRemindersSettings,
+    checkOverdue: deps.features?.checkOverdueTasks
   };
   appContextMod.setContextValue('reminderApi', reminderApiObj);
   appContextMod.registerApi('reminder', reminderApiObj);

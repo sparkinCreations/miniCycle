@@ -29,9 +29,8 @@ import {
 
 const di = createDIModule('RecurringCore', {
     appInit: optional(null),
-    getAppState: optional(null),
+    AppState: optional(null),
     updateAppState: optional(null),
-    isAppStateReady: optional(null),
     loadData: optional(null),
     showNotification: optional(null),
     showNotificationWithTip: optional(null),
@@ -72,7 +71,8 @@ export function setRecurringCoreDependencies(overrides = {}) {
  * @throws {Error} If dependency is missing
  */
 function assertInjected(name, value) {
-    if (typeof value !== 'function') {
+    // Check for existence - allows functions, objects, or other truthy values
+    if (value == null) {
         throw new Error(`recurringCore: missing required dependency '${name}'. Call setRecurringCoreDependencies() first.`);
     }
 }
@@ -1209,9 +1209,9 @@ export async function catchUpMissedRecurringTasks() {
     await Deps.appInit?.waitForCore();
 
     // ✅ Read from AppState
-    assertInjected('getAppState', Deps.getAppState);
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
+    assertInjected('AppState', Deps.AppState);
+    const state = Deps.AppState?.get();
+    const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {
         console.warn('⚠️ No active cycle ID found for catch-up');
@@ -1368,10 +1368,10 @@ export async function watchRecurringTasks() {
     await Deps.appInit?.waitForCore();
 
     // ✅ Read from AppState
-    assertInjected('getAppState', Deps.getAppState);
+    assertInjected('AppState', Deps.AppState);
 
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
+    const state = Deps.AppState?.get();
+    const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {
         console.warn('⚠️ No active cycle ID found for recurring task watch');
@@ -1501,8 +1501,8 @@ export async function setupRecurringWatcher() {
     console.log('✅ Core systems ready - setting up recurring watcher');
 
     // ✅ Read from AppState
-    assertInjected('getAppState', Deps.getAppState);
-    const state = Deps.getAppState();
+    assertInjected('AppState', Deps.AppState);
+    const state = Deps.AppState?.get();
 
     // Handle case where state isn't loaded yet
     if (!state) {
@@ -1720,16 +1720,15 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
 export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
     assertInjected('querySelector', Deps.querySelector);
     assertInjected('updateAppState', Deps.updateAppState);
-    assertInjected('getAppState', Deps.getAppState);
-    assertInjected('isAppStateReady', Deps.isAppStateReady);
+    assertInjected('AppState', Deps.AppState);
 
-    if (!Deps.isAppStateReady()) {
+    if (!Deps.AppState?.isReady?.()) {
         console.warn('⚠️ AppState not ready for handleRecurringTaskDeactivation');
         return;
     }
 
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
+    const state = Deps.AppState?.get();
+    const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for handleRecurringTaskDeactivation');
@@ -1819,17 +1818,16 @@ export function handleRecurringTaskDeactivation(task, taskContext, assignedTaskI
  */
 export function applyRecurringToTaskSchema25(taskId, newSettings) {
     // ✅ Use AppState instead of direct parameter passing
-    assertInjected('isAppStateReady', Deps.isAppStateReady);
-    assertInjected('getAppState', Deps.getAppState);
+    assertInjected('AppState', Deps.AppState);
     assertInjected('updateAppState', Deps.updateAppState);
 
-    if (!Deps.isAppStateReady()) {
+    if (!Deps.AppState?.isReady?.()) {
         console.warn('⚠️ AppState not ready for applyRecurringToTaskSchema25');
         return;
     }
 
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
+    const state = Deps.AppState?.get();
+    const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
@@ -1926,16 +1924,15 @@ export function deleteRecurringTemplate(taskId) {
     console.log('🗑️ Deleting recurring template (AppState-based)...');
 
     assertInjected('updateAppState', Deps.updateAppState);
-    assertInjected('getAppState', Deps.getAppState);
-    assertInjected('isAppStateReady', Deps.isAppStateReady);
+    assertInjected('AppState', Deps.AppState);
 
-    if (!Deps.isAppStateReady()) {
+    if (!Deps.AppState?.isReady?.()) {
         console.warn('⚠️ AppState not ready for deleteRecurringTemplate');
         return;
     }
 
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
+    const state = Deps.AppState?.get();
+    const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for deleteRecurringTemplate');
@@ -2047,16 +2044,15 @@ export function removeRecurringTasksFromCycle(taskElements, cycleData) {
 export function handleRecurringTasksAfterReset() {
     console.log('🔄 Handling recurring tasks after reset (AppState-based)...');
 
-    assertInjected('getAppState', Deps.getAppState);
-    assertInjected('isAppStateReady', Deps.isAppStateReady);
+    assertInjected('AppState', Deps.AppState);
 
-    if (!Deps.isAppStateReady()) {
+    if (!Deps.AppState?.isReady?.()) {
         console.warn('⚠️ AppState not ready for handleRecurringTasksAfterReset');
         return;
     }
 
-    const state = Deps.getAppState();
-    const activeCycleId = state.appState?.activeCycleId;
+    const state = Deps.AppState?.get();
+    const activeCycleId = state?.appState?.activeCycleId;
 
     if (!activeCycleId) {
         console.error('❌ No active cycle found for handleRecurringTasksAfterReset');

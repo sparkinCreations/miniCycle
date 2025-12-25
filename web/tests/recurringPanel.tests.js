@@ -98,7 +98,7 @@ export function runRecurringPanelTests(resultsDiv) {
     test('creates instance with dependencies', () => {
         const mockDeps = {
             showNotification: (msg) => msg,
-            getAppState: () => ({ data: {}, appState: {} })
+            AppState: { data: {}, appState: {} }
         };
 
         const panel = new RecurringPanelManager(mockDeps);
@@ -263,7 +263,7 @@ export function runRecurringPanelTests(resultsDiv) {
         }
 
         const panel = new RecurringPanelManager({
-            getAppState: () => ({
+            AppState: {
                 data: { cycles: {} },
                 appState: { activeCycleId: 'cycle-1' }
             }),
@@ -286,7 +286,7 @@ export function runRecurringPanelTests(resultsDiv) {
 
         const panel = new RecurringPanelManager({
             isAppStateReady: () => true,
-            getAppState: () => ({
+            AppState: {
                 data: { cycles: {} },
                 appState: { activeCycleId: 'cycle-1' }
             }),
@@ -735,7 +735,7 @@ export function runRecurringPanelTests(resultsDiv) {
                 return null;
             },
             isAppStateReady: () => true,
-            getAppState: () => ({
+            AppState: {
                 data: {
                     cycles: {
                         'cycle-1': { recurringTemplates: {} }
@@ -769,7 +769,7 @@ export function runRecurringPanelTests(resultsDiv) {
                 return null;
             },
             isAppStateReady: () => true,
-            getAppState: () => ({
+            AppState: {
                 data: {
                     cycles: {
                         'cycle-1': {
@@ -958,7 +958,7 @@ export function runRecurringPanelTests(resultsDiv) {
         }
 
         const panel = new RecurringPanelManager({
-            getAppState: () => ({
+            AppState: {
                 data: { cycles: {} },
                 appState: { activeCycleId: 'cycle-1' }
             }),
@@ -977,7 +977,7 @@ export function runRecurringPanelTests(resultsDiv) {
     test('handles missing active cycle in updateRecurringPanel', () => {
         const panel = new RecurringPanelManager({
             isAppStateReady: () => true,
-            getAppState: () => ({
+            AppState: {
                 data: { cycles: {} },
                 appState: { activeCycleId: null }
             }),
@@ -1043,7 +1043,7 @@ export function runRecurringPanelTests(resultsDiv) {
         const panel = new RecurringPanelManager({
             getElementById: (id) => mockElements[id] || null,
             isAppStateReady: () => true,
-            getAppState: () => mockState,
+            AppState: mockState,
             buildRecurringSummary: () => 'Daily',
             formatNextOccurrence: () => 'Tomorrow'
         });
@@ -1102,7 +1102,7 @@ export function runRecurringPanelTests(resultsDiv) {
         const panel = new RecurringPanelManager({
             getElementById: (id) => mockElements[id] || null,
             isAppStateReady: () => true,
-            getAppState: () => mockState,
+            AppState: mockState,
             buildRecurringSummary: () => 'Weekly',
             formatNextOccurrence: () => 'Next Monday'
         });
@@ -1151,7 +1151,7 @@ export function runRecurringPanelTests(resultsDiv) {
 
         const panel = new RecurringPanelManager({
             isAppStateReady: () => true,
-            getAppState: () => mockState,
+            AppState: mockState,
             getElementById: (id) => {
                 if (id === 'recurring-task-list') return { innerHTML: '' };
                 return null;
@@ -1184,10 +1184,10 @@ export function runRecurringPanelTests(resultsDiv) {
         };
 
         const panel = new RecurringPanelManager({
-            getAppState: () => mockState
+            AppState: mockState
         });
 
-        const state = panel.deps.getAppState();
+        const state = panel.deps.AppState;
 
         if (state !== mockState) {
             throw new Error('Should use injected AppState function');

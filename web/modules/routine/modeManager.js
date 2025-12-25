@@ -21,7 +21,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 
 const di = createDIModule('ModeManager', {
     appInit: optional(null),
-    getAppState: optional(null),
+    AppState: optional(null),
     loadMiniCycleData: optional(null),
     createTaskButtonContainer: optional(null),
     setupDueDateButtonInteraction: optional(null),
@@ -41,7 +41,7 @@ const di = createDIModule('ModeManager', {
 
 /**
  * Set dependencies for ModeManager (call before creating instance)
- * @param {Object} dependencies - { getAppState, showNotification, etc. }
+ * @param {Object} dependencies - { AppState, showNotification, etc. }
  */
 export function setModeManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -146,7 +146,7 @@ export class ModeManager {
         console.log('🔍 ModeManager: Current mode settings:', { autoResetEnabled, deleteCheckedEnabled });
 
         // Get settings for button visibility
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         const currentState = AppState?.get();
         const settings = currentState?.settings || {};
         const remindersEnabledGlobal = currentState?.reminders?.enabled || false;
@@ -261,7 +261,7 @@ export class ModeManager {
         // Wait for core
         await this.deps.appInit?.waitForCore();
 
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         const currentState = AppState?.get();
         if (!currentState) {
             console.error('❌ ModeManager: No state data available for syncModeFromToggles');
@@ -354,7 +354,7 @@ export class ModeManager {
         // Wait for core
         await this.deps.appInit?.waitForCore();
 
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         const currentState = AppState?.get();
         if (!currentState) {
             console.error('❌ ModeManager: No state data available for updateStorageFromToggles');
@@ -703,7 +703,7 @@ export class ModeManager {
         }
 
         // ✅ Use state-based data access
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         if (!AppState?.isReady?.()) {
             console.error('❌ ModeManager: AppState not ready for setupToggleAutoReset');
             return;
@@ -870,7 +870,7 @@ export class ModeManager {
             const DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = self.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS;
 
             // ✅ Update via AppState instead of direct localStorage manipulation
-            const AppState = self.deps.getAppState();
+            const AppState = self.deps.AppState;
             if (AppState?.isReady?.()) {
                 // Store updated state to avoid race condition
                 let updatedCycle = null;
@@ -953,7 +953,7 @@ export class ModeManager {
     validateModeEnforcement() {
         console.log('🔍 ModeManager: Validating mode enforcement...');
 
-        const AppState = this.deps.getAppState();
+        const AppState = this.deps.AppState;
         if (!AppState?.isReady?.()) {
             console.log('⏳ ModeManager: AppState not ready for validation');
             return;

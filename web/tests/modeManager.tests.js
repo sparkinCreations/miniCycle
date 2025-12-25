@@ -90,11 +90,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         return {
             AppMeta: { version: '1.0.0-test' },
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => mockSchemaData,
                 update: (fn) => { fn(mockSchemaData); }
-            }),
+            },
             loadMiniCycleData: () => ({
                 metadata: mockSchemaData.metadata,
                 cycles: mockSchemaData.data.cycles,
@@ -158,7 +158,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('accepts constructor dependency injection', async () => {
         const mockDeps = {
-            getAppState: () => ({ get: () => ({}) }),
+            AppState: { get: () => ({}) },
             loadMiniCycleData: () => ({ metadata: { version: '2.5' } }),
             showNotification: () => {},
             getElementById: (id) => document.createElement('div'),
@@ -167,7 +167,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         const manager = new ModeManager(mockDeps);
 
-        if (!manager.deps.getAppState || !manager.deps.loadMiniCycleData) {
+        if (!manager.deps.AppState || !manager.deps.loadMiniCycleData) {
             throw new Error('Dependency injection failed');
         }
     });
@@ -184,7 +184,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const expectedDeps = [
-            'getAppState',
+            'AppState',
             'loadMiniCycleData',
             'createTaskButtonContainer',
             'setupDueDateButtonInteraction',
@@ -257,7 +257,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('refreshTaskButtonsForModeChange completes without error (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => null,
+            AppState: null,
             querySelectorAll: () => [],
             getElementById: () => null
         }));
@@ -275,7 +275,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('syncModeFromToggles handles missing state gracefully (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ get: () => null }),
+            AppState: { get: () => null },
             getElementById: () => null
         }));
         const manager = new ModeManager();
@@ -317,7 +317,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.id = 'deleteCheckedTasks';
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ get: () => mockState }),
+            AppState: { get: () => mockState },
             getElementById: (id) => {
                 if (id === 'mode-selector') return mockModeSelector;
                 if (id === 'mobile-mode-selector') return mockMobileModeSelector;
@@ -373,7 +373,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         document.body.appendChild(deleteCheckedTasks);
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ get: () => mockState }),
+            AppState: { get: () => mockState },
             getElementById: (id) => document.getElementById(id)
         }));
         const manager = new ModeManager();
@@ -429,7 +429,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         document.body.appendChild(deleteCheckedTasks);
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ get: () => mockState }),
+            AppState: { get: () => mockState },
             getElementById: (id) => document.getElementById(id)
         }));
         const manager = new ModeManager();
@@ -466,7 +466,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         const deleteCheckedTasks = document.createElement('input');
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ get: () => mockState }),
+            AppState: { get: () => mockState },
             getElementById: (id) => {
                 if (id === 'mode-selector') return mockModeSelector;
                 if (id === 'mobile-mode-selector') return mockMobileModeSelector;
@@ -523,7 +523,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.checked = false;
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => mockAppState,
+            AppState: mockAppState,
             getElementById: (id) => {
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
@@ -552,7 +552,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => mockAppState,
+            AppState: mockAppState,
             getElementById: () => null
         }));
         const manager = new ModeManager();
@@ -612,7 +612,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles missing dependencies gracefully (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => null,
+            AppState: null,
             getElementById: () => null,
             querySelectorAll: () => []
         }));
@@ -627,7 +627,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles null AppState gracefully (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => null,
+            AppState: null,
             getElementById: () => null
         }));
         const manager = new ModeManager();
@@ -639,7 +639,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles missing DOM elements gracefully (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ get: () => ({ data: { cycles: {} }, appState: {} }) }),
+            AppState: { get: () => ({ data: { cycles: {} }, appState: {} }) },
             getElementById: () => null,
             querySelectorAll: () => []
         }));
@@ -674,7 +674,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => mockAppState,
+            AppState: mockAppState,
             getElementById: () => null,
             querySelectorAll: () => []
         }));
@@ -686,7 +686,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
     await test('works without AppState (fallback mode) (DI)', async () => {
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => null,
+            AppState: null,
             loadMiniCycleData: () => ({
                 metadata: { version: '2.5' },
                 settings: {},
@@ -736,7 +736,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.id = 'deleteCheckedTasks';
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({ isReady: () => false }),
+            AppState: { isReady: () => false },
             getElementById: (id) => {
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
@@ -775,11 +775,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasksContainer.style.display = 'block';
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => mockState,
                 update: () => {}
-            }),
+            },
             getElementById: (id) => {
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
@@ -821,11 +821,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         deleteCheckedTasks.type = 'checkbox';
 
         setModeManagerDependencies(createMockDeps({
-            getAppState: () => ({
+            AppState: {
                 isReady: () => true,
                 get: () => mockState,
                 update: (fn) => { updateCalled = true; fn(mockState); }
-            }),
+            },
             getElementById: (id) => {
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
