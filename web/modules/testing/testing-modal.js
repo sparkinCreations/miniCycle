@@ -28,6 +28,12 @@ let deps = {
     safeAddEventListener: null,
     safeAddEventListenerById: null,
 
+    // Safe storage utilities (from GlobalUtils)
+    safeLocalStorageGet: null,
+    safeLocalStorageSet: null,
+    safeJSONParse: null,
+    safeJSONStringify: null,
+
     // Testing utilities
     setupAutomatedTestingFunctions: null,
 
@@ -675,7 +681,7 @@ function setupTestButtons() {
 
     // Console capture buttons
     safeAddEventListenerById("enable-auto-capture", "click", () => {
-        safeLocalStorageSet("miniCycle_enableAutoConsoleCapture", "true");
+        deps.safeLocalStorageSet("miniCycle_enableAutoConsoleCapture", "true");
         if (typeof deps.startAutoConsoleCapture === 'function' && !deps.isConsoleCapturing()) {
             deps.startAutoConsoleCapture();
         }
@@ -1136,7 +1142,7 @@ function testMigrationConfig() {
     const requiredKeys = ['miniCycleStorage', 'lastUsedMiniCycle'];
     let keysFound = 0;
     requiredKeys.forEach(key => {
-        if (safeLocalStorageGet(key, null)) {
+        if (deps.safeLocalStorageGet(key, null)) {
             keysFound++;
         }
     });
@@ -1198,7 +1204,7 @@ function simulateMigration() {
 function backupBeforeMigration() {
     appendToTestResults("💾 Creating Migration Backup...\n");
 
-    const backupData = safeJSONStringify(localStorage, null);
+    const backupData = deps.safeJSONStringify(localStorage, null);
     if (!backupData) {
         appendToTestResults(`❌ Backup Failed: Could not serialize localStorage\n\n`);
         showNotification("❌ Failed to create backup", "error", 3000);
@@ -1206,7 +1212,7 @@ function backupBeforeMigration() {
     }
     const backupKey = `miniCycle_backup_${Date.now()}`;
 
-    const success = safeLocalStorageSet(backupKey, backupData);
+    const success = deps.safeLocalStorageSet(backupKey, backupData);
     if (success) {
         appendToTestResults(`✅ Backup Created: ${backupKey}\n`);
         appendToTestResults(`Backup Size: ${(backupData.length / 1024).toFixed(2)} KB\n\n`);
@@ -1230,12 +1236,12 @@ function validateMigrationData() {
     
     // Check 1: Current data exists
     validation.checks++;
-    const oldCycles = safeLocalStorageGet("miniCycleStorage", null);
+    const oldCycles = deps.safeLocalStorageGet("miniCycleStorage", null);
     if (oldCycles) {
         validation.passed++;
         appendToTestResults("✅ miniCycleStorage data found\n");
 
-        const parsed = safeJSONParse(oldCycles, null);
+        const parsed = deps.safeJSONParse(oldCycles, null);
         if (parsed) {
             appendToTestResults(`  - Found ${Object.keys(parsed).length} cycles\n`);
         } else {
@@ -1249,7 +1255,7 @@ function validateMigrationData() {
     
     // Check 2: Last used cycle
     validation.checks++;
-    const lastUsed = safeLocalStorageGet("lastUsedMiniCycle", null);
+    const lastUsed = deps.safeLocalStorageGet("lastUsedMiniCycle", null);
     if (lastUsed) {
         validation.passed++;
         appendToTestResults(`✅ Active cycle: ${lastUsed}\n`);
@@ -1260,7 +1266,7 @@ function validateMigrationData() {
 
     // Check 3: Settings data
     validation.checks++;
-    const reminders = safeLocalStorageGet("miniCycleReminders", null);
+    const reminders = deps.safeLocalStorageGet("miniCycleReminders", null);
     if (reminders) {
         validation.passed++;
         appendToTestResults("✅ Reminder settings found\n");
@@ -1271,7 +1277,7 @@ function validateMigrationData() {
     
     // Check 4: Available space
     validation.checks++;
-    const localStorageStr = safeJSONStringify(localStorage, "{}");
+    const localStorageStr = deps.safeJSONStringify(localStorage, "{}");
     const currentSize = localStorageStr.length;
     const estimatedNewSize = currentSize * 1.5; // rough estimate
     const maxSize = 5 * 1024 * 1024; // 5MB typical limit
@@ -1429,7 +1435,7 @@ async function listAvailableBackups() {
         legacyBackups.forEach(key => {
             const timestamp = key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, '');
             const date = new Date(parseInt(timestamp)).toLocaleString();
-            const backupValue = safeLocalStorageGet(key, "");
+            const backupValue = deps.safeLocalStorageGet(key, "");
             const size = (backupValue.length / 1024).toFixed(2);
             const type = key.startsWith('auto_migration_backup_') ? 'AUTO' : 'MANUAL';
             appendToTestResults(`  - ${date} - ${size} KB [${type}]\n`);
@@ -1494,7 +1500,7 @@ async function restoreFromBackup() {
 
     legacyKeys.forEach(key => {
         const timestamp = parseInt(key.replace(/^(miniCycle_backup_|auto_migration_backup_)/, ''));
-        const backupData = safeLocalStorageGet(key, null);
+        const backupData = deps.safeLocalStorageGet(key, null);
         allBackups.push({
             type: key.startsWith('auto_migration_backup_') ? 'localstorage-auto' : 'localstorage-manual',
             timestamp,
@@ -1770,16 +1776,16 @@ async function restoreFromBackup() {
 
                             if (restoredData.cycles || restoredData.miniCycleStorage) {
                                 const cyclesData = restoredData.cycles || restoredData.miniCycleStorage;
-                                safeLocalStorageSet('miniCycleStorage', typeof cyclesData === 'string' ? cyclesData : JSON.stringify(cyclesData));
+                                deps.safeLocalStorageSet('miniCycleStorage', typeof cyclesData === 'string' ? cyclesData : JSON.stringify(cyclesData));
                                 appendToTestResults(`✅ Restored: miniCycleStorage\n`);
                             }
                             if (restoredData.lastUsedMiniCycle || restoredData.activeCycle) {
-                                safeLocalStorageSet('lastUsedMiniCycle', restoredData.lastUsedMiniCycle || restoredData.activeCycle);
+                                deps.safeLocalStorageSet('lastUsedMiniCycle', restoredData.lastUsedMiniCycle || restoredData.activeCycle);
                                 appendToTestResults(`✅ Restored: lastUsedMiniCycle\n`);
                             }
                             if (restoredData.reminders || restoredData.miniCycleReminders) {
                                 const remindersData = restoredData.reminders || restoredData.miniCycleReminders;
-                                safeLocalStorageSet('miniCycleReminders', typeof remindersData === 'string' ? remindersData : JSON.stringify(remindersData));
+                                deps.safeLocalStorageSet('miniCycleReminders', typeof remindersData === 'string' ? remindersData : JSON.stringify(remindersData));
                                 appendToTestResults(`✅ Restored: miniCycleReminders\n`);
                             }
                             appendToTestResults(`ℹ️ Legacy data will be migrated to Schema 2.5 on reload\n`);
@@ -1787,8 +1793,8 @@ async function restoreFromBackup() {
 
                     // ✅ Handle localStorage backups (legacy)
                     } else {
-                        const backupData = safeLocalStorageGet(selectedBackup.id, null);
-                        const parsed = safeJSONParse(backupData, null);
+                        const backupData = deps.safeLocalStorageGet(selectedBackup.id, null);
+                        const parsed = deps.safeJSONParse(backupData, null);
                         if (!parsed) {
                             throw new Error('Failed to parse backup data');
                         }
@@ -1809,22 +1815,22 @@ async function restoreFromBackup() {
                             if (isAuto) {
                                 // Auto-migration backup format
                                 if (parsed.data?.miniCycleStorage) {
-                                    safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
+                                    deps.safeLocalStorageSet('miniCycleStorage', parsed.data.miniCycleStorage);
                                     appendToTestResults(`✅ Restored: miniCycleStorage\n`);
                                 }
                                 if (parsed.data?.miniCycleReminders) {
-                                    safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
+                                    deps.safeLocalStorageSet('miniCycleReminders', parsed.data.miniCycleReminders);
                                     appendToTestResults(`✅ Restored: miniCycleReminders\n`);
                                 }
                                 if (parsed.data?.lastUsedMiniCycle) {
-                                    safeLocalStorageSet('lastUsedMiniCycle', parsed.data.lastUsedMiniCycle);
+                                    deps.safeLocalStorageSet('lastUsedMiniCycle', parsed.data.lastUsedMiniCycle);
                                     appendToTestResults(`✅ Restored: lastUsedMiniCycle\n`);
                                 }
                                 if (parsed.data?.settings) {
                                     Object.keys(parsed.data.settings).forEach(key => {
                                         if (parsed.data.settings[key] !== null && parsed.data.settings[key] !== undefined) {
                                             const storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
-                                            safeLocalStorageSet(storageKey, JSON.stringify(parsed.data.settings[key]));
+                                            deps.safeLocalStorageSet(storageKey, JSON.stringify(parsed.data.settings[key]));
                                             appendToTestResults(`✅ Restored setting: ${storageKey}\n`);
                                         }
                                     });
@@ -1833,7 +1839,7 @@ async function restoreFromBackup() {
                                 // Manual backup format - direct key restoration
                                 ['miniCycleStorage', 'lastUsedMiniCycle', 'miniCycleReminders'].forEach(key => {
                                     if (parsed[key]) {
-                                        safeLocalStorageSet(key, typeof parsed[key] === 'string' ? parsed[key] : JSON.stringify(parsed[key]));
+                                        deps.safeLocalStorageSet(key, typeof parsed[key] === 'string' ? parsed[key] : JSON.stringify(parsed[key]));
                                         appendToTestResults(`✅ Restored: ${key}\n`);
                                     }
                                 });
@@ -2246,7 +2252,7 @@ function generateDebugReport() {
         };
 
         appendToTestResults("📋 Debug Report Generated:\n");
-        appendToTestResults(safeJSONStringify(report, "Error generating report", false, 2));
+        appendToTestResults(deps.safeJSONStringify(report, "Error generating report", false, 2));
         appendToTestResults("\n\n");
         
         showNotification("📋 Debug report generated successfully", "success", 3000);
@@ -2321,7 +2327,7 @@ function openStorageViewer() {
       const key = localStorage.key(i);
       if (!key) continue;
 
-      const rawValue = safeLocalStorageGet(key, null);
+      const rawValue = deps.safeLocalStorageGet(key, null);
       if (rawValue === null) continue;
 
       const wrapper = document.createElement("div");
@@ -2385,7 +2391,7 @@ function openStorageViewer() {
       valueContainer.style.display = "none"; // Start collapsed
 
       let valueEl;
-      const parsed = safeJSONParse(rawValue, null, true);
+      const parsed = deps.safeJSONParse(rawValue, null, true);
       if (parsed !== null && typeof parsed === "object") {
         valueEl = renderExpandableJSON(parsed);
       } else if (parsed !== null) {
@@ -2685,7 +2691,7 @@ function renderExpandableJSON(data, depth = 0) {
         entry.appendChild(child);
       } else {
         // ✅ FIX: Better formatting for different value types
-        const valueText = safeJSONStringify(value, String(value));
+        const valueText = deps.safeJSONStringify(value, String(value));
         valueEl.textContent = valueText;
         
         // ✅ FIX: Color coding by value type
@@ -3142,7 +3148,7 @@ function testLocalStorage() {
         // Test write
         const testKey = "miniCycle_test_" + Date.now();
         const testData = { test: true, timestamp: Date.now() };
-        const writeSuccess = safeLocalStorageSet(testKey, safeJSONStringify(testData, null));
+        const writeSuccess = deps.safeLocalStorageSet(testKey, deps.safeJSONStringify(testData, null));
         if (writeSuccess) {
             appendToTestResults("✅ Write test: PASSED\n");
         } else {
@@ -3150,7 +3156,7 @@ function testLocalStorage() {
         }
 
         // Test read
-        const retrieved = safeJSONParse(safeLocalStorageGet(testKey, null), null);
+        const retrieved = deps.safeJSONParse(deps.safeLocalStorageGet(testKey, null), null);
         if (retrieved && retrieved.test === true) {
             appendToTestResults("✅ Read test: PASSED\n");
         } else {
@@ -3159,14 +3165,14 @@ function testLocalStorage() {
 
         // Test delete
         safeLocalStorageRemove(testKey);
-        if (safeLocalStorageGet(testKey, null) === null) {
+        if (deps.safeLocalStorageGet(testKey, null) === null) {
             appendToTestResults("✅ Delete test: PASSED\n");
         } else {
             appendToTestResults("❌ Delete test: FAILED\n");
         }
 
         // Storage capacity test
-        const storageUsed = safeJSONStringify(localStorage, "{}").length;
+        const storageUsed = deps.safeJSONStringify(localStorage, "{}").length;
         const storageLimit = 5 * 1024 * 1024; // 5MB estimate
         const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
         

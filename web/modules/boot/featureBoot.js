@@ -257,7 +257,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   // Task API
   const taskApiObj = {
     add: deps.task?.addTask,
-    delete: deps.task?.deleteTaskFromCore,
+    delete: deps.task?.deleteTask,
     handleCompletionChange: deps.task?.handleTaskCompletionChange,
     handleCompleteAll: deps.task?.handleCompleteAllTasks,
     loadContext: deps.task?.loadTaskContext,
