@@ -97,28 +97,12 @@ export class RecurringPanelManager {
      * ✅ MEMORY LEAK FIX: Replaces 35-60+ anonymous listeners with ~5 delegated listeners
      */
     initEventDelegation() {
-        if (this._eventDelegationInitialized) {
-            console.log('⚠️ Recurring panel event delegation already initialized');
-            return;
-        }
-
-        // Setup delegation for monthly day boxes
-        this.setupMonthlyDayDelegation();
-
-        // Setup delegation for weekly day boxes
-        this.setupWeeklyDayDelegation();
-
-        // Setup delegation for yearly month boxes
-        this.setupYearlyMonthDelegation();
-
-        // Setup delegation for yearly day boxes
-        this.setupYearlyDayDelegation();
-
-        // Setup delegation for task list items
-        this.setupTaskListDelegation();
-
-        this._eventDelegationInitialized = true;
-        console.log('✅ Recurring panel event delegation initialized (memory leak fix applied)');
+        const callbacks = {
+            handleRemoveTask: (template, item) => this.handleRemoveTask(template, item),
+            showTaskSummaryPreview: (task) => this.showTaskSummaryPreview(task),
+            getSelectedYearlyMonths: () => this.getSelectedYearlyMonths()
+        };
+        _initEventDelegation(this.deps, this.state, callbacks);
     }
 
     /**
@@ -380,6 +364,14 @@ export class RecurringPanelManager {
      */
     setup() {
         console.log('⚙️ Setting up recurring panel...');
+
+        // Inject form actions for callback pattern
+        if (_formModule?.setFormActions) {
+            _formModule.setFormActions({
+                updateRecurringSummary: () => this.updateRecurringSummary(),
+                normalizeRecurringSettings: (settings) => this.deps.normalizeRecurringSettings?.(settings) || settings
+            });
+        }
 
         try {
             const overlay = this.deps.getElementById("recurring-panel-overlay");
@@ -754,21 +746,7 @@ export class RecurringPanelManager {
      * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     generateMonthlyDayGrid() {
-        const container = this.deps.querySelector(".monthly-days");
-        if (!container) return;
-
-        container.innerHTML = "";
-
-        for (let i = 1; i <= 31; i++) {
-            const dayBox = document.createElement("div");
-            dayBox.className = "monthly-day-box";
-            dayBox.setAttribute("data-day", i);
-            dayBox.textContent = i;
-
-            // ✅ NO listener added - handled by setupMonthlyDayDelegation()
-
-            container.appendChild(dayBox);
-        }
+        _generateMonthlyDayGrid(this.deps);
     }
 
     /**
@@ -785,24 +763,7 @@ export class RecurringPanelManager {
      * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     generateYearlyMonthGrid() {
-        const container = this.deps.querySelector(".yearly-months");
-        if (!container) return;
-
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-        container.innerHTML = "";
-
-        monthNames.forEach((name, index) => {
-            const monthBox = document.createElement("div");
-            monthBox.className = "yearly-month-box";
-            monthBox.setAttribute("data-month", index + 1);
-            monthBox.textContent = name;
-
-            // ✅ NO listener added - handled by setupYearlyMonthDelegation()
-
-            container.appendChild(monthBox);
-        });
+        _generateYearlyMonthGrid(this.deps);
     }
 
     /**
@@ -810,37 +771,7 @@ export class RecurringPanelManager {
      * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     generateYearlyDayGrid(monthNumber) {
-        const container = this.deps.querySelector(".yearly-days");
-        if (!container) return;
-
-        container.innerHTML = "";
-
-        const daysInMonth = new Date(2025, monthNumber, 0).getDate();
-        const selectedDays = this.state.selectedYearlyDays[monthNumber] || [];
-        const yearlyApplyToAllCheckbox = this.deps.getElementById("yearly-apply-days-to-all");
-        const applyToAll = yearlyApplyToAllCheckbox?.checked;
-
-        // If "apply to all" is checked, use the shared day list
-        const sharedDays = this.state.selectedYearlyDays["all"] || [];
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            const dayBox = document.createElement("div");
-            dayBox.className = "yearly-day-box";
-            dayBox.setAttribute("data-day", i);
-            dayBox.textContent = i;
-
-            const isSelected = applyToAll
-                ? sharedDays.includes(i)
-                : selectedDays.includes(i);
-
-            if (isSelected) {
-                dayBox.classList.add("selected");
-            }
-
-            // ✅ NO listener added - handled by setupYearlyDayDelegation()
-
-            container.appendChild(dayBox);
-        }
+        _generateYearlyDayGrid(this.deps, this.state, monthNumber);
     }
 
     /**
@@ -869,16 +800,14 @@ export class RecurringPanelManager {
      * Get selected yearly months
      */
     getSelectedYearlyMonths() {
-        return Array.from(this.deps.querySelectorAll(".yearly-month-box.selected"))
-                    .map(el => parseInt(el.dataset.month));
+        return _getSelectedYearlyMonthsForm(this.deps);
     }
 
     /**
      * Get selected monthly days
      */
     getSelectedMonthlyDays() {
-        return Array.from(this.deps.querySelectorAll(".monthly-day-box.selected"))
-                    .map(el => parseInt(el.dataset.day));
+        return _getSelectedMonthlyDays(this.deps);
     }
 
     /**
@@ -999,36 +928,14 @@ export class RecurringPanelManager {
      * Get tomorrow's date
      */
     getTomorrow() {
-        try {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            if (isNaN(tomorrow.getTime()) || tomorrow.getFullYear() > 2100) {
-                throw new Error("Invalid date generated");
-            }
-
-            return tomorrow;
-        } catch (error) {
-            console.warn("⚠️ Error generating tomorrow's date:", error);
-            const fallback = new Date();
-            fallback.setDate(fallback.getDate() + 1);
-            return fallback;
-        }
+        return _getTomorrow();
     }
 
     /**
      * Update recurring count visibility based on settings
      */
     updateRecurCountVisibility() {
-        const isIndefinite = this.deps.getElementById("recur-indefinitely")?.checked;
-        const isUsingSpecificDates = this.deps.getElementById("recur-specific-dates")?.checked;
-        const countContainer = this.deps.getElementById("recur-count-container");
-
-        if (!countContainer) return;
-
-        // Only show if NOT using specific dates AND NOT recurring indefinitely
-        const shouldShow = !isUsingSpecificDates && !isIndefinite;
-        countContainer.classList.toggle("hidden", !shouldShow);
+        _updateRecurCountVisibility(this.deps);
     }
 
     /**
@@ -1994,146 +1901,7 @@ export class RecurringPanelManager {
      * @returns {Object} Settings object
      */
     buildRecurringSettingsFromPanel() {
-        try {
-            const frequency = this.deps.getElementById("recur-frequency")?.value || "daily";
-
-            // Determine duration mode
-            const indefinitelyCheckbox = this.deps.getElementById("recur-indefinitely");
-            const indefinitely = indefinitelyCheckbox?.checked ?? true;
-
-            let count = null;
-            let untilDate = null;
-
-            // If not indefinite, check which limited duration option is selected
-            if (!indefinitely) {
-                const countRadio = this.deps.getElementById("recur-count-radio");
-                const untilRadio = this.deps.getElementById("recur-until-radio");
-
-                if (countRadio?.checked) {
-                    count = parseInt(this.deps.getElementById("recur-count-input")?.value) || 1;
-                } else if (untilRadio?.checked) {
-                    untilDate = this.deps.getElementById("recur-until-date")?.value || null;
-                }
-            }
-
-            const settings = {
-                frequency,
-                indefinitely,
-                count,
-                untilDate,
-                useSpecificTime: false,
-                time: null,
-                specificDates: {
-                    enabled: false,
-                    dates: []
-                },
-                daily: {},
-                hourly: {},
-                weekly: {},
-                biweekly: {},
-                monthly: {},
-                yearly: {}
-            };
-
-            // ✅ Specific Dates Mode
-            if (this.deps.getElementById("recur-specific-dates")?.checked) {
-                const dateInputs = this.deps.querySelectorAll("#specific-date-list input[type='date']");
-                settings.specificDates.enabled = true;
-                settings.specificDates.dates = Array.from(dateInputs).map(input => input.value).filter(Boolean);
-
-                if (this.deps.getElementById("specific-date-specific-time")?.checked) {
-                    settings.useSpecificTime = true;
-                    settings.time = {
-                        hour: parseInt(this.deps.getElementById("specific-date-hour")?.value) || 0,
-                        minute: parseInt(this.deps.getElementById("specific-date-minute")?.value) || 0,
-                        meridiem: this.deps.getElementById("specific-date-meridiem")?.value,
-                        military: this.deps.getElementById("specific-date-military")?.checked
-                    };
-                }
-            } else {
-                // ✅ Time block for non-specific-dates
-                const timeId = frequency;
-                const timeEnabled = this.deps.getElementById(`${timeId}-specific-time`)?.checked;
-
-                // ✅ Time block for non-specific-dates — EXCLUDE hourly!
-                if (frequency !== "hourly" && timeEnabled) {
-                    settings.useSpecificTime = true;
-                    settings.time = {
-                        hour: parseInt(this.deps.getElementById(`${timeId}-hour`)?.value) || 0,
-                        minute: parseInt(this.deps.getElementById(`${timeId}-minute`)?.value) || 0,
-                        meridiem: this.deps.getElementById(`${timeId}-meridiem`)?.value,
-                        military: this.deps.getElementById(`${timeId}-military`)?.checked
-                    };
-                }
-
-                // ✅ Hourly Specific Minute
-                if (frequency === "hourly") {
-                    const useSpecificMinute = this.deps.getElementById("hourly-specific-time")?.checked;
-                    const minuteEl = this.deps.getElementById("hourly-minute");
-
-                    settings.hourly = {
-                        useSpecificMinute: !!useSpecificMinute,
-                        minute: useSpecificMinute && minuteEl ? parseInt(minuteEl.value) || 0 : 0
-                    };
-                }
-
-                // ✅ Weekly
-                if (frequency === "weekly") {
-                    const selector = `.${frequency}-day-box.selected`;
-                    settings[frequency] = {
-                        useSpecificDays: this.deps.getElementById(`${frequency}-specific-days`)?.checked,
-                        days: Array.from(this.deps.querySelectorAll(selector)).map(el => el.dataset.day)
-                    };
-                }
-
-                // ✅ Biweekly (separate weeks)
-                if (frequency === "biweekly") {
-                    settings.biweekly = {
-                        useSpecificDays: this.deps.getElementById("biweekly-specific-days")?.checked,
-                        week1: Array.from(this.deps.querySelectorAll(".biweekly-day-box.selected[data-week='1']")).map(el => el.dataset.day),
-                        week2: Array.from(this.deps.querySelectorAll(".biweekly-day-box.selected[data-week='2']")).map(el => el.dataset.day)
-                    };
-                }
-
-                // ✅ Monthly
-                if (frequency === "monthly") {
-                    const useSpecificDays = this.deps.getElementById("monthly-specific-days")?.checked;
-                    const useWeekOfMonth = this.deps.getElementById("monthly-week-of-month")?.checked;
-
-                    settings.monthly = {
-                        useSpecificDays: useSpecificDays,
-                        days: useSpecificDays ? Array.from(this.deps.querySelectorAll(".monthly-day-box.selected")).map(el => parseInt(el.dataset.day)) : [],
-                        lastDay: useSpecificDays ? (this.deps.getElementById("monthly-last-day")?.checked || false) : false,
-                        useWeekOfMonth: useWeekOfMonth,
-                        weekOfMonth: useWeekOfMonth ? {
-                            ordinal: this.deps.getElementById("monthly-week-ordinal")?.value || "1",
-                            day: this.deps.getElementById("monthly-week-day")?.value || "Mon"
-                        } : null
-                    };
-                }
-
-                // ✅ Yearly
-                if (frequency === "yearly") {
-                    const applyAll = this.deps.getElementById("yearly-apply-days-to-all")?.checked;
-                    const useMonths = this.deps.getElementById("yearly-specific-months")?.checked;
-                    const useDays = this.deps.getElementById("yearly-specific-days")?.checked;
-
-                    settings.yearly = {
-                        useSpecificMonths: useMonths,
-                        months: this.getSelectedYearlyMonths(),
-                        useSpecificDays: useDays,
-                        daysByMonth: applyAll ? { all: this.state.selectedYearlyDays["all"] || [] } : { ...this.state.selectedYearlyDays },
-                        applyDaysToAll: applyAll
-                    };
-                }
-            }
-
-            return this.deps.normalizeRecurringSettings(settings);
-
-        } catch (error) {
-            console.error('❌ Error building settings from panel:', error);
-            return { frequency: 'daily', indefinitely: true };
-        }
+        return _buildRecurringSettingsFromPanelForm(this.deps, this.state);
     }
 
     // ============================================
@@ -2145,71 +1913,14 @@ export class RecurringPanelManager {
      * @param {Object} settings - Recurring settings to populate
      */
     populateRecurringFormWithSettings(settings) {
-        console.log('📝 Populating recurring form with settings:', settings);
-
-        try {
-            // Frequency dropdown
-            const frequencySelect = this.deps.getElementById('recur-frequency');
-            if (frequencySelect && settings.frequency) {
-                frequencySelect.value = settings.frequency;
-                frequencySelect.dispatchEvent(new Event('change'));
-            }
-
-            // Indefinite checkbox
-            const indefiniteCheckbox = this.deps.getElementById('recur-indefinitely');
-            if (indefiniteCheckbox) {
-                indefiniteCheckbox.checked = settings.indefinitely !== false;
-            }
-
-            // Repeat count
-            if (settings.indefinitely === false && settings.count) {
-                const countInput = this.deps.getElementById('recur-count-input');
-                if (countInput) {
-                    countInput.value = settings.count;
-                }
-            }
-
-            // Update the summary display
-            this.updateRecurringSummary();
-
-            console.log('✅ Form populated successfully');
-
-        } catch (error) {
-            console.error('❌ Error populating form with settings:', error);
-        }
+        _populateRecurringFormWithSettings(this.deps, settings);
     }
 
     /**
      * Clear/reset the recurring form
      */
     clearRecurringForm() {
-        console.log('🧹 Clearing recurring form');
-
-        try {
-            // Reset frequency to default
-            const frequencySelect = this.deps.getElementById('recur-frequency');
-            if (frequencySelect) {
-                frequencySelect.value = 'daily';
-                frequencySelect.dispatchEvent(new Event('change'));
-            }
-
-            // Reset indefinite checkbox
-            const indefiniteCheckbox = this.deps.getElementById('recur-indefinitely');
-            if (indefiniteCheckbox) {
-                indefiniteCheckbox.checked = true;
-            }
-
-            // Clear repeat count
-            const countInput = this.deps.getElementById('recur-count-input');
-            if (countInput) {
-                countInput.value = '';
-            }
-
-            console.log('✅ Form cleared successfully');
-
-        } catch (error) {
-            console.error('❌ Error clearing form:', error);
-        }
+        _clearRecurringForm(this.deps);
     }
 
     // ============================================
@@ -2460,172 +2171,77 @@ export class RecurringPanelManager {
 // STANDALONE UTILITY FUNCTIONS
 // ============================================
 
+// Loaded dynamically with version cache-busting
+let _buildRecurringSummaryFromSettings = null;
+let _generateMonthlyDayGrid = null;
+let _generateYearlyMonthGrid = null;
+let _generateYearlyDayGrid = null;
+// Form module functions
+let _formModule = null;
+let _getTomorrow = null;
+let _getSelectedMonthlyDays = null;
+let _getSelectedYearlyMonthsForm = null;
+let _updateRecurCountVisibility = null;
+let _buildRecurringSettingsFromPanelForm = null;
+let _populateRecurringFormWithSettings = null;
+let _clearRecurringForm = null;
+// Events module functions
+let _eventsModule = null;
+let _initEventDelegation = null;
+
+/**
+ * Load sub-modules with version cache-busting
+ * @param {string} version - Version string for cache-busting
+ */
+export async function loadPanelSubModules(version) {
+    if (_buildRecurringSummaryFromSettings) {
+        return; // Already loaded
+    }
+
+    console.log(`Loading recurringPanel sub-modules with v=${version}...`);
+
+    const [summaryModule, gridsModule, formModule, eventsModule] = await Promise.all([
+        import(`./recurringPanelSummary.js?v=${version}`),
+        import(`./recurringPanelGrids.js?v=${version}`),
+        import(`./recurringPanelForm.js?v=${version}`),
+        import(`./recurringPanelEvents.js?v=${version}`)
+    ]);
+
+    _buildRecurringSummaryFromSettings = summaryModule.buildRecurringSummaryFromSettings;
+    _generateMonthlyDayGrid = gridsModule.generateMonthlyDayGrid;
+    _generateYearlyMonthGrid = gridsModule.generateYearlyMonthGrid;
+    _generateYearlyDayGrid = gridsModule.generateYearlyDayGrid;
+
+    // Form module
+    _formModule = formModule;
+    _getTomorrow = formModule.getTomorrow;
+    _getSelectedMonthlyDays = formModule.getSelectedMonthlyDays;
+    _getSelectedYearlyMonthsForm = formModule.getSelectedYearlyMonths;
+    _updateRecurCountVisibility = formModule.updateRecurCountVisibility;
+    _buildRecurringSettingsFromPanelForm = formModule.buildRecurringSettingsFromPanel;
+    _populateRecurringFormWithSettings = formModule.populateRecurringFormWithSettings;
+    _clearRecurringForm = formModule.clearRecurringForm;
+
+    // Events module
+    _eventsModule = eventsModule;
+    _initEventDelegation = eventsModule.initEventDelegation;
+
+    console.log('recurringPanel sub-modules loaded');
+}
+
 /**
  * Build recurring summary text from settings
- * Standalone function for use outside the class
+ * Wrapper that calls the dynamically loaded function
  * @param {Object} settings - Recurring settings
  * @returns {string} Summary text
  */
 export function buildRecurringSummaryFromSettings(settings = {}) {
-    // Normalize settings to ensure useSpecificDays is properly set
-    // This handles cases where settings are passed without normalization
-    if (settings.monthly && !('useSpecificDays' in settings.monthly) && settings.monthly.days?.length > 0) {
-        settings.monthly.useSpecificDays = true;
+    if (!_buildRecurringSummaryFromSettings) {
+        console.warn('buildRecurringSummaryFromSettings called before sub-modules loaded, using inline fallback');
+        // Minimal fallback
+        return `Repeats ${settings.frequency || 'daily'}`;
     }
-
-    const freq = settings.frequency || "daily";
-    const indefinitely = settings.indefinitely ?? true;
-    const count = settings.count;
-
-    // Helper function for parsing dates
-    const parseDateAsLocal = (dateStr) => {
-        try {
-            const [year, month, day] = dateStr.split("-").map(Number);
-            return new Date(year, month - 1, day);
-        } catch (error) {
-            return new Date();
-        }
-    };
-
-    // === ✅ SPECIFIC DATES OVERRIDE ===
-    if (settings.specificDates?.enabled && settings.specificDates.dates?.length) {
-        const formattedDates = settings.specificDates.dates.map(dateStr => {
-            const date = parseDateAsLocal(dateStr);
-            return date.toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                weekday: "short"
-            });
-        });
-
-        let summary = `📅 Specific dates: ${formattedDates.join(", ")}`;
-
-        // Optionally show time for specific dates
-        if (settings.time) {
-            const { hour, minute, meridiem, military } = settings.time;
-            const formattedTime = military
-                ? `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-                : `${hour}:${minute.toString().padStart(2, "0")} ${meridiem}`;
-            summary += ` ⏰ at ${formattedTime}`;
-        }
-
-        return summary;
-    }
-
-    // === 🔁 Normal Recurrence Fallback ===
-    let summaryText = `⏱ Repeats ${freq}`;
-
-    // Duration: indefinitely, count, or until date
-    if (!indefinitely && count) {
-        summaryText += ` for ${count} time${count !== 1 ? "s" : ""}`;
-    } else if (!indefinitely && settings.untilDate) {
-        // Format date nicely for display
-        const dateObj = new Date(settings.untilDate + 'T00:00:00');
-        const formattedDate = dateObj.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric"
-        });
-        summaryText += ` until ${formattedDate}`;
-    } else {
-        summaryText += " indefinitely";
-    }
-
-    // === TIME HANDLING ===
-    if (settings.time && (settings.useSpecificTime ?? true)) {
-        const { hour, minute, meridiem, military } = settings.time;
-        const formatted = military
-            ? `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-            : `${hour}:${minute.toString().padStart(2, "0")} ${meridiem}`;
-        summaryText += ` at ${formatted}`;
-    }
-
-    // === HOURLY ===
-    if (freq === "hourly" && settings.hourly?.useSpecificMinute) {
-        summaryText += ` every hour at :${settings.hourly.minute.toString().padStart(2, "0")}`;
-    }
-
-    // === WEEKLY ===
-    if (freq === "weekly" && settings.weekly?.days?.length) {
-        summaryText += ` on ${settings.weekly.days.join(", ")}`;
-    }
-
-    // === BIWEEKLY (two-week pattern) ===
-    if (freq === "biweekly") {
-        const week1Days = settings.biweekly?.week1 || [];
-        const week2Days = settings.biweekly?.week2 || [];
-
-        if (week1Days.length || week2Days.length) {
-            const parts = [];
-            if (week1Days.length) parts.push(`Week 1: ${week1Days.join(", ")}`);
-            if (week2Days.length) parts.push(`Week 2: ${week2Days.join(", ")}`);
-            summaryText += ` on ${parts.join(" | ")}`;
-        }
-    }
-
-    // === MONTHLY ===
-    if (freq === "monthly") {
-        const monthly = settings.monthly || {};
-
-        // Week-of-month pattern (e.g., "2nd Tuesday", "Last Friday")
-        if (monthly.useWeekOfMonth && monthly.weekOfMonth) {
-            const ordinalMap = {
-                "1": "1st",
-                "2": "2nd",
-                "3": "3rd",
-                "4": "4th",
-                "last": "Last"
-            };
-            const dayMap = {
-                "Sun": "Sunday",
-                "Mon": "Monday",
-                "Tue": "Tuesday",
-                "Wed": "Wednesday",
-                "Thu": "Thursday",
-                "Fri": "Friday",
-                "Sat": "Saturday"
-            };
-            const ordinal = ordinalMap[monthly.weekOfMonth.ordinal] || monthly.weekOfMonth.ordinal;
-            const day = dayMap[monthly.weekOfMonth.day] || monthly.weekOfMonth.day;
-            summaryText += ` on ${ordinal} ${day}`;
-        }
-        // Specific days pattern
-        else if (monthly.useSpecificDays && (monthly.days?.length || monthly.lastDay)) {
-            const parts = [];
-
-            if (monthly.days?.length) {
-                parts.push(`day${monthly.days.length > 1 ? "s" : ""} ${monthly.days.join(", ")}`);
-            }
-
-            if (monthly.lastDay) {
-                parts.push("last day");
-            }
-
-            if (parts.length > 0) {
-                summaryText += ` on ${parts.join(" and ")}`;
-            }
-        }
-    }
-
-    // === YEARLY ===
-    if (freq === "yearly") {
-        const months = settings.yearly?.months || [];
-        const daysByMonth = settings.yearly?.daysByMonth || {};
-
-        if (months.length) {
-            const monthNames = months.map(m => new Date(0, m - 1).toLocaleString("default", { month: "short" }));
-            summaryText += ` in ${monthNames.join(", ")}`;
-        }
-
-        if (settings.yearly?.useSpecificDays) {
-            if (settings.yearly.applyDaysToAll && daysByMonth.all?.length) {
-                summaryText += ` on day${daysByMonth.all.length > 1 ? "s" : ""} ${daysByMonth.all.join(", ")}`;
-            }
-        }
-    }
-
-    return summaryText;
+    return _buildRecurringSummaryFromSettings(settings);
 }
 
 // ============================================

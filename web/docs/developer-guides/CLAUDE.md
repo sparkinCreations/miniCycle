@@ -36,17 +36,17 @@ npm test                     # Run automated tests (1623 tests, Playwright)
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 21, 2025 - Updated)
+### Current State (December 25, 2025 - Updated)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
 | Boot files | 1 monolithic | **4 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **53 files** | — | — |
+| Modules | 43 files | **60 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **53** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **60** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -143,7 +143,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1623 tests across 53 modules, 100% passing
+- **Test coverage** - 1623 tests across 60 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -258,6 +258,7 @@ const instance = new MyModule();         // Then create
 3. **Capturing deps at construction time** - Use getter pattern for late-injected deps.
 4. **Using spread operator on deps with getters** - Use `Object.defineProperties` instead.
 5. **Creating instances before wiring deps** - Always wire first, then instantiate.
+6. **Stripping version query strings from dynamic imports** - The pattern `import(\`./module.js?v=${version}\`)` is intentional for cache-busting. Preserve it.
 
 ---
 
@@ -265,7 +266,7 @@ const instance = new MyModule();         // Then create
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1623 tests across 53 modules)
+npm test                    # All tests (1623 tests across 60 modules)
 ```
 
 ### Browser Tests
@@ -289,7 +290,7 @@ Open http://localhost:8080/tests/module-test-suite.html
 | `core/` | AppState, appInit, appContext | 5 |
 | `task/` | Task CRUD, DOM, events, drag-drop | 7 |
 | `routine/` | Routine management, switching, migration | 5 |
-| `recurring/` | Recurring task templates and panel | 3 |
+| `recurring/` | Recurring task scheduling, activation, panel | 10 |
 | `ui/` | Modals, menus, settings, onboarding | 9 |
 | `features/` | Themes, stats, reminders, due dates | 4 |
 | `utils/` | Notifications, device detection, utilities | 5 |
