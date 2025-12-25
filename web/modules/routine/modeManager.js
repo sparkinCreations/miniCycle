@@ -1053,6 +1053,10 @@ export class ModeManager {
                 // Small delay to ensure app state is fully restored
                 setTimeout(() => {
                     this.validateModeEnforcement();
+                    // Check if auto-reset should trigger (all tasks completed in auto-cycle mode)
+                    if (typeof this.deps.checkMiniCycle === 'function') {
+                        this.deps.checkMiniCycle();
+                    }
                 }, 100);
             }
         };

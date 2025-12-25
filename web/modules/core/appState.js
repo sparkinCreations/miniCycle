@@ -579,9 +579,36 @@ export function assignCycleVariables() {
 // ✅ Replace the bottom of your file with this:
 let AppState = null;
 
+// Properties that exist on state DATA (accessed via .get()), not on the manager
+const STATE_DATA_PROPERTIES = ['appState', 'settings', 'cycles', 'schemaVersion'];
+
+/**
+ * Wrap AppState manager in a proxy that warns when state data properties
+ * are accessed directly on the manager instead of via .get()
+ */
+function createValidatedAppStateProxy(manager) {
+    const warnedProps = new Set();
+
+    return new Proxy(manager, {
+        get(target, prop) {
+            // Warn once per property if accessing state data property on manager
+            if (STATE_DATA_PROPERTIES.includes(prop) && !warnedProps.has(prop)) {
+                console.warn(
+                    `⚠️ AppState: Accessing '.${prop}' on manager - did you mean AppState.get().${prop}? ` +
+                    `The manager has methods like .get(), .update(), .isReady(). ` +
+                    `Call .get() first to access state data.`
+                );
+                warnedProps.add(prop);
+            }
+            return target[prop];
+        }
+    });
+}
+
 export function createStateManager(dependencies = {}) {
     if (!AppState) {
-        AppState = new MiniCycleState(dependencies);
+        const manager = new MiniCycleState(dependencies);
+        AppState = createValidatedAppStateProxy(manager);
     }
     return AppState;
 }

@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.560';
+const APP_VERSION = '1.562';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -333,6 +333,14 @@ export async function initAppState(deps, showNotification) {
   // Note: appContextMod already imported at start of initAppState
   appContextMod.setContextValue('AppState', AppState);
   console.log('✅ AppState added to appContext');
+
+  // ========== Inject AppState into Notifications ==========
+  // Notifications was loaded early (pre-AppState) with AppState: null
+  // Now that AppState exists, inject it so recurring notifications work
+  if (deps.utils?.setNotificationsDependencies) {
+    deps.utils.setNotificationsDependencies({ AppState });
+    console.log('✅ AppState injected into Notifications');
+  }
 
   // ========== Initialize data access functions ==========
   // Must be after appContext so dataAccess.js can use state().AppState

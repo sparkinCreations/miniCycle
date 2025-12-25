@@ -42,7 +42,7 @@
  */
 
 // Version marker for cache debugging (updated by update-version.sh)
-export const DIBASE_VERSION = '1.560';
+export const DIBASE_VERSION = '1.562';
 
 // ============================================================================
 // DEPENDENCY MARKERS
@@ -303,6 +303,85 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
                 .map(([key]) => key);
         }
     };
+}
+
+// ============================================================================
+// PROXY HELPERS WITH VALIDATION
+// ============================================================================
+
+/**
+ * Create a deps proxy that warns when spread incorrectly
+ * Use this instead of `new Proxy({}, { get... })` for DI proxies
+ *
+ * @param {Object} di - The DI container from createDIModule
+ * @param {string} moduleName - Module name for warning messages
+ * @returns {Proxy} Proxy that resolves deps and warns on spread
+ *
+ * @example
+ * const deps = createDepsProxy(di, 'MyModule');
+ * deps.AppState // works - triggers get trap
+ * { ...deps }   // warns - spreading proxy doesn't work as expected
+ */
+export function createDepsProxy(di, moduleName) {
+    let spreadWarned = false;
+
+    return new Proxy({}, {
+        get(_, prop) {
+            return di.resolve()[prop];
+        },
+        ownKeys() {
+            if (!spreadWarned) {
+                console.warn(
+                    `⚠️ ${moduleName}: Spreading DI proxy directly may not work as expected. ` +
+                    `Use di.resolve() or access properties directly (e.g., deps.AppState).`
+                );
+                spreadWarned = true;
+            }
+            return Reflect.ownKeys(di.resolve());
+        },
+        getOwnPropertyDescriptor(_, prop) {
+            // Required for spread to work after ownKeys
+            const resolved = di.resolve();
+            if (prop in resolved) {
+                return {
+                    value: resolved[prop],
+                    writable: true,
+                    enumerable: true,
+                    configurable: true
+                };
+            }
+            return undefined;
+        }
+    });
+}
+
+/**
+ * Wrap resolved deps in a proxy that warns when null optional deps are accessed
+ *
+ * @param {Object} resolved - Resolved dependencies object
+ * @param {Object} schema - DI schema with OPTIONAL markers
+ * @param {string} moduleName - Module name for warning messages
+ * @returns {Proxy} Proxy that warns on null optional dep access
+ */
+export function createValidatedDepsProxy(resolved, schema, moduleName) {
+    const warnedKeys = new Set();
+
+    return new Proxy(resolved, {
+        get(target, prop) {
+            const value = target[prop];
+
+            // Warn once per null optional dep access
+            if (value === null && schema[prop]?.[OPTIONAL] && !warnedKeys.has(prop)) {
+                console.warn(
+                    `⚠️ ${moduleName}: Optional dep '${prop}' accessed but was not injected. ` +
+                    `Ensure setDependencies() includes '${prop}' or handle null case.`
+                );
+                warnedKeys.add(prop);
+            }
+
+            return value;
+        }
+    });
 }
 
 // ============================================================================

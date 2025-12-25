@@ -58,6 +58,17 @@ export function setTestingModalDependencies(dependencies) {
 // Get notifications instance from deps
 const getNotifications = () => deps.notifications || null;
 
+// Simple HTML escape for XSS protection
+const escapeHtml = (str) => {
+    if (typeof str !== 'string') return str;
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
 // Safe access to notification functions (uses injected deps)
 // ✅ FIXED: Removed duration = 2000 default to avoid overriding notification.show's duration = null default
 function safeShowNotification(message, type = "info", duration) {
@@ -1616,10 +1627,10 @@ async function restoreFromBackup() {
             </div>
             <div style="font-size: 12px; color: #ccc;">
                 💾 ${size} KB • ${storageLabel}
-                ${backup.metadata ? ` • v${backup.metadata.schemaVersion}` : ''}
+                ${backup.metadata ? ` • v${escapeHtml(String(backup.metadata.schemaVersion))}` : ''}
             </div>
             <div style="font-size: 11px; color: #999; margin-top: 4px;">
-                ${backup.name}
+                ${escapeHtml(backup.name)}
             </div>
         `;
 

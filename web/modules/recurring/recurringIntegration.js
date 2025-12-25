@@ -88,7 +88,11 @@ export async function initializeRecurringModules(options = {}) {
 
         console.log('🔧 Configuring recurringCore dependencies...');
 
-        recurringCore.setRecurringCoreDependencies({
+        // Capture returned functions (workaround for dynamic import binding issues)
+        const coreFunctions = await recurringCore.setRecurringCoreDependencies({
+            // Version for cache-busting sub-module imports
+            AppMeta: options.AppMeta,
+
             // State management (required) - DI-pure (pass AppState directly)
             AppState: deps.AppState,
             updateAppState: (updateFn, immediate = false) => {
@@ -159,13 +163,13 @@ export async function initializeRecurringModules(options = {}) {
         console.log('🎛️ Initializing RecurringPanelManager...');
 
         const recurringPanel = new RecurringPanelManager({
-            // From recurringCore module
-            applyRecurringSettings: recurringCore.applyRecurringToTaskSchema25,
-            deleteTemplate: recurringCore.deleteRecurringTemplate,
+            // From recurringCore module (use coreFunctions for loaded values)
+            applyRecurringSettings: coreFunctions.applyRecurringToTaskSchema25,
+            deleteTemplate: coreFunctions.deleteRecurringTemplate,
             buildRecurringSummary: buildRecurringSummaryFromSettings,
-            normalizeRecurringSettings: recurringCore.normalizeRecurringSettings,
-            formatNextOccurrence: recurringCore.formatNextOccurrence,
-            calculateNextOccurrence: recurringCore.calculateNextOccurrence,
+            normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
+            formatNextOccurrence: coreFunctions.formatNextOccurrence,
+            calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
 
             // State management - DI-pure (pass AppState directly)
             AppState: deps.AppState,
@@ -214,7 +218,7 @@ export async function initializeRecurringModules(options = {}) {
         console.log('🔗 Wiring up panel callbacks to core...');
 
         // Update core dependencies with panel methods
-        recurringCore.setRecurringCoreDependencies({
+        await recurringCore.setRecurringCoreDependencies({
             updateRecurringPanel: () => recurringPanel.updateRecurringPanel(),
             updateRecurringSummary: () => recurringPanel.updateRecurringSummary(),
             updatePanelButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
@@ -239,7 +243,7 @@ export async function initializeRecurringModules(options = {}) {
         console.log('⏱️ Setting up recurring task watcher...');
 
         // Initialize the watcher - will start checking every 30 seconds
-        recurringCore.setupRecurringWatcher();
+        coreFunctions.setupRecurringWatcher();
 
         console.log('✅ Recurring watcher initialized');
 
@@ -268,19 +272,19 @@ export async function initializeRecurringModules(options = {}) {
         // STEP 7: Build return object (Phase 3 - no window.* exports)
         // ============================================
 
-        // Build convenience objects for direct access
+        // Build convenience objects for direct access (use coreFunctions for loaded values)
         const recurringCoreAPI = {
-            applyRecurringSettings: recurringCore.applyRecurringToTaskSchema25,
-            handleActivation: recurringCore.handleRecurringTaskActivation,
-            handleDeactivation: recurringCore.handleRecurringTaskDeactivation,
-            deleteTemplate: recurringCore.deleteRecurringTemplate,
-            removeTasksFromCycle: recurringCore.removeRecurringTasksFromCycle,
-            handleAfterReset: recurringCore.handleRecurringTasksAfterReset,
-            watchTasks: recurringCore.watchRecurringTasks,
-            catchUpMissedTasks: recurringCore.catchUpMissedRecurringTasks,
+            applyRecurringSettings: coreFunctions.applyRecurringToTaskSchema25,
+            handleActivation: coreFunctions.handleRecurringTaskActivation,
+            handleDeactivation: coreFunctions.handleRecurringTaskDeactivation,
+            deleteTemplate: coreFunctions.deleteRecurringTemplate,
+            removeTasksFromCycle: coreFunctions.removeRecurringTasksFromCycle,
+            handleAfterReset: coreFunctions.handleRecurringTasksAfterReset,
+            watchTasks: coreFunctions.watchRecurringTasks,
+            catchUpMissedTasks: coreFunctions.catchUpMissedRecurringTasks,
             // Utility functions
-            calculateNextOccurrence: recurringCore.calculateNextOccurrence,
-            calculateNextOccurrences: recurringCore.calculateNextOccurrences,
+            calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
+            calculateNextOccurrences: coreFunctions.calculateNextOccurrences,
             // Backward compatibility - redirect button visibility to panel
             updateRecurringButtonVisibility: () => recurringPanel.updateRecurringPanelButtonVisibility()
         };
