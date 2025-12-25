@@ -1,28 +1,32 @@
 /**
- * 🎯 miniCycle Task Core Module (DI-Pure)
- * Handles core task CRUD operations with graceful error handling
+ * miniCycle Task Core Module (DI-Pure)
+ * Main orchestrator for task operations
  *
- * Features:
- * - Task creation (addTask)
- * - Task editing (editTask)
- * - Task deletion (deleteTask)
- * - Task completion toggling
- * - Priority management
- * - Task reordering
- * - Batch operations (reset, complete all)
- * - Integration with Schema 2.5 data structure
+ * This module coordinates task functionality by delegating to focused sub-modules:
+ * - taskCRUD.js - Create, Read, Update, Delete operations
+ * - taskCompletion.js - Completion state and ordering
+ * - taskCycleReset.js - Cycle reset and complete-all operations
+ *
+ * NO window.* globals - all dependencies must be injected
+ * NO legacy fallbacks - strict DI only
+ * Uses dynamic versioned imports to avoid duplicate module loading
  *
  * @module task/taskCore
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { TASK_TIMEOUTS, UI_TIMEOUTS } from '../core/constants.js';
+import { TASK_TIMEOUTS } from '../core/constants.js';
+
+// ============================================================================
+// MODULE-LEVEL STORAGE (populated by dynamic imports)
+// ============================================================================
+
+let _subModules = null;
+let _initialized = false;
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
-// NOTE: No appContext fallback - all dependencies must come through DI
-// This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskCore', {
     appInit: optional(null),
@@ -67,44 +71,117 @@ const _deps = new Proxy({}, {
 // Singleton instance (initialized by initTaskCore)
 let taskCoreInstance = null;
 
+// ============================================================================
+// DYNAMIC SUB-MODULE LOADING (versioned imports)
+// ============================================================================
+
 /**
- * Set dependencies for TaskCore.
- * Can be called before OR after initTaskCore - updates both module-level
- * deps and the existing instance if one exists.
+ * Load all sub-modules with versioned imports
+ * @param {string} version - Version string for cache busting
+ */
+async function loadSubModules(version) {
+    if (_subModules) return _subModules;
+
+    console.log(`📦 TaskCore: Loading sub-modules with version ${version}`);
+
+    const [
+        taskCRUDModule,
+        taskCompletionModule,
+        taskCycleResetModule
+    ] = await Promise.all([
+        import(`./taskCRUD.js?v=${version}`),
+        import(`./taskCompletion.js?v=${version}`),
+        import(`./taskCycleReset.js?v=${version}`)
+    ]);
+
+    _subModules = {
+        // Task CRUD
+        setTaskCRUDDependencies: taskCRUDModule.setTaskCRUDDependencies,
+        addTaskImpl: taskCRUDModule.addTaskImpl,
+        editTaskImpl: taskCRUDModule.editTaskImpl,
+        deleteTaskImpl: taskCRUDModule.deleteTaskImpl,
+        toggleTaskPriorityImpl: taskCRUDModule.toggleTaskPriorityImpl,
+
+        // Task Completion
+        setTaskCompletionDependencies: taskCompletionModule.setTaskCompletionDependencies,
+        handleTaskCompletionChangeImpl: taskCompletionModule.handleTaskCompletionChangeImpl,
+        saveCurrentTaskOrderImpl: taskCompletionModule.saveCurrentTaskOrderImpl,
+        saveTaskToSchema25Impl: taskCompletionModule.saveTaskToSchema25Impl,
+
+        // Task Cycle Reset
+        setTaskCycleResetDependencies: taskCycleResetModule.setTaskCycleResetDependencies,
+        resetTasksImpl: taskCycleResetModule.resetTasksImpl,
+        handleCompleteAllTasksImpl: taskCycleResetModule.handleCompleteAllTasksImpl,
+        deleteCompletedTasksImpl: taskCycleResetModule.deleteCompletedTasksImpl,
+        markAllTasksCompleteImpl: taskCycleResetModule.markAllTasksCompleteImpl,
+        clearAllTimeouts: taskCycleResetModule.clearAllTimeouts,
+        isResetInProgress: taskCycleResetModule.isResetInProgress
+    };
+
+    console.log('✅ TaskCore: All sub-modules loaded');
+    return _subModules;
+}
+
+/**
+ * Wire dependencies to all sub-modules
+ * @param {Object} dependencies - Dependencies to propagate
+ */
+function wireSubModuleDependencies(dependencies) {
+    if (!_subModules) {
+        console.error('TaskCore: Sub-modules not loaded yet');
+        return;
+    }
+
+    _subModules.setTaskCRUDDependencies(dependencies);
+    _subModules.setTaskCompletionDependencies(dependencies);
+    _subModules.setTaskCycleResetDependencies(dependencies);
+
+    console.log('✅ TaskCore: Sub-module dependencies wired');
+}
+
+/**
+ * Set dependencies for TaskCore and all sub-modules.
+ * Can be called before OR after initTaskCore.
  *
  * @param {Object} dependencies - Dependencies to inject
  */
 export function setTaskCoreDependencies(dependencies) {
     di.setDependencies(dependencies);
 
+    // Forward dependencies to sub-modules if loaded
+    if (_subModules) {
+        wireSubModuleDependencies(dependencies);
+    }
+
     // Also update existing instance if initialized
-    // IMPORTANT: Only assign deps that were actually passed (not ALL resolved deps)
-    // Otherwise we'd overwrite existing deps like AppState with null
     if (taskCoreInstance && taskCoreInstance.deps) {
         for (const [key, value] of Object.entries(dependencies)) {
             if (value !== undefined) {
                 taskCoreInstance.deps[key] = value;
             }
         }
-        console.log('🎯 TaskCore instance deps updated:', Object.keys(dependencies));
+        console.log('TaskCore instance deps updated:', Object.keys(dependencies));
     } else {
-        console.log('🎯 TaskCore module deps set (pre-init):', Object.keys(dependencies));
+        console.log('TaskCore module deps set (pre-init):', Object.keys(dependencies));
     }
 }
+
+// ============================================================================
+// TASK CORE CLASS
+// ============================================================================
 
 export class TaskCore {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
 
-        // Instance version - uses injected AppMeta (no hardcoded fallback)
-        this.version = resolvedDeps.AppMeta?.version;
+        // Instance version - uses injected AppMeta
+        this.version = resolvedDeps.AppMeta?.version || 'dev-local';
 
-        // ✅ FIX #7: Track active timeouts for cleanup
+        // Track active timeouts for cleanup
         this.activeTimeouts = new Set();
 
         // Store dependencies - NO window.* fallbacks (DI-pure)
-        // Priority: constructor > module deps > local fallback
         this.deps = {
             // State management
             AppState: resolvedDeps.AppState || null,
@@ -113,24 +190,24 @@ export class TaskCore {
             loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
             sanitizeInput: resolvedDeps.sanitizeInput || ((text) => text),
 
-            // Safe storage utilities (injected, no globals)
+            // Safe storage utilities
             safeJSONParse: resolvedDeps.safeJSONParse || ((str, fallback) => { try { return JSON.parse(str); } catch { return fallback; } }),
             safeJSONStringify: resolvedDeps.safeJSONStringify || ((obj, fallback) => { try { return JSON.stringify(obj); } catch { return fallback; } }),
             safeLocalStorageGet: resolvedDeps.safeLocalStorageGet || ((key, fallback) => { try { return localStorage.getItem(key); } catch { return fallback; } }),
             safeLocalStorageSet: resolvedDeps.safeLocalStorageSet || ((key, value) => { try { localStorage.setItem(key, value); } catch { console.warn('localStorage unavailable'); } }),
 
-            // Undo system state check (injected function, no AppGlobalState)
+            // Undo system state check
             isPerformingUndoRedo: resolvedDeps.isPerformingUndoRedo || (() => false),
 
             // UI updates
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
-            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => console.log('⏭️ updateStatsPanel not available')),
-            updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
-            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
-            refreshUIFromState: resolvedDeps.refreshUIFromState || (() => console.log('⏭️ refreshUIFromState not available')),
+            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => console.log('updateStatsPanel not available')),
+            updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('updateProgressBar not available')),
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('checkCompleteAllButton not available')),
+            refreshUIFromState: resolvedDeps.refreshUIFromState || (() => console.log('refreshUIFromState not available')),
 
             // Undo system
-            captureStateSnapshot: resolvedDeps.captureStateSnapshot || (() => console.log('⏭️ captureStateSnapshot not available')),
+            captureStateSnapshot: resolvedDeps.captureStateSnapshot || (() => console.log('captureStateSnapshot not available')),
             enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || (() => {}),
 
             // Modal system
@@ -142,7 +219,7 @@ export class TaskCore {
             querySelector: resolvedDeps.querySelector || ((selector) => document.querySelector(selector)),
             querySelectorAll: resolvedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
 
-            // Task DOM creation (injected from taskDOM.js)
+            // Task DOM creation
             validateAndSanitizeTaskInput: resolvedDeps.validateAndSanitizeTaskInput || null,
             loadTaskContext: resolvedDeps.loadTaskContext || null,
             createOrUpdateTaskData: resolvedDeps.createOrUpdateTaskData || null,
@@ -151,9 +228,9 @@ export class TaskCore {
             finalizeTaskCreation: resolvedDeps.finalizeTaskCreation || null,
 
             // Auto-save
-            autoSave: resolvedDeps.autoSave || (() => console.log('⏭️ autoSave not available')),
+            autoSave: resolvedDeps.autoSave || (() => console.log('autoSave not available')),
 
-            // Cycle completion (used in resetTasks)
+            // Cycle completion
             incrementCycleCount: resolvedDeps.incrementCycleCount || null,
             helpWindowManager: resolvedDeps.helpWindowManager || null,
             showCompletionAnimation: resolvedDeps.showCompletionAnimation || null,
@@ -176,127 +253,76 @@ export class TaskCore {
             updateMoveArrowsVisibility: resolvedDeps.updateMoveArrowsVisibility || null
         };
 
-        // Local instance state (previously on AppGlobalState)
+        // Local instance state
         this.isResetting = false;
 
-        console.log('🎯 TaskCore module initialized');
+        console.log('TaskCore module initialized');
     }
 
-    /**
-     * Helper to resolve getter functions for late-initialized dependencies.
-     * Some deps (like helpWindowManager) are passed as getter functions
-     * because they don't exist at initialization time.
-     *
-     * @param {*} dep - The dependency (may be a getter function or direct value)
-     * @returns {*} The resolved value
-     */
-    _resolveGetter(dep) {
-        if (typeof dep === 'function' && dep.length === 0) {
-            // It's a no-arg function (getter), call it to get the actual value
-            try {
-                return dep();
-            } catch {
-                return null;
-            }
-        }
-        return dep;
-    }
+    // ========================================================================
+    // INITIALIZATION
+    // ========================================================================
 
     /**
      * Initialize task core system
-     * Must be called after DOM is ready and appInit core is ready
      */
     async init() {
-        console.log('🔄 Initializing task core system...');
+        console.log('Initializing task core system...');
 
-        // Wait for core systems to be ready (with timeout for test environments)
         try {
             await Promise.race([
                 _deps.appInit?.waitForCore(),
                 new Promise((resolve) => setTimeout(resolve, TASK_TIMEOUTS.CORE_INIT))
             ]);
-            console.log('✅ Task core system initialized successfully');
+
+            // Load sub-modules with versioned imports
+            await loadSubModules(this.version);
+
+            // Wire dependencies to sub-modules
+            wireSubModuleDependencies(di.resolve());
+
+            _initialized = true;
+            console.log('Task core system initialized successfully');
         } catch (error) {
-            console.warn('⚠️ Task core system initialization failed:', error);
+            console.warn('Task core system initialization failed:', error);
             _deps.showNotification?.('Task system initialized with limited functionality', 'warning');
         }
     }
 
-    // ============================================================================
+    // ========================================================================
+    // TIMEOUT MANAGEMENT
+    // ========================================================================
+
+    trackTimeout(timeoutId) {
+        this.activeTimeouts.add(timeoutId);
+        return timeoutId;
+    }
+
+    clearTrackedTimeout(timeoutId) {
+        clearTimeout(timeoutId);
+        this.activeTimeouts.delete(timeoutId);
+    }
+
+    clearAllTimeouts() {
+        console.log(`Clearing ${this.activeTimeouts.size} active timeouts`);
+        for (const timeoutId of this.activeTimeouts) {
+            clearTimeout(timeoutId);
+        }
+        this.activeTimeouts.clear();
+        // Also clear sub-module timeouts
+        _subModules?.clearAllTimeouts?.();
+    }
+
+    // ========================================================================
     // FALLBACK METHODS
-    // ============================================================================
-
-    /**
-     * Wait for core with timeout (for test environment compatibility)
-     */
-    async waitForCoreWithTimeout() {
-        try {
-            await Promise.race([
-                _deps.appInit?.waitForCore(),
-                new Promise((resolve) => setTimeout(resolve, TASK_TIMEOUTS.UI_FUNC_MAX_WAIT))
-            ]);
-        } catch (error) {
-            console.warn('⚠️ Core wait timeout or error:', error);
-        }
-    }
-
-    /**
-     * Wait for specific global functions to be available
-     * Used by resetTasks to ensure UI functions exist before calling them
-     *
-     * Note: Dependencies may be passed as getter functions (e.g., () => window.helpWindowManager)
-     * to handle late initialization. This method resolves getters before checking.
-     */
-    async waitForUIFunctions(maxWaitMs = TASK_TIMEOUTS.UI_FUNC_WAIT_TOTAL) {
-        const startTime = Date.now();
-        const checkInterval = TASK_TIMEOUTS.UI_FUNC_CHECK_INTERVAL;
-
-        // Helper to resolve getter functions
-        const resolveGetter = (dep) => {
-            if (typeof dep === 'function' && dep.length === 0) {
-                // It's a getter function (no args), call it to get the actual value
-                try {
-                    return dep();
-                } catch {
-                    return null;
-                }
-            }
-            return dep;
-        };
-
-        while (Date.now() - startTime < maxWaitMs) {
-            // Check injected deps only (DI-pure, no window.* fallback)
-            // Resolve getters for deps that may be late-initialized
-            const hasIncrementCycleCount = typeof this.deps.incrementCycleCount === 'function';
-            const helpWindowMgr = resolveGetter(this.deps.helpWindowManager);
-            const hasHelpWindowManager = helpWindowMgr && typeof helpWindowMgr.showCycleCompleteMessage === 'function';
-            const hasShowCompletionAnimation = typeof this.deps.showCompletionAnimation === 'function';
-
-            if (hasIncrementCycleCount && hasHelpWindowManager && hasShowCompletionAnimation) {
-                console.log('✅ All UI functions available for resetTasks');
-                return true;
-            }
-
-            // Wait before checking again
-            await new Promise(resolve => setTimeout(resolve, checkInterval));
-        }
-
-        // Final check for logging
-        const helpWindowMgr = resolveGetter(this.deps.helpWindowManager);
-        console.warn('⚠️ Timeout waiting for UI functions:', {
-            incrementCycleCount: typeof this.deps.incrementCycleCount === 'function',
-            helpWindowManager: helpWindowMgr && typeof helpWindowMgr.showCycleCompleteMessage === 'function',
-            showCompletionAnimation: typeof this.deps.showCompletionAnimation === 'function'
-        });
-        return false;
-    }
+    // ========================================================================
 
     fallbackNotification(message, type = 'info') {
         console.log(`[TaskCore] ${message}`);
     }
 
     fallbackLoadData() {
-        console.warn('⚠️ loadMiniCycleData not available');
+        console.warn('loadMiniCycleData not available');
         return null;
     }
 
@@ -314,1050 +340,109 @@ export class TaskCore {
         }
     }
 
-    // ============================================================================
-    // ✅ FIX #7: TIMEOUT MANAGEMENT
-    // ============================================================================
+    // ========================================================================
+    // CRUD OPERATIONS (delegated to taskCRUD.js)
+    // ========================================================================
 
-    /**
-     * Track a timeout for later cleanup
-     * @param {number} timeoutId - The timeout ID returned by setTimeout
-     */
-    trackTimeout(timeoutId) {
-        this.activeTimeouts.add(timeoutId);
-        return timeoutId;
-    }
-
-    /**
-     * Clear a specific timeout and remove from tracking
-     * @param {number} timeoutId - The timeout ID to clear
-     */
-    clearTrackedTimeout(timeoutId) {
-        clearTimeout(timeoutId);
-        this.activeTimeouts.delete(timeoutId);
-    }
-
-    /**
-     * Clear all tracked timeouts (called on cleanup/destroy)
-     */
-    clearAllTimeouts() {
-        console.log(`🧹 Clearing ${this.activeTimeouts.size} active timeouts`);
-        for (const timeoutId of this.activeTimeouts) {
-            clearTimeout(timeoutId);
-        }
-        this.activeTimeouts.clear();
-    }
-
-    // ============================================================================
-    // TASK CRUD OPERATIONS
-    // ============================================================================
-
-    /**
-     * Add a new task to the current cycle
-     * @param {string} taskText - The text content of the task
-     * @param {Object} options - Task options
-     * @param {boolean} [options.completed=false] - Whether the task is completed
-     * @param {boolean} [options.shouldSave=true] - Whether to save immediately
-     * @param {string|null} [options.dueDate=null] - Due date for the task
-     * @param {boolean|null} [options.highPriority=null] - Whether task is high priority
-     * @param {boolean} [options.isLoading=false] - Whether task is being loaded from storage
-     * @param {boolean} [options.remindersEnabled=false] - Whether reminders are enabled
-     * @param {boolean} [options.recurring=false] - Whether task is recurring
-     * @param {string|null} [options.taskId=null] - Specific task ID (for loading)
-     * @param {Object} [options.recurringSettings={}] - Settings for recurring tasks
-     * @param {boolean} [options.deleteWhenComplete] - Auto-delete when completed
-     * @param {Object} [options.deleteWhenCompleteSettings] - Auto-delete settings
-     * @param {boolean} [options.deferAppend=false] - Defer DOM append for batch ops
-     * @param {HTMLElement|null} [options.targetContainer=null] - Target container for task
-     */
     async addTask(taskText, options = {}) {
-        const {
-            completed = false,
-            shouldSave = true,
-            dueDate = null,
-            highPriority = null,
-            isLoading = false,
-            remindersEnabled = false,
-            recurring = false,
-            taskId = null,
-            recurringSettings = {},
-            deleteWhenComplete = undefined,
-            deleteWhenCompleteSettings = undefined,
-            deferAppend = false,
-            targetContainer = null
-        } = options;
-
-        try {
-            // Wait for core to be ready
-            await this.waitForCoreWithTimeout();
-
-            // Validate AppState is available
-            if (!this.deps.AppState?.isReady?.()) {
-                console.warn('⚠️ AppState not ready, task creation may fail');
-            }
-
-            // Input validation and sanitization
-            const validatedInput = this.deps.validateAndSanitizeTaskInput?.(taskText);
-            if (!validatedInput) {
-                console.warn('⚠️ Task validation failed');
-                return;
-            }
-
-            // Load and validate data context
-            const taskContext = this.deps.loadTaskContext?.(validatedInput, taskId, {
-                completed, dueDate, highPriority, remindersEnabled, recurring, recurringSettings, deleteWhenComplete, deleteWhenCompleteSettings
-            }, isLoading);
-            if (!taskContext) {
-                console.warn('⚠️ Could not load task context');
-                return;
-            }
-
-            // Create or update task data
-            const taskData = this.deps.createOrUpdateTaskData?.(taskContext);
-
-            // Create DOM elements
-            const taskElements = this.deps.createTaskDOMElements?.(taskContext, taskData);
-
-            // Setup task interactions and events
-            this.deps.setupTaskInteractions?.(taskElements, taskContext);
-
-            // Finalize task creation (✅ FIX #6: Pass batch options)
-            const result = this.deps.finalizeTaskCreation?.(taskElements, taskContext, {
-                shouldSave,
-                isLoading,
-                deferAppend,
-                targetContainer
-            });
-
-            console.log('✅ Task creation completed (Schema 2.5)');
-
-            return result; // ✅ FIX #6: Return taskItem for batch processing
-
-        } catch (error) {
-            console.warn('⚠️ Task creation failed:', error);
-            _deps.showNotification?.('Could not add task - please try again', 'warning');
+        if (!_subModules?.addTaskImpl) {
+            console.warn('TaskCore: addTaskImpl not loaded');
+            return;
         }
+        return _subModules.addTaskImpl(taskText, options, this.deps);
     }
 
-    /**
-     * Edit an existing task's text
-     * @param {HTMLElement} taskItem - The task DOM element
-     */
     async editTask(taskItem) {
-        try {
-            await this.waitForCoreWithTimeout();
-
-            const taskLabel = taskItem.querySelector("span");
-            const oldText = taskLabel.textContent.trim();
-
-            this.deps.showPromptModal({
-                title: "Edit Task Name",
-                message: "Rename this task:",
-                placeholder: "Enter new task name",
-                defaultValue: oldText,
-                confirmText: "Save",
-                cancelText: "Cancel",
-                required: true,
-                callback: async (newText) => {
-                    if (newText && newText.trim() !== oldText) {
-                        const cleanText = this.deps.sanitizeInput(newText.trim());
-
-                        // Enable undo system
-                        this.deps.enableUndoSystemOnFirstInteraction();
-
-                        // Capture snapshot BEFORE changing text
-                        if (this.deps.AppState?.isReady?.()) {
-                            const currentState = this.deps.AppState.get();
-                            if (currentState) this.deps.captureStateSnapshot(currentState);
-                        }
-
-                        // Update DOM
-                        taskLabel.textContent = cleanText;
-
-                        const taskId = taskItem.dataset.taskId;
-
-                        // Update AppState
-                        if (this.deps.AppState?.isReady?.()) {
-                            await this.deps.AppState.update(state => {
-                                const cid = state.appState.activeCycleId;
-                                const cycle = state.data.cycles[cid];
-                                const t = cycle?.tasks?.find(t => t.id === taskId);
-                                if (t) t.text = cleanText;
-                            }, true);
-                        } else {
-                            // Fallback to localStorage
-                            const schemaData = this.deps.loadMiniCycleData();
-                            if (schemaData) {
-                                const cycles = schemaData.data?.cycles || {};
-                                const activeCycle = schemaData.appState?.activeCycleId;
-                                const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                                if (task) {
-                                    task.text = cleanText;
-                                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                                    if (fullSchemaData) {
-                                        fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                                        fullSchemaData.metadata.lastModified = Date.now();
-                                        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                                    }
-                                }
-                            }
-                        }
-
-                        _deps.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
-                        this.deps.updateStatsPanel();
-                        this.deps.updateProgressBar();
-                        this.deps.checkCompleteAllButton();
-                    }
-                }
-            });
-
-        } catch (error) {
-            console.warn('⚠️ Task edit failed:', error);
-            _deps.showNotification?.('Could not edit task', 'warning');
+        if (!_subModules?.editTaskImpl) {
+            console.warn('TaskCore: editTaskImpl not loaded');
+            return;
         }
+        return _subModules.editTaskImpl(taskItem, this.deps);
     }
 
-    /**
-     * Delete a task with confirmation
-     * @param {HTMLElement} taskItem - The task DOM element
-     */
     async deleteTask(taskItem) {
-        try {
-            await this.waitForCoreWithTimeout();
-
-            const taskId = taskItem.dataset.taskId;
-            const taskName = taskItem.querySelector(".task-text")?.textContent || "Task";
-
-            this.deps.showConfirmationModal({
-                title: "Delete Task",
-                message: `Are you sure you want to delete "${taskName}"?`,
-                confirmText: "Delete",
-                cancelText: "Cancel",
-                callback: async (confirmDelete) => {
-                    if (!confirmDelete) {
-                        _deps.showNotification?.(`"${taskName}" has not been deleted.`, "show", 2500);
-                        return;
-                    }
-
-                    // Enable undo system
-                    this.deps.enableUndoSystemOnFirstInteraction();
-
-                    // Capture snapshot BEFORE deletion
-                    if (this.deps.AppState?.isReady?.()) {
-                        const currentState = this.deps.AppState.get();
-                        if (currentState) this.deps.captureStateSnapshot(currentState);
-                    }
-
-                    // Update AppState
-                    if (this.deps.AppState?.isReady?.()) {
-                        await this.deps.AppState.update(state => {
-                            const cid = state.appState.activeCycleId;
-                            const cycle = state.data.cycles[cid];
-                            if (cycle?.tasks) {
-                                const index = cycle.tasks.findIndex(t => t.id === taskId);
-                                if (index !== -1) {
-                                    cycle.tasks.splice(index, 1);
-                                }
-                            }
-                        }, true);
-
-                        // Remove from DOM
-                        taskItem.remove();
-
-                        _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
-                        this.deps.updateStatsPanel();
-                        this.deps.updateProgressBar();
-                        this.deps.checkCompleteAllButton();
-
-                        // Update move arrows (first/last task may have changed)
-                        if (typeof this.deps.updateMoveArrowsVisibility === 'function') {
-                            this.deps.updateMoveArrowsVisibility();
-                        }
-
-                    } else {
-                        // Fallback to localStorage
-                        const schemaData = this.deps.loadMiniCycleData();
-                        if (schemaData) {
-                            const cycles = schemaData.data?.cycles || {};
-                            const activeCycle = schemaData.appState?.activeCycleId;
-                            const tasks = cycles[activeCycle]?.tasks || [];
-                            const index = tasks.findIndex(t => t.id === taskId);
-
-                            if (index !== -1) {
-                                tasks.splice(index, 1);
-                                const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                                if (fullSchemaData) {
-                                    fullSchemaData.data.cycles[activeCycle].tasks = tasks;
-                                    fullSchemaData.metadata.lastModified = Date.now();
-                                    this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-
-                                    taskItem.remove();
-                                    _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
-                                    this.deps.updateStatsPanel();
-                                    this.deps.updateProgressBar();
-                                    this.deps.checkCompleteAllButton();
-
-                                    // Update move arrows (first/last task may have changed)
-                                    if (typeof this.deps.updateMoveArrowsVisibility === 'function') {
-                                        this.deps.updateMoveArrowsVisibility();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-        } catch (error) {
-            console.warn('⚠️ Task deletion failed:', error);
-            _deps.showNotification?.('Could not delete task', 'warning');
+        if (!_subModules?.deleteTaskImpl) {
+            console.warn('TaskCore: deleteTaskImpl not loaded');
+            return;
         }
+        return _subModules.deleteTaskImpl(taskItem, this.deps);
     }
 
-    /**
-     * Toggle task priority (high/normal)
-     * @param {HTMLElement} taskItem - The task DOM element
-     */
     async toggleTaskPriority(taskItem) {
-        try {
-            await this.waitForCoreWithTimeout();
-
-            // Enable undo system
-            this.deps.enableUndoSystemOnFirstInteraction();
-
-            const taskId = taskItem.dataset.taskId;
-
-            // Read fresh state from AppState
-            const currentState = this.deps.AppState?.get();
-            if (!currentState) {
-                console.error('❌ AppState not available for priority toggle');
-                return;
-            }
-
-            const activeCycleId = currentState.appState?.activeCycleId;
-            const freshCycle = currentState.data?.cycles?.[activeCycleId];
-            const task = freshCycle?.tasks?.find(t => t.id === taskId);
-
-            if (!task) {
-                console.warn('⚠️ Task not found for priority toggle:', taskId);
-                return;
-            }
-
-            // Toggle based on AppState, not DOM
-            const isCurrentlyHighPriority = task.highPriority === true;
-            const newHighPriority = !isCurrentlyHighPriority;
-
-            console.log('⭐ Toggling priority state:', {
-                taskId: taskId,
-                wasHighPriority: isCurrentlyHighPriority,
-                willBeHighPriority: newHighPriority
-            });
-
-            // Capture snapshot BEFORE changing priority
-            if (this.deps.AppState?.isReady?.()) {
-                this.deps.captureStateSnapshot(currentState);
-            }
-
-            // Update DOM based on calculated state
-            taskItem.classList.toggle("high-priority", newHighPriority);
-            const button = taskItem.querySelector(".priority-btn");
-            if (button) {
-                button.classList.toggle("active", newHighPriority);
-                button.classList.toggle("priority-active", newHighPriority);
-                button.setAttribute("aria-pressed", newHighPriority.toString());
-            }
-
-            // Update AppState
-            if (this.deps.AppState?.isReady?.()) {
-                this.deps.AppState.update(state => {
-                    const cid = state.appState.activeCycleId;
-                    const cycle = state.data.cycles[cid];
-                    const t = cycle?.tasks?.find(t => t.id === taskId);
-                    if (t) t.highPriority = newHighPriority;
-                }, true);
-
-                _deps.showNotification?.(
-                    `Priority ${newHighPriority ? "enabled" : "removed"}.`,
-                    newHighPriority ? "error" : "info",
-                    1500
-                );
-            } else {
-                // Fallback to localStorage
-                const schemaData = this.deps.loadMiniCycleData();
-                if (schemaData) {
-                    const cycles = schemaData.data?.cycles || {};
-                    const activeCycle = schemaData.appState?.activeCycleId;
-                    const task = cycles[activeCycle]?.tasks?.find(t => t.id === taskId);
-                    if (task) {
-                        task.highPriority = taskItem.classList.contains("high-priority");
-                        const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                        if (fullSchemaData) {
-                            fullSchemaData.data.cycles[activeCycle] = cycles[activeCycle];
-                            fullSchemaData.metadata.lastModified = Date.now();
-                            this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                            _deps.showNotification?.(
-                                `Priority ${task.highPriority ? "enabled" : "removed"}.`,
-                                task.highPriority ? "error" : "info",
-                                1500
-                            );
-                        }
-                    }
-                }
-            }
-
-        } catch (error) {
-            console.warn('⚠️ Priority toggle failed:', error);
-            _deps.showNotification?.('Could not toggle priority', 'warning');
+        if (!_subModules?.toggleTaskPriorityImpl) {
+            console.warn('TaskCore: toggleTaskPriorityImpl not loaded');
+            return;
         }
+        return _subModules.toggleTaskPriorityImpl(taskItem, this.deps);
     }
 
-    // ============================================================================
-    // TASK COMPLETION & STATE MANAGEMENT
-    // ============================================================================
+    // ========================================================================
+    // COMPLETION OPERATIONS (delegated to taskCompletion.js)
+    // ========================================================================
 
-    /**
-     * Handle task completion checkbox change
-     * @param {HTMLInputElement} checkbox - The checkbox element
-     */
     async handleTaskCompletionChange(checkbox) {
-        try {
-            const taskItem = checkbox.closest(".task");
-            const taskId = taskItem?.dataset?.taskId;
-            const isCompleted = checkbox.checked;
-
-            // ✅ Capture state snapshot BEFORE making changes (for undo)
-            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.isPerformingUndoRedo()) {
-                const currentState = this.deps.AppState?.get?.();
-                if (currentState) {
-                    this.deps.captureStateSnapshot(currentState);
-                    console.log('📸 Captured snapshot before task completion change');
-                }
-            }
-
-            // ✅ UPDATE: Save completion state to AppState/localStorage (only if taskId exists)
-            if (taskId) {
-                // Update AppState if available
-                if (this.deps.AppState?.isReady?.()) {
-                    await this.deps.AppState.update(state => {
-                        const cid = state.appState?.activeCycleId;
-                        const cycle = state.data?.cycles?.[cid];
-                        if (!cycle?.tasks) return;
-
-                        const task = cycle.tasks.find(t => t.id === taskId);
-                        if (task) {
-                            task.completed = isCompleted;
-                            console.log(`✅ Task completion saved to AppState: ${task.text} = ${isCompleted}`);
-                        }
-                    }, false); // Don't force immediate save, let debounce handle it
-                } else {
-                    // Fallback to localStorage
-                    const schemaData = this.deps.loadMiniCycleData();
-                    if (schemaData) {
-                        const activeCycle = schemaData.appState?.activeCycleId;
-                        const task = schemaData.data?.cycles?.[activeCycle]?.tasks?.find(t => t.id === taskId);
-                        if (task) {
-                            task.completed = isCompleted;
-
-                            // Save to localStorage
-                            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                            if (fullSchemaData?.data?.cycles?.[activeCycle]) {
-                                const taskIndex = fullSchemaData.data.cycles[activeCycle].tasks.findIndex(t => t.id === taskId);
-                                if (taskIndex !== -1) {
-                                    fullSchemaData.data.cycles[activeCycle].tasks[taskIndex].completed = isCompleted;
-                                    fullSchemaData.metadata.lastModified = Date.now();
-                                    this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-                                    console.log(`✅ Task completion saved to localStorage: ${task.text} = ${isCompleted}`);
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                console.warn('⚠️ No task ID found - completion state not saved (DOM update only)');
-            }
-
-            // Update DOM classes (always do this, even without taskId for test compatibility)
-            if (taskItem) {
-                if (isCompleted) {
-                    taskItem.classList.remove("overdue-task");
-                } else {
-                    // Check if task is overdue
-                    if (typeof this.deps.checkOverdueTasks === 'function') {
-                        this.deps.checkOverdueTasks(taskItem);
-                    }
-                }
-
-                // Move task between active and completed lists
-                if (typeof this.deps.handleTaskListMovement === 'function') {
-                    this.deps.handleTaskListMovement(taskItem, isCompleted);
-                }
-            }
-
-            // Update help window if available (DI-pure, no window.* fallback)
-            // Note: helpWindowManager may be a getter function
-            if (this.deps.helpWindowManager) {
-                setTimeout(() => {
-                    // ✅ FIX: Resolve fresh inside setTimeout (not stale from outer scope)
-                    const freshHelpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
-                    if (freshHelpWindowMgr && typeof freshHelpWindowMgr.updateConstantMessage === 'function') {
-                        freshHelpWindowMgr.updateConstantMessage();
-                    }
-                }, UI_TIMEOUTS.STATS_UPDATE_DELAY);
-            }
-        } catch (error) {
-            console.warn('⚠️ Task completion change failed:', error);
-            _deps.showNotification?.('Could not update task', 'warning');
+        if (!_subModules?.handleTaskCompletionChangeImpl) {
+            console.warn('TaskCore: handleTaskCompletionChangeImpl not loaded');
+            return;
         }
+        return _subModules.handleTaskCompletionChangeImpl(checkbox, this.deps);
     }
 
-    /**
-     * Save current task order after drag & drop
-     */
     async saveCurrentTaskOrder() {
-        try {
-            await this.waitForCoreWithTimeout();
-
-            const taskElements = this.deps.querySelectorAll("#taskList .task");
-            const newOrderIds = Array.from(taskElements).map(task => task.dataset.taskId);
-
-            // Use AppState to trigger undo snapshots
-            if (this.deps.AppState?.isReady?.()) {
-                await this.deps.AppState.update(state => {
-                    const cid = state.appState.activeCycleId;
-                    const cycle = state.data.cycles[cid];
-                    if (!cycle?.tasks) return;
-
-                    // Reorder tasks based on DOM order
-                    const reorderedTasks = newOrderIds.map(id =>
-                        cycle.tasks.find(task => task.id === id)
-                    ).filter(Boolean);
-
-                    cycle.tasks = reorderedTasks;
-                }, true);
-                return;
-            }
-
-            // Fallback to localStorage
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for saveCurrentTaskOrder');
-                return;
-            }
-            const cycles = schemaData.data?.cycles || {};
-            const activeCycle = schemaData.appState?.activeCycleId;
-            const currentCycle = cycles[activeCycle];
-            if (!currentCycle || !Array.isArray(currentCycle.tasks)) return;
-
-            const reorderedTasks = newOrderIds.map(id =>
-                currentCycle.tasks.find(task => task.id === id)
-            ).filter(Boolean);
-
-            currentCycle.tasks = reorderedTasks;
-
-            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-            if (fullSchemaData) {
-                fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                fullSchemaData.metadata.lastModified = Date.now();
-                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-            }
-
-        } catch (error) {
-            console.warn('⚠️ Save task order failed:', error);
-            _deps.showNotification?.('Could not save task order', 'warning');
+        if (!_subModules?.saveCurrentTaskOrderImpl) {
+            console.warn('TaskCore: saveCurrentTaskOrderImpl not loaded');
+            return;
         }
+        return _subModules.saveCurrentTaskOrderImpl(this.deps);
     }
 
-    /**
-     * Save task data to Schema 2.5 storage
-     * Prioritizes AppState, falls back to localStorage
-     *
-     * @param {string} activeCycle - The cycle ID to save
-     * @param {object} currentCycle - The cycle data to save
-     */
     saveTaskToSchema25(activeCycle, currentCycle) {
-        // Use AppState if available, otherwise fallback to localStorage
-        if (this.deps.AppState && this.deps.AppState.isReady()) {
-            try {
-                this.deps.AppState.update(state => {
-                    if (state && state.data && state.data.cycles) {
-                        state.data.cycles[activeCycle] = currentCycle;
-                        state.metadata.lastModified = Date.now();
-                    }
-                });
-                return;
-            } catch (error) {
-                console.warn('⚠️ AppState save failed, falling back to localStorage:', error);
-                // Fall through to localStorage fallback
-            }
+        if (!_subModules?.saveTaskToSchema25Impl) {
+            console.warn('TaskCore: saveTaskToSchema25Impl not loaded');
+            return;
         }
-
-        // Fallback to localStorage if AppState not ready or failed
-        try {
-            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-            if (fullSchemaData && fullSchemaData.data && fullSchemaData.data.cycles) {
-                fullSchemaData.data.cycles[activeCycle] = currentCycle;
-                fullSchemaData.metadata.lastModified = Date.now();
-                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-            } else {
-                console.error('❌ Invalid schema data structure in localStorage');
-            }
-        } catch (error) {
-            console.error('❌ Failed to save to localStorage:', error);
-        }
+        return _subModules.saveTaskToSchema25Impl(activeCycle, currentCycle, this.deps);
     }
 
-    // ============================================================================
-    // RESET HELPERS (extracted for clarity)
-    // ============================================================================
+    // ========================================================================
+    // RESET OPERATIONS (delegated to taskCycleReset.js)
+    // ========================================================================
 
-    /**
-     * Get context needed for reset operation
-     * @returns {Object|null} Reset context or null if invalid
-     */
-    _getResetContext() {
-        const taskList = this.deps.querySelector("#taskList");
-        const completedTaskList = this.deps.querySelector("#completedTaskList");
-
-        if (!taskList) {
-            console.error('❌ Task list element not found');
-            return null;
-        }
-
-        // Get tasks from both lists
-        const taskElements = [
-            ...taskList.querySelectorAll(".task"),
-            ...(completedTaskList?.querySelectorAll(".task") || [])
-        ];
-
-        // Get cycle data from AppState or localStorage
-        let cycles, activeCycle, cycleData;
-        if (this.deps.AppState?.isReady?.()) {
-            const state = this.deps.AppState.get();
-            cycles = state?.data?.cycles || {};
-            activeCycle = state?.appState?.activeCycleId;
-            cycleData = cycles[activeCycle];
-        } else {
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for resetTasks');
-                return null;
-            }
-            cycles = schemaData.data?.cycles || {};
-            activeCycle = schemaData.appState?.activeCycleId;
-            cycleData = cycles[activeCycle];
-        }
-
-        if (!activeCycle || !cycleData) {
-            console.error("❌ No active cycle found for resetTasks");
-            return null;
-        }
-
-        return { taskList, completedTaskList, taskElements, cycles, activeCycle, cycleData };
-    }
-
-    /**
-     * Perform the core data reset logic
-     * @param {Object} context - Reset context from _getResetContext
-     * @returns {Object} Result with tasksDeleted count
-     */
-    _resetTasksData(context) {
-        const { taskElements, activeCycle } = context;
-
-        // Get fresh state (user may have switched cycles during animation)
-        const freshState = this.deps.AppState?.get?.();
-        const currentActiveCycle = freshState?.appState?.activeCycleId;
-
-        if (currentActiveCycle !== activeCycle) {
-            console.warn('⚠️ Cycle switched during reset, aborting');
-            return { aborted: true };
-        }
-
-        const freshCycleData = freshState?.data?.cycles?.[currentActiveCycle];
-        if (!freshCycleData) {
-            console.warn('⚠️ Could not get fresh cycle data');
-            return { aborted: true };
-        }
-
-        // Remove recurring tasks
-        if (typeof this.deps.removeRecurringTasksFromCycle === 'function') {
-            this.deps.removeRecurringTasksFromCycle(taskElements, freshCycleData);
-        }
-
-        // Process non-recurring tasks
-        const tasksToDelete = [];
-        taskElements.forEach(taskEl => {
-            if (taskEl.classList.contains("recurring")) return;
-
-            const taskId = taskEl.dataset.taskId;
-            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
-
-            // Check if task should be deleted
-            if (task?.deleteWhenComplete === true) {
-                console.log(`🗑️ Marking task for deletion: ${task.text}`);
-                tasksToDelete.push(taskId);
-                taskEl.remove();
-                return;
-            }
-
-            // Reset task DOM
-            const checkbox = taskEl.querySelector("input[type='checkbox']");
-            const dueDateInput = taskEl.querySelector(".due-date");
-            if (checkbox) checkbox.checked = false;
-            taskEl.classList.remove("overdue-task");
-            if (dueDateInput) {
-                dueDateInput.value = "";
-                dueDateInput.classList.add("hidden");
-            }
-        });
-
-        // Update AppState atomically
-        if (this.deps.AppState?.isReady?.()) {
-            this.deps.AppState.update(state => {
-                const cycle = state?.data?.cycles?.[currentActiveCycle];
-                if (cycle) {
-                    if (tasksToDelete.length > 0) {
-                        cycle.tasks = cycle.tasks.filter(t => !tasksToDelete.includes(t.id));
-                    }
-                    cycle.tasks.forEach(task => {
-                        if (!task.recurring) {
-                            task.completed = false;
-                            task.dueDate = null;
-                        }
-                    });
-                }
-            });
-            console.log('✅ Reset data saved to AppState');
-        } else {
-            // localStorage fallback
-            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-            if (fullSchemaData?.data?.cycles?.[currentActiveCycle]) {
-                if (tasksToDelete.length > 0) {
-                    fullSchemaData.data.cycles[currentActiveCycle].tasks =
-                        fullSchemaData.data.cycles[currentActiveCycle].tasks.filter(t => !tasksToDelete.includes(t.id));
-                }
-                fullSchemaData.metadata.lastModified = Date.now();
-                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-            }
-        }
-
-        return { aborted: false, tasksDeleted: tasksToDelete.length };
-    }
-
-    /**
-     * Move completed tasks back to active list
-     * @param {Object} context - Reset context
-     */
-    _moveCompletedTasksBack(context) {
-        const { taskList, completedTaskList } = context;
-        if (!completedTaskList || !taskList) return;
-
-        const completedTaskElements = completedTaskList.querySelectorAll('.task');
-        completedTaskElements.forEach(taskEl => {
-            if (!taskEl.classList.contains('recurring')) {
-                taskList.appendChild(taskEl);
-            }
-        });
-
-        if (completedTaskElements.length > 0) {
-            console.log(`✅ Moved ${completedTaskElements.length} task(s) back to active list`);
-        }
-
-        if (typeof this.deps.updateCompletedTasksCount === 'function') {
-            this.deps.updateCompletedTasksCount();
-        }
-    }
-
-    // ============================================================================
-    // MAIN RESET FUNCTION
-    // ============================================================================
-
-    /**
-     * Reset all tasks (cycle completion)
-     */
     async resetTasks() {
-        try {
-            if (this.isResetting) return;
-            this.isResetting = true;
-
-            console.log('🔄 Resetting tasks (Schema 2.5 only)...');
-
-            // Wait for critical UI functions to be available
-            await this.waitForUIFunctions();
-
-            // Step 1: Get and validate context
-            const context = this._getResetContext();
-            if (!context) {
-                this.isResetting = false;
-                return;
-            }
-
-            const { activeCycle, cycles } = context;
-            console.log('📊 Resetting tasks for cycle:', activeCycle);
-
-            // Step 2: Capture undo snapshot BEFORE modifications
-            if (typeof this.deps.captureStateSnapshot === 'function' && !this.deps.isPerformingUndoRedo()) {
-                const currentState = this.deps.AppState?.get?.();
-                if (currentState) {
-                    this.deps.captureStateSnapshot(currentState);
-                    console.log('📸 Undo snapshot captured');
-                }
-            }
-
-            // Step 3: Animate progress bar fill (delegated to cycleCompletion)
-            if (typeof this.deps.animateProgressBarFill === 'function') {
-                await this.deps.animateProgressBarFill();
-            }
-
-            // Step 4: Perform core data reset
-            const result = this._resetTasksData(context);
-            if (result.aborted) {
-                this.isResetting = false;
-                return;
-            }
-
-            // Step 5: Move completed tasks back
-            this._moveCompletedTasksBack(context);
-
-            // Step 6: Increment cycle count (handles animation + milestones)
-            if (typeof this.deps.incrementCycleCount === 'function') {
-                this.deps.incrementCycleCount(activeCycle, cycles);
-            }
-
-            // Step 7: Animate progress bar empty (delegated to cycleCompletion)
-            if (typeof this.deps.animateProgressBarEmpty === 'function') {
-                this.deps.animateProgressBarEmpty();
-            }
-
-            // Step 8: Show cycle completion message
-            const helpWindowMgr = this._resolveGetter(this.deps.helpWindowManager);
-            if (helpWindowMgr?.showCycleCompleteMessage) {
-                helpWindowMgr.showCycleCompleteMessage();
-            }
-
-            // Step 9: Update undo/redo buttons
-            if (typeof this.deps.updateUndoRedoButtons === 'function') {
-                this.deps.updateUndoRedoButtons();
-            }
-
-            // Step 10: Trigger plugin hook (if pluginManager available)
-            if (this.deps.pluginManager?.triggerHook) {
-                this.deps.pluginManager.triggerHook('cycleReset', { cycleId: activeCycle });
-            }
-
-            // Step 11: Schedule cleanup and release lock
-            this.trackTimeout(setTimeout(() => {
-                if (this.deps.recurringCore?.watchRecurringTasks) {
-                    this.deps.recurringCore.watchRecurringTasks();
-                }
-                _deps.autoSave?.();
-                this.deps.updateStatsPanel?.();
-                console.log('✅ Reset tasks completed');
-            }, TASK_TIMEOUTS.POST_RESET_CLEANUP));
-
-            this.trackTimeout(setTimeout(() => {
-                this.isResetting = false;
-            }, TASK_TIMEOUTS.RESET_LOCK_RELEASE));
-
-        } catch (error) {
-            console.warn('⚠️ Reset tasks failed:', error);
-            this.isResetting = false;
-            _deps.showNotification?.('Could not reset tasks', 'warning');
+        if (_subModules?.isResetInProgress?.()) {
+            console.log('Reset already in progress, skipping');
+            return;
         }
+        if (!_subModules?.resetTasksImpl) {
+            console.warn('TaskCore: resetTasksImpl not loaded');
+            return;
+        }
+        return _subModules.resetTasksImpl(this.deps);
     }
 
-    /**
-     * Delete completed tasks that have deleteWhenComplete enabled (To-Do mode).
-     * Used by handleCompleteAllTasks in both modal callback and direct paths.
-     * @param {string} activeCycleId - The active cycle ID
-     * @param {Object} cycleData - The cycle data object
-     * @param {HTMLElement} taskList - The task list DOM element
-     * @returns {Object} { deleted: number } or { aborted: true, reason: string }
-     */
-    async _deleteCompletedTasks(activeCycleId, cycleData, taskList) {
-        // Find all tasks that are BOTH completed AND marked for deletion
-        const tasksToDelete = [];
-        const allTaskElements = taskList.querySelectorAll(".task");
-
-        allTaskElements.forEach(taskElement => {
-            const taskId = taskElement.dataset.taskId;
-            const task = cycleData.tasks?.find(t => t.id === taskId);
-            const checkbox = taskElement.querySelector("input[type='checkbox']");
-            const isCompleted = checkbox?.checked || false;
-
-            if (isCompleted && task?.deleteWhenComplete === true) {
-                tasksToDelete.push({ taskId, taskElement });
-            }
-        });
-
-        if (tasksToDelete.length === 0) {
-            this.deps.showNotification?.("⚠️ No completed tasks to delete.", "default", 3000);
-            return { aborted: true, reason: 'no_tasks' };
-        }
-
-        console.log(`🗑️ Deleting ${tasksToDelete.length} tasks marked for deletion`);
-
-        // Remove from DOM and collect IDs
-        const taskIdsToDelete = tasksToDelete.map(({ taskId, taskElement }) => {
-            taskElement.remove();
-            return taskId;
-        });
-
-        // Update AppState
-        if (this.deps.AppState?.isReady?.()) {
-            await this.deps.AppState.update(state => {
-                const cycle = state.data.cycles[activeCycleId];
-                if (cycle?.tasks) {
-                    cycle.tasks = cycle.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-                }
-            }, true);
-        } else {
-            // Fallback to localStorage
-            cycleData.tasks = cycleData.tasks.filter(t => !taskIdsToDelete.includes(t.id));
-            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-            if (fullSchemaData) {
-                fullSchemaData.data.cycles[activeCycleId] = cycleData;
-                fullSchemaData.metadata.lastModified = Date.now();
-                this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-            }
-        }
-
-        // Update UI
-        this.deps.updateProgressBar?.();
-        this.deps.updateStatsPanel?.();
-        this.deps.checkCompleteAllButton?.();
-
-        return { deleted: taskIdsToDelete.length };
-    }
-
-    /**
-     * Mark all tasks as complete and trigger cycle check/reset.
-     * Used by handleCompleteAllTasks in both modal callback and direct paths.
-     * @param {Object} cycleData - The cycle data object
-     * @param {HTMLElement} taskList - The task list DOM element
-     */
-    _markAllTasksComplete(cycleData, taskList) {
-        console.log('✔️ Marking all tasks as complete');
-
-        taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
-
-        if (typeof this.deps.checkMiniCycle === 'function') {
-            this.deps.checkMiniCycle();
-        }
-
-        // Only call resetTasks() if autoReset is OFF
-        if (!cycleData.autoReset) {
-            this.trackTimeout(setTimeout(() => this.resetTasks(), TASK_TIMEOUTS.CORE_INIT));
-        }
-    }
-
-    /**
-     * Complete all tasks at once
-     */
     async handleCompleteAllTasks() {
-        try {
-            console.log('✔️ Handling complete all tasks (Schema 2.5 only)...');
-
-            // Step 1: Get context
-            const context = this._getCompleteAllContext();
-            if (!context) return;
-
-            const { activeCycle, cycleData, taskList } = context;
-            console.log('📊 Processing complete all tasks for cycle:', activeCycle);
-
-            // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
-            if (!cycleData.deleteCheckedTasks) {
-                const hasDueDates = [...taskList.querySelectorAll(".due-date")].some(
-                    dueDateInput => dueDateInput.value
-                );
-
-                if (hasDueDates) {
-                    this._showDueDateConfirmationModal();
-                    return;
-                }
-            }
-
-            // Step 3: Execute the appropriate action
-            await this._executeCompleteAll(activeCycle, cycleData, taskList);
-
-            console.log('✅ Complete all tasks handled (Schema 2.5)');
-
-        } catch (error) {
-            console.warn('⚠️ Complete all tasks failed:', error);
-            _deps.showNotification?.('Could not complete all tasks', 'warning');
+        if (!_subModules?.handleCompleteAllTasksImpl) {
+            console.warn('TaskCore: handleCompleteAllTasksImpl not loaded');
+            return;
         }
+        return _subModules.handleCompleteAllTasksImpl(() => this.resetTasks(), this.deps);
     }
 
-    /**
-     * Get context for complete all operation.
-     * @returns {Object|null} { activeCycle, cycleData, taskList } or null if invalid
-     */
-    _getCompleteAllContext() {
-        const taskList = this.deps.querySelector("#taskList");
-        let activeCycle, cycleData;
-
-        if (this.deps.AppState?.isReady?.()) {
-            const state = this.deps.AppState.get();
-            activeCycle = state?.appState?.activeCycleId;
-            cycleData = state?.data?.cycles?.[activeCycle];
-        } else {
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
-                console.error('❌ Schema 2.5 data required for handleCompleteAllTasks');
-                return null;
-            }
-            activeCycle = schemaData.appState?.activeCycleId;
-            cycleData = schemaData.data?.cycles?.[activeCycle];
+    // Internal helpers exposed for backwards compatibility
+    async _deleteCompletedTasks(activeCycleId, cycleData, taskList) {
+        if (!_subModules?.deleteCompletedTasksImpl) {
+            console.warn('TaskCore: deleteCompletedTasksImpl not loaded');
+            return;
         }
-
-        if (!activeCycle || !cycleData) {
-            console.warn('⚠️ No active cycle found for complete all tasks');
-            return null;
-        }
-
-        return { activeCycle, cycleData, taskList };
+        return _subModules.deleteCompletedTasksImpl(activeCycleId, cycleData, taskList, this.deps);
     }
 
-    /**
-     * Show confirmation modal for completing tasks with due dates.
-     */
-    _showDueDateConfirmationModal() {
-        this.deps.showConfirmationModal({
-            title: "Reset Tasks with Due Dates",
-            message: "⚠️ This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
-            confirmText: "Reset Tasks",
-            cancelText: "Cancel",
-            callback: async (confirmed) => {
-                if (!confirmed) return;
-
-                // Read FRESH state - user may have changed mode while modal was open
-                const freshContext = this._getCompleteAllContext();
-                if (!freshContext) {
-                    console.warn('⚠️ Could not get fresh state in confirmation callback');
-                    return;
-                }
-
-                await this._executeCompleteAll(
-                    freshContext.activeCycle,
-                    freshContext.cycleData,
-                    freshContext.taskList
-                );
-            }
-        });
-    }
-
-    /**
-     * Execute the complete all operation (delete or mark complete).
-     * @param {string} activeCycle - Active cycle ID
-     * @param {Object} cycleData - Cycle data
-     * @param {HTMLElement} taskList - Task list element
-     */
-    async _executeCompleteAll(activeCycle, cycleData, taskList) {
-        if (cycleData.deleteCheckedTasks) {
-            // To-Do mode: delete completed tasks
-            await this._deleteCompletedTasks(activeCycle, cycleData, taskList);
-        } else {
-            // Cycle mode: mark all complete and trigger reset
-            this._markAllTasksComplete(cycleData, taskList);
+    _markAllTasksComplete(cycleData, taskList) {
+        if (!_subModules?.markAllTasksCompleteImpl) {
+            console.warn('TaskCore: markAllTasksCompleteImpl not loaded');
+            return;
         }
+        return _subModules.markAllTasksCompleteImpl(cycleData, taskList, () => this.resetTasks(), this.deps);
     }
 }
 
@@ -1375,22 +460,15 @@ export async function initTaskCore(dependencies = {}) {
         try {
             taskCoreInstance = new TaskCore(dependencies);
             await taskCoreInstance.init();
-
-            // Phase 3 - No window.* exports (main script handles exposure)
-            console.log('✅ TaskCore initialized (Phase 3)');
+            console.log('TaskCore initialized (Phase 3)');
         } catch (e) {
-            // ✅ FIX #5: Error boundary for TaskCore initialization
-            console.error('❌ TaskCore initialization failed:', e);
-
-            // Clean up partial initialization
+            console.error('TaskCore initialization failed:', e);
             taskCoreInstance = null;
 
-            // Notify user if notification system is available
             if (dependencies.showNotification) {
-                dependencies.showNotification('⚠️ Task system failed to initialize', 'error', 5000);
+                dependencies.showNotification('Task system failed to initialize', 'error', 5000);
             }
-
-            throw e; // Re-throw so caller knows initialization failed
+            throw e;
         }
     }
     return taskCoreInstance;
@@ -1402,7 +480,7 @@ export async function initTaskCore(dependencies = {}) {
 
 function addTask(taskText, options = {}) {
     if (!taskCoreInstance) {
-        console.warn('⚠️ TaskCore not initialized');
+        console.warn('TaskCore not initialized');
         return Promise.reject(new Error('TaskCore not initialized'));
     }
     return taskCoreInstance.addTask(taskText, options);
@@ -1452,11 +530,9 @@ function handleCompleteAllTasks() {
 // EXPORTS
 // ============================================================================
 
-// Phase 3 - Clean exports (no new window.* globals; legacy reads only)
-console.log('🎯 TaskCore module loaded (Phase 3 - DI-pure)');
+console.log('TaskCore module loaded (DI-pure, dynamic versioned imports)');
 
 export {
-    // TaskCore class already exported at line 21
     taskCoreInstance,
     addTask,
     editTaskFromCore,

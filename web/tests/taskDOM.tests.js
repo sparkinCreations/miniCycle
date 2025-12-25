@@ -840,6 +840,15 @@ export async function runTaskDOMTests(resultsDiv) {
 
         await manager.init();
 
+        // After init(), taskToAddTaskOptions should be loaded from taskUtils.js
+        // If for some reason it's not available (test env issues), inject directly to renderer
+        if (!manager.renderer.deps.taskToAddTaskOptions) {
+            manager.renderer.deps.taskToAddTaskOptions = (task) => ({
+                taskId: task.id,
+                completed: task.completed || false
+            });
+        }
+
         await manager.renderer.renderTasks([
             { id: 'task-1', text: 'Test', completed: false }
         ]);

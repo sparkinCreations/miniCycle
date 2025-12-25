@@ -605,6 +605,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         resetTasks: (...args) => deps.task?.resetTasks?.(...args),
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
         saveTaskToSchema25: (...args) => deps.task?.saveTaskToSchema25?.(...args),
+        taskToAddTaskOptions: (...args) => deps.task?.taskToAddTaskOptions?.(...args),
 
         // Task button container and click handler (from taskDOM)
         createTaskButtonContainer: (...args) => deps.task?.createTaskButtonContainer?.(...args),

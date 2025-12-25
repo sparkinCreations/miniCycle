@@ -64,6 +64,12 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
             getTaskList: () => document.getElementById('taskList'),
             getCompleteAllButton: () => document.getElementById('completeAll'),
             isTouchDevice: () => false,
+            // Mock taskToAddTaskOptions - converts task to addTask options
+            taskToAddTaskOptions: (task) => ({
+                completed: task.completed || false,
+                taskId: task.id,
+                shouldSave: false
+            }),
             ...overrides
         };
     }
