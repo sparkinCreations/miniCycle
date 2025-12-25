@@ -1,6 +1,6 @@
 # Developer Profile
 
-**Last Updated:** December 21, 2025
+**Last Updated:** December 25, 2025
 
 This document captures insights about the developer behind miniCycle to help with future collaboration and context continuity.
 
@@ -51,6 +51,7 @@ This document captures insights about the developer behind miniCycle to help wit
 - **Visual bug reporting** - Provides screenshots at key moments to eliminate ambiguity. QA background shows in communication style - doesn't just describe problems, provides proof.
 - **Trusts evidence over authority** - Will reject confident-sounding wrong answers if they have evidence to the contrary. Doesn't defer just because something sounds authoritative.
 - **Has taste** - Knows what "right" looks like. Will reject working solutions that don't match the quality/feel they're aiming for. Aesthetic judgment, not just functional correctness.
+- **Notice and course correct** - When working with AI, has learned that pattern matching can override specific instructions. Watches for deviations and corrects them rather than expecting perfection. Pragmatic adaptation rather than frustration.
 
 ### Weaknesses / Blind Spots
 
@@ -110,6 +111,7 @@ This document captures insights about the developer behind miniCycle to help wit
 - **Show evidence** - Points to code/docs rather than asserting
 - **Iterative revelation** - Will walk through features piece by piece if underestimated
 - **Questions are tests** - Sometimes asks questions to see if the AI understands the system
+- **Terse and efficient** - Short messages, gets to the point. Doesn't repeat context unnecessarily
 
 ---
 
@@ -152,10 +154,24 @@ The user-facing simplicity masks engineering depth:
 4. **The 2-phase init is intentional** - Timeout safety was added Dec 2025, keep it
 5. **Ask before changing architecture** - Developer knows the system deeply
 6. **Inline detection for critical device checks** - Use `'ontouchstart' in window || navigator.maxTouchPoints > 0` instead of DI for touch detection. DI can fail if deps aren't wired up (Dec 2025 lesson)
+7. **Versioned Dynamic Imports** - Pattern: `import(\`./module.js?v=${version}\`)`. All dynamic imports use AppMeta.version for cache-busting. Prevents stale module issues during development. *Don't strip these - they're intentional, not boilerplate*
 
 ---
 
 ## Session History
+
+### December 25, 2025
+- **Completed recurringCore.js split** (7 new modules)
+  - recurringScheduler.js, recurringActivation.js, recurringDeletion.js, recurringWatcher.js, recurringCycleHandler.js, recurringCatchup.js, recurringNormalization.js
+- **Fixed three integration bugs:**
+  - Proxy spreading in notifications.js - `{...proxy}` returns empty object
+  - 9 missing `.get()` calls in recurringPanel.js - AppState manager vs state data
+  - Missing DI injection for `openRecurringSettingsPanelForTask`
+- **Added defensive error checking:**
+  - `createDepsProxy()` warns when DI proxy is spread
+  - `createValidatedAppStateProxy()` warns when state properties accessed on manager
+  - `validateCriticalDIWiring()` in featureBoot.js checks post-boot
+- **Key lesson:** Pattern matching can override explicit instructions (version params ignored during refactor)
 
 ### December 21, 2025
 - **Completed `cycle/` → `routine/` folder refactor**
