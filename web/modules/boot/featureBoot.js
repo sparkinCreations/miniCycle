@@ -174,6 +174,18 @@ export async function bootFeatures(deps, coreResult) {
     registerGroupedApisFromLoader(deps, appContextMod, coreResult);
 
     // =========================================================================
+    // INJECT RECURRING FUNCTIONS INTO NOTIFICATIONS
+    // =========================================================================
+    // Notifications was loaded early (pre-recurring), now inject recurring functions
+    if (deps.utils?.setNotificationsDependencies && deps.recurring?.panel) {
+      deps.utils.setNotificationsDependencies({
+        openRecurringSettingsPanelForTask: (taskId) => deps.recurring?.panel?.openRecurringSettingsPanelForTask?.(taskId),
+        updateRecurringPanel: () => deps.recurring?.panel?.updateRecurringPanel?.()
+      });
+      console.log('✅ Recurring functions injected into Notifications');
+    }
+
+    // =========================================================================
     // HTML EVENT LISTENERS (zero window.* globals)
     // =========================================================================
     // These listeners allow HTML inline scripts (like service worker update UI)
@@ -202,6 +214,11 @@ export async function bootFeatures(deps, coreResult) {
     });
 
     console.log('✅ HTML event listeners configured');
+
+    // =========================================================================
+    // VALIDATE CRITICAL DI WIRING
+    // =========================================================================
+    validateCriticalDIWiring(deps);
 
     console.log('✅ bootFeatures: Complete');
     console.log(`📦 Loaded ${Object.keys(features.managers).length} managers, ${Object.keys(features.modules).length} modules`);
@@ -393,4 +410,71 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   appContextMod.setContextValue('enableUndoSystemOnFirstInteraction', deps.ui?.enableUndoSystemOnFirstInteraction);
 
   console.log('✅ Grouped APIs registered via moduleLoader');
+}
+
+/**
+ * Validate that critical DI wiring is complete after boot
+ * Warns about missing dependencies that could cause runtime issues
+ *
+ * @param {Object} deps - The deps container
+ */
+function validateCriticalDIWiring(deps) {
+  console.log('🔍 Validating critical DI wiring...');
+
+  const warnings = [];
+
+  // Define critical wiring checks
+  const checks = [
+    // Notifications should have recurring functions
+    {
+      name: 'notifications → recurring',
+      check: () => deps.recurring?.panel?.openRecurringSettingsPanelForTask,
+      fix: 'Ensure recurring panel is loaded and openRecurringSettingsPanelForTask is injected into notifications'
+    },
+    // Core should have AppState
+    {
+      name: 'core → AppState',
+      check: () => deps.core?.AppState,
+      fix: 'Ensure AppState is created in coreBoot and stored in deps.core.AppState'
+    },
+    // Recurring panel should exist if recurring is enabled
+    {
+      name: 'recurring → panel',
+      check: () => deps.recurring?.panel,
+      fix: 'Ensure recurringIntegration module is loaded and panel is registered'
+    },
+    // Task module should exist
+    {
+      name: 'task → taskCore',
+      check: () => deps.task?.taskCore || deps.task?.addTask,
+      fix: 'Ensure taskCore module is loaded'
+    },
+    // Utils should have notifications
+    {
+      name: 'utils → notifications',
+      check: () => deps.utils?.showNotification,
+      fix: 'Ensure notifications is loaded in bootEarlyDeps'
+    }
+  ];
+
+  // Run checks
+  for (const { name, check, fix } of checks) {
+    try {
+      if (!check()) {
+        warnings.push({ name, fix });
+      }
+    } catch (e) {
+      warnings.push({ name, fix, error: e.message });
+    }
+  }
+
+  // Report warnings
+  if (warnings.length > 0) {
+    console.warn('⚠️ DI Wiring Issues Detected:');
+    for (const { name, fix, error } of warnings) {
+      console.warn(`  ❌ ${name}: ${fix}${error ? ` (Error: ${error})` : ''}`);
+    }
+  } else {
+    console.log('✅ All critical DI wiring validated');
+  }
 }

@@ -279,9 +279,10 @@ export class MiniCycleNotifications {
     _notificationsInstance = this;
   }
 
-  // Getter that always returns merged deps (live reference to _deps)
+  // Getter that always returns merged deps (live reference to DI-resolved deps)
+  // NOTE: Can't spread _deps proxy - must call di.resolve() directly
   get deps() {
-    return { ..._deps, ...this._constructorDeps };
+    return { ...di.resolve(), ...this._constructorDeps };
   }
 
   // Helper method to update dragging state (no window.* sync needed)
@@ -1074,6 +1075,10 @@ async setDefaultPosition(notificationContainer) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await _deps.appInit?.waitForCore();
 
+        if (!this.deps.AppState?.get) {
+          console.warn('⚠️ AppState not available for recurring settings');
+          return;
+        }
         const state = this.deps.AppState.get();
         const activeCycleId = state.appState?.activeCycleId;
         const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
