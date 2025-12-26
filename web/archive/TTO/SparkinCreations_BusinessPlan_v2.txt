@@ -1,0 +1,400 @@
+SparkinCreations Business Plan v2.0
+Updated: December 2025
+
+==================================================
+
+Part 1: Strategic Overview (External-Facing)
+--------------------------------------------------
+
+Mission Statement
+SparkinCreations builds useful tools and fun products that help people solve problems and contribute to the world.
+
+Official Website: sparkinCreations.com
+
+Vision & Core Values
+
+Vision:
+To grow into a recognized indie brand known for quality, creativity, and practical design, with a portfolio of apps that people can trust, enjoy, and rely on in everyday life.
+
+Core Values:
+- Practical Utility: Every product should be genuinely useful
+- Creativity: Unique approaches and thoughtful design are at the core
+- Contribute to the World: Each app should have purpose and positive impact
+- Respect for Privacy: Offline-first where it makes sense; data handled carefully when online
+- Accessibility: Products should be approachable and easy to use
+
+--------------------------------------------------
+
+Product Portfolio
+--------------------------------------------------
+
+Tier 1: miniCycle (Free - Flagship)
+Website: minicycleapp.com / minicycle.app
+Status: LIVE (v1.560)
+
+Purpose: Lightweight, offline-first routine manager for repeatable daily workflows.
+
+Features:
+- Auto-reset cycles with completion tracking
+- Recurring task scheduling
+- Per-cycle undo/redo with IndexedDB persistence
+- Gamification (cycle counts, theme unlocks at milestones)
+- Multi-cycle management
+- Full PWA with offline support
+- .mcyc file export/import for sharing routines
+
+Technical Highlights:
+- 44,200 lines of vanilla JavaScript
+- 80 modules with strict dependency injection
+- Zero external dependencies
+- 1,623 tests (100% pass rate)
+- Enterprise-grade architecture
+
+Goal: Build trust, establish user base, demonstrate sparkinCreations quality, funnel power users to Task Cycle.
+
+--------------------------------------------------
+
+Tier 2: Task Cycle (One-Time Purchase)
+Website: taskcycle.app
+Status: PLANNED
+Price: $29 (launch) / $39 (regular)
+
+Purpose: Powerful offline-first task and project management for individuals who need more than routines.
+
+Core Features (MVP):
+- Everything in miniCycle, plus:
+- Subtasks with progress roll-up
+- Task comments and notes
+- Task timing and time tracking
+- Multiple task types (checklists, counters, true/false)
+- Priority levels with visual indicators
+- Timeline view of activity
+- Built-in stopwatch and timer
+- Advanced analytics (personal productivity insights)
+- Low-priority task tagging
+
+Differentiator from miniCycle:
+- miniCycle = Routines that reset (habits, daily workflows)
+- Task Cycle = Projects that complete (one-time tasks, goals, checklists)
+
+Goal: Convert miniCycle power users into paying customers. Primary revenue driver.
+
+--------------------------------------------------
+
+Tier 3: Task Cycle Pro (Optional Subscription)
+Access: Via taskcycle.app
+Status: PLANNED (Phase 2)
+Price: $5/month or $49/year
+
+Purpose: Cloud-enhanced Task Cycle for users who want sync and backup.
+
+Launch Features (Keep It Simple):
+- Cloud sync across devices
+- Automatic backup and restore
+- Priority email support
+
+Future Features (Based on Demand):
+- Collaboration and shared task lists
+- Team analytics dashboards
+- AI-powered task templates
+- Shared reports and exports
+
+Goal: Recurring revenue from users who need cross-device access. Do NOT over-build before validating demand.
+
+--------------------------------------------------
+
+Tier 4: MasterMath (Free - Educational)
+Website: mastermath.app
+Status: LIVE (v1.1.0)
+
+Purpose: Privacy-focused math tutor for precalculus and calculus problems.
+
+Features:
+- Step-by-step solutions with explanations
+- Derivatives, integrals, limits, algebra, trigonometry
+- Interactive function graphing
+- Common mistakes warnings
+- 100% client-side (no data leaves device)
+- Export to PDF, CSV, JSON, Markdown
+
+Goal: Build brand credibility in education space. Potential future monetization via premium features or tutoring marketplace.
+
+==================================================
+
+Part 2: Go-To-Market Strategy
+--------------------------------------------------
+
+Marketing Channels (Low/No Cost)
+
+1. Build in Public
+   - Share development progress on Twitter/X
+   - Post updates in indie hacker communities
+   - Write about the journey (quality inspector to indie dev)
+
+2. Content Marketing
+   - Dev blog posts on architecture decisions
+   - "How I built X" articles
+   - Reddit posts in relevant subreddits (r/productivity, r/webdev, r/indiehackers)
+
+3. Product Launches
+   - Product Hunt launch for Task Cycle
+   - Hacker News "Show HN" posts
+   - Indie Hackers product listing
+
+4. Personal Story (Your Superpower)
+   - "Quality inspector by day, indie developer by night"
+   - "Built enterprise-grade software as a side project"
+   - "From 3,551-line monolith to 80-module architecture"
+
+5. Word of Mouth
+   - miniCycle users recommend Task Cycle
+   - In-app "Upgrade to Task Cycle" subtle prompt
+   - .mcyc sharing spreads awareness
+
+Paid Marketing (Later, If Needed)
+- Budget: $100-300 for launch campaigns only
+- Focus: Targeted ads during Product Hunt launch week
+- Goal: Amplify organic momentum, not replace it
+
+--------------------------------------------------
+
+User Acquisition Funnel
+
+Discovery → miniCycle (free) → Value realized → Task Cycle prompt → Purchase → Pro upsell (optional)
+
+Key Metrics:
+- miniCycle monthly active users
+- miniCycle → Task Cycle conversion rate (target: 2-5%)
+- Task Cycle → Pro conversion rate (target: 10-20%)
+- Churn rate for Pro subscribers
+
+==================================================
+
+Part 3: Internal Playbook (For MJ's Execution)
+--------------------------------------------------
+
+Financial Reality Check
+
+Current Situation:
+- Full-time quality inspector: ~$96,000/year
+- Side project time: Evenings, weekends, PTO
+- Products shipped: 2 (miniCycle, MasterMath)
+- Current revenue: $0
+
+Revenue Targets (Monthly):
+
+Year 1 (2025):
+- Target: $100-500/month
+- Source: Task Cycle early adopters
+- Milestone: First paying customer
+
+Year 2 (2026):
+- Target: $500-2,000/month
+- Source: Task Cycle growth + early Pro subscribers
+- Milestone: Revenue covers all business expenses
+
+Year 3 (2027):
+- Target: $2,000-5,000/month
+- Source: Task Cycle + Pro + potential new products
+- Milestone: Serious side income, evaluate full-time transition
+
+Expenses (Annual):
+- Development tools: $200
+- Domain renewals: $50
+- Marketing (launch campaigns): $300
+- Legal/business registration: $200
+- Misc/buffer: $250
+- Total: ~$1,000/year (keep it lean)
+
+Break-Even Math:
+- Task Cycle at $29: 35 sales = $1,015 (covers year 1 expenses)
+- Task Cycle at $39: 26 sales = $1,014 (covers year 1 expenses)
+- Pro at $5/month: 17 subscribers = $1,020/year
+
+--------------------------------------------------
+
+90-Day Action Plan (Starting January 2025)
+--------------------------------------------------
+
+Month 1: Task Cycle Foundation
+Week 1-2:
+- Define Task Cycle MVP feature list (no scope creep)
+- Set up taskcycle.app domain and landing page
+- Create Task Cycle architecture plan (reuse miniCycle patterns)
+
+Week 3-4:
+- Begin Task Cycle development
+- Core task management (create, edit, delete, complete)
+- Subtask system with progress tracking
+
+Deliverable: Task Cycle skeleton with core CRUD operations
+
+Month 2: Task Cycle MVP Build
+Week 1-2:
+- Task timing and stopwatch/timer
+- Task comments and notes
+- Priority system
+
+Week 3-4:
+- Analytics/insights view
+- Data persistence (IndexedDB)
+- Import from miniCycle option
+
+Deliverable: Functional Task Cycle MVP (internal testing)
+
+Month 3: Beta and Soft Launch
+Week 1-2:
+- Beta testing with 10-20 users (friends, family, Reddit volunteers)
+- Bug fixes and polish based on feedback
+- Payment integration (Stripe or Gumroad)
+
+Week 3-4:
+- Soft launch to email list / early followers
+- Gather testimonials
+- Prepare Product Hunt launch
+
+Deliverable: Task Cycle live and accepting payments
+
+--------------------------------------------------
+
+Success Metrics
+--------------------------------------------------
+
+miniCycle (Free Flagship):
+- Monthly active users (target: 500+ by end of Year 1)
+- Retention: 30-day return rate (target: 40%+)
+- Word of mouth: Organic signups without marketing
+- Conversion: Users who upgrade to Task Cycle
+
+Task Cycle (Paid):
+- Total sales
+- Conversion rate from miniCycle users
+- Feature usage (which features drive value?)
+- Refund rate (target: <5%)
+- Customer satisfaction (feedback, reviews)
+
+Task Cycle Pro (Subscription):
+- Subscriber count
+- Monthly recurring revenue (MRR)
+- Churn rate (target: <5% monthly)
+- Feature requests (what do paying users want?)
+
+Overall Business:
+- Total revenue across products
+- Revenue per product (diversification)
+- Brand recognition (social followers, mentions, backlinks)
+- User trust (reviews, testimonials, repeat customers)
+
+--------------------------------------------------
+
+Risk Scenarios & Responses
+--------------------------------------------------
+
+Risk: Low miniCycle adoption
+Response: Talk to users. Why aren't they using it? Iterate on onboarding, features, or positioning.
+
+Risk: Users won't pay for Task Cycle
+Response: Adjust pricing (try $19). Add more value. Survey non-converters to understand objections.
+
+Risk: Limited personal time
+Response: Keep scope small. Ship MVP, iterate based on feedback. Don't build features nobody asked for.
+
+Risk: Competitors copy the concept
+Response: Focus on execution and polish. Your architecture and quality are hard to replicate quickly.
+
+Risk: Pro tier doesn't convert
+Response: Don't over-invest in Pro until Task Cycle base is proven. Cloud sync might be enough.
+
+Risk: Burnout from maintaining multiple products
+Response: Automate what you can. Set boundaries on support time. It's okay to slow down.
+
+--------------------------------------------------
+
+Support Plan
+--------------------------------------------------
+
+Channels:
+- Email: support@sparkincreations.com
+- In-app feedback form
+- GitHub issues for bug reports (technical users)
+
+Time Allocation:
+- Maximum 5 hours/week on support
+- Batch responses (not real-time)
+- FAQ and documentation reduce repeat questions
+
+Paid User Priority:
+- Task Cycle and Pro users get faster responses
+- miniCycle users directed to FAQ/docs first
+
+--------------------------------------------------
+
+Exit Criteria (Decision Points)
+--------------------------------------------------
+
+When to Go Full-Time on sparkinCreations:
+- Revenue consistently covers living expenses ($4,000-6,000/month)
+- Growth trajectory is positive (not flat)
+- You have 6+ months runway saved
+- You're confident in the sustainability
+
+When to Pivot:
+- After 12 months, if revenue < $500/month despite marketing efforts
+- If user feedback consistently says "I don't need this"
+- If maintaining products becomes a burden with no return
+
+When to Shut Down a Product:
+- Zero active users for 6+ months
+- Maintenance cost exceeds any possible return
+- You've lost passion and it's dragging down other products
+
+--------------------------------------------------
+
+Principles for Success
+--------------------------------------------------
+
+1. Ship early, ship often
+   Don't wait for perfect. Get it in users' hands and iterate.
+
+2. Talk to users constantly
+   They'll tell you what to build. Listen more than you assume.
+
+3. Focus on one thing at a time
+   Task Cycle first. Don't start new products until it's stable.
+
+4. Quality over quantity
+   Better to have 3 excellent products than 20 mediocre ones.
+
+5. Sustainable pace
+   Marathon, not sprint. You have a day job. Protect your energy.
+
+6. Always solve real problems
+   If you wouldn't use it yourself, don't build it.
+
+7. Revenue validates
+   Downloads and signups are vanity. Paying customers are truth.
+
+8. Stay honest
+   With users, with yourself, about what's working and what's not.
+
+==================================================
+
+Document History
+--------------------------------------------------
+v1.0 - Original business plan
+v2.0 - December 2025 update
+      - Updated to reflect miniCycle already shipped (v1.560)
+      - Added MasterMath to product portfolio
+      - Adjusted Task Cycle pricing ($29-39 vs $50)
+      - Simplified Pro tier (cloud sync first, features later)
+      - Added specific 90-day action plan for Task Cycle
+      - Added support plan and exit criteria
+      - Expanded marketing strategy with specific channels
+      - Revised financial targets to be more conservative Year 1
+
+==================================================
+
+REMINDER: Move this file out of public repo before pushing.
+This document contains internal strategy and should be kept private.
+
+==================================================
