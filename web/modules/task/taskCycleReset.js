@@ -599,6 +599,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
                     message: "This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
                     confirmText: "Reset Tasks",
                     cancelText: "Cancel",
+                    trustedHTML: true,  // Static strings only, no user content
                     callback: async (confirmed) => {
                         if (!confirmed) return;
 
