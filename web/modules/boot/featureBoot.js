@@ -82,7 +82,7 @@ export async function bootEarlyDeps(deps, coreResult) {
     // Store in deps container
     deps.utils.notifications = notifications;
     deps.utils.showNotification = (message, type, duration) => notifications.show(message, type, duration);
-    deps.utils.showNotificationWithTip = (content, type, duration, tipId) => notifications.showWithTip(content, type, duration, tipId);
+    deps.utils.showNotificationWithTip = (content, type, duration, tipId, options) => notifications.showWithTip(content, type, duration, tipId, options);
     deps.utils.showApplyConfirmation = (targetElement) => notifications.showApplyConfirmation(targetElement);
     deps.utils.showConfirmationModal = (options) => notifications.showConfirmationModal(options);
     deps.utils.showPromptModal = (options) => notifications.showPromptModal(options);

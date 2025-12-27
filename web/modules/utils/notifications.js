@@ -260,6 +260,17 @@ class EducationalTipManager {
 }
 
 /**
+ * 🔒 Get escape function from deps (helper for XSS protection)
+ * @param {Object} deps - Dependencies object
+ * @returns {Function} Escape function
+ */
+function getEscapeHtml(deps) {
+  return deps.GlobalUtils?.escapeHtml
+    || deps.escapeHtml
+    || ((s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'));
+}
+
+/**
  * 🔔 Main MiniCycle Notifications Class
  */
 // Store instance reference for late dep updates
@@ -394,8 +405,19 @@ export class MiniCycleNotifications {
 
   /**
    * 🔧 Enhanced notification with educational tips support
+   *
+   * ⚠️ SECURITY: By default, content is HTML-escaped to prevent XSS.
+   * Pass { trusted: true } as the 5th argument ONLY for pre-built HTML
+   * where all user content has already been escaped.
+   *
+   * @param {string} content - Notification content (escaped by default)
+   * @param {string} type - Notification type (default, error, success, etc.)
+   * @param {number|null} duration - Auto-dismiss duration in ms
+   * @param {string|null} tipId - Educational tip ID
+   * @param {Object} options - Options object
+   * @param {boolean} options.trusted - If true, content is treated as trusted HTML (DANGEROUS)
    */
-  showWithTip(content, type = "default", duration = null, tipId = null) {
+  showWithTip(content, type = "default", duration = null, tipId = null, options = {}) {
     try {
       const notificationContainer = document.getElementById("notification-container");
       if (!notificationContainer) {
@@ -407,6 +429,10 @@ export class MiniCycleNotifications {
         console.warn("⚠️ Invalid or empty message passed to showWithTip().");
         content = "⚠️ Unknown notification";
       }
+
+      // ✅ XSS PROTECTION: Escape content by default unless explicitly trusted
+      const escape = getEscapeHtml(this.deps);
+      const safeContent = options.trusted === true ? content : escape(content);
 
       const newId = _deps.generateHashId?.(content) || `notif-${Date.now()}`;
       const existing = [...notificationContainer.querySelectorAll(".notification")];
@@ -428,16 +454,16 @@ export class MiniCycleNotifications {
       if (type === "warning") notification.classList.add("warning");
       if (type === "recurring") notification.classList.add("recurring");
 
-      // Check if HTML already has a close button before adding one
+      // Check if HTML already has a close button before adding one (only for trusted content)
       const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = content;
-      const hasCloseBtn = tempDiv.querySelector(".close-btn, .notification-close");
+      tempDiv.innerHTML = safeContent;
+      const hasCloseBtn = options.trusted && tempDiv.querySelector(".close-btn, .notification-close");
 
       if (hasCloseBtn) {
-        notification.innerHTML = content;
+        notification.innerHTML = safeContent;
       } else {
         notification.innerHTML = `
-          <div class="notification-content">${content}</div>
+          <div class="notification-content">${safeContent}</div>
           <button class="notification-close" aria-label="Close notification">✖</button>
         `;
       }
@@ -1146,14 +1172,25 @@ async setDefaultPosition(notificationContainer) {
 
   /**
    * ❓ Show confirmation modal
+   *
+   * ⚠️ SECURITY: title and message are HTML-escaped by default to prevent XSS.
+   * Set trustedHTML: true ONLY if you're passing pre-escaped content.
    */
   showConfirmationModal({
     title = "Confirm Action",
     message = "Are you sure?",
     confirmText = "Yes",
     cancelText = "Cancel",
-    callback = () => {}
+    callback = () => {},
+    trustedHTML = false  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)
   }) {
+    // ✅ XSS PROTECTION: Escape all user-facing strings by default
+    const escape = getEscapeHtml(this.deps);
+    const safeTitle = trustedHTML ? title : escape(title);
+    const safeMessage = trustedHTML ? message : escape(message);
+    const safeConfirmText = trustedHTML ? confirmText : escape(confirmText);
+    const safeCancelText = trustedHTML ? cancelText : escape(cancelText);
+
     const overlay = document.createElement("div");
     overlay.className = "mini-modal-overlay";
 
@@ -1164,11 +1201,11 @@ async setDefaultPosition(notificationContainer) {
     modal.setAttribute("tabindex", "-1");
 
     modal.innerHTML = `
-      <div class="mini-modal-header">${title}</div>
-      <div class="mini-modal-body">${message}</div>
+      <div class="mini-modal-header">${safeTitle}</div>
+      <div class="mini-modal-body">${safeMessage}</div>
       <div class="mini-modal-buttons">
-        <button class="btn-confirm">${confirmText}</button>
-        <button class="btn-cancel">${cancelText}</button>
+        <button class="btn-confirm">${safeConfirmText}</button>
+        <button class="btn-cancel">${safeCancelText}</button>
       </div>
     `;
 
@@ -1211,6 +1248,9 @@ async setDefaultPosition(notificationContainer) {
 
   /**
    * 📝 Show prompt modal
+   *
+   * ⚠️ SECURITY: All text parameters are HTML-escaped by default to prevent XSS.
+   * Set trustedHTML: true ONLY if you're passing pre-escaped content.
    */
   showPromptModal({
     title = "Enter a value",
@@ -1220,19 +1260,29 @@ async setDefaultPosition(notificationContainer) {
     confirmText = "OK",
     cancelText = "Cancel",
     required = false,
-    callback = () => {}
+    callback = () => {},
+    trustedHTML = false  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)
   }) {
+    // ✅ XSS PROTECTION: Escape all user-facing strings by default
+    const escape = getEscapeHtml(this.deps);
+    const safeTitle = trustedHTML ? title : escape(title);
+    const safeMessage = trustedHTML ? message : escape(message);
+    const safePlaceholder = trustedHTML ? placeholder : escape(placeholder);
+    const safeDefaultValue = trustedHTML ? defaultValue : escape(defaultValue);
+    const safeConfirmText = trustedHTML ? confirmText : escape(confirmText);
+    const safeCancelText = trustedHTML ? cancelText : escape(cancelText);
+
     const overlay = document.createElement("div");
     overlay.className = "miniCycle-overlay";
 
     overlay.innerHTML = `
       <div class="miniCycle-prompt-box">
-        <h2 class="miniCycle-prompt-title">${title}</h2>
-        <p class="miniCycle-prompt-message">${message}</p>
-        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" placeholder="${placeholder}" value="${defaultValue}" />
+        <h2 class="miniCycle-prompt-title">${safeTitle}</h2>
+        <p class="miniCycle-prompt-message">${safeMessage}</p>
+        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
         <div class="miniCycle-prompt-buttons">
-          <button class="miniCycle-btn-cancel">${cancelText}</button>
-          <button class="miniCycle-btn-confirm">${confirmText}</button>
+          <button class="miniCycle-btn-cancel">${safeCancelText}</button>
+          <button class="miniCycle-btn-confirm">${safeConfirmText}</button>
         </div>
       </div>
     `;
