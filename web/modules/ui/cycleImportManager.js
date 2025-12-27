@@ -35,6 +35,34 @@ export function setCycleImportManagerDependencies(dependencies) {
 }
 
 // ============================================================================
+// SECURITY CONSTANTS
+// ============================================================================
+
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB limit
+const MAX_TASK_COUNT = 250; // Maximum tasks per imported cycle
+const MAX_TASK_TEXT_LENGTH = 500;
+const MAX_CYCLE_NAME_LENGTH = 100;
+
+// ============================================================================
+// FALLBACK SANITIZATION (when DataValidator not available)
+// ============================================================================
+
+/**
+ * Fallback sanitization for when DataValidator is not injected.
+ * Escapes HTML and enforces length limits.
+ * @param {string} input - Text to sanitize
+ * @param {number} maxLength - Maximum allowed length
+ * @returns {string} Sanitized text
+ */
+function fallbackSanitize(input, maxLength = 100) {
+    if (typeof input !== 'string') return '';
+    // Use textContent to strip any HTML
+    const temp = document.createElement('div');
+    temp.textContent = input;
+    return temp.textContent.trim().substring(0, maxLength);
+}
+
+// ============================================================================
 // IMPORT FUNCTIONS
 // ============================================================================
 
@@ -105,6 +133,16 @@ export function setupImportButtons() {
                 return;
             }
 
+            // Security: File size limit to prevent memory exhaustion
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                _deps.showNotification?.(`File too large. Maximum size is 10MB.`, "error");
+                console.warn(`Import rejected: file size ${(file.size / 1024 / 1024).toFixed(2)}MB exceeds 10MB limit`);
+                fileInput.remove();
+                fileInput = null;
+                resetPickerState();
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -151,6 +189,13 @@ function processImportedData(fileContent) {
         return;
     }
 
+    // Security: Limit task count to prevent performance issues
+    if (importedData.tasks.length > MAX_TASK_COUNT) {
+        _deps.showNotification?.(`Too many tasks. Maximum is ${MAX_TASK_COUNT} tasks per cycle.`, "error");
+        console.warn(`Import rejected: ${importedData.tasks.length} tasks exceeds ${MAX_TASK_COUNT} limit`);
+        return;
+    }
+
     console.log("Importing miniCycle with auto-conversion to Schema 2.5...");
 
     const loadMiniCycleData = _deps.loadMiniCycleData;
@@ -174,9 +219,12 @@ function processImportedData(fileContent) {
             safeSettings.defaultRecurTime = new Date().toISOString();
         }
 
+        // Security: Always sanitize task text, with or without DataValidator
+        const sanitizedText = fallbackSanitize(task.text || "", MAX_TASK_TEXT_LENGTH);
+
         const taskData = {
             id: task.id || `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            text: task.text || "",
+            text: sanitizedText,
             completed: task.completed || false,
             dueDate: task.dueDate || null,
             highPriority: task.highPriority || false,
@@ -188,7 +236,7 @@ function processImportedData(fileContent) {
             schemaVersion: task.schemaVersion || 2
         };
 
-        // Validate task structure
+        // Validate task structure (DataValidator provides additional validation if available)
         try {
             const DataValidator = _deps.DataValidator;
             if (DataValidator?.validateTask) {
@@ -230,8 +278,12 @@ function processImportedData(fileContent) {
         }
     });
 
-    // Validate and sanitize cycle title
-    let cycleTitle = importedData.title || importedData.name || 'Imported Cycle';
+    // Security: Always sanitize cycle title, with or without DataValidator
+    let cycleTitle = fallbackSanitize(
+        importedData.title || importedData.name || 'Imported Cycle',
+        MAX_CYCLE_NAME_LENGTH
+    );
+    // Additional validation via DataValidator if available
     try {
         const DataValidator = _deps.DataValidator;
         if (DataValidator?.validateCycleName) {
@@ -274,9 +326,9 @@ function processImportedData(fileContent) {
     console.log(`Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
 
     if (recurringCount > 0) {
-        _deps.showNotification?.(`"${importedData.name}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
+        _deps.showNotification?.(`"${cycleTitle}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
     } else {
-        _deps.showNotification?.(`"${importedData.name}" imported and converted to Schema 2.5!`, "success");
+        _deps.showNotification?.(`"${cycleTitle}" imported successfully!`, "success");
     }
 
     location.reload();

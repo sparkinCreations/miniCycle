@@ -17,7 +17,7 @@ import { BOOT_TIMEOUTS } from '../core/constants.js';
 installDebugFilter();
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.565';
+const APP_VERSION = '1.566';
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
