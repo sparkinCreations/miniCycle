@@ -24,7 +24,8 @@ const di = createDIModule('TaskCompletion', {
     handleTaskListMovement: optional(null),
     helpWindowManager: optional(null),
     querySelector: optional(null),
-    querySelectorAll: optional(null)
+    querySelectorAll: optional(null),
+    watchRecurringTasks: optional(null)  // For immediate recurring task respawn
 });
 
 // Late-binding deps via Proxy
@@ -156,6 +157,23 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                     freshHelpWindowMgr.updateConstantMessage();
                 }
             }, UI_TIMEOUTS.STATS_UPDATE_DELAY);
+        }
+
+        // ✅ Trigger recurring task check for immediate respawn
+        // When a recurring task is completed, check if next occurrence should spawn now
+        if (isCompleted && taskItem?.classList.contains('recurring')) {
+            const watchRecurringTasks = deps.watchRecurringTasks || _deps.watchRecurringTasks;
+            if (typeof watchRecurringTasks === 'function') {
+                // Small delay to allow state to settle after completion
+                setTimeout(async () => {
+                    try {
+                        console.log('🔄 Triggering recurring check after task completion...');
+                        await watchRecurringTasks();
+                    } catch (error) {
+                        console.warn('Recurring check after completion failed:', error);
+                    }
+                }, 100);
+            }
         }
     } catch (error) {
         console.warn('Task completion change failed:', error);
