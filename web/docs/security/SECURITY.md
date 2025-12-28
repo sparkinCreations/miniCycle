@@ -155,7 +155,7 @@ When importing `.mcyc` cycle files:
 | Task count | 250 max via `MAX_TASK_COUNT` |
 | Task text | Sanitized via `fallbackSanitize()` (100 chars default) |
 | Cycle name | Sanitized via `fallbackSanitize()` (100 chars) |
-| Recurring templates | Generated from sanitized task text, not imported directly |
+| Recurring templates | Imported and merged from file data; task text is sanitized |
 | JSON parsing | Standard `JSON.parse()` with try-catch |
 
 **Backup Restore (full app data) - `modules/testing/testing-modal.js`:**
