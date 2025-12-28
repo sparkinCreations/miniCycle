@@ -1,7 +1,7 @@
 # Security Guide
 
-**Version**: 1.373
-**Last Updated**: November 23, 2025
+**Version**: 1.569
+**Last Updated**: December 27, 2025
 
 ---
 
@@ -14,10 +14,11 @@
 5. [Security Checklist for New Features](#security-checklist-for-new-features)
 6. [Verified Secure Modules](#verified-secure-modules)
 7. [Example: Secure Modal Creation](#example-secure-modal-creation)
-8. [Security Audit History](#security-audit-history)
-9. [Reporting Security Issues](#reporting-security-issues)
-10. [Additional Resources](#additional-resources)
-11. [Event Flow & UI State Patterns](#event-flow--ui-state-patterns)
+8. [Content Security Policy (CSP)](#content-security-policy-csp)
+9. [Security Audit History](#security-audit-history)
+10. [Reporting Security Issues](#reporting-security-issues)
+11. [Additional Resources](#additional-resources)
+12. [Event Flow & UI State Patterns](#event-flow--ui-state-patterns)
 
 ---
 
@@ -192,7 +193,28 @@ createModalInsecure(theme, title, content) {
 
 ---
 
+## Content Security Policy (CSP)
+
+**Implemented in v1.569** via `miniCycle.html` meta tag and `netlify.toml` HTTP headers.
+
+CSP provides defense in depth - even if XSS sanitization is bypassed, the browser will block unauthorized script execution.
+
+**Key directives:**
+- `script-src 'self' 'unsafe-inline'` - Only local scripts (inline needed for feature detection)
+- `connect-src 'self' https://api.web3forms.com` - Limits fetch/XHR targets
+- `form-action 'self' https://api.web3forms.com` - Limits form POST targets
+- `base-uri 'self'` - Prevents base tag injection
+
+**For full details:** See [SECURITY.md](../security/SECURITY.md#content-security-policy)
+
+---
+
 ## Security Audit History
+
+- **December 2025:** CSP Implementation
+  - Added Content Security Policy via meta tag and HTTP headers
+  - Schema normalization (dueDate format, reminders location)
+  - Security score improved to 8.5/10 for personal use case
 
 - **November 2025:** XSS audit completed
   - Theme sanitization implemented (onboardingManager.js:155)
