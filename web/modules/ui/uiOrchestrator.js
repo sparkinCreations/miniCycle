@@ -297,16 +297,25 @@ class UIOrchestrator {
 
     /**
      * Full render via TaskRenderer
+     * State-driven: reads tasks from AppState
      * @private
      */
     _fullRender() {
         const TaskRenderer = _deps.TaskRenderer;
-        if (TaskRenderer?.renderTasks) {
-            console.log('🎭 Executing full render');
-            TaskRenderer.renderTasks();
-        } else {
+        const AppState = _deps.AppState;
+
+        if (!TaskRenderer?.renderTasks) {
             console.warn('🎭 TaskRenderer not available for full render');
+            return;
         }
+
+        // Get tasks from AppState (state-driven, not relying on hidden defaults)
+        const state = AppState?.get?.();
+        const activeCycleId = state?.appState?.activeCycleId;
+        const tasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
+
+        console.log(`🎭 Executing full render (${tasks.length} tasks)`);
+        TaskRenderer.renderTasks(tasks);
     }
 
     /**
