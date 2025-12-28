@@ -21,7 +21,7 @@
  */
 
 // Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.567';
+const APP_VERSION = '1.568';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection

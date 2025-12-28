@@ -139,19 +139,27 @@ export class GlobalUtils {
     }
 
     /**
-     * Safely sets inner HTML with null checking.
+     * Sets innerHTML with null checking only.
      *
+     * ⚠️ SECURITY WARNING: This function does NOT escape HTML!
+     * The name "safe" refers ONLY to null-checking, NOT XSS protection.
+     *
+     * - For user-controlled content: Use safeSetInnerHTMLWithEscape() instead
+     * - For static/trusted HTML: This function is acceptable
+     *
+     * @deprecated Prefer safeSetInnerHTMLWithEscape() for user content
      * @param {HTMLElement|string} elementOrId - Element or element ID.
-     * @param {string} html - HTML content to set.
+     * @param {string} html - HTML content to set (NOT escaped - must be trusted).
      * @returns {boolean} Success status.
      */
     static safeSetInnerHTML(elementOrId, html) {
-        const element = typeof elementOrId === 'string' 
+        // NOTE: "safe" here means null-safe, NOT XSS-safe
+        const element = typeof elementOrId === 'string'
             ? GlobalUtils.safeGetElementById(elementOrId)
             : elementOrId;
-            
+
         if (!element) return false;
-        
+
         element.innerHTML = html;
         return true;
     }
@@ -726,10 +734,14 @@ ELEMENT SELECTION FUNCTIONS:
 
 CONTENT MANIPULATION FUNCTIONS:
 
-7. Safe HTML Setting:
-   safeSetInnerHTML('my-div', '<p>New content</p>');
-   safeSetInnerHTML(element, '<p>New content</p>');
-   
+7. Safe HTML Setting (with XSS protection):
+   // ✅ RECOMMENDED: Use this for any user content
+   safeSetInnerHTMLWithEscape('my-div', userContent);  // Escapes by default
+   safeSetInnerHTMLWithEscape('my-div', trustedHtml, true);  // Skip escape for trusted HTML
+
+   // ⚠️ DEPRECATED: Only null-safe, NOT XSS-safe - use for static HTML only
+   safeSetInnerHTML('my-div', '<p>Static content</p>');
+
 8. Safe Text Setting:
    safeSetTextContent('my-div', 'New text');
    safeSetTextContent(element, 'New text');

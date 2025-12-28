@@ -8,10 +8,13 @@
 The codebase has proper protection utilities in `modules/utils/globalUtils.js`:
 
 ```javascript
-GlobalUtils.escapeHtml(text)           // Escape HTML characters
-GlobalUtils.safeSetInnerHTML(el, html) // Safe innerHTML setter
-GlobalUtils.safeSetInnerHTMLWithEscape(el, content, allowHtml) // Conditional escape
+GlobalUtils.escapeHtml(text)           // Escape HTML characters - USE THIS FOR USER CONTENT
+GlobalUtils.safeSetInnerHTMLWithEscape(el, content, allowHtml) // Preferred: escapes by default
+GlobalUtils.safeSetInnerHTML(el, html) // ⚠️ DEPRECATED - null-safe only, NOT XSS-safe
 ```
+
+> ⚠️ **WARNING**: `safeSetInnerHTML` is misleadingly named! It only provides null-checking,
+> NOT XSS protection. Always use `safeSetInnerHTMLWithEscape()` for user content.
 
 ## Audit Results by Category
 
@@ -83,6 +86,7 @@ When adding new innerHTML usage:
 2. For static templates: Document that content is static
 3. Consider using `textContent` when HTML formatting not needed
 4. Avoid template literals with user variables unless explicitly escaped
+5. **Never use `safeSetInnerHTML`** for user content - it does NOT escape HTML
 
 ## Files Not Requiring Changes
 All 25 files with innerHTML usage have been audited and found to be properly protected:

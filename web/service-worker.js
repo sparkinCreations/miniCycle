@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v360'; // Force refresh - bypass browser HTTP cache for JS
+var CACHE_VERSION = 'v361'; // Force refresh - bypass browser HTTP cache for JS
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
