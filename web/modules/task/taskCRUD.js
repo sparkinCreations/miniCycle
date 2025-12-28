@@ -298,6 +298,11 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                                 cycle.tasks.splice(index, 1);
                             }
                         }
+                        // Also delete any corresponding recurring template
+                        if (cycle?.recurringTemplates?.[taskId]) {
+                            delete cycle.recurringTemplates[taskId];
+                            console.log(`🗑️ Removed recurring template for deleted task ${taskId}`);
+                        }
                     }, true);
 
                     // Remove from DOM
