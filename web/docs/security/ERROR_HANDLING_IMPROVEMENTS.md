@@ -4,6 +4,11 @@
 **Date:** November 13, 2025
 **Status:** ✅ Complete
 
+> **Note:** This document reflects the codebase as of v1.354. Some patterns may have evolved:
+> - `window.*` globals mentioned here have since been replaced with dependency injection (Dec 2025)
+> - The safe utility functions (`safeJSONParse`, etc.) remain current and correct
+> - Refer to [CLAUDE.md](../developer-guides/CLAUDE.md) for current DI patterns
+
 ---
 
 ## 🎯 Overview
@@ -96,8 +101,8 @@ const json = safeJSONStringify(data, null);
 - **Logging:** Yes (unless silent=true)
 - **Returns:** JSON string or defaultValue
 
-**Global Registration:**
-All functions available globally via `window.*` (lines 531-536)
+**Access:**
+Functions available via module imports. (Historical note: Previously registered on `window.*`, now accessed via DI.)
 
 ---
 

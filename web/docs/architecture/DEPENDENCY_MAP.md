@@ -1,26 +1,42 @@
 # miniCycle Dependency Map
 
 > **Generated:** November 2025
-> **Updated:** December 21, 2025
+> **Updated:** December 27, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
 ## Executive Summary
 
-The miniCycle codebase has **61 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
+The miniCycle codebase has **80 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
 
 ### Key Numbers
-| Metric | Before | Current | Target | Progress |
-|--------|--------|---------|--------|----------|
-| Total modules | 43 | **53** | — | — |
+| Metric | Before (Nov 2025) | Current | Target | Progress |
+|--------|-------------------|---------|--------|----------|
+| Total modules | 43 | **80** | — | — |
 | `window.*` globals created | ~68 | **0** | 0 | **100%** ✅ |
 | `window.*` references consumed | ~748 | **0** | 0 | **100%** ✅ |
 | Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
 | Modules still exporting to `window.*` | ~40 | **0** | 0 | **100%** ✅ |
 
+### Module Distribution
+| Directory | Count |
+|-----------|-------|
+| ui/ | 18 |
+| recurring/ | 13 |
+| task/ | 10 |
+| core/ | 8 |
+| utils/ | 8 |
+| boot/ | 6 |
+| routine/ | 5 |
+| features/ | 4 |
+| other/ | 3 |
+| testing/ | 3 |
+| progress/ | 1 |
+| storage/ | 1 |
+
 > **Modular overhaul complete (December 2025).** All modules use strict DI.
 >
-> **Last verified:** December 20, 2025
+> **Last verified:** December 27, 2025
 
 ---
 
@@ -92,15 +108,15 @@ Phase 3: Data & Rendering
 
 #### `modules/core/appState.js`
 ```
-Creates:    window.AppState
-Consumes:   localStorage, window.showNotification (optional)
+Exports:    AppState class (via appContext.js getters)
+Consumes:   localStorage, showNotification (via DI)
 Imports:    constants.js
-Used by:    20+ modules
+Used by:    20+ modules (via getAppState() or DI)
 ```
 
 #### `modules/core/appInit.js`
 ```
-Creates:    window.appInit
+Exports:    appInit object with waitForCore(), waitForApp()
 Consumes:   none
 Imports:    none
 Used by:    15+ modules (via waitForCore/waitForApp)
@@ -108,10 +124,10 @@ Used by:    15+ modules (via waitForCore/waitForApp)
 
 #### `modules/core/constants.js`
 ```
-Creates:    none (clean module)
+Exports:    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS
 Consumes:   none
 Imports:    none
-Exports:    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETTINGS
+Used by:    Multiple modules via direct import
 ```
 
 ---
@@ -120,24 +136,22 @@ Exports:    DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_RECURRING_DELETE_SETT
 
 #### `modules/routine/routineManager.js`
 ```
-Creates:    window.routineManager
+Exports:    RoutineManager class, setRoutineManagerDependencies()
 Imports:    none
-Dependencies (constructor injection with validation):
+Dependencies (strict DI via setRoutineManagerDependencies):
   - AppState, showPromptModal, sanitizeInput
   - loadMiniCycleData, completeInitialSetup, hideMainMenu, autoSave
   - safeLocalStorageGet, safeLocalStorageSet (storage utilities)
   - safeJSONParse, safeJSONStringify (JSON utilities)
   - DEFAULT_TASK_OPTION_BUTTONS (constant)
-  - onCycleCreated (optional callback)
 Note:       Has _validateDependencies() method, uses deps.* pattern
 ```
 
 #### `modules/routine/routineLoader.js`
 ```
-Creates:    window.loadMiniCycle (optional)
-Consumes:   window.syncAllTasksWithMode, window.recurringCore
+Exports:    RoutineLoader class, setRoutineLoaderDependencies()
 Imports:    appInit, constants.js
-Dependencies (injected):
+Dependencies (strict DI):
   - AppState, loadMiniCycleData, addTask, updateThemeColor
   - startReminders, catchUpMissedRecurringTasks
   - updateProgressBar, updateMainMenuHeader, updateStatsPanel
@@ -145,27 +159,25 @@ Dependencies (injected):
 
 #### `modules/routine/modeManager.js`
 ```
-Creates:    window.modeManager, window.initializeModeSelector,
-            window.setupModeSelector, window.syncModeFromToggles, etc.
-Consumes:   window.AppState, window.recurringCore
+Exports:    ModeManager class, setModeManagerDependencies()
 Imports:    appInit
+Dependencies (strict DI):
+  - AppState, recurringCore
 ```
 
 #### `modules/routine/routineSwitcher.js`
 ```
-Creates:    window.routineSwitcher + 7 wrapper functions
-Consumes:   window.AppState, window.showPromptModal,
-            window.showConfirmationModal, window.sanitizeInput,
-            window.loadMiniCycle
-Imports:    none
+Exports:    RoutineSwitcher class, setRoutineSwitcherDependencies()
+Dependencies (strict DI):
+  - AppState, showPromptModal, showConfirmationModal
+  - sanitizeInput, loadMiniCycle
 ```
 
-#### `modules/tasks/taskCore.js`
+#### `modules/task/taskCore.js`
 ```
-Creates:    none (class-based)
-Consumes:   none (fully dependency injected)
+Exports:    TaskCore class, setTaskCoreDependencies()
 Imports:    appInit
-Dependencies (injected):
+Dependencies (strict DI):
   - AppState, loadMiniCycleData, sanitizeInput
   - showNotification, updateStatsPanel, updateProgressBar
   - checkCompleteAllButton, refreshUIFromState
@@ -173,21 +185,18 @@ Dependencies (injected):
   - Modal functions, DOM helpers, autoSave
 ```
 
-#### `modules/tasks/taskDOM.js`
+#### `modules/task/taskDOM.js`
 ```
-Creates:    window.__taskDOMManager, window.__TaskValidator,
-            window.__TaskUtils, window.__TaskRenderer, window.__TaskEvents
+Exports:    TaskDOMManager, TaskValidator, TaskUtils, TaskRenderer, TaskEvents
+           setTaskDOMDependencies()
 Imports:    appInit, constants.js
-Note:       Uses double-underscore globals for versioning workaround
 
-TaskRenderer Dependencies (constructor injection with validation):
+TaskRenderer Dependencies (strict DI):
   - AppState, addTask, loadMiniCycle
   - updateProgressBar, checkCompleteAllButton, updateArrowsInDOM
   - checkOverdueTasks, enableDragAndDropOnTask
   - recurringPanel (via deferred getter for late-bound lookup)
-  - updateRecurringPanelButtonVisibility
-Note:       Has _validateDependencies() that warns (not throws) for missing deps
-            Uses deferred getters for dependencies not available at init time
+Note:       Uses deferred getters for dependencies not available at init time
 ```
 
 ---
@@ -196,10 +205,9 @@ Note:       Has _validateDependencies() that warns (not throws) for missing deps
 
 #### `modules/recurring/recurringCore.js`
 ```
-Creates:    window.recurringCore (via wrapper)
-Consumes:   none (fully dependency injected)
+Exports:    RecurringCore class, setRecurringCoreDependencies()
 Imports:    appInit, constants.js
-Dependencies (strict injection via setRecurringCoreDependencies):
+Dependencies (strict DI via setRecurringCoreDependencies):
   - getAppState, updateAppState, isAppStateReady
   - loadData, showNotification, querySelector
   - updateRecurringPanel, updateRecurringSummary
@@ -208,24 +216,25 @@ Dependencies (strict injection via setRecurringCoreDependencies):
 
 #### `modules/features/dueDates.js`
 ```
-Creates:    none (class-based)
-Consumes:   AppState (via getter)
+Exports:    DueDates class, setDueDatesDependencies()
 Imports:    appInit
+Dependencies (strict DI):
+  - AppState
 ```
 
 #### `modules/features/reminders.js`
 ```
-Creates:    window.reminders (wrapper)
-Consumes:   AppState, showNotification
+Exports:    Reminders class, setRemindersDependencies()
 Imports:    appInit
+Dependencies (strict DI):
+  - AppState, showNotification
 ```
 
 #### `modules/ui/undoRedoManager.js`
 ```
-Creates:    window.__undoRedoManager (internal)
-Consumes:   none (fully dependency injected)
+Exports:    UndoRedoManager class, setUndoRedoManagerDependencies()
 Imports:    appInit
-Dependencies (strict injection via setUndoRedoManagerDependencies):
+Dependencies (strict DI via setUndoRedoManagerDependencies):
   - AppState, refreshUIFromState, AppGlobalState
   - getElementById, safeAddEventListener, showNotification
 ```
@@ -236,58 +245,53 @@ Dependencies (strict injection via setUndoRedoManagerDependencies):
 
 #### `modules/ui/modalManager.js`
 ```
-Creates:    window.modalManager
-Imports:    none (removed appInit direct import)
-Dependencies (via setModalManagerDependencies + initModalManager):
+Exports:    ModalManager class, setModalManagerDependencies(), initModalManager()
+Imports:    none
+Dependencies (strict DI via setModalManagerDependencies + initModalManager):
   - waitForCore (for initialization timing)
   - showNotification, hideMainMenu
   - sanitizeInput, safeAddEventListener
 Note:       Uses explicit initialization via initModalManager()
-            Must call initModalManager(deps) instead of auto-init on import
 ```
 
 #### `modules/ui/settingsManager.js`
 ```
-Creates:    none (class-based)
-Consumes:   window.DataValidator, window.recurringCore,
-            window.showNotification
+Exports:    SettingsManager class, setSettingsManagerDependencies()
 Imports:    appInit
+Dependencies (strict DI):
+  - DataValidator, recurringCore, showNotification
 ```
 
 #### `modules/ui/onboardingManager.js`
 ```
-Creates:    window.onboardingManager, window.OnboardingManager
+Exports:    OnboardingManager class, setOnboardingManagerDependencies()
 Imports:    appInit
-Dependencies (via setOnboardingManagerDependencies + constructor):
+Dependencies (strict DI via setOnboardingManagerDependencies):
   - AppState, showNotification
   - showCycleCreationModal, completeInitialSetup
   - safeAddEventListenerById
-Note:       Uses layered fallback: constructor > module deps > window.*
-            Supports both DI and legacy window.* patterns for test compatibility
 ```
 
 #### `modules/ui/pullToRefresh.js`
 ```
-Creates:    window.pullToRefresh, window.PullToRefresh
+Exports:    PullToRefresh class, setPullToRefreshDependencies()
 Imports:    none (standalone)
-Dependencies (via setPullToRefreshDependencies + constructor):
+Dependencies (strict DI via setPullToRefreshDependencies):
   - refreshUIFromState, checkRecurringTasksNow, watchRecurringTasks
   - promptServiceWorkerUpdate, showNotification
-Note:       Uses layered fallback: constructor > module deps > window.*
-            Mobile PWA pull-to-refresh with SW update checking
+Note:       Mobile PWA pull-to-refresh with SW update checking
 ```
 
 #### `modules/utils/globalUtils.js`
 ```
-Creates:    window.GlobalUtils (class reference)
+Exports:    GlobalUtils class with safeAddEventListener, sanitizeInput, etc.
 Consumes:   none (pure utilities)
 Imports:    none
-Exports:    GlobalUtils class with safeAddEventListener, etc.
 ```
 
 #### `modules/utils/notifications.js`
 ```
-Creates:    window.showNotification
+Exports:    showNotification function, setNotificationsDependencies()
 Consumes:   DOM
 Imports:    none
 ```
@@ -367,48 +371,43 @@ UI modules react to state changes
 
 ## Dependency Injection Patterns Used
 
-### Pattern 1: Constructor with fallbacks (most common)
+All modules now use strict DI with no `window.*` fallbacks. The patterns below are the current standard:
+
+### Pattern 1: Module-level setter with Object.defineProperties (standard)
 ```javascript
-constructor(dependencies = {}) {
-    this.deps = {
-        AppState: dependencies.AppState || window.AppState,
-        notify: dependencies.showNotification || window.showNotification
-    };
+let _deps = {};
+
+export function setModuleDependencies(dependencies) {
+    // Preserves lazy getters for late resolution
+    const descriptors = Object.getOwnPropertyDescriptors(dependencies);
+    Object.defineProperties(_deps, descriptors);
+}
+
+class MyModule {
+    constructor(dependencies = {}) {
+        const mergedDeps = { ..._deps, ...dependencies };
+        if (!mergedDeps.AppState) throw new Error('AppState required');
+        this.deps = {
+            AppState: mergedDeps.AppState,  // No fallback
+            showNotification: mergedDeps.showNotification
+        };
+    }
 }
 ```
-**Reality:** DI parameter is never used. Always falls back to `window.*`.
+**Used by:** Most modules (taskCore, routineManager, recurringCore, etc.)
+**Key:** Uses `Object.defineProperties` to preserve lazy getters during wiring.
 
-### Pattern 2: Strict injection (critical modules)
-```javascript
-const Deps = {};
-export function setDependencies(overrides) {
-    Object.assign(Deps, overrides);
-}
-// Used by: recurringCore, undoRedoManager, migrationManager, themeManager,
-//          dataValidator, modalManager, routineManager, taskRenderer,
-//          taskOptionsCustomizer, onboardingManager, pullToRefresh
-```
-**Reality:** Actually enforced. Must call setter before use.
-
-### Pattern 3: Getter functions (runtime access)
-```javascript
-this.deps = {
-    getAppState: dependencies.getAppState || (() => window.AppState)
-};
-```
-**Reality:** Defers resolution to call time. Still usually gets from `window`.
-
-### Pattern 4: Deferred getter objects (late-bound dependencies)
+### Pattern 2: Deferred getter objects (late-bound dependencies)
 ```javascript
 // For dependencies not available at initialization time
-recurringPanel: this.dependencies.recurringPanel || {
-    get updateRecurringPanel() { return window.recurringPanel?.updateRecurringPanel; },
-    get updateRecurringPanelButtonVisibility() { return window.recurringPanel?.updateRecurringPanelButtonVisibility; }
-}
+this.deps = {
+    get recurringPanel() { return _deps.recurringPanel; }
+};
 ```
 **Used by:** TaskRenderer (for recurringPanel which initializes after taskDOM)
+**Key:** Getter is evaluated at access time, not construction time.
 
-### Pattern 5: Explicit initialization function
+### Pattern 3: Explicit initialization function
 ```javascript
 export async function initModalManager(dependencies = {}) {
     setModalManagerDependencies(dependencies);
@@ -417,50 +416,32 @@ export async function initModalManager(dependencies = {}) {
     return modalManager;
 }
 ```
-**Used by:** modalManager (removes auto-init on import, allows DI of waitForCore)
-
-### Pattern 6: Layered fallback (DI with test compatibility)
-```javascript
-// Module-level deps for late injection
-let _deps = {};
-export function setXxxDependencies(dependencies) {
-    _deps = { ..._deps, ...dependencies };
-}
-
-constructor(options = {}) {
-    // Priority: constructor injection > module deps > window.* (test fallback)
-    this.deps = {
-        AppState: options.AppState || _deps.AppState || window.AppState,
-        showNotification: options.showNotification || _deps.showNotification || window.showNotification
-    };
-}
-```
-**Used by:** onboardingManager, pullToRefresh
-**Benefit:** Full DI support while preserving backward compatibility with tests that mock `window.*`
+**Used by:** modalManager
+**Key:** Explicit init call instead of auto-init on import.
 
 ---
 
 ## Common Debugging Scenarios
 
 ### "Feature X doesn't work"
-1. Check if required globals exist: `console.log(window.AppState, window.featureX)`
+1. Check if dependencies were wired: Look in `featureBoot.js` for `setXDependencies()` call
 2. Check initialization order in console logs
-3. Verify `appInit.waitForCore()` was awaited
+3. Verify `appInit.waitForCore()` was awaited before accessing state
 
 ### "State changes don't persist"
-1. Check `AppState.isReady()` returns true
-2. Check localStorage in DevTools
+1. Check `AppState.isReady()` returns true (via `getAppState().isReady()`)
+2. Check localStorage in DevTools → Application → Local Storage
 3. Look for save errors in console
 
 ### "Module Y can't find Module Z"
-1. Both communicate via `window.*` - check if Z is initialized first
-2. Check for typos in global name
-3. Verify Z's initialization runs before Y tries to use it
+1. Check `featureBoot.js` wiring order - Z must be wired before Y uses it
+2. Use deferred getter pattern if Z initializes after Y
+3. Check for typos in dependency names in setter call
 
 ### "Circular dependency suspected"
-1. No actual ES6 circular imports exist (all go through `window.*`)
-2. Issue is likely initialization order
-3. Check if both modules use `waitForCore()` properly
+1. ES6 imports are fine - issue is usually DI wiring order
+2. Check if both modules use `waitForCore()` properly
+3. Consider deferred getter pattern for late-bound deps
 
 ---
 
@@ -515,4 +496,4 @@ const taskCore = new TaskCore();
 
 ---
 
-*This document reflects the actual architecture as of December 2025. All modules use strict DI.*
+*This document reflects the actual architecture as of December 27, 2025. All modules use strict DI.*
