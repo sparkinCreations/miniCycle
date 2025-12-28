@@ -158,7 +158,7 @@ export const MODULE_MANIFESTS = {
         path: '../task/dragDropManager.js',
         phase: PHASES.TASK_MANAGEMENT,
         requires: ['appInit', 'AppState', 'showNotification'],
-        provides: ['enableDragAndDropOnTask', 'updateMoveArrowsVisibility', 'updateArrowsInDOM'],
+        provides: ['enableDragAndDropOnTask', 'updateMoveArrowsVisibility', 'updateArrowsInDOM', 'setArrowsEnabled', 'updateFirstLastMarkers'],
         api: 'task'
     },
 
@@ -267,13 +267,22 @@ export const MODULE_MANIFESTS = {
     // =========================================================================
     // PHASE 6: UI MANAGERS
     // =========================================================================
+    uiOrchestrator: {
+        path: '../ui/uiOrchestrator.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit', 'AppState'],
+        provides: ['requestUIUpdate', 'flushUIUpdates', 'initUIOrchestrator', 'getUIOrchestrator', 'ui'],
+        api: 'ui',
+        after: ['taskDOM', 'cycleCompletion', 'statsPanel', 'dragDropManager']
+    },
+
     undoRedoManager: {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState'],
+        requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
         provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initializeUndoSystemForApp'],
         api: 'undo',
-        after: ['taskDOM']
+        after: ['taskDOM', 'uiOrchestrator']
     },
 
     menuManager: {

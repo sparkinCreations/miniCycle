@@ -726,6 +726,39 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Stats panel manager (from deps.ui) - returns instance when called as function
         statsPanelManager: () => deps.ui?.statsPanelManager,
 
+        // UIOrchestrator (from deps.ui) - lazy resolution for UI update coalescing
+        UIOrchestrator: new Proxy({}, {
+            get(target, prop) {
+                return deps.ui?.UIOrchestrator?.[prop];
+            }
+        }),
+        requestUIUpdate: (...args) => deps.ui?.requestUIUpdate?.(...args),
+        flushUIUpdates: (...args) => deps.ui?.flushUIUpdates?.(...args),
+        getUIOrchestrator: () => deps.ui?.getUIOrchestrator?.(),
+        ui: new Proxy({}, {
+            get(target, prop) {
+                return deps.ui?.ui?.[prop];
+            }
+        }),
+
+        // Additional dependencies for UIOrchestrator
+        TaskDOMManager: new Proxy({}, {
+            get(target, prop) {
+                return deps.task?.taskDOMManager?.[prop];
+            }
+        }),
+        TaskRenderer: new Proxy({}, {
+            get(target, prop) {
+                // renderTasks is exported as a standalone function, not on an instance
+                if (prop === 'renderTasks') {
+                    return deps.task?.renderTasks;
+                }
+                return undefined;
+            }
+        }),
+        setArrowsEnabled: (...args) => deps.task?.setArrowsEnabled?.(...args),
+        updateFirstLastMarkers: (...args) => deps.task?.updateFirstLastMarkers?.(...args),
+
     };
 
     // Add required dependencies

@@ -133,7 +133,7 @@ export class TaskRenderer {
     }
 
     /**
-     * Render tasks array to DOM
+     * Render tasks array to DOM using atomic replaceChildren
      * @param {Array} tasksArray - Array of task objects
      */
     async renderTasks(tasksArray = []) {
@@ -145,8 +145,6 @@ export class TaskRenderer {
             return;
         }
 
-        taskList.innerHTML = ""; // Clear existing tasks from DOM
-
         if (!Array.isArray(tasksArray)) {
             console.warn('⚠️ Invalid tasks array provided to renderTasks');
             return;
@@ -154,27 +152,31 @@ export class TaskRenderer {
 
         console.log(`📋 Rendering ${tasksArray.length} tasks`);
 
-        // ✅ FIX #6: Use DocumentFragment for batched DOM updates
+        // ✅ Create DocumentFragment for batched DOM operations
         const fragment = document.createDocumentFragment();
 
-        // Add all tasks to fragment (batch operation)
+        // Build all task elements in fragment (no reflows during construction)
         for (const task of tasksArray) {
             if (!task || !task.id) {
                 console.warn('⚠️ Skipping invalid task:', task);
                 continue;
             }
 
-            // Use injected addTask with shared options helper
+            // Use injected addTask with deferred append to fragment
             if (this.deps.addTask && this.deps.taskToAddTaskOptions) {
                 const options = this.deps.taskToAddTaskOptions(task);
+                // Defer append and use fragment as target container
+                options.deferAppend = true;
+                options.targetContainer = fragment;
                 await this.deps.addTask(task.text, options);
             } else {
                 console.warn('⚠️ addTask or taskToAddTaskOptions not available for task:', task.id);
             }
         }
 
-        // ✅ FIX #6: Append entire fragment to DOM in one operation (single reflow)
-        taskList.appendChild(fragment);
+        // ✅ Atomic DOM update: replaceChildren swaps all children in one reflow
+        // This is more efficient than innerHTML = "" followed by appendChild
+        taskList.replaceChildren(...fragment.childNodes);
 
         // Re-run UI state updates
         this.deps.updateProgressBar?.();
@@ -189,8 +191,7 @@ export class TaskRenderer {
             this.deps.checkOverdueTasks?.();
         }, 500);
 
-        // ✅ FIX: Re-initialize drag handlers on newly rendered tasks
-        // This is needed after refreshUIFromState() recreates the DOM
+        // Re-initialize drag handlers on newly rendered tasks
         if (this.deps.enableDragAndDropOnTask) {
             const tasks = this.deps.querySelectorAll('#taskList .task');
             tasks.forEach(task => {
@@ -198,7 +199,7 @@ export class TaskRenderer {
             });
         }
 
-        console.log('✅ Tasks rendered successfully (batched DOM update)');
+        console.log('✅ Tasks rendered successfully (atomic replaceChildren)');
     }
 
     /**

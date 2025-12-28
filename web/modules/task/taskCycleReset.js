@@ -22,9 +22,6 @@ const di = createDIModule('TaskCycleReset', {
     isPerformingUndoRedo: optional(null),
     showNotification: optional(null),
     showConfirmationModal: optional(null),
-    updateStatsPanel: optional(null),
-    updateProgressBar: optional(null),
-    checkCompleteAllButton: optional(null),
     captureStateSnapshot: optional(null),
     updateUndoRedoButtons: optional(null),
     updateCompletedTasksCount: optional(null),
@@ -38,7 +35,9 @@ const di = createDIModule('TaskCycleReset', {
     removeRecurringTasksFromCycle: optional(null),
     checkMiniCycle: optional(null),
     querySelector: optional(null),
-    querySelectorAll: optional(null)
+    querySelectorAll: optional(null),
+    // UIOrchestrator for coalesced UI updates
+    requestUIUpdate: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -56,6 +55,7 @@ export function setTaskCycleResetDependencies(dependencies) {
     di.setDependencies(dependencies);
     console.log('Task Cycle Reset dependencies set:', Object.keys(dependencies));
 }
+
 
 // ============================================================================
 // MODULE STATE
@@ -448,9 +448,6 @@ export async function resetTasksImpl(deps = {}) {
  */
 export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskList, deps = {}) {
     const AppState = deps.AppState || _deps.AppState;
-    const updateProgressBar = deps.updateProgressBar || _deps.updateProgressBar;
-    const updateStatsPanel = deps.updateStatsPanel || _deps.updateStatsPanel;
-    const checkCompleteAllButton = deps.checkCompleteAllButton || _deps.checkCompleteAllButton;
 
     // Find all tasks that are BOTH completed AND marked for deletion
     const tasksToDelete = [];
@@ -492,10 +489,13 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
         console.warn('⚠️ AppState not ready for task deletion - state may be lost');
     }
 
-    // Update UI
-    updateProgressBar?.();
-    updateStatsPanel?.();
-    checkCompleteAllButton?.();
+    // Request UI updates via UIOrchestrator
+    const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
+    requestUIUpdate?.({
+        progress: true,
+        stats: true,
+        completeAllButton: true
+    });
 
     return { deleted: taskIdsToDelete.length };
 }
