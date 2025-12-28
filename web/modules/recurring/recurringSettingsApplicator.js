@@ -23,7 +23,8 @@ const di = createDIModule('RecurringSettingsApplicator', {
     normalizeRecurringSettings: required(),
     calculateNextOccurrence: required(),
     updateAppState: optional(null),
-    syncRecurringStateToDOM: optional(null)
+    syncRecurringStateToDOM: optional(null),
+    restartRecurringWatcher: optional(null)
 });
 
 const _deps = new Proxy({}, {
@@ -182,6 +183,9 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
         panel.updateRecurringPanelButtonVisibility();
         panel.clearRecurringForm();
+
+        // Restart watcher at active interval since templates now exist
+        _deps.restartRecurringWatcher?.();
 
         console.log('✅ Recurring settings applied successfully');
 

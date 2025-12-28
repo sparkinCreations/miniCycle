@@ -98,6 +98,7 @@ export let shouldRecreateRecurringTask = null;
 export let catchUpMissedRecurringTasks = null;
 export let watchRecurringTasks = null;
 export let setupRecurringWatcher = null;
+export let restartRecurringWatcher = null;
 export let isWatcherInitialized = null;
 export let resetWatcherState = null;
 
@@ -194,6 +195,7 @@ async function loadSubModules(version) {
         catchUpMissedRecurringTasks = watcher.catchUpMissedRecurringTasks;
         watchRecurringTasks = watcher.watchRecurringTasks;
         setupRecurringWatcher = watcher.setupRecurringWatcher;
+        restartRecurringWatcher = watcher.restartRecurringWatcher;
         isWatcherInitialized = watcher.isWatcherInitialized;
         resetWatcherState = watcher.resetWatcherState;
 
@@ -245,7 +247,8 @@ export async function setRecurringCoreDependencies(overrides = {}) {
             ...overrides,
             // Inject sibling module functions
             normalizeRecurringSettings: _settings.normalizeRecurringSettings,
-            calculateNextOccurrence: _calculators.calculateNextOccurrence
+            calculateNextOccurrence: _calculators.calculateNextOccurrence,
+            restartRecurringWatcher: _watcher?.restartRecurringWatcher
         });
     }
 
@@ -285,6 +288,7 @@ export async function setRecurringCoreDependencies(overrides = {}) {
         catchUpMissedRecurringTasks,
         watchRecurringTasks,
         setupRecurringWatcher,
+        restartRecurringWatcher,
         isWatcherInitialized,
         resetWatcherState,
         // Activation

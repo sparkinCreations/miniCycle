@@ -31,7 +31,8 @@ const di = createDIModule('RecurringActivation', {
     GlobalUtils: optional(null),
     // Functions from sibling modules (injected to avoid circular imports)
     normalizeRecurringSettings: optional(null),
-    calculateNextOccurrence: optional(null)
+    calculateNextOccurrence: optional(null),
+    restartRecurringWatcher: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -184,6 +185,9 @@ export function handleRecurringTaskActivation(task, taskContext, button = null) 
     }
 
     console.log('✅ Task activated as recurring:', assignedTaskId);
+
+    // Restart watcher at active interval since a template was created
+    Deps.restartRecurringWatcher?.();
 
     // Update panel button visibility
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
@@ -381,6 +385,9 @@ export function applyRecurringToTaskSchema25(taskId, newSettings) {
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         Deps.updatePanelButtonVisibility();
     }
+
+    // Restart watcher at active interval since a template was created/updated
+    Deps.restartRecurringWatcher?.();
 
     console.log('✅ Recurring settings applied to task:', taskId);
 }

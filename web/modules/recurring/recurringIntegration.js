@@ -146,6 +146,7 @@ export async function initializeRecurringModules(options = {}) {
             // Time/scheduling (required)
             now: () => Date.now(),
             setInterval: (fn, ms) => setInterval(fn, ms),
+            clearInterval: (id) => clearInterval(id),
 
             // Feature flags (required) - DI-pure
             isEnabled: () => {
@@ -175,7 +176,8 @@ export async function initializeRecurringModules(options = {}) {
             normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
             updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
-            syncRecurringStateToDOM: deps.syncRecurringStateToDOM
+            syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
+            restartRecurringWatcher: coreFunctions.restartRecurringWatcher
         });
 
         console.log('✅ settingsApplicator dependencies configured');
