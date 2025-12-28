@@ -78,7 +78,8 @@ export async function initializeRecurringModules(options = {}) {
         }
         const version = options.AppMeta?.version || 'dev-local';
         const recurringCore = await import(`./recurringCore.js?v=${version}`);
-        const { RecurringPanelManager, buildRecurringSummaryFromSettings, loadPanelSubModules } = await import(`./recurringPanel.js?v=${version}`);
+        const { RecurringPanelManager, setRecurringPanelDependencies, buildRecurringSummaryFromSettings, loadPanelSubModules } = await import(`./recurringPanel.js?v=${version}`);
+        const settingsApplicator = await import(`./recurringSettingsApplicator.js?v=${version}`);
 
         // Load panel sub-modules with version cache-busting
         await loadPanelSubModules(version);
@@ -160,57 +161,61 @@ export async function initializeRecurringModules(options = {}) {
         console.log('✅ recurringCore dependencies configured');
 
         // ============================================
-        // STEP 3: Initialize RecurringPanelManager (Resilient Constructor)
+        // STEP 2.5: Configure settingsApplicator dependencies
         // ============================================
 
-        console.log('🎛️ Initializing RecurringPanelManager...');
+        console.log('🔧 Configuring settingsApplicator dependencies...');
 
-        const recurringPanel = new RecurringPanelManager({
-            // From recurringCore module (use coreFunctions for loaded values)
-            applyRecurringSettings: coreFunctions.applyRecurringToTaskSchema25,
-            deleteTemplate: coreFunctions.deleteRecurringTemplate,
-            buildRecurringSummary: buildRecurringSummaryFromSettings,
+        settingsApplicator.setRecurringSettingsApplicatorDependencies({
+            appInit: deps.appInit,
+            AppState: deps.AppState,
+            showNotification: deps.showNotification,
+            getElementById: (id) => document.getElementById(id),
+            querySelectorAll: (selector) => document.querySelectorAll(selector),
             normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
-            formatNextOccurrence: coreFunctions.formatNextOccurrence,
+            calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
+            updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
+            syncRecurringStateToDOM: deps.syncRecurringStateToDOM
+        });
+
+        console.log('✅ settingsApplicator dependencies configured');
+
+        // ============================================
+        // STEP 3: Initialize RecurringPanelManager (Strict DI)
+        // ============================================
+
+        console.log('🎛️ Configuring RecurringPanel dependencies...');
+
+        // Wire module-level dependencies BEFORE creating instance
+        setRecurringPanelDependencies({
+            // Required dependencies (will throw if missing)
+            AppState: deps.AppState,
+            showNotification: deps.showNotification,
+            applyRecurringSettings: settingsApplicator.applyRecurringSettings,
+            normalizeRecurringSettings: coreFunctions.normalizeRecurringSettings,
             calculateNextOccurrence: coreFunctions.calculateNextOccurrence,
 
-            // State management - DI-pure (pass AppState directly)
-            AppState: deps.AppState,
+            // Optional dependencies
+            appInit: deps.appInit,
+            deleteTemplate: coreFunctions.deleteRecurringTemplate,
+            buildRecurringSummary: buildRecurringSummaryFromSettings,
+            formatNextOccurrence: coreFunctions.formatNextOccurrence,
             updateAppState: (updateFn, immediate) => deps.AppState?.update(updateFn, immediate),
             loadData: () => deps.loadMiniCycleData?.(),
-
-            // UI dependencies - DI-pure
-            showNotification: (message, type, duration) => {
-                if (typeof deps.showNotification === 'function') {
-                    return deps.showNotification(message, type, duration);
-                }
-                console.log(`[Panel Notification] ${message}`);
-            },
-            showConfirmationModal: (options) => {
-                if (typeof deps.notifications?.showConfirmationModal === 'function') {
-                    return deps.notifications.showConfirmationModal(options);
-                }
-                // Fallback to browser confirm
-                const confirmed = confirm(options.message);
-                if (options.callback) options.callback(confirmed);
-            },
+            showConfirmationModal: (options) => deps.notifications?.showConfirmationModal(options),
             getElementById: (id) => document.getElementById(id),
             querySelector: (selector) => document.querySelector(selector),
             querySelectorAll: (selector) => document.querySelectorAll(selector),
-
-            // Advanced panel dependencies (optional) - DI-pure
-            isOverlayActive: () => {
-                if (typeof deps.isOverlayActive === 'function') {
-                    return deps.isOverlayActive();
-                }
-                return false;
-            },
-
-            // Utilities - DI-pure
+            isOverlayActive: deps.isOverlayActive,
             escapeHtml: deps.escapeHtml,
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
             refreshTaskButtonsForModeChange: deps.refreshTaskButtonsForModeChange
         });
+
+        console.log('🎛️ Creating RecurringPanelManager instance...');
+
+        // Create instance - will validate required deps via DI
+        const recurringPanel = new RecurringPanelManager();
 
         console.log('✅ RecurringPanelManager initialized');
 

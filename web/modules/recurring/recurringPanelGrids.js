@@ -71,7 +71,7 @@ export function generateYearlyDayGrid(deps, state, monthNumber) {
 
     container.innerHTML = "";
 
-    const daysInMonth = new Date(2025, monthNumber, 0).getDate();
+    const daysInMonth = new Date(new Date().getFullYear(), monthNumber, 0).getDate();
     const selectedDays = state.selectedYearlyDays[monthNumber] || [];
     const yearlyApplyToAllCheckbox = deps.getElementById("yearly-apply-days-to-all");
     const applyToAll = yearlyApplyToAllCheckbox?.checked;
