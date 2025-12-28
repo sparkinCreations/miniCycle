@@ -60,10 +60,9 @@ export function loadMiniCycleData() {
         try {
             const state = AppState.get();
             if (state) {
-                // Load reminders from active cycle (per-cycle)
+                // Load reminders from root customReminders (where reminders.js saves)
                 const activeCycleId = state.appState.activeCycleId;
-                const activeCycle = state.data.cycles[activeCycleId];
-                const reminders = activeCycle?.reminders || {
+                const reminders = state.customReminders || {
                     enabled: false,
                     indefinite: false,
                     dueDatesReminders: false,
@@ -90,8 +89,8 @@ export function loadMiniCycleData() {
         try {
             const parsed = JSON.parse(data);
             const activeCycleId = parsed.appState.activeCycleId;
-            const activeCycle = parsed.data.cycles[activeCycleId];
-            const reminders = activeCycle?.reminders || {
+            // Read from root customReminders (where reminders.js saves)
+            const reminders = parsed.customReminders || {
                 enabled: false,
                 indefinite: false,
                 dueDatesReminders: false,
@@ -130,8 +129,8 @@ export function loadMiniCycleData() {
     if (newData) {
         const parsed = JSON.parse(newData);
         const activeCycleId = parsed.appState.activeCycleId;
-        const activeCycle = parsed.data.cycles[activeCycleId];
-        const reminders = activeCycle?.reminders || {
+        // Read from root customReminders (where reminders.js saves)
+        const reminders = parsed.customReminders || {
             enabled: false,
             indefinite: false,
             dueDatesReminders: false,

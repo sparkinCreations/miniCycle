@@ -64,3 +64,14 @@
   [headers.values]
     # Cache manifest for PWA
     Cache-Control = "public, max-age=86400"
+
+# Version control plane - must revalidate to prevent stale version loops
+[[headers]]
+  for = "/version.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

@@ -175,7 +175,7 @@ Each task object in the `tasks` array contains:
 - **id**: Unique task identifier (string)
 - **text**: Task description text (string)
 - **completed**: Completion status (boolean)
-- **dueDate**: Optional due date (string | null)
+- **dueDate**: Optional due date in ISO format "YYYY-MM-DD" (string | null)
 - **highPriority**: Priority flag (boolean)
 - **remindersEnabled**: Task-specific reminder toggle (boolean)
 - **recurring**: Whether task is recurring (boolean)
@@ -203,7 +203,8 @@ Gamification and achievement tracking:
 
 ### Custom Reminders
 
-User-configurable reminder system:
+User-configurable reminder system stored at root level (`miniCycle.customReminders`).
+Note: Per-task reminders use the `remindersEnabled` boolean on individual tasks.
 - **enabled**: Reminders on/off
 - **indefinite**: Repeat reminders forever
 - **dueDatesReminders**: Remind about task due dates
