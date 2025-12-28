@@ -919,7 +919,7 @@ export class StatsPanelManager {
         };
 
         this.updateThemeMessages(globalCyclesCompleted, milestoneUnlocks);
-        this.unlockThemesIfEligible(globalCyclesCompleted, milestoneUnlocks);
+        // Unlock awarding is handled by cycleCompletion.js - statsPanel is read-only
 
         console.log('✅ Theme unlock status updated (global cycles)');
     }
