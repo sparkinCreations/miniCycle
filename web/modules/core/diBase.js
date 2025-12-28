@@ -42,7 +42,7 @@
  */
 
 // Version marker for cache debugging (updated by update-version.sh)
-export const DIBASE_VERSION = '1.569';
+export const DIBASE_VERSION = '1.570';
 
 // ============================================================================
 // DEPENDENCY MARKERS
