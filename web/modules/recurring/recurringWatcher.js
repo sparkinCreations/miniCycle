@@ -8,7 +8,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
+import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -61,6 +61,53 @@ function assertInjected(name, value) {
 let _recurringWatcherInitialized = false;
 let _watcherIntervalId = null;
 let _currentIntervalMs = null;
+let _taskLimitNotificationShown = false; // Prevent notification spam
+
+// ============================================================================
+// TASK LIMIT HELPERS
+// ============================================================================
+
+/**
+ * Check if adding tasks would exceed the cycle limit
+ * @param {number} currentTaskCount - Current number of tasks in cycle
+ * @param {number} tasksToAdd - Number of tasks to add
+ * @returns {Object} { allowed: number, blocked: number, atLimit: boolean }
+ */
+function checkTaskLimit(currentTaskCount, tasksToAdd) {
+    const limit = LIMITS.TASKS_PER_CYCLE;
+    const availableSlots = Math.max(0, limit - currentTaskCount);
+    const allowed = Math.min(tasksToAdd, availableSlots);
+    const blocked = tasksToAdd - allowed;
+    return {
+        allowed,
+        blocked,
+        atLimit: currentTaskCount >= limit,
+        availableSlots
+    };
+}
+
+/**
+ * Show notification about blocked recurring tasks due to limit
+ * Only shows once per session to avoid spam
+ * @param {number} blockedCount - Number of tasks blocked
+ */
+function showTaskLimitNotification(blockedCount) {
+    if (_taskLimitNotificationShown) return;
+    _taskLimitNotificationShown = true;
+
+    Deps.showNotification?.(
+        `⚠️ ${blockedCount} recurring task${blockedCount > 1 ? 's' : ''} couldn't spawn - task list full (${LIMITS.TASKS_PER_CYCLE} limit).\nComplete or delete tasks to allow more recurring tasks.`,
+        'warning',
+        8000
+    );
+}
+
+/**
+ * Reset the task limit notification flag (e.g., when tasks are deleted)
+ */
+export function resetTaskLimitNotification() {
+    _taskLimitNotificationShown = false;
+}
 
 // ============================================================================
 // INTERVAL MANAGEMENT
@@ -237,55 +284,71 @@ export async function catchUpMissedRecurringTasks() {
         };
     });
 
+    // Check task limit before adding
+    const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
+
     // Add summary log
     console.log(`\n📊 Catch-up Summary:`);
     console.log(`   Total templates checked: ${Object.keys(templates).length}`);
     console.log(`   Tasks to add: ${tasksToAdd.length}`);
+    console.log(`   Tasks allowed by limit: ${limitCheck.allowed}`);
+    console.log(`   Tasks blocked by limit: ${limitCheck.blocked}`);
     console.log(`   Templates to update: ${Object.keys(templateUpdates).length}`);
 
+    // Only add tasks up to the limit (templates are NOT deleted - they just won't spawn)
+    const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
+
     // Batch all changes in one AppState update
-    if (tasksToAdd.length > 0) {
+    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
         Deps.updateAppState(draft => {
             const cycle = draft.data.cycles[activeCycleId];
 
-            // Add missed recurring tasks
-            tasksToAdd.forEach(taskData => {
+            // Add missed recurring tasks (only up to limit)
+            tasksToActuallyAdd.forEach(taskData => {
                 cycle.tasks.push({
                     ...taskData,
                     dateCreated: now.toISOString()
                 });
             });
 
-            // Update template timestamps and next occurrences
+            // Update template timestamps and next occurrences (always update, even if task wasn't added)
             Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });
         }, true); // Immediate save
 
-        console.log(`✅ Caught up ${tasksToAdd.length} missed recurring task${tasksToAdd.length > 1 ? 's' : ''}`);
+        if (tasksToActuallyAdd.length > 0) {
+            console.log(`✅ Caught up ${tasksToActuallyAdd.length} missed recurring task${tasksToActuallyAdd.length > 1 ? 's' : ''}`);
 
-        // Refresh DOM
-        setTimeout(() => {
-            if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
-                Deps.refreshUIFromState();
-                console.log('🔄 DOM refreshed after catching up tasks');
-            }
-        }, 0);
+            // Refresh DOM
+            setTimeout(() => {
+                if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
+                    Deps.refreshUIFromState();
+                    console.log('🔄 DOM refreshed after catching up tasks');
+                }
+            }, 0);
 
-        // Show notification
-        assertInjected('showNotification', Deps.showNotification);
-        Deps.showNotification(
-            `⏰ Added ${tasksToAdd.length} missed recurring task${tasksToAdd.length > 1 ? 's' : ''}`,
-            'info',
-            3000
-        );
+            // Show notification
+            assertInjected('showNotification', Deps.showNotification);
+            Deps.showNotification(
+                `⏰ Added ${tasksToActuallyAdd.length} missed recurring task${tasksToActuallyAdd.length > 1 ? 's' : ''}`,
+                'info',
+                3000
+            );
+        }
+
+        // Show limit notification if any tasks were blocked
+        if (limitCheck.blocked > 0) {
+            console.log(`⚠️ ${limitCheck.blocked} recurring task(s) blocked by ${LIMITS.TASKS_PER_CYCLE} task limit`);
+            showTaskLimitNotification(limitCheck.blocked);
+        }
     } else {
         console.log('✅ No missed recurring tasks to catch up');
     }
 
-    return { added: tasksToAdd.length, updated: Object.keys(templateUpdates).length };
+    return { added: tasksToActuallyAdd.length, updated: Object.keys(templateUpdates).length, blocked: limitCheck.blocked };
 }
 
 // ============================================================================
@@ -390,38 +453,50 @@ export async function watchRecurringTasks() {
         };
     });
 
+    // Check task limit before adding
+    const limitCheck = checkTaskLimit(taskList.length, tasksToAdd.length);
+    const tasksToActuallyAdd = tasksToAdd.slice(0, limitCheck.allowed);
+
     // Batch all changes
-    if (tasksToAdd.length > 0) {
+    if (tasksToActuallyAdd.length > 0 || Object.keys(templateUpdates).length > 0) {
         assertInjected('updateAppState', Deps.updateAppState);
 
         Deps.updateAppState(draft => {
             const cycle = draft.data.cycles[activeCycleId];
 
-            // Add new recurring tasks
-            tasksToAdd.forEach(taskData => {
+            // Add new recurring tasks (only up to limit)
+            tasksToActuallyAdd.forEach(taskData => {
                 cycle.tasks.push({
                     ...taskData,
                     dateCreated: now.toISOString()
                 });
             });
 
-            // Update template timestamps
+            // Update template timestamps (always update, even if task wasn't added)
             Object.entries(templateUpdates).forEach(([templateId, updatedTemplate]) => {
                 cycle.recurringTemplates[templateId] = updatedTemplate;
             });
         });
 
-        console.log(`✅ Added ${tasksToAdd.length} recurring tasks via AppState`);
+        if (tasksToActuallyAdd.length > 0) {
+            console.log(`✅ Added ${tasksToActuallyAdd.length} recurring tasks via AppState`);
 
-        // Refresh DOM
-        setTimeout(() => {
-            if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
-                Deps.refreshUIFromState();
-                console.log('🔄 DOM refreshed after adding recurring tasks');
-            } else {
-                console.warn('⚠️ refreshUIFromState not available');
-            }
-        }, 0);
+            // Refresh DOM
+            setTimeout(() => {
+                if (Deps.refreshUIFromState && typeof Deps.refreshUIFromState === 'function') {
+                    Deps.refreshUIFromState();
+                    console.log('🔄 DOM refreshed after adding recurring tasks');
+                } else {
+                    console.warn('⚠️ refreshUIFromState not available');
+                }
+            }, 0);
+        }
+
+        // Show limit notification if any tasks were blocked
+        if (limitCheck.blocked > 0) {
+            console.log(`⚠️ ${limitCheck.blocked} recurring task(s) blocked by ${LIMITS.TASKS_PER_CYCLE} task limit`);
+            showTaskLimitNotification(limitCheck.blocked);
+        }
     }
 }
 
