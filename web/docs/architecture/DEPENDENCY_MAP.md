@@ -4,19 +4,28 @@
 > **Updated:** December 27, 2025
 > **Purpose:** Document actual module dependencies for debugging, maintenance, and feature development
 
+> **Note:** This map reflects architecture as of December 2025. Infrastructure globals (APP_VERSION for service worker, window.onerror for error handling) are intentional exceptions to the "no window.*" rule.
+
 ## Executive Summary
 
-The miniCycle codebase has **80 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern. **Zero custom `window.*` globals remain.**
+The miniCycle codebase has **80 modules** across **12 directories**. All modules use strict dependency injection via `appContext.js` and the `deps` container pattern.
+
+**No custom business logic is exposed on `window.*`** (exceptions: version/service-worker infrastructure, browser API event handlers).
 
 ### Key Numbers
 | Metric | Before (Nov 2025) | Current | Target | Progress |
 |--------|-------------------|---------|--------|----------|
 | Total modules | 43 | **80** | — | — |
-| `window.*` globals created | ~68 | **0** | 0 | **100%** ✅ |
-| `window.*` references consumed | ~748 | **0** | 0 | **100%** ✅ |
+| Custom `window.*` globals (business logic) | ~68 | **0** | 0 | **100%** ✅ |
+| `window.*` fallbacks in modules | ~748 | **0** | 0 | **100%** ✅ |
 | Modules with DI setters (`set*Dependencies`) | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
 | Modules still exporting to `window.*` | ~40 | **0** | 0 | **100%** ✅ |
+
+**Infrastructure exceptions (intentional):**
+- `window.APP_VERSION` / `self.APP_VERSION` - Service worker cache versioning
+- `window.onerror`, `window.addEventListener('unhandledrejection')` - Global error handlers
+- `document.documentElement.dataset.appBooted` - Boot completion flag
 
 ### Module Distribution
 | Directory | Count |
@@ -45,26 +54,28 @@ The miniCycle codebase has **80 modules** across **12 directories**. All modules
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                   appContext.js (centralized registry)       │
-│  getAppState(), getTaskApi(), getUiApi(), getRoutineApi()   │
+│    getAppState(), getTaskApi(), getCycleApi(), getUiApi()   │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
-│  │  core/  │  │  tasks/ │  │routine/ │  │   ui/   │        │
+│  │  core/  │  │  task/  │  │routine/ │  │   ui/   │        │
 │  │         │  │         │  │         │  │         │        │
 │  │appState │  │taskCore │  │ routine │  │ modal   │        │
 │  │appInit  │  │taskDOM  │  │ Manager │  │ Manager │        │
-│  │constants│  │dragDrop │  │ modeMan │  │settings │        │
+│  │appContxt│  │dragDrop │  │ modeMan │  │settings │        │
 │  └─────────┘  └─────────┘  └─────────┘  └─────────┘        │
 │                                                              │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                     │
-│  │recurring│  │features/│  │  utils/ │                     │
-│  │         │  │         │  │         │                     │
-│  │ core    │  │dueDates │  │globalUti│                     │
-│  │ panel   │  │reminders│  │notifica │                     │
-│  │integrat │  │themes   │  │dataValid│                     │
-│  └─────────┘  └─────────┘  └─────────┘                     │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
+│  │recurring│  │features/│  │  utils/ │  │  boot/  │        │
+│  │         │  │         │  │         │  │         │        │
+│  │ core    │  │dueDates │  │globalUti│  │orchestr │        │
+│  │ panel   │  │reminders│  │notifica │  │coreBoot │        │
+│  │ matcher │  │themes   │  │dataValid│  │featBoot │        │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘        │
 │                                                              │
-│  All modules use strict DI - no window.* globals             │
+│  + storage/, progress/, testing/, other/                     │
+│                                                              │
+│  All modules use strict DI (infrastructure globals excepted) │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -73,31 +84,42 @@ The miniCycle codebase has **80 modules** across **12 directories**. All modules
 ## Initialization Order (Critical)
 
 ```
-Phase 1: Core Systems
-─────────────────────
-1. appState.js      → window.AppState created
-2. appInit.js       → markCoreSystemsReady() called
-   └── waitForCore() promises resolve
-
-Phase 2: Module Loading (parallel-safe)
-───────────────────────────────────────
-├── routineManager.js
-├── routineSwitcher.js
-├── modeManager.js
-├── taskCore.js
-├── taskDOM.js
-├── modalManager.js
-├── settingsManager.js
-├── undoRedoManager.js
-├── recurringCore.js
-├── All feature modules...
-└── markAppReady() called
-    └── waitForApp() promises resolve
-
-Phase 3: Data & Rendering
-─────────────────────────
-1. routineLoader.loadMiniCycle()
-2. UI fully interactive
+miniCycle-main.js (entrypoint)
+    ↓
+orchestrator.js (sequence controller)
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Phase 1: coreBoot.js - Core Systems                         │
+├─────────────────────────────────────────────────────────────┤
+│ 1. AppState initialized (stored in deps.core.AppState)      │
+│ 2. GlobalUtils loaded                                       │
+│ 3. Migration check                                          │
+│ 4. appInit.markCoreSystemsReady() called                    │
+│    └── waitForCore() promises resolve                       │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Phase 2: featureBoot.js - Feature Modules (DI wiring)       │
+├─────────────────────────────────────────────────────────────┤
+│ For each module:                                            │
+│   1. Import module                                          │
+│   2. Call setXDependencies() with deps container            │
+│   3. Create instance                                        │
+│   4. Store in deps container                                │
+│                                                             │
+│ Modules: taskCore, routineManager, recurringCore,           │
+│          modalManager, settingsManager, undoRedoManager...  │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Phase 3: uiBoot.js - Data & UI                              │
+├─────────────────────────────────────────────────────────────┤
+│ 1. routineLoader.loadMiniCycle()                            │
+│ 2. Event listeners attached                                 │
+│ 3. UI fully interactive                                     │
+│ 4. appInit.markAppReady() called                            │
+│    └── waitForApp() promises resolve                        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
