@@ -64,6 +64,7 @@ export class RoutineSwitcher {
         this._tempRenameData = null;
 
         this.loadMiniCycleListTimeout = null;
+        this._idleSaveScheduled = false;
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = this.deps.AppMeta?.version;
 
@@ -238,12 +239,15 @@ export class RoutineSwitcher {
 
                     state.metadata.lastModified = Date.now();
 
-                    console.log('💾 Rename saved through state system');
+                    console.log('💾 Rename queued through state system');
 
                     // Store clean name for UI updates (instance state, not window.*)
                     this._tempRenameData = { oldKey: cycleKey, newKey: cleanName, newName: cleanName };
 
-                }, true); // immediate save
+                }, false); // deferred save - don't block UI
+
+                // ✅ Schedule idle-time save for durability
+                this._scheduleIdleSave();
 
                 // ✅ Get the rename data for UI updates (from instance state)
                 const renameData = this._tempRenameData || {};
@@ -489,7 +493,10 @@ export class RoutineSwitcher {
             console.log('🔍 Inside state update - changing from:', state.appState.activeCycleId, 'to:', cycleKey);
             state.appState.activeCycleId = cycleKey;
             state.metadata.lastModified = Date.now();
-        }, true); // immediate save
+        }, false); // deferred save - don't block UI
+
+        // ✅ Schedule idle-time save for durability
+        this._scheduleIdleSave();
 
         // ✅ Verify the change took effect
         const newActiveId = this.deps.AppState.get()?.appState?.activeCycleId;
@@ -552,13 +559,15 @@ export class RoutineSwitcher {
      */
     _validateAndRepairCycleData(cycleKey) {
         const currentState = this.deps.AppState.get();
-        const cycle = currentState?.data?.cycles?.[cycleKey];
+        const originalCycle = currentState?.data?.cycles?.[cycleKey];
 
-        if (!cycle) {
+        if (!originalCycle) {
             console.warn(`⚠️ Cycle not found for validation: ${cycleKey}`);
             return false;
         }
 
+        // ✅ Clone the cycle to avoid mutating state outside AppState.update()
+        const cycle = structuredClone(originalCycle);
         let repaired = false;
 
         // Ensure tasks is an array
@@ -657,7 +666,7 @@ export class RoutineSwitcher {
             repaired = true;
         }
 
-        // Save repairs if any were made
+        // ✅ Apply repairs through AppState.update() - never mutate outside transaction
         if (repaired) {
             console.log(`🔧 Repairing cycle data for "${cycleKey}"...`);
             this.deps.AppState.update(state => {
@@ -676,19 +685,23 @@ export class RoutineSwitcher {
     setupModalClickOutside() {
         const safeAdd = this.deps.safeAddEventListener;
         document._cycleSwitcherClickOutsideHandler = (event) => {
-            const switchModalContent = this.deps.querySelector(".mini-cycle-switch-modal-content");
+            // ✅ Early return if modal not visible (avoid DOM queries on every click)
             const switchModal = this.deps.querySelector(".mini-cycle-switch-modal");
+            if (!switchModal || switchModal.style.display !== "flex") {
+                return;
+            }
+
+            const switchModalContent = this.deps.querySelector(".mini-cycle-switch-modal-content");
             const mainMenu = this.deps.querySelector(".menu-container");
 
             // ✅ Add error checking for missing elements
-            if (!switchModalContent || !switchModal || !mainMenu) {
+            if (!switchModalContent || !mainMenu) {
                 console.warn('⚠️ Modal elements not found for click outside handler');
                 return;
             }
 
-            // ✅ If the modal is open and the clicked area is NOT inside the modal or main menu, close it
+            // ✅ If clicked area is NOT inside the modal or main menu, close it
             if (
-                switchModal.style.display === "flex" &&
                 !switchModalContent.contains(event.target) &&
                 !mainMenu.contains(event.target)
             ) {
@@ -875,6 +888,35 @@ export class RoutineSwitcher {
             console.log('📊 Storage bar updated:', info);
         } else {
             console.warn('⚠️ Storage bar elements not found');
+        }
+    }
+
+    /**
+     * Schedule an idle-time save for durability without blocking UI
+     * Uses requestIdleCallback with fallback to setTimeout
+     */
+    _scheduleIdleSave() {
+        if (this._idleSaveScheduled) return;
+        this._idleSaveScheduled = true;
+
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.() || !AppState.forceSave) {
+            this._idleSaveScheduled = false;
+            return;
+        }
+
+        const doSave = () => {
+            this._idleSaveScheduled = false;
+            if (AppState.isReady?.()) {
+                console.log('💾 Idle-time save for routine operation');
+                AppState.forceSave();
+            }
+        };
+
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(doSave, { timeout: 500 });
+        } else {
+            setTimeout(doSave, 50);
         }
     }
 

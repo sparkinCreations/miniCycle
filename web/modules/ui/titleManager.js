@@ -93,7 +93,10 @@ async function handleMiniCycleTitleBlur() {
                 const cid = state?.appState?.activeCycleId;
                 const cycle = state?.data?.cycles?.[cid];
                 if (cycle) cycle.title = newTitle;
-            }, true);
+            }, false); // deferred save - don't block UI
+
+            // ✅ Schedule idle-time save for durability
+            scheduleIdleSave();
         } else {
             // AppState should always be ready by this point
             console.error('Title update failed: AppState not ready');
@@ -110,6 +113,35 @@ async function handleMiniCycleTitleBlur() {
 
 // ✅ FIX: Module-level flag for idempotency
 let _titleListenerInitialized = false;
+let _idleSaveScheduled = false;
+
+/**
+ * Schedule an idle-time save for durability without blocking UI
+ */
+function scheduleIdleSave() {
+    if (_idleSaveScheduled) return;
+    _idleSaveScheduled = true;
+
+    const AppState = deps.AppState;
+    if (!AppState?.isReady?.() || !AppState.forceSave) {
+        _idleSaveScheduled = false;
+        return;
+    }
+
+    const doSave = () => {
+        _idleSaveScheduled = false;
+        if (AppState.isReady?.()) {
+            console.log('💾 Idle-time save for title update');
+            AppState.forceSave();
+        }
+    };
+
+    if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(doSave, { timeout: 500 });
+    } else {
+        setTimeout(doSave, 50);
+    }
+}
 
 /**
  * Set up the miniCycle title listener for inline editing.
