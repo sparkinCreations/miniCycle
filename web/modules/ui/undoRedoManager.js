@@ -27,7 +27,9 @@ const di = createDIModule('UndoRedoManager', {
   AppGlobalState: optional(null),
   getElementById: optional(null),
   safeAddEventListener: optional(null),
-  showNotification: optional(null)
+  showNotification: optional(null),
+  // UIOrchestrator for smart UI updates (optional - falls back to refreshUIFromState)
+  UIOrchestrator: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -455,6 +457,129 @@ function describeChange(fromSnapshot, toSnapshot) {
 }
 
 /**
+ * Compute a structured transaction diff between two snapshots
+ * Used by UIOrchestrator to decide patch vs full render
+ * @param {Object} fromSnapshot - Previous state snapshot
+ * @param {Object} toSnapshot - New state snapshot
+ * @returns {Object} Transaction diff with actionable metadata
+ */
+export function computeTransactionDiff(fromSnapshot, toSnapshot) {
+  const diff = {
+    kind: 'undo', // or 'redo' - set by caller
+    cycleChanged: false,
+    taskCountChanged: false,
+    taskOrderChanged: false,
+    changedTaskIds: [],
+    addedTaskIds: [],
+    removedTaskIds: [],
+    fieldsChanged: new Set(),
+    requiresFullRender: false,
+    description: describeChange(fromSnapshot, toSnapshot)
+  };
+
+  if (!fromSnapshot || !toSnapshot) {
+    diff.requiresFullRender = true;
+    return diff;
+  }
+
+  const fromTasks = fromSnapshot.tasks || [];
+  const toTasks = toSnapshot.tasks || [];
+
+  // Check for cycle-level changes (require full render)
+  if (fromSnapshot.activeCycleId !== toSnapshot.activeCycleId) {
+    diff.cycleChanged = true;
+    diff.requiresFullRender = true;
+    return diff;
+  }
+
+  if (fromSnapshot.title !== toSnapshot.title ||
+      fromSnapshot.autoReset !== toSnapshot.autoReset ||
+      fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
+    diff.cycleChanged = true;
+    // Cycle metadata changes don't require full task re-render
+  }
+
+  // Check task count changes
+  if (fromTasks.length !== toTasks.length) {
+    diff.taskCountChanged = true;
+  }
+
+  // Build task maps
+  const fromTaskMap = new Map(fromTasks.map(t => [t.id, t]));
+  const toTaskMap = new Map(toTasks.map(t => [t.id, t]));
+
+  // Find added tasks
+  for (const [id] of toTaskMap) {
+    if (!fromTaskMap.has(id)) {
+      diff.addedTaskIds.push(id);
+    }
+  }
+
+  // Find removed tasks
+  for (const [id] of fromTaskMap) {
+    if (!toTaskMap.has(id)) {
+      diff.removedTaskIds.push(id);
+    }
+  }
+
+  // Check for order changes
+  const fromOrder = fromTasks.map(t => t.id).join(',');
+  const toOrder = toTasks.map(t => t.id).join(',');
+  if (fromOrder !== toOrder) {
+    diff.taskOrderChanged = true;
+  }
+
+  // Find modified tasks and what fields changed
+  for (const [id, toTask] of toTaskMap) {
+    const fromTask = fromTaskMap.get(id);
+    if (!fromTask) continue; // new task, already in addedTaskIds
+
+    const taskFieldsChanged = [];
+
+    if (fromTask.text !== toTask.text) {
+      taskFieldsChanged.push('text');
+    }
+    if (fromTask.completed !== toTask.completed) {
+      taskFieldsChanged.push('completed');
+    }
+    if (fromTask.highPriority !== toTask.highPriority) {
+      taskFieldsChanged.push('highPriority');
+    }
+    if (fromTask.dueDate !== toTask.dueDate) {
+      taskFieldsChanged.push('dueDate');
+    }
+    if (fromTask.recurring !== toTask.recurring) {
+      taskFieldsChanged.push('recurring');
+    }
+    if (fromTask.remindersEnabled !== toTask.remindersEnabled) {
+      taskFieldsChanged.push('remindersEnabled');
+    }
+    if (fromTask.deleteWhenComplete !== toTask.deleteWhenComplete) {
+      taskFieldsChanged.push('deleteWhenComplete');
+    }
+
+    if (taskFieldsChanged.length > 0) {
+      diff.changedTaskIds.push(id);
+      taskFieldsChanged.forEach(f => diff.fieldsChanged.add(f));
+    }
+  }
+
+  // Convert Set to Array for JSON serialization
+  diff.fieldsChanged = [...diff.fieldsChanged];
+
+  // Determine if full render is needed
+  // Full render required if: tasks added/removed, order changed, or many tasks modified
+  if (diff.addedTaskIds.length > 0 ||
+      diff.removedTaskIds.length > 0 ||
+      diff.taskOrderChanged ||
+      diff.changedTaskIds.length > 5) { // Threshold: patch up to 5 tasks, else full render
+    diff.requiresFullRender = true;
+  }
+
+  return diff;
+}
+
+/**
  * Compare two snapshots for equality
  * Uses cached signatures if available for performance
  */
@@ -471,6 +596,49 @@ export function snapshotsEqual(a, b) {
 }
 
 // ============ UNDO/REDO OPERATIONS ============
+
+/**
+ * Handle UI update after undo/redo using UIOrchestrator if available
+ * Falls back to refreshUIFromState for backward compatibility
+ * @param {Object} diff - Transaction diff from computeTransactionDiff
+ * @param {Object} newState - The new state after undo/redo
+ */
+function handleUndoRedoUIUpdate(diff, newState) {
+  const orchestrator = Deps.UIOrchestrator;
+
+  if (orchestrator?.request) {
+    // Use UIOrchestrator for smart updates
+    console.log('🎭 Undo/redo using UIOrchestrator:', diff.requiresFullRender ? 'full render' : 'patch');
+
+    if (diff.requiresFullRender) {
+      // Full render needed
+      orchestrator.request({
+        tasks: { type: 'full' },
+        progress: true,
+        stats: true,
+        completeAllButton: true,
+        arrows: true,
+        mainMenuHeader: diff.cycleChanged
+      });
+    } else {
+      // Patch only changed tasks
+      orchestrator.request({
+        tasks: {
+          type: 'patch',
+          taskIds: diff.changedTaskIds,
+          changedFields: diff.fieldsChanged
+        },
+        progress: true,
+        stats: true,
+        completeAllButton: true
+      });
+    }
+  } else {
+    // Fallback to refreshUIFromState
+    console.log('🔄 Undo/redo using refreshUIFromState (UIOrchestrator not available)');
+    Deps.refreshUIFromState(newState);
+  }
+}
 
 /**
  * Perform undo operation
@@ -532,6 +700,10 @@ export async function performStateBasedUndo() {
 
     Deps.AppGlobalState.activeRedoStack.push(currentSnapshot);
 
+    // Compute transaction diff BEFORE applying state change
+    const transactionDiff = computeTransactionDiff(currentSnapshot, snap);
+    transactionDiff.kind = 'undo';
+
     await Deps.AppState.update(state => {
       if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
         state.appState.activeCycleId = snap.activeCycleId;
@@ -547,7 +719,9 @@ export async function performStateBasedUndo() {
     }, true);
 
     await Promise.resolve();
-    Deps.refreshUIFromState(Deps.AppState.get());
+
+    // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
+    handleUndoRedoUIUpdate(transactionDiff, Deps.AppState.get());
 
     // Wait for next tick to ensure all rendering state updates complete
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -565,7 +739,7 @@ export async function performStateBasedUndo() {
 
     // ✅ Show success notification
     if (Deps.showNotification) {
-      const changeDesc = describeChange(currentSnapshot, snap);
+      const changeDesc = transactionDiff.description;
       const stepsLeft = Deps.AppGlobalState.activeUndoStack.length;
       const stepsText = stepsLeft === 0 ? 'no steps left' :
                         stepsLeft === 1 ? '1 step left' :
@@ -657,6 +831,10 @@ export async function performStateBasedRedo() {
 
     Deps.AppGlobalState.activeUndoStack.push(currentSnapshot);
 
+    // Compute transaction diff BEFORE applying state change
+    const transactionDiff = computeTransactionDiff(currentSnapshot, snap);
+    transactionDiff.kind = 'redo';
+
     await Deps.AppState.update(state => {
       if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
         state.appState.activeCycleId = snap.activeCycleId;
@@ -672,7 +850,9 @@ export async function performStateBasedRedo() {
     }, true);
 
     await Promise.resolve();
-    Deps.refreshUIFromState(Deps.AppState.get());
+
+    // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
+    handleUndoRedoUIUpdate(transactionDiff, Deps.AppState.get());
 
     // Wait for next tick to ensure all rendering state updates complete
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -690,7 +870,7 @@ export async function performStateBasedRedo() {
 
     // ✅ Show success notification
     if (Deps.showNotification) {
-      const changeDesc = describeChange(currentSnapshot, snap);
+      const changeDesc = transactionDiff.description;
       const stepsLeft = Deps.AppGlobalState.activeRedoStack.length;
       const stepsText = stepsLeft === 0 ? 'no steps left' :
                         stepsLeft === 1 ? '1 step left' :

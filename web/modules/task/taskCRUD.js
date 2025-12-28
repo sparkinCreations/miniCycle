@@ -18,10 +18,6 @@ const di = createDIModule('TaskCRUD', {
     AppState: optional(null),
     sanitizeInput: optional(null),
     showNotification: optional(null),
-    updateStatsPanel: optional(null),
-    updateProgressBar: optional(null),
-    checkCompleteAllButton: optional(null),
-    updateMoveArrowsVisibility: optional(null),
     showPromptModal: optional(null),
     showConfirmationModal: optional(null),
     captureStateSnapshot: optional(null),
@@ -31,7 +27,9 @@ const di = createDIModule('TaskCRUD', {
     createOrUpdateTaskData: optional(null),
     createTaskDOMElements: optional(null),
     setupTaskInteractions: optional(null),
-    finalizeTaskCreation: optional(null)
+    finalizeTaskCreation: optional(null),
+    // UIOrchestrator for coalesced UI updates
+    requestUIUpdate: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -87,6 +85,7 @@ function fallbackConfirmModal(config) {
         config.callback(result);
     }
 }
+
 
 // ============================================================================
 // CRUD OPERATIONS
@@ -190,9 +189,6 @@ export async function editTaskImpl(taskItem, deps = {}) {
         const AppState = deps.AppState || _deps.AppState;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
-        const updateStatsPanel = deps.updateStatsPanel || _deps.updateStatsPanel;
-        const updateProgressBar = deps.updateProgressBar || _deps.updateProgressBar;
-        const checkCompleteAllButton = deps.checkCompleteAllButton || _deps.checkCompleteAllButton;
 
         showPromptModal({
             title: "Edit Task Name",
@@ -233,9 +229,14 @@ export async function editTaskImpl(taskItem, deps = {}) {
                     }
 
                     _deps.showNotification?.(`Task renamed to "${cleanText}"`, "info", 1500);
-                    updateStatsPanel?.();
-                    updateProgressBar?.();
-                    checkCompleteAllButton?.();
+
+                    // Request UI updates via UIOrchestrator
+                    const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
+                    requestUIUpdate?.({
+                        stats: true,
+                        progress: true,
+                        completeAllButton: true
+                    });
                 }
             }
         });
@@ -262,10 +263,6 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
         const AppState = deps.AppState || _deps.AppState;
         const captureStateSnapshot = deps.captureStateSnapshot || _deps.captureStateSnapshot;
         const enableUndoSystemOnFirstInteraction = deps.enableUndoSystemOnFirstInteraction || _deps.enableUndoSystemOnFirstInteraction;
-        const updateStatsPanel = deps.updateStatsPanel || _deps.updateStatsPanel;
-        const updateProgressBar = deps.updateProgressBar || _deps.updateProgressBar;
-        const checkCompleteAllButton = deps.checkCompleteAllButton || _deps.checkCompleteAllButton;
-        const updateMoveArrowsVisibility = deps.updateMoveArrowsVisibility || _deps.updateMoveArrowsVisibility;
 
         showConfirmationModal({
             title: "Delete Task",
@@ -309,14 +306,15 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                     taskItem.remove();
 
                     _deps.showNotification?.(`Task "${taskName}" deleted.`, "show", 2500);
-                    updateStatsPanel?.();
-                    updateProgressBar?.();
-                    checkCompleteAllButton?.();
 
-                    // Update move arrows (first/last task may have changed)
-                    if (typeof updateMoveArrowsVisibility === 'function') {
-                        updateMoveArrowsVisibility();
-                    }
+                    // Request UI updates via UIOrchestrator
+                    const requestUIUpdate = deps.requestUIUpdate || _deps.requestUIUpdate;
+                    requestUIUpdate?.({
+                        stats: true,
+                        progress: true,
+                        completeAllButton: true,
+                        arrows: true
+                    });
                 } else {
                     console.warn('⚠️ AppState not ready for task deletion - state may be lost');
                     _deps.showNotification?.('Could not delete task - please try again', 'warning');
