@@ -15,6 +15,12 @@ const STORAGE_BUFFER_BYTES = 0.25 * 1024 * 1024;
 // Default localStorage quota (5MB is common, but we detect actual)
 const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024;
 
+// Session flag for one-time 75% warning
+let _storageWarningShown = false;
+
+// Flag to track if quota detection has been requested
+let _quotaDetectionRequested = false;
+
 // ============================================================================
 // STORAGE CALCULATION FUNCTIONS
 // ============================================================================
@@ -44,51 +50,65 @@ export function getLocalStorageUsedBytes() {
 }
 
 /**
- * Estimate localStorage quota by attempting to fill it
- * This is cached after first call to avoid repeated expensive operations
- * @returns {number} Estimated quota in bytes
+ * Cached quota value
  */
 let _cachedQuota = null;
 
+/**
+ * Get localStorage quota - uses conservative default until detection is triggered
+ * @returns {number} Quota in bytes
+ */
 export function getLocalStorageQuota() {
+    // Return cached if available, otherwise use conservative default
+    // Actual detection happens lazily via detectStorageQuota()
+    return _cachedQuota !== null ? _cachedQuota : DEFAULT_QUOTA_BYTES;
+}
+
+/**
+ * Detect actual localStorage quota by attempting to fill it
+ * Call this on-demand (e.g., when storage modal opens) to avoid blocking boot
+ * Results are cached for the session
+ * @returns {number} Detected quota in bytes
+ */
+export function detectStorageQuota() {
+    // Already detected
     if (_cachedQuota !== null) {
         return _cachedQuota;
     }
 
-    // Try to estimate quota by checking navigator.storage if available
-    // Otherwise use a conservative default
+    // Mark as requested
+    _quotaDetectionRequested = true;
+
     try {
-        // Most browsers have 5-10MB localStorage quota
-        // We'll use a test-based approach to estimate
         const testKey = '__storage_quota_test__';
         const testChunk = 'x'.repeat(1024); // 1KB chunk (2KB in UTF-16)
         let testSize = 0;
         const maxTest = 10 * 1024; // Test up to 10MB
 
-        // First, save current usage
+        // Save original value if exists
         const originalValue = localStorage.getItem(testKey);
 
         try {
-            // Try to write increasingly larger values
+            // Write increasingly larger values until quota error
             while (testSize < maxTest) {
                 testSize += 100; // 100KB increments
                 const testValue = testChunk.repeat(testSize);
                 localStorage.setItem(testKey, testValue);
             }
         } catch (e) {
-            // QuotaExceededError - we've found the limit
+            // QuotaExceededError - found the limit
         }
 
-        // Clean up test
+        // Always clean up test key
         if (originalValue !== null) {
             localStorage.setItem(testKey, originalValue);
         } else {
             localStorage.removeItem(testKey);
         }
 
-        // Calculate detected quota
-        const usedBeforeTest = getLocalStorageUsedBytes();
-        _cachedQuota = Math.max(testSize * 1024 * 2, DEFAULT_QUOTA_BYTES); // Convert to bytes
+        // Cache detected quota
+        _cachedQuota = Math.max(testSize * 1024 * 2, DEFAULT_QUOTA_BYTES);
+        console.log(`📊 Storage quota detected: ${formatBytes(_cachedQuota)}`);
 
     } catch (error) {
         console.warn('Could not detect localStorage quota, using default:', error);
@@ -153,11 +173,41 @@ export function formatBytes(bytes) {
 }
 
 /**
+ * Check storage level and show one-time warning if needed
+ * @param {Object} info - Storage info from getStorageInfo()
+ * @param {Function} showNotification - Notification function (optional)
+ * @returns {boolean} True if warning was shown
+ */
+export function checkStorageWarning(info, showNotification) {
+    // Only show once per session, and only at 75%+ (warning level)
+    if (_storageWarningShown || info.percentage < 75) {
+        return false;
+    }
+
+    _storageWarningShown = true;
+
+    if (typeof showNotification === 'function') {
+        showNotification(
+            'Storage is getting tight. Export old routines to free up space.',
+            'warning',
+            5000
+        );
+    }
+
+    console.log('⚠️ Storage warning shown (75%+ usage)');
+    return true;
+}
+
+/**
  * Update storage bar UI elements
  * @param {HTMLElement} barElement - The progress bar element
  * @param {HTMLElement} textElement - The text display element
+ * @param {Function} showNotification - Optional notification function for warnings
  */
-export function updateStorageBarUI(barElement, textElement) {
+export function updateStorageBarUI(barElement, textElement, showNotification) {
+    // Trigger quota detection when storage bar is shown (lazy detection)
+    detectStorageQuota();
+
     const info = getStorageInfo();
 
     if (barElement) {
@@ -168,8 +218,12 @@ export function updateStorageBarUI(barElement, textElement) {
     if (textElement) {
         const usedStr = formatBytes(info.used);
         const totalStr = formatBytes(info.total);
-        textElement.textContent = `${usedStr} / ${totalStr} used`;
+        // Use "~" to indicate estimates
+        textElement.textContent = `~${usedStr} / ~${totalStr} used`;
     }
+
+    // Check for one-time storage warning
+    checkStorageWarning(info, showNotification);
 
     return info;
 }

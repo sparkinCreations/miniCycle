@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
 import { getObjectSizeBytes, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
+import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -318,6 +319,14 @@ function processImportedData(fileContent) {
         cycleTitle = 'Imported Cycle';
     }
 
+    // ✅ Get unique name (auto-increment if duplicate) - use title as storage key
+    const existingCycles = appState.get()?.data?.cycles || {};
+    const { name: finalCycleTitle, wasModified: titleWasModified } = getUniqueCycleName(cycleTitle, existingCycles);
+
+    if (titleWasModified) {
+        console.log(`⚠️ Import name collision: "${cycleTitle}" → "${finalCycleTitle}"`);
+    }
+
     // Security: Merge imported template metadata with sanitized text from tasks.
     // Only extract specific safe metadata fields from import (timestamps, etc.)
     // All text content comes from our sanitized generated templates.
@@ -344,11 +353,11 @@ function processImportedData(fileContent) {
         };
     }
 
-    // ✅ Create imported cycle via AppState.update()
+    // ✅ Create imported cycle via AppState.update() - use title as storage key (consistent with app)
     appState.update(state => {
-        state.data.cycles[cycleId] = {
+        state.data.cycles[finalCycleTitle] = {
             id: cycleId,
-            title: cycleTitle,
+            title: finalCycleTitle,
             tasks: mappedTasks,
             autoReset: importedData.autoReset !== false,
             cycleCount: importedData.cycleCount || 0,
@@ -359,7 +368,7 @@ function processImportedData(fileContent) {
             reminders: importedData.reminders || null
         };
 
-        state.appState.activeCycleId = cycleId;
+        state.appState.activeCycleId = finalCycleTitle;
         state.metadata.lastModified = Date.now();
         state.metadata.totalCyclesCreated++;
     }, true); // immediate save
@@ -369,18 +378,24 @@ function processImportedData(fileContent) {
     const recurringCount = Object.keys(recurringTemplates).length;
     console.log(`Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
 
-    // Show appropriate notification based on truncation and recurring status
+    // Show appropriate notification based on truncation, name collision, and recurring status
     if (tasksTruncated) {
         const truncatedCount = originalTaskCount - MAX_TASK_COUNT;
         _deps.showNotification?.(
-            `"${cycleTitle}" imported but exceeded ${MAX_TASK_COUNT} task limit.\n${truncatedCount} task${truncatedCount > 1 ? 's were' : ' was'} not imported.`,
+            `"${finalCycleTitle}" imported but exceeded ${MAX_TASK_COUNT} task limit.\n${truncatedCount} task${truncatedCount > 1 ? 's were' : ' was'} not imported.`,
             "warning",
             6000
         );
+    } else if (titleWasModified) {
+        _deps.showNotification?.(
+            `Name "${cycleTitle}" already exists. Imported as "${finalCycleTitle}".`,
+            "warning",
+            4000
+        );
     } else if (recurringCount > 0) {
-        _deps.showNotification?.(`"${cycleTitle}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
+        _deps.showNotification?.(`"${finalCycleTitle}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
     } else {
-        _deps.showNotification?.(`"${cycleTitle}" imported successfully!`, "success");
+        _deps.showNotification?.(`"${finalCycleTitle}" imported successfully!`, "success");
     }
 
     location.reload();

@@ -7,6 +7,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { updateStorageBarUI, getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
+import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -125,19 +126,28 @@ export class RoutineSwitcher {
         // ✅ Use safeAddEventListener to prevent duplicate handlers
         const safeAdd = this.deps.safeAddEventListener;
 
-        // ✅ Event listeners - store handlers on elements for proper cleanup
-        renameButton._clickHandler = () => this.renameMiniCycle();
+        // ✅ Event listeners - only create handler ONCE to prevent duplicates
+        // (safeAddEventListener only works with the SAME function reference)
+        if (!renameButton._clickHandler) {
+            renameButton._clickHandler = () => this.renameMiniCycle();
+        }
         safeAdd(renameButton, "click", renameButton._clickHandler);
 
-        deleteButton._clickHandler = () => this.deleteMiniCycle();
+        if (!deleteButton._clickHandler) {
+            deleteButton._clickHandler = () => this.deleteMiniCycle();
+        }
         safeAdd(deleteButton, "click", deleteButton._clickHandler);
 
         const confirmBtn = this.deps.getElementById("miniCycleSwitchConfirm");
-        confirmBtn._clickHandler = () => this.confirmMiniCycle();
+        if (!confirmBtn._clickHandler) {
+            confirmBtn._clickHandler = () => this.confirmMiniCycle();
+        }
         safeAdd(confirmBtn, "click", confirmBtn._clickHandler);
 
         const cancelBtn = this.deps.getElementById("miniCycleSwitchCancel");
-        cancelBtn._clickHandler = () => this.hideSwitchMiniCycleModal();
+        if (!cancelBtn._clickHandler) {
+            cancelBtn._clickHandler = () => this.hideSwitchMiniCycleModal();
+        }
         safeAdd(cancelBtn, "click", cancelBtn._clickHandler);
 
         console.log('✅ Switch miniCycle modal setup completed');
@@ -211,20 +221,23 @@ export class RoutineSwitcher {
                     return;
                 }
 
+                // ✅ Get unique name (auto-increment if duplicate)
+                const { name: uniqueName, wasModified } = getUniqueCycleName(cleanName, this.deps.AppState.get()?.data?.cycles || {});
+
+                if (wasModified) {
+                    console.log(`⚠️ Name collision: "${cleanName}" → "${uniqueName}"`);
+                    this.deps.showNotification(`Name already exists. Using "${uniqueName}" instead.`, "warning", 3000);
+                }
+
+                const finalName = uniqueName;
+
                 // ✅ Update through state system
                 this.deps.AppState.update(state => {
-                    // Check for existing cycles by title (key collision check)
-                    if (state.data.cycles[cleanName]) {
-                        console.warn('⚠️ Cycle name already exists:', cleanName);
-                        this.deps.showNotification("⚠ A miniCycle with that name already exists.", "show", 1500);
-                        return; // Don't save if duplicate exists
-                    }
-
                     console.log('🔄 Performing rename operation...');
 
                     // Create new entry with new title as key
-                    const updatedCycle = { ...currentCycle, title: cleanName };
-                    state.data.cycles[cleanName] = updatedCycle;
+                    const updatedCycle = { ...currentCycle, title: finalName };
+                    state.data.cycles[finalName] = updatedCycle;
 
                     // Remove old entry
                     delete state.data.cycles[cycleKey];
@@ -233,16 +246,16 @@ export class RoutineSwitcher {
 
                     // Update active cycle if this was the active one
                     if (state.appState.activeCycleId === cycleKey) {
-                        state.appState.activeCycleId = cleanName;
-                        console.log('🎯 Updated active cycle ID to:', cleanName);
+                        state.appState.activeCycleId = finalName;
+                        console.log('🎯 Updated active cycle ID to:', finalName);
                     }
 
                     state.metadata.lastModified = Date.now();
 
                     console.log('💾 Rename queued through state system');
 
-                    // Store clean name for UI updates (instance state, not window.*)
-                    this._tempRenameData = { oldKey: cycleKey, newKey: cleanName, newName: cleanName };
+                    // Store final name for UI updates (instance state, not window.*)
+                    this._tempRenameData = { oldKey: cycleKey, newKey: finalName, newName: finalName };
 
                 }, false); // deferred save - don't block UI
 
@@ -255,24 +268,24 @@ export class RoutineSwitcher {
 
                 // ✅ Notify undo system of cycle rename (DI-pure)
                 if (typeof this.deps.onCycleRenamed === 'function') {
-                    this.deps.onCycleRenamed(cycleKey, cleanName).catch(err => {
+                    this.deps.onCycleRenamed(cycleKey, finalName).catch(err => {
                         console.warn('⚠️ Undo system cycle rename notification failed:', err);
                     });
                 }
 
                 // Update UI
-                selectedCycle.dataset.cycleKey = cleanName;
-                selectedCycle.dataset.cycleName = cleanName;
-                selectedCycle.textContent = cleanName;
+                selectedCycle.dataset.cycleKey = finalName;
+                selectedCycle.dataset.cycleName = finalName;
+                selectedCycle.textContent = finalName;
 
                 console.log('🔄 Refreshing UI...');
 
                 // Refresh UI
                 this.loadMiniCycleList();
-                this.updatePreview(cleanName);
+                this.updatePreview(finalName);
                 setTimeout(() => {
                     const updatedItem = [...this.deps.querySelectorAll(".mini-cycle-switch-item")]
-                        .find(item => item.dataset.cycleKey === cleanName);
+                        .find(item => item.dataset.cycleKey === finalName);
                     if (updatedItem) {
                         updatedItem.classList.add("selected");
                         updatedItem.click();
@@ -280,8 +293,10 @@ export class RoutineSwitcher {
                     }
                 }, 50);
 
-                console.log(`✅ Successfully renamed: "${oldName}" → "${cleanName}"`);
-                this.deps.showNotification(`✅ miniCycle renamed to "${cleanName}"`, "success", 2500);
+                console.log(`✅ Successfully renamed: "${oldName}" → "${finalName}"`);
+                if (!wasModified) {
+                    this.deps.showNotification(`✅ miniCycle renamed to "${finalName}"`, "success", 2500);
+                }
             }
         });
     }
@@ -840,11 +855,11 @@ export class RoutineSwitcher {
             leftSide.className = "cycle-item-left";
             leftSide.textContent = emoji + " " + (cycleData.title || cycleKey);
 
-            // 📊 Create right side with size
+            // 📊 Create right side with size (~ indicates estimate)
             const cycleSize = getObjectSizeBytes(cycleData);
             const sizeSpan = document.createElement("span");
             sizeSpan.className = "cycle-item-size";
-            sizeSpan.textContent = formatBytes(cycleSize);
+            sizeSpan.textContent = `~${formatBytes(cycleSize)}`;
 
             listItem.appendChild(leftSide);
             listItem.appendChild(sizeSpan);
@@ -884,7 +899,8 @@ export class RoutineSwitcher {
         const textElement = this.deps.getElementById('storage-bar-text');
 
         if (barElement && textElement) {
-            const info = updateStorageBarUI(barElement, textElement);
+            // ✅ Pass showNotification for one-time 75% storage warning
+            const info = updateStorageBarUI(barElement, textElement, this.deps.showNotification);
             console.log('📊 Storage bar updated:', info);
         } else {
             console.warn('⚠️ Storage bar elements not found');

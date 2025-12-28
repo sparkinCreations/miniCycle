@@ -255,10 +255,10 @@ export class HelpWindowManager {
                 const activeCycle = state.appState?.activeCycleId;
                 const currentCycle = state.data?.cycles?.[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
-                // Calculate routine size
+                // Calculate routine size (~ indicates estimate)
                 if (currentCycle) {
                     const sizeBytes = getObjectSizeBytes(currentCycle);
-                    routineSize = formatBytes(sizeBytes);
+                    routineSize = `~${formatBytes(sizeBytes)}`;
                 }
             }
         } else if (typeof deps.loadMiniCycleData === 'function') {
@@ -267,10 +267,10 @@ export class HelpWindowManager {
                 const { cycles, activeCycle } = schemaData;
                 const currentCycle = cycles[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
-                // Calculate routine size
+                // Calculate routine size (~ indicates estimate)
                 if (currentCycle) {
                     const sizeBytes = getObjectSizeBytes(currentCycle);
-                    routineSize = formatBytes(sizeBytes);
+                    routineSize = `~${formatBytes(sizeBytes)}`;
                 }
             }
         }

@@ -174,7 +174,12 @@ class MiniCycleState {
 
                     // Defer the save operation to avoid blocking the main thread during init
                     const saveData = () => {
-                        this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+                        try {
+                            this.deps.storage.setItem("miniCycleData", JSON.stringify(this.data));
+                        } catch (error) {
+                            console.error('❌ Deferred save failed:', error);
+                            // Don't show notification during init - could interrupt boot
+                        }
                     };
 
                     if (typeof requestIdleCallback !== 'undefined') {

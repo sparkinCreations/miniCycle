@@ -252,7 +252,7 @@ export const MODULE_MANIFESTS = {
     routineSwitcher: {
         path: '../routine/routineSwitcher.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],
         provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle'
     },
@@ -282,7 +282,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/undoRedoManager.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification', 'safeAddEventListener', 'getElementById', 'refreshUIFromState', 'UIOrchestrator', 'requestUIUpdate'],
-        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initializeUndoSystemForApp'],
+        provides: ['performStateBasedUndo', 'performStateBasedRedo', 'captureStateSnapshot', 'updateUndoRedoButtons', 'enableUndoSystemOnFirstInteraction', 'wrapAppStateForUndo', 'setupStateBasedUndoRedo', 'initializeUndoSystemForApp', 'onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched'],
         api: 'undo',
         after: ['taskDOM', 'uiOrchestrator']
     },
@@ -309,7 +309,7 @@ export const MODULE_MANIFESTS = {
     titleManager: {
         path: '../ui/titleManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'GlobalUtils', 'AppState', 'loadMiniCycleData', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons'],
+        requires: ['appInit', 'GlobalUtils', 'AppState', 'loadMiniCycleData', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons', 'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'onCycleRenamed'],
         provides: ['setupMiniCycleTitleListener', 'handleMiniCycleTitleBlur'],
         api: 'ui'
     },
