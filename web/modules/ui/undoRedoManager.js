@@ -16,6 +16,27 @@ const UNDO_LIMIT = LIMITS.UNDO_STACK;
 const UNDO_MIN_INTERVAL_MS = DEBOUNCE.UNDO_MIN_INTERVAL;
 const UNDO_DB_WRITE_DEBOUNCE_MS = DEBOUNCE.UNDO_DB_WRITE;
 
+// ============ IDLE-TIME SAVE HELPER ============
+/**
+ * Schedule a state save during idle time for durability without blocking input.
+ * Uses requestIdleCallback with setTimeout fallback.
+ */
+function scheduleIdleSave() {
+  const doSave = () => {
+    if (Deps.AppState?.forceSave) {
+      console.log('💾 Idle-time save after undo/redo');
+      Deps.AppState.forceSave();
+    }
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(doSave, { timeout: 500 });
+  } else {
+    // Fallback for Safari/older browsers
+    setTimeout(doSave, 50);
+  }
+}
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -182,7 +203,8 @@ export function wrapAppStateForUndo(appInit) {
       ? AppState.get.bind(AppState)
       : null;
 
-    AppState.update = async (producer, immediate) => {
+    // Not async - snapshot capture is synchronous, just pass through the Promise
+    AppState.update = (producer, immediate) => {
       try {
         // Capture snapshot before update (if core ready and not during undo/redo)
         if (appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
@@ -194,6 +216,7 @@ export function wrapAppStateForUndo(appInit) {
       } catch (e) {
         console.warn('⚠️ Undo snapshot wrapper error:', e);
       }
+      // Return the Promise from boundUpdate directly (no await needed)
       return boundUpdate(producer, immediate);
     };
 
@@ -733,6 +756,9 @@ export async function performStateBasedUndo() {
       );
     }
 
+    // ✅ Schedule idle-time save for durability (doesn't block input)
+    scheduleIdleSave();
+
     // ✅ Show success notification
     if (Deps.showNotification) {
       const changeDesc = transactionDiff.description;
@@ -859,6 +885,9 @@ export async function performStateBasedRedo() {
         Deps.AppGlobalState.activeRedoStack
       );
     }
+
+    // ✅ Schedule idle-time save for durability (doesn't block input)
+    scheduleIdleSave();
 
     // ✅ Show success notification
     if (Deps.showNotification) {
