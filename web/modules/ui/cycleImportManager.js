@@ -294,6 +294,9 @@ function processImportedData(fileContent) {
         cycleTitle = 'Imported Cycle';
     }
 
+    // Security: Always use templates generated from sanitized tasks, never from imported file directly.
+    // This ensures recurring template text is always sanitized (derived from task.text which was sanitized above).
+    // Imported recurringTemplates could contain unsanitized text that bypasses our XSS protection.
     fullSchemaData.data.cycles[cycleId] = {
         id: cycleId,
         title: cycleTitle,
@@ -302,7 +305,7 @@ function processImportedData(fileContent) {
         cycleCount: importedData.cycleCount || 0,
         deleteCheckedTasks: importedData.deleteCheckedTasks || false,
         createdAt: Date.now(),
-        recurringTemplates: importedData.recurringTemplates || recurringTemplates,
+        recurringTemplates: recurringTemplates,  // Only use sanitized templates from task processing
         taskOptionButtons: importedData.taskOptionButtons || null,
         reminders: importedData.reminders || null
     };

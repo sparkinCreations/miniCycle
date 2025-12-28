@@ -1,7 +1,7 @@
 # Deployment Guide
 
-**Version:** 1.341
-**Last Updated:** November 9, 2025
+**Version:** 1.569
+**Last Updated:** December 27, 2025
 
 ---
 
@@ -244,11 +244,32 @@ const CACHE_VERSION = 'v1.341';  // Increment to force cache refresh
 - Ensure SSL certificate is valid and renewed
 
 ### Content Security Policy
-Currently using default CSP. Consider adding:
+
+**Implemented (v1.569+):**
+
+CSP is configured in two places for defense in depth:
+
+1. **Meta tag** in `miniCycle.html`:
 ```html
-<meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net;">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+  font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+  img-src 'self' data: blob:;
+  connect-src 'self' https://api.web3forms.com;
+  form-action 'self' https://api.web3forms.com;
+  base-uri 'self';
+">
 ```
+
+2. **HTTP headers** in `netlify.toml`:
+   - Same CSP policy as above
+   - Plus `X-Frame-Options: DENY` (clickjacking protection)
+   - Plus `Strict-Transport-Security` (HSTS)
+   - Plus `X-Content-Type-Options: nosniff`
+
+See `netlify.toml` for full security headers configuration.
 
 ### CORS Configuration
 If hosting on subdomain or CDN:

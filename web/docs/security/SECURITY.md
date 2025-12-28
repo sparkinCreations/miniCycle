@@ -239,17 +239,41 @@ sanitizeInput(input, maxLength = 100)
 
 ### Content Security Policy
 
-**Recommended CSP for self-hosting:**
+**Implemented CSP (v1.569+):**
+
+miniCycle includes a Content Security Policy via meta tag in `miniCycle.html` and HTTP headers in `netlify.toml`:
 
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+  font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+  img-src 'self' data: blob:;
+  connect-src 'self' https://api.web3forms.com;
+  form-action 'self' https://api.web3forms.com;
+  base-uri 'self';
 ```
 
-This prevents:
-- Loading external scripts
-- XSS attacks
-- Clickjacking
-- Data exfiltration
+**What each directive allows:**
+
+| Directive | Allows | Why |
+|-----------|--------|-----|
+| `script-src 'self' 'unsafe-inline'` | Local scripts + inline scripts | Feature detection needs inline script |
+| `style-src ...` | Local + Google Fonts + Font Awesome | External stylesheets |
+| `font-src ...` | Google Fonts + Font Awesome CDN | Font files |
+| `img-src 'self' data: blob:` | Local + data URLs + blobs | Logos, generated images |
+| `connect-src ...` | Local + Web3Forms API | Feedback form submission |
+| `form-action ...` | Local + Web3Forms | Form POST targets |
+| `base-uri 'self'` | Only local base URLs | Prevents base tag injection |
+
+**This prevents:**
+- Loading external scripts from untrusted sources
+- XSS attacks via injected scripts
+- Data exfiltration to unauthorized endpoints
+- Base tag injection attacks
+
+**Note:** `frame-ancestors` (clickjacking protection) is set via HTTP header in `netlify.toml` since it cannot be set via meta tags.
 
 ### No eval() Usage
 
@@ -309,6 +333,31 @@ For details, see [Error Handling Documentation](ERROR_HANDLING_AND_TESTING_SUMMA
 ---
 
 ## Vulnerability History
+
+### v1.569 (2025-12-27)
+
+**Content Security Policy Implementation:**
+- Added CSP meta tag to `miniCycle.html`
+- Added CSP HTTP headers to `netlify.toml`
+- Configured to allow: self-hosted scripts, Google Fonts, Font Awesome, Web3Forms feedback
+- Added `frame-ancestors: 'none'` via HTTP header (clickjacking protection)
+- Added `base-uri 'self'` (base tag injection protection)
+- **Impact:** Defense in depth against XSS, script injection, clickjacking
+- **Severity:** Enhancement (proactive security hardening)
+
+**Schema Normalization:**
+- Fixed `dueDate` validator to accept ISO date strings (YYYY-MM-DD) from HTML inputs
+- Fixed reminders read/write location mismatch in `dataAccess.js`
+- Updated schema documentation in `SCHEMA_2_5.md`
+- **Impact:** Data consistency, prevents validation errors
+- **Severity:** Low (bug fix)
+
+**Recurring Template Sanitization:**
+- Fixed `.mcyc` import to reject imported `recurringTemplates` in favor of templates generated from sanitized task text
+- Previously, imported files could supply `recurringTemplates` with unsanitized text, bypassing XSS protection
+- Now all recurring template text derives from already-sanitized task text
+- **Impact:** Closes XSS vector via malicious .mcyc files
+- **Severity:** Medium (security fix)
 
 ### v1.357 (2025-11-14)
 
@@ -385,7 +434,7 @@ No known security vulnerabilities reported.
 ### Planned Improvements
 
 **Short-term (next 3 months):**
-- [ ] Add Content Security Policy headers
+- [x] Add Content Security Policy headers ✅ (v1.569)
 - [ ] Implement Subresource Integrity (SRI)
 - [ ] Add security.txt file
 - [ ] Automated security scanning in CI/CD
@@ -518,8 +567,8 @@ If self-hosting or modifying miniCycle:
 
 ---
 
-**Security Policy Version:** 1.0
-**Last Updated:** November 14, 2025
-**miniCycle Version:** 1.357
+**Security Policy Version:** 1.1
+**Last Updated:** December 27, 2025
+**miniCycle Version:** 1.569
 
 *This security policy is a living document and will be updated as needed.*
