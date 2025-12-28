@@ -278,30 +278,21 @@ export class OnboardingManager {
     completeOnboarding(modal, cycles, activeCycle) {
         console.log('✅ Onboarding completed, transitioning...');
 
-        // ✅ FIX: Try to mark onboarding complete, but don't bail out if AppState isn't ready
-        // The cycle creation modal will properly initialize everything
-        if (this.deps.AppState?.isReady?.()) {
-            // Mark onboarding as complete using AppState
-            this.deps.AppState.update(state => {
+        // ✅ Use AppState as source of truth
+        const appState = this.deps.AppState;
+
+        // Ensure AppState is ready (reload from localStorage if needed)
+        if (!appState?.isReady?.()) {
+            appState?.reload?.();
+        }
+
+        if (appState?.isReady?.()) {
+            appState.update(state => {
                 state.settings.onboardingCompleted = true;
             }, true);
             console.log('✅ Onboarding flag set in AppState');
         } else {
-            // AppState not ready - try direct localStorage update as fallback
-            console.warn('⚠️ AppState not ready, attempting direct localStorage update...');
-            try {
-                const stored = localStorage.getItem('miniCycleData');
-                if (stored) {
-                    const data = JSON.parse(stored);
-                    if (data.settings) {
-                        data.settings.onboardingCompleted = true;
-                        localStorage.setItem('miniCycleData', JSON.stringify(data));
-                        console.log('✅ Onboarding flag set via direct localStorage');
-                    }
-                }
-            } catch (e) {
-                console.warn('⚠️ Could not update localStorage directly:', e.message);
-            }
+            console.warn('⚠️ AppState not ready - onboarding flag not persisted');
         }
 
         modal.remove();

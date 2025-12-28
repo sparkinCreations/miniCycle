@@ -15,7 +15,6 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 // ============================================================================
 
 const di = createDIModule('CycleImportManager', {
-    loadMiniCycleData: required(),
     AppState: required(),
     showNotification: required(),
     safeAddEventListener: required(),
@@ -198,16 +197,20 @@ function processImportedData(fileContent) {
 
     console.log("Importing miniCycle with auto-conversion to Schema 2.5...");
 
-    const loadMiniCycleData = _deps.loadMiniCycleData;
-    const schemaData = loadMiniCycleData?.();
+    // ✅ Use AppState as source of truth
+    const appState = typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
 
-    if (!schemaData) {
-        console.error("Schema 2.5 data required for import");
-        _deps.showNotification?.("Cannot import - Schema 2.5 data structure required.", "error");
+    // Ensure AppState is ready (reload from localStorage if needed)
+    if (!appState?.isReady?.()) {
+        appState?.reload?.();
+    }
+
+    if (!appState?.isReady?.()) {
+        console.error("AppState not ready for import");
+        _deps.showNotification?.("Cannot import - app not ready. Please try again.", "error");
         return;
     }
 
-    const fullSchemaData = JSON.parse(localStorage.getItem("miniCycleData"));
     const cycleId = `imported_${Date.now()}`;
 
     console.log("Creating imported cycle with ID:", cycleId);
@@ -320,33 +323,27 @@ function processImportedData(fileContent) {
         };
     }
 
-    fullSchemaData.data.cycles[cycleId] = {
-        id: cycleId,
-        title: cycleTitle,
-        tasks: mappedTasks,
-        autoReset: importedData.autoReset !== false,
-        cycleCount: importedData.cycleCount || 0,
-        deleteCheckedTasks: importedData.deleteCheckedTasks || false,
-        createdAt: Date.now(),
-        recurringTemplates: mergedTemplates,
-        taskOptionButtons: importedData.taskOptionButtons || null,
-        reminders: importedData.reminders || null
-    };
+    // ✅ Create imported cycle via AppState.update()
+    appState.update(state => {
+        state.data.cycles[cycleId] = {
+            id: cycleId,
+            title: cycleTitle,
+            tasks: mappedTasks,
+            autoReset: importedData.autoReset !== false,
+            cycleCount: importedData.cycleCount || 0,
+            deleteCheckedTasks: importedData.deleteCheckedTasks || false,
+            createdAt: Date.now(),
+            recurringTemplates: mergedTemplates,
+            taskOptionButtons: importedData.taskOptionButtons || null,
+            reminders: importedData.reminders || null
+        };
 
-    // Set as active cycle and persist
-    fullSchemaData.appState.activeCycleId = cycleId;
-    fullSchemaData.metadata.lastModified = Date.now();
-    fullSchemaData.metadata.totalCyclesCreated++;
-    localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+        state.appState.activeCycleId = cycleId;
+        state.metadata.lastModified = Date.now();
+        state.metadata.totalCyclesCreated++;
+    }, true); // immediate save
 
-    // Sync AppState with imported cycle data
-    const AppState = _deps.AppState?.();
-    if (AppState && typeof AppState.init === 'function') {
-        AppState.data = fullSchemaData;
-        AppState.isInitialized = true;
-        AppState.isDirty = false;
-        console.log('AppState synchronized with imported cycle data');
-    }
+    console.log('✅ Imported cycle saved via AppState');
 
     const recurringCount = Object.keys(recurringTemplates).length;
     console.log(`Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
