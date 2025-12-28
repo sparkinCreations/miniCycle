@@ -319,13 +319,6 @@ class UIOrchestrator {
         const TaskDOMManager = _deps.TaskDOMManager;
         const AppState = _deps.AppState;
 
-        if (!TaskDOMManager?.patchTask) {
-            // Fallback to full render if patchTask not available
-            console.log('🎭 patchTask not available, falling back to full render');
-            this._fullRender();
-            return;
-        }
-
         // Get current task data from state
         const state = AppState?.get?.();
         const activeCycleId = state?.appState?.activeCycleId;
@@ -358,12 +351,6 @@ class UIOrchestrator {
         if (!taskIds?.length) return;
 
         const TaskDOMManager = _deps.TaskDOMManager;
-
-        if (!TaskDOMManager?.removeTask) {
-            console.log('🎭 removeTask not available, falling back to full render');
-            this._fullRender();
-            return;
-        }
 
         console.log(`🎭 Removing ${taskIds.length} task(s):`, taskIds);
 
