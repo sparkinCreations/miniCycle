@@ -126,6 +126,7 @@ export const INTERVALS = Object.freeze({
  */
 export const LIMITS = Object.freeze({
     UNDO_STACK: 20,                // Max items in undo/redo stack
+    TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
     NORMALIZATION_CACHE: 50,       // Max entries in recurring settings normalization cache
     ERROR_LOG: 50,                 // Max errors to keep in error log

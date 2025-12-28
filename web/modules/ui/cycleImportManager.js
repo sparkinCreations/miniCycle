@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
+import { LIMITS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -38,9 +39,9 @@ export function setCycleImportManagerDependencies(dependencies) {
 // ============================================================================
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB limit
-const MAX_TASK_COUNT = 250; // Maximum tasks per imported cycle
-const MAX_TASK_TEXT_LENGTH = 500;
-const MAX_CYCLE_NAME_LENGTH = 100;
+const MAX_TASK_COUNT = LIMITS.TASKS_PER_CYCLE; // Use centralized limit (150)
+const MAX_TASK_TEXT_LENGTH = LIMITS.TASK_CHARACTER;
+const MAX_CYCLE_NAME_LENGTH = LIMITS.CYCLE_NAME_CHARACTER;
 
 // ============================================================================
 // FALLBACK SANITIZATION (when DataValidator not available)
@@ -188,11 +189,13 @@ function processImportedData(fileContent) {
         return;
     }
 
-    // Security: Limit task count to prevent performance issues
+    // Security: Truncate tasks if exceeding limit (instead of rejecting)
+    let tasksTruncated = false;
+    let originalTaskCount = importedData.tasks.length;
     if (importedData.tasks.length > MAX_TASK_COUNT) {
-        _deps.showNotification?.(`Too many tasks. Maximum is ${MAX_TASK_COUNT} tasks per cycle.`, "error");
-        console.warn(`Import rejected: ${importedData.tasks.length} tasks exceeds ${MAX_TASK_COUNT} limit`);
-        return;
+        console.warn(`Import truncating: ${importedData.tasks.length} tasks exceeds ${MAX_TASK_COUNT} limit, keeping first ${MAX_TASK_COUNT}`);
+        importedData.tasks = importedData.tasks.slice(0, MAX_TASK_COUNT);
+        tasksTruncated = true;
     }
 
     console.log("Importing miniCycle with auto-conversion to Schema 2.5...");
@@ -352,7 +355,15 @@ function processImportedData(fileContent) {
     const recurringCount = Object.keys(recurringTemplates).length;
     console.log(`Import completed successfully to Schema 2.5${recurringCount > 0 ? ` (${recurringCount} recurring templates created)` : ''}`);
 
-    if (recurringCount > 0) {
+    // Show appropriate notification based on truncation and recurring status
+    if (tasksTruncated) {
+        const truncatedCount = originalTaskCount - MAX_TASK_COUNT;
+        _deps.showNotification?.(
+            `"${cycleTitle}" imported but exceeded ${MAX_TASK_COUNT} task limit.\n${truncatedCount} task${truncatedCount > 1 ? 's were' : ' was'} not imported.`,
+            "warning",
+            6000
+        );
+    } else if (recurringCount > 0) {
         _deps.showNotification?.(`"${cycleTitle}" imported with ${recurringCount} recurring task${recurringCount > 1 ? 's' : ''}!`, "success", 4000);
     } else {
         _deps.showNotification?.(`"${cycleTitle}" imported successfully!`, "success");

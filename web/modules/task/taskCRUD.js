@@ -8,6 +8,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { LIMITS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -122,6 +123,24 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         const AppState = deps.AppState || _deps.AppState;
         if (!AppState?.isReady?.()) {
             console.warn('AppState not ready, task creation may fail');
+        }
+
+        // Check task limit (skip during initial loading)
+        if (!isLoading && AppState?.isReady?.()) {
+            const state = AppState.get();
+            const activeCycleId = state?.appState?.activeCycleId;
+            const currentTasks = state?.data?.cycles?.[activeCycleId]?.tasks || [];
+
+            if (currentTasks.length >= LIMITS.TASKS_PER_CYCLE) {
+                console.warn(`Task limit reached (${LIMITS.TASKS_PER_CYCLE}). Cannot add more tasks.`);
+                const showNotification = deps.showNotification || _deps.showNotification;
+                showNotification?.(
+                    `Cannot add task - limit of ${LIMITS.TASKS_PER_CYCLE} tasks reached.\nComplete or delete tasks to add more.`,
+                    'warning',
+                    5000
+                );
+                return;
+            }
         }
 
         // Input validation and sanitization
