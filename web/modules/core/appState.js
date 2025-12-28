@@ -497,6 +497,8 @@ class MiniCycleState {
                 alwaysShowRecurring: false,
                 autoSave: true,
                 showThreeDots: false,
+                scrollToNewTask: true,
+                scrollOnLoad: false,
                 onboardingCompleted: false,
                 dismissedEducationalTips: {},
                 defaultRecurringSettings: {

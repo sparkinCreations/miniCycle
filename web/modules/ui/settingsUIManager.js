@@ -280,6 +280,103 @@ export function setupCompletedDropdownToggle() {
 }
 
 /**
+ * Setup scroll to new task toggle
+ */
+export function setupScrollToNewTaskToggle() {
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const scrollToggle = document.getElementById("toggle-scroll-to-new-task");
+    if (!scrollToggle) return;
+
+    console.log('Setting up scroll to new task toggle...');
+
+    // Default to true (enabled) if not set
+    let scrollEnabled = true;
+    const AppState = _deps.AppState?.();
+    if (AppState?.isReady?.()) {
+        const currentState = AppState.get();
+        // Use nullish coalescing - default to true if undefined
+        scrollEnabled = currentState?.settings?.scrollToNewTask ?? true;
+    }
+
+    scrollToggle.checked = scrollEnabled;
+
+    scrollToggle._changeHandler = async () => {
+        const enabled = scrollToggle.checked;
+        console.log('Scroll to new task toggle changed:', enabled);
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.scrollToNewTask = enabled;
+            }, true);
+            console.log('Scroll to new task setting saved to state:', enabled);
+        } else {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification?.('Failed to save setting', 'error');
+            scrollToggle.checked = !enabled;
+            return;
+        }
+    };
+
+    safeAddEventListener(scrollToggle, "change", scrollToggle._changeHandler);
+    console.log('Scroll to new task toggle setup completed');
+}
+
+/**
+ * Setup scroll on load toggle
+ */
+export function setupScrollOnLoadToggle() {
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    const scrollToggle = document.getElementById("toggle-scroll-on-load");
+    if (!scrollToggle) return;
+
+    console.log('Setting up scroll on load toggle...');
+
+    // Default to false (disabled for performance)
+    let scrollEnabled = false;
+    const AppState = _deps.AppState?.();
+    if (AppState?.isReady?.()) {
+        const currentState = AppState.get();
+        scrollEnabled = currentState?.settings?.scrollOnLoad || false;
+    }
+
+    scrollToggle.checked = scrollEnabled;
+
+    scrollToggle._changeHandler = async () => {
+        const enabled = scrollToggle.checked;
+        console.log('Scroll on load toggle changed:', enabled);
+
+        const AppState = _deps.AppState?.();
+        if (AppState?.isReady?.()) {
+            await AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.scrollOnLoad = enabled;
+            }, true);
+            console.log('Scroll on load setting saved to state:', enabled);
+        } else {
+            console.error('AppState not ready - setting not saved');
+            _deps.showNotification?.('Failed to save setting', 'error');
+            scrollToggle.checked = !enabled;
+            return;
+        }
+    };
+
+    safeAddEventListener(scrollToggle, "change", scrollToggle._changeHandler);
+    console.log('Scroll on load toggle setup completed');
+}
+
+/**
  * Setup debug mode toggle
  */
 export function setupDebugModeToggle() {
@@ -409,6 +506,8 @@ export function initAllToggles() {
     setupMoveArrowsToggle();
     setupThreeDotsToggle();
     setupCompletedDropdownToggle();
+    setupScrollToNewTaskToggle();
+    setupScrollOnLoadToggle();
     setupDebugModeToggle();
     setupResetRecurringButton();
 }

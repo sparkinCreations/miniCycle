@@ -1538,9 +1538,20 @@ export class TaskDOMManager {
         // Clear input
         if (taskInput) taskInput.value = "";
 
-        // Scroll to new task only for user-initiated adds, not during bulk load
-        if (!isLoading) {
-            TaskUtils.scrollToNewTask(taskList);
+        // Scroll behavior based on context and settings
+        const state = this.deps.AppState?.get?.();
+        if (isLoading) {
+            // During page load: only scroll if setting is enabled (default: off for performance)
+            const scrollOnLoad = state?.settings?.scrollOnLoad || false;
+            if (scrollOnLoad) {
+                TaskUtils.scrollToNewTask(taskList);
+            }
+        } else {
+            // User-initiated add: scroll if setting is enabled (default: on)
+            const scrollEnabled = state?.settings?.scrollToNewTask ?? true;
+            if (scrollEnabled) {
+                TaskUtils.scrollToNewTask(taskList);
+            }
         }
 
         // Handle overdue styling (delegated to TaskUtils)
