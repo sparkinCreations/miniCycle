@@ -3732,6 +3732,33 @@ color: rgba(77, 77, 255, 0.771);
     display: none !important;
 }
 
+/* ============================================================================
+ * CSS-DRIVEN ARROW VISIBILITY (O(1) performance)
+ * Replaces O(N) DOM sweeps with declarative CSS rules
+ * ============================================================================ */
+
+/* Default: arrows hidden when parent has data-move-arrows="false" or absent */
+#taskList:not([data-move-arrows="true"]) .move-up,
+#taskList:not([data-move-arrows="true"]) .move-down {
+    display: none !important;
+}
+
+/* When arrows enabled: show by default */
+#taskList[data-move-arrows="true"] .move-up,
+#taskList[data-move-arrows="true"] .move-down {
+    display: flex;
+}
+
+/* Hide up arrow on first task */
+#taskList[data-move-arrows="true"] > .task.is-first-task .move-up {
+    display: none !important;
+}
+
+/* Hide down arrow on last task */
+#taskList[data-move-arrows="true"] > .task.is-last-task .move-down {
+    display: none !important;
+}
+
 .badge-container {
     text-align: center;
     margin-top: 0px;
