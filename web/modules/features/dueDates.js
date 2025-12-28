@@ -205,19 +205,21 @@ export class MiniCycleDueDates {
         const currentState = AppState.get();
         let overdueTaskStates = { ...(currentState?.appState?.overdueTaskStates || {}) };
 
-        // ✅ Track tasks that just became overdue
+        // ✅ Track tasks that just became overdue (by ID, display text for notification)
         let newlyOverdueTasks = [];
 
         tasks.forEach(task => {
+            // ✅ FIX: Use task ID instead of task text for tracking (prevents issues when renaming tasks)
+            const taskId = task.dataset?.assignedTaskId;
             const taskText = task.querySelector(".task-text")?.textContent;
             const dueDateInput = task.querySelector(".due-date");
-            if (!dueDateInput || !taskText) return;
+            if (!dueDateInput || !taskId) return;
 
             const dueDateValue = dueDateInput.value;
             if (!dueDateValue) {
                 // ✅ Date was cleared — remove overdue class
                 task.classList.remove("overdue-task");
-                delete overdueTaskStates[taskText];
+                delete overdueTaskStates[taskId];
                 return;
             }
 
@@ -228,19 +230,19 @@ export class MiniCycleDueDates {
 
             if (dueDate < today) {
                 if (!autoReset) {
-                    if (!overdueTaskStates[taskText]) {
-                        newlyOverdueTasks.push(taskText); // ✅ Only notify if it just became overdue
+                    if (!overdueTaskStates[taskId]) {
+                        newlyOverdueTasks.push(taskText || 'Unnamed task'); // Display text for notification
                     }
                     task.classList.add("overdue-task");
-                    overdueTaskStates[taskText] = true;
-                } else if (overdueTaskStates[taskText]) {
+                    overdueTaskStates[taskId] = true;
+                } else if (overdueTaskStates[taskId]) {
                     task.classList.add("overdue-task");
                 } else {
                     task.classList.remove("overdue-task");
                 }
             } else {
                 task.classList.remove("overdue-task");
-                delete overdueTaskStates[taskText];
+                delete overdueTaskStates[taskId];
             }
         });
 
