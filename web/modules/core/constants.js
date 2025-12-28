@@ -212,7 +212,7 @@ export const TIME_UNITS = Object.freeze({
 // ============================================================================
 
 // Version marker for cache debugging (updated by update-version.sh)
-export const CONSTANTS_VERSION = '1.573';
+export const CONSTANTS_VERSION = '1.574';
 
 // Phase 2 Step 6 - Clean exports (no window.* pollution)
 console.log(`🔧 Core constants loaded (v${CONSTANTS_VERSION})`);

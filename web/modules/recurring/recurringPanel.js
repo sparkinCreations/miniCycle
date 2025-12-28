@@ -1,8 +1,8 @@
 /**
  * miniCycle Recurring Tasks - UI Panel Manager
  *
- * Pattern: Resilient Constructor 🛡️
- * Purpose: UI management for recurring task panel with graceful degradation
+ * Pattern: Strict Dependency Injection (DI-Pure)
+ * Purpose: UI management for recurring task panel
  *
  * This module handles:
  * - Recurring task panel rendering
@@ -11,15 +11,53 @@
  * - Summary text generation
  * - Button visibility management
  *
+ * NO window.* globals - all dependencies must be injected
+ * NO silent fallbacks for required deps - throws on missing
+ *
  * @module recurringPanel
  * @requires recurringCore (via dependency injection)
  * @requires AppInit (for initialization coordination)
  */
 
-// ✅ appInit now injected via DI (no static import - enables versioning)
-// ✅ REMOVED: Static import creates duplicate without version parameter
-// import { formatNextOccurrence, calculateNextOccurrence } from './recurringCore.js';
-// These will be passed as dependencies instead
+import { createDIModule, required, optional } from '../core/diBase.js';
+
+// ============================================================================
+// DEPENDENCY INJECTION SETUP
+// ============================================================================
+
+const di = createDIModule('RecurringPanel', {
+    // Required - will throw if missing
+    AppState: required(),
+    showNotification: required(),
+    applyRecurringSettings: required(),
+    normalizeRecurringSettings: required(),
+    calculateNextOccurrence: required(),
+
+    // Optional with sensible defaults/fallbacks
+    appInit: optional(null),
+    deleteTemplate: optional(null),
+    buildRecurringSummary: optional(null),
+    formatNextOccurrence: optional(null),
+    updateAppState: optional(null),
+    loadData: optional(null),
+    showConfirmationModal: optional(null),
+    getElementById: optional(null),
+    querySelector: optional(null),
+    querySelectorAll: optional(null),
+    isOverlayActive: optional(null),
+    escapeHtml: optional(null),
+    syncRecurringStateToDOM: optional(null),
+    refreshTaskButtonsForModeChange: optional(null),
+    safeAddEventListener: optional(null)
+}, { strict: true });  // Throw on missing required deps
+
+/**
+ * Set dependencies for RecurringPanel module
+ * Must be called before creating RecurringPanelManager instances
+ */
+export function setRecurringPanelDependencies(dependencies) {
+    di.setDependencies(dependencies);
+}
 
 // ============================================
 // RECURRING PANEL MANAGER CLASS
@@ -27,47 +65,46 @@
 
 /**
  * RecurringPanelManager - Manages the recurring tasks UI panel
- * Uses Resilient Constructor pattern for graceful degradation
+ * Uses Strict DI pattern - throws on missing required dependencies
  */
 export class RecurringPanelManager {
     constructor(dependencies = {}) {
         console.log('🎛️ Initializing RecurringPanelManager...');
 
-        // Store dependencies (DI-pure, no window.* fallbacks for state management)
+        // Resolve dependencies via DI system (throws on missing required deps)
+        const resolved = di.resolve(dependencies);
+
+        // Store dependencies with sensible fallbacks for optional ones only
         this.deps = {
-            // AppInit for initialization coordination (injected, not imported)
-            appInit: dependencies.appInit || null,
+            // Required - validated by DI (will throw if missing)
+            AppState: resolved.AppState,
+            showNotification: resolved.showNotification,
+            applyRecurringSettings: resolved.applyRecurringSettings,
+            normalizeRecurringSettings: resolved.normalizeRecurringSettings,
+            calculateNextOccurrence: resolved.calculateNextOccurrence,
 
-            // From recurringCore module
-            applyRecurringSettings: dependencies.applyRecurringSettings || this.fallbackApplySettings.bind(this),
-            deleteTemplate: dependencies.deleteTemplate || this.fallbackDeleteTemplate.bind(this),
-            buildRecurringSummary: dependencies.buildRecurringSummary || this.fallbackBuildSummary.bind(this),
-            normalizeRecurringSettings: dependencies.normalizeRecurringSettings || this.fallbackNormalize.bind(this),
-            formatNextOccurrence: dependencies.formatNextOccurrence || this.fallbackFormatNext.bind(this),
-            calculateNextOccurrence: dependencies.calculateNextOccurrence || this.fallbackCalculateNext.bind(this),
+            // Optional with graceful fallbacks
+            appInit: resolved.appInit,
+            deleteTemplate: resolved.deleteTemplate || this.fallbackDeleteTemplate.bind(this),
+            buildRecurringSummary: resolved.buildRecurringSummary || this.fallbackBuildSummary.bind(this),
+            formatNextOccurrence: resolved.formatNextOccurrence || this.fallbackFormatNext.bind(this),
+            updateAppState: resolved.updateAppState || ((fn, imm) => resolved.AppState?.update(fn, imm)),
+            loadData: resolved.loadData,
+            showConfirmationModal: resolved.showConfirmationModal || this.fallbackConfirmation.bind(this),
 
-            // State management (DI-pure, must be injected)
-            AppState: dependencies.AppState || null,
-            updateAppState: dependencies.updateAppState || null,
-            loadData: dependencies.loadData || null,
+            // DOM helpers with safe defaults
+            getElementById: resolved.getElementById || ((id) => document.getElementById(id)),
+            querySelector: resolved.querySelector || ((sel) => document.querySelector(sel)),
+            querySelectorAll: resolved.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
 
-            // UI dependencies
-            showNotification: dependencies.showNotification || this.fallbackNotification.bind(this),
-            showConfirmationModal: dependencies.showConfirmationModal || this.fallbackConfirmation.bind(this),
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelector: dependencies.querySelector || ((sel) => document.querySelector(sel)),
-            querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
+            // Optional utilities
+            isOverlayActive: resolved.isOverlayActive || (() => false),
+            escapeHtml: resolved.escapeHtml,
+            syncRecurringStateToDOM: resolved.syncRecurringStateToDOM,
+            refreshTaskButtonsForModeChange: resolved.refreshTaskButtonsForModeChange,
 
-            // Advanced panel dependencies (optional)
-            isOverlayActive: dependencies.isOverlayActive || (() => false),
-
-            // Utilities (optional)
-            escapeHtml: dependencies.escapeHtml || null,
-            syncRecurringStateToDOM: dependencies.syncRecurringStateToDOM || null,
-            refreshTaskButtonsForModeChange: dependencies.refreshTaskButtonsForModeChange || null,
-
-            // Event listener utility (prevents duplicates)
-            safeAddEventListener: dependencies.safeAddEventListener || ((el, ev, handler) => {
+            // Event listener utility with safe default
+            safeAddEventListener: resolved.safeAddEventListener || ((el, ev, handler) => {
                 if (!el) return;
                 el.removeEventListener(ev, handler);
                 el.addEventListener(ev, handler);
@@ -105,251 +142,40 @@ export class RecurringPanelManager {
         _initEventDelegation(this.deps, this.state, callbacks);
     }
 
-    /**
-     * Event delegation for monthly day boxes
-     * ✅ Replaces 31 listeners with 1
-     */
-    setupMonthlyDayDelegation() {
-        const container = this.deps.querySelector(".monthly-days");
-        if (!container) return;
-
-        this.deps.safeAddEventListener(container, "click", (event) => {
-            const dayBox = event.target.closest(".monthly-day-box");
-            if (!dayBox) return;
-
-            dayBox.classList.toggle("selected");
-        });
-    }
-
-    /**
-     * Event delegation for weekly day boxes
-     * ✅ Replaces 7 listeners with 1
-     */
-    setupWeeklyDayDelegation() {
-        const container = this.deps.querySelector(".weekly-days");
-        if (!container) return;
-
-        this.deps.safeAddEventListener(container, "click", (event) => {
-            const dayBox = event.target.closest(".weekly-day-box");
-            if (!dayBox) return;
-
-            dayBox.classList.toggle("selected");
-        });
-    }
-
-    /**
-     * Event delegation for yearly month boxes
-     * ✅ Replaces 12 listeners with 1
-     */
-    setupYearlyMonthDelegation() {
-        const container = this.deps.querySelector(".yearly-months");
-        if (!container) return;
-
-        this.deps.safeAddEventListener(container, "click", (event) => {
-            const monthBox = event.target.closest(".yearly-month-box");
-            if (!monthBox) return;
-
-            // Toggle selection
-            monthBox.classList.toggle("selected");
-
-            const selectedMonths = this.getSelectedYearlyMonths();
-
-            // Reveal or hide the specific-days checkbox label
-            const specificDaysLabel = this.deps.getElementById("yearly-specific-days-label");
-            if (specificDaysLabel) {
-                specificDaysLabel.classList.toggle("hidden", selectedMonths.length === 0);
-            }
-
-            // Show/hide day container based on selection + checkbox state
-            const yearlySpecificDaysCheckbox = this.deps.getElementById("yearly-specific-days");
-            const yearlyDayContainer = this.deps.getElementById("yearly-day-container");
-
-            if (yearlySpecificDaysCheckbox && yearlyDayContainer) {
-                const shouldShow = yearlySpecificDaysCheckbox.checked && selectedMonths.length > 0;
-                yearlyDayContainer.classList.toggle("hidden", !shouldShow);
-            }
-
-            // Update dropdown
-            const yearlyMonthSelect = this.deps.getElementById("yearly-month-select");
-            if (yearlyMonthSelect) {
-                yearlyMonthSelect.innerHTML = "";
-
-                selectedMonths.forEach((monthNum) => {
-                    const option = document.createElement("option");
-                    option.value = monthNum;
-                    option.textContent = new Date(0, monthNum - 1).toLocaleString('default', { month: 'long' });
-                    yearlyMonthSelect.appendChild(option);
-                });
-
-                // Trigger month change to update day grid
-                if (selectedMonths.length === 1) {
-                    yearlyMonthSelect.value = selectedMonths[0];
-                    yearlyMonthSelect.dispatchEvent(new Event("change"));
-                }
-            }
-        });
-    }
-
-    /**
-     * Event delegation for yearly day boxes
-     * ✅ Replaces 31 listeners with 1 (with complex apply-to-all logic)
-     */
-    setupYearlyDayDelegation() {
-        const container = this.deps.getElementById("yearly-day-container");
-        if (!container) return;
-
-        this.deps.safeAddEventListener(container, "click", (event) => {
-            const dayBox = event.target.closest(".yearly-day-box");
-            if (!dayBox) return;
-
-            const day = parseInt(dayBox.getAttribute("data-day"));
-            if (isNaN(day)) return;
-
-            dayBox.classList.toggle("selected");
-            const isNowSelected = dayBox.classList.contains("selected");
-
-            // Get current state
-            const applyToAll = this.deps.getElementById("yearly-apply-all")?.checked || false;
-            const monthNumber = parseInt(this.deps.getElementById("yearly-month-select")?.value);
-            const activeMonths = this.getSelectedYearlyMonths();
-
-            if (applyToAll) {
-                // Update shared days
-                const sharedDays = this.state.selectedYearlyDays["all"] || [];
-                if (isNowSelected && !sharedDays.includes(day)) {
-                    sharedDays.push(day);
-                } else if (!isNowSelected && sharedDays.includes(day)) {
-                    const idx = sharedDays.indexOf(day);
-                    sharedDays.splice(idx, 1);
-                }
-
-                this.state.selectedYearlyDays["all"] = sharedDays;
-
-                // Sync all selected months
-                activeMonths.forEach(month => {
-                    this.state.selectedYearlyDays[month] = [...sharedDays];
-                });
-            } else {
-                // Regular mode, per-month
-                const current = this.state.selectedYearlyDays[monthNumber] || [];
-                if (isNowSelected && !current.includes(day)) {
-                    current.push(day);
-                } else if (!isNowSelected && current.includes(day)) {
-                    const idx = current.indexOf(day);
-                    current.splice(idx, 1);
-                }
-                this.state.selectedYearlyDays[monthNumber] = current;
-            }
-        });
-    }
-
-    /**
-     * Event delegation for task list items
-     * ✅ Replaces N×3 listeners (checkbox, remove, row click) with 1 delegated listener
-     */
-    setupTaskListDelegation() {
-        const container = this.deps.getElementById("recurring-task-list");
-        if (!container) return;
-
-        this.deps.safeAddEventListener(container, "click", (event) => {
-            const item = event.target.closest(".recurring-task-item");
-            if (!item) return;
-
-            // Handle checkbox clicks
-            const checkbox = event.target.closest(".recurring-check");
-            if (checkbox) {
-                event.stopPropagation();
-                item.classList.toggle("checked");
-                return;
-            }
-
-            // Handle remove button clicks
-            const removeBtn = event.target.closest(".recurring-remove-btn");
-            if (removeBtn) {
-                event.stopPropagation();
-                const taskId = item.getAttribute("data-task-id");
-                if (taskId && this.deps.AppState?.isReady?.()) {
-                    // Get template from recurringTemplates (not tasks array)
-                    const currentState = this.deps.AppState.get();
-                    const activeCycleId = currentState.appState?.activeCycleId;
-                    const currentCycle = currentState.data?.cycles?.[activeCycleId];
-                    const template = currentCycle?.recurringTemplates?.[taskId];
-
-                    if (template) {
-                        this.handleRemoveTask(template, item);
-                    }
-                }
-                return;
-            }
-
-            // Handle row click for selection
-            this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                el.classList.remove("selected");
-            });
-            item.classList.add("selected");
-
-            const taskId = item.getAttribute("data-task-id");
-            this.state.selectedTaskId = taskId;
-
-            // Get fresh data from AppState - ONLY use recurringTemplates
-            if (this.deps.AppState?.isReady?.()) {
-                const currentState = this.deps.AppState.get();
-                const activeCycleId = currentState.appState?.activeCycleId;
-                const currentCycle = currentState.data?.cycles?.[activeCycleId];
-
-                // Get task from recurringTemplates ONLY (independent from tasks array)
-                const template = currentCycle?.recurringTemplates?.[taskId];
-
-                if (template) {
-                    // Use the template directly (it has all needed properties)
-                    this.showTaskSummaryPreview(template);
-                } else {
-                    console.warn('⚠️ Template not found for task:', taskId);
-                }
-            }
-        });
-    }
+    // NOTE: Individual delegation methods (setupMonthlyDayDelegation, setupWeeklyDayDelegation, etc.)
+    // have been consolidated into recurringPanelEvents.js module.
+    // The initEventDelegation() method above delegates to that module.
 
     // ============================================
-    // FALLBACK METHODS
+    // FALLBACK METHODS (for optional dependencies only)
     // ============================================
 
-    fallbackApplySettings(taskId, settings) {
-        console.warn('⚠️ applyRecurringSettings not available - using fallback');
-        console.log('Would apply settings to task:', taskId, settings);
-    }
-
+    /**
+     * Fallback for deleteTemplate - logs warning but allows operation to continue
+     */
     fallbackDeleteTemplate(taskId) {
-        console.warn('⚠️ deleteTemplate not available - using fallback');
-        console.log('Would delete template:', taskId);
+        console.warn('⚠️ deleteTemplate not wired - template deletion skipped');
+        this.deps.showNotification('Template deletion not available', 'warning');
     }
 
+    /**
+     * Fallback for buildRecurringSummary - returns basic summary
+     */
     fallbackBuildSummary(settings) {
-        console.warn('⚠️ buildRecurringSummary not available - using fallback');
-        return `Recurring ${settings.frequency || 'daily'}`;
+        return `Recurring ${settings?.frequency || 'daily'}`;
     }
 
-    fallbackNormalize(settings) {
-        console.warn('⚠️ normalizeRecurringSettings not available - using fallback');
-        return settings;
-    }
-
+    /**
+     * Fallback for formatNextOccurrence - returns formatted date
+     */
     fallbackFormatNext(timestamp) {
-        console.warn('⚠️ formatNextOccurrence not available - using fallback');
         return timestamp ? new Date(timestamp).toLocaleDateString() : 'Not scheduled';
     }
 
-    fallbackCalculateNext(settings, fromTime) {
-        console.warn('⚠️ calculateNextOccurrence not available - using fallback');
-        return null;
-    }
-
-    fallbackNotification(message, type) {
-        console.log(`[Panel Notification] ${message}`);
-    }
-
+    /**
+     * Fallback for showConfirmationModal - uses browser confirm
+     */
     fallbackConfirmation(options) {
-        console.log(`[Panel Confirmation] ${options.message}`);
         const confirmed = confirm(options.message);
         if (options.callback) options.callback(confirmed);
     }
@@ -754,7 +580,7 @@ export class RecurringPanelManager {
      * ✅ MEMORY LEAK FIX: No longer adds individual listeners - uses event delegation
      */
     setupWeeklyDayToggle() {
-        // ✅ NO listeners added - handled by setupWeeklyDayDelegation()
+        // ✅ NO listeners added - handled by recurringPanelEvents.js delegation
         // This method kept for backward compatibility but does nothing
     }
 
@@ -989,209 +815,15 @@ export class RecurringPanelManager {
 
     /**
      * Handle applying recurring settings to checked tasks
+     * Delegates to recurringSettingsApplicator module for the heavy lifting
      */
     async handleApplySettings() {
-        console.log('📝 Applying recurring settings (AppState-based)...');
-
-        try {
-            // ✅ Wait for core systems to be ready (AppState + data)
-            await this.deps.appInit?.waitForCore();
-
-            const state = this.deps.AppState.get();
-            const activeCycleId = state.appState?.activeCycleId;
-
-            if (!activeCycleId) {
-                this.deps.showNotification("⚠ No active cycle found.");
-                return;
-            }
-
-            const cycleData = state.data?.cycles?.[activeCycleId];
-            if (!cycleData) {
-                this.deps.showNotification("⚠ Active cycle data not found.");
-                return;
-            }
-
-            const checkedEls = this.deps.querySelectorAll(".recurring-check:checked");
-
-            if (!checkedEls.length) {
-                this.deps.showNotification("⚠ No tasks checked to apply settings.");
-                return;
-            }
-
-            const settings = this.deps.normalizeRecurringSettings(this.buildRecurringSettingsFromPanel());
-
-            // Set defaultRecurTime if not using specific time
-            if (!settings.specificTime && !settings.defaultRecurTime) {
-                settings.defaultRecurTime = new Date().toISOString();
-            }
-
-            // Batch all updates in one AppState operation (DI-pure)
-            // ✅ CRITICAL: Await the update to ensure state is saved before re-rendering
-            if (this.deps.updateAppState) {
-                await this.deps.updateAppState(draft => {
-                    // Save default recurring settings if requested
-                    if (this.deps.getElementById("set-default-recurring")?.checked) {
-                        if (!draft.settings) draft.settings = {};
-                        draft.settings.defaultRecurringSettings = settings;
-                    }
-
-                    const cycle = draft.data.cycles[activeCycleId];
-                    if (!cycle.recurringTemplates) {
-                        cycle.recurringTemplates = {};
-                    }
-
-                    checkedEls.forEach(checkbox => {
-                        const taskEl = checkbox.closest("[data-task-id]");
-                        const taskId = taskEl?.dataset.taskId;
-                        if (!taskId || !taskEl) return;
-
-                        // Check if task exists in task list
-                        let task = cycle.tasks.find(t => t.id === taskId);
-
-                        // ✅ ONLY update task if it exists in the task list
-                        // DON'T create new tasks - let the watch function handle that
-                        if (task) {
-                            // Apply recurring settings to existing task
-                            task.recurring = true;
-                            task.schemaVersion = 2;
-                            task.recurringSettings = structuredClone(settings);
-                        }
-
-                        // ✅ ALWAYS update the template (this is the important part)
-                        // Get template data (either from existing task or from template)
-                        const existingTemplate = cycle.recurringTemplates[taskId];
-                        const templateText = task?.text ||
-                                           existingTemplate?.text ||
-                                           taskEl.querySelector(".recurring-task-text")?.textContent ||
-                                           "Untitled Task";
-
-                        cycle.recurringTemplates[taskId] = {
-                            id: taskId,
-                            text: templateText,
-                            dueDate: task?.dueDate || existingTemplate?.dueDate || null,
-                            highPriority: task?.highPriority || existingTemplate?.highPriority || false,
-                            remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
-                            recurring: true,
-                            recurringSettings: structuredClone(settings),
-                            nextScheduledOccurrence: this.deps.calculateNextOccurrence(settings, Date.now()),
-                            schemaVersion: 2
-                        };
-                    });
-                }, true); // ✅ Immediate save to prevent data loss on browser crash
-            }
-
-            // Update DOM after state changes (DI-pure)
-            if (this.deps.syncRecurringStateToDOM) {
-                checkedEls.forEach(checkbox => {
-                    const taskEl = checkbox.closest("[data-task-id]");
-                    if (!taskEl) return;
-
-                    // Update DOM
-                    taskEl.classList.add("recurring");
-                    taskEl.setAttribute("data-recurring-settings", JSON.stringify(settings));
-                    const recurringBtn = taskEl.querySelector(".recurring-btn");
-                    if (recurringBtn) {
-                        recurringBtn.classList.add("active");
-                        recurringBtn.setAttribute("aria-pressed", "true");
-                    }
-
-                    this.deps.syncRecurringStateToDOM(taskEl, settings);
-                });
-            }
-
-            // Show success notifications
-            if (this.deps.getElementById("set-default-recurring")?.checked) {
-                this.deps.showNotification("✅ Default recurring settings saved!", "success", 1500);
-            }
-
-            this.updateRecurringSummary();
-            this.deps.showNotification("✅ Recurring settings applied!", "success", 2000);
-            await this.updateRecurringPanel();
-
-            // ✅ Use setTimeout to ensure DOM has updated before querying for checked tasks
-            setTimeout(() => {
-                // ✅ Keep first checked task selected and show updated preview
-                const checkedTasks = this.deps.querySelectorAll(".recurring-task-item.checked");
-                let firstCheckedTask = null;
-
-                console.log('🔍 Looking for checked tasks after apply:', checkedTasks.length);
-
-                if (checkedTasks.length > 0) {
-                    firstCheckedTask = checkedTasks[0];
-
-                    // Keep first task selected, clear the rest
-                    this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                        if (el !== firstCheckedTask) {
-                            el.classList.remove("selected", "checked");
-                        }
-                    });
-
-                    // Update preview with new settings
-                    const taskId = firstCheckedTask.dataset.taskId;
-                    const state = this.deps.AppState.get();
-                    const activeCycleId = state.appState?.activeCycleId;
-                    const task = state.data?.cycles?.[activeCycleId]?.tasks.find(t => t.id === taskId);
-
-                    if (task) {
-                        this.showTaskSummaryPreview(task);
-                        console.log('✅ Updated preview with new settings for task:', taskId);
-
-                        // ✅ Debug: Check if preview is visible
-                        const summaryContainer = this.deps.getElementById("recurring-summary-preview");
-                        console.log('🔍 Preview container visibility after apply:', {
-                            exists: !!summaryContainer,
-                            hasHiddenClass: summaryContainer?.classList.contains("hidden"),
-                            innerHTML: summaryContainer?.innerHTML.substring(0, 100)
-                        });
-                    }
-                } else {
-                    // No checked tasks - clear all selections
-                    this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                        el.classList.remove("selected", "checked");
-                    });
-                    console.log('⚠️ No checked tasks found after apply settings');
-                }
-            }, 10);
-
-            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
-            settingsPanel?.classList.add("hidden");
-
-            // Explicitly hide checkboxes and toggle container
-            this.deps.querySelectorAll(".recurring-check").forEach(cb => {
-                cb.classList.add("hidden");
-                cb.checked = false;
-            });
-
-            const toggleContainer = this.deps.getElementById("recurring-toggle-actions");
-            toggleContainer?.classList.add("hidden");
-
-            // Update button visibility
-            this.updateRecurringPanelButtonVisibility();
-
-            // Clear the form
-            this.clearRecurringForm();
-
-            console.log('✅ Recurring settings applied successfully');
-
-        } catch (error) {
-            console.error('❌ Failed to apply recurring settings:', error);
-            this.deps.showNotification('❌ Failed to apply settings. Please try again.', 'error', 5000);
-
-            // Cleanup on error: hide settings panel and reset form
-            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
-            if (settingsPanel) {
-                settingsPanel.classList.add("hidden");
-            }
-
-            // Reset checkboxes
-            this.deps.querySelectorAll(".recurring-check").forEach(cb => {
-                cb.classList.add("hidden");
-                cb.checked = false;
-            });
-
-            // Re-throw to allow caller to handle if needed
-            throw error;
-        }
+        // Use the injected applyRecurringSettings function (from recurringSettingsApplicator.js)
+        // Falls back to fallbackApplySettings if not wired
+        return this.deps.applyRecurringSettings(
+            this,  // Pass panel instance for callbacks
+            () => this.buildRecurringSettingsFromPanel()  // Settings builder callback
+        );
     }
 
     /**
@@ -1535,27 +1167,28 @@ export class RecurringPanelManager {
         item.className = "recurring-task-item";
         item.setAttribute("data-task-id", task.id);
 
-        // ✅ XSS PROTECTION: Escape HTML in task text (DI-pure)
-        const escapedTaskText = typeof this.deps.escapeHtml === 'function'
-            ? this.deps.escapeHtml(task.text)
-            : task.text;
+        // ✅ XSS PROTECTION: Use DOM APIs with textContent (safer than innerHTML + escapeHtml)
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "recurring-check hidden";
+        checkbox.id = `recurring-check-${task.id}`;
+        checkbox.name = `recurring-check-${task.id}`;
+        checkbox.setAttribute("aria-label", "Mark this task temporarily");
 
-        item.innerHTML = `
-            <input type="checkbox"
-                   class="recurring-check"
-                   id="recurring-check-${task.id}"
-                   name="recurring-check-${task.id}"
-                   aria-label="Mark this task temporarily">
-            <span class="recurring-task-text">${escapedTaskText}</span>
-            <button title="Remove from Recurring" class="recurring-remove-btn">
-              <i class='fas fa-trash recurring-trash-icon'></i>
-            </button>
-        `;
+        const textSpan = document.createElement("span");
+        textSpan.className = "recurring-task-text";
+        textSpan.textContent = task.text;  // textContent auto-escapes HTML
 
-        // ✅ MEMORY LEAK FIX: No listeners added - handled by setupTaskListDelegation()
-        // Checkbox is hidden by default
-        const checkbox = item.querySelector(".recurring-check");
-        checkbox.classList.add("hidden");
+        const removeBtn = document.createElement("button");
+        removeBtn.title = "Remove from Recurring";
+        removeBtn.className = "recurring-remove-btn";
+        removeBtn.innerHTML = "<i class='fas fa-trash recurring-trash-icon'></i>";
+
+        item.appendChild(checkbox);
+        item.appendChild(textSpan);
+        item.appendChild(removeBtn);
+
+        // ✅ MEMORY LEAK FIX: No listeners added - handled by recurringPanelEvents.js delegation
 
         return item;
     }
@@ -1613,14 +1246,44 @@ export class RecurringPanelManager {
                     // Remove recurring visual state
                     const matchingTaskItem = this.deps.querySelector(`.task[data-task-id="${task.id}"]`);
                     if (matchingTaskItem) {
+                        // Remove active state from recurring button
                         const recurringBtn = matchingTaskItem.querySelector(".recurring-btn");
                         if (recurringBtn) {
                             recurringBtn.classList.remove("active");
                             recurringBtn.setAttribute("aria-pressed", "false");
                             recurringBtn.disabled = false;
                         }
+                        // Remove the recurring indicator icon from task label
+                        const recurringIndicator = matchingTaskItem.querySelector(".recurring-indicator");
+                        if (recurringIndicator) {
+                            recurringIndicator.remove();
+                        }
                         matchingTaskItem.classList.remove("recurring");
                         matchingTaskItem.removeAttribute("data-recurring-settings");
+
+                        // Restore delete-when-complete state based on cycle mode
+                        const updatedState = this.deps.AppState.get();
+                        const freshCycle = updatedState.data?.cycles?.[activeCycleId];
+                        const isToDoMode = freshCycle?.deleteCheckedTasks === true;
+                        const defaultDeleteState = isToDoMode; // todo=true, cycle=false
+
+                        // Update delete-when-complete button
+                        const deleteBtn = matchingTaskItem.querySelector('.delete-when-complete-btn');
+                        if (deleteBtn) {
+                            deleteBtn.classList.toggle('active', defaultDeleteState);
+                            deleteBtn.classList.toggle('delete-when-complete-active', defaultDeleteState);
+                            deleteBtn.setAttribute('aria-pressed', defaultDeleteState.toString());
+                        }
+
+                        // Update data attribute and visual indicators
+                        matchingTaskItem.dataset.deleteWhenComplete = defaultDeleteState.toString();
+                        if (isToDoMode) {
+                            matchingTaskItem.classList.remove('show-delete-indicator');
+                            matchingTaskItem.classList.toggle('kept-task', !defaultDeleteState);
+                        } else {
+                            matchingTaskItem.classList.toggle('show-delete-indicator', defaultDeleteState);
+                            matchingTaskItem.classList.remove('kept-task');
+                        }
                     }
 
                     item.remove();
@@ -1761,31 +1424,39 @@ export class RecurringPanelManager {
                 return;
             }
 
-            // ✅ XSS PROTECTION: Escape HTML in task text (DI-pure)
-            const escapedTaskText = typeof this.deps.escapeHtml === 'function'
-                ? this.deps.escapeHtml(task.text)
-                : task.text;
+            // ✅ XSS PROTECTION: Use DOM APIs with textContent (safer than innerHTML + escapeHtml)
+            previewText.innerHTML = '';  // Clear existing content
+
+            const taskNameStrong = document.createElement('strong');
+            taskNameStrong.textContent = task.text;  // textContent auto-escapes HTML
+            previewText.appendChild(taskNameStrong);
+            previewText.appendChild(document.createElement('br'));
 
             if (!recurringSettings) {
-                previewText.innerHTML = `
-                    <strong>${escapedTaskText}</strong><br>
-                    <em>No recurring settings configured</em>
-                `;
+                const noSettingsEm = document.createElement('em');
+                noSettingsEm.textContent = 'No recurring settings configured';
+                previewText.appendChild(noSettingsEm);
                 return;
             }
 
             const summaryText = this.deps.buildRecurringSummary(recurringSettings);
+            const summarySpan = document.createElement('span');
+            summarySpan.className = 'recurring-summary-text';
+            summarySpan.textContent = summaryText;
+            previewText.appendChild(summarySpan);
 
             // ✅ Get next occurrence text
             const nextOccurrenceText = template?.nextScheduledOccurrence
                 ? this.deps.formatNextOccurrence(template.nextScheduledOccurrence)
                 : null;
 
-            previewText.innerHTML = `
-                <strong>${escapedTaskText}</strong><br>
-                <span class="recurring-summary-text">${summaryText}</span>
-                ${nextOccurrenceText ? `<br><span class="next-occurrence-text">${nextOccurrenceText}</span>` : ''}
-            `;
+            if (nextOccurrenceText) {
+                previewText.appendChild(document.createElement('br'));
+                const nextSpan = document.createElement('span');
+                nextSpan.className = 'next-occurrence-text';
+                nextSpan.textContent = nextOccurrenceText;
+                previewText.appendChild(nextSpan);
+            }
 
             // ✅ Only show button if settings panel is NOT currently open
             const changeBtn = this.deps.getElementById("change-recurring-settings");
