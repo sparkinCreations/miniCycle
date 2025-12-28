@@ -29,10 +29,6 @@ const di = createDIModule('RoutineManager', {
     updateProgressBar: optional(null),
     checkCompleteAllButton: optional(null),
     autoSave: optional(null),
-    safeLocalStorageGet: optional(null),
-    safeLocalStorageSet: optional(null),
-    safeJSONParse: optional(null),
-    safeJSONStringify: optional(null),
     onCycleCreated: optional(null),
     DEFAULT_TASK_OPTION_BUTTONS: optional(null),
     AppMeta: optional(null)
@@ -76,12 +72,6 @@ export class RoutineManager {
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
             autoSave: resolvedDeps.autoSave || (() => {}),
 
-            // Storage functions (required) - no global fallbacks
-            safeLocalStorageGet: resolvedDeps.safeLocalStorageGet,
-            safeLocalStorageSet: resolvedDeps.safeLocalStorageSet,
-            safeJSONParse: resolvedDeps.safeJSONParse,
-            safeJSONStringify: resolvedDeps.safeJSONStringify,
-
             // Undo system callback (optional)
             onCycleCreated: resolvedDeps.onCycleCreated || null,
 
@@ -114,10 +104,6 @@ export class RoutineManager {
             'sanitizeInput',
             'completeInitialSetup',
             'hideMainMenu',
-            'safeLocalStorageGet',
-            'safeLocalStorageSet',
-            'safeJSONParse',
-            'safeJSONStringify',
             'DEFAULT_TASK_OPTION_BUTTONS'
         ];
 
@@ -161,50 +147,50 @@ export class RoutineManager {
 
                     console.log('🔄 Creating new cycle:', newCycleName);
 
-                    // Create new cycle in Schema 2.5 format
-                    const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-                    if (!fullSchemaData) {
-                        console.error('❌ Failed to load schema data');
+                    // ✅ Use AppState as source of truth
+                    const appState = this.deps.AppState;
+
+                    // Ensure AppState is ready (reload from localStorage if needed)
+                    if (!appState?.isReady?.()) {
+                        appState?.reload?.();
+                    }
+
+                    if (!appState?.isReady?.()) {
+                        console.error('❌ AppState not ready for cycle creation');
+                        this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
                         return;
                     }
 
-                    fullSchemaData.data.cycles[cycleId] = {
-                        id: cycleId,
-                        title: newCycleName,
-                        tasks: [],
-                        autoReset: true,
-                        deleteCheckedTasks: false,
-                        cycleCount: 0,
-                        createdAt: Date.now(),
-                        recurringTemplates: {},
-                        reminders: {
-                            enabled: false,
-                            indefinite: false,
-                            dueDatesReminders: false,
-                            repeatCount: 0,
-                            frequencyValue: 30,
-                            frequencyUnit: "minutes"
-                        }
-                    };
+                    // ✅ Create cycle via AppState.update()
+                    await appState.update(state => {
+                        state.data.cycles[cycleId] = {
+                            id: cycleId,
+                            title: newCycleName,
+                            tasks: [],
+                            autoReset: true,
+                            deleteCheckedTasks: false,
+                            cycleCount: 0,
+                            createdAt: Date.now(),
+                            recurringTemplates: {},
+                            reminders: {
+                                enabled: false,
+                                indefinite: false,
+                                dueDatesReminders: false,
+                                repeatCount: 0,
+                                frequencyValue: 30,
+                                frequencyUnit: "minutes"
+                            }
+                        };
 
-                    fullSchemaData.appState.activeCycleId = cycleId;
-                    fullSchemaData.metadata.lastModified = Date.now();
-                    fullSchemaData.metadata.totalCyclesCreated++;
+                        state.appState.activeCycleId = cycleId;
+                        state.metadata.lastModified = Date.now();
+                        state.metadata.totalCyclesCreated++;
+                    }, true); // immediate save
 
-                    this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-
-                    // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-                    if (this.deps.AppState && typeof this.deps.AppState.init === 'function') {
-                        this.deps.AppState.data = fullSchemaData;
-                        this.deps.AppState.isInitialized = true;
-                        this.deps.AppState.isDirty = false; // Mark as clean since we just saved
-                        console.log('✅ AppState synchronized with new cycle data');
-                    }
-
-                    console.log('💾 New cycle saved to Schema 2.5');
+                    console.log('💾 New cycle saved via AppState');
 
                     // ✅ Complete the setup after user interaction
-                    this.deps.completeInitialSetup(cycleId, fullSchemaData);
+                    this.deps.completeInitialSetup(cycleId, appState.get());
                 }
             });
         }, 500);
@@ -230,53 +216,50 @@ export class RoutineManager {
                 taskCount: sample.tasks?.length || 0
             });
 
-            // Load full schema data directly from localStorage (don't use loadMiniCycleData which may not have active cycle yet)
-            const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-            if (!fullSchemaData) {
-                console.error('❌ Failed to load schema data from localStorage');
-                throw new Error('Failed to load schema data');
-            }
-            const cycleId = `cycle_${Date.now()}`;
+            // ✅ Use AppState as source of truth
+            const appState = this.deps.AppState;
 
+            // Ensure AppState is ready (reload from localStorage if needed)
+            if (!appState?.isReady?.()) {
+                appState?.reload?.();
+            }
+
+            if (!appState?.isReady?.()) {
+                console.error('❌ AppState not ready for sample cycle creation');
+                throw new Error('AppState not ready');
+            }
+
+            const cycleId = `cycle_${Date.now()}`;
             console.log('🔄 Creating sample cycle with ID:', cycleId);
 
-            // Create sample cycle in Schema 2.5 format
-            fullSchemaData.data.cycles[cycleId] = {
-                id: cycleId,
-                title: sample.title || sample.name || "Getting Started",
-                tasks: sample.tasks || [],
-                autoReset: sample.autoReset !== false, // Default to true if not specified
-                cycleCount: sample.cycleCount || 0,
-                deleteCheckedTasks: sample.deleteCheckedTasks || false,
-                createdAt: Date.now(),
-                recurringTemplates: {},
-                reminders: {
-                    enabled: false,
-                    indefinite: false,
-                    dueDatesReminders: false,
-                    repeatCount: 0,
-                    frequencyValue: 30,
-                    frequencyUnit: "minutes"
-                }
-            };
+            // ✅ Create sample cycle via AppState.update()
+            await appState.update(state => {
+                state.data.cycles[cycleId] = {
+                    id: cycleId,
+                    title: sample.title || sample.name || "Getting Started",
+                    tasks: sample.tasks || [],
+                    autoReset: sample.autoReset !== false, // Default to true if not specified
+                    cycleCount: sample.cycleCount || 0,
+                    deleteCheckedTasks: sample.deleteCheckedTasks || false,
+                    createdAt: Date.now(),
+                    recurringTemplates: {},
+                    reminders: {
+                        enabled: false,
+                        indefinite: false,
+                        dueDatesReminders: false,
+                        repeatCount: 0,
+                        frequencyValue: 30,
+                        frequencyUnit: "minutes"
+                    }
+                };
 
-            fullSchemaData.appState.activeCycleId = cycleId;
-            fullSchemaData.metadata.lastModified = Date.now();
-            fullSchemaData.metadata.totalCyclesCreated++;
+                state.appState.activeCycleId = cycleId;
+                state.metadata.lastModified = Date.now();
+                state.metadata.totalCyclesCreated++;
+            }, true); // immediate save
 
-            this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-
-            // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-            const appState = this.deps.AppState;
-            if (appState && typeof appState.init === 'function') {
-                appState.data = fullSchemaData;
-                appState.isInitialized = true;
-                appState.isDirty = false; // Mark as clean since we just saved
-                console.log('✅ AppState synchronized with new cycle data');
-            }
-
-            console.log('💾 Sample cycle saved to Schema 2.5');
-            console.log('📈 Total cycles created:', fullSchemaData.metadata.totalCyclesCreated);
+            console.log('💾 Sample cycle saved via AppState');
+            console.log('📈 Total cycles created:', appState.get().metadata.totalCyclesCreated);
 
             // ✅ CLOSE ANY OPEN MODALS
             const existingModals = this.deps.querySelectorAll('.miniCycle-overlay, .mini-modal-overlay');
@@ -285,7 +268,7 @@ export class RoutineManager {
             this.deps.showNotification("✨ A sample miniCycle has been preloaded to help you get started!", "success", 5000);
 
             // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
-            this.deps.completeInitialSetup(cycleId, fullSchemaData);
+            this.deps.completeInitialSetup(cycleId, appState.get());
 
         } catch (err) {
             console.error('❌ Failed to load sample miniCycle:', err);
@@ -304,57 +287,58 @@ export class RoutineManager {
     /**
      * Create a basic fallback cycle if sample loading fails
      */
-    createBasicFallbackCycle() {
+    async createBasicFallbackCycle() {
         console.log('🆘 Creating basic fallback cycle...');
 
-        const fullSchemaData = this.deps.safeJSONParse(this.deps.safeLocalStorageGet("miniCycleData", null), null);
-        if (!fullSchemaData) {
-            console.error('❌ Failed to load schema data for fallback cycle');
+        // ✅ Use AppState as source of truth
+        const appState = this.deps.AppState;
+
+        // Ensure AppState is ready (reload from localStorage if needed)
+        if (!appState?.isReady?.()) {
+            appState?.reload?.();
+        }
+
+        if (!appState?.isReady?.()) {
+            console.error('❌ AppState not ready for fallback cycle creation');
+            this.deps.showNotification("⚠️ Failed to create cycle. Please refresh.", "error", 5000);
             return;
         }
+
         const cycleId = `cycle_${Date.now()}`;
 
-        fullSchemaData.data.cycles[cycleId] = {
-            id: cycleId,
-            title: "Getting Started",
-            tasks: [
-                {
-                    id: "task-welcome",
-                    text: "Welcome to miniCycle! 🎉",
-                    completed: false,
-                    schemaVersion: 2
-                },
-                {
-                    id: "task-guide",
-                    text: "Add your first task using the input box above ✏️",
-                    completed: false,
-                    schemaVersion: 2
-                }
-            ],
-            autoReset: true,
-            deleteCheckedTasks: false,
-            cycleCount: 0,
-            createdAt: Date.now(),
-            recurringTemplates: {}
-        };
+        // ✅ Create fallback cycle via AppState.update()
+        await appState.update(state => {
+            state.data.cycles[cycleId] = {
+                id: cycleId,
+                title: "Getting Started",
+                tasks: [
+                    {
+                        id: "task-welcome",
+                        text: "Welcome to miniCycle! 🎉",
+                        completed: false,
+                        schemaVersion: 2
+                    },
+                    {
+                        id: "task-guide",
+                        text: "Add your first task using the input box above ✏️",
+                        completed: false,
+                        schemaVersion: 2
+                    }
+                ],
+                autoReset: true,
+                deleteCheckedTasks: false,
+                cycleCount: 0,
+                createdAt: Date.now(),
+                recurringTemplates: {}
+            };
 
-        fullSchemaData.appState.activeCycleId = cycleId;
-        fullSchemaData.metadata.lastModified = Date.now();
-        fullSchemaData.metadata.totalCyclesCreated++;
+            state.appState.activeCycleId = cycleId;
+            state.metadata.lastModified = Date.now();
+            state.metadata.totalCyclesCreated++;
+        }, true); // immediate save
 
-        this.deps.safeLocalStorageSet("miniCycleData", this.deps.safeJSONStringify(fullSchemaData, null));
-
-        // ✅ SYNC AppState with new cycle data (prevents overwriting with stale data)
-        const appState = this.deps.AppState;
-        if (appState && typeof appState.init === 'function') {
-            appState.data = fullSchemaData;
-            appState.isInitialized = true;
-            appState.isDirty = false; // Mark as clean since we just saved
-            console.log('✅ AppState synchronized with new cycle data');
-        }
-
-        console.log('✅ Basic fallback cycle created');
-        this.deps.completeInitialSetup(cycleId, fullSchemaData);
+        console.log('✅ Basic fallback cycle created via AppState');
+        this.deps.completeInitialSetup(cycleId, appState.get());
     }
 
     /**
