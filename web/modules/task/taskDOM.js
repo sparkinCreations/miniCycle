@@ -1538,8 +1538,10 @@ export class TaskDOMManager {
         // Clear input
         if (taskInput) taskInput.value = "";
 
-        // Scroll to new task (delegated to TaskUtils)
-        TaskUtils.scrollToNewTask(taskList);
+        // Scroll to new task only for user-initiated adds, not during bulk load
+        if (!isLoading) {
+            TaskUtils.scrollToNewTask(taskList);
+        }
 
         // Handle overdue styling (delegated to TaskUtils)
         TaskUtils.handleOverdueStyling(taskItem, completed);
