@@ -234,8 +234,12 @@ function processImportedData(fileContent) {
             remindersEnabled: task.remindersEnabled || false,
             recurring: task.recurring || false,
             recurringSettings: safeSettings,
-            deleteWhenComplete: task.deleteWhenComplete,
-            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings || { cycle: false, todo: true },
+            // Default deleteWhenComplete to true if not explicitly set
+            // Recurring tasks: always delete (cycle: true, todo: true)
+            // Non-recurring tasks: respect mode (cycle: false, todo: true)
+            deleteWhenComplete: task.deleteWhenComplete ?? true,
+            deleteWhenCompleteSettings: task.deleteWhenCompleteSettings ||
+                (task.recurring ? { cycle: true, todo: true } : { cycle: false, todo: true }),
             schemaVersion: task.schemaVersion || 2
         };
 
