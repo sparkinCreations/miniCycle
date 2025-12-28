@@ -147,10 +147,28 @@ export class TaskOptionsCustomizer {
             querySelector: deps.querySelector || ((sel) => document.querySelector(sel))
         };
 
+        // ✅ Debounce state for refresh
+        this._refreshTimeout = null;
+        this._refreshDebounceMs = 150;
+
         // Validate required dependencies
         this._validateDependencies();
 
         console.log('✅ TaskOptionsCustomizer initialized');
+    }
+
+    /**
+     * Schedule a debounced refresh of task buttons
+     * Prevents multiple rapid renders when toggling checkboxes quickly
+     */
+    scheduleRefresh() {
+        if (this._refreshTimeout) {
+            clearTimeout(this._refreshTimeout);
+        }
+        this._refreshTimeout = setTimeout(() => {
+            this._refreshTimeout = null;
+            this.refreshAllTaskButtons();
+        }, this._refreshDebounceMs);
     }
 
     /**
@@ -168,6 +186,7 @@ export class TaskOptionsCustomizer {
             modeManager: _deps.modeManager,
             appInit: _deps.appInit,  // DI-pure (no fallback)
             DEFAULT_TASK_OPTION_BUTTONS: _deps.DEFAULT_TASK_OPTION_BUTTONS || FALLBACK_TASK_OPTION_BUTTONS,
+            safeAddEventListener: _deps.safeAddEventListener,
             // DOM helpers from constructor
             ...this._constructorDeps
         };
@@ -190,8 +209,15 @@ export class TaskOptionsCustomizer {
      * Setup event listeners for opening customizer from settings
      */
     setupEventListeners() {
-        // Use safeAddEventListener
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
+        // ✅ Idempotency guard to prevent duplicate listeners
+        if (this._eventListenersInitialized) {
+            console.log('✅ TaskOptionsCustomizer event listeners already set up');
+            return;
+        }
+        this._eventListenersInitialized = true;
+
+        // Use safeAddEventListener (prefer injected, fallback inline)
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
 
         // Wait for DOM to be ready, then attach listener
         const attachListener = () => {
@@ -211,7 +237,7 @@ export class TaskOptionsCustomizer {
                         // Then open the customization modal
                         this.showCustomizationModal(currentCycleId);
                     } else {
-                        _deps.showNotification?.('Please select a cycle first', 'warning');
+                        this.deps.showNotification?.('Please select a cycle first', 'warning');
                     }
                 };
                 safeAdd(openButton, 'click', openButton._clickHandler);
@@ -438,8 +464,8 @@ export class TaskOptionsCustomizer {
         const optionItems = modal.querySelectorAll('.task-option-item');
         const previewContent = modal.querySelector('#option-preview-content');
 
-        // Use safeAddEventListener
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
+        // Use safeAddEventListener (prefer injected, fallback inline)
+        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
 
         // ✅ Real-time saving: Save immediately when any checkbox changes
         checkboxes.forEach(checkbox => {
@@ -524,129 +550,127 @@ export class TaskOptionsCustomizer {
      * @param {NodeList} checkboxes - Checkbox elements
      */
     async saveCustomization(cycleId, checkboxes) {
-        const newOptions = {};
-
+        // ✅ Collect all checkbox values
+        const allOptions = {};
         checkboxes.forEach(cb => {
-            newOptions[cb.dataset.option] = cb.checked;
+            allOptions[cb.dataset.option] = cb.checked;
         });
 
         // Ensure customize button is always enabled
-        newOptions.customize = true;
+        allOptions.customize = true;
 
-        // ✅ Check if move arrows setting changed to sync with global setting
+        // ✅ Separate global options from cycle options
+        // Global options should NOT be stored in cycle.taskOptionButtons
+        const globalKeys = ['moveArrows', 'threeDots', 'customize'];
+        const cycleOnlyOptions = {};
+        for (const [key, value] of Object.entries(allOptions)) {
+            if (!globalKeys.includes(key)) {
+                cycleOnlyOptions[key] = value;
+            }
+        }
+        // Keep customize in cycle options (it's always true anyway)
+        cycleOnlyOptions.customize = true;
+
+        // ✅ Get current state ONCE before update
         const currentState = this.deps.AppState.get();
         const currentGlobalMoveArrows = currentState.ui?.moveArrowsVisible || false;
-        const newMoveArrows = newOptions.moveArrows || false;
+        const currentThreeDots = currentState.settings?.showThreeDots || false;
+        const cycle = currentState.data.cycles[cycleId];
+        const currentRemindersEnabled = cycle?.reminders?.enabled || false;
 
-        // Save to AppState
+        // ✅ New values from checkboxes
+        const newMoveArrows = allOptions.moveArrows || false;
+        const newThreeDots = allOptions.threeDots || false;
+        const newRemindersEnabled = allOptions.reminders || false;
+
+        // ✅ Track what changed for post-update side effects
+        const moveArrowsChanged = newMoveArrows !== currentGlobalMoveArrows;
+        const threeDotsChanged = newThreeDots !== currentThreeDots;
+        const remindersChanged = newRemindersEnabled !== currentRemindersEnabled;
+
+        // ✅ SINGLE AppState.update() - all changes in one atomic transaction
         await this.deps.AppState.update(state => {
+            // Save cycle-only options (without global keys)
             if (state.data.cycles[cycleId]) {
-                state.data.cycles[cycleId].taskOptionButtons = newOptions;
+                state.data.cycles[cycleId].taskOptionButtons = cycleOnlyOptions;
             }
 
-            // ✅ Sync move arrows with global setting
-            if (newMoveArrows !== currentGlobalMoveArrows) {
+            // Sync move arrows global setting
+            if (moveArrowsChanged) {
                 if (!state.ui) state.ui = {};
                 state.ui.moveArrowsVisible = newMoveArrows;
-                console.log(`✅ Synced global move arrows setting to: ${newMoveArrows}`);
+                console.log(`✅ Synced global move arrows: ${newMoveArrows}`);
             }
-        });
 
-        // ✅ Update move arrows visibility in DOM if changed (DI-pure)
-        if (newMoveArrows !== currentGlobalMoveArrows) {
+            // Sync three dots global setting
+            if (threeDotsChanged) {
+                if (!state.settings) state.settings = {};
+                state.settings.showThreeDots = newThreeDots;
+                console.log(`✅ Synced global three dots: ${newThreeDots}`);
+            }
+
+            // Sync reminders enabled for this cycle
+            if (remindersChanged && state.data.cycles[cycleId]?.reminders) {
+                state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
+                console.log(`✅ Set reminders enabled: ${newRemindersEnabled}`);
+            }
+
+            state.metadata.lastModified = Date.now();
+        }, true); // immediate save
+
+        // ✅ Post-update side effects (DOM syncing)
+
+        // Move arrows DOM updates
+        if (moveArrowsChanged) {
             const updateMoveArrowsVisibility = this.deps.updateMoveArrowsVisibility;
             if (typeof updateMoveArrowsVisibility === 'function') {
                 updateMoveArrowsVisibility();
             }
+            const settingsMoveArrowsToggle = document.getElementById('toggle-move-arrows');
+            if (settingsMoveArrowsToggle) {
+                settingsMoveArrowsToggle.checked = newMoveArrows;
+            }
         }
 
-        // ✅ Sync with settings panel checkbox
-        const settingsMoveArrowsToggle = document.getElementById('toggle-move-arrows');
-        if (settingsMoveArrowsToggle && newMoveArrows !== currentGlobalMoveArrows) {
-            settingsMoveArrowsToggle.checked = newMoveArrows;
-            console.log('🔄 Synced settings panel checkbox:', newMoveArrows);
-        }
-
-        // ✅ Check if three dots setting changed to sync with global setting
-        const currentThreeDots = currentState.settings?.showThreeDots || false;
-        const newThreeDots = newOptions.threeDots || false;
-
-        console.log('🔵 Three dots check:', { currentThreeDots, newThreeDots, changed: newThreeDots !== currentThreeDots });
-
-        if (newThreeDots !== currentThreeDots) {
-            // Update global three dots setting
-            await this.deps.AppState.update(state => {
-                if (!state.settings) state.settings = {};
-                state.settings.showThreeDots = newThreeDots;
-                console.log(`✅ Synced global three dots setting to: ${newThreeDots}`);
-            });
-
-            // ✅ Sync with settings panel checkbox
+        // Three dots DOM updates
+        if (threeDotsChanged) {
             const settingsThreeDotsToggle = document.getElementById('toggle-three-dots');
             if (settingsThreeDotsToggle) {
                 settingsThreeDotsToggle.checked = newThreeDots;
-                console.log('🔄 Synced three dots settings checkbox:', newThreeDots);
             }
-
-            // ✅ Update body class for three dots mode
-            if (newThreeDots) {
-                document.body.classList.add('show-three-dots-enabled');
-            } else {
-                document.body.classList.remove('show-three-dots-enabled');
-            }
-
-            // ✅ Note: No need to call renderTaskList here - refreshAllTaskButtons() will handle it at the end
+            document.body.classList.toggle('show-three-dots-enabled', newThreeDots);
         }
 
-        // ✅ Enable/disable reminders for this cycle when checkbox changes
-        const cycle = currentState.data.cycles[cycleId];
-        const currentRemindersEnabled = cycle?.reminders?.enabled || false;
-        const newRemindersEnabled = newOptions.reminders || false;
-
-        if (newRemindersEnabled !== currentRemindersEnabled) {
-            // Update the cycle's reminder enabled status
-            await this.deps.AppState.update(state => {
-                if (state.data.cycles[cycleId]?.reminders) {
-                    state.data.cycles[cycleId].reminders.enabled = newRemindersEnabled;
-                    console.log(`✅ Set reminders enabled for cycle ${cycleId}: ${newRemindersEnabled}`);
-                }
-            });
-
-            // ✅ Sync with reminders modal checkbox
+        // Reminders DOM updates and system start/stop
+        if (remindersChanged) {
             const enableRemindersCheckbox = document.getElementById('enableReminders');
             if (enableRemindersCheckbox) {
                 enableRemindersCheckbox.checked = newRemindersEnabled;
-                console.log('🔄 Synced reminders modal checkbox:', newRemindersEnabled);
-
-                // Update frequency section visibility
                 const frequencySection = document.getElementById('frequency-section');
                 if (frequencySection) {
-                    frequencySection.classList.toggle("hidden", !newRemindersEnabled);
+                    frequencySection.classList.toggle('hidden', !newRemindersEnabled);
                 }
             }
 
-            // Trigger the reminders system to start/stop (DI-pure)
+            // Start/stop reminders system
             if (newRemindersEnabled) {
                 const startReminders = this.deps.startReminders;
                 if (typeof startReminders === 'function') {
                     setTimeout(() => startReminders(), 200);
-                    console.log('🔔 Started reminders for cycle');
                 }
             } else {
                 const stopReminders = this.deps.stopReminders;
                 if (typeof stopReminders === 'function') {
                     stopReminders();
-                    console.log('🔕 Stopped reminders for cycle');
                 }
             }
         }
 
-        // ✅ Refresh task list UI to apply button visibility changes
-        await this.refreshAllTaskButtons();
+        // ✅ Refresh task list UI (debounced)
+        this.scheduleRefresh();
 
-        _deps.showNotification?.('✅ Task options updated', 'success', 2000);
-
-        console.log(`✅ Saved task option customization for cycle: ${cycleId}`, newOptions);
+        this.deps.showNotification?.('✅ Task options updated', 'success', 2000);
+        console.log(`✅ Saved task options for cycle: ${cycleId}`, { cycleOnlyOptions, moveArrows: newMoveArrows, threeDots: newThreeDots });
     }
 
     /**
@@ -660,7 +684,7 @@ export class TaskOptionsCustomizer {
             cb.checked = defaultValue ?? false;
         });
 
-        _deps.showNotification?.('🔄 Reset to defaults', 'info', 2000);
+        this.deps.showNotification?.('🔄 Reset to defaults', 'info', 2000);
     }
 
     /**
@@ -704,6 +728,7 @@ export class TaskOptionsCustomizer {
 
     /**
      * Get button visibility settings for a cycle
+     * Merges cycle-specific options with global settings
      * @param {string} cycleId - The cycle ID
      * @returns {Object} Button visibility settings
      */
@@ -713,7 +738,18 @@ export class TaskOptionsCustomizer {
         if (!state) return { ...defaultButtons };
 
         const cycle = state.data.cycles[cycleId];
-        return cycle?.taskOptionButtons || { ...defaultButtons };
+        const cycleOptions = cycle?.taskOptionButtons || {};
+
+        // ✅ Merge cycle options with global settings
+        // Global options are stored separately, not in cycle.taskOptionButtons
+        return {
+            ...defaultButtons,
+            ...cycleOptions,
+            // Always read global options from their canonical locations
+            moveArrows: state.ui?.moveArrowsVisible || false,
+            threeDots: state.settings?.showThreeDots || false,
+            customize: true // Always enabled
+        };
     }
 }
 
