@@ -359,7 +359,7 @@ export const MODULE_MANIFESTS = {
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'loadMiniCycleData'],
+        requires: ['appInit', 'AppState', 'loadMiniCycleData', 'safeAddEventListener'],
         provides: [],
         provideInstance: 'helpWindowManager',
         api: 'ui'

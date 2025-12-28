@@ -15,7 +15,8 @@ import { getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
 
 const di = createDIModule('HelpWindowManager', {
     loadMiniCycleData: optional(null),
-    AppState: optional(null)
+    AppState: optional(null),
+    safeAddEventListener: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -51,10 +52,11 @@ export class HelpWindowManager {
     }
 
     init() {
-        if (!this.helpWindow || this.initialized) {
-            if (this.initialized) console.warn('⚠️ HelpWindowManager already initialized');
+        if (this.initialized) {
+            console.warn('⚠️ HelpWindowManager already initialized');
             return;
         }
+        if (!this.helpWindow) return;
 
         this.initialized = true;
 
@@ -80,7 +82,11 @@ export class HelpWindowManager {
         }
         this._eventListenersInitialized = true;
 
-        const safeAdd = (el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); };
+        // Use injected safeAddEventListener with fallback
+        const safeAdd = deps.safeAddEventListener || ((el, ev, fn) => {
+            el?.removeEventListener(ev, fn);
+            el?.addEventListener(ev, fn);
+        });
 
         // Listen for checkbox changes on tasks
         document._helpWindowChangeHandler = (e) => {
