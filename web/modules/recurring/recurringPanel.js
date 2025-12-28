@@ -353,63 +353,20 @@ export class RecurringPanelManager {
 
     /**
      * Setup frequency selector dropdown
+     * Delegates to recurringPanelSetup module
      */
     setupFrequencySelector() {
-        const frequencySelect = this.deps.getElementById("recur-frequency");
-        if (!frequencySelect) return;
-
-        this.deps.safeAddEventListener(frequencySelect, "change", () => {
-            const selectedFrequency = frequencySelect.value;
-            const frequencyMap = {
-                hourly: this.deps.getElementById("hourly-options"),
-                daily: this.deps.getElementById("daily-options"),
-                weekly: this.deps.getElementById("weekly-options"),
-                biweekly: this.deps.getElementById("biweekly-options"),
-                monthly: this.deps.getElementById("monthly-options"),
-                yearly: this.deps.getElementById("yearly-options")
-            };
-
-            // Hide all frequency option sections
-            Object.values(frequencyMap).forEach(section => {
-                if (section) section.classList.add("hidden");
-            });
-
-            // Show selected frequency options
-            if (frequencyMap[selectedFrequency]) {
-                frequencyMap[selectedFrequency].classList.remove("hidden");
-            }
-
-            this.updateRecurringSummary();
-        });
+        _setupFrequencySelector(this.deps, () => this.updateRecurringSummary());
     }
 
     /**
      * Setup toggle visibility for various sections
+     * Delegates to recurringPanelSetup module
      */
     setupToggleVisibility() {
-        const toggleVisibility = (triggerId, contentId) => {
-            const trigger = this.deps.getElementById(triggerId);
-            const content = this.deps.getElementById(contentId);
-            if (trigger && content) {
-                this.deps.safeAddEventListener(trigger, "change", () => {
-                    content.classList.toggle("hidden", !trigger.checked);
-                });
-            }
-        };
+        _setupToggleVisibility(this.deps);
 
-        toggleVisibility("hourly-specific-time", "hourly-minute-container");
-        toggleVisibility("daily-specific-time", "daily-time-container");
-        toggleVisibility("weekly-specific-days", "weekly-day-container");
-        toggleVisibility("weekly-specific-time", "weekly-time-container");
-        toggleVisibility("biweekly-specific-days", "biweekly-day-container");
-        toggleVisibility("biweekly-specific-time", "biweekly-time-container");
-        toggleVisibility("monthly-specific-days", "monthly-day-container");
-        toggleVisibility("monthly-week-of-month", "monthly-week-container");
-        toggleVisibility("monthly-specific-time", "monthly-time-container");
-        toggleVisibility("yearly-specific-months", "yearly-month-container");
-        toggleVisibility("yearly-specific-time", "yearly-time-container");
-
-        // Setup duration radio buttons
+        // Setup duration radio buttons (kept in class - has local state)
         this.setupDurationRadioButtons();
 
         // Setup mutual exclusivity for monthly options
@@ -418,153 +375,34 @@ export class RecurringPanelManager {
 
     /**
      * Setup toggle check all button
+     * Delegates to recurringPanelSetup module
      */
     setupToggleCheckAll() {
-        const toggleBtn = this.deps.getElementById("toggle-check-all");
-        if (!toggleBtn) return;
-
-        this.deps.safeAddEventListener(toggleBtn, "click", () => {
-            const checkboxes = this.deps.querySelectorAll(".recurring-check:not(.hidden)");
-            const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
-
-            checkboxes.forEach(cb => {
-                cb.checked = anyUnchecked;
-                const item = cb.closest(".recurring-task-item");
-                if (item) {
-                    item.classList.toggle("checked", anyUnchecked);
-                }
-            });
-
-            // Update button label
-            toggleBtn.textContent = anyUnchecked ? "Uncheck All" : "Check All";
-
-            this.updateRecurringSummary();
-        });
+        _setupToggleCheckAll(this.deps, () => this.updateRecurringSummary());
     }
 
     /**
      * Setup advanced settings toggle
+     * Delegates to recurringPanelSetup module
      */
     setupAdvancedToggle() {
-        const toggleBtn = this.deps.getElementById("toggle-advanced-settings");
-        if (!toggleBtn) return;
-
-        let advancedVisible = false;
-
-        const setAdvancedVisibility = (visible) => {
-            toggleBtn.textContent = visible ? "Hide Advanced Options" : "Show Advanced Options";
-
-            // Show/hide all `.frequency-options` panels
-            this.deps.querySelectorAll(".frequency-options").forEach(option => {
-                option.style.display = visible ? "block" : "none";
-            });
-
-            // Always show frequency dropdown container
-            const frequencyContainer = this.deps.getElementById("recur-frequency-container");
-            if (frequencyContainer) frequencyContainer.style.display = "block";
-
-            // Handle extras like 'Recur indefinitely' and 'Specific Dates'
-            const advancedControls = [
-                { checkboxId: "recur-indefinitely" },
-                { checkboxId: "recur-specific-dates" }
-            ];
-
-            advancedControls.forEach(({ checkboxId }) => {
-                const checkbox = this.deps.getElementById(checkboxId);
-                if (!checkbox) return;
-
-                const label = checkbox.closest("label");
-                if (label) {
-                    label.style.display = visible ? "flex" : "none";
-                }
-            });
-
-            const defaultBoxContainer = this.deps.getElementById("set-default-recurring-container");
-            if (defaultBoxContainer) {
-                defaultBoxContainer.style.display = visible ? "block" : "none";
-            }
-        };
-
-        setAdvancedVisibility(advancedVisible);
-
-        this.deps.safeAddEventListener(toggleBtn, "click", () => {
-            advancedVisible = !advancedVisible;
-            setAdvancedVisibility(advancedVisible);
-        });
+        _setupAdvancedToggle(this.deps);
     }
 
     /**
      * Setup time conversion between 12hr and 24hr formats
+     * Delegates to recurringPanelSetup module
      */
-    setupTimeConversion({ hourInputId, minuteInputId, meridiemSelectId, militaryCheckboxId }) {
-        const hourInput = this.deps.getElementById(hourInputId);
-        const minuteInput = this.deps.getElementById(minuteInputId);
-        const meridiemSelect = this.deps.getElementById(meridiemSelectId);
-        const militaryToggle = this.deps.getElementById(militaryCheckboxId);
-
-        if (!hourInput || !minuteInput || !meridiemSelect || !militaryToggle) return;
-
-        this.deps.safeAddEventListener(militaryToggle, "change", () => {
-            const is24Hour = militaryToggle.checked;
-            let hour = parseInt(hourInput.value) || 0;
-            let meridiem = meridiemSelect.value;
-
-            if (is24Hour) {
-                // Convert from 12h to 24h
-                if (meridiem === "AM") {
-                    hour = hour === 12 ? 0 : hour;
-                } else {
-                    hour = hour === 12 ? 12 : hour + 12;
-                }
-                hourInput.value = hour;
-                meridiemSelect.classList.add("hidden");
-            } else {
-                // Convert from 24h to 12h
-                if (hour === 0) {
-                    hourInput.value = 12;
-                    meridiemSelect.value = "AM";
-                } else if (hour < 12) {
-                    hourInput.value = hour;
-                    meridiemSelect.value = "AM";
-                } else if (hour === 12) {
-                    hourInput.value = 12;
-                    meridiemSelect.value = "PM";
-                } else {
-                    hourInput.value = hour - 12;
-                    meridiemSelect.value = "PM";
-                }
-                meridiemSelect.classList.remove("hidden");
-            }
-        });
+    setupTimeConversion(config) {
+        _setupTimeConversion(this.deps, config);
     }
 
     /**
      * Setup military time toggle for a frequency prefix
+     * Delegates to recurringPanelSetup module
      */
     setupMilitaryTimeToggle(prefix) {
-        const toggle = this.deps.getElementById(`${prefix}-military`);
-        const hourInput = this.deps.getElementById(`${prefix}-hour`);
-        const meridiemSelect = this.deps.getElementById(`${prefix}-meridiem`);
-
-        if (!toggle || !hourInput || !meridiemSelect) {
-            console.warn(`⚠️ Missing elements for military time toggle: ${prefix}`);
-            return;
-        }
-
-        this.deps.safeAddEventListener(toggle, "change", () => {
-            const is24Hour = toggle.checked;
-
-            try {
-                hourInput.min = is24Hour ? 0 : 1;
-                hourInput.max = is24Hour ? 23 : 12;
-                meridiemSelect.classList.toggle("hidden", is24Hour);
-
-                // Update summary when time format changes
-                this.updateRecurringSummary();
-            } catch (error) {
-                console.warn(`⚠️ Error updating military time toggle for ${prefix}:`, error);
-            }
-        });
+        _setupMilitaryTimeToggle(this.deps, prefix, () => this.updateRecurringSummary());
     }
 
     /**
@@ -909,75 +747,20 @@ export class RecurringPanelManager {
 
     /**
      * Setup mutual exclusivity for monthly specific days vs week-of-month pattern
+     * Delegates to recurringPanelSetup module
      */
     setupMonthlyMutualExclusion() {
-        const specificDays = this.deps.getElementById("monthly-specific-days");
-        const weekOfMonth = this.deps.getElementById("monthly-week-of-month");
-
-        if (!specificDays || !weekOfMonth) return;
-
-        this.deps.safeAddEventListener(specificDays, "change", () => {
-            if (specificDays.checked && weekOfMonth.checked) {
-                weekOfMonth.checked = false;
-                const weekContainer = this.deps.getElementById("monthly-week-container");
-                if (weekContainer) weekContainer.classList.add("hidden");
-            }
-        });
-
-        this.deps.safeAddEventListener(weekOfMonth, "change", () => {
-            if (weekOfMonth.checked && specificDays.checked) {
-                specificDays.checked = false;
-                const dayContainer = this.deps.getElementById("monthly-day-container");
-                if (dayContainer) dayContainer.classList.add("hidden");
-            }
-        });
+        _setupMonthlyMutualExclusion(this.deps);
     }
 
     /**
      * Setup additional event listeners for recurring panel
+     * Delegates to recurringPanelSetup module
      */
     setupAdditionalListeners() {
-        // Specific date time checkbox
-        const specificDateTime = this.deps.getElementById("specific-date-specific-time");
-        if (specificDateTime) {
-            this.deps.safeAddEventListener(specificDateTime, "change", (e) => {
-                const timeContainer = this.deps.getElementById("specific-date-time-container");
-                if (timeContainer) {
-                    timeContainer.classList.toggle("hidden", !e.target.checked);
-                }
-                this.updateRecurringSummary();
-            });
-        }
-
-        // Duration radio buttons summary update
-        ['recur-indefinitely', 'recur-count-radio', 'recur-until-radio'].forEach(id => {
-            const radio = this.deps.getElementById(id);
-            if (radio) {
-                this.deps.safeAddEventListener(radio, "change", () => {
-                    this.updateRecurCountVisibility();
-                    this.updateRecurringSummary();
-                });
-            }
-        });
-
-        // Document click handler for hiding preview when clicking outside
-        this.deps.safeAddEventListener(document, "click", (e) => {
-            const overlay = this.deps.getElementById("recurring-panel-overlay");
-            if (!overlay || overlay.classList.contains("hidden")) return;
-
-            const taskList = this.deps.getElementById("recurring-task-list");
-            const settingsPanel = this.deps.getElementById("recurring-settings-panel");
-            const summaryPreview = this.deps.getElementById("recurring-summary-preview");
-
-            if (taskList?.contains(e.target) || settingsPanel?.contains(e.target)) return;
-
-            // Hide summary preview when clicking outside
-            if (summaryPreview && !summaryPreview.contains(e.target) && !taskList?.contains(e.target)) {
-                summaryPreview.classList.add("hidden");
-                this.deps.querySelectorAll(".recurring-task-item").forEach(el => {
-                    el.classList.remove("selected");
-                });
-            }
+        _setupAdditionalListeners(this.deps, {
+            updateRecurringSummary: () => this.updateRecurringSummary(),
+            updateRecurCountVisibility: () => this.updateRecurCountVisibility()
         });
     }
 
@@ -1859,6 +1642,16 @@ let _clearRecurringForm = null;
 // Events module functions
 let _eventsModule = null;
 let _initEventDelegation = null;
+// Setup module functions
+let _setupModule = null;
+let _setupFrequencySelector = null;
+let _setupToggleVisibility = null;
+let _setupToggleCheckAll = null;
+let _setupAdvancedToggle = null;
+let _setupTimeConversion = null;
+let _setupMilitaryTimeToggle = null;
+let _setupMonthlyMutualExclusion = null;
+let _setupAdditionalListeners = null;
 
 /**
  * Load sub-modules with version cache-busting
@@ -1871,11 +1664,12 @@ export async function loadPanelSubModules(version) {
 
     console.log(`Loading recurringPanel sub-modules with v=${version}...`);
 
-    const [summaryModule, gridsModule, formModule, eventsModule] = await Promise.all([
+    const [summaryModule, gridsModule, formModule, eventsModule, setupModule] = await Promise.all([
         import(`./recurringPanelSummary.js?v=${version}`),
         import(`./recurringPanelGrids.js?v=${version}`),
         import(`./recurringPanelForm.js?v=${version}`),
-        import(`./recurringPanelEvents.js?v=${version}`)
+        import(`./recurringPanelEvents.js?v=${version}`),
+        import(`./recurringPanelSetup.js?v=${version}`)
     ]);
 
     _buildRecurringSummaryFromSettings = summaryModule.buildRecurringSummaryFromSettings;
@@ -1896,6 +1690,17 @@ export async function loadPanelSubModules(version) {
     // Events module
     _eventsModule = eventsModule;
     _initEventDelegation = eventsModule.initEventDelegation;
+
+    // Setup module
+    _setupModule = setupModule;
+    _setupFrequencySelector = setupModule.setupFrequencySelector;
+    _setupToggleVisibility = setupModule.setupToggleVisibility;
+    _setupToggleCheckAll = setupModule.setupToggleCheckAll;
+    _setupAdvancedToggle = setupModule.setupAdvancedToggle;
+    _setupTimeConversion = setupModule.setupTimeConversion;
+    _setupMilitaryTimeToggle = setupModule.setupMilitaryTimeToggle;
+    _setupMonthlyMutualExclusion = setupModule.setupMonthlyMutualExclusion;
+    _setupAdditionalListeners = setupModule.setupAdditionalListeners;
 
     console.log('recurringPanel sub-modules loaded');
 }
