@@ -219,7 +219,7 @@ export async function catchUpMissedRecurringTasks() {
             id: template.id,
             recurringSettings: template.recurringSettings,
             deleteWhenComplete: true, // Always true for recreated instances (safety override)
-            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings || { ...DEFAULT_RECURRING_DELETE_SETTINGS }
+            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
         // Calculate NEXT future occurrence
@@ -377,7 +377,7 @@ export async function watchRecurringTasks() {
             id: template.id,
             recurringSettings: template.recurringSettings,
             deleteWhenComplete: true, // Always true for recreated instances (safety override)
-            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings || { ...DEFAULT_RECURRING_DELETE_SETTINGS }
+            deleteWhenCompleteSettings: template.deleteWhenCompleteSettings ?? { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
         // Recalculate next occurrence
