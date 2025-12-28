@@ -272,7 +272,7 @@ export const MODULE_MANIFESTS = {
     uiOrchestrator: {
         path: '../ui/uiOrchestrator.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState'],
+        requires: ['appInit', 'AppState', 'TaskDOMManager', 'renderTasks', 'updateProgressBar', 'updateStatsPanel', 'checkCompleteAllButton', 'setArrowsEnabled', 'updateFirstLastMarkers'],
         provides: ['requestUIUpdate', 'flushUIUpdates', 'initUIOrchestrator', 'getUIOrchestrator', 'ui'],
         api: 'ui',
         after: ['taskDOM', 'cycleCompletion', 'statsPanel', 'dragDropManager']

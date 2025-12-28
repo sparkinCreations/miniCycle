@@ -727,9 +727,17 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         statsPanelManager: () => deps.ui?.statsPanelManager,
 
         // UIOrchestrator (from deps.ui) - lazy resolution for UI update coalescing
+        // Note: Use getUIOrchestrator() to get the instance, not the class
+        // Methods must be bound to preserve 'this' context
         UIOrchestrator: new Proxy({}, {
             get(target, prop) {
-                return deps.ui?.UIOrchestrator?.[prop];
+                const instance = deps.ui?.getUIOrchestrator?.();
+                const value = instance?.[prop];
+                // Bind methods to preserve 'this' context
+                if (typeof value === 'function') {
+                    return value.bind(instance);
+                }
+                return value;
             }
         }),
         requestUIUpdate: (...args) => deps.ui?.requestUIUpdate?.(...args),
@@ -742,9 +750,15 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         }),
 
         // Additional dependencies for UIOrchestrator
+        // Methods must be bound to preserve 'this' context
         TaskDOMManager: new Proxy({}, {
             get(target, prop) {
-                return deps.task?.taskDOMManager?.[prop];
+                const instance = deps.task?.taskDOMManager;
+                const value = instance?.[prop];
+                if (typeof value === 'function') {
+                    return value.bind(instance);
+                }
+                return value;
             }
         }),
         TaskRenderer: new Proxy({}, {
