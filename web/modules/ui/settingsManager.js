@@ -96,6 +96,8 @@ async function loadSubModules(version) {
         setupMoveArrowsToggle: settingsUIModule.setupMoveArrowsToggle,
         setupThreeDotsToggle: settingsUIModule.setupThreeDotsToggle,
         setupCompletedDropdownToggle: settingsUIModule.setupCompletedDropdownToggle,
+        setupScrollToNewTaskToggle: settingsUIModule.setupScrollToNewTaskToggle,
+        setupScrollOnLoadToggle: settingsUIModule.setupScrollOnLoadToggle,
         setupDebugModeToggle: settingsUIModule.setupDebugModeToggle,
         setupResetRecurringButton: settingsUIModule.setupResetRecurringButton,
         syncCurrentSettingsToStorage: settingsUIModule.syncCurrentSettingsToStorage,
@@ -218,6 +220,8 @@ export class SettingsManager {
             _subModules.setupMoveArrowsToggle();
             _subModules.setupThreeDotsToggle();
             _subModules.setupCompletedDropdownToggle();
+            _subModules.setupScrollToNewTaskToggle();
+            _subModules.setupScrollOnLoadToggle();
             _subModules.setupDebugModeToggle();
             _subModules.setupResetRecurringButton();
             _subModules.setupExportButton();
@@ -320,6 +324,8 @@ export function setupDarkModeToggle() { _subModules?.setupDarkModeToggle?.(); }
 export function setupMoveArrowsToggle() { _subModules?.setupMoveArrowsToggle?.(); }
 export function setupThreeDotsToggle() { _subModules?.setupThreeDotsToggle?.(); }
 export function setupCompletedDropdownToggle() { _subModules?.setupCompletedDropdownToggle?.(); }
+export function setupScrollToNewTaskToggle() { _subModules?.setupScrollToNewTaskToggle?.(); }
+export function setupScrollOnLoadToggle() { _subModules?.setupScrollOnLoadToggle?.(); }
 export function setupDebugModeToggle() { _subModules?.setupDebugModeToggle?.(); }
 export function setupResetRecurringButton() { _subModules?.setupResetRecurringButton?.(); }
 export function syncCurrentSettingsToStorage() { return _subModules?.syncCurrentSettingsToStorage?.(); }

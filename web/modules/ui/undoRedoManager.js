@@ -704,6 +704,7 @@ export async function performStateBasedUndo() {
     const transactionDiff = computeTransactionDiff(currentSnapshot, snap);
     transactionDiff.kind = 'undo';
 
+    // Use non-immediate save for better UI latency (persistence via debounce)
     await Deps.AppState.update(state => {
       if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
         state.appState.activeCycleId = snap.activeCycleId;
@@ -716,19 +717,14 @@ export async function performStateBasedUndo() {
       if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
-    }, true);
-
-    await Promise.resolve();
+    }, false);
 
     // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
     handleUndoRedoUIUpdate(transactionDiff, Deps.AppState.get());
 
-    // Wait for next tick to ensure all rendering state updates complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-
     updateUndoRedoButtons();
 
-    // ✅ Save updated stacks to IndexedDB
+    // ✅ Save updated stacks to IndexedDB (async, doesn't block UI)
     if (currentActive) {
       saveUndoStackToIndexedDB(
         currentActive,
@@ -835,6 +831,7 @@ export async function performStateBasedRedo() {
     const transactionDiff = computeTransactionDiff(currentSnapshot, snap);
     transactionDiff.kind = 'redo';
 
+    // Use non-immediate save for better UI latency (persistence via debounce)
     await Deps.AppState.update(state => {
       if (snap.activeCycleId && snap.activeCycleId !== state.appState.activeCycleId) {
         state.appState.activeCycleId = snap.activeCycleId;
@@ -847,19 +844,14 @@ export async function performStateBasedRedo() {
       if ('autoReset' in snap) cycle.autoReset = snap.autoReset;
       if ('deleteCheckedTasks' in snap) cycle.deleteCheckedTasks = snap.deleteCheckedTasks;
       if ('cycleCount' in snap) cycle.cycleCount = snap.cycleCount;  // ✅ Restore cycle count
-    }, true);
-
-    await Promise.resolve();
+    }, false);
 
     // Use UIOrchestrator if available, otherwise fall back to refreshUIFromState
     handleUndoRedoUIUpdate(transactionDiff, Deps.AppState.get());
 
-    // Wait for next tick to ensure all rendering state updates complete
-    await new Promise(resolve => setTimeout(resolve, 0));
-
     updateUndoRedoButtons();
 
-    // ✅ Save updated stacks to IndexedDB
+    // ✅ Save updated stacks to IndexedDB (async, doesn't block UI)
     if (currentActive) {
       saveUndoStackToIndexedDB(
         currentActive,
