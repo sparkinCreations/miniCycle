@@ -188,13 +188,26 @@ export class DataValidator {
             throw new TypeError('Task recurring must be a boolean');
         }
 
-        // Validate dueDate (should be a number timestamp or null)
-        if ('dueDate' in task && task.dueDate !== null) {
-            const dueDate = Number(task.dueDate);
-            if (!Number.isFinite(dueDate)) {
-                throw new TypeError('Task dueDate must be a number timestamp or null');
+        // Validate dueDate (should be an ISO date string like "2024-12-31", or null/empty)
+        if ('dueDate' in task) {
+            if (task.dueDate === null || task.dueDate === '') {
+                task.dueDate = null;
+            } else if (typeof task.dueDate === 'string') {
+                // Validate ISO date format (YYYY-MM-DD) from HTML date inputs
+                const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+                if (!isoDatePattern.test(task.dueDate)) {
+                    throw new TypeError('Task dueDate must be an ISO date string (YYYY-MM-DD) or null');
+                }
+            } else if (typeof task.dueDate === 'number') {
+                // Accept legacy number timestamps - convert to ISO string
+                const date = new Date(task.dueDate);
+                if (isNaN(date.getTime())) {
+                    throw new TypeError('Task dueDate timestamp is invalid');
+                }
+                task.dueDate = date.toISOString().split('T')[0];
+            } else {
+                throw new TypeError('Task dueDate must be an ISO date string (YYYY-MM-DD), number timestamp, or null');
             }
-            task.dueDate = dueDate;
         }
 
         return task;

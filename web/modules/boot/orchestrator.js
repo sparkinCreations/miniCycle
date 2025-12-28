@@ -16,8 +16,9 @@ import { BOOT_TIMEOUTS } from '../core/constants.js';
 // Enable with: ?debug=true or localStorage.setItem('miniCycle_debug', 'true')
 installDebugFilter();
 
-// Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.568';
+// ✅ Single source of truth: Read version from globalThis (set by version.js)
+// Falls back to 'dev-local' for local development without version.js
+const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 
 // Retry configuration
 const MAX_BOOT_RETRIES = 1;
@@ -276,11 +277,66 @@ async function runBootSequence() {
 }
 
 /**
+ * Production guard: If version.js failed to load on production, trigger cache recovery
+ * This prevents running with mismatched cached modules
+ */
+async function checkProductionVersionGuard() {
+  const isProduction = location.hostname.includes('minicycle.app');
+  const versionMissing = APP_VERSION === 'dev-local';
+
+  if (isProduction && versionMissing) {
+    console.error('❌ version.js failed to load on production - triggering cache recovery');
+
+    const reloadAttempts = parseInt(sessionStorage.getItem('_versionGuardReload') || '0', 10);
+
+    if (reloadAttempts < 2) {
+      sessionStorage.setItem('_versionGuardReload', (reloadAttempts + 1).toString());
+
+      // Clear all service worker caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log('🗑️ Cleared', cacheNames.length, 'caches for version recovery');
+      }
+
+      // Unregister service worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+
+      // Reload with cache-bust
+      const url = new URL(window.location.href);
+      url.searchParams.set('_vg', Date.now().toString());
+      window.location.href = url.toString();
+      return true; // Indicates reload happening
+    }
+
+    // Exhausted retries - clear flag and continue with fallback
+    sessionStorage.removeItem('_versionGuardReload');
+    console.warn('⚠️ Version guard retries exhausted - continuing with dev-local fallback');
+  }
+
+  // Clean up successful reload
+  if (sessionStorage.getItem('_versionGuardReload')) {
+    sessionStorage.removeItem('_versionGuardReload');
+  }
+
+  return false; // No reload needed
+}
+
+/**
  * Main initialization with retry logic
  * - First failure: retry once
  * - Second failure: show error with lite version option
  */
 async function initApp() {
+  // Check production version guard first
+  const needsReload = await checkProductionVersionGuard();
+  if (needsReload) return;
+
   bootAttempt++;
   console.log(`🚀 Starting miniCycle initialization (attempt ${bootAttempt})...`);
 

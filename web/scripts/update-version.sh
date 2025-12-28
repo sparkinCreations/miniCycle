@@ -81,10 +81,9 @@ CORE_HTML_FILES=(
     "pages/product.html"
 )
 
+# Note: miniCycle-main.js, orchestrator.js, coreBoot.js now read from globalThis.APP_VERSION
+# They no longer need manual version updates - only version.js is the source of truth
 CORE_JS_FILES=(
-    "miniCycle-main.js"
-    "modules/boot/orchestrator.js"
-    "modules/boot/coreBoot.js"
     "lite/miniCycle-lite-scripts.js"
     "service-worker.js"
 )
@@ -504,40 +503,13 @@ if should_update "pages/product.html"; then
 fi
 
 # ============================================
-# UPDATE: miniCycle-main.js (entrypoint)
+# NOTE: These files now read from globalThis.APP_VERSION (set by version.js)
+# No manual version updates needed - they are single-source-of-truth compliant
 # ============================================
-
-if should_update "miniCycle-main.js"; then
-    if backup_file "miniCycle-main.js"; then
-        "${SED_INPLACE[@]}" "s/APP_VERSION = window.APP_VERSION || '[0-9.]*'/APP_VERSION = window.APP_VERSION || '$NEW_VERSION'/g" miniCycle-main.js
-        echo "✅ Updated miniCycle-main.js"
-    fi
-fi
-
-# ============================================
-# UPDATE: modules/boot/orchestrator.js
-# ============================================
-
-if should_update "modules/boot/orchestrator.js"; then
-    if backup_file "modules/boot/orchestrator.js"; then
-        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" modules/boot/orchestrator.js
-        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" modules/boot/orchestrator.js
-        "${SED_INPLACE[@]}" "s/currentVersion: '[0-9.]*'/currentVersion: '$NEW_VERSION'/g" modules/boot/orchestrator.js
-        "${SED_INPLACE[@]}" "s/const APP_VERSION = '[0-9.]*'/const APP_VERSION = '$NEW_VERSION'/g" modules/boot/orchestrator.js
-        echo "✅ Updated modules/boot/orchestrator.js"
-    fi
-fi
-
-# ============================================
-# UPDATE: modules/boot/coreBoot.js
-# ============================================
-
-if should_update "modules/boot/coreBoot.js"; then
-    if backup_file "modules/boot/coreBoot.js"; then
-        "${SED_INPLACE[@]}" "s/const APP_VERSION = '[0-9.]*'/const APP_VERSION = '$NEW_VERSION'/g" modules/boot/coreBoot.js
-        echo "✅ Updated modules/boot/coreBoot.js"
-    fi
-fi
+# - miniCycle-main.js          → reads globalThis.APP_VERSION
+# - modules/boot/orchestrator.js → reads globalThis.APP_VERSION
+# - modules/boot/coreBoot.js     → reads globalThis.APP_VERSION
+echo "ℹ️  Boot files read from version.js (no update needed)"
 
 # ============================================
 # UPDATE: lite/miniCycle-lite-scripts.js
@@ -1025,32 +997,37 @@ echo "✅ All done!"
 # 📦 MODULE VERSIONING (DI-PURE) - v4.0
 # ============================================
 #
-# Modules do NOT have hardcoded versions. The version flows via DI:
+# ============================================
+# VERSION FLOW (Single Source of Truth)
+# ============================================
+#
+# All version information flows from version.js:
 #
 #   version.js (this script generates it)
 #       ↓
-#   window.APP_VERSION (set by version.js)
+#   globalThis.APP_VERSION (set by version.js via self.APP_VERSION)
 #       ↓
-#   modules/boot/orchestrator.js builds: window.AppMeta = { version: window.APP_VERSION }
+#   Boot files read globalThis.APP_VERSION directly:
+#   - miniCycle-main.js
+#   - modules/boot/orchestrator.js
+#   - modules/boot/coreBoot.js
 #       ↓
-#   initModule({ AppMeta: window.AppMeta, ... })
+#   coreBoot.js creates AppMeta = { version: APP_VERSION }
 #       ↓
-#   this.version = mergedDeps.AppMeta?.version
-#       ↓
-#   const version = this.version || 'dev-local'
+#   Modules receive version via DI: deps.AppMeta.version
 #       ↓
 #   import(`./submodule.js?v=${version}`)
 #
 # Benefits:
-# • No hardcoded versions in 40+ module files
-# • Single source of truth (version.js)
-# • Modules are fully DI-pure (no window.* version access)
+# • TRUE single source of truth (version.js only)
+# • No hardcoded versions in boot files or modules
+# • Boot files use globalThis fallback to 'dev-local' for local dev
+# • Modules are fully DI-pure (no globalThis/window version access)
 # • Cache-busting via dynamic imports works automatically
 #
 # Notes:
 # • @version JSDoc tags removed from modules (version in URL)
 # • Modules use 'dev-local' fallback if AppMeta not provided
-# • AppMeta object is built in modules/boot/orchestrator.js, not version.js
 # • See docs/developer-guides/TASKDOM_DI_GUIDE.md for patterns
 #
 # ============================================

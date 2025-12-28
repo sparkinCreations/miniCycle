@@ -9,7 +9,6 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { sanitizeImportedData } from '../utils/dataSanitizer.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -229,8 +228,10 @@ async function processRestoreData(fileContent) {
         return;
     }
 
-    // Sanitize imported data
+    // Sanitize imported data (dynamic import to match settingsManager's versioned import)
     console.log('Sanitizing imported data...');
+    const version = _deps.AppMeta?.version || globalThis.APP_VERSION || 'dev-local';
+    const { sanitizeImportedData } = await import(`../utils/dataSanitizer.js?v=${version}`);
     sanitizeImportedData(backupData);
 
     // Create safety backup before restore

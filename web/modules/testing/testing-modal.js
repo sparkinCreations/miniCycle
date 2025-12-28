@@ -3208,11 +3208,11 @@ function testLocalStorage() {
 // Add this to your testing modal functions in miniCycle-scripts.js
 function showServiceWorkerInfo() {
     appendToTestResults("📡 Service Worker Information:\n");
-    
+
     getServiceWorkerInfo().then(info => {
         appendToTestResults(`- Supported: ${info.supported ? '✅' : '❌'}\n`);
         appendToTestResults(`- Registered: ${info.registered ? '✅' : '❌'}\n`);
-        
+
         if (info.registered) {
             appendToTestResults(`- Scope: ${info.scope}\n`);
             appendToTestResults(`- State: ${info.state}\n`);
@@ -3220,11 +3220,11 @@ function showServiceWorkerInfo() {
             appendToTestResults(`- Update Available: ${info.updateAvailable ? '✅ YES' : '❌ NO'}\n`);
             appendToTestResults(`- Script URL: ${info.scriptURL}\n`);
         }
-        
+
         if (info.error) {
             appendToTestResults(`- Error: ${info.error}\n`);
         }
-        
+
         appendToTestResults("\n");
         showNotification("📡 Service Worker info displayed", "info", 2000);
     });

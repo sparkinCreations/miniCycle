@@ -20,8 +20,9 @@
  * ============================================================================
  */
 
-// Version constant - auto-updated by update-version.sh
-const APP_VERSION = '1.568';
+// ✅ Single source of truth: Read version from globalThis (set by version.js)
+// Falls back to 'dev-local' for local development without version.js
+const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
 
 // ============================================================================
 // CRITICAL: Set boot flag IMMEDIATELY for HTML fallback detection
@@ -79,10 +80,18 @@ export async function initCoreBoot(deps) {
 
   console.log('✅ AppGlobalState loaded');
 
-  // ========== Clean up cache-clearing URL parameter ==========
+  // ========== Clean up cache-clearing URL parameters ==========
   const urlParams = new URLSearchParams(window.location.search);
+  let paramsModified = false;
   if (urlParams.has('_cc')) {
     urlParams.delete('_cc');
+    paramsModified = true;
+  }
+  if (urlParams.has('_vg')) {
+    urlParams.delete('_vg');
+    paramsModified = true;
+  }
+  if (paramsModified) {
     const cleanUrl = urlParams.toString()
       ? `${window.location.pathname}?${urlParams.toString()}`
       : window.location.pathname;
