@@ -719,7 +719,7 @@ export class TaskDOMManager {
         if (showThreeDots) {
             const threeDotsButton = document.createElement("button");
             threeDotsButton.classList.add("three-dots-btn");
-            threeDotsButton.innerHTML = "⋮";
+            threeDotsButton.textContent = "⋮";
             threeDotsButton.setAttribute("title", "Show task options");
             threeDotsButton.setAttribute("aria-label", "Show task options");
 
@@ -789,32 +789,32 @@ export class TaskDOMManager {
             },
             {
                 class: "priority-btn",
-                icon: "<i class='fas fa-exclamation-triangle'></i>",
+                iconClass: "fas fa-exclamation-triangle",
                 show: visibleOptions.highPriority ?? true
             },
             {
                 class: "edit-btn",
-                icon: "<i class='fas fa-edit'></i>",
+                iconClass: "fas fa-edit",
                 show: visibleOptions.rename ?? true
             },
             {
                 class: "delete-btn",
-                icon: "<i class='fas fa-trash'></i>",
+                iconClass: "fas fa-trash",
                 show: visibleOptions.delete ?? true
             },
             {
                 class: "recurring-btn",
-                icon: "<i class='fas fa-repeat'></i>",
+                iconClass: "fas fa-repeat",
                 show: visibleOptions.recurring ?? false
             },
             {
                 class: "set-due-date",
-                icon: "<i class='fas fa-calendar-alt'></i>",
+                iconClass: "fas fa-calendar-alt",
                 show: visibleOptions.dueDate ?? false
             },
             {
                 class: "enable-task-reminders",
-                icon: "<i class='fas fa-bell'></i>",
+                iconClass: "fas fa-bell",
                 show: visibleOptions.reminders ?? false,
                 toggle: true
             },
@@ -842,7 +842,7 @@ export class TaskDOMManager {
     createCustomizeButton() {
         const button = document.createElement("button");
         button.classList.add("task-btn", "customize-btn");
-        button.innerHTML = "-/+"; // Customize icon
+        button.textContent = "-/+"; // Customize icon
         button.setAttribute("type", "button");
         button.setAttribute("title", "Customize task options");
         button.setAttribute("tabindex", "0");
@@ -885,12 +885,23 @@ export class TaskDOMManager {
      * Create individual task button
      */
     createTaskButton(buttonConfig, taskContext, buttonContainer) {
-        const { class: btnClass, icon, toggle = false, show } = buttonConfig;
+        const { class: btnClass, icon, iconClass, toggle = false, show } = buttonConfig;
         const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority, deleteWhenComplete } = taskContext;
 
         const button = document.createElement("button");
         button.classList.add("task-btn", btnClass);
-        button.innerHTML = icon;
+
+        // Use createElement instead of innerHTML for performance (avoids HTML parsing)
+        if (iconClass) {
+            // FontAwesome icon - create <i> element
+            const iconEl = document.createElement("i");
+            iconClass.split(" ").forEach(cls => iconEl.classList.add(cls));
+            button.appendChild(iconEl);
+        } else if (icon) {
+            // Text icon (▲, ▼, ❌, etc.) - use textContent
+            button.textContent = icon;
+        }
+
         button.setAttribute("type", "button");
 
         // ✅ Move arrows: don't add .hidden class - CSS handles visibility via
@@ -1345,7 +1356,9 @@ export class TaskDOMManager {
         if (recurring) {
             const icon = document.createElement("span");
             icon.className = "recurring-indicator";
-            icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+            const iconEl = document.createElement("i");
+            iconEl.classList.add("fas", "fa-sync-alt");
+            icon.appendChild(iconEl);
             taskLabel.appendChild(icon);
         }
 
@@ -1417,7 +1430,9 @@ export class TaskDOMManager {
                     if (isNowRecurring && !existingIcon) {
                         const icon = document.createElement("span");
                         icon.className = "recurring-indicator";
-                        icon.innerHTML = `<i class="fas fa-sync-alt"></i>`;
+                        const iconEl = document.createElement("i");
+                        iconEl.classList.add("fas", "fa-sync-alt");
+                        icon.appendChild(iconEl);
                         taskLabel.appendChild(icon);
                         console.log('✅ Added recurring icon to task:', assignedTaskId);
                     } else if (!isNowRecurring && existingIcon) {
