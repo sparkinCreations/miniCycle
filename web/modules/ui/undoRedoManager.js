@@ -20,13 +20,18 @@ const UNDO_DB_WRITE_DEBOUNCE_MS = DEBOUNCE.UNDO_DB_WRITE;
 /**
  * Schedule a state save during idle time for durability without blocking input.
  * Uses requestIdleCallback with setTimeout fallback.
+ * Captures AppState reference upfront to avoid repeated proxy gets.
  */
 function scheduleIdleSave() {
+  // Capture reference now to avoid repeated di.resolve() proxy gets
+  const AppState = Deps.AppState;
+  if (!AppState?.isReady?.() || !AppState.forceSave) {
+    return; // Not ready or missing forceSave - skip silently
+  }
+
   const doSave = () => {
-    if (Deps.AppState?.forceSave) {
-      console.log('💾 Idle-time save after undo/redo');
-      Deps.AppState.forceSave();
-    }
+    console.log('💾 Idle-time save after undo/redo');
+    AppState.forceSave();
   };
 
   if (typeof requestIdleCallback === 'function') {

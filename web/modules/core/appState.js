@@ -193,6 +193,19 @@ class MiniCycleState {
             }
 
             this.isInitialized = true;
+
+            // ✅ Flush pending saves on page unload to prevent data loss
+            window.addEventListener('beforeunload', () => {
+                if (this.saveTimeout) {
+                    clearTimeout(this.saveTimeout);
+                    this.saveTimeout = null;
+                }
+                if (this.isDirty) {
+                    console.log('💾 beforeunload: Flushing pending state save');
+                    this.save();
+                }
+            });
+
             console.log('✅ State initialization completed');
             return this.data;
 
