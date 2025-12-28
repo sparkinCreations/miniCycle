@@ -431,7 +431,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -446,7 +446,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: false } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -479,7 +479,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -501,7 +501,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -523,7 +523,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: false } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -551,7 +551,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: true } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 
@@ -579,7 +579,7 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
             AppState: {
                 isReady: () => true,
                 get: () => ({ settings: { showCompletedDropdown: false } })
-            })
+            }
         }));
         const manager = new CompletedTasksManager();
 

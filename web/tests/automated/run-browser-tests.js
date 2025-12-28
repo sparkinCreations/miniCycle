@@ -187,9 +187,16 @@ async function runAllTests() {
     // Grant notification permissions for reminder tests
     await context.grantPermissions(['notifications'], { origin: 'http://localhost:8080' });
 
-    // Add init script to mock Notification API
+    // Add init script to mock Notification API and capture errors
     await context.addInitScript(() => {
         window.__MINICYCLE_TEST__ = true;
+        // Capture errors with full stack traces
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error(`[SYNTAX ERROR] ${message} at ${source}:${lineno}:${colno}`);
+            if (error && error.stack) {
+                console.error(`[STACK] ${error.stack}`);
+            }
+        };
         if (typeof Notification === 'undefined') {
             window.Notification = function (title, opts) { return { close() {} }; };
         }
@@ -202,14 +209,26 @@ async function runAllTests() {
     // Run tests for each module
     for (const module of modules) {
         const page = await context.newPage();
-        // Log console errors for debugging
+        // Log console messages for debugging
         page.on('console', msg => {
             if (msg.type() === 'error') {
                 console.log(`   ${colors.red}Console error: ${msg.text()}${colors.reset}`);
+                // Try to get location info from message
+                const location = msg.location();
+                if (location && location.url) {
+                    console.log(`   ${colors.red}  at ${location.url}:${location.lineNumber}:${location.columnNumber}${colors.reset}`);
+                }
             }
         });
         page.on('pageerror', error => {
             console.log(`   ${colors.red}Page error: ${error.message}${colors.reset}`);
+            // Log full error details including file/line info
+            console.log(`   ${colors.red}Full error: ${error.toString()}${colors.reset}`);
+            console.log(`   ${colors.red}Error name: ${error.name}${colors.reset}`);
+        });
+        // Log network request failures
+        page.on('requestfailed', request => {
+            console.log(`   ${colors.yellow}Request failed: ${request.url()} - ${request.failure()?.errorText}${colors.reset}`);
         });
         // Disable cache for this page to ensure fresh module loads
         await page.route('**/*', async (route) => {
