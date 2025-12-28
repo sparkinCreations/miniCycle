@@ -22,6 +22,7 @@ const di = createDIModule('RecurringWatcher', {
     refreshUIFromState: optional(null),
     now: optional(null),
     setInterval: optional(null),
+    clearInterval: optional(null),
     isEnabled: optional(null),
     // Functions from sibling modules (injected to avoid circular imports)
     calculateNextOccurrence: optional(null),
@@ -58,6 +59,59 @@ function assertInjected(name, value) {
 // ============================================================================
 
 let _recurringWatcherInitialized = false;
+let _watcherIntervalId = null;
+let _currentIntervalMs = null;
+
+// ============================================================================
+// INTERVAL MANAGEMENT
+// ============================================================================
+
+/**
+ * Switch the watcher interval (active 30s vs idle 2h)
+ * @param {boolean} hasTemplates - Whether recurring templates exist
+ */
+function switchInterval(hasTemplates) {
+    const targetInterval = hasTemplates
+        ? INTERVALS.RECURRING_WATCHER
+        : INTERVALS.RECURRING_WATCHER_IDLE;
+
+    // Skip if already at the target interval
+    if (_currentIntervalMs === targetInterval) {
+        return;
+    }
+
+    // Clear existing interval
+    if (_watcherIntervalId !== null && Deps.clearInterval) {
+        Deps.clearInterval(_watcherIntervalId);
+        _watcherIntervalId = null;
+    }
+
+    // Start new interval
+    if (Deps.setInterval) {
+        _watcherIntervalId = Deps.setInterval(() => watchRecurringTasks(), targetInterval);
+        _currentIntervalMs = targetInterval;
+
+        const intervalDesc = hasTemplates ? '30 seconds (active)' : '2 hours (idle)';
+        console.log(`⏱️ Recurring watcher interval: ${intervalDesc}`);
+    }
+}
+
+/**
+ * Restart the watcher at active interval (30s)
+ * Call this when a recurring template is created
+ */
+export function restartRecurringWatcher() {
+    if (!_recurringWatcherInitialized) {
+        console.log('🔄 Watcher not initialized yet, will start on setup');
+        return;
+    }
+
+    console.log('🔄 Restarting recurring watcher at active interval...');
+    switchInterval(true);
+
+    // Run an immediate check
+    watchRecurringTasks();
+}
 
 // ============================================================================
 // CATCH-UP LOGIC
@@ -145,6 +199,16 @@ export async function catchUpMissedRecurringTasks() {
         console.log(`  🎯 MISSED OCCURRENCE DETECTED!`);
         console.log(`  ⏰ Catching up missed task: ${template.text}`);
 
+        // RECREATION SAFETY POLICY:
+        // Template stores user's deleteWhenComplete preference (may be false for persistent tasks).
+        // However, when recreating a missing task, we force deleteWhenComplete=true on the INSTANCE
+        // to ensure the recreated task gets cleaned up on completion, preventing duplicate accumulation.
+        // The template's stored preference is NOT mutated - only the recreated instance is overridden.
+        const templateDeleteWhenComplete = template.deleteWhenComplete ?? true;
+        if (templateDeleteWhenComplete === false) {
+            console.debug(`  ⚠️ Template "${template.text}" has deleteWhenComplete=false but task was missing; recreated instance forced to true`);
+        }
+
         tasksToAdd.push({
             text: template.text,
             completed: false,
@@ -154,7 +218,7 @@ export async function catchUpMissedRecurringTasks() {
             recurring: true,
             id: template.id,
             recurringSettings: template.recurringSettings,
-            deleteWhenComplete: template.deleteWhenComplete || true,
+            deleteWhenComplete: true, // Always true for recreated instances (safety override)
             deleteWhenCompleteSettings: template.deleteWhenCompleteSettings || { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
@@ -264,9 +328,13 @@ export async function watchRecurringTasks() {
 
     const templates = cycleData.recurringTemplates || {};
     const taskList = cycleData.tasks || [];
+    const hasTemplates = Object.keys(templates).length > 0;
 
-    if (!Object.keys(templates).length) {
-        console.log('📋 No recurring templates found');
+    // Dynamic interval: slow down when no templates, speed up when templates exist
+    switchInterval(hasTemplates);
+
+    if (!hasTemplates) {
+        console.log('📋 No recurring templates found - watcher idle');
         return;
     }
 
@@ -292,6 +360,13 @@ export async function watchRecurringTasks() {
 
         console.log("⏱ Auto-recreating recurring task:", template.text);
 
+        // RECREATION SAFETY POLICY: (see catchUpMissedRecurringTasks for full explanation)
+        // Force deleteWhenComplete=true on recreated instances to prevent duplicate accumulation.
+        const templateDeleteWhenComplete = template.deleteWhenComplete ?? true;
+        if (templateDeleteWhenComplete === false) {
+            console.debug(`⚠️ Template "${template.text}" has deleteWhenComplete=false; recreated instance forced to true`);
+        }
+
         tasksToAdd.push({
             text: template.text,
             completed: false,
@@ -301,7 +376,7 @@ export async function watchRecurringTasks() {
             recurring: true,
             id: template.id,
             recurringSettings: template.recurringSettings,
-            deleteWhenComplete: template.deleteWhenComplete || true,
+            deleteWhenComplete: true, // Always true for recreated instances (safety override)
             deleteWhenCompleteSettings: template.deleteWhenCompleteSettings || { ...DEFAULT_RECURRING_DELETE_SETTINGS }
         });
 
@@ -401,21 +476,20 @@ export async function setupRecurringWatcher() {
     }
 
     const recurringTemplates = cycleData.recurringTemplates || {};
+    const hasTemplates = Object.keys(recurringTemplates).length > 0;
 
-    if (!Object.keys(recurringTemplates).length) {
-        console.log('📋 No recurring templates to watch');
-        return;
+    if (hasTemplates) {
+        console.log('🔄 Setting up recurring task watcher with', Object.keys(recurringTemplates).length, 'templates');
+        // Initial check only if templates exist
+        await catchUpMissedRecurringTasks();
+        await watchRecurringTasks();
+    } else {
+        console.log('📋 No recurring templates - watcher starting in idle mode');
     }
 
-    console.log('🔄 Setting up recurring task watcher with', Object.keys(recurringTemplates).length, 'templates');
-
-    // Initial check
-    await catchUpMissedRecurringTasks();
-    await watchRecurringTasks();
-
-    // Setup interval
+    // Setup interval (active or idle based on template count)
     assertInjected('setInterval', Deps.setInterval);
-    Deps.setInterval(() => watchRecurringTasks(), INTERVALS.RECURRING_WATCHER);
+    switchInterval(hasTemplates);
 
     // Re-check when tab becomes visible
     document.addEventListener("visibilitychange", async () => {
@@ -441,7 +515,12 @@ export function isWatcherInitialized() {
  * Reset watcher state (for testing)
  */
 export function resetWatcherState() {
+    if (_watcherIntervalId !== null && Deps.clearInterval) {
+        Deps.clearInterval(_watcherIntervalId);
+    }
     _recurringWatcherInitialized = false;
+    _watcherIntervalId = null;
+    _currentIntervalMs = null;
 }
 
 console.log('👁️ RecurringWatcher module loaded');

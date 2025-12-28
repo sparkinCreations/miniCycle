@@ -111,8 +111,9 @@ export const DEBOUNCE = Object.freeze({
  * @constant {Object}
  */
 export const INTERVALS = Object.freeze({
-    RECURRING_WATCHER: 30000,      // 30s - Recurring task watcher check interval
-    STATS_CACHE_TTL: 5000          // 5s - Task stats cache time-to-live
+    RECURRING_WATCHER: 30000,           // 30s - Recurring task watcher check interval (active)
+    RECURRING_WATCHER_IDLE: 7200000,    // 2h - Recurring watcher interval when no templates exist
+    STATS_CACHE_TTL: 5000               // 5s - Task stats cache time-to-live
 });
 
 // ============================================================================
