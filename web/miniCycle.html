@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.568">
+<meta name="app-version" content="1.569">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -38,7 +38,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.568">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.569">
 <link rel="manifest" href="manifest.json">
 
 
@@ -94,7 +94,7 @@
 
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.568"></script>
+<script src="./version.js?v=1.569"></script>
 
 <script>
 
@@ -172,11 +172,11 @@ if ('serviceWorker' in navigator) {
 
   // ✅ SW version - increment this when you update the service worker
   const SW_VERSION = '1344';
-  const CURRENT_CACHE_VERSION = 'v361'; // Must match service-worker.js
+  const CURRENT_CACHE_VERSION = 'v362'; // Must match service-worker.js
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.568${SW_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.569${SW_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -263,7 +263,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.568')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.569')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -1861,7 +1861,7 @@ Feedback
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.568"></script>
+ <script type="module" src="miniCycle-main.js?v=1.569"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1900,7 +1900,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.568"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.569"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {
