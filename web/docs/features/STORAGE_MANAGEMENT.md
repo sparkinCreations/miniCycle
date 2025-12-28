@@ -204,7 +204,15 @@ while (testSize < maxTest) {
 // testSize now indicates approximate quota
 ```
 
-This result is cached to avoid repeated expensive operations.
+**Important notes about quota detection:**
+
+- **Cached result** - Detection only runs once per session; the result is cached to avoid repeated expensive operations
+- **Test key cleanup** - The test key (`__storage_quota_test__`) is always removed after detection, even if an error occurs
+- **Private browsing** - Safari and other browsers may have reduced quotas (sometimes as low as 0) in private/incognito mode
+- **Safari quirks** - Safari's localStorage can behave differently, especially regarding quota limits and error handling
+- **First-run cost** - The detection involves writing progressively larger values, which can be slow (~100-500ms) on first page load
+
+If quota detection fails for any reason, miniCycle falls back to a conservative 5MB default.
 
 ## Constants
 
