@@ -2,15 +2,14 @@
 
 ## Supported Versions
 
-We actively support the following versions with security updates:
+We support the **latest release only**. Security fixes are applied to the current version - we do not backport to older releases.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.352+  | :white_check_mark: |
-| 1.330-1.351 | :white_check_mark: |
-| < 1.330 | :x: |
+| Latest  | :white_check_mark: |
+| Older   | :x: |
 
-**Recommendation:** Always use the latest version for best security and features.
+**Recommendation:** Always update to the latest version for security fixes and features.
 
 ---
 
@@ -24,9 +23,8 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 Instead:
 
-1. **Email:** security@minicycle.app (if available)
-2. **GitHub Security:** Use [GitHub Security Advisories](https://github.com/[your-repo]/security/advisories/new)
-3. **Direct Message:** Contact maintainers privately
+1. **Email:** security@sparkincreations.com
+2. **Direct Message:** Contact maintainers privately via GitHub
 
 ### What to Include
 
@@ -67,19 +65,21 @@ miniCycle uses **client-side only** storage:
 - Isolated per-origin
 - **Risk:** Physical device access
 
-**No Server Communication:**
-- ✅ No API calls
-- ✅ No analytics
-- ✅ No telemetry
-- ✅ No third-party scripts
+**Minimal Network Communication:**
+- ✅ No analytics or telemetry
+- ✅ No third-party scripts loaded
+- ⚠️ **Exception:** Feedback form uses [Web3Forms API](https://web3forms.com) to send user-submitted feedback
+  - Only triggered when user explicitly submits the feedback form
+  - Sends: user email (optional), message text, timestamp
+  - No automatic data collection
 
 ### Data Privacy
 
-**What We Collect:** Nothing.
-**What We Store:** Everything locally.
-**What We Send:** Nothing.
+**Automatic Collection:** None. No tracking, analytics, or telemetry.
+**Data Storage:** All routine/task data stored locally in browser (localStorage/IndexedDB).
+**Network Transmission:** Only via explicit user action (feedback form submission).
 
-miniCycle is 100% offline-capable and privacy-respecting.
+miniCycle is fully offline-capable. Network access is only used for the optional feedback feature.
 
 ---
 
@@ -139,39 +139,36 @@ miniCycle is 100% offline-capable and privacy-respecting.
    - Use reputable browser (Chrome, Firefox, Safari)
 
 4. **Network Security**
-   - miniCycle doesn't require internet (works offline)
-   - No data transmitted over network
+   - miniCycle works fully offline
+   - Only network use: optional feedback form (user-initiated)
    - Safe to use on public Wi-Fi
 
 ### Import/Export Security
 
-**Import Validation (v1.353+):**
+**Cycle Import (.mcyc files) - `modules/ui/cycleImportManager.js`:**
 
-When importing `.mcyc` files, miniCycle performs validation:
+When importing `.mcyc` cycle files:
 
-```javascript
-// File size limit
-maxSize: 10MB  // Prevents memory issues
+| Check | Implementation |
+|-------|----------------|
+| File size | 10MB limit via `MAX_FILE_SIZE_BYTES` |
+| Task count | 250 max via `MAX_TASK_COUNT` |
+| Task text | Sanitized via `fallbackSanitize()` (100 chars default) |
+| Cycle name | Sanitized via `fallbackSanitize()` (100 chars) |
+| Recurring templates | Generated from sanitized task text, not imported directly |
+| JSON parsing | Standard `JSON.parse()` with try-catch |
 
-// Content sanitization
-sanitizeImportedData() {
-  - Sanitizes all task text
-  - Sanitizes cycle names
-  - Sanitizes recurring template text
-  - Prevents XSS via malicious imports
-}
+**Backup Restore (full app data) - `modules/testing/testing-modal.js`:**
 
-// Schema validation
-- Checks for valid schemaVersion
-- Validates data structure
-- Safe JSON parsing
-```
+When restoring full backups (via Developer Tools):
+- Uses `safeJSONParse()` for protected parsing
+- Validates schema structure before applying
+- User must explicitly confirm restore action
 
 **Security checks on import:**
-- ✅ File size limited to 10MB
+- ✅ File size limited (10MB for cycles)
 - ✅ All user content sanitized for XSS
-- ✅ Schema version validated
-- ✅ JSON parsing protected with safeJSONParse
+- ✅ Task/name length limits enforced
 - ✅ Invalid files rejected with error message
 
 ### When Sharing Data
@@ -284,6 +281,32 @@ miniCycle **never** uses:
 - `innerHTML` with unsanitized content
 
 All code is statically analyzable and safe.
+
+### Developer Security Rules
+
+When contributing to miniCycle, follow these security practices:
+
+**DOM Manipulation:**
+- Always use `textContent` for user-provided text (auto-escapes HTML)
+- Never use `innerHTML` with unsanitized user input
+- Sanitize values before using in class names or attributes: `value.replace(/[^a-zA-Z0-9-_]/g, '')`
+
+**Data Handling:**
+- Use `safeJSONParse()` and `safeJSONStringify()` for JSON operations
+- Use `safeLocalStorageGet/Set/Remove()` for storage operations
+- Validate imported data before using (check types, lengths, structure)
+
+**External Data:**
+- All imported .mcyc file content must be sanitized via `fallbackSanitize()` or `DataValidator`
+- Never trust imported data - treat as untrusted input
+- Apply length limits to prevent DoS (10MB file, 250 tasks, 500 char text)
+
+**CSP Compliance:**
+- Don't add external script sources without updating CSP
+- Don't use `eval()`, `Function()`, or string-based `setTimeout/setInterval`
+- Keep inline scripts minimal (currently needed for feature detection only)
+
+See [SECURITY_GUIDE.md](../developer-guides/SECURITY_GUIDE.md) for detailed patterns and examples.
 
 ### Error Handling & Resilience
 
@@ -547,7 +570,7 @@ If self-hosting or modifying miniCycle:
 1. Open miniCycle
 2. Menu → Settings → About
 3. Version shown at bottom
-4. Compare with [latest release](https://github.com/[your-repo]/releases)
+4. Compare with latest version at [minicycleapp.com](https://minicycleapp.com)
 
 ---
 
