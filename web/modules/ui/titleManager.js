@@ -8,6 +8,8 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { LIMITS } from '../core/constants.js';
+import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -19,7 +21,11 @@ const di = createDIModule('TitleManager', {
     loadMiniCycleData: optional(null),
     showNotification: optional(null),
     updateMainMenuHeader: optional(null),
-    updateUndoRedoButtons: optional(null)
+    updateUndoRedoButtons: optional(null),
+    // Undo integration
+    captureStateSnapshot: optional(null),
+    enableUndoSystemOnFirstInteraction: optional(null),
+    onCycleRenamed: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -37,83 +43,16 @@ export function setTitleManagerDependencies(injected) {
     di.setDependencies(injected);
 }
 
-/**
- * Handle blur event on miniCycle title element.
- * Validates and saves the new title, or reverts if empty.
- */
-async function handleMiniCycleTitleBlur() {
-    const titleElement = document.getElementById("mini-cycle-title");
-    if (!titleElement) return;
+// ============================================================================
+// MODULE STATE
+// ============================================================================
 
-    const AppState = deps.AppState;
-    const loadMiniCycleData = deps.loadMiniCycleData;
-    const showNotification = deps.showNotification;
-    const GlobalUtils = deps.GlobalUtils;
-
-    let newTitle = GlobalUtils?.sanitizeInput?.(titleElement.textContent.trim()) || titleElement.textContent.trim();
-
-    if (newTitle === "") {
-        console.log('Empty title detected, reverting (Schema 2.5 only)...');
-
-        const schemaData = loadMiniCycleData?.();
-        if (!schemaData) {
-            console.error('Schema 2.5 data required for title revert');
-            return;
-        }
-
-        const { cycles, activeCycle } = schemaData;
-        const oldTitle = cycles[activeCycle]?.title || "Untitled miniCycle";
-
-        showNotification?.("Title cannot be empty. Reverting to previous title.");
-        titleElement.textContent = oldTitle;
-        return;
-    }
-
-    console.log('Updating title (Schema 2.5 only)...');
-    const schemaData = loadMiniCycleData?.();
-    if (!schemaData) {
-        console.error('Schema 2.5 data required for setupMiniCycleTitleListener');
-        return;
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const miniCycleData = cycles[activeCycle];
-    if (!activeCycle || !miniCycleData) {
-        console.warn("No active miniCycle found. Title update aborted.");
-        return;
-    }
-
-    const oldTitle = miniCycleData.title;
-    if (newTitle !== oldTitle) {
-        console.log(`Title change detected: "${oldTitle}" → "${newTitle}"`);
-
-        // Update via AppState only (no direct localStorage fallback)
-        if (AppState?.isReady?.()) {
-            await AppState.update(state => {
-                const cid = state?.appState?.activeCycleId;
-                const cycle = state?.data?.cycles?.[cid];
-                if (cycle) cycle.title = newTitle;
-            }, false); // deferred save - don't block UI
-
-            // ✅ Schedule idle-time save for durability
-            scheduleIdleSave();
-        } else {
-            // AppState should always be ready by this point
-            console.error('Title update failed: AppState not ready');
-            showNotification?.('Failed to save title change', 'error');
-            titleElement.textContent = oldTitle; // Revert UI
-            return;
-        }
-
-        // Refresh UI
-        deps.updateMainMenuHeader?.();
-        deps.updateUndoRedoButtons?.();
-    }
-}
-
-// ✅ FIX: Module-level flag for idempotency
 let _titleListenerInitialized = false;
 let _idleSaveScheduled = false;
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 
 /**
  * Schedule an idle-time save for durability without blocking UI
@@ -143,12 +82,142 @@ function scheduleIdleSave() {
     }
 }
 
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
+
+/**
+ * Handle blur event on miniCycle title element.
+ * Validates and saves the new title, updating storage key to match.
+ */
+async function handleMiniCycleTitleBlur() {
+    const titleElement = document.getElementById("mini-cycle-title");
+    if (!titleElement) return;
+
+    const AppState = deps.AppState;
+    const loadMiniCycleData = deps.loadMiniCycleData;
+    const showNotification = deps.showNotification;
+    const GlobalUtils = deps.GlobalUtils;
+
+    // ✅ FIX #1: Load data once at the start
+    const schemaData = loadMiniCycleData?.();
+    if (!schemaData) {
+        console.error('Schema 2.5 data required for title update');
+        return;
+    }
+
+    const { cycles, activeCycle } = schemaData;
+    const miniCycleData = cycles[activeCycle];
+
+    if (!activeCycle || !miniCycleData) {
+        console.warn("No active miniCycle found. Title update aborted.");
+        return;
+    }
+
+    const oldTitle = miniCycleData.title || activeCycle;
+    let newTitle = GlobalUtils?.sanitizeInput?.(titleElement.textContent.trim()) || titleElement.textContent.trim();
+
+    // Handle empty title - revert
+    if (newTitle === "") {
+        console.log('Empty title detected, reverting...');
+        showNotification?.("Title cannot be empty. Reverting to previous title.");
+        titleElement.textContent = oldTitle;
+        return;
+    }
+
+    // ✅ FIX #2: Enforce character limit
+    const maxLength = LIMITS.CYCLE_NAME_CHARACTER || 100;
+    if (newTitle.length > maxLength) {
+        console.log(`Title exceeds ${maxLength} chars, truncating...`);
+        newTitle = newTitle.substring(0, maxLength);
+        titleElement.textContent = newTitle;
+        showNotification?.(`Title truncated to ${maxLength} characters.`, "warning", 2000);
+    }
+
+    // No change - exit early
+    if (newTitle === oldTitle) {
+        console.log('Title unchanged');
+        return;
+    }
+
+    console.log(`Title change detected: "${oldTitle}" → "${newTitle}"`);
+
+    // Check AppState readiness
+    if (!AppState?.isReady?.()) {
+        console.error('Title update failed: AppState not ready');
+        showNotification?.('Failed to save title change', 'error');
+        titleElement.textContent = oldTitle;
+        return;
+    }
+
+    // ✅ Get unique name (auto-increment if duplicate)
+    const currentState = AppState.get();
+    const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, currentState?.data?.cycles || {});
+
+    if (wasModified) {
+        console.log(`⚠️ Name collision: "${newTitle}" → "${finalTitle}"`);
+        showNotification?.(`Name already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+        titleElement.textContent = finalTitle; // Update UI to show final name
+    }
+
+    // ✅ Enable undo system and capture snapshot BEFORE change
+    deps.enableUndoSystemOnFirstInteraction?.();
+    deps.captureStateSnapshot?.(currentState);
+
+    // ✅ Update storage key to match new title (like routineSwitcher does)
+    await AppState.update(state => {
+        const oldKey = state.appState.activeCycleId;
+        const cycle = state.data.cycles[oldKey];
+
+        if (!cycle) {
+            console.error('Cycle not found for title update');
+            return;
+        }
+
+        // Create new entry with new title as key
+        const updatedCycle = { ...cycle, title: finalTitle };
+        state.data.cycles[finalTitle] = updatedCycle;
+
+        // Remove old entry (if key changed)
+        if (finalTitle !== oldKey) {
+            delete state.data.cycles[oldKey];
+            state.appState.activeCycleId = finalTitle;
+            console.log(`Storage key updated: "${oldKey}" → "${finalTitle}"`);
+        }
+
+        state.metadata.lastModified = Date.now();
+    }, false); // deferred save - don't block UI
+
+    // ✅ Schedule idle-time save for durability
+    scheduleIdleSave();
+
+    // ✅ Notify undo system of rename (if key changed)
+    if (finalTitle !== activeCycle && typeof deps.onCycleRenamed === 'function') {
+        deps.onCycleRenamed(activeCycle, finalTitle).catch(err => {
+            console.warn('⚠️ Undo system rename notification failed:', err);
+        });
+    }
+
+    // Refresh UI
+    deps.updateMainMenuHeader?.();
+    deps.updateUndoRedoButtons?.();
+
+    console.log(`✅ Title updated: "${oldTitle}" → "${finalTitle}"`);
+    if (!wasModified) {
+        showNotification?.(`Renamed to "${finalTitle}"`, "success", 1500);
+    }
+}
+
+// ============================================================================
+// SETUP
+// ============================================================================
+
 /**
  * Set up the miniCycle title listener for inline editing.
  * Makes the title element contentEditable and attaches blur handler.
  */
 export function setupMiniCycleTitleListener() {
-    // ✅ FIX: Idempotency guard to prevent duplicate listeners
+    // Idempotency guard to prevent duplicate listeners
     if (_titleListenerInitialized) {
         console.log('✅ Title listener already set up');
         return;
@@ -176,25 +245,24 @@ export function setupMiniCycleTitleListener() {
  * @returns {Object} Module exports for registration
  */
 export function initTitleManager(dependencies = {}) {
-    // Pass dependencies directly (no adapter needed with new pattern)
     const adaptedDeps = {
         GlobalUtils: dependencies.GlobalUtils,
         AppState: dependencies.AppState,
         loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
         updateMainMenuHeader: dependencies.updateMainMenuHeader,
-        updateUndoRedoButtons: dependencies.updateUndoRedoButtons
+        updateUndoRedoButtons: dependencies.updateUndoRedoButtons,
+        // Undo integration
+        captureStateSnapshot: dependencies.captureStateSnapshot,
+        enableUndoSystemOnFirstInteraction: dependencies.enableUndoSystemOnFirstInteraction,
+        onCycleRenamed: dependencies.onCycleRenamed
     };
 
-    // Set dependencies
     setTitleManagerDependencies(adaptedDeps);
-
-    // Setup the title listener for inline editing
     setupMiniCycleTitleListener();
 
     console.log('✅ TitleManager initialized via initTitleManager');
 
-    // Return exports for registration
     return {
         setupMiniCycleTitleListener,
         handleMiniCycleTitleBlur

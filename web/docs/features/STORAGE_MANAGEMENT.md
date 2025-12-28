@@ -67,16 +67,18 @@ Located in the "Switch miniCycle" modal, the storage bar shows:
 
 **Status Thresholds:**
 
-| Usage | Status | Color |
-|-------|--------|-------|
-| 0-49% | Normal | Green |
-| 50-74% | Caution | Yellow |
-| 75-89% | Warning | Orange |
-| 90%+ | Critical | Red |
+| Usage | Status | Color | Notification |
+|-------|--------|-------|--------------|
+| 0-49% | Normal | Green | None |
+| 50-74% | Caution | Yellow | None |
+| 75-89% | Warning | Orange | One-time toast |
+| 90%+ | Critical | Red | None (bar is visible) |
+
+**One-time 75% Warning:** When storage first exceeds 75%, a toast notification appears: *"Storage is getting tight. Export old routines to free up space."* This only shows once per session to avoid notification fatigue.
 
 ### Routine Sizes
 
-Each routine in the switch modal displays its size (e.g., "45.2 KB"). This helps users identify which routines are consuming the most space.
+Each routine in the switch modal displays its estimated size (e.g., "~45.2 KB"). The "~" prefix indicates these are estimates based on JSON serialization. This helps users identify which routines are consuming the most space.
 
 ### Help Window
 
@@ -166,13 +168,16 @@ Core functions for storage management:
 | Function | Purpose |
 |----------|---------|
 | `getLocalStorageUsedBytes()` | Calculate total bytes used |
-| `getLocalStorageQuota()` | Detect browser's quota (cached) |
+| `getLocalStorageQuota()` | Return cached quota or 5MB default |
+| `detectStorageQuota()` | Detect actual quota (called on-demand) |
 | `getStorageInfo()` | Get usage, available, percentage, status |
 | `formatBytes()` | Human-readable size (e.g., "2.5 MB") |
 | `getObjectSizeBytes()` | Calculate object size when stringified |
 | `canAddToStorage()` | Check if additional bytes would fit |
 | `estimateTaskSize()` | Estimate bytes for a new task |
 | `getStorageShortageMessage()` | User-friendly shortage message |
+| `checkStorageWarning()` | Show one-time 75% warning toast |
+| `updateStorageBarUI()` | Update storage bar with lazy detection |
 
 ### Size Calculations
 
@@ -193,10 +198,16 @@ return baseOverhead + textBytes;
 
 ### Quota Detection
 
-Browser quotas vary (typically 5-10MB). miniCycle detects the actual quota on first access by attempting to write increasingly large test values:
+Browser quotas vary (typically 5-10MB). miniCycle uses **lazy quota detection** to avoid blocking app boot:
+
+**How it works:**
+
+1. On boot, miniCycle uses a conservative 5MB default
+2. When the user opens the "Switch miniCycle" modal, actual quota detection runs
+3. The detected quota is cached for the rest of the session
 
 ```javascript
-// Write test data until QuotaExceededError
+// detectStorageQuota() - called when storage bar is shown
 while (testSize < maxTest) {
     testSize += 100; // 100KB increments
     localStorage.setItem(testKey, testChunk.repeat(testSize));
@@ -206,11 +217,12 @@ while (testSize < maxTest) {
 
 **Important notes about quota detection:**
 
-- **Cached result** - Detection only runs once per session; the result is cached to avoid repeated expensive operations
+- **Lazy loading** - Detection only runs when the storage modal is opened, not on boot
+- **Cached result** - Once detected, the result is cached to avoid repeated expensive operations
 - **Test key cleanup** - The test key (`__storage_quota_test__`) is always removed after detection, even if an error occurs
 - **Private browsing** - Safari and other browsers may have reduced quotas (sometimes as low as 0) in private/incognito mode
 - **Safari quirks** - Safari's localStorage can behave differently, especially regarding quota limits and error handling
-- **First-run cost** - The detection involves writing progressively larger values, which can be slow (~100-500ms) on first page load
+- **Detection cost** - The detection involves writing progressively larger values, which takes ~100-500ms when triggered
 
 If quota detection fails for any reason, miniCycle falls back to a conservative 5MB default.
 

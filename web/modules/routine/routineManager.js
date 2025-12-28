@@ -14,6 +14,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
+import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // Estimated size for a new empty cycle (structure overhead)
 const ESTIMATED_NEW_CYCLE_SIZE = 800; // ~400 chars * 2 bytes
@@ -165,11 +166,20 @@ export class RoutineManager {
                         return;
                     }
 
-                    // ✅ Create cycle via AppState.update()
+                    // ✅ Get unique name (uses centralized utility)
+                    const existingCycles = appState.get()?.data?.cycles || {};
+                    const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
+
+                    if (wasModified) {
+                        console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
+                        this.deps.showNotification(`Name already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+                    }
+
+                    // ✅ Create cycle via AppState.update() - use title as key
                     await appState.update(state => {
-                        state.data.cycles[cycleId] = {
+                        state.data.cycles[finalTitle] = {
                             id: cycleId,
-                            title: newCycleName,
+                            title: finalTitle,
                             tasks: [],
                             autoReset: true,
                             deleteCheckedTasks: false,
@@ -186,7 +196,7 @@ export class RoutineManager {
                             }
                         };
 
-                        state.appState.activeCycleId = cycleId;
+                        state.appState.activeCycleId = finalTitle;
                         state.metadata.lastModified = Date.now();
                         state.metadata.totalCyclesCreated++;
                     }, true); // immediate save
@@ -194,7 +204,7 @@ export class RoutineManager {
                     console.log('💾 New cycle saved via AppState');
 
                     // ✅ Complete the setup after user interaction
-                    this.deps.completeInitialSetup(cycleId, appState.get());
+                    this.deps.completeInitialSetup(finalTitle, appState.get());
                 }
             });
         }, 500);
@@ -234,13 +244,19 @@ export class RoutineManager {
             }
 
             const cycleId = `cycle_${Date.now()}`;
-            console.log('🔄 Creating sample cycle with ID:', cycleId);
+            const sampleTitle = sample.title || sample.name || "Getting Started";
 
-            // ✅ Create sample cycle via AppState.update()
+            // ✅ Get unique name (uses centralized utility)
+            const existingCycles = appState.get()?.data?.cycles || {};
+            const { name: finalTitle, wasModified } = getUniqueCycleName(sampleTitle, existingCycles);
+
+            console.log('🔄 Creating sample cycle:', finalTitle);
+
+            // ✅ Create sample cycle via AppState.update() - use title as key
             await appState.update(state => {
-                state.data.cycles[cycleId] = {
+                state.data.cycles[finalTitle] = {
                     id: cycleId,
-                    title: sample.title || sample.name || "Getting Started",
+                    title: finalTitle,
                     tasks: sample.tasks || [],
                     autoReset: sample.autoReset !== false, // Default to true if not specified
                     cycleCount: sample.cycleCount || 0,
@@ -257,7 +273,7 @@ export class RoutineManager {
                     }
                 };
 
-                state.appState.activeCycleId = cycleId;
+                state.appState.activeCycleId = finalTitle;
                 state.metadata.lastModified = Date.now();
                 state.metadata.totalCyclesCreated++;
             }, true); // immediate save
@@ -272,7 +288,7 @@ export class RoutineManager {
             this.deps.showNotification("✨ A sample miniCycle has been preloaded to help you get started!", "success", 5000);
 
             // ✅ COMPLETE SETUP AFTER LOADING SAMPLE
-            this.deps.completeInitialSetup(cycleId, appState.get());
+            this.deps.completeInitialSetup(finalTitle, appState.get());
 
         } catch (err) {
             console.error('❌ Failed to load sample miniCycle:', err);
@@ -309,12 +325,17 @@ export class RoutineManager {
         }
 
         const cycleId = `cycle_${Date.now()}`;
+        const fallbackTitle = "Getting Started";
 
-        // ✅ Create fallback cycle via AppState.update()
+        // ✅ Get unique name (uses centralized utility)
+        const existingCycles = appState.get()?.data?.cycles || {};
+        const { name: finalTitle } = getUniqueCycleName(fallbackTitle, existingCycles);
+
+        // ✅ Create fallback cycle via AppState.update() - use title as key
         await appState.update(state => {
-            state.data.cycles[cycleId] = {
+            state.data.cycles[finalTitle] = {
                 id: cycleId,
-                title: "Getting Started",
+                title: finalTitle,
                 tasks: [
                     {
                         id: "task-welcome",
@@ -336,13 +357,13 @@ export class RoutineManager {
                 recurringTemplates: {}
             };
 
-            state.appState.activeCycleId = cycleId;
+            state.appState.activeCycleId = finalTitle;
             state.metadata.lastModified = Date.now();
             state.metadata.totalCyclesCreated++;
         }, true); // immediate save
 
         console.log('✅ Basic fallback cycle created via AppState');
-        this.deps.completeInitialSetup(cycleId, appState.get());
+        this.deps.completeInitialSetup(finalTitle, appState.get());
     }
 
     /**
@@ -392,42 +413,20 @@ export class RoutineManager {
                 const cycleId = `cycle_${Date.now()}`;
                 console.log('🆔 Generated cycle ID:', cycleId);
 
+                // ✅ Get unique name before update (uses centralized utility)
+                const existingCycles = this.deps.AppState.get()?.data?.cycles || {};
+                const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
+
+                if (wasModified) {
+                    console.log(`⚠️ Name collision: "${newCycleName}" → "${finalTitle}"`);
+                    this.deps.showNotification(`Name already exists. Using "${finalTitle}" instead.`, "warning", 3000);
+                }
+
+                const storageKey = finalTitle;
                 let finalResult = null;
 
                 // ✅ Update through state system
                 this.deps.AppState.update(state => {
-                    // ✅ Determine the storage key (title-first approach with ID fallback)
-                    let storageKey = newCycleName;
-                    let finalTitle = newCycleName;
-
-                    // ✅ Handle duplicate titles by checking existing keys
-                    if (state.data.cycles[storageKey]) {
-                        console.log('⚠️ Duplicate title detected, finding unique variation');
-
-                        // Try numbered variations first: "Title (2)", "Title (3)", etc.
-                        let counter = 2;
-                        let numberedTitle = `${newCycleName} (${counter})`;
-
-                        while (state.data.cycles[numberedTitle] && counter < 10) {
-                            counter++;
-                            numberedTitle = `${newCycleName} (${counter})`;
-                        }
-
-                        // If we found a unique numbered title, use it
-                        if (!state.data.cycles[numberedTitle]) {
-                            storageKey = numberedTitle;
-                            finalTitle = numberedTitle;
-                            console.log('🔄 Using numbered variation:', finalTitle);
-                            this.deps.showNotification(`⚠ Title already exists. Using "${finalTitle}" instead.`, "warning", 3000);
-                        } else {
-                            // Fallback to ID if too many duplicates
-                            storageKey = cycleId;
-                            finalTitle = newCycleName; // Keep original title inside object
-                            console.log('🔄 Using unique ID for storage:', storageKey);
-                            this.deps.showNotification(`⚠ Multiple cycles with this name exist. Using unique ID for storage.`, "warning", 3000);
-                        }
-                    }
-
                     console.log('🔄 Creating new cycle with storage key:', storageKey);
 
                     // ✅ Create new cycle in Schema 2.5 format

@@ -10,6 +10,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { getObjectSizeBytes, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
+import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -348,24 +349,25 @@ export class MenuManager {
                     return;
                 }
 
-                const newCycleName = this.deps.sanitizeInput(input.trim());
-                console.log('🔍 Processing new cycle name:', newCycleName);
+                const sanitizedName = this.deps.sanitizeInput(input.trim());
+                console.log('🔍 Processing new cycle name:', sanitizedName);
 
-                if (!newCycleName) {
+                if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
                     this.deps.showNotification("⚠ Please enter a valid name.");
                     return;
                 }
 
+                // ✅ Get unique name (auto-increment if duplicate)
+                const { name: finalCycleName, wasModified } = getUniqueCycleName(sanitizedName, data.cycles || {});
+
+                if (wasModified) {
+                    console.log(`⚠️ Name collision: "${sanitizedName}" → "${finalCycleName}"`);
+                    this.deps.showNotification(`Name already exists. Using "${finalCycleName}" instead.`, "warning", 3000);
+                }
+
                 // ✅ Update through state system
                 AppState.update(state => {
-                    // ✅ Check for existing cycles by key
-                    if (state.data.cycles[newCycleName]) {
-                        console.warn('⚠️ Cycle name already exists:', newCycleName);
-                        this.deps.showNotification("⚠ A miniCycle with this name already exists. Please choose a different name.");
-                        return; // Don't save if duplicate exists
-                    }
-
                     console.log('🔄 Creating new cycle copy...');
 
                     // ✅ Create new cycle with title as key for Schema 2.5
@@ -374,26 +376,28 @@ export class MenuManager {
                     console.log('📊 Deep copying current cycle data');
 
                     // ✅ Deep copy the current cycle with new title as storage key
-                    state.data.cycles[newCycleName] = {
+                    state.data.cycles[finalCycleName] = {
                         ...JSON.parse(JSON.stringify(currentCycle)),
                         id: newCycleId,
-                        title: newCycleName,
+                        title: finalCycleName,
                         createdAt: Date.now()
                     };
 
-                    console.log('🎯 Setting new cycle as active:', newCycleName);
+                    console.log('🎯 Setting new cycle as active:', finalCycleName);
 
                     // ✅ Set as active cycle using the title as key
-                    state.appState.activeCycleId = newCycleName;
+                    state.appState.activeCycleId = finalCycleName;
                     state.metadata.lastModified = Date.now();
                     state.metadata.totalCyclesCreated++;
 
-                    console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${newCycleName}"`);
+                    console.log(`✅ Successfully created cycle copy: "${currentCycle.title}" → "${finalCycleName}"`);
                     console.log('📈 Total cycles created:', state.metadata.totalCyclesCreated);
 
                 }, true); // immediate save
 
-                this.deps.showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${newCycleName}"!`);
+                if (!wasModified) {
+                    this.deps.showNotification(`✅ miniCycle "${currentCycle.title}" was copied as "${finalCycleName}"!`);
+                }
                 this.hideMainMenu();
 
                 // ✅ Use proper cycle loader if available
