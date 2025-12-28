@@ -295,13 +295,42 @@ function processImportedData(fileContent) {
     }
 
     // Security: Merge imported template metadata with sanitized text from tasks.
-    // This preserves safe fields (timestamps, etc.) while ensuring text is always sanitized.
+    // Start from our generated (sanitized) template, then selectively copy only
+    // non-string metadata fields from the imported template that don't override
+    // existing keys. This preserves safe metadata (timestamps, flags, etc.)
+        const imported = (typeof importedData.recurringTemplates?.[id] === 'object' &&
+            importedData.recurringTemplates[id] !== null)
+            ? importedData.recurringTemplates[id]
+            : {};
     const mergedTemplates = {};
     for (const [id, generated] of Object.entries(recurringTemplates)) {
         const imported = importedData.recurringTemplates?.[id] || {};
+        const merged = {
+            ...generated,
+            text: generated.text  // Explicitly ensure text is from sanitized source
+        };
+
+        for (const [key, value] of Object.entries(imported)) {
+            // Only copy metadata fields that do not already exist on the merged
+            // template and are not strings (to avoid introducing unsafe text).
+            if (!(key in merged) && typeof value !== 'string') {
+                merged[key] = value;
+            }
+        }
+
+        mergedTemplates[id] = merged;
+            createdAt: importedCreatedAt,
+            updatedAt: importedUpdatedAt
+        } = imported;
+
+        const safeImported = {};
+        if (importedId !== undefined) safeImported.id = importedId;
+        if (importedCreatedAt !== undefined) safeImported.createdAt = importedCreatedAt;
+        if (importedUpdatedAt !== undefined) safeImported.updatedAt = importedUpdatedAt;
+
         mergedTemplates[id] = {
-            ...imported,        // Keep safe metadata fields from import
-            ...generated,       // Override with our sanitized data
+            ...safeImported,    // Keep only explicitly allowed metadata fields from import
+            ...generated,       // Override with our sanitized/generated data
             text: generated.text  // Explicitly ensure text is from sanitized source
         };
     }
