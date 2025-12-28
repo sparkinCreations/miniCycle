@@ -47,6 +47,10 @@ const _deps = new Proxy({}, {
  */
 export function setStatsPanelDependencies(dependencies) {
     di.setDependencies(dependencies);
+    // Invalidate cached deps if manager already exists
+    if (statsPanelManager?._cachedDeps) {
+        statsPanelManager._cachedDeps = null;
+    }
     console.log('📊 StatsPanel dependencies set:', Object.keys(dependencies));
 }
 
@@ -104,11 +108,11 @@ export class StatsPanelManager {
     }
 
     /**
-     * Getter for dependencies - always reads from current module-level _deps
-     * This allows late injection via setStatsPanelDependencies() to work
+     * Resolve and cache dependencies - avoids repeated Proxy/resolve overhead
+     * Call this after dependencies are set via setStatsPanelDependencies()
      */
-    get dependencies() {
-        return {
+    _resolveAndCacheDeps() {
+        this._cachedDeps = {
             showNotification: _deps.showNotification || this._constructorDeps.fallbackNotification,
             loadMiniCycleData: _deps.loadMiniCycleData || this._constructorDeps.fallbackLoadData,
             isOverlayActive: _deps.isOverlayActive || this._constructorDeps.fallbackOverlayCheck,
@@ -117,8 +121,19 @@ export class StatsPanelManager {
             hideMainMenu: _deps.hideMainMenu || (() => {}),
             setupDarkModeToggle: _deps.setupDarkModeToggle || (() => {}),
             AppState: _deps.AppState,
-            appInit: _deps.appInit  // DI-pure (no fallback)
+            appInit: _deps.appInit
         };
+    }
+
+    /**
+     * Getter for dependencies - returns cached deps for performance
+     */
+    get dependencies() {
+        // Resolve on first access or if not cached
+        if (!this._cachedDeps) {
+            this._resolveAndCacheDeps();
+        }
+        return this._cachedDeps;
     }
 
     /**
