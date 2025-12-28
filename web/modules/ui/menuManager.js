@@ -9,6 +9,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { getObjectSizeBytes, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -315,6 +316,19 @@ export class MenuManager {
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
             this.deps.showNotification("⚠ No miniCycle found to save.");
+            return;
+        }
+
+        // ✅ Check storage quota before duplicating
+        const cycleSize = getObjectSizeBytes(currentCycle);
+        const storageCheck = canAddToStorage(cycleSize);
+        if (!storageCheck.allowed) {
+            console.warn('Storage quota exceeded. Cannot duplicate routine.');
+            this.deps.showNotification(
+                getStorageShortageMessage(storageCheck.shortfall),
+                'error',
+                5000
+            );
             return;
         }
 

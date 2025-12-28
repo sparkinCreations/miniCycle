@@ -13,6 +13,10 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
+
+// Estimated size for a new empty cycle (structure overhead)
+const ESTIMATED_NEW_CYCLE_SIZE = 800; // ~400 chars * 2 bytes
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -351,6 +355,18 @@ export class RoutineManager {
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for createNewMiniCycle');
             this.deps.showNotification("⚠️ App not ready. Please try again.", "warning", 3000);
+            return;
+        }
+
+        // ✅ Check storage quota before showing modal
+        const storageCheck = canAddToStorage(ESTIMATED_NEW_CYCLE_SIZE);
+        if (!storageCheck.allowed) {
+            console.warn('Storage quota exceeded. Cannot create new routine.');
+            this.deps.showNotification(
+                getStorageShortageMessage(storageCheck.shortfall),
+                'error',
+                5000
+            );
             return;
         }
 

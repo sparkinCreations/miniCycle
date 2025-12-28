@@ -7,6 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -243,8 +244,9 @@ export class HelpWindowManager {
         const completedTasks = document.querySelectorAll('.task input:checked').length;
         const remaining = totalTasks - completedTasks;
 
-        // Get cycle count from Schema 2.5 (DI-pure, no window.* fallbacks)
+        // Get cycle count and size from Schema 2.5 (DI-pure, no window.* fallbacks)
         let cycleCount = 0;
+        let routineSize = '';
 
         // Prefer AppState if available, fall back to loadMiniCycleData
         if (deps.AppState?.isReady?.()) {
@@ -253,6 +255,11 @@ export class HelpWindowManager {
                 const activeCycle = state.appState?.activeCycleId;
                 const currentCycle = state.data?.cycles?.[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
+                // Calculate routine size
+                if (currentCycle) {
+                    const sizeBytes = getObjectSizeBytes(currentCycle);
+                    routineSize = formatBytes(sizeBytes);
+                }
             }
         } else if (typeof deps.loadMiniCycleData === 'function') {
             const schemaData = deps.loadMiniCycleData();
@@ -260,24 +267,32 @@ export class HelpWindowManager {
                 const { cycles, activeCycle } = schemaData;
                 const currentCycle = cycles[activeCycle];
                 cycleCount = currentCycle?.cycleCount || 0;
+                // Calculate routine size
+                if (currentCycle) {
+                    const sizeBytes = getObjectSizeBytes(currentCycle);
+                    routineSize = formatBytes(sizeBytes);
+                }
             }
         }
 
+        // Size suffix for messages
+        const sizeSuffix = routineSize ? ` • ${routineSize}` : '';
+
         // Return different constant messages based on state
         if (totalTasks === 0) {
-            return `📝 Add your first task to get started! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
+            return `📝 Add your first task to get started! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed${sizeSuffix}`;
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return `🎉 All tasks complete! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
+            return `🎉 All tasks complete! • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed${sizeSuffix}`;
         }
 
         if (cycleCount === 0) {
-            return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Complete your first cycle!`;
+            return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • Complete your first cycle!${sizeSuffix}`;
         }
 
         // Show progress and cycle count
-        return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed`;
+        return `📋 ${remaining} task${remaining === 1 ? '' : 's'} remaining • ${cycleCount} cycle${cycleCount === 1 ? '' : 's'} completed${sizeSuffix}`;
     }
 
     updateContent(message) {

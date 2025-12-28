@@ -50,6 +50,7 @@
   * [MCYC File Format](data-schema/MCYC_FILE_FORMAT.md)
 
 * **Features**
+  * [Storage Management](features/STORAGE_MANAGEMENT.md)
   * [Completed Tasks Dropdown](features/COMPLETED_TASKS_DROPDOWN.md)
   * [Task Options Customizer](features/TASK_OPTIONS_CUSTOMIZER.md)
   * [Recurring Tasks Guide](features/minicycle-recurring-guide.md)

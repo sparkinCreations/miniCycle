@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
+import { getObjectSizeBytes, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -196,6 +197,19 @@ function processImportedData(fileContent) {
         console.warn(`Import truncating: ${importedData.tasks.length} tasks exceeds ${MAX_TASK_COUNT} limit, keeping first ${MAX_TASK_COUNT}`);
         importedData.tasks = importedData.tasks.slice(0, MAX_TASK_COUNT);
         tasksTruncated = true;
+    }
+
+    // ✅ Check storage quota before importing
+    const estimatedSize = getObjectSizeBytes(importedData);
+    const storageCheck = canAddToStorage(estimatedSize);
+    if (!storageCheck.allowed) {
+        console.warn('Storage quota exceeded. Cannot import routine.');
+        _deps.showNotification?.(
+            getStorageShortageMessage(storageCheck.shortfall),
+            'error',
+            5000
+        );
+        return;
     }
 
     console.log("Importing miniCycle with auto-conversion to Schema 2.5...");
