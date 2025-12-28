@@ -447,6 +447,6 @@ export function createLazyDeps() {
 }
 
 // Version constant for cache validation (like APPINIT_VERSION pattern)
-export const APPCONTEXT_VERSION = '1.572';
+export const APPCONTEXT_VERSION = '1.573';
 
 console.log(`📦 appContext module loaded (v${APPCONTEXT_VERSION} - grouped APIs)`);
