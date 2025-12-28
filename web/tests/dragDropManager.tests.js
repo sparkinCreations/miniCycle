@@ -331,32 +331,58 @@ export async function runDragDropManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">👁️ Arrow Visibility</h4>';
 
-    test('updateArrowsInDOM() hides arrows when disabled', () => {
+    test('updateArrowsInDOM() sets data-move-arrows attribute and first/last markers', () => {
         const manager = new DragDropManager();
 
-        // Create mock task
-        const task = document.createElement('div');
-        task.className = 'task';
-        const upBtn = document.createElement('button');
-        upBtn.className = 'move-up';
-        const downBtn = document.createElement('button');
-        downBtn.className = 'move-down';
-        task.appendChild(upBtn);
-        task.appendChild(downBtn);
+        // Create mock taskList container (required for CSS-driven approach)
+        const taskList = document.createElement('div');
+        taskList.id = 'taskList';
 
-        document.body.appendChild(task);
+        // Create two mock tasks
+        const task1 = document.createElement('div');
+        task1.className = 'task';
+        const upBtn1 = document.createElement('button');
+        upBtn1.className = 'move-up';
+        const downBtn1 = document.createElement('button');
+        downBtn1.className = 'move-down';
+        task1.appendChild(upBtn1);
+        task1.appendChild(downBtn1);
 
+        const task2 = document.createElement('div');
+        task2.className = 'task';
+        const upBtn2 = document.createElement('button');
+        upBtn2.className = 'move-up';
+        const downBtn2 = document.createElement('button');
+        downBtn2.className = 'move-down';
+        task2.appendChild(upBtn2);
+        task2.appendChild(downBtn2);
+
+        taskList.appendChild(task1);
+        taskList.appendChild(task2);
+        document.body.appendChild(taskList);
+
+        // Test arrows disabled
         manager.updateArrowsInDOM(false);
-
-        if (!upBtn.classList.contains('hidden')) {
-            throw new Error('Up button should have hidden class when arrows disabled');
+        if (taskList.dataset.moveArrows !== 'false') {
+            throw new Error('taskList should have data-move-arrows="false" when arrows disabled');
         }
-        if (!downBtn.classList.contains('hidden')) {
-            throw new Error('Down button should have hidden class when arrows disabled');
+
+        // Test arrows enabled
+        manager.updateArrowsInDOM(true);
+        if (taskList.dataset.moveArrows !== 'true') {
+            throw new Error('taskList should have data-move-arrows="true" when arrows enabled');
+        }
+
+        // Check first/last markers
+        if (!task1.classList.contains('is-first-task')) {
+            throw new Error('First task should have is-first-task class');
+        }
+        if (!task2.classList.contains('is-last-task')) {
+            throw new Error('Last task should have is-last-task class');
         }
 
         // Cleanup
-        document.body.removeChild(task);
+        document.body.removeChild(taskList);
     });
 
     test('updateArrowsInDOM() handles missing elements gracefully', () => {

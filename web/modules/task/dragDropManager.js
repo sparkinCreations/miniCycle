@@ -178,8 +178,8 @@ export class DragDropManager {
                     this.deps.checkCompleteAllButton();
                     this.deps.updateUndoRedoButtons();
 
-                    // Update move arrows (first/last task may have changed)
-                    this.updateMoveArrowsVisibility();
+                    // Update first/last markers (O(1) - CSS handles arrow visibility)
+                    this.updateFirstLastMarkers();
 
                     console.log("🔁 Drag reorder completed and saved with undo snapshot.");
                 }
@@ -526,6 +526,9 @@ export class DragDropManager {
                 // Re-render from state to reflect changes
                 this.deps.refreshUIFromState();
 
+                // Update first/last markers after re-render (O(1))
+                this.updateFirstLastMarkers();
+
                 // Update undo/redo buttons
                 this.deps.updateUndoRedoButtons();
 
@@ -659,45 +662,50 @@ export class DragDropManager {
     }
 
     /**
-     * Update arrow visibility in the DOM
+     * O(1) update: Set data attribute on taskList for CSS-driven visibility
+     * @param {boolean} showArrows - Whether to show arrows
+     */
+    setArrowsEnabled(showArrows) {
+        const taskList = document.getElementById('taskList');
+        if (taskList) {
+            taskList.dataset.moveArrows = showArrows ? 'true' : 'false';
+        }
+    }
+
+    /**
+     * O(1) update: Mark first/last tasks with boundary classes
+     * Called after task add, delete, or reorder
+     */
+    updateFirstLastMarkers() {
+        const taskList = document.getElementById('taskList');
+        if (!taskList) return;
+
+        // Remove old markers (O(1) - at most one of each)
+        taskList.querySelector('.is-first-task')?.classList.remove('is-first-task');
+        taskList.querySelector('.is-last-task')?.classList.remove('is-last-task');
+
+        // Add new markers (direct children only)
+        const firstTask = taskList.firstElementChild;
+        const lastTask = taskList.lastElementChild;
+
+        if (firstTask?.classList.contains('task')) {
+            firstTask.classList.add('is-first-task');
+        }
+        if (lastTask?.classList.contains('task') && lastTask !== firstTask) {
+            lastTask.classList.add('is-last-task');
+        }
+    }
+
+    /**
+     * Update arrow visibility in the DOM (O(1) CSS-driven approach)
      * @param {boolean} showArrows - Whether to show arrows
      */
     updateArrowsInDOM(showArrows) {
         try {
-            const allTasks = document.querySelectorAll(".task");
-
-            allTasks.forEach((task, index) => {
-                const upButton = task.querySelector('.move-up');
-                const downButton = task.querySelector('.move-down');
-                const taskOptions = task.querySelector('.task-options');
-                const taskButtons = task.querySelectorAll('.task-btn');
-
-                // ✅ Use .hidden class for consistent behavior (display: none !important)
-                if (upButton) {
-                    if (showArrows && index !== 0) {
-                        upButton.classList.remove("hidden");
-                    } else {
-                        upButton.classList.add("hidden");
-                    }
-                }
-                if (downButton) {
-                    if (showArrows && index !== allTasks.length - 1) {
-                        downButton.classList.remove("hidden");
-                    } else {
-                        downButton.classList.add("hidden");
-                    }
-                }
-
-                // Ensure task options remain interactive
-                if (taskOptions) {
-                    taskOptions.style.pointerEvents = "auto";
-                }
-
-                // Ensure individual buttons remain interactive
-                taskButtons.forEach(button => {
-                    button.style.pointerEvents = "auto";
-                });
-            });
+            // O(1) operations - CSS handles per-task visibility
+            this.setArrowsEnabled(showArrows);
+            this.updateFirstLastMarkers();
+            console.log(`✅ Arrow visibility updated via CSS (O(1)): ${showArrows ? 'visible' : 'hidden'}`);
         } catch (error) {
             console.warn('⚠️ Failed to update arrows in DOM:', error);
         }
@@ -825,8 +833,32 @@ function updateArrowsInDOM(showArrows) {
     dragDropManager.updateArrowsInDOM(showArrows);
 }
 
+/**
+ * O(1) update: Set arrows enabled state via data attribute
+ * @param {boolean} showArrows - Whether to show arrows
+ */
+function setArrowsEnabled(showArrows) {
+    if (!dragDropManager) {
+        console.warn('⚠️ DragDropManager not initialized');
+        return;
+    }
+    dragDropManager.setArrowsEnabled(showArrows);
+}
+
+/**
+ * O(1) update: Update first/last task markers
+ * Call after task add, delete, or reorder
+ */
+function updateFirstLastMarkers() {
+    if (!dragDropManager) {
+        console.warn('⚠️ DragDropManager not initialized');
+        return;
+    }
+    dragDropManager.updateFirstLastMarkers();
+}
+
 // Phase 3 - DI-pure pattern (no window.* in module code)
 console.log('🔄 DragDropManager module loaded (Phase 3 - DI-pure)');
 
 // Export for ES6 modules
-export { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM };
+export { initDragDropManager, enableDragAndDropOnTask, updateMoveArrowsVisibility, toggleArrowVisibility, updateArrowsInDOM, setArrowsEnabled, updateFirstLastMarkers };

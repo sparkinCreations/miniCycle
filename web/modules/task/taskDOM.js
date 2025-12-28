@@ -893,12 +893,10 @@ export class TaskDOMManager {
         button.innerHTML = icon;
         button.setAttribute("type", "button");
 
-        // ✅ Special handling for move arrows: always render but start hidden
-        // Their visibility will be controlled by updateArrowsInDOM() based on global setting
-        if (btnClass === "move-up" || btnClass === "move-down") {
-            // Use .hidden class for consistent behavior (display: none !important)
-            button.classList.add("hidden");
-        } else if (!show) {
+        // ✅ Move arrows: don't add .hidden class - CSS handles visibility via
+        // #taskList[data-move-arrows] attribute (O(1) CSS-driven approach)
+        // Other buttons: use .hidden class when not shown
+        if (btnClass !== "move-up" && btnClass !== "move-down" && !show) {
             button.classList.add("hidden");
         }
 
