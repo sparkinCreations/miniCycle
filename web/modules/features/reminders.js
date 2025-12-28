@@ -47,6 +47,10 @@ const _deps = new Proxy({}, {
  */
 export function setRemindersDependencies(dependencies) {
     di.setDependencies(dependencies);
+    // Invalidate cached deps if manager already exists
+    if (reminderManager?._cachedDeps) {
+        reminderManager._cachedDeps = null;
+    }
     console.log('🔔 Reminders dependencies set:', Object.keys(dependencies));
 }
 
@@ -66,12 +70,10 @@ export class MiniCycleReminders {
     }
 
     /**
-     * Getter for dependencies - always reads from current module-level _deps
-     * This ensures late-injected dependencies are available
+     * Resolve and cache dependencies - avoids repeated Proxy/resolve overhead
      */
-    get deps() {
-        return {
-            // Core dependencies (from _deps, resolved at access time)
+    _resolveAndCacheDeps() {
+        this._cachedDeps = {
             AppState: _deps.AppState,
             showNotification: _deps.showNotification || this.fallbackNotification,
             loadMiniCycleData: _deps.loadMiniCycleData || this.fallbackLoadData,
@@ -79,9 +81,18 @@ export class MiniCycleReminders {
             refreshTaskListUI: _deps.refreshTaskListUI,
             updateUndoRedoButtons: _deps.updateUndoRedoButtons || (() => console.log('⏭️ updateUndoRedoButtons not available')),
             autoSave: _deps.autoSave || (() => console.warn('⚠️ autoSave not available')),
-            // Browser API overrides (from constructor, for testing)
             ...this._constructorDeps
         };
+    }
+
+    /**
+     * Getter for dependencies - returns cached deps for performance
+     */
+    get deps() {
+        if (!this._cachedDeps) {
+            this._resolveAndCacheDeps();
+        }
+        return this._cachedDeps;
     }
 
     /**
