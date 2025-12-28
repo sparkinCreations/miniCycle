@@ -295,30 +295,15 @@ function processImportedData(fileContent) {
     }
 
     // Security: Merge imported template metadata with sanitized text from tasks.
-    // Start from our generated (sanitized) template, then selectively copy only
-    // non-string metadata fields from the imported template that don't override
-    // existing keys. This preserves safe metadata (timestamps, flags, etc.)
-        const imported = (typeof importedData.recurringTemplates?.[id] === 'object' &&
-            importedData.recurringTemplates[id] !== null)
-            ? importedData.recurringTemplates[id]
-            : {};
+    // Only extract specific safe metadata fields from import (timestamps, etc.)
+    // All text content comes from our sanitized generated templates.
     const mergedTemplates = {};
     for (const [id, generated] of Object.entries(recurringTemplates)) {
         const imported = importedData.recurringTemplates?.[id] || {};
-        const merged = {
-            ...generated,
-            text: generated.text  // Explicitly ensure text is from sanitized source
-        };
 
-        for (const [key, value] of Object.entries(imported)) {
-            // Only copy metadata fields that do not already exist on the merged
-            // template and are not strings (to avoid introducing unsafe text).
-            if (!(key in merged) && typeof value !== 'string') {
-                merged[key] = value;
-            }
-        }
-
-        mergedTemplates[id] = merged;
+        // Only extract specific safe metadata fields from import
+        const {
+            id: importedId,
             createdAt: importedCreatedAt,
             updatedAt: importedUpdatedAt
         } = imported;
