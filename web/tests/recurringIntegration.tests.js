@@ -5,8 +5,31 @@
 
 import {
     initializeRecurringModules,
-    testRecurringIntegration
+    testRecurringIntegration,
+    setRecurringIntegrationDependencies
 } from '../modules/recurring/recurringIntegration.js';
+
+/**
+ * Helper to set up DI dependencies for recurring integration tests
+ * @param {Object} mockAppState - Mock AppState object
+ * @param {Function} mockShowNotification - Mock notification function
+ * @param {Object} mockFeatureFlags - Mock feature flags
+ */
+function setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags) {
+    setRecurringIntegrationDependencies({
+        appInit: { waitForCore: () => Promise.resolve() },
+        AppState: mockAppState,
+        showNotification: mockShowNotification,
+        FeatureFlags: mockFeatureFlags,
+        loadMiniCycleData: () => mockAppState?.get?.() || null,
+        refreshUIFromState: () => {},
+        updateProgressBar: () => {},
+        notifications: { showConfirmationModal: () => {} },
+        isOverlayActive: () => false,
+        getDeferredRecurringSetup: () => window._deferredRecurringSetup || [],
+        clearDeferredRecurringSetup: () => { window._deferredRecurringSetup = []; }
+    });
+}
 
 export function runRecurringIntegrationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔗 RecurringIntegration Tests</h2><h3>Running tests...</h3>';
@@ -133,7 +156,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
 
     test('initializes with valid dependencies', async () => {
         // Setup mocks
-        window.AppState = {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -142,11 +165,17 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
 
-        const result = await initializeRecurringModules();
+        // Set up DI dependencies
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
+
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
         if (!result) {
             throw new Error('Initialization did not return result');
@@ -162,7 +191,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     });
 
     test('exposes recurringCore globally', async () => {
-        window.AppState = {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -171,23 +200,28 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
-        if (!window.recurringCore) {
-            throw new Error('recurringCore not exposed globally');
+        // Phase 3: check returned object (no window.* exports)
+        if (!result.core) {
+            throw new Error('recurringCore not returned');
         }
 
-        if (typeof window.recurringCore.applyRecurringSettings !== 'function') {
-            throw new Error('recurringCore.applyRecurringSettings not a function');
+        if (!result.coreAPI || typeof result.coreAPI.applyRecurringSettings !== 'function') {
+            throw new Error('coreAPI.applyRecurringSettings not a function');
         }
     });
 
-    test('exposes recurringPanel globally', async () => {
-        window.AppState = {
+    test('returns recurringPanel in result', async () => {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -196,23 +230,28 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
-        if (!window.recurringPanel) {
-            throw new Error('recurringPanel not exposed globally');
+        // Phase 3: check returned object (no window.* exports)
+        if (!result.panel) {
+            throw new Error('recurringPanel not returned');
         }
 
-        if (typeof window.recurringPanel.updatePanel !== 'function') {
-            throw new Error('recurringPanel.updatePanel not a function');
+        if (!result.panelAPI || typeof result.panelAPI.updatePanel !== 'function') {
+            throw new Error('panelAPI.updatePanel not a function');
         }
     });
 
-    test('exposes backward compatible functions', async () => {
-        window.AppState = {
+    test('returns complete API objects', async () => {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -221,43 +260,64 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
-        const requiredFunctions = [
-            'applyRecurringToTaskSchema25',
-            'handleRecurringTaskActivation',
-            'handleRecurringTaskDeactivation',
-            'updateRecurringPanel'
+        // Check coreAPI functions
+        const requiredCoreFunctions = [
+            'applyRecurringSettings',
+            'handleActivation',
+            'handleDeactivation'
         ];
 
-        requiredFunctions.forEach(fn => {
-            if (typeof window[fn] !== 'function') {
-                throw new Error(`${fn} not exposed globally`);
+        requiredCoreFunctions.forEach(fn => {
+            if (typeof result.coreAPI[fn] !== 'function') {
+                throw new Error(`coreAPI.${fn} not a function`);
+            }
+        });
+
+        // Check panelAPI functions
+        const requiredPanelFunctions = [
+            'updatePanel',
+            'updateSummary',
+            'updateButtonVisibility'
+        ];
+
+        requiredPanelFunctions.forEach(fn => {
+            if (typeof result.panelAPI[fn] !== 'function') {
+                throw new Error(`panelAPI.${fn} not a function`);
             }
         });
     });
 
     test('handles missing AppState gracefully', async () => {
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
+
         window.AppState = null;
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(null, mockShowNotification, mockFeatureFlags);
 
         try {
-            await initializeRecurringModules();
+            await initializeRecurringModules({ AppMeta: { version: 'test' } });
             throw new Error('Should have thrown error for missing AppState');
         } catch (error) {
-            if (!error.message.includes('AppState')) {
-                throw new Error('Wrong error thrown');
+            if (!error.message.includes('AppState') && !error.message.includes('missing required deps')) {
+                throw new Error('Wrong error thrown: ' + error.message);
             }
         }
     });
 
     test('processes deferred setups', async () => {
-        window.AppState = {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -266,16 +326,20 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
 
         let deferredCalled = false;
         window._deferredRecurringSetup = [
             () => { deferredCalled = true; }
         ];
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
         if (!deferredCalled) {
             throw new Error('Deferred setup not called');
@@ -294,16 +358,20 @@ export function runRecurringIntegrationTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🔌 Dependency Configuration</h4>';
 
     test('configures state management dependencies', async () => {
-        window.AppState = {
+        const mockAppState = {
             get: () => ({ test: 'data' }),
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        const result = await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
         // Verify dependencies were configured by checking core is functional
         if (!result.core) {
@@ -312,7 +380,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     });
 
     test('configures notification dependencies', async () => {
-        window.AppState = {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -321,12 +389,16 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
-
         let notificationCalled = false;
-        window.showNotification = (msg) => { notificationCalled = true; };
-        window.FeatureFlags = { recurringEnabled: true };
+        const mockShowNotification = (msg) => { notificationCalled = true; };
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        await initializeRecurringModules();
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
+
+        await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
         // Verify notification dependency works
         if (typeof window.showNotification !== 'function') {
@@ -335,7 +407,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     });
 
     test('configures feature flag dependencies', async () => {
-        window.AppState = {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -344,12 +416,16 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: false };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: false };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
         // Should still initialize even if feature is disabled
-        const result = await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
         if (!result) {
             throw new Error('Should initialize even with feature disabled');
@@ -361,11 +437,16 @@ export function runRecurringIntegrationTests(resultsDiv) {
 
     test('catches and reports initialization errors', async () => {
         // Force an error by providing invalid state
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
+
         window.AppState = null;
-        window.showNotification = (msg) => msg;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(null, mockShowNotification, mockFeatureFlags);
 
         try {
-            await initializeRecurringModules();
+            await initializeRecurringModules({ AppMeta: { version: 'test' } });
             throw new Error('Should have thrown initialization error');
         } catch (error) {
             // Expected - error should be caught and rethrown
@@ -376,16 +457,20 @@ export function runRecurringIntegrationTests(resultsDiv) {
     });
 
     test('shows notification on initialization failure', async () => {
-        window.AppState = null;
-
         let notificationMessage = null;
-        window.showNotification = (msg, type) => {
+        const mockShowNotification = (msg, type) => {
             notificationMessage = msg;
             return { message: msg, type };
         };
+        const mockFeatureFlags = { recurringEnabled: true };
+
+        window.AppState = null;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(null, mockShowNotification, mockFeatureFlags);
 
         try {
-            await initializeRecurringModules();
+            await initializeRecurringModules({ AppMeta: { version: 'test' } });
         } catch (error) {
             // Expected error
         }
@@ -399,7 +484,7 @@ export function runRecurringIntegrationTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Functions</h4>';
 
     test('exposes applyRecurringToTaskSchema25', async () => {
-        window.AppState = {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -408,19 +493,24 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
-        if (typeof window.applyRecurringToTaskSchema25 !== 'function') {
-            throw new Error('applyRecurringToTaskSchema25 not exposed');
+        // Phase 3: check returned coreAPI (no window.* exports)
+        if (!result.coreAPI || typeof result.coreAPI.applyRecurringSettings !== 'function') {
+            throw new Error('coreAPI.applyRecurringSettings not exposed');
         }
     });
 
-    test('exposes handleRecurringTaskActivation', async () => {
-        window.AppState = {
+    test('returns handleActivation in coreAPI', async () => {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -429,19 +519,24 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
-        if (typeof window.handleRecurringTaskActivation !== 'function') {
-            throw new Error('handleRecurringTaskActivation not exposed');
+        // Phase 3: check returned coreAPI
+        if (!result.coreAPI || typeof result.coreAPI.handleActivation !== 'function') {
+            throw new Error('coreAPI.handleActivation not exposed');
         }
     });
 
-    test('exposes panel update functions', async () => {
-        window.AppState = {
+    test('returns panel update functions in panelAPI', async () => {
+        const mockAppState = {
             get: () => ({
                 schemaVersion: "2.5",
                 data: { cycles: {} },
@@ -450,21 +545,26 @@ export function runRecurringIntegrationTests(resultsDiv) {
             update: (fn) => {},
             isReady: () => true
         };
+        const mockShowNotification = (msg) => msg;
+        const mockFeatureFlags = { recurringEnabled: true };
 
-        window.showNotification = (msg) => msg;
-        window.FeatureFlags = { recurringEnabled: true };
+        window.AppState = mockAppState;
+        window.showNotification = mockShowNotification;
+        window.FeatureFlags = mockFeatureFlags;
+        setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags);
 
-        await initializeRecurringModules();
+        const result = await initializeRecurringModules({ AppMeta: { version: 'test' } });
 
+        // Phase 3: check returned panelAPI
         const panelFunctions = [
-            'updateRecurringPanel',
-            'updateRecurringSummary',
-            'updateRecurringPanelButtonVisibility'
+            'updatePanel',
+            'updateSummary',
+            'updateButtonVisibility'
         ];
 
         panelFunctions.forEach(fn => {
-            if (typeof window[fn] !== 'function') {
-                throw new Error(`${fn} not exposed`);
+            if (!result.panelAPI || typeof result.panelAPI[fn] !== 'function') {
+                throw new Error(`panelAPI.${fn} not exposed`);
             }
         });
     });

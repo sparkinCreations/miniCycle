@@ -4,15 +4,26 @@
  */
 
 import {
-    setRecurringCoreDependencies,
-    normalizeRecurringSettings,
-    shouldTaskRecurNow,
-    calculateNextOccurrence,
-    calculateNextOccurrences,
-    formatNextOccurrence
+    setRecurringCoreDependencies
 } from '../modules/recurring/recurringCore.js';
 
-export function runRecurringCoreTests(resultsDiv) {
+export async function runRecurringCoreTests(resultsDiv) {
+    resultsDiv.innerHTML = '<h2>🔁 RecurringCore Tests</h2><h3>Initializing module...</h3>';
+
+    // Initialize recurring core module - this loads sub-modules and populates exported functions
+    const recurringCore = await setRecurringCoreDependencies({
+        AppMeta: { version: 'test' }
+    });
+
+    // Get functions from the initialized module
+    const {
+        normalizeRecurringSettings,
+        shouldTaskRecurNow,
+        calculateNextOccurrence,
+        calculateNextOccurrences,
+        formatNextOccurrence
+    } = recurringCore;
+
     resultsDiv.innerHTML = '<h2>🔁 RecurringCore Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
