@@ -6,6 +6,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { updateStorageBarUI, getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -114,6 +115,9 @@ export class RoutineSwitcher {
 
         // ✅ Let loadMiniCycleList() handle all the population logic
         this.loadMiniCycleList();
+
+        // ✅ Update storage bar
+        this.updateStorageBar();
 
         console.log('🔗 Setting up event listeners...');
 
@@ -818,11 +822,19 @@ export class RoutineSwitcher {
                 emoji = "🔃"; // If Auto Reset is ON, show 🔃
             }
 
-            // 📌 Ensure spacing between emoji and text
-            listItem.textContent = emoji + " ";
-            const nameSpan = document.createElement("span");
-            nameSpan.textContent = cycleData.title || cycleKey;
-            listItem.appendChild(nameSpan);
+            // 📌 Create left side with emoji and name
+            const leftSide = document.createElement("span");
+            leftSide.className = "cycle-item-left";
+            leftSide.textContent = emoji + " " + (cycleData.title || cycleKey);
+
+            // 📊 Create right side with size
+            const cycleSize = getObjectSizeBytes(cycleData);
+            const sizeSpan = document.createElement("span");
+            sizeSpan.className = "cycle-item-size";
+            sizeSpan.textContent = formatBytes(cycleSize);
+
+            listItem.appendChild(leftSide);
+            listItem.appendChild(sizeSpan);
 
             // 🖱️ Handle selection with safeAddEventListener
             const safeAdd = this.deps.safeAddEventListener;
@@ -849,6 +861,21 @@ export class RoutineSwitcher {
         this.deps.updateReminderButtons();
 
         console.log('✅ MiniCycle list loaded successfully (state-based), final count:', miniCycleList.children.length);
+    }
+
+    /**
+     * Update the storage bar UI with current localStorage usage
+     */
+    updateStorageBar() {
+        const barElement = this.deps.getElementById('storage-bar-fill');
+        const textElement = this.deps.getElementById('storage-bar-text');
+
+        if (barElement && textElement) {
+            const info = updateStorageBarUI(barElement, textElement);
+            console.log('📊 Storage bar updated:', info);
+        } else {
+            console.warn('⚠️ Storage bar elements not found');
+        }
     }
 
     // Fallback methods for graceful degradation

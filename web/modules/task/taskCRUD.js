@@ -9,6 +9,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS } from '../core/constants.js';
+import { estimateTaskSize, canAddToStorage, getStorageShortageMessage } from '../utils/storageUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -137,6 +138,20 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
                 showNotification?.(
                     `Cannot add task - limit of ${LIMITS.TASKS_PER_CYCLE} tasks reached.\nComplete or delete tasks to add more.`,
                     'warning',
+                    5000
+                );
+                return;
+            }
+
+            // Check storage quota
+            const estimatedSize = estimateTaskSize(taskText);
+            const storageCheck = canAddToStorage(estimatedSize);
+            if (!storageCheck.allowed) {
+                console.warn('Storage quota exceeded. Cannot add task.');
+                const showNotification = deps.showNotification || _deps.showNotification;
+                showNotification?.(
+                    getStorageShortageMessage(storageCheck.shortfall),
+                    'error',
                     5000
                 );
                 return;
