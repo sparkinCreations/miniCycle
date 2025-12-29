@@ -31,7 +31,8 @@ const di = createDIModule('TaskRenderer', {
     recurringPanel: optional(null),
     updateRecurringPanelButtonVisibility: optional(null),
     AppMeta: optional(null),
-    taskToAddTaskOptions: optional(null)  // From taskUtils - injected to avoid duplicate module loading
+    taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
+    revealTaskButtons: optional(null)  // For restoring active task options after render
 });
 
 // Late-binding deps via Proxy
@@ -81,6 +82,9 @@ export class TaskRenderer {
 
             // Task utilities (required for rendering)
             taskToAddTaskOptions: resolvedDeps.taskToAddTaskOptions,
+
+            // Task options visibility (for restoring active task after render)
+            revealTaskButtons: resolvedDeps.revealTaskButtons,
 
             // DOM helpers
             getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
@@ -199,6 +203,9 @@ export class TaskRenderer {
             });
         }
 
+        // Restore active task options from state (state-driven UI)
+        this._restoreActiveTaskOptions();
+
         console.log('✅ Tasks rendered successfully (atomic replaceChildren)');
     }
 
@@ -254,6 +261,34 @@ export class TaskRenderer {
     async refreshTaskListUI() {
         // Quick refresh - just re-render from current state
         await this.refreshUIFromState();
+    }
+
+    /**
+     * Restore active task options from AppState (state-driven UI)
+     * Called after renderTasks to ensure task options are shown for the active task
+     * @private
+     */
+    _restoreActiveTaskOptions() {
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.()) return;
+
+        const currentState = AppState.get();
+        const activeTaskId = currentState?.ui?.activeTaskId;
+
+        if (!activeTaskId) return;
+
+        // Find the task element and show its options
+        const taskElement = document.querySelector(`.task[data-task-id="${activeTaskId}"]`);
+        if (taskElement) {
+            // Directly show task options (don't use revealTaskButtons to avoid toggle behavior)
+            const taskOptions = taskElement.querySelector('.task-options');
+            if (taskOptions) {
+                taskOptions.style.opacity = '1';
+                taskOptions.style.visibility = 'visible';
+                taskOptions.style.pointerEvents = 'auto';
+                console.log(`✅ Restored active task options for: ${activeTaskId}`);
+            }
+        }
     }
 }
 

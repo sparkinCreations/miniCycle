@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.599">
+<meta name="app-version" content="1.600">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -30,7 +30,6 @@
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
 
 <!-- Preconnect for faster font loading -->
@@ -38,7 +37,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.599">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.600">
 <link rel="manifest" href="manifest.json">
 
 
@@ -94,7 +93,7 @@
 
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.599"></script>
+<script src="./version.js?v=1.600"></script>
 
 <script>
 
@@ -178,7 +177,7 @@ if ('serviceWorker' in navigator) {
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.599${APP_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.600${APP_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -265,7 +264,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.599')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.600')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -286,11 +285,7 @@ if ('serviceWorker' in navigator) {
 
           showConfirmationModal({
               title: "🔄 Important App Update",
-              message: `We've updated miniCycle's core system!<br><br>
-                       ✅ Old version has been safely removed<br>
-                       🆕 New version is ready to install<br>
-                       🔄 Please reload the page to complete the update<br><br>
-                       This is a one-time update to improve future update reliability.`,
+              message: `We've updated miniCycle's core system!\n\n✅ Old version has been safely removed\n🆕 New version is ready to install\n🔄 Please reload the page to complete the update\n\nThis is a one-time update to improve future update reliability.`,
               confirmText: "🔄 Reload Now",
               cancelText: "Later",
               callback: (confirmed) => {
@@ -320,11 +315,7 @@ if ('serviceWorker' in navigator) {
     setTimeout(() => {
       showConfirmationModal({
         title: "🚀 App Update Available!",
-        message: `A new version of miniCycle is ready to install!<br><br>
-                 ✨ New features and improvements<br>
-                 🐛 Bug fixes and performance enhancements<br>
-                 🔒 Latest security updates<br><br>
-                 <strong>Don't worry:</strong> After clicking "Prepare Update", you'll be asked again before the page reloads. Your work is safe!`,
+        message: `A new version of miniCycle is ready to install!\n\n✨ New features and improvements\n🐛 Bug fixes and performance enhancements\n🔒 Latest security updates\n\nDon't worry: After clicking "Prepare Update", you'll be asked again before the page reloads. Your work is safe!`,
         confirmText: "✅ Prepare Update",
         cancelText: "Maybe Later",
         callback: (confirmed) => {
@@ -363,10 +354,7 @@ if ('serviceWorker' in navigator) {
     setTimeout(() => {
       showConfirmationModal({
         title: "✅ Update Installed Successfully!",
-        message: `The app has been updated in the background.<br><br>
-                 🔄 <strong>Reload now</strong> to start using the new version<br>
-                 ⏰ <strong>Or reload later</strong> when you're ready<br><br>
-                 Your tasks and data are safe - nothing will be lost. The update will apply on your next visit if you choose to wait.`,
+        message: `The app has been updated in the background.\n\n🔄 Reload now to start using the new version\n⏰ Or reload later when you're ready\n\nYour tasks and data are safe - nothing will be lost. The update will apply on your next visit if you choose to wait.`,
         confirmText: "🔄 Reload Now",
         cancelText: "⏰ Reload Later",
         callback: (confirmed) => {
@@ -435,15 +423,7 @@ window.checkForUpdates = async function() {
       // Show detailed update modal
       _confirm({
         title: "🆕 Update Available!",
-        message: `A new version of miniCycle is available!<br><br>
-                 <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
-                 📦 <strong>Current Version:</strong> ${currentVersion}<br>
-                 🚀 <strong>New Version:</strong> ${newVersion}<br>
-                 </div>
-                 ✨ This update includes new features and improvements<br>
-                 🐛 Bug fixes and performance enhancements<br>
-                 🔒 Latest security updates<br><br>
-                 You can choose to update now or continue using the current version. The update is optional and you can install it whenever you're ready.`,
+        message: `A new version of miniCycle is available!\n\n📦 Current: ${currentVersion}\n🚀 New: ${newVersion}\n\n✨ New features and improvements\n🐛 Bug fixes and performance enhancements\n🔒 Latest security updates\n\nYou can update now or continue using the current version.`,
         confirmText: "🔄 Update Now",
         cancelText: "Later",
         callback: (confirmed) => {
@@ -568,12 +548,7 @@ window.forceServiceWorkerUpdate = async function() {
 
         _confirm({
           title: "🔄 Update Ready!",
-          message: `An update is ready to install!<br><br>
-                   <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 6px; margin: 8px 0;">
-                   📊 <strong>Current Version:</strong> ${currentVersion}<br>
-                   🚀 <strong>New Version:</strong> ${newVersion}<br>
-                   </div>
-                   Would you like to apply it now?`,
+          message: `An update is ready to install!\n\n📊 Current: ${currentVersion}\n🚀 New: ${newVersion}\n\nWould you like to apply it now?`,
           confirmText: "Apply Update",
           cancelText: "Cancel",
           callback: (confirmed) => {
@@ -1881,7 +1856,7 @@ Feedback
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.599"></script>
+ <script type="module" src="miniCycle-main.js?v=1.600"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1920,7 +1895,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.599"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.600"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

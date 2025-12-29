@@ -252,6 +252,7 @@ class ErrorHandler {
 // Create singleton instance
 const errorHandler = new ErrorHandler();
 
-console.log('📦 ErrorHandler module loaded (using diBase)');
+// Named export (preferred over default export)
+export { errorHandler };
 
-export default errorHandler;
+console.log('📦 ErrorHandler module loaded (using diBase)');

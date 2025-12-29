@@ -288,6 +288,6 @@ export async function initGamesManager(dependencies = {}) {
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('🎮 Games Manager module loaded (DI-pure, awaiting init)');
 
+// Named exports only (no default export)
 // Note: initGamesManager is already exported via 'export async function' declaration
-export default GamesManager;
-export { gamesManager };
+export { GamesManager, gamesManager };

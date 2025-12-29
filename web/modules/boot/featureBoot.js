@@ -54,7 +54,7 @@ export async function bootEarlyDeps(deps, coreResult) {
   // ========== Console Capture (needed for diagnostics) ==========
   try {
     const consoleCaptureMod = await import(withV('../utils/consoleCapture.js'));
-    deps.utils.consoleCapture = consoleCaptureMod.default;
+    deps.utils.consoleCapture = consoleCaptureMod.consoleCapture;
     console.log('✅ ConsoleCapture loaded (early)');
   } catch (error) {
     console.error('❌ Failed to load ConsoleCapture:', error);

@@ -374,6 +374,7 @@ export async function initOnboardingManager(dependencies = {}) {
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('🎓 Onboarding Manager module loaded (DI-pure, awaiting init)');
 
+// Named exports only (no default export)
 // Note: initOnboardingManager is already exported via 'export async function' declaration
-export default OnboardingManager;
+// Note: OnboardingManager class is already exported at declaration
 export { onboardingManager };

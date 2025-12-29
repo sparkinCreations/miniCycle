@@ -3303,6 +3303,7 @@ body.dark-mode.theme-golden-glow .testing-tab.active {
   font-size: 1rem;
   margin-bottom: 20px;
   color: #333;
+  white-space: pre-line;  /* Renders \n as line breaks */
 }
 
 .mini-modal-buttons {

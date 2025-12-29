@@ -662,4 +662,4 @@ export async function initDueDatesManager(dependencies = {}) {
     return dueDatesManager;
 }
 
-export default MiniCycleDueDates;
+// Named exports only (class already exported at declaration)

@@ -930,9 +930,8 @@ function setupThemesPanelWithData(schemaData) {
 
 console.log('🎨 ThemeManager module loaded (Phase 2 - no window.* exports)');
 
-// Export class, singleton, and wrapper functions
-// Note: initThemeManager is already exported via 'export function' declaration
-export default ThemeManager;
+// Export singleton and wrapper functions
+// Note: ThemeManager class and initThemeManager are already exported at declaration
 export {
     themeManager,
     applyTheme,

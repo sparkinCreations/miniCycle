@@ -126,12 +126,12 @@ export class TaskDOMManager {
             // Task operations
             taskCore: resolvedDeps.taskCore || this._warnMissingOptional('taskCore'),
 
-            // UI updates (safe with ?.() chaining)
+            // UI updates (use ?.() chaining when calling)
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
-            updateProgressBar: resolvedDeps.updateProgressBar || this.fallbackUpdate,
-            updateStatsPanel: resolvedDeps.updateStatsPanel || this.fallbackUpdate,
-            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || this.fallbackUpdate,
-            updateMainMenuHeader: resolvedDeps.updateMainMenuHeader || this.fallbackUpdate,
+            updateProgressBar: resolvedDeps.updateProgressBar,
+            updateStatsPanel: resolvedDeps.updateStatsPanel,
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
+            updateMainMenuHeader: resolvedDeps.updateMainMenuHeader,
 
             // Mode management
             getCurrentMode: resolvedDeps.getCurrentMode || this.fallbackGetMode,
@@ -141,12 +141,12 @@ export class TaskDOMManager {
             reminders: resolvedDeps.reminders || this._warnMissingOptional('reminders'),
             recurringPanel: resolvedDeps.recurringPanel || this._warnMissingOptional('recurringPanel'),
 
-            // Helper functions
-            incrementCycleCount: resolvedDeps.incrementCycleCount || this.fallbackIncrement,
-            showCompletionAnimation: resolvedDeps.showCompletionAnimation || this.fallbackAnimation,
-            helpWindowManager: resolvedDeps.helpWindowManager || null,
-            autoSave: resolvedDeps.autoSave || this.fallbackAutoSave,
-            captureStateSnapshot: resolvedDeps.captureStateSnapshot || this.fallbackCapture,
+            // Helper functions (use ?.() chaining when calling)
+            incrementCycleCount: resolvedDeps.incrementCycleCount,
+            showCompletionAnimation: resolvedDeps.showCompletionAnimation,
+            helpWindowManager: resolvedDeps.helpWindowManager,
+            autoSave: resolvedDeps.autoSave,
+            captureStateSnapshot: resolvedDeps.captureStateSnapshot,
 
             // Task completion handlers
             enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || null,
@@ -477,34 +477,8 @@ export class TaskDOMManager {
         console.log(`[TaskDOM] ${message}`);
     }
 
-    fallbackUpdate() {
-        // Silent fallback - UI updates are optional
-    }
-
     fallbackGetMode() {
         return 'manual-cycle'; // Default to manual cycle
-    }
-
-    fallbackIncrement() {
-        console.warn('⚠️ incrementCycleCount not available');
-    }
-
-    fallbackAnimation() {
-        console.warn('⚠️ showCompletionAnimation not available');
-    }
-
-    fallbackAutoSave() {
-        // Silent fallback - autosave is optional
-    }
-
-    fallbackCapture() {
-        // Silent fallback - undo system is optional
-    }
-
-    fallbackAddListener(element, event, handler) {
-        if (element && element.addEventListener) {
-            element.addEventListener(event, handler);
-        }
     }
 
     fallbackGetElement(selector) {

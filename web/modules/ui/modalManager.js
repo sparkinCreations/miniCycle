@@ -463,5 +463,6 @@ export function getModalManager() {
 // Phase 3 - Clean exports (no window.* pollution, no auto-init)
 console.log('✅ Modal Manager module loaded (Phase 3 - no window.* exports, no auto-init)');
 
-export default ModalManager;
+// Named exports only (no default export)
+// Note: ModalManager class is already exported at declaration
 export { modalManager };

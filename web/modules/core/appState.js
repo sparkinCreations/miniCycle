@@ -542,7 +542,8 @@ class MiniCycleState {
                 overdueTaskStates: {}
             },
             ui: {
-                moveArrowsVisible: false
+                moveArrowsVisible: false,
+                activeTaskId: null  // Task ID with options currently visible
             },
             userProgress: {
                 cyclesCompleted: 0,
@@ -645,7 +646,7 @@ export function resetStateManager() {
 }
 
 // ✅ For backward compatibility, but this should be initialized
-export default function getStateManager() {
+export function getStateManager() {
     if (!AppState) {
         console.warn('⚠️ State manager not initialized with dependencies');
         AppState = new MiniCycleState(); // Fallback with no deps

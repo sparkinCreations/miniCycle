@@ -596,10 +596,9 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
             if (hasDueDates) {
                 mergedDeps.showConfirmationModal({
                     title: "Reset Tasks with Due Dates",
-                    message: "This will complete all tasks and reset them to an uncompleted state.<br><br>Any assigned Due Dates will be cleared.<br><br>Proceed?",
+                    message: "This will complete all tasks and reset them to an uncompleted state.\n\nAny assigned Due Dates will be cleared.\n\nProceed?",
                     confirmText: "Reset Tasks",
                     cancelText: "Cancel",
-                    trustedHTML: true,  // Static strings only, no user content
                     callback: async (confirmed) => {
                         if (!confirmed) return;
 
