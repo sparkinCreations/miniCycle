@@ -2,11 +2,11 @@
 // Single source of truth for all version info
 
 // App version - displayed to users, used for URL cache-busting (?v=)
-self.APP_VERSION = '1.598';
+self.APP_VERSION = '1.599';
 
 // Cache version - controls service worker cache invalidation
 // Bump this to force full cache refresh without changing app version
-self.CACHE_VERSION = 391;
+self.CACHE_VERSION = 392;
 
 // Make available in browser window context
 if (typeof window !== 'undefined') {
