@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.604">
+<meta name="app-version" content="1.605">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -37,7 +37,7 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.604">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.605">
 <link rel="manifest" href="manifest.json">
 
 
@@ -93,7 +93,7 @@
 
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.604"></script>
+<script src="./version.js?v=1.605"></script>
 
 <script>
 
@@ -177,7 +177,7 @@ if ('serviceWorker' in navigator) {
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.604${APP_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.605${APP_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -264,7 +264,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.604')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.605')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -658,15 +658,6 @@ window.installApp = () => {
   
 
 <header class="mini-cycle-header-row">
-  <!-- Mode Selector -->
-  <div class="mode-selector-container">
-    <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
-      <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻</option>
-      <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻</option>
-      <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode ✓</option>
-    </select>
-  </div>
-
   <!-- Logo and App Name -->
   <div class="header-branding">
     <img src="assets/images/logo/logo.png" alt="miniCycle" class="header-logo" width="40" height="40">
@@ -677,13 +668,18 @@ window.installApp = () => {
   <button class="menu-button" aria-label="Menu" title="Open menu">☰</button>
 </header>
 
-<!-- Mobile Mode Selector (below header) -->
-<div class="mobile-mode-selector-wrapper">
-  <select id="mobile-mode-selector" class="mode-selector" aria-label="Select mode (mobile)" title="Switch mode (mobile): Auto Cycle, Manual Cycle, or To-Do">
-    <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻ ▼</option>
-    <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻ ▼</option>
-    <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode ✓ ▼</option>
+<!-- Mode Selector (centered below header) -->
+<div class="mode-selector-wrapper">
+  <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
+    <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻</option>
+    <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻</option>
+    <option value="todo-mode" title="Simple To-Do list mode">To-Do Mode ✓</option>
   </select>
+  <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routine" title="Switch routine">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </button>
 </div>
 
 
@@ -1858,7 +1854,7 @@ Feedback
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.604"></script>
+ <script type="module" src="miniCycle-main.js?v=1.605"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1897,7 +1893,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.604"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.605"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

@@ -72,7 +72,20 @@ export class RoutineSwitcher {
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
 
+        // ✅ Setup routine switcher button in mode selector banner
+        this.setupRoutineSwitcherButton();
+
         console.log('🔄 RoutineSwitcher initialized');
+    }
+
+    /**
+     * Setup the routine switcher button click handler
+     */
+    setupRoutineSwitcherButton() {
+        const btn = this.deps.getElementById('routine-switcher-btn');
+        if (btn && this.deps.safeAddEventListener) {
+            this.deps.safeAddEventListener(btn, 'click', () => this.switchMiniCycle());
+        }
     }
 
     /**
@@ -1082,8 +1095,8 @@ function setupModalClickOutside() {
 // Exports
 // ============================================
 
-// Phase 2 Step 11 - Clean exports (no window.* pollution)
-console.log('🔄 RoutineSwitcher module loaded (Phase 2 - no window.* exports)');
+// Phase 2 Step 11 - Clean exports
+console.log('🔄 RoutineSwitcher module loaded');
 
 export {
     switchMiniCycle,

@@ -126,7 +126,7 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             document.body.className = '';
 
             // Clear DOM elements
-            const existingSelectors = document.querySelectorAll('#mode-selector, #mobile-mode-selector, #toggleAutoReset, #deleteCheckedTasks');
+            const existingSelectors = document.querySelectorAll('#mode-selector, #toggleAutoReset, #deleteCheckedTasks');
             existingSelectors.forEach(el => el.remove());
 
             await testFn();
@@ -305,9 +305,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             <option value="todo-mode">To-Do Mode</option>
         `;
 
-        const mockMobileModeSelector = mockModeSelector.cloneNode(true);
-        mockMobileModeSelector.id = 'mobile-mode-selector';
-
         const toggleAutoReset = document.createElement('input');
         toggleAutoReset.type = 'checkbox';
         toggleAutoReset.id = 'toggleAutoReset';
@@ -320,7 +317,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             AppState: { get: () => mockState },
             getElementById: (id) => {
                 if (id === 'mode-selector') return mockModeSelector;
-                if (id === 'mobile-mode-selector') return mockMobileModeSelector;
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
                 return null;
@@ -357,11 +353,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         `;
         document.body.appendChild(mockModeSelector);
 
-        const mockMobileModeSelector = document.createElement('select');
-        mockMobileModeSelector.id = 'mobile-mode-selector';
-        mockMobileModeSelector.innerHTML = mockModeSelector.innerHTML;
-        document.body.appendChild(mockMobileModeSelector);
-
         const toggleAutoReset = document.createElement('input');
         toggleAutoReset.type = 'checkbox';
         toggleAutoReset.id = 'toggleAutoReset';
@@ -386,7 +377,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         // Cleanup
         mockModeSelector.remove();
-        mockMobileModeSelector.remove();
         toggleAutoReset.remove();
         deleteCheckedTasks.remove();
     });
@@ -413,11 +403,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         `;
         document.body.appendChild(mockModeSelector);
 
-        const mockMobileModeSelector = document.createElement('select');
-        mockMobileModeSelector.id = 'mobile-mode-selector';
-        mockMobileModeSelector.innerHTML = mockModeSelector.innerHTML;
-        document.body.appendChild(mockMobileModeSelector);
-
         const toggleAutoReset = document.createElement('input');
         toggleAutoReset.type = 'checkbox';
         toggleAutoReset.id = 'toggleAutoReset';
@@ -442,7 +427,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
 
         // Cleanup
         mockModeSelector.remove();
-        mockMobileModeSelector.remove();
         toggleAutoReset.remove();
         deleteCheckedTasks.remove();
     });
@@ -461,7 +445,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         const mockModeSelector = document.createElement('select');
-        const mockMobileModeSelector = document.createElement('select');
         const toggleAutoReset = document.createElement('input');
         const deleteCheckedTasks = document.createElement('input');
 
@@ -469,7 +452,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             AppState: { get: () => mockState },
             getElementById: (id) => {
                 if (id === 'mode-selector') return mockModeSelector;
-                if (id === 'mobile-mode-selector') return mockMobileModeSelector;
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
                 return null;

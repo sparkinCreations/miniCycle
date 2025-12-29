@@ -151,6 +151,13 @@ export class MenuManager {
             () => this.deps.switchMiniCycle()
         );
 
+        // ✅ Routine switcher button in mode selector banner
+        this.deps.safeAddEventListener(
+            this.deps.getElementById("routine-switcher-btn"),
+            "click",
+            () => this.deps.switchMiniCycle()
+        );
+
         this.deps.safeAddEventListener(
             this.deps.getElementById("clear-mini-cycle-tasks"),
             "click",
