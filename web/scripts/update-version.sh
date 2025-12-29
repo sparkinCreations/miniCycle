@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 4.3 - Added --auto flag for unattended updates (Dec 2025)
+# Version: 4.4 - Added --changelog and --lite flags (Dec 2025)
 #
 # Features:
 #  - Generates version.js as single source of truth
@@ -10,6 +10,8 @@
 #  - Modules get version via DI (no hardcoded versions in modules)
 #  - Git tag automation with optional remote push
 #  - --auto flag for fully automated sequential version bumps
+#  - --changelog flag for auto-generated changelog from git commits
+#  - --lite flag for optional lite version updates
 
 # ============================================
 # AUTO MODE HANDLING
@@ -18,6 +20,8 @@
 AUTO_MODE=false
 AUTO_GIT_TAG=false
 AUTO_GIT_PUSH=false
+INCLUDE_LITE=false
+AUTO_CHANGELOG=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -35,21 +39,33 @@ while [[ $# -gt 0 ]]; do
             AUTO_GIT_TAG=true  # Push implies tag
             shift
             ;;
+        --lite|-l)
+            INCLUDE_LITE=true
+            shift
+            ;;
+        --changelog|-c)
+            AUTO_CHANGELOG=true
+            shift
+            ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v4.3"
+            echo "🎯 miniCycle Version Updater v4.4"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
             echo "Options:"
-            echo "  --auto, -a     Auto-bump versions and update all files (no prompts)"
-            echo "  --tag, -t      Auto-create git tag (use with --auto)"
-            echo "  --push, -p     Auto-push tag to remote (implies --tag)"
-            echo "  --help, -h     Show this help message"
+            echo "  --auto, -a      Auto-bump versions and update all files (no prompts)"
+            echo "  --changelog, -c Auto-generate changelog from git commits"
+            echo "  --lite, -l      Include lite version files (normally static)"
+            echo "  --tag, -t       Auto-create git tag (use with --auto)"
+            echo "  --push, -p      Auto-push tag to remote (implies --tag)"
+            echo "  --help, -h      Show this help message"
             echo ""
             echo "Examples:"
             echo "  ./update-version.sh              # Interactive mode"
             echo "  ./update-version.sh --auto       # Auto-bump, no git tag"
+            echo "  ./update-version.sh --auto -c    # Auto-bump + update changelog"
             echo "  ./update-version.sh --auto --tag # Auto-bump + create tag"
+            echo "  ./update-version.sh -a -c -t     # Auto-bump + changelog + tag"
             echo "  ./update-version.sh -a -p        # Auto-bump + tag + push"
             echo ""
             exit 0
@@ -63,10 +79,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$AUTO_MODE" = true ]; then
-    echo "🤖 miniCycle Version Updater v4.3 (AUTO MODE)"
+    echo "🤖 miniCycle Version Updater v4.4 (AUTO MODE)"
     echo "=============================================="
 else
-    echo "🎯 miniCycle Version Updater v4.3"
+    echo "🎯 miniCycle Version Updater v4.4"
     echo "================================="
 fi
 echo ""
@@ -77,19 +93,29 @@ echo ""
 
 CORE_HTML_FILES=(
     "miniCycle.html"
-    "lite/miniCycle-lite.html"
     "pages/product.html"
 )
 
 # Note: miniCycle-main.js, orchestrator.js, coreBoot.js now read from globalThis.APP_VERSION
-# They no longer need manual version updates - only version.js is the source of truth
+# service-worker.js reads from version.js via importScripts - no manual updates needed
 CORE_JS_FILES=(
+    # Empty - all JS files now read from version.js or receive version via DI
+)
+
+# Lite version files (only included with --lite flag)
+LITE_HTML_FILES=(
+    "lite/miniCycle-lite.html"
+)
+LITE_JS_FILES=(
     "lite/miniCycle-lite-scripts.js"
-    "service-worker.js"
 )
 
 MANIFEST_FILES=(
     "manifest.json"
+)
+
+# Lite manifest only included with --lite flag
+LITE_MANIFEST_FILES=(
     "manifest-lite.json"
 )
 
@@ -103,6 +129,11 @@ PACKAGE_FILES=(
 # Modules now receive version via DI (AppMeta.version) from version.js
 # No hardcoded versions in module files - they're fully DI-pure
 echo "ℹ️  Module files use DI for versioning (no updates needed)"
+if [ "$INCLUDE_LITE" = true ]; then
+    echo "📱 Lite version files INCLUDED (--lite flag)"
+else
+    echo "📱 Lite version files excluded (use --lite to include)"
+fi
 echo ""
 
 # ============================================
@@ -160,18 +191,18 @@ else
   SED_INPLACE=(sed -i)
 fi
 
-# ✅ Get current versions (best-effort)
-CURRENT_VERSION=$(grep -oE '<meta name="app-version" content="[^"]*"' miniCycle.html 2>/dev/null | head -1 | sed -E 's/.*content="([^"]*)".*/\1/')
-CURRENT_SW_VERSION=$(grep -oE "CACHE_VERSION = 'v[0-9]+'" service-worker.js 2>/dev/null | sed -E "s/.*'(v[0-9]+)'.*/\1/")
+# ✅ Get current versions from version.js (single source of truth)
+CURRENT_VERSION=$(grep -oE "APP_VERSION = '[^']*'" version.js 2>/dev/null | sed -E "s/.*'([^']*)'.*/\1/")
+CURRENT_CACHE_VERSION=$(grep -oE "CACHE_VERSION = [0-9]+" version.js 2>/dev/null | sed -E "s/.*= ([0-9]+).*/\1/")
 
-echo "📊 Current versions:"
+echo "📊 Current versions (from version.js):"
 echo "   App version: ${CURRENT_VERSION:-"Not set"}"
-echo "   Service Worker: ${CURRENT_SW_VERSION:-"Not set"}"
+echo "   Cache version: ${CURRENT_CACHE_VERSION:-"Not set"}"
 echo ""
 
 # ✅ Get new version (auto-calculate or prompt)
 if [ "$AUTO_MODE" = true ]; then
-    # Auto-bump app version (increment by 0.001)
+    # Auto-bump app version (increment by 1)
     if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
         MAJOR="${BASH_REMATCH[1]}"
         MINOR="${BASH_REMATCH[2]}"
@@ -182,33 +213,31 @@ if [ "$AUTO_MODE" = true ]; then
         exit 1
     fi
 
-    # Auto-bump SW version (increment by 1)
-    if [[ "$CURRENT_SW_VERSION" =~ ^v([0-9]+)$ ]]; then
-        SW_NUM="${BASH_REMATCH[1]}"
-        NEW_SW_NUM=$((SW_NUM + 1))
-        SW_VERSION="v${NEW_SW_NUM}"
+    # Auto-bump cache version (increment by 1)
+    if [[ "$CURRENT_CACHE_VERSION" =~ ^[0-9]+$ ]]; then
+        NEW_CACHE_VERSION=$((CURRENT_CACHE_VERSION + 1))
     else
-        echo "❌ Cannot parse current SW version for auto-bump: $CURRENT_SW_VERSION"
+        echo "❌ Cannot parse current cache version for auto-bump: $CURRENT_CACHE_VERSION"
         exit 1
     fi
 
     echo "🤖 Auto-calculated new versions:"
     echo "   App version: $CURRENT_VERSION → $NEW_VERSION"
-    echo "   Service Worker: $CURRENT_SW_VERSION → $SW_VERSION"
+    echo "   Cache version: $CURRENT_CACHE_VERSION → $NEW_CACHE_VERSION"
     echo ""
 else
     # Interactive mode - prompt user
-    read -p "🔢 Enter new app version (e.g., 1.320): " NEW_VERSION
-    read -p "⚙️  Enter new service worker version (e.g., v96): " SW_VERSION
+    read -p "🔢 Enter new app version (e.g., 1.599): " NEW_VERSION
+    read -p "🗄️  Enter new cache version (e.g., 392): " NEW_CACHE_VERSION
 
     # ✅ Validate input
     if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        echo "❌ Invalid version format. Use format like 1.320"
+        echo "❌ Invalid version format. Use format like 1.599"
         exit 1
     fi
 
-    if [[ ! "$SW_VERSION" =~ ^v[0-9]+$ ]]; then
-        echo "❌ Invalid service worker version. Use format like v96"
+    if [[ ! "$NEW_CACHE_VERSION" =~ ^[0-9]+$ ]]; then
+        echo "❌ Invalid cache version. Use a number like 392"
         exit 1
     fi
 fi
@@ -244,7 +273,11 @@ FILES_TO_UPDATE=""
 
 if [ "$UPDATE_MODE" == "1" ]; then
     echo ""
-    echo "📦 Mode: Update ALL files"
+    if [ "$INCLUDE_LITE" = true ]; then
+        echo "📦 Mode: Update ALL files (including lite version)"
+    else
+        echo "📦 Mode: Update ALL files (excluding lite version)"
+    fi
 
     # Mark all files for update (using | as delimiter)
     for file in "${CORE_HTML_FILES[@]}"; do
@@ -259,6 +292,19 @@ if [ "$UPDATE_MODE" == "1" ]; then
     for file in "${PACKAGE_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
+
+    # Include lite files only if --lite flag is set
+    if [ "$INCLUDE_LITE" = true ]; then
+        for file in "${LITE_HTML_FILES[@]}"; do
+            FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+        done
+        for file in "${LITE_JS_FILES[@]}"; do
+            FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+        done
+        for file in "${LITE_MANIFEST_FILES[@]}"; do
+            FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+        done
+    fi
 
 # ============================================
 # MODE 2: ONE-BY-ONE SELECTION
@@ -334,6 +380,24 @@ elif [ "$UPDATE_MODE" == "2" ]; then
     done
     echo ""
 
+    # Lite version files (only shown with --lite flag)
+    if [ "$INCLUDE_LITE" = true ]; then
+        echo "--- Lite Version Files ---"
+        for file in "${LITE_HTML_FILES[@]}" "${LITE_JS_FILES[@]}" "${LITE_MANIFEST_FILES[@]}"; do
+            if [ -f "$file" ]; then
+                read -p "Update $file? (Y/n): " -n 1 -r
+                echo ""
+                if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                    FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
+                    echo "✅ Will update $file"
+                else
+                    echo "⏭️  Skipping $file"
+                fi
+            fi
+        done
+        echo ""
+    fi
+
 # ============================================
 # MODE 3: CUSTOM FILE SELECTION
 # ============================================
@@ -342,7 +406,7 @@ elif [ "$UPDATE_MODE" == "3" ]; then
     echo ""
     echo "📝 Mode: Custom file selection"
     echo "   Enter file names separated by spaces or commas"
-    echo "   Example: miniCycle.html service-worker.js modules/core/appState.js"
+    echo "   Example: miniCycle.html manifest.json lite/miniCycle-lite.html"
     echo ""
     read -p "Files: " CUSTOM_FILES
 
@@ -388,7 +452,7 @@ TOTAL_FILES=$((TOTAL_FILES / 2))
 echo ""
 echo "📝 Summary:"
 echo "   App version: ${CURRENT_VERSION:-"?"} → $NEW_VERSION"
-echo "   Service Worker: ${CURRENT_SW_VERSION:-"?"} → $SW_VERSION"
+echo "   Cache version: ${CURRENT_CACHE_VERSION:-"?"} → $NEW_CACHE_VERSION"
 echo "   Files to update: $TOTAL_FILES"
 echo "   Backups will be saved to: $BACKUP_FOLDER"
 echo ""
@@ -447,17 +511,23 @@ fi
 # Generate new version.js file
 cat > "version.js" << EOF
 // Version file - Auto-generated by update-version.sh
-// This provides a single source of truth for the app version across all contexts
+// Single source of truth for all version info
 
+// App version - displayed to users, used for URL cache-busting (?v=)
 self.APP_VERSION = '$NEW_VERSION';
+
+// Cache version - controls service worker cache invalidation
+// Bump this to force full cache refresh without changing app version
+self.CACHE_VERSION = $NEW_CACHE_VERSION;
 
 // Make available in browser window context
 if (typeof window !== 'undefined') {
   window.APP_VERSION = self.APP_VERSION;
+  window.CACHE_VERSION = self.CACHE_VERSION;
 }
 EOF
 
-echo "✅ Generated version.js (v$NEW_VERSION)"
+echo "✅ Generated version.js (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
 echo ""
 
 # ============================================
@@ -470,8 +540,7 @@ if should_update "miniCycle.html"; then
         "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" miniCycle.html
         "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" miniCycle.html
         "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" miniCycle.html
-        # ✅ Sync CURRENT_CACHE_VERSION with service-worker.js CACHE_VERSION
-        "${SED_INPLACE[@]}" "s/const CURRENT_CACHE_VERSION = 'v[0-9]*'/const CURRENT_CACHE_VERSION = '$SW_VERSION'/g" miniCycle.html
+        # Note: CURRENT_CACHE_VERSION now reads from version.js (no hardcoded update needed)
         echo "✅ Updated miniCycle.html"
     fi
 fi
@@ -524,16 +593,18 @@ if should_update "lite/miniCycle-lite-scripts.js"; then
 fi
 
 # ============================================
-# UPDATE: service-worker.js
+# NOTE: service-worker.js no longer needs updates
 # ============================================
+# It reads APP_VERSION and CACHE_VERSION from version.js via importScripts
+echo "ℹ️  service-worker.js reads from version.js (no update needed)"
 
-if should_update "service-worker.js"; then
-    if backup_file "service-worker.js"; then
-        "${SED_INPLACE[@]}" "s/CACHE_VERSION = 'v[0-9]*'/CACHE_VERSION = '$SW_VERSION'/g" service-worker.js
-        "${SED_INPLACE[@]}" "s/APP_VERSION = '[0-9.]*'/APP_VERSION = '$NEW_VERSION'/g" service-worker.js
-        echo "✅ Updated service-worker.js"
-    fi
-fi
+# ============================================
+# DEBUG VERSION MARKERS (always updated)
+# ============================================
+# These help identify stale cached files in DevTools
+# They're always updated regardless of mode selection
+echo ""
+echo "📝 Updating debug version markers..."
 
 # ============================================
 # UPDATE: modules/core/appInit.js (JSDoc @version for cache debugging)
@@ -656,8 +727,11 @@ EOF
 # Add version.js first (single source of truth)
 echo "restore_file \"version.js\"" >> "$BACKUP_FOLDER/restore.sh"
 
-# Add appInit.js (critical for cache debugging)
+# Add debug version marker files (always updated)
 echo "restore_file \"modules/core/appInit.js\"" >> "$BACKUP_FOLDER/restore.sh"
+echo "restore_file \"modules/core/appContext.js\"" >> "$BACKUP_FOLDER/restore.sh"
+echo "restore_file \"modules/core/constants.js\"" >> "$BACKUP_FOLDER/restore.sh"
+echo "restore_file \"modules/core/diBase.js\"" >> "$BACKUP_FOLDER/restore.sh"
 
 # Add core HTML files
 for file in "${CORE_HTML_FILES[@]}"; do
@@ -704,10 +778,13 @@ VALIDATION_ERRORS=0
 # Validate version.js (single source of truth)
 if [ -f "version.js" ]; then
     if ! grep -q "self.APP_VERSION = '$NEW_VERSION'" version.js; then
-        echo "⚠️  Warning: version.js may not have generated correctly"
+        echo "⚠️  Warning: version.js APP_VERSION may not have generated correctly"
+        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    elif ! grep -q "self.CACHE_VERSION = $NEW_CACHE_VERSION" version.js; then
+        echo "⚠️  Warning: version.js CACHE_VERSION may not have generated correctly"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     else
-        echo "✅ version.js validated (v$NEW_VERSION)"
+        echo "✅ version.js validated (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
     fi
 else
     echo "❌ Error: version.js was not generated"
@@ -720,11 +797,7 @@ if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
         echo "⚠️  Warning: miniCycle.html app-version may not have updated correctly"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
-    # ✅ Validate CURRENT_CACHE_VERSION is synced with SW_VERSION
-    if ! grep -q "CURRENT_CACHE_VERSION = '$SW_VERSION'" miniCycle.html; then
-        echo "⚠️  Warning: miniCycle.html CURRENT_CACHE_VERSION may not have synced with service-worker.js"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-    fi
+    # Note: CURRENT_CACHE_VERSION now reads from version.js at runtime (no validation needed)
 fi
 
 if should_update "lite/miniCycle-lite.html" && [ -f "lite/miniCycle-lite.html" ]; then
@@ -734,17 +807,7 @@ if should_update "lite/miniCycle-lite.html" && [ -f "lite/miniCycle-lite.html" ]
     fi
 fi
 
-# Validate service worker
-if should_update "service-worker.js" && [ -f "service-worker.js" ]; then
-    if ! grep -q "CACHE_VERSION = '$SW_VERSION'" service-worker.js; then
-        echo "⚠️  Warning: service-worker.js CACHE_VERSION may not have updated"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-    fi
-    if ! grep -q "APP_VERSION = '$NEW_VERSION'" service-worker.js; then
-        echo "⚠️  Warning: service-worker.js APP_VERSION may not have updated"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-    fi
-fi
+# Note: service-worker.js validation removed - it reads from version.js via importScripts
 
 # Validate manifests
 if should_update "manifest.json" && [ -f "manifest.json" ]; then
@@ -785,9 +848,11 @@ echo ""
 echo "🎉 Update completed successfully!"
 echo ""
 echo "📊 Update Summary:"
-echo "   Files updated: $TOTAL_FILES"
+echo "   Selected files updated: $TOTAL_FILES"
+echo "   Debug markers updated: 4 (appInit, appContext, constants, diBase)"
+echo "   version.js: regenerated"
 echo "   App version: $NEW_VERSION"
-echo "   Service Worker: $SW_VERSION"
+echo "   Cache version: $NEW_CACHE_VERSION"
 echo ""
 echo "📁 Backup location: $BACKUP_FOLDER"
 echo "🔧 Restore script: $BACKUP_FOLDER/restore.sh"
@@ -811,6 +876,94 @@ echo "4. Test both full and lite versions"
 echo ""
 echo "🔄 To restore previous versions:"
 echo "   cd $BACKUP_FOLDER && ./restore.sh"
+echo ""
+
+# ============================================
+# CHANGELOG GENERATION
+# ============================================
+
+echo "📝 Changelog"
+echo "------------"
+
+# Determine if we should update changelog
+UPDATE_CHANGELOG=false
+if [ "$AUTO_MODE" = true ]; then
+    if [ "$AUTO_CHANGELOG" = true ]; then
+        UPDATE_CHANGELOG=true
+        echo "🤖 Auto mode: Generating changelog..."
+    else
+        echo "⏭️  Auto mode: Skipping changelog (use --changelog to auto-generate)"
+    fi
+else
+    read -p "Update CHANGELOG.md with git commits? (y/N): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        UPDATE_CHANGELOG=true
+    fi
+fi
+
+if [ "$UPDATE_CHANGELOG" = true ]; then
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        CHANGELOG_FILE="CHANGELOG.md"
+
+        # Get the last tag (if any)
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+        # Get commits since last tag (or all commits if no tag)
+        if [ -n "$LAST_TAG" ]; then
+            echo "📋 Getting commits since $LAST_TAG..."
+            COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --no-merges 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
+        else
+            echo "📋 Getting recent commits (no previous tag found)..."
+            COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
+        fi
+
+        if [ -n "$COMMITS" ]; then
+            # Format date
+            TODAY=$(date +"%Y-%m-%d")
+
+            # Create new changelog entry
+            NEW_ENTRY="## [$NEW_VERSION] - $TODAY"$'\n'
+            while IFS= read -r commit; do
+                # Extract just the message (remove commit hash)
+                MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
+                NEW_ENTRY+="- $MSG"$'\n'
+            done <<< "$COMMITS"
+            NEW_ENTRY+=$'\n'
+
+            # Create or update changelog
+            if [ -f "$CHANGELOG_FILE" ]; then
+                # Prepend new entry to existing changelog
+                echo "📝 Prepending to existing $CHANGELOG_FILE..."
+                TEMP_FILE=$(mktemp)
+                echo "$NEW_ENTRY" > "$TEMP_FILE"
+                cat "$CHANGELOG_FILE" >> "$TEMP_FILE"
+                mv "$TEMP_FILE" "$CHANGELOG_FILE"
+            else
+                # Create new changelog
+                echo "📝 Creating new $CHANGELOG_FILE..."
+                echo "# Changelog" > "$CHANGELOG_FILE"
+                echo "" >> "$CHANGELOG_FILE"
+                echo "All notable changes to miniCycle will be documented in this file." >> "$CHANGELOG_FILE"
+                echo "" >> "$CHANGELOG_FILE"
+                echo "$NEW_ENTRY" >> "$CHANGELOG_FILE"
+            fi
+
+            # Count commits added
+            COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
+            echo "✅ Added $COMMIT_COUNT commits to changelog"
+        else
+            echo "ℹ️  No new commits to add (or all were version bumps)"
+        fi
+    else
+        echo "⚠️  Not in a git repository - skipping changelog"
+    fi
+else
+    if [ "$AUTO_MODE" != true ]; then
+        echo "⏭️  Skipping changelog update"
+    fi
+fi
+
 echo ""
 
 # ============================================
@@ -865,7 +1018,7 @@ if [ "$CREATE_TAG" = true ]; then
             git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION
 
 App version: $NEW_VERSION
-Service Worker cache: $SW_VERSION
+Cache version: $NEW_CACHE_VERSION
 Generated by update-version.sh"
 
             if [ $? -eq 0 ]; then
@@ -936,11 +1089,20 @@ echo "✅ All done!"
 #
 # Auto mode:
 # • Increments app version by 1 (e.g., 1.483 → 1.484)
-# • Increments SW cache version by 1 (e.g., v271 → v272)
-# • Updates all files automatically
+# • Increments cache version by 1 (e.g., 391 → 392)
+# • Updates all files automatically (excludes lite by default)
 # • Skips all confirmation prompts
+# • Use --changelog to auto-generate changelog from git commits
+# • Use --lite to include lite version files
 # • Use --tag to auto-create git tag
 # • Use --push to auto-push tag to remote
+#
+# 📋 CHANGELOG GENERATION:
+# • Pulls commits since last git tag
+# • Filters out version bump commits automatically
+# • Prepends new entry to CHANGELOG.md
+# • Creates CHANGELOG.md if it doesn't exist
+# • Format: ## [version] - YYYY-MM-DD
 #
 # 📝 PLATFORM NOTES:
 # • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled
@@ -977,25 +1139,30 @@ echo "✅ All done!"
 # Core files (version parameters + meta tags):
 # • version.js                    - Single source of truth (auto-generated)
 # • miniCycle.html                - ?v= params, currentVersion, meta tags
-# • miniCycle-main.js             - Entrypoint, APP_VERSION fallback
-# • modules/boot/orchestrator.js  - Boot orchestration (was miniCycle-scripts.js)
-# • service-worker.js             - CACHE_VERSION + APP_VERSION
 #
-# Lite version:
-# • lite/miniCycle-lite.html
-# • lite/miniCycle-lite-scripts.js
+# Files that read from version.js (no direct updates needed):
+# • service-worker.js             - Reads APP_VERSION and CACHE_VERSION via importScripts
+# • miniCycle-main.js             - Reads globalThis.APP_VERSION
+# • modules/boot/orchestrator.js  - Reads globalThis.APP_VERSION
+# • modules/boot/coreBoot.js      - Reads globalThis.APP_VERSION
+#
+# Debug version markers (for identifying stale cache):
+# • modules/core/appInit.js       - @version JSDoc tag
+# • modules/core/appContext.js    - APPCONTEXT_VERSION constant
+# • modules/core/constants.js     - CONSTANTS_VERSION constant
+# • modules/core/diBase.js        - DIBASE_VERSION constant
 #
 # Other pages:
 # • pages/product.html
 #
+# Lite version (only with --lite flag):
+# • lite/miniCycle-lite.html
+# • lite/miniCycle-lite-scripts.js
+# • manifest-lite.json
+#
 # Manifests & package:
 # • manifest.json
-# • manifest-lite.json
 # • package.json
-#
-# ============================================
-# 📦 MODULE VERSIONING (DI-PURE) - v4.0
-# ============================================
 #
 # ============================================
 # VERSION FLOW (Single Source of Truth)
