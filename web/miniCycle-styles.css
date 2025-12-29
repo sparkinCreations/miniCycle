@@ -460,10 +460,10 @@ button:not(.dot):hover {
     border-bottom: 2px solid #ffffff; /* Add subtle underline effect */
 }
 
-/* ✅ Saving indicator - subtle text that appears when autosave is running */
+/* ✅ Saving indicator - subtle text that appears below mode selector banner */
 .saving-indicator {
     position: fixed;
-    top: 78px;
+    top: 105px;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Inter', sans-serif;
@@ -481,10 +481,10 @@ button:not(.dot):hover {
     visibility: visible;
 }
 
-/* Mobile: position saving indicator below mode selector */
+/* Mobile: position saving indicator below mode selector banner */
 @media (max-width: 768px) {
     .saving-indicator {
-        top: 125px;
+        top: 120px;
     }
 }
 
@@ -1123,17 +1123,83 @@ body.dark-mode.theme-golden-glow {
     border: 1px solid var(--header-border);
 }
 
-/* ✅ Mobile mode selector consistency */
-@media (max-width: 768px) {
-    .mobile-mode-selector-wrapper {
-        background: var(--header-bg);
-        border-bottom: 1px solid var(--header-border);
-    }
+/* ✅ Universal mode selector wrapper - always centered below header */
+.mode-selector-wrapper {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2px 0;
+    background: linear-gradient(135deg, #f1f1f172, #ffffff10);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    z-index: 19;
+    min-height: 28px;
 }
 
-/* ✅ Mode selector on left */
-.mode-selector-container {
-  justify-self: start;
+/* ✅ Universal mode selector - mobile-style for all screen sizes */
+.mode-selector-wrapper .mode-selector {
+    position: relative;
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    padding: 3px 20px 3px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 140px;
+    height: 22px;
+    appearance: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.3s ease;
+    /* Dropdown arrow */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%232c3270' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 10px;
+}
+
+/* ✅ Routine switcher button - positioned on right side of banner */
+.routine-switcher-btn {
+    position: absolute;
+    right: 15px;
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    width: 36px;
+    height: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.routine-switcher-btn:hover {
+    background: rgba(255,255,255,0.4);
+    border-color: #0c2091;
+}
+
+.routine-switcher-btn:active {
+    transform: scale(0.95);
+}
+
+.routine-switcher-btn svg {
+    stroke: rgb(44, 50, 112);
+    width: 16px;
+    height: 16px;
 }
 
 .mode-selector {
@@ -1143,7 +1209,7 @@ body.dark-mode.theme-golden-glow {
     border: 1px solid rgba(255, 255, 255, 0.72);
     border-radius: 10px;
     margin: 0;
-    padding: 5px 12px; /* ✅ Equal padding on both sides */
+    padding: 5px 12px;
     height: 28px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1181,10 +1247,6 @@ body.dark-mode.theme-golden-glow {
     border-top: 6px solid white;
     pointer-events: none;
 }
-    /* ✅ Mobile mode selector styling */
-    .mobile-mode-selector-wrapper {
-      display:none;
-    }
 
 .mode-selector:hover {
     background: rgba(0, 0, 0, 0.85);
@@ -1322,54 +1384,10 @@ body.theme-golden-glow .mode-selector:hover {
         }
     
         
-        /* ✅ Hide mode selector from header on mobile */
-        .mode-selector-container {
-            display: none;
+        /* ✅ Mobile: adjust mode selector wrapper position below taller header */
+        .mode-selector-wrapper {
+            top: 87px;
         }
-        
-        /* ✅ Mobile mode selector wrapper - properly positioned */
-        .mobile-mode-selector-wrapper {
-            position: fixed;
-            top: 87px; /* ✅ Match header height exactly */
-            left: 0;
-            right: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* ✅ Vertical centering */
-            padding: 0px 0px;
-            background: linear-gradient(135deg, #f1f1f172, #ffffff10);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-            z-index: 19;
-            min-height: 35px; /* ✅ Consistent height */
-        }
-
-                  .mobile-mode-selector-wrapper .mode-selector {
-                  position: relative;
-                  top: 1px;
-                  background: rgba(255,255,255,0.2); /* ✅ Add background for visibility */
-                  box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-                  border: 1px solid #0c20913f; /* ✅ Add subtle border */
-                  color: rgb(44, 50, 112); /* ✅ Better contrast with dark background */
-                  border-radius: 5px;
-                  padding: 3px 5px 3px 5px; /* ✅ Equal padding */
-                  font-size: 12px;
-                  font-weight: medium;
-                  width: 90%; /* ✅ Full width within wrapper */
-                  max-width: 130px; /* ✅ Match task list max-width */
-                  height: 25px;
-                  appearance: none;
-                  cursor: pointer;
-                  box-sizing: border-box; /* ✅ Fix the box-sizing */
-                  margin: 0 auto;
-                  
-                  /* ✅ Perfect centering */
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  text-align: center;
-              }
         .header-logo {
           width: auto;
           height: 30px;
@@ -1413,110 +1431,125 @@ body.theme-golden-glow .mode-selector:hover {
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }*/
 
-    body.dark-mode .mobile-mode-selector-wrapper .mode-selector {
+    body.dark-mode .mode-selector-wrapper .mode-selector {
         background: rgba(60, 60, 60, 0.8);
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: #f0f0f0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
     }
 
-    body.dark-mode .mobile-mode-selector-wrapper .mode-selector:hover {
+    body.dark-mode .mode-selector-wrapper .mode-selector:hover {
         background: rgba(80, 80, 80, 0.9);
         border-color: rgba(255, 255, 255, 0.3);
     }
 
-    body.dark-mode .mobile-mode-selector-wrapper .mode-selector:focus {
+    body.dark-mode .mode-selector-wrapper .mode-selector:focus {
         background: rgba(90, 90, 90, 0.95);
         border-color: rgba(255, 255, 255, 0.4);
         box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
     }
 
-    body.dark-mode .mobile-mode-selector-wrapper .mode-selector option {
+    body.dark-mode .mode-selector-wrapper .mode-selector option {
         background: rgba(40, 40, 40, 0.95);
         color: #f0f0f0;
     }
 
-    body.dark-mode .mobile-mode-selector-wrapper .mode-selector option:hover {
+    body.dark-mode .mode-selector-wrapper .mode-selector option:hover {
         background: rgba(60, 60, 60, 1);
     }
 
-    body.dark-mode .mobile-mode-selector-wrapper .mode-selector option:checked {
+    body.dark-mode .mode-selector-wrapper .mode-selector option:checked {
         background: rgba(100, 100, 255, 0.8);
         color: white;
     }
+
+    body.dark-mode .routine-switcher-btn {
+        background: rgba(60, 60, 60, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .routine-switcher-btn:hover {
+        background: rgba(80, 80, 80, 0.9);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    body.dark-mode .routine-switcher-btn svg {
+        stroke: #f0f0f0;
+    }
 }
 
-/* 🌊 Dark Ocean Theme: Mobile Mode Selector */
+/* 🌊 Dark Ocean Theme: Mode Selector */
 @media (max-width: 768px) {
-    body.theme-dark-ocean .mobile-mode-selector-wrapper {
+    body.theme-dark-ocean .mode-selector-wrapper {
         background: linear-gradient(135deg, #1a3a4f, #0c1724);
         border-bottom: 1px solid rgba(78, 205, 196, 0.2);
     }
 
-    body.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector {
+    body.theme-dark-ocean .mode-selector-wrapper .mode-selector {
         background: rgba(26, 58, 79, 0.8);
         border: 1px solid rgba(78, 205, 196, 0.3);
         color: #e0f7fa;
     }
 
-    body.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector:hover {
+    body.theme-dark-ocean .mode-selector-wrapper .mode-selector:hover {
         background: rgba(32, 70, 95, 0.9);
         border-color: rgba(78, 205, 196, 0.5);
     }
 }
 
-/* 🌟 Golden Glow Theme: Mobile Mode Selector */
+/* 🌟 Golden Glow Theme: Mode Selector */
 @media (max-width: 768px) {
-    body.theme-golden-glow .mobile-mode-selector-wrapper {
+    body.theme-golden-glow .mode-selector-wrapper {
         background: linear-gradient(135deg, #fff9e0, #ffeaa7);
         border-bottom: 1px solid rgba(255, 215, 0, 0.3);
     }
 
-    body.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector {
+    body.theme-golden-glow .mode-selector-wrapper .mode-selector {
         background: rgba(255, 248, 220, 0.8);
         border: 1px solid rgba(255, 215, 0, 0.4);
         color: #4a3d00;
     }
 
-    body.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector:hover {
+    body.theme-golden-glow .mode-selector-wrapper .mode-selector:hover {
         background: rgba(255, 240, 180, 0.9);
         border-color: rgba(255, 215, 0, 0.6);
     }
 }
 
-/* 🌟+🌙 Golden Glow Dark Mode: Mobile Mode Selector */
+/* 🌟+🌙 Golden Glow Dark Mode: Mode Selector */
 @media (max-width: 768px) {
-    body.dark-mode.theme-golden-glow .mobile-mode-selector-wrapper {
+    body.dark-mode.theme-golden-glow .mode-selector-wrapper {
         background: linear-gradient(135deg, #3b3200, #4a3d00);
         border-bottom: 1px solid rgba(255, 229, 60, 0.2);
     }
 
-    body.dark-mode.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector {
+    body.dark-mode.theme-golden-glow .mode-selector-wrapper .mode-selector {
         background: rgba(75, 61, 0, 0.8);
         border: 1px solid rgba(255, 229, 60, 0.3);
         color: #ffeaa7;
     }
 
-    body.dark-mode.theme-golden-glow .mobile-mode-selector-wrapper .mode-selector:hover {
+    body.dark-mode.theme-golden-glow .mode-selector-wrapper .mode-selector:hover {
         background: rgba(94, 72, 0, 0.9);
         border-color: rgba(255, 229, 60, 0.5);
     }
 }
 
-/* 🌊+🌙 Dark Ocean Dark Mode: Mobile Mode Selector */
+/* 🌊+🌙 Dark Ocean Dark Mode: Mode Selector */
 @media (max-width: 768px) {
-    body.dark-mode.theme-dark-ocean .mobile-mode-selector-wrapper {
+    body.dark-mode.theme-dark-ocean .mode-selector-wrapper {
         background: linear-gradient(135deg, #0c1724, #102030);
         border-bottom: 1px solid rgba(78, 205, 196, 0.2);
     }
 
-    body.dark-mode.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector {
+    body.dark-mode.theme-dark-ocean .mode-selector-wrapper .mode-selector {
         background: rgba(16, 32, 48, 0.8);
         border: 1px solid rgba(78, 205, 196, 0.3);
         color: #b2f0ff;
     }
 
-    body.dark-mode.theme-dark-ocean .mobile-mode-selector-wrapper .mode-selector:hover {
+    body.dark-mode.theme-dark-ocean .mode-selector-wrapper .mode-selector:hover {
         background: rgba(27, 47, 64, 0.9);
         border-color: rgba(78, 205, 196, 0.5);
     }

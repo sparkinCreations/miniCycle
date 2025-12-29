@@ -1,3 +1,7 @@
+## [1.605] - 2025-12-29
+- feat: implement saving indicator and routine search functionality with UI updates
+
+
 ## [1.604] - 2025-12-29
 - Refactor code structure for improved readability and maintainability
 

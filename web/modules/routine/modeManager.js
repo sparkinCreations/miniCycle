@@ -275,9 +275,8 @@ export class ModeManager {
         const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
         const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
         const modeSelector = this.deps.getElementById('mode-selector');
-        const mobileModeSelector = this.deps.getElementById('mobile-mode-selector');
 
-        if (!toggleAutoReset || !deleteCheckedTasks || !modeSelector || !mobileModeSelector) {
+        if (!toggleAutoReset || !deleteCheckedTasks || !modeSelector) {
             console.warn('⚠️ ModeManager: Required DOM elements not found');
             return;
         }
@@ -319,11 +318,10 @@ export class ModeManager {
             mode = 'manual-cycle';
         }
 
-        console.log('📝 ModeManager: Setting both selectors to:', mode);
+        console.log('📝 ModeManager: Setting selector to:', mode);
 
-        // Update both selectors
+        // Update selector
         modeSelector.value = mode;
-        mobileModeSelector.value = mode;
 
         // Update body classes
         document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
@@ -462,24 +460,22 @@ export class ModeManager {
             return;
         }
 
-        console.log('🎯 ModeManager: Setting up mode selectors (state-based)...');
+        console.log('🎯 ModeManager: Setting up mode selector (state-based)...');
 
         // Wait for core
         await this.deps.appInit?.waitForCore();
 
         const modeSelector = this.deps.getElementById('mode-selector');
-        const mobileModeSelector = this.deps.getElementById('mobile-mode-selector');
         const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
         const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
 
         console.log('🔍 ModeManager: Element detection:', {
             modeSelector: !!modeSelector,
-            mobileModeSelector: !!mobileModeSelector,
             toggleAutoReset: !!toggleAutoReset,
             deleteCheckedTasks: !!deleteCheckedTasks
         });
 
-        if (!modeSelector || !mobileModeSelector || !toggleAutoReset || !deleteCheckedTasks) {
+        if (!modeSelector || !toggleAutoReset || !deleteCheckedTasks) {
             console.warn('⚠️ ModeManager: Mode selector elements not found');
             return;
         }
@@ -507,9 +503,8 @@ export class ModeManager {
                     break;
             }
 
-            // Keep both selectors in sync
+            // Update selector value
             modeSelector.value = selectedMode;
-            mobileModeSelector.value = selectedMode;
 
             // ✅ UPDATE STORAGE FIRST - must await to ensure data is saved before UI sync
             await this.updateStorageFromToggles();
@@ -582,43 +577,6 @@ export class ModeManager {
         };
         safeAdd(modeSelector, 'change', modeSelector._changeHandler);
 
-        mobileModeSelector._changeHandler = async (e) => {
-            console.log('📱 ModeManager: Mobile mode selector changed:', e.target.value);
-            await syncTogglesFromMode(e.target.value);
-            this.updateCycleModeDescription();
-
-            if (this.deps.checkCompleteAllButton) {
-                this.deps.checkCompleteAllButton();
-            }
-
-            // ✅ Refresh task buttons to apply mode-specific button visibility
-            this.refreshTaskButtonsForModeChange();
-
-            // ✅ Update recurring button visibility for mode change (DI-pure)
-            if (this.deps.recurringCore?.updateRecurringButtonVisibility) {
-                console.log('🔁 ModeManager: Updating recurring button visibility for mode change...');
-                setTimeout(() => {
-                    this.deps.recurringCore.updateRecurringButtonVisibility();
-                    console.log('🔁 ModeManager: Recurring button visibility update completed');
-                }, 100);
-            }
-
-            // ✅ If switching to auto-cycle mode, check if cycle should complete
-            if (e.target.value === 'auto-cycle' && this.deps.checkMiniCycle) {
-                console.log('🔄 ModeManager: Auto-cycle mode enabled - checking if cycle should complete...');
-                setTimeout(() => {
-                    this.deps.checkMiniCycle();
-                }, 150); // Small delay to ensure UI is updated first
-            }
-
-            if (this.deps.showNotification) {
-                this.deps.showNotification(`Switched to ${this.getModeName(e.target.value)}`, 'success', 2000);
-            }
-
-            console.log('✅ ModeManager: Mode change applied without reload');
-        };
-        safeAdd(mobileModeSelector, 'change', mobileModeSelector._changeHandler);
-
         toggleAutoReset._modeChangeHandler = (e) => {
             console.log('🔘 ModeManager: Auto Reset toggle changed:', e.target.checked);
             this.syncModeFromToggles();
@@ -657,7 +615,7 @@ export class ModeManager {
         safeAdd(deleteCheckedTasks, 'change', deleteCheckedTasks._modeChangeHandler);
 
         // ✅ Initialize on load
-        console.log('🚀 ModeManager: Initializing mode selectors...');
+        console.log('🚀 ModeManager: Initializing mode selector...');
         this.syncModeFromToggles();
 
         // ✅ Check if we need to restore mode after reload
@@ -668,22 +626,18 @@ export class ModeManager {
 
             // Small delay to ensure DOM is ready
             setTimeout(() => {
-                // ✅ FIX: Re-query DOM elements fresh inside setTimeout (not stale from outer scope)
                 const freshModeSelector = this.deps.getElementById("mode-selector");
-                const freshMobileModeSelector = this.deps.getElementById("mobile-mode-selector");
-
                 if (freshModeSelector) freshModeSelector.value = modeToRestore;
-                if (freshMobileModeSelector) freshMobileModeSelector.value = modeToRestore;
                 this.syncModeFromToggles();
                 this.updateCycleModeDescription();
 
                 if (this.deps.showNotification) {
-                    this.deps.showNotification(`✅ Switched to ${this.getModeName(modeToRestore)}`, 'success', 3000);
+                    this.deps.showNotification(`Switched to ${this.getModeName(modeToRestore)}`, 'success', 3000);
                 }
             }, 500);
         }
 
-        console.log('✅ ModeManager: Mode selectors setup complete');
+        console.log('✅ ModeManager: Mode selector setup complete');
     }
 
     /**
@@ -977,8 +931,7 @@ export class ModeManager {
         // Get DOM elements
         const toggleAutoReset = this.deps.getElementById('toggleAutoReset');
         const deleteCheckedTasks = this.deps.getElementById('deleteCheckedTasks');
-        const modeSelector = this.deps.getElementById('modeSelector');
-        const mobileModeSelector = this.deps.getElementById('mobile-mode-selector');
+        const modeSelector = this.deps.getElementById('mode-selector');
 
         if (!toggleAutoReset || !deleteCheckedTasks) {
             console.warn('⚠️ ModeManager: Toggle elements not found for validation');
@@ -1015,9 +968,8 @@ export class ModeManager {
                 correctMode = 'manual-cycle';
             }
 
-            // Update mode selectors
+            // Update mode selector
             if (modeSelector) modeSelector.value = correctMode;
-            if (mobileModeSelector) mobileModeSelector.value = correctMode;
 
             // Update body class
             document.body.className = document.body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
