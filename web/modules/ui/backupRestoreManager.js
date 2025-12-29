@@ -35,6 +35,16 @@ export function setBackupRestoreManagerDependencies(dependencies) {
 }
 
 // ============================================================================
+// IDEMPOTENCY GUARDS
+// ============================================================================
+
+const _initialized = {
+    backupButton: false,
+    restoreButton: false,
+    resetButton: false
+};
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -71,6 +81,13 @@ export function neutralizeAppState() {
  * Setup backup button functionality
  */
 export function setupBackupButton() {
+    // ✅ Idempotency guard
+    if (_initialized.backupButton) {
+        console.log('✅ Backup button already set up');
+        return;
+    }
+    _initialized.backupButton = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('BackupRestoreManager: safeAddEventListener dependency not injected');
@@ -118,6 +135,13 @@ export function setupBackupButton() {
  * Setup restore button functionality
  */
 export function setupRestoreButton() {
+    // ✅ Idempotency guard
+    if (_initialized.restoreButton) {
+        console.log('✅ Restore button already set up');
+        return;
+    }
+    _initialized.restoreButton = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('BackupRestoreManager: safeAddEventListener dependency not injected');

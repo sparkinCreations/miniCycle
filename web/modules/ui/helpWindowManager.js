@@ -19,8 +19,8 @@ const di = createDIModule('HelpWindowManager', {
     safeAddEventListener: optional(null)
 });
 
-// Late-binding deps via Proxy
-const deps = new Proxy({}, {
+// Late-binding deps via Proxy (standard: _deps with underscore prefix)
+const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
     }
@@ -83,7 +83,7 @@ export class HelpWindowManager {
         this._eventListenersInitialized = true;
 
         // Use injected safeAddEventListener with fallback
-        const safeAdd = deps.safeAddEventListener || ((el, ev, fn) => {
+        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => {
             el?.removeEventListener(ev, fn);
             el?.addEventListener(ev, fn);
         });
@@ -255,8 +255,8 @@ export class HelpWindowManager {
         let routineSize = '';
 
         // Prefer AppState if available, fall back to loadMiniCycleData
-        if (deps.AppState?.isReady?.()) {
-            const state = deps.AppState.get();
+        if (_deps.AppState?.isReady?.()) {
+            const state = _deps.AppState.get();
             if (state) {
                 const activeCycle = state.appState?.activeCycleId;
                 const currentCycle = state.data?.cycles?.[activeCycle];
@@ -267,8 +267,8 @@ export class HelpWindowManager {
                     routineSize = `~${formatBytes(sizeBytes)}`;
                 }
             }
-        } else if (typeof deps.loadMiniCycleData === 'function') {
-            const schemaData = deps.loadMiniCycleData();
+        } else if (typeof _deps.loadMiniCycleData === 'function') {
+            const schemaData = _deps.loadMiniCycleData();
             if (schemaData) {
                 const { cycles, activeCycle } = schemaData;
                 const currentCycle = cycles[activeCycle];

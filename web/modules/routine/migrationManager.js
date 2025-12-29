@@ -36,8 +36,8 @@ const di = createDIModule('MigrationManager', {
     document: optional(null)
 });
 
-// Late-binding deps via Proxy
-const Deps = new Proxy({}, {
+// Late-binding deps via Proxy (standard: _deps with underscore prefix)
+const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
     }
@@ -99,14 +99,14 @@ function assertInjected(name, value) {
  * @public
  */
 export function createInitialSchema25Data() {
-    assertInjected('storage', Deps.storage);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('now', _deps.now);
 
     const initialData = {
         schemaVersion: "2.5",
         metadata: {
-            createdAt: Deps.now(),
-            lastModified: Deps.now(),
+            createdAt: _deps.now(),
+            lastModified: _deps.now(),
             migratedFrom: null,
             migrationDate: null,
             totalCyclesCreated: 0,
@@ -157,7 +157,7 @@ export function createInitialSchema25Data() {
         }
     };
 
-    Deps.storage.setItem("miniCycleData", JSON.stringify(initialData));
+    _deps.storage.setItem("miniCycleData", JSON.stringify(initialData));
     console.log('✅ Initial Schema 2.5 data created');
 }
 
@@ -231,10 +231,10 @@ const SCHEMA_2_5_TARGET = {
  * @public
  */
 export function checkMigrationNeeded() {
-    assertInjected('storage', Deps.storage);
-    assertInjected('document', Deps.document);
+    assertInjected('storage', _deps.storage);
+    assertInjected('document', _deps.document);
 
-    const currentData = Deps.storage.getItem("miniCycleData");
+    const currentData = _deps.storage.getItem("miniCycleData");
     if (currentData) {
         const parsed = JSON.parse(currentData);
         if (parsed.schemaVersion === "2.5") {
@@ -243,9 +243,9 @@ export function checkMigrationNeeded() {
     }
 
     // Check for old format data
-    const oldCycles = Deps.storage.getItem("miniCycleStorage");
-    const lastUsed = Deps.storage.getItem("lastUsedMiniCycle");
-    const reminders = Deps.storage.getItem("miniCycleReminders");
+    const oldCycles = _deps.storage.getItem("miniCycleStorage");
+    const lastUsed = _deps.storage.getItem("lastUsedMiniCycle");
+    const reminders = _deps.storage.getItem("miniCycleReminders");
 
     const hasOldData = !!(oldCycles || lastUsed || reminders);
 
@@ -256,8 +256,8 @@ export function checkMigrationNeeded() {
             cycles: !!oldCycles,
             lastUsed: !!lastUsed,
             reminders: !!reminders,
-            milestones: !!Deps.storage.getItem("milestoneUnlocks"),
-            darkMode: Deps.document.body.classList.contains('dark-mode')
+            milestones: !!_deps.storage.getItem("milestoneUnlocks"),
+            darkMode: _deps.document.body.classList.contains('dark-mode')
         }
     };
 }
@@ -275,8 +275,8 @@ export function checkMigrationNeeded() {
  * @public
  */
 export function simulateMigrationToSchema25(dryRun = true) {
-    assertInjected('storage', Deps.storage);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('now', _deps.now);
 
     const results = {
         success: false,
@@ -288,25 +288,25 @@ export function simulateMigrationToSchema25(dryRun = true) {
 
     try {
         // 1. Gather existing data
-        const oldCycles = JSON.parse(Deps.storage.getItem("miniCycleStorage") || "{}");
-        const lastUsed = Deps.storage.getItem("lastUsedMiniCycle");
-        const reminders = JSON.parse(Deps.storage.getItem("miniCycleReminders") || "{}");
-        const milestones = JSON.parse(Deps.storage.getItem("milestoneUnlocks") || "{}");
-        const moveArrows = Deps.storage.getItem("miniCycleMoveArrows") === "true";
-        const threeDots = Deps.storage.getItem("miniCycleThreeDots") === "true";
-        const alwaysRecurring = JSON.parse(Deps.storage.getItem("miniCycleAlwaysShowRecurring")) || false;
-        const darkModeEnabled = Deps.storage.getItem("darkModeEnabled") === "true";
-        const currentTheme = Deps.storage.getItem("currentTheme") || null;
-        const notifPosition = JSON.parse(Deps.storage.getItem("miniCycleNotificationPosition") || "{}");
+        const oldCycles = JSON.parse(_deps.storage.getItem("miniCycleStorage") || "{}");
+        const lastUsed = _deps.storage.getItem("lastUsedMiniCycle");
+        const reminders = JSON.parse(_deps.storage.getItem("miniCycleReminders") || "{}");
+        const milestones = JSON.parse(_deps.storage.getItem("milestoneUnlocks") || "{}");
+        const moveArrows = _deps.storage.getItem("miniCycleMoveArrows") === "true";
+        const threeDots = _deps.storage.getItem("miniCycleThreeDots") === "true";
+        const alwaysRecurring = JSON.parse(_deps.storage.getItem("miniCycleAlwaysShowRecurring")) || false;
+        const darkModeEnabled = _deps.storage.getItem("darkModeEnabled") === "true";
+        const currentTheme = _deps.storage.getItem("currentTheme") || null;
+        const notifPosition = JSON.parse(_deps.storage.getItem("miniCycleNotificationPosition") || "{}");
 
         // 2. Create new schema structure
         const newData = JSON.parse(JSON.stringify(SCHEMA_2_5_TARGET));
 
         // 3. Populate metadata
-        newData.metadata.createdAt = Deps.now();
-        newData.metadata.lastModified = Deps.now();
+        newData.metadata.createdAt = _deps.now();
+        newData.metadata.lastModified = _deps.now();
         newData.metadata.migratedFrom = "legacy";
-        newData.metadata.migrationDate = Deps.now();
+        newData.metadata.migrationDate = _deps.now();
         newData.metadata.totalCyclesCreated = Object.keys(oldCycles).length;
 
         // Calculate total completed tasks
@@ -359,11 +359,11 @@ export function simulateMigrationToSchema25(dryRun = true) {
 
         if (!dryRun) {
             // Actually perform migration
-            Deps.storage.setItem("miniCycleData", JSON.stringify(newData));
+            _deps.storage.setItem("miniCycleData", JSON.stringify(newData));
             results.changes.push("🚀 Migration completed - data saved to miniCycleData");
 
             // Optionally backup old data
-            const backupKey = `migration_backup_${Deps.now()}`;
+            const backupKey = `migration_backup_${_deps.now()}`;
             const oldData = {
                 miniCycleStorage: oldCycles,
                 lastUsedMiniCycle: lastUsed,
@@ -372,7 +372,7 @@ export function simulateMigrationToSchema25(dryRun = true) {
                 darkModeEnabled: darkModeEnabled,
                 currentTheme: currentTheme
             };
-            Deps.storage.setItem(backupKey, JSON.stringify(oldData));
+            _deps.storage.setItem(backupKey, JSON.stringify(oldData));
             results.changes.push(`💾 Old data backed up to ${backupKey}`);
         }
 
@@ -394,29 +394,29 @@ export function simulateMigrationToSchema25(dryRun = true) {
  * @public
  */
 export function performSchema25Migration() {
-    assertInjected('storage', Deps.storage);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('now', _deps.now);
 
     // Create backup first
-    const backupKey = `pre_migration_backup_${Deps.now()}`;
+    const backupKey = `pre_migration_backup_${_deps.now()}`;
     const currentData = {};
 
     // Backup all current localStorage
     ["miniCycleStorage", "lastUsedMiniCycle", "miniCycleReminders",
      "milestoneUnlocks", "darkModeEnabled", "currentTheme",
      "miniCycleNotificationPosition", "miniCycleAlwaysShowRecurring"].forEach(key => {
-        const value = Deps.storage.getItem(key);
+        const value = _deps.storage.getItem(key);
         if (value) currentData[key] = value;
     });
 
-    Deps.storage.setItem(backupKey, JSON.stringify(currentData));
+    _deps.storage.setItem(backupKey, JSON.stringify(currentData));
 
     // Perform actual migration
     const results = simulateMigrationToSchema25(false);
 
     if (results.success) {
         // Clean up old keys (optional - you might want to keep them temporarily)
-        // Object.keys(currentData).forEach(key => Deps.storage.removeItem(key));
+        // Object.keys(currentData).forEach(key => _deps.storage.removeItem(key));
         results.changes.push(`🗂️ Backup created: ${backupKey}`);
     }
 
@@ -436,9 +436,9 @@ export function performSchema25Migration() {
  * @public
  */
 export function validateAllMiniCycleTasksLenient() {
-    assertInjected('storage', Deps.storage);
+    assertInjected('storage', _deps.storage);
 
-    const storage = JSON.parse(Deps.storage.getItem("miniCycleStorage")) || {};
+    const storage = JSON.parse(_deps.storage.getItem("miniCycleStorage")) || {};
     const results = [];
 
     for (const [cycleName, cycleData] of Object.entries(storage)) {
@@ -485,12 +485,12 @@ export function validateAllMiniCycleTasksLenient() {
  * @public
  */
 export function fixTaskValidationIssues() {
-    assertInjected('storage', Deps.storage);
+    assertInjected('storage', _deps.storage);
 
     console.log('🔧 Fixing task validation issues...');
 
     try {
-        const legacyData = Deps.storage.getItem('miniCycleStorage');
+        const legacyData = _deps.storage.getItem('miniCycleStorage');
         if (!legacyData) {
             console.log('⚠️ No legacy data found');
             return { success: false, message: 'No legacy data found' };
@@ -640,7 +640,7 @@ export function fixTaskValidationIssues() {
         });
 
         if (fixedTasks > 0) {
-            Deps.storage.setItem('miniCycleStorage', JSON.stringify(cycles));
+            _deps.storage.setItem('miniCycleStorage', JSON.stringify(cycles));
             console.log(`✅ Fixed ${fixedTasks} task validation issues:`);
             fixedDetails.forEach(detail => console.log(`   - ${detail}`));
 
@@ -686,9 +686,9 @@ export function fixTaskValidationIssues() {
  * @private
  */
 async function performAutoMigration(options = {}) {
-    assertInjected('storage', Deps.storage);
-    assertInjected('showNotification', Deps.showNotification);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('showNotification', _deps.showNotification);
+    assertInjected('now', _deps.now);
 
     const {
         forceMode = false,
@@ -720,7 +720,7 @@ async function performAutoMigration(options = {}) {
             const migrationResult = performSchema25Migration();
 
             if (migrationResult.success || migrationResult.partialSuccess) {
-                Deps.showNotification('✅ Force migration completed! Some data may need manual review.', 'success', 6000);
+                _deps.showNotification('✅ Force migration completed! Some data may need manual review.', 'success', 6000);
                 return {
                     success: true,
                     forced: true,
@@ -733,7 +733,7 @@ async function performAutoMigration(options = {}) {
             }
         }
 
-        console.log('📊 Current localStorage keys:', Object.keys(Deps.storage));
+        console.log('📊 Current localStorage keys:', Object.keys(_deps.storage));
 
         // Step 1: Check if migration is needed
         console.log('🔍 Checking if migration is needed...');
@@ -742,7 +742,7 @@ async function performAutoMigration(options = {}) {
 
         if (!migrationCheck.needed) {
             console.log('✅ No migration needed - user already on Schema 2.5');
-            console.log('📦 Current miniCycleData exists:', !!Deps.storage.getItem("miniCycleData"));
+            console.log('📦 Current miniCycleData exists:', !!_deps.storage.getItem("miniCycleData"));
             return { success: true, message: 'Already on latest schema' };
         }
 
@@ -750,12 +750,12 @@ async function performAutoMigration(options = {}) {
 
         // Step 2: Show user notification
         console.log('📢 Showing migration notification to user...');
-        Deps.showNotification('🔄 Updating your data format... This will take a moment.', 'info', 200);
+        _deps.showNotification('🔄 Updating your data format... This will take a moment.', 'info', 200);
 
         // Step 3: Create automatic backup before migration
         console.log('📥 Creating automatic backup before migration...');
         console.log('💾 Available storage before backup:', {
-            used: JSON.stringify(Deps.storage).length,
+            used: JSON.stringify(_deps.storage).length,
             limit: '~5-10MB (browser dependent)'
         });
 
@@ -782,7 +782,7 @@ async function performAutoMigration(options = {}) {
         if (fixResult.success && fixResult.fixedCount > 0) {
             console.log(`✅ Successfully fixed ${fixResult.fixedCount} data issues:`);
             fixResult.details?.forEach(detail => console.log(`   - ${detail}`));
-            Deps.showNotification(`🔧 Fixed ${fixResult.fixedCount} data compatibility issues`, 'info', 3000);
+            _deps.showNotification(`🔧 Fixed ${fixResult.fixedCount} data compatibility issues`, 'info', 3000);
         } else if (!fixResult.success) {
             console.warn('⚠️ Data fixing encountered issues, but continuing with migration');
             console.warn('🔧 Fix error:', fixResult.message);
@@ -838,14 +838,14 @@ async function performAutoMigration(options = {}) {
 
         // Step 6: ✅ Simple post-migration validation
         console.log('✅ Validating migrated data...');
-        const newSchemaData = Deps.storage.getItem("miniCycleData");
+        const newSchemaData = _deps.storage.getItem("miniCycleData");
         console.log('📦 New schema data exists:', !!newSchemaData);
         console.log('📏 New schema data size:', newSchemaData ? newSchemaData.length : 0);
 
         if (!newSchemaData) {
             console.error('❌ Post-migration validation failed: No Schema 2.5 data found');
             console.error('🔧 Troubleshooting: Migration did not create miniCycleData key');
-            console.error('📊 Current localStorage keys after migration:', Object.keys(Deps.storage));
+            console.error('📊 Current localStorage keys after migration:', Object.keys(_deps.storage));
             return await handleMigrationFailure('Migration validation failed - no new data found', backupResult.backupKey);
         }
 
@@ -891,19 +891,19 @@ async function performAutoMigration(options = {}) {
 
         // ✅ Clean up old separate localStorage keys
         console.log('🧹 Cleaning up legacy localStorage keys...');
-        Deps.storage.removeItem("overdueTaskStates"); // Clean up old separate key
+        _deps.storage.removeItem("overdueTaskStates"); // Clean up old separate key
         console.log('✅ Removed old overdueTaskStates key');
 
         // ✅ Enhanced success notification with fix details
         const successMessage = fixResult.fixedCount > 0
             ? `✅ Data updated successfully! Fixed ${fixResult.fixedCount} compatibility issues.`
             : '✅ Data format updated successfully!';
-        Deps.showNotification(successMessage, 'success', 4000);
+        _deps.showNotification(successMessage, 'success', 4000);
 
         // Step 8: Store migration completion info
-        const legacyData = Deps.storage.getItem('miniCycleStorage') || '{}';
+        const legacyData = _deps.storage.getItem('miniCycleStorage') || '{}';
         const migrationInfo = {
-            completed: Deps.now(),
+            completed: _deps.now(),
             backupKey: backupResult.backupKey,
             version: '1.395',
             autoMigrated: true,
@@ -917,7 +917,7 @@ async function performAutoMigration(options = {}) {
         };
 
         console.log('💾 Storing migration completion info:', migrationInfo);
-        Deps.storage.setItem('miniCycleMigrationInfo', JSON.stringify(migrationInfo));
+        _deps.storage.setItem('miniCycleMigrationInfo', JSON.stringify(migrationInfo));
 
         return {
             success: true,
@@ -944,19 +944,19 @@ async function performAutoMigration(options = {}) {
  * @private
  */
 function createMinimalSchema25() {
-    assertInjected('storage', Deps.storage);
-    assertInjected('showNotification', Deps.showNotification);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('showNotification', _deps.showNotification);
+    assertInjected('now', _deps.now);
 
     console.log('🆘 Creating minimal Schema 2.5 structure as last resort');
 
     const minimalData = {
         schemaVersion: "2.5",
         metadata: {
-            createdAt: Deps.now(),
-            lastModified: Deps.now(),
+            createdAt: _deps.now(),
+            lastModified: _deps.now(),
             migratedFrom: "force_migration",
-            migrationDate: Deps.now(),
+            migrationDate: _deps.now(),
             totalCyclesCreated: 1,
             totalTasksCompleted: 0,
             schemaVersion: "2.5"
@@ -981,7 +981,7 @@ function createMinimalSchema25() {
                     autoReset: true,
                     deleteCheckedTasks: false,
                     cycleCount: 0,
-                    createdAt: Deps.now(),
+                    createdAt: _deps.now(),
                     recurringTemplates: {}
                 }
             }
@@ -1002,9 +1002,9 @@ function createMinimalSchema25() {
         }
     };
 
-    Deps.storage.setItem("miniCycleData", JSON.stringify(minimalData));
+    _deps.storage.setItem("miniCycleData", JSON.stringify(minimalData));
 
-    Deps.showNotification('⚠️ Created fresh miniCycle. Previous data may have been incompatible.', 'warning', 8000);
+    _deps.showNotification('⚠️ Created fresh miniCycle. Previous data may have been incompatible.', 'warning', 8000);
 
     return {
         success: true,
@@ -1029,9 +1029,9 @@ function createMinimalSchema25() {
  * @private
  */
 async function handleMigrationFailure(reason, backupKey) {
-    assertInjected('storage', Deps.storage);
-    assertInjected('sessionStorage', Deps.sessionStorage);
-    assertInjected('showNotification', Deps.showNotification);
+    assertInjected('storage', _deps.storage);
+    assertInjected('sessionStorage', _deps.sessionStorage);
+    assertInjected('showNotification', _deps.showNotification);
 
     try {
         console.log('🔄 Handling migration failure, attempting to maintain legacy data access…');
@@ -1042,13 +1042,13 @@ async function handleMigrationFailure(reason, backupKey) {
         if (backupKey) {
             console.log('📥 Attempting to restore from backup:', backupKey);
             console.log('🔍 Checking if backup exists in localStorage...');
-            const backupExists = !!Deps.storage.getItem(backupKey);
+            const backupExists = !!_deps.storage.getItem(backupKey);
             console.log('💾 Backup exists:', backupExists);
 
             try {
                 await restoreFromAutomaticBackup(backupKey);
                 console.log('✅ Successfully restored from backup');
-                console.log('📊 Post-restore localStorage keys:', Object.keys(Deps.storage));
+                console.log('📊 Post-restore localStorage keys:', Object.keys(_deps.storage));
             } catch (restoreError) {
                 console.error('❌ Failed to restore from backup:', restoreError);
                 console.error('🔧 Restore error details:', restoreError.message);
@@ -1069,16 +1069,16 @@ async function handleMigrationFailure(reason, backupKey) {
 
             // Step 3: Set session flag to use legacy mode until reload
             console.log('🚩 Setting legacy fallback mode flags...');
-            Deps.sessionStorage.setItem('miniCycleLegacyModeActive', 'true');
-            Deps.sessionStorage.setItem('miniCycleMigrationFailureReason', reason);
+            _deps.sessionStorage.setItem('miniCycleLegacyModeActive', 'true');
+            _deps.sessionStorage.setItem('miniCycleMigrationFailureReason', reason);
 
             console.log('📊 Session storage flags set:', {
-                legacyMode: Deps.sessionStorage.getItem('miniCycleLegacyModeActive'),
-                failureReason: Deps.sessionStorage.getItem('miniCycleMigrationFailureReason')
+                legacyMode: _deps.sessionStorage.getItem('miniCycleLegacyModeActive'),
+                failureReason: _deps.sessionStorage.getItem('miniCycleMigrationFailureReason')
             });
 
             // Step 4: Show user-friendly notification
-            Deps.showNotification(
+            _deps.showNotification(
                 '⚠️ Unable to update data format. Using existing data until next app reload. Your data is safe!',
                 'warning',
                 8000
@@ -1096,12 +1096,12 @@ async function handleMigrationFailure(reason, backupKey) {
             // Step 5: Last resort - critical error
             console.error('❌ No legacy data available for fallback');
             console.error('🚨 CRITICAL: Complete data loss scenario');
-            console.error('📊 Final localStorage state:', Object.keys(Deps.storage));
+            console.error('📊 Final localStorage state:', Object.keys(_deps.storage));
             console.error('💾 Available data sources:', {
-                miniCycleStorage: !!Deps.storage.getItem('miniCycleStorage'),
-                miniCycleData: !!Deps.storage.getItem('miniCycleData'),
-                lastUsedMiniCycle: !!Deps.storage.getItem('lastUsedMiniCycle'),
-                anyBackups: Object.keys(Deps.storage).filter(key => key.includes('backup')),
+                miniCycleStorage: !!_deps.storage.getItem('miniCycleStorage'),
+                miniCycleData: !!_deps.storage.getItem('miniCycleData'),
+                lastUsedMiniCycle: !!_deps.storage.getItem('lastUsedMiniCycle'),
+                anyBackups: Object.keys(_deps.storage).filter(key => key.includes('backup')),
             });
 
             showCriticalError('Unable to access your data. Please contact support or try refreshing the page.');
@@ -1138,19 +1138,19 @@ async function handleMigrationFailure(reason, backupKey) {
  * @private
  */
 function ensureLegacyDataAccess() {
-    assertInjected('storage', Deps.storage);
+    assertInjected('storage', _deps.storage);
 
     try {
         console.log('🔍 Checking legacy data access...');
 
         // Check if legacy data exists
-        const legacyStorage = Deps.storage.getItem('miniCycleStorage');
+        const legacyStorage = _deps.storage.getItem('miniCycleStorage');
         console.log('📦 Legacy storage exists:', !!legacyStorage);
         console.log('📏 Legacy storage size:', legacyStorage ? legacyStorage.length : 0);
 
         if (!legacyStorage) {
             console.error('❌ No legacy data found in localStorage');
-            console.error('📋 Available localStorage keys:', Object.keys(Deps.storage));
+            console.error('📋 Available localStorage keys:', Object.keys(_deps.storage));
             return false;
         }
 
@@ -1213,13 +1213,13 @@ function ensureLegacyDataAccess() {
  * @private
  */
 function isLegacyFallbackModeActive() {
-    assertInjected('sessionStorage', Deps.sessionStorage);
+    assertInjected('sessionStorage', _deps.sessionStorage);
 
-    const isActive = Deps.sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
+    const isActive = _deps.sessionStorage.getItem('miniCycleLegacyModeActive') === 'true';
     console.log('🚩 Legacy fallback mode check:', {
         isActive: isActive,
-        sessionFlag: Deps.sessionStorage.getItem('miniCycleLegacyModeActive'),
-        failureReason: Deps.sessionStorage.getItem('miniCycleMigrationFailureReason')
+        sessionFlag: _deps.sessionStorage.getItem('miniCycleLegacyModeActive'),
+        failureReason: _deps.sessionStorage.getItem('miniCycleMigrationFailureReason')
     });
     return isActive;
 }
@@ -1237,45 +1237,45 @@ function isLegacyFallbackModeActive() {
  * @private
  */
 async function createAutomaticMigrationBackup() {
-    assertInjected('storage', Deps.storage);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('now', _deps.now);
 
     try {
         console.log('📥 Starting automatic backup creation...');
-        const timestamp = Deps.now();
+        const timestamp = _deps.now();
         const backupKey = `auto_migration_backup_${timestamp}`;
         console.log('🏷️ Generated backup key:', backupKey);
 
         // Check if we have data to backup
         console.log('🔍 Checking for legacy data to backup...');
-        const legacyData = Deps.storage.getItem('miniCycleStorage');
+        const legacyData = _deps.storage.getItem('miniCycleStorage');
         console.log('📦 Legacy data found:', !!legacyData);
         console.log('📏 Legacy data size:', legacyData ? legacyData.length : 0);
 
         if (!legacyData) {
             console.error('❌ No legacy data found to backup');
-            console.error('📋 Available localStorage keys:', Object.keys(Deps.storage));
+            console.error('📋 Available localStorage keys:', Object.keys(_deps.storage));
             throw new Error('No legacy data found to backup');
         }
 
         // Gather all data to backup
         console.log('📋 Gathering additional data for backup...');
-        const remindersData = Deps.storage.getItem('miniCycleReminders');
-        const lastUsed = Deps.storage.getItem('lastUsedMiniCycle');
-        const milestones = Deps.storage.getItem('milestoneUnlocks');
+        const remindersData = _deps.storage.getItem('miniCycleReminders');
+        const lastUsed = _deps.storage.getItem('lastUsedMiniCycle');
+        const milestones = _deps.storage.getItem('milestoneUnlocks');
         console.log('🔔 Reminders data:', !!remindersData);
         console.log('📌 Last used cycle:', !!lastUsed);
         console.log('🏆 Milestones:', !!milestones);
 
         const settingsData = {
-            threeDots: Deps.storage.getItem('miniCycleThreeDots'),
-            darkMode: Deps.storage.getItem('darkModeEnabled'),
-            moveArrows: Deps.storage.getItem('miniCycleMoveArrows'),
-            alwaysShowRecurring: Deps.storage.getItem('miniCycleAlwaysShowRecurring'),
-            defaultRecurring: Deps.storage.getItem('miniCycleDefaultRecurring'),
-            theme: Deps.storage.getItem('currentTheme'),
-            onboarding: Deps.storage.getItem('miniCycleOnboarding'),
-            notificationPosition: Deps.storage.getItem('miniCycleNotificationPosition')
+            threeDots: _deps.storage.getItem('miniCycleThreeDots'),
+            darkMode: _deps.storage.getItem('darkModeEnabled'),
+            moveArrows: _deps.storage.getItem('miniCycleMoveArrows'),
+            alwaysShowRecurring: _deps.storage.getItem('miniCycleAlwaysShowRecurring'),
+            defaultRecurring: _deps.storage.getItem('miniCycleDefaultRecurring'),
+            theme: _deps.storage.getItem('currentTheme'),
+            onboarding: _deps.storage.getItem('miniCycleOnboarding'),
+            notificationPosition: _deps.storage.getItem('miniCycleNotificationPosition')
         };
 
         console.log('⚙️ Settings data collected:', Object.keys(settingsData).filter(key => settingsData[key] !== null));
@@ -1311,15 +1311,15 @@ async function createAutomaticMigrationBackup() {
 
         try {
             console.log('💾 Attempting to store backup in localStorage...');
-            Deps.storage.setItem(backupKey, JSON.stringify(backupData));
+            _deps.storage.setItem(backupKey, JSON.stringify(backupData));
             console.log('✅ Backup stored successfully');
         } catch (storageError) {
             console.error('❌ Storage error during backup:', storageError);
             console.error('🔧 Storage error details:', storageError.message);
             console.error('📊 Storage usage info:', {
                 backupSize: backupSize,
-                estimatedTotalStorage: JSON.stringify(Deps.storage).length,
-                availableKeys: Object.keys(Deps.storage).length
+                estimatedTotalStorage: JSON.stringify(_deps.storage).length,
+                availableKeys: Object.keys(_deps.storage).length
             });
             throw new Error('Insufficient storage space for backup');
         }
@@ -1327,7 +1327,7 @@ async function createAutomaticMigrationBackup() {
         // Add to backup index for management
         try {
             console.log('📋 Updating backup index...');
-            const backupIndex = JSON.parse(Deps.storage.getItem('miniCycleBackupIndex') || '[]');
+            const backupIndex = JSON.parse(_deps.storage.getItem('miniCycleBackupIndex') || '[]');
             console.log('📊 Current backup index size:', backupIndex.length);
 
             backupIndex.push({
@@ -1347,7 +1347,7 @@ async function createAutomaticMigrationBackup() {
                 console.log('🗑️ Removing oldest backup:', oldestAutoBackup.key);
 
                 try {
-                    Deps.storage.removeItem(oldestAutoBackup.key);
+                    _deps.storage.removeItem(oldestAutoBackup.key);
                     const index = backupIndex.findIndex(b => b.key === oldestAutoBackup.key);
                     backupIndex.splice(index, 1);
                     console.log('✅ Old backup cleaned up successfully');
@@ -1358,7 +1358,7 @@ async function createAutomaticMigrationBackup() {
                 }
             }
 
-            Deps.storage.setItem('miniCycleBackupIndex', JSON.stringify(backupIndex));
+            _deps.storage.setItem('miniCycleBackupIndex', JSON.stringify(backupIndex));
             console.log('✅ Backup index updated successfully');
 
         } catch (indexError) {
@@ -1378,8 +1378,8 @@ async function createAutomaticMigrationBackup() {
         console.error('❌ Failed to create automatic backup:', error);
         console.error('🔧 Backup creation error:', error.message);
         console.error('📊 System state at backup failure:', {
-            localStorage: Object.keys(Deps.storage),
-            storageEstimate: JSON.stringify(Deps.storage).length
+            localStorage: Object.keys(_deps.storage),
+            storageEstimate: JSON.stringify(_deps.storage).length
         });
         return {
             success: false,
@@ -1398,19 +1398,19 @@ async function createAutomaticMigrationBackup() {
  * @private
  */
 async function restoreFromAutomaticBackup(backupKey) {
-    assertInjected('storage', Deps.storage);
+    assertInjected('storage', _deps.storage);
 
     try {
         console.log('🔄 Restoring from automatic backup:', backupKey);
 
         console.log('🔍 Checking if backup exists...');
-        const backupData = Deps.storage.getItem(backupKey);
+        const backupData = _deps.storage.getItem(backupKey);
         console.log('📦 Backup data found:', !!backupData);
         console.log('📏 Backup data size:', backupData ? backupData.length : 0);
 
         if (!backupData) {
             console.error('❌ Backup not found in localStorage');
-            console.error('📋 Available backup keys:', Object.keys(Deps.storage).filter(key => key.includes('backup')));
+            console.error('📋 Available backup keys:', Object.keys(_deps.storage).filter(key => key.includes('backup')));
             throw new Error('Backup not found');
         }
 
@@ -1435,7 +1435,7 @@ async function restoreFromAutomaticBackup(backupKey) {
         // Restore legacy data
         if (backup.data.miniCycleStorage) {
             console.log('📦 Restoring miniCycleStorage...');
-            Deps.storage.setItem('miniCycleStorage', backup.data.miniCycleStorage);
+            _deps.storage.setItem('miniCycleStorage', backup.data.miniCycleStorage);
             console.log('✅ miniCycleStorage restored');
         } else {
             console.warn('⚠️ No miniCycleStorage found in backup');
@@ -1444,13 +1444,13 @@ async function restoreFromAutomaticBackup(backupKey) {
         // Restore last used cycle
         if (backup.data.lastUsedMiniCycle) {
             console.log('📌 Restoring lastUsedMiniCycle...');
-            Deps.storage.setItem('lastUsedMiniCycle', backup.data.lastUsedMiniCycle);
+            _deps.storage.setItem('lastUsedMiniCycle', backup.data.lastUsedMiniCycle);
             console.log('✅ lastUsedMiniCycle restored');
         }
 
         if (backup.data.miniCycleReminders) {
             console.log('🔔 Restoring miniCycleReminders...');
-            Deps.storage.setItem('miniCycleReminders', backup.data.miniCycleReminders);
+            _deps.storage.setItem('miniCycleReminders', backup.data.miniCycleReminders);
             console.log('✅ miniCycleReminders restored');
         } else {
             console.warn('⚠️ No miniCycleReminders found in backup');
@@ -1459,7 +1459,7 @@ async function restoreFromAutomaticBackup(backupKey) {
         // Restore milestones
         if (backup.data.milestoneUnlocks) {
             console.log('🏆 Restoring milestoneUnlocks...');
-            Deps.storage.setItem('milestoneUnlocks', backup.data.milestoneUnlocks);
+            _deps.storage.setItem('milestoneUnlocks', backup.data.milestoneUnlocks);
             console.log('✅ milestoneUnlocks restored');
         }
 
@@ -1485,7 +1485,7 @@ async function restoreFromAutomaticBackup(backupKey) {
                                 storageKey = `miniCycle${key.charAt(0).toUpperCase() + key.slice(1)}`;
                         }
 
-                        Deps.storage.setItem(storageKey, settings[key]);
+                        _deps.storage.setItem(storageKey, settings[key]);
                         settingsRestored.push(key);
                         console.log(`   ✅ Restored setting: ${key} -> ${storageKey}`);
                     } catch (settingError) {
@@ -1503,8 +1503,8 @@ async function restoreFromAutomaticBackup(backupKey) {
         // Remove any Schema 2.5 data that might have been created
         try {
             console.log('🧹 Cleaning up any Schema 2.5 data...');
-            const schema25Existed = !!Deps.storage.getItem('miniCycleData');
-            Deps.storage.removeItem('miniCycleData');
+            const schema25Existed = !!_deps.storage.getItem('miniCycleData');
+            _deps.storage.removeItem('miniCycleData');
             console.log('🧹 Schema 2.5 data cleanup:', schema25Existed ? 'removed' : 'none found');
         } catch (removeError) {
             console.warn('⚠️ Failed to remove Schema 2.5 data:', removeError);
@@ -1512,7 +1512,7 @@ async function restoreFromAutomaticBackup(backupKey) {
         }
 
         console.log('✅ Data restored from automatic backup successfully');
-        console.log('📊 Post-restore localStorage keys:', Object.keys(Deps.storage));
+        console.log('📊 Post-restore localStorage keys:', Object.keys(_deps.storage));
 
         return { success: true };
 
@@ -1521,8 +1521,8 @@ async function restoreFromAutomaticBackup(backupKey) {
         console.error('🔧 Restore error stack:', error.stack);
         console.error('📊 System state at restore failure:', {
             backupKey: backupKey,
-            backupExists: !!Deps.storage.getItem(backupKey),
-            currentKeys: Object.keys(Deps.storage)
+            backupExists: !!_deps.storage.getItem(backupKey),
+            currentKeys: Object.keys(_deps.storage)
         });
         throw error;
     }
@@ -1537,18 +1537,18 @@ async function restoreFromAutomaticBackup(backupKey) {
  * @private
  */
 function showCriticalError(message) {
-    assertInjected('document', Deps.document);
-    assertInjected('now', Deps.now);
+    assertInjected('document', _deps.document);
+    assertInjected('now', _deps.now);
 
     console.log('🚨 Showing critical error to user:', message);
     console.log('📊 System state at critical error:', {
-        localStorage: Deps.storage ? Object.keys(Deps.storage) : 'N/A',
-        sessionStorage: Deps.sessionStorage ? Object.keys(Deps.sessionStorage) : 'N/A',
+        localStorage: _deps.storage ? Object.keys(_deps.storage) : 'N/A',
+        sessionStorage: _deps.sessionStorage ? Object.keys(_deps.sessionStorage) : 'N/A',
         url: window.location.href,
-        timestamp: new Date(Deps.now()).toISOString()
+        timestamp: new Date(_deps.now()).toISOString()
     });
 
-    const errorContainer = Deps.document.createElement('div');
+    const errorContainer = _deps.document.createElement('div');
     errorContainer.style.cssText = `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ff4444; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 400px; text-align: center; font-family: Inter, sans-serif; line-height: 1.5;`;
 
     errorContainer.innerHTML = `
@@ -1576,7 +1576,7 @@ function showCriticalError(message) {
         </div>
     `;
 
-    Deps.document.body.appendChild(errorContainer);
+    _deps.document.body.appendChild(errorContainer);
 
     console.log('📢 Critical error dialog displayed to user');
 
@@ -1604,28 +1604,28 @@ function showCriticalError(message) {
  * @public
  */
 export async function initializeAppWithAutoMigration(options = {}) {
-    assertInjected('storage', Deps.storage);
-    assertInjected('sessionStorage', Deps.sessionStorage);
-    assertInjected('showNotification', Deps.showNotification);
-    assertInjected('initialSetup', Deps.initialSetup);
-    assertInjected('now', Deps.now);
+    assertInjected('storage', _deps.storage);
+    assertInjected('sessionStorage', _deps.sessionStorage);
+    assertInjected('showNotification', _deps.showNotification);
+    assertInjected('initialSetup', _deps.initialSetup);
+    assertInjected('now', _deps.now);
 
     console.log('🚀 Initializing app with auto-migration check…');
     console.log('📊 Initial system state:', {
-        localStorage: Object.keys(Deps.storage),
-        sessionStorage: Object.keys(Deps.sessionStorage),
+        localStorage: Object.keys(_deps.storage),
+        sessionStorage: Object.keys(_deps.sessionStorage),
         userAgent: navigator.userAgent,
-        timestamp: new Date(Deps.now()).toISOString()
+        timestamp: new Date(_deps.now()).toISOString()
     });
 
     // Check if we're already in legacy fallback mode
     console.log('🚩 Checking for existing legacy fallback mode...');
     if (isLegacyFallbackModeActive()) {
         console.log('⚠️ App is running in legacy fallback mode');
-        const failureReason = Deps.sessionStorage.getItem('miniCycleMigrationFailureReason') || 'Unknown reason';
+        const failureReason = _deps.sessionStorage.getItem('miniCycleMigrationFailureReason') || 'Unknown reason';
         console.log('❌ Previous failure reason:', failureReason);
 
-        Deps.showNotification(
+        _deps.showNotification(
             `⚠️ Running in compatibility mode due to: ${failureReason}. Restart app to retry migration.`,
             'warning',
             5000
@@ -1633,8 +1633,8 @@ export async function initializeAppWithAutoMigration(options = {}) {
 
         // Load app with legacy data
         console.log('📱 Loading app in legacy fallback mode...');
-        Deps.initialSetup();
-        Deps.onInitialSetupComplete?.();
+        _deps.initialSetup();
+        _deps.onInitialSetupComplete?.();
         return;
     }
 
@@ -1662,16 +1662,16 @@ export async function initializeAppWithAutoMigration(options = {}) {
                     forced: result.forced || false,
                     minimal: result.minimal || false
                 });
-                Deps.initialSetup();
-                  Deps.onInitialSetupComplete?.();
+                _deps.initialSetup();
+                  _deps.onInitialSetupComplete?.();
             } else if (result.fallbackActive) {
                 console.log('⚠️ Migration failed but fallback active, loading app with legacy data...');
                 console.log('📊 Fallback details:', {
                     reason: result.reason,
                     message: result.message
                 });
-                Deps.initialSetup();
-                  Deps.onInitialSetupComplete?.();
+                _deps.initialSetup();
+                  _deps.onInitialSetupComplete?.();
             } else {
                 console.error('❌ Auto-migration failed completely:', result.message);
                 console.error('🚨 Critical failure details:', result);
@@ -1685,8 +1685,8 @@ export async function initializeAppWithAutoMigration(options = {}) {
     } else {
         console.log('✅ No migration needed, loading app normally...');
         console.log('📦 Current schema status:', migrationCheck.currentVersion);
-        Deps.initialSetup();
-          Deps.onInitialSetupComplete?.();
+        _deps.initialSetup();
+          _deps.onInitialSetupComplete?.();
     }
 }
 

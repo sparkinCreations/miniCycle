@@ -94,6 +94,13 @@ export class OnboardingManager {
      * Set up event listeners for reset onboarding button
      */
     setupEventListeners() {
+        // ✅ Idempotency guard
+        if (this._eventListenersInitialized) {
+            console.log('✅ Onboarding event listeners already set up');
+            return;
+        }
+        this._eventListenersInitialized = true;
+
         if (this.deps.safeAddEventListenerById) {
             this.deps.safeAddEventListenerById("reset-onboarding", "click", () => {
                 this.resetOnboarding();

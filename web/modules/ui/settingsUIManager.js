@@ -41,6 +41,19 @@ export function setSettingsUIManagerDependencies(dependencies) {
 }
 
 // ============================================================================
+// IDEMPOTENCY GUARDS
+// ============================================================================
+
+const _initialized = {
+    settingsMenu: false,
+    moveArrowsToggle: false,
+    threeDotsToggle: false,
+    completedDropdownToggle: false,
+    debugToggle: false,
+    resetRecurringDefaults: false
+};
+
+// ============================================================================
 // MENU MANAGEMENT
 // ============================================================================
 
@@ -48,6 +61,13 @@ export function setSettingsUIManagerDependencies(dependencies) {
  * Setup settings menu open/close functionality
  */
 export function setupSettingsMenu() {
+    // ✅ Idempotency guard
+    if (_initialized.settingsMenu) {
+        console.log('✅ Settings menu already set up');
+        return;
+    }
+    _initialized.settingsMenu = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
@@ -104,6 +124,13 @@ export function setupDarkModeToggle() {
  * Setup move arrows toggle
  */
 export function setupMoveArrowsToggle() {
+    // ✅ Idempotency guard
+    if (_initialized.moveArrowsToggle) {
+        console.log('✅ Move arrows toggle already set up');
+        return;
+    }
+    _initialized.moveArrowsToggle = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
@@ -166,6 +193,13 @@ export function setupMoveArrowsToggle() {
  * Setup three-dots menu toggle
  */
 export function setupThreeDotsToggle() {
+    // ✅ Idempotency guard
+    if (_initialized.threeDotsToggle) {
+        console.log('✅ Three dots toggle already set up');
+        return;
+    }
+    _initialized.threeDotsToggle = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
@@ -218,6 +252,13 @@ export function setupThreeDotsToggle() {
  * Setup completed dropdown toggle
  */
 export function setupCompletedDropdownToggle() {
+    // ✅ Idempotency guard
+    if (_initialized.completedDropdownToggle) {
+        console.log('✅ Completed dropdown toggle already set up');
+        return;
+    }
+    _initialized.completedDropdownToggle = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
@@ -380,6 +421,13 @@ export function setupScrollOnLoadToggle() {
  * Setup debug mode toggle
  */
 export function setupDebugModeToggle() {
+    // ✅ Idempotency guard
+    if (_initialized.debugToggle) {
+        console.log('✅ Debug mode toggle already set up');
+        return;
+    }
+    _initialized.debugToggle = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
@@ -415,6 +463,13 @@ export function setupDebugModeToggle() {
  * Setup reset recurring defaults button
  */
 export function setupResetRecurringButton() {
+    // ✅ Idempotency guard
+    if (_initialized.resetRecurringDefaults) {
+        console.log('✅ Reset recurring button already set up');
+        return;
+    }
+    _initialized.resetRecurringDefaults = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
