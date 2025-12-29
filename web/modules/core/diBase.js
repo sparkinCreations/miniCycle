@@ -41,8 +41,8 @@
  * @version 1.0.0
  */
 
-// Version marker for cache debugging (updated by update-version.sh)
-export const DIBASE_VERSION = '1.602';
+// Version marker for cache debugging (derives from Single Source of Truth)
+export const DIBASE_VERSION = globalThis.APP_VERSION;
 
 // ============================================================================
 // DEPENDENCY MARKERS

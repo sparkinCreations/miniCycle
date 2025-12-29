@@ -420,34 +420,80 @@ async function initDataAccess(deps) {
 export { loadMiniCycleData, autoSave, updateCycleData, initDataAccess };
 
 // ============================================================================
-// SECTION 3: Cache Recovery Helpers
+// SECTION 3: Cache Recovery Helpers (SINGLE SOURCE OF TRUTH)
 // ============================================================================
 
+// Unified cache recovery - single flag prevents reload loops across all systems
+const CACHE_RECOVERY_FLAG = '_cacheRecoveryAttempts';
+const MAX_RECOVERY_ATTEMPTS = 2;
+
 /**
- * Handle stale cache recovery with reload
+ * Clear all service worker caches and unregister workers
+ * @returns {Promise<number>} Number of caches cleared
  */
-async function handleStaleCacheRecovery() {
-  const reloadAttempts = parseInt(sessionStorage.getItem('_staleCacheReload') || '0', 10);
+export async function clearAllCaches() {
+  let cleared = 0;
 
-  if (reloadAttempts < 2) {
-    sessionStorage.setItem('_staleCacheReload', (reloadAttempts + 1).toString());
-    sessionStorage.setItem('_cacheRecoveryReload', 'true');
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    cleared = cacheNames.length;
+    console.log('🗑️ Cleared', cleared, 'caches');
+  }
 
-    // Clear all service worker caches
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
-      console.log('🗑️ Cleared', cacheNames.length, 'caches');
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const reg of registrations) {
+      await reg.unregister();
     }
-
-    // Unregister service worker
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const reg of registrations) {
-        await reg.unregister();
-        console.log('🗑️ Unregistered service worker');
-      }
+    if (registrations.length > 0) {
+      console.log('🗑️ Unregistered', registrations.length, 'service worker(s)');
     }
+  }
+
+  return cleared;
+}
+
+/**
+ * Get current recovery attempt count
+ * @returns {number}
+ */
+export function getRecoveryAttemptCount() {
+  return parseInt(sessionStorage.getItem(CACHE_RECOVERY_FLAG) || '0', 10);
+}
+
+/**
+ * Check if recovery attempts are exhausted
+ * @returns {boolean}
+ */
+export function isRecoveryExhausted() {
+  return getRecoveryAttemptCount() >= MAX_RECOVERY_ATTEMPTS;
+}
+
+/**
+ * Clear recovery flags (call after successful boot)
+ */
+export function clearRecoveryFlags() {
+  sessionStorage.removeItem(CACHE_RECOVERY_FLAG);
+  sessionStorage.removeItem('_staleCacheReload'); // Legacy cleanup
+  sessionStorage.removeItem('_versionGuardReload'); // Legacy cleanup
+  sessionStorage.removeItem('_cacheRecoveryReload'); // Legacy cleanup
+}
+
+/**
+ * Attempt cache recovery with reload
+ * Uses single shared counter to prevent reload loops across systems
+ * @param {string} source - Identifier for logging (e.g., 'coreBoot', 'orchestrator')
+ * @returns {Promise<boolean>} true if reload initiated, false if exhausted
+ */
+export async function attemptCacheRecovery(source = 'unknown') {
+  const attempts = getRecoveryAttemptCount();
+
+  if (attempts < MAX_RECOVERY_ATTEMPTS) {
+    console.log(`🔄 Cache recovery attempt ${attempts + 1}/${MAX_RECOVERY_ATTEMPTS} from ${source}`);
+    sessionStorage.setItem(CACHE_RECOVERY_FLAG, (attempts + 1).toString());
+
+    await clearAllCaches();
 
     // Navigate to cache-busted URL
     const url = new URL(window.location.href);
@@ -456,11 +502,22 @@ async function handleStaleCacheRecovery() {
     return true;
   }
 
-  // If we've tried twice and still stale, show user instructions
-  sessionStorage.removeItem('_staleCacheReload');
-  sessionStorage.setItem('_staleAppInitForgiven', 'true');
-  showStaleCacheBanner();
+  // Exhausted retries
+  console.warn(`⚠️ Cache recovery exhausted (${MAX_RECOVERY_ATTEMPTS} attempts) - ${source}`);
+  sessionStorage.removeItem(CACHE_RECOVERY_FLAG);
   return false;
+}
+
+/**
+ * Handle stale cache recovery (wrapper for backward compatibility)
+ */
+async function handleStaleCacheRecovery() {
+  const recovered = await attemptCacheRecovery('coreBoot-stale');
+  if (!recovered) {
+    sessionStorage.setItem('_staleAppInitForgiven', 'true');
+    showStaleCacheBanner();
+  }
+  return recovered;
 }
 
 /**
