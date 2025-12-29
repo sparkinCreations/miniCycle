@@ -152,6 +152,7 @@ export function loadMiniCycleData() {
 
 /**
  * Auto-save current state with debouncing
+ * SAFETY: Includes guards to prevent wiping tasks when DOM extraction is suspicious
  * @param {Array|null} overrideTaskList - Optional task list to save instead of extracting from DOM
  * @param {boolean} immediate - If true, skip debouncing
  * @returns {Promise<Object>} Result object with success status
@@ -167,7 +168,52 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
     }
 
     try {
-        const taskData = overrideTaskList || _injectedGetExtractTaskDataFromDOM?.() || [];
+        // Get current state to check existing task count
+        const currentState = AppState.get();
+        const activeCycleId = currentState?.appState?.activeCycleId;
+        const existingTasks = currentState?.data?.cycles?.[activeCycleId]?.tasks || [];
+        const existingTaskCount = existingTasks.length;
+
+        // Determine task data source
+        let taskData;
+        let usedDOMExtraction = false;
+
+        if (overrideTaskList !== null) {
+            // Explicit override provided - use it directly
+            taskData = overrideTaskList;
+        } else {
+            // DOM extraction path - apply safety guards
+            usedDOMExtraction = true;
+
+            // SAFETY CHECK 1: Verify #taskList exists in DOM
+            const taskListElement = document.getElementById('taskList');
+            if (!taskListElement) {
+                console.warn('⚠️ autoSave: #taskList not found in DOM - refusing to save');
+                return { success: false, error: 'Task list element not found', guard: 'missing-tasklist' };
+            }
+
+            // Extract from DOM
+            taskData = _injectedGetExtractTaskDataFromDOM?.() || [];
+
+            // SAFETY CHECK 2: Refuse to save empty extraction when tasks exist
+            if (taskData.length === 0 && existingTaskCount > 0) {
+                console.warn(`⚠️ autoSave: Empty extraction but ${existingTaskCount} tasks exist in state - refusing to wipe`);
+                return { success: false, error: 'Empty extraction would wipe existing tasks', guard: 'empty-extraction' };
+            }
+
+            // SAFETY CHECK 3: Validate extracted tasks have required fields
+            const invalidTasks = taskData.filter(t => !t?.id || typeof t?.text !== 'string');
+            if (invalidTasks.length > 0) {
+                console.warn(`⚠️ autoSave: ${invalidTasks.length} invalid tasks in extraction - refusing to save`);
+                return { success: false, error: 'Invalid task data extracted', guard: 'invalid-tasks' };
+            }
+
+            // SAFETY CHECK 4: Dramatic task count drop (more than 50% loss with 3+ tasks)
+            if (existingTaskCount >= 3 && taskData.length < existingTaskCount * 0.5) {
+                console.warn(`⚠️ autoSave: Dramatic task drop (${existingTaskCount} → ${taskData.length}) - refusing to save`);
+                return { success: false, error: 'Suspicious task count drop', guard: 'dramatic-drop' };
+            }
+        }
 
         await AppState.update(state => {
             const activeCycle = state?.appState?.activeCycleId;
@@ -183,7 +229,7 @@ export async function autoSave(overrideTaskList = null, immediate = false) {
             currentCycle.tasks = taskData;
         }, immediate);
 
-        return { success: true, taskCount: taskData.length };
+        return { success: true, taskCount: taskData.length, usedDOMExtraction };
     } catch (error) {
         console.error('❌ autoSave failed:', error?.message || error);
         return { success: false, error: error?.message || 'Unknown error' };

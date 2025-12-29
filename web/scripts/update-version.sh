@@ -1,20 +1,27 @@
 #!/bin/bash
 # update-version.sh - Enhanced Interactive Version Updater for miniCycle
-# Version: 4.4 - Added --changelog and --lite flags (Dec 2025)
+# Version: 5.0 - Added --dry-run, set -euo pipefail, staged status messages (Dec 2025)
 #
 # Features:
-#  - Generates version.js as single source of truth
+#  - Generates version.js as single source of truth (using globalThis)
 #  - Multi-mode: Update all, one-by-one, or custom selection
 #  - Automatic backup with restore scripts
 #  - macOS and Linux compatible
-#  - Modules get version via DI (no hardcoded versions in modules)
+#  - Debug markers derive from globalThis.APP_VERSION at runtime (no script updates)
 #  - Git tag automation with optional remote push
 #  - --auto flag for fully automated sequential version bumps
 #  - --changelog flag for auto-generated changelog from git commits
 #  - --lite flag for optional lite version updates
+#  - --dry-run flag to preview changes without writing
 
 # ============================================
-# AUTO MODE HANDLING
+# STRICT MODE
+# ============================================
+# Exit on error, undefined vars, pipe failures
+set -euo pipefail
+
+# ============================================
+# FLAG VARIABLES
 # ============================================
 
 AUTO_MODE=false
@@ -22,8 +29,12 @@ AUTO_GIT_TAG=false
 AUTO_GIT_PUSH=false
 INCLUDE_LITE=false
 AUTO_CHANGELOG=false
+DRY_RUN=false
 
-# Parse command line arguments
+# ============================================
+# PARSE COMMAND LINE ARGUMENTS
+# ============================================
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --auto|-a)
@@ -47,8 +58,12 @@ while [[ $# -gt 0 ]]; do
             AUTO_CHANGELOG=true
             shift
             ;;
+        --dry-run|-n)
+            DRY_RUN=true
+            shift
+            ;;
         --help|-h)
-            echo "🎯 miniCycle Version Updater v4.4"
+            echo "🎯 miniCycle Version Updater v5.0"
             echo ""
             echo "Usage: ./update-version.sh [options]"
             echo ""
@@ -58,11 +73,14 @@ while [[ $# -gt 0 ]]; do
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
             echo "  --push, -p      Auto-push tag to remote (implies --tag)"
+            echo "  --dry-run, -n   Preview changes without writing any files"
             echo "  --help, -h      Show this help message"
             echo ""
             echo "Examples:"
             echo "  ./update-version.sh              # Interactive mode"
+            echo "  ./update-version.sh --dry-run    # Preview what would change"
             echo "  ./update-version.sh --auto       # Auto-bump, no git tag"
+            echo "  ./update-version.sh --auto -n    # Auto-bump dry run"
             echo "  ./update-version.sh --auto -c    # Auto-bump + update changelog"
             echo "  ./update-version.sh --auto --tag # Auto-bump + create tag"
             echo "  ./update-version.sh -a -c -t     # Auto-bump + changelog + tag"
@@ -78,11 +96,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ "$AUTO_MODE" = true ]; then
-    echo "🤖 miniCycle Version Updater v4.4 (AUTO MODE)"
+# ============================================
+# HEADER
+# ============================================
+
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 miniCycle Version Updater v5.0 (DRY RUN MODE)"
+    echo "================================================="
+    echo "⚠️  No files will be modified - preview only"
+elif [ "$AUTO_MODE" = true ]; then
+    echo "🤖 miniCycle Version Updater v5.0 (AUTO MODE)"
     echo "=============================================="
 else
-    echo "🎯 miniCycle Version Updater v4.4"
+    echo "🎯 miniCycle Version Updater v5.0"
     echo "================================="
 fi
 echo ""
@@ -96,11 +122,7 @@ CORE_HTML_FILES=(
     "pages/product.html"
 )
 
-# Note: miniCycle-main.js, orchestrator.js, coreBoot.js now read from globalThis.APP_VERSION
-# service-worker.js reads from version.js via importScripts - no manual updates needed
-CORE_JS_FILES=(
-    # Empty - all JS files now read from version.js or receive version via DI
-)
+# Note: JS files now read from globalThis.APP_VERSION at runtime - no manual updates needed
 
 # Lite version files (only included with --lite flag)
 LITE_HTML_FILES=(
@@ -124,11 +146,11 @@ PACKAGE_FILES=(
 )
 
 # ============================================
-# NOTE: Module files no longer need version updates
+# INFO MESSAGES
 # ============================================
-# Modules now receive version via DI (AppMeta.version) from version.js
-# No hardcoded versions in module files - they're fully DI-pure
+
 echo "ℹ️  Module files use DI for versioning (no updates needed)"
+echo "ℹ️  Debug markers derive from globalThis.APP_VERSION at runtime"
 if [ "$INCLUDE_LITE" = true ]; then
     echo "📱 Lite version files INCLUDED (--lite flag)"
 else
@@ -140,67 +162,80 @@ echo ""
 # SETUP & CONFIGURATION
 # ============================================
 
-# ✅ Create backup directory if it doesn't exist
 BACKUP_DIR="backup"
-if [ ! -d "$BACKUP_DIR" ]; then
-    mkdir -p "$BACKUP_DIR"
-    echo "📁 Created backup directory: $BACKUP_DIR"
+BACKUP_FOLDER=""
+
+# Only create backup structure if not dry run
+if [ "$DRY_RUN" = false ]; then
+    # Create backup directory if it doesn't exist
+    if [ ! -d "$BACKUP_DIR" ]; then
+        mkdir -p "$BACKUP_DIR"
+        echo "📁 Created backup directory: $BACKUP_DIR"
+    fi
+
+    # Create backup folder structure
+    mkdir -p "$BACKUP_DIR/lite" 2>/dev/null || true
+    mkdir -p "$BACKUP_DIR/pages" 2>/dev/null || true
+    mkdir -p "$BACKUP_DIR/modules/boot" 2>/dev/null || true
+
+    # Clean up old backups (keep only last 3)
+    cleanup_old_backups() {
+        echo "🧹 Checking for old backups to clean up..."
+        BACKUP_COUNT=$(find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" 2>/dev/null | wc -l | tr -d ' ')
+        if [ "$BACKUP_COUNT" -gt 3 ]; then
+            echo "📊 Found $BACKUP_COUNT existing backups (keeping newest 3)"
+            find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" -print0 2>/dev/null \
+              | xargs -0 ls -td 2>/dev/null \
+              | tail -n +4 \
+              | while read -r old_backup; do
+                    echo "🗑️  Removing old backup: $(basename "$old_backup")"
+                    rm -rf "$old_backup"
+                done
+            echo "✅ Cleanup completed - kept newest 3 backups"
+        else
+            echo "📦 Found $BACKUP_COUNT existing backups (no cleanup needed)"
+        fi
+        echo ""
+    }
+
+    # Run cleanup before creating new backup
+    cleanup_old_backups
+
+    # Create timestamped backup subfolder for this update
+    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    BACKUP_FOLDER="$BACKUP_DIR/version_update_$TIMESTAMP"
+    mkdir -p "$BACKUP_FOLDER"
+
+    echo "📂 New backup folder: $BACKUP_FOLDER"
+    echo ""
 fi
 
-# ✅ Create backup folder structure
-mkdir -p "$BACKUP_DIR/lite" 2>/dev/null
-mkdir -p "$BACKUP_DIR/pages" 2>/dev/null
-mkdir -p "$BACKUP_DIR/modules/boot" 2>/dev/null
+# ============================================
+# PORTABLE SED (macOS vs Linux)
+# ============================================
 
-# ✅ Clean up old backups (keep only last 3)
-cleanup_old_backups() {
-    echo "🧹 Checking for old backups to clean up..."
-    BACKUP_COUNT=$(find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" | wc -l | tr -d ' ')
-    if [ "$BACKUP_COUNT" -gt 3 ]; then
-        echo "📊 Found $BACKUP_COUNT existing backups (keeping newest 3)"
-        # ls -td sorts newest first, tail -n +4 skips first 3 (keeps them), outputs rest for deletion
-        find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" -print0 \
-          | xargs -0 ls -td \
-          | tail -n +4 \
-          | while read -r old_backup; do
-                echo "🗑️  Removing old backup: $(basename "$old_backup")"
-                rm -rf "$old_backup"
-            done
-        echo "✅ Cleanup completed - kept newest 3 backups"
-    else
-        echo "📦 Found $BACKUP_COUNT existing backups (no cleanup needed)"
-    fi
-    echo ""
-}
-
-# ✅ Run cleanup before creating new backup
-cleanup_old_backups
-
-# ✅ Create timestamped backup subfolder for this update
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FOLDER="$BACKUP_DIR/version_update_$TIMESTAMP"
-mkdir -p "$BACKUP_FOLDER"
-
-echo "📂 New backup folder: $BACKUP_FOLDER"
-echo ""
-
-# ✅ Portable in-place sed (macOS vs Linux)
 if [[ "$OSTYPE" == "darwin"* ]]; then
   SED_INPLACE=(sed -i "")
 else
   SED_INPLACE=(sed -i)
 fi
 
-# ✅ Get current versions from version.js (single source of truth)
-CURRENT_VERSION=$(grep -oE "APP_VERSION = '[^']*'" version.js 2>/dev/null | sed -E "s/.*'([^']*)'.*/\1/")
-CURRENT_CACHE_VERSION=$(grep -oE "CACHE_VERSION = [0-9]+" version.js 2>/dev/null | sed -E "s/.*= ([0-9]+).*/\1/")
+# ============================================
+# GET CURRENT VERSIONS
+# ============================================
+
+CURRENT_VERSION=$(grep -oE "APP_VERSION = '[^']*'" version.js 2>/dev/null | sed -E "s/.*'([^']*)'.*/\1/" || echo "")
+CURRENT_CACHE_VERSION=$(grep -oE "CACHE_VERSION = [0-9]+" version.js 2>/dev/null | sed -E "s/.*= ([0-9]+).*/\1/" || echo "")
 
 echo "📊 Current versions (from version.js):"
 echo "   App version: ${CURRENT_VERSION:-"Not set"}"
 echo "   Cache version: ${CURRENT_CACHE_VERSION:-"Not set"}"
 echo ""
 
-# ✅ Get new version (auto-calculate or prompt)
+# ============================================
+# GET NEW VERSION
+# ============================================
+
 if [ "$AUTO_MODE" = true ]; then
     # Auto-bump app version (increment by 1)
     if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
@@ -230,7 +265,7 @@ else
     read -p "🔢 Enter new app version (e.g., 1.599): " NEW_VERSION
     read -p "🗄️  Enter new cache version (e.g., 392): " NEW_CACHE_VERSION
 
-    # ✅ Validate input
+    # Validate input
     if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
         echo "❌ Invalid version format. Use format like 1.599"
         exit 1
@@ -242,8 +277,11 @@ else
     fi
 fi
 
+# ============================================
+# SELECT UPDATE MODE
+# ============================================
+
 if [ "$AUTO_MODE" = true ]; then
-    # Auto mode: always update all files
     UPDATE_MODE="1"
     echo "📦 Auto mode: Updating ALL files"
 else
@@ -264,11 +302,10 @@ fi
 # FILE SELECTION TRACKING (bash 3 compatible)
 # ============================================
 
-# Use space-separated string instead of associative array
 FILES_TO_UPDATE=""
 
 # ============================================
-# MODE 1: UPDATE ALL FILES
+# MODE HANDLING
 # ============================================
 
 if [ "$UPDATE_MODE" == "1" ]; then
@@ -279,13 +316,11 @@ if [ "$UPDATE_MODE" == "1" ]; then
         echo "📦 Mode: Update ALL files (excluding lite version)"
     fi
 
-    # Mark all files for update (using | as delimiter)
+    # Mark all files for update
     for file in "${CORE_HTML_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
-    for file in "${CORE_JS_FILES[@]}"; do
-        FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
-    done
+    # Note: CORE_JS_FILES removed - JS files now derive from globalThis.APP_VERSION
     for file in "${MANIFEST_FILES[@]}"; do
         FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
     done
@@ -306,17 +341,12 @@ if [ "$UPDATE_MODE" == "1" ]; then
         done
     fi
 
-# ============================================
-# MODE 2: ONE-BY-ONE SELECTION
-# ============================================
-
 elif [ "$UPDATE_MODE" == "2" ]; then
     echo ""
     echo "📋 Mode: Select files ONE-BY-ONE"
     echo "   (Press Enter for Yes, n for No)"
     echo ""
 
-    # Core HTML files
     echo "--- Core HTML Files ---"
     for file in "${CORE_HTML_FILES[@]}"; do
         if [ -f "$file" ]; then
@@ -332,23 +362,6 @@ elif [ "$UPDATE_MODE" == "2" ]; then
     done
     echo ""
 
-    # Core JS files
-    echo "--- Core JavaScript Files ---"
-    for file in "${CORE_JS_FILES[@]}"; do
-        if [ -f "$file" ]; then
-            read -p "Update $file? (Y/n): " -n 1 -r
-            echo ""
-            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-                FILES_TO_UPDATE="$FILES_TO_UPDATE|$file|"
-                echo "✅ Will update $file"
-            else
-                echo "⏭️  Skipping $file"
-            fi
-        fi
-    done
-    echo ""
-
-    # Manifest files
     echo "--- Manifest Files ---"
     for file in "${MANIFEST_FILES[@]}"; do
         if [ -f "$file" ]; then
@@ -364,7 +377,6 @@ elif [ "$UPDATE_MODE" == "2" ]; then
     done
     echo ""
 
-    # Package files
     echo "--- Package Files ---"
     for file in "${PACKAGE_FILES[@]}"; do
         if [ -f "$file" ]; then
@@ -380,7 +392,6 @@ elif [ "$UPDATE_MODE" == "2" ]; then
     done
     echo ""
 
-    # Lite version files (only shown with --lite flag)
     if [ "$INCLUDE_LITE" = true ]; then
         echo "--- Lite Version Files ---"
         for file in "${LITE_HTML_FILES[@]}" "${LITE_JS_FILES[@]}" "${LITE_MANIFEST_FILES[@]}"; do
@@ -398,10 +409,6 @@ elif [ "$UPDATE_MODE" == "2" ]; then
         echo ""
     fi
 
-# ============================================
-# MODE 3: CUSTOM FILE SELECTION
-# ============================================
-
 elif [ "$UPDATE_MODE" == "3" ]; then
     echo ""
     echo "📝 Mode: Custom file selection"
@@ -410,7 +417,6 @@ elif [ "$UPDATE_MODE" == "3" ]; then
     echo ""
     read -p "Files: " CUSTOM_FILES
 
-    # Parse input (handle both space and comma separated)
     CUSTOM_FILES=$(echo "$CUSTOM_FILES" | tr ',' ' ')
 
     echo ""
@@ -425,69 +431,85 @@ elif [ "$UPDATE_MODE" == "3" ]; then
     done
     echo ""
 
-# ============================================
-# MODE 4: CANCEL
-# ============================================
-
 elif [ "$UPDATE_MODE" == "4" ]; then
     echo ""
     echo "❌ Update cancelled."
-    rm -rf "$BACKUP_FOLDER" 2>/dev/null
+    [ -n "$BACKUP_FOLDER" ] && rm -rf "$BACKUP_FOLDER" 2>/dev/null || true
     exit 0
 
 else
     echo "❌ Invalid choice. Exiting."
-    rm -rf "$BACKUP_FOLDER" 2>/dev/null
+    [ -n "$BACKUP_FOLDER" ] && rm -rf "$BACKUP_FOLDER" 2>/dev/null || true
     exit 1
 fi
 
 # ============================================
-# CONFIRMATION
+# COUNT FILES (safer method using array)
 # ============================================
 
-# Count files (count number of pipes, divide by 2)
-TOTAL_FILES=$(echo "$FILES_TO_UPDATE" | tr -cd '|' | wc -c)
-TOTAL_FILES=$((TOTAL_FILES / 2))
+# Convert pipe-delimited string to count
+TOTAL_FILES=0
+if [ -n "$FILES_TO_UPDATE" ]; then
+    # Remove leading/trailing pipes, then count remaining pipes + 1
+    CLEANED=$(echo "$FILES_TO_UPDATE" | sed 's/^|//;s/|$//')
+    if [ -n "$CLEANED" ]; then
+        TOTAL_FILES=$(echo "$CLEANED" | tr -cd '|' | wc -c)
+        TOTAL_FILES=$((TOTAL_FILES / 2 + 1))
+    fi
+fi
+
+# ============================================
+# CONFIRMATION / DRY RUN SUMMARY
+# ============================================
 
 echo ""
 echo "📝 Summary:"
 echo "   App version: ${CURRENT_VERSION:-"?"} → $NEW_VERSION"
 echo "   Cache version: ${CURRENT_CACHE_VERSION:-"?"} → $NEW_CACHE_VERSION"
 echo "   Files to update: $TOTAL_FILES"
-echo "   Backups will be saved to: $BACKUP_FOLDER"
+if [ "$DRY_RUN" = false ]; then
+    echo "   Backups will be saved to: $BACKUP_FOLDER"
+fi
 echo ""
 
-if [ "$AUTO_MODE" = true ]; then
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 DRY RUN - Previewing changes..."
+    echo ""
+elif [ "$AUTO_MODE" = true ]; then
     echo "🤖 Auto mode: Proceeding with update..."
 else
     read -p "🤔 Continue? (Y/N): " -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "❌ Update cancelled."
-        rm -rf "$BACKUP_FOLDER" 2>/dev/null
+        rm -rf "$BACKUP_FOLDER" 2>/dev/null || true
         exit 1
     fi
 fi
 
 echo ""
-echo "🔄 Updating files..."
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 Files that WOULD be updated:"
+else
+    echo "🔄 Updating files..."
+fi
 echo ""
 
 # ============================================
-# HELPER FUNCTIONS (must be defined before use)
+# HELPER FUNCTIONS
 # ============================================
 
-# Helper function to check if file should be updated (bash 3 compatible)
 should_update() {
     local file=$1
     [[ "$FILES_TO_UPDATE" == *"|$file|"* ]]
 }
 
-# Backup helper
 backup_file() {
     local file=$1
+    if [ "$DRY_RUN" = true ]; then
+        return 0
+    fi
     if [ -f "$file" ]; then
-        # Create parent directory structure in backup folder
         local backup_path="$BACKUP_FOLDER/$file"
         mkdir -p "$(dirname "$backup_path")"
         cp "$file" "$backup_path"
@@ -497,221 +519,201 @@ backup_file() {
     return 1
 }
 
+# Dry run wrapper for sed
+do_sed() {
+    local file=$1
+    shift
+    if [ "$DRY_RUN" = true ]; then
+        return 0
+    fi
+    "${SED_INPLACE[@]}" "$@" "$file"
+}
+
 # ============================================
-# GENERATE: version.js (FIRST - Single Source of Truth)
+# STAGE 1: GENERATE version.js (Single Source of Truth)
 # ============================================
 
-echo "📝 Generating version.js..."
+echo "📝 Stage 1: Generating version.js..."
 
-# Backup existing version.js if it exists
-if [ -f "version.js" ]; then
-    backup_file "version.js"
-fi
+if [ "$DRY_RUN" = true ]; then
+    echo "   Would generate version.js with:"
+    echo "   - globalThis.APP_VERSION = '$NEW_VERSION'"
+    echo "   - globalThis.CACHE_VERSION = $NEW_CACHE_VERSION"
+else
+    # Backup existing version.js
+    if [ -f "version.js" ]; then
+        backup_file "version.js"
+    fi
 
-# Generate new version.js file
-cat > "version.js" << EOF
+    # Generate new version.js using globalThis (cleaner, works everywhere)
+    cat > "version.js" << EOF
 // Version file - Auto-generated by update-version.sh
 // Single source of truth for all version info
 
-// App version - displayed to users, used for URL cache-busting (?v=)
-self.APP_VERSION = '$NEW_VERSION';
+// Use globalThis for universal compatibility (window, self, Node, SW)
+globalThis.APP_VERSION = '$NEW_VERSION';
+globalThis.CACHE_VERSION = $NEW_CACHE_VERSION;
 
-// Cache version - controls service worker cache invalidation
-// Bump this to force full cache refresh without changing app version
-self.CACHE_VERSION = $NEW_CACHE_VERSION;
-
-// Make available in browser window context
-if (typeof window !== 'undefined') {
-  window.APP_VERSION = self.APP_VERSION;
-  window.CACHE_VERSION = self.CACHE_VERSION;
-}
+// Debug markers in modules derive from globalThis.APP_VERSION at runtime
+// No separate version constants needed - true single source of truth
 EOF
 
-echo "✅ Generated version.js (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
+    echo "✅ Generated version.js (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
+fi
 echo ""
 
 # ============================================
-# UPDATE: miniCycle.html
+# STAGE 2: UPDATE HTML FILES
 # ============================================
+
+echo "📝 Stage 2: Updating HTML files..."
+STAGE2_SUCCESS=true
 
 if should_update "miniCycle.html"; then
-    if backup_file "miniCycle.html"; then
-        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" miniCycle.html
-        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" miniCycle.html
-        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" miniCycle.html
-        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" miniCycle.html
-        # Note: CURRENT_CACHE_VERSION now reads from version.js (no hardcoded update needed)
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: miniCycle.html"
+    elif backup_file "miniCycle.html"; then
+        do_sed "miniCycle.html" "s/?v=[0-9.]*/?v=$NEW_VERSION/g"
+        do_sed "miniCycle.html" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g"
+        do_sed "miniCycle.html" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g"
+        do_sed "miniCycle.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
         echo "✅ Updated miniCycle.html"
+    else
+        echo "⚠️  Failed to update miniCycle.html"
+        STAGE2_SUCCESS=false
     fi
 fi
-
-# ============================================
-# UPDATE: lite/miniCycle-lite.html
-# ============================================
 
 if should_update "lite/miniCycle-lite.html"; then
-    if backup_file "lite/miniCycle-lite.html"; then
-        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" lite/miniCycle-lite.html
-        "${SED_INPLACE[@]}" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g" lite/miniCycle-lite.html
-        "${SED_INPLACE[@]}" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g" lite/miniCycle-lite.html
-        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" lite/miniCycle-lite.html
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: lite/miniCycle-lite.html"
+    elif backup_file "lite/miniCycle-lite.html"; then
+        do_sed "lite/miniCycle-lite.html" "s/?v=[0-9.]*/?v=$NEW_VERSION/g"
+        do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g"
+        do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g"
+        do_sed "lite/miniCycle-lite.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
         echo "✅ Updated lite/miniCycle-lite.html"
+    else
+        echo "⚠️  Failed to update lite/miniCycle-lite.html"
+        STAGE2_SUCCESS=false
     fi
 fi
-
-# ============================================
-# UPDATE: pages/product.html
-# ============================================
 
 if should_update "pages/product.html"; then
-    if backup_file "pages/product.html"; then
-        "${SED_INPLACE[@]}" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g" pages/product.html
-        "${SED_INPLACE[@]}" "s/?v=[0-9.]*/?v=$NEW_VERSION/g" pages/product.html
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: pages/product.html"
+    elif backup_file "pages/product.html"; then
+        do_sed "pages/product.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
+        do_sed "pages/product.html" "s/?v=[0-9.]*/?v=$NEW_VERSION/g"
         echo "✅ Updated pages/product.html"
+    else
+        echo "⚠️  Failed to update pages/product.html"
+        STAGE2_SUCCESS=false
     fi
 fi
 
-# ============================================
-# NOTE: These files now read from globalThis.APP_VERSION (set by version.js)
-# No manual version updates needed - they are single-source-of-truth compliant
-# ============================================
-# - miniCycle-main.js          → reads globalThis.APP_VERSION
-# - modules/boot/orchestrator.js → reads globalThis.APP_VERSION
-# - modules/boot/coreBoot.js     → reads globalThis.APP_VERSION
-echo "ℹ️  Boot files read from version.js (no update needed)"
+if [ "$STAGE2_SUCCESS" = true ]; then
+    echo "✅ Stage 2 complete"
+else
+    echo "⚠️  Stage 2 completed with warnings"
+fi
+echo ""
 
 # ============================================
-# UPDATE: lite/miniCycle-lite-scripts.js
+# STAGE 3: UPDATE LITE JS (if applicable)
 # ============================================
 
 if should_update "lite/miniCycle-lite-scripts.js"; then
-    if backup_file "lite/miniCycle-lite-scripts.js"; then
-        "${SED_INPLACE[@]}" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g" lite/miniCycle-lite-scripts.js
-        "${SED_INPLACE[@]}" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g" lite/miniCycle-lite-scripts.js
+    echo "📝 Stage 3: Updating lite JS files..."
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: lite/miniCycle-lite-scripts.js"
+    elif backup_file "lite/miniCycle-lite-scripts.js"; then
+        do_sed "lite/miniCycle-lite-scripts.js" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g"
+        do_sed "lite/miniCycle-lite-scripts.js" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g"
         echo "✅ Updated lite/miniCycle-lite-scripts.js"
     fi
+    echo "✅ Stage 3 complete"
+    echo ""
 fi
 
 # ============================================
-# NOTE: service-worker.js no longer needs updates
-# ============================================
-# It reads APP_VERSION and CACHE_VERSION from version.js via importScripts
-echo "ℹ️  service-worker.js reads from version.js (no update needed)"
-
-# ============================================
-# DEBUG VERSION MARKERS (always updated)
-# ============================================
-# These help identify stale cached files in DevTools
-# They're always updated regardless of mode selection
-echo ""
-echo "📝 Updating debug version markers..."
-
-# ============================================
-# UPDATE: modules/core/appInit.js (JSDoc @version for cache debugging)
+# STAGE 4: UPDATE MANIFESTS & PACKAGE
 # ============================================
 
-APPINIT_FILE="modules/core/appInit.js"
-if [ -f "$APPINIT_FILE" ]; then
-    backup_file "$APPINIT_FILE"
-    # Update @version in JSDoc comment (helps identify stale cached versions)
-    "${SED_INPLACE[@]}" "s/@version [0-9.]*/@version $NEW_VERSION/g" "$APPINIT_FILE"
-    echo "✅ Updated $APPINIT_FILE @version tag"
-fi
-
-# ============================================
-# UPDATE: modules/core/appContext.js (APPCONTEXT_VERSION for cache debugging)
-# ============================================
-
-APPCONTEXT_FILE="modules/core/appContext.js"
-if [ -f "$APPCONTEXT_FILE" ]; then
-    backup_file "$APPCONTEXT_FILE"
-    # Update APPCONTEXT_VERSION constant (helps identify stale cached versions)
-    "${SED_INPLACE[@]}" "s/APPCONTEXT_VERSION = '[0-9.]*'/APPCONTEXT_VERSION = '$NEW_VERSION'/g" "$APPCONTEXT_FILE"
-    echo "✅ Updated $APPCONTEXT_FILE APPCONTEXT_VERSION"
-fi
-
-# ============================================
-# UPDATE: modules/core/constants.js (CONSTANTS_VERSION for cache debugging)
-# ============================================
-
-CONSTANTS_FILE="modules/core/constants.js"
-if [ -f "$CONSTANTS_FILE" ]; then
-    backup_file "$CONSTANTS_FILE"
-    # Update CONSTANTS_VERSION constant (helps identify stale cached versions)
-    "${SED_INPLACE[@]}" "s/CONSTANTS_VERSION = '[0-9.]*'/CONSTANTS_VERSION = '$NEW_VERSION'/g" "$CONSTANTS_FILE"
-    echo "✅ Updated $CONSTANTS_FILE CONSTANTS_VERSION"
-fi
-
-# ============================================
-# UPDATE: modules/core/diBase.js (DIBASE_VERSION for cache debugging)
-# ============================================
-
-DIBASE_FILE="modules/core/diBase.js"
-if [ -f "$DIBASE_FILE" ]; then
-    backup_file "$DIBASE_FILE"
-    # Update DIBASE_VERSION constant (helps identify stale cached versions)
-    "${SED_INPLACE[@]}" "s/DIBASE_VERSION = '[0-9.]*'/DIBASE_VERSION = '$NEW_VERSION'/g" "$DIBASE_FILE"
-    echo "✅ Updated $DIBASE_FILE DIBASE_VERSION"
-fi
-
-# ============================================
-# UPDATE: manifest.json
-# ============================================
+echo "📝 Stage 4: Updating manifests & package.json..."
+STAGE4_SUCCESS=true
 
 if should_update "manifest.json"; then
-    if backup_file "manifest.json"; then
-        "${SED_INPLACE[@]}" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g" manifest.json
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: manifest.json"
+    elif backup_file "manifest.json"; then
+        do_sed "manifest.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated manifest.json"
+    else
+        STAGE4_SUCCESS=false
     fi
 fi
-
-# ============================================
-# UPDATE: manifest-lite.json
-# ============================================
 
 if should_update "manifest-lite.json"; then
-    if backup_file "manifest-lite.json"; then
-        "${SED_INPLACE[@]}" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g" manifest-lite.json
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: manifest-lite.json"
+    elif backup_file "manifest-lite.json"; then
+        do_sed "manifest-lite.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated manifest-lite.json"
+    else
+        STAGE4_SUCCESS=false
     fi
 fi
-
-# ============================================
-# UPDATE: package.json
-# ============================================
 
 if should_update "package.json"; then
-    if backup_file "package.json"; then
-        "${SED_INPLACE[@]}" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g" package.json
+    if [ "$DRY_RUN" = true ]; then
+        echo "   Would update: package.json"
+    elif backup_file "package.json"; then
+        do_sed "package.json" "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/g"
         echo "✅ Updated package.json"
+    else
+        STAGE4_SUCCESS=false
     fi
 fi
 
-# ============================================
-# RESTORE SCRIPT GENERATION
-# ============================================
-
+if [ "$STAGE4_SUCCESS" = true ]; then
+    echo "✅ Stage 4 complete"
+else
+    echo "⚠️  Stage 4 completed with warnings"
+fi
 echo ""
-echo "📝 Generating restore script..."
 
-# Start creating restore script
-cat > "$BACKUP_FOLDER/restore.sh" << 'EOF'
+# ============================================
+# NOTE: Debug markers now derive from globalThis
+# ============================================
+
+echo "ℹ️  Debug markers (APPCONTEXT_VERSION, CONSTANTS_VERSION, DIBASE_VERSION)"
+echo "   now derive from globalThis.APP_VERSION at runtime - no script updates needed"
+echo ""
+
+# ============================================
+# STAGE 5: GENERATE RESTORE SCRIPT
+# ============================================
+
+if [ "$DRY_RUN" = false ]; then
+    echo "📝 Stage 5: Generating restore script..."
+
+    cat > "$BACKUP_FOLDER/restore.sh" << 'EOF'
 #!/bin/bash
 # Auto-generated restore script
+set -euo pipefail
+
 echo "🔄 Restoring files from backup..."
 echo ""
 
 RESTORED=0
 FAILED=0
 
-# Function to restore a file
 restore_file() {
     local file=$1
     if [ -f "$file" ]; then
-        # Create parent directory if needed
-        mkdir -p "../$(dirname "$file")" 2>/dev/null
-        cp "$file" "../$file" 2>/dev/null
-        if [ $? -eq 0 ]; then
+        mkdir -p "../$(dirname "$file")" 2>/dev/null || true
+        if cp "$file" "../$file" 2>/dev/null; then
             echo "✅ Restored $file"
             RESTORED=$((RESTORED + 1))
         else
@@ -721,40 +723,24 @@ restore_file() {
     fi
 }
 
-# Restore core files
 EOF
 
-# Add version.js first (single source of truth)
-echo "restore_file \"version.js\"" >> "$BACKUP_FOLDER/restore.sh"
+    # Add files to restore script
+    echo "restore_file \"version.js\"" >> "$BACKUP_FOLDER/restore.sh"
 
-# Add debug version marker files (always updated)
-echo "restore_file \"modules/core/appInit.js\"" >> "$BACKUP_FOLDER/restore.sh"
-echo "restore_file \"modules/core/appContext.js\"" >> "$BACKUP_FOLDER/restore.sh"
-echo "restore_file \"modules/core/constants.js\"" >> "$BACKUP_FOLDER/restore.sh"
-echo "restore_file \"modules/core/diBase.js\"" >> "$BACKUP_FOLDER/restore.sh"
+    for file in "${CORE_HTML_FILES[@]}"; do
+        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+    done
 
-# Add core HTML files
-for file in "${CORE_HTML_FILES[@]}"; do
-    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-done
+    for file in "${MANIFEST_FILES[@]}"; do
+        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+    done
 
-# Add core JS files
-for file in "${CORE_JS_FILES[@]}"; do
-    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-done
+    for file in "${PACKAGE_FILES[@]}"; do
+        echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
+    done
 
-# Add manifest files
-for file in "${MANIFEST_FILES[@]}"; do
-    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-done
-
-# Add package files
-for file in "${PACKAGE_FILES[@]}"; do
-    echo "restore_file \"$file\"" >> "$BACKUP_FOLDER/restore.sh"
-done
-
-# Add final summary
-cat >> "$BACKUP_FOLDER/restore.sh" << 'EOF'
+    cat >> "$BACKUP_FOLDER/restore.sh" << 'EOF'
 
 echo ""
 echo "📊 Restore Summary:"
@@ -764,135 +750,104 @@ echo ""
 echo "🎉 Restore completed!"
 EOF
 
-chmod +x "$BACKUP_FOLDER/restore.sh"
-echo "✅ Restore script created: $BACKUP_FOLDER/restore.sh"
+    chmod +x "$BACKUP_FOLDER/restore.sh"
+    echo "✅ Restore script created: $BACKUP_FOLDER/restore.sh"
+    echo "✅ Stage 5 complete"
+    echo ""
+fi
 
 # ============================================
-# VALIDATION
+# STAGE 6: VALIDATION
 # ============================================
 
-echo ""
-echo "🔍 Validating updated files..."
-VALIDATION_ERRORS=0
+if [ "$DRY_RUN" = false ]; then
+    echo "📝 Stage 6: Validating updated files..."
+    VALIDATION_ERRORS=0
 
-# Validate version.js (single source of truth)
-if [ -f "version.js" ]; then
-    if ! grep -q "self.APP_VERSION = '$NEW_VERSION'" version.js; then
-        echo "⚠️  Warning: version.js APP_VERSION may not have generated correctly"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-    elif ! grep -q "self.CACHE_VERSION = $NEW_CACHE_VERSION" version.js; then
-        echo "⚠️  Warning: version.js CACHE_VERSION may not have generated correctly"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    # Validate version.js
+    if [ -f "version.js" ]; then
+        if ! grep -q "globalThis.APP_VERSION = '$NEW_VERSION'" version.js; then
+            echo "⚠️  Warning: version.js APP_VERSION may not have generated correctly"
+            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        elif ! grep -q "globalThis.CACHE_VERSION = $NEW_CACHE_VERSION" version.js; then
+            echo "⚠️  Warning: version.js CACHE_VERSION may not have generated correctly"
+            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        else
+            echo "✅ version.js validated"
+        fi
     else
-        echo "✅ version.js validated (app: $NEW_VERSION, cache: $NEW_CACHE_VERSION)"
-    fi
-else
-    echo "❌ Error: version.js was not generated"
-    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-fi
-
-# Validate HTML files
-if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
-    if ! grep -q "content=\"$NEW_VERSION\"" miniCycle.html; then
-        echo "⚠️  Warning: miniCycle.html app-version may not have updated correctly"
+        echo "❌ Error: version.js was not generated"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
-    # Note: CURRENT_CACHE_VERSION now reads from version.js at runtime (no validation needed)
-fi
 
-if should_update "lite/miniCycle-lite.html" && [ -f "lite/miniCycle-lite.html" ]; then
-    if ! grep -q "?v=$NEW_VERSION" lite/miniCycle-lite.html; then
-        echo "⚠️  Warning: lite/miniCycle-lite.html may not have updated correctly"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    # Validate HTML files
+    if should_update "miniCycle.html" && [ -f "miniCycle.html" ]; then
+        if ! grep -q "content=\"$NEW_VERSION\"" miniCycle.html; then
+            echo "⚠️  Warning: miniCycle.html may not have updated correctly"
+            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        fi
     fi
-fi
 
-# Note: service-worker.js validation removed - it reads from version.js via importScripts
-
-# Validate manifests
-if should_update "manifest.json" && [ -f "manifest.json" ]; then
-    if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest.json; then
-        echo "⚠️  Warning: manifest.json may not have updated correctly"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    # Validate manifests
+    if should_update "manifest.json" && [ -f "manifest.json" ]; then
+        if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest.json; then
+            echo "⚠️  Warning: manifest.json may not have updated correctly"
+            VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+        fi
     fi
-fi
 
-if should_update "manifest-lite.json" && [ -f "manifest-lite.json" ]; then
-    if ! grep -q "\"version\": \"$NEW_VERSION\"" manifest-lite.json; then
-        echo "⚠️  Warning: manifest-lite.json may not have updated correctly"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
+    if [ $VALIDATION_ERRORS -eq 0 ]; then
+        echo "✅ All files validated successfully!"
+        echo "✅ Stage 6 complete"
+    else
+        echo "⚠️  Found $VALIDATION_ERRORS potential issues - check files manually"
+        echo "💡 If needed, restore with: cd $BACKUP_FOLDER && ./restore.sh"
     fi
-fi
-
-# Validate package.json
-if should_update "package.json" && [ -f "package.json" ]; then
-    if ! grep -q "\"version\": \"$NEW_VERSION\"" package.json; then
-        echo "⚠️  Warning: package.json may not have updated correctly"
-        VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
-    fi
-fi
-
-# Validation summary
-if [ $VALIDATION_ERRORS -eq 0 ]; then
-    echo "✅ All updated files validated successfully!"
-else
-    echo "⚠️  Found $VALIDATION_ERRORS potential issues - check files manually"
-    echo "💡 If needed, restore with: cd $BACKUP_FOLDER && ./restore.sh"
+    echo ""
 fi
 
 # ============================================
-# FINAL STATUS
+# CORE FILE UPDATES COMPLETE
 # ============================================
 
 echo ""
-echo "🎉 Update completed successfully!"
+echo "════════════════════════════════════════"
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 DRY RUN COMPLETE - No files were modified"
+else
+    echo "✅ CORE FILE UPDATES COMPLETE"
+fi
+echo "════════════════════════════════════════"
 echo ""
-echo "📊 Update Summary:"
-echo "   Selected files updated: $TOTAL_FILES"
-echo "   Debug markers updated: 4 (appInit, appContext, constants, diBase)"
-echo "   version.js: regenerated"
+echo "📊 Summary:"
 echo "   App version: $NEW_VERSION"
 echo "   Cache version: $NEW_CACHE_VERSION"
-echo ""
-echo "📁 Backup location: $BACKUP_FOLDER"
-echo "🔧 Restore script: $BACKUP_FOLDER/restore.sh"
+if [ "$DRY_RUN" = false ]; then
+    echo "   Files updated: $TOTAL_FILES"
+    echo "   Backup location: $BACKUP_FOLDER"
+fi
 echo ""
 
-FINAL_BACKUP_COUNT=$(find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" | wc -l | tr -d ' ')
-echo "📦 Backup status: $FINAL_BACKUP_COUNT backups maintained (max 3)"
-if [ "$FINAL_BACKUP_COUNT" -gt 0 ]; then
-    echo "📂 Available backups:"
-    find "$BACKUP_DIR" -maxdepth 1 -type d -name "version_update_*" -exec basename {} \; | sort -r | head -3 | while read backup; do
-        echo "   • $backup"
-    done
+# Exit here if dry run
+if [ "$DRY_RUN" = true ]; then
+    echo "💡 Run without --dry-run to apply these changes"
+    exit 0
 fi
 
-echo ""
-echo "🧪 Recommended next steps:"
-echo "1. Test the app locally"
-echo "2. Hard refresh; check SW logs for APP_VERSION/CACHE_VERSION"
-echo "3. Verify update prompt flow"
-echo "4. Test both full and lite versions"
-echo ""
-echo "🔄 To restore previous versions:"
-echo "   cd $BACKUP_FOLDER && ./restore.sh"
-echo ""
-
 # ============================================
-# CHANGELOG GENERATION
+# OPTIONAL: CHANGELOG GENERATION
 # ============================================
 
-echo "📝 Changelog"
-echo "------------"
+echo "📝 Optional: Changelog"
+echo "----------------------"
 
-# Determine if we should update changelog
 UPDATE_CHANGELOG=false
 if [ "$AUTO_MODE" = true ]; then
     if [ "$AUTO_CHANGELOG" = true ]; then
         UPDATE_CHANGELOG=true
         echo "🤖 Auto mode: Generating changelog..."
     else
-        echo "⏭️  Auto mode: Skipping changelog (use --changelog to auto-generate)"
+        echo "⏭️  Skipping changelog (use --changelog to auto-generate)"
     fi
 else
     read -p "Update CHANGELOG.md with git commits? (y/N): " -n 1 -r
@@ -905,82 +860,64 @@ fi
 if [ "$UPDATE_CHANGELOG" = true ]; then
     if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
         CHANGELOG_FILE="CHANGELOG.md"
-
-        # Get the last tag (if any)
         LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-        # Get commits since last tag (or all commits if no tag)
         if [ -n "$LAST_TAG" ]; then
             echo "📋 Getting commits since $LAST_TAG..."
             COMMITS=$(git log "$LAST_TAG"..HEAD --oneline --no-merges 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
         else
-            echo "📋 Getting recent commits (no previous tag found)..."
+            echo "📋 Getting recent commits..."
             COMMITS=$(git log --oneline --no-merges -20 2>/dev/null | grep -v -E "^[a-f0-9]+ (chore: [Bb]ump|Bump version|Update version)" || true)
         fi
 
         if [ -n "$COMMITS" ]; then
-            # Format date
             TODAY=$(date +"%Y-%m-%d")
-
-            # Create new changelog entry
             NEW_ENTRY="## [$NEW_VERSION] - $TODAY"$'\n'
             while IFS= read -r commit; do
-                # Extract just the message (remove commit hash)
                 MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
                 NEW_ENTRY+="- $MSG"$'\n'
             done <<< "$COMMITS"
             NEW_ENTRY+=$'\n'
 
-            # Create or update changelog
             if [ -f "$CHANGELOG_FILE" ]; then
-                # Prepend new entry to existing changelog
-                echo "📝 Prepending to existing $CHANGELOG_FILE..."
                 TEMP_FILE=$(mktemp)
                 echo "$NEW_ENTRY" > "$TEMP_FILE"
                 cat "$CHANGELOG_FILE" >> "$TEMP_FILE"
                 mv "$TEMP_FILE" "$CHANGELOG_FILE"
             else
-                # Create new changelog
-                echo "📝 Creating new $CHANGELOG_FILE..."
                 echo "# Changelog" > "$CHANGELOG_FILE"
-                echo "" >> "$CHANGELOG_FILE"
-                echo "All notable changes to miniCycle will be documented in this file." >> "$CHANGELOG_FILE"
                 echo "" >> "$CHANGELOG_FILE"
                 echo "$NEW_ENTRY" >> "$CHANGELOG_FILE"
             fi
 
-            # Count commits added
             COMMIT_COUNT=$(echo "$COMMITS" | wc -l | tr -d ' ')
-            echo "✅ Added $COMMIT_COUNT commits to changelog"
+            echo "✅ Changelog updated ($COMMIT_COUNT commits added)"
         else
-            echo "ℹ️  No new commits to add (or all were version bumps)"
+            echo "ℹ️  No new commits to add"
         fi
     else
         echo "⚠️  Not in a git repository - skipping changelog"
     fi
 else
-    if [ "$AUTO_MODE" != true ]; then
-        echo "⏭️  Skipping changelog update"
-    fi
+    echo "⏭️  Skipping changelog"
 fi
 
 echo ""
 
 # ============================================
-# GIT TAG AUTOMATION
+# OPTIONAL: GIT TAG
 # ============================================
 
-echo "🏷️  Git Tag Automation"
-echo "----------------------"
+echo "🏷️  Optional: Git Tag"
+echo "---------------------"
 
-# Determine if we should create a tag
 CREATE_TAG=false
 if [ "$AUTO_MODE" = true ]; then
     if [ "$AUTO_GIT_TAG" = true ]; then
         CREATE_TAG=true
         echo "🤖 Auto mode: Creating git tag..."
     else
-        echo "⏭️  Auto mode: Skipping tag (use --tag to auto-create)"
+        echo "⏭️  Skipping tag (use --tag to auto-create)"
     fi
 else
     read -p "Create git tag v$NEW_VERSION? (y/N): " -n 1 -r
@@ -991,217 +928,73 @@ else
 fi
 
 if [ "$CREATE_TAG" = true ]; then
-    # Check if we're in a git repository
     if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-        # Check if tag already exists
+        SKIP_TAG=false
+
         if git rev-parse "v$NEW_VERSION" > /dev/null 2>&1; then
             echo "⚠️  Tag v$NEW_VERSION already exists"
             if [ "$AUTO_MODE" = true ]; then
-                # Auto mode: delete and recreate
-                git tag -d "v$NEW_VERSION" 2>/dev/null
-                echo "🤖 Auto mode: Deleted existing tag"
+                git tag -d "v$NEW_VERSION" 2>/dev/null || true
+                echo "🤖 Deleted existing tag"
             else
                 read -p "Delete and recreate? (y/N): " -n 1 -r
                 echo ""
                 if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    git tag -d "v$NEW_VERSION" 2>/dev/null
-                    echo "🗑️  Deleted existing tag"
+                    git tag -d "v$NEW_VERSION" 2>/dev/null || true
                 else
-                    echo "⏭️  Skipping tag creation"
                     SKIP_TAG=true
                 fi
             fi
         fi
 
-        if [ "$SKIP_TAG" != "true" ]; then
-            # Create annotated tag
-            git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION
+        if [ "$SKIP_TAG" = false ]; then
+            if git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION
 
 App version: $NEW_VERSION
 Cache version: $NEW_CACHE_VERSION
-Generated by update-version.sh"
-
-            if [ $? -eq 0 ]; then
+Generated by update-version.sh"; then
                 echo "✅ Created tag: v$NEW_VERSION"
 
-                # Determine if we should push
                 PUSH_TAG=false
-                if [ "$AUTO_MODE" = true ]; then
-                    if [ "$AUTO_GIT_PUSH" = true ]; then
-                        PUSH_TAG=true
-                        echo "🤖 Auto mode: Pushing tag to remote..."
-                    else
-                        echo "💡 Push later with: git push origin v$NEW_VERSION"
-                    fi
-                else
+                if [ "$AUTO_MODE" = true ] && [ "$AUTO_GIT_PUSH" = true ]; then
+                    PUSH_TAG=true
+                elif [ "$AUTO_MODE" = false ]; then
                     read -p "Push tag to remote? (y/N): " -n 1 -r
                     echo ""
                     if [[ $REPLY =~ ^[Yy]$ ]]; then
                         PUSH_TAG=true
-                    else
-                        echo "💡 Push later with: git push origin v$NEW_VERSION"
                     fi
                 fi
 
                 if [ "$PUSH_TAG" = true ]; then
-                    git push origin "v$NEW_VERSION"
-                    if [ $? -eq 0 ]; then
+                    if git push origin "v$NEW_VERSION"; then
                         echo "✅ Pushed tag to remote"
                     else
-                        echo "⚠️  Failed to push tag (you can push manually: git push origin v$NEW_VERSION)"
+                        echo "⚠️  Failed to push tag"
                     fi
+                else
+                    echo "💡 Push later: git push origin v$NEW_VERSION"
                 fi
             else
-                echo "❌ Failed to create tag"
+                echo "⚠️  Failed to create tag"
             fi
         fi
     else
-        echo "⚠️  Not in a git repository - skipping tag creation"
+        echo "⚠️  Not in a git repository"
     fi
 else
-    if [ "$AUTO_MODE" != true ]; then
-        echo "⏭️  Skipping tag creation"
-        echo "💡 Create manually with: git tag -a v$NEW_VERSION -m \"Release v$NEW_VERSION\""
-    fi
+    echo "⏭️  Skipping tag"
 fi
 
 echo ""
-echo "✅ All done!"
-
-# ============================================
-# INSTRUCTIONS & DOCUMENTATION
-# ============================================
-#
-# 🚀 HOW TO USE THIS SCRIPT:
-#
-# 1️⃣ First time setup (make it executable):
-#    chmod +x scripts/update-version.sh
-#
-# 2️⃣ Run from web/ directory:
-#    ./scripts/update-version.sh
-#
-# 3️⃣ Follow the prompts to enter new version numbers
-#
-# 🤖 AUTO MODE (v4.3+):
-#    ./scripts/update-version.sh --auto       # Auto-bump versions, no prompts
-#    ./scripts/update-version.sh --auto --tag # Auto-bump + create git tag
-#    ./scripts/update-version.sh -a -p        # Auto-bump + tag + push to remote
-#
-# Auto mode:
-# • Increments app version by 1 (e.g., 1.483 → 1.484)
-# • Increments cache version by 1 (e.g., 391 → 392)
-# • Updates all files automatically (excludes lite by default)
-# • Skips all confirmation prompts
-# • Use --changelog to auto-generate changelog from git commits
-# • Use --lite to include lite version files
-# • Use --tag to auto-create git tag
-# • Use --push to auto-push tag to remote
-#
-# 📋 CHANGELOG GENERATION:
-# • Pulls commits since last git tag
-# • Filters out version bump commits automatically
-# • Prepends new entry to CHANGELOG.md
-# • Creates CHANGELOG.md if it doesn't exist
-# • Format: ## [version] - YYYY-MM-DD
-#
-# 📝 PLATFORM NOTES:
-# • macOS: Uses sed -i "" (empty string after -i) ✅ Already handled
-# • Linux: Uses sed -i (no quotes) ✅ Already handled
-# • Windows: Use Git Bash or WSL ✅ Cross-platform compatible
-#
-# 🛡️ SAFETY FEATURES:
-# • ✅ Automatic backups created in backup/ folder with timestamps
-# • ✅ Auto-generated restore.sh script in each backup folder
-# • ✅ Automatic cleanup of old backups (keeps only newest 3)
-# • ✅ No manual backups needed - script handles everything!
-#
-# 🏷️ GIT TAG AUTOMATION (v4.2+):
-# • ✅ Optional git tag creation after version update
-# • ✅ Creates annotated tags with version info
-# • ✅ Handles existing tag detection/replacement
-# • ✅ Optional push to remote origin
-# • Manual: git tag -a v1.474 -m "Release v1.474"
-#
-# 🧹 BACKUP CLEANUP:
-# • ✅ Automatically removes backups older than the newest 3
-# • ✅ Runs cleanup before creating new backup
-# • ✅ Shows backup status after completion
-# • ✅ Always maintains restore capability for recent versions
-#
-# 🔄 TO RESTORE PREVIOUS VERSION:
-#    cd backup/version_update_YYYYMMDD_HHMMSS
-#    ./restore.sh
-#
-# ============================================
-# 🎯 FILES UPDATED BY THIS SCRIPT:
-# ============================================
-#
-# Core files (version parameters + meta tags):
-# • version.js                    - Single source of truth (auto-generated)
-# • miniCycle.html                - ?v= params, currentVersion, meta tags
-#
-# Files that read from version.js (no direct updates needed):
-# • service-worker.js             - Reads APP_VERSION and CACHE_VERSION via importScripts
-# • miniCycle-main.js             - Reads globalThis.APP_VERSION
-# • modules/boot/orchestrator.js  - Reads globalThis.APP_VERSION
-# • modules/boot/coreBoot.js      - Reads globalThis.APP_VERSION
-#
-# Debug version markers (for identifying stale cache):
-# • modules/core/appInit.js       - @version JSDoc tag
-# • modules/core/appContext.js    - APPCONTEXT_VERSION constant
-# • modules/core/constants.js     - CONSTANTS_VERSION constant
-# • modules/core/diBase.js        - DIBASE_VERSION constant
-#
-# Other pages:
-# • pages/product.html
-#
-# Lite version (only with --lite flag):
-# • lite/miniCycle-lite.html
-# • lite/miniCycle-lite-scripts.js
-# • manifest-lite.json
-#
-# Manifests & package:
-# • manifest.json
-# • package.json
-#
-# ============================================
-# VERSION FLOW (Single Source of Truth)
-# ============================================
-#
-# All version information flows from version.js:
-#
-#   version.js (this script generates it)
-#       ↓
-#   globalThis.APP_VERSION (set by version.js via self.APP_VERSION)
-#       ↓
-#   Boot files read globalThis.APP_VERSION directly:
-#   - miniCycle-main.js
-#   - modules/boot/orchestrator.js
-#   - modules/boot/coreBoot.js
-#       ↓
-#   coreBoot.js creates AppMeta = { version: APP_VERSION }
-#       ↓
-#   Modules receive version via DI: deps.AppMeta.version
-#       ↓
-#   import(`./submodule.js?v=${version}`)
-#
-# Benefits:
-# • TRUE single source of truth (version.js only)
-# • No hardcoded versions in boot files or modules
-# • Boot files use globalThis fallback to 'dev-local' for local dev
-# • Modules are fully DI-pure (no globalThis/window version access)
-# • Cache-busting via dynamic imports works automatically
-#
-# Notes:
-# • @version JSDoc tags removed from modules (version in URL)
-# • Modules use 'dev-local' fallback if AppMeta not provided
-# • See docs/developer-guides/TASKDOM_DI_GUIDE.md for patterns
-#
-# ============================================
-# 📚 ARCHIVED VERSIONS
-# ============================================
-#
-# • v3.0 (auto-discovery): archive/update-version-v3-autodiscovery.sh
-#   - Had auto-discovery of utility files with @version tags
-#   - Kept for reference on regex patterns and discovery logic
-#
+echo "════════════════════════════════════════"
+echo "✅ ALL DONE!"
+echo "════════════════════════════════════════"
+echo ""
+echo "🧪 Recommended next steps:"
+echo "1. Test the app locally"
+echo "2. Hard refresh; check version in console"
+echo "3. Verify update prompt flow"
+echo ""
+echo "🔄 To restore: cd $BACKUP_FOLDER && ./restore.sh"
+echo ""

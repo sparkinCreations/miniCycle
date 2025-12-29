@@ -257,9 +257,6 @@ export function createDepsContainer() {
 function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
   const { GlobalUtils } = coreResult;
 
-  console.log('🔍 DEBUG: deps.task at API registration:', deps.task);
-  console.log('🔍 DEBUG: deps.task?.addTask:', deps.task?.addTask);
-
   // State API
   const stateApiObj = {
     AppState: deps.core?.AppState,

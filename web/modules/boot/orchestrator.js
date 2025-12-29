@@ -11,6 +11,12 @@
 
 import { installDebugFilter } from '../utils/debugMode.js';
 import { BOOT_TIMEOUTS } from '../core/constants.js';
+import {
+  attemptCacheRecovery,
+  clearAllCaches,
+  clearRecoveryFlags,
+  isRecoveryExhausted
+} from './coreBoot.js';
 
 // Install debug filter FIRST - before any other console.log calls
 // Enable with: ?debug=true or localStorage.setItem('miniCycle_debug', 'true')
@@ -50,6 +56,17 @@ function redirectToLite() {
   const url = new URL(LITE_VERSION_PATH, window.location.origin);
   url.searchParams.set('fallback', 'true');
   window.location.href = url.href;
+}
+
+/**
+ * Escape HTML special characters to prevent XSS
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string safe for innerHTML
+ */
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 /**
@@ -125,11 +142,17 @@ function showBootError(phase, error, willRetry = false) {
   const { description, suggestion } = getErrorDetails(error, phase);
   const shortError = (error?.message || 'Unknown error').substring(0, 80);
 
+  // Escape dynamic values to prevent XSS
+  const safeDescription = escapeHtml(description);
+  const safeSuggestion = escapeHtml(suggestion);
+  const safeShortError = escapeHtml(shortError);
+  const safePhase = escapeHtml(phase);
+
   if (willRetry) {
     loader.innerHTML = `
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" class="loader-logo" width="120" height="96">
       <div class="loader-text" style="animation: none;">Having trouble loading...</div>
-      <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 13px;">${description}</div>
+      <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 13px;">${safeDescription}</div>
       <div style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">Retrying automatically...</div>
     `;
   } else {
@@ -141,13 +164,13 @@ function showBootError(phase, error, willRetry = false) {
       <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle" width="120" height="96" style="object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); animation: none;">
       <div style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500; font-family: 'Inter', sans-serif;">Unable to Load</div>
       <div style="margin-top: 8px; color: rgba(255,255,255,0.9); font-size: 14px; max-width: 300px; text-align: center;">
-        ${description}
+        ${safeDescription}
       </div>
       <div style="margin-top: 6px; color: rgba(255,255,255,0.6); font-size: 12px; max-width: 280px; text-align: center; font-family: monospace; word-break: break-word;">
-        ${shortError}
+        ${safeShortError}
       </div>
       <div style="margin-top: 12px; color: rgba(255,255,255,0.8); font-size: 13px;">
-        💡 ${suggestion}
+        💡 ${safeSuggestion}
       </div>
       <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
         ${isCacheError ? `
@@ -164,11 +187,11 @@ function showBootError(phase, error, willRetry = false) {
         </button>
       </div>
       <div style="margin-top: 12px; color: rgba(255,255,255,0.5); font-size: 11px;">
-        Failed at: ${phase} (attempt ${bootAttempt})
+        Failed at: ${safePhase} (attempt ${bootAttempt})
       </div>
     `;
 
-    // Add clear cache handler
+    // Add clear cache handler (uses shared utility)
     const clearCacheBtn = document.getElementById('clear-cache-btn');
     if (clearCacheBtn) {
       clearCacheBtn.addEventListener('click', async () => {
@@ -176,21 +199,7 @@ function showBootError(phase, error, willRetry = false) {
         clearCacheBtn.disabled = true;
 
         try {
-          // Unregister all service workers
-          if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(registrations.map(r => r.unregister()));
-            console.log('✅ Service workers unregistered');
-          }
-
-          // Clear all caches
-          if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
-            console.log('✅ Caches cleared');
-          }
-
-          // Reload without cache
+          await clearAllCaches();
           window.location.reload(true);
         } catch (e) {
           console.error('Cache clear failed:', e);
@@ -273,12 +282,17 @@ async function runBootSequence() {
 
   const totalTime = Date.now() - bootStart;
   console.log(`✅ miniCycle initialization complete (${totalTime}ms)`);
+
+  // Clear recovery flags on successful boot
+  clearRecoveryFlags();
+
   return true;
 }
 
 /**
  * Production guard: If version.js failed to load on production, trigger cache recovery
  * This prevents running with mismatched cached modules
+ * Uses shared cache recovery to prevent reload loops
  */
 async function checkProductionVersionGuard() {
   const isProduction = location.hostname.includes('minicycle.app');
@@ -286,42 +300,7 @@ async function checkProductionVersionGuard() {
 
   if (isProduction && versionMissing) {
     console.error('❌ version.js failed to load on production - triggering cache recovery');
-
-    const reloadAttempts = parseInt(sessionStorage.getItem('_versionGuardReload') || '0', 10);
-
-    if (reloadAttempts < 2) {
-      sessionStorage.setItem('_versionGuardReload', (reloadAttempts + 1).toString());
-
-      // Clear all service worker caches
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-        console.log('🗑️ Cleared', cacheNames.length, 'caches for version recovery');
-      }
-
-      // Unregister service worker
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const reg of registrations) {
-          await reg.unregister();
-        }
-      }
-
-      // Reload with cache-bust
-      const url = new URL(window.location.href);
-      url.searchParams.set('_vg', Date.now().toString());
-      window.location.href = url.toString();
-      return true; // Indicates reload happening
-    }
-
-    // Exhausted retries - clear flag and continue with fallback
-    sessionStorage.removeItem('_versionGuardReload');
-    console.warn('⚠️ Version guard retries exhausted - continuing with dev-local fallback');
-  }
-
-  // Clean up successful reload
-  if (sessionStorage.getItem('_versionGuardReload')) {
-    sessionStorage.removeItem('_versionGuardReload');
+    return await attemptCacheRecovery('orchestrator-versionGuard');
   }
 
   return false; // No reload needed

@@ -1,3 +1,7 @@
+## [1.603] - 2025-12-29
+- feat: update version to 1.602 across all relevant files for consistency
+
+
 ## [1.600] - 2025-12-29
 - feat: refactor exports to use named exports only across multiple modules
 - feat: implement collapsible changelog section with dynamic loading
