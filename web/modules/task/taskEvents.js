@@ -172,8 +172,7 @@ export class TaskEvents {
                 this.deps.checkMiniCycle();
             }
 
-            // Auto-save (DI-pure)
-            _deps.autoSave?.();
+            // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
             // Logo background animation (DI-pure)
             if (typeof this.deps.triggerLogoBackground === 'function') {
@@ -265,7 +264,7 @@ export class TaskEvents {
             shouldSave = false;
         }
 
-        if (shouldSave) _deps.autoSave?.();
+        // Note: autoSave removed - each operation updates AppState directly
         console.log("✅ Task button clicked:", button.className);
     }
 

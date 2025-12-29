@@ -422,7 +422,7 @@ export async function resetTasksImpl(deps = {}) {
             if (mergedDeps.recurringCore?.watchRecurringTasks) {
                 mergedDeps.recurringCore.watchRecurringTasks();
             }
-            mergedDeps.autoSave?.();
+            // Note: autoSave removed - resetTasksData already calls AppState.update()
             mergedDeps.updateStatsPanel?.();
             console.log('Reset tasks completed');
         }, TASK_TIMEOUTS.POST_RESET_CLEANUP));

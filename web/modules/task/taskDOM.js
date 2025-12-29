@@ -1290,7 +1290,7 @@ export class TaskDOMManager {
                 this.deps.checkMiniCycle();
             }
 
-            _deps.autoSave?.(null, true);  // ✅ Force immediate save on task completion
+            // Note: autoSave removed - handleTaskCompletionChange already updates AppState
 
             if (typeof this.deps.triggerLogoBackground === 'function') {
                 this.deps.triggerLogoBackground(checkbox.checked ? 'green' : 'default', 300);
@@ -1562,7 +1562,7 @@ export class TaskDOMManager {
             this.deps.updateMoveArrowsVisibility();
         }
 
-        if (shouldSave) _deps.autoSave?.();
+        // Note: autoSave removed - task creation via createOrUpdateTaskData already updates AppState
     }
 
     // GROUP 6: RENDERING
