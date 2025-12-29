@@ -58,13 +58,13 @@ export class ModeManager {
         // Store dependencies with fallback for safeAddEventListener
         this.deps = {
             ...resolvedDeps,
-            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener.bind(this)
+            safeAddEventListener: resolvedDeps.safeAddEventListener
         };
 
         // Debounce timer for refresh operations
         this.refreshDebounceTimer = null;
 
-        this.isInitialized = false;
+        this._initialized = false;
     }
 
     /**
@@ -88,7 +88,7 @@ export class ModeManager {
         // ✅ Setup visibility change listener for mode validation on app resume
         this.setupVisibilityChangeListener();
 
-        this.isInitialized = true;
+        this._initialized = true;
         console.log('✅ ModeManager: Initialized');
     }
 
@@ -839,10 +839,12 @@ export class ModeManager {
             return;
         }
 
-        // Prevent duplicate listeners
-        if (deleteCheckedTasks.dataset.modeListenerAdded) {
+        // ✅ Idempotency guard
+        if (this._setupDeleteCheckedTasksModeListenerInitialized) {
+            console.log('✅ Delete checked tasks mode listener already set up');
             return;
         }
+        this._setupDeleteCheckedTasksModeListenerInitialized = true;
 
         const self = this;
         const safeAdd = this.deps.safeAddEventListener;
@@ -941,8 +943,6 @@ export class ModeManager {
             console.log('✅ Delete checked tasks setting saved (Schema 2.5)');
         };
         safeAdd(deleteCheckedTasks, "change", deleteCheckedTasks._deleteCheckedTasksModeHandler);
-
-        deleteCheckedTasks.dataset.modeListenerAdded = 'true';
     }
 
     /**

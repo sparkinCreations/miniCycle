@@ -2,7 +2,7 @@
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
 var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v390'; // Force refresh - bypass browser HTTP cache for JS
+var CACHE_VERSION = 'v391'; // Force refresh - bypass browser HTTP cache for JS
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -65,8 +65,10 @@ var UTILITIES = [
   './modules/recurring/recurringPanelForm.js',
   './modules/recurring/recurringPanelEvents.js',
   './modules/recurring/recurringPanelGrids.js',
+  './modules/recurring/recurringPanelSetup.js',
   './modules/recurring/recurringPanelSummary.js',
   './modules/recurring/recurringIntegration.js',
+  './modules/recurring/recurringSettingsApplicator.js',
   './modules/recurring/recurringCore.js',
   './modules/recurring/recurringActivation.js',
   './modules/recurring/recurringWatcher.js',
@@ -83,6 +85,8 @@ var UTILITIES = [
   './modules/utils/dataSanitizer.js',
   './modules/utils/debugMode.js',
   './modules/utils/errorHandler.js',
+  './modules/utils/nameUtils.js',
+  './modules/utils/storageUtils.js',
   // Storage modules
   './modules/storage/backupManager.js',
   // Progress modules
@@ -122,6 +126,7 @@ var UTILITIES = [
   './modules/ui/taskUI.js',
   './modules/ui/titleManager.js',
   './modules/ui/uiEffects.js',
+  './modules/ui/uiOrchestrator.js',
   './modules/ui/undoRedoManager.js',
   // Other modules
   './modules/other/basicPluginSystem.js',

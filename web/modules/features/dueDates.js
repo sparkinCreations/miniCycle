@@ -65,7 +65,7 @@ export class MiniCycleDueDates {
             saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener,
+            safeAddEventListener: dependencies.safeAddEventListener,
             AppState: resolvedDeps.AppState || null
         };
 
@@ -290,7 +290,7 @@ export class MiniCycleDueDates {
             dueDateInput.classList.add("hidden");
         }
 
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
         dueDateInput._changeHandler = async () => {
             // ✅ Read fresh state from localStorage (source of truth)
             await _deps.appInit?.waitForCore();
@@ -338,7 +338,7 @@ export class MiniCycleDueDates {
             return; // Already has listener
         }
 
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
         dueDateButton._clickHandler = () => {
             dueDateInput.classList.toggle("hidden");
             dueDateButton.classList.toggle("active", !dueDateInput.classList.contains("hidden"));
@@ -362,7 +362,7 @@ export class MiniCycleDueDates {
         }
 
         // Make sure we only attach the listener once
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
 
         if (!this.toggleAutoReset.dataset.dueDateListenerAdded) {
             this.toggleAutoReset.dataset.dueDateListenerAdded = true;

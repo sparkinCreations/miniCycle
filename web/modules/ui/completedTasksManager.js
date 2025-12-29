@@ -20,7 +20,7 @@ const di = createDIModule('CompletedTasksManager', {
     AppState: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
-    safeAddEventListener: optional((el, evt, fn) => el?.addEventListener(evt, fn))
+    safeAddEventListener: optional((el, evt, fn) => { el?.removeEventListener(evt, fn); el?.addEventListener(evt, fn); })
 });
 
 /**
@@ -39,7 +39,7 @@ export class CompletedTasksManager {
         // Resolve deps from diBase, with constructor overrides
         this.deps = di.resolve(dependencies);
 
-        this.isInitialized = false;
+        this._initialized = false;
     }
 
     /**
@@ -47,6 +47,12 @@ export class CompletedTasksManager {
      * Sets up event listeners and restores saved state
      */
     init() {
+        // ✅ Idempotency guard
+        if (this._initialized) {
+            console.log('✅ CompletedTasksManager already initialized');
+            return;
+        }
+
         console.log('🎯 CompletedTasksManager: Initializing completed tasks section...');
 
         const header = this.deps.getElementById('completed-tasks-header');
@@ -66,7 +72,7 @@ export class CompletedTasksManager {
         // Update count on page load
         this.updateCount();
 
-        this.isInitialized = true;
+        this._initialized = true;
         console.log('✅ CompletedTasksManager: Completed tasks section initialized');
     }
 
@@ -263,7 +269,7 @@ export async function initCompletedTasksManager(dependencies = {}) {
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
         querySelectorAll: (sel) => document.querySelectorAll(sel),
-        safeAddEventListener: dependencies.safeAddEventListener || dependencies.GlobalUtils?.safeAddEventListener
+        safeAddEventListener: dependencies.safeAddEventListener
     };
 
     const manager = new CompletedTasksManager(adaptedDeps);

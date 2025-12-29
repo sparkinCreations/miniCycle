@@ -72,11 +72,11 @@ export async function initializeRecurringModules(options = {}) {
         // STEP 1: Import both modules (with version for cache-busting)
         // ============================================
 
-        // Use injected AppMeta version only (DI-pure)
+        // Use injected AppMeta version only (strict DI - no hardcoded fallback)
         if (!options.AppMeta?.version) {
             console.warn('⚠️ recurringIntegration: AppMeta.version not provided');
         }
-        const version = options.AppMeta?.version || 'dev-local';
+        const version = options.AppMeta?.version;
         const recurringCore = await import(`./recurringCore.js?v=${version}`);
         const { RecurringPanelManager, setRecurringPanelDependencies, buildRecurringSummaryFromSettings, loadPanelSubModules } = await import(`./recurringPanel.js?v=${version}`);
         const settingsApplicator = await import(`./recurringSettingsApplicator.js?v=${version}`);
@@ -208,6 +208,7 @@ export async function initializeRecurringModules(options = {}) {
             getElementById: (id) => document.getElementById(id),
             querySelector: (selector) => document.querySelector(selector),
             querySelectorAll: (selector) => document.querySelectorAll(selector),
+            safeAddEventListener: deps.GlobalUtils?.safeAddEventListener,
             isOverlayActive: deps.isOverlayActive,
             escapeHtml: deps.escapeHtml,
             syncRecurringStateToDOM: deps.syncRecurringStateToDOM,

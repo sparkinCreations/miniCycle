@@ -60,7 +60,7 @@ export class MiniCycleReminders {
         this._constructorDeps = {
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddEventListener
+            safeAddEventListener: dependencies.safeAddEventListener
         };
 
         // Store constructor-provided version (can be overridden by _deps.AppMeta)
@@ -744,7 +744,7 @@ export class MiniCycleReminders {
      */
     setupReminderButtonHandler(button, taskContext) {
         const { assignedTaskId } = taskContext;
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
 
         button._reminderClickHandler = async () => {
             // Wait for core systems (DI-pure)

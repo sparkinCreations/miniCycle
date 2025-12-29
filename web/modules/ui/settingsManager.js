@@ -194,7 +194,8 @@ function wireSubModuleDependencies(dependencies) {
 
 export class SettingsManager {
     constructor(dependencies = {}) {
-        this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version || 'dev-local';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = dependencies.AppMeta?.version || _deps.AppMeta?.version;
         this.initialized = false;
     }
 
@@ -315,7 +316,7 @@ export async function initSettingsManager(dependencies) {
 
 // These are async because sub-modules are loaded dynamically
 export async function getSubModules(version) {
-    return await loadSubModules(version || _deps.AppMeta?.version || 'dev-local');
+    return await loadSubModules(version || _deps.AppMeta?.version);
 }
 
 // Synchronous getters (only work after init)

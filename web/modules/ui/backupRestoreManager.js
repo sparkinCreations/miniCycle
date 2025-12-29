@@ -254,7 +254,7 @@ async function processRestoreData(fileContent) {
 
     // Sanitize imported data (dynamic import to match settingsManager's versioned import)
     console.log('Sanitizing imported data...');
-    const version = _deps.AppMeta?.version || globalThis.APP_VERSION || 'dev-local';
+    const version = _deps.AppMeta?.version;
     const { sanitizeImportedData } = await import(`../utils/dataSanitizer.js?v=${version}`);
     sanitizeImportedData(backupData);
 
@@ -342,6 +342,13 @@ async function processRestoreData(fileContent) {
  * Setup factory reset button functionality
  */
 export function setupFactoryResetButton() {
+    // ✅ Idempotency guard
+    if (_initialized.resetButton) {
+        console.log('✅ Factory reset button already set up');
+        return;
+    }
+    _initialized.resetButton = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('BackupRestoreManager: safeAddEventListener dependency not injected');

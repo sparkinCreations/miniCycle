@@ -45,7 +45,7 @@ function fallbackShowNotification(message, type, duration) {
 
 // Getter functions for deps (resolved at call time)
 function getSafeAddEventListenerById() {
-    return _deps.safeAddEventListenerById || fallbackAddEventListenerById;
+    return _deps.safeAddEventListenerById;
 }
 
 function getShowNotification() {

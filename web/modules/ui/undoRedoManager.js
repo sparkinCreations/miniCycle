@@ -89,6 +89,15 @@ function assertInjected(name, value) {
   }
 }
 
+// ============================================================================
+// IDEMPOTENCY GUARDS
+// ============================================================================
+
+const _initialized = {
+  undoRedoUI: false,
+  undoRedoKeyboard: false
+};
+
 // ============ UI INITIALIZATION ============
 
 /**
@@ -96,12 +105,12 @@ function assertInjected(name, value) {
  * Called once during app initialization
  */
 export function wireUndoRedoUI() {
-  // Idempotent guard
-  if (_deps.AppGlobalState.__undoRedoWired) {
-    console.log('ℹ️ Undo/redo UI already wired');
+  // ✅ Idempotency guard
+  if (_initialized.undoRedoUI) {
+    console.log('✅ Undo/redo UI already wired');
     return;
   }
-  _deps.AppGlobalState.__undoRedoWired = true;
+  _initialized.undoRedoUI = true;
 
   initializeUndoRedoButtons();
 
@@ -126,12 +135,12 @@ export function wireUndoRedoUI() {
  * Called once during app initialization
  */
 export function wireUndoRedoKeyboardShortcuts() {
-  // Idempotent guard
-  if (_deps.AppGlobalState.__undoRedoKeyboardWired) {
-    console.log('ℹ️ Undo/redo keyboard shortcuts already wired');
+  // ✅ Idempotency guard
+  if (_initialized.undoRedoKeyboard) {
+    console.log('✅ Undo/redo keyboard shortcuts already wired');
     return;
   }
-  _deps.AppGlobalState.__undoRedoKeyboardWired = true;
+  _initialized.undoRedoKeyboard = true;
 
   assertInjected('safeAddEventListener', _deps.safeAddEventListener);
 
