@@ -503,6 +503,18 @@
             <div style="margin-top: 12px; font-size: 0.85rem; color: rgba(0,0,0,0.6);">
                 100% Free • No random ads • No accounts • Just routines
             </div>
+            <!-- Changelog Section (Collapsible) -->
+            <div id="changelog" style="margin-top: 15px; text-align: center; padding: 0 20px;">
+                <button id="changelog-toggle" style="background: none; border: none; color: rgba(0,0,0,0.5); font-size: 0.8rem; cursor: pointer; padding: 5px 12px; transition: color 0.2s;" onmouseover="this.style.color='rgba(0,0,0,0.8)'" onmouseout="this.style.color='rgba(0,0,0,0.5)'">
+                    Changelog <span id="changelog-arrow" style="font-size: 0.65rem; transition: transform 0.3s ease; display: inline-block;">▼</span>
+                </button>
+                <div id="changelog-content" style="max-height: 0; overflow: hidden; font-size: 0.8rem; line-height: 1.5; transition: max-height 0.4s ease; text-align: center; background: rgba(0,0,0,0.08); border-radius: 10px; margin-top: 8px; color: rgba(0,0,0,0.7);">
+                    <div id="changelog-inner" style="padding: 15px 20px; overflow-y: auto;">
+                        <p style="text-align: center; opacity: 0.5;">Loading...</p>
+                    </div>
+                </div>
+                <p id="changelog-hint" style="font-size: 0.7rem; color: rgba(0,0,0,0.4); margin-top: 5px; display: none;">Double-click to expand</p>
+            </div>
         </div>
 
         <div class="video-showcase">
@@ -566,14 +578,6 @@
 
         <div class="cta-section">
             <a href="../miniCycle.html" class="cta-button">Try miniCycle Now</a>
-        </div>
-
-        <!-- Changelog Section -->
-        <div id="changelog" class="changelog-section" style="margin-top: 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; text-align: left;">
-            <h2 style="text-align: center; margin-bottom: 20px; font-size: 1.8rem;">Changelog</h2>
-            <div id="changelog-content" style="max-height: 400px; overflow-y: auto; font-size: 0.95rem; line-height: 1.6;">
-                <p style="text-align: center; opacity: 0.7;">Loading changelog...</p>
-            </div>
         </div>
     </div>
 
@@ -756,9 +760,48 @@
                 document.getElementById('changelog-content').innerHTML = '<p style="opacity: 0.7;">Could not load changelog.</p>';
             });
 
-        // Scroll to changelog if hash is present
+        // Changelog toggle functionality
+        const changelogToggle = document.getElementById('changelog-toggle');
+        const changelogContent = document.getElementById('changelog-content');
+        const changelogInner = document.getElementById('changelog-inner');
+        const changelogArrow = document.getElementById('changelog-arrow');
+        const changelogHint = document.getElementById('changelog-hint');
+        let changelogState = 'closed'; // closed, open, expanded
+
+        function setChangelogState(state) {
+            changelogState = state;
+            if (state === 'closed') {
+                changelogContent.style.maxHeight = '0';
+                changelogInner.style.maxHeight = 'none';
+                changelogArrow.style.transform = 'rotate(0deg)';
+                changelogHint.style.display = 'none';
+            } else if (state === 'open') {
+                changelogContent.style.maxHeight = '200px';
+                changelogInner.style.maxHeight = '170px';
+                changelogArrow.style.transform = 'rotate(180deg)';
+                changelogHint.style.display = 'block';
+            } else if (state === 'expanded') {
+                changelogContent.style.maxHeight = '500px';
+                changelogInner.style.maxHeight = '470px';
+                changelogArrow.style.transform = 'rotate(180deg)';
+                changelogHint.style.display = 'none';
+            }
+        }
+
+        changelogToggle.addEventListener('click', () => {
+            if (changelogState === 'closed') setChangelogState('open');
+            else setChangelogState('closed');
+        });
+
+        changelogContent.addEventListener('dblclick', () => {
+            if (changelogState === 'open') setChangelogState('expanded');
+            else if (changelogState === 'expanded') setChangelogState('open');
+        });
+
+        // Auto-open and scroll to changelog if hash is present
         if (window.location.hash === '#changelog') {
             setTimeout(() => {
+                setChangelogState('open');
                 document.getElementById('changelog').scrollIntoView({ behavior: 'smooth' });
             }, 500);
         }
