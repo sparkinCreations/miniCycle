@@ -68,10 +68,23 @@ function fallbackSanitize(input, maxLength = 100) {
 // IMPORT FUNCTIONS
 // ============================================================================
 
+// ============================================================================
+// IDEMPOTENCY GUARD
+// ============================================================================
+
+let _importButtonsInitialized = false;
+
 /**
  * Setup import button functionality
  */
 export function setupImportButtons() {
+    // ✅ Idempotency guard
+    if (_importButtonsInitialized) {
+        console.log('✅ Import buttons already set up');
+        return;
+    }
+    _importButtonsInitialized = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('CycleImportManager: safeAddEventListener dependency not injected');

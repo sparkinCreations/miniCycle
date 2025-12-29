@@ -32,8 +32,8 @@ const di = createDIModule('RoutineLoader', {
   taskToAddTaskOptions: optional(null)  // From taskUtils - injected to avoid duplicate module loading
 });
 
-// Late-binding Deps via Proxy
-const Deps = new Proxy({}, {
+// Late-binding deps via Proxy (standard: _deps with underscore prefix)
+const _deps = new Proxy({}, {
   get(_, prop) {
     return di.resolve()[prop];
   }
@@ -49,7 +49,7 @@ function setRoutineLoaderDependencies(overrides = {}) {
  */
 function getAppState() {
   // ✅ Handle both getter function and direct reference
-  return typeof Deps.AppState === 'function' ? Deps.AppState() : Deps.AppState;
+  return typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
 }
 
 function assertInjected(name, fn) {
@@ -66,14 +66,14 @@ function assertInjected(name, fn) {
 async function loadMiniCycle() {
   console.log('🔄 Loading miniCycle (Schema 2.5 only)...');
 
-  assertInjected('loadMiniCycleData', Deps.loadMiniCycleData);
-  assertInjected('addTask', Deps.addTask);
+  assertInjected('loadMiniCycleData', _deps.loadMiniCycleData);
+  assertInjected('addTask', _deps.addTask);
 
-  const schemaData = Deps.loadMiniCycleData();
+  const schemaData = _deps.loadMiniCycleData();
 
   if (!schemaData) {
     console.error('❌ No Schema 2.5 data found');
-    Deps.createInitialSchema25Data?.();
+    _deps.createInitialSchema25Data?.();
     return;
   }
 
@@ -107,7 +107,7 @@ async function loadMiniCycle() {
 
   // 2.5) Sync visual indicators with current mode
   // ✅ After rendering tasks, sync all delete-when-complete visual indicators (DI-pure)
-  const syncFn = Deps.syncAllTasksWithMode;
+  const syncFn = _deps.syncAllTasksWithMode;
   if (currentCycle.tasks && syncFn) {
     const currentMode = currentCycle.deleteCheckedTasks === true ? 'todo' : 'cycle';
     const tasksDataMap = {};
@@ -308,7 +308,7 @@ function renderTasksToDOM(tasks = []) {
   // Instead, render tasks directly to DOM from the data already in AppState
   console.log(`🔄 Rendering ${tasks.length} existing tasks to DOM (without creating new ones)`);
 
-  const taskToAddTaskOptions = Deps.taskToAddTaskOptions;
+  const taskToAddTaskOptions = _deps.taskToAddTaskOptions;
   if (typeof taskToAddTaskOptions !== 'function') {
     console.error('renderTasksToDOM: taskToAddTaskOptions not available - aborting to prevent task duplication');
     return;
@@ -316,7 +316,7 @@ function renderTasksToDOM(tasks = []) {
   tasks.forEach(task => {
     // Render task to DOM using shared options helper (injected via DI)
     const options = taskToAddTaskOptions(task);
-    Deps.addTask(task.text || task.taskText || '', options);
+    _deps.addTask(task.text || task.taskText || '', options);
   });
 
   console.log('✅ Tasks rendered to DOM with original IDs and states preserved');
@@ -358,7 +358,7 @@ function applyThemeSettings(settings) {
     document.body.classList.add(`theme-${settings.theme}`);
   }
 
-  Deps.updateThemeColor?.();
+  _deps.updateThemeColor?.();
 }
 
 
@@ -380,13 +380,13 @@ async function setupRemindersForCycle(reminders) {
     frequencySection.classList.toggle('hidden', !enabled);
   }
   if (enabled) {
-    Deps.startReminders?.();
+    _deps.startReminders?.();
   }
 
   // ✅ Catch up on missed recurring tasks when switching cycles
-  if (Deps.catchUpMissedRecurringTasks) {
+  if (_deps.catchUpMissedRecurringTasks) {
     console.log('🔄 Catching up on missed recurring tasks after cycle switch...');
-    await Deps.catchUpMissedRecurringTasks();
+    await _deps.catchUpMissedRecurringTasks();
   }
 }
 
@@ -394,10 +394,10 @@ async function setupRemindersForCycle(reminders) {
  * Dependent UI refresh
  */
 function updateDependentComponents() {
-  Deps.updateProgressBar?.();
-  Deps.checkCompleteAllButton?.();
-  Deps.updateMainMenuHeader?.();
-  Deps.updateStatsPanel?.();
+  _deps.updateProgressBar?.();
+  _deps.checkCompleteAllButton?.();
+  _deps.updateMainMenuHeader?.();
+  _deps.updateStatsPanel?.();
 }
 
 /**
@@ -408,7 +408,7 @@ function updateDependentComponents() {
 async function saveCycleData(activeCycle, currentCycle) {
   // ✅ Wait for core systems to be ready (AppState + data)
   // This prevents conflicts with AppState initialization
-  await Deps.appInit?.waitForCore();
+  await _deps.appInit?.waitForCore();
 
   // ✅ Use AppState only (no localStorage fallback)
   const appState = getAppState();

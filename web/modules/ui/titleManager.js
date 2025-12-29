@@ -28,8 +28,8 @@ const di = createDIModule('TitleManager', {
     onCycleRenamed: optional(null)
 });
 
-// Late-binding deps via Proxy
-const deps = new Proxy({}, {
+// Late-binding deps via Proxy (standard: _deps with underscore prefix)
+const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
     }
@@ -61,7 +61,7 @@ function scheduleIdleSave() {
     if (_idleSaveScheduled) return;
     _idleSaveScheduled = true;
 
-    const AppState = deps.AppState;
+    const AppState = _deps.AppState;
     if (!AppState?.isReady?.() || !AppState.forceSave) {
         _idleSaveScheduled = false;
         return;
@@ -94,10 +94,10 @@ async function handleMiniCycleTitleBlur() {
     const titleElement = document.getElementById("mini-cycle-title");
     if (!titleElement) return;
 
-    const AppState = deps.AppState;
-    const loadMiniCycleData = deps.loadMiniCycleData;
-    const showNotification = deps.showNotification;
-    const GlobalUtils = deps.GlobalUtils;
+    const AppState = _deps.AppState;
+    const loadMiniCycleData = _deps.loadMiniCycleData;
+    const showNotification = _deps.showNotification;
+    const GlobalUtils = _deps.GlobalUtils;
 
     // ✅ FIX #1: Load data once at the start
     const schemaData = loadMiniCycleData?.();
@@ -161,8 +161,8 @@ async function handleMiniCycleTitleBlur() {
     }
 
     // ✅ Enable undo system and capture snapshot BEFORE change
-    deps.enableUndoSystemOnFirstInteraction?.();
-    deps.captureStateSnapshot?.(currentState);
+    _deps.enableUndoSystemOnFirstInteraction?.();
+    _deps.captureStateSnapshot?.(currentState);
 
     // ✅ Update storage key to match new title (like routineSwitcher does)
     await AppState.update(state => {
@@ -192,15 +192,15 @@ async function handleMiniCycleTitleBlur() {
     scheduleIdleSave();
 
     // ✅ Notify undo system of rename (if key changed)
-    if (finalTitle !== activeCycle && typeof deps.onCycleRenamed === 'function') {
-        deps.onCycleRenamed(activeCycle, finalTitle).catch(err => {
+    if (finalTitle !== activeCycle && typeof _deps.onCycleRenamed === 'function') {
+        _deps.onCycleRenamed(activeCycle, finalTitle).catch(err => {
             console.warn('⚠️ Undo system rename notification failed:', err);
         });
     }
 
     // Refresh UI
-    deps.updateMainMenuHeader?.();
-    deps.updateUndoRedoButtons?.();
+    _deps.updateMainMenuHeader?.();
+    _deps.updateUndoRedoButtons?.();
 
     console.log(`✅ Title updated: "${oldTitle}" → "${finalTitle}"`);
     if (!wasModified) {
@@ -229,7 +229,7 @@ export function setupMiniCycleTitleListener() {
     _titleListenerInitialized = true;
     titleElement.contentEditable = true;
 
-    const GlobalUtils = deps.GlobalUtils;
+    const GlobalUtils = _deps.GlobalUtils;
     if (GlobalUtils?.safeAddEventListener) {
         GlobalUtils.safeAddEventListener(titleElement, "blur", handleMiniCycleTitleBlur);
     } else {

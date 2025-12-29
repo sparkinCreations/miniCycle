@@ -33,6 +33,12 @@ export function setCycleExportManagerDependencies(dependencies) {
 }
 
 // ============================================================================
+// IDEMPOTENCY GUARD
+// ============================================================================
+
+let _exportButtonInitialized = false;
+
+// ============================================================================
 // EXPORT FUNCTIONS
 // ============================================================================
 
@@ -71,6 +77,13 @@ export function exportMiniCycleData(miniCycleData, cycleName) {
  * Setup export button functionality
  */
 export function setupExportButton() {
+    // ✅ Idempotency guard
+    if (_exportButtonInitialized) {
+        console.log('✅ Export button already set up');
+        return;
+    }
+    _exportButtonInitialized = true;
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('CycleExportManager: safeAddEventListener dependency not injected');
