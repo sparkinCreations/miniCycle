@@ -573,7 +573,8 @@ if should_update "miniCycle.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: miniCycle.html"
     elif backup_file "miniCycle.html"; then
-        do_sed "miniCycle.html" "s/?v=[0-9.]*/?v=$NEW_VERSION/g"
+        # Use [0-9.]+ (one or more) to avoid matching ?v=${APP_VERSION} which has no digits after =
+        do_sed "miniCycle.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
         do_sed "miniCycle.html" "s/var currentVersion = '[0-9.]*'/var currentVersion = '$NEW_VERSION'/g"
         do_sed "miniCycle.html" "s/const currentVersion = '[0-9.]*'/const currentVersion = '$NEW_VERSION'/g"
         do_sed "miniCycle.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
@@ -588,7 +589,7 @@ if should_update "lite/miniCycle-lite.html"; then
     if [ "$DRY_RUN" = true ]; then
         echo "   Would update: lite/miniCycle-lite.html"
     elif backup_file "lite/miniCycle-lite.html"; then
-        do_sed "lite/miniCycle-lite.html" "s/?v=[0-9.]*/?v=$NEW_VERSION/g"
+        do_sed "lite/miniCycle-lite.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
         do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-styles\.css\"/miniCycle-lite-styles.css?v=$NEW_VERSION\"/g"
         do_sed "lite/miniCycle-lite.html" "s/miniCycle-lite-scripts\.js\"/miniCycle-lite-scripts.js?v=$NEW_VERSION\"/g"
         do_sed "lite/miniCycle-lite.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
@@ -604,7 +605,7 @@ if should_update "pages/product.html"; then
         echo "   Would update: pages/product.html"
     elif backup_file "pages/product.html"; then
         do_sed "pages/product.html" "s|<meta name=\"app-version\" content=\"[^\"]*\">|<meta name=\"app-version\" content=\"$NEW_VERSION\">|g"
-        do_sed "pages/product.html" "s/?v=[0-9.]*/?v=$NEW_VERSION/g"
+        do_sed "pages/product.html" 's/?v=[0-9.]\{1,\}/?v='"$NEW_VERSION"'/g'
         echo "✅ Updated pages/product.html"
     else
         echo "⚠️  Failed to update pages/product.html"
