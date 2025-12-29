@@ -474,7 +474,7 @@ export class RoutineManager {
                 this.deps.hideMainMenu();
                 this.deps.updateProgressBar();
                 this.deps.checkCompleteAllButton();
-                this.deps.autoSave();
+                // Note: autoSave removed - AppState.update(immediate=true) already persisted
 
                 // ✅ Notify undo system of new cycle
                 if (finalResult && typeof this.deps.onCycleCreated === 'function') {

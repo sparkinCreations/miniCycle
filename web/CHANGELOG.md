@@ -1,3 +1,7 @@
+## [1.604] - 2025-12-29
+- Refactor code structure for improved readability and maintainability
+
+
 ## [1.603] - 2025-12-29
 - feat: update version to 1.602 across all relevant files for consistency
 

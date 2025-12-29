@@ -50,6 +50,31 @@ class MiniCycleState {
         this.version = mergedDeps.AppMeta?.version;
         this.isInitialized = false; // ✅ Add this flag
         this._initPromise = null; // ✅ FIX #1: Track in-flight initialization
+        this._savingIndicatorTimeout = null; // For hiding indicator after save
+    }
+
+    // ✅ Show saving indicator (subtle UI feedback)
+    _showSavingIndicator() {
+        const indicator = document.getElementById('saving-indicator');
+        if (indicator) {
+            // Clear any pending hide timeout
+            if (this._savingIndicatorTimeout) {
+                clearTimeout(this._savingIndicatorTimeout);
+            }
+            indicator.classList.add('visible');
+        }
+    }
+
+    // ✅ Hide saving indicator with brief delay (so it's visible even on fast saves)
+    _hideSavingIndicator() {
+        const indicator = document.getElementById('saving-indicator');
+        if (indicator) {
+            // Keep visible for minimum 300ms so user can see it
+            this._savingIndicatorTimeout = setTimeout(() => {
+                indicator.classList.remove('visible');
+                this._savingIndicatorTimeout = null;
+            }, 300);
+        }
     }
 
     // ✅ FIXED: Move isReady method to proper location
@@ -324,6 +349,9 @@ class MiniCycleState {
             return;
         }
 
+        // Show saving indicator
+        this._showSavingIndicator();
+
         try {
             // ✅ FIX #4: Check for concurrent modifications before saving
             const currentStored = this.deps.storage.getItem("miniCycleData");
@@ -352,6 +380,7 @@ class MiniCycleState {
                             this.data = storedData;
                             this.isDirty = false;
                             console.log('✅ Data reloaded, save cancelled to prevent data loss');
+                            this._hideSavingIndicator();
                             return;
                         } else {
                             // Small diff - just our own rapid saves, proceed with save
@@ -375,9 +404,11 @@ class MiniCycleState {
             this.saveTimeout = null;
 
             console.log('✅ State saved to localStorage successfully');
+            this._hideSavingIndicator();
         } catch (error) {
             console.error('❌ Save failed:', error);
             this.deps.showNotification('Failed to save data', 'error');
+            this._hideSavingIndicator();
         }
     }
 

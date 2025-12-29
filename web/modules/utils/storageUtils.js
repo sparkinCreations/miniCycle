@@ -199,17 +199,10 @@ export function checkStorageWarning(info, showNotification) {
 }
 
 /**
- * Update storage bar UI elements
- * @param {HTMLElement} barElement - The progress bar element
- * @param {HTMLElement} textElement - The text display element
- * @param {Function} showNotification - Optional notification function for warnings
+ * Render storage bar with current info
+ * @private
  */
-export function updateStorageBarUI(barElement, textElement, showNotification) {
-    // Trigger quota detection when storage bar is shown (lazy detection)
-    detectStorageQuota();
-
-    const info = getStorageInfo();
-
+function renderStorageBar(barElement, textElement, info) {
     if (barElement) {
         barElement.style.width = `${info.percentage}%`;
         barElement.className = `storage-bar-fill storage-${info.status}`;
@@ -218,12 +211,44 @@ export function updateStorageBarUI(barElement, textElement, showNotification) {
     if (textElement) {
         const usedStr = formatBytes(info.used);
         const totalStr = formatBytes(info.total);
-        // Use "~" to indicate estimates
-        textElement.textContent = `~${usedStr} / ~${totalStr} used`;
+        // Use "~" to indicate estimates (remove ~ once quota is detected)
+        const prefix = _cachedQuota !== null ? '' : '~';
+        textElement.textContent = `${prefix}${usedStr} / ${prefix}${totalStr} used`;
     }
+}
+
+/**
+ * Update storage bar UI elements
+ * Uses idle detection to avoid blocking the main thread on modal open
+ * @param {HTMLElement} barElement - The progress bar element
+ * @param {HTMLElement} textElement - The text display element
+ * @param {Function} showNotification - Optional notification function for warnings
+ */
+export function updateStorageBarUI(barElement, textElement, showNotification) {
+    // Render immediately with current info (uses default quota if not detected)
+    const info = getStorageInfo();
+    renderStorageBar(barElement, textElement, info);
 
     // Check for one-time storage warning
     checkStorageWarning(info, showNotification);
+
+    // If quota not yet detected, schedule detection in idle time then repaint
+    if (_cachedQuota === null) {
+        const detectAndRepaint = () => {
+            detectStorageQuota();
+            const updatedInfo = getStorageInfo();
+            renderStorageBar(barElement, textElement, updatedInfo);
+            // Re-check warning with accurate quota
+            checkStorageWarning(updatedInfo, showNotification);
+        };
+
+        // Use requestIdleCallback for non-blocking detection, with fallback
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(detectAndRepaint, { timeout: 2000 });
+        } else {
+            setTimeout(detectAndRepaint, 100);
+        }
+    }
 
     return info;
 }

@@ -118,6 +118,9 @@ export class RoutineSwitcher {
         // ✅ Let loadMiniCycleList() handle all the population logic
         this.loadMiniCycleList();
 
+        // ✅ Setup search input
+        this.setupSearchInput();
+
         // ✅ Update storage bar
         this.updateStorageBar();
 
@@ -904,6 +907,58 @@ export class RoutineSwitcher {
             console.log('📊 Storage bar updated:', info);
         } else {
             console.warn('⚠️ Storage bar elements not found');
+        }
+    }
+
+    /**
+     * Setup search input for filtering routines
+     */
+    setupSearchInput() {
+        const searchInput = this.deps.getElementById('routine-search-input');
+        if (!searchInput) {
+            console.warn('⚠️ Search input not found');
+            return;
+        }
+
+        // Clear search input when modal opens
+        searchInput.value = '';
+
+        // Setup input handler (only once)
+        if (!searchInput._searchHandler) {
+            searchInput._searchHandler = (e) => {
+                this.filterRoutineList(e.target.value);
+            };
+            searchInput.addEventListener('input', searchInput._searchHandler);
+        }
+
+        // Focus the search input for immediate typing
+        setTimeout(() => searchInput.focus(), 100);
+    }
+
+    /**
+     * Filter routine list based on search query
+     * @param {string} query - Search query
+     */
+    filterRoutineList(query) {
+        const miniCycleList = this.deps.getElementById('miniCycleList');
+        if (!miniCycleList) return;
+
+        const items = miniCycleList.querySelectorAll('.mini-cycle-switch-item');
+        const lowerQuery = query.toLowerCase().trim();
+
+        items.forEach(item => {
+            const cycleName = (item.dataset.cycleName || '').toLowerCase();
+            const matches = lowerQuery === '' || cycleName.includes(lowerQuery);
+            item.style.display = matches ? '' : 'none';
+        });
+
+        // Hide switch-items-row if no item is selected or visible
+        const switchRow = this.deps.getElementById('switch-items-row');
+        const selectedItem = miniCycleList.querySelector('.mini-cycle-switch-item.selected');
+        if (switchRow && selectedItem && selectedItem.style.display === 'none') {
+            // Selected item is now hidden, deselect it
+            selectedItem.classList.remove('selected');
+            switchRow.style.display = 'none';
         }
     }
 
