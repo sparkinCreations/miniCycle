@@ -227,8 +227,8 @@ async function loadSubModules(version) {
 export async function setRecurringCoreDependencies(overrides = {}) {
     di.setDependencies(overrides);
 
-    // Get version for cache-busting
-    const version = overrides.AppMeta?.version || Deps.AppMeta?.version || 'dev-local';
+    // Get version for cache-busting (strict DI - no hardcoded fallback)
+    const version = overrides.AppMeta?.version || Deps.AppMeta?.version;
 
     // Load sub-modules with version
     await loadSubModules(version);

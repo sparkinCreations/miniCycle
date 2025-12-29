@@ -167,7 +167,7 @@ export class TaskDOMManager {
             updateRecurringPanelButtonVisibility: resolvedDeps.updateRecurringPanelButtonVisibility || null,
 
             // DOM helpers (fallback to native)
-            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener,
+            safeAddEventListener: resolvedDeps.safeAddEventListener,
             safeGetElement: resolvedDeps.safeGetElement || this.fallbackGetElement,
             getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelector: resolvedDeps.querySelector || ((sel) => document.querySelector(sel)),
@@ -243,11 +243,11 @@ export class TaskDOMManager {
             if (!this.modulesLoaded) {
                 console.log('📦 Loading task sub-modules with versioning...');
 
-                // Get version for cache busting - use injected version only (DI-pure)
+                // Get version for cache busting - use injected version only (strict DI)
                 if (!this.version) {
                     console.warn('⚠️ TaskDOMManager: AppMeta.version not provided');
                 }
-                const version = this.version || 'dev-local';
+                const version = this.version;
                 console.log(`📦 Using version ${version} for sub-module imports`);
 
                 // Load all 4 sub-modules with versioned imports
@@ -849,7 +849,7 @@ export class TaskDOMManager {
         button.setAttribute("aria-label", "Customize which task option buttons are visible");
 
         // Click handler - use deps (injected via setTaskDOMManagerDependencies)
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
         button._clickHandler = (e) => {
             e.stopPropagation();
             const customizer = this.deps.taskOptionsCustomizer;
@@ -930,7 +930,7 @@ export class TaskDOMManager {
         button.setAttribute("tabindex", "0");
 
         // Keyboard navigation with safeAddEventListener
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
         button._accessibilityKeydownHandler = (e) => {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
@@ -1032,7 +1032,7 @@ export class TaskDOMManager {
         } else {
             // Use handleTaskButtonClick from injected deps with safeAddEventListener
             if (typeof this.deps.handleTaskButtonClick === 'function') {
-                const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+                const safeAdd = this.deps.safeAddEventListener;
                 safeAdd(button, "click", this.deps.handleTaskButtonClick);
             }
         }
@@ -1046,7 +1046,7 @@ export class TaskDOMManager {
     setupDeleteWhenCompleteButtonHandler(button, taskContext) {
         const { assignedTaskId } = taskContext;
 
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
         button._deleteWhenCompleteClickHandler = async (e) => {
             e.stopPropagation();
 
@@ -1300,7 +1300,7 @@ export class TaskDOMManager {
         checkbox.setAttribute("aria-checked", checkbox.checked);
 
         // Add event listener using safe helper
-        const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
+        const addListener = this.deps.safeAddEventListener;
 
         addListener(checkbox, "change", () => {
             // ✅ Enable undo system on first user interaction
@@ -1375,7 +1375,7 @@ export class TaskDOMManager {
         // ✅ Mark that handler is attached to prevent double-attachment
         button.dataset.handlerAttached = 'true';
 
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = this.deps.safeAddEventListener;
         button._recurringClickHandler = (event) => {
             // ✅ Prevent event from bubbling to checkbox
             event.stopPropagation();

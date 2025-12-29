@@ -103,12 +103,8 @@ export class RecurringPanelManager {
             syncRecurringStateToDOM: resolved.syncRecurringStateToDOM,
             refreshTaskButtonsForModeChange: resolved.refreshTaskButtonsForModeChange,
 
-            // Event listener utility with safe default
-            safeAddEventListener: resolved.safeAddEventListener || ((el, ev, handler) => {
-                if (!el) return;
-                el.removeEventListener(ev, handler);
-                el.addEventListener(ev, handler);
-            })
+            // Event listener utility (strict DI - no fallback)
+            safeAddEventListener: resolved.safeAddEventListener
         };
 
         // Internal state

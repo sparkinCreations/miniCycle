@@ -58,7 +58,7 @@ export class RoutineSwitcher {
             showNotification: resolvedDeps.showNotification || this.fallbackNotification.bind(this),
             showPromptModal: resolvedDeps.showPromptModal || this.fallbackPrompt.bind(this),
             showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirm.bind(this),
-            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener.bind(this)
+            safeAddEventListener: resolvedDeps.safeAddEventListener
         };
 
         // Instance state for temporary data (replaces window._tempRenameData)

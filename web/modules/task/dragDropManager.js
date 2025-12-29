@@ -70,7 +70,7 @@ export class DragDropManager {
             isTouchDevice: resolvedDeps.isTouchDevice || this.fallbackIsTouchDevice,
             enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
-            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener
+            safeAddEventListener: resolvedDeps.safeAddEventListener
         };
 
         // Internal state (local to this instance, not global)

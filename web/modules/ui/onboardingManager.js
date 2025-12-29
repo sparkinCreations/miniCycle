@@ -243,7 +243,7 @@ export class OnboardingManager {
             this.completeOnboarding(modal, cycles, activeCycle);
         };
 
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = _deps.safeAddEventListener;
 
         nextBtn._clickHandler = () => {
             if (currentStep < steps.length - 1) {

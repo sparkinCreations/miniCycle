@@ -212,6 +212,13 @@ export class StatsPanelManager {
      * Set up all event listeners for swipe detection and UI interactions
      */
     setupEventListeners() {
+        // ✅ Idempotency guard
+        if (this._eventListenersInitialized) {
+            console.log('✅ StatsPanel event listeners already set up');
+            return;
+        }
+        this._eventListenersInitialized = true;
+
         // Bind methods to preserve 'this' context
         this.boundHandlers = {
             handleTouchStart: this.handleTouchStart.bind(this),
@@ -253,7 +260,7 @@ export class StatsPanelManager {
      * Setup touch event listeners for mobile devices
      */
     setupTouchEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
         safeAdd(document, "touchstart", this.boundHandlers.handleTouchStart, { passive: true });
         safeAdd(document, "touchmove", this.boundHandlers.handleTouchMove, { passive: true });
         safeAdd(document, "touchend", this.boundHandlers.handleTouchEnd, { passive: true });
@@ -263,7 +270,7 @@ export class StatsPanelManager {
      * Setup mouse event listeners for desktop
      */
     setupMouseEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
         safeAdd(document, "mousedown", this.boundHandlers.handleMouseDown);
         safeAdd(document, "mousemove", this.boundHandlers.handleMouseMove);
         safeAdd(document, "mouseup", this.boundHandlers.handleMouseUp);
@@ -273,7 +280,7 @@ export class StatsPanelManager {
      * Setup wheel event listeners for trackpad/mouse wheel
      */
     setupWheelEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
         safeAdd(document, "wheel", this.boundHandlers.handleWheel, { passive: false });
     }
 
@@ -281,7 +288,7 @@ export class StatsPanelManager {
      * Setup pointer event listeners for modern devices
      */
     setupPointerEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
         safeAdd(document, "pointerdown", this.boundHandlers.handlePointerDown);
         safeAdd(document, "pointermove", this.boundHandlers.handlePointerMove);
         safeAdd(document, "pointerup", this.boundHandlers.handlePointerUp);
@@ -291,7 +298,7 @@ export class StatsPanelManager {
      * Setup keyboard event listeners
      */
     setupKeyboardEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
         safeAdd(document, "keydown", this.boundHandlers.handleKeydown);
     }
 
@@ -299,7 +306,7 @@ export class StatsPanelManager {
      * Setup UI interaction event listeners
      */
     setupUIEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
 
         // Slide buttons
         if (this.elements.slideLeft) {
@@ -336,7 +343,7 @@ export class StatsPanelManager {
      * Setup theme-related event listeners
      */
     setupThemeEvents() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
 
         // Current Routine status click
         if (this.elements.currentRoutineStatus) {
@@ -367,7 +374,7 @@ export class StatsPanelManager {
      * FIX: Setup data-ready listener to update stats when session loads
      */
     setupDataReadyListener() {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+        const safeAdd = _deps.safeAddEventListener;
 
         // Create bound handler for cycle:ready if not already created
         if (!this.boundHandlers.handleCycleReady) {

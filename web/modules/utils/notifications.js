@@ -177,7 +177,7 @@ class EducationalTipManager {
   }
 
   initializeTipListeners(container) {
-    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    const safeAdd = _deps.safeAddEventListener;
 
     // Create bound handlers for this container (stored on container to enable removal)
     if (!container._tipCloseHandler) {
@@ -351,7 +351,7 @@ export class MiniCycleNotifications {
       // Style and handler for any close button
       const closeBtn = notification.querySelector(".close-btn");
       if (closeBtn) {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+        const safeAdd = _deps.safeAddEventListener;
 
         Object.assign(closeBtn.style, {
           position: "absolute",
@@ -476,7 +476,7 @@ export class MiniCycleNotifications {
       // Close button click
       const closeBtn = notification.querySelector(".close-btn, .notification-close");
       if (closeBtn) {
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+        const safeAdd = _deps.safeAddEventListener;
         closeBtn._clickHandler = (e) => {
           e.stopPropagation();
 
@@ -659,7 +659,7 @@ async setDefaultPosition(notificationContainer) {
     };
 
     startTimer();
-    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    const safeAdd = _deps.safeAddEventListener;
     safeAdd(notification, "mouseenter", pauseTimer);
     safeAdd(notification, "mouseleave", resumeTimer);
 
@@ -792,7 +792,7 @@ async setDefaultPosition(notificationContainer) {
         document.removeEventListener("mouseup", onMouseUp);
       };
 
-      const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+      const safeAdd = _deps.safeAddEventListener;
       safeAdd(document, "mousemove", onMouseMove);
       safeAdd(document, "mouseup", onMouseUp);
 
@@ -803,7 +803,7 @@ async setDefaultPosition(notificationContainer) {
       });
     };
 
-    const safeAddOuter = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    const safeAddOuter = _deps.safeAddEventListener;
     safeAddOuter(notificationContainer, "mousedown", mouseDownHandler);
     cleanupFunctions.push(() => {
       notificationContainer.removeEventListener("mousedown", mouseDownHandler);
@@ -867,7 +867,7 @@ async setDefaultPosition(notificationContainer) {
         document.removeEventListener("touchend", onTouchEnd);
       };
 
-      const safeAddTouch = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+      const safeAddTouch = _deps.safeAddEventListener;
       safeAddTouch(document, "touchmove", onTouchMove, { passive: false });
       safeAddTouch(document, "touchend", onTouchEnd, { passive: false });
 
@@ -878,7 +878,7 @@ async setDefaultPosition(notificationContainer) {
       });
     };
 
-    const safeAddTouchOuter = _deps.safeAddEventListener || ((el, ev, fn, opts) => el?.addEventListener(ev, fn, opts));
+    const safeAddTouchOuter = _deps.safeAddEventListener;
     safeAddTouchOuter(notificationContainer, "touchstart", touchStartHandler, { passive: true });
     cleanupFunctions.push(() => {
       notificationContainer.removeEventListener("touchstart", touchStartHandler);
@@ -1006,7 +1006,7 @@ async setDefaultPosition(notificationContainer) {
    * Initialize recurring notification listeners (with expand/collapse support)
    */
   initializeRecurringNotificationListeners(notification) {
-    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    const safeAdd = _deps.safeAddEventListener;
 
     // Close button handler
     const closeBtn = notification.querySelector(".close-btn");
@@ -1232,7 +1232,7 @@ async setDefaultPosition(notificationContainer) {
       }
     };
 
-    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    const safeAdd = _deps.safeAddEventListener;
     safeAdd(document, "keydown", handleKeydown);
 
     confirmBtn.onclick = () => {
@@ -1295,7 +1295,7 @@ async setDefaultPosition(notificationContainer) {
 
     setTimeout(() => input.focus(), 50);
 
-    const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => el?.addEventListener(ev, fn));
+    const safeAdd = _deps.safeAddEventListener;
 
     cancelBtn._clickHandler = () => {
       document.body.removeChild(overlay);

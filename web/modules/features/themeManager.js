@@ -47,8 +47,6 @@ const _deps = new Proxy({}, {
     }
 });
 
-// Fallback for safeAddEventListener
-const fallbackAddListener = (el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); };
 
 /**
  * Set dependencies for ThemeManager
@@ -202,6 +200,13 @@ export class ThemeManager {
                 return;
             }
 
+            // ✅ Idempotency guard (per-toggle)
+            if (thisToggle.dataset.darkModeSetup) {
+                console.log(`✅ Dark mode toggle '${toggleId}' already set up`);
+                return;
+            }
+            thisToggle.dataset.darkModeSetup = 'true';
+
             console.log('🌙 Setting up dark mode toggle (Schema 2.5 only)...');
             
             const schemaData = this.loadSchemaData();
@@ -223,7 +228,7 @@ export class ThemeManager {
             this.updateQuickToggleIcon(isDark);
 
             // Event handler with safeAddEventListener
-            const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+            const safeAdd = _deps.safeAddEventListener;
             thisToggle._darkModeChangeHandler = (e) => {
                 const enabled = e.target.checked;
                 this.toggleDarkMode(enabled, allToggleIds, thisToggle);
@@ -246,7 +251,14 @@ export class ThemeManager {
                 console.warn('⚠️ Quick dark toggle element not found');
                 return;
             }
-            
+
+            // ✅ Idempotency guard
+            if (quickToggle.dataset.quickToggleSetup) {
+                console.log('✅ Quick dark toggle already set up');
+                return;
+            }
+            quickToggle.dataset.quickToggleSetup = 'true';
+
             console.log('🌙 Setting up quick dark toggle...');
             
             // Get current dark mode state
@@ -260,7 +272,7 @@ export class ThemeManager {
             // Set correct initial icon state
             newQuickToggle.textContent = isDark ? "☀️" : "🌙";
             
-            const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+            const safeAdd = _deps.safeAddEventListener;
             newQuickToggle._clickHandler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -572,7 +584,7 @@ export class ThemeManager {
             
             const checkbox = toggleDiv.querySelector('input');
             if (checkbox) {
-                const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+                const safeAdd = _deps.safeAddEventListener;
                 checkbox._themeChangeHandler = (e) => {
                     if (e.target.checked) {
                         this.applyTheme(theme.class === 'default' ? 'default' : theme.class);
@@ -591,6 +603,13 @@ export class ThemeManager {
      * Setup themes panel modal
      */
     setupThemesPanel() {
+        // ✅ Idempotency guard
+        if (this._setupThemesPanelInitialized) {
+            console.log('✅ Themes panel already set up');
+            return;
+        }
+        this._setupThemesPanelInitialized = true;
+
         try {
             console.log('🎨 Setting up themes panel (Schema 2.5 only)...');
             
@@ -634,7 +653,7 @@ export class ThemeManager {
             }
           
             // Open modal
-            const safeAdd = _deps.safeAddEventListener || fallbackAddListener;
+            const safeAdd = _deps.safeAddEventListener;
             if (themeButton) {
                 themeButton._clickHandler = () => {
                     if (themesModal) {

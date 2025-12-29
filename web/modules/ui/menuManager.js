@@ -66,8 +66,8 @@ export class MenuManager {
 
         // Instance version - uses injected AppMeta (no hardcoded fallback)
         this.version = resolvedDeps.AppMeta?.version;
-        this.initialized = false;
-        this.hasRun = false; // Track if setupMainMenu has run
+        this._initialized = false;
+        this._setupMainMenuInitialized = false;
 
         // Store dependencies with resilient fallbacks
         // All deps come from DI system (resolvedDeps), not raw constructor params
@@ -80,7 +80,7 @@ export class MenuManager {
             getElementById: resolvedDeps.getElementById,
             querySelector: resolvedDeps.querySelector,
             querySelectorAll: resolvedDeps.querySelectorAll,
-            safeAddEventListener: resolvedDeps.safeAddEventListener || this.fallbackAddListener,
+            safeAddEventListener: resolvedDeps.safeAddEventListener,
             switchMiniCycle: resolvedDeps.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
             createNewMiniCycle: resolvedDeps.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
             loadMiniCycle: resolvedDeps.loadMiniCycle || (() => console.warn('loadMiniCycle not available')),
@@ -107,7 +107,7 @@ export class MenuManager {
      * Initialize menu manager (wait for core systems)
      */
     async init() {
-        if (this.initialized) return;
+        if (this._initialized) return;
 
         // Wait for core systems before setup
         await _deps.appInit?.waitForCore();
@@ -120,7 +120,7 @@ export class MenuManager {
 
             // Setup menu
             this.setupMainMenu();
-            this.initialized = true;
+            this._initialized = true;
             console.log('🎛️ Menu Manager initialized');
         } catch (error) {
             console.warn('Menu Manager initialization failed:', error);
@@ -133,8 +133,12 @@ export class MenuManager {
      * Ensures the function runs only once to prevent duplicate event bindings.
      */
     setupMainMenu() {
-        if (this.hasRun) return; // Prevents running more than once
-        this.hasRun = true;
+        // ✅ Idempotency guard
+        if (this._setupMainMenuInitialized) {
+            console.log('✅ Main menu already set up');
+            return;
+        }
+        this._setupMainMenuInitialized = true;
 
         this.deps.safeAddEventListener(
             this.deps.getElementById("save-as-mini-cycle"),

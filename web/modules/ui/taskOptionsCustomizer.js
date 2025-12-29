@@ -217,7 +217,7 @@ export class TaskOptionsCustomizer {
         this._eventListenersInitialized = true;
 
         // Use safeAddEventListener (prefer injected, fallback inline)
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
+        const safeAdd = this.deps.safeAddEventListener;
 
         // Wait for DOM to be ready, then attach listener
         const attachListener = () => {
@@ -465,7 +465,7 @@ export class TaskOptionsCustomizer {
         const previewContent = modal.querySelector('#option-preview-content');
 
         // Use safeAddEventListener (prefer injected, fallback inline)
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn, opts) => { el?.removeEventListener(ev, fn, opts); el?.addEventListener(ev, fn, opts); });
+        const safeAdd = this.deps.safeAddEventListener;
 
         // ✅ Real-time saving: Save immediately when any checkbox changes
         checkboxes.forEach(checkbox => {

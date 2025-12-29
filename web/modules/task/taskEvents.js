@@ -57,7 +57,7 @@ export class TaskEvents {
             // DOM helpers with defaults
             getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: dependencies.querySelectorAll || ((sel) => document.querySelectorAll(sel)),
-            safeAddEventListener: dependencies.safeAddEventListener || this.fallbackAddListener,
+            safeAddEventListener: dependencies.safeAddEventListener,
             // Core modules (injected from TaskDOMManager)
             taskCore: dependencies.taskCore,
             // Task options visibility (for three-dots menu)
@@ -467,7 +467,7 @@ export class TaskEvents {
      * @param {HTMLElement} taskItem - Task element
      */
     setupTaskFocusInteractions(taskItem) {
-        const addListener = this.deps.safeAddEventListener || ((el, event, handler) => el.addEventListener(event, handler));
+        const addListener = this.deps.safeAddEventListener;
 
         // DI-pure: use injected TaskOptionsVisibilityController
         const controller = this.deps.TaskOptionsVisibilityController;

@@ -175,7 +175,7 @@ export class ModalManager {
         }
 
         // Use safeAddEventListener to prevent duplicate listeners
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = _deps.safeAddEventListener;
 
         // Open Modal
         openFeedbackBtn._clickHandler = () => {
@@ -272,7 +272,7 @@ export class ModalManager {
         const thankYouMessage = document.getElementById("thank-you-message");
 
         if (openFeedbackFooter && feedbackModal) {
-            const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+            const safeAdd = _deps.safeAddEventListener;
             openFeedbackFooter._clickHandler = () => {
                 feedbackModal.style.display = "flex";
                 if (thankYouMessage) {
@@ -295,7 +295,7 @@ export class ModalManager {
             return;
         }
 
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = _deps.safeAddEventListener;
         const closeAboutBtn = aboutModal.querySelector(".close-modal");
 
         // Open Modal
@@ -352,7 +352,7 @@ export class ModalManager {
             return;
         }
 
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        const safeAdd = _deps.safeAddEventListener;
 
         // Close button
         closeRemindersBtn._clickHandler = () => {

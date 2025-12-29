@@ -171,8 +171,8 @@ export class TaskCore {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
 
-        // Instance version - uses injected AppMeta
-        this.version = resolvedDeps.AppMeta?.version || 'dev-local';
+        // Instance version - uses injected AppMeta (no hardcoded fallback)
+        this.version = resolvedDeps.AppMeta?.version;
 
         // Track active timeouts for cleanup
         this.activeTimeouts = new Set();

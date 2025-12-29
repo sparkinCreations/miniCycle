@@ -219,7 +219,14 @@ class GamesManager {
      * Set up all event listeners for games panel
      */
     setupEventListeners() {
-        const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => { el?.removeEventListener(ev, fn); el?.addEventListener(ev, fn); });
+        // ✅ Idempotency guard
+        if (this._eventListenersInitialized) {
+            console.log('✅ Games event listeners already set up');
+            return;
+        }
+        this._eventListenersInitialized = true;
+
+        const safeAdd = this.deps.safeAddEventListener;
 
         // Open games panel
         const openButton = document.getElementById("open-games-panel");

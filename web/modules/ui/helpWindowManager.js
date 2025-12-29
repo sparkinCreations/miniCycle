@@ -82,11 +82,8 @@ export class HelpWindowManager {
         }
         this._eventListenersInitialized = true;
 
-        // Use injected safeAddEventListener with fallback
-        const safeAdd = _deps.safeAddEventListener || ((el, ev, fn) => {
-            el?.removeEventListener(ev, fn);
-            el?.addEventListener(ev, fn);
-        });
+        // Use injected safeAddEventListener (strict DI - no fallback)
+        const safeAdd = _deps.safeAddEventListener;
 
         // Listen for checkbox changes on tasks
         document._helpWindowChangeHandler = (e) => {
