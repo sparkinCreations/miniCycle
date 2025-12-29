@@ -1,8 +1,8 @@
 // ES5-compatible (no const/let, no arrow funcs, no async/await, no optional chaining)
 // ✅ Import version from centralized version.js file
 importScripts('./version.js');
-var APP_VERSION = self.APP_VERSION; // Use version from version.js
-var CACHE_VERSION = 'v391'; // Force refresh - bypass browser HTTP cache for JS
+var APP_VERSION = self.APP_VERSION;   // For URL cache-busting (?v=1.598)
+var CACHE_VERSION = 'v' + self.CACHE_VERSION; // For cache naming (v391)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 
@@ -370,10 +370,17 @@ self.addEventListener('fetch', function (event) {
                         url.pathname.endsWith('.mjs');
 
   if (isScriptOrStyle) {
+    // ✅ AUTO-VERSION: Append version parameter to JS/CSS requests for cache-busting
+    // This ensures ALL modules show with ?v= in DevTools Sources panel
+    var fetchUrl = new URL(request.url);
+    if (!fetchUrl.searchParams.has('v') && fetchUrl.pathname.endsWith('.js')) {
+      fetchUrl.searchParams.set('v', APP_VERSION);
+    }
+
     // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
     // ✅ IMPORTANT: Use cache: 'no-cache' to bypass browser HTTP cache
     // This prevents 304 responses returning stale module content
-    var freshRequest = new Request(request.url, {
+    var freshRequest = new Request(fetchUrl.href, {
       method: 'GET',
       headers: request.headers,
       mode: request.mode,
@@ -381,13 +388,18 @@ self.addEventListener('fetch', function (event) {
       cache: 'no-cache'  // Force revalidation, bypass stale browser cache
     });
 
+    // ✅ Create normalized cache key (strip version param for consistent caching)
+    var cacheUrl = new URL(request.url);
+    cacheUrl.searchParams.delete('v');
+    var cacheRequest = new Request(cacheUrl.href);
+
     event.respondWith(
       fetch(freshRequest)
         .then(function (res) {
           if (res && res.status === 200) {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
-              // Store with original request URL for consistent cache keys
-              return cache.put(request, res.clone()).then(function() {
+              // Store with normalized URL (no version) for consistent cache keys
+              return cache.put(cacheRequest, res.clone()).then(function() {
                 // console.log('📦 Cached fresh JS/CSS:', request.url);
                 // ✅ Trim cache after adding new entry
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
@@ -401,9 +413,9 @@ self.addEventListener('fetch', function (event) {
           return res;
         })
         .catch(function (error) {
-          // ✅ Offline fallback: use cache
+          // ✅ Offline fallback: use cache (with normalized key)
           console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
-          return caches.match(request).then(function (cached) {
+          return caches.match(cacheRequest).then(function (cached) {
             return cached || new Response('// Offline - file not cached', {
               status: 504,
               statusText: 'Gateway Timeout',

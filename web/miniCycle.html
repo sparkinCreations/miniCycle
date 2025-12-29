@@ -170,13 +170,15 @@ if ('serviceWorker' in navigator) {
     }));
   }
 
-  // ✅ SW version - increment this when you update the service worker
-  const SW_VERSION = '1344';
-  const CURRENT_CACHE_VERSION = 'v391'; // Must match service-worker.js
+  // ✅ Read versions from version.js (single source of truth)
+  // version.js loads synchronously before this script and sets window.APP_VERSION/CACHE_VERSION
+  const APP_VERSION = window.APP_VERSION || '1.0';
+  const CACHE_VERSION = window.CACHE_VERSION || 1;
+  const CURRENT_CACHE_VERSION = 'v' + CACHE_VERSION;
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=1.598${SW_VERSION}`, {
+    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=${APP_VERSION}`, {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
@@ -263,7 +265,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.598')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
