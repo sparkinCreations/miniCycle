@@ -567,6 +567,14 @@
         <div class="cta-section">
             <a href="../miniCycle.html" class="cta-button">Try miniCycle Now</a>
         </div>
+
+        <!-- Changelog Section -->
+        <div id="changelog" class="changelog-section" style="margin-top: 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; text-align: left;">
+            <h2 style="text-align: center; margin-bottom: 20px; font-size: 1.8rem;">Changelog</h2>
+            <div id="changelog-content" style="max-height: 400px; overflow-y: auto; font-size: 0.95rem; line-height: 1.6;">
+                <p style="text-align: center; opacity: 0.7;">Loading changelog...</p>
+            </div>
+        </div>
     </div>
 
            <div class="footer-bottom">
@@ -724,6 +732,36 @@
 
         // Auto-advance every 5 seconds (optional - can be removed)
         setInterval(nextVideo, 15000);
+
+        // Fetch and render changelog
+        fetch('../CHANGELOG.md')
+            .then(response => response.text())
+            .then(markdown => {
+                const container = document.getElementById('changelog-content');
+                // Simple markdown to HTML conversion
+                let html = markdown
+                    .replace(/^## \[([^\]]+)\] - (.+)$/gm, '<h3 style="margin-top: 20px; margin-bottom: 10px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px;">v$1 <span style="font-weight: normal; font-size: 0.85em; opacity: 0.7;">($2)</span></h3>')
+                    .replace(/^# (.+)$/gm, '') // Remove main title (we have our own)
+                    .replace(/^- (.+)$/gm, '<li style="margin-left: 20px; margin-bottom: 5px;">$1</li>')
+                    .replace(/\n\n/g, '</ul><ul style="list-style: none; padding: 0;">')
+                    .replace(/^(.+)$/gm, line => line.startsWith('<') ? line : `<p>${line}</p>`);
+
+                // Clean up empty paragraphs and wrap lists
+                html = '<ul style="list-style: none; padding: 0;">' + html + '</ul>';
+                html = html.replace(/<p><\/p>/g, '').replace(/<ul[^>]*><\/ul>/g, '');
+
+                container.innerHTML = html || '<p>No changelog entries yet.</p>';
+            })
+            .catch(err => {
+                document.getElementById('changelog-content').innerHTML = '<p style="opacity: 0.7;">Could not load changelog.</p>';
+            });
+
+        // Scroll to changelog if hash is present
+        if (window.location.hash === '#changelog') {
+            setTimeout(() => {
+                document.getElementById('changelog').scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+        }
     </script>
 </body>
 </html>
