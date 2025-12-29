@@ -701,7 +701,7 @@ export const DEFAULT_TASK_OPTION_BUTTONS = {
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('🛠️ GlobalUtils module loaded (DI-pure, no window.* exports)');
 
-export default GlobalUtils;
+// Note: GlobalUtils is exported at class declaration (line 27)
 
 /*
 ===========================================

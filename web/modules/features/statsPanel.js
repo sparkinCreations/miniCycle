@@ -1494,5 +1494,5 @@ export function updateStatsPanel() {
 // DI-pure module (no window.* fallbacks)
 console.log('📊 Stats Panel module loaded (DI-pure, no window.* exports)');
 
-export default StatsPanelManager;
+// Note: StatsPanelManager class is already exported at declaration
 export { statsPanelManager };

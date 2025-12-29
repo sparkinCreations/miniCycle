@@ -470,4 +470,5 @@ const backupManager = new BackupManager();
 // DI-pure module (no window.* fallbacks for dependencies)
 console.log('💾 BackupManager module loaded (DI-pure, no window.* exports)');
 
-export default backupManager;
+// Named export (preferred over default export)
+export { backupManager };

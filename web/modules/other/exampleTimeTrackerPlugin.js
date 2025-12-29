@@ -257,4 +257,4 @@ class TimeTrackerPlugin extends MiniCyclePlugin {
 console.log('⏱️ TimeTrackerPlugin module loaded (Phase 2 - no window.* exports)');
 
 // Export for use
-export default TimeTrackerPlugin;
+export { TimeTrackerPlugin };

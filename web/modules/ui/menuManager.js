@@ -69,11 +69,10 @@ export class MenuManager {
         this._initialized = false;
         this._setupMainMenuInitialized = false;
 
-        // Store dependencies with resilient fallbacks
-        // All deps come from DI system (resolvedDeps), not raw constructor params
+        // Store dependencies - DI provides all of these via moduleLoader
         this.deps = {
-            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
-            AppState: resolvedDeps.AppState || (() => null),
+            loadMiniCycleData: resolvedDeps.loadMiniCycleData,
+            AppState: resolvedDeps.AppState,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             showPromptModal: resolvedDeps.showPromptModal || this.fallbackPromptModal,
             showConfirmationModal: resolvedDeps.showConfirmationModal || this.fallbackConfirmationModal,
@@ -81,18 +80,18 @@ export class MenuManager {
             querySelector: resolvedDeps.querySelector,
             querySelectorAll: resolvedDeps.querySelectorAll,
             safeAddEventListener: resolvedDeps.safeAddEventListener,
-            switchMiniCycle: resolvedDeps.switchMiniCycle || (() => console.warn('switchMiniCycle not available')),
-            createNewMiniCycle: resolvedDeps.createNewMiniCycle || (() => console.warn('createNewMiniCycle not available')),
-            loadMiniCycle: resolvedDeps.loadMiniCycle || (() => console.warn('loadMiniCycle not available')),
-            updateCycleModeDescription: resolvedDeps.updateCycleModeDescription || null,
-            checkGamesUnlock: resolvedDeps.checkGamesUnlock || (() => {}),
-            sanitizeInput: resolvedDeps.sanitizeInput || ((input) => input),
-            updateCycleData: resolvedDeps.updateCycleData || (() => false),
-            updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
-            updateStatsPanel: resolvedDeps.updateStatsPanel || (() => {}),
-            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
-            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || (() => {}),
-            recurringPanel: resolvedDeps.recurringPanel || null
+            switchMiniCycle: resolvedDeps.switchMiniCycle,
+            createNewMiniCycle: resolvedDeps.createNewMiniCycle,
+            loadMiniCycle: resolvedDeps.loadMiniCycle,
+            updateCycleModeDescription: resolvedDeps.updateCycleModeDescription,
+            checkGamesUnlock: resolvedDeps.checkGamesUnlock,
+            sanitizeInput: resolvedDeps.sanitizeInput,
+            updateCycleData: resolvedDeps.updateCycleData,
+            updateProgressBar: resolvedDeps.updateProgressBar,
+            updateStatsPanel: resolvedDeps.updateStatsPanel,
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
+            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
+            recurringPanel: resolvedDeps.recurringPanel
         };
 
         // Cache DOM elements (will be set in init)
@@ -208,8 +207,8 @@ export class MenuManager {
 
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
-            console.error('❌ Schema 2.5 data required for updateMainMenuHeader');
-            throw new Error('Schema 2.5 data not found');
+            console.warn('⚠️ No data available for updateMainMenuHeader');
+            return;
         }
 
         const { cycles, activeCycle } = schemaData;
@@ -427,7 +426,8 @@ export class MenuManager {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for clearAllTasks');
-            throw new Error('Schema 2.5 data not found');
+            this.deps.showNotification('⚠️ Data not available. Please try again.', 'error', 3000);
+            return;
         }
 
         const { cycles, activeCycle } = schemaData;
@@ -496,7 +496,8 @@ export class MenuManager {
         const schemaData = this.deps.loadMiniCycleData();
         if (!schemaData) {
             console.error('❌ Schema 2.5 data required for deleteAllTasks');
-            throw new Error('Schema 2.5 data not found');
+            this.deps.showNotification('⚠️ Data not available. Please try again.', 'error', 3000);
+            return;
         }
 
         const { cycles, activeCycle } = schemaData;
@@ -568,12 +569,7 @@ export class MenuManager {
         });
     }
 
-    // Fallback methods
-    fallbackLoadData() {
-        console.warn('⚠️ Data loading not available');
-        return null;
-    }
-
+    // Fallback methods (for modals - uses native browser dialogs)
     fallbackNotification(message, type) {
         console.log(`[Menu] ${message}`);
     }
@@ -589,12 +585,6 @@ export class MenuManager {
         const confirmed = confirm(options.message);
         if (options.callback) {
             options.callback(confirmed);
-        }
-    }
-
-    fallbackAddListener(element, event, handler) {
-        if (element) {
-            element.addEventListener(event, handler);
         }
     }
 }

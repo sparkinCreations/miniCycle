@@ -301,7 +301,7 @@ export class TaskEvents {
     /**
      * Reveal task buttons (three dots menu OR long-press)
      * @param {HTMLElement} taskItem - Task element
-     * @param {string} caller - Caller identifier ('three-dots-button' or 'long-press')
+     * @param {string} caller - Caller identifier ('three-dots-button', 'long-press', or 'arrow-move')
      */
     revealTaskButtons(taskItem, caller = 'three-dots-button') {
         const taskOptions = taskItem.querySelector(".task-options");
@@ -312,9 +312,10 @@ export class TaskEvents {
 
         // Check current visibility state
         const isCurrentlyVisible = taskOptions.style.visibility === "visible";
+        const taskId = taskItem.dataset.taskId || taskItem.dataset.id;
 
         console.log('🔍 revealTaskButtons called:', {
-            taskId: taskItem.dataset.id || 'unknown',
+            taskId: taskId || 'unknown',
             caller,
             inlineVisibility: taskOptions.style.visibility || '(not set)',
             isCurrentlyVisible,
@@ -340,15 +341,29 @@ export class TaskEvents {
             console.log(`🧹 Hidden ${hiddenCount} other task option menus`);
         }
 
+        // Determine new active task ID
+        let newActiveTaskId = null;
+
         // Toggle visibility using centralized controller
-        if (isCurrentlyVisible) {
-            // Hide if already visible (clicking same task again)
+        if (isCurrentlyVisible && caller !== 'arrow-move') {
+            // Hide if already visible (clicking same task again) - but not for arrow moves
             console.log('👆 TOGGLING OFF (same task clicked twice)');
             controller?.hide(taskItem, caller);
+            newActiveTaskId = null;
         } else {
             // Show if hidden (first click or switching tasks)
             console.log('✨ TOGGLING ON (first click or switching tasks)');
             controller?.show(taskItem, caller);
+            newActiveTaskId = taskId || null;
+        }
+
+        // Update activeTaskId in AppState (state-driven UI)
+        const AppState = this.deps.AppState;
+        if (AppState?.isReady?.()) {
+            AppState.update(state => {
+                if (!state.ui) state.ui = {};
+                state.ui.activeTaskId = newActiveTaskId;
+            }, false); // Don't persist to localStorage - this is transient UI state
         }
     }
 

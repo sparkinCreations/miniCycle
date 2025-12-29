@@ -178,7 +178,7 @@ export async function initCoreBoot(deps) {
 
   // ========== Load GlobalUtils ==========
   const globalUtilsModule = await import(withV('../utils/globalUtils.js'));
-  GlobalUtils = globalUtilsModule.default;
+  GlobalUtils = globalUtilsModule.GlobalUtils;
 
   // Store in deps container
   deps.utils = deps.utils || {};

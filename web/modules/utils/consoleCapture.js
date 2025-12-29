@@ -445,4 +445,5 @@ export const {
 
 console.log('🔍 Console Capture module loaded (DI-pure, no window.* exports)');
 
-export default consoleCapture;
+// Named export (preferred over default export)
+export { consoleCapture };

@@ -15,8 +15,8 @@ import { createDIModule, optional } from '../core/diBase.js';
 const di = createDIModule('DragDropManager', {
     appInit: optional(null),
     AppState: optional(null),
-    saveCurrentTaskOrder: optional(null),
-    autoSave: optional(null),
+    // saveCurrentTaskOrder removed - now using state-first pattern
+    // autoSave removed - AppState.update handles persistence
     updateProgressBar: optional(null),
     updateStatsPanel: optional(null),
     checkCompleteAllButton: optional(null),
@@ -41,7 +41,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for DragDropManager (call before init)
- * @param {Object} dependencies - { AppState, saveCurrentTaskOrder, etc. }
+ * @param {Object} dependencies - { AppState, updateProgressBar, etc. }
  */
 export function setDragDropManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -53,22 +53,20 @@ export class DragDropManager {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
 
-        // Store dependencies - DI-pure pattern (no window.* fallbacks, no AppGlobalState)
+        // Store dependencies - DI provides all via moduleLoader (use ?.() for optional calls)
+        // Note: saveCurrentTaskOrder and autoSave removed - now using state-first pattern
         this.deps = {
-            // Core state access
             AppState: resolvedDeps.AppState,
-            saveCurrentTaskOrder: resolvedDeps.saveCurrentTaskOrder || this.fallbackSave,
-            autoSave: resolvedDeps.autoSave || this.fallbackAutoSave,
-            updateProgressBar: resolvedDeps.updateProgressBar || this.fallbackUpdate,
-            updateStatsPanel: resolvedDeps.updateStatsPanel || this.fallbackUpdate,
-            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || this.fallbackUpdate,
-            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons || this.fallbackUpdate,
-            captureStateSnapshot: resolvedDeps.captureStateSnapshot || this.fallbackCapture,
-            refreshUIFromState: resolvedDeps.refreshUIFromState || this.fallbackRefresh,
-            revealTaskButtons: resolvedDeps.revealTaskButtons || this.fallbackReveal,
-            hideTaskButtons: resolvedDeps.hideTaskButtons || this.fallbackHide,
-            isTouchDevice: resolvedDeps.isTouchDevice || this.fallbackIsTouchDevice,
-            enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction || this.fallbackEnableUndo,
+            updateProgressBar: resolvedDeps.updateProgressBar,
+            updateStatsPanel: resolvedDeps.updateStatsPanel,
+            checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
+            updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
+            captureStateSnapshot: resolvedDeps.captureStateSnapshot,
+            refreshUIFromState: resolvedDeps.refreshUIFromState,
+            revealTaskButtons: resolvedDeps.revealTaskButtons,
+            hideTaskButtons: resolvedDeps.hideTaskButtons,
+            isTouchDevice: resolvedDeps.isTouchDevice || (() => 'ontouchstart' in window),
+            enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             safeAddEventListener: resolvedDeps.safeAddEventListener
         };
@@ -165,23 +163,58 @@ export class DragDropManager {
             };
             safeAdd(document, "dragover", document._dragoverHandler);
 
-            // Setup drop handler
+            // Setup drop handler (state-first pattern)
             document._dropHandler = (event) => {
                 event.preventDefault();
                 if (!this.draggedTask) return;
 
                 if (this.didDragReorderOccur) {
-                    this.deps.saveCurrentTaskOrder();
-                    this.deps.autoSave();
-                    this.deps.updateProgressBar();
-                    this.deps.updateStatsPanel();
-                    this.deps.checkCompleteAllButton();
-                    this.deps.updateUndoRedoButtons();
+                    // State-first: Read new order from DOM and update AppState directly
+                    const AppState = this._getAppState();
+                    if (AppState?.isReady?.()) {
+                        // Capture undo snapshot BEFORE saving new order
+                        const currentState = AppState.get();
+                        if (currentState) this.deps.captureStateSnapshot?.(currentState);
+
+                        // Read task order from DOM
+                        const taskList = document.getElementById('taskList');
+                        const taskElements = taskList?.querySelectorAll('.task');
+                        const newTaskOrder = [];
+                        taskElements?.forEach(taskEl => {
+                            const taskId = taskEl.dataset.taskId;
+                            if (taskId) newTaskOrder.push(taskId);
+                        });
+
+                        // Update AppState with new order
+                        AppState.update(state => {
+                            const activeCycleId = state.appState.activeCycleId;
+                            if (activeCycleId && state.data.cycles[activeCycleId]) {
+                                const tasks = state.data.cycles[activeCycleId].tasks;
+                                if (tasks && newTaskOrder.length > 0) {
+                                    // Reorder tasks array to match DOM order
+                                    const taskMap = new Map(tasks.map(t => [t.id, t]));
+                                    const reorderedTasks = newTaskOrder
+                                        .map(id => taskMap.get(id))
+                                        .filter(Boolean);
+                                    state.data.cycles[activeCycleId].tasks = reorderedTasks;
+                                    state.metadata.lastModified = Date.now();
+                                }
+                            }
+                        }, true); // immediate save
+
+                        console.log("🔁 Drag reorder: state updated with new order");
+                    }
+
+                    // Update UI elements
+                    this.deps.updateProgressBar?.();
+                    this.deps.updateStatsPanel?.();
+                    this.deps.checkCompleteAllButton?.();
+                    this.deps.updateUndoRedoButtons?.();
 
                     // Update first/last markers (O(1) - CSS handles arrow visibility)
                     this.updateFirstLastMarkers();
 
-                    console.log("🔁 Drag reorder completed and saved with undo snapshot.");
+                    console.log("🔁 Drag reorder completed and saved.");
                 }
 
                 this.cleanupDragState();
@@ -267,7 +300,7 @@ export class DragDropManager {
                 document.querySelectorAll(".task").forEach(task => {
                     if (task !== taskElement) {
                         task.classList.remove("long-pressed");
-                        this.deps.hideTaskButtons(task);
+                        this.deps.hideTaskButtons?.(task);
                     }
                 });
 
@@ -284,7 +317,7 @@ export class DragDropManager {
 
                     // Ensure task options remain visible
                     // Pass 'long-press' as caller so controller allows it in both modes
-                    this.deps.revealTaskButtons(taskElement, 'long-press');
+                    this.deps.revealTaskButtons?.(taskElement, 'long-press');
                 }, 500); // Long-press delay (500ms)
             };
             safeAdd(taskElement, "touchstart", taskElement._touchstartHandler, { passive: false }); // Must be non-passive - calls preventDefault()
@@ -363,7 +396,7 @@ export class DragDropManager {
                 if (event.target.closest(".task-options")) return;
 
                 // Enable undo system on first user interaction
-                this.deps.enableUndoSystemOnFirstInteraction();
+                this.deps.enableUndoSystemOnFirstInteraction?.();
 
                 this.draggedTask = taskElement;
                 event.dataTransfer.setData("text/plain", "");
@@ -482,10 +515,10 @@ export class DragDropManager {
     }
 
     /**
-     * Handle arrow button clicks for task reordering
+     * Handle arrow button clicks for task reordering (state-first pattern)
      * @param {HTMLElement} button - The arrow button that was clicked
      */
-    handleArrowClick(button) {
+    async handleArrowClick(button) {
         try {
             const taskItem = button.closest('.task');
             if (!taskItem) return;
@@ -503,13 +536,17 @@ export class DragDropManager {
 
             if (newIndex === currentIndex) return; // No movement needed
 
-            // Reorder via state system (splice in array)
+            // Get task ID for state-driven active task tracking
+            const taskId = taskItem.dataset.taskId;
+
+            // Reorder via state system (state-first pattern)
             const AppState = this._getAppState();
             if (AppState?.isReady?.()) {
                 // Capture undo snapshot BEFORE reordering
                 const currentState = AppState.get();
-                if (currentState) this.deps.captureStateSnapshot(currentState);
+                if (currentState) this.deps.captureStateSnapshot?.(currentState);
 
+                // Update state: reorder tasks AND set activeTaskId
                 AppState.update(state => {
                     const activeCycleId = state.appState.activeCycleId;
                     if (activeCycleId && state.data.cycles[activeCycleId]) {
@@ -521,16 +558,22 @@ export class DragDropManager {
                             state.metadata.lastModified = Date.now();
                         }
                     }
+                    // Set activeTaskId so rendering restores task options (state-driven UI)
+                    if (!state.ui) state.ui = {};
+                    state.ui.activeTaskId = taskId || null;
                 }, true); // immediate save
 
-                // Re-render from state to reflect changes
-                this.deps.refreshUIFromState();
+                // Re-render from state (await to ensure DOM is ready)
+                await this.deps.refreshUIFromState?.();
 
                 // Update first/last markers after re-render (O(1))
                 this.updateFirstLastMarkers();
 
                 // Update undo/redo buttons
-                this.deps.updateUndoRedoButtons();
+                this.deps.updateUndoRedoButtons?.();
+
+                // Task options are now restored automatically by _restoreActiveTaskOptions in renderTasks
+                // No setTimeout hack needed!
 
                 console.log(`✅ Task moved from position ${currentIndex} to ${newIndex} via arrows`);
             } else {
@@ -579,30 +622,22 @@ export class DragDropManager {
     }
 
     /**
-     * Update move arrows visibility based on state
+     * Update move arrows visibility based on AppState (single source of truth)
      */
     updateMoveArrowsVisibility() {
         try {
             console.log('🔄 Updating move arrows visibility (state-based)...');
 
-            let showArrows = false;
             const AppState = this._getAppState();
 
-            if (AppState?.isReady?.()) {
-                const currentState = AppState.get();
-                showArrows = currentState?.ui?.moveArrowsVisible || false;
-                console.log('📊 Arrow visibility from AppState:', showArrows);
-            } else {
-                // Silent fallback when state isn't ready (during initialization)
-                const storedValue = localStorage.getItem("miniCycleMoveArrows");
-                if (storedValue !== null) {
-                    showArrows = storedValue === "true";
-                    console.log('📊 Arrow visibility from localStorage fallback:', showArrows);
-                } else {
-                    showArrows = false;
-                    console.log('📊 Arrow visibility using default:', showArrows);
-                }
+            if (!AppState?.isReady?.()) {
+                console.log('⏳ AppState not ready, deferring arrow visibility update');
+                return;
             }
+
+            const currentState = AppState.get();
+            const showArrows = currentState?.ui?.moveArrowsVisible || false;
+            console.log('📊 Arrow visibility from AppState:', showArrows);
 
             // Update DOM to reflect current state
             this.updateArrowsInDOM(showArrows);
@@ -711,56 +746,9 @@ export class DragDropManager {
         }
     }
 
-    // ============================================
-    // Fallback Methods (Resilient Constructor Pattern)
-    // ============================================
-
-    fallbackSave() {
-        console.warn('⚠️ saveCurrentTaskOrder not available - task order may not persist');
-    }
-
-    fallbackAutoSave() {
-        console.warn('⚠️ autoSave not available - changes may not be saved');
-    }
-
-    fallbackUpdate() {
-        // Silent fallback - these are UI updates that can be skipped
-    }
-
-    fallbackCapture(state) {
-        console.warn('⚠️ captureStateSnapshot not available - undo may not work for drag operations');
-    }
-
-    fallbackRefresh() {
-        console.warn('⚠️ refreshUIFromState not available - UI may not reflect changes');
-    }
-
-    fallbackReveal(task) {
-        console.warn('⚠️ revealTaskButtons not available - task buttons may not appear');
-    }
-
-    fallbackHide(task) {
-        console.warn('⚠️ hideTaskButtons not available - task buttons may not hide');
-    }
-
-    fallbackIsTouchDevice() {
-        // Simple touch detection fallback
-        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    }
-
-    fallbackEnableUndo() {
-        // Silent fallback - undo system activation is optional
-    }
-
+    // Fallback for notification (logs to console)
     fallbackNotification(message, type) {
         console.log(`[DragDrop] ${message}`);
-    }
-
-    fallbackAddListener(element, event, handler, options) {
-        if (element) {
-            element.removeEventListener(event, handler, options);
-            element.addEventListener(event, handler, options);
-        }
     }
 }
 

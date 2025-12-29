@@ -1083,4 +1083,4 @@ export async function initReminderManager(dependencies = {}) {
     return reminderManager;
 }
 
-export default MiniCycleReminders;
+// Named exports only (class already exported at declaration)
