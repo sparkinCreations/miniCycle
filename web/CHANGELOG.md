@@ -1,3 +1,9 @@
+## [1.606] - 2025-12-30
+- feat: enhance routine switcher button functionality and UI improvements
+- fix: update versioning logic to prevent matching non-numeric app version in service worker registration
+- feat: update mode selector implementation and remove mobile-specific selectors
+
+
 ## [1.605] - 2025-12-29
 - feat: implement saving indicator and routine search functionality with UI updates
 
