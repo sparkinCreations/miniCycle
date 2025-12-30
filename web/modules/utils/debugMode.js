@@ -4,7 +4,7 @@
  * Controls console output based on debug flag.
  * Enable via:
  *   - URL param: ?debug=true (takes priority)
- *   - Settings: stored in miniCycleData.settings.debugMode
+ *   - Settings: stored in AppState settings.debugMode
  *   - Import: import { enableDebug } from './debugMode.js'
  *
  * @module utils/debugMode
@@ -19,10 +19,35 @@ const originalConsole = {
     error: console.error.bind(console)
 };
 
+// ============================================================================
+// DEPENDENCY INJECTION
+// ============================================================================
+
+let _AppState = null;
+
 /**
- * Read debug setting from miniCycleData.settings.debugMode
+ * Set AppState dependency for state-based persistence
+ * @param {Object} AppState - The AppState module
  */
-function getDebugFromStorage() {
+export function setDebugModeDependencies({ AppState }) {
+    _AppState = AppState;
+}
+
+// ============================================================================
+// STATE ACCESS
+// ============================================================================
+
+/**
+ * Read debug setting from AppState (or localStorage fallback for early boot)
+ */
+function getDebugFromState() {
+    // Try AppState first
+    if (_AppState?.isReady?.()) {
+        const state = _AppState.get();
+        return state?.settings?.debugMode === true;
+    }
+
+    // Fallback to localStorage for early boot (before AppState is ready)
     try {
         const raw = localStorage.getItem('miniCycleData');
         if (!raw) return false;
@@ -34,21 +59,14 @@ function getDebugFromStorage() {
 }
 
 /**
- * Write debug setting to miniCycleData.settings.debugMode
+ * Write debug setting via AppState
  */
-function setDebugInStorage(enabled) {
-    try {
-        const raw = localStorage.getItem('miniCycleData');
-        if (!raw) return;
-        const data = JSON.parse(raw);
-        if (data && data.settings) {
-            data.settings.debugMode = enabled;
-            data.metadata = data.metadata || {};
-            data.metadata.lastModified = Date.now();
-            localStorage.setItem('miniCycleData', JSON.stringify(data));
-        }
-    } catch {
-        // Ignore storage errors
+async function setDebugInState(enabled) {
+    if (_AppState?.isReady?.()) {
+        await _AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.debugMode = enabled;
+        }, true); // persist immediately
     }
 }
 
@@ -61,8 +79,8 @@ function isDebugEnabled() {
         if (urlParams.get('debug') === 'false') return false;
     }
 
-    // Check miniCycleData.settings.debugMode
-    return getDebugFromStorage();
+    // Check AppState/localStorage
+    return getDebugFromState();
 }
 
 // Track current state
@@ -111,7 +129,7 @@ export function installDebugFilter() {
  */
 export function enableDebug() {
     debugEnabled = true;
-    setDebugInStorage(true);
+    setDebugInState(true);
     originalConsole.log('🐛 Debug mode: ON');
 }
 
@@ -120,7 +138,7 @@ export function enableDebug() {
  */
 export function disableDebug() {
     debugEnabled = false;
-    setDebugInStorage(false);
+    setDebugInState(false);
     originalConsole.log('🐛 Debug mode: OFF');
 }
 
@@ -130,6 +148,14 @@ export function disableDebug() {
  */
 export function isDebug() {
     return debugEnabled;
+}
+
+/**
+ * Refresh debug state from AppState (call after AppState is ready)
+ * This syncs the in-memory state with the persisted state
+ */
+export function refreshDebugState() {
+    debugEnabled = isDebugEnabled();
 }
 
 /**

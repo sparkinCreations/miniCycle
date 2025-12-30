@@ -9,7 +9,7 @@
  * This file only coordinates - no DI writes, no UI logic, no DOM queries.
  */
 
-import { installDebugFilter } from '../utils/debugMode.js';
+import { installDebugFilter, setDebugModeDependencies, refreshDebugState } from '../utils/debugMode.js';
 import { BOOT_TIMEOUTS } from '../core/constants.js';
 import {
   attemptCacheRecovery,
@@ -249,6 +249,11 @@ async function runBootSequence() {
   const { GlobalUtils } = coreResult;
   await bootEarlyDeps(deps, coreResult);
   await initAppState(deps, deps.utils.showNotification);
+
+  // Wire AppState into debugMode for state-based persistence
+  setDebugModeDependencies({ AppState: deps.core.AppState });
+  refreshDebugState();
+
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 2: FEATURES (with timeout) ==========

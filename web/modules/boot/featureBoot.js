@@ -216,6 +216,36 @@ export async function bootFeatures(deps, coreResult) {
     console.log('✅ HTML event listeners configured');
 
     // =========================================================================
+    // LOAD TASK SEARCH MODULE
+    // =========================================================================
+    console.log('🔍 About to load TaskSearch module...');
+    try {
+      const taskSearchMod = await import(withV('../ui/taskSearch.js'));
+      deps.ui.initTaskSearch = taskSearchMod.initTaskSearch;
+      deps.ui.updateSearchVisibility = taskSearchMod.updateSearchVisibility;
+      deps.ui.resetSearch = taskSearchMod.resetSearch;
+
+      // Inject into TaskRenderer for visibility updates on render
+      console.log('🔍 TaskSearch: Checking injection path...', {
+        hasTaskDeps: !!deps.task,
+        hasTaskDOMManager: !!deps.task?.taskDOMManager,
+        hasRenderer: !!deps.task?.taskDOMManager?.renderer,
+        hasInjectDependency: typeof deps.task?.taskDOMManager?.renderer?.injectDependency
+      });
+
+      if (deps.task?.taskDOMManager?.renderer?.injectDependency) {
+        deps.task.taskDOMManager.renderer.injectDependency('updateSearchVisibility', taskSearchMod.updateSearchVisibility);
+        console.log('✅ TaskSearch: Injected updateSearchVisibility into TaskRenderer');
+      } else {
+        console.warn('⚠️ TaskSearch: Could not inject - renderer not available');
+      }
+
+      console.log('✅ TaskSearch module loaded');
+    } catch (err) {
+      console.warn('⚠️ TaskSearch module failed to load:', err);
+    }
+
+    // =========================================================================
     // VALIDATE CRITICAL DI WIRING
     // =========================================================================
     validateCriticalDIWiring(deps);

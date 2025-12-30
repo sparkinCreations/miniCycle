@@ -414,6 +414,14 @@ export async function loadAllModules(deps, coreResult) {
         }
     }
 
+    // Inject updateSearchVisibility into TaskRenderer (for task search visibility)
+    if (deps.task?.taskDOMManager?.renderer && deps.ui?.updateSearchVisibility) {
+        if (typeof deps.task.taskDOMManager.renderer.injectDependency === 'function') {
+            deps.task.taskDOMManager.renderer.injectDependency('updateSearchVisibility', deps.ui.updateSearchVisibility);
+            console.log('✅ moduleLoader: Injected updateSearchVisibility into TaskRenderer');
+        }
+    }
+
     return results;
 }
 

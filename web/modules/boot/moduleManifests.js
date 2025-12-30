@@ -356,6 +356,15 @@ export const MODULE_MANIFESTS = {
         api: 'ui'
     },
 
+    taskSearch: {
+        path: '../ui/taskSearch.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['appInit'],
+        provides: ['initTaskSearch', 'updateSearchVisibility', 'resetSearch'],
+        api: 'ui',
+        after: ['taskDOM']
+    },
+
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,

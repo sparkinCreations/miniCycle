@@ -30,6 +30,7 @@ const di = createDIModule('TaskRenderer', {
     enableDragAndDropOnTask: optional(null),
     recurringPanel: optional(null),
     updateRecurringPanelButtonVisibility: optional(null),
+    updateSearchVisibility: optional(null),  // Task search visibility based on count
     AppMeta: optional(null),
     taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
     revealTaskButtons: optional(null)  // For restoring active task options after render
@@ -79,6 +80,9 @@ export class TaskRenderer {
             // Recurring panel (required)
             recurringPanel: resolvedDeps.recurringPanel,
             updateRecurringPanelButtonVisibility: resolvedDeps.updateRecurringPanelButtonVisibility,
+
+            // Task search visibility
+            updateSearchVisibility: resolvedDeps.updateSearchVisibility,
 
             // Task utilities (required for rendering)
             taskToAddTaskOptions: resolvedDeps.taskToAddTaskOptions,
@@ -205,6 +209,9 @@ export class TaskRenderer {
 
         // Restore active task options from state (state-driven UI)
         this._restoreActiveTaskOptions();
+
+        // Update task search visibility based on count
+        this.deps.updateSearchVisibility?.(tasksArray.length);
 
         console.log('✅ Tasks rendered successfully (atomic replaceChildren)');
     }
