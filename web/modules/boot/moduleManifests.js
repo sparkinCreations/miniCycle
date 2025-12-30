@@ -243,10 +243,10 @@ export const MODULE_MANIFESTS = {
     modeManager: {
         path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle'],
+        requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle', 'createNewMiniCycle'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription'],
         api: 'cycle',
-        after: ['recurringIntegration', 'routineSwitcher']
+        after: ['recurringIntegration', 'routineSwitcher', 'routineManager']
     },
 
     routineSwitcher: {
@@ -260,10 +260,10 @@ export const MODULE_MANIFESTS = {
     routineManager: {
         path: '../routine/routineManager.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal'],
+        requires: ['appInit', 'AppState', 'showNotification', 'showPromptModal', 'updateMainMenuHeader'],
         provides: ['showCycleCreationModal', 'createNewMiniCycle'],
         api: 'cycle',
-        after: ['menuManager']  // Needs hideMainMenu from menuManager
+        after: ['menuManager']  // Needs hideMainMenu and updateMainMenuHeader from menuManager
     },
 
     // =========================================================================

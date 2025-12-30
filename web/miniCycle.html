@@ -670,6 +670,24 @@ window.installApp = () => {
 
 <!-- Mode Selector (centered below header) -->
 <div class="mode-selector-wrapper">
+  <!-- Quick Actions Button (left side) -->
+  <div class="quick-actions-container">
+    <button id="quick-actions-btn" class="quick-actions-btn" aria-label="Quick actions" title="Quick actions">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+      </svg>
+    </button>
+    <div id="quick-actions-menu" class="quick-actions-menu" style="display: none;">
+      <button id="toggle-task-input-btn" class="quick-action-item">
+        <span class="quick-action-icon">📝</span>
+        <span id="toggle-task-input-text" class="quick-action-text">Add Task</span>
+      </button>
+      <button id="create-routine-btn" class="quick-action-item">
+        <span class="quick-action-icon">✨</span>
+        <span class="quick-action-text">Create New Routine</span>
+      </button>
+    </div>
+  </div>
   <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
     <option value="auto-cycle" title="Automatically cycle tasks">Auto Cycle ↻</option>
     <option value="manual-cycle" title="Manually cycle through tasks">Manual Cycle ✔︎↻</option>
@@ -1718,7 +1736,7 @@ window.installApp = () => {
 
 
 <div id="task-view">
-    <div class="task-input">
+    <div class="task-input" style="display: none;">
   <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
   <button id="addTaskBtn" title="Add task">Add</button>
     </div>
@@ -1726,6 +1744,13 @@ window.installApp = () => {
     <div class="task-list-container">
         <!--Tasks will go here-->
         <ul id="taskList" class="task-list"></ul>
+
+        <!-- Empty State Message -->
+        <div id="empty-state" class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No tasks yet</div>
+            <div class="empty-state-hint">Press the <strong>+</strong> button to add a task or create a new routine</div>
+        </div>
 
         <!-- Completed Tasks Collapsible Section -->
         <div class="completed-tasks-section" id="completed-tasks-section">
