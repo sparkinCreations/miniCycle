@@ -527,6 +527,74 @@ padding: 0;
 margin: 0;
 }
 
+/* Task Search - Understated inline search */
+.task-search-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 4px 10px;
+    gap: 6px;
+}
+
+.task-search-btn {
+    background: transparent;
+    border: none;
+    color: rgba(44, 50, 112, 0.4);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.task-search-btn:hover {
+    color: rgba(44, 50, 112, 0.7);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.task-search-btn.active {
+    color: rgb(44, 50, 112);
+}
+
+.task-search-input {
+    border: none;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: rgb(44, 50, 112);
+    width: 120px;
+    outline: none;
+    transition: width 0.2s ease, background 0.2s ease;
+}
+
+.task-search-input:focus {
+    background: rgba(255, 255, 255, 0.7);
+    width: 150px;
+}
+
+.task-search-input::placeholder {
+    color: rgba(44, 50, 112, 0.5);
+}
+
+.task-search-clear {
+    background: transparent;
+    border: none;
+    color: rgba(44, 50, 112, 0.5);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+}
+
+.task-search-clear:hover {
+    color: rgb(44, 50, 112);
+}
+
 /* Empty State */
 .empty-state {
     display: none;
@@ -1277,8 +1345,10 @@ body.dark-mode.theme-golden-glow {
 
 .quick-actions-btn svg {
     fill: rgb(44, 50, 112);
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    stroke: rgb(44, 50, 112);
+    stroke-width: 1px;
 }
 
 /* Quick Actions Dropdown Menu */
@@ -1392,16 +1462,16 @@ body.dark-mode.theme-golden-glow {
 }
 
 .mode-selector:hover {
-    background: rgba(0, 0, 0, 0.85);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.4);
+    border-color: #0c2091;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .mode-selector:focus {
-    background: rgba(0, 0, 0, 0.9);
-    border-color: rgba(255, 255, 255, 0.6);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.5);
+    border-color: #0c2091;
+    box-shadow: 0 0 0 2px rgba(12, 32, 145, 0.2);
 }
 
 /* Style the dropdown options */
@@ -1635,6 +1705,7 @@ body.theme-golden-glow .mode-selector:hover {
 
     body.dark-mode .quick-actions-btn svg {
         fill: #f0f0f0;
+        stroke: #f0f0f0;
     }
 
     body.dark-mode .quick-actions-menu {
@@ -1657,6 +1728,41 @@ body.theme-golden-glow .mode-selector:hover {
 
     body.dark-mode .quick-action-item:not(:last-child) {
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Dark mode: Task Search */
+    body.dark-mode .task-search-btn {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    body.dark-mode .task-search-btn:hover {
+        color: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .task-search-btn.active {
+        color: #f0f0f0;
+    }
+
+    body.dark-mode .task-search-input {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f0f0f0;
+    }
+
+    body.dark-mode .task-search-input:focus {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .task-search-input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .task-search-clear {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .task-search-clear:hover {
+        color: #f0f0f0;
     }
 }
 

@@ -1742,6 +1742,17 @@ window.installApp = () => {
     </div>
     <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
     <div class="task-list-container">
+        <!-- Task Search (hidden until 3+ tasks) -->
+        <div id="task-search-container" class="task-search-container" style="display: none;">
+            <button id="task-search-btn" class="task-search-btn" title="Search tasks">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </button>
+            <input type="text" id="task-search-input" class="task-search-input" placeholder="Search..." style="display: none;">
+            <button id="task-search-clear" class="task-search-clear" style="display: none;" title="Clear search">×</button>
+        </div>
         <!--Tasks will go here-->
         <ul id="taskList" class="task-list"></ul>
 
@@ -1749,7 +1760,7 @@ window.installApp = () => {
         <div id="empty-state" class="empty-state">
             <div class="empty-state-icon">📋</div>
             <div class="empty-state-text">No tasks yet</div>
-            <div class="empty-state-hint">Press the <strong>+</strong> button to add a task or create a new routine</div>
+            <div class="empty-state-hint">Press the <strong>+</strong> button above to add a task or create a new routine</div>
         </div>
 
         <!-- Completed Tasks Collapsible Section -->
