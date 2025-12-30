@@ -243,10 +243,10 @@ export const MODULE_MANIFESTS = {
     modeManager: {
         path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
-        requires: ['appInit', 'AppState', 'showNotification'],
+        requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription'],
         api: 'cycle',
-        after: ['recurringIntegration']
+        after: ['recurringIntegration', 'routineSwitcher']
     },
 
     routineSwitcher: {
