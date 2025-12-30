@@ -31,6 +31,7 @@ const di = createDIModule('RoutineManager', {
     sanitizeInput: optional(null),
     completeInitialSetup: optional(null),
     hideMainMenu: optional(null),
+    updateMainMenuHeader: optional(null),
     updateProgressBar: optional(null),
     checkCompleteAllButton: optional(null),
     autoSave: optional(null),
@@ -73,6 +74,7 @@ export class RoutineManager {
             // Lifecycle functions (required)
             completeInitialSetup: resolvedDeps.completeInitialSetup,
             hideMainMenu: resolvedDeps.hideMainMenu,
+            updateMainMenuHeader: resolvedDeps.updateMainMenuHeader || (() => {}),
             updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
             autoSave: resolvedDeps.autoSave || (() => {}),
@@ -135,7 +137,7 @@ export class RoutineManager {
 
         setTimeout(() => {
             this.deps.showPromptModal({
-                title: "Create a miniCycle",
+                title: "Create a Routine",
                 message: "Enter a name to get started:",
                 placeholder: "e.g., Morning Routine",
                 confirmText: "Create",
@@ -392,7 +394,7 @@ export class RoutineManager {
         }
 
         this.deps.showPromptModal({
-            title: "Create New miniCycle",
+            title: "Create New Routine",
             message: "What would you like to name it?",
             placeholder: "e.g., Daily Routine",
             defaultValue: "",
@@ -474,6 +476,7 @@ export class RoutineManager {
                 this.deps.hideMainMenu();
                 this.deps.updateProgressBar();
                 this.deps.checkCompleteAllButton();
+                this.deps.updateMainMenuHeader();
                 // Note: autoSave removed - AppState.update(immediate=true) already persisted
 
                 // ✅ Notify undo system of new cycle

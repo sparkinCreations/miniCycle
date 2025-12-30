@@ -37,6 +37,7 @@ const di = createDIModule('ModeManager', {
     updateRecurringButtonVisibility: optional(() => {}),
     syncAllTasksWithMode: optional(null),
     switchMiniCycle: optional(null),
+    createNewMiniCycle: optional(null),
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional({ cycle: false, todo: true })
 });
 
@@ -646,7 +647,92 @@ export class ModeManager {
             });
         }
 
+        // ✅ Setup quick actions button (plus icon in mode selector banner)
+        this.setupQuickActionsButton();
+
         console.log('✅ ModeManager: Mode selector setup complete');
+    }
+
+    /**
+     * Setup quick actions button and dropdown menu
+     * Handles toggle task input and create new routine actions
+     */
+    setupQuickActionsButton() {
+        const quickActionsBtn = this.deps.getElementById('quick-actions-btn');
+        const quickActionsMenu = this.deps.getElementById('quick-actions-menu');
+        const toggleTaskInputBtn = this.deps.getElementById('toggle-task-input-btn');
+        const createRoutineBtn = this.deps.getElementById('create-routine-btn');
+        const taskInput = this.deps.querySelectorAll('.task-input')[0];
+
+        if (!quickActionsBtn || !quickActionsMenu) {
+            console.warn('⚠️ ModeManager: Quick actions elements not found');
+            return;
+        }
+
+        // Toggle menu on button click
+        this.deps.safeAddEventListener(quickActionsBtn, 'click', (e) => {
+            e.stopPropagation();
+            const isVisible = quickActionsMenu.style.display !== 'none';
+            quickActionsMenu.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close menu on outside click
+        this.deps.safeAddEventListener(document, 'click', (e) => {
+            if (!quickActionsBtn.contains(e.target) && !quickActionsMenu.contains(e.target)) {
+                quickActionsMenu.style.display = 'none';
+            }
+        });
+
+        // Toggle task input visibility
+        if (toggleTaskInputBtn && taskInput) {
+            const toggleText = this.deps.getElementById('toggle-task-input-text');
+
+            // Update button text based on current visibility
+            const updateToggleText = () => {
+                if (toggleText) {
+                    const isHidden = taskInput.style.display === 'none';
+                    toggleText.textContent = isHidden ? 'Add Task' : 'Hide Task Input';
+                }
+            };
+
+            // Set initial text
+            updateToggleText();
+
+            this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', () => {
+                const isHidden = taskInput.style.display === 'none';
+                taskInput.style.display = isHidden ? '' : 'none';
+                quickActionsMenu.style.display = 'none';
+
+                // Update button text after toggle
+                updateToggleText();
+
+                if (this.deps.showNotification) {
+                    this.deps.showNotification(
+                        isHidden ? 'Task input shown' : 'Task input hidden',
+                        'info',
+                        2000
+                    );
+                }
+            });
+        }
+
+        // Create new routine
+        if (createRoutineBtn) {
+            this.deps.safeAddEventListener(createRoutineBtn, 'click', () => {
+                quickActionsMenu.style.display = 'none';
+
+                if (this.deps.createNewMiniCycle) {
+                    this.deps.createNewMiniCycle();
+                } else {
+                    console.warn('⚠️ ModeManager: createNewMiniCycle not available');
+                    if (this.deps.showNotification) {
+                        this.deps.showNotification('Create routine not available', 'warning', 2000);
+                    }
+                }
+            });
+        }
+
+        console.log('✅ ModeManager: Quick actions button setup complete');
     }
 
     /**

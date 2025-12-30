@@ -338,10 +338,14 @@ export class MenuManager {
 
         console.log('📝 Prompting user for new cycle name');
 
+        // Generate suggested name with increment
+        const { name: suggestedName } = getUniqueCycleName(currentCycle.title, data.cycles || {});
+
         this.deps.showPromptModal({
             title: "Duplicate Routine",
             message: `Enter a new name for your copy of "${currentCycle.title}":`,
             placeholder: "e.g., My Custom Routine",
+            defaultValue: suggestedName,
             confirmText: "Save Copy",
             cancelText: "Cancel",
             required: true,

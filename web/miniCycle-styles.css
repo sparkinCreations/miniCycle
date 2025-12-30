@@ -527,6 +527,49 @@ padding: 0;
 margin: 0;
 }
 
+/* Empty State */
+.empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.7;
+}
+
+.empty-state-text {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.empty-state-hint {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+.empty-state-hint strong {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Show empty state when task list is empty */
+.task-list:empty + .empty-state {
+    display: flex;
+}
+
 /* Hide scrollbar on WebKit browsers */
 .task-list-container::-webkit-scrollbar {
 width: 6px;
@@ -1202,6 +1245,106 @@ body.dark-mode.theme-golden-glow {
     height: 16px;
 }
 
+/* ✅ Quick Actions button - positioned on left side of banner */
+.quick-actions-container {
+    position: absolute;
+    left: 15px;
+}
+
+.quick-actions-btn {
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
+    border: 1px solid #0c20913f;
+    color: rgb(44, 50, 112);
+    border-radius: 5px;
+    width: 88px;
+    height: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.quick-actions-btn:hover {
+    background: rgba(255,255,255,0.4);
+    border-color: #0c2091;
+}
+
+.quick-actions-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-actions-btn svg {
+    fill: rgb(44, 50, 112);
+    width: 16px;
+    height: 16px;
+}
+
+/* Quick Actions Dropdown Menu */
+.quick-actions-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    border: 1px solid rgba(12, 32, 145, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+    color: rgb(44, 50, 112);
+    transition: background 0.2s ease;
+}
+
+.quick-action-item:hover {
+    background: rgba(12, 32, 145, 0.1);
+}
+
+.quick-action-item:active {
+    background: rgba(12, 32, 145, 0.2);
+}
+
+.quick-action-item:not(:last-child) {
+    border-bottom: 1px solid rgba(12, 32, 145, 0.1);
+}
+
+.quick-action-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.quick-action-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Desktop: Move buttons closer to center */
+@media (min-width: 769px) {
+    .quick-actions-container {
+        left: calc(50% - 280px);
+    }
+
+    .routine-switcher-btn {
+        right: calc(50% - 280px);
+    }
+}
+
 .mode-selector {
     position: relative;
     background: rgba(0, 0, 0, 0.691);
@@ -1476,6 +1619,44 @@ body.theme-golden-glow .mode-selector:hover {
 
     body.dark-mode .routine-switcher-btn svg {
         fill: #f0f0f0;
+    }
+
+    /* Dark mode: Quick Actions Button */
+    body.dark-mode .quick-actions-btn {
+        background: rgba(60, 60, 60, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .quick-actions-btn:hover {
+        background: rgba(80, 80, 80, 0.9);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    body.dark-mode .quick-actions-btn svg {
+        fill: #f0f0f0;
+    }
+
+    body.dark-mode .quick-actions-menu {
+        background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .quick-action-item {
+        color: #f0f0f0;
+    }
+
+    body.dark-mode .quick-action-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .quick-action-item:active {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .quick-action-item:not(:last-child) {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 }
 
