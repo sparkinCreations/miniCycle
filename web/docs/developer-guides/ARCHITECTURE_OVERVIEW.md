@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated**: December 21, 2025
+**Last Updated**: December 30, 2025
 
 ---
 
@@ -17,6 +17,7 @@
    - [Undo/Redo System](#4-undoredo-system)
    - [Task Options Customizer](#5-task-options-customizer)
    - [Mode Manager](#6-mode-manager)
+   - [State-Based Drag & Drop](#7-state-based-drag--drop)
 
 ---
 
@@ -25,10 +26,10 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Boot Files** | 4 files | Split Dec 2025 for debuggability |
-| **Modules** | 53+ modules | All using strict DI |
+| **Modules** | 60 modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1623 tests across 53 modules |
+| **Test Coverage** | 100% ✅ | 1623 tests across 60 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
@@ -136,7 +137,7 @@ web/
 ├── miniCycle-styles.css             # Styles
 ├── service-worker.js                # PWA service worker
 │
-├── modules/                          # 61 ES6 modules (all strict DI)
+├── modules/                          # 60 ES6 modules (all strict DI)
 │   ├── boot/                        # Boot sequence (Dec 2025 split)
 │   │   ├── orchestrator.js          # Pure sequence controller (~75 lines)
 │   │   ├── coreBoot.js              # Core state & init (~578 lines)
@@ -155,7 +156,7 @@ web/
 │   │   ├── taskEvents.js            # Event handling
 │   │   ├── taskValidation.js        # Input validation
 │   │   ├── taskUtils.js             # Task utilities
-│   │   └── dragDropManager.js       # Drag & drop
+│   │   └── dragDropManager.js       # State-based drag & drop (v1.606)
 │   │
 │   ├── routine/                     # Routine system (5 modules)
 │   │   ├── routineLoader.js         # Data loading
@@ -574,19 +575,25 @@ The mode manager (`modules/routine/modeManager.js`) controls miniCycle's three f
 - ✅ **State synchronization** - Toggles, selectors, and task buttons stay in sync
 - ✅ **Event coordination** - Proper listener re-attachment after button refresh
 
+**Routine Switcher Enhancements (v1.606):**
+- ✅ **Visual mode indicators** - Emojis show mode at a glance in routine list
+- ✅ **Search bar** - Filter routines by name
+- ✅ **Storage viewer** - View localStorage data in switcher modal
+- ✅ **Folder icon button** - Quick access from mode selector banner
+
 **Three Operating Modes:**
 
-**1. Auto Cycle Mode ↻**
+**1. Auto Cycle Mode** 🔄
 - Tasks automatically reset when all completed
 - Perfect for daily routines and habits
 - Settings: `autoReset: true`, `deleteCheckedTasks: false`
 
-**2. Manual Cycle Mode ✔︎↻**
+**2. Manual Cycle Mode** ✅ 🔄
 - "Complete Cycle" button appears when all tasks done
 - User manually triggers reset for review before cycling
 - Settings: `autoReset: false`, `deleteCheckedTasks: false`
 
-**3. To-Do Mode ✓**
+**3. To-Do Mode** 📋
 - Completed tasks are deleted (not reset)
 - Traditional to-do list behavior
 - Recurring tasks enabled for repeating items
@@ -615,6 +622,40 @@ modeSelector.addEventListener('change', (e) => {
 
 **For complete documentation, see:**
 → **[MODE_MANAGER_ARCHITECTURE.md](../architecture/MODE_MANAGER_ARCHITECTURE.md)** - Complete mode management architecture
+
+---
+
+### 7. State-Based Drag & Drop
+
+**Reorder Tasks Through State Updates (v1.606)**
+
+The drag & drop system (`modules/task/dragDropManager.js`) was refactored to use state-based architecture, ensuring consistency between the UI and underlying data.
+
+**Key Architecture:**
+- ✅ **State-first updates** - Drag operations update AppState, UI re-renders from state
+- ✅ **Consistent event handling** - Uses `safeAddEventListener` for all drag events
+- ✅ **Touch support** - Full touch drag support for mobile devices
+- ✅ **Visual feedback** - Drag indicators show drop position
+
+**State-Based Flow:**
+```javascript
+// 1. User drags task from position A to position B
+// 2. On drop, calculate new index from drop position
+// 3. Update state with reordered task array
+this.deps.AppState.update(state => {
+    const tasks = state.data.cycles[cycleId].tasks;
+    const [movedTask] = tasks.splice(fromIndex, 1);
+    tasks.splice(toIndex, 0, movedTask);
+}, true);  // Immediate save
+
+// 4. UI automatically re-renders from updated state
+```
+
+**Benefits of State-Based Approach:**
+- **Data consistency** - Task order in DOM always matches state
+- **Undo support** - Drag operations captured in undo history
+- **Simpler debugging** - Single source of truth in AppState
+- **No DOM manipulation** - UI renders from state, not manual DOM moves
 
 ---
 

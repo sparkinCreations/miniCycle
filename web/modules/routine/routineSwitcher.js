@@ -850,16 +850,28 @@ export class RoutineSwitcher {
             listItem.dataset.cycleName = cycleData.title || cycleKey; // Use title for compatibility
             listItem.dataset.cycleKey = cycleKey; // ✅ Store the storage key
 
-            // 🏷️ Determine emoji based on miniCycle properties
-            let emoji = "📋"; // Default to 📋 (Standard Document)
-            if (cycleData.autoReset) {
-                emoji = "🔃"; // If Auto Reset is ON, show 🔃
+            // 🏷️ Determine emoji based on miniCycle mode
+            let emoji = "✅ 🔄"; // Manual Cycle (check + cycle)
+            if (cycleData.deleteCheckedTasks) {
+                emoji = "📋"; // To-Do Mode
+            } else if (cycleData.autoReset) {
+                emoji = "🔄"; // Auto Cycle Mode
             }
 
-            // 📌 Create left side with emoji and name
+            // 📌 Create left side with fixed-width emoji container and name
             const leftSide = document.createElement("span");
             leftSide.className = "cycle-item-left";
-            leftSide.textContent = emoji + " " + (cycleData.title || cycleKey);
+
+            const emojiSpan = document.createElement("span");
+            emojiSpan.className = "cycle-item-emoji";
+            emojiSpan.textContent = emoji;
+
+            const titleSpan = document.createElement("span");
+            titleSpan.className = "cycle-item-title";
+            titleSpan.textContent = cycleData.title || cycleKey;
+
+            leftSide.appendChild(emojiSpan);
+            leftSide.appendChild(titleSpan);
 
             // 📊 Create right side with size (~ indicates estimate)
             const cycleSize = getObjectSizeBytes(cycleData);

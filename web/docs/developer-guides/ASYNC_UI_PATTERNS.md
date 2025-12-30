@@ -1,6 +1,6 @@
 # Async UI Patterns & Common Pitfalls
 
-> **Last Updated**: December 2024
+> **Last Updated**: December 2025
 > **Audience**: Developers working on miniCycle
 > **Purpose**: Document lessons learned from async state management bugs
 
@@ -72,28 +72,49 @@ When data exists in multiple places (task + template), update BOTH.
 
 ---
 
-## 3. Missing Window Exports
+## 3. Module Communication Without Window Globals
 
-### The Problem
-With ES modules and dependency injection, functions may exist internally but not be exposed where other modules expect them.
+### The Problem (Legacy Pattern - Now Resolved)
+Previously, modules communicated via `window.*` globals, which caused hidden dependencies and silent failures.
 
 ```javascript
-// ❌ WRONG - Function exists but not exposed to window
-window.recurringCore = recurringModules.coreAPI; // Has handleDeactivation
+// ❌ OLD PATTERN (no longer used)
+window.recurringCore = recurringModules.coreAPI;
+// Other module checks: if (window.handleRecurringTaskDeactivation) // UNDEFINED!
+```
 
-// But taskDOM.js looks for:
-if (window.handleRecurringTaskDeactivation) // UNDEFINED!
+### The Solution (Current Pattern)
+As of December 2025, miniCycle uses **zero custom `window.*` globals**. All module communication uses:
 
-// ✅ RIGHT - Explicitly expose what other modules need
-window.handleRecurringTaskDeactivation = (...args) =>
-    recurringModules.coreAPI.handleDeactivation(...args);
+```javascript
+// ✅ RIGHT - Use appContext for cross-module access
+import { getAppState, getTaskApi } from '../core/appContext.js';
+
+const AppState = getAppState();
+const taskApi = getTaskApi();
+
+// ✅ RIGHT - Use dependency injection
+class MyModule {
+    constructor(dependencies = {}) {
+        this.deps = {
+            handleDeactivation: dependencies.handleDeactivation
+        };
+    }
+}
+
+// ✅ RIGHT - Use CustomEvents for HTML-to-module communication
+document.dispatchEvent(new CustomEvent('app:showNotification', {
+    detail: { message: 'Success!', type: 'success' }
+}));
 ```
 
 ### Why It Matters
-Silent failures - the code checks `if (window.functionName)` and simply skips execution if it's undefined, making bugs hard to track.
+- **Explicit dependencies** - No hidden globals
+- **Testable** - Dependencies can be mocked
+- **Auditable** - Can trace all module connections
 
 ### Lesson
-When Module A calls `window.functionName`, Module B must explicitly set `window.functionName = ...`.
+Use `appContext.js` getters, dependency injection, or CustomEvents instead of `window.*` globals.
 
 ---
 
@@ -176,16 +197,66 @@ For instant UI feedback, do DOM updates synchronously in the event handler, not 
 
 ---
 
+## 6. Idle-Time Saves for Durability (v1.606)
+
+### The Pattern
+Leverage browser idle time to ensure data durability without blocking the main thread.
+
+```javascript
+// Schedule saves during browser idle time
+function scheduleIdleSave() {
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+            if (AppState.isDirty) {
+                AppState.save();
+            }
+        }, { timeout: 5000 });  // Max wait 5 seconds
+    } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+            if (AppState.isDirty) {
+                AppState.save();
+            }
+        }, 1000);
+    }
+}
+```
+
+### When to Use
+- After state changes that don't need immediate persistence
+- For batching multiple rapid updates
+- To improve UI responsiveness during heavy operations
+
+### Benefits
+- **Non-blocking** - Saves don't interrupt user interactions
+- **Battery-friendly** - Works with browser power management
+- **Reliable** - Falls back to setTimeout for older browsers
+
+### Combination with Debounced Saves
+```javascript
+// AppState already uses 600ms debounced saves
+// Idle-time saves provide an additional safety net
+AppState.update(state => {
+    state.data.cycles[cycleId].tasks.push(newTask);
+});  // Debounced save scheduled
+
+// Also schedule an idle-time save for extra durability
+scheduleIdleSave();
+```
+
+---
+
 ## Summary Checklist
 
 When working with async state and UI:
 
 - [ ] Forward all parameters through wrapper functions
 - [ ] Update all data locations (task + template, etc.)
-- [ ] Expose functions to `window.*` where needed
+- [ ] Use appContext or DI instead of `window.*` globals
 - [ ] Use synchronous DOM state as backup for async state
 - [ ] Update UI synchronously for instant feedback
 - [ ] Implement rollback logic for failed state updates
+- [ ] Consider idle-time saves for non-critical persistence
 
 ---
 

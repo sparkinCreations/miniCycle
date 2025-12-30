@@ -1,7 +1,15 @@
 ## [1.606] - 2025-12-30
-- feat: enhance routine switcher button functionality and UI improvements
+- feat: add visual mode indicators in routine switcher (🔄 Auto, ✅ 🔄 Manual, 📋 To-Do)
+- feat: add routine search bar and storage viewer to switcher modal
+- feat: add folder icon button in mode selector banner for quick routine access
+- feat: refactor drag & drop to state-based architecture for data consistency
+- feat: consistent safeAddEventListener usage across all 60 modules
+- feat: implement idle-time saves for improved data durability
+- fix: click-outside handler now properly excludes routine switcher button
 - fix: update versioning logic to prevent matching non-numeric app version in service worker registration
-- feat: update mode selector implementation and remove mobile-specific selectors
+- style: improve routine switcher button styling (gradient, shadows, hover effects)
+- style: enhance Open/Cancel/Import buttons with professional styling
+- docs: comprehensive documentation update for December 2025 changes
 
 
 ## [1.605] - 2025-12-29
