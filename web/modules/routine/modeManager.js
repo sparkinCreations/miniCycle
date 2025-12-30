@@ -36,6 +36,7 @@ const di = createDIModule('ModeManager', {
     refreshTaskListUI: optional(null),
     updateRecurringButtonVisibility: optional(() => {}),
     syncAllTasksWithMode: optional(null),
+    switchMiniCycle: optional(null),
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: optional({ cycle: false, todo: true })
 });
 
@@ -635,6 +636,14 @@ export class ModeManager {
                     this.deps.showNotification(`Switched to ${this.getModeName(modeToRestore)}`, 'success', 3000);
                 }
             }, 500);
+        }
+
+        // ✅ Setup routine switcher button (folder icon in mode selector banner)
+        const routineSwitcherBtn = this.deps.getElementById('routine-switcher-btn');
+        if (routineSwitcherBtn && this.deps.switchMiniCycle) {
+            this.deps.safeAddEventListener(routineSwitcherBtn, 'click', () => {
+                this.deps.switchMiniCycle();
+            });
         }
 
         console.log('✅ ModeManager: Mode selector setup complete');

@@ -1178,7 +1178,7 @@ body.dark-mode.theme-golden-glow {
     border: 1px solid #0c20913f;
     color: rgb(44, 50, 112);
     border-radius: 5px;
-    width: 36px;
+    width: 88px;
     height: 22px;
     cursor: pointer;
     display: flex;
@@ -1197,7 +1197,7 @@ body.dark-mode.theme-golden-glow {
 }
 
 .routine-switcher-btn svg {
-    stroke: rgb(44, 50, 112);
+    fill: rgb(44, 50, 112);
     width: 16px;
     height: 16px;
 }
@@ -1475,7 +1475,7 @@ body.theme-golden-glow .mode-selector:hover {
     }
 
     body.dark-mode .routine-switcher-btn svg {
-        stroke: #f0f0f0;
+        fill: #f0f0f0;
     }
 }
 
@@ -2212,29 +2212,88 @@ input:checked + .slider:before {
     color: rgba(0, 0, 0, 0.8);
 }
 
-/* 🏁 Open & Cancel Buttons (Bigger) */
+/* 🏁 Open & Cancel Buttons */
 .mini-cycle-switch-btn {
-    width: 90px; /* ✅ Bigger */
-    padding: 7px;
-    font-size: 1.1rem;
+    width: 100px;
+    height: 30px;
+    padding: 0 16px;
+    font-size: 0.95rem;
     margin: 5px;
-    font-weight: bold;
-    border-radius: 5px;
-    transition: opacity 0.2s ease-in-out, transform 0.1s;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mini-cycle-switch-btn:hover {
-    opacity: 0.8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .mini-cycle-switch-btn:active {
-    transform: scale(0.98);
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Open Button */
+.mini-cycle-switch-btn.open-btn {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    color: white;
+}
+
+.mini-cycle-switch-btn.open-btn:hover {
+    background: linear-gradient(135deg, #5a6578 0%, #3d4758 100%);
 }
 
 /* ❌ Cancel Button */
 .mini-cycle-switch-btn.cancel-btn {
-    background: #ff4d4d;
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
     color: white;
+}
+
+.mini-cycle-switch-btn.cancel-btn:hover {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+/* 📥 Import From External Button */
+.mini-cycle-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 220px;
+    padding: 10px 20px;
+    margin: 10px auto;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    color: white;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.mini-cycle-upload-btn:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mini-cycle-upload-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.mini-cycle-upload-btn i {
+    font-size: 1rem;
 }
 
 /* 🎭 Responsive Adjustments */
@@ -2250,7 +2309,13 @@ input:checked + .slider:before {
 
     .mini-cycle-switch-btn {
         width: 90px;
-        padding: 8px;
+        padding: 8px 12px;
+    }
+
+    .mini-cycle-upload-btn {
+        max-width: 200px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
     }
 }
 

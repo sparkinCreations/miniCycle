@@ -72,20 +72,7 @@ export class RoutineSwitcher {
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
 
-        // ✅ Setup routine switcher button in mode selector banner
-        this.setupRoutineSwitcherButton();
-
         console.log('🔄 RoutineSwitcher initialized');
-    }
-
-    /**
-     * Setup the routine switcher button click handler
-     */
-    setupRoutineSwitcherButton() {
-        const btn = this.deps.getElementById('routine-switcher-btn');
-        if (btn && this.deps.safeAddEventListener) {
-            this.deps.safeAddEventListener(btn, 'click', () => this.switchMiniCycle());
-        }
     }
 
     /**
@@ -724,6 +711,7 @@ export class RoutineSwitcher {
 
             const switchModalContent = this.deps.querySelector(".mini-cycle-switch-modal-content");
             const mainMenu = this.deps.querySelector(".menu-container");
+            const routineSwitcherBtn = this.deps.getElementById("routine-switcher-btn");
 
             // ✅ Add error checking for missing elements
             if (!switchModalContent || !mainMenu) {
@@ -731,10 +719,12 @@ export class RoutineSwitcher {
                 return;
             }
 
-            // ✅ If clicked area is NOT inside the modal or main menu, close it
+            // ✅ If clicked area is NOT inside the modal, main menu, or routine switcher button, close it
             if (
                 !switchModalContent.contains(event.target) &&
-                !mainMenu.contains(event.target)
+                !mainMenu.contains(event.target) &&
+                event.target !== routineSwitcherBtn &&
+                !routineSwitcherBtn?.contains(event.target)
             ) {
                 switchModal.style.display = "none";
             }
