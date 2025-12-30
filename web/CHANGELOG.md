@@ -1,3 +1,8 @@
+## [1.608] - 2025-12-30
+- feat: add quick actions button and empty state UI; enhance routine creation flow
+- chore: update version to 1.607 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.607] - 2025-12-30
 - feat: enhance routine switcher UI with visual indicators and improved styling; update documentation and coding standards
 - chore: update version to 1.606 across all relevant files
