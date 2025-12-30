@@ -1,3 +1,8 @@
+## [1.607] - 2025-12-30
+- feat: enhance routine switcher UI with visual indicators and improved styling; update documentation and coding standards
+- chore: update version to 1.606 across all relevant files
+
+
 ## [1.606] - 2025-12-30
 - feat: add visual mode indicators in routine switcher (🔄 Auto, ✅ 🔄 Manual, 📋 To-Do)
 - feat: add routine search bar and storage viewer to switcher modal
