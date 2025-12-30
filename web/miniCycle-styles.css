@@ -2040,6 +2040,20 @@ input:checked + .slider:before {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cycle-item-emoji {
+    min-width: 45px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.cycle-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .cycle-item-size {

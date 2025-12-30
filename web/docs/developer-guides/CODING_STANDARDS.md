@@ -1,7 +1,7 @@
 # miniCycle Coding Standards
 
-Version: 1.0
-Last Updated: 2025-12-29
+Version: 1.1
+Last Updated: 2025-12-30
 
 ## 1. Export Patterns
 
@@ -99,7 +99,7 @@ init() {
 
 ### Standard: DI-Injected SafeAddEventListener
 
-All UI event listeners should use the DI-injected `safeAddEventListener` functions with fallback:
+All 60 modules use DI-injected `safeAddEventListener` for event handling. This ensures null-safety, testability, and consistent behavior:
 
 ```javascript
 // In module DI setup

@@ -1,9 +1,9 @@
 # DI Patterns Guide
 
-**Last Updated:** December 21, 2025
+**Last Updated:** December 30, 2025
 **Status:** All modules now use strict DI - No `|| window.*` fallbacks remain
 
-This document covers the dependency injection patterns used in miniCycle. All 53 modules follow these patterns.
+This document covers the dependency injection patterns used in miniCycle. All 60 modules follow these patterns.
 
 ---
 
@@ -13,9 +13,10 @@ This document covers the dependency injection patterns used in miniCycle. All 53
 2. [Object.defineProperties (Critical)](#objectdefineproperties-critical)
 3. [Instance Getter Pattern](#instance-getter-pattern)
 4. [Wiring in orchestrator.js](#wiring-in-orchestratorjs)
-5. [Complete Module Template](#complete-module-template)
-6. [Common Mistakes](#common-mistakes)
-7. [All DI Modules](#all-di-modules)
+5. [safeAddEventListener Pattern](#safeaddeventlistener-pattern)
+6. [Complete Module Template](#complete-module-template)
+7. [Common Mistakes](#common-mistakes)
+8. [All DI Modules](#all-di-modules)
 
 ---
 
@@ -259,6 +260,70 @@ setModuleDependencies({
 
 ---
 
+## safeAddEventListener Pattern
+
+**Consistent Event Handling Across All Modules (v1.606)**
+
+All modules use `safeAddEventListener` for event listener management instead of direct `addEventListener` calls. This pattern is injected as a dependency for consistency and testability.
+
+### The Pattern
+
+```javascript
+// In globalUtils.js - safeAddEventListener implementation
+export function safeAddEventListener(element, event, handler, options) {
+    if (!element) {
+        console.warn(`safeAddEventListener: Element not found for event "${event}"`);
+        return null;
+    }
+    element.addEventListener(event, handler, options);
+    return { element, event, handler, options };
+}
+```
+
+### Usage in Modules
+
+```javascript
+// GOOD: Use injected safeAddEventListener
+class MyModule {
+    constructor(dependencies = {}) {
+        this.deps = {
+            safeAddEventListener: dependencies.safeAddEventListener
+        };
+    }
+
+    setupEventHandlers() {
+        // Returns cleanup info, logs warning if element missing
+        this.deps.safeAddEventListener(element, 'click', this.handleClick);
+    }
+}
+
+// BAD: Direct addEventListener calls
+element.addEventListener('click', this.handleClick);  // No null check, not testable
+```
+
+### Why safeAddEventListener
+
+| Direct addEventListener | safeAddEventListener |
+|------------------------|----------------------|
+| Throws if element is null | Logs warning, returns null |
+| Hard to test | Easy to mock in tests |
+| No consistency | Consistent across all modules |
+| No cleanup tracking | Returns cleanup info |
+
+### Wiring safeAddEventListener
+
+```javascript
+// In modules/boot/featureBoot.js
+setMyModuleDependencies({
+    safeAddEventListener: deps.utils.safeAddEventListener,
+    // ... other deps
+});
+```
+
+**All 60 modules now use this pattern consistently.**
+
+---
+
 ## Complete Module Template
 
 ```javascript
@@ -409,7 +474,7 @@ loadData: () => window.loadMiniCycleData?.()
 
 ## All DI Modules
 
-**All 61 modules use strict dependency injection with no `|| window.*` fallbacks.**
+**All 60 modules use strict dependency injection with no `|| window.*` fallbacks.**
 
 ### Modules with `set*Dependencies()` (40 modules)
 
@@ -472,29 +537,3 @@ These are pure utilities or static configuration with no dependencies:
 - [CLAUDE.md](./CLAUDE.md) - Main developer guide
 - [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) - System architecture
 - [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) - Detailed DI implementation example
-
-
-  ---
-  | Priority | Target                    | Lines | Target Module                        | Status              |
-  |----------|---------------------------|-------|--------------------------------------|---------------------|
-  | P4       | Notification Wrappers     | 80    | Delete                               | ✅ DONE (-175 lines) |
-  | P0       | saveToggleAutoReset()     | ~758  | settingsManager.js (exists)          | Pending             |
-  | P1       | createTaskLabel()         | ~350  | taskDOM.js or new module             | Pending             |
-  | P2       | Completed Tasks (9 funcs) | ~214  | completedTasksManager.js (NEW)       | Pending             |
-  | P3       | Initial Setup (2 funcs)   | ~190  | appInit.js (exists)                  | Pending             |
-  | P5       | Progress System (7 funcs) | ~270  | progressManager.js (NEW)             | Pending             |
-  | P6       | remindOverdueTasks()      | ~102  | notifications.js or taskReminders.js | Pending             |
-
-   | Function                       | Lines | Worth Extracting?        |
-  |--------------------------------|-------|--------------------------|
-  | addTask()                      | ~40   | Keep - core orchestrator |
-  | validateAndSanitizeTaskInput() | ~25   | Keep - fallback          |
-  | loadTaskContext()              | ~45   | Keep - fallback          |
-  | createOrUpdateTaskData()       | ~90   | Keep - fallback          |
-  | createTaskDOMElements()        | ~124  | Could extract to taskDOM |
-  | autoSave()                     | ~47   | Keep - core              |
-  | loadMiniCycleData()            | ~111  | Keep - core              |
-  | updateCycleData()              | ~57   | Keep - core              |
-  | detectDeviceType()             | ~58   | Small utility            |
-  | setupMiniCycleTitleListener()  | ~19   | Small setup              |
-  | Various event handlers         | ~200  | Small handlers           |
