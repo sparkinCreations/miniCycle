@@ -319,23 +319,23 @@ button:not(.dot):hover {
 
     /* Mobile task card constraints */
     .task-card {
-        max-height: calc(100vh - 315px);
+        max-height: calc(100vh - 355px);
         margin-top: 15px;
     }
 
     /* Shorter task card when Complete button is visible on mobile */
     #task-view.complete-btn-visible .task-card {
-        max-height: calc(100vh - 385px);
+        max-height: calc(100vh - 425px);
     }
 
     /* Shorter task card when mode description is visible on mobile */
     #task-view.mode-description-visible .task-card {
-        max-height: calc(100vh - 395px);
+        max-height: calc(100vh - 435px);
     }
 
     /* Even shorter when both are visible on mobile */
     #task-view.complete-btn-visible.mode-description-visible .task-card {
-        max-height: calc(100vh - 435px);
+        max-height: calc(100vh - 475px);
     }
 
     #task-view {
