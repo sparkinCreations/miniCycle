@@ -1,3 +1,8 @@
+## [1.615] - 2025-12-31
+- feat: update mobile task card constraints for iOS Safari compatibility
+- chore: update version to 1.614 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.614] - 2025-12-31
 - feat: adjust mobile task card height constraints for improved visibility
 - chore: update version to 1.613 in manifest, HTML, and version files; enhance changelog
