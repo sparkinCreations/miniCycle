@@ -312,31 +312,63 @@ button:not(.dot):hover {
 }
 
 @media (max-width: 768px) {
-  .task-input {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;  /* Center in flex column parent */
-    background: rgb(255, 255, 255);
-    border-radius: 8px;
-    padding: 10px 0px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    margin-bottom: 8px;
-    max-width: 450px;
-    width: 90%;
-    height: 25px;
-}
-#taskInput {
-      flex: 1;
-    background: rgb(255, 255, 255);
-    padding: 7px;
-    font-size: 16px;
-    border: none;
-    border-radius: 6px;
-    outline: none;
-    max-width: 350px;
-    width: 60%;
-}
+    /* Prevent horizontal scroll on mobile */
+    html, body {
+        overflow-x: hidden;
+    }
+
+    /* Mobile task card constraints */
+    .task-card {
+        max-height: calc(100vh - 280px);
+    }
+
+    /* Shorter task card when Complete button is visible on mobile */
+    #task-view.complete-btn-visible .task-card {
+        max-height: calc(100vh - 350px);
+    }
+
+    /* Shorter task card when mode description is visible on mobile */
+    #task-view.mode-description-visible .task-card {
+        max-height: calc(100vh - 360px);
+    }
+
+    /* Even shorter when both are visible on mobile */
+    #task-view.complete-btn-visible.mode-description-visible .task-card {
+        max-height: calc(100vh - 400px);
+    }
+
+    #task-view {
+        width: 90vw;
+        max-width: none;
+        left: calc(50% - 10px);  /* Nudge left to center visually */
+    }
+
+    .task-input {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+        background: rgb(255, 255, 255);
+        border-radius: 8px;
+        padding: 10px 0px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        margin-bottom: 8px;
+        max-width: 450px;
+        width: 90%;
+        height: 25px;
+    }
+
+    #taskInput {
+        flex: 1;
+        background: rgb(255, 255, 255);
+        padding: 7px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        outline: none;
+        max-width: 350px;
+        width: 60%;
+    }
 
     #addTaskBtn {
         padding: 8px 12px;
@@ -537,6 +569,21 @@ margin: 0;
     max-height: calc(100vh - 320px);
     display: flex;
     flex-direction: column;
+}
+
+/* Shorter task card when Complete button is visible */
+#task-view.complete-btn-visible .task-card {
+    max-height: calc(100vh - 380px);
+}
+
+/* Shorter task card when mode description is visible in help window */
+#task-view.mode-description-visible .task-card {
+    max-height: calc(100vh - 380px);
+}
+
+/* Even shorter when both Complete button AND mode description are visible */
+#task-view.complete-btn-visible.mode-description-visible .task-card {
+    max-height: calc(100vh - 430px);
 }
 
 /* Wider task card on desktop */
@@ -998,12 +1045,34 @@ border-radius: 5px;
     .complete-all-and-help-window-container {
         gap: 10px; /* Smaller gap on mobile */
         flex-direction: column;
-    }
-    
-    .help-window {
+        align-items: center;
         width: 100%;
+    }
+
+    .help-window {
+        width: 90%;
         max-width: 400px;
         font-size: 13px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Move background to title-row so it stays full width */
+    .title-row {
+        background-color: rgba(255, 255, 255, 0.4);
+        border-radius: 10px 10px 0 0;
+        padding: 8px 10px;
+    }
+
+    /* Constrain title text width so it wraps before search icon */
+    .mini-cycle-title {
+        max-width: 85%;
+        margin-left: auto;
+        margin-right: auto;
+        background: none;
+        background-color: transparent;
+        padding: 0;
+        box-shadow: none;
     }
 }
 

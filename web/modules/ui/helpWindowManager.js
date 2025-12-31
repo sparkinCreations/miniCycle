@@ -178,6 +178,10 @@ export class HelpWindowManager {
 
         this.isShowingModeDescription = true;
 
+        // Add class to task-view for CSS to reduce task card height
+        const taskView = document.getElementById('task-view');
+        taskView?.classList.add('mode-description-visible');
+
         const modeDescriptions = {
             'auto-cycle': {
                 title: "🔄 Auto Cycle Mode",
@@ -211,6 +215,9 @@ export class HelpWindowManager {
         this.modeDescriptionTimeout = setTimeout(() => {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
+            // Remove class from task-view
+            const taskView = document.getElementById('task-view');
+            taskView?.classList.remove('mode-description-visible');
             this.updateConstantMessage();
         }, 30000);
 
@@ -228,6 +235,9 @@ export class HelpWindowManager {
             clearTimeout(this.modeDescriptionTimeout);
             this.modeDescriptionTimeout = null;
             this.isShowingModeDescription = false;
+            // Remove class from task-view
+            const taskView = document.getElementById('task-view');
+            taskView?.classList.remove('mode-description-visible');
         }
 
         this.isShowingCycleComplete = true;
@@ -337,6 +347,10 @@ export class HelpWindowManager {
         if (this.modeDescriptionTimeout) {
             clearTimeout(this.modeDescriptionTimeout);
             this.modeDescriptionTimeout = null;
+            this.isShowingModeDescription = false;
+            // Remove class from task-view
+            const taskView = document.getElementById('task-view');
+            taskView?.classList.remove('mode-description-visible');
         }
     }
 }
