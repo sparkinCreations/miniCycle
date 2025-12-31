@@ -1,3 +1,8 @@
+## [1.617] - 2025-12-31
+- feat: add extra bottom padding for mobile to improve layout
+- chore: update version to 1.616 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.616] - 2025-12-31
 - feat: adjust mobile task card max-height for improved layout on iOS Safari
 - chore: update version to 1.615 in manifest, HTML, and version files; enhance changelog
