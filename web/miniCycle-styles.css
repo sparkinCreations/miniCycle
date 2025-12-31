@@ -317,6 +317,11 @@ button:not(.dot):hover {
         overflow-x: hidden;
     }
 
+    /* Add extra bottom padding for mobile */
+    body {
+        padding-bottom: calc(env(safe-area-inset-bottom) + 30px);
+    }
+
     /* Mobile task card constraints - using dvh for iOS Safari compatibility */
     .task-card {
         max-height: calc(100dvh - 385px);
