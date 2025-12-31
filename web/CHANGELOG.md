@@ -1,3 +1,7 @@
+## [1.619] - 2025-12-31
+- feat: implement desktop-only max-height rules for task cards to improve layout
+
+
 ## [1.618] - 2025-12-31
 - chore: update version to 1.617 in manifest, HTML, and version files; enhance changelog
 
