@@ -177,7 +177,21 @@ Dependencies (strict DI):
   - AppState, loadMiniCycleData, addTask, updateThemeColor
   - startReminders, catchUpMissedRecurringTasks
   - updateProgressBar, updateMainMenuHeader, updateStatsPanel
+  - updateSearchVisibility (task search visibility)
 ```
+
+**⚠️ Important: Two Task Rendering Paths**
+
+routineLoader has its own `renderTasksToDOM()` function that renders tasks during boot.
+This is SEPARATE from `TaskRenderer.renderTasks()` which handles runtime re-renders.
+
+| Path | When Used | Location |
+|------|-----------|----------|
+| `renderTasksToDOM()` | Boot-time, routine switching | `routineLoader.js` |
+| `TaskRenderer.renderTasks()` | Undo/redo, state refresh, runtime updates | `taskRenderer.js` |
+
+**If you need to hook into "after tasks render"**, you must hook into BOTH paths.
+Example: `updateSearchVisibility` is injected into both routineLoader and TaskRenderer.
 
 #### `modules/routine/modeManager.js`
 ```

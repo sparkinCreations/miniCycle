@@ -259,6 +259,7 @@ const instance = new MyModule();         // Then create
 4. **Using spread operator on deps with getters** - Use `Object.defineProperties` instead.
 5. **Creating instances before wiring deps** - Always wire first, then instantiate.
 6. **Stripping version query strings from dynamic imports** - The pattern `import(\`./module.js?v=${version}\`)` is intentional for cache-busting. Preserve it.
+7. **Hooking into only one task rendering path** - Tasks render via TWO paths: `routineLoader.renderTasksToDOM()` (boot-time) and `TaskRenderer.renderTasks()` (runtime). Hook into BOTH for "after tasks render" features. See [HIDDEN_CODEBASE_INSIGHTS.md](./HIDDEN_CODEBASE_INSIGHTS.md#51-two-separate-task-rendering-paths).
 
 ---
 

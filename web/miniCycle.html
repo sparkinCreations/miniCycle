@@ -1736,22 +1736,28 @@ window.installApp = () => {
 
 
 <div id="task-view">
-    <div class="task-input" style="display: none;">
-  <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
-  <button id="addTaskBtn" title="Add task">Add</button>
-    </div>
-    <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
-    <div class="task-list-container">
-        <!-- Task Search (hidden until 3+ tasks) -->
-        <div id="task-search-container" class="task-search-container" style="display: none;">
-            <button id="task-search-btn" class="task-search-btn" title="Search tasks">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-            </button>
-            <input type="text" id="task-search-input" class="task-search-input" placeholder="Search..." style="display: none;">
-            <button id="task-search-clear" class="task-search-clear" style="display: none;" title="Clear search">×</button>
+    <div class="task-card">
+        <div class="task-input" style="display: none;">
+            <input type="text" id="taskInput" name="taskInput" class="taskInput" placeholder="Enter a task..." title="Type a task and press Add or Enter">
+            <button id="addTaskBtn" title="Add task">Add</button>
+        </div>
+        <div class="title-row">
+            <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true"></div>
+            <!-- Task Search Icon (hidden until 3+ tasks) -->
+            <div id="task-search-container" class="task-search-container" style="display: none;">
+                <button id="task-search-btn" class="task-search-btn" title="Search tasks">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="task-list-container">
+        <!-- Search Input Row (appears below title when search is expanded) -->
+        <div id="task-search-input-row" class="task-search-input-row" style="display: none;">
+            <input type="text" id="task-search-input" class="task-search-input" placeholder="Search tasks...">
+            <button id="task-search-clear" class="task-search-clear" title="Clear search">×</button>
         </div>
         <!--Tasks will go here-->
         <ul id="taskList" class="task-list"></ul>
@@ -1771,6 +1777,7 @@ window.installApp = () => {
             <ul id="completedTaskList" class="completed-task-list"></ul>
         </div>
     </div>
+    </div><!-- end task-card -->
     <div class="progress-container">
         <div id="progressBar" class="progress-bar"></div>
     </div>

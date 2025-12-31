@@ -29,7 +29,8 @@ const di = createDIModule('RoutineLoader', {
   updateMainMenuHeader: optional(null),
   updateStatsPanel: optional(null),
   syncAllTasksWithMode: optional(null),
-  taskToAddTaskOptions: optional(null)  // From taskUtils - injected to avoid duplicate module loading
+  taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
+  updateSearchVisibility: optional(null)  // Task search visibility based on count
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -318,6 +319,9 @@ function renderTasksToDOM(tasks = []) {
     const options = taskToAddTaskOptions(task);
     _deps.addTask(task.text || task.taskText || '', options);
   });
+
+  // Update task search visibility based on count
+  _deps.updateSearchVisibility?.(tasks.length);
 
   console.log('✅ Tasks rendered to DOM with original IDs and states preserved');
 }

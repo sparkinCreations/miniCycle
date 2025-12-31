@@ -56,8 +56,9 @@ export function initTaskSearch() {
     const searchBtn = deps.getElementById('task-search-btn');
     const searchInput = deps.getElementById('task-search-input');
     const clearBtn = deps.getElementById('task-search-clear');
+    const inputRow = deps.getElementById('task-search-input-row');
 
-    if (!container || !searchBtn || !searchInput || !clearBtn) {
+    if (!container || !searchBtn || !searchInput || !clearBtn || !inputRow) {
         console.warn('⚠️ TaskSearch: Required DOM elements not found');
         return;
     }
@@ -72,9 +73,13 @@ export function initTaskSearch() {
         filterTasks(e.target.value);
     });
 
-    // Clear search on X button click
+    // Clear search on X button click - collapse if already empty
     clearBtn.addEventListener('click', () => {
-        clearSearch();
+        if (searchInput.value.trim() === '') {
+            collapseSearch();
+        } else {
+            clearSearch();
+        }
     });
 
     // Clear search on Escape key
@@ -88,8 +93,9 @@ export function initTaskSearch() {
     isInitialized = true;
     console.log('✅ TaskSearch initialized');
 
-    // NOTE: Don't check initial task count here - tasks aren't rendered yet during boot
-    // TaskRenderer will call updateSearchVisibility() after rendering tasks
+    // Check initial task count - tasks are already rendered by coreBoot before this runs
+    const initialCount = getTaskCount();
+    updateSearchVisibility(initialCount);
 }
 
 /**
@@ -110,13 +116,12 @@ function expandSearch() {
     const deps = di.resolve();
     const searchBtn = deps.getElementById('task-search-btn');
     const searchInput = deps.getElementById('task-search-input');
-    const clearBtn = deps.getElementById('task-search-clear');
+    const inputRow = deps.getElementById('task-search-input-row');
 
-    if (searchInput && clearBtn && searchBtn) {
-        searchInput.style.display = 'block';
-        clearBtn.style.display = 'block';
+    if (inputRow && searchBtn) {
+        inputRow.style.display = 'flex';
         searchBtn.classList.add('active');
-        searchInput.focus();
+        searchInput?.focus();
         isSearchExpanded = true;
     }
 }
@@ -127,12 +132,10 @@ function expandSearch() {
 function collapseSearch() {
     const deps = di.resolve();
     const searchBtn = deps.getElementById('task-search-btn');
-    const searchInput = deps.getElementById('task-search-input');
-    const clearBtn = deps.getElementById('task-search-clear');
+    const inputRow = deps.getElementById('task-search-input-row');
 
-    if (searchInput && clearBtn && searchBtn) {
-        searchInput.style.display = 'none';
-        clearBtn.style.display = 'none';
+    if (inputRow && searchBtn) {
+        inputRow.style.display = 'none';
         searchBtn.classList.remove('active');
         isSearchExpanded = false;
     }
