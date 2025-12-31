@@ -331,7 +331,43 @@ These could be one generic function with config, but the repetition isn't hurtin
 
 ## 5. Things That Might Bite You Later
 
-### 5.1 Schema Version is a String
+### 5.1 Two Separate Task Rendering Paths
+
+**Locations:**
+- Boot-time: `/modules/routine/routineLoader.js` → `renderTasksToDOM()`
+- Runtime: `/modules/task/taskRenderer.js` → `renderTasks()`
+
+**The Gotcha:**
+
+Tasks are rendered through TWO completely separate code paths:
+
+| Path | When Used | Function |
+|------|-----------|----------|
+| `renderTasksToDOM()` | App boot, routine switching | `routineLoader.js` |
+| `TaskRenderer.renderTasks()` | Undo/redo, state refresh, pull-to-refresh | `taskRenderer.js` |
+
+If you need to hook into "after tasks are rendered" (e.g., updating UI based on task count, initializing task-related features), **you must hook into BOTH paths**.
+
+**Example (Task Search):**
+```javascript
+// In routineLoader.js - boot-time path
+_deps.updateSearchVisibility?.(tasks.length);
+
+// In taskRenderer.js - runtime path
+this.deps.updateSearchVisibility?.(tasksArray.length);
+```
+
+**Why This Exists:**
+- Boot-time rendering uses `addTask()` directly for each task (simpler, faster)
+- Runtime rendering uses atomic DOM replacement via `replaceChildren()` (smoother UX)
+
+**How to Identify:**
+- If a feature works after undo/redo but not on initial load → missing routineLoader hook
+- If a feature works on load but not after refresh → missing TaskRenderer hook
+
+---
+
+### 5.2 Schema Version is a String
 
 ```javascript
 schemaVersion: "2.5"
@@ -347,7 +383,7 @@ String comparison works (`"2.5" === "2.5"`), but if you ever need version compar
 
 ---
 
-### 5.2 Cycle IDs Are Human-Readable Names
+### 5.3 Cycle IDs Are Human-Readable Names
 
 ```javascript
 activeCycleId: "Morning Routine"  // The actual cycle name
@@ -361,7 +397,7 @@ You handle renames, but it's fragile.
 
 ---
 
-### 5.3 Recurring Templates Are Stored Separately
+### 5.4 Recurring Templates Are Stored Separately
 
 ```javascript
 cycle: {
@@ -379,7 +415,7 @@ This is intentional (templates survive task deletion), but could cause orphaned 
 
 ---
 
-### 5.4 Concurrent Modification Detection Has a Gap
+### 5.5 Concurrent Modification Detection Has a Gap
 
 **Location:** `/modules/core/constants.js`
 

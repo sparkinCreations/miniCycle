@@ -31,7 +31,10 @@ const di = createDIModule('TaskCRUD', {
     setupTaskInteractions: optional(null),
     finalizeTaskCreation: optional(null),
     // UIOrchestrator for coalesced UI updates
-    requestUIUpdate: optional(null)
+    requestUIUpdate: optional(null),
+    // Task search visibility
+    updateSearchVisibility: optional(null),
+    getTaskCount: optional(null)
 });
 
 // Late-binding deps via Proxy
@@ -198,6 +201,10 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         });
 
         console.log('Task creation completed (Schema 2.5)');
+
+        // Update search visibility after adding task
+        _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
+
         return result;
 
     } catch (error) {
@@ -349,6 +356,9 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
                         completeAllButton: true,
                         arrows: true
                     });
+
+                    // Update search visibility after deleting task
+                    _deps.updateSearchVisibility?.(_deps.getTaskCount?.() ?? 0);
                 } else {
                     console.warn('⚠️ AppState not ready for task deletion - state may be lost');
                     _deps.showNotification?.('Could not delete task - please try again', 'warning');

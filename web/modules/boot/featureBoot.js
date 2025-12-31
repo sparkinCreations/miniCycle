@@ -218,7 +218,6 @@ export async function bootFeatures(deps, coreResult) {
     // =========================================================================
     // LOAD TASK SEARCH MODULE
     // =========================================================================
-    console.log('🔍 About to load TaskSearch module...');
     try {
       const taskSearchMod = await import(withV('../ui/taskSearch.js'));
       deps.ui.initTaskSearch = taskSearchMod.initTaskSearch;
@@ -226,19 +225,23 @@ export async function bootFeatures(deps, coreResult) {
       deps.ui.resetSearch = taskSearchMod.resetSearch;
 
       // Inject into TaskRenderer for visibility updates on render
-      console.log('🔍 TaskSearch: Checking injection path...', {
-        hasTaskDeps: !!deps.task,
-        hasTaskDOMManager: !!deps.task?.taskDOMManager,
-        hasRenderer: !!deps.task?.taskDOMManager?.renderer,
-        hasInjectDependency: typeof deps.task?.taskDOMManager?.renderer?.injectDependency
-      });
-
       if (deps.task?.taskDOMManager?.renderer?.injectDependency) {
         deps.task.taskDOMManager.renderer.injectDependency('updateSearchVisibility', taskSearchMod.updateSearchVisibility);
-        console.log('✅ TaskSearch: Injected updateSearchVisibility into TaskRenderer');
-      } else {
-        console.warn('⚠️ TaskSearch: Could not inject - renderer not available');
       }
+
+      // Also inject into routineLoader for boot-time rendering
+      if (features.modules.routineLoader?.setRoutineLoaderDependencies) {
+        features.modules.routineLoader.setRoutineLoaderDependencies({
+          updateSearchVisibility: taskSearchMod.updateSearchVisibility
+        });
+      }
+
+      // Inject into taskCRUD for add/delete visibility updates
+      const { setTaskCRUDDependencies } = await import(withV('../task/taskCRUD.js'));
+      setTaskCRUDDependencies({
+        updateSearchVisibility: taskSearchMod.updateSearchVisibility,
+        getTaskCount: taskSearchMod.getTaskCount
+      });
 
       console.log('✅ TaskSearch module loaded');
     } catch (err) {

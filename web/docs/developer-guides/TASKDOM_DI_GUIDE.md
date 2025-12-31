@@ -116,6 +116,32 @@ After `initTaskDOMManager()` runs, the manager has these sub-modules:
 
 ---
 
+## Two Task Rendering Paths (Important!)
+
+Tasks are rendered through TWO separate code paths:
+
+| Path | When Used | Location |
+|------|-----------|----------|
+| `renderTasksToDOM()` | Boot-time, routine switching | `routineLoader.js` |
+| `TaskRenderer.renderTasks()` | Undo/redo, state refresh, runtime updates | `taskRenderer.js` |
+
+**Why this matters:** If you need to hook into "after tasks are rendered" (e.g., updating UI based on task count), you must inject your hook into BOTH paths.
+
+**Example - Task Search Visibility:**
+```javascript
+// Hook into routineLoader (boot-time path)
+setRoutineLoaderDependencies({
+    updateSearchVisibility: taskSearchMod.updateSearchVisibility
+});
+
+// Hook into TaskRenderer (runtime path)
+taskDOMManager.renderer.injectDependency('updateSearchVisibility', taskSearchMod.updateSearchVisibility);
+```
+
+**Common Symptom:** Feature works after undo/redo but not on initial load = missing routineLoader hook.
+
+---
+
 ## TaskCore Dependencies
 
 TaskCore receives these injectable dependencies:

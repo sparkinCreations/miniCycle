@@ -152,14 +152,14 @@ web/
 │   ├── task/                        # Task system (7 modules)
 │   │   ├── taskCore.js              # Task CRUD & business logic
 │   │   ├── taskDOM.js               # Task DOM coordination
-│   │   ├── taskRenderer.js          # Task element creation
+│   │   ├── taskRenderer.js          # Task element creation (runtime renders)
 │   │   ├── taskEvents.js            # Event handling
 │   │   ├── taskValidation.js        # Input validation
 │   │   ├── taskUtils.js             # Task utilities
 │   │   └── dragDropManager.js       # State-based drag & drop (v1.606)
 │   │
 │   ├── routine/                     # Routine system (5 modules)
-│   │   ├── routineLoader.js         # Data loading
+│   │   ├── routineLoader.js         # Data loading + boot-time task rendering
 │   │   ├── routineManager.js        # Routine CRUD
 │   │   ├── routineSwitcher.js       # Routine switching
 │   │   ├── modeManager.js           # Auto/Manual/To-Do modes

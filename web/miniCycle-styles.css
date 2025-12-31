@@ -58,7 +58,7 @@ html, body {
 
 #task-view {
     position: fixed;
-    top: 54%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90vw;
@@ -252,10 +252,10 @@ html, body {
     border-radius: 8px;
     padding: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    margin-bottom: 15px;
-    max-width: 450px;
-    width : 82%;
+    margin-bottom: 8px;  /* Space between input and title */
+    width: 100%;
     height: 30px;
+    flex-shrink: 0;  /* Don't shrink - task list shrinks instead */
 }
 
 input[type="text"] {
@@ -316,13 +316,14 @@ button:not(.dot):hover {
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: center;  /* Center in flex column parent */
     background: rgb(255, 255, 255);
     border-radius: 8px;
     padding: 10px 0px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     max-width: 450px;
-    width : 80%;
+    width: 90%;
     height: 25px;
 }
 #taskInput {
@@ -436,20 +437,20 @@ button:not(.dot):hover {
     letter-spacing: 0.5px;
     color: rgba(43, 43, 43, 0.783);
     background: none;
-    background-color: rgba(255, 255, 255, 0.4); /* Solid background to separate it from tasks */
+    background-color: rgba(255, 255, 255, 0.4);
     padding: 8px 10px;
     border: none;
     outline: none;
     cursor: text;
     top: 0;
-    border-radius: 8px 8px 0 0; /* Rounded only on top corners */
+    border-radius: 8px 8px 0 0;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
     padding-top: 5px;
     padding-bottom: 5px;
-    width: 100%; /* Adjust width dynamically */
-    max-width: 400px;
-    z-index:  1;
+    width: 100%;
+    /* max-width inherited from .task-card */
+    z-index: 1;
 }
 
 
@@ -490,7 +491,8 @@ button:not(.dot):hover {
 
 /* ✅ Task List Container - content-responsive height */
 .task-list-container {
-    max-width: 400px;
+    position: relative;
+    /* max-width inherited from .task-card */
     width: 100%;
     /* ✅ Remove fixed height - use auto with constraints */
     height: auto;
@@ -527,72 +529,127 @@ padding: 0;
 margin: 0;
 }
 
-/* Task Search - Understated inline search */
+/* Unified card containing title and task list */
+.task-card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    max-height: calc(100vh - 320px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Wider task card on desktop */
+@media (min-width: 1024px) {
+    .task-card {
+        max-width: 600px;
+    }
+
+    #task-view {
+        max-width: 600px;
+    }
+
+    .progress-container {
+        max-width: 600px;
+    }
+
+    /* Narrower input bars on desktop, centered */
+    .task-input {
+        max-width: 450px;
+        align-self: center;
+    }
+
+    .task-search-input-row {
+        max-width: 300px;
+        margin: 0 auto 8px auto;
+    }
+
+    /* Push Add button to the right */
+    #addTaskBtn {
+        margin-left: auto;
+        margin-right: 0px;
+    }
+}
+
+/* Title row wrapper - keeps title and search icon aligned */
+.title-row {
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+/* Task Search - Icon in title bar area, right side */
 .task-search-container {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding: 4px 10px;
-    gap: 6px;
+    padding: 0;
+    z-index: 10;
 }
 
 .task-search-btn {
     background: transparent;
     border: none;
-    color: rgba(44, 50, 112, 0.4);
+    color: rgba(40, 40, 40, 0.7);
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition: color 0.2s ease;
 }
 
 .task-search-btn:hover {
-    color: rgba(44, 50, 112, 0.7);
-    background: rgba(255, 255, 255, 0.3);
+    color: rgba(60, 60, 60, 0.8);
 }
 
 .task-search-btn.active {
-    color: rgb(44, 50, 112);
+    color: rgba(60, 60, 60, 0.9);
+}
+
+/* Search input row - appears at top of task list */
+.task-search-input-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
 }
 
 .task-search-input {
     border: none;
-    background: rgba(255, 255, 255, 0.5);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    color: rgb(44, 50, 112);
-    width: 120px;
+    background: transparent;
+    padding: 4px 0;
+    font-size: 13px;
+    color: #333;
+    width: 140px;
     outline: none;
-    transition: width 0.2s ease, background 0.2s ease;
-}
-
-.task-search-input:focus {
-    background: rgba(255, 255, 255, 0.7);
-    width: 150px;
 }
 
 .task-search-input::placeholder {
-    color: rgba(44, 50, 112, 0.5);
+    color: rgba(60, 60, 60, 0.5);
 }
 
 .task-search-clear {
     background: transparent;
     border: none;
-    color: rgba(44, 50, 112, 0.5);
+    color: rgba(60, 60, 60, 0.4);
     cursor: pointer;
-    padding: 2px 6px;
-    font-size: 14px;
+    padding: 2px 4px;
+    font-size: 16px;
     line-height: 1;
     border-radius: 4px;
     transition: color 0.2s ease;
 }
 
 .task-search-clear:hover {
-    color: rgb(44, 50, 112);
+    color: rgba(60, 60, 60, 0.8);
 }
 
 /* Empty State */
@@ -1730,40 +1787,7 @@ body.theme-golden-glow .mode-selector:hover {
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Dark mode: Task Search */
-    body.dark-mode .task-search-btn {
-        color: rgba(255, 255, 255, 0.4);
-    }
-
-    body.dark-mode .task-search-btn:hover {
-        color: rgba(255, 255, 255, 0.7);
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    body.dark-mode .task-search-btn.active {
-        color: #f0f0f0;
-    }
-
-    body.dark-mode .task-search-input {
-        background: rgba(255, 255, 255, 0.1);
-        color: #f0f0f0;
-    }
-
-    body.dark-mode .task-search-input:focus {
-        background: rgba(255, 255, 255, 0.15);
-    }
-
-    body.dark-mode .task-search-input::placeholder {
-        color: rgba(255, 255, 255, 0.5);
-    }
-
-    body.dark-mode .task-search-clear {
-        color: rgba(255, 255, 255, 0.5);
-    }
-
-    body.dark-mode .task-search-clear:hover {
-        color: #f0f0f0;
-    }
+    /* Dark mode: Task Search - already dark, no changes needed */
 }
 
 /* 🌊 Dark Ocean Theme: Mode Selector */
