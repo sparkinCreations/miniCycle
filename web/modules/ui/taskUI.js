@@ -334,11 +334,14 @@ export function checkCompleteAllButton() {
     }
 
     const isAutoMode = document.body.classList.contains('auto-cycle-mode');
+    const taskView = document.getElementById('task-view');
 
     if (taskList.children.length > 0 && !isAutoMode) {
         completeAllButton.style.display = "block";
+        taskView?.classList.add('complete-btn-visible');
     } else {
         completeAllButton.style.display = "none";
+        taskView?.classList.remove('complete-btn-visible');
     }
 }
 
