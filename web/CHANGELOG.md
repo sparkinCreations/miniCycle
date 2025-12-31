@@ -1,3 +1,8 @@
+## [1.612] - 2025-12-31
+- feat: enhance task view responsiveness with dynamic height adjustments and visibility classes
+- chore: update version to 1.611 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.611] - 2025-12-31
 - feat: enhance task search functionality with dual rendering paths and visibility updates
 - chore: update version to 1.610 in manifest, HTML, and version files; enhance changelog
