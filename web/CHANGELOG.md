@@ -1,3 +1,8 @@
+## [1.614] - 2025-12-31
+- feat: adjust mobile task card height constraints for improved visibility
+- chore: update version to 1.613 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.613] - 2025-12-31
 - feat: adjust mobile task card height constraints for improved layout
 - chore: update version to 1.612 in manifest, HTML, and version files; enhance changelog
