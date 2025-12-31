@@ -572,24 +572,30 @@ margin: 0;
     position: relative;
     width: 100%;
     max-width: 400px;
-    max-height: calc(100vh - 320px);
     display: flex;
     flex-direction: column;
 }
 
-/* Shorter task card when Complete button is visible */
-#task-view.complete-btn-visible .task-card {
-    max-height: calc(100vh - 380px);
-}
+/* Desktop-only max-height rules (mobile rules are in @media max-width: 768px) */
+@media (min-width: 769px) {
+    .task-card {
+        max-height: calc(100vh - 320px);
+    }
 
-/* Shorter task card when mode description is visible in help window */
-#task-view.mode-description-visible .task-card {
-    max-height: calc(100vh - 380px);
-}
+    /* Shorter task card when Complete button is visible */
+    #task-view.complete-btn-visible .task-card {
+        max-height: calc(100vh - 380px);
+    }
 
-/* Even shorter when both Complete button AND mode description are visible */
-#task-view.complete-btn-visible.mode-description-visible .task-card {
-    max-height: calc(100vh - 430px);
+    /* Shorter task card when mode description is visible in help window */
+    #task-view.mode-description-visible .task-card {
+        max-height: calc(100vh - 380px);
+    }
+
+    /* Even shorter when both Complete button AND mode description are visible */
+    #task-view.complete-btn-visible.mode-description-visible .task-card {
+        max-height: calc(100vh - 430px);
+    }
 }
 
 /* Wider task card on desktop */
