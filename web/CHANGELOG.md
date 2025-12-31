@@ -1,3 +1,8 @@
+## [1.611] - 2025-12-31
+- feat: enhance task search functionality with dual rendering paths and visibility updates
+- chore: update version to 1.610 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.610] - 2025-12-30
 - feat: implement task search functionality with inline filtering and visibility control
 - chore: update version to 1.609 in manifest, HTML, and version files; enhance changelog
