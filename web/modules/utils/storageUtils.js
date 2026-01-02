@@ -1,8 +1,38 @@
 /**
- * Storage Utilities
- * Calculates localStorage usage and provides storage information
+ * Storage Utilities Module
+ *
+ * Manages localStorage quota detection, usage tracking, and storage checks.
+ * Provides utilities for estimating object sizes and monitoring quota.
+ *
+ * Features:
+ * - Automatic quota detection with caching
+ * - Storage usage calculation and display
+ * - Size estimation for objects/tasks
+ * - Pre-add storage checks
+ * - Quota warning notifications
  *
  * @module utils/storageUtils
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ */
+
+/**
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} StorageCheck
+ * @property {boolean} allowed - Whether operation is allowed
+ * @property {number} [shortfall] - Bytes short if not allowed
+ * @property {number} available - Available bytes
+ * @property {number} required - Required bytes
+ */
+
+/**
+ * @typedef {Object} StorageInfo
+ * @property {number} usedBytes - Bytes currently used
+ * @property {number} quotaBytes - Total quota bytes
+ * @property {number} availableBytes - Available bytes
+ * @property {number} percentUsed - Usage percentage
  */
 
 // ============================================================================

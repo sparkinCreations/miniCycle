@@ -112,6 +112,7 @@ async function loadSubModules(version) {
         // Cycle Import
         setCycleImportManagerDependencies: cycleImportModule.setCycleImportManagerDependencies,
         setupImportButtons: cycleImportModule.setupImportButtons,
+        setupDragDropImport: cycleImportModule.setupDragDropImport,
 
         // Backup/Restore
         setBackupRestoreManagerDependencies: backupRestoreModule.setBackupRestoreManagerDependencies,
@@ -228,6 +229,7 @@ export class SettingsManager {
             _subModules.setupResetRecurringButton();
             _subModules.setupExportButton();
             _subModules.setupImportButtons();
+            _subModules.setupDragDropImport();
             _subModules.setupBackupButton();
             _subModules.setupRestoreButton();
             _subModules.setupFactoryResetButton();

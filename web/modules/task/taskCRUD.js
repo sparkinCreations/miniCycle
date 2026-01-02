@@ -1,10 +1,43 @@
 /**
  * Task CRUD Operations Module (DI-Pure)
- * Handles Create, Read, Update, Delete operations for tasks
  *
- * Extracted from taskCore.js for better maintainability
+ * Handles Create, Read, Update, Delete operations for tasks.
+ * Extracted from taskCore.js for better maintainability.
+ *
+ * Features:
+ * - Task creation with validation and storage quota checks
+ * - Task editing with undo support
+ * - Task deletion with confirmation
+ * - Priority toggling
  *
  * @module task/taskCRUD
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} AddTaskOptions
+ * @property {boolean} [completed=false] - Initial completion state
+ * @property {boolean} [shouldSave=true] - Whether to persist immediately
+ * @property {string|null} [dueDate=null] - Due date in ISO format
+ * @property {boolean|null} [highPriority=null] - Priority flag (null uses default)
+ * @property {boolean} [isLoading=false] - Loading from storage (skip animations/limits)
+ * @property {boolean} [remindersEnabled=false] - Enable reminders for task
+ * @property {boolean} [recurring=false] - Is this a recurring task
+ * @property {string|null} [taskId=null] - Specific ID to use (for recurring)
+ * @property {RecurringSettings} [recurringSettings={}] - Recurring configuration
+ * @property {boolean} [deleteWhenComplete] - Delete on completion flag
+ * @property {Object} [deleteWhenCompleteSettings] - Delete settings object
+ * @property {boolean} [deferAppend=false] - Defer DOM append (for batch operations)
+ * @property {HTMLElement|null} [targetContainer=null] - Custom container element
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -47,6 +80,13 @@ const _deps = new Proxy({}, {
 /**
  * Set dependencies for TaskCRUD
  * @param {Object} dependencies - Dependencies to inject
+ * @param {MiniCycleState} [dependencies.AppState] - State manager
+ * @param {Function} [dependencies.showNotification] - Notification function
+ * @param {Function} [dependencies.sanitizeInput] - Input sanitization
+ * @param {Function} [dependencies.showPromptModal] - Prompt modal function
+ * @param {Function} [dependencies.showConfirmationModal] - Confirmation modal function
+ * @param {Function} [dependencies.captureStateSnapshot] - Undo snapshot capture
+ * @param {Function} [dependencies.requestUIUpdate] - UI Orchestrator update function
  */
 export function setTaskCRUDDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -58,7 +98,10 @@ export function setTaskCRUDDependencies(dependencies) {
 // ============================================================================
 
 /**
- * Wait for core with timeout (for test environment compatibility)
+ * Wait for core initialization with timeout
+ * Ensures compatibility with test environments
+ * @returns {Promise<void>}
+ * @private
  */
 async function waitForCoreWithTimeout() {
     try {
@@ -73,6 +116,12 @@ async function waitForCoreWithTimeout() {
 
 /**
  * Fallback prompt modal using browser prompt
+ * Used when showPromptModal dependency is not available
+ * @param {Object} config - Modal configuration
+ * @param {string} config.message - Prompt message
+ * @param {string} [config.defaultValue] - Default input value
+ * @param {Function} [config.callback] - Callback with result
+ * @private
  */
 function fallbackPromptModal(config) {
     const result = prompt(config.message, config.defaultValue || '');
@@ -83,6 +132,11 @@ function fallbackPromptModal(config) {
 
 /**
  * Fallback confirmation modal using browser confirm
+ * Used when showConfirmationModal dependency is not available
+ * @param {Object} config - Modal configuration
+ * @param {string} config.message - Confirmation message
+ * @param {Function} [config.callback] - Callback with boolean result
+ * @private
  */
 function fallbackConfirmModal(config) {
     const result = confirm(config.message);
@@ -98,9 +152,20 @@ function fallbackConfirmModal(config) {
 
 /**
  * Add a new task to the current cycle
+ *
+ * Handles:
+ * - Input validation and sanitization
+ * - Task limit checks (max per cycle)
+ * - Storage quota verification
+ * - DOM element creation
+ * - State persistence
+ *
  * @param {string} taskText - The text content of the task
- * @param {Object} options - Task options
- * @param {Object} deps - Resolved dependencies
+ * @param {AddTaskOptions} [options={}] - Task creation options
+ * @param {Object} [deps={}] - Dependency overrides
+ * @returns {Promise<Task|undefined>} Created task or undefined on failure
+ * @example
+ * await addTaskImpl('Buy groceries', { highPriority: true }, deps);
  */
 export async function addTaskImpl(taskText, options = {}, deps = {}) {
     const {
@@ -215,8 +280,13 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
 
 /**
  * Edit an existing task's text
- * @param {HTMLElement} taskItem - The task DOM element
- * @param {Object} deps - Resolved dependencies
+ *
+ * Shows a prompt modal for the user to enter new task text.
+ * Captures undo snapshot before making changes.
+ *
+ * @param {HTMLElement} taskItem - The task DOM element to edit
+ * @param {Object} [deps={}] - Dependency overrides
+ * @returns {Promise<void>}
  */
 export async function editTaskImpl(taskItem, deps = {}) {
     try {
@@ -290,8 +360,14 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
 /**
  * Delete a task with confirmation
- * @param {HTMLElement} taskItem - The task DOM element
- * @param {Object} deps - Resolved dependencies
+ *
+ * Shows a confirmation modal before deletion.
+ * Also removes any associated recurring template.
+ * Captures undo snapshot before deletion.
+ *
+ * @param {HTMLElement} taskItem - The task DOM element to delete
+ * @param {Object} [deps={}] - Dependency overrides
+ * @returns {Promise<void>}
  */
 export async function deleteTaskImpl(taskItem, deps = {}) {
     try {
@@ -373,9 +449,14 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
 }
 
 /**
- * Toggle task priority (high/normal)
+ * Toggle task priority between high and normal
+ *
+ * Reads current priority from AppState (not DOM) to ensure accuracy.
+ * Updates both DOM and state. Captures undo snapshot before change.
+ *
  * @param {HTMLElement} taskItem - The task DOM element
- * @param {Object} deps - Resolved dependencies
+ * @param {Object} [deps={}] - Dependency overrides
+ * @returns {Promise<void>}
  */
 export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
     try {

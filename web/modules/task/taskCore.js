@@ -1,17 +1,43 @@
 /**
  * miniCycle Task Core Module (DI-Pure)
- * Main orchestrator for task operations
  *
- * This module coordinates task functionality by delegating to focused sub-modules:
+ * Main orchestrator for task operations. Coordinates task functionality
+ * by delegating to focused sub-modules:
  * - taskCRUD.js - Create, Read, Update, Delete operations
  * - taskCompletion.js - Completion state and ordering
  * - taskCycleReset.js - Cycle reset and complete-all operations
  *
- * NO window.* globals - all dependencies must be injected
- * NO legacy fallbacks - strict DI only
- * Uses dynamic versioned imports to avoid duplicate module loading
+ * Architecture:
+ * - NO window.* globals - all dependencies must be injected
+ * - NO legacy fallbacks - strict DI only
+ * - Uses dynamic versioned imports to avoid duplicate module loading
  *
  * @module task/taskCore
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} TaskCoreAddOptions
+ * @property {boolean} [completed=false] - Initial completion state
+ * @property {boolean} [shouldSave=true] - Whether to persist immediately
+ * @property {string|null} [dueDate=null] - Due date in ISO format
+ * @property {boolean} [highPriority=false] - Priority flag
+ * @property {boolean} [isLoading=false] - Loading from storage (skip animations)
+ * @property {boolean} [remindersEnabled=false] - Enable reminders
+ * @property {boolean} [recurring=false] - Is recurring task
+ * @property {string|null} [taskId=null] - Specific ID (for recurring)
+ * @property {Object} [recurringSettings={}] - Recurring configuration
+ * @property {boolean} [deleteWhenComplete] - Delete on completion flag
+ * @property {boolean} [deferAppend=false] - Defer DOM append
+ * @property {HTMLElement|null} [targetContainer=null] - Custom container
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -140,6 +166,10 @@ function wireSubModuleDependencies(dependencies) {
  * Can be called before OR after initTaskCore.
  *
  * @param {Object} dependencies - Dependencies to inject
+ * @param {MiniCycleState} [dependencies.AppState] - State manager
+ * @param {Function} [dependencies.showNotification] - Notification function
+ * @param {Function} [dependencies.sanitizeInput] - Input sanitization
+ * @param {Object} [dependencies.AppMeta] - App metadata with version
  */
 export function setTaskCoreDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -166,7 +196,21 @@ export function setTaskCoreDependencies(dependencies) {
 // TASK CORE CLASS
 // ============================================================================
 
+/**
+ * Main task operations coordinator
+ *
+ * Delegates to specialized sub-modules for actual implementation:
+ * - taskCRUD.js for add/edit/delete
+ * - taskCompletion.js for completion handling
+ * - taskCycleReset.js for cycle reset operations
+ *
+ * @class TaskCore
+ */
 export class TaskCore {
+    /**
+     * Create TaskCore instance
+     * @param {Object} [dependencies={}] - Dependency overrides
+     */
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
         const resolvedDeps = di.resolve(dependencies);
@@ -255,6 +299,8 @@ export class TaskCore {
 
     /**
      * Initialize task core system
+     * Loads sub-modules and wires dependencies
+     * @returns {Promise<void>}
      */
     async init() {
         console.log('Initializing task core system...');
@@ -334,6 +380,15 @@ export class TaskCore {
     // CRUD OPERATIONS (delegated to taskCRUD.js)
     // ========================================================================
 
+    /**
+     * Add a new task to the active cycle
+     * @param {string} taskText - Task description
+     * @param {TaskCoreAddOptions} [options={}] - Task options
+     * @returns {Promise<Task|undefined>} Created task or undefined if failed
+     * @example
+     * await taskCore.addTask('Buy groceries');
+     * await taskCore.addTask('Important meeting', { highPriority: true });
+     */
     async addTask(taskText, options = {}) {
         if (!_subModules?.addTaskImpl) {
             console.warn('TaskCore: addTaskImpl not loaded');
@@ -342,6 +397,11 @@ export class TaskCore {
         return _subModules.addTaskImpl(taskText, options, this.deps);
     }
 
+    /**
+     * Edit an existing task (shows prompt modal)
+     * @param {HTMLElement} taskItem - Task DOM element
+     * @returns {Promise<void>}
+     */
     async editTask(taskItem) {
         if (!_subModules?.editTaskImpl) {
             console.warn('TaskCore: editTaskImpl not loaded');
@@ -350,6 +410,11 @@ export class TaskCore {
         return _subModules.editTaskImpl(taskItem, this.deps);
     }
 
+    /**
+     * Delete a task (shows confirmation modal)
+     * @param {HTMLElement} taskItem - Task DOM element
+     * @returns {Promise<void>}
+     */
     async deleteTask(taskItem) {
         if (!_subModules?.deleteTaskImpl) {
             console.warn('TaskCore: deleteTaskImpl not loaded');
@@ -358,6 +423,11 @@ export class TaskCore {
         return _subModules.deleteTaskImpl(taskItem, this.deps);
     }
 
+    /**
+     * Toggle high priority flag on a task
+     * @param {HTMLElement} taskItem - Task DOM element
+     * @returns {Promise<void>}
+     */
     async toggleTaskPriority(taskItem) {
         if (!_subModules?.toggleTaskPriorityImpl) {
             console.warn('TaskCore: toggleTaskPriorityImpl not loaded');
@@ -370,6 +440,12 @@ export class TaskCore {
     // COMPLETION OPERATIONS (delegated to taskCompletion.js)
     // ========================================================================
 
+    /**
+     * Handle task completion checkbox change
+     * Updates state, reorders tasks, and triggers UI updates
+     * @param {HTMLInputElement} checkbox - Task checkbox element
+     * @returns {Promise<void>}
+     */
     async handleTaskCompletionChange(checkbox) {
         if (!_subModules?.handleTaskCompletionChangeImpl) {
             console.warn('TaskCore: handleTaskCompletionChangeImpl not loaded');
@@ -378,6 +454,11 @@ export class TaskCore {
         return _subModules.handleTaskCompletionChangeImpl(checkbox, this.deps);
     }
 
+    /**
+     * Save current task order to state
+     * Called after drag-drop reordering
+     * @returns {Promise<void>}
+     */
     async saveCurrentTaskOrder() {
         if (!_subModules?.saveCurrentTaskOrderImpl) {
             console.warn('TaskCore: saveCurrentTaskOrderImpl not loaded');
@@ -386,6 +467,12 @@ export class TaskCore {
         return _subModules.saveCurrentTaskOrderImpl(this.deps);
     }
 
+    /**
+     * Save task to Schema 2.5 format
+     * @param {string} activeCycle - Active cycle ID
+     * @param {Cycle} currentCycle - Current cycle data
+     * @returns {void}
+     */
     saveTaskToSchema25(activeCycle, currentCycle) {
         if (!_subModules?.saveTaskToSchema25Impl) {
             console.warn('TaskCore: saveTaskToSchema25Impl not loaded');
@@ -398,6 +485,11 @@ export class TaskCore {
     // RESET OPERATIONS (delegated to taskCycleReset.js)
     // ========================================================================
 
+    /**
+     * Reset all tasks in current cycle (uncheck all)
+     * Used when cycle is completed and auto-reset is enabled
+     * @returns {Promise<void>}
+     */
     async resetTasks() {
         if (_subModules?.isResetInProgress?.()) {
             console.log('Reset already in progress, skipping');
@@ -410,6 +502,11 @@ export class TaskCore {
         return _subModules.resetTasksImpl(this.deps);
     }
 
+    /**
+     * Handle "Complete All" button click
+     * Completes remaining tasks and triggers cycle completion
+     * @returns {Promise<void>}
+     */
     async handleCompleteAllTasks() {
         if (!_subModules?.handleCompleteAllTasksImpl) {
             console.warn('TaskCore: handleCompleteAllTasksImpl not loaded');
@@ -418,7 +515,14 @@ export class TaskCore {
         return _subModules.handleCompleteAllTasksImpl(() => this.resetTasks(), this.deps);
     }
 
-    // Internal helpers exposed for backwards compatibility
+    /**
+     * Delete completed tasks from cycle
+     * @param {string} activeCycleId - Cycle ID
+     * @param {Cycle} cycleData - Cycle data
+     * @param {HTMLElement} taskList - Task list container
+     * @returns {Promise<void>}
+     * @private
+     */
     async _deleteCompletedTasks(activeCycleId, cycleData, taskList) {
         if (!_subModules?.deleteCompletedTasksImpl) {
             console.warn('TaskCore: deleteCompletedTasksImpl not loaded');
@@ -427,6 +531,13 @@ export class TaskCore {
         return _subModules.deleteCompletedTasksImpl(activeCycleId, cycleData, taskList, this.deps);
     }
 
+    /**
+     * Mark all tasks as complete
+     * @param {Cycle} cycleData - Cycle data
+     * @param {HTMLElement} taskList - Task list container
+     * @returns {void}
+     * @private
+     */
     _markAllTasksComplete(cycleData, taskList) {
         if (!_subModules?.markAllTasksCompleteImpl) {
             console.warn('TaskCore: markAllTasksCompleteImpl not loaded');
@@ -468,6 +579,12 @@ export async function initTaskCore(dependencies = {}) {
 // WRAPPER FUNCTIONS (for cross-module compatibility)
 // ============================================================================
 
+/**
+ * Add a new task (wrapper function)
+ * @param {string} taskText - Task description
+ * @param {TaskCoreAddOptions} [options={}] - Task options
+ * @returns {Promise<Task|undefined>} Created task
+ */
 function addTask(taskText, options = {}) {
     if (!taskCoreInstance) {
         console.warn('TaskCore not initialized');
@@ -476,41 +593,79 @@ function addTask(taskText, options = {}) {
     return taskCoreInstance.addTask(taskText, options);
 }
 
+/**
+ * Edit an existing task (wrapper function)
+ * @param {HTMLElement} taskItem - Task DOM element
+ * @returns {Promise<void>|undefined}
+ */
 function editTask(taskItem) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.editTask(taskItem);
 }
 
+/**
+ * Delete a task (wrapper function)
+ * @param {HTMLElement} taskItem - Task DOM element
+ * @returns {Promise<void>|undefined}
+ */
 function deleteTask(taskItem) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.deleteTask(taskItem);
 }
 
+/**
+ * Toggle task priority (wrapper function)
+ * @param {HTMLElement} taskItem - Task DOM element
+ * @returns {Promise<void>|undefined}
+ */
 function toggleTaskPriority(taskItem) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.toggleTaskPriority(taskItem);
 }
 
+/**
+ * Handle task completion change (wrapper function)
+ * @param {HTMLInputElement} checkbox - Task checkbox
+ * @returns {Promise<void>|undefined}
+ */
 function handleTaskCompletionChange(checkbox) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.handleTaskCompletionChange(checkbox);
 }
 
+/**
+ * Save current task order (wrapper function)
+ * @returns {Promise<void>|undefined}
+ */
 function saveCurrentTaskOrder() {
     if (!taskCoreInstance) return;
     return taskCoreInstance.saveCurrentTaskOrder();
 }
 
+/**
+ * Save task to Schema 2.5 (wrapper function)
+ * @param {string} cycleId - Cycle ID
+ * @param {Cycle} cycleData - Cycle data
+ * @returns {void}
+ */
 function saveTaskToSchema25(cycleId, cycleData) {
     if (!taskCoreInstance) return;
     return taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
 }
 
+/**
+ * Reset all tasks (wrapper function)
+ * @returns {Promise<void>|undefined}
+ */
 function resetTasks() {
     if (!taskCoreInstance) return;
     return taskCoreInstance.resetTasks();
 }
 
+/**
+ * Handle complete all tasks (wrapper function)
+ * @returns {Promise<void>|undefined}
+ */
 function handleCompleteAllTasks() {
     if (!taskCoreInstance) return;
     return taskCoreInstance.handleCompleteAllTasks();

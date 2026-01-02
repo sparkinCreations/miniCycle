@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "checkJs": false,
+    "strict": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@core/*": ["modules/core/*"],
+      "@task/*": ["modules/task/*"],
+      "@ui/*": ["modules/ui/*"]
+    }
+  },
+  "include": [
+    "modules/**/*.js",
+    "*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "lite",
+    "docs/archive"
+  ]
+}

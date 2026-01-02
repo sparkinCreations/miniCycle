@@ -1,16 +1,38 @@
 /**
  * miniCycle Recurring Tasks - Core Coordinator
  *
- * Pattern: Strict Dependency Injection
- * Purpose: Coordinates recurring task functionality across sub-modules
+ * Coordinates recurring task functionality across sub-modules.
+ * Dynamically loads sub-modules with version cache-busting.
  *
- * This module:
- * - Sets up DI for all recurring sub-modules
- * - Dynamically loads sub-modules with version cache-busting
- * - Re-exports all public APIs from sub-modules
+ * Sub-modules:
+ * - recurringDateUtils.js - Date manipulation utilities
+ * - recurringCalculators.js - Next occurrence calculations
+ * - recurringMatcher.js - Pattern matching for recurrence
+ * - recurringSettings.js - Settings normalization
+ * - recurringWatcher.js - Background watcher for activations
+ * - recurringActivation.js - Task activation/deactivation
  *
- * @module recurringCore
- * @version 2.0.0 - Split into focused sub-modules
+ * @module recurring/recurringCore
+ * @version 2.0.0
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} RecurringCoreExports
+ * @property {Function} convert12To24 - Convert 12h to 24h time
+ * @property {Function} parseDateAsLocal - Parse date as local timezone
+ * @property {Function} calculateNextOccurrence - Calculate next occurrence
+ * @property {Function} shouldTaskRecurNow - Check if task should recur
+ * @property {Function} normalizeRecurringSettings - Normalize settings
+ * @property {Function} setupRecurringWatcher - Start the watcher
+ * @property {Function} handleRecurringTaskActivation - Activate recurring task
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -222,7 +244,12 @@ async function loadSubModules(version) {
 
 /**
  * Configure dependencies for all recurring modules
+ * Loads sub-modules and propagates dependencies to them
  * @param {Object} overrides - Dependency overrides
+ * @param {MiniCycleState} [overrides.AppState] - State manager
+ * @param {Function} [overrides.showNotification] - Notification function
+ * @param {Object} [overrides.AppMeta] - App metadata with version
+ * @returns {Promise<RecurringCoreExports>} Loaded function exports
  */
 export async function setRecurringCoreDependencies(overrides = {}) {
     di.setDependencies(overrides);
@@ -303,6 +330,7 @@ export async function setRecurringCoreDependencies(overrides = {}) {
 
 /**
  * Get resolved dependencies (for sub-modules that need access)
+ * @returns {Object} Resolved dependencies object
  */
 export function getRecurringDeps() {
     return di.resolve();
@@ -310,6 +338,7 @@ export function getRecurringDeps() {
 
 /**
  * Check if sub-modules are loaded
+ * @returns {boolean} True if all sub-modules are loaded
  */
 export function isSubModulesLoaded() {
     return _subModulesLoaded;

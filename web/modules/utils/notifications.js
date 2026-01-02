@@ -1,24 +1,37 @@
 /**
- * 🔔 MiniCycle Notifications Module (Schema 2.5 only)
+ * MiniCycle Notifications Module (Schema 2.5)
  *
- * A comprehensive notification system with:
+ * Comprehensive notification system with toast messages,
+ * educational tips, and modal dialogs.
+ *
+ * Features:
+ * - Toast notifications (info, success, warning, error)
  * - Drag-enabled position persistence
- * - Educational tips management
+ * - Educational tips with dismissal tracking
  * - Recurring task notifications
  * - Modal dialogs (confirmation & prompt)
  * - Schema 2.5 data integration
  *
- * Pattern: Simple Instance ✨
- * - Single responsibility (notifications)
- * - Required dependencies via diBase.js
- *
- * Usage:
- *   import { MiniCycleNotifications } from './modules/utils/notifications.js';
- *   const notifications = new MiniCycleNotifications();
- *   notifications.show("Hello World!", "success", 3000);
- *
- * @module notifications
- * @requires AppInit (for initialization coordination)
+ * @module utils/notifications
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {'info'|'success'|'warning'|'error'|'show'} NotificationType
+ */
+
+/**
+ * @typedef {Object} NotificationOptions
+ * @property {string} message - Message to display
+ * @property {NotificationType} [type='info'] - Notification type
+ * @property {number} [duration=3000] - Display duration in ms
+ * @property {string} [tip] - Optional educational tip
+ * @property {string} [tipId] - Tip ID for dismissal tracking
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

@@ -1,8 +1,24 @@
 /**
- * 🔄 miniCycle Routine Switcher
- * Manages routine switching UI and operations
+ * miniCycle Routine Switcher
  *
- * @module routineSwitcher
+ * Manages routine/cycle switching UI and operations.
+ * Handles the modal for switching between cycles, renaming, and deleting.
+ *
+ * Features:
+ * - Cycle switching modal
+ * - Cycle renaming with validation
+ * - Cycle deletion with confirmation
+ * - Storage usage display per cycle
+ * - Undo/redo stack management on switch
+ *
+ * @module routine/routineSwitcher
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ */
+
+/**
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
