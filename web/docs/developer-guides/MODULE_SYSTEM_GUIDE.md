@@ -187,11 +187,14 @@ const taskCore = await initTaskCore({
 
 **Key Difference:** Local fallbacks (like inline JSON.parse) instead of `|| window.*`.
 
-**Current DI-Pure Modules:**
-- `modules/task/taskDOM.js` - TaskDOMManager
-- `modules/task/taskCore.js` - TaskCore
+**✅ All 89+ Modules Are Now DI-Pure (Dec 2025)**
 
-See [TASKDOM_DI_GUIDE.md](./TASKDOM_DI_GUIDE.md) for usage patterns.
+The DI overhaul is complete. All modules use the DI-Pure pattern with:
+- `createDIModule()` from `diBase.js`
+- `required()` and `optional()` markers
+- Zero `|| window.*` fallbacks
+
+See [DI_PATTERNS.md](./DI_PATTERNS.md) for current best practices.
 
 ---
 

@@ -209,7 +209,7 @@ const tasks = state.data.cycles[activeCycleId].tasks;
 ## What NOT to Do
 
 1. **Don't assume it's a todo app** - Tasks cycle, not delete
-2. **Don't add `window.*` globals** - We have too many already
+2. **Don't add `window.*` globals** - We have zero custom globals, keep it that way
 3. **Don't create new modules without checking existing ones** - Similar code may already exist
 4. **Don't skip tests** - 100% coverage is maintained
 
@@ -217,15 +217,21 @@ const tasks = state.data.cycles[activeCycleId].tasks;
 
 ## Future Direction
 
-### Planned: True Modular Overhaul
+### ✅ Completed: True Modular Overhaul (Dec 2025)
 
-The goal is to transform from global coupling to true dependency injection. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md).
+The DI overhaul is **complete**. miniCycle now uses pure dependency injection with zero `window.*` fallbacks.
 
-**Current state:** DI pattern exists but injects globals
-**Target state:** DI injects actual instances, no global fallbacks
+**Achieved:**
+- Custom DI framework (`diBase.js`) with `required()`, `optional()`, `createDIModule()`
+- Boot orchestrator (`moduleLoader.js`) wires all 89+ modules
+- Zero custom `window.*` globals
+- 1,458+ tests can inject pure mocks
+
+See [DI_PATTERNS.md](./DI_PATTERNS.md) for the current DI architecture.
 
 ### Completed (Historical)
 
+- ✅ **Pure DI system** - Completed Dec 2025
 - ~~Namespace consolidation~~ - Attempted Nov 2025, reverted
 - ~~74.8% line reduction~~ - Completed Oct 2025
 
@@ -253,8 +259,8 @@ The goal is to transform from global coupling to true dependency injection. See 
 - [minicycle-recurring-guide.md](../features/minicycle-recurring-guide.md) - Recurring tasks
 - [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md) - Per-cycle buttons
 
-### Future Work
-- [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) - Architecture improvement plan
+### Completed Plans (Archive)
+- [MODULAR_OVERHAUL_PLAN.md](../archive/MODULAR_OVERHAUL_PLAN.md) - ✅ Completed Dec 2025
 
 ### Archive
 Historical docs moved to `docs/archive/` for reference.
