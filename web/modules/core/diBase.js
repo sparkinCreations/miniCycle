@@ -55,6 +55,11 @@ const OPTIONAL = Symbol('optional');
  * Mark a dependency as required
  * If missing at resolve time, logs a warning (dev) or throws (strict mode)
  * @returns {Object} Required marker
+ * @example
+ * const di = createDIModule('MyModule', {
+ *     AppState: required(),        // Must be injected
+ *     loadData: required()         // Must be injected
+ * });
  */
 export function required() {
     return { [REQUIRED]: true };
@@ -64,6 +69,11 @@ export function required() {
  * Mark a dependency as optional with a default value
  * @param {*} defaultValue - Default value if dependency not provided
  * @returns {Object} Optional marker with default
+ * @example
+ * const di = createDIModule('MyModule', {
+ *     autoSave: optional(() => console.log('autoSave unavailable')),
+ *     debugMode: optional(false)   // Defaults to false if not injected
+ * });
  */
 export function optional(defaultValue = null) {
     return { [OPTIONAL]: true, default: defaultValue };
@@ -199,6 +209,7 @@ export function createDIModule(moduleName, schema = {}, options = {}) {
          *
          * @param {Object} [overrides={}] - Constructor-provided overrides
          * @returns {Object} Resolved dependencies
+         * @throws {Error} If strict mode is enabled and required dependencies are missing
          */
         resolve(overrides = {}) {
             const resolved = {};

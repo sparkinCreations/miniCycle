@@ -12,12 +12,62 @@
  *
  * @module appGlobalState
  * @version 1.0.0
+ * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ */
+
+/**
+ * @typedef {Object} FeatureFlagsType
+ * @property {boolean} recurringEnabled - Whether recurring tasks are enabled
+ * @property {boolean} moveArrowsEnabled - Whether move arrows are shown
+ * @property {boolean} debugMode - Whether debug mode is active
+ */
+
+/**
+ * @typedef {Object} AppGlobalStateType
+ * @property {HTMLElement|null} draggedTask - Currently dragged task element
+ * @property {number|null} logoTimeoutId - Logo animation timeout
+ * @property {number} touchStartTime - Touch start timestamp
+ * @property {boolean} isLongPress - Long press detection flag
+ * @property {number} touchStartY - Touch start Y coordinate
+ * @property {number} touchEndY - Touch end Y coordinate
+ * @property {number|null} holdTimeout - Hold timeout ID
+ * @property {boolean} moved - Whether touch has moved
+ * @property {boolean} isDragging - Active drag operation flag
+ * @property {boolean} rearrangeInitialized - Rearrange mode initialized
+ * @property {HTMLElement|null} lastDraggedOver - Last drag over element
+ * @property {HTMLElement|null} lastRearrangeTarget - Last rearrange target
+ * @property {boolean} hasInteracted - User has interacted with app
+ * @property {number} lastDragOverTime - Last drag over timestamp
+ * @property {number|null} reminderIntervalId - Reminder interval ID
+ * @property {number} timesReminded - Reminder count
+ * @property {Date|null} lastReminderTime - Last reminder timestamp
+ * @property {boolean} isResetting - Cycle reset in progress
+ * @property {Object|null} undoSnapshot - Undo state snapshot
+ * @property {Object|null} redoSnapshot - Redo state snapshot
+ * @property {Array} activeUndoStack - Per-cycle undo stack
+ * @property {Array} activeRedoStack - Per-cycle redo stack
+ * @property {string|null} activeCycleIdForUndo - Cycle ID for undo context
+ * @property {boolean} isSwitchingCycles - Cycle switch in progress
+ * @property {boolean} didDragReorderOccur - Drag reorder occurred
+ * @property {number} lastReorderTime - Last reorder timestamp
+ * @property {boolean} isPerformingUndoRedo - Undo/redo in progress
+ * @property {string|null} lastSnapshotSignature - Last snapshot hash
+ * @property {number} lastSnapshotTs - Last snapshot timestamp
+ * @property {boolean} advancedVisible - Advanced panel visible
+ * @property {boolean} isInitializing - App initialization in progress
+ * @property {boolean} pendingCacheNotification - Cache notification pending
+ * @property {Array} queuedAddTaskCalls - Queued add task calls
+ * @property {boolean} wrappedAppStateUpdate - AppState update wrapped
+ * @property {boolean} useUpdateWrapper - Use update wrapper flag
+ * @property {number|null} bootStartTime - Boot start timestamp
+ * @property {Object|null} recurringModules - Recurring module references
  */
 
 // ============================================================================
 // FEATURE FLAGS
 // ============================================================================
 
+/** @type {FeatureFlagsType} */
 export const FeatureFlags = {
   recurringEnabled: true,
   moveArrowsEnabled: true,
@@ -30,6 +80,7 @@ export const FeatureFlags = {
 // APP GLOBAL STATE
 // ============================================================================
 
+/** @type {AppGlobalStateType} */
 export const AppGlobalState = {
   // Drag & touch state
   draggedTask: null,

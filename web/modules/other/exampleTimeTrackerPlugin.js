@@ -1,14 +1,27 @@
 /**
- * ==========================================
- * 🔌 EXAMPLE PLUGIN: TIME TRACKER
- * ==========================================
+ * Example Time Tracker Plugin
  *
  * A simple example plugin that demonstrates how to extend miniCycle
- * with time tracking functionality.
+ * with time tracking functionality. Shows how to:
+ * - Extend MiniCyclePlugin base class
+ * - Hook into task lifecycle events
+ * - Add custom UI elements
+ * - Persist plugin data
+ *
+ * @module other/exampleTimeTrackerPlugin
+ * @example
+ * // Register the plugin
+ * import { TimeTrackerPlugin } from './exampleTimeTrackerPlugin.js';
+ * const tracker = new TimeTrackerPlugin();
+ * pluginManager.register(tracker);
  */
 
 import { MiniCyclePlugin } from './basicPluginSystem.js';
 
+/**
+ * Time Tracker Plugin - tracks time spent on tasks
+ * @extends MiniCyclePlugin
+ */
 class TimeTrackerPlugin extends MiniCyclePlugin {
     constructor() {
         super('TimeTracker', '1.0.0');

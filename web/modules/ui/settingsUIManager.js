@@ -1,11 +1,21 @@
 /**
  * Settings UI Manager (DI-Pure)
- * Handles settings menu UI and toggle controls
+ * Handles settings menu UI and toggle controls including:
+ * - Move arrows toggle
+ * - Three-dots menu toggle
+ * - Completed tasks dropdown toggle
+ * - Debug mode toggle
+ * - Reset recurring defaults
  *
  * NO window.* globals - all dependencies must be injected
  * NO legacy fallbacks - strict DI only
  *
  * @module ui/settingsUIManager
+ * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - DI patterns
+ */
+
+/**
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
@@ -36,6 +46,17 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Set dependencies for settings UI manager
+ * @param {Object} dependencies - Dependency configuration
+ * @param {Object} dependencies.AppState - AppState instance (required)
+ * @param {Function} dependencies.loadMiniCycleData - Data loader (required)
+ * @param {Function} dependencies.showNotification - Notification function (required)
+ * @param {Function} dependencies.safeAddEventListener - Event listener helper (required)
+ * @param {Function} [dependencies.hideMainMenu] - Menu hide function
+ * @param {Function} [dependencies.setupDarkModeToggle] - Dark mode setup
+ * @param {Function} [dependencies.updateMoveArrowsVisibility] - Move arrows updater
+ */
 export function setSettingsUIManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }

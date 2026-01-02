@@ -584,6 +584,7 @@ export async function initTaskCore(dependencies = {}) {
  * @param {string} taskText - Task description
  * @param {TaskCoreAddOptions} [options={}] - Task options
  * @returns {Promise<Task|undefined>} Created task
+ * @throws {Error} If TaskCore has not been initialized via initTaskCore()
  */
 function addTask(taskText, options = {}) {
     if (!taskCoreInstance) {

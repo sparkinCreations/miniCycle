@@ -451,6 +451,21 @@ export function calculateNextSpecificDate(dates, from, timeSettings) {
  * @param {Object} settings - Recurring settings object
  * @param {Date|number} fromTime - Calculate from this time (default: now)
  * @returns {number|null} Unix timestamp of next occurrence, or null if cannot calculate
+ * @example
+ * // Daily task at 9:00 AM
+ * const next = calculateNextOccurrence({
+ *     frequency: 'daily',
+ *     time: { hour: 9, minute: 0, meridiem: 'AM' }
+ * });
+ * console.log(new Date(next)); // Tomorrow at 9:00 AM
+ *
+ * @example
+ * // Weekly task on Mon/Wed/Fri
+ * const next = calculateNextOccurrence({
+ *     frequency: 'weekly',
+ *     weekly: { days: ['Mon', 'Wed', 'Fri'] },
+ *     time: { hour: 10, minute: 30, meridiem: 'AM' }
+ * });
  */
 export function calculateNextOccurrence(settings, fromTime = Date.now()) {
     if (!settings) {
@@ -550,6 +565,10 @@ export function calculateNextOccurrences(settings, count = 5, fromTime = Date.no
  *
  * @param {number|null} nextOccurrence - Unix timestamp of next occurrence
  * @returns {string} Human-readable string like "Tomorrow at 9:00 AM"
+ * @example
+ * const next = calculateNextOccurrence(settings);
+ * console.log(formatNextOccurrence(next));
+ * // "Appears in 2 hours" or "Next: Tomorrow at 9:00 AM"
  */
 export function formatNextOccurrence(nextOccurrence) {
     if (!nextOccurrence) {
