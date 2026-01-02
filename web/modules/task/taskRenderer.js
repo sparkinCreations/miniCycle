@@ -1,13 +1,24 @@
 /**
- * 🎨 miniCycle Task Renderer (DI-Pure)
- * Handles task rendering and UI refresh operations
+ * miniCycle Task Renderer
  *
- * Pattern: Simple Instance 🎯
- * - Manages rendering state
- * - Coordinates with other modules
- * - Updates UI components
+ * Handles task rendering and UI refresh operations using atomic DOM updates.
+ * Uses DocumentFragment and replaceChildren for efficient batch rendering.
  *
- * @module modules/task/taskRenderer
+ * Features:
+ * - Atomic DOM updates (single reflow per render)
+ * - State-driven UI restoration
+ * - Drag-drop re-initialization after render
+ * - Search visibility updates
+ *
+ * @module task/taskRenderer
+ * @version 1.0.0
+ * @see {@link module:task/taskCRUD} - Task creation logic
+ * @see {@link module:task/taskDOM} - DOM element creation
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -141,8 +152,11 @@ export class TaskRenderer {
     }
 
     /**
-     * Render tasks array to DOM using atomic replaceChildren
-     * @param {Array} tasksArray - Array of task objects
+     * Render tasks array to DOM using atomic replaceChildren.
+     * Uses DocumentFragment for efficient batch DOM operations.
+     *
+     * @param {Task[]} tasksArray - Array of task objects to render
+     * @returns {Promise<void>}
      */
     async renderTasks(tasksArray = []) {
         console.log('🔄 Rendering tasks (Schema 2.5 only)...');
@@ -217,9 +231,13 @@ export class TaskRenderer {
     }
 
     /**
-     * Refresh UI from state (re-render tasks from AppState or localStorage)
-     * @param {Object} providedState - Optional state object (uses AppState if not provided)
+     * Refresh UI from state (re-render tasks from AppState).
+     * Falls back to loadMiniCycle if state is not available.
+     *
      * NOTE: Can only be called after Phase 2 complete (TaskDOMManager ready)
+     *
+     * @param {Object|null} [providedState=null] - Optional state object (uses AppState if not provided)
+     * @returns {Promise<void>}
      */
     async refreshUIFromState(providedState = null) {
         const state =
@@ -306,8 +324,14 @@ export class TaskRenderer {
 let taskRenderer = null;
 
 /**
- * Initialize the global task renderer
+ * Initialize the global task renderer singleton.
+ * Called by moduleLoader during Phase 2 boot.
+ *
  * @param {Object} dependencies - Required dependencies
+ * @param {MiniCycleState} [dependencies.AppState] - State manager
+ * @param {Function} [dependencies.addTask] - Task creation function
+ * @param {Function} [dependencies.loadMiniCycle] - Cycle loading function
+ * @returns {TaskRenderer} The initialized renderer instance
  */
 export function initTaskRenderer(dependencies = {}) {
     if (taskRenderer) {

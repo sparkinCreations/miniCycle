@@ -4,7 +4,22 @@
  * Handles watching for recurring tasks that need to be recreated,
  * catching up on missed tasks, and setting up interval-based checks.
  *
- * @module recurringWatcher
+ * Features:
+ * - Periodic checking for tasks due to respawn
+ * - Catchup logic for missed recurring tasks
+ * - Configurable check intervals
+ * - Respawn limit enforcement
+ *
+ * @module recurring/recurringWatcher
+ * @version 1.0.0
+ * @see {@link module:recurring/recurringCore} - Core calculation logic
+ * @see {@link module:recurring/recurringPanel} - UI management
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
