@@ -1,3 +1,8 @@
+## [1.626] - 2026-01-02
+- Refactor code structure for improved readability and maintainability
+- chore: update version to 1.625 and refresh changelog
+
+
 ## [1.625] - 2026-01-02
 - changed phot size in what is minicycle
 - updated photos
