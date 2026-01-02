@@ -1,3 +1,10 @@
+## [1.624] - 2026-01-02
+- added many photos
+- fix: adjust mobile task card margin for improved spacing
+- feat: add copyright authorship statement for potential registration
+- chore: update version to 1.623 in manifest, HTML, and version files; enhance changelog fix: adjust mobile task card margin for improved spacing
+
+
 ## [1.623] - 2026-01-01
 - fix: adjust mobile task card margin for improved spacing
 
