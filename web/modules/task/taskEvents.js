@@ -1,13 +1,25 @@
 /**
- * 🎮 miniCycle Task Events (DI-Pure)
- * Handles all task event interactions (clicks, hover, focus, buttons)
+ * miniCycle Task Events Module
  *
- * Pattern: Simple Instance 🎯
- * - Manages event binding and handling
- * - Coordinates user interactions
- * - Delegates to other modules (taskCore)
+ * Handles all task event interactions including clicks, hover, focus, and buttons.
+ * Uses event delegation pattern to prevent memory leaks from listener accumulation.
  *
- * @module modules/task/taskEvents
+ * Features:
+ * - Event delegation for task clicks (single listener for all tasks)
+ * - Hover/focus interactions for task options
+ * - Button click handling (edit, delete, priority, due date)
+ * - Three-dots menu toggle support
+ * - Keyboard navigation for accessibility
+ *
+ * @module task/taskEvents
+ * @version 1.0.0
+ * @see {@link module:task/taskDOM} - Parent DOM manager
+ * @see {@link module:task/taskCRUD} - Task operations
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

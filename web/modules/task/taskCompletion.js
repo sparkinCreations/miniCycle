@@ -1,10 +1,25 @@
 /**
- * Task Completion & State Management Module (DI-Pure)
- * Handles task completion changes, ordering, and persistence
+ * miniCycle Task Completion Module
  *
- * Extracted from taskCore.js for better maintainability
+ * Handles task completion state changes, ordering, and persistence.
+ * Manages the flow when a user checks/unchecks a task checkbox.
+ *
+ * Features:
+ * - Completion state persistence to AppState
+ * - Undo snapshot capture before changes
+ * - Task list movement (active ↔ completed)
+ * - Recurring task respawn triggering
+ * - Overdue task styling updates
  *
  * @module task/taskCompletion
+ * @version 1.0.0
+ * @see {@link module:task/taskCRUD} - CRUD operations
+ * @see {@link module:recurring/recurringWatcher} - Recurring task handling
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

@@ -2,9 +2,21 @@
  * miniCycle Recurring Tasks - Settings Normalization
  *
  * Provides settings normalization with memoization cache.
- * Separated to avoid circular dependencies.
+ * Separated from recurringCore to avoid circular dependencies.
  *
- * @module recurringSettings
+ * Features:
+ * - Settings normalization with default values
+ * - Memoization cache for performance
+ * - Support for all frequency types (hourly, daily, weekly, etc.)
+ *
+ * @module recurring/recurringSettings
+ * @version 1.0.0
+ * @see {@link module:recurring/recurringCore} - Uses normalized settings
+ * @see {@link module:recurring/recurringPanel} - UI for settings
+ */
+
+/**
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
  */
 
 import { LIMITS } from '../core/constants.js';

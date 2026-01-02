@@ -1,22 +1,25 @@
 /**
  * miniCycle Recurring Tasks - UI Panel Manager
  *
- * Pattern: Strict Dependency Injection (DI-Pure)
- * Purpose: UI management for recurring task panel
+ * Handles UI management for the recurring task settings panel.
+ * Uses strict dependency injection - all dependencies must be injected.
  *
- * This module handles:
+ * Features:
  * - Recurring task panel rendering
  * - Form population and validation
  * - Settings panel visibility management
  * - Summary text generation
  * - Button visibility management
  *
- * NO window.* globals - all dependencies must be injected
- * NO silent fallbacks for required deps - throws on missing
- *
- * @module recurringPanel
- * @requires recurringCore (via dependency injection)
- * @requires AppInit (for initialization coordination)
+ * @module recurring/recurringPanel
+ * @version 1.0.0
+ * @see {@link module:recurring/recurringCore} - Core calculation logic
+ * @see {@link module:recurring/recurringWatcher} - Task watcher
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';

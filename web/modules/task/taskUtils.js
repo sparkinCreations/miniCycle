@@ -1,17 +1,28 @@
 /**
- * 🛠️ miniCycle Task Utilities (DI-Pure)
- * Utility functions for task operations (context building, DOM extraction, scrolling, etc.)
+ * miniCycle Task Utilities Module
  *
- * Pattern: Static Utilities 🔧
- * - Pure utility functions
- * - No instance state
- * - Dependencies passed as parameters (class methods)
- * - Module-level deps for wrapper functions
+ * Static utility functions for task operations including context building,
+ * DOM data extraction, scrolling, and task data creation/persistence.
  *
- * Note: document.querySelector, document.getElementById are browser APIs,
- * not dependencies - they cannot be injected (but can be overridden for testing).
+ * Features:
+ * - Task context building from DOM elements
+ * - DOM data extraction for persistence
+ * - Schema 2.5 task data creation
+ * - Recurring task template management
+ * - Scroll-to-task behavior
+ * - Overdue styling management
  *
- * @module modules/task/taskUtils
+ * @module task/taskUtils
+ * @version 1.0.0
+ * @see {@link module:task/taskDOM} - Uses these utilities
+ * @see {@link module:task/taskRenderer} - Uses taskToAddTaskOptions
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

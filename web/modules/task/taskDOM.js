@@ -1,30 +1,31 @@
 /**
- * 🎨 miniCycle Task DOM Manager (DI-Pure)
+ * miniCycle Task DOM Manager
  *
- * Manages all task DOM creation, rendering, and interaction setup.
- * Handles 30+ functions for creating task elements, buttons, and event listeners.
+ * Core DOM management for all task operations. Handles 30+ functions for
+ * creating task elements, buttons, event listeners, and DOM patching.
  *
- * Pattern: Resilient Constructor 🛡️
- * - Degrades gracefully when dependencies missing
- * - Shows user-friendly error messages
- * - Falls back to basic task display
+ * Architecture:
+ * - Single instance stored in module-level `taskDOMManager` variable
+ * - Sub-modules loaded dynamically: TaskValidator, TaskUtils, TaskRenderer, TaskEvents
+ * - Resilient constructor pattern - degrades gracefully when dependencies missing
  *
  * Dependency Pattern (DI-Pure):
- * - this._rawDeps: Raw input from constructor (used only for sub-module pre-injection)
- * - this.deps: Normalized dependency bag with fallbacks (used for all runtime access)
- * - this.version: Uses injected AppMeta.version (no window.APP_VERSION in modules)
- * - Use this.deps.* everywhere except when checking for pre-injected sub-modules
+ * - this._rawDeps: Raw input from constructor (for sub-module pre-injection)
+ * - this.deps: Normalized dependency bag with fallbacks (runtime access)
  * - NO window.* fallbacks - module-level instances only
  *
- * Module Instance:
- * - Single instance stored in module-level `taskDOMManager` variable
- * - Main script (miniCycle-scripts.js) exposes to window.__taskDOMManager for backward compat
- * - Wrapper functions use module-level instance directly (no window.* fallbacks)
- *
- * Based on dragDropManager.js + statsPanel.js patterns
- *
- * @module modules/task/taskDOM
- * @requires appInit, AppState, taskCore, globalUtils, taskValidation
+ * @module task/taskDOM
+ * @version 1.0.0
+ * @see {@link module:task/taskCRUD} - CRUD operations
+ * @see {@link module:task/taskRenderer} - Rendering operations
+ * @see {@link module:task/taskEvents} - Event handling
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ * @typedef {import('../core/types.js').RecurringSettings} RecurringSettings
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

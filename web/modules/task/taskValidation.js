@@ -1,13 +1,19 @@
 /**
- * 🔒 miniCycle Task Validation (DI-Pure)
- * Validates and sanitizes task input for security and data integrity
+ * miniCycle Task Validation Module
  *
- * Pattern: Simple Instance ✨
- * - Single responsibility (validation only)
- * - Required dependencies (sanitizeInput, showNotification)
- * - Pure input validation logic
+ * Validates and sanitizes task input for security and data integrity.
+ * Ensures task text meets length requirements and is properly sanitized.
  *
- * @module modules/task/taskValidation
+ * Features:
+ * - Input sanitization via injected sanitizeInput function
+ * - Character limit enforcement (100 chars)
+ * - Empty/invalid input handling
+ * - User notification for validation failures
+ *
+ * @module task/taskValidation
+ * @version 1.0.0
+ * @see {@link module:task/taskDOM} - Uses this for task creation
+ * @see {@link module:core/globalUtils} - Provides sanitizeInput
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
