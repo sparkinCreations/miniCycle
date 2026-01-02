@@ -13,7 +13,7 @@
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
 │  │ Functional │  │Performance │  │ Lighthouse │  │  Manual   │ │
 │  │   Tests    │  │ Benchmarks │  │     CI     │  │ Profiling │ │
-│  │ 1610+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
+│  │ 1,690+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -165,7 +165,7 @@ Push to GitHub
 │ ✅ End-to-end workflows                           │
 └───────────────────────────────────────────────────┘
 
-Total: 1610+ tests across all layers
+Total: 1,690+ tests across all layers
 ```
 
 ---
@@ -614,7 +614,7 @@ Storage Speed      | <100ms  | 0.80ms  | ✅ 125x
 ### Run Tests
 
 ```bash
-npm test           # Functional (1610+ tests, ~65s)
+npm test           # Functional (1,690+ tests, ~65s)
 npm run perf       # Performance (12 tests, 20ms)
 npm run lighthouse # Lighthouse (full audit, 3min)
 npm start          # Manual testing (browser)

@@ -4,7 +4,7 @@
 **Author:** miniCycle Team
 **Last Updated:** December 2025
 **Status:** Production Ready
-**Test Coverage:** 76 tests (100% passing)
+**Test Coverage:** 45 tests (100% passing)
 
 ---
 
@@ -1508,7 +1508,7 @@ modules/boot/orchestrator.js            Integration point
   └── renderTasks()             Restore arrow visibility
 
 tests/
-├── dragDropManager.tests.js   Test suite (76 tests)
+├── dragDropManager.tests.js   Test suite (45 tests)
 └── DRAGDROP_TESTS_SUMMARY.md  Test documentation
 
 docs/
@@ -1746,7 +1746,7 @@ open http://localhost:8080/tests/module-test-suite.html
 ✅ sets draggable attribute required by Safari
 ...
 
-Results: 76/76 tests passed (100%)
+Results: 76/45 tests passed (100%)
 ```
 
 #### Automated Testing
@@ -1761,7 +1761,7 @@ node tests/automated/run-browser-tests.js
 **Result:**
 ```
 🧪 Testing dragDropManager...
-   ✅ Results: 76/76 tests passed (100%)
+   ✅ Results: 76/45 tests passed (100%)
 ```
 
 ---

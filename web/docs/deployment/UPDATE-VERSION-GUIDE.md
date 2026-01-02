@@ -68,7 +68,7 @@ var APP_VERSION = self.APP_VERSION;  // ES5 compatible
 const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
 // Every module gets versioned
-await import(withV('./utilities/notifications.js'));
+await import(withV('./modules/notifications.js'));
 // Loads: notifications.js?v=1.330
 ```
 
@@ -80,7 +80,7 @@ await import(withV('./utilities/notifications.js'));
 <script src="notifications.js?v=1.329"></script>
 
 // Dynamic import:
-await import('./utilities/notifications.js');  // Un-versioned!
+await import('./modules/notifications.js');  // Un-versioned!
 
 // Result: TWO cache entries
 // - notifications.js (old, never refreshes)
@@ -93,7 +93,7 @@ await import('./utilities/notifications.js');  // Un-versioned!
 window.APP_VERSION = '1.330';
 
 // Dynamic import uses same version
-await import(`./utilities/notifications.js?v=${window.APP_VERSION}`);
+await import(`./modules/notifications.js?v=${window.APP_VERSION}`);
 
 // Result: ONE cache entry
 // - notifications.js?v=1.330 (everyone uses this)
@@ -126,7 +126,7 @@ await import(`./utilities/notifications.js?v=${window.APP_VERSION}`);
 **One module stays un-versioned:**
 ```javascript
 // ✅ appInit must load WITHOUT version
-const { appInit } = await import('./utilities/appInitialization.js');
+const { appInit } = await import('./modules/appInitialization.js');
 
 // Why? It needs to be a singleton across all static imports
 // Static imports in utilities use: import { appInit } from './appInitialization.js'

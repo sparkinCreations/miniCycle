@@ -26,10 +26,10 @@
 | Metric | Value | Notes |
 |--------|-------|-------|
 | **Boot Files** | 6 files | Split Dec 2025 for debuggability |
-| **Modules** | 86 modules | All using strict DI |
+| **Modules** | 87 modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1610+ tests across 86 modules |
+| **Test Coverage** | 100% ✅ | 1,690+ tests across 87 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 

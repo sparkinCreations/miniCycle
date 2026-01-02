@@ -33,7 +33,7 @@ JavaScript was self-taught. The technical foundation was not.
 | **2008** | CET124 (College C) | First code. Already versioning, iterating, adding features beyond requirements |
 | **Ongoing** | Spreadsheet Tools | Budget tracker, GD&T calculator for work, miniCycle spreadsheet version — building automated systems before "learning to code" |
 | **2024** | TaskCycle | First JS project. 3,551 lines, 40+ features, monolithic but complete |
-| **2024-25** | miniCycle | Second JS project. Evolved from 11,758-line monolith to 44,200 lines across 80 modules |
+| **2024-25** | miniCycle | Second JS project. Evolved from 11,758-line monolith to 44,200 lines across 87 modules |
 | **2025** | MasterMath | Third JS project. Adapted Base44 scaffold, replaced AI backend with local math libraries |
 
 ### Key Insight: The Patterns Were Always There
@@ -281,7 +281,7 @@ The user-facing simplicity masks engineering depth:
 - **Reviewed full project history:**
   - TaskCycle (first JS): 3,551 lines, 40+ features, monolithic
   - miniCycle pre-split: 11,758 lines, window.* globals, emerging patterns
-  - miniCycle current: 44,200 lines, 80 modules, enterprise-grade DI
+  - miniCycle current: 44,200 lines, 87 modules, enterprise-grade DI
   - MasterMath: Adapted Base44 scaffold with custom solver logic
 - **Spreadsheet tools reviewed** (installed openpyxl to read xlsx files):
   - Budget.xlsx: Personal finance model with income projections, tax breakdown, debt tracking, goal timelines
