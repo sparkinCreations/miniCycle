@@ -29,10 +29,18 @@
 ">
 
 <title>miniCycle - Turn Your Routine Into Progress</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
 
-<!-- Preconnect for faster font loading -->
+<!-- Preconnect for faster font loading (must come BEFORE font requests) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<!-- Preload critical font weight for faster text rendering -->
+<link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Google Fonts stylesheet (after preload) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -40,9 +48,60 @@
 <link rel="stylesheet" href="miniCycle-styles.css?v=1.625">
 <link rel="manifest" href="manifest.json">
 
-
+<!-- Modulepreload for critical boot modules - speeds up ES module loading -->
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.625">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.625">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.625">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.625">
+<link rel="modulepreload" href="./modules/core/storage.js?v=1.625">
+<link rel="modulepreload" href="./modules/utils/logger.js?v=1.625">
 
 <style>
+  /* Critical CSS - Inlined for instant loader display */
+  #app-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4c79ff, #74c0fc);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+  }
+  #app-loader.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .loader-logo {
+    width: 120px;
+    height: 96px;
+    object-fit: contain;
+    animation: spin 2s linear infinite;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .loader-text {
+    margin-top: 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    opacity: 0.9;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
   /* Notification styles */
   #notification-container {
     position: fixed;
