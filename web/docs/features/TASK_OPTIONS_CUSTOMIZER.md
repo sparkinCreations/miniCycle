@@ -753,7 +753,7 @@ function backfillTaskOptionButtons(state) {
 
 ### Why Full-Width Close Button?
 
-**Consistency:** Matches other modals in miniCycle (reminders, settings, cycle switcher).
+**Consistency:** Matches other modals in miniCycle (reminders, settings, routine switcher).
 
 **Accessibility:** Large touch target, easy to tap on mobile.
 
