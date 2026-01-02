@@ -1,3 +1,7 @@
+## [1.623] - 2026-01-01
+- fix: adjust mobile task card margin for improved spacing
+
+
 ## [1.622] - 2026-01-01
 - chore: update version to 1.621 in manifest, HTML, and version files; enhance changelog
 
