@@ -324,23 +324,23 @@ button:not(.dot):hover {
 
     /* Mobile task card constraints - using dvh for iOS Safari compatibility */
     .task-card {
-        max-height: calc(100dvh - 315px);
-        margin-top: 15px;
+        max-height: calc(100dvh - 325px);
+        margin-top: -5px;
     }
 
     /* Shorter task card when Complete button is visible on mobile */
     #task-view.complete-btn-visible .task-card {
-        max-height: calc(100dvh - 385px);
+        max-height: calc(100dvh - 395px);
     }
 
     /* Shorter task card when mode description is visible on mobile */
     #task-view.mode-description-visible .task-card {
-        max-height: calc(100dvh - 395px);
+        max-height: calc(100dvh - 405px);
     }
 
     /* Even shorter when both are visible on mobile */
     #task-view.complete-btn-visible.mode-description-visible .task-card {
-        max-height: calc(100dvh - 435px);
+        max-height: calc(100dvh - 445px);
     }
 
     #task-view {
