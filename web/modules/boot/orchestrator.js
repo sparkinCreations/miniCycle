@@ -32,13 +32,18 @@ const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 let bootAttempt = 0;
 
 /**
- * Update loader text to show boot progress
+ * Update loader text and progress bar
  * @param {string} message - Progress message to display
+ * @param {number} percent - Progress percentage (0-100)
  */
-function updateLoaderProgress(message) {
+function updateLoaderProgress(message, percent = 0) {
   const loaderText = document.querySelector('.loader-text');
   if (loaderText) {
     loaderText.textContent = message;
+  }
+  const loaderBar = document.querySelector('.loader-bar');
+  if (loaderBar) {
+    loaderBar.style.width = `${percent}%`;
   }
 }
 
@@ -228,7 +233,7 @@ async function runBootSequence() {
   const bootStart = Date.now();
 
   // ========== LOAD BOOT MODULES (with timeout) ==========
-  updateLoaderProgress('Loading core...');
+  updateLoaderProgress('Loading core...', 10);
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
       import(`./coreBoot.js?v=${APP_VERSION}`),
@@ -250,7 +255,7 @@ async function runBootSequence() {
   };
 
   // ========== PHASE 1: CORE (with timeout) ==========
-  updateLoaderProgress('Starting systems...');
+  updateLoaderProgress('Starting systems...', 25);
   console.log('🔧 Phase 1: Core systems...');
   const coreResult = await withTimeout(
     initCoreBoot(deps),
@@ -270,7 +275,7 @@ async function runBootSequence() {
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
-  updateLoaderProgress('Loading features...');
+  updateLoaderProgress('Loading features...', 50);
   console.log('🔌 Phase 2: Feature modules...');
   await withTimeout(
     bootFeatures(deps, coreResult),
@@ -284,7 +289,7 @@ async function runBootSequence() {
   console.log(`✅ Phase 2 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 3: DATA & UI (with timeout) ==========
-  updateLoaderProgress('Starting up...');
+  updateLoaderProgress('Starting up...', 85);
   console.log('🎨 Phase 3: Data & UI...');
 
   await withTimeout(
@@ -300,6 +305,7 @@ async function runBootSequence() {
     'Phase 3 (UI)'
   );
 
+  updateLoaderProgress('Ready!', 100);
   const totalTime = Date.now() - bootStart;
   console.log(`✅ miniCycle initialization complete (${totalTime}ms)`);
 

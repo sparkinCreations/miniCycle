@@ -1,3 +1,7 @@
+## [1.628] - 2026-01-02
+- chore: update version to 1.627 and refresh changelog
+
+
 ## [1.627] - 2026-01-02
 - chore: update version to 1.626 and refresh changelog
 
