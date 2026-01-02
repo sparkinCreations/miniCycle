@@ -146,9 +146,10 @@ export async function runNotificationsTests(resultsDiv) {
         };
         window.safeAddEventListener = mockSafeAddEventListener;
 
-        // Set module dependencies so DI system has access to safeAddEventListener
+        // Set module dependencies so DI system has access to safeAddEventListener and generateHashId
         setNotificationsDependencies({
-            safeAddEventListener: mockSafeAddEventListener
+            safeAddEventListener: mockSafeAddEventListener,
+            generateHashId: window.generateHashId
         });
 
         // Mock AppState - improved to not rely on window.loadMiniCycleData during update
@@ -316,6 +317,9 @@ export async function runNotificationsTests(resultsDiv) {
 
     test('showWithTip() prevents duplicates', () => {
         setupMockGlobals();
+        // Ensure clean container with no leftover notifications
+        const existingContainer = document.getElementById('notification-container');
+        if (existingContainer) existingContainer.remove();
         const container = createNotificationContainer();
         const notifications = new window.MiniCycleNotifications();
 
@@ -324,7 +328,7 @@ export async function runNotificationsTests(resultsDiv) {
 
         const notifs = container.querySelectorAll('.notification');
         if (notifs.length !== 1) {
-            throw new Error('Duplicate notification created');
+            throw new Error(`Duplicate notification created: found ${notifs.length}`);
         }
     });
 
