@@ -1,3 +1,7 @@
+## [1.634] - 2026-01-02
+- chore: update version to 1.633 and refresh changelog
+
+
 ## [1.633] - 2026-01-02
 - Refactor tests for improved dependency management and validation
 - chore: update version to 1.632 and refresh changelog
