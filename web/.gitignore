@@ -34,3 +34,6 @@ temp/
 
 # Backup folders
 backup/
+
+# Ignore subdirectories in docs/archive (keep files only)
+docs/archive/*/
