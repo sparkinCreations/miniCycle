@@ -1,3 +1,8 @@
+## [1.642] - 2026-01-02
+- feat: add syncModeFromToggles functionality to moduleLoader and routineLoader
+- chore: update version to 1.641 and refresh related files
+
+
 ## [1.641] - 2026-01-02
 - feat: add warning for multiple file imports in cycleImportManager
 - chore: update version to 1.640 and refresh related files
