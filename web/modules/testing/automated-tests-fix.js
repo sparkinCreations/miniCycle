@@ -1,5 +1,11 @@
-// Fix for automated tests tab accessibility issue
-// This script ensures the automated tests tab works properly
+/**
+ * Automated Tests Tab Fix
+ * Ensures the automated tests tab in the testing modal works properly.
+ * Fixes class issues, missing emojis, and structural problems.
+ *
+ * @module testing/automated-tests-fix
+ * @description DOM fix script that runs on DOMContentLoaded
+ */
 
 document.addEventListener('DOMContentLoaded', function() {
     // Wait for everything to load

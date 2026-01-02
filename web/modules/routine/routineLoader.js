@@ -4,7 +4,17 @@
  * - No window probing, no stubs, no retry loops
  * - No window.* fallbacks (DI-pure)
  *
+ * Handles loading and rendering routines (cycles) from AppState,
+ * including task rendering, UI state updates, and theme application.
+ *
  * @module routineLoader
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
@@ -41,6 +51,15 @@ const _deps = new Proxy({}, {
   }
 });
 
+/**
+ * Set dependencies for routine loader module
+ * @param {Object} overrides - Dependency overrides
+ * @param {Function} [overrides.AppState] - AppState getter or instance
+ * @param {Function} [overrides.loadMiniCycleData] - Data loader function
+ * @param {Function} [overrides.addTask] - Task addition function
+ * @param {Function} [overrides.updateProgressBar] - Progress bar updater
+ * @param {Function} [overrides.syncModeFromToggles] - Mode sync function
+ */
 function setRoutineLoaderDependencies(overrides = {}) {
   di.setDependencies(overrides);
 }
@@ -54,6 +73,12 @@ function getAppState() {
   return typeof _deps.AppState === 'function' ? _deps.AppState() : _deps.AppState;
 }
 
+/**
+ * Assert that a dependency has been injected
+ * @param {string} name - Dependency name
+ * @param {Function} fn - Dependency function to check
+ * @throws {Error} If dependency is not a function
+ */
 function assertInjected(name, fn) {
   if (typeof fn !== 'function') {
     throw new Error(`routineLoader: missing dependency ${name}`);
@@ -61,9 +86,14 @@ function assertInjected(name, fn) {
 }
 
 /**
- * Main coordination function
- * NOTE: This is now called in Phase 3 (after all modules initialized)
- * so no need to wait for appInit - guaranteed to be ready
+ * Load and render the active routine (cycle)
+ * Main coordination function that loads tasks, updates UI, and syncs state.
+ * Called in Phase 3 after all modules are initialized.
+ *
+ * @async
+ * @returns {Promise<void>}
+ * @throws {Error} If loadMiniCycleData dependency is missing
+ * @throws {Error} If addTask dependency is missing
  */
 async function loadMiniCycle() {
   console.log('🔄 Loading miniCycle (Schema 2.5 only)...');

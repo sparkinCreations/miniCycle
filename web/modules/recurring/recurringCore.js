@@ -250,6 +250,16 @@ async function loadSubModules(version) {
  * @param {Function} [overrides.showNotification] - Notification function
  * @param {Object} [overrides.AppMeta] - App metadata with version
  * @returns {Promise<RecurringCoreExports>} Loaded function exports
+ * @example
+ * // Initialize recurring system with dependencies
+ * const recurring = await setRecurringCoreDependencies({
+ *     AppState: stateManager,
+ *     showNotification: notifyFn,
+ *     AppMeta: { version: '1.0.0' }
+ * });
+ *
+ * // Use returned functions
+ * const next = recurring.calculateNextOccurrence(settings);
  */
 export async function setRecurringCoreDependencies(overrides = {}) {
     di.setDependencies(overrides);
