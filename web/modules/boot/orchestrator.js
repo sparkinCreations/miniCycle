@@ -232,8 +232,13 @@ function showBootError(phase, error, willRetry = false) {
 async function runBootSequence() {
   const bootStart = Date.now();
 
+  // ========== CHECK FOR UPDATES ==========
+  updateLoaderProgress('Checking for updates...', 5);
+  // Service worker handles actual update check asynchronously
+  // This step ensures version.js is loaded and ready
+
   // ========== LOAD BOOT MODULES (with timeout) ==========
-  updateLoaderProgress('Loading core...', 10);
+  updateLoaderProgress('Loading core...', 15);
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
       import(`./coreBoot.js?v=${APP_VERSION}`),
@@ -255,7 +260,7 @@ async function runBootSequence() {
   };
 
   // ========== PHASE 1: CORE (with timeout) ==========
-  updateLoaderProgress('Starting systems...', 25);
+  updateLoaderProgress('Starting systems...', 30);
   console.log('🔧 Phase 1: Core systems...');
   const coreResult = await withTimeout(
     initCoreBoot(deps),
@@ -275,7 +280,7 @@ async function runBootSequence() {
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
-  updateLoaderProgress('Loading features...', 50);
+  updateLoaderProgress('Loading features...', 55);
   console.log('🔌 Phase 2: Feature modules...');
   await withTimeout(
     bootFeatures(deps, coreResult),
