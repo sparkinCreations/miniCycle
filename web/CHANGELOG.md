@@ -1,3 +1,8 @@
+## [1.633] - 2026-01-02
+- Refactor tests for improved dependency management and validation
+- chore: update version to 1.632 and refresh changelog
+
+
 ## [1.632] - 2026-01-02
 - feat: add storage refresh button and quota detection improvements
 - refactor: enhance boot sequence progress updates and add update check
