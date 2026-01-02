@@ -19,7 +19,7 @@
 
 ## Overview
 
-miniCycle has **100% test coverage** with **1623 tests passing** across 53 modules. The testing system runs:
+miniCycle has **100% test coverage** with **1610+ tests passing** across 86 modules. The testing system runs:
 - ✅ **Locally** - Browser-based manual testing via web interface
 - ✅ **Automated** - Playwright-based automated testing
 - ✅ **CI/CD** - GitHub Actions on every push/PR (Node.js 18.x and 20.x)
@@ -98,9 +98,9 @@ Running 53 test modules across all systems...
    ✅ PASS globalUtils            36/36 tests
    ✅ PASS notifications          35/35 tests
    ✅ PASS state                  40/40 tests
-   ... (53 modules total)
+   ... (86 modules total)
 ============================================================
-🎉 All tests passed! (1623/1623 - 100%) ✅
+🎉 All tests passed! (1610+/1610+ - 100%) ✅
 ============================================================
 ```
 
@@ -128,10 +128,10 @@ miniCycle has **automated testing** that runs on every push and pull request via
 2. Setup Node.js environment
 3. Install dependencies (Playwright)
 4. Start HTTP server on port 8080
-5. Run all 1623 tests via Playwright
+5. Run all 1610+ tests via Playwright
 6. Report results (pass/fail)
 
-**Current Status:** 1623/1623 tests passing (100%) ✅
+**Current Status:** 1610+/1610+ tests passing (100%) ✅
 
 ---
 
@@ -339,7 +339,7 @@ export function runOnboardingManagerTests(resultsDiv) {
 
 ## Test Coverage
 
-Current module test coverage (53 modules, 1623 tests):
+Current module test coverage (86 modules, 1610+ tests):
 
 | Module | Tests | Module | Tests |
 |--------|-------|--------|-------|
@@ -371,9 +371,9 @@ Current module test coverage (53 modules, 1623 tests):
 | completedTasksManager | 29 | featureBoot | 13 |
 | pullToRefresh | 18 | | |
 
-**Total: 1623 tests across 53 modules**
+**Total: 1610+ tests across 86 modules**
 
-**Overall Pass Rate: 100% ✅ (1623/1623 tests passing)**
+**Overall Pass Rate: 100% ✅ (1610+/1610+ tests passing)**
 
 ---
 

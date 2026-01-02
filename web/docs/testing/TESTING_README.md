@@ -3,7 +3,7 @@
 > **Complete guide to testing miniCycle - functional tests, performance benchmarks, and quality assurance**
 
 **Current Status**:
-- ✅ **Functional Tests**: 1623/1623 (100%)
+- ✅ **Functional Tests**: 1610+/1610+ (100%)
 - ✅ **Performance Benchmarks**: 12/12 (100%)
 - ✅ **Execution Time**: ~65s total
 - ✅ **Memory Usage**: 9.54MB (0.3%)
@@ -28,7 +28,7 @@
 ### Run All Tests
 
 ```bash
-# 1. Functional tests (1623 tests, ~115s)
+# 1. Functional tests (1610+ tests, ~115s)
 npm test
 
 # 2. Performance benchmarks (12 tests, ~20s)
@@ -82,7 +82,7 @@ tests/
 | **Plugins & A11y** | basicPluginSystem, accessibility | 83 |
 | **Stress Testing** | stress | 50 |
 
-**Total**: 1623+ tests across 53 modules
+**Total**: 1610+ tests across 86 modules
 
 ### Running Specific Tests
 
@@ -104,7 +104,7 @@ npm start
 
 ```
 Module Coverage: 100% (50/50 modules)
-Test Pass Rate: 100% (1623+/1623+)
+Test Pass Rate: 100% (1610+/1610+)
 Lines Covered: ~15,000 lines across 50 modules
 ```
 
@@ -202,7 +202,7 @@ npm run lighthouse  # Terminal 2
 **Runs:**
 - Installs dependencies
 - Starts dev server
-- Runs 1623 automated tests
+- Runs 1610+ automated tests
 - Tests on Node.js 18.x and 20.x
 
 **Status:**
@@ -312,7 +312,7 @@ npm run lighthouse  # Terminal 2
 ✅ basicPluginSystem    42/42 tests
 ✅ accessibility        41/41 tests
 
-🎉 All tests passed! (1623/1623 - 100%)
+🎉 All tests passed! (1610+/1610+ - 100%)
 ```
 
 ### Performance Benchmark Results
@@ -633,7 +633,7 @@ Before releasing:
 
 ```
 📊 Test Statistics
-├── Functional Tests: 1623/1623 (100%) ✅
+├── Functional Tests: 1610+/1610+ (100%) ✅
 ├── Performance Tests: 12/12 (100%) ✅
 ├── Module Coverage: 45/45 (100%) ✅
 ├── Line Coverage: ~15,000 lines ✅

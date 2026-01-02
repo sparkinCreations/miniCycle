@@ -2,7 +2,7 @@
 
 > **Comprehensive documentation for the miniCycle routine manager.**
 
-**Version**: 1.560 | **Test Coverage**: 1623/1623 (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
+**Version**: 1.637 | **Test Coverage**: 1610+/1610+ (100%) ✅ | **Overall Rating**: 8.8/10 | **Platforms**: Mac, iPad, iPhone
 
 Welcome to the miniCycle documentation site! Use the sidebar to navigate through guides, architecture docs, and API references.
 
@@ -42,7 +42,7 @@ Welcome to the miniCycle documentation site! Use the sidebar to navigate through
 
 ## 🧪 Testing
 
-- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (53 modules, 1623/1623 tests - 100% ✅)
+- **[TESTING_QUICK_REFERENCE.md](./testing/TESTING_QUICK_REFERENCE.md)** - Complete testing reference (86 modules, 1610+/1610+ tests - 100% ✅)
   - Browser-based testing
   - GitHub Actions CI/CD integration
   - localStorage protection patterns
@@ -76,11 +76,11 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 
 | Metric | Value |
 |--------|-------|
-| Boot files | 4 files (~1,885 lines total) |
-| Modules | 80 files |
+| Boot files | 6 files |
+| Modules | 86 files |
 | Total LOC | ~44,200 lines |
 | DI completion | 100% (no `\|\| window.*` fallbacks) |
-| Test coverage | 1623 tests (100%) |
+| Test coverage | 1610+ tests (100%) |
 | JSDoc blocks | 514 (98% module coverage) |
 | Overall rating | 8.8/10 |
 
@@ -94,7 +94,7 @@ Also see: [/tests/README.md](../tests/README.md) for quick start guides
 ### The Reality
 
 The codebase has **complete strict DI**:
-- ✅ Code is organized into 80 focused modules
+- ✅ Code is organized into 86 focused modules
 - ✅ All modules use strict dependency injection
 - ✅ No `|| window.*` fallbacks remain
 - ✅ Modules can be tested in isolation

@@ -21,15 +21,15 @@
 
 ---
 
-## Current Stats (December 2025)
+## Current Stats (January 2026)
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| **Boot Files** | 4 files | Split Dec 2025 for debuggability |
-| **Modules** | 60 modules | All using strict DI |
+| **Boot Files** | 6 files | Split Dec 2025 for debuggability |
+| **Modules** | 86 modules | All using strict DI |
 | **Schema Version** | 2.5 | Auto-migration from older versions |
 | **Browser Support** | Modern + ES5 | Dual-version system |
-| **Test Coverage** | 100% ✅ | 1623 tests across 60 modules |
+| **Test Coverage** | 100% ✅ | 1610+ tests across 86 modules |
 | **DI Completion** | 100% ✅ | No `\|\| window.*` fallbacks |
 | **Modules with setters** | 40+ | `set*Dependencies()` functions |
 
