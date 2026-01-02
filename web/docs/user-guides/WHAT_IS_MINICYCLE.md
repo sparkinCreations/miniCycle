@@ -2,7 +2,7 @@
 
 **Your Routine Manager That Resets Itself**
 
-![miniCycle Main View](../../assets/images/screenshots/Example/IMG_1286.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1286.PNG" alt="miniCycle Main View" width="300">
 
 -----
 
@@ -43,13 +43,13 @@ Examples:
 
 When you check off the final task…
 
-![Task Completion Animation](../../assets/images/screenshots/Example/IMG_1172.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1172.PNG" alt="Task Completion Animation" width="300">
 
 ### 4️⃣ miniCycle resets the routine
 
 All tasks become unchecked again — ready for next time.
 
-![All Tasks Complete](../../assets/images/screenshots/Example/IMG_1281.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1281.PNG" alt="All Tasks Complete" width="300">
 
 ### 5️⃣ Your Cycle Count increases
 
@@ -136,7 +136,7 @@ After a month: **Cycle count: 30** (if you completed it every day)
 - **Spot patterns** - Know which routines you're maintaining vs. skipping
 - **Unlock achievements** - Reach milestones (5, 25, 50, 75, 100 cycles!)
 
-![Stats Panel with Achievements](../../assets/images/screenshots/Example/IMG_1176.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1176.PNG" alt="Stats Panel with Achievements" width="300">
 
 Every routine has its own cycle count.
 
@@ -146,7 +146,7 @@ Every routine has its own cycle count.
 
 miniCycle offers three different ways routines can behave:
 
-![Cycle Mode Selection](../../assets/images/screenshots/Example/IMG_1183.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1183.PNG" alt="Cycle Mode Selection" width="300">
 
 ### 🔄 Auto Cycle Mode (Most Popular)
 
@@ -176,7 +176,7 @@ miniCycle offers three different ways routines can behave:
 - You click when ready to reset
 - Tasks uncheck and cycle count increases
 
-![Manual Cycle Complete Button](../../assets/images/screenshots/Example/IMG_1191.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1191.PNG" alt="Manual Cycle Complete Button" width="300">
 
 **Perfect for:**
 
@@ -279,7 +279,7 @@ miniCycle offers three different ways routines can behave:
 
 Here's what consistent use looks like — **147 cycles completed**:
 
-![147 Cycles Completed](../../assets/images/screenshots/Example/IMG_1301.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1301.PNG" alt="147 Cycles Completed" width="300">
 
 -----
 
@@ -462,7 +462,7 @@ Think about tasks you do repeatedly:
 
 ### Step 3: Create Your First Routine
 
-![Empty State - Create First Routine](../../assets/images/screenshots/Example/IMG_1303.PNG)
+<img src="../../assets/images/screenshots/Example/IMG_1303.PNG" alt="Empty State - Create First Routine" width="300">
 
 1. Open miniCycle
 1. Click "Create a Routine"
