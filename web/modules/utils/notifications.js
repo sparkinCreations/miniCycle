@@ -63,6 +63,19 @@ function _safeAddEventListener(element, event, handler, options) {
 }
 
 /**
+ * Simple hash function for generating stable IDs from strings
+ * Used as fallback when generateHashId is not injected via DI
+ */
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/**
  * Set dependencies for Notifications module (call before creating instance)
  * @param {Object} dependencies - Late-injected dependencies
  */
@@ -328,8 +341,8 @@ export class MiniCycleNotifications {
         message = "⚠️ Unknown notification";
       }
 
-      // Generate unique ID (DI-pure)
-      const newId = _deps.generateHashId?.(message) || `notif-${Date.now()}`;
+      // Generate unique ID (DI-pure) - use simple hash fallback for duplicate detection
+      const newId = _deps.generateHashId?.(message) || `notif-${simpleHash(message)}`;
       if ([...notificationContainer.querySelectorAll(".notification")]
           .some(n => n.dataset.id === newId)) {
         console.log("🔄 Notification already exists, skipping duplicate.");
@@ -443,7 +456,7 @@ export class MiniCycleNotifications {
       const escape = getEscapeHtml(this.deps);
       const safeContent = options.trusted === true ? content : escape(content);
 
-      const newId = _deps.generateHashId?.(content) || `notif-${Date.now()}`;
+      const newId = _deps.generateHashId?.(content) || `notif-${simpleHash(content)}`;
       const existing = [...notificationContainer.querySelectorAll(".notification")];
 
       // Prevent duplicates
