@@ -50,6 +50,7 @@
   * [MCYC File Format](data-schema/MCYC_FILE_FORMAT.md)
 
 * **Features**
+  * [Feature List](features/FEATURE_LIST.md)
   * [Storage Management](features/STORAGE_MANAGEMENT.md)
   * [Completed Tasks Dropdown](features/COMPLETED_TASKS_DROPDOWN.md)
   * [Task Options Customizer](features/TASK_OPTIONS_CUSTOMIZER.md)
@@ -88,7 +89,6 @@
   * [Module Independence Refactor](future-work/MODULE_INDEPENDENCE_REFACTOR_PLAN.md)
   * [Schema 2.6 Migration Plan](future-work/SCHEMA_2_6_PLAN.md)
   * [Delete When Complete Plan](future-work/DELETE_WHEN_COMPLETE_PLAN.md)
-  * [Folder Structure Refactor Plan](future-work/FOLDER_STRUCTURE_REFACTOR_PLAN.md)
   * [Task Options Customizer Plan](future-work/TASK_OPTIONS_CUSTOMIZER_PLAN.md)
   * [CSS Refactor Plan](future-work/CSS_REFACTOR_PLAN.md)
   * [Remaining Extractions Analysis](future-work/REMAINING_EXTRACTIONS_ANALYSIS.md)
@@ -115,6 +115,7 @@
   * **Folder Organization (Complete)**
     * [Final Folder Organization](archive/FINAL_FOLDER_ORGANIZATION.md)
     * [Final Module Structure](archive/FINAL-MODULE-STRUCTURE.md)
+    * [Folder Structure Refactor Plan](archive/FOLDER_STRUCTURE_REFACTOR_PLAN.md)
     * [Multi-Platform Folder Structure](archive/MULTI_PLATFORM_FOLDER_STRUCTURE.md)
     * [Quick Guide Multi-Platform](archive/QUICK_GUIDE_MULTI_PLATFORM.md)
 
