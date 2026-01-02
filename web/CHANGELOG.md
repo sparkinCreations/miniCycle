@@ -1,7 +1,7 @@
 ## [1.635] - 2026-01-02
 - feat: add Playwright-based test and performance benchmark runners
 - chore: add ESLint configuration and scripts for linting
-- chore: update version to 1.634 and refresh changelog
+- chore: update version to 1.634 and refresh changelog.
 
 
 ## [1.634] - 2026-01-02
