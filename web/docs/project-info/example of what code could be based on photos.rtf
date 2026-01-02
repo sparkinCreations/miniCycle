@@ -1,0 +1,722 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-BoldItalic;\f1\fnil\fcharset0 Menlo-Regular;\f2\fnil\fcharset0 Menlo-Bold;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red57\green192\blue38;\red86\green32\blue244;
+\red56\green185\blue199;\red202\green51\blue35;\red170\green171\blue37;}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c25706\c77963\c19557;\cssrgb\c41681\c25958\c96648;
+\cssrgb\c25546\c77007\c82023;\cssrgb\c83899\c28663\c18026;\cssrgb\c72331\c71682\c18599;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\i\b\fs22 \cf2 \ul \ulc2 \CocoaLigature0 Speculative Code Architecture Analysis
+\f1\i0\b0 \ulnone \
+\
+  Based purely on the UI/UX observed across 122 screenshots, here's my educated guess at what the miniCycle codebase might look like:\
+\
+  ---\
+  
+\f2\b Inferred Project Structure
+\f1\b0 \
+\
+  miniCycle/\
+  \uc0\u9500 \u9472 \u9472  index.html\
+  \uc0\u9500 \u9472 \u9472  manifest.json\
+  \uc0\u9500 \u9472 \u9472  service-worker.js\
+  \uc0\u9500 \u9472 \u9472  version.txt (or version.js)\
+  \uc0\u9474 \
+  \uc0\u9500 \u9472 \u9472  css/\
+  \uc0\u9474    \u9500 \u9472 \u9472  main.css\
+  \uc0\u9474    \u9500 \u9472 \u9472  themes/\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  default.css\
+  \uc0\u9474    \u9474    \u9492 \u9472 \u9472  dark-ocean.css\
+  \uc0\u9474    \u9500 \u9472 \u9472  dark-mode.css\
+  \uc0\u9474    \u9492 \u9472 \u9472  animations.css\
+  \uc0\u9474 \
+  \uc0\u9500 \u9472 \u9472  js/\
+  \uc0\u9474    \u9500 \u9472 \u9472  app.js                    # Main entry, initialization\
+  \uc0\u9474    \u9500 \u9472 \u9472  state.js                  # Central state management\
+  \uc0\u9474    \u9500 \u9472 \u9472  storage.js                # LocalStorage abstraction\
+  \uc0\u9474    \u9500 \u9472 \u9472  router.js                 # View switching (Tasks \u8596  Stats)\
+  \uc0\u9474    \u9474 \
+  \uc0\u9474    \u9500 \u9472 \u9472  components/\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  task.js               # Task card rendering\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  routine.js            # Routine container\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  modal.js              # Generic modal system\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  dropdown.js           # Cycle mode selector\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  calendar.js           # Date picker\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  progress.js           # Progress bar/ring\
+  \uc0\u9474    \u9474    \u9492 \u9472 \u9472  toast.js              # Notification banners\
+  \uc0\u9474    \u9474 \
+  \uc0\u9474    \u9500 \u9472 \u9472  features/\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  recurring.js          # Recurring task logic\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  reminders.js          # Notification scheduling\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  search.js             # Filter/search\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  stats.js              # Stats panel calculations\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  achievements.js       # Badge/unlock system\
+  \uc0\u9474    \u9474    \u9500 \u9472 \u9472  themes.js             # Theme switching\
+  \uc0\u9474    \u9474    \u9492 \u9472 \u9472  import-export.js      # .mcyc file handling\
+  \uc0\u9474    \u9474 \
+  \uc0\u9474    \u9492 \u9472 \u9472  utils/\
+  \uc0\u9474        \u9500 \u9472 \u9472  dom.js                # DOM helper functions\
+  \uc0\u9474        \u9500 \u9472 \u9472  date.js               # Date formatting/calculations\
+  \uc0\u9474        \u9500 \u9472 \u9472  storage-calc.js       # Size calculations\
+  \uc0\u9474        \u9492 \u9472 \u9472  animations.js         # Animation triggers\
+  \uc0\u9474 \
+  \uc0\u9492 \u9472 \u9472  assets/\
+      \uc0\u9492 \u9472 \u9472  images/\
+          \uc0\u9500 \u9472 \u9472  logo.svg\
+          \uc0\u9500 \u9472 \u9472  clipboard.svg         # Empty state illustration\
+          \uc0\u9492 \u9472 \u9472  confetti/             # Completion animations\
+\
+  ---\
+  
+\f2\b Likely Data Structures
+\f1\b0 \
+\
+  
+\f2\b Routine Object
+\f1\b0 \
+\
+  \cf3 // What I imagine a routine looks like in storage\cf2 \
+  \cf4 const\cf2  routine = \{\
+    \cf5 id\cf2 : \cf6 "routine_1704067200000"\cf2 ,\
+    \cf5 name\cf2 : \cf6 "Getting Started \uc0\u55357 \u56960 "\cf2 ,\
+    \cf5 emoji\cf2 : \cf6 "\uc0\u55357 \u56960 "\cf2 ,\
+    \cf5 createdAt\cf2 : \cf3 1704067200000\cf2 ,\
+    \cf5 lastModified\cf2 : \cf3 1704153600000\cf2 ,\
+    \cf5 cycleMode\cf2 : \cf6 "auto"\cf2 , \cf3 // "auto" | "manual" | "todo"\cf2 \
+    \cf5 cyclesCompleted\cf2 : \cf3 147\cf2 ,\
+\
+    \cf5 tasks\cf2 : [\
+      \{\
+        \cf5 id\cf2 : \cf6 "task_1704067200001"\cf2 ,\
+        \cf5 text\cf2 : \cf6 "Tap here to complete this task!"\cf2 ,\
+        \cf5 completed\cf2 : \cf4 false\cf2 ,\
+        \cf5 priority\cf2 : \cf4 false\cf2 ,\
+        \cf5 order\cf2 : \cf3 0\cf2 ,\
+        \cf5 dueDate\cf2 : \cf4 null\cf2 ,           \cf3 // timestamp or null\cf2 \
+        \cf5 recurring\cf2 : \cf4 null\cf2 ,          \cf3 // recurring config or null\cf2 \
+        \cf5 reminders\cf2 : \cf4 null\cf2 ,          \cf3 // reminder config or null\cf2 \
+        \cf5 createdAt\cf2 : \cf3 1704067200000\cf2 \
+      \}\
+    ],\
+\
+    \cf3 // Per-routine customization\cf2 \
+    \cf5 taskOptions\cf2 : \{\
+      \cf5 showPriority\cf2 : \cf4 true\cf2 ,\
+      \cf5 showRename\cf2 : \cf4 true\cf2 ,\
+      \cf5 showDelete\cf2 : \cf4 true\cf2 ,\
+      \cf5 showRecurring\cf2 : \cf4 true\cf2 ,\
+      \cf5 showDueDate\cf2 : \cf4 true\cf2 ,\
+      \cf5 showReminders\cf2 : \cf4 true\cf2 ,\
+      \cf5 showDeleteWhenComplete\cf2 : \cf4 false\cf2 ,\
+      \cf5 showMoveArrows\cf2 : \cf4 false\cf2 ,\
+      \cf5 showThreeDots\cf2 : \cf4 true\cf2 \
+    \}\
+  \};\
+\
+  
+\f2\b Recurring Configuration
+\f1\b0 \
+\
+  \cf3 // The recurring system seems complex - here's my guess\cf2 \
+  \cf4 const\cf2  recurringConfig = \{\
+    \cf5 type\cf2 : \cf6 "interval"\cf2 , \cf3 // "interval" | "specific"\cf2 \
+\
+    \cf3 // For interval-based\cf2 \
+    \cf5 frequency\cf2 : \cf6 "daily"\cf2 , \cf3 // "hourly"|"daily"|"weekly"|"biweekly"|"monthly"|"yearly"\cf2 \
+    \cf5 indefinite\cf2 : \cf4 true\cf2 ,\
+\
+    \cf3 // For specific dates\cf2 \
+    \cf5 specificDates\cf2 : [\cf6 "2026-01-03"\cf2 , \cf6 "2026-01-07"\cf2 ],\
+\
+    \cf3 // Optional time\cf2 \
+    \cf5 time\cf2 : \cf6 "04:00"\cf2 , \cf3 // 24-hour format, null if not set\cf2 \
+\
+    \cf3 // Computed\cf2 \
+    \cf5 nextOccurrence\cf2 : \cf3 1704340800000\cf2 ,\
+\
+    \cf3 // User preference\cf2 \
+    \cf5 isDefault\cf2 : \cf4 false\cf2 \
+  \};\
+\
+  
+\f2\b Settings/Preferences
+\f1\b0 \
+\
+  \cf4 const\cf2  settings = \{\
+    \cf3 // Display\cf2 \
+    \cf5 showMoveArrows\cf2 : \cf4 false\cf2 ,\
+    \cf5 showThreeDots\cf2 : \cf4 true\cf2 ,\
+    \cf5 alwaysShowRecurringButton\cf2 : \cf4 false\cf2 ,\
+    \cf5 showCompletedInDropdown\cf2 : \cf4 false\cf2 ,\
+    \cf5 scrollToNewTask\cf2 : \cf4 true\cf2 ,\
+    \cf5 scrollToLastOnLoad\cf2 : \cf4 false\cf2 ,\
+\
+    \cf3 // Theme\cf2 \
+    \cf5 theme\cf2 : \cf6 "default"\cf2 , \cf3 // "default" | "dark-ocean"\cf2 \
+    \cf5 darkMode\cf2 : \cf4 false\cf2 ,\
+\
+    \cf3 // Debug\cf2 \
+    \cf5 debugMode\cf2 : \cf4 false\cf2 ,\
+\
+    \cf3 // Defaults\cf2 \
+    \cf5 defaultRecurring\cf2 : \cf4 null\cf2 ,\
+\
+    \cf3 // State\cf2 \
+    \cf5 onboardingComplete\cf2 : \cf4 true\cf2 ,\
+    \cf5 notificationPosition\cf2 : \{ \cf5 x\cf2 : \cf3 0\cf2 , \cf5 y\cf2 : \cf3 0\cf2  \},\
+\
+    \cf3 // Unlocks\cf2 \
+    \cf5 unlockedThemes\cf2 : [\cf6 "default"\cf2 , \cf6 "dark-ocean"\cf2 ],\
+    \cf5 achievements\cf2 : \{\
+      \cf5 tasksCompleted\cf2 : \cf3 147\cf2 ,\
+      \cf5 badges\cf2 : [\cf6 "bronze"\cf2 , \cf6 "silver"\cf2 , \cf6 "gold"\cf2 , \cf6 "diamond"\cf2 , \cf6 "champion"\cf2 ]\
+    \}\
+  \};\
+\
+  ---\
+  
+\f2\b Likely Code Patterns
+\f1\b0 \
+\
+  
+\f2\b 1. State Management (No Framework)
+\f1\b0 \
+\
+  \cf3 // I suspect a simple pub/sub or observer pattern\cf2 \
+  \cf4 const\cf2  State = \{\
+    \cf5 _state\cf2 : \{\},\
+    \cf5 _listeners\cf2 : [],\
+\
+    \cf7 get(key)\cf2  \{\
+      \cf4 return\cf2  \cf5 this\cf2 ._state[key];\
+    \},\
+\
+    \cf7 set(key, value)\cf2  \{\
+      \cf5 this\cf2 ._state[key] = value;\
+      \cf5 this\cf2 ._persist();\
+      \cf5 this\cf2 ._notify(key, value);\
+    \},\
+\
+    \cf7 subscribe(callback)\cf2  \{\
+      \cf5 this\cf2 ._listeners.push(callback);\
+    \},\
+\
+    \cf7 _notify(key, value)\cf2  \{\
+      \cf5 this\cf2 ._listeners.forEach(\cf7 cb =>\cf2  cb(key, value));\
+    \},\
+\
+    \cf7 _persist()\cf2  \{\
+      \cf5 localStorage\cf2 .setItem(\cf6 'miniCycle'\cf2 , \cf5 JSON\cf2 .stringify(\cf5 this\cf2 ._state));\
+    \},\
+\
+    \cf7 _hydrate()\cf2  \{\
+      \cf4 const\cf2  saved = \cf5 localStorage\cf2 .getItem(\cf6 'miniCycle'\cf2 );\
+      \cf4 if\cf2  (saved) \cf5 this\cf2 ._state = \cf5 JSON\cf2 .parse(saved);\
+    \}\
+  \};\
+\
+  
+\f2\b 2. Component Pattern (Vanilla JS)
+\f1\b0 \
+\
+  \cf3 // Likely using a factory or class pattern for UI components\cf2 \
+  \cf4 function\cf7  createTaskCard(task, routine) \cf2 \{\
+    \cf4 const\cf2  card = \cf5 document\cf2 .createElement(\cf6 'div'\cf2 );\
+    card.className = \cf6 'task-card'\cf2 ;\
+    card.dataset.taskId = task.id;\
+\
+    \cf4 if\cf2  (task.priority) \{\
+      card.classList.add(\cf6 'priority'\cf2 );\
+    \}\
+\
+    card.innerHTML = \cf6 `\cf2 \
+  \cf6     <div class="checkbox $\{task.completed ? 'checked' : ''\}" \cf2 \
+  \cf6          onclick="handleTaskToggle('$\{task.id\}')">\cf2 \
+  \cf6       $\{task.completed ? '\uc0\u10003 ' : ''\}\cf2 \
+  \cf6     </div>\cf2 \
+  \cf6     <div class="task-content">\cf2 \
+  \cf6       <span class="task-text">$\{escapeHtml(task.text)\}</span>\cf2 \
+  \cf6       $\{task.dueDate ? `<span class="due-date">$\{formatDate(task.dueDate)\}</span>` : ''\}\cf2 \
+  \cf6       $\{task.recurring ? '<span class="recurring-icon">\uc0\u55357 \u56580 </span>' : ''\}\cf2 \
+  \cf6     </div>\cf2 \
+  \cf6     <div class="task-actions">\cf2 \
+  \cf6       $\{renderActionIcons(task, routine.taskOptions)\}\cf2 \
+  \cf6     </div>\cf2 \
+  \cf6   `\cf2 ;\
+\
+    \cf3 // Long press handling\cf2 \
+    \cf4 let\cf2  pressTimer;\
+    card.addEventListener(\cf6 'touchstart'\cf2 , \cf7 () =>\cf2  \{\
+      pressTimer = \cf5 setTimeout\cf2 (\cf7 () =>\cf2  openTaskModal(task), \cf3 500\cf2 );\
+    \});\
+    card.addEventListener(\cf6 'touchend'\cf2 , \cf7 () =>\cf2  \cf5 clearTimeout\cf2 (pressTimer));\
+\
+    \cf4 return\cf2  card;\
+  \}\
+\
+  
+\f2\b 3. Modal System
+\f1\b0 \
+\
+  \cf3 // Generic modal manager\cf2 \
+  \cf4 const\cf2  Modal = \{\
+    \cf5 stack\cf2 : [],\
+\
+    \cf7 open(type, data = \{\})\cf2  \{\
+      \cf4 const\cf2  overlay = \cf5 document\cf2 .createElement(\cf6 'div'\cf2 );\
+      overlay.className = \cf6 'modal-overlay'\cf2 ;\
+\
+      \cf4 const\cf2  content = \cf5 this\cf2 .render(type, data);\
+      overlay.appendChild(content);\
+\
+      \cf5 document\cf2 .body.appendChild(overlay);\
+      \cf5 this\cf2 .stack.push(overlay);\
+\
+      \cf3 // Animate in\cf2 \
+      requestAnimationFrame(\cf7 () =>\cf2  overlay.classList.add(\cf6 'visible'\cf2 ));\
+    \},\
+\
+    \cf7 close()\cf2  \{\
+      \cf4 const\cf2  current = \cf5 this\cf2 .stack.pop();\
+      \cf4 if\cf2  (current) \{\
+        current.classList.remove(\cf6 'visible'\cf2 );\
+        \cf5 setTimeout\cf2 (\cf7 () =>\cf2  current.remove(), \cf3 300\cf2 );\
+      \}\
+    \},\
+\
+    \cf7 render(type, data)\cf2  \{\
+      \cf4 switch\cf2 (type) \{\
+        \cf4 case\cf2  \cf6 'task-options'\cf2 : \cf4 return\cf2  renderTaskOptionsModal(data);\
+        \cf4 case\cf2  \cf6 'recurring'\cf2 : \cf4 return\cf2  renderRecurringModal(data);\
+        \cf4 case\cf2  \cf6 'settings'\cf2 : \cf4 return\cf2  renderSettingsModal(data);\
+        \cf4 case\cf2  \cf6 'calendar'\cf2 : \cf4 return\cf2  renderCalendarModal(data);\
+        \cf3 // ... etc\cf2 \
+      \}\
+    \}\
+  \};\
+\
+  
+\f2\b 4. Recurring Task Engine
+\f1\b0 \
+\
+  \cf3 // This seems like a complex piece of logic\cf2 \
+  \cf4 const\cf2  RecurringEngine = \{\
+\
+    \cf7 calculateNextOccurrence(config)\cf2  \{\
+      \cf4 const\cf2  now = \cf4 new\cf2  \cf5 Date\cf2 ();\
+\
+      \cf4 if\cf2  (config.type === \cf6 'specific'\cf2 ) \{\
+        \cf3 // Find next date in specificDates that's in the future\cf2 \
+        \cf4 return\cf2  config.specificDates\
+          .map(\cf7 d =>\cf2  \cf4 new\cf2  \cf5 Date\cf2 (d))\
+          .filter(\cf7 d =>\cf2  d > now)\
+          .sort(\cf7 (a, b) =>\cf2  a - b)[\cf3 0\cf2 ];\
+      \}\
+\
+      \cf3 // Interval-based calculation\cf2 \
+      \cf4 let\cf2  next = \cf4 new\cf2  \cf5 Date\cf2 ();\
+\
+      \cf4 switch\cf2 (config.frequency) \{\
+        \cf4 case\cf2  \cf6 'hourly'\cf2 :\
+          next.setHours(next.getHours() + \cf3 1\cf2 );\
+          \cf4 break\cf2 ;\
+        \cf4 case\cf2  \cf6 'daily'\cf2 :\
+          next.setDate(next.getDate() + \cf3 1\cf2 );\
+          \cf4 break\cf2 ;\
+        \cf4 case\cf2  \cf6 'weekly'\cf2 :\
+          next.setDate(next.getDate() + \cf3 7\cf2 );\
+          \cf4 break\cf2 ;\
+        \cf4 case\cf2  \cf6 'biweekly'\cf2 :\
+          next.setDate(next.getDate() + \cf3 14\cf2 );\
+          \cf4 break\cf2 ;\
+        \cf4 case\cf2  \cf6 'monthly'\cf2 :\
+          next.setMonth(next.getMonth() + \cf3 1\cf2 );\
+          \cf4 break\cf2 ;\
+        \cf4 case\cf2  \cf6 'yearly'\cf2 :\
+          next.setFullYear(next.getFullYear() + \cf3 1\cf2 );\
+          \cf4 break\cf2 ;\
+      \}\
+\
+      \cf3 // Apply specific time if set\cf2 \
+      \cf4 if\cf2  (config.time) \{\
+        \cf4 const\cf2  [hours, minutes] = config.time.split(\cf6 ':'\cf2 );\
+        next.setHours(\cf5 parseInt\cf2 (hours), \cf5 parseInt\cf2 (minutes), \cf3 0\cf2 , \cf3 0\cf2 );\
+      \}\
+\
+      \cf4 return\cf2  next;\
+    \},\
+\
+    \cf7 getTimeUntilNext(config)\cf2  \{\
+      \cf4 const\cf2  next = \cf5 this\cf2 .calculateNextOccurrence(config);\
+      \cf4 const\cf2  now = \cf4 new\cf2  \cf5 Date\cf2 ();\
+      \cf4 const\cf2  diff = next - now;\
+\
+      \cf4 const\cf2  hours = \cf5 Math\cf2 .floor(diff / (\cf3 1000\cf2  * \cf3 60\cf2  * \cf3 60\cf2 ));\
+\
+      \cf4 if\cf2  (hours < \cf3 1\cf2 ) \cf4 return\cf2  \cf6 'Appears in less than an hour'\cf2 ;\
+      \cf4 if\cf2  (hours === \cf3 1\cf2 ) \cf4 return\cf2  \cf6 'Appears in 1 hour'\cf2 ;\
+      \cf4 return\cf2  \cf6 `Appears in $\{hours\} hours`\cf2 ;\
+    \},\
+\
+    \cf7 processRecurringTasks(routine)\cf2  \{\
+      \cf4 const\cf2  now = \cf4 new\cf2  \cf5 Date\cf2 ();\
+\
+      routine.tasks.forEach(\cf7 task =>\cf2  \{\
+        \cf4 if\cf2  (task.recurring && task.completed) \{\
+          \cf4 const\cf2  next = \cf5 this\cf2 .calculateNextOccurrence(task.recurring);\
+          \cf4 if\cf2  (now >= next) \{\
+            task.completed = \cf4 false\cf2 ;\
+            task.recurring.nextOccurrence = \cf5 this\cf2 .calculateNextOccurrence(task.recurring);\
+          \}\
+        \}\
+      \});\
+    \}\
+  \};\
+\
+  
+\f2\b 5. Theme System
+\f1\b0 \
+\
+  \cf3 // CSS custom properties driven\cf2 \
+  \cf4 const\cf2  ThemeManager = \{\
+    \cf5 current\cf2 : \cf6 'default'\cf2 ,\
+    \cf5 darkMode\cf2 : \cf4 false\cf2 ,\
+\
+    \cf7 setTheme(themeName)\cf2  \{\
+      \cf5 document\cf2 .body.dataset.theme = themeName;\
+      \cf5 this\cf2 .current = themeName;\
+      State.set(\cf6 'theme'\cf2 , themeName);\
+    \},\
+\
+    \cf7 toggleDarkMode()\cf2  \{\
+      \cf5 this\cf2 .darkMode = !\cf5 this\cf2 .darkMode;\
+      \cf5 document\cf2 .body.classList.toggle(\cf6 'dark-mode'\cf2 , \cf5 this\cf2 .darkMode);\
+      State.set(\cf6 'darkMode'\cf2 , \cf5 this\cf2 .darkMode);\
+\
+      \cf3 // Update moon/sun icon\cf2 \
+      \cf4 const\cf2  toggle = \cf5 document\cf2 .querySelector(\cf6 '.dark-mode-toggle'\cf2 );\
+      toggle.textContent = \cf5 this\cf2 .darkMode ? \cf6 '\uc0\u9728 \u65039 '\cf2  : \cf6 '\uc0\u55356 \u57113 '\cf2 ;\
+    \},\
+\
+    \cf7 unlock(themeName)\cf2  \{\
+      \cf4 const\cf2  unlocked = State.get(\cf6 'unlockedThemes'\cf2 ) || [\cf6 'default'\cf2 ];\
+      \cf4 if\cf2  (!unlocked.includes(themeName)) \{\
+        unlocked.push(themeName);\
+        State.set(\cf6 'unlockedThemes'\cf2 , unlocked);\
+        showToast(\cf6 `\uc0\u55356 \u57225  $\{themeName\} theme unlocked!`\cf2 );\
+      \}\
+    \}\
+  \};\
+\
+  
+\f2\b 6. File Import/Export (.mcyc)
+\f1\b0 \
+\
+  \cf3 // Custom file format handler\cf2 \
+  \cf4 const\cf2  FileManager = \{\
+\
+    \cf7 exportRoutine(routine)\cf2  \{\
+      \cf4 const\cf2  data = \{\
+        \cf5 version\cf2 : \cf6 '1.623'\cf2 ,\
+        \cf5 type\cf2 : \cf6 'miniCycle-routine'\cf2 ,\
+        \cf5 exportedAt\cf2 : \cf5 Date\cf2 .now(),\
+        \cf5 routine\cf2 : routine\
+      \};\
+\
+      \cf4 const\cf2  blob = \cf4 new\cf2  Blob([\cf5 JSON\cf2 .stringify(data, \cf4 null\cf2 , \cf3 2\cf2 )], \{\
+        \cf5 type\cf2 : \cf6 'application/json'\cf2 \
+      \});\
+\
+      \cf4 const\cf2  filename = \cf6 `$\{routine.name.replace(/[^a-z0-9]/gi, '_')\}.mcyc`\cf2 ;\
+\
+      \cf3 // Trigger download\cf2 \
+      \cf4 const\cf2  a = \cf5 document\cf2 .createElement(\cf6 'a'\cf2 );\
+      a.href = URL.createObjectURL(blob);\
+      a.download = filename;\
+      a.click();\
+    \},\
+\
+    \cf4 async\cf2  \cf7 importRoutine(file)\cf2  \{\
+      \cf4 const\cf2  text = \cf4 await\cf2  file.text();\
+      \cf4 const\cf2  data = \cf5 JSON\cf2 .parse(text);\
+\
+      \cf4 if\cf2  (data.type !== \cf6 'miniCycle-routine'\cf2 ) \{\
+        \cf4 throw\cf2  \cf4 new\cf2  \cf5 Error\cf2 (\cf6 'Invalid file format'\cf2 );\
+      \}\
+\
+      \cf3 // Generate new IDs to avoid conflicts\cf2 \
+      \cf4 const\cf2  routine = data.routine;\
+      routine.id = \cf6 `routine_$\{\cf5 Date\cf6 .now()\}`\cf2 ;\
+      routine.tasks.forEach(\cf7 t =>\cf2  t.id = \cf6 `task_$\{\cf5 Date\cf6 .now()\}_$\{\cf5 Math\cf6 .random()\}`\cf2 );\
+\
+      \cf4 return\cf2  routine;\
+    \},\
+\
+    \cf7 backupAll()\cf2  \{\
+      \cf4 const\cf2  allData = \{\
+        \cf5 version\cf2 : \cf6 '1.623'\cf2 ,\
+        \cf5 type\cf2 : \cf6 'miniCycle-backup'\cf2 ,\
+        \cf5 exportedAt\cf2 : \cf5 Date\cf2 .now(),\
+        \cf5 routines\cf2 : State.get(\cf6 'routines'\cf2 ),\
+        \cf5 settings\cf2 : State.get(\cf6 'settings'\cf2 )\
+      \};\
+\
+      \cf4 const\cf2  blob = \cf4 new\cf2  Blob([\cf5 JSON\cf2 .stringify(allData)], \{ \cf5 type\cf2 : \cf6 'application/json'\cf2  \});\
+      \cf4 const\cf2  a = \cf5 document\cf2 .createElement(\cf6 'a'\cf2 );\
+      a.href = URL.createObjectURL(blob);\
+      a.download = \cf6 `miniCycle-backup-$\{\cf4 new\cf6  \cf5 Date\cf6 ().toISOString().split('T')[\cf3 0\cf6 ]\}.mcyc`\cf2 ;\
+      a.click();\
+    \}\
+  \};\
+\
+  
+\f2\b 7. Storage Size Calculator
+\f1\b0 \
+\
+  \cf3 // They show "~7 KB" - must calculate this\cf2 \
+  \cf4 const\cf2  StorageCalc = \{\
+\
+    \cf7 getRoutineSize(routine)\cf2  \{\
+      \cf4 const\cf2  json = \cf5 JSON\cf2 .stringify(routine);\
+      \cf4 const\cf2  bytes = \cf4 new\cf2  Blob([json]).size;\
+      \cf4 return\cf2  bytes;\
+    \},\
+\
+    \cf7 formatSize(bytes)\cf2  \{\
+      \cf4 if\cf2  (bytes < \cf3 1024\cf2 ) \cf4 return\cf2  \cf6 `~$\{bytes\} B`\cf2 ;\
+      \cf4 if\cf2  (bytes < \cf3 1024\cf2  * \cf3 1024\cf2 ) \cf4 return\cf2  \cf6 `~$\{\cf5 Math\cf6 .round(bytes / \cf3 1024\cf6 )\} KB`\cf2 ;\
+      \cf4 return\cf2  \cf6 `~$\{(bytes / (\cf3 1024\cf6  * \cf3 1024\cf6 )).toFixed(\cf3 2\cf6 )\} MB`\cf2 ;\
+    \},\
+\
+    \cf7 getTotalUsage()\cf2  \{\
+      \cf4 let\cf2  total = \cf3 0\cf2 ;\
+      \cf4 for\cf2  (\cf4 let\cf2  key \cf4 in\cf2  \cf5 localStorage\cf2 ) \{\
+        \cf4 if\cf2  (\cf5 localStorage\cf2 .hasOwnProperty(key)) \{\
+          total += \cf5 localStorage\cf2 [key].length * \cf3 2\cf2 ; \cf3 // UTF-16 = 2 bytes per char\cf2 \
+        \}\
+      \}\
+      \cf4 return\cf2  total;\
+    \},\
+\
+    \cf7 getQuota()\cf2  \{\
+      \cf3 // Estimate ~10MB for localStorage\cf2 \
+      \cf4 return\cf2  \cf3 10\cf2  * \cf3 1024\cf2  * \cf3 1024\cf2 ;\
+    \}\
+  \};\
+\
+  
+\f2\b 8. Service Worker
+\f1\b0 \
+\
+  \cf3 // service-worker.js\cf2 \
+  \cf4 const\cf2  CACHE_VERSION = \cf6 'v416'\cf2 ;\
+  \cf4 const\cf2  CACHE_NAME = \cf6 `miniCycle-$\{CACHE_VERSION\}`\cf2 ;\
+\
+  \cf4 const\cf2  ASSETS_TO_CACHE = [\
+    \cf6 '/'\cf2 ,\
+    \cf6 '/index.html'\cf2 ,\
+    \cf6 '/css/main.css'\cf2 ,\
+    \cf6 '/js/app.js'\cf2 ,\
+    \cf3 // ... all assets\cf2 \
+  ];\
+\
+  self.addEventListener(\cf6 'install'\cf2 , \cf7 event =>\cf2  \{\
+    event.waitUntil(\
+      caches.open(CACHE_NAME)\
+        .then(\cf7 cache =>\cf2  cache.addAll(ASSETS_TO_CACHE))\
+        .then(\cf7 () =>\cf2  self.skipWaiting())\
+    );\
+  \});\
+\
+  self.addEventListener(\cf6 'activate'\cf2 , \cf7 event =>\cf2  \{\
+    event.waitUntil(\
+      caches.keys().then(\cf7 keys =>\cf2 \
+        \cf5 Promise\cf2 .all(\
+          keys.filter(\cf7 key =>\cf2  key !== CACHE_NAME)\
+              .map(\cf7 key =>\cf2  caches.delete(key))\
+        )\
+      )\
+    );\
+  \});\
+\
+  self.addEventListener(\cf6 'fetch'\cf2 , \cf7 event =>\cf2  \{\
+    event.respondWith(\
+      caches.match(event.request)\
+        .then(\cf7 response =>\cf2  response || fetch(event.request))\
+    );\
+  \});\
+\
+  ---\
+  
+\f2\b CSS Architecture Guess
+\f1\b0 \
+\
+  
+\f2\b Theme Variables
+\f1\b0 \
+\
+  \cf3 /* Likely using CSS custom properties for theming */\cf2 \
+  :root \{\
+    \cf3 /* Default theme */\cf2 \
+    --bg-gradient-start: \cf3 #87CEEB\cf2 ;\
+    --bg-gradient-end: \cf3 #4A90D9\cf2 ;\
+    --card-bg: \cf3 #ffffff\cf2 ;\
+    --card-shadow: \cf3 0\cf2  \cf3 2px\cf2  \cf3 8px\cf2  \cf5 rgba\cf2 (\cf3 0\cf2 ,\cf3 0\cf2 ,\cf3 0\cf2 ,\cf3 0.1\cf2 );\
+    --text-primary: \cf3 #333333\cf2 ;\
+    --text-secondary: \cf3 #666666\cf2 ;\
+    --accent-green: \cf3 #4CAF50\cf2 ;\
+    --accent-red: \cf3 #f44336\cf2 ;\
+    --accent-purple: \cf3 #9C27B0\cf2 ;\
+    --priority-border: \cf3 #f44336\cf2 ;\
+  \}\
+\
+  [data-theme=\cf6 "dark-ocean"\cf2 ] \{\
+    --bg-gradient-start: \cf3 #1a237e\cf2 ;\
+    --bg-gradient-end: \cf3 #0d1b3e\cf2 ;\
+    --card-bg: \cf3 #1e3a5f\cf2 ;\
+    --text-primary: \cf3 #ffffff\cf2 ;\
+    --text-secondary: \cf3 #b0bec5\cf2 ;\
+  \}\
+\
+  .dark-mode \{\
+    --card-bg: \cf3 #2d2d2d\cf2 ;\
+    --text-primary: \cf3 #ffffff\cf2 ;\
+    --text-secondary: \cf3 #aaaaaa\cf2 ;\
+  \}\
+\
+  \cf3 /* Applied together for dark-ocean + dark-mode */\cf2 \
+  [data-theme=\cf6 "dark-ocean"\cf2 ].dark-mode \{\
+    --bg-gradient-start: \cf3 #0a0a1a\cf2 ;\
+    --bg-gradient-end: \cf3 #050510\cf2 ;\
+    --card-bg: \cf3 #0d1520\cf2 ;\
+  \}\
+\
+  
+\f2\b Animation Classes
+\f1\b0 \
+\
+  \cf3 /* Completion animation */\cf2 \
+  \cf4 @keyframes\cf2  checkmark-pop \{\
+    \cf3 0%\cf2  \{ transform: \cf5 scale\cf2 (\cf3 0\cf2 ); \}\
+    \cf3 50%\cf2  \{ transform: \cf5 scale\cf2 (\cf3 1.2\cf2 ); \}\
+    \cf3 100%\cf2  \{ transform: \cf5 scale\cf2 (\cf3 1\cf2 ); \}\
+  \}\
+\
+  \cf4 @keyframes\cf2  confetti \{\
+    \cf3 0%\cf2  \{ opacity: \cf3 1\cf2 ; transform: \cf5 translateY\cf2 (\cf3 0\cf2 ) \cf5 rotate\cf2 (\cf3 0deg\cf2 ); \}\
+    \cf3 100%\cf2  \{ opacity: \cf3 0\cf2 ; transform: \cf5 translateY\cf2 (-\cf3 100px\cf2 ) \cf5 rotate\cf2 (\cf3 720deg\cf2 ); \}\
+  \}\
+\
+  .task-card.completing .checkbox \{\
+    animation: checkmark-pop \cf3 0.3s\cf2  ease-out;\
+  \}\
+\
+  \cf3 /* Progress bar fill */\cf2 \
+  .progress-bar-fill \{\
+    transition: width \cf3 0.5s\cf2  ease-out;\
+    background: \cf5 linear-gradient\cf2 (\cf3 90deg\cf2 , \cf5 var\cf2 (--accent-green), \cf3 #8BC34A\cf2 );\
+  \}\
+\
+  \cf3 /* Modal transitions */\cf2 \
+  .modal-overlay \{\
+    opacity: \cf3 0\cf2 ;\
+    transition: opacity \cf3 0.3s\cf2  ease;\
+  \}\
+\
+  .modal-overlay.visible \{\
+    opacity: \cf3 1\cf2 ;\
+  \}\
+\
+  ---\
+  
+\f2\b Estimated Code Statistics
+\f1\b0 \
+\
+  | Metric              | Estimate      |\
+  |---------------------|---------------|\
+  | Total JS Lines      | 4,000 - 6,000 |\
+  | Total CSS Lines     | 1,500 - 2,500 |\
+  | HTML (index.html)   | 200 - 400     |\
+  | Number of JS files  | 15 - 25       |\
+  | Number of CSS files | 5 - 10        |\
+\
+  ---\
+  
+\f2\b Architecture Observations
+\f1\b0 \
+\
+  
+\f2\b What They Did Right (Probably)
+\f1\b0 \
+\
+  1. 
+\f2\b Separation of concerns
+\f1\b0  \'97 Features seem modular based on UI behavior\
+  2. 
+\f2\b Event delegation
+\f1\b0  \'97 With this many interactive elements, likely using delegated handlers\
+  3. 
+\f2\b Efficient DOM updates
+\f1\b0  \'97 UI feels snappy, suggesting minimal reflows\
+  4. 
+\f2\b Stateful persistence
+\f1\b0  \'97 Automatic saving without explicit "Save" buttons\
+  5. 
+\f2\b Progressive enhancement
+\f1\b0  \'97 Works offline, core features don't need JS for layout\
+\
+  
+\f2\b Challenges They Likely Solved
+\f1\b0 \
+\
+  1. 
+\f2\b Long-press detection
+\f1\b0  \'97 Custom implementation for mobile\
+  2. 
+\f2\b Swipe gesture handling
+\f1\b0  \'97 Touch event management without Hammer.js\
+  3. 
+\f2\b Date picker
+\f1\b0  \'97 Built custom calendar widget\
+  4. 
+\f2\b Recurring calculation
+\f1\b0  \'97 Complex date math for all frequencies\
+  5. 
+\f2\b Storage management
+\f1\b0  \'97 Size calculation and quota awareness\
+\
+  ---\
+  
+\f2\b Summary
+\f1\b0 \
+\
+  Based on the sophistication of the UI and the "vanilla JS, no framework" constraint, I'd expect:\
+\
+  - 
+\f2\b Clean, modular architecture
+\f1\b0  with feature-based organization\
+  - 
+\f2\b Custom state management
+\f1\b0  using observer pattern\
+  - 
+\f2\b DOM manipulation helpers
+\f1\b0  to reduce repetition\
+  - 
+\f2\b CSS custom properties
+\f1\b0  driving the theme system\
+  - 
+\f2\b Local Storage
+\f1\b0  as the persistence layer\
+  - 
+\f2\b Service Worker
+\f1\b0  for offline-first PWA behavior\
+  - 
+\f2\b Event delegation
+\f1\b0  for performance with many tasks\
+  - 
+\f2\b Custom implementations
+\f1\b0  of calendar, modals, toasts, and gestures\
+\
+}

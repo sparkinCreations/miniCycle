@@ -2,15 +2,17 @@
 
 **Your Routine Manager That Resets Itself**
 
+![miniCycle Main View](../../assets/images/screenshots/Example/IMG_1286.PNG)
+
 -----
 
 ## 🎯 The Simple Explanation
 
 miniCycle is a routine manager.
 
-You create **routines** made of tasks, complete them, and when all tasks are finished, miniCycle automatically resets the routine so it’s ready for next time.
+You create **routines** made of tasks, complete them, and when all tasks are finished, miniCycle automatically resets the routine so it's ready for next time.
 
-It also tracks how many times you’ve completed each routine — these completions are your **cycles**.
+It also tracks how many times you've completed each routine — these completions are your **cycles**.
 
 Think of it like a checklist that never disappears and never needs rebuilding.
 
@@ -41,11 +43,13 @@ Examples:
 
 When you check off the final task…
 
+![Task Completion Animation](../../assets/images/screenshots/Example/IMG_1172.PNG)
+
 ### 4️⃣ miniCycle resets the routine
 
 All tasks become unchecked again — ready for next time.
 
-(There’s a brief 1-2 second pause so you can see your completion!)
+![All Tasks Complete](../../assets/images/screenshots/Example/IMG_1281.PNG)
 
 ### 5️⃣ Your Cycle Count increases
 
@@ -53,21 +57,21 @@ Every completed routine adds **+1 cycle** to your progress.
 
 -----
 
-## 🔄 Understanding “Routines” vs “Cycles”
+## 🔄 Understanding "Routines" vs "Cycles"
 
-### What’s a Routine?
+### What's a Routine?
 
 A **routine** is the persistent checklist you create.
 
 Examples:
 
-- Your “Morning Routine” with 8 tasks
-- Your “Quality Check” routine with 12 steps
-- Your “Weekly Review” routine with 5 items
+- Your "Morning Routine" with 8 tasks
+- Your "Quality Check" routine with 12 steps
+- Your "Weekly Review" routine with 5 items
 
 **The routine stays the same.** You create it once, and it never disappears.
 
-### What’s a Cycle?
+### What's a Cycle?
 
 A **cycle** is one complete run-through of your routine.
 
@@ -77,7 +81,7 @@ Examples:
 - Complete it again tomorrow → **2 cycles**
 - Complete it 30 days in a row → **30 cycles**
 
-**The cycle count tracks your consistency.** It shows how many times you’ve finished the entire routine.
+**The cycle count tracks your consistency.** It shows how many times you've finished the entire routine.
 
 ### The Relationship
 
@@ -90,7 +94,7 @@ Cycle = Each time you finish it (tracked progress)
 ```
 
 **In one sentence:**
-“I created my Morning Routine, and I’ve completed 42 cycles of it this month.”
+"I created my Morning Routine, and I've completed 42 cycles of it this month."
 
 -----
 
@@ -98,11 +102,11 @@ Cycle = Each time you finish it (tracked progress)
 
 **Complete all tasks → tasks reset → cycle count goes up.**
 
-That’s it. Simple. Predictable. Repeatable.
+That's it. Simple. Predictable. Repeatable.
 
 -----
 
-## 📈 What Is a “Cycle”? (Deeper Dive)
+## 📈 What Is a "Cycle"? (Deeper Dive)
 
 A cycle is one full completion of your routine.
 
@@ -119,8 +123,8 @@ A cycle is one full completion of your routine.
 [ ] Review today's goals
 ```
 
-**First day:** Check all 6 tasks → **Cycle count: 1**  
-**Second day:** Check all 6 tasks → **Cycle count: 2**  
+**First day:** Check all 6 tasks → **Cycle count: 1**
+**Second day:** Check all 6 tasks → **Cycle count: 2**
 **Third day:** Check all 6 tasks → **Cycle count: 3**
 
 After a month: **Cycle count: 30** (if you completed it every day)
@@ -129,8 +133,10 @@ After a month: **Cycle count: 30** (if you completed it every day)
 
 - **Track consistency** - See how often you actually complete routines
 - **Build momentum** - Higher numbers = more motivation
-- **Spot patterns** - Know which routines you’re maintaining vs. skipping
-- **Unlock achievements** - Reach milestones (10 cycles, 50 cycles, 100 cycles!)
+- **Spot patterns** - Know which routines you're maintaining vs. skipping
+- **Unlock achievements** - Reach milestones (5, 25, 50, 75, 100 cycles!)
+
+![Stats Panel with Achievements](../../assets/images/screenshots/Example/IMG_1176.PNG)
 
 Every routine has its own cycle count.
 
@@ -138,14 +144,16 @@ Every routine has its own cycle count.
 
 ## 🎛️ Three Modes for Different Needs
 
-miniCycle offers three different ways routines can reset:
+miniCycle offers three different ways routines can behave:
+
+![Cycle Mode Selection](../../assets/images/screenshots/Example/IMG_1183.PNG)
 
 ### 🔄 Auto Cycle Mode (Most Popular)
 
 **How it works:**
 
 - Check off the last task
-- Wait 1-2 seconds (celebration moment!)
+- Brief celebration moment
 - Routine automatically resets
 - Cycle count increases
 
@@ -164,9 +172,11 @@ miniCycle offers three different ways routines can reset:
 **How it works:**
 
 - Complete all tasks
-- “Start New Cycle” button appears
+- "Complete" button appears
 - You click when ready to reset
 - Tasks uncheck and cycle count increases
+
+![Manual Cycle Complete Button](../../assets/images/screenshots/Example/IMG_1191.PNG)
 
 **Perfect for:**
 
@@ -183,15 +193,15 @@ miniCycle offers three different ways routines can reset:
 **How it works:**
 
 - Complete a task → it gets deleted (not reset)
-- “Delete Completed Tasks” button appears when all done
 - Works like a traditional to-do list
+- No cycling — tasks are removed when done
 
 **Perfect for:**
 
 - One-time tasks
 - Shopping lists
 - Project deliverables
-- Anything you don’t want to repeat
+- Anything you don't want to repeat
 
 **Example:** Moving checklist or vacation planning
 
@@ -265,6 +275,14 @@ miniCycle offers three different ways routines can reset:
 
 -----
 
+### ⭐ Power User Example
+
+Here's what consistent use looks like — **147 cycles completed**:
+
+![147 Cycles Completed](../../assets/images/screenshots/Example/IMG_1301.PNG)
+
+-----
+
 ### ⭐ Planning Routines
 
 **Weekly Review** (Manual Cycle)
@@ -305,7 +323,7 @@ miniCycle offers three different ways routines can reset:
 
 Your routine stays exactly the same every time.
 
-No more “What did I do yesterday?” or “What’s my morning routine again?”
+No more "What did I do yesterday?" or "What's my morning routine again?"
 
 ### ✔ You always start fresh
 
@@ -345,7 +363,7 @@ No extra effort — it resets automatically (in Auto Cycle mode).
 
 ### 📊 Cycle Count Tracking
 
-See exactly how many times you’ve completed each routine.
+See exactly how many times you've completed each routine.
 
 ### 🎛️ Flexible Modes
 
@@ -373,18 +391,18 @@ Progressive Web App (PWA) works without internet.
 
 ### Traditional To-Do Apps (Todoist, Any.do, etc.)
 
-❌ Tasks disappear when completed  
-❌ Must rebuild routines constantly  
-❌ No cycling concept  
+❌ Tasks disappear when completed
+❌ Must rebuild routines constantly
+❌ No cycling concept
 ✅ Good for one-off projects
 
 -----
 
 ### Habit Trackers (Habitica, Streaks, etc.)
 
-❌ Only track completion, don’t manage tasks  
-❌ No complex workflows  
-❌ Limited task details  
+❌ Only track completion, don't manage tasks
+❌ No complex workflows
+❌ Limited task details
 ✅ Good for simple habit building
 
 -----
@@ -417,7 +435,7 @@ Progressive Web App (PWA) works without internet.
 ### ⚠️ Not Ideal For:
 
 - **Only have one-off tasks** (traditional to-do apps work better)
-- **Don’t repeat workflows** (no benefit from cycling)
+- **Don't repeat workflows** (no benefit from cycling)
 - **Need cloud sync** (miniCycle is local-only for privacy)
 - **Want team collaboration** (miniCycle is for personal use)
 
@@ -444,9 +462,11 @@ Think about tasks you do repeatedly:
 
 ### Step 3: Create Your First Routine
 
+![Empty State - Create First Routine](../../assets/images/screenshots/Example/IMG_1303.PNG)
+
 1. Open miniCycle
-1. Click “Create a Routine”
-1. Name it (e.g., “Morning Routine”)
+1. Click "Create a Routine"
+1. Name it (e.g., "Morning Routine")
 1. Add your tasks
 1. Choose your mode (Auto/Manual/To-Do)
 
@@ -463,9 +483,9 @@ Think about tasks you do repeatedly:
 
 ### 🔄 The Routine is the Product
 
-You’re not just managing tasks.
+You're not just managing tasks.
 
-You’re building and refining repeatable routines.
+You're building and refining repeatable routines.
 
 Each cycle helps you improve your process.
 
