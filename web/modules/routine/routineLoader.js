@@ -30,7 +30,8 @@ const di = createDIModule('RoutineLoader', {
   updateStatsPanel: optional(null),
   syncAllTasksWithMode: optional(null),
   taskToAddTaskOptions: optional(null),  // From taskUtils - injected to avoid duplicate module loading
-  updateSearchVisibility: optional(null)  // Task search visibility based on count
+  updateSearchVisibility: optional(null),  // Task search visibility based on count
+  syncModeFromToggles: optional(null)  // Sync mode selector with routine's saved mode
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
@@ -344,6 +345,9 @@ function updateCycleUIState(currentCycle, settings) {
   if (deleteCheckedTasks) {
     deleteCheckedTasks.checked = currentCycle.deleteCheckedTasks || false;
   }
+
+  // Sync mode selector dropdown and body classes with routine's saved mode
+  _deps.syncModeFromToggles?.();
 
   applyThemeSettings(settings || {});
 }

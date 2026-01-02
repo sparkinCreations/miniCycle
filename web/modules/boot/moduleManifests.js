@@ -246,6 +246,7 @@ export const MODULE_MANIFESTS = {
         requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle', 'createNewMiniCycle'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription'],
         api: 'cycle',
+        provideInstance: 'modeManager',
         after: ['recurringIntegration', 'routineSwitcher', 'routineManager']
     },
 

@@ -727,6 +727,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         initializeModeSelector: (...args) => deps.cycle?.setupModeSelector?.(...args),
         setupModeSelector: (...args) => deps.cycle?.setupModeSelector?.(...args),
         updateCycleModeDescription: (...args) => deps.cycle?.updateCycleModeDescription?.(...args),
+        syncModeFromToggles: (...args) => deps.cycle?.modeManager?.syncModeFromToggles?.(...args),
 
         // Help window manager (from deps.ui) - returns instance when called as function
         helpWindowManager: () => deps.ui?.helpWindowManager,
