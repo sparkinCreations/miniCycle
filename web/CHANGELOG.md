@@ -1,3 +1,8 @@
+## [1.637] - 2026-01-02
+- feat: add simple hash function for stable ID generation and duplicate detection in notifications
+- chore: update version to 1.636 and refresh changelog
+
+
 ## [1.636] - 2026-01-02
 - feat: enhance notification tests with dependency injection and duplicate check
 - chore: fix punctuation in version update for changelog
