@@ -1,3 +1,8 @@
+## [1.630] - 2026-01-02
+- refactor: update footer links for clarity and consistency
+- chore: update version to 1.629 and refresh changelog
+
+
 ## [1.629] - 2026-01-02
 - refactor: update service worker log messages for consistency
 - chore: update version to 1.628 and refresh changelog
