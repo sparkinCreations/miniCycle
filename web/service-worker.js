@@ -377,31 +377,26 @@ self.addEventListener('fetch', function (event) {
       fetchUrl.searchParams.set('v', APP_VERSION);
     }
 
-    // ✅ NETWORK-FIRST for JS/CSS: Always fetch fresh, cache as backup
-    // ✅ IMPORTANT: Use cache: 'no-cache' to bypass browser HTTP cache
-    // This prevents 304 responses returning stale module content
-    var freshRequest = new Request(fetchUrl.href, {
-      method: 'GET',
-      headers: request.headers,
-      mode: request.mode,
-      credentials: request.credentials,
-      cache: 'no-cache'  // Force revalidation, bypass stale browser cache
-    });
-
     // ✅ Create normalized cache key (strip version param for consistent caching)
     var cacheUrl = new URL(request.url);
     cacheUrl.searchParams.delete('v');
     var cacheRequest = new Request(cacheUrl.href);
 
+    // ✅ STALE-WHILE-REVALIDATE for JS/CSS: Serve from cache instantly, update in background
+    // This makes repeat visits feel instant while keeping content fresh
     event.respondWith(
-      fetch(freshRequest)
-        .then(function (res) {
+      caches.match(cacheRequest).then(function (cached) {
+        // Background fetch to update cache (don't await)
+        var fetchPromise = fetch(new Request(fetchUrl.href, {
+          method: 'GET',
+          headers: request.headers,
+          mode: request.mode,
+          credentials: request.credentials,
+          cache: 'no-cache'  // Force revalidation for the background fetch
+        })).then(function (res) {
           if (res && res.status === 200) {
             return caches.open(DYNAMIC_CACHE).then(function (cache) {
-              // Store with normalized URL (no version) for consistent cache keys
               return cache.put(cacheRequest, res.clone()).then(function() {
-                // console.log('📦 Cached fresh JS/CSS:', request.url);
-                // ✅ Trim cache after adding new entry
                 trimCache(DYNAMIC_CACHE, MAX_DYNAMIC_ENTRIES);
                 return res;
               }).catch(function(cacheError) {
@@ -411,18 +406,26 @@ self.addEventListener('fetch', function (event) {
             });
           }
           return res;
-        })
-        .catch(function (error) {
-          // ✅ Offline fallback: use cache (with normalized key)
-          console.warn('❌ Fetch failed for JS/CSS, trying cache:', request.url, error);
-          return caches.match(cacheRequest).then(function (cached) {
-            return cached || new Response('// Offline - file not cached', {
-              status: 504,
-              statusText: 'Gateway Timeout',
-              headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
-            });
+        }).catch(function (error) {
+          console.warn('⚠️ Background fetch failed for:', request.url, error);
+          return null;
+        });
+
+        // If we have a cached version, return it immediately
+        if (cached) {
+          // console.log('⚡ Cache hit (stale-while-revalidate):', request.url);
+          return cached;
+        }
+
+        // No cache - wait for network (first visit or cache miss)
+        return fetchPromise.then(function (res) {
+          return res || new Response('// Offline - file not cached', {
+            status: 504,
+            statusText: 'Gateway Timeout',
+            headers: { 'Content-Type': url.pathname.endsWith('.css') ? 'text/css' : 'application/javascript' }
           });
-        })
+        });
+      })
     );
   } else {
     // ✅ CACHE-FIRST for images and other static assets

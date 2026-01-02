@@ -32,6 +32,17 @@ const LITE_VERSION_PATH = './lite/miniCycle-lite.html';
 let bootAttempt = 0;
 
 /**
+ * Update loader text to show boot progress
+ * @param {string} message - Progress message to display
+ */
+function updateLoaderProgress(message) {
+  const loaderText = document.querySelector('.loader-text');
+  if (loaderText) {
+    loaderText.textContent = message;
+  }
+}
+
+/**
  * Wrap a promise with a timeout
  * @param {Promise} promise - The promise to wrap
  * @param {number} ms - Timeout in milliseconds
@@ -217,6 +228,7 @@ async function runBootSequence() {
   const bootStart = Date.now();
 
   // ========== LOAD BOOT MODULES (with timeout) ==========
+  updateLoaderProgress('Loading core...');
   const [coreBoot, featureBoot, uiBoot] = await withTimeout(
     Promise.all([
       import(`./coreBoot.js?v=${APP_VERSION}`),
@@ -238,6 +250,7 @@ async function runBootSequence() {
   };
 
   // ========== PHASE 1: CORE (with timeout) ==========
+  updateLoaderProgress('Starting systems...');
   console.log('🔧 Phase 1: Core systems...');
   const coreResult = await withTimeout(
     initCoreBoot(deps),
@@ -257,6 +270,7 @@ async function runBootSequence() {
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 2: FEATURES (with timeout) ==========
+  updateLoaderProgress('Loading features...');
   console.log('🔌 Phase 2: Feature modules...');
   await withTimeout(
     bootFeatures(deps, coreResult),
@@ -270,6 +284,7 @@ async function runBootSequence() {
   console.log(`✅ Phase 2 complete (${Date.now() - bootStart}ms)`);
 
   // ========== PHASE 3: DATA & UI (with timeout) ==========
+  updateLoaderProgress('Starting up...');
   console.log('🎨 Phase 3: Data & UI...');
 
   await withTimeout(
