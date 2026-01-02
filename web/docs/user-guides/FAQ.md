@@ -2,8 +2,8 @@
 
 > **Quick answers to common questions about miniCycle**
 
-**Last Updated:** November 13, 2025
-**Version:** 1.352
+**Last Updated:** January 2, 2026
+**Version:** 1.625+
 
 ---
 
@@ -22,7 +22,7 @@
 
 ### What is miniCycle?
 
-miniCycle is a **routine-building task manager** designed for repeating tasks and habits. Unlike traditional to-do apps where tasks are deleted when complete, miniCycle **cycles** your tasks - they reset and repeat, helping you build consistent routines.
+miniCycle is a **privacy-focused routine manager** designed for repeating tasks and habits. Unlike traditional to-do apps where tasks are deleted when complete, miniCycle organizes your tasks into **routines** that **cycle** - they reset and repeat when complete, helping you build consistent habits.
 
 ---
 
@@ -79,20 +79,20 @@ miniCycle is perfect for:
 
 1. Open miniCycle
 2. Complete the brief onboarding tutorial
-3. Explore the sample cycle provided
-4. Create your first cycle
+3. Explore the sample routine provided
+4. Create your first routine
 5. Add tasks to your routine
 6. Start checking them off!
 
-**Tip:** Start with just 3-5 tasks in your first cycle. You can always add more later.
+**Tip:** Start with just 3-5 tasks in your first routine. You can always add more later.
 
 ---
 
 ## Features & Functionality
 
-### How many cycles can I create?
+### How many routines can I create?
 
-**Unlimited!** Create as many cycles as you need. Common examples:
+**Unlimited!** Create as many routines as you need. Common examples:
 - Morning Routine
 - Evening Routine
 - Weekly Cleaning
@@ -102,12 +102,12 @@ miniCycle is perfect for:
 
 ---
 
-### How many tasks can I add to a cycle?
+### How many tasks can I add to a routine?
 
-**No hard limit**, but we recommend:
-- **Optimal:** 5-20 tasks per cycle
+**Up to 150 tasks per routine.** Recommendations:
+- **Optimal:** 5-20 tasks per routine
 - **Good:** Up to 50 tasks
-- **Caution:** 50+ tasks (may impact performance)
+- **Maximum:** 150 tasks (hard limit)
 
 ---
 
@@ -187,7 +187,7 @@ Depends on your **mode**:
 - Completed tasks deleted (not reset)
 - Best for one-time projects
 
-Change modes in Settings for each cycle.
+Change modes using the mode selector dropdown for each routine.
 
 ---
 
@@ -196,7 +196,7 @@ Change modes in Settings for each cycle.
 **Yes!** miniCycle has a powerful undo/redo system:
 - Click the **↶ Undo** button (or Ctrl/⌘+Z)
 - Click the **↷ Redo** button (or Ctrl/⌘+Y)
-- **20 undo levels per cycle**
+- **20 undo levels per routine**
 - Works for: task edits, deletions, completions, reordering
 
 ---
@@ -248,11 +248,11 @@ Change modes in Settings for each cycle.
 
 ### How do I back up my data?
 
-**Export your cycles regularly:**
+**Export your routines regularly:**
 
-1. Menu → **Settings**
-2. Click **"Export Cycle"**
-3. Saves a `.mcyc` file to your downloads
+1. Open menu (☰) → **Download Routine** for individual routines
+2. Or use **Settings → Backup All Routines** for complete backup
+3. Saves `.mcyc` files to your downloads
 4. Store in cloud storage (Google Drive, Dropbox, etc.)
 
 **Tip:** Export after making significant changes!
@@ -261,21 +261,26 @@ Change modes in Settings for each cycle.
 
 ### How do I restore from backup?
 
-1. Menu → **Settings**
-2. Click **"Import Cycle"**
-3. Select your `.mcyc` file
-4. Cycle and tasks are restored
+**For individual routines:**
+1. Menu (☰) → **Import Routine**
+2. Select your `.mcyc` file
+3. Routine and tasks are restored
+
+**For complete backup:**
+1. **Settings → Restore All Routines**
+2. Select your backup file
+3. All routines are restored
 
 ---
 
 ### Can I sync across devices?
 
-**Not yet built-in.** Current workaround:
-1. Export cycle on Device A
+**Not built-in** - miniCycle is privacy-focused with no cloud sync. Workaround:
+1. Export routine on Device A
 2. Transfer `.mcyc` file to Device B (email, cloud, etc.)
-3. Import cycle on Device B
+3. Import routine on Device B
 
-**Coming:** Cloud sync is under consideration for future versions.
+This keeps your data 100% under your control.
 
 ---
 
@@ -307,7 +312,7 @@ Change modes in Settings for each cycle.
 
 3. **Storage quota exceeded**
    - Unlikely unless you have massive task lists
-   - Export/delete old cycles
+   - Export/delete old routines
 
 4. **Browser bug**
    - Try different browser
@@ -382,12 +387,12 @@ Change modes in Settings for each cycle.
 **Common issues:**
 
 1. **Undo history empty**
-   - No changes made since cycle switch
-   - Can only undo last 20 actions per cycle
+   - No changes made since routine switch
+   - Can only undo last 20 actions per routine
 
-2. **Switched cycles**
-   - Undo is **per-cycle**
-   - Switch back to the cycle you edited
+2. **Switched routines**
+   - Undo is **per-routine**
+   - Switch back to the routine you edited
 
 3. **Page refreshed**
    - Undo history persists via IndexedDB
@@ -401,8 +406,8 @@ Change modes in Settings for each cycle.
 **Optimization tips:**
 
 1. **Too many tasks**
-   - Keep cycles under 50 tasks
-   - Split large cycles into smaller ones
+   - Keep routines under 50 tasks for best performance
+   - Split large routines into smaller ones
 
 2. **Browser extensions**
    - Disable extensions temporarily
@@ -420,13 +425,13 @@ Change modes in Settings for each cycle.
 
 ## Advanced Usage
 
-### Can I share cycles with others?
+### Can I share routines with others?
 
 **Yes!**
-1. Export cycle as `.mcyc` file
+1. Export routine as `.mcyc` file
 2. Share file (email, chat, cloud link)
 3. Others import the file
-4. They get a copy of your cycle
+4. They get a copy of your routine
 
 **Note:** They can't edit your original, only their copy.
 
@@ -459,6 +464,17 @@ Change modes in Settings for each cycle.
 
 ---
 
+### What is miniCycle Lite?
+
+**miniCycle Lite** is a lightweight version designed for:
+- Older devices and browsers
+- Slower internet connections
+- Users who prefer simplicity
+
+It has the core features (routines, three modes, cycle tracking) without advanced functionality like recurring tasks or theme unlocks. [Try miniCycle Lite](../../lite/miniCycle-lite.html)
+
+---
+
 ### What browsers are supported?
 
 **Fully supported:**
@@ -467,7 +483,7 @@ Change modes in Settings for each cycle.
 - Safari 14+ (macOS/iOS)
 
 **Fallback available:**
-- miniCycle Lite for older browsers (ES5 compatible)
+- [miniCycle Lite](../../lite/miniCycle-lite.html) for older browsers/devices (ES5 compatible, lightweight)
 
 ---
 
@@ -518,8 +534,9 @@ Change modes in Settings for each cycle.
 
 ### Documentation Resources
 
-- **User Guide:** [USER_GUIDE.md](./USER_GUIDE.md) - Complete user manual
-- **Developer Docs:** [CLAUDE.md](../developer-guides/CLAUDE.md) - Technical architecture
+- **User Manual:** [User Manual](../../legal/user-manual.html) - Complete guide with screenshots
+- **Feature List:** [FEATURE_LIST.md](../features/FEATURE_LIST.md) - All features explained
+- **What is miniCycle:** [WHAT_IS_MINICYCLE.md](./WHAT_IS_MINICYCLE.md) - Core concepts
 - **Changelog:** [CHANGELOG.md](../../CHANGELOG.md) - Version history
 - **All Docs:** [INDEX.md](../developer-guides/INDEX.md) - Documentation index
 
@@ -531,8 +548,8 @@ Change modes in Settings for each cycle.
 
 ---
 
-**FAQ Version:** 1.0
-**Last Updated:** November 13, 2025
-**miniCycle Version:** 1.352
+**FAQ Version:** 2.0
+**Last Updated:** January 2, 2026
+**miniCycle Version:** 1.625+
 
-*Can't find your question? Check the [USER_GUIDE.md](./USER_GUIDE.md) or open a GitHub Issue!*
+*Can't find your question? Check the [User Manual](../../legal/user-manual.html) or open a GitHub Issue!*
