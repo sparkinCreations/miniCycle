@@ -2,6 +2,7 @@
   "name": "minicycle-web",
   "version": "1.634",
   "description": "miniCycle - Turn Your Routine Into Progress",
+  "type": "module",
   "private": true,
   "//": "=== TESTING NOTES ===",
   "// Jest removed": "Jest was removed in favor of comprehensive Playwright browser tests (958 tests, 100% coverage). Browser tests are more appropriate for this project since all modules use browser APIs (DOM, localStorage, etc.). Jest tests were experimental, broken, and added no value over the existing browser test suite.",
@@ -14,6 +15,8 @@
     "test:browser": "node tests/automated/run-browser-tests.js",
     "test:manual": "python3 -m http.server 8080",
     "perf": "node tests/automated/run-performance-benchmarks.js",
+    "lint": "eslint modules/",
+    "lint:fix": "eslint modules/ --fix",
     "lighthouse": "lhci autorun",
     "lighthouse:install": "npm install -g @lhci/cli"
   },
@@ -26,6 +29,9 @@
   "author": "miniCycle",
   "license": "UNLICENSED",
   "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "playwright": "^1.56.0"
   }
 }

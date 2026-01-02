@@ -139,6 +139,4 @@ export const pluginIntegrationHelpers = {
     }
 };
 
-export { pluginIntegrationHelpers };
-
 console.log('🔌 PluginIntegrationGuide loaded (DI-pure, no window.* exports)');
