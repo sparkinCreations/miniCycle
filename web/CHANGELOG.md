@@ -1,3 +1,8 @@
+## [1.629] - 2026-01-02
+- refactor: update service worker log messages for consistency
+- chore: update version to 1.628 and refresh changelog
+
+
 ## [1.628] - 2026-01-02
 - chore: update version to 1.627 and refresh changelog
 
