@@ -1,3 +1,8 @@
+## [1.641] - 2026-01-02
+- feat: add warning for multiple file imports in cycleImportManager
+- chore: update version to 1.640 and refresh related files
+
+
 ## [1.640] - 2026-01-02
 - refactor: Enhance module documentation and add type definitions
 - docs: update FAQ for version 1.625+ and improve clarity on routines
