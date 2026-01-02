@@ -10,6 +10,7 @@
  */
 
 import { installDebugFilter, setDebugModeDependencies, refreshDebugState } from '../utils/debugMode.js';
+import { setStorageDependencies } from '../utils/storageUtils.js';
 import { BOOT_TIMEOUTS } from '../core/constants.js';
 import {
   attemptCacheRecovery,
@@ -276,6 +277,9 @@ async function runBootSequence() {
   // Wire AppState into debugMode for state-based persistence
   setDebugModeDependencies({ AppState: deps.core.AppState });
   refreshDebugState();
+
+  // Wire AppState into storageUtils for quota caching
+  setStorageDependencies({ AppState: deps.core.AppState });
 
   console.log(`✅ Phase 1 complete (${Date.now() - bootStart}ms)`);
 

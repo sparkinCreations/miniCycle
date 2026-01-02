@@ -15,11 +15,114 @@ const STORAGE_BUFFER_BYTES = 0.25 * 1024 * 1024;
 // Default localStorage quota (5MB is common, but we detect actual)
 const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024;
 
+// Quota cache validity period (14 days in milliseconds)
+const QUOTA_CACHE_VALIDITY_MS = 14 * 24 * 60 * 60 * 1000;
+
 // Session flag for one-time 75% warning
 let _storageWarningShown = false;
 
 // Flag to track if quota detection has been requested
 let _quotaDetectionRequested = false;
+
+// Dependency injection for AppState (set via setStorageDependencies)
+let _deps = { AppState: null };
+
+// ============================================================================
+// DEPENDENCY INJECTION
+// ============================================================================
+
+/**
+ * Set dependencies for storage utilities (called during boot)
+ * @param {Object} deps - Dependencies { AppState }
+ */
+export function setStorageDependencies(deps) {
+    if (deps.AppState) {
+        _deps.AppState = deps.AppState;
+        console.log('📊 Storage utilities: AppState connected');
+    }
+}
+
+// ============================================================================
+// QUOTA CACHE FUNCTIONS
+// ============================================================================
+
+/**
+ * Get cached quota from AppState metadata
+ * @returns {Object|null} { detectedBytes, detectedAt, detectedVersion } or null
+ */
+function getCachedQuotaFromState() {
+    try {
+        const state = _deps.AppState?.get?.();
+        return state?.metadata?.storageQuota || null;
+    } catch (error) {
+        console.warn('Could not read cached quota from state:', error);
+        return null;
+    }
+}
+
+/**
+ * Save detected quota to AppState metadata
+ * @param {number} bytes - Detected quota in bytes
+ */
+function saveCachedQuotaToState(bytes) {
+    try {
+        if (!_deps.AppState?.isReady?.()) {
+            console.log('📊 AppState not ready, quota will only be cached in session');
+            return;
+        }
+
+        _deps.AppState.update(data => {
+            if (!data.metadata) data.metadata = {};
+            data.metadata.storageQuota = {
+                detectedBytes: bytes,
+                detectedAt: Date.now(),
+                detectedVersion: globalThis.APP_VERSION || 'unknown'
+            };
+        });
+        console.log(`📊 Quota cached to AppState: ${formatBytes(bytes)}`);
+    } catch (error) {
+        console.warn('Could not save quota to state:', error);
+    }
+}
+
+/**
+ * Check if cached quota is still valid
+ * @param {Object} cached - Cached quota object
+ * @returns {boolean} True if cache is valid
+ */
+function isCachedQuotaValid(cached) {
+    if (!cached || !cached.detectedBytes || !cached.detectedAt) {
+        return false;
+    }
+
+    const now = Date.now();
+    const age = now - cached.detectedAt;
+    const currentVersion = globalThis.APP_VERSION || 'unknown';
+
+    // Invalid if older than 14 days
+    if (age > QUOTA_CACHE_VALIDITY_MS) {
+        console.log('📊 Cached quota expired (age > 14 days)');
+        return false;
+    }
+
+    // Invalid if app version changed
+    if (cached.detectedVersion !== currentVersion) {
+        console.log(`📊 Cached quota invalid (version changed: ${cached.detectedVersion} → ${currentVersion})`);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Force re-detection of storage quota (clears cache)
+ * @returns {number} Newly detected quota in bytes
+ */
+export function forceQuotaRedetection() {
+    console.log('📊 Force re-detecting storage quota...');
+    _cachedQuota = null;
+    return detectStorageQuota(true);
+}
 
 // ============================================================================
 // STORAGE CALCULATION FUNCTIONS
@@ -65,19 +168,31 @@ export function getLocalStorageQuota() {
 }
 
 /**
- * Detect actual localStorage quota by attempting to fill it
- * Call this on-demand (e.g., when storage modal opens) to avoid blocking boot
- * Results are cached for the session
+ * Detect actual localStorage quota
+ * First checks for valid cached quota in AppState, then falls back to fill-test
+ * Results are cached both in session memory and persisted to AppState
+ * @param {boolean} forceRedetect - Skip cache and force fresh detection
  * @returns {number} Detected quota in bytes
  */
-export function detectStorageQuota() {
-    // Already detected
-    if (_cachedQuota !== null) {
+export function detectStorageQuota(forceRedetect = false) {
+    // Already detected this session (and not forcing)
+    if (_cachedQuota !== null && !forceRedetect) {
         return _cachedQuota;
+    }
+
+    // Check for valid persisted cache in AppState (unless forcing)
+    if (!forceRedetect) {
+        const cachedFromState = getCachedQuotaFromState();
+        if (isCachedQuotaValid(cachedFromState)) {
+            _cachedQuota = cachedFromState.detectedBytes;
+            console.log(`📊 Using cached quota from AppState: ${formatBytes(_cachedQuota)}`);
+            return _cachedQuota;
+        }
     }
 
     // Mark as requested
     _quotaDetectionRequested = true;
+    console.log('📊 Running storage quota detection (fill-test)...');
 
     try {
         const testKey = '__storage_quota_test__';
@@ -106,9 +221,12 @@ export function detectStorageQuota() {
             localStorage.removeItem(testKey);
         }
 
-        // Cache detected quota
+        // Cache detected quota (session)
         _cachedQuota = Math.max(testSize * 1024 * 2, DEFAULT_QUOTA_BYTES);
         console.log(`📊 Storage quota detected: ${formatBytes(_cachedQuota)}`);
+
+        // Persist to AppState for future sessions
+        saveCachedQuotaToState(_cachedQuota);
 
     } catch (error) {
         console.warn('Could not detect localStorage quota, using default:', error);

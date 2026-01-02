@@ -2528,13 +2528,44 @@ input:checked + .slider:before {
     border-radius: 8px;
 }
 
+.storage-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
 .storage-bar-label {
     font-size: 0.75rem;
     font-weight: 600;
     color: #666;
-    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.storage-refresh-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.storage-refresh-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #4c79ff;
+}
+
+.storage-refresh-btn.refreshing {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .storage-bar-track {
@@ -2593,8 +2624,14 @@ input:checked + .slider:before {
     color: #999;
 }
 
+.dark-mode .storage-refresh-btn {
+    color: #888;
+}
 
-
+.dark-mode .storage-refresh-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #6b9aff;
+}
 
 
 

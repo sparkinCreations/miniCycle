@@ -6,7 +6,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { updateStorageBarUI, getObjectSizeBytes, formatBytes } from '../utils/storageUtils.js';
+import { updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection } from '../utils/storageUtils.js';
 import { getUniqueCycleName } from '../utils/nameUtils.js';
 
 // ============================================================================
@@ -923,6 +923,50 @@ export class RoutineSwitcher {
         } else {
             console.warn('⚠️ Storage bar elements not found');
         }
+
+        // Setup refresh button handler
+        this.setupStorageRefreshButton();
+    }
+
+    /**
+     * Setup storage refresh button handler
+     */
+    setupStorageRefreshButton() {
+        const refreshBtn = this.deps.getElementById('storage-refresh-btn');
+        if (!refreshBtn) return;
+
+        const safeAdd = this.deps.safeAddEventListener;
+        if (!safeAdd) {
+            console.warn('⚠️ safeAddEventListener not available for storage refresh button');
+            return;
+        }
+
+        safeAdd(refreshBtn, 'click', async () => {
+            // Add spinning animation
+            refreshBtn.classList.add('refreshing');
+            refreshBtn.disabled = true;
+
+            try {
+                // Force re-detect quota
+                forceQuotaRedetection();
+
+                // Update the storage bar with new values
+                const barElement = this.deps.getElementById('storage-bar-fill');
+                const textElement = this.deps.getElementById('storage-bar-text');
+                if (barElement && textElement) {
+                    updateStorageBarUI(barElement, textElement, this.deps.showNotification);
+                }
+
+                this.deps.showNotification?.('Storage quota refreshed', 'success', 2000);
+            } catch (error) {
+                console.error('Failed to refresh storage quota:', error);
+                this.deps.showNotification?.('Failed to refresh storage', 'error', 3000);
+            } finally {
+                // Remove spinning animation
+                refreshBtn.classList.remove('refreshing');
+                refreshBtn.disabled = false;
+            }
+        });
     }
 
     /**

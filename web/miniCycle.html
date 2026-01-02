@@ -1716,7 +1716,12 @@ window.installApp = () => {
 
         <!-- Storage Bar -->
         <div class="storage-bar-container">
-            <div class="storage-bar-label">Storage</div>
+            <div class="storage-bar-header">
+                <div class="storage-bar-label">Storage</div>
+                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage quota">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
             <div class="storage-bar-track">
                 <div id="storage-bar-fill" class="storage-bar-fill storage-normal"></div>
             </div>
