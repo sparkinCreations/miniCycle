@@ -8098,17 +8098,7 @@ body.dark-mode.theme-golden-glow {
     width: 120px;
     height: 96px; /* Matches 1280x1024 aspect ratio (1.25:1) */
     object-fit: contain; /* Preserve aspect ratio to prevent distortion */
-    animation: spin 2s linear infinite;
     filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .loader-text {
@@ -8118,16 +8108,23 @@ body.dark-mode.theme-golden-glow {
     font-weight: 500;
     font-family: 'Inter', sans-serif;
     opacity: 0.9;
-    animation: pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
-    0%, 100% {
-        opacity: 0.6;
-    }
-    50% {
-        opacity: 1;
-    }
+.loader-bar-container {
+    margin-top: 24px;
+    width: 200px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.loader-bar {
+    width: 0%;
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+    transition: width 0.3s ease-out;
 }
 
 /* Loading spinner for operations (smaller, can be triggered programmatically) */
