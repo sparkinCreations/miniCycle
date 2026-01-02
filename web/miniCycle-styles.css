@@ -325,7 +325,7 @@ button:not(.dot):hover {
     /* Mobile task card constraints - using dvh for iOS Safari compatibility */
     .task-card {
         max-height: calc(100dvh - 325px);
-        margin-top: 27px;
+        margin-top: 18px;
     }
 
     /* Shorter task card when Complete button is visible on mobile */
