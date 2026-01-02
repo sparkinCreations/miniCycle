@@ -1,3 +1,9 @@
+## [1.636] - 2026-01-02
+- feat: enhance notification tests with dependency injection and duplicate check
+- chore: fix punctuation in version update for changelog
+- chore: update version to 1.635 and refresh changelog
+
+
 ## [1.635] - 2026-01-02
 - feat: add Playwright-based test and performance benchmark runners
 - chore: add ESLint configuration and scripts for linting
