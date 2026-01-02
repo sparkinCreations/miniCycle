@@ -304,6 +304,12 @@ export function setupDragDropImport() {
         const files = e.dataTransfer?.files;
         if (!files || files.length === 0) return;
 
+        // Warn if multiple files dropped
+        if (files.length > 1) {
+            _deps.showNotification?.('Only one file can be imported at a time.', 'warning');
+            return;
+        }
+
         const file = files[0];
 
         // Validate file extension
