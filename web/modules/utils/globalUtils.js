@@ -1,15 +1,25 @@
 /**
- * ==========================================
- * 🛠️ GLOBAL UTILITIES MODULE (DI-Pure)
- * ==========================================
+ * Global Utilities Module (DI-Pure)
  *
  * Core utility functions used throughout the miniCycle application.
- * These are foundational utilities that need to be available globally
- * without import overhead for frequently called functions.
+ * Provides DOM manipulation, event handling, and input sanitization.
  *
- * Note: document.*, localStorage are browser APIs, not dependencies.
+ * Features:
+ * - Safe event listener management (prevents duplicates)
+ * - DOM element manipulation helpers
+ * - Input sanitization and validation
+ * - HTML escaping for XSS prevention
+ * - Hash ID generation
  *
- * @author miniCycle Development Team
+ * @module utils/globalUtils
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {Object} EventListenerOptions
+ * @property {boolean} [once=false] - Remove after first invocation
+ * @property {boolean} [passive=false] - Never calls preventDefault
+ * @property {boolean} [capture=false] - Use capture phase
  */
 
 // Module-level deps for late injection (static class pattern)

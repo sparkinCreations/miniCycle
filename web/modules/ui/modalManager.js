@@ -1,6 +1,8 @@
 /**
- * 🎭 miniCycle Modal Manager (DI-Pure)
- * Centralized modal management and coordination
+ * miniCycle Modal Manager (DI-Pure)
+ *
+ * Centralized modal management and coordination.
+ * Handles all modal dialogs in the application.
  *
  * Features:
  * - Global modal close functionality
@@ -8,8 +10,35 @@
  * - Click-outside-to-close behavior
  * - Individual modal setup (feedback, about, settings, reminders)
  * - Modal state tracking
+ * - Prompt and confirmation modal APIs
  *
- * @module modalManager
+ * @module ui/modalManager
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} PromptModalConfig
+ * @property {string} [title=''] - Modal title
+ * @property {string} message - Prompt message
+ * @property {string} [placeholder=''] - Input placeholder
+ * @property {string} [defaultValue=''] - Default input value
+ * @property {string} [confirmText='OK'] - Confirm button text
+ * @property {string} [cancelText='Cancel'] - Cancel button text
+ * @property {boolean} [required=false] - Whether input is required
+ * @property {Function} callback - Called with input value or null if cancelled
+ */
+
+/**
+ * @typedef {Object} ConfirmationModalConfig
+ * @property {string} [title=''] - Modal title
+ * @property {string} message - Confirmation message
+ * @property {string} [confirmText='Confirm'] - Confirm button text
+ * @property {string} [cancelText='Cancel'] - Cancel button text
+ * @property {Function} callback - Called with boolean (true if confirmed)
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

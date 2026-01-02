@@ -1,14 +1,25 @@
 /**
  * UI Orchestrator (DI-Pure)
+ *
  * Centralizes UI update requests and coalesces them per animation frame.
+ * This is a key performance optimization that prevents redundant DOM updates.
  *
  * Architecture:
  * - Receives UI "intents" from state-changing modules
  * - Coalesces multiple requests into single update passes
  * - Dispatches to appropriate renderers (TaskDOMManager, TaskRenderer, etc.)
  * - Eliminates fan-out and redundant DOM updates
+ * - Monitors frame budget (warns if flush > 16ms)
  *
  * @module ui/uiOrchestrator
+ * @see {@link file://../../../docs/developer-guides/ASYNC_UI_PATTERNS.md} - UI patterns
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {import('../core/types.js').Task} Task
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
@@ -44,6 +55,15 @@ const _deps = new Proxy({}, {
     }
 });
 
+/**
+ * Set dependencies for UIOrchestrator
+ * @param {Object} dependencies - Dependencies to inject
+ * @param {MiniCycleState} dependencies.AppState - State manager (required)
+ * @param {Object} [dependencies.TaskDOMManager] - Task DOM manager
+ * @param {Object} [dependencies.TaskRenderer] - Task renderer
+ * @param {Function} [dependencies.updateProgressBar] - Progress bar updater
+ * @param {Function} [dependencies.updateStatsPanel] - Stats panel updater
+ */
 export function setUIOrchestratorDependencies(dependencies) {
     di.setDependencies(dependencies);
 }

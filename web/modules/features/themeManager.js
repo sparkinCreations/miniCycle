@@ -1,29 +1,31 @@
 /**
  * Theme Manager Module (DI-Pure)
  *
- * 🎯 Pattern: Simple Instance
- * ✅ Self-contained theme and dark mode management
- * ✅ Works immediately with graceful degradation
- * ✅ Handles theme unlocking, dark mode, and theme application
- * ✅ Manages theme color meta tags for PWA integration
+ * Self-contained theme and dark mode management.
+ * Handles theme unlocking (gamification), dark mode toggle, and PWA theme colors.
  *
- * Usage:
- *   import './modules/features/themeManager.js';
+ * Features:
+ * - Theme application (dark-ocean, golden-glow)
+ * - Dark mode toggle
+ * - Theme unlocking based on milestones
+ * - PWA theme-color meta tag management
+ * - Graceful degradation without dependencies
  *
- *   // Available globally:
- *   applyTheme('dark-ocean');
- *   setupDarkModeToggle('darkModeToggle');
- *   setupQuickDarkToggle();
- *   unlockDarkOceanTheme();
- *   unlockGoldenGlowTheme();
- *   updateThemeColor();
- *
- * Dependencies: None (graceful fallbacks)
- * Storage: Uses localStorage for Schema 2.5 data
- * DOM: Handles missing elements gracefully
- *
- * @module themeManager
- * @requires AppInit (for initialization coordination)
+ * @module features/themeManager
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ */
+
+/**
+ * @typedef {import('../core/types.js').Settings} Settings
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} ThemeConfig
+ * @property {string} id - Theme identifier (e.g., "DarkOcean")
+ * @property {string} class - CSS class name (e.g., "dark-ocean")
+ * @property {string} label - Display label with emoji
+ * @property {string} unlockKey - Key used for unlock tracking
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

@@ -69,10 +69,11 @@ function fallbackSanitize(input, maxLength = 100) {
 // ============================================================================
 
 // ============================================================================
-// IDEMPOTENCY GUARD
+// IDEMPOTENCY GUARDS
 // ============================================================================
 
 let _importButtonsInitialized = false;
+let _dragDropInitialized = false;
 
 /**
  * Setup import button functionality
@@ -190,6 +191,158 @@ export function setupImportButtons() {
         button._importHandler = handleImport;
         safeAddEventListener(button, "click", button._importHandler);
     });
+}
+
+/**
+ * Setup drag and drop import for .mcyc files
+ * Allows users to drag .mcyc files anywhere on the page to import
+ */
+export function setupDragDropImport() {
+    // Idempotency guard
+    if (_dragDropInitialized) {
+        console.log('Drag-drop import already set up');
+        return;
+    }
+    _dragDropInitialized = true;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('CycleImportManager: safeAddEventListener dependency not injected');
+        return;
+    }
+
+    let dragCounter = 0; // Track nested drag events
+
+    // Create drop overlay element
+    const overlay = document.createElement('div');
+    overlay.id = 'mcyc-drop-overlay';
+    overlay.innerHTML = `
+        <div class="mcyc-drop-content">
+            <div class="mcyc-drop-icon">+</div>
+            <div class="mcyc-drop-text">Drop .mcyc file to import</div>
+        </div>
+    `;
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        pointer-events: none;
+    `;
+    overlay.querySelector('.mcyc-drop-content').style.cssText = `
+        background: var(--bg-color, #1a1a2e);
+        border: 3px dashed var(--accent-color, #4a9eff);
+        border-radius: 16px;
+        padding: 48px 64px;
+        text-align: center;
+        color: var(--text-color, #fff);
+    `;
+    overlay.querySelector('.mcyc-drop-icon').style.cssText = `
+        font-size: 48px;
+        margin-bottom: 16px;
+        color: var(--accent-color, #4a9eff);
+    `;
+    overlay.querySelector('.mcyc-drop-text').style.cssText = `
+        font-size: 18px;
+        font-weight: 500;
+    `;
+    document.body.appendChild(overlay);
+
+    const showOverlay = () => {
+        overlay.style.display = 'flex';
+    };
+
+    const hideOverlay = () => {
+        overlay.style.display = 'none';
+    };
+
+    // Check if file is .mcyc
+    const isMcycFile = (file) => {
+        return file?.name?.toLowerCase().endsWith('.mcyc');
+    };
+
+    // Check if drag contains files
+    const hasFiles = (event) => {
+        return event.dataTransfer?.types?.includes('Files');
+    };
+
+    // Dragenter - show overlay
+    safeAddEventListener(document, 'dragenter', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragCounter++;
+        if (dragCounter === 1) {
+            showOverlay();
+        }
+    });
+
+    // Dragleave - hide overlay when leaving window
+    safeAddEventListener(document, 'dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter === 0) {
+            hideOverlay();
+        }
+    });
+
+    // Dragover - required to allow drop
+    safeAddEventListener(document, 'dragover', (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    // Drop - process the file
+    safeAddEventListener(document, 'drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        hideOverlay();
+
+        const files = e.dataTransfer?.files;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+
+        // Validate file extension
+        if (!isMcycFile(file)) {
+            _deps.showNotification?.('Please drop a .mcyc file to import.', 'warning');
+            return;
+        }
+
+        // Reject .tcyc files (shouldn't happen with extension check, but be safe)
+        if (file.name.endsWith('.tcyc')) {
+            _deps.showNotification?.('miniCycle does not support .tcyc files.\nPlease save your Task Cycle as .MCYC to import.');
+            return;
+        }
+
+        // Security: File size limit
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            _deps.showNotification?.('File too large. Maximum size is 10MB.', 'error');
+            console.warn(`Import rejected: file size ${(file.size / 1024 / 1024).toFixed(2)}MB exceeds 10MB limit`);
+            return;
+        }
+
+        // Read and process the file
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                processImportedData(event.target.result);
+            } catch (error) {
+                _deps.showNotification?.('Error importing miniCycle.', 'error');
+                console.error('Drag-drop import error:', error);
+            }
+        };
+        reader.onerror = () => {
+            _deps.showNotification?.('Error reading file.', 'error');
+            console.error('FileReader error:', reader.error);
+        };
+        reader.readAsText(file);
+    });
+
+    console.log('Drag-drop import enabled');
 }
 
 /**

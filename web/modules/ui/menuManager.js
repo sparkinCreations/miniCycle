@@ -1,11 +1,24 @@
 /**
- * 🎛️ miniCycle Menu Manager (DI-Pure)
- * Handles main menu operations and interactions
+ * miniCycle Menu Manager (DI-Pure)
  *
- * Note: document.*, window.location are browser APIs, not dependencies.
+ * Handles main menu operations and interactions.
+ * Manages the hamburger menu, cycle creation, and settings access.
  *
- * @module menuManager
- * @pattern Resilient Constructor 🛡️
+ * Features:
+ * - Main menu toggle and navigation
+ * - New cycle creation with validation
+ * - Settings panel access
+ * - Cycle mode description updates
+ * - Help window integration
+ *
+ * @module ui/menuManager
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {import('../core/types.js').Cycle} Cycle
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

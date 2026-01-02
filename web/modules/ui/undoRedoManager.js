@@ -1,11 +1,30 @@
 /**
  * miniCycle Undo/Redo Manager Module (DI-Pure)
- * - State-based undo/redo system with snapshot management
- * - CRITICAL: Cannot work without AppState - fails fast
- * - Pure module with explicit dependency injection
  *
- * @module undoRedoManager
- * @pattern Strict Injection 🔧
+ * State-based undo/redo system with snapshot management.
+ * Maintains per-cycle undo stacks with configurable limits.
+ *
+ * Features:
+ * - Snapshot-based state capture
+ * - Per-cycle undo/redo stacks
+ * - Keyboard shortcuts (Ctrl+Z, Ctrl+Y)
+ * - Idle-time saves for durability
+ * - Minimum interval between snapshots
+ *
+ * @module ui/undoRedoManager
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} UndoRedoStack
+ * @property {Schema25Data[]} undoStack - Array of undo snapshots
+ * @property {Schema25Data[]} redoStack - Array of redo snapshots
+ * @property {number} lastSnapshotTime - Timestamp of last snapshot
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

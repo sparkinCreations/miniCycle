@@ -1,10 +1,22 @@
 /**
- * Welcome to to miniCycle's state module. Here is state.js
+ * miniCycle State Management Module
  *
- * This module manages the application state, including loading, updating, and saving state to localStorage.
- * It also provides a way to subscribe to state changes.
+ * Central state manager for the application using Schema 2.5 format.
+ * Handles loading, updating, and persisting state to localStorage with
+ * debounced saves, subscriber notifications, and concurrent modification detection.
  *
- * @module state
+ * @module core/appState
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md} - Schema reference
+ * @see {@link file://../../../docs/developer-guides/DI_PATTERNS.md} - Dependency injection
+ * @see {@link file://../../../docs/developer-guides/ARCHITECTURE_OVERVIEW.md} - Architecture
+ */
+
+/**
+ * @typedef {import('./types.js').Schema25Data} Schema25Data
+ * @typedef {import('./types.js').Task} Task
+ * @typedef {import('./types.js').Cycle} Cycle
+ * @typedef {import('./types.js').Settings} Settings
+ * @typedef {import('./types.js').StateChangeCallback} StateChangeCallback
  */
 
 // Import constants
@@ -19,15 +31,40 @@ let _deps = {};
 
 /**
  * Set dependencies for AppState (call before createStateManager)
- * @param {Object} dependencies - { showNotification, storage, loadInitialData, createInitialData }
+ * @param {Object} dependencies - Dependencies to inject
+ * @param {Function} [dependencies.showNotification] - Notification display function
+ * @param {Storage} [dependencies.storage] - Storage interface (defaults to localStorage)
+ * @param {Function} [dependencies.loadInitialData] - Function to load initial data
+ * @param {Function} [dependencies.createInitialData] - Function to create initial state
+ * @param {Object} [dependencies.AppMeta] - Application metadata containing version
  */
 export function setAppStateDependencies(dependencies) {
     _deps = { ..._deps, ...dependencies };
     console.log('🏗️ AppState dependencies set:', Object.keys(dependencies));
 }
 
-// MiniCycleState class definition
+/**
+ * Central state manager for miniCycle application
+ *
+ * Manages Schema 2.5 state with:
+ * - Debounced localStorage persistence
+ * - Subscriber pattern for reactive updates
+ * - Concurrent modification detection
+ * - Race condition prevention during initialization
+ *
+ * @class MiniCycleState
+ * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md#how-data-flows}
+ */
 class MiniCycleState {
+    /**
+     * Create a new MiniCycleState instance
+     * @param {Object} [dependencies={}] - Dependency overrides
+     * @param {Function} [dependencies.showNotification] - Notification function
+     * @param {Storage} [dependencies.storage] - Storage interface (localStorage)
+     * @param {Function} [dependencies.loadInitialData] - Initial data loader
+     * @param {Function} [dependencies.createInitialData] - Initial state creator
+     * @param {Object} [dependencies.AppMeta] - App metadata with version
+     */
     constructor(dependencies = {}) {
         // Merge injected deps with constructor deps (constructor takes precedence)
         const mergedDeps = { ..._deps, ...dependencies };
@@ -77,20 +114,29 @@ class MiniCycleState {
         }
     }
 
-    // ✅ FIXED: Move isReady method to proper location
+    /**
+     * Check if state manager is initialized and has data
+     * @returns {boolean} True if ready for operations
+     */
     isReady() {
         return this.isInitialized && this.data !== null;
     }
 
-    // ✅ NEW: Add get method that autoSaveWithStateModule expects
+    /**
+     * Get current state data
+     * @returns {Schema25Data|null} Current state or null if not initialized
+     * @example
+     * const state = AppState.get();
+     * const activeCycle = state.data.cycles[state.appState.activeCycleId];
+     */
     get() {
         return this.data;
     }
 
     /**
-     * ✅ Reload data from localStorage (used after createInitialSchema25Data)
+     * Reload data from localStorage (used after createInitialSchema25Data)
      * Unlike init(), this will reload even if already initialized
-     * @returns {Object|null} The loaded data
+     * @returns {Schema25Data|null} The loaded data or null if not found/invalid
      */
     reload() {
         console.log('🔄 Reloading AppState from localStorage...');
@@ -113,7 +159,12 @@ class MiniCycleState {
         }
     }
 
-    // ✅ FIX #1: Enhanced init with initialization lock to prevent race conditions
+    /**
+     * Initialize state manager - loads data from localStorage
+     * Uses initialization lock to prevent race conditions
+     * @returns {Promise<Schema25Data|null>} Loaded state or null if no valid data
+     * @throws {Error} If initialization fails catastrophically
+     */
     async init() {
         // Already initialized - return immediately
         if (this.isInitialized) {
@@ -247,7 +298,12 @@ class MiniCycleState {
         }
     }
     
-    // ✅ Add structure validation method
+    /**
+     * Validate that data conforms to Schema 2.5 structure
+     * @param {Object} data - Data to validate
+     * @returns {boolean} True if valid Schema 2.5 structure
+     * @private
+     */
     validateSchema25Structure(data) {
         try {
             return data &&
@@ -262,7 +318,11 @@ class MiniCycleState {
         }
     }
     
-    // ✅ Add minimal fallback state
+    /**
+     * Create minimal fallback state for recovery scenarios
+     * @returns {Schema25Data} Minimal valid Schema 2.5 state
+     * @private
+     */
     createMinimalFallbackState() {
         return {
             schemaVersion: "2.5",
@@ -283,7 +343,28 @@ class MiniCycleState {
         };
     }
     
-    // ✅ Enhanced update with initialization check - FIXED to be async
+    /**
+     * Update state with a producer function
+     *
+     * The producer function receives the current state and can mutate it directly.
+     * Changes are automatically persisted to localStorage (debounced by default).
+     *
+     * @param {function(Schema25Data): *} updateFn - Function that mutates state
+     * @param {boolean} [immediate=false] - If true, save immediately without debounce
+     * @returns {Promise<*>} Result from updateFn (if any)
+     * @throws {Error} If state not initialized or updateFn throws
+     * @example
+     * // Toggle dark mode
+     * await AppState.update(state => {
+     *     state.settings.darkMode = !state.settings.darkMode;
+     * });
+     *
+     * // Add a task (immediate save)
+     * await AppState.update(state => {
+     *     state.data.cycles[cycleId].tasks.push(newTask);
+     * }, true);
+     * @see {@link file://../../../docs/developer-guides/DATA_SCHEMA_GUIDE.md#how-data-flows}
+     */
     async update(updateFn, immediate = false) {
         if (!this.isInitialized) {
             console.warn('⚠️ State not initialized yet, initializing first...');
@@ -319,7 +400,11 @@ class MiniCycleState {
         }
     }
 
-    // Schedule a save (debounced)
+    /**
+     * Schedule a save operation (debounced unless immediate)
+     * @param {boolean} [immediate=false] - If true, save synchronously
+     * @private
+     */
     scheduleSave(immediate = false) {
         if (this.saveTimeout) {
             clearTimeout(this.saveTimeout);
@@ -338,7 +423,11 @@ class MiniCycleState {
         }
     }
 
-    // Actually save to localStorage
+    /**
+     * Persist current state to localStorage
+     * Includes concurrent modification detection to prevent data loss
+     * @private
+     */
     save() {
         if (!this.isDirty) {
             console.log('⏭️ Save skipped - not dirty');
@@ -413,12 +502,24 @@ class MiniCycleState {
         }
     }
 
-    // Force immediate save
+    /**
+     * Force an immediate save, bypassing debounce
+     */
     forceSave() {
         this.scheduleSave(true);
     }
 
-    // Subscribe to state changes
+    /**
+     * Subscribe to state changes
+     * @param {string} key - Subscription identifier (for grouping/debugging)
+     * @param {StateChangeCallback} callback - Called with (newState, oldState) on changes
+     * @example
+     * AppState.subscribe('myModule', (newState, oldState) => {
+     *     if (newState.settings.darkMode !== oldState.settings.darkMode) {
+     *         updateTheme();
+     *     }
+     * });
+     */
     subscribe(key, callback) {
         if (!this.listeners.has(key)) {
             this.listeners.set(key, []);
@@ -427,7 +528,12 @@ class MiniCycleState {
         console.log(`✅ Subscribed to: ${key}`);
     }
 
-    // ✅ NEW: Unsubscribe from state changes (like safeRemoveEventListener)
+    /**
+     * Unsubscribe a callback from state changes
+     * @param {string} key - Subscription identifier
+     * @param {StateChangeCallback} callback - The callback to remove
+     * @returns {boolean} True if callback was found and removed
+     */
     unsubscribe(key, callback) {
         if (!this.listeners.has(key)) {
             console.warn(`⚠️ No listeners found for key: ${key}`);
@@ -454,7 +560,11 @@ class MiniCycleState {
         return true;
     }
 
-    // ✅ NEW: Safe subscribe (like safeAddEventListener)
+    /**
+     * Safe subscribe - removes existing callback before adding (prevents duplicates)
+     * @param {string} key - Subscription identifier
+     * @param {StateChangeCallback} callback - The callback to add
+     */
     safeSubscribe(key, callback) {
         // Remove any existing instance of this callback first
         this.unsubscribe(key, callback);
@@ -463,7 +573,11 @@ class MiniCycleState {
         console.log(`✅ Safe subscribed to: ${key}`);
     }
 
-    // ✅ NEW: Unsubscribe all listeners for a key
+    /**
+     * Unsubscribe all listeners for a key
+     * @param {string} key - Subscription identifier
+     * @returns {number} Number of callbacks removed
+     */
     unsubscribeAll(key) {
         if (this.listeners.has(key)) {
             const count = this.listeners.get(key).length;
@@ -475,7 +589,11 @@ class MiniCycleState {
         return 0;
     }
 
-    // ✅ NEW: Get listener count for debugging
+    /**
+     * Get listener count (for debugging)
+     * @param {string} [key] - Specific key, or omit for total count
+     * @returns {number} Number of listeners
+     */
     getListenerCount(key) {
         if (key) {
             return this.listeners.has(key) ? this.listeners.get(key).length : 0;
@@ -486,7 +604,12 @@ class MiniCycleState {
         return total;
     }
 
-    // Notify all listeners
+    /**
+     * Notify all subscribers of state change
+     * @param {Schema25Data} oldData - State before change
+     * @param {Schema25Data} newData - State after change
+     * @private
+     */
     notifyListeners(oldData, newData) {
         this.listeners.forEach((callbacks, key) => {
             callbacks.forEach(callback => {
@@ -499,19 +622,30 @@ class MiniCycleState {
         });
     }
 
-    // Helper methods for common operations
+    /**
+     * Get the currently active cycle
+     * @returns {Cycle|null} Active cycle or null if not available
+     */
     getActiveCycle() {
         if (!this.data) return null;
         const { data, appState } = this.data;
         return data.cycles[appState.activeCycleId];
     }
 
+    /**
+     * Get tasks from the active cycle
+     * @returns {Task[]} Array of tasks (empty if no active cycle)
+     */
     getTasks() {
         const cycle = this.getActiveCycle();
         return cycle?.tasks || [];
     }
 
-    // ✅ NEW: Helper to update active cycle tasks
+    /**
+     * Update tasks in the active cycle
+     * @param {Object} taskUpdates - Updates to apply to tasks
+     * @deprecated Use update() with direct task manipulation instead
+     */
     updateActiveTasks(taskUpdates) {
         this.update(state => {
             const activeCycle = state.appState.activeCycleId;
@@ -521,14 +655,21 @@ class MiniCycleState {
         });
     }
 
-    // ✅ NEW: Helper to set active cycle
+    /**
+     * Set the active cycle
+     * @param {string} cycleId - Cycle ID to make active
+     */
     setActiveCycle(cycleId) {
         this.update(state => {
             state.appState.activeCycleId = cycleId;
         });
     }
 
-    // ✅ FIXED: Moved createInitialState to proper location and enhanced it
+    /**
+     * Create a fresh initial state (Schema 2.5)
+     * Used for new users or when no valid data exists
+     * @returns {Schema25Data} Fresh initial state
+     */
     createInitialState() {
         return {
             schemaVersion: "2.5",
@@ -595,13 +736,13 @@ class MiniCycleState {
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// EXPORTED HELPER FUNCTIONS
 // ============================================================================
 
 /**
  * Get current cycle variables from AppState
  * Used by cycleCompletion and other modules that need cycle info
- * @returns {Object} { lastUsedMiniCycle, savedMiniCycles }
+ * @returns {{lastUsedMiniCycle: string|null, savedMiniCycles: Object.<string, Cycle>}} Cycle data
  */
 export function assignCycleVariables() {
     console.log('🔄 Assigning cycle variables (state-based)...');
@@ -630,15 +771,22 @@ export function assignCycleVariables() {
     };
 }
 
-// ✅ Replace the bottom of your file with this:
+// ============================================================================
+// SINGLETON MANAGEMENT
+// ============================================================================
+
+/** @type {MiniCycleState|null} */
 let AppState = null;
 
-// Properties that exist on state DATA (accessed via .get()), not on the manager
+/** Properties that exist on state DATA (accessed via .get()), not on the manager */
 const STATE_DATA_PROPERTIES = ['appState', 'settings', 'cycles', 'schemaVersion'];
 
 /**
  * Wrap AppState manager in a proxy that warns when state data properties
  * are accessed directly on the manager instead of via .get()
+ * @param {MiniCycleState} manager - The state manager instance
+ * @returns {MiniCycleState} Proxy-wrapped manager
+ * @private
  */
 function createValidatedAppStateProxy(manager) {
     const warnedProps = new Set();
@@ -659,6 +807,11 @@ function createValidatedAppStateProxy(manager) {
     });
 }
 
+/**
+ * Create or get the singleton state manager
+ * @param {Object} [dependencies={}] - Dependencies to inject
+ * @returns {MiniCycleState} The state manager instance
+ */
 export function createStateManager(dependencies = {}) {
     if (!AppState) {
         const manager = new MiniCycleState(dependencies);
@@ -667,7 +820,11 @@ export function createStateManager(dependencies = {}) {
     return AppState;
 }
 
-// ✅ TEST ONLY: Reset singleton for isolated testing
+/**
+ * Reset state manager singleton (TEST ONLY)
+ * Used for isolated testing - clears all state and listeners
+ * @returns {void}
+ */
 export function resetStateManager() {
     if (AppState) {
         // Clean up listeners
@@ -678,7 +835,11 @@ export function resetStateManager() {
     AppState = null;
 }
 
-// ✅ For backward compatibility, but this should be initialized
+/**
+ * Get existing state manager (creates fallback if needed)
+ * @returns {MiniCycleState} The state manager instance
+ * @deprecated Use createStateManager() with proper dependencies instead
+ */
 export function getStateManager() {
     if (!AppState) {
         console.warn('⚠️ State manager not initialized with dependencies');
