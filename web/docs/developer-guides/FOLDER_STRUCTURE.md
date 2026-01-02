@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Last Updated:** December 21, 2025
-**Status:** All 53 modules use strict DI | Boot files split (Dec 2025)
+**Last Updated:** January 2, 2026
+**Status:** All 86 modules use strict DI | Boot files split (Dec 2025)
 
 ---
 
@@ -57,7 +57,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 1623/1623 tests passing ✅
+- 1610+/1610+ tests passing ✅
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -82,20 +82,24 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (53 modules, all strict DI)
-│   ├── boot/                            # Boot sequence modules (Dec 2025 split)
-│   │   ├── orchestrator.js              # DI wiring hub (~1,883 lines)
-│   │   ├── coreBoot.js                  # Core state & init (~673 lines)
-│   │   ├── featureBoot.js               # Feature module loading (~1,470 lines)
-│   │   └── uiBoot.js                    # UI event handlers (~406 lines)
-│   ├── core/                            # Essential system modules
-│   ├── task/                            # Task management system (7 modules)
+├── 📁 modules/                          # ES6 application modules (86 modules, all strict DI)
+│   ├── boot/                            # Boot sequence modules (6 modules)
+│   │   ├── orchestrator.js              # DI wiring hub
+│   │   ├── coreBoot.js                  # Core state & init
+│   │   ├── featureBoot.js               # Feature module loading
+│   │   ├── moduleLoader.js              # Dynamic module loader
+│   │   ├── moduleManifests.js           # Module dependency manifests
+│   │   └── uiBoot.js                    # UI event handlers
+│   ├── core/                            # Essential system modules (8 modules)
+│   ├── task/                            # Task management system (10 modules)
 │   ├── routine/                         # Routine management system (5 modules)
-│   ├── recurring/                       # Recurring tasks system (3 modules)
-│   ├── ui/                              # UI coordination (6 modules)
+│   ├── recurring/                       # Recurring tasks system (15 modules)
+│   ├── ui/                              # UI coordination (20 modules)
 │   ├── features/                        # Optional/pluggable features (4 modules)
-│   ├── utils/                           # Shared utilities (4 modules)
-│   ├── testing/                         # Testing infrastructure (5 modules)
+│   ├── utils/                           # Shared utilities (10 modules)
+│   ├── storage/                         # Storage & backup (1 module)
+│   ├── progress/                        # Cycle completion (1 module)
+│   ├── testing/                         # Testing infrastructure (3 modules)
 │   └── other/                           # Experimental/plugin examples (3 modules)
 │
 ├── 📁 pages/                            # Marketing & product pages
@@ -128,7 +132,7 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (1623 tests, 100% passing)
+├── 📁 tests/                            # Test suite (1610+ tests, 100% passing)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
 │   ├── [33 module test files]
@@ -176,7 +180,7 @@ web/
 **Why this matters:** GitHub renders Markdown beautifully, Docsify adds navigation
 
 ### `/tests/` - Test Suite
-**Purpose:** 1623 automated tests mirroring module structure
+**Purpose:** 1610+ automated tests mirroring module structure
 **Philosophy:** Tests are first-class citizens, not afterthoughts
 **Why this matters:** 100% passing tests = confidence to refactor fearlessly
 
@@ -243,16 +247,18 @@ web/
 
 ## Modules Organization
 
-The `/modules/` directory contains 61 ES6 modules organized into 12 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
+The `/modules/` directory contains 86 ES6 modules organized into 12 logical groups. **All modules use strict dependency injection with no `|| window.*` fallbacks.**
 
-### `boot/` - Boot Sequence Modules (Dec 2025)
+### `boot/` - Boot Sequence Modules (6 modules)
 **Purpose:** Application boot orchestration split into focused files
 **When to add here:** Only boot-related code (initialization, DI wiring, UI setup)
 
-- `orchestrator.js` (1,883 lines) - DI wiring hub, coordinates boot sequence
-- `coreBoot.js` (673 lines) - Core state, AppState, migration, sets `window.AppBootStarted`
-- `featureBoot.js` (1,470 lines) - Feature module loading and DI wiring
-- `uiBoot.js` (406 lines) - UI event handlers, loader helpers, device detection
+- `orchestrator.js` - DI wiring hub, coordinates boot sequence
+- `coreBoot.js` - Core state, AppState, migration
+- `featureBoot.js` - Feature module loading and DI wiring
+- `moduleLoader.js` - Dynamic module loader with dependency resolution
+- `moduleManifests.js` - Module dependency manifests and metadata
+- `uiBoot.js` - UI event handlers, loader helpers, device detection
 
 **Philosophy:** Split from monolithic `miniCycle-scripts.js` for better debuggability. Each file can be uploaded independently for AI-assisted debugging.
 
@@ -267,34 +273,41 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `core/` - Essential System Modules
+### `core/` - Essential System Modules (8 modules)
 **Purpose:** Foundation modules required for app initialization
-**When to add here:** Never. Core is frozen - only appState, appInit, and constants belong here.
+**When to add here:** Never. Core is frozen - critical infrastructure only.
 
-- `appState.js` (415 lines) - Centralized state management with localStorage persistence
-- `appInit.js` (186 lines) - Two-phase initialization system
-- `appGlobalState.js` (266 lines) - Global runtime state and feature flags
+- `appState.js` - Centralized state management with localStorage persistence
+- `appInit.js` - Two-phase initialization system
+- `appGlobalState.js` - Global runtime state and feature flags
+- `appContext.js` - Centralized module registry for cross-module access
 - `constants.js` - Application constants
+- `dataAccess.js` - Data access layer abstractions
+- `diBase.js` - Dependency injection base utilities
+- `migrationFacade.js` - Schema migration facade
 
 **Philosophy:** Core modules are special - they initialize before everything else and are dependency-injected into other modules.
 
 ---
 
-### `task/` - Task Management System (7 modules)
+### `task/` - Task Management System (10 modules)
 **Purpose:** Everything related to individual task lifecycle
 **When to add here:** Task creation, validation, rendering, events, drag-drop
 
-- `taskCore.js` (778 lines) - CRUD operations and business logic
-- `taskDOM.js` (1,108 lines) - DOM coordination and composition
-- `taskRenderer.js` (333 lines) - DOM element creation and rendering
-- `taskEvents.js` (427 lines) - Event handling (clicks, inputs, focus)
-- `taskValidation.js` (215 lines) - Input validation and sanitization
-- `taskUtils.js` (370 lines) - Helper functions and utilities
-- `dragDropManager.js` (695 lines) - Drag & drop with Safari compatibility
+- `taskCore.js` - CRUD operations and business logic
+- `taskCRUD.js` - Task create, read, update, delete operations
+- `taskDOM.js` - DOM coordination and composition
+- `taskRenderer.js` - DOM element creation and rendering
+- `taskEvents.js` - Event handling (clicks, inputs, focus)
+- `taskCompletion.js` - Task completion logic
+- `taskCycleReset.js` - Cycle reset and task state management
+- `taskValidation.js` - Input validation and sanitization
+- `taskUtils.js` - Helper functions and utilities
+- `dragDropManager.js` - Drag & drop with Safari compatibility
 
 **Philosophy:** Task system split by responsibility, not by implementation detail. DOM coordination (`taskDOM.js`) orchestrates rendering (`taskRenderer.js`) and events (`taskEvents.js`).
 
-**Reasoning:** A 3,000-line monolith was impossible to test. Seven focused modules each have clear contracts and 100% test coverage.
+**Reasoning:** A 3,000-line monolith was impossible to test. Ten focused modules each have clear contracts and 100% test coverage.
 
 ---
 
@@ -314,31 +327,56 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `recurring/` - Recurring Tasks System (3 modules)
+### `recurring/` - Recurring Tasks System (15 modules)
 **Purpose:** Template-based recurring task generation
 **When to add here:** Recurring logic, scheduling, UI
 
-- `recurringCore.js` (927 lines) - Business logic and scheduling
-- `recurringPanel.js` (2,219 lines) - Complex UI for recurring settings
-- `recurringIntegration.js` (361 lines) - Integration with task system
+- `recurringCore.js` - Business logic and scheduling
+- `recurringActivation.js` - Recurring task activation logic
+- `recurringCalculators.js` - Date calculation utilities
+- `recurringDateUtils.js` - Date parsing and formatting
+- `recurringIntegration.js` - Integration with task system
+- `recurringMatcher.js` - Pattern matching for recurring rules
+- `recurringPanel.js` - Complex UI for recurring settings
+- `recurringPanelEvents.js` - Panel event handlers
+- `recurringPanelForm.js` - Panel form components
+- `recurringPanelGrids.js` - Panel grid layouts
+- `recurringPanelSetup.js` - Panel initialization
+- `recurringPanelSummary.js` - Summary display components
+- `recurringSettings.js` - Settings management
+- `recurringSettingsApplicator.js` - Apply settings to tasks
+- `recurringWatcher.js` - Watch for recurring task triggers
 
 **Philosophy:** Recurring is a feature layer on top of tasks. It generates tasks from templates based on schedules.
 
-**Reasoning:** Recurring panel is the most complex UI in miniCycle. Keeping it isolated prevents contaminating simpler modules.
+**Reasoning:** Recurring panel is the most complex UI in miniCycle. Keeping it isolated and well-modularized prevents contaminating simpler modules.
 
 ---
 
-### `ui/` - UI Coordination (7 modules)
+### `ui/` - UI Coordination (20 modules)
 **Purpose:** Application-level UI that coordinates multiple systems
 **When to add here:** Modals, menus, settings, onboarding, undo/redo, customization
 
-- `modalManager.js` (383 lines) - Modal lifecycle and stacking
-- `menuManager.js` (546 lines) - Settings menu and navigation
-- `settingsManager.js` (952 lines) - Settings panel and persistence
-- `onboardingManager.js` (291 lines) - First-time user experience
-- `undoRedoManager.js` (463 lines) - Per-cycle undo/redo with IndexedDB
-- `gamesManager.js` (195 lines) - Mini-game unlock and panel
-- `taskOptionsCustomizer.js` (635 lines) - Per-cycle button visibility customization (v1.357+)
+- `modalManager.js` - Modal lifecycle and stacking
+- `menuManager.js` - Settings menu and navigation
+- `settingsManager.js` - Settings panel and persistence
+- `settingsUIManager.js` - Settings UI components
+- `onboardingManager.js` - First-time user experience
+- `undoRedoManager.js` - Per-cycle undo/redo with IndexedDB
+- `gamesManager.js` - Mini-game unlock and panel
+- `taskOptionsCustomizer.js` - Per-cycle button visibility customization
+- `backupRestoreManager.js` - Backup and restore functionality
+- `completedTasksManager.js` - Completed tasks display
+- `cycleExportManager.js` - Cycle export functionality
+- `cycleImportManager.js` - Cycle import functionality
+- `helpWindowManager.js` - Help window display
+- `pullToRefresh.js` - Pull-to-refresh gesture
+- `taskInteractions.js` - Task interaction handlers
+- `taskSearch.js` - Task search functionality
+- `taskUI.js` - Task UI utilities
+- `titleManager.js` - Page title management
+- `uiEffects.js` - UI animations and effects
+- `uiOrchestrator.js` - UI coordination and orchestration
 
 **Philosophy:** UI modules don't contain business logic - they coordinate other modules and present data.
 
@@ -361,14 +399,20 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `utils/` - Shared Utilities (4 modules)
+### `utils/` - Shared Utilities (10 modules)
 **Purpose:** Reusable utilities with no business logic dependencies
-**When to add here:** Pure functions, platform detection, logging
+**When to add here:** Pure functions, platform detection, logging, validation
 
-- `globalUtils.js` (490 lines) - Pure utility functions
-- `notifications.js` (1,036 lines) - Toast notification system
-- `deviceDetection.js` (353 lines) - Platform and capability detection
-- `consoleCapture.js` (415 lines) - Console logging for debugging
+- `globalUtils.js` - Pure utility functions
+- `notifications.js` - Toast notification system
+- `deviceDetection.js` - Platform and capability detection
+- `consoleCapture.js` - Console logging for debugging
+- `dataSanitizer.js` - Data sanitization utilities
+- `dataValidator.js` - Data validation utilities
+- `debugMode.js` - Debug mode utilities
+- `errorHandler.js` - Error handling utilities
+- `nameUtils.js` - Name/string utilities
+- `storageUtils.js` - localStorage utilities and quota management
 
 **Philosophy:** Utils are stateless, dependency-free, and reusable across modules.
 
@@ -376,14 +420,13 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `testing/` - Testing Infrastructure (5 modules)
+### `testing/` - Testing Infrastructure (3 modules)
 **Purpose:** Test-related modules that shouldn't pollute production modules
 **When to add here:** Test helpers, mocks, test UI
 
-- `testing-modal.js` (891 lines) - In-app testing modal
-- `testing-modal-integration.js` (156 lines) - Test runner integration
-- `testing-modal-tab-html.html` - Test UI HTML
-- `automated-tests-fix.js` (42 lines) - Test automation fixes
+- `testing-modal.js` - In-app testing modal
+- `testing-modal-integration.js` - Test runner integration
+- `automated-tests-fix.js` - Test automation fixes
 
 **Philosophy:** Testing is important enough to deserve its own space.
 
@@ -391,13 +434,33 @@ miniCycle-main.js (entrypoint)
 
 ---
 
+### `storage/` - Storage & Backup (1 module)
+**Purpose:** Storage management and backup functionality
+**When to add here:** Backup, export, storage quota management
+
+- `backupManager.js` - Backup creation and management
+
+**Philosophy:** Storage concerns are isolated from business logic.
+
+---
+
+### `progress/` - Cycle Completion (1 module)
+**Purpose:** Cycle completion tracking and progress
+**When to add here:** Cycle completion, progress tracking, animations
+
+- `cycleCompletion.js` - Cycle completion logic and animations
+
+**Philosophy:** Progress tracking deserves isolation for clear responsibility.
+
+---
+
 ### `other/` - Experimental & Plugin Examples (3 modules)
 **Purpose:** Example code and experimental features
 **When to add here:** Plugins, prototypes, proof-of-concepts
 
-- `basicPluginSystem.js` (329 lines) - Plugin architecture proof-of-concept
-- `exampleTimeTrackerPlugin.js` (254 lines) - Example plugin implementation
-- `pluginIntegrationGuide.js` (187 lines) - Plugin integration documentation
+- `basicPluginSystem.js` - Plugin architecture proof-of-concept
+- `exampleTimeTrackerPlugin.js` - Example plugin implementation
+- `pluginIntegrationGuide.js` - Plugin integration documentation
 
 **Philosophy:** Examples should be runnable code, not just docs.
 

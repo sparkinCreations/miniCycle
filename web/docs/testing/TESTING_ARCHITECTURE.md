@@ -13,7 +13,7 @@
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
 │  │ Functional │  │Performance │  │ Lighthouse │  │  Manual   │ │
 │  │   Tests    │  │ Benchmarks │  │     CI     │  │ Profiling │ │
-│  │ 1623+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
+│  │ 1610+ tests│  │  12 tests  │  │  5 metrics │  │ DevTools  │ │
 │  └────────────┘  └────────────┘  └────────────┘  └───────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -50,8 +50,8 @@ Developer Makes Changes
     └────────────────────────────────┘
          ↓
     ┌─────────────────┐
-    │ Results: 1623+/ │
-    │ 1623+ Passed ✅ │
+    │ Results: 1610+/ │
+    │ 1610+ Passed ✅ │
     └─────────────────┘
          ↓
     ┌────────────┐
@@ -86,7 +86,7 @@ Push to GitHub
 └────────────┘      └──────────────────┘
       ↓                    ↓
 ┌────────────┐      ┌──────────────────┐
-│ Run 1623   │      │ Run Benchmarks   │
+│ Run 1610+  │      │ Run Benchmarks   │
 │ Tests      │      │ (12 tests)       │
 └────────────┘      └──────────────────┘
       ↓                    ↓
@@ -165,7 +165,7 @@ Push to GitHub
 │ ✅ End-to-end workflows                           │
 └───────────────────────────────────────────────────┘
 
-Total: 1623+ tests across all layers
+Total: 1610+ tests across all layers
 ```
 
 ---
@@ -468,7 +468,7 @@ setRecurringCoreDependencies({
 │ Notifications    │  39   │  100%  │   93%    │ ✅      │
 │ ... (22 more)    │ 618   │  100%  │   95%    │ ✅      │
 ├──────────────────┼───────┼────────┼──────────┼─────────┤
-│ TOTAL            │ 1623+ │  100%  │   95%    │ ✅ 100% │
+│ TOTAL            │ 1610+ │  100%  │   95%    │ ✅ 100% │
 └──────────────────┴───────┴────────┴──────────┴─────────┘
 ```
 
@@ -569,7 +569,7 @@ Ideal Distribution (achieved!):
 ```
 Test Type          | Count  | Total Time | Avg Time
 -------------------|--------|------------|----------
-Functional Tests   | 1623+  | ~65s       | ~44ms
+Functional Tests   | 1610+  | ~65s       | ~44ms
 Performance Tests  | 12     | 21.40ms    | 1.78ms
 Lighthouse (full)  | 10     | 180s       | 18s
 -------------------|--------|------------|----------
@@ -592,7 +592,7 @@ Stress Testing     | 50    | 3.4%
 Integration        | 11    | 0.8%
 Performance        | 12    | 0.8%
 -------------------|-------|------------
-Total              | 1623+ | 100%
+Total              | 1610+ | 100%
 ```
 
 ### Performance Status
@@ -614,7 +614,7 @@ Storage Speed      | <100ms  | 0.80ms  | ✅ 125x
 ### Run Tests
 
 ```bash
-npm test           # Functional (1623+ tests, ~65s)
+npm test           # Functional (1610+ tests, ~65s)
 npm run perf       # Performance (12 tests, 20ms)
 npm run lighthouse # Lighthouse (full audit, 3min)
 npm start          # Manual testing (browser)

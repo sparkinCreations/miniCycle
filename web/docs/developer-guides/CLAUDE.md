@@ -22,7 +22,7 @@ npm start                    # Starts Python HTTP server on port 8080
 ./update-version.sh          # Interactive version updater
 
 # Testing
-npm test                     # Run automated tests (1623 tests, Playwright)
+npm test                     # Run automated tests (1610+ tests, Playwright)
 ```
 
 ### File Access
@@ -36,17 +36,17 @@ npm test                     # Run automated tests (1623 tests, Playwright)
 
 ## Architecture: Strict Dependency Injection
 
-### Current State (December 25, 2025 - Updated)
+### Current State (January 2, 2026 - Updated)
 
 | Metric | Before | Current | Target | Progress |
 |--------|--------|---------|--------|----------|
-| Boot files | 1 monolithic | **4 focused files** | — | Split Dec 2025 |
-| Modules | 43 files | **60 files** | — | — |
+| Boot files | 1 monolithic | **6 focused files** | — | Split Dec 2025 |
+| Modules | 43 files | **86 files** | — | — |
 | `|| window.*` fallbacks | ~40 modules | **0** | 0 | **100%** ✅ |
 | Custom `window.*` globals | ~270 | **0** | 0 | **100%** ✅ |
 | Modules with `set*Dependencies()` | 0 | **40+** | All stateful | **Exceeded** |
 | `this.deps.*` usage | 0 | **950+** | 100+ | **Exceeded** |
-| **All modules use strict DI** | 0 | **60** | All | **100%** ✅ |
+| **All modules use strict DI** | 0 | **86** | All | **100%** ✅ |
 
 ### Architecture Philosophy
 
@@ -143,7 +143,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1623 tests across 60 modules, 100% passing
+- **Test coverage** - 1610+ tests across 86 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -267,7 +267,7 @@ const instance = new MyModule();         // Then create
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1623 tests across 60 modules)
+npm test                    # All tests (1610+ tests across 86 modules)
 ```
 
 ### Browser Tests
@@ -283,21 +283,21 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ## Module Organization
 
-### Folder Structure (`web/modules/`)
+### Folder Structure (`web/modules/`) - 86 modules total
 
 | Folder | Purpose | Modules |
 |--------|---------|---------|
-| `boot/` | Boot sequence (Dec 2025 split) | 4 |
-| `core/` | AppState, appInit, appContext | 5 |
-| `task/` | Task CRUD, DOM, events, drag-drop | 7 |
+| `boot/` | Boot sequence, module loading | 6 |
+| `core/` | AppState, appInit, appContext, DI base | 8 |
+| `task/` | Task CRUD, DOM, events, drag-drop | 10 |
 | `routine/` | Routine management, switching, migration | 5 |
-| `recurring/` | Recurring task scheduling, activation, panel | 10 |
-| `ui/` | Modals, menus, settings, onboarding | 9 |
+| `recurring/` | Recurring task scheduling, activation, panel | 15 |
+| `ui/` | Modals, menus, settings, onboarding | 20 |
 | `features/` | Themes, stats, reminders, due dates | 4 |
-| `utils/` | Notifications, device detection, utilities | 5 |
+| `utils/` | Notifications, device detection, utilities | 10 |
 | `storage/` | Backup manager | 1 |
 | `progress/` | Cycle completion tracking | 1 |
-| `testing/` | Test infrastructure | 5 |
+| `testing/` | Test infrastructure | 3 |
 | `other/` | Plugins, experimental | 3 |
 
 ### All Modules Use Strict DI
