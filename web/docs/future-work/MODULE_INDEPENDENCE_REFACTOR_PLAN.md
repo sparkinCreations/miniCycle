@@ -1,21 +1,23 @@
 # Module Independence Refactor Plan
 
 **Date:** December 3, 2025
-**Status:** Planning
+**Status:** ✅ **COMPLETED** (December 2025)
 **Goal:** Make modules truly independent and unit-testable
+
+> **✅ This plan has been implemented.** All 89+ modules now use pure DI via `diBase.js` with zero `window.*` fallbacks. The app now scores **10/10** on independence with 1,458+ tests passing. See [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for the current architecture.
 
 ---
 
-## Overview
+## Overview (Historical Context)
 
-Currently, miniCycle modules score **5.2/10** on independence. While they work well together (958 tests pass), they have hidden dependencies that prevent true unit testing:
+This document captures the state as of December 3, 2025 when modules scored **5.2/10** on independence. The issues described below have all been resolved:
 
-1. **appInit imported directly** instead of injected
-2. **window.* runtime discovery** for functions
-3. **Global storage functions** (safeLocalStorageSet/Get)
-4. **Load-time logging** that can't be suppressed
+1. ~~**appInit imported directly** instead of injected~~ → Now injected via DI
+2. ~~**window.* runtime discovery** for functions~~ → Zero `window.*` fallbacks
+3. ~~**Global storage functions** (safeLocalStorageSet/Get)~~ → All storage functions injected
+4. ~~**Load-time logging** that can't be suppressed~~ → Logging is now conditional
 
-This plan addresses all four issues systematically.
+The sections below describe the original plan that was successfully executed.
 
 ---
 

@@ -3,11 +3,13 @@
 Welcome to the **miniCycle developer community!**
 This guide explains how the app is structured, how modules communicate, and how to safely extend or contribute new functionality.
 
-miniCycle is built with **vanilla JavaScript (ES6 modules)** and has **dependency injection boilerplate** in most modules.
+miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure dependency injection system** with zero global fallbacks.
 
-> **⚠️ Architecture Reality Check**
+> **✅ Pure Dependency Injection**
 >
-> The DI pattern exists but all dependencies resolve to `window.*` globals. Modules have constructor injection but use fallbacks like `dependencies.AppState || window.AppState`. This means modules cannot be tested in isolation without mocking `window`. See [MODULAR_OVERHAUL_PLAN.md](../future-work/MODULAR_OVERHAUL_PLAN.md) for the plan to fix this.
+> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `setXxxDependencies()` functions. Modules use `required()` for mandatory dependencies and `optional(defaultValue)` for optional ones. The boot orchestrator (`moduleLoader.js`) wires all 89+ modules at startup.
+>
+> **This enables true unit testing** - the 1,458+ test suite injects pure mocks without touching global state.
 
 ---
 
@@ -15,10 +17,10 @@ miniCycle is built with **vanilla JavaScript (ES6 modules)** and has **dependenc
 
 | Principle | Description |
 |------------|--------------|
-| **Resilience First** | Every module has fallback functions, though these currently fall back to `window.*` globals. |
-| **DI Boilerplate** | Pass dependencies via constructor or `setXYZDependencies()` functions. Note: currently all resolve to globals. |
+| **Pure DI** | All dependencies are explicitly injected via `setXxxDependencies()`. No `window.*` fallbacks. |
+| **DI Framework** | Use `createDIModule()` from `diBase.js` with `required()` and `optional()` markers. |
 | **Schema Safety** | All data reads/writes must go through the `AppState` or schema-safe helpers like `loadMiniCycleData()`. |
-| **Two-Phase Initialization** | All modules wait for `appInit.waitForCore()` before executing logic that touches DOM or AppState. |
+| **Three-Phase Boot** | Orchestrated boot: coreBoot → uiBoot → featureBoot. Modules wait for `appInit.waitForCore()`. |
 | **Zero Frameworks** | No React/Vue. miniCycle's architecture is custom-built to stay lightweight, offline-first, and localStorage-based. |
 
 ---
@@ -114,27 +116,47 @@ When creating a new file, include this in the header:
 ## 🧰 6. Adding a New Module
 
 ### Step 1 — Create your module
-1. Place it in `/utilities/` or a relevant folder.
-2. Choose a pattern (Resilient Constructor / Strict Injection).
-3. Implement `constructor(dependencies = {})` or `setDependencies()`.
+1. Place it in the appropriate folder (`/modules/task/`, `/modules/ui/`, etc.).
+2. Use `createDIModule()` from `diBase.js` for dependency management.
+3. Export a `setXxxDependencies()` function for wiring.
 
-### Step 2 — Register it
-Import it where needed (usually in `appInitialization.js` or the specific manager using it).
-
-### Step 3 — Inject dependencies
+### Step 2 — Define dependencies
 ```js
-const myModule = new MyNewModule({
-  AppState,
-  showNotification: window.showNotification,
-  getElementById: (id) => document.getElementById(id)
+import { createDIModule, required, optional } from '../core/diBase.js';
+
+const di = createDIModule('MyModule', {
+    AppState: required(),
+    showNotification: required(),
+    optionalDep: optional(null)
 });
+
+export function setMyModuleDependencies(deps) {
+    di.setDependencies(deps);
+}
 ```
 
-### Step 4 — Initialize it
-Ensure your module runs **after core initialization**:
+### Step 3 — Register in manifest
+Add your module to `modules/boot/moduleManifests.js`:
 ```js
-await appInit.waitForCore();
-myModule.init?.();
+myModule: {
+    path: '../path/to/myModule.js',
+    phase: PHASES.FEATURES,
+    requires: ['AppState', 'showNotification'],
+    provides: ['myFunction'],
+    api: 'features'
+}
+```
+
+### Step 4 — Use dependencies
+```js
+const _deps = new Proxy({}, {
+    get(_, prop) { return di.resolve()[prop]; }
+});
+
+export async function myFunction() {
+    await _deps.appInit?.waitForCore();
+    _deps.showNotification('Ready!', 'success');
+}
 ```
 
 ---
@@ -185,12 +207,13 @@ Register it in your main script after `statsPanel.js` is loaded.
 
 ## 💡 10. Pro Tips for Contributors
 
-- Follow the **existing DI pattern** even though it currently resolves to globals — this prepares for future true modularization.
+- Use `createDIModule()` with `required()` and `optional()` — never use `window.*` fallbacks.
 - Always handle **missing DOM gracefully** (`if (!element) return;`).
 - Keep UI logic isolated from data logic.
 - Use **`AppState.update()`** to modify data, not direct object mutation.
 - Add `@pattern` and `@version` in module headers — it's part of the versioning philosophy.
-- See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) to understand actual module dependencies.  
+- See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) to understand actual module dependencies.
+- Check [DI_PATTERNS.md](../developer-guides/DI_PATTERNS.md) for DI best practices.  
 
 ---
 
