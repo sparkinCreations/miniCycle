@@ -1,3 +1,7 @@
+## [1.622] - 2026-01-01
+- chore: update version to 1.621 in manifest, HTML, and version files; enhance changelog
+
+
 ## [1.621] - 2026-01-01
 - feat: adjust mobile task card max-height for improved layout
 - chore: update version to 1.620 in manifest, HTML, and version files; enhance changelog
