@@ -22,7 +22,7 @@ import {
 } from './testHelpers.js';
 
 // Direct import from module (not via appContext which may not be populated)
-import { SettingsManager, setSettingsManagerDependencies } from '../modules/ui/settingsManager.js';
+import { SettingsManager, setSettingsManagerDependencies, _resetForTesting } from '../modules/ui/settingsManager.js';
 
 export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2><h3>Setting up mocks...</h3>';
@@ -31,6 +31,11 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     // Use shared testHelpers for comprehensive mock setup
     // =====================================================
     const env = await setupTestEnvironment();
+
+    // Set up SettingsManager module dependencies
+    setSettingsManagerDependencies({
+        safeAddEventListener: env.deps.safeAddEventListener
+    });
 
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -643,6 +648,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         const instance = new SettingsManager();
         await instance.init();
+        // Reset idempotency guard and re-run setup
+        _resetForTesting();
         instance.setupSettingsMenu();
 
         // Simulate button click
@@ -696,6 +703,8 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
         const instance = new SettingsManager();
         await instance.init();
+        // Reset idempotency guard and re-run setup
+        _resetForTesting();
         instance.setupSettingsMenu();
 
         // Simulate close button click

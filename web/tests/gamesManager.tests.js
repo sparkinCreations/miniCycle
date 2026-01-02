@@ -16,7 +16,7 @@ export async function runGamesManagerTests(resultsDiv) {
     // Import the module directly for DI testing
     try {
         const module = await import('../modules/ui/gamesManager.js');
-        GamesManager = module.default;
+        GamesManager = module.GamesManager;  // Named export, not default
         setGamesManagerDependencies = module.setGamesManagerDependencies;
         gamesManagerInstance = module.gamesManager;
         resultsDiv.innerHTML = '<h2>🎮 GamesManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';

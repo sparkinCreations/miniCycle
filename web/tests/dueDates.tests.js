@@ -13,6 +13,11 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
+import {
+    MiniCycleDueDates,
+    setDueDatesDependencies
+} from '../modules/features/dueDates.js';
+
 export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2><h3>Setting up mocks...</h3>';
 
@@ -20,6 +25,14 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
     // Use shared testHelpers for comprehensive mock setup
     // =====================================================
     const env = await setupTestEnvironment();
+
+    // Set up DueDates module dependencies
+    setDueDatesDependencies({
+        safeAddEventListener: env.deps.safeAddEventListener
+    });
+
+    // Make MiniCycleDueDates available for tests (fallback compatibility)
+    window.MiniCycleDueDates = MiniCycleDueDates;
 
     resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -258,6 +271,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             // Create mock task element
             const taskDiv = document.createElement('div');
             taskDiv.classList.add('task');
+            // Set assignedTaskId - required by checkOverdueTasks (uses task ID, not text)
+            taskDiv.dataset.assignedTaskId = 'overdue-task-1';
             const taskText = document.createElement('span');
             taskText.classList.add('task-text');
             taskText.textContent = 'Overdue Task';
@@ -278,7 +293,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
             const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
 
-            if (!savedData.appState.overdueTaskStates['Overdue Task']) {
+            // Implementation stores by task ID, not task text
+            if (!savedData.appState.overdueTaskStates['overdue-task-1']) {
                 throw new Error('Overdue task not tracked in overdueTaskStates');
             }
         });

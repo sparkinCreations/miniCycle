@@ -202,34 +202,34 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    test('has fallback methods for all dependencies', () => {
+    test('has fallback methods for notifications', () => {
         setMenuManagerDependencies({});
         const instance = new MenuManager();
 
         // Check key fallback methods exist
-        if (typeof instance.fallbackLoadData !== 'function') {
-            throw new Error('Missing fallbackLoadData');
-        }
         if (typeof instance.fallbackNotification !== 'function') {
             throw new Error('Missing fallbackNotification');
+        }
+        if (typeof instance.fallbackPromptModal !== 'function') {
+            throw new Error('Missing fallbackPromptModal');
         }
     });
 
     test('initializes with false flags', () => {
         setMenuManagerDependencies(createMockDeps());
         const instance = new MenuManager();
-        if (instance.initialized !== false) {
-            throw new Error('initialized should start as false');
+        if (instance._initialized !== false) {
+            throw new Error('_initialized should start as false');
         }
-        if (instance.hasRun !== false) {
-            throw new Error('hasRun should start as false');
+        if (instance._setupMainMenuInitialized !== false) {
+            throw new Error('_setupMainMenuInitialized should start as false');
         }
     });
 
     // === CORE FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4>⚡ Core Functionality (DI)</h4>';
 
-    test('setupMainMenu sets hasRun flag (DI)', () => {
+    test('setupMainMenu sets initialization flag (DI)', () => {
         setMenuManagerDependencies(createMockDeps({
             getElementById: () => document.createElement('button'),
             safeAddEventListener: () => {}
@@ -238,8 +238,8 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
 
         instance.setupMainMenu();
 
-        if (instance.hasRun !== true) {
-            throw new Error('hasRun should be true after setupMainMenu');
+        if (instance._setupMainMenuInitialized !== true) {
+            throw new Error('_setupMainMenuInitialized should be true after setupMainMenu');
         }
     });
 

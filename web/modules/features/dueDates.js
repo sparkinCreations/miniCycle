@@ -63,9 +63,9 @@ export class MiniCycleDueDates {
             updateProgressBar: resolvedDeps.updateProgressBar || (() => console.log('⏭️ updateProgressBar not available')),
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => console.log('⏭️ checkCompleteAllButton not available')),
             saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
-            getElementById: dependencies.getElementById || ((id) => document.getElementById(id)),
-            querySelectorAll: dependencies.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
-            safeAddEventListener: dependencies.safeAddEventListener,
+            getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
+            querySelectorAll: resolvedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
+            safeAddEventListener: resolvedDeps.safeAddEventListener,
             AppState: resolvedDeps.AppState || null
         };
 

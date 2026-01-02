@@ -91,6 +91,7 @@ async function loadSubModules(version) {
     _subModules = {
         // Settings UI
         setSettingsUIManagerDependencies: settingsUIModule.setSettingsUIManagerDependencies,
+        _resetForTesting: settingsUIModule._resetForTesting,
         setupSettingsMenu: settingsUIModule.setupSettingsMenu,
         setupDarkModeToggle: settingsUIModule.setupDarkModeToggle,
         setupMoveArrowsToggle: settingsUIModule.setupMoveArrowsToggle,
@@ -340,5 +341,6 @@ export function setupFactoryResetButton() { _subModules?.setupFactoryResetButton
 export function neutralizeAppState() { _subModules?.neutralizeAppState?.(); }
 export function sanitizeImportedData(data) { return _subModules?.sanitizeImportedData?.(data); }
 export function sanitizeText(text, maxLen) { return _subModules?.sanitizeText?.(text, maxLen); }
+export function _resetForTesting() { _subModules?._resetForTesting?.(); }
 
 console.log('Settings Manager loaded (facade pattern with dynamic versioned imports)');

@@ -112,6 +112,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
             recurringCore: { updateRecurringButtonVisibility: () => {} },
             getElementById: (id) => document.getElementById(id) || document.createElement('div'),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
+            safeAddEventListener: (el, event, handler, options) => {
+                if (el && typeof el.addEventListener === 'function') {
+                    el.addEventListener(event, handler, options);
+                }
+            },
             ...overrides
         };
     }
@@ -172,11 +177,11 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('has isInitialized flag set to false initially', async () => {
+    await test('has _initialized flag set to false initially', async () => {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
-        if (manager.isInitialized !== false) {
-            throw new Error('isInitialized should be false before init()');
+        if (manager._initialized !== false) {
+            throw new Error('_initialized should be false before init()');
         }
     });
 

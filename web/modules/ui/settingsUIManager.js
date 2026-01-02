@@ -40,6 +40,19 @@ export function setSettingsUIManagerDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Reset initialized state for testing
+ * @private - Only for testing purposes
+ */
+export function _resetForTesting() {
+    _initialized.settingsMenu = false;
+    _initialized.moveArrowsToggle = false;
+    _initialized.threeDotsToggle = false;
+    _initialized.completedDropdownToggle = false;
+    _initialized.debugToggle = false;
+    _initialized.resetRecurringDefaults = false;
+}
+
 // ============================================================================
 // IDEMPOTENCY GUARDS
 // ============================================================================

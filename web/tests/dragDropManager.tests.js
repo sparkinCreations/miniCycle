@@ -24,6 +24,11 @@ export async function runDragDropManagerTests(resultsDiv) {
     // =====================================================
     const env = await setupTestEnvironment();
 
+    // Set up DragDropManager module dependencies
+    setDragDropManagerDependencies({
+        safeAddEventListener: env.deps.safeAddEventListener
+    });
+
     resultsDiv.innerHTML = '<h2>🔄 DragDropManager Tests</h2><h3>Running tests...</h3>';
 
     let passed = { count: 0 };
@@ -71,9 +76,9 @@ export async function runDragDropManagerTests(resultsDiv) {
 
     test('creates instance with dependencies', () => {
         const mockDeps = {
-            saveCurrentTaskOrder: () => {},
-            autoSave: () => {},
-            showNotification: (msg) => {}
+            showNotification: (msg) => {},
+            updateProgressBar: () => {},
+            AppState: { isReady: () => true, get: () => null }
         };
 
         const manager = new DragDropManager(mockDeps);
@@ -81,7 +86,7 @@ export async function runDragDropManagerTests(resultsDiv) {
         if (!manager) {
             throw new Error('Failed to create instance with dependencies');
         }
-        if (!manager.deps.saveCurrentTaskOrder) {
+        if (!manager.deps.showNotification) {
             throw new Error('Dependencies not stored correctly');
         }
     });
@@ -543,104 +548,36 @@ export async function runDragDropManagerTests(resultsDiv) {
     });
 
     // ============================================
-    // 🛡️ FALLBACK METHODS TESTS
+    // 🛡️ DI DEPENDENCY TESTS
     // ============================================
-    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Fallback Methods</h4>';
-
-    test('fallbackSave() logs warning', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackSave();
-    });
-
-    test('fallbackAutoSave() logs warning', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackAutoSave();
-    });
-
-    test('fallbackUpdate() is silent', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw or log
-        manager.fallbackUpdate();
-    });
-
-    test('fallbackCapture() logs warning', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackCapture({});
-    });
-
-    test('fallbackRefresh() logs warning', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackRefresh();
-    });
-
-    test('fallbackReveal() logs warning', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackReveal(document.createElement('div'));
-    });
-
-    test('fallbackHide() logs warning', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackHide(document.createElement('div'));
-    });
-
-    test('fallbackIsTouchDevice() detects touch support', () => {
-        const manager = new DragDropManager();
-
-        const result = manager.fallbackIsTouchDevice();
-
-        if (typeof result !== 'boolean') {
-            throw new Error('fallbackIsTouchDevice should return boolean');
-        }
-    });
-
-    test('fallbackEnableUndo() is silent', () => {
-        const manager = new DragDropManager();
-
-        // Should not throw
-        manager.fallbackEnableUndo();
-    });
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ DI Dependency Tests</h4>';
 
     test('fallbackNotification() logs to console', () => {
         const manager = new DragDropManager();
 
-        // Should not throw
+        // Should not throw - this is the only remaining fallback
         manager.fallbackNotification('Test message', 'info');
     });
 
-    test('uses fallbacks when dependencies missing', () => {
+    test('uses showNotification fallback when dependencies missing', () => {
         const manager = new DragDropManager(); // No dependencies
 
-        if (typeof manager.deps.saveCurrentTaskOrder !== 'function') {
-            throw new Error('Should use fallback for saveCurrentTaskOrder');
-        }
+        // showNotification should fall back to fallbackNotification
         if (typeof manager.deps.showNotification !== 'function') {
-            throw new Error('Should use fallback for showNotification');
+            throw new Error('Should have showNotification function (fallback or injected)');
         }
     });
 
     test('uses provided dependencies over fallbacks', () => {
-        let customSaveCalled = false;
+        let customNotificationCalled = false;
 
         const manager = new DragDropManager({
-            saveCurrentTaskOrder: () => { customSaveCalled = true; }
+            showNotification: () => { customNotificationCalled = true; }
         });
 
-        manager.deps.saveCurrentTaskOrder();
+        manager.deps.showNotification('test', 'info');
 
-        if (!customSaveCalled) {
+        if (!customNotificationCalled) {
             throw new Error('Should use provided dependency over fallback');
         }
     });
@@ -778,17 +715,6 @@ export async function runDragDropManagerTests(resultsDiv) {
         }
         if (taskElement.style.msUserSelect !== 'none') {
             throw new Error('Should prevent text selection with msUserSelect');
-        }
-    });
-
-    test('fallbackIsTouchDevice() checks for touch capability', () => {
-        const manager = new DragDropManager();
-
-        const result = manager.fallbackIsTouchDevice();
-
-        // Should return boolean based on touch support
-        if (typeof result !== 'boolean') {
-            throw new Error('Should return boolean for touch detection');
         }
     });
 

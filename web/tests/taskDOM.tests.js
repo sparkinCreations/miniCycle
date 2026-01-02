@@ -35,7 +35,8 @@ export async function runTaskDOMTests(resultsDiv) {
     setTaskDOMManagerDependencies({
         sanitizeInput: mockSanitizeInput,
         showNotification: () => {},
-        loadMiniCycleData: () => null
+        loadMiniCycleData: () => null,
+        safeAddEventListener: env.deps.safeAddEventListener
     });
 
     // Helper to get default dependencies for TaskDOMManager constructor

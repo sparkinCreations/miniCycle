@@ -21,13 +21,37 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
+// Dynamic import to avoid circular dependency issues
+let RoutineSwitcher = null;
+let setRoutineSwitcherDependencies = null;
+
 export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false) {
+    resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Loading module...</h3>';
+
+    // Dynamic import of the module
+    try {
+        const module = await import('../modules/routine/routineSwitcher.js');
+        RoutineSwitcher = module.RoutineSwitcher;
+        setRoutineSwitcherDependencies = module.setRoutineSwitcherDependencies;
+    } catch (e) {
+        resultsDiv.innerHTML = `<h2>🔄 RoutineSwitcher Tests</h2><div class="result fail">❌ Failed to import module: ${e.message}</div>`;
+        return { passed: 0, total: 1 };
+    }
+
     resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Setting up mocks...</h3>';
 
     // =====================================================
     // Use shared testHelpers for comprehensive mock setup
     // =====================================================
     const env = await setupTestEnvironment();
+
+    // Set up RoutineSwitcher module dependencies
+    setRoutineSwitcherDependencies({
+        safeAddEventListener: env.deps.safeAddEventListener
+    });
+
+    // Make RoutineSwitcher available for tests (fallback compatibility)
+    window.RoutineSwitcher = RoutineSwitcher;
 
     resultsDiv.innerHTML = '<h2>🔄 RoutineSwitcher Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -56,10 +80,7 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         }
     }
 
-    // Import the module class
-    const RoutineSwitcher = window.RoutineSwitcher;
-
-    // Check if class is available
+    // Check if class is available (already imported dynamically above)
     if (!RoutineSwitcher) {
         resultsDiv.innerHTML += '<div class="result fail">❌ RoutineSwitcher class not found. Make sure the module is properly loaded.</div>';
         return { passed: 0, total: 1 };
@@ -378,12 +399,12 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         const instance = new RoutineSwitcher(mockDeps);
         instance.loadMiniCycleListActual();
 
-        // Morning Routine has autoReset=true, should have 🔃
+        // Morning Routine has autoReset=true, should have 🔄 (auto cycle mode)
         const morningItem = [...listContainer.children].find(el =>
             el.textContent.includes('Morning Routine')
         );
-        if (!morningItem || !morningItem.textContent.includes('🔃')) {
-            throw new Error('Auto-reset cycle should have 🔃 emoji');
+        if (!morningItem || !morningItem.textContent.includes('🔄')) {
+            throw new Error('Auto-reset cycle should have 🔄 emoji');
         }
 
         // Work Tasks has deleteCheckedTasks, should have 📋 (default)
