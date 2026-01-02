@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
 **Last Updated:** January 2, 2026
-**Status:** All 86 modules use strict DI | Boot files split (Dec 2025)
+**Status:** All 87 modules use strict DI | Boot files split (Dec 2025)
 
 ---
 
@@ -57,7 +57,7 @@ Marketing pages, legal documents, and archived code were moved into dedicated fo
 ### ✅ Test-Friendly Layout
 - Tests mirror module structure
 - Easy to find corresponding tests
-- 1610+/1610+ tests passing ✅
+- 1610+/1,690+ tests passing ✅
 
 ### ✅ Clear Separation of Concerns
 - Application code in `modules/`
@@ -82,7 +82,7 @@ web/
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
 │
-├── 📁 modules/                          # ES6 application modules (86 modules, all strict DI)
+├── 📁 modules/                          # ES6 application modules (87 modules, all strict DI)
 │   ├── boot/                            # Boot sequence modules (6 modules)
 │   │   ├── orchestrator.js              # DI wiring hub
 │   │   ├── coreBoot.js                  # Core state & init
@@ -132,7 +132,7 @@ web/
 │   ├── [architecture docs]
 │   └── archive/                         # Historical/completed docs
 │
-├── 📁 tests/                            # Test suite (1610+ tests, 100% passing)
+├── 📁 tests/                            # Test suite (1,690+ tests, 100% passing)
 │   ├── module-test-suite.html           # Browser test runner
 │   ├── automated/                       # Playwright automation
 │   ├── [33 module test files]

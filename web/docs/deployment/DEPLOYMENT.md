@@ -50,7 +50,7 @@ minicycle.app/
 ├── manifest.json                  # PWA manifest (full version)
 ├── manifest-lite.json             # PWA manifest (lite version)
 ├── version.js                     # Version configuration (v1.341)
-├── utilities/                     # Modular components (33 modules)
+├── modules/                     # Modular components (33 modules)
 ├── tests/                         # Test suite
 │   ├── module-test-suite.html     # Browser-based test runner
 │   └── ...
@@ -77,7 +77,7 @@ minicycle.app/
 2. **Run Tests**
    ```bash
    npm test
-   # Ensure all 958 tests pass before deploying
+   # Ensure all 1,690+ tests pass before deploying
    ```
 
 3. **Upload to Server**
@@ -188,7 +188,7 @@ const CACHE_VERSION = 'v1.341';  // Increment to force cache refresh
 
 ### Issue: 404 on Module Imports
 
-**Symptoms:** Console errors like `Failed to load module: ./utilities/notifications.js?v=1.341`
+**Symptoms:** Console errors like `Failed to load module: ./modules/notifications.js?v=1.341`
 
 **Solutions:**
 1. Verify all files uploaded to server
@@ -283,7 +283,7 @@ If hosting on subdomain or CDN:
 **Before Every Deployment:**
 
 - [ ] Run `./update-version.sh` to increment version
-- [ ] Run `npm test` - Ensure all 958 tests pass
+- [ ] Run `npm test` - Ensure all 1,690+ tests pass
 - [ ] Test locally on http://localhost:8080
 - [ ] Test on local WiFi (iPad/iPhone if available)
 - [ ] Create git commit with version number

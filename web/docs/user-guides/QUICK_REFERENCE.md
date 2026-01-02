@@ -3,7 +3,7 @@
 **Version**: 1.516 | **Service Worker**: v110 | **Schema**: 2.5
 **Last Updated**: December 20, 2025
 **Modularization**: ✅ COMPLETE (74.8% reduction achieved!)
-**Tests**: ✅ 1610+/1610+ passing (100%) - All platforms
+**Tests**: ✅ 1,690+ passing (100%) - All platforms
 
 ---
 
@@ -58,10 +58,10 @@ const morningRoutine = {
 | Metric | Value |
 |--------|-------|
 | Boot Files | 6 files |
-| Modules | 86 modules (all strict DI) |
+| Modules | 87 modules (all strict DI) |
 | Schema Version | 2.5 |
 | App Version | 1.637 |
-| Test Coverage | 100% (1610+ tests) ✅ |
+| Test Coverage | 100% (1,690+ tests) ✅ |
 | Browser Support | Modern + ES5 |
 
 **Boot File Structure (Dec 2025):**
@@ -87,7 +87,7 @@ web/
 ├── modules/boot/orchestrator.js        # Core app (3,674 lines) - 74.8% reduction! ✅
 ├── miniCycle-styles.css        # Styles
 ├── service-worker.js           # PWA (v82)
-├── utilities/                  # 33 modules (12,003 lines extracted)
+├── modules/                  # 33 modules (12,003 lines extracted)
 │   ├── state.js               # Centralized state
 │   ├── notifications.js       # Notification system
 │   ├── statsPanel.js          # Stats & achievements
@@ -439,7 +439,7 @@ window.myModule = myModule;
 ```javascript
 // Import in modules/boot/orchestrator.js
 document.addEventListener('DOMContentLoaded', async () => {
-    await import('./utilities/myModule.js');
+    await import('./modules/myModule.js');
     console.log('✅ MyModule loaded');
 });
 ```
@@ -817,8 +817,8 @@ window.exportDebugData()                 // Debug package
 
 **✅ MODULARIZATION & BOOT SPLIT COMPLETE!**
 - Boot files: 6 focused files
-- 86 modules (all strict DI)
-- 100% test coverage (1610+ tests passing) ✅
+- 87 modules (all strict DI)
+- 100% test coverage (1,690+ tests passing) ✅
 
 **Architecture:** See [BOOT_FILE_SPLIT_PLAN.md](../future-work/BOOT_FILE_SPLIT_PLAN.md) for boot file structure details.
 

@@ -2,7 +2,7 @@
 
 **Version**: 1.516
 **Last Updated**: December 20, 2025
-**Test Status**: 1610+/1610+ tests passing (100%)
+**Test Status**: 1610+/1,690+ tests passing (100%)
 
 ---
 
@@ -46,7 +46,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 | Boot Files | 6 files | Split Dec 2025 for debuggability |
 | Modules | 86 files | Organized by feature |
 | DI Completion | 100% | No `\|\| window.*` fallbacks |
-| Test Coverage | 100% | 1610+ tests passing |
+| Test Coverage | 100% | 1,690+ tests passing |
 
 **Boot File Structure:**
 - `miniCycle-main.js` (133 lines) - Entrypoint

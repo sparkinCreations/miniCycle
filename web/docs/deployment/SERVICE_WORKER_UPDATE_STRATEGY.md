@@ -28,7 +28,7 @@ Users had old service workers that:
 <script src="utilities/notifications.js?v=1.329"></script>
 
 // Dynamic import (un-versioned):
-await import('./utilities/notifications.js');  // ❌ Different URL!
+await import('./modules/notifications.js');  // ❌ Different URL!
 
 // Result: Both URLs cached separately, updates don't propagate
 ```
@@ -62,11 +62,11 @@ if (typeof window !== 'undefined') {
 const withV = (path) => `${path}?v=${window.APP_VERSION}`;
 
 // Exception: appInit must stay un-versioned (singleton pattern)
-const { appInit } = await import('./utilities/appInitialization.js');
+const { appInit } = await import('./modules/appInitialization.js');
 
 // All other modules use versioned imports
-const { MiniCycleNotifications } = await import(withV('./utilities/notifications.js'));
-// Loads: ./utilities/notifications.js?v=1.330
+const { MiniCycleNotifications } = await import(withV('./modules/notifications.js'));
+// Loads: ./modules/notifications.js?v=1.330
 ```
 
 **Why:**

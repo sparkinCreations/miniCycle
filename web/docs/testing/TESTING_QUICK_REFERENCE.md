@@ -1,7 +1,7 @@
 # miniCycle Testing - Quick Reference
 
 **Last Updated**: December 20, 2025
-**Test Coverage**: 100% (1610+ tests passing across 86 modules) ✅
+**Test Coverage**: 100% (1,690+ tests passing across 87 modules) ✅
 **Platforms**: Mac ✅ | iPad ✅ | iPhone ✅
 
 ---
@@ -164,7 +164,7 @@ export function runMyModuleTests(resultsDiv, isPartOfSuite = false) {
 ```javascript
 // Loader
 if (moduleName === 'myModule') {
-    await import('../utilities/myModule.js');
+    await import('../modules/myModule.js');
     currentModule = 'myModule';
 }
 
@@ -406,10 +406,10 @@ function test(name, testFn) {
 | TaskRenderer | 16 | ✅ |
 | TaskEvents | 22 | ✅ |
 | TaskDOM | 43 | ✅ |
-| **Total** | **1610+/1610+** | **100%** ✅ |
+| **Total** | **1,690+** | **100%** ✅ |
 
 **Recent Improvements (October 2025):**
-- ✅ **100% Test Coverage Achieved** - All 1610+ tests passing
+- ✅ **100% Test Coverage Achieved** - All 1,690+ tests passing
 - ✅ **ConsoleCapture** - Fixed 3 auto-start edge case tests
 - ✅ **GitHub Actions** - CI/CD integrated for automated testing
 - ✅ **Multi-version Testing** - Node.js 18.x and 20.x compatibility
@@ -907,7 +907,7 @@ jobs:
 - **Bug Fixes**: DeviceDetection (2), Reminders (6), ConsoleCapture (1)
 
 ### October 31, 2025 - v2.2
-- **100% Test Coverage** - All 1610+ tests passing
+- **100% Test Coverage** - All 1,690+ tests passing
 - **GitHub Actions** - CI/CD integration complete
 - **ConsoleCapture Fixes** - Resolved 3 auto-start edge case tests
 - **Multi-version Testing** - Node.js 18.x and 20.x support

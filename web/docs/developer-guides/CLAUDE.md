@@ -22,7 +22,7 @@ npm start                    # Starts Python HTTP server on port 8080
 ./update-version.sh          # Interactive version updater
 
 # Testing
-npm test                     # Run automated tests (1610+ tests, Playwright)
+npm test                     # Run automated tests (1,690+ tests, Playwright)
 ```
 
 ### File Access
@@ -143,7 +143,7 @@ Only standard browser API event handlers remain (`window.onload`, `window.onerro
 - **appInit system** - 2-phase initialization prevents race conditions
 - **AppState** - Centralized state with subscriptions and debounced saves
 - **File organization** - Clear folder structure by feature
-- **Test coverage** - 1610+ tests across 86 modules, 100% passing
+- **Test coverage** - 1,690+ tests across 87 modules, 100% passing
 - **Object.defineProperties** - Preserves lazy getters during DI wiring
 
 ---
@@ -267,7 +267,7 @@ const instance = new MyModule();         // Then create
 
 ### Run Tests
 ```bash
-npm test                    # All tests (1610+ tests across 86 modules)
+npm test                    # All tests (1,690+ tests across 87 modules)
 ```
 
 ### Browser Tests
@@ -283,7 +283,7 @@ Open http://localhost:8080/tests/module-test-suite.html
 
 ## Module Organization
 
-### Folder Structure (`web/modules/`) - 86 modules total
+### Folder Structure (`web/modules/`) - 87 modules total
 
 | Folder | Purpose | Modules |
 |--------|---------|---------|

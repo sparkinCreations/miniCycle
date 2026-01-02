@@ -377,7 +377,7 @@ Create tasks that automatically appear on a schedule.
 ### Architecture
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Dependency Injection | Pure DI architecture (86 modules) | `core/diBase.js` |
+| Dependency Injection | Pure DI architecture (87 modules) | `core/diBase.js` |
 | Modular Boot System | 8-phase module loading | `boot/moduleLoader.js` |
 | Module Manifests | Dependency declarations | `boot/moduleManifests.js` |
 | App Context | Centralized module registry | `core/appContext.js` |

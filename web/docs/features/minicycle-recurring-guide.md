@@ -482,7 +482,7 @@ The recurring task system is organized across multiple files following miniCycle
 
 #### Core Files
 
-**`/utilities/recurringCore.js`** - *The Engine*
+**`/modules/recurringCore.js`** - *The Engine*
 - **Purpose:** Core recurring logic, scheduling algorithms, and business rules
 - **Responsibilities:**
   - Pattern matching (`shouldTaskRecurNow()`)
@@ -495,7 +495,7 @@ The recurring task system is organized across multiple files following miniCycle
 - **Pattern:** Strict dependency injection for testability
 - **Why separate?** Complex scheduling logic needs isolation for testing and maintenance
 
-**`/utilities/recurringPanel.js`** - *The Interface*
+**`/modules/recurringPanel.js`** - *The Interface*
 - **Purpose:** UI panel for managing recurring tasks
 - **Responsibilities:**
   - Recurring tasks panel modal
@@ -507,7 +507,7 @@ The recurring task system is organized across multiple files following miniCycle
 - **Pattern:** Resilient constructor (UI-focused)
 - **Why separate?** UI concerns separated from business logic
 
-**`/utilities/recurringIntegration.js`** - *The Glue*
+**`/modules/recurringIntegration.js`** - *The Glue*
 - **Purpose:** Integration layer connecting core and panel to main app
 - **Responsibilities:**
   - Dependency injection setup
@@ -624,33 +624,33 @@ configureRecurringCoreDeps({
 **Module Loading:**
 ```javascript
 // modules/boot/orchestrator.js loads in order:
-import { appInit } from './utilities/appInitialization.js';
+import { appInit } from './modules/appInitialization.js';
 
 // After core systems ready:
 const { configureRecurringCoreDeps, watchRecurringTasks } =
-  await import('./utilities/recurringCore.js');
+  await import('./modules/recurringCore.js');
 
 const { RecurringPanelManager } =
-  await import('./utilities/recurringPanel.js');
+  await import('./modules/recurringPanel.js');
 
 // Integration ties them together:
-await import('./utilities/recurringIntegration.js');
+await import('./modules/recurringIntegration.js');
 ```
 
 #### Related Modules
 
-**`/utilities/state.js`** - State Management
+**`/modules/state.js`** - State Management
 - All recurring data stored in AppState
 - Handles persistence to localStorage
 - Provides `getAppState()` and `updateAppState()` functions
 - Recurring core uses these via dependency injection
 
-**`/utilities/task/taskCore.js`** - Task CRUD Operations
+**`/modules/task/taskCore.js`** - Task CRUD Operations
 - Core task manipulation functions
 - Used by recurring system to create/delete tasks
 - `deleteTask()` function does NOT recalculate recurring schedules (intentional - manual deletion is different from cycle reset)
 
-**`/utilities/task/taskEvents.js`** - Task UI Event Handlers
+**`/modules/task/taskEvents.js`** - Task UI Event Handlers
 - Handles clicks on recurring button (🔁)
 - Calls `applyRecurringToTaskSchema25()` from recurringCore
 - Manages task options menu interactions
@@ -662,7 +662,7 @@ await import('./utilities/recurringIntegration.js');
 
 **File Reference Summary:**
 ```
-/utilities/
+/modules/
   ├── recurringCore.js         (~1,700 lines) - Business logic
   ├── recurringPanel.js        (~2,200 lines) - UI panel
   ├── recurringIntegration.js  (~370 lines)   - Wiring/setup
@@ -728,7 +728,7 @@ await import('./utilities/recurringIntegration.js');
 Below are the core functions with their file locations and line numbers (as of v1.338+):
 
 #### Toggle Recurring On
-**Location:** `/utilities/recurringCore.js` (lines 1495-1583)
+**Location:** `/modules/recurringCore.js` (lines 1495-1583)
 **Function:** `applyRecurringToTaskSchema25(taskId, newSettings)`
 ```javascript
 function handleRecurringTaskActivation(task, taskContext) {
@@ -763,7 +763,7 @@ function handleRecurringTaskActivation(task, taskContext) {
 ```
 
 #### Toggle Recurring Off
-**Location:** `/utilities/recurringCore.js` (lines 1642-1673)
+**Location:** `/modules/recurringCore.js` (lines 1642-1673)
 **Function:** `removeRecurringFromTask(taskId)`
 ```javascript
 function handleRecurringTaskDeactivation(task, taskId) {
@@ -963,7 +963,7 @@ recurringSettings: {
 - Only one duration mode is active at a time
 
 #### Calculate Next Occurrence
-**Location:** `/utilities/recurringCore.js` (lines 146-711)
+**Location:** `/modules/recurringCore.js` (lines 146-711)
 **Functions:**
 - `calculateNextOccurrence(settings, fromTime)` - Main dispatcher (line 146)
 - `calculateNextDailyOccurrence(settings, fromTime)` - Daily logic (line 222)
@@ -1036,7 +1036,7 @@ function formatNextOccurrence(nextOccurrence) {
 ```
 
 #### Check if Task Should Recreate (Hybrid Approach)
-**Location:** `/utilities/recurringCore.js` (lines 883-911)
+**Location:** `/modules/recurringCore.js` (lines 883-911)
 **Functions:**
 - `shouldRecreateRecurringTask(template, taskList, now)` - Validation logic (line 883)
 - `shouldTaskRecurNow(settings, now)` - Pattern matching fallback (line 737)
@@ -1122,7 +1122,7 @@ function getDaysBetween(startDate, endDate) {
 ```
 
 #### Catch Up Missed Tasks
-**Location:** `/utilities/recurringCore.js` (lines 924-1082)
+**Location:** `/modules/recurringCore.js` (lines 924-1082)
 **Function:** `catchUpMissedRecurringTasks()`
 **Trigger:** Runs when browser tab becomes visible again (`visibilitychange` event)
 ```javascript
@@ -1169,7 +1169,7 @@ async function catchUpMissedRecurringTasks() {
 ```
 
 #### Watch Recurring Tasks (30-second Polling)
-**Location:** `/utilities/recurringCore.js` (lines 1086-1217)
+**Location:** `/modules/recurringCore.js` (lines 1086-1217)
 **Function:** `watchRecurringTasks()`
 **Trigger:** Runs every 30 seconds via `setInterval` (setup in `recurringIntegration.js`)
 ```javascript
@@ -1214,7 +1214,7 @@ export async function watchRecurringTasks() {
 ```
 
 #### Cycle Reset (Delete Recurring Tasks)
-**Location:** `/utilities/recurringCore.js` (lines 1593-1632)
+**Location:** `/modules/recurringCore.js` (lines 1593-1632)
 **Function:** `removeRecurringTasksFromCycle(cycleId, taskList, recurringTemplates)`
 **Called by:** `completeMiniCycle()` in main app when cycle completes
 ```javascript

@@ -66,7 +66,7 @@ window.myModule = myModule;
 ```javascript
 // modules/boot/orchestrator.js
 document.addEventListener('DOMContentLoaded', async () => {
-    await import('./utilities/myModule.js');
+    await import('./modules/myModule.js');
     console.log('✅ MyModule loaded');
 });
 ```
@@ -161,7 +161,7 @@ console.log(cycle.recurringTemplates);
 ./update-version.sh
 
 # 2. Run tests
-npm test  # Ensure all 1610+ tests pass
+npm test  # Ensure all 1,690+ tests pass
 
 # 3. Commit changes
 git add .

@@ -130,7 +130,7 @@ canRedo()  → boolean
 ### Notifications Module
 
 ```javascript
-import { MiniCycleNotifications } from './utilities/notifications.js';
+import { MiniCycleNotifications } from './modules/notifications.js';
 
 const notif = new MiniCycleNotifications();
 
@@ -147,7 +147,7 @@ notif.resetPosition();
 ### Stats Panel Module
 
 ```javascript
-import { StatsPanelManager } from './utilities/statsPanel.js';
+import { StatsPanelManager } from './modules/statsPanel.js';
 
 const stats = new StatsPanelManager({
     showNotification,
@@ -169,7 +169,7 @@ stats.getStatistics();
 ### Recurring Core Module
 
 ```javascript
-import * as recurringCore from './utilities/recurringCore.js';
+import * as recurringCore from './modules/recurringCore.js';
 
 // Set dependencies
 recurringCore.setRecurringCoreDependencies({
@@ -188,7 +188,7 @@ const task = recurringCore.generateRecurringTask(template);
 ### Theme Manager Module
 
 ```javascript
-import { ThemeManager } from './utilities/themeManager.js';
+import { ThemeManager } from './modules/themeManager.js';
 
 // Apply theme
 ThemeManager.applyTheme(themeName);
@@ -203,7 +203,7 @@ const themes = ThemeManager.getAvailableThemes();
 ### Mode Manager Module
 
 ```javascript
-import { ModeManager } from './utilities/routine/modeManager.js';
+import { ModeManager } from './modules/routine/modeManager.js';
 
 // Switch mode
 ModeManager.switchMode('auto-cycle');  // or 'manual-cycle', 'todo-mode'

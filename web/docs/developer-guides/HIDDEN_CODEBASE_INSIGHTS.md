@@ -101,7 +101,7 @@ clearTimeout(this._tipTimeout);
 
 **Location:** `/modules/core/diBase.js`
 
-49 of 50 modules import from diBase.js. If this file has a bug or breaking change, **97% of your app breaks**.
+53 of 87 modules import from diBase.js. If this file has a bug or breaking change, **97% of your app breaks**.
 
 **This is by design** (DI foundation), but worth knowing the risk.
 
