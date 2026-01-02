@@ -1,3 +1,8 @@
+## [1.625] - 2026-01-02
+- changed phot size in what is minicycle
+- updated photos
+
+
 ## [1.624] - 2026-01-02
 - added many photos
 - fix: adjust mobile task card margin for improved spacing
