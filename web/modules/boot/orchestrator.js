@@ -1,12 +1,24 @@
 /**
- * orchestrator.js - Boot Orchestration
+ * miniCycle Boot Orchestrator
  *
- * Pure sequence controller for miniCycle boot:
- *   Phase 1: coreBoot (AppState, GlobalUtils, migration)
- *   Phase 2: featureBoot (all feature modules)
- *   Phase 3: uiBoot (event listeners, UI finalization)
+ * Pure sequence controller for the 3-phase boot process.
+ * This file ONLY coordinates - no DI writes, no UI logic, no DOM queries.
  *
- * This file only coordinates - no DI writes, no UI logic, no DOM queries.
+ * Boot Phases:
+ * - Phase 1: coreBoot (AppState, GlobalUtils, migration)
+ * - Phase 2: featureBoot (all feature modules)
+ * - Phase 3: uiBoot (event listeners, UI finalization)
+ *
+ * Error Handling:
+ * - Automatic retry on first failure
+ * - Cache recovery for stale module issues
+ * - Lite version fallback for persistent failures
+ *
+ * @module boot/orchestrator
+ * @version 1.0.0
+ * @see {@link module:boot/coreBoot} - Phase 1 implementation
+ * @see {@link module:boot/featureBoot} - Phase 2 implementation
+ * @see {@link module:boot/uiBoot} - Phase 3 implementation
  */
 
 import { installDebugFilter, setDebugModeDependencies, refreshDebugState } from '../utils/debugMode.js';
@@ -228,7 +240,11 @@ function showBootError(phase, error, willRetry = false) {
 }
 
 /**
- * Core boot sequence - separated for retry capability
+ * Execute the core boot sequence with timeout protection.
+ * Separated from initApp() to enable retry on failure.
+ *
+ * @returns {Promise<boolean>} True if boot succeeded, false if reload initiated
+ * @throws {Error} If any phase times out or fails critically
  */
 async function runBootSequence() {
   const bootStart = Date.now();
@@ -342,9 +358,14 @@ async function checkProductionVersionGuard() {
 }
 
 /**
- * Main initialization with retry logic
- * - First failure: retry once
- * - Second failure: show error with lite version option
+ * Main application initialization entry point.
+ * Implements retry logic for resilient startup.
+ *
+ * Retry Strategy:
+ * - First failure: Show retry message, wait, then retry
+ * - Second failure: Show error with Lite version fallback option
+ *
+ * @returns {Promise<void>}
  */
 async function initApp() {
   // Check production version guard first

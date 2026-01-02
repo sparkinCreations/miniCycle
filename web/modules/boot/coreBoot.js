@@ -1,10 +1,10 @@
 /**
- * ============================================================================
- * coreBoot.js - Core State & Initialization
- * ============================================================================
- * Location: modules/boot/coreBoot.js
+ * miniCycle Core Boot Module
  *
- * This is the FOUNDATION boot file. It:
+ * Foundation boot file that initializes core systems in the correct order.
+ * This is the FIRST phase of the 3-phase boot sequence (core → feature → ui).
+ *
+ * Responsibilities:
  * - Sets boot flag IMMEDIATELY (for HTML fallback detection)
  * - Loads AppGlobalState and FeatureFlags from appGlobalState.js
  * - Loads and configures appInit (2-phase initialization system)
@@ -16,8 +16,29 @@
  * - This file must NOT import from featureBoot.js or uiBoot.js
  * - This file CAN import from ../core/* and ../utils/globalUtils.js
  *
+ * @module boot/coreBoot
  * @version 1.0.0
- * ============================================================================
+ * @see {@link module:boot/featureBoot} - Second phase (feature initialization)
+ * @see {@link module:boot/uiBoot} - Third phase (UI initialization)
+ */
+
+/**
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ */
+
+/**
+ * @typedef {Object} CoreBootDeps
+ * @property {Object} core - Core module references
+ * @property {Object} core.AppGlobalState - Global application state
+ * @property {Object} core.FeatureFlags - Feature flag settings
+ * @property {Object} core.appInit - App initialization manager
+ * @property {MiniCycleState} core.AppState - State manager instance
+ * @property {Object} core.AppMeta - App metadata with version
+ * @property {Function} core.loadMiniCycleData - Load data from state
+ * @property {Function} core.autoSave - Auto-save function
+ * @property {Object} utils - Utility functions
+ * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
@@ -56,8 +77,25 @@ let withV = (path) => `${path}?v=${APP_VERSION}`;
 
 /**
  * Initialize core boot systems. This is the first phase of app initialization.
- * @param {Object} deps - Dependency container to populate
- * @returns {Promise<Object>} Core module references
+ *
+ * Loads and configures:
+ * - AppGlobalState and FeatureFlags
+ * - appInit (2-phase initialization system)
+ * - Core constants (DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, etc.)
+ * - GlobalUtils
+ * - Migration manager
+ * - appContext (early initialization)
+ *
+ * @param {CoreBootDeps} deps - Dependency container to populate
+ * @returns {Promise<Object|null>} Core module references, or null if cache recovery triggered
+ * @throws {Error} If critical module loading fails
+ * @example
+ * const deps = { core: {}, utils: {} };
+ * const coreRefs = await initCoreBoot(deps);
+ * if (coreRefs) {
+ *     // Core boot succeeded
+ *     const { AppGlobalState, appInit } = coreRefs;
+ * }
  */
 export async function initCoreBoot(deps) {
   console.log('🚀 coreBoot: Starting core initialization...');
@@ -257,10 +295,23 @@ export async function initCoreBoot(deps) {
 
 /**
  * Initialize AppState and wire migration dependencies.
- * Called after notifications are available.
- * @param {Object} deps - Dependency container
- * @param {Function} showNotification - Notification function
- * @returns {Promise<Object>} AppState instance
+ * Called after notifications are available (from featureBoot).
+ *
+ * This function:
+ * - Wires appInit setup dependencies
+ * - Configures migration manager
+ * - Creates and initializes AppState singleton
+ * - Adds AppState to appContext
+ * - Initializes data access functions
+ *
+ * @param {CoreBootDeps} deps - Dependency container with core modules
+ * @param {Function} showNotification - Notification display function
+ * @returns {Promise<MiniCycleState>} Initialized AppState instance
+ * @example
+ * const AppState = await initAppState(deps, showNotification);
+ * await AppState.update(state => {
+ *     state.settings.darkMode = true;
+ * });
  */
 export async function initAppState(deps, showNotification) {
   console.log('🗃️ Initializing AppState...');

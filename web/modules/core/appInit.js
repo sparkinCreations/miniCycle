@@ -1,16 +1,38 @@
 /**
- * AppInit - 2-Phase Initialization Coordinator for miniCycle (DI-Pure)
+ * miniCycle AppInit - 2-Phase Initialization Coordinator
  *
- * Solves race conditions by coordinating miniCycle module initialization:
+ * Solves race conditions by coordinating module initialization with
+ * a promise-based waiting system. Modules can wait for specific phases
+ * to complete before proceeding with their initialization.
+ *
+ * Initialization Phases:
  * - Phase 1 (Core Systems): AppState + cycle data loaded
- * - Phase 2 (App Ready): All miniCycle modules initialized
+ * - Phase 2 (App Ready): All modules initialized, UI ready
  *
- * Also provides plugin support with lifecycle hooks for extensibility.
+ * Features:
+ * - Promise-based phase waiting with timeout protection
+ * - Plugin registration and lifecycle hooks
+ * - Initial setup orchestration (onboarding, cycle loading)
+ * - Performance timing and status reporting
  *
- * Now includes initialSetup and completeInitialSetup methods (extracted
- * from main script).
- *
- * @version 1.602
+ * @module core/appInit
+ * @version 2.0.0
+ * @see {@link module:boot/orchestrator} - Boot sequence coordinator
+ * @see {@link module:core/appState} - State management
+ */
+
+/**
+ * @typedef {import('./types.js').Schema25Data} Schema25Data
+ * @typedef {import('./types.js').Cycle} Cycle
+ */
+
+/**
+ * @typedef {Object} AppInitStatus
+ * @property {boolean} coreReady - Whether Phase 1 (core) is complete
+ * @property {boolean} appReady - Whether Phase 2 (app) is complete
+ * @property {number} pluginCount - Number of registered plugins
+ * @property {Object} timings - Phase timing data in milliseconds
+ * @property {Array<{name: string, version: string}>} plugins - Registered plugins
  */
 
 import { createDIModule, optional } from './diBase.js';
