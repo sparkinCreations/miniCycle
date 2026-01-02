@@ -135,7 +135,7 @@ var UTILITIES = [
 ];
 
 self.addEventListener('install', function (event) {
-  console.log('🔧 Service Worker v' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
+  console.log('🔧 Service Worker ' + CACHE_VERSION + ' (App v' + APP_VERSION + ') installing...');
 
   // Build the full pre-cache list once
   var precacheList = CORE.concat(FULL_SHELL, LITE_SHELL, UTILITIES);
@@ -190,7 +190,7 @@ self.addEventListener('install', function (event) {
 });
 
 self.addEventListener('activate', function (event) {
-  console.log('🚀 Service Worker v' + CACHE_VERSION + ' activated');
+  console.log('🚀 Service Worker ' + CACHE_VERSION + ' activated');
   event.waitUntil(
     caches.keys().then(function (keys) {
       return Promise.all(keys.map(function (k) {
@@ -528,4 +528,4 @@ self.addEventListener('error', function (event) {
   console.error('🚨 Service Worker error:', event.error);
 });
 
-console.log('🎯 Service Worker script loaded - v' + CACHE_VERSION + ' (App v' + APP_VERSION + ')');
+console.log('🎯 Service Worker script loaded - ' + CACHE_VERSION + ' (App v' + APP_VERSION + ')');

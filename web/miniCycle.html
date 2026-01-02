@@ -36,10 +36,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 
-<!-- Preload critical font weight for faster text rendering -->
-<link rel="preload" href="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2" as="font" type="font/woff2" crossorigin>
-
-<!-- Google Fonts stylesheet (after preload) -->
+<!-- Google Fonts stylesheet -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
@@ -52,9 +49,10 @@
 <link rel="modulepreload" href="./miniCycle-main.js?v=1.628">
 <link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.628">
 <link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.628">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.628">
 <link rel="modulepreload" href="./modules/core/appState.js?v=1.628">
-<link rel="modulepreload" href="./modules/core/storage.js?v=1.628">
-<link rel="modulepreload" href="./modules/utils/logger.js?v=1.628">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.628">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.628">
 
 <style>
   /* Critical CSS - Inlined for instant loader display */
