@@ -1,17 +1,25 @@
 /**
- * ==========================================
- * 📊 STATS PANEL MODULE WITH SWIPE SUPPORT (DI-Pure)
- * ==========================================
+ * miniCycle Stats Panel Module
  *
- * Manages the stats panel functionality including:
+ * Full-featured stats panel with multi-platform gesture support.
+ * Provides statistics, milestone tracking, and theme unlock management.
+ *
+ * Features:
  * - Multi-platform swipe detection (touch, mouse, wheel, pointer)
  * - View switching between task view and stats panel
- * - Stats data calculation and display
- * - Theme unlock status management
+ * - Real-time stats calculation and display
+ * - Theme and game unlock milestone tracking
  * - Navigation dot updates
- * - Collapsible section preferences (stored in AppState.settings.statsPanel)
+ * - Collapsible section preferences (persisted in AppState)
  *
- * @author miniCycle Development Team
+ * @module features/statsPanel
+ * @version 1.395
+ * @see {@link module:core/appState} - State management for preferences
+ */
+
+/**
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
+ * @typedef {import('../core/types.js').Schema25Data} Schema25Data
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

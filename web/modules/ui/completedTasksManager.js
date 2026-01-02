@@ -1,13 +1,23 @@
 /**
- * Completed Tasks Manager (DI-Pure)
- * Manages the completed tasks dropdown section
+ * miniCycle Completed Tasks Manager
  *
- * Handles:
- * - Completed tasks section initialization
- * - Toggle visibility (expand/collapse)
+ * Manages the collapsible completed tasks section that optionally separates
+ * completed tasks from active tasks in the UI.
+ *
+ * Responsibilities:
+ * - Section initialization and state restoration
+ * - Toggle visibility (expand/collapse with state persistence)
  * - Moving tasks between active and completed lists
  * - Organizing tasks on cycle load
- * - Count updates
+ * - Completed task count updates
+ *
+ * @module ui/completedTasksManager
+ * @version 1.0.0
+ * @see {@link module:task/taskCompletion} - Task completion handling
+ */
+
+/**
+ * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
 import { createDIModule, optional } from '../core/diBase.js';

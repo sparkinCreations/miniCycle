@@ -1,32 +1,53 @@
 /**
- * ============================================================================
- * uiBoot.js - UI Event Handlers & Helpers
- * ============================================================================
- * Location: modules/boot/uiBoot.js
+ * miniCycle UI Boot Module
  *
- * This file handles ALL UI setup via the initUIBoot() entrypoint:
- * - All global DOM event listeners
- * - UI helper functions (loaders, etc.)
+ * Handles ALL UI setup via the initUIBoot() entrypoint. This is the THIRD
+ * phase of the 3-phase boot sequence (core → feature → ui).
+ *
+ * Responsibilities:
+ * - All global DOM event listeners (keyboard shortcuts, clicks)
+ * - UI helper functions (loaders, overlays)
  * - Device detection fallback
- * - DOM queries and listener attachment
+ * - Task input and menu button listeners
  * - Loader hiding and input focus
  *
  * MAIN ENTRYPOINT:
  * - initUIBoot({ GlobalUtils, deps, appContextMod })
  *   Called by orchestrator.js after data load
  *
- * ARCHITECTURE (Dec 2025):
+ * ARCHITECTURE:
  * - orchestrator.js is a pure sequence controller (no UI logic)
  * - uiBoot.js owns ALL UI setup via initUIBoot()
- * - Zero window.* globals
+ * - Zero window.* globals - uses appContext grouped APIs
  *
  * IMPORT RULES:
  * - This file CAN import from coreBoot.js
  * - This file CAN import from featureBoot.js
  * - This file uses appContext.js getters for cross-module access
  *
+ * @module boot/uiBoot
  * @version 2.0.0
- * ============================================================================
+ * @see {@link module:boot/coreBoot} - First phase (core initialization)
+ * @see {@link module:boot/featureBoot} - Second phase (feature initialization)
+ */
+
+/**
+ * @typedef {Object} UIBootOptions
+ * @property {Object} GlobalUtils - GlobalUtils module reference
+ * @property {Object} deps - Dependencies container with ui, utils, core
+ * @property {Object} appContextMod - appContext module for grouped API access
+ */
+
+/**
+ * @typedef {Object} FinalizeUIOptions
+ * @property {Object} GlobalUtils - GlobalUtils module reference
+ * @property {Object} deps - Dependencies container
+ * @property {Function} getHandleCompleteAllTasks - Getter for complete all handler
+ * @property {Function} getInitializeModeSelector - Getter for mode selector init
+ * @property {Function} getUpdateMoveArrowsVisibility - Getter for move arrows update
+ * @property {Function} getInitCompletedTasksSection - Getter for completed tasks init
+ * @property {Function} getRecurringPanel - Getter for recurring panel
+ * @property {Function} getDeviceDetectionManager - Getter for device detection
  */
 
 // ============================================================================
@@ -606,9 +627,19 @@ export function setupTryLiteVersionButton(GlobalUtils, deps) {
 // ============================================================================
 
 /**
- * Finalize UI setup after all modules are loaded
- * Called by orchestrator after bootFeatures completes
- * @param {Object} options - Configuration options
+ * Finalize UI setup after all modules are loaded.
+ * Called by initUIBoot after basic listeners are attached.
+ *
+ * Initializes:
+ * - Complete All button click handler
+ * - Mode selector
+ * - Move arrows visibility
+ * - Completed tasks section
+ * - Recurring panel button visibility
+ * - Device detection auto-redetect
+ *
+ * @param {FinalizeUIOptions} options - Configuration options
+ * @returns {Promise<void>}
  */
 export async function finalizeUI(options) {
   const {
@@ -649,12 +680,24 @@ export async function finalizeUI(options) {
 // ============================================================================
 
 /**
- * Initialize all UI setup in one call
- * This is the single entrypoint for orchestrator.js to call
- * @param {Object} options - Configuration options
- * @param {Object} options.GlobalUtils - GlobalUtils module reference
- * @param {Object} options.deps - Dependencies container
- * @param {Object} options.appContextMod - appContext module reference
+ * Initialize all UI setup in one call.
+ * This is the single entrypoint for orchestrator.js to call after data loads.
+ *
+ * Sets up:
+ * - Task input and menu button listeners
+ * - Global event listeners (keyboard shortcuts, clicks)
+ * - Complete All button handler
+ * - Mode selector, move arrows, completed tasks section
+ * - Device detection and app loader hiding
+ *
+ * @param {UIBootOptions} options - Configuration options
+ * @returns {Promise<void>}
+ * @example
+ * await initUIBoot({
+ *     GlobalUtils: deps.utils.GlobalUtils,
+ *     deps: deps,
+ *     appContextMod: await import('../core/appContext.js')
+ * });
  */
 export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // Store appContextMod for use by module-level getters
