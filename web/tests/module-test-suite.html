@@ -407,6 +407,7 @@
         <button id="run-tests-btn">Run Tests</button>
         <button id="run-all-tests-btn">▶️ Run All Tests (43 modules)</button>
         <button id="copy-results-btn" style="display: none;">📋 Copy Results</button>
+        <button id="copy-failed-btn" style="display: none;">📋 Copy Failed Tests</button>
     </div>
 
     <div id="results"></div>
@@ -494,6 +495,7 @@
         const runTestsBtn = document.getElementById('run-tests-btn');
         const runAllTestsBtn = document.getElementById('run-all-tests-btn');
         const copyResultsBtn = document.getElementById('copy-results-btn');
+        const copyFailedBtn = document.getElementById('copy-failed-btn');
         const resultsDiv = document.getElementById('results');
         const darkModeToggle = document.getElementById('dark-mode-toggle');
         const searchModulesInput = document.getElementById('search-modules');
@@ -1482,8 +1484,9 @@
                 await runFeatureBootTests(resultsDiv);
             }
 
-            // Show copy button after tests run
+            // Show copy buttons after tests run
             copyResultsBtn.style.display = 'inline-block';
+            copyFailedBtn.style.display = 'inline-block';
         });
 
         // Copy results to clipboard with iOS/iPad fallback
@@ -1538,13 +1541,69 @@
             }
         });
 
-        function showCopySuccess() {
-            const originalText = copyResultsBtn.textContent;
-            copyResultsBtn.textContent = '✅ Copied!';
+        function showCopySuccess(button) {
+            const btn = button || copyResultsBtn;
+            const originalText = btn.textContent;
+            btn.textContent = '✅ Copied!';
             setTimeout(() => {
-                copyResultsBtn.textContent = originalText;
+                btn.textContent = originalText;
             }, 2000);
         }
+
+        // Copy failed tests to clipboard
+        copyFailedBtn.addEventListener('click', async () => {
+            try {
+                const textResults = convertFailedTestsToText();
+
+                if (!textResults.trim()) {
+                    alert('No failed tests to copy! 🎉');
+                    return;
+                }
+
+                // Try modern Clipboard API first
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(textResults);
+                        showCopySuccess(copyFailedBtn);
+                        return;
+                    } catch (clipboardError) {
+                        console.log('Clipboard API blocked, using fallback...');
+                    }
+                }
+
+                // Fallback for iPad/iPhone
+                const textarea = document.createElement('textarea');
+                textarea.value = textResults;
+                textarea.style.position = 'fixed';
+                textarea.style.top = '0';
+                textarea.style.left = '0';
+                textarea.style.width = '2em';
+                textarea.style.height = '2em';
+                textarea.style.padding = '0';
+                textarea.style.border = 'none';
+                textarea.style.outline = 'none';
+                textarea.style.boxShadow = 'none';
+                textarea.style.background = 'transparent';
+                document.body.appendChild(textarea);
+
+                textarea.focus();
+                textarea.select();
+                textarea.setSelectionRange(0, textarea.value.length);
+
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                if (successful) {
+                    showCopySuccess(copyFailedBtn);
+                } else {
+                    throw new Error('execCommand failed');
+                }
+
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                alert('Failed to copy failed tests to clipboard.');
+            }
+        });
 
         // Run all tests
         runAllTestsBtn.addEventListener('click', async () => {
@@ -1552,6 +1611,7 @@
 
             resultsDiv.innerHTML = '<h2>🧪 Running All Tests...</h2><p>This may take a few moments...</p>';
             copyResultsBtn.style.display = 'none';
+            copyFailedBtn.style.display = 'none';
 
             // 🛡️ PREVENT PAGE RELOADS during tests
             const originalBeforeUnload = window.onbeforeunload;
@@ -1743,6 +1803,7 @@
 
                 resultsDiv.innerHTML = output;
                 copyResultsBtn.style.display = 'inline-block';
+                copyFailedBtn.style.display = 'inline-block';
 
                 // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
                 await new Promise(resolve => setTimeout(resolve, 700));
@@ -1764,6 +1825,79 @@
                 delete window.__TEST_MODE_NO_RELOAD__;
             }
         });
+
+        // Convert only failed tests to plain text format
+        function convertFailedTestsToText() {
+            const h2 = resultsDiv.querySelector('h2');
+            let text = '';
+
+            // Check if this is "Run All Tests" results (has a table)
+            const summaryTable = resultsDiv.querySelector('table');
+
+            if (summaryTable) {
+                // Count total failures first
+                const allFailedResults = resultsDiv.querySelectorAll('.result.fail');
+                if (allFailedResults.length === 0) {
+                    return '';
+                }
+
+                text += '='.repeat(80) + '\n';
+                text += '❌ FAILED TESTS (' + allFailedResults.length + ' failures)\n';
+                text += '='.repeat(80) + '\n\n';
+
+                // Group failures by module
+                const moduleBlocks = resultsDiv.querySelectorAll('div[style*="margin: 20px 0"]');
+                moduleBlocks.forEach(block => {
+                    const h4 = block.querySelector('h4');
+                    const failedResults = block.querySelectorAll('.result.fail');
+
+                    if (failedResults.length > 0 && h4) {
+                        text += '\n' + h4.textContent + ' (' + failedResults.length + ' failed)\n';
+                        text += '-'.repeat(h4.textContent.length + 10) + '\n';
+
+                        failedResults.forEach(result => {
+                            text += '❌ ' + result.textContent + '\n';
+                        });
+                    }
+                });
+
+            } else {
+                // Single module format
+                const failedResults = resultsDiv.querySelectorAll('.result.fail');
+                if (failedResults.length === 0) {
+                    return '';
+                }
+
+                text += '='.repeat(80) + '\n';
+                text += '❌ FAILED TESTS (' + failedResults.length + ' failures)\n';
+                if (h2) {
+                    text += 'Module: ' + h2.textContent + '\n';
+                }
+                text += '='.repeat(80) + '\n\n';
+
+                let currentSection = '';
+                failedResults.forEach(result => {
+                    // Check for section header
+                    let prevSibling = result.previousElementSibling;
+                    while (prevSibling) {
+                        if (prevSibling.classList && prevSibling.classList.contains('test-section')) {
+                            if (currentSection !== prevSibling.textContent) {
+                                currentSection = prevSibling.textContent;
+                                text += '\n' + currentSection + '\n';
+                                text += '-'.repeat(currentSection.length) + '\n';
+                            }
+                            break;
+                        }
+                        prevSibling = prevSibling.previousElementSibling;
+                    }
+
+                    text += '❌ ' + result.textContent + '\n';
+                });
+            }
+
+            text += '\n' + '='.repeat(80) + '\n';
+            return text;
+        }
 
         // Convert HTML results to plain text format
         function convertResultsToText() {

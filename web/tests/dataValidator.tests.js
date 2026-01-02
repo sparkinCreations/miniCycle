@@ -432,15 +432,16 @@ export async function runDataValidatorTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('validateTask validates dueDate as number', () => {
+    await test('validateTask converts numeric dueDate to ISO string', () => {
         const task = {
             id: 'task-1',
             text: 'Hello',
             dueDate: Date.now()
         };
         const result = DataValidator.validateTask(task);
-        if (typeof result.dueDate !== 'number') {
-            throw new Error('dueDate should be a number');
+        // Validator converts numeric timestamp to ISO date string (YYYY-MM-DD)
+        if (typeof result.dueDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(result.dueDate)) {
+            throw new Error('dueDate should be converted to ISO date string');
         }
     });
 

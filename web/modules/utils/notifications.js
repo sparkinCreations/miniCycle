@@ -50,6 +50,19 @@ const _deps = new Proxy({}, {
 });
 
 /**
+ * Safe event listener helper - uses DI safeAddEventListener or falls back to native
+ * This ensures the module works even if safeAddEventListener isn't injected
+ */
+function _safeAddEventListener(element, event, handler, options) {
+  const safeAdd = _deps.safeAddEventListener;
+  if (typeof safeAdd === 'function') {
+    safeAdd(element, event, handler, options);
+  } else if (element && typeof element.addEventListener === 'function') {
+    element.addEventListener(event, handler, options);
+  }
+}
+
+/**
  * Set dependencies for Notifications module (call before creating instance)
  * @param {Object} dependencies - Late-injected dependencies
  */
@@ -177,8 +190,6 @@ class EducationalTipManager {
   }
 
   initializeTipListeners(container) {
-    const safeAdd = _deps.safeAddEventListener;
-
     // Create bound handlers for this container (stored on container to enable removal)
     if (!container._tipCloseHandler) {
       container._tipCloseHandler = (e) => {
@@ -208,10 +219,10 @@ class EducationalTipManager {
     }
 
     // Handle tip close buttons
-    safeAdd(container, 'click', container._tipCloseHandler);
+    _safeAddEventListener(container, 'click', container._tipCloseHandler);
 
     // Handle tip toggle buttons
-    safeAdd(container, 'click', container._tipToggleHandler);
+    _safeAddEventListener(container, 'click', container._tipToggleHandler);
   }
 
   hideTip(tipId, container) {
@@ -351,8 +362,6 @@ export class MiniCycleNotifications {
       // Style and handler for any close button
       const closeBtn = notification.querySelector(".close-btn");
       if (closeBtn) {
-        const safeAdd = _deps.safeAddEventListener;
-
         Object.assign(closeBtn.style, {
           position: "absolute",
           top: "6px",
@@ -376,7 +385,7 @@ export class MiniCycleNotifications {
           notification.classList.remove("show");
           setTimeout(() => notification.remove(), 300);
         };
-        safeAdd(closeBtn, "click", closeBtn._clickHandler);
+        _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
 
       notificationContainer.appendChild(notification);
@@ -476,7 +485,6 @@ export class MiniCycleNotifications {
       // Close button click
       const closeBtn = notification.querySelector(".close-btn, .notification-close");
       if (closeBtn) {
-        const safeAdd = _deps.safeAddEventListener;
         closeBtn._clickHandler = (e) => {
           e.stopPropagation();
 
@@ -486,7 +494,7 @@ export class MiniCycleNotifications {
           notification.classList.remove("show");
           setTimeout(() => notification.remove(), 300);
         };
-        safeAdd(closeBtn, "click", closeBtn._clickHandler);
+        _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
       }
 
       // Initialize tip listeners if this notification has tips
@@ -659,9 +667,8 @@ async setDefaultPosition(notificationContainer) {
     };
 
     startTimer();
-    const safeAdd = _deps.safeAddEventListener;
-    safeAdd(notification, "mouseenter", pauseTimer);
-    safeAdd(notification, "mouseleave", resumeTimer);
+    _safeAddEventListener(notification, "mouseenter", pauseTimer);
+    _safeAddEventListener(notification, "mouseleave", resumeTimer);
 
     // ✅ FIX #7: Return cleanup function to clear all timeouts
     return () => {
@@ -792,9 +799,8 @@ async setDefaultPosition(notificationContainer) {
         document.removeEventListener("mouseup", onMouseUp);
       };
 
-      const safeAdd = _deps.safeAddEventListener;
-      safeAdd(document, "mousemove", onMouseMove);
-      safeAdd(document, "mouseup", onMouseUp);
+      _safeAddEventListener(document, "mousemove", onMouseMove);
+      _safeAddEventListener(document, "mouseup", onMouseUp);
 
       // FIX #2: Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
@@ -803,8 +809,7 @@ async setDefaultPosition(notificationContainer) {
       });
     };
 
-    const safeAddOuter = _deps.safeAddEventListener;
-    safeAddOuter(notificationContainer, "mousedown", mouseDownHandler);
+    _safeAddEventListener(notificationContainer, "mousedown", mouseDownHandler);
     cleanupFunctions.push(() => {
       notificationContainer.removeEventListener("mousedown", mouseDownHandler);
     });
@@ -867,9 +872,8 @@ async setDefaultPosition(notificationContainer) {
         document.removeEventListener("touchend", onTouchEnd);
       };
 
-      const safeAddTouch = _deps.safeAddEventListener;
-      safeAddTouch(document, "touchmove", onTouchMove, { passive: false });
-      safeAddTouch(document, "touchend", onTouchEnd, { passive: false });
+      _safeAddEventListener(document, "touchmove", onTouchMove, { passive: false });
+      _safeAddEventListener(document, "touchend", onTouchEnd, { passive: false });
 
       // FIX #2: Store cleanup for forced cleanup on notification removal
       cleanupFunctions.push(() => {
@@ -878,8 +882,7 @@ async setDefaultPosition(notificationContainer) {
       });
     };
 
-    const safeAddTouchOuter = _deps.safeAddEventListener;
-    safeAddTouchOuter(notificationContainer, "touchstart", touchStartHandler, { passive: true });
+    _safeAddEventListener(notificationContainer, "touchstart", touchStartHandler, { passive: true });
     cleanupFunctions.push(() => {
       notificationContainer.removeEventListener("touchstart", touchStartHandler);
     });
@@ -1006,8 +1009,6 @@ async setDefaultPosition(notificationContainer) {
    * Initialize recurring notification listeners (with expand/collapse support)
    */
   initializeRecurringNotificationListeners(notification) {
-    const safeAdd = _deps.safeAddEventListener;
-
     // Close button handler
     const closeBtn = notification.querySelector(".close-btn");
     if (closeBtn) {
@@ -1016,7 +1017,7 @@ async setDefaultPosition(notificationContainer) {
         notification.classList.remove("show");
         setTimeout(() => notification.remove(), 300);
       };
-      safeAdd(closeBtn, "click", closeBtn._clickHandler);
+      _safeAddEventListener(closeBtn, "click", closeBtn._clickHandler);
     }
 
     // Delegate clicks inside notification
@@ -1137,7 +1138,7 @@ async setDefaultPosition(notificationContainer) {
         }
       }
     };
-    safeAdd(notification, "click", notification._clickHandler);
+    _safeAddEventListener(notification, "click", notification._clickHandler);
   }
 
   /**
@@ -1232,8 +1233,7 @@ async setDefaultPosition(notificationContainer) {
       }
     };
 
-    const safeAdd = _deps.safeAddEventListener;
-    safeAdd(document, "keydown", handleKeydown);
+    _safeAddEventListener(document, "keydown", handleKeydown);
 
     confirmBtn.onclick = () => {
       cleanup();
@@ -1295,13 +1295,11 @@ async setDefaultPosition(notificationContainer) {
 
     setTimeout(() => input.focus(), 50);
 
-    const safeAdd = _deps.safeAddEventListener;
-
     cancelBtn._clickHandler = () => {
       document.body.removeChild(overlay);
       callback(null);
     };
-    safeAdd(cancelBtn, "click", cancelBtn._clickHandler);
+    _safeAddEventListener(cancelBtn, "click", cancelBtn._clickHandler);
 
     confirmBtn._clickHandler = () => {
       const value = input.value.trim();
@@ -1313,13 +1311,13 @@ async setDefaultPosition(notificationContainer) {
       document.body.removeChild(overlay);
       callback(value);
     };
-    safeAdd(confirmBtn, "click", confirmBtn._clickHandler);
+    _safeAddEventListener(confirmBtn, "click", confirmBtn._clickHandler);
 
     overlay._keydownHandler = (e) => {
       if (e.key === "Enter") confirmBtn.click();
       if (e.key === "Escape") cancelBtn.click();
     };
-    safeAdd(overlay, "keydown", overlay._keydownHandler);
+    _safeAddEventListener(overlay, "keydown", overlay._keydownHandler);
   }
 }
 

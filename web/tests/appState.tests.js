@@ -22,9 +22,9 @@ import {
 import {
     setAppStateDependencies,
     createStateManager,
-    resetStateManager
+    resetStateManager,
+    getStateManager
 } from '../modules/core/appState.js';
-import getStateManager from '../modules/core/appState.js';
 
 export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>AppState Tests</h2><h3>Setting up mocks...</h3>';

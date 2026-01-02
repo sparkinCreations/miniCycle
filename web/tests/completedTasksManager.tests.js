@@ -119,21 +119,21 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
-    await test('has isInitialized flag set to false initially', async () => {
+    await test('has _initialized flag set to false initially', async () => {
         setCompletedTasksManagerDependencies(createMockDeps());
         const manager = new CompletedTasksManager();
-        if (manager.isInitialized !== false) {
-            throw new Error('isInitialized should be false before init()');
+        if (manager._initialized !== false) {
+            throw new Error('_initialized should be false before init()');
         }
     });
 
-    await test('init sets isInitialized to true', async () => {
+    await test('init sets _initialized to true', async () => {
         createTestDOM();
         setCompletedTasksManagerDependencies(createMockDeps());
         const manager = new CompletedTasksManager();
         manager.init();
-        if (manager.isInitialized !== true) {
-            throw new Error('isInitialized should be true after init()');
+        if (manager._initialized !== true) {
+            throw new Error('_initialized should be true after init()');
         }
     });
 
@@ -145,8 +145,10 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         const manager = new CompletedTasksManager();
         // Should not throw
         manager.init();
-        if (manager.isInitialized !== false) {
-            throw new Error('isInitialized should remain false when DOM missing');
+        // When DOM elements are missing, init returns early without setting _initialized
+        // This allows re-initialization when DOM becomes available
+        if (manager._initialized !== false) {
+            throw new Error('_initialized should remain false when DOM elements are missing');
         }
     });
 

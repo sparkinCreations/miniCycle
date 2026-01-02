@@ -29,6 +29,11 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
     const env = await setupTestEnvironment();
 
+    // Set up HelpWindowManager module dependencies
+    setHelpWindowManagerDependencies({
+        safeAddEventListener: env.deps.safeAddEventListener
+    });
+
     resultsDiv.innerHTML = '<h2>HelpWindowManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 

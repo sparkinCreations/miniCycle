@@ -230,6 +230,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
     });
 
     await test('validates all required dependencies', async () => {
+        // These are the actual required deps per _validateDependencies()
         const requiredDeps = [
             'AppState',
             'loadMiniCycleData',
@@ -237,10 +238,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             'sanitizeInput',
             'completeInitialSetup',
             'hideMainMenu',
-            'safeLocalStorageGet',
-            'safeLocalStorageSet',
-            'safeJSONParse',
-            'safeJSONStringify',
             'DEFAULT_TASK_OPTION_BUTTONS'
         ];
 
@@ -405,16 +402,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('completeInitialSetup should be called');
         }
 
-        // Check the cycle was created
+        // Check the cycle was created - uses title as key, not cycle_ prefix
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        const cycleKeys = Object.keys(stored.data.cycles);
-        const newCycleKey = cycleKeys.find(key => key.startsWith('cycle_'));
+        const newCycle = stored.data.cycles['My New Cycle'];
 
-        if (!newCycleKey) {
-            throw new Error('New cycle should be created with cycle_ prefix');
+        if (!newCycle) {
+            throw new Error('New cycle should be created with title as key');
         }
 
-        const newCycle = stored.data.cycles[newCycleKey];
         if (newCycle.title !== 'My New Cycle') {
             throw new Error(`Cycle title should be "My New Cycle", got "${newCycle.title}"`);
         }
@@ -460,22 +455,20 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         });
 
         const instance = new RoutineManager(deps);
-        instance.createBasicFallbackCycle();
+        await instance.createBasicFallbackCycle();
 
         if (!completeSetupCalled) {
             throw new Error('completeInitialSetup should be called');
         }
 
-        // Check the cycle was created
+        // Check the cycle was created - uses title as key
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        const cycleKeys = Object.keys(stored.data.cycles);
-        const fallbackKey = cycleKeys.find(key => key.startsWith('cycle_'));
+        const fallbackCycle = stored.data.cycles['Getting Started'];
 
-        if (!fallbackKey) {
-            throw new Error('Fallback cycle should be created');
+        if (!fallbackCycle) {
+            throw new Error('Fallback cycle should be created with title as key');
         }
 
-        const fallbackCycle = stored.data.cycles[fallbackKey];
         if (fallbackCycle.title !== 'Getting Started') {
             throw new Error(`Fallback title should be "Getting Started", got "${fallbackCycle.title}"`);
         }
@@ -500,14 +493,17 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
     await test('createBasicFallbackCycle syncs AppState', async () => {
         // createBasicFallbackCycle uses injected deps.AppState (DI pattern)
+        let updateCalled = false;
+        const mockSchemaData = createMockSchemaData();
         const mockAppState = {
             isReady: () => true,
-            get: () => createMockSchemaData(),
-            update: () => {},
-            data: null,
-            isInitialized: false,
-            isDirty: true,
-            init: () => {}
+            get: () => mockSchemaData,
+            update: (updateFn) => {
+                updateCalled = true;
+                updateFn(mockSchemaData);
+                localStorage.setItem('miniCycleData', JSON.stringify(mockSchemaData));
+            },
+            reload: () => {}
         };
 
         const deps = createValidDeps({
@@ -516,14 +512,15 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         });
 
         const instance = new RoutineManager(deps);
-        instance.createBasicFallbackCycle();
+        await instance.createBasicFallbackCycle();
 
-        // Check injected AppState was synced via DI
-        if (instance.deps.AppState.isInitialized !== true) {
-            throw new Error('AppState.isInitialized should be true');
+        // Check that AppState.update was called (the DI-pure way of syncing)
+        if (!updateCalled) {
+            throw new Error('AppState.update should be called');
         }
-        if (instance.deps.AppState.isDirty !== false) {
-            throw new Error('AppState.isDirty should be false');
+        // Verify the cycle was created in the data
+        if (!mockSchemaData.data.cycles['Getting Started']) {
+            throw new Error('Fallback cycle should be created in AppState data');
         }
     });
 
@@ -569,7 +566,8 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         if (!modalOptions) {
             throw new Error('showPromptModal should be called');
         }
-        if (modalOptions.title !== 'Create New miniCycle') {
+        // Implementation uses "Create New Routine" (not "miniCycle")
+        if (modalOptions.title !== 'Create New Routine') {
             throw new Error('Incorrect modal title');
         }
         if (modalOptions.required !== true) {
@@ -675,13 +673,13 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
-    await test('createNewMiniCycle falls back to ID when too many duplicates', async () => {
+    await test('createNewMiniCycle falls back to timestamp when too many duplicates', async () => {
         const notifications = [];
         const mockData = createMockSchemaData();
 
         // Add many existing cycles with same name (fill up to 10)
         mockData.data.cycles['Many Dupes'] = { id: 'c1', title: 'Many Dupes', tasks: [] };
-        for (let i = 2; i <= 10; i++) {
+        for (let i = 2; i <= 11; i++) {
             mockData.data.cycles[`Many Dupes (${i})`] = { id: `c${i}`, title: `Many Dupes (${i})`, tasks: [] };
         }
 
@@ -705,20 +703,18 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         const instance = new RoutineManager(deps);
         instance.createNewMiniCycle();
 
-        // Should fall back to using cycle_timestamp as key
+        // Fallback appends timestamp to the name (e.g., "Many Dupes (1735822342415)")
         const cycleKeys = Object.keys(mockData.data.cycles);
-        const idKey = cycleKeys.find(k => k.startsWith('cycle_') && !k.includes('test'));
+        // Look for a key that starts with "Many Dupes (" and ends with a timestamp
+        const timestampKey = cycleKeys.find(k => {
+            if (!k.startsWith('Many Dupes (')) return false;
+            // Check if it's a timestamp (not a simple number)
+            const num = k.match(/\((\d+)\)$/);
+            return num && num[1].length > 10; // Timestamps are longer than 10 digits
+        });
 
-        if (!idKey) {
-            throw new Error('Should fall back to ID-based key');
-        }
-        // Check notification was sent (may contain warning about unique ID)
-        const hasWarning = notifications.some(msg =>
-            msg && (msg.includes('unique ID') || msg.includes('Multiple cycles'))
-        );
-        if (!hasWarning && notifications.length === 0) {
-            // If no notifications, the cycle was still created correctly - test passes
-            // The notification is optional behavior
+        if (!timestampKey) {
+            throw new Error('Should fall back to timestamp-based name');
         }
     });
 
@@ -750,13 +746,16 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         let hideMenuCalled = false;
         let updateProgressCalled = false;
         let checkCompleteCalled = false;
-        let autoSaveCalled = false;
+        let updateCalled = false;
 
         const deps = createValidDeps({
             AppState: {
                 isReady: () => true,
                 get: () => mockData,
-                update: (updateFn) => { updateFn(mockData); }
+                update: (updateFn, immediate) => {
+                    updateCalled = true;
+                    updateFn(mockData);
+                }
             },
             showPromptModal: (options) => {
                 options.callback('UI Test Cycle');
@@ -764,8 +763,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             sanitizeInput: (input) => input.trim(),
             hideMainMenu: () => { hideMenuCalled = true; },
             updateProgressBar: () => { updateProgressCalled = true; },
-            checkCompleteAllButton: () => { checkCompleteCalled = true; },
-            autoSave: () => { autoSaveCalled = true; }
+            checkCompleteAllButton: () => { checkCompleteCalled = true; }
         });
 
         const instance = new RoutineManager(deps);
@@ -793,8 +791,9 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         if (!checkCompleteCalled) {
             throw new Error('checkCompleteAllButton should be called');
         }
-        if (!autoSaveCalled) {
-            throw new Error('autoSave should be called');
+        // AppState.update with immediate=true handles persistence (autoSave is removed)
+        if (!updateCalled) {
+            throw new Error('AppState.update should be called for persistence');
         }
     });
 
@@ -1040,16 +1039,17 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
     // === INTEGRATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔗 Integration Tests</h4>';
 
-    await test('syncs AppState.data after cycle creation', async () => {
+    await test('syncs AppState via update after cycle creation', async () => {
         const mockData = createMockSchemaData();
+        let updateCalled = false;
         const mockAppState = {
             isReady: () => true,
             get: () => mockData,
-            update: (updateFn) => { updateFn(mockData); },
-            data: null,
-            isInitialized: false,
-            isDirty: true,
-            init: () => {}
+            update: (updateFn, immediate) => {
+                updateCalled = true;
+                updateFn(mockData);
+            },
+            reload: () => {}
         };
 
         const deps = createValidDeps({
@@ -1067,9 +1067,13 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
 
         await new Promise(resolve => setTimeout(resolve, 700));
 
-        // AppState should be synced
-        if (mockAppState.data === null) {
-            throw new Error('AppState.data should be synced');
+        // AppState.update should be called to sync data
+        if (!updateCalled) {
+            throw new Error('AppState.update should be called');
+        }
+        // Verify the cycle was created
+        if (!mockData.data.cycles['Sync Test']) {
+            throw new Error('Cycle should be created in AppState data');
         }
     });
 

@@ -266,6 +266,21 @@ export function createMockUpdateCycleData() {
 export function createCommonDependencies(overrides = {}) {
     const mockAppState = createMockAppState();
 
+    // Mock safeAddEventListener that properly adds event listeners
+    const mockSafeAddEventListener = (element, event, handler, options) => {
+        if (element && typeof element.addEventListener === 'function') {
+            element.addEventListener(event, handler, options);
+        }
+    };
+
+    // Mock safeAddEventListenerById that finds element by ID first
+    const mockSafeAddEventListenerById = (id, event, handler, options) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener(event, handler, options);
+        }
+    };
+
     return {
         AppState: mockAppState,
         getAppState: () => mockAppState,
@@ -278,6 +293,8 @@ export function createCommonDependencies(overrides = {}) {
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
         querySelectorAll: (sel) => document.querySelectorAll(sel),
+        safeAddEventListener: mockSafeAddEventListener,
+        safeAddEventListenerById: mockSafeAddEventListenerById,
         ...overrides
     };
 }

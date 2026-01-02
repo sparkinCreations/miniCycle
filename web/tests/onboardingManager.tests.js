@@ -18,7 +18,7 @@ export async function runOnboardingManagerTests(resultsDiv) {
     // Import the module directly for DI testing
     try {
         const module = await import('../modules/ui/onboardingManager.js');
-        OnboardingManager = module.default;
+        OnboardingManager = module.OnboardingManager;  // Named export, not default
         setOnboardingManagerDependencies = module.setOnboardingManagerDependencies;
         onboardingManagerInstance = module.onboardingManager;
         resultsDiv.innerHTML = '<h2>🎓 OnboardingManager Tests (DI-Pure)</h2><h3>Running tests...</h3>';
@@ -46,6 +46,11 @@ export async function runOnboardingManagerTests(resultsDiv) {
             showCycleCreationModal: () => {},
             completeInitialSetup: () => {},
             safeAddEventListenerById: () => {},
+            safeAddEventListener: (el, event, handler, options) => {
+                if (el && typeof el.addEventListener === 'function') {
+                    el.addEventListener(event, handler, options);
+                }
+            },
             ...overrides
         };
     }

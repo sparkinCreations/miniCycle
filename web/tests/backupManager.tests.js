@@ -24,7 +24,7 @@ import {
     waitForAsyncOperations
 } from './testHelpers.js';
 
-import backupManager, { setBackupManagerDependencies } from '../modules/storage/backupManager.js';
+import { backupManager, setBackupManagerDependencies } from '../modules/storage/backupManager.js';
 
 export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>BackupManager Tests</h2><h3>Setting up mocks...</h3>';

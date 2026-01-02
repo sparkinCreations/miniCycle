@@ -6,7 +6,7 @@
  */
 
 // Direct import from module (not via appContext which may not be populated)
-import errorHandler from '../modules/utils/errorHandler.js';
+import { errorHandler } from '../modules/utils/errorHandler.js';
 import { hasGlobal } from './helpers/testContext.js';
 
 export function runErrorHandlerTests(resultsDiv) {

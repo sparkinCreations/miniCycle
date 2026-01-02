@@ -4,6 +4,10 @@
  */
 
 import { getTestMiniCycleNotifications, getTestEducationalTipManager, hasGlobal } from './helpers/testContext.js';
+import { setNotificationsDependencies, MiniCycleNotifications } from '../modules/utils/notifications.js';
+
+// Make class available globally for tests
+window.MiniCycleNotifications = MiniCycleNotifications;
 
 export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔔 MiniCycleNotifications Tests</h2><h3>Running tests...</h3>';
@@ -133,6 +137,19 @@ export async function runNotificationsTests(resultsDiv) {
             }
             return 'hash-' + Math.abs(hash).toString(36);
         };
+
+        // Mock safeAddEventListener and set it as a dependency for the Notifications module
+        const mockSafeAddEventListener = (element, event, handler, options) => {
+            if (element && typeof element.addEventListener === 'function') {
+                element.addEventListener(event, handler, options);
+            }
+        };
+        window.safeAddEventListener = mockSafeAddEventListener;
+
+        // Set module dependencies so DI system has access to safeAddEventListener
+        setNotificationsDependencies({
+            safeAddEventListener: mockSafeAddEventListener
+        });
 
         // Mock AppState - improved to not rely on window.loadMiniCycleData during update
         window.AppState = {
@@ -397,6 +414,7 @@ export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">💬 Modal Dialogs</h4>';
 
     test('showConfirmationModal() creates modal', () => {
+        setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
 
         notifications.showConfirmationModal({
@@ -412,6 +430,7 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     test('showConfirmationModal() has confirm and cancel buttons', () => {
+        setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
 
         notifications.showConfirmationModal({
@@ -433,6 +452,7 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     test('showConfirmationModal() confirm button triggers callback', (done) => {
+        setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
         let callbackCalled = false;
 
@@ -455,6 +475,7 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     test('showPromptModal() creates prompt', () => {
+        setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
 
         notifications.showPromptModal({
@@ -475,6 +496,7 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     test('showPromptModal() has default value', () => {
+        setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
 
         notifications.showPromptModal({
@@ -490,6 +512,7 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     test('showPromptModal() enforces required field', () => {
+        setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();
         let callbackCalled = false;
 
@@ -523,6 +546,7 @@ export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⏰ Auto-Remove</h4>';
 
     test('setupAutoRemove() attaches hover listeners', () => {
+        setupMockGlobals();
         const container = createNotificationContainer();
         const notification = document.createElement('div');
         notification.className = 'notification';
@@ -544,6 +568,7 @@ export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🖱️ Dragging</h4>';
 
     test('setupNotificationDragging() attaches listeners', () => {
+        setupMockGlobals();
         const container = createNotificationContainer();
         const notifications = new window.MiniCycleNotifications();
 
@@ -555,6 +580,7 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     test('setupNotificationDragging() only attaches once', () => {
+        setupMockGlobals();
         const container = createNotificationContainer();
         const notifications = new window.MiniCycleNotifications();
 
@@ -584,6 +610,7 @@ export async function runNotificationsTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
     test('show() handles missing generateHashId gracefully', () => {
+        setupMockGlobals();
         createNotificationContainer();
         delete window.generateHashId;
 
