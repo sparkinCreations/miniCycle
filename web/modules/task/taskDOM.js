@@ -70,7 +70,7 @@ export function setTaskDOMManagerDependencies(dependencies) {
 
 // ✅ Module classes will be loaded dynamically with versioning
 // ✅ Also stored globally to handle multiple module instances (see note above)
-let TaskValidator, TaskUtils, TaskRenderer, TaskEvents;
+let TaskValidator, TaskUtils, TaskRenderer, TaskEvents, TaskButtons, TaskDOMPatch;
 // ✅ Wrapper function from taskUtils.js (uses _deps for saveTaskToSchema25)
 let _createOrUpdateTaskDataFn = null;
 // ✅ taskToAddTaskOptions from taskUtils.js - exported for other modules to use
@@ -89,6 +89,8 @@ export class TaskDOMManager {
         this.validator = null;
         this.renderer = null;
         this.events = null;
+        this.buttons = null;
+        this.patcher = null;
         this.modulesLoaded = false;
 
         // ============================================
@@ -251,26 +253,32 @@ export class TaskDOMManager {
                 const version = this.version;
                 console.log(`📦 Using version ${version} for sub-module imports`);
 
-                // Load all 4 sub-modules with versioned imports
+                // Load all 6 sub-modules with versioned imports
                 console.log('📦 Starting Promise.all for sub-module imports...');
                 const [
                     { TaskValidator: ValidatorClass },
                     { TaskUtils: UtilsClass, setTaskUtilsDependencies, createOrUpdateTaskData: createOrUpdateTaskDataWrapper, taskToAddTaskOptions },
                     { TaskRenderer: RendererClass },
-                    { TaskEvents: EventsClass }
+                    { TaskEvents: EventsClass },
+                    { TaskButtons: ButtonsClass },
+                    { TaskDOMPatch: PatchClass }
                 ] = await Promise.all([
                     import(`./taskValidation.js?v=${version}`),
                     import(`./taskUtils.js?v=${version}`),
                     import(`./taskRenderer.js?v=${version}`),
-                    import(`./taskEvents.js?v=${version}`)
+                    import(`./taskEvents.js?v=${version}`),
+                    import(`./taskButtons.js?v=${version}`),
+                    import(`./taskDOMPatch.js?v=${version}`)
                 ]);
-                console.log('✅ All 4 sub-modules imported successfully');
+                console.log('✅ All 6 sub-modules imported successfully');
 
                 // Store classes for module-level access
                 TaskValidator = ValidatorClass;
                 TaskUtils = UtilsClass;
                 TaskRenderer = RendererClass;
                 TaskEvents = EventsClass;
+                TaskButtons = ButtonsClass;
+                TaskDOMPatch = PatchClass;
                 // Store wrapper function that uses _deps (for saveTaskToSchema25)
                 _createOrUpdateTaskDataFn = createOrUpdateTaskDataWrapper;
                 // Store taskToAddTaskOptions for export to other modules
@@ -293,7 +301,9 @@ export class TaskDOMManager {
                     TaskValidator: !!TaskValidator,
                     TaskUtils: !!TaskUtils,
                     TaskRenderer: !!TaskRenderer,
-                    TaskEvents: !!TaskEvents
+                    TaskEvents: !!TaskEvents,
+                    TaskButtons: !!TaskButtons,
+                    TaskDOMPatch: !!TaskDOMPatch
                 });
 
                 // Initialize validator module - no window.* fallbacks (Phase 2)
@@ -364,12 +374,34 @@ export class TaskDOMManager {
                     console.log('✅ Task click event delegation initialized');
                 }
 
+                // Initialize buttons module - handles all button creation and setup
+                this.buttons = this._rawDeps.buttons || new TaskButtons({
+                    AppState: this.deps.AppState,
+                    safeAddEventListener: this.deps.safeAddEventListener,
+                    showNotification: this.deps.showNotification,
+                    taskOptionsCustomizer: this.deps.taskOptionsCustomizer,
+                    setupRecurringButtonHandler: this.deps.setupRecurringButtonHandler,
+                    setupReminderButtonHandler: this.deps.setupReminderButtonHandler,
+                    handleTaskButtonClick: this.deps.handleTaskButtonClick,
+                    GlobalUtils: this.deps.GlobalUtils,
+                    DEFAULT_TASK_OPTION_BUTTONS: this.deps.DEFAULT_TASK_OPTION_BUTTONS
+                });
+                console.log('✅ TaskButtons module initialized');
+
+                // Initialize patcher module - handles DOM patching without full re-renders
+                this.patcher = this._rawDeps.patcher || new TaskDOMPatch({
+                    sanitizeInput: this.deps.sanitizeInput
+                });
+                console.log('✅ TaskDOMPatch module initialized');
+
                 // Phase 3 - No window.* exports (main script handles exposure)
                 // Expose classes on instance so main script can assign to window.__*
                 this.TaskValidator = TaskValidator;
                 this.TaskUtils = TaskUtils;
                 this.TaskRenderer = TaskRenderer;
                 this.TaskEvents = TaskEvents;
+                this.TaskButtons = TaskButtons;
+                this.TaskDOMPatch = TaskDOMPatch;
 
                 this.modulesLoaded = true;
                 console.log('✅ Task sub-modules loaded successfully (versioned)');
@@ -721,513 +753,31 @@ export class TaskDOMManager {
 
     /**
      * Create task button container with all buttons
+     * Delegates to TaskButtons module
      */
     createTaskButtonContainer(taskContext) {
-        const {
-            autoResetEnabled, deleteCheckedEnabled, settings,
-            remindersEnabled, remindersEnabledGlobal, assignedTaskId,
-            currentCycle, recurring, highPriority
-        } = taskContext;
-
+        if (this.buttons) {
+            return this.buttons.createTaskButtonContainer(taskContext);
+        }
+        // Fallback: create empty container if buttons module not loaded
+        console.warn('⚠️ TaskButtons module not loaded, returning empty container');
         const buttonContainer = document.createElement("div");
         buttonContainer.classList.add("task-options");
-
-        // ✅ If three dots mode is enabled, ensure buttons start explicitly HIDDEN
-        const threeDotsEnabled = settings.showThreeDots || false;
-        if (threeDotsEnabled) {
-            // Explicitly hide with inline styles so toggle check works correctly
-            buttonContainer.style.visibility = "hidden";
-            buttonContainer.style.opacity = "0";
-            buttonContainer.style.pointerEvents = "none";
-        }
-
-        // ✅ Get button visibility settings for this cycle (no window.* fallback)
-        const visibleOptions = currentCycle.taskOptionButtons || this.deps.DEFAULT_TASK_OPTION_BUTTONS || {};
-
-        // ✅ NEW: Always show customize button first
-        const customizeBtn = this.createCustomizeButton();
-        buttonContainer.appendChild(customizeBtn);
-
-        // ✅ UPDATED: Button configuration with visibility checks (no mode dependencies)
-        // ⚠️ Move arrows visibility is controlled by global state.ui.moveArrowsVisible
-        // via updateMoveArrowsVisibility(), not by taskOptionButtons
-        const buttons = [
-            {
-                class: "move-up",
-                icon: "▲",
-                show: true // Always render, visibility controlled by global setting
-            },
-            {
-                class: "move-down",
-                icon: "▼",
-                show: true // Always render, visibility controlled by global setting
-            },
-            {
-                class: "priority-btn",
-                iconClass: "fas fa-exclamation-triangle",
-                show: visibleOptions.highPriority ?? true
-            },
-            {
-                class: "edit-btn",
-                iconClass: "fas fa-edit",
-                show: visibleOptions.rename ?? true
-            },
-            {
-                class: "delete-btn",
-                iconClass: "fas fa-trash",
-                show: visibleOptions.delete ?? true
-            },
-            {
-                class: "recurring-btn",
-                iconClass: "fas fa-repeat",
-                show: visibleOptions.recurring ?? false
-            },
-            {
-                class: "set-due-date",
-                iconClass: "fas fa-calendar-alt",
-                show: visibleOptions.dueDate ?? false
-            },
-            {
-                class: "enable-task-reminders",
-                iconClass: "fas fa-bell",
-                show: visibleOptions.reminders ?? false,
-                toggle: true
-            },
-            {
-                class: "delete-when-complete-btn",
-                icon: "❌",
-                show: visibleOptions.deleteWhenComplete ?? false,
-                toggle: true
-            }
-        ];
-
-        buttons.forEach(buttonConfig => {
-            const button = this.createTaskButton(buttonConfig, taskContext, buttonContainer);
-            buttonContainer.appendChild(button);
-        });
-
         return buttonContainer;
     }
 
     /**
-     * ✅ NEW: Create the customize button (⋯)
-     * Opens the task options customization modal for the current cycle
-     * @returns {HTMLButtonElement} The customize button element
-     */
-    createCustomizeButton() {
-        const button = document.createElement("button");
-        button.classList.add("task-btn", "customize-btn");
-        button.textContent = "-/+"; // Customize icon
-        button.setAttribute("type", "button");
-        button.setAttribute("title", "Customize task options");
-        button.setAttribute("tabindex", "0");
-        button.setAttribute("aria-label", "Customize which task option buttons are visible");
-
-        // Click handler - use deps (injected via setTaskDOMManagerDependencies)
-        const safeAdd = this.deps.safeAddEventListener;
-        button._clickHandler = (e) => {
-            e.stopPropagation();
-            const customizer = this.deps.taskOptionsCustomizer;
-            if (customizer) {
-                // ✅ Always use the active cycle ID from AppState
-                const state = this.deps.AppState?.get?.();
-                const activeCycleId = state?.appState?.activeCycleId;
-
-                if (activeCycleId) {
-                    customizer.showCustomizationModal(activeCycleId);
-                } else {
-                    console.warn('⚠️ No active cycle ID found');
-                }
-            } else {
-                console.warn('⚠️ TaskOptionsCustomizer not injected');
-            }
-        };
-        safeAdd(button, "click", button._clickHandler);
-
-        // Keyboard handler
-        button._keydownHandler = (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                button.click();
-            }
-        };
-        safeAdd(button, "keydown", button._keydownHandler);
-
-        return button;
-    }
-
-    /**
-     * Create individual task button
-     */
-    createTaskButton(buttonConfig, taskContext, buttonContainer) {
-        const { class: btnClass, icon, iconClass, toggle = false, show } = buttonConfig;
-        const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority, deleteWhenComplete } = taskContext;
-
-        const button = document.createElement("button");
-        button.classList.add("task-btn", btnClass);
-
-        // Use createElement instead of innerHTML for performance (avoids HTML parsing)
-        if (iconClass) {
-            // FontAwesome icon - create <i> element
-            const iconEl = document.createElement("i");
-            iconClass.split(" ").forEach(cls => iconEl.classList.add(cls));
-            button.appendChild(iconEl);
-        } else if (icon) {
-            // Text icon (▲, ▼, ❌, etc.) - use textContent
-            button.textContent = icon;
-        }
-
-        button.setAttribute("type", "button");
-
-        // ✅ Move arrows: don't add .hidden class - CSS handles visibility via
-        // #taskList[data-move-arrows] attribute (O(1) CSS-driven approach)
-        // Other buttons: use .hidden class when not shown
-        if (btnClass !== "move-up" && btnClass !== "move-down" && !show) {
-            button.classList.add("hidden");
-        }
-
-        // Setup accessibility attributes
-        this.setupButtonAccessibility(button, btnClass, buttonContainer);
-
-        // Setup ARIA states
-        this.setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete);
-
-        // Setup button event handlers
-        this.setupButtonEventHandlers(button, btnClass, taskContext);
-
-        return button;
-    }
-
-    /**
-     * Setup button accessibility (keyboard navigation, ARIA labels)
-     */
-    setupButtonAccessibility(button, btnClass, buttonContainer) {
-        button.setAttribute("tabindex", "0");
-
-        // Keyboard navigation with safeAddEventListener
-        const safeAdd = this.deps.safeAddEventListener;
-        button._accessibilityKeydownHandler = (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                button.click();
-            }
-
-            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                const focusable = Array.from(buttonContainer.querySelectorAll("button.task-btn"));
-                const currentIndex = focusable.indexOf(e.target);
-                const nextIndex = e.key === "ArrowRight"
-                    ? (currentIndex + 1) % focusable.length
-                    : (currentIndex - 1 + focusable.length) % focusable.length;
-                focusable[nextIndex].focus();
-                e.preventDefault();
-            }
-        };
-        safeAdd(button, "keydown", button._accessibilityKeydownHandler);
-
-        // ARIA labels and tooltips
-        const ariaLabels = {
-            "move-up": "Move task up",
-            "move-down": "Move task down",
-            "recurring-btn": "Toggle recurring task",
-            "set-due-date": "Set due date",
-            "enable-task-reminders": "Toggle reminders for this task",
-            "priority-btn": "Mark task as high priority",
-            "edit-btn": "Edit task",
-            "delete-btn": "Delete task",
-            "delete-when-complete-btn": "Toggle delete when complete (permanently remove on auto-reset)"
-        };
-        const label = ariaLabels[btnClass] || "Task action";
-        button.setAttribute("aria-label", label);
-        button.setAttribute("title", label); // Add tooltip
-    }
-
-    /**
-     * Setup button ARIA states (pressed, active)
-     */
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete) {
-        if (btnClass === "enable-task-reminders") {
-            const isActive = remindersEnabled === true;
-            button.classList.toggle("reminder-active", isActive);
-            button.setAttribute("aria-pressed", isActive.toString());
-        } else if (btnClass === "delete-when-complete-btn") {
-            const isActive = deleteWhenComplete === true;
-            button.classList.toggle("active", isActive);
-            button.classList.toggle("delete-when-complete-active", isActive);
-            button.setAttribute("aria-pressed", isActive.toString());
-        } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
-            let isActive;
-
-            if (btnClass === "recurring-btn") {
-                // ✅ Check if task has a recurring template (source of truth)
-                const hasRecurringTemplate = currentCycle?.recurringTemplates?.[assignedTaskId];
-                isActive = hasRecurringTemplate || !!recurring;
-
-                // ✅ Debug log for recurring button
-                console.log('🔘 Setting up recurring button:', {
-                    taskId: assignedTaskId,
-                    recurring,
-                    hasRecurringTemplate: !!hasRecurringTemplate,
-                    isActive,
-                    hasActiveClass: button.classList.contains('active')
-                });
-            } else {
-                isActive = !!highPriority;
-            }
-
-            button.classList.toggle("active", isActive);
-            button.setAttribute("aria-pressed", isActive.toString());
-        }
-    }
-
-    /**
-     * Setup button event handlers
-     */
-    setupButtonEventHandlers(button, btnClass, taskContext) {
-        if (btnClass === "recurring-btn") {
-            // ✅ Setup recurring button handler (from injected deps)
-            if (typeof this.deps.setupRecurringButtonHandler === 'function') {
-                this.deps.setupRecurringButtonHandler(button, taskContext);
-            } else {
-                // Fallback to internal method if not injected
-                this.setupRecurringButtonHandler(button, taskContext);
-            }
-        } else if (btnClass === "enable-task-reminders") {
-            // ✅ Use setupReminderButtonHandler from injected deps
-            if (typeof this.deps.setupReminderButtonHandler === 'function') {
-                this.deps.setupReminderButtonHandler(button, taskContext);
-            } else {
-                console.warn('⚠️ setupReminderButtonHandler not injected - reminders module may not be loaded');
-            }
-        } else if (btnClass === "delete-when-complete-btn") {
-            // ✅ Setup delete-when-complete button handler
-            this.setupDeleteWhenCompleteButtonHandler(button, taskContext);
-        } else if (btnClass === "move-up" || btnClass === "move-down") {
-            // ✅ Skip attaching old handlers to move buttons - using event delegation
-            console.log(`🔄 Skipping old handler for ${btnClass} - using event delegation`);
-        } else {
-            // Use handleTaskButtonClick from injected deps with safeAddEventListener
-            if (typeof this.deps.handleTaskButtonClick === 'function') {
-                const safeAdd = this.deps.safeAddEventListener;
-                safeAdd(button, "click", this.deps.handleTaskButtonClick);
-            }
-        }
-    }
-
-    /**
-     * Setup delete-when-complete button handler
-     * @param {HTMLButtonElement} button - The delete-when-complete button
-     * @param {Object} taskContext - Task context object
-     */
-    setupDeleteWhenCompleteButtonHandler(button, taskContext) {
-        const { assignedTaskId } = taskContext;
-
-        const safeAdd = this.deps.safeAddEventListener;
-        button._deleteWhenCompleteClickHandler = async (e) => {
-            e.stopPropagation();
-
-            const taskItem = button.closest(".task");
-            if (!taskItem) {
-                console.warn('⚠️ Task item not found for delete-when-complete button');
-                return;
-            }
-
-            // Check if task is recurring
-            const isRecurring = taskItem.classList.contains("recurring");
-
-            // Get current state
-            const currentlyActive = button.classList.contains("delete-when-complete-active");
-            const newState = !currentlyActive;
-
-            // ✅ Allow toggling delete-when-complete on recurring tasks
-            // If disabled, show pin indicator - task will be kept on reset (won't respawn until re-enabled)
-            if (isRecurring && !newState) {
-                // Show info notification (not a blocking modal)
-                _deps.showNotification?.(
-                    "📌 This recurring task will be kept on reset instead of respawning.",
-                    "info",
-                    3000
-                );
-            }
-
-            // ✅ Update state and DOM using centralized functions
-            if (!this.deps.AppState?.isReady?.()) {
-                console.error('❌ AppState not available for delete-when-complete toggle');
-                _deps.showNotification?.('Feature temporarily unavailable', 'error', 3000);
-                return;
-            }
-
-            // Check GlobalUtils availability
-            if (!this.deps.GlobalUtils) {
-                console.error('❌ GlobalUtils not available - using fallback');
-            }
-
-            // Get current state info
-            let state = this.deps.AppState.get();
-            let activeCycleId = state.appState.activeCycleId;
-            let cycle = state.data.cycles[activeCycleId];
-            let isToDoMode = cycle?.deleteCheckedTasks === true;
-            const currentMode = isToDoMode ? 'todo' : 'cycle';
-
-            // Update task data in AppState
-            await this.deps.AppState.update(state => {
-                const cycle = state.data.cycles[activeCycleId];
-                const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
-
-                if (task) {
-                    // Validate and initialize settings if missing
-                    const isValid = this.deps.GlobalUtils?.validateDeleteSettings(task.deleteWhenCompleteSettings);
-                    if (!isValid) {
-                        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                        console.warn('⚠️ Initialized missing deleteWhenCompleteSettings for task', assignedTaskId);
-                    }
-
-                    // Update active value AND mode-specific setting
-                    task.deleteWhenComplete = newState;
-                    task.deleteWhenCompleteSettings[currentMode] = newState;
-
-                    console.log(`✅ Set deleteWhenComplete for task ${assignedTaskId} (${currentMode} mode): ${newState}`);
-                }
-            }, true);
-
-            // Refresh state after update
-            state = this.deps.AppState.get();
-            const task = state.data.cycles[activeCycleId]?.tasks?.find(t => t.id === assignedTaskId);
-
-            if (task) {
-                // ✅ Use centralized DOM sync function if available
-                if (this.deps.GlobalUtils) {
-                    this.deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
-                        taskItem,
-                        task,
-                        currentMode,
-                        { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
-                    );
-                } else {
-                    // Fallback: manual DOM update
-                    console.warn('⚠️ Using fallback DOM update - GlobalUtils not available');
-                    taskItem.dataset.deleteWhenComplete = newState.toString();
-                    taskItem.dataset.deleteWhenCompleteSettings = JSON.stringify(task.deleteWhenCompleteSettings);
-
-                    // Update button state
-                    button.classList.toggle("active", newState);
-                    button.classList.toggle("delete-when-complete-active", newState);
-                    button.setAttribute("aria-pressed", newState.toString());
-
-                    // Update visual indicators (must handle recurring tasks properly)
-                    if (isToDoMode) {
-                        taskItem.classList.remove('show-delete-indicator');
-                        taskItem.classList.toggle('kept-task', !newState);
-                    } else {
-                        // Cycle mode: handle recurring vs non-recurring differently
-                        if (newState && !isRecurring) {
-                            // Non-recurring with deleteWhenComplete=true: show red X
-                            taskItem.classList.add('show-delete-indicator');
-                            taskItem.classList.remove('kept-task');
-                        } else {
-                            taskItem.classList.remove('show-delete-indicator');
-                            // Recurring with deleteWhenComplete=false: show pin
-                            if (!newState && isRecurring) {
-                                taskItem.classList.add('kept-task');
-                            } else {
-                                taskItem.classList.remove('kept-task');
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Show notification (mode-specific messaging)
-            let message;
-            if (newState) {
-                message = "Task will be removed on auto-reset";
-            } else {
-                message = isToDoMode
-                    ? "📌 Task will be kept on complete (pinned)"
-                    : "Task will remain in list on auto-reset";
-            }
-            _deps.showNotification?.(message, "info", 2000);
-        };
-        safeAdd(button, "click", button._deleteWhenCompleteClickHandler);
-    }
-
-    /**
      * Handle disabling recurring for a task (called from confirmation modal)
+     * Delegates to TaskButtons module
      * @param {string} assignedTaskId - The task ID
      * @param {HTMLElement} taskItem - The task DOM element
      * @param {HTMLElement} button - The delete-when-complete button
      */
     async handleDisableRecurringForTask(assignedTaskId, taskItem, button) {
-        console.log('🔁 User confirmed: Disabling recurring for task', assignedTaskId);
-
-        // Remove recurring template and update task
-        if (this.deps.AppState?.isReady?.()) {
-            await this.deps.AppState.update(state => {
-                const cid = state.appState.activeCycleId;
-                const cycle = state.data.cycles[cid];
-
-                // Remove recurring template
-                if (cycle?.recurringTemplates?.[assignedTaskId]) {
-                    delete cycle.recurringTemplates[assignedTaskId];
-                    console.log(`🗑️ Removed recurring template for task ${assignedTaskId}`);
-                }
-
-                // Update task to not be recurring
-                const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
-                if (task) {
-                    task.recurring = false;
-
-                    // ✅ Restore mode-specific deleteWhenComplete setting
-                    // Initialize settings if missing
-                    if (!task.deleteWhenCompleteSettings) {
-                        task.deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-                    }
-
-                    // Determine current mode and restore that mode's setting
-                    const isToDoMode = cycle?.deleteCheckedTasks === true;
-                    const currentMode = isToDoMode ? 'todo' : 'cycle';
-                    task.deleteWhenComplete = task.deleteWhenCompleteSettings[currentMode];
-
-                    console.log(`✅ Restored deleteWhenComplete from ${currentMode} mode settings:`, task.deleteWhenComplete);
-                }
-            }, true);
-
-            // ✅ Get the restored task data and current mode
-            const state = this.deps.AppState.get();
-            const cid = state.appState.activeCycleId;
-            const cycle = state.data.cycles[cid];
-            const task = cycle?.tasks?.find(t => t.id === assignedTaskId);
-            const isToDoMode = cycle?.deleteCheckedTasks === true;
-            const currentMode = isToDoMode ? 'todo' : 'cycle';
-
-            // Update DOM - remove recurring class
-            taskItem.classList.remove("recurring");
-
-            const recurringBtn = taskItem.querySelector(".recurring-btn");
-            if (recurringBtn) {
-                recurringBtn.classList.remove("active");
-                recurringBtn.setAttribute("aria-pressed", "false");
-            }
-
-            // ✅ Use centralized DOM sync function for deleteWhenComplete state
-            if (task && this.deps.GlobalUtils) {
-                this.deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
-                    taskItem,
-                    task,
-                    currentMode,
-                    { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }
-                );
-            } else if (!this.deps.GlobalUtils) {
-                console.error('❌ GlobalUtils not available for recurring disable sync');
-                // Fallback: manual update
-                const restoredDeleteWhenComplete = task?.deleteWhenComplete || false;
-                taskItem.dataset.deleteWhenComplete = restoredDeleteWhenComplete.toString();
-                button.classList.toggle("active", restoredDeleteWhenComplete);
-                button.classList.toggle("delete-when-complete-active", restoredDeleteWhenComplete);
-                button.setAttribute("aria-pressed", restoredDeleteWhenComplete.toString());
-            }
-
-            _deps.showNotification?.("Recurring disabled for this task", "info", 2000);
+        if (this.buttons) {
+            return this.buttons.handleDisableRecurringForTask(assignedTaskId, taskItem, button);
         }
+        console.warn('⚠️ TaskButtons module not loaded');
     }
 
     /**
@@ -1571,8 +1121,9 @@ export class TaskDOMManager {
     // Use this.renderer.renderTasks(), this.renderer.refreshUIFromState(), etc.
 
     // ========================================================================
-    // GROUP 7: PATCH/REMOVE APIs (for UIOrchestrator)
+    // GROUP 7: PATCH/REMOVE APIs (delegated to TaskDOMPatch)
     // These provide O(1) DOM updates for single-task changes
+    // ✅ MOVED TO: modules/task/taskDOMPatch.js
     // ========================================================================
 
     /**
@@ -1582,143 +1133,11 @@ export class TaskDOMManager {
      * @param {string[]} [changedFields] - Specific fields that changed (for optimization)
      */
     patchTask(taskId, taskData, changedFields = null) {
-        const taskElement = document.querySelector(`.task[data-task-id="${taskId}"]`);
-        if (!taskElement) {
-            console.warn(`🎨 patchTask: Task element not found for ${taskId}`);
-            return false;
+        if (this.patcher) {
+            return this.patcher.patchTask(taskId, taskData, changedFields);
         }
-
-        try {
-            // If no specific fields, patch all common fields
-            const fields = changedFields || ['completed', 'text', 'highPriority', 'dueDate', 'recurring', 'remindersEnabled'];
-
-            fields.forEach(field => {
-                switch (field) {
-                    case 'completed':
-                        this._patchCompleted(taskElement, taskData);
-                        break;
-                    case 'text':
-                        this._patchText(taskElement, taskData);
-                        break;
-                    case 'highPriority':
-                        this._patchHighPriority(taskElement, taskData);
-                        break;
-                    case 'dueDate':
-                        this._patchDueDate(taskElement, taskData);
-                        break;
-                    case 'recurring':
-                        this._patchRecurring(taskElement, taskData);
-                        break;
-                    case 'remindersEnabled':
-                        this._patchReminders(taskElement, taskData);
-                        break;
-                    case 'deleteWhenComplete':
-                        this._patchDeleteWhenComplete(taskElement, taskData);
-                        break;
-                }
-            });
-
-            console.log(`🎨 Patched task ${taskId}:`, changedFields || 'all fields');
-            return true;
-        } catch (error) {
-            console.error(`🎨 patchTask failed for ${taskId}:`, error);
-            return false;
-        }
-    }
-
-    /**
-     * Patch completed state
-     * @private
-     */
-    _patchCompleted(taskElement, taskData) {
-        const checkbox = taskElement.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-            checkbox.checked = taskData.completed || false;
-        }
-        taskElement.classList.toggle('completed', taskData.completed || false);
-    }
-
-    /**
-     * Patch task text
-     * @private
-     */
-    _patchText(taskElement, taskData) {
-        const label = taskElement.querySelector('label');
-        if (label) {
-            const sanitized = this.deps.sanitizeInput?.(taskData.text) || taskData.text;
-            label.textContent = sanitized;
-        }
-    }
-
-    /**
-     * Patch high priority state
-     * @private
-     */
-    _patchHighPriority(taskElement, taskData) {
-        taskElement.classList.toggle('high-priority', taskData.highPriority || false);
-
-        const priorityBtn = taskElement.querySelector('.priority-btn');
-        if (priorityBtn) {
-            priorityBtn.classList.toggle('priority-active', taskData.highPriority || false);
-            priorityBtn.setAttribute('aria-pressed', String(taskData.highPriority || false));
-        }
-    }
-
-    /**
-     * Patch due date display
-     * @private
-     */
-    _patchDueDate(taskElement, taskData) {
-        const dueDateSpan = taskElement.querySelector('.due-date');
-        if (dueDateSpan) {
-            if (taskData.dueDate) {
-                const date = new Date(taskData.dueDate);
-                dueDateSpan.textContent = date.toLocaleDateString();
-                dueDateSpan.classList.remove('hidden');
-            } else {
-                dueDateSpan.textContent = '';
-                dueDateSpan.classList.add('hidden');
-            }
-        }
-    }
-
-    /**
-     * Patch recurring state
-     * @private
-     */
-    _patchRecurring(taskElement, taskData) {
-        taskElement.classList.toggle('recurring', taskData.recurring || false);
-
-        const recurringBtn = taskElement.querySelector('.recurring-btn');
-        if (recurringBtn) {
-            recurringBtn.classList.toggle('active', taskData.recurring || false);
-            recurringBtn.setAttribute('aria-pressed', String(taskData.recurring || false));
-        }
-    }
-
-    /**
-     * Patch reminders state
-     * @private
-     */
-    _patchReminders(taskElement, taskData) {
-        const reminderBtn = taskElement.querySelector('.enable-task-reminders');
-        if (reminderBtn) {
-            reminderBtn.classList.toggle('reminder-active', taskData.remindersEnabled || false);
-            reminderBtn.setAttribute('aria-pressed', String(taskData.remindersEnabled || false));
-        }
-    }
-
-    /**
-     * Patch delete-when-complete state
-     * @private
-     */
-    _patchDeleteWhenComplete(taskElement, taskData) {
-        const dwcBtn = taskElement.querySelector('.delete-when-complete-btn');
-        if (dwcBtn) {
-            const isActive = taskData.deleteWhenComplete || false;
-            dwcBtn.classList.toggle('active', isActive);
-            dwcBtn.setAttribute('aria-pressed', String(isActive));
-        }
+        console.warn('🎨 TaskDOMPatch not initialized');
+        return false;
     }
 
     /**
@@ -1727,15 +1146,11 @@ export class TaskDOMManager {
      * @returns {boolean} True if removed, false if not found
      */
     removeTask(taskId) {
-        const taskElement = document.querySelector(`.task[data-task-id="${taskId}"]`);
-        if (!taskElement) {
-            console.warn(`🎨 removeTask: Task element not found for ${taskId}`);
-            return false;
+        if (this.patcher) {
+            return this.patcher.removeTask(taskId);
         }
-
-        taskElement.remove();
-        console.log(`🎨 Removed task ${taskId} from DOM`);
-        return true;
+        console.warn('🎨 TaskDOMPatch not initialized');
+        return false;
     }
 
     /**
@@ -1744,41 +1159,11 @@ export class TaskDOMManager {
      * @returns {boolean} True if reordered successfully
      */
     applyTaskOrder(taskIds) {
-        const taskList = document.getElementById('taskList');
-        if (!taskList) {
-            console.warn('🎨 applyTaskOrder: taskList not found');
-            return false;
+        if (this.patcher) {
+            return this.patcher.applyTaskOrder(taskIds);
         }
-
-        // Build a map of existing elements
-        const elementMap = new Map();
-        taskList.querySelectorAll('.task[data-task-id]').forEach(el => {
-            elementMap.set(el.dataset.taskId, el);
-        });
-
-        // Create document fragment in new order
-        const fragment = document.createDocumentFragment();
-        let reorderNeeded = false;
-
-        taskIds.forEach((taskId, index) => {
-            const element = elementMap.get(taskId);
-            if (element) {
-                // Check if reorder is actually needed
-                const currentIndex = Array.from(taskList.children).indexOf(element);
-                if (currentIndex !== index) {
-                    reorderNeeded = true;
-                }
-                fragment.appendChild(element);
-            }
-        });
-
-        if (reorderNeeded) {
-            // Atomic swap - single reflow
-            taskList.replaceChildren(fragment);
-            console.log(`🎨 Reordered ${taskIds.length} tasks`);
-        }
-
-        return true;
+        console.warn('🎨 TaskDOMPatch not initialized');
+        return false;
     }
 
     /**
@@ -1786,22 +1171,8 @@ export class TaskDOMManager {
      * Used for CSS-driven arrow visibility
      */
     syncBoundaryMarkers() {
-        const taskList = document.getElementById('taskList');
-        if (!taskList) return;
-
-        // Remove old markers (O(1) - at most one of each)
-        taskList.querySelector('.is-first-task')?.classList.remove('is-first-task');
-        taskList.querySelector('.is-last-task')?.classList.remove('is-last-task');
-
-        // Add new markers
-        const firstTask = taskList.firstElementChild;
-        const lastTask = taskList.lastElementChild;
-
-        if (firstTask?.classList.contains('task')) {
-            firstTask.classList.add('is-first-task');
-        }
-        if (lastTask?.classList.contains('task') && lastTask !== firstTask) {
-            lastTask.classList.add('is-last-task');
+        if (this.patcher) {
+            return this.patcher.syncBoundaryMarkers();
         }
     }
 
@@ -1916,67 +1287,9 @@ function extractTaskDataFromDOM() {
     if (typeof TaskUtils?.extractTaskDataFromDOM === 'function') {
         return TaskUtils.extractTaskDataFromDOM();
     }
-
-    // 🔁 Fallback: local DOM extraction so autosave/directSave still works
-    console.warn('⚠️ TaskUtils not initialized yet, using inline fallback');
-
-    const taskListElement = document.getElementById('taskList');
-    if (!taskListElement) {
-        console.warn('⚠️ Task list element not found in fallback extractTaskDataFromDOM');
-        return [];
-    }
-
-    const tasks = [...taskListElement.children].map(taskElement => {
-        const taskTextElement = taskElement.querySelector(".task-text");
-        const taskId = taskElement.dataset.taskId;
-
-        if (!taskTextElement || !taskId) {
-            console.warn("⚠️ Skipping invalid task element in fallback extractTaskDataFromDOM");
-            return null;
-        }
-
-        // Recurring settings
-        let recurringSettings = {};
-        try {
-            const recurringAttr = taskElement.getAttribute("data-recurring-settings");
-            if (recurringAttr) {
-                recurringSettings = JSON.parse(recurringAttr);
-            }
-        } catch (err) {
-            console.warn("⚠️ Invalid recurring settings in fallback, using empty object");
-        }
-
-        // deleteWhenCompleteSettings – use defaults unless valid JSON is present
-        let deleteWhenCompleteSettings = { ...DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS };
-        const dwcAttr = taskElement.dataset.deleteWhenCompleteSettings;
-        if (dwcAttr) {
-            try {
-                deleteWhenCompleteSettings = JSON.parse(dwcAttr);
-            } catch (err) {
-                console.warn("⚠️ Invalid deleteWhenCompleteSettings in fallback, using defaults");
-            }
-        }
-
-        return {
-            id: taskId,
-            text: taskTextElement.textContent,
-            completed: taskElement.querySelector("input[type='checkbox']")?.checked || false,
-            dueDate: taskElement.querySelector(".due-date")?.value || null,
-            highPriority: taskElement.classList.contains("high-priority"),
-            remindersEnabled: taskElement
-                .querySelector(".enable-task-reminders")
-                ?.classList.contains("reminder-active") || false,
-            recurring:
-                taskElement.classList.contains("recurring") ||
-                taskElement.querySelector(".recurring-btn")?.classList.contains("active") || false,
-            recurringSettings,
-            deleteWhenComplete: taskElement.dataset.deleteWhenComplete === "true" || false,
-            deleteWhenCompleteSettings,
-            schemaVersion: 2 // ✅ This path is only for legacy 2.5 saves
-        };
-    }).filter(Boolean);
-
-    return tasks;
+    // TaskUtils not available - return empty array (will be populated once TaskUtils loads)
+    console.warn('⚠️ TaskUtils not initialized yet, returning empty array');
+    return [];
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
