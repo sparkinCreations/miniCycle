@@ -1,3 +1,8 @@
+## [1.652] - 2026-01-03
+- fix: update X-Frame-Options header to SAMEORIGIN for improved security
+- chore: update version to 1.651 in changelog, manifest, HTML, and version files
+
+
 ## [1.651] - 2026-01-03
 - feat: Update testing modal and data analysis functions
 
