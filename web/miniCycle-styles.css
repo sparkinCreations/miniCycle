@@ -5965,6 +5965,7 @@ body.dark-mode {
 /* ✅ Ensure notification text/content doesn't overlap the close button */
 .notification .notification-content {
   padding-right: 28px;
+  white-space: pre-line;  /* Renders \n as line breaks (XSS-safe alternative to <br>) */
 }
 
 
