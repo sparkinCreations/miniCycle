@@ -1,3 +1,8 @@
+## [1.649] - 2026-01-02
+- refactor: update notification formatting to use new line characters for better readability
+- chore: update version to 1.648 in changelog, manifest, HTML, and version files
+
+
 ## [1.648] - 2026-01-02
 - feat: add showTaskInput setting and update task input visibility logic
 - chore: update version to 1.647 in changelog, manifest, HTML, and version files
