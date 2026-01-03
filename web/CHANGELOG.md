@@ -1,3 +1,7 @@
+## [1.651] - 2026-01-03
+- feat: Update testing modal and data analysis functions
+
+
 ## [1.650] - 2026-01-03
 - chore: update version to 1.649 in changelog, manifest, HTML, and version files
 
