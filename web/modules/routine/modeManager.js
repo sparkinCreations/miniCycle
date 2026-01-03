@@ -687,28 +687,36 @@ export class ModeManager {
         if (toggleTaskInputBtn && taskInput) {
             const toggleText = this.deps.getElementById('toggle-task-input-text');
 
-            // Update button text based on current visibility
-            const updateToggleText = () => {
+            // Update button text and visibility based on state
+            const updateToggleText = (isVisible) => {
                 if (toggleText) {
-                    const isHidden = taskInput.style.display === 'none';
-                    toggleText.textContent = isHidden ? 'Add Task' : 'Hide Task Input';
+                    toggleText.textContent = isVisible ? 'Hide Task Input' : 'Add Task';
                 }
+                taskInput.style.display = isVisible ? '' : 'none';
             };
 
-            // Set initial text
-            updateToggleText();
+            // Set initial state from settings (default: true = visible)
+            const initialVisible = this.deps.AppState?.get()?.settings?.showTaskInput !== false;
+            updateToggleText(initialVisible);
 
-            this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', () => {
-                const isHidden = taskInput.style.display === 'none';
-                taskInput.style.display = isHidden ? '' : 'none';
+            this.deps.safeAddEventListener(toggleTaskInputBtn, 'click', async () => {
+                const currentVisible = taskInput.style.display !== 'none';
+                const newVisible = !currentVisible;
+
+                // Update UI immediately
+                updateToggleText(newVisible);
                 quickActionsMenu.style.display = 'none';
 
-                // Update button text after toggle
-                updateToggleText();
+                // Persist to settings
+                if (this.deps.AppState) {
+                    await this.deps.AppState.update(state => {
+                        state.settings.showTaskInput = newVisible;
+                    });
+                }
 
                 if (this.deps.showNotification) {
                     this.deps.showNotification(
-                        isHidden ? 'Task input shown' : 'Task input hidden',
+                        newVisible ? 'Task input shown' : 'Task input hidden',
                         'info',
                         2000
                     );

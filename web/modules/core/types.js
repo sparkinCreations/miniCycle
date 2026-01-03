@@ -214,6 +214,7 @@
  * @property {boolean} [alwaysShowRecurring=false] - Always show recurring panel
  * @property {boolean} [autoSave=true] - Auto-save enabled
  * @property {boolean} [showThreeDots=false] - Show three dots menu globally
+ * @property {boolean} [showTaskInput=true] - Show task input bar
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding
  * @property {Object.<string, boolean>} [dismissedEducationalTips={}] - Dismissed tips
  * @property {RecurringSettings} [defaultRecurringSettings] - Default recurring task settings
