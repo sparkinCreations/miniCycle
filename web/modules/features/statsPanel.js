@@ -269,6 +269,7 @@ export class StatsPanelManager {
      */
     setupTouchEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
         safeAdd(document, "touchstart", this.boundHandlers.handleTouchStart, { passive: true });
         safeAdd(document, "touchmove", this.boundHandlers.handleTouchMove, { passive: true });
         safeAdd(document, "touchend", this.boundHandlers.handleTouchEnd, { passive: true });
@@ -279,6 +280,7 @@ export class StatsPanelManager {
      */
     setupMouseEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
         safeAdd(document, "mousedown", this.boundHandlers.handleMouseDown);
         safeAdd(document, "mousemove", this.boundHandlers.handleMouseMove);
         safeAdd(document, "mouseup", this.boundHandlers.handleMouseUp);
@@ -289,6 +291,7 @@ export class StatsPanelManager {
      */
     setupWheelEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
         safeAdd(document, "wheel", this.boundHandlers.handleWheel, { passive: false });
     }
 
@@ -297,6 +300,7 @@ export class StatsPanelManager {
      */
     setupPointerEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
         safeAdd(document, "pointerdown", this.boundHandlers.handlePointerDown);
         safeAdd(document, "pointermove", this.boundHandlers.handlePointerMove);
         safeAdd(document, "pointerup", this.boundHandlers.handlePointerUp);
@@ -307,6 +311,7 @@ export class StatsPanelManager {
      */
     setupKeyboardEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
         safeAdd(document, "keydown", this.boundHandlers.handleKeydown);
     }
 
@@ -315,6 +320,7 @@ export class StatsPanelManager {
      */
     setupUIEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
 
         // Slide buttons
         if (this.elements.slideLeft) {
@@ -352,6 +358,7 @@ export class StatsPanelManager {
      */
     setupThemeEvents() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
 
         // Current Routine status click
         if (this.elements.currentRoutineStatus) {
@@ -383,6 +390,7 @@ export class StatsPanelManager {
      */
     setupDataReadyListener() {
         const safeAdd = _deps.safeAddEventListener;
+        if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
 
         // Create bound handler for cycle:ready if not already created
         if (!this.boundHandlers.handleCycleReady) {

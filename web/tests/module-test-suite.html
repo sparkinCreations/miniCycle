@@ -489,6 +489,47 @@
         const { runUIBootTests } = await import(`./uiBoot.tests.js?v=${cacheBuster}`);
         const { runFeatureBootTests } = await import(`./featureBoot.tests.js?v=${cacheBuster}`);
 
+        // 🚦 TEST MODE FLAG - Tells app to skip IndexedDB restoration after tests
+        // Uses same DB as test results for simplicity
+        const TEST_MODE_DB = 'miniCycleTestResultsDB';
+        const TEST_MODE_STORE = 'results';
+
+        async function setTestModeFlag(active) {
+            return new Promise((resolve) => {
+                try {
+                    const request = indexedDB.open(TEST_MODE_DB, 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains(TEST_MODE_STORE)) {
+                            db.createObjectStore(TEST_MODE_STORE, { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = () => {
+                        const db = request.result;
+                        const tx = db.transaction(TEST_MODE_STORE, 'readwrite');
+                        const store = tx.objectStore(TEST_MODE_STORE);
+                        if (active) {
+                            store.put({ id: 'testModeActive', active: true, timestamp: Date.now() });
+                        } else {
+                            store.delete('testModeActive');
+                        }
+                        tx.oncomplete = () => {
+                            db.close();
+                            resolve(true);
+                        };
+                        tx.onerror = () => {
+                            db.close();
+                            resolve(false);
+                        };
+                    };
+                    request.onerror = () => resolve(false);
+                } catch (e) {
+                    console.warn('Could not set test mode flag:', e);
+                    resolve(false);
+                }
+            });
+        }
+
         let currentModule = null;
 
         const moduleSelect = document.getElementById('module-select');
@@ -1650,6 +1691,10 @@
             });
             console.log('🔒 Saved original localStorage before running all tests');
 
+            // 🚦 SET TEST MODE FLAG - tells app to skip IndexedDB restoration on reload
+            await setTestModeFlag(true);
+            console.log('🚦 Test mode flag SET - app will skip IndexedDB restore on reload');
+
             // Define all modules and their test functions
             const allModules = [
                 { name: '🔗 Integration (E2E)', key: 'integration', runFn: runIntegrationTests, importPath: null },
@@ -1713,7 +1758,24 @@
 
             try {
                 // Run each module's tests
+                const totalModuleCount = allModules.length;
+                let moduleIndex = 0;
+
                 for (const module of allModules) {
+                    moduleIndex++;
+
+                    // Send progress update to parent (if embedded)
+                    const isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
+                    if (isEmbedded && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'TEST_PROGRESS',
+                            currentModule: module.key,
+                            moduleName: module.name,
+                            currentIndex: moduleIndex,
+                            totalModules: totalModuleCount
+                        }, '*');
+                    }
+
                     try {
                         // Load and expose the module using shared helper
                         // This ensures consistent window.* exposure for all modules
@@ -1805,6 +1867,70 @@
                 copyResultsBtn.style.display = 'inline-block';
                 copyFailedBtn.style.display = 'inline-block';
 
+                // 📤 Send results back to opener if this was an autorun request
+                if (new URLSearchParams(window.location.search).get('autorun') === 'true') {
+                    const failedModules = allResults.filter(r => r.passed !== r.total);
+                    const resultData = {
+                        type: 'TEST_RESULTS',
+                        totalPassed,
+                        totalTests,
+                        duration,
+                        allPassed: totalPassed === totalTests,
+                        failedModules: failedModules.map(m => ({
+                            name: m.name,
+                            passed: m.passed,
+                            total: m.total,
+                            error: m.error
+                        })),
+                        timestamp: Date.now()
+                    };
+
+                    // Store in IndexedDB for pickup by testing modal, then notify opener
+                    const storeAndNotify = () => {
+                        return new Promise((resolve) => {
+                            try {
+                                const dbRequest = indexedDB.open('miniCycleTestResultsDB', 1);
+                                dbRequest.onupgradeneeded = (e) => {
+                                    const db = e.target.result;
+                                    if (!db.objectStoreNames.contains('results')) {
+                                        db.createObjectStore('results', { keyPath: 'id' });
+                                    }
+                                };
+                                dbRequest.onsuccess = () => {
+                                    const db = dbRequest.result;
+                                    const tx = db.transaction('results', 'readwrite');
+                                    tx.objectStore('results').put({ id: 'latest', ...resultData });
+                                    tx.oncomplete = () => {
+                                        db.close();
+                                        console.log('💾 Stored test results in IndexedDB');
+                                        resolve();
+                                    };
+                                    tx.onerror = () => resolve();
+                                };
+                                dbRequest.onerror = () => resolve();
+                            } catch (e) {
+                                console.warn('Failed to store results in IndexedDB:', e);
+                                resolve();
+                            }
+                        });
+                    };
+
+                    await storeAndNotify();
+
+                    // Send results via postMessage
+                    const isEmbedded = new URLSearchParams(window.location.search).get('embedded') === 'true';
+                    if (isEmbedded && window.parent !== window) {
+                        // Embedded in iframe - send to parent
+                        window.parent.postMessage(resultData, '*');
+                        console.log('📤 Sent test results to parent (embedded mode)');
+                    } else if (window.opener) {
+                        // Popup window - send to opener
+                        window.opener.postMessage(resultData, '*');
+                        window.opener.focus();
+                        console.log('📤 Sent test results to opener and focused');
+                    }
+                }
+
                 // ⏱️ WAIT for any debounced saves to complete (700ms safety margin)
                 await new Promise(resolve => setTimeout(resolve, 700));
 
@@ -1819,10 +1945,29 @@
                 });
                 console.log('✅ All tests completed - original localStorage restored');
 
+                // 🚦 CLEAR TEST MODE FLAG - safe for app to restore from IndexedDB now
+                await setTestModeFlag(false);
+                console.log('🚦 Test mode flag CLEARED - app can safely restore from IndexedDB');
+
                 // 🛡️ RESTORE ORIGINAL handlers and clear flag
                 window.onbeforeunload = originalBeforeUnload;
                 window.setTimeout = originalSetTimeout;
                 delete window.__TEST_MODE_NO_RELOAD__;
+
+                // 🔄 If opened via autorun (popup mode only), reload the opener to pick up restored data
+                // Skip reload if embedded - parent will handle closing the iframe
+                const urlParams = new URLSearchParams(window.location.search);
+                const isAutorun = urlParams.get('autorun') === 'true';
+                const isEmbedded = urlParams.get('embedded') === 'true';
+
+                if (isAutorun && !isEmbedded && window.opener) {
+                    console.log('🔄 Reloading opener to ensure clean state...');
+                    try {
+                        window.opener.location.reload();
+                    } catch (e) {
+                        console.warn('Could not reload opener:', e);
+                    }
+                }
             }
         });
 
@@ -2008,6 +2153,16 @@
             text += '='.repeat(80) + '\n';
 
             return text;
+        }
+
+        // 🚀 Auto-run tests if opened with ?autorun=true
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('autorun') === 'true') {
+            console.log('🚀 Autorun mode detected - starting tests automatically');
+            // Wait a moment for page to fully load, then trigger run all tests
+            setTimeout(() => {
+                runAllTestsBtn.click();
+            }, 500);
         }
     </script>
     </div> <!-- Close container -->

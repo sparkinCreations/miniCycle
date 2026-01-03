@@ -1,3 +1,7 @@
+## [1.650] - 2026-01-03
+- chore: update version to 1.649 in changelog, manifest, HTML, and version files
+
+
 ## [1.649] - 2026-01-02
 - refactor: update notification formatting to use new line characters for better readability
 - chore: update version to 1.648 in changelog, manifest, HTML, and version files

@@ -767,6 +767,24 @@ export class TaskDOMManager {
     }
 
     /**
+     * Create a single task button
+     * Delegates to TaskButtons module
+     */
+    createTaskButton(buttonConfig, taskContext, buttonContainer) {
+        if (this.buttons) {
+            return this.buttons.createTaskButton(buttonConfig, taskContext, buttonContainer);
+        }
+        // Fallback: create basic button if buttons module not loaded
+        const { class: btnClass, icon, show } = buttonConfig;
+        const button = document.createElement("button");
+        button.classList.add("task-btn", btnClass);
+        if (icon) button.textContent = icon;
+        button.setAttribute("type", "button");
+        if (!show) button.classList.add("hidden");
+        return button;
+    }
+
+    /**
      * Handle disabling recurring for a task (called from confirmation modal)
      * Delegates to TaskButtons module
      * @param {string} assignedTaskId - The task ID

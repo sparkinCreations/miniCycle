@@ -334,7 +334,7 @@ class MiniCycleState {
             settings: {
                 theme: 'default',
                 darkMode: false,
-                showTaskInput: true,
+                showTaskInput: false,
                 debugMode: false
             },
             data: { cycles: {} },
@@ -689,7 +689,7 @@ class MiniCycleState {
                 alwaysShowRecurring: false,
                 autoSave: true,
                 showThreeDots: false,
-                showTaskInput: true,
+                showTaskInput: false,
                 scrollToNewTask: true,
                 scrollOnLoad: false,
                 onboardingCompleted: false,

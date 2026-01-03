@@ -1284,15 +1284,17 @@ export class RecurringPanelManager {
         changeBtn.className = 'change-recurring-btn';
         changeBtn.textContent = 'Change Recurring Settings';
 
-        // Attach click listener to button
-        this.deps.safeAddEventListener(changeBtn, 'click', () => {
-            console.log('🔧 Change recurring settings clicked');
-            if (this.state.selectedTaskId) {
-                this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
-            } else {
-                console.warn('⚠️ No task selected for changing settings');
-            }
-        });
+        // Attach click listener to button (guard for tests)
+        if (this.deps.safeAddEventListener) {
+            this.deps.safeAddEventListener(changeBtn, 'click', () => {
+                console.log('🔧 Change recurring settings clicked');
+                if (this.state.selectedTaskId) {
+                    this.openRecurringSettingsPanelForTask(this.state.selectedTaskId);
+                } else {
+                    console.warn('⚠️ No task selected for changing settings');
+                }
+            });
+        }
 
         summaryBox.appendChild(previewText);
         summaryBox.appendChild(changeBtn);
@@ -1514,6 +1516,7 @@ export class RecurringPanelManager {
      * Attach recurring summary listeners
      */
     attachRecurringSummaryListeners() {
+        if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
         console.log('🔗 Attaching recurring summary listeners...');
 
         try {
@@ -1539,6 +1542,7 @@ export class RecurringPanelManager {
      * Moved from orchestrator.js for proper module ownership
      */
     wireAlwaysShowRecurringListener() {
+        if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
         const checkbox = this.deps.getElementById("always-show-recurring");
         if (!checkbox) {
             console.warn('⚠️ always-show-recurring checkbox not found');
@@ -1556,6 +1560,7 @@ export class RecurringPanelManager {
      * Moved from orchestrator.js for proper module ownership
      */
     wireRecurringSettingsClickListener() {
+        if (!this.deps.safeAddEventListener) return; // Guard: dependency not injected (e.g., in tests)
         this.deps.safeAddEventListener(document, "click", (e) => {
             const target = e.target.closest(".open-recurring-settings");
             if (!target) return;

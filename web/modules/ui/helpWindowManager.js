@@ -87,7 +87,8 @@ export class HelpWindowManager {
 
         // Listen for checkbox changes on tasks
         document._helpWindowChangeHandler = (e) => {
-            if (e.target.type === 'checkbox' && e.target.closest('.task')) {
+            // Guard: e.target may not have closest() if event dispatched on document
+            if (e.target?.type === 'checkbox' && e.target?.closest?.('.task')) {
                 setTimeout(() => {
                     this.updateConstantMessage();
                 }, 50);
@@ -97,7 +98,8 @@ export class HelpWindowManager {
 
         // Listen for click events on tasks
         document._helpWindowClickHandler = (e) => {
-            if (e.target.closest('.task')) {
+            // Guard: e.target may not have closest() if event dispatched on document
+            if (e.target?.closest?.('.task')) {
                 setTimeout(() => {
                     this.updateConstantMessage();
                 }, 100);
