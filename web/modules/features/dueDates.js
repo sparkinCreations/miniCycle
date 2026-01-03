@@ -258,7 +258,7 @@ export class MiniCycleDueDates {
 
         // ✅ Show notification ONLY if there are newly overdue tasks
         if (newlyOverdueTasks.length > 0) {
-            this.deps.showNotification(`⚠️ Overdue Tasks:<br>- ${newlyOverdueTasks.join("<br>- ")}`, "error");
+            this.deps.showNotification(`⚠️ Overdue Tasks:\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
         }
     }
 
@@ -551,7 +551,7 @@ export class MiniCycleDueDates {
 
         if (overdueTasks.length > 0) {
             console.log('⚠️ Showing overdue notification for tasks:', overdueTasks);
-            this.deps.showNotification(`⚠️ Overdue Tasks:<br>- ${overdueTasks.join("<br>- ")}`, "error");
+            this.deps.showNotification(`⚠️ Overdue Tasks:\n~ ${overdueTasks.join("\n~ ")}`, "error");
         } else {
             console.log('✅ No overdue tasks found');
         }

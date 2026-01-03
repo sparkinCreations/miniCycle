@@ -585,31 +585,11 @@ function setupTestButtons() {
         showPerformanceInfo();
     });
     
-    // Enhanced migration tab buttons
-    safeAddEventListenerById("check-migration-status", "click", () => {
-        checkMigrationStatus();
-    });
-    
-    safeAddEventListenerById("test-migration-config", "click", () => {
-        testMigrationConfig();
-    });
-    
-    safeAddEventListenerById("simulate-migration", "click", () => {
-        simulateMigration();
-    });
-    
+    // Migration tab buttons (legacy simulation tools removed)
     safeAddEventListenerById("backup-before-migration", "click", () => {
         backupBeforeMigration();
     });
-    
-    safeAddEventListenerById("validate-migration-data", "click", () => {
-        validateMigrationData();
-    });
-    
-    safeAddEventListenerById("perform-actual-migration", "click", () => {
-        performActualMigration();
-    });
-    
+
     safeAddEventListenerById("list-available-backups", "click", () => {
         listAvailableBackups();
     });
@@ -651,36 +631,20 @@ function setupTestButtons() {
         repairData();
     });
     
-    // Enhanced debug info tab buttons
+    // Debug info tab buttons (dev-only test functions removed)
     safeAddEventListenerById("generate-debug-report", "click", () => {
         generateDebugReport();
     });
-    
-    safeAddEventListenerById("test-notifications-debug", "click", () => {
-        testNotifications();
-    });
-    
-    safeAddEventListenerById("test-recurring-logic", "click", () => {
-        testRecurringLogic();
-    });
-    
+
     safeAddEventListenerById("view-local-storage-btn", "click", () => {
         console.log("🔍 View Local Storage button clicked!");
         openStorageViewer();
     });
-    
+
     safeAddEventListenerById("show-browser-info", "click", () => {
         showBrowserInfo();
     });
-    
-    safeAddEventListenerById("show-feature-flags", "click", () => {
-        showFeatureFlags();
-    });
-    
-    safeAddEventListenerById("test-localStorage", "click", () => {
-        testLocalStorage();
-    });
-    
+
     // Service Worker buttons
     safeAddEventListenerById("show-service-worker-info", "click", () => {
         showServiceWorkerInfo();
@@ -1088,129 +1052,8 @@ function showPerformanceInfo() {
 // 🔄 TEST FUNCTIONS - MIGRATION TAB
 // ==========================================
 
-function checkMigrationStatus() {
-    appendToTestResults("🔄 Checking Migration Status...\n");
-    showNotification("Checking if migration is needed...", "info", 2000);
-    
-    const migrationCheck = checkMigrationNeeded();
-    
-    appendToTestResults(`📊 Migration Assessment:\n`);
-    appendToTestResults(`- Migration Needed: ${migrationCheck.needed ? "YES" : "NO"}\n`);
-    appendToTestResults(`- Current Version: ${migrationCheck.currentVersion}\n`);
-    
-    if (migrationCheck.oldDataFound) {
-        appendToTestResults(`📁 Old Data Found:\n`);
-        Object.entries(migrationCheck.oldDataFound).forEach(([key, value]) => {
-            appendToTestResults(`  - ${key}: ${value ? "✅ Present" : "❌ Missing"}\n`);
-        });
-    }
-    
-    if (migrationCheck.needed) {
-        appendToTestResults(`\n🚀 Recommendation: Run migration to Schema 2.5\n`);
-        showNotification("⚠️ Migration to Schema 2.5 recommended", "warning", 4000);
-    } else {
-        appendToTestResults(`\n✅ No migration needed - you're up to date!\n`);
-        showNotification("✅ Schema is up to date", "success", 2000);
-    }
-    
-    appendToTestResults("\n");
-}
-
-function testMigrationConfig() {
-    appendToTestResults("🧪 Testing Migration Configuration...\n");
-    
-    let passed = 0;
-    let failed = 0;
-    
-    // Test 1: Migration functions exist
-    if (typeof checkMigrationNeeded === 'function') {
-        appendToTestResults("✅ checkMigrationNeeded() function exists\n");
-        passed++;
-    } else {
-        appendToTestResults("❌ checkMigrationNeeded() function missing\n");
-        failed++;
-    }
-    
-    // Test 2: Schema target defined
-    if (typeof SCHEMA_2_5_TARGET === 'object') {
-        appendToTestResults("✅ Schema 2.5 target structure defined\n");
-        passed++;
-    } else {
-        appendToTestResults("❌ Schema 2.5 target structure missing\n");
-        failed++;
-    }
-    
-    // Test 3: Simulation function exists
-    if (typeof simulateMigrationToSchema25 === 'function') {
-        appendToTestResults("✅ simulateMigrationToSchema25() function exists\n");
-        passed++;
-    } else {
-        appendToTestResults("❌ simulateMigrationToSchema25() function missing\n");
-        failed++;
-    }
-    
-    // Test 4: Required localStorage keys
-    const requiredKeys = ['miniCycleStorage', 'lastUsedMiniCycle'];
-    let keysFound = 0;
-    requiredKeys.forEach(key => {
-        if (deps.safeLocalStorageGet(key, null)) {
-            keysFound++;
-        }
-    });
-    
-    appendToTestResults(`✅ Found ${keysFound}/${requiredKeys.length} required localStorage keys\n`);
-    
-    appendToTestResults(`\n📊 Migration Config Test Results:\n`);
-    appendToTestResults(`- Tests Passed: ${passed}\n`);
-    appendToTestResults(`- Tests Failed: ${failed}\n`);
-    appendToTestResults(`- Overall Status: ${failed === 0 ? "✅ READY" : "❌ NOT READY"}\n\n`);
-    
-    const status = failed === 0 ? "success" : "error";
-    showNotification(`🧪 Migration config test: ${failed === 0 ? "PASSED" : "FAILED"}`, status, 2000);
-}
-
-function simulateMigration() {
-    appendToTestResults("🎭 Simulating Migration to Schema 2.5 (Safe Mode)...\n");
-    showNotification("Running safe migration simulation...", "info", 3000);
-    
-    const results = simulateMigrationToSchema25(true); // dry run
-    
-    if (results.success) {
-        appendToTestResults("✅ Migration Simulation Successful!\n\n");
-        
-        appendToTestResults("📋 Changes that would be made:\n");
-        results.changes.forEach(change => {
-            appendToTestResults(`${change}\n`);
-        });
-        
-        if (results.warnings.length > 0) {
-            appendToTestResults("\n⚠️ Warnings:\n");
-            results.warnings.forEach(warning => {
-                appendToTestResults(`${warning}\n`);
-            });
-        }
-        
-        appendToTestResults("\n📊 New Schema Preview:\n");
-        appendToTestResults(`- Schema Version: ${results.dataPreview.schemaVersion}\n`);
-        appendToTestResults(`- Cycles: ${Object.keys(results.dataPreview.data.cycles).length}\n`);
-        appendToTestResults(`- Active Cycle: ${results.dataPreview.appState.activeCycleId || "none"}\n`);
-        appendToTestResults(`- Unlocked Themes: ${results.dataPreview.settings.unlockedThemes.length}\n`);
-        appendToTestResults(`- Total Completed: ${results.dataPreview.metadata.totalTasksCompleted}\n`);
-        
-        showNotification("✅ Migration simulation completed successfully", "success", 3000);
-    } else {
-        appendToTestResults("❌ Migration Simulation Failed!\n\n");
-        
-        appendToTestResults("🚨 Errors:\n");
-        results.errors.forEach(error => {
-            appendToTestResults(`${error}\n`);
-        });
-        
-        showNotification("❌ Migration simulation failed", "error", 4000);
-    }
-    
-    appendToTestResults("\n");
-}
+// Migration status/config/simulation functions removed (legacy - most users on Schema 2.5)
+// Keeping backup/restore functions which are still useful
 
 function backupBeforeMigration() {
     appendToTestResults("💾 Creating Migration Backup...\n");
@@ -1234,157 +1077,7 @@ function backupBeforeMigration() {
     }
 }
 
-function validateMigrationData() {
-    appendToTestResults("✅ Validating Migration Data...\n");
-    showNotification("Validating data for migration...", "info", 2000);
-    
-    const validation = {
-        checks: 0,
-        passed: 0,
-        warnings: 0,
-        errors: 0
-    };
-    
-    // Check 1: Current data exists
-    validation.checks++;
-    const oldCycles = deps.safeLocalStorageGet("miniCycleStorage", null);
-    if (oldCycles) {
-        validation.passed++;
-        appendToTestResults("✅ miniCycleStorage data found\n");
-
-        const parsed = deps.safeJSONParse(oldCycles, null);
-        if (parsed) {
-            appendToTestResults(`  - Found ${Object.keys(parsed).length} cycles\n`);
-        } else {
-            validation.errors++;
-            appendToTestResults("❌ miniCycleStorage data is corrupted\n");
-        }
-    } else {
-        validation.warnings++;
-        appendToTestResults("⚠️ No miniCycleStorage data found\n");
-    }
-    
-    // Check 2: Last used cycle
-    validation.checks++;
-    const lastUsed = deps.safeLocalStorageGet("lastUsedMiniCycle", null);
-    if (lastUsed) {
-        validation.passed++;
-        appendToTestResults(`✅ Active cycle: ${lastUsed}\n`);
-    } else {
-        validation.warnings++;
-        appendToTestResults("⚠️ No active cycle set\n");
-    }
-
-    // Check 3: Settings data
-    validation.checks++;
-    const reminders = deps.safeLocalStorageGet("miniCycleReminders", null);
-    if (reminders) {
-        validation.passed++;
-        appendToTestResults("✅ Reminder settings found\n");
-    } else {
-        validation.passed++;
-        appendToTestResults("ℹ️ No reminder settings (will use defaults)\n");
-    }
-    
-    // Check 4: Available space
-    validation.checks++;
-    const localStorageStr = deps.safeJSONStringify(localStorage, "{}");
-    const currentSize = localStorageStr.length;
-    const estimatedNewSize = currentSize * 1.5; // rough estimate
-    const maxSize = 5 * 1024 * 1024; // 5MB typical limit
-    
-    if (estimatedNewSize < maxSize * 0.8) {
-        validation.passed++;
-        appendToTestResults("✅ Sufficient storage space available\n");
-    } else {
-        validation.errors++;
-        appendToTestResults("❌ Storage space may be insufficient\n");
-    }
-    
-    appendToTestResults(`\n📊 Validation Summary:\n`);
-    appendToTestResults(`- Total Checks: ${validation.checks}\n`);
-    appendToTestResults(`- Passed: ${validation.passed}\n`);
-    appendToTestResults(`- Warnings: ${validation.warnings}\n`);
-    appendToTestResults(`- Errors: ${validation.errors}\n`);
-    
-    const status = validation.errors === 0 ? "✅ READY FOR MIGRATION" : "❌ MIGRATION NOT RECOMMENDED";
-    appendToTestResults(`- Status: ${status}\n\n`);
-    
-    const notifType = validation.errors === 0 ? "success" : "warning";
-    const notifMsg = validation.errors === 0 ? "Data validation passed" : "Data validation issues found";
-    showNotification(notifMsg, notifType, 3000);
-}
-
-function performActualMigration() {
-    appendToTestResults("🚀 PERFORMING ACTUAL MIGRATION TO SCHEMA 2.5...\n");
-    appendToTestResults("⚠️ This will modify your data!\n\n");
-    
-    showNotification("🚀 Running actual migration - DO NOT CLOSE APP!", "warning", 5000);
-    
-    // First check if migration is needed
-    const check = checkMigrationNeeded();
-    if (!check.needed) {
-        appendToTestResults("ℹ️ No migration needed - already at Schema 2.5 or newer\n\n");
-        showNotification("ℹ️ No migration needed", "info", 3000);
-        return;
-    }
-    
-    setTimeout(() => {
-        const results = performSchema25Migration();
-        
-        if (results.success) {
-            appendToTestResults("🎉 MIGRATION COMPLETED SUCCESSFULLY!\n\n");
-            
-            appendToTestResults("✅ Migration Results:\n");
-            results.changes.forEach(change => {
-                appendToTestResults(`${change}\n`);
-            });
-            
-            appendToTestResults("\n🔄 Next Steps:\n");
-            appendToTestResults("1. Reload the app to see changes\n");
-            appendToTestResults("2. Verify your cycles and settings\n");
-            appendToTestResults("3. If issues occur, you can restore from backup\n");
-            
-            showNotification("🎉 Migration completed! Please reload the app", "success", 8000);
-            
-            // Show reload confirmation
-            setTimeout(() => {
-    safeShowConfirmationModal({
-        title: "🎉 Schema 2.5 Migration Complete!",
-        message: `Migration to Schema 2.5 was successful!<br><br>
-                 ✅ Your data has been upgraded<br>
-                 ✅ All cycles and settings preserved<br>
-                 ✅ New features are now available<br><br>
-                 Would you like to reload the app now to see the changes?`,
-        confirmText: "🔄 Reload Now",
-        cancelText: "Continue Working",
-        callback: (confirmed) => {
-            if (confirmed) {
-                showNotification("🔄 Reloading app...", "info", 2000);
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showNotification("ℹ️ You can reload manually anytime to see new features", "info", 4000);
-            }
-        }
-    });
-}, 2000);
-        } else {
-            appendToTestResults("💥 MIGRATION FAILED!\n\n");
-            
-            appendToTestResults("🚨 Errors encountered:\n");
-            results.errors.forEach(error => {
-                appendToTestResults(`${error}\n`);
-            });
-            
-            appendToTestResults("\n🔧 Your original data should still be intact.\n");
-            appendToTestResults("Please report this error for assistance.\n");
-            
-            showNotification("❌ Migration failed - data preserved", "error", 6000);
-        }
-        
-        appendToTestResults("\n");
-    }, 2000);
-}
+// validateMigrationData and performActualMigration removed (legacy - most users on Schema 2.5)
 
 async function listAvailableBackups() {
     appendToTestResults("📋 Available Backups:\n\n");
@@ -2270,46 +1963,8 @@ function generateDebugReport() {
     }, 2000);
 }
 
-function testNotifications() {
-    appendToTestResults("🔔 Testing Notification System...\n");
-    
-    showNotification("🧪 Test notification - Default", "default", 2000);
-    
-    setTimeout(() => {
-        showNotification("✅ Test notification - Success", "success", 2000);
-    }, 500);
-    
-    setTimeout(() => {
-        showNotification("⚠️ Test notification - Warning", "warning", 2000);
-    }, 1000);
-    
-    setTimeout(() => {
-        showNotification("❌ Test notification - Error", "error", 2000);
-    }, 1500);
-    
-    setTimeout(() => {
-        showNotification("ℹ️ Test notification - Info", "info", 2000);
-    }, 2000);
-    
-    appendToTestResults("🔔 Notification tests completed\n");
-    appendToTestResults("Check the notifications in the top-right corner\n\n");
-}
+// testNotifications and testRecurringLogic removed (dev-only)
 
-function testRecurringLogic() {
-    appendToTestResults("🔁 Testing Recurring Logic...\n");
-    showNotification("Testing recurring task logic...", "info", 2000);
-    
-    setTimeout(() => {
-        appendToTestResults("🔁 Recurring Logic Test Results:\n");
-        appendToTestResults("✅ shouldTaskRecurNow function exists\n");
-        appendToTestResults("✅ buildRecurringSettingsFromPanel function exists\n");
-        appendToTestResults("✅ normalizeRecurringSettings function exists\n");
-        appendToTestResults("✅ watchRecurringTasks function exists\n");
-        appendToTestResults("✅ All recurring functions operational\n\n");
-        
-        showNotification("✅ Recurring logic tests passed", "success", 2000);
-    }, 1500);
-}
 // ==========================================
 // 👁️ IMPROVED LOCAL STORAGE VIEWER (Bug Fixes)
 // ==========================================
@@ -3111,101 +2766,8 @@ function showBrowserInfo() {
     showNotification("🌐 Browser info displayed", "info", 2000);
 }
 
-function showFeatureFlags() {
-    appendToTestResults("🚩 Feature Flags:\n");
-    
-    // ✅ Schema 2.5 only
-    const schemaData = loadMiniCycleData();
-    if (!schemaData) {
-        appendToTestResults("❌ Schema 2.5 data required for feature flags\n\n");
-        showNotification("❌ Schema 2.5 data required", "error", 2000);
-        return;
-    }
-    
-    const { settings } = schemaData;
-    
-    const features = {
-        "Dark Mode": settings.darkMode === true,
-        "Move Arrows": settings.showMoveArrows === true,
-        "Three Dots Menu": settings.showThreeDots === true,
-        "Always Show Recurring": settings.alwaysShowRecurring === true,
-        "Reminders Enabled": schemaData.reminders?.enabled === true,
-        "Onboarding Completed": settings.onboardingCompleted === true
-    };
-    
-    const themeFeatures = {
-        "Dark Ocean Theme": settings.unlockedThemes.includes("dark-ocean"),
-        "Golden Glow Theme": settings.unlockedThemes.includes("golden-glow"),
-        "Task Order Game": settings.unlockedFeatures.includes("task-order-game")
-    };
-    
-    Object.entries(features).forEach(([feature, enabled]) => {
-        appendToTestResults(`- ${feature}: ${enabled ? '✅ ON' : '❌ OFF'}\n`);
-    });
-    
-    appendToTestResults("\n🎨 Unlocked Features:\n");
-    Object.entries(themeFeatures).forEach(([feature, unlocked]) => {
-        appendToTestResults(`- ${feature}: ${unlocked ? '🔓 UNLOCKED' : '🔒 LOCKED'}\n`);
-    });
-    
-    appendToTestResults("\n");
-    showNotification("🚩 Feature flags displayed (Schema 2.5)", "info", 2000);
-}
+// showFeatureFlags and testLocalStorage removed (dev-only)
 
-function testLocalStorage() {
-    appendToTestResults("💾 Testing localStorage Operations...\n");
-
-    try {
-        // Test write
-        const testKey = "miniCycle_test_" + Date.now();
-        const testData = { test: true, timestamp: Date.now() };
-        const writeSuccess = deps.safeLocalStorageSet(testKey, deps.safeJSONStringify(testData, null));
-        if (writeSuccess) {
-            appendToTestResults("✅ Write test: PASSED\n");
-        } else {
-            appendToTestResults("❌ Write test: FAILED\n");
-        }
-
-        // Test read
-        const retrieved = deps.safeJSONParse(deps.safeLocalStorageGet(testKey, null), null);
-        if (retrieved && retrieved.test === true) {
-            appendToTestResults("✅ Read test: PASSED\n");
-        } else {
-            appendToTestResults("❌ Read test: FAILED\n");
-        }
-
-        // Test delete
-        safeLocalStorageRemove(testKey);
-        if (deps.safeLocalStorageGet(testKey, null) === null) {
-            appendToTestResults("✅ Delete test: PASSED\n");
-        } else {
-            appendToTestResults("❌ Delete test: FAILED\n");
-        }
-
-        // Storage capacity test
-        const storageUsed = deps.safeJSONStringify(localStorage, "{}").length;
-        const storageLimit = 5 * 1024 * 1024; // 5MB estimate
-        const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
-        
-        appendToTestResults(`📊 Storage Usage: ${usagePercent}% (${(storageUsed/1024).toFixed(2)} KB used)\n`);
-        
-        if (parseFloat(usagePercent) < 80) {
-            appendToTestResults("✅ Storage capacity: HEALTHY\n");
-        } else {
-            appendToTestResults("⚠️ Storage capacity: HIGH USAGE\n");
-        }
-        
-        appendToTestResults("\n");
-        showNotification("💾 localStorage tests completed", "success", 2000);
-        
-    } catch (error) {
-        appendToTestResults(`❌ localStorage test failed: ${error.message}\n\n`);
-        showNotification("❌ localStorage test failed", "error", 3000);
-    }
-}
-
-
-// Add this to your testing modal functions in miniCycle-scripts.js
 function showServiceWorkerInfo() {
     appendToTestResults("📡 Service Worker Information:\n");
 

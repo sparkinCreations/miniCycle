@@ -584,7 +584,8 @@ export class MiniCycleReminders {
         // Send notification
         console.log('📢 Showing reminder notification for tasks:', incompleteTasks);
         // No duration = requires manual dismissal (reminders should persist until user acknowledges)
-        this.deps.showNotification(`🔔 You have tasks to complete:<br>- ${incompleteTasks.join("<br>- ")}`, "info");
+        // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
+        this.deps.showNotification(`🔔 You have tasks to complete:\n~ ${incompleteTasks.join("\n~ ")}`, "info");
 
         // Update counter and next reminder time
         const multiplier = remindersSettings.frequencyUnit === "hours" ? 3600000 :
