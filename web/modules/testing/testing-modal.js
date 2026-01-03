@@ -37,9 +37,8 @@ let deps = {
     // Testing utilities
     setupAutomatedTestingFunctions: null,
 
-    // Console capture
-    startAutoConsoleCapture: null,
-    isConsoleCapturing: () => false
+    // Console capture (consoleCapture object with methods)
+    consoleCapture: null
 };
 
 /**
@@ -585,11 +584,7 @@ function setupTestButtons() {
         showPerformanceInfo();
     });
     
-    // Migration tab buttons (legacy simulation tools removed)
-    safeAddEventListenerById("backup-before-migration", "click", () => {
-        backupBeforeMigration();
-    });
-
+    // Backup management buttons
     safeAddEventListenerById("list-available-backups", "click", () => {
         listAvailableBackups();
     });
@@ -606,27 +601,15 @@ function setupTestButtons() {
         cleanOldBackups();
     });
     
-    // Enhanced data tools tab buttons
-    safeAddEventListenerById("analyze-cycles", "click", () => {
-        analyzeCycles();
+    // Data tools tab buttons
+    safeAddEventListenerById("run-full-analysis", "click", () => {
+        runFullAnalysis();
     });
-    
-    safeAddEventListenerById("analyze-tasks", "click", () => {
-        analyzeTasks();
-    });
-    
-    safeAddEventListenerById("find-data-issues", "click", () => {
-        findDataIssues();
-    });
-    
+
     safeAddEventListenerById("export-debug-data", "click", () => {
         exportDebugData();
     });
-    
-    safeAddEventListenerById("clean-old-data", "click", () => {
-        cleanOldData();
-    });
-    
+
     safeAddEventListenerById("repair-data", "click", () => {
         repairData();
     });
@@ -657,32 +640,36 @@ function setupTestButtons() {
     // Console capture buttons
     safeAddEventListenerById("enable-auto-capture", "click", () => {
         deps.safeLocalStorageSet("miniCycle_enableAutoConsoleCapture", "true");
-        if (typeof deps.startAutoConsoleCapture === 'function' && !deps.isConsoleCapturing()) {
-            deps.startAutoConsoleCapture();
+        const cc = deps.consoleCapture;
+        if (cc && typeof cc.startAutoConsoleCapture === 'function') {
+            cc.startAutoConsoleCapture();
         }
         appendToTestResults("🔄 Auto console capture enabled - will start automatically on next refresh\n\n");
         showNotification("🔄 Auto-capture enabled for migrations", "success", 3000);
     });
 
     safeAddEventListenerById("show-all-console-logs", "click", () => {
-        if (typeof showAllCapturedLogs === 'function') {
-            showAllCapturedLogs();
+        const cc = deps.consoleCapture;
+        if (cc && typeof cc.showAllCapturedLogs === 'function') {
+            cc.showAllCapturedLogs();
         } else {
             appendToTestResults("❌ Console capture function not available\n\n");
         }
     });
 
     safeAddEventListenerById("show-migration-errors", "click", () => {
-        if (typeof showMigrationErrorsOnly === 'function') {
-            showMigrationErrorsOnly();
+        const cc = deps.consoleCapture;
+        if (cc && typeof cc.showMigrationErrorsOnly === 'function') {
+            cc.showMigrationErrorsOnly();
         } else {
             appendToTestResults("❌ Migration error function not available\n\n");
         }
     });
 
     safeAddEventListenerById("clear-all-console-logs", "click", () => {
-        if (typeof clearAllConsoleLogs === 'function') {
-            clearAllConsoleLogs();
+        const cc = deps.consoleCapture;
+        if (cc && typeof cc.clearAllConsoleLogs === 'function') {
+            cc.clearAllConsoleLogs();
         } else {
             appendToTestResults("❌ Console clear function not available\n\n");
         }
@@ -690,8 +677,9 @@ function setupTestButtons() {
 
     safeAddEventListenerById("stop-console-capture", "click", () => {
         safeLocalStorageRemove("miniCycle_enableAutoConsoleCapture");
-        if (typeof stopConsoleCapture === 'function') {
-            stopConsoleCapture();
+        const cc = deps.consoleCapture;
+        if (cc && typeof cc.stopConsoleCapture === 'function') {
+            cc.stopConsoleCapture();
         }
         appendToTestResults("⏹️ Auto console capture disabled\n\n");
         showNotification("⏹️ Auto-capture disabled", "info", 2000);
@@ -1052,30 +1040,7 @@ function showPerformanceInfo() {
 // 🔄 TEST FUNCTIONS - MIGRATION TAB
 // ==========================================
 
-// Migration status/config/simulation functions removed (legacy - most users on Schema 2.5)
-// Keeping backup/restore functions which are still useful
-
-function backupBeforeMigration() {
-    appendToTestResults("💾 Creating Migration Backup...\n");
-
-    const backupData = deps.safeJSONStringify(localStorage, null);
-    if (!backupData) {
-        appendToTestResults(`❌ Backup Failed: Could not serialize localStorage\n\n`);
-        showNotification("❌ Failed to create backup", "error", 3000);
-        return;
-    }
-    const backupKey = `miniCycle_backup_${Date.now()}`;
-
-    const success = deps.safeLocalStorageSet(backupKey, backupData);
-    if (success) {
-        appendToTestResults(`✅ Backup Created: ${backupKey}\n`);
-        appendToTestResults(`Backup Size: ${(backupData.length / 1024).toFixed(2)} KB\n\n`);
-        showNotification("✅ Migration backup created successfully", "success", 3000);
-    } else {
-        appendToTestResults(`❌ Backup Failed: Could not save to localStorage\n\n`);
-        showNotification("❌ Failed to create backup", "error", 3000);
-    }
-}
+// Backup/restore functions
 
 // validateMigrationData and performActualMigration removed (legacy - most users on Schema 2.5)
 
@@ -1664,6 +1629,114 @@ function cleanOldBackups() {
 // 💾 TEST FUNCTIONS - DATA TOOLS TAB
 // ==========================================
 
+function runFullAnalysis() {
+    appendToTestResults("═".repeat(50) + "\n");
+    appendToTestResults("📊 RUNNING FULL DATA ANALYSIS\n");
+    appendToTestResults("═".repeat(50) + "\n\n");
+    showNotification("🔬 Running full data analysis...", "info", 3000);
+
+    const state = deps.AppState?.get();
+    if (!state) {
+        appendToTestResults("❌ No state data available\n\n");
+        showNotification("❌ No data available", "error", 3000);
+        return;
+    }
+
+    const cycles = state.data.cycles || {};
+    const metadata = state.metadata || {};
+
+    // === ROUTINE ANALYSIS ===
+    appendToTestResults("📊 ROUTINE ANALYSIS\n");
+    appendToTestResults("-".repeat(30) + "\n");
+
+    let totalCycles = 0;
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let recurringTasks = 0;
+    let cyclesWithAutoMode = 0;
+
+    Object.values(cycles).forEach(cycle => {
+        totalCycles++;
+        if (cycle.mode === 'auto' || cycle.autoReset) cyclesWithAutoMode++;
+        cycle.tasks?.forEach(task => {
+            totalTasks++;
+            if (task.completed) completedTasks++;
+            if (task.recurring || task.recurringTemplateId) recurringTasks++;
+        });
+    });
+
+    appendToTestResults(`• Total Routines: ${totalCycles}\n`);
+    appendToTestResults(`• Total Tasks: ${totalTasks}\n`);
+    appendToTestResults(`• Completed: ${completedTasks} (${totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) : 0}%)\n`);
+    appendToTestResults(`• Recurring: ${recurringTasks}\n`);
+    appendToTestResults(`• Auto Mode Routines: ${cyclesWithAutoMode}\n\n`);
+
+    // === TASK ANALYSIS ===
+    appendToTestResults("📝 TASK ANALYSIS\n");
+    appendToTestResults("-".repeat(30) + "\n");
+
+    let highPriorityTasks = 0;
+    let tasksWithDueDates = 0;
+    let overdueTasks = 0;
+    let tasksWithReminders = 0;
+    let deleteWhenCompleteTasks = 0;
+    const today = new Date();
+
+    Object.values(cycles).forEach(cycle => {
+        cycle.tasks?.forEach(task => {
+            if (task.highPriority) highPriorityTasks++;
+            if (task.dueDate) {
+                tasksWithDueDates++;
+                if (new Date(task.dueDate) < today) overdueTasks++;
+            }
+            if (task.remindersEnabled) tasksWithReminders++;
+            if (task.deleteWhenComplete || task.deleteWhenCompleteSettings?.todo) {
+                deleteWhenCompleteTasks++;
+            }
+        });
+    });
+
+    appendToTestResults(`• High Priority: ${highPriorityTasks}\n`);
+    appendToTestResults(`• With Due Dates: ${tasksWithDueDates}\n`);
+    appendToTestResults(`• Overdue: ${overdueTasks}\n`);
+    appendToTestResults(`• With Reminders: ${tasksWithReminders}\n`);
+    appendToTestResults(`• Delete When Complete: ${deleteWhenCompleteTasks}\n\n`);
+
+    // === DATA ISSUES ===
+    appendToTestResults("🔍 DATA ISSUES SCAN\n");
+    appendToTestResults("-".repeat(30) + "\n");
+
+    const issues = [];
+    Object.entries(cycles).forEach(([cycleId, cycle]) => {
+        if (!cycle.tasks) issues.push(`Routine "${cycle.title || cycleId}" missing tasks array`);
+        if (!cycle.title) issues.push(`Routine "${cycleId}" missing title`);
+        cycle.tasks?.forEach((task, index) => {
+            if (task.id === undefined) issues.push(`Task ${index} in "${cycle.title}" missing ID`);
+            if (!task.text || task.text.trim() === '') issues.push(`Task ${index} in "${cycle.title}" has empty text`);
+            if (task.recurring && (!task.recurringSettings || Object.keys(task.recurringSettings).length === 0)) {
+                issues.push(`Task "${task.text}" marked recurring but missing settings`);
+            }
+        });
+    });
+
+    if (issues.length === 0) {
+        appendToTestResults("✅ No data issues found!\n\n");
+    } else {
+        appendToTestResults(`⚠️ Found ${issues.length} issues:\n`);
+        issues.forEach(issue => appendToTestResults(`  • ${issue}\n`));
+        appendToTestResults("\n");
+    }
+
+    // === SUMMARY ===
+    appendToTestResults("═".repeat(50) + "\n");
+    appendToTestResults("✅ ANALYSIS COMPLETE\n");
+    appendToTestResults(`Schema Version: ${metadata.schemaVersion || '2.5'}\n`);
+    appendToTestResults("═".repeat(50) + "\n\n");
+
+    const status = issues.length === 0 ? "success" : "warning";
+    showNotification(`Analysis complete: ${totalCycles} routines, ${totalTasks} tasks, ${issues.length} issues`, status, 4000);
+}
+
 function analyzeCycles() {
     appendToTestResults("📊 Analyzing Routines...\n");
     showNotification("Analyzing your routines...", "info", 2000);
@@ -1868,49 +1941,124 @@ function repairData() {
             return;
         }
 
-        let repaired = 0;
+        const repairs = [];
 
         // ✅ Update via AppState to ensure proper save
         deps.AppState.update(appState => {
-            Object.entries(appState.data.cycles).forEach(([cycleId, cycle]) => {
-                // Ensure tasks array exists
-                if (!cycle.tasks) {
+            // === FIX MISSING CYCLES OBJECT ===
+            if (!appState.data.cycles || typeof appState.data.cycles !== 'object') {
+                appState.data.cycles = {};
+                repairs.push("Created missing cycles object");
+            }
+
+            // === FIX CORRUPTED CYCLES (non-object entries) ===
+            const cycleIds = Object.keys(appState.data.cycles);
+            for (const cycleId of cycleIds) {
+                const cycle = appState.data.cycles[cycleId];
+
+                // Remove completely invalid cycles (null, undefined, non-objects)
+                if (!cycle || typeof cycle !== 'object' || Array.isArray(cycle)) {
+                    delete appState.data.cycles[cycleId];
+                    repairs.push(`Removed corrupted cycle: ${cycleId}`);
+                    continue;
+                }
+
+                // Ensure tasks array exists and is valid
+                if (!cycle.tasks || !Array.isArray(cycle.tasks)) {
                     cycle.tasks = [];
-                    repaired++;
+                    repairs.push(`Fixed missing tasks array in "${cycle.title || cycleId}"`);
                 }
 
                 // Ensure title exists
-                if (!cycle.title) {
+                if (!cycle.title || typeof cycle.title !== 'string') {
                     cycle.title = cycleId;
-                    repaired++;
+                    repairs.push(`Fixed missing title for cycle ${cycleId}`);
                 }
 
-                // Fix task IDs and ensure Schema 2.5 fields
-                cycle.tasks?.forEach((task, index) => {
-                    if (task.id === undefined) {
-                        task.id = index;
-                        repaired++;
+                // Ensure mode exists
+                if (!cycle.mode) {
+                    cycle.mode = 'manual';
+                    repairs.push(`Added default mode to "${cycle.title}"`);
+                }
+
+                // Filter out corrupted tasks (non-objects) and fix valid ones
+                const validTasks = [];
+                cycle.tasks.forEach((task, index) => {
+                    // Skip invalid tasks
+                    if (!task || typeof task !== 'object') {
+                        repairs.push(`Removed corrupted task at index ${index} in "${cycle.title}"`);
+                        return;
                     }
 
-                    // Ensure delete when complete settings exist
-                    if (!task.deleteWhenCompleteSettings) {
-                        task.deleteWhenCompleteSettings = { cycle: false, todo: true };
-                        repaired++;
+                    // Fix missing task ID (use unique ID, not index)
+                    if (task.id === undefined || task.id === null) {
+                        task.id = Date.now() + Math.floor(Math.random() * 1000) + index;
+                        repairs.push(`Generated unique ID for task in "${cycle.title}"`);
                     }
+
+                    // Fix missing or invalid text
+                    if (!task.text || typeof task.text !== 'string') {
+                        task.text = task.text ? String(task.text) : `Task ${task.id}`;
+                        repairs.push(`Fixed invalid text for task ${task.id}`);
+                    }
+
+                    // Fix missing completed status
+                    if (typeof task.completed !== 'boolean') {
+                        task.completed = false;
+                        repairs.push(`Fixed missing completed status for "${task.text}"`);
+                    }
+
+                    // Ensure deleteWhenCompleteSettings exists
+                    if (!task.deleteWhenCompleteSettings || typeof task.deleteWhenCompleteSettings !== 'object') {
+                        task.deleteWhenCompleteSettings = { cycle: false, todo: true };
+                    }
+
+                    validTasks.push(task);
                 });
-            });
+
+                cycle.tasks = validTasks;
+            }
+
+            // === FIX ACTIVE CYCLE REFERENCE ===
+            if (appState.data.activeCycle) {
+                const activeCycleExists = appState.data.cycles[appState.data.activeCycle];
+                if (!activeCycleExists) {
+                    const availableCycles = Object.keys(appState.data.cycles);
+                    if (availableCycles.length > 0) {
+                        appState.data.activeCycle = availableCycles[0];
+                        repairs.push(`Fixed invalid activeCycle reference → ${availableCycles[0]}`);
+                    } else {
+                        appState.data.activeCycle = null;
+                        repairs.push("Cleared activeCycle (no routines exist)");
+                    }
+                }
+            }
+
+            // === FIX MISSING SETTINGS ===
+            if (!appState.data.settings || typeof appState.data.settings !== 'object') {
+                appState.data.settings = {};
+                repairs.push("Created missing settings object");
+            }
+
         }, true); // Immediate save
 
         appendToTestResults(`🔧 Data Repair Complete:\n`);
-        appendToTestResults(`- Repairs made: ${repaired}\n`);
-        appendToTestResults(`- Data structure normalized to Schema 2.5\n\n`);
+        appendToTestResults(`- Total repairs: ${repairs.length}\n`);
 
-        if (repaired > 0) {
-            showNotification(`🔧 Repaired ${repaired} data issues`, "success", 3000);
+        if (repairs.length > 0) {
+            appendToTestResults(`- Details:\n`);
+            repairs.forEach(r => appendToTestResults(`  • ${r}\n`));
+        } else {
+            appendToTestResults(`- No issues found - data is healthy!\n`);
+        }
+        appendToTestResults("\n");
+
+        if (repairs.length > 0) {
+            showNotification(`🔧 Made ${repairs.length} repairs`, "success", 3000);
         } else {
             showNotification("✅ No repairs needed", "success", 2000);
         }
-    }, 2000);
+    }, 1000);
 }
 
 // ==========================================

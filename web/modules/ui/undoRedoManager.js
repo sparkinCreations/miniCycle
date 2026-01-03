@@ -1256,6 +1256,56 @@ let undoDB = null;  // Database connection
 let dbWriteTimeout = null;  // Debounce timer
 
 /**
+ * Check if test mode flag is active (tests are running)
+ * If active, skip IndexedDB restoration to avoid loading test data
+ * @returns {Promise<boolean>} True if test mode is active
+ */
+async function isTestModeActive() {
+  try {
+    return new Promise((resolve) => {
+      const request = indexedDB.open('miniCycleTestResultsDB', 1);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('results')) {
+          db.createObjectStore('results', { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        try {
+          const tx = db.transaction('results', 'readonly');
+          const store = tx.objectStore('results');
+          const getRequest = store.get('testModeActive');
+          getRequest.onsuccess = () => {
+            const data = getRequest.result;
+            db.close();
+            if (data && data.active) {
+              // Only consider active if set within last 10 minutes
+              if (Date.now() - data.timestamp < 600000) {
+                console.log('🚦 Test mode active - skipping IndexedDB restore');
+                resolve(true);
+                return;
+              }
+            }
+            resolve(false);
+          };
+          getRequest.onerror = () => {
+            db.close();
+            resolve(false);
+          };
+        } catch (e) {
+          db.close();
+          resolve(false);
+        }
+      };
+      request.onerror = () => resolve(false);
+    });
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Initialize IndexedDB for undo history persistence
  * Gracefully degrades if IndexedDB unavailable (private browsing)
  */
@@ -1352,8 +1402,15 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack) {
 
 /**
  * Load undo/redo stacks from IndexedDB
+ * Skips restoration if test mode is active to prevent loading test data
  */
 export async function loadUndoStackFromIndexedDB(cycleId) {
+  // 🚦 Skip IndexedDB restore if tests are running
+  if (await isTestModeActive()) {
+    console.log(`🚦 Test mode active - returning empty undo history for "${cycleId}"`);
+    return { undoStack: [], redoStack: [] };
+  }
+
   if (!undoDB) {
     return { undoStack: [], redoStack: [] };  // Graceful degradation
   }

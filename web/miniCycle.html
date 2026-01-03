@@ -14,7 +14,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="app-version" content="1.649">
+<meta name="app-version" content="1.650">
 
 <!-- Content Security Policy -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -43,17 +43,17 @@
 <link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <!-- Add cache busting version parameter -->
-<link rel="stylesheet" href="miniCycle-styles.css?v=1.649">
+<link rel="stylesheet" href="miniCycle-styles.css?v=1.650">
 <link rel="manifest" href="manifest.json">
 
 <!-- Modulepreload for critical boot modules - speeds up ES module loading -->
-<link rel="modulepreload" href="./miniCycle-main.js?v=1.649">
-<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.649">
-<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.649">
-<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.649">
-<link rel="modulepreload" href="./modules/core/appState.js?v=1.649">
-<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.649">
-<link rel="modulepreload" href="./modules/core/constants.js?v=1.649">
+<link rel="modulepreload" href="./miniCycle-main.js?v=1.650">
+<link rel="modulepreload" href="./modules/boot/orchestrator.js?v=1.650">
+<link rel="modulepreload" href="./modules/boot/coreBoot.js?v=1.650">
+<link rel="modulepreload" href="./modules/boot/featureBoot.js?v=1.650">
+<link rel="modulepreload" href="./modules/core/appState.js?v=1.650">
+<link rel="modulepreload" href="./modules/core/appGlobalState.js?v=1.650">
+<link rel="modulepreload" href="./modules/core/constants.js?v=1.650">
 
 <style>
   /* Critical CSS - Inlined for instant loader display */
@@ -156,7 +156,7 @@
 
 
 <!-- version.js MUST load synchronously before ES modules to set globalThis.APP_VERSION -->
-<script src="./version.js?v=1.649"></script>
+<script src="./version.js?v=1.650"></script>
 
 <script>
 
@@ -327,7 +327,7 @@ if ('serviceWorker' in navigator) {
       // Check if we have an old SW without version parameter
       for (const reg of existingRegistrations) {
         const scriptURL = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL;
-        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.649')) {
+        if (scriptURL && scriptURL.includes('service-worker.js') && !scriptURL.includes('?v=1.650')) {
           console.log('🗑️ Found old service worker without version - unregistering:', scriptURL);
           await reg.unregister();
           console.log('✅ Old service worker unregistered successfully');
@@ -1436,8 +1436,6 @@ window.installApp = () => {
             <!-- Tabs for different testing categories -->
             <div class="testing-tabs">
                 <button class="testing-tab active" data-tab="diagnostics">📊 Diagnostics</button>
-                <button class="testing-tab" data-tab="migration">🔄 Migration</button>
-                <button class="testing-tab" data-tab="data">💾 Data Tools</button>
                 <button class="testing-tab" data-tab="debug">🐛 Debug Info</button>
                 <button class="testing-tab" data-tab="automated-tests">🧪 Automated Tests</button>
             </div>
@@ -1457,33 +1455,20 @@ window.installApp = () => {
                     <button id="show-storage-info" class="test-btn test-secondary">Storage Analysis</button>
                     <button id="show-performance-info" class="test-btn test-secondary">Performance Info</button>
                 </div>
-            </div>
-
-            <!-- Migration Tab -->
-            <div id="migration-tab" class="testing-tab-content">
-                <div class="testing-section">
-              <h3>🔒 Backup Management</h3>
-              <button id="list-available-backups" class="test-btn test-info">List Available Backups</button>
-              <button id="create-manual-backup" class="test-btn test-success">Create Manual Backup</button>
-              <button id="restore-from-backup" class="test-btn test-warning">Restore from Backup</button>
-              <button id="clean-old-backups" class="test-btn test-secondary">Clean Old Backups</button>
-          </div>
-            </div>
-
-            <!-- Data Tools Tab -->
-            <div id="data-tab" class="testing-tab-content">
-                <div class="testing-section">
-                    <h3>📊 Data Analysis</h3>
-                    <button id="analyze-cycles" class="test-btn test-info">Analyze Cycles</button>
-                    <button id="analyze-tasks" class="test-btn test-info">Analyze Tasks</button>
-                    <button id="find-data-issues" class="test-btn test-warning">Find Data Issues</button>
-                </div>
 
                 <div class="testing-section">
                     <h3>🛠️ Data Tools</h3>
+                    <button id="run-full-analysis" class="test-btn test-primary">Run Full Analysis</button>
                     <button id="export-debug-data" class="test-btn test-success">Export Debug Package</button>
-                    <button id="clean-old-data" class="test-btn test-warning">Clean Old Data</button>
                     <button id="repair-data" class="test-btn test-danger">Repair Corrupted Data</button>
+                </div>
+
+                <div class="testing-section">
+                    <h3>💾 Backup Management</h3>
+                    <button id="list-available-backups" class="test-btn test-info">List Available Backups</button>
+                    <button id="create-manual-backup" class="test-btn test-success">Create Manual Backup</button>
+                    <button id="restore-from-backup" class="test-btn test-warning">Restore from Backup</button>
+                    <button id="clean-old-backups" class="test-btn test-secondary">Clean Old Backups</button>
                 </div>
             </div>
 
@@ -1531,65 +1516,26 @@ window.installApp = () => {
             <!-- Automated Tests Tab -->
             <div id="automated-tests-tab" class="testing-tab-content">
                 <div class="testing-section">
-                    <h3>🚀 Quick Actions</h3>
+                    <h3>🧪 Quick Test</h3>
                     <button id="run-all-automated-tests" class="test-btn test-primary">
-                        🏁 Run All Tests (253 tests)
+                        🏁 Run All Tests
                     </button>
-                    <button id="clear-automated-results" class="test-btn test-clear">
-                        🧹 Clear Results
-                    </button>
-                    <button id="export-automated-results" class="test-btn test-export">
-                        📄 Export Results
-                    </button>
+                    <p style="font-size: 12px; color: #888; margin: 8px 0;">
+                        Runs all 1600+ tests and shows pass/fail summary.
+                    </p>
                 </div>
 
                 <div class="testing-section">
-                    <h3>🎨 Theme & UI Tests</h3>
-                    <button id="test-thememanager" class="test-btn test-info">
-                        🎨 ThemeManager (18 tests)
-                    </button>
-                    <button id="test-globalutils" class="test-btn test-info">
-                        🛠️ Global Utils (11 tests)
-                    </button>
-                    <button id="test-notifications" class="test-btn test-info">
-                        🔔 Notifications (10 tests)
-                    </button>
-                </div>
-
-                <div class="testing-section">
-                    <h3>📱 Core System Tests</h3>
-                    <button id="test-devicedetection" class="test-btn test-secondary">
-                        📱 DeviceDetection (17 tests)
-                    </button>
-                    <button id="test-cycleloader" class="test-btn test-secondary">
-                        🔄 CycleLoader (11 tests)
-                    </button>
-                    <button id="test-state" class="test-btn test-secondary">
-                        💾 State Management (41 tests)
-                    </button>
-                    <button id="test-consolecapture" class="test-btn test-secondary">
-                        � Console Capture (17 tests)
-                    </button>
-                </div>
-
-                <div class="testing-section">
-                    <h3>� Recurring Features</h3>
-                    <button id="test-recurringcore" class="test-btn test-warning">
-                        🔁 Recurring Core (37 tests)
-                    </button>
-                    <button id="test-recurringintegration" class="test-btn test-warning">
-                        � Recurring Integration (35 tests)
-                    </button>
-                    <button id="test-recurringpanel" class="test-btn test-warning">
-                        🎛️ Recurring Panel (31 tests)
-                    </button>
-                </div>
-
-                <div class="testing-section">
-                    <h3>� Analytics & Stats</h3>
-                    <button id="test-statspanel" class="test-btn test-success">
-                        � Stats Panel (25 tests)
-                    </button>
+                    <h3>🔬 Full Test Suite</h3>
+                    <p style="font-size: 13px; margin: 8px 0;">
+                        For detailed testing with individual module controls:
+                    </p>
+                    <a href="tests/module-test-suite.html" target="_blank" class="test-btn test-info" style="display: inline-block; text-decoration: none; text-align: center;">
+                        Open Test Suite Browser →
+                    </a>
+                    <p style="font-size: 12px; color: #888; margin: 8px 0;">
+                        The test suite browser lets you run individual modules, see detailed results, and debug specific failures.
+                    </p>
                 </div>
             </div>
         </div>
@@ -1946,7 +1892,7 @@ window.installApp = () => {
 <div id="live-region" aria-live="polite" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;"></div>
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=1.649"></script>
+ <script type="module" src="miniCycle-main.js?v=1.650"></script>
 
 <script>
 // Sync About modal version with meta app-version
@@ -1985,7 +1931,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
    <!-- Testing modules now loaded dynamically in miniCycle-scripts.js -->
-   <script src="modules/testing/automated-tests-fix.js?v=1.649"></script>
+   <script src="modules/testing/automated-tests-fix.js?v=1.650"></script>
    <script>
 // Late fallback: only redirect if feature gate failed OR full app never even started booting.
 (function () {

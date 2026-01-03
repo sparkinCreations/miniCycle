@@ -48,6 +48,7 @@ const di = createDIModule('AppInit', {
 	showCycleCreationModal: optional(null),
 	getOnboardingManager: optional(null),
 	getMiniCycleState: optional(null),
+	showNotification: optional(null),  // For data integrity warnings
 
 	// For completeInitialSetup
 	loadMiniCycle: optional(null),
@@ -301,6 +302,18 @@ class AppInit {
 		let schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
 
 		if (!schemaData) {
+			// Check if this is corrupted data vs truly empty
+			const rawData = localStorage.getItem('miniCycleData');
+			if (rawData) {
+				// Data exists but couldn't be parsed - CORRUPTED
+				console.error('🚨 DATA CORRUPTION DETECTED: localStorage has data but it cannot be parsed');
+				console.error('🚨 Raw data preview:', rawData.substring(0, 100));
+
+				// Show recovery modal
+				this.showDataCorruptionRecovery(rawData);
+				return;
+			}
+
 			console.log('🆕 No Schema 2.5 data found - creating initial structure...');
 			_deps.createInitialSchema25Data?.();
 
@@ -312,6 +325,13 @@ class AppInit {
 			}
 
 			schemaData = miniCycleState?.load?.() || _deps.loadMiniCycleData?.();
+		}
+
+		// Final check - if still no data, something is very wrong
+		if (!schemaData) {
+			console.error('🚨 Failed to load or create schema data');
+			this.showDataCorruptionRecovery(localStorage.getItem('miniCycleData'));
+			return;
 		}
 
 		const { cycles, activeCycle, reminders, settings } = schemaData;
@@ -335,8 +355,45 @@ class AppInit {
 			return;
 		}
 
-		if (!activeCycle || !cycles[activeCycle]) {
-			console.log('🆕 Existing user, no active cycle found, prompting for new cycle creation...');
+		// 🛡️ DATA INTEGRITY CHECK: Ensure valid routines exist
+		const cycleCount = Object.keys(cycles || {}).length;
+		const hasValidActiveCycle = activeCycle && cycles[activeCycle];
+
+		if (cycleCount === 0) {
+			// No routines exist at all - data corruption or cleared data
+			console.warn('⚠️ DATA INTEGRITY: No routines exist - showing creation modal with sample option');
+			_deps.showNotification?.('No routines found. Create one or load a sample.', 'warning', 5000);
+			_deps.showCycleCreationModal?.();
+			return;
+		}
+
+		if (!hasValidActiveCycle) {
+			// Routines exist but none is active - data corruption
+			console.warn('⚠️ DATA INTEGRITY: No active routine (but routines exist) - attempting recovery');
+
+			// Try to auto-recover by activating the first available routine
+			const availableCycles = Object.keys(cycles);
+			const firstCycle = availableCycles[0];
+
+			if (firstCycle) {
+				console.log(`🔧 Auto-recovering: Setting active routine to "${firstCycle}"`);
+				const miniCycleState = _deps.getMiniCycleState?.();
+				if (miniCycleState?.isReady?.()) {
+					await miniCycleState.update(state => {
+						state.appState.activeCycleId = firstCycle;
+					}, true);
+					// Reload schemaData with fixed activeCycle
+					schemaData = miniCycleState.load();
+					const recoveredActiveCycle = schemaData?.activeCycle || firstCycle;
+					_deps.showNotification?.(`Recovered: Activated "${recoveredActiveCycle}"`, 'success', 3000);
+					await this.runCompleteInitialSetup(recoveredActiveCycle, null, schemaData);
+					return;
+				}
+			}
+
+			// Recovery failed - show creation modal
+			console.warn('⚠️ DATA INTEGRITY: Recovery failed - showing creation modal');
+			_deps.showNotification?.('No active routine found. Create one or load a sample.', 'warning', 5000);
 			_deps.showCycleCreationModal?.();
 			return;
 		}
@@ -460,6 +517,128 @@ class AppInit {
 		console.log('✅ Initial setup completed successfully');
 
 		return true;
+	}
+
+	/**
+	 * Show data corruption recovery modal
+	 * Offers options to recover from corrupted localStorage data
+	 */
+	showDataCorruptionRecovery(corruptedData) {
+		console.log('🚨 Showing data corruption recovery modal...');
+
+		// Create modal overlay
+		const modal = document.createElement('div');
+		modal.id = 'data-corruption-modal';
+		modal.style.cssText = `
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.9);
+			z-index: 100000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			box-sizing: border-box;
+		`;
+
+		const content = document.createElement('div');
+		content.style.cssText = `
+			background: linear-gradient(135deg, #1a1a2e, #16213e);
+			border-radius: 16px;
+			padding: 32px;
+			max-width: 500px;
+			width: 100%;
+			color: white;
+			font-family: 'Inter', -apple-system, sans-serif;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+		`;
+
+		const preview = corruptedData ? corruptedData.substring(0, 50) + '...' : 'No data';
+
+		content.innerHTML = `
+			<h2 style="margin: 0 0 16px; color: #ff6b6b; font-size: 1.5rem;">
+				⚠️ Data Corruption Detected
+			</h2>
+			<p style="margin: 0 0 16px; opacity: 0.9; line-height: 1.5;">
+				Your saved data appears to be corrupted and cannot be loaded. This may have happened during a test run or browser issue.
+			</p>
+			<p style="margin: 0 0 24px; font-size: 0.85rem; opacity: 0.7; font-family: monospace; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; word-break: break-all;">
+				Preview: ${preview.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+			</p>
+			<div style="display: flex; flex-direction: column; gap: 12px;">
+				<button id="recovery-fresh-start" style="
+					background: linear-gradient(135deg, #4c79ff, #74c0fc);
+					border: none;
+					color: white;
+					padding: 14px 20px;
+					border-radius: 8px;
+					cursor: pointer;
+					font-size: 1rem;
+					font-weight: 600;
+				">
+					🆕 Start Fresh (Clear Data)
+				</button>
+				<button id="recovery-load-sample" style="
+					background: rgba(255,255,255,0.1);
+					border: 1px solid rgba(255,255,255,0.3);
+					color: white;
+					padding: 14px 20px;
+					border-radius: 8px;
+					cursor: pointer;
+					font-size: 1rem;
+				">
+					📥 Load Sample Routine
+				</button>
+				<button id="recovery-download-backup" style="
+					background: transparent;
+					border: 1px solid rgba(255,255,255,0.2);
+					color: rgba(255,255,255,0.7);
+					padding: 10px 20px;
+					border-radius: 8px;
+					cursor: pointer;
+					font-size: 0.9rem;
+				">
+					💾 Download Corrupted Data (for recovery)
+				</button>
+			</div>
+		`;
+
+		modal.appendChild(content);
+		document.body.appendChild(modal);
+
+		// Button handlers
+		document.getElementById('recovery-fresh-start').addEventListener('click', () => {
+			localStorage.removeItem('miniCycleData');
+			modal.remove();
+			window.location.reload();
+		});
+
+		document.getElementById('recovery-load-sample').addEventListener('click', async () => {
+			localStorage.removeItem('miniCycleData');
+			modal.remove();
+			// Create initial data then show cycle creation modal with sample option
+			_deps.createInitialSchema25Data?.();
+			const miniCycleState = _deps.getMiniCycleState?.();
+			if (miniCycleState?.reload) {
+				miniCycleState.reload();
+			}
+			// Trigger sample load
+			_deps.showCycleCreationModal?.();
+		});
+
+		document.getElementById('recovery-download-backup').addEventListener('click', () => {
+			// Download the corrupted data for potential manual recovery
+			const blob = new Blob([corruptedData || ''], { type: 'text/plain' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `miniCycle-corrupted-backup-${Date.now()}.txt`;
+			a.click();
+			URL.revokeObjectURL(url);
+		});
 	}
 }
 

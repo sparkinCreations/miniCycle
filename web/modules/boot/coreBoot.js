@@ -333,6 +333,7 @@ export async function initAppState(deps, showNotification) {
       showCycleCreationModal: () => appContextMod.getCycleApi?.()?.create,
       getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
       getMiniCycleState: () => deps.core.AppState || null,
+      showNotification: (msg, type, duration) => showNotification?.(msg, type, duration),  // For data integrity warnings
 
       // For completeInitialSetup - use grouped APIs (not legacy getters)
       loadMiniCycle: () => appContextMod.getCycleApi?.()?.load,
