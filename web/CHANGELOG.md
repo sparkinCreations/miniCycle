@@ -1,3 +1,8 @@
+## [1.647] - 2026-01-02
+- Refactor TaskDOMManager: Extract DOM patching logic to TaskDOMPatch module
+- chore: update version to 1.646 in changelog, manifest, HTML, and version files
+
+
 ## [1.646] - 2026-01-02
 - refactor: enhance module documentation with detailed features and versioning
 - chore: update version to 1.645 in changelog, manifest, HTML, and version files
