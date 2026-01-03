@@ -1,3 +1,8 @@
+## [1.648] - 2026-01-02
+- feat: add showTaskInput setting and update task input visibility logic
+- chore: update version to 1.647 in changelog, manifest, HTML, and version files
+
+
 ## [1.647] - 2026-01-02
 - Refactor TaskDOMManager: Extract DOM patching logic to TaskDOMPatch module
 - chore: update version to 1.646 in changelog, manifest, HTML, and version files
