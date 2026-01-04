@@ -1,3 +1,7 @@
+## [1.670] - 2026-01-04
+- fix: update initial visibility state for task input during onboarding
+
+
 ## [1.669] - 2026-01-04
 - feat: update onboarding placeholder text and enhance task area visibility during onboarding
 

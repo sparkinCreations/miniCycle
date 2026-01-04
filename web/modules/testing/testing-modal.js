@@ -185,13 +185,16 @@ function setupTestingModal() {
         setTimeout(() => {
             // Setup tabs first
             setupTestingTabs();
-            
+
             // Setup buttons
             setupTestButtons();
-            
+
             // Setup results controls
             setupResultsControls();
-            
+
+            // Setup resize and restore saved height
+            setupResultsAreaResize();
+
             // Setup automated testing integration
             if (typeof deps.setupAutomatedTestingFunctions === 'function') {
                 deps.setupAutomatedTestingFunctions();
@@ -265,17 +268,17 @@ function setupResultsControls() {
     safeAddEventListenerById("clear-test-results", "click", () => {
         clearTestResults();
     });
-    
+
     // Export results button
     safeAddEventListenerById("export-test-results", "click", () => {
         exportTestResults();
     });
-    
+
     // Copy results button
     safeAddEventListenerById("copy-test-results", "click", () => {
         copyTestResults();
     });
-    
+
     // Search/filter functionality (if elements exist)
     const searchInput = document.getElementById("search-test-results");
     if (searchInput) {
@@ -283,12 +286,12 @@ function setupResultsControls() {
             const query = e.target.value.toLowerCase();
             const testingOutput = document.getElementById("testing-output");
             if (!testingOutput) return;
-            
+
             const lines = testingOutput.textContent.split('\n');
-            const filteredLines = lines.filter(line => 
+            const filteredLines = lines.filter(line =>
                 line.toLowerCase().includes(query)
             );
-            
+
             if (query.trim() === '') {
                 // Show all lines if no search query
                 testingOutput.textContent = lines.join('\n');
@@ -297,6 +300,239 @@ function setupResultsControls() {
             }
         });
     }
+
+    // Setup results area resize
+    setupResultsAreaResize();
+}
+
+// ==========================================
+// 📏 RESULTS AREA RESIZE FUNCTIONALITY
+// ==========================================
+
+const MIN_RESULTS_HEIGHT = 80;
+
+// Apply saved results area height - call this when modal opens
+function applyResultsAreaSavedHeight() {
+    // Use setTimeout to wait for modal CSS transitions to complete
+    // A single requestAnimationFrame isn't enough when modal is reopened
+    setTimeout(() => {
+        const resultsArea = document.querySelector('.testing-results-area');
+        const activeTabContent = document.querySelector('.testing-tab-content.active');
+        const modalBody = document.querySelector('.testing-modal-body');
+
+        if (!resultsArea || !modalBody) return;
+
+        const savedHeight = loadResultsAreaHeight();
+        const modalBodyHeight = modalBody.getBoundingClientRect().height;
+
+        // Trust the user's saved height - only reject if larger than modal body
+        // (which would mean it was saved from a larger screen)
+        const maxAllowedResultsHeight = modalBodyHeight;
+
+        if (savedHeight && savedHeight >= MIN_RESULTS_HEIGHT && savedHeight <= maxAllowedResultsHeight) {
+            // Apply saved height to results area
+            resultsArea.style.height = `${savedHeight}px`;
+            resultsArea.style.minHeight = `${savedHeight}px`;
+            resultsArea.style.maxHeight = `${savedHeight}px`;
+            resultsArea.style.flex = 'none';
+
+            // Also constrain the tab content to make room for results area
+            if (activeTabContent) {
+                const availableHeight = modalBodyHeight - savedHeight - 50; // 50px for tabs
+                activeTabContent.style.height = `${availableHeight}px`;
+                activeTabContent.style.maxHeight = `${availableHeight}px`;
+                activeTabContent.style.overflow = 'auto';
+            }
+        } else {
+            // Saved height doesn't fit (e.g., desktop height on mobile) - reset to CSS defaults
+            resultsArea.style.height = '';
+            resultsArea.style.minHeight = '';
+            resultsArea.style.maxHeight = '';
+            resultsArea.style.flex = '';
+
+            if (activeTabContent) {
+                activeTabContent.style.height = '';
+                activeTabContent.style.maxHeight = '';
+                activeTabContent.style.overflow = '';
+            }
+        }
+    }, 100); // Wait 100ms for modal to fully expand
+}
+
+// Load saved height from AppState
+function loadResultsAreaHeight() {
+    try {
+        const appState = deps.AppState?.get?.();
+        return appState?.settings?.testingModalResultsHeight || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// Save height to AppState
+function saveResultsAreaHeight(height) {
+    try {
+        if (deps.AppState?.update) {
+            deps.AppState.update(state => {
+                state.settings = state.settings || {};
+                state.settings.testingModalResultsHeight = height;
+            });
+        }
+    } catch (e) {
+        console.warn('Could not save results height:', e);
+    }
+}
+
+function setupResultsAreaResize() {
+    const resultsHeader = document.querySelector('.testing-results-header');
+    const resultsArea = document.querySelector('.testing-results-area');
+    const modalBody = document.querySelector('.testing-modal-body');
+
+    if (!resultsHeader || !resultsArea || !modalBody) {
+        console.log('⚠️ Results resize: elements not found');
+        return;
+    }
+
+    // Prevent duplicate initialization of event listeners
+    if (resultsHeader.dataset.resizeInitialized) {
+        // Still apply saved height even if already initialized
+        applyResultsAreaSavedHeight();
+        return;
+    }
+    resultsHeader.dataset.resizeInitialized = 'true';
+
+    let isResizing = false;
+    let startY = 0;
+    let startResultsHeight = 0;
+    let startContentHeight = 0;
+    const minContentHeight = 60;
+
+    // Helper to get actual rendered height
+    function getHeight(el) {
+        return el.getBoundingClientRect().height || el.offsetHeight;
+    }
+
+    // Get the active tab content element
+    function getActiveTabContent() {
+        return document.querySelector('.testing-tab-content.active');
+    }
+
+    // Helper to get Y coordinate from mouse or touch event
+    function getEventY(e) {
+        if (e.touches && e.touches.length > 0) {
+            return e.touches[0].clientY;
+        }
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return e.changedTouches[0].clientY;
+        }
+        return e.clientY;
+    }
+
+    function startResize(e) {
+        // Only start resize if clicking directly on header or h3, not on buttons
+        const target = e.target;
+        if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.testing-results-controls')) {
+            return; // Don't resize when clicking buttons
+        }
+
+        const activeTabContent = getActiveTabContent();
+        if (!activeTabContent) return;
+
+        // Get Y coordinate for both mouse and touch events
+        const clientY = getEventY(e);
+        if (clientY === undefined) return;
+
+        // Get current heights using getBoundingClientRect for accuracy
+        startResultsHeight = getHeight(resultsArea);
+        startContentHeight = getHeight(activeTabContent);
+
+        // If heights are 0 or too small, use fallback values
+        if (startResultsHeight < MIN_RESULTS_HEIGHT) startResultsHeight = 250;
+        if (startContentHeight < minContentHeight) startContentHeight = 300;
+
+        isResizing = true;
+        startY = clientY;
+
+        // Prevent text selection during resize
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ns-resize';
+
+        // Set initial explicit heights to enable smooth resizing
+        resultsArea.style.height = `${startResultsHeight}px`;
+        resultsArea.style.minHeight = `${startResultsHeight}px`;
+        resultsArea.style.maxHeight = `${startResultsHeight}px`;
+        resultsArea.style.flex = 'none';
+
+        // Only resize tab content, keep tabs visible
+        activeTabContent.style.height = `${startContentHeight}px`;
+        activeTabContent.style.maxHeight = `${startContentHeight}px`;
+        activeTabContent.style.overflow = 'auto';
+
+        e.preventDefault();
+    }
+
+    function doResize(e) {
+        if (!isResizing) return;
+
+        const activeTabContent = getActiveTabContent();
+        if (!activeTabContent) return;
+
+        // Get Y coordinate for both mouse and touch events
+        const clientY = getEventY(e);
+        if (clientY === undefined) return;
+
+        const deltaY = startY - clientY; // Inverted: drag UP = positive = grow results
+
+        // Calculate new heights
+        let newResultsHeight = startResultsHeight + deltaY;
+        let newContentHeight = startContentHeight - deltaY;
+
+        // Enforce minimum constraints
+        if (newResultsHeight < MIN_RESULTS_HEIGHT) {
+            newResultsHeight = MIN_RESULTS_HEIGHT;
+            newContentHeight = startContentHeight + startResultsHeight - MIN_RESULTS_HEIGHT;
+        }
+        if (newContentHeight < minContentHeight) {
+            newContentHeight = minContentHeight;
+            newResultsHeight = startContentHeight + startResultsHeight - minContentHeight;
+        }
+
+        // Apply new heights - only to results area and tab content (tabs stay visible)
+        resultsArea.style.height = `${newResultsHeight}px`;
+        resultsArea.style.minHeight = `${newResultsHeight}px`;
+        resultsArea.style.maxHeight = `${newResultsHeight}px`;
+
+        activeTabContent.style.height = `${newContentHeight}px`;
+        activeTabContent.style.maxHeight = `${newContentHeight}px`;
+    }
+
+    function stopResize() {
+        if (!isResizing) return;
+        isResizing = false;
+
+        // Restore normal cursor and selection
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+
+        // Save the current results height
+        const currentHeight = getHeight(resultsArea);
+        if (currentHeight >= MIN_RESULTS_HEIGHT) {
+            saveResultsAreaHeight(Math.round(currentHeight));
+        }
+    }
+
+    // Mouse events for desktop
+    resultsHeader.addEventListener('mousedown', startResize);
+    document.addEventListener('mousemove', doResize);
+    document.addEventListener('mouseup', stopResize);
+
+    // Touch events for mobile
+    resultsHeader.addEventListener('touchstart', startResize, { passive: false });
+    document.addEventListener('touchmove', doResize, { passive: false });
+    document.addEventListener('touchend', stopResize);
+
+    // Apply saved height immediately
+    applyResultsAreaSavedHeight();
 }
 
 // ==========================================
