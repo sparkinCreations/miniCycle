@@ -292,14 +292,16 @@ function createTestRunnerModal() {
     `;
 
     // Hidden iframe - runs tests in background
+    // Use reasonable dimensions to avoid test failures due to element sizing
     const iframe = document.createElement('iframe');
     iframe.id = 'test-runner-iframe';
     iframe.style.cssText = `
         position: absolute;
-        width: 1px;
-        height: 1px;
+        width: 800px;
+        height: 600px;
         opacity: 0;
         pointer-events: none;
+        left: -9999px;
     `;
     iframe.src = 'tests/module-test-suite.html?autorun=true&embedded=true';
 
