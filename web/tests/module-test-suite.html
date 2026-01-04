@@ -1693,6 +1693,10 @@
             });
             console.log('🔒 Saved original localStorage before running all tests');
 
+            // 🧹 CLEAR localStorage so tests run with clean state
+            localStorage.clear();
+            console.log('🧹 Cleared localStorage for clean test environment');
+
             // 🚦 SET TEST MODE FLAG - tells app to skip IndexedDB restoration on reload
             await setTestModeFlag(true);
             console.log('🚦 Test mode flag SET - app will skip IndexedDB restore on reload');
